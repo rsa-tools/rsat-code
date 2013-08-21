@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.92 2013/08/20 05:12:05 jvanheld Exp $
+# $Id: position-analysis,v 1.93 2013/08/21 14:27:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -83,12 +83,15 @@ package main;
     our @supported_return_fields = qw(distrib
 				      occ
 				      index
-				      exp
+				      exp_occ
+				      freq_per_window
+				      freq_per_word
 				      chi
 				      sig
 				      rank
 				      graphs
 				      clusters
+				      matrices
 				      html
 				     );
 
@@ -107,6 +110,9 @@ package main;
     our $clust_method = "complete";
     our $clust_suffix = "clusters";
 
+
+    our $max_asmb_nb = 5;
+
     our %infile = (); our @infiles = ();
     our %outfile = (); our @outfiles = ();
     our %graphfile = (); our @graphfiles = (); ## graph files to index + display
@@ -123,8 +129,7 @@ package main;
       }
     }
 
-    &RSAT::message::Info("Running tasks", join(",",sort(keys(%task))));
-
+    &RSAT::message::Info("Running tasks", join(",",sort(keys(%task)))) if ($main::verbose >= 2);
 
     ## Check oligonucleotide length
     unless ($oligo_length > 0) {
@@ -162,6 +167,10 @@ package main;
 	$last_seq = $skip_seq + $max_seq_nb;
     }
 
+    ## Check dependencies between output types
+    $return{chi} = 1 if ($return{sig});
+
+
     ################################################################
     ## Specific treatment for output file, because if other files
     ## (graphs, clusters, frequency profiles) are requested, they must
@@ -174,7 +183,7 @@ package main;
 	chomp $dir{output};
     } else {
 	## Output profile is required for some return types
-	for my $return_type (qw(graphs exp clusters)) {
+	for my $return_type (qw(graphs exp_occ freq_per_window freq_per_pos clusters index html)) {
 	    if ($return{$return_type}) {
 		&RSAT::error::FatalError("The option '-return $return_type' requires to specify an output file (-o)");
 	    }
@@ -199,17 +208,33 @@ package main;
 
     ## Observed occurrence profiles
     if ($return{occ}) {
-	$outfile{occ_profiles} = $output_prefix."_occ_profiles.tab"; push @outfiles, "occ_profiles";
+	$outfile{occ} = $output_prefix."_occ.tab"; push @outfiles, "occ";
 	if ($return{html}) {
-	    $outfile{occ_profiles_html} = $output_prefix."_occ_profiles.html"; push @outfiles, "occ_profiles_html";
+	    $outfile{occ_html} = $output_prefix."_occ.html"; push @outfiles, "occ_html";
 	}
     }
 
     ## Expected frequency profiles
-    if ($return{exp}) {
-	$outfile{exp_profiles} = $output_prefix."_exp_profiles.tab"; push @outfiles, "exp_profiles";
+    if ($return{exp_occ}) {
+	$outfile{exp_occ} = $output_prefix."_exp_occ.tab"; push @outfiles, "exp_occ";
 	if ($return{html}) {
-	    $outfile{exp_profiles_html} = $output_prefix."_exp_profiles.html"; push @outfiles, "exp_profiles_html";
+	    $outfile{exp_occ_html} = $output_prefix."_exp_occ.html"; push @outfiles, "exp_occ_html";
+	}
+    }
+
+    ## Frequencies per window ("vertical" frequencies)
+    if ($return{freq_per_window}) {
+	$outfile{freq_per_window} = $output_prefix."_freq_per_window.tab"; push @outfiles, "freq_per_window";
+	if ($return{html}) {
+	    $outfile{freq_per_window_html} = $output_prefix."_freq_per_window.html"; push @outfiles, "freq_per_window_html";
+	}
+    }
+
+    ## Frequencies per word ("longitudinal" frequencies)
+    if ($return{freq_per_word}) {
+	$outfile{freq_per_word} = $output_prefix."_freq_per_word.tab"; push @outfiles, "freq_per_word";
+	if ($return{html}) {
+	    $outfile{freq_per_word_html} = $output_prefix."_freq_per_word.html"; push @outfiles, "freq_per_word_html";
 	}
     }
 
@@ -286,7 +311,9 @@ package main;
       ## Print the main result file
       &PrintResult();
       &PrintProfiles("occ") if ($return{occ});
-      &PrintProfiles("exp") if ($return{exp});
+      &PrintProfiles("exp_occ") if ($return{exp_occ});
+      &PrintProfiles("freq_per_window") if ($return{freq_per_window});
+      &PrintProfiles("freq_per_word") if ($return{freq_per_word});
     }
 
     ## Cluster oligonucleotides based on their occurrence profiles
@@ -297,37 +324,41 @@ package main;
 	## Define output file names for clusters
 	my $cluster_prefix = &ShortFileName($output_prefix);
 	$outfile{cluster_heatmap} = $dir{clusters}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap";
-	$outfile{cluster_occ_profiles} = $dir{clusters}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles";
-	$outfile{cluster_freq_profiles} = $dir{clusters}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles";
-	$outfile{cluster_median_profiles_plot} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_plot";
-	$outfile{cluster_median_profiles} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles";
+	$outfile{cluster_occ} = $dir{clusters}."/".$cluster_prefix."_occ_per_cluster.pdf"; push @outfiles, "cluster_occ";
+	$outfile{cluster_freq} = $dir{clusters}."/".$cluster_prefix."_freq_per_cluster.pdf"; push @outfiles, "cluster_freq";
+	$outfile{cluster_median_plot} = $dir{clusters}."/".$cluster_prefix."_median_per_cluster.pdf"; push @outfiles, "cluster_median_plot";
+	$outfile{cluster_median} = $dir{clusters}."/".$cluster_prefix."_median_per_cluster.tab"; push @outfiles, "cluster_median";
 
 	&ProfileClustering() if ($task{clusters});
+      }
 
-	## Define output file names for matrices
-	$prefix{pssm} = $output_prefix."_pssm"; 
-	$outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
-	$outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
-	$outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
+    ## Convert k-mer assemblies into matrices
+    if ($return{matrices}) {
+      ## Define output file names for matrices
+      $prefix{pssm} = $output_prefix."_pssm"; 
+      $outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
+      $outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
+      $outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
 
+      if ($return{clusters}) {
 	for my $c (1..$clust_nb) {
 	  $graphfile{'logo_clust'.$c} =  $prefix{pssm}."_count_matrices_logo_m".$c.".png"; push @graphfiles, 'logo_clust'.$c;
 	}
-
-	&ClustersToMatrices() if ($task{matrices});
+      } else {
+	for my $m (1..$max_asmb_nb) {
+	  $graphfile{'logo_m'.$m} =  $prefix{pssm}."_count_matrices_logo_m".$m.".png"; push @graphfiles, 'logo_m'.$m;
+	}
+      }
+      &ClustersToMatrices() if ($task{matrices});
     }
 
     if  ($return{graphs}) {
-	## Define index name for the graphs
-	if ($outfile{output}) {
-	    $outfile{graph_index} = $outfile{output}; push @outfiles, "graph_index";
-	    $outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
-	    $outfile{graph_index} .= "_graph_index.html";
-	} else {
-	    $outfile{graph_index} = "$dir{output}/graph_index_${oligo_length}nt_ci${pos_interval}_$strands.html";
-	}
-	push @outfiles, "graph_index";
-	&GenerateGraphs() if ($task{graphs});
+      ## Define index file for the word-specific graphs
+      $outfile{graph_index} = $outfile{output};
+      $outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
+      $outfile{graph_index} .= "_graph_index.html";
+      push @outfiles, "graph_index";
+      &GenerateGraphs() if ($task{graphs});
     }
 
     ## Generate the HTML report
@@ -663,13 +694,13 @@ sub CalcWindows {
 			  "min_pos/pos_interval", $min_pos/$pos_interval,
 			  "min_calc_window", $min_calc_window,
 			  "min_window", $min_window,
-			 ) if ($main::verbose >= 0);
+			 ) if ($main::verbose >= 5);
     &RSAT::message::Debug("pos_interval", $pos_interval,
 			  "max_pos", $max_pos,
 			  "max_pos/pos_interval", $max_pos/$pos_interval,
 			  "max_calc_window", $max_calc_window,
 			  "max_window", $max_window,
-			 ) if ($main::verbose >= 0);
+			 ) if ($main::verbose >= 5);
 
     ## 2013-08: temporarily set display windows to the same values as
     ## calc windows. I will estimate later if it is worth maintaining
@@ -687,11 +718,12 @@ sub CalcWindows {
 
 
 ################################################################
-## Calculate the sum of in-bound occurrences for each oligo
+## Calculate the sum of in-bound occurrences for each oligo, and for each window
 sub CalcInboundOcc {
   foreach my $oligo_seq (sort keys %pattern) {
     foreach my $window ($min_calc_window..$max_calc_window) {
       $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
+      $occ_per_window{$window} += $window_occ{$oligo_seq}{$window};
     }
   }
 }
@@ -755,7 +787,7 @@ sub CalcExpectedUsingMarkov {
   }
 
   if ($export_markov_freq) {
-    ## Open a file to store expected oligonucleotide fequencies
+    ## Open a file to store expected oligonucleotide frequencies
     $outfile{markov_freq} = $output_prefix."_markov".$markov."_exp_freq.tab"; push @outfiles, "markov_freq";
     my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
     print $markov_freq_out join ("\t", "#window",
@@ -946,8 +978,8 @@ sub CalcChi {
     # 	    ) if ($main::verbose >= 5);
 
     ## check threshold on occurrences
-    if (defined($lth{'sig'})) {
-      if ($pattern{$oligo_seq}->{sig} < $lth{'sig'}) {
+    if (defined($lth{sig})) {
+      if ($pattern{$oligo_seq}->{sig} < $lth{sig}) {
 	&RSAT::message::Debug( "Deleting pattern", $oligo_seq, "significance", $pattern{$oligo_seq}->{sig}, "sig threshold", $lth{sig}) if ($main::verbose >= 5);
 	delete $pattern{$oligo_seq};
 	#	    delete $pattern{$oligo_seq}->{occ};
@@ -1208,7 +1240,7 @@ OPTIONS
 
 		distrib	k-mer occurrences per position window
 
-		exp	expected occurrences for each window
+		exp_occ	expected occurrences for each window
 
 		chi	chi-square value
 
@@ -1368,7 +1400,7 @@ position-analysis options
 -nogrouprc	do not group reverse complement pairs
 -noov		no overlap
 -sort		sort oligonucleotides according to the chi2 statistics
--return		fields to return. Supported: html,chi,distrib,exp,graph,rank,clusters
+-return		fields to return. Supported: html,chi,distrib,exp_occ,graph,rank,clusters
 -task		run specific tasks. Supported: pos, clusters, graphs
 -markov		markov order for computing background k-mer frequencies
 -lth_chi	lower threshold on chi2
@@ -1473,9 +1505,9 @@ sub ReadArguments {
 
 	    ### lower threshold on significance
 	  } elsif ($ARGV[$a] =~ /^-lth_sig/) {
-	    $lth{'sig'} = $ARGV[$a+1];
-	    $return{'sig'} = 1;
-	    unless (&IsReal($lth{'sig'})) {
+	    $lth{sig} = $ARGV[$a+1];
+	    $return{sig} = 1;
+	    unless (&IsReal($lth{sig})) {
 	      &RSAT::error::FatalError("Threshold on sig must be a Real number") ;
 	    }
 
@@ -1642,6 +1674,13 @@ sub ReadArguments {
 	    &RSAT::error::FatalError($clust_nb, "invalid number of clusters, must be a Natural number >= 2")
 	      unless ((&IsNatural($clust_nb) && ($clust_nb >= 2)));
 
+	    ################################################################
+	    ## matrix parameters
+	} elsif ($ARGV[$a] eq "-max_asmb_nb") {
+	    $max_asmb_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($max_asmb_nb, "invalid number of matrices, must be a Natural number >= 1")
+	      unless ((&IsNatural($max_asmb_nb) && ($max_asmb_nb >= 1)));
+
 	} elsif ($ARGV[$a] eq "-clust_method") {
 	    $clust_method = $ARGV[$a+1];
 
@@ -1784,7 +1823,11 @@ sub PrintResult {
   ## Output columns
   @out_col = (); @col_descriptions = ();
   push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
-  push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
+  if (($strands eq '2str') && ($oligo_len > 3)) {
+    push @out_col, 'identifier'; push @col_descriptions, 'pattern identifier';
+  } else {
+    push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
+  }
   push @out_col, 'occ'; push @col_descriptions, 'pattern occurrences';
   if ($noov) {
     push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';
@@ -1796,11 +1839,11 @@ sub PrintResult {
     push @out_col, "Eval" ; push @col_descriptions, 'E-value; expected number of false positives (Eval = Pval * nb_tests)';
     push @out_col, "sig" ; push @col_descriptions, 'Significance (sig = -log10(Eval))';
   }
-  if ($return{'rank'}) {
+  if ($return{rank}) {
     push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';
   }
 
-#  ## Keep track of the number of columns exporte before the distribution, to be passed do cluster_position_profiles.R
+#  ## Keep track of the number of columns exported before the distribution, to be passed do cluster_position_profiles.R
 #  $column_offset = scalar(@out_col);
 
   ################################################################
@@ -1809,7 +1852,7 @@ sub PrintResult {
   ## Note: this should soon be changed (2013-08), it is cleaner to
   ## export separate files with the different distributions
   ## (occurrences, frequencies, expected frequencies, ...).
-  if ($return{'distrib'}) {
+  if ($return{distrib}) {
     my $w=0;
       for my $window ($min_calc_window..$max_calc_window) {
 	$w++;
@@ -1855,12 +1898,12 @@ sub PrintResult {
     }
 
     ## Rank
-    if ($return{'rank'}) {
+    if ($return{rank}) {
       print $out "\t$rank";
     }
 
     ### Position distribution
-    if ($return{'distrib'}) {
+    if ($return{distrib}) {
       for my $window ($min_calc_window..$max_calc_window) {
 	print $out "\t", $window_occ{$oligo_seq}{$window} || 0;
       }
@@ -1896,11 +1939,14 @@ sub PrintProfiles {
   my $profile_type = shift(@_) || "occ";
 
   my %profile_desc = ("occ"=>"observed occurrences",
-		      "exp"=>"expected occurrences");
+		      "exp_occ"=>"expected occurrences",
+		      "freq_per_window"=>"frequency per window (\"vertical\" frequency)",
+		      "freq_per_word"=>"frequency per word (\"longitudinal\" frequency)",
+		     );
 
   &RSAT::message::TimeWarn("Printing", $profile_type,"profiles") if ($main::verbose >= 2);
 
-  my $out_profile = &OpenOutputFile($outfile{$profile_type.'_profiles'});
+  my $out_profile = &OpenOutputFile($outfile{$profile_type});
 
   ## Print header
   print $out_profile "; position-analysis";
@@ -1939,10 +1985,14 @@ sub PrintProfiles {
     print $out_profile "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
     my $value;
     for my $window ($min_calc_window..$max_calc_window) {
-      if ($profile_type eq "exp") {
+      if ($profile_type eq "exp_occ") {
 	$value =  sprintf "%.1f", $exp_occ{$oligo_seq}{$window} || 0;
       } elsif ($profile_type eq "occ") {
 	$value = $window_occ{$oligo_seq}{$window} || 0;
+      } elsif ($profile_type eq "freq_per_window") {
+	$value = sprintf "%.3g ", $window_occ{$oligo_seq}{$window} / $occ_per_window{$window} || 0;
+      } elsif ($profile_type eq "freq_per_word") {
+	$value = sprintf "%.3g",$window_occ{$oligo_seq}{$window} / $pattern{$oligo_seq}->{in_bound_occ} || 0;
       } else {
 	&RSAT::error::FatalError("Invalid profile type", $profile_type);
       }
@@ -1960,15 +2010,15 @@ sub PrintProfiles {
     }
     print $out_profile "\n";
   }
-  &RSAT::message::TimeWarn("Exp. profiles", $outfile{exp_profiles}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Expected occurrence profiles", $outfile{exp_occ}) if ($main::verbose >= 2);
   close ($out_profile);
 
   ## Generate an HTML output file if required
-  if ($outfile{exp_profiles_html}) {
+  if ($outfile{exp_occ_html}) {
     &RSAT::message::TimeWarn("Generating HTML table", $outfile{html}) if ($main::verbose >= 2);
     my $cmd = $SCRIPTS."/text-to-html";
-    $cmd .= " -i ".$outfile{exp_profiles};
-    $cmd .= " -o ".$outfile{exp_profiles_html};
+    $cmd .= " -i ".$outfile{exp_occ};
+    $cmd .= " -o ".$outfile{exp_occ_html};
     &doit($cmd);
   }
 
@@ -2027,9 +2077,15 @@ sub ClustersToMatrices {
   &RSAT::message::TimeWarn("Extracting matrices from k-mers in sequences.") if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/matrix-from-patterns";
   $cmd .= " -v 1";
-  $cmd .= " -pl ".$outfile{clusters};
   $cmd .= " -seq ".$infile{sequences};
-  $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30 -sc 4 -cc 2 ";
+  $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30";
+  if ($return{clusters}) {
+    $cmd .= " -pl ".$outfile{clusters};
+    $cmd .= " -sc 4 -cc 2 ";
+  } else {
+    $cmd .= " -pl ".$outfile{output};
+    $cmd .= " -max_asmb_nb ".$max_asmb_nb;
+  }
   $cmd .= " -max_asmb_nb 8";
   $cmd .= " -flanks 2 -logo";
   $cmd .= " -o ".$prefix{pssm};
@@ -2140,7 +2196,7 @@ sub GenerateGraphs {
 	$command .= " -format ".$img_format;
 	print "; $command\n" if ($main::verbose >= 3);
 	open XY, "| $command";
-	print XY ";window\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
+	print XY ";window\tocc_$oligo_seq\texp_occ_$oligo_seq\n"; ### header line
 	foreach my $window ($min_display_window..$max_display_window) {
 #	foreach my $window ($min_window..$max_window) {
 	    print XY "$window_center{$window}\t";
