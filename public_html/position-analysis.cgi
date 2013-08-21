@@ -25,17 +25,27 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $position_analysis_command = "$SCRIPTS/position-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
-$prefix = "position-analysis";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+
+
+################################################################
+## Output paths
+$output_prefix = "position-analysis";
+$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
+
+## We need to create the output directory before starting
+## compare-matrices, since it will generate multiple output files.
+system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
+
+#$prefix = "position-analysis";
+#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 #$tmp_file_name = sprintf "position-analysis.%s", &AlphaDate;
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
-### print the result page
+## print the result page
 &RSA_header("position-analysis result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -43,8 +53,8 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
-#### read parameters ####
-$parameters = " -v ";
+## Read parameters ####
+$parameters = " -v 2";
 $parameters .= " -sort" if ($query->param('sort'));
 $parameters .= " -nofilter" unless ($query->param('filter'));
 $parameters .= " -nocheck" unless ($query->param('check'));
@@ -52,7 +62,7 @@ $parameters .= " -nocheck" unless ($query->param('check'));
 #### purge sequence option
 $purge = $query->param('purge');
 
-### sequence file
+## sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 push @result_files, ("Input sequence", $sequence_file);
 if ($purge) {
@@ -67,51 +77,89 @@ if ($purge) {
 }
 
 
-### fields to return
+## fields to return
 @return_fields = ();
 
-### threshold on occurrences
-$lth_occ = $query->param('lth_occ');
-&FatalError("$lth_occ Invalid threshold on occurrences") unless &IsNatural($lth_occ);
-$parameters .= " -lth_occ ".$lth_occ;
+## threshold on occurrences
+my $lth_occ = $query->param('lth_occ');
+if (&IsNatural($lth_occ)) {
+  $parameters .= " -lth_occ ".$lth_occ;
+}
+#&FatalError("$lth_occ Invalid threshold on occurrences") unless &IsNatural($lth_occ);
+#$parameters .= " -lth_occ ".$lth_occ;
 
-#### chi2
+## Chi2
 if ($query->param('return_chi')) {
-  push @return_fields, "chi";
+  push @return_fields, ("chi", "sig");
 
-  ### threshold on chi-square
-  $lth = $query->param('lth');
-  &FatalError("$lth Invalid threshold on chi2") unless &IsNatural($lth);
-  $parameters .= " -lth ".$lth;
+  ## Threshold on chi2 statistics
+  my $lth_chi = $query->param('lth_chi');
+  if (&IsReal($lth_chi)) {
+    $parameters .= " -lth_chi ".$lth_chi;
+  }
+
+  ## Threshold on chi2 significance
+  my $lth_sig = $query->param('lth_sig');
+  if (&IsReal($lth_sig)) {
+    $parameters .= " -lth_sig ".$lth_sig;
+  }
 }
 
-### graphs
-if ($query->param('return_graph')) {
-  push @return_fields, "graph";
-} 
-
-### rank
+## rank
 if ($query->param('return_rank')) {
   push @return_fields, "rank";
 }
 
-### distrib
+## distrib
 if ($query->param('return_distrib')) {
   push @return_fields, "distrib";
-} 
+}
 
-### expected occurrences
+## Expected occurrences
 if ($query->param('return_exp')) {
   push @return_fields, "exp";
-} 
+}
 
-$return_fields = join ",", @return_fields;
+## Clusters
+if ($query->param('return_clusters')) {
+  push @return_fields, "clusters";
+
+
+  ## Number of clusters
+  my $clust_nb = $query->param('clust_nb');
+  if (&IsNatural($clust_nb)) {
+    $parameters .= " -clust_nb ".$clust_nb;
+  } else {
+    &FatalError($clust_nb, "Invalid number of clusters: must be a Natural number.");
+  }
+}
+
+## Matrices
+if ($query->param('return_matrices')) {
+  push @return_fields, "matrices";
+
+
+  ## Number of matrices
+  my $max_asmb_nb = $query->param('max_asmb_nb');
+  if (&IsNatural($max_asmb_nb)) {
+    $parameters .= " -max_asmb_nb ".$max_asmb_nb;
+  } else {
+    &FatalError($max_asmb_nb, "Invalid number of matrices: must be a Natural number.");
+  }
+}
+
+## Graphs
+if ($query->param('return_graphs')) {
+  push @return_fields, "graphs";
+}
+
+$return_fields = join ",", @return_fields, "index";
 
 
 $parameters .= " -return $return_fields";
 
 
-### single or both strands
+## single or both strands
 if ($query->param('strand') =~ /single/) {
   $parameters .= " -1str";
 } else {
@@ -119,19 +167,15 @@ if ($query->param('strand') =~ /single/) {
 }
 
 
-### group patterns by pairs of reverse complements
+## group patterns by pairs of reverse complements
 unless ($query->param('grouprc')) {
   $parameters .= " -nogrouprc";
 } 
 
-### prevent overlapping matches of the same pattern
+## prevent overlapping matches of the same pattern
 if ($query->param('noov')) {
   $parameters .= " -noov";
-} 
-
-### verbose
-$parameters .= " -v";
-
+}
 
 #### oligo length
 $oligo_length = $query->param('oligo_length') ;
@@ -155,78 +199,96 @@ if ((&IsInteger($offset)) && ($offset != 0)) {
   $parameters .= " -offset ".$offset;
 }
 
+
+################################################################
+## Output file
+$output_file = $output_path."/".$output_prefix.".tab";
+$parameters .= " -o ".$output_file;
+
+## Report the full command before executing
 &ReportWebCommand($command." ".$parameters);
 
+################################################################
+## Display or send result by email
+$index_file = $output_path."/".$output_prefix."_index.html";
+my $mail_title = join (" ", "[RSAT]", "compare-matrices", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-
-  &PipingWarning();
-
-  ### execute the command ###
-  $result_file = $tmp_file_path.".tab";
-  push @result_files, ("Position analysis result", $result_file);
-  open RESULT, "$command $parameters |";
-
-
-  ### Print result on the web page
-  print '<H2>Result</H2>';
-  &PrintHtmlTable(RESULT, $result_file, true);
-  close(RESULT);
-
-  #### oligonucleotide assembly ####
-  if (&IsReal($query->param('occ_significance_threshold'))) {
-
-    ## Assemble the significant patterns with pattern-assembly
-      $assembly_file = $tmp_file_path.".asmb";
-#      $assembly_file = "$TMP/$tmp_file_name.asmb";
-      push @result_files, ('assembly', $assembly_file);
-    $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
-    if ($query->param('strand') =~ /single/) {
-      $pattern_assembly_command .= " -1str";
-    } else {
-      $pattern_assembly_command .= " -2str";
-    }
-
-    #     if (&IsNatural($query->param('max_asmb_nb'))) {
-    #       $pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
-    #     }
-    #     $pattern_assembly_command .= " -i ".$result_file;
-    #     $pattern_assembly_command .= " -o ".$assembly_file;
-    # 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
-    # 	if ($query->param('strand') =~ /single/) {
-    # 	    $pattern_assembly_command .= " -1str";
-    # 	} else {
-    # 	    $pattern_assembly_command .= " -2str";
-    # 	}
-
-    unless ($ENV{RSA_ERROR}) {
-      print "<H2>Pattern assembly</H2>\n";
-      open CLUSTERS, "$pattern_assembly_command  |";
-      print "<PRE>\n";
-      while (<CLUSTERS>) {
-	s|$ENV{RSAT}/||g;
-	print;
-      }
-      print "</PRE>\n";
-      close(CLUSTERS);
-    }
-  }
-
-  &PrintURLTable(@result_files);
-  &PipingForm();
-  print '<HR SIZE=3>';
-
+  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
 }
+
+# &ReportWebCommand($command." ".$parameters);
+
+# if ($query->param('output') =~ /display/i) {
+
+#   &PipingWarning();
+
+#   ### execute the command ###
+#   $result_file = $tmp_file_path.".tab";
+#   push @result_files, ("Position analysis result", $result_file);
+#   open RESULT, "$command $parameters |";
+
+
+#   ### Print result on the web page
+#   print '<H2>Result</H2>';
+#   &PrintHtmlTable(RESULT, $result_file, true);
+#   close(RESULT);
+
+#   #### oligonucleotide assembly ####
+#   if (&IsReal($query->param('occ_significance_threshold'))) {
+
+#     ## Assemble the significant patterns with pattern-assembly
+#     $assembly_file = $tmp_file_path.".asmb";
+#     #      $assembly_file = "$TMP/$tmp_file_name.asmb";
+#     push @result_files, ('assembly', $assembly_file);
+#     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
+#     if ($query->param('strand') =~ /single/) {
+#       $pattern_assembly_command .= " -1str";
+#     } else {
+#       $pattern_assembly_command .= " -2str";
+#     }
+
+#     #     if (&IsNatural($query->param('max_asmb_nb'))) {
+#     #       $pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+#     #     }
+#     #     $pattern_assembly_command .= " -i ".$result_file;
+#     #     $pattern_assembly_command .= " -o ".$assembly_file;
+#     # 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+#     # 	if ($query->param('strand') =~ /single/) {
+#     # 	    $pattern_assembly_command .= " -1str";
+#     # 	} else {
+#     # 	    $pattern_assembly_command .= " -2str";
+#     # 	}
+
+#     unless ($ENV{RSA_ERROR}) {
+#       print "<H2>Pattern assembly</H2>\n";
+#       open CLUSTERS, "$pattern_assembly_command  |";
+#       print "<PRE>\n";
+#       while (<CLUSTERS>) {
+# 	s|$ENV{RSAT}/||g;
+# 	print;
+#       }
+#       print "</PRE>\n";
+#       close(CLUSTERS);
+#     }
+#   }
+
+#   &PrintURLTable(@result_files);
+#   &PipingForm();
+#   print '<HR SIZE=3>';
+
+# } else {
+#   &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
+# }
 
 print $query->end_html;
 
 exit(0);
 
 
+## Prepare data for piping
 sub PipingForm {
-    ### prepare data for piping
-    
     #### title
     $title = $query->param('title');
     $title =~ s/\"/\'/g;
@@ -251,7 +313,7 @@ sub PipingForm {
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+<INPUT type="hidden" NAME="sequence_format" VALUE="fasta">
 <INPUT type="submit" value="pattern matching (dna-pattern)">
 </FORM>
 </TD>
