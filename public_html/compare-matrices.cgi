@@ -21,24 +21,15 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ################################################################
-## configuration
+## Output paths
 $command = "$ENV{RSAT}/perl-scripts/compare-matrices";
 
-$prefix = "compare-matrices";
-$output_path = &RSAT::util::make_temp_file("",$prefix, 1); $output_dir = &ShortFileName($output_path);
-
-#$output_dir_prefix = sprintf "compare-matrices.%s", &AlphaDate();
-#$output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1); $output_dir = &ShortFileName($tmp_file_path);
+$output_prefix = "compare-matrices";
+$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
 
 ## We need to create the output directory before starting
 ## compare-matrices, since it will generate multiple output files.
-#$output_path = $TMP."/".$output_dir;
-#$output_path =~ s|\/\/|\/|g;
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
-# $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
-# $ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/bin";
-
-$output_prefix = "compare-matrices";
 
 ################################################################
 ## result page header
