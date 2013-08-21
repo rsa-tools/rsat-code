@@ -33,7 +33,7 @@ $output_prefix = "position-analysis";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
 
 ## We need to create the output directory before starting
-## compare-matrices, since it will generate multiple output files.
+## the analysis, since it will generate multiple output files.
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 
 #$prefix = "position-analysis";
@@ -211,7 +211,7 @@ $parameters .= " -o ".$output_file;
 ################################################################
 ## Display or send result by email
 $index_file = $output_path."/".$output_prefix."_index.html";
-my $mail_title = join (" ", "[RSAT]", "compare-matrices", &AlphaDate());
+my $mail_title = join (" ", "[RSAT]", "position-analysis", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
 } else {
