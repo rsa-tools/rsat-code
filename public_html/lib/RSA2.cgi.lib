@@ -2716,7 +2716,16 @@ sub IndexFiles {
       print $html_index "<td>".$key."</td>";
       print $html_index "<td><a href='".$link."'>".$link."</a></td>";
       print $html_index "<td><a href='".$link."'><img width='200' src='".$link."'></a></td>";
-      print $html_index "<td></td>";
+
+      ## A special trick for sequence logos: check the reverse complement
+      if ($file =~ /(_logo_m\d+)/) {
+	my $suffix = $1;
+	my $rc_file = $file;
+	$rc_file =~ s/${suffix}/${suffix}_rc/;
+	my $rc_link = &RSAT::util::RelativePath($main::outfile{html_index}, $rc_file);
+	print $html_index "<td><a href='".$rc_link."'><img width='200' src='".$rc_link."'></a></td>";	  print $html_index "<td></td>";
+      }
+
       print $html_index "</tr>\n";
     }
     print $html_index "</table>\n";
