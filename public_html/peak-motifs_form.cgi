@@ -19,10 +19,10 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### Read the CGI query
-$default{demo_descr} = "";
 
 ################################################################
 ### default values for filling the form
+$default{demo_descr} = "";
 $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
 $default{assembly} = "";
@@ -287,14 +287,14 @@ sub Panel1 {
   <tr><td style='padding-right:15px;border-right:1px solid #2D282E;'>";
 
   print "<span title=\"Provide here your peak sequences.This is the only mandatory input of the whole form\">";
-   &MultiSequenceChoice("Peak sequences <font color='red'>(mandatory)</font>",1);
-	print "</span>";
-    print "<p/>\n";
-	print "</td><td style='padding-left:15px;'>";
+  &MultiSequenceChoice("Peak sequences <font color='red'>(mandatory)</font>",1);
+  print "</span>";
+  print "<p/>\n";
+  print "</td><td style='padding-left:15px;'>";
   print "<p><b>Optional:</b> <i>control dataset for differential analysis (test vs control)</i></p>\n";
 
- print "<p/>\n";
-print "<span title=\"Provide a second peak sequences set ONLY if you perform a differential analysis (mutant vs wild type, ...)\">";
+  print "<p/>\n";
+  print "<span title=\"Provide a second peak sequences set ONLY if you perform a differential analysis (mutant vs wild type, ...)\">";
   &MultiSequenceChoice("Control sequences",2);
   print "</span>";
   print "<p/>\n";
