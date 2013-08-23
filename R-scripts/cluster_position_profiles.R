@@ -259,7 +259,7 @@ cluster.table <- data.frame('seq'=pos.data[names(clusters),'seq'],
 ## Export the cluster file in the same directory as the position
 ## profiles. All other files are exported in the separate cluster
 ## directory, to avoid confusion between the numerous output file.
-cluster.file <- file.path(dir.pos, paste(sep='', prefix, '_clusters.tab'))
+cluster.file <- file.path(dir.pos, paste(sep='', prefix, '_',clust.suffix,'.tab'))
 write.table(cluster.table, file=cluster.file, row.names=FALSE, col.names=TRUE, quote=FALSE, sep='\t')
 
 ## Report the number of elements per cluster
