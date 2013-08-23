@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.93 2013/08/21 14:27:29 jvanheld Exp $
+# $Id: position-analysis,v 1.94 2013/08/23 21:44:33 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -108,8 +108,7 @@ package main;
 #    our $column_offset = 0;
     our $clust_nb = 8;
     our $clust_method = "complete";
-    our $clust_suffix = "clusters";
-
+    our $clust_suffix = "";
 
     our $max_asmb_nb = 5;
 
@@ -191,6 +190,13 @@ package main;
 	$dir{output} = ".";
     }
     push @dirs , "output";
+
+    ## Automatic assignation of suffix for cluster file and directory
+    if ($return{clusters}) {
+	unless ($clust_suffix) {
+	    $clust_suffix = "clusters_".$clust_method."_k".$clust_nb;
+	}
+    }
 
 
     ################################################################
@@ -318,16 +324,16 @@ package main;
 
     ## Cluster oligonucleotides based on their occurrence profiles
     if ($return{clusters}) {
+	$outfile{clusters} = $output_prefix."_".$clust_suffix.".tab"; push @outfiles, "clusters";
 	$dir{clusters} = $output_prefix."_".$clust_suffix; push @dirs, "clusters";
-	$outfile{clusters} = $output_prefix."_clusters.tab"; push @outfiles, "clusters";
 
 	## Define output file names for clusters
 	my $cluster_prefix = &ShortFileName($output_prefix);
 	$outfile{cluster_heatmap} = $dir{clusters}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap";
-	$outfile{cluster_occ} = $dir{clusters}."/".$cluster_prefix."_occ_per_cluster.pdf"; push @outfiles, "cluster_occ";
-	$outfile{cluster_freq} = $dir{clusters}."/".$cluster_prefix."_freq_per_cluster.pdf"; push @outfiles, "cluster_freq";
-	$outfile{cluster_median_plot} = $dir{clusters}."/".$cluster_prefix."_median_per_cluster.pdf"; push @outfiles, "cluster_median_plot";
-	$outfile{cluster_median} = $dir{clusters}."/".$cluster_prefix."_median_per_cluster.tab"; push @outfiles, "cluster_median";
+	$outfile{cluster_occ_profiles} = $dir{clusters}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles";
+	$outfile{cluster_freq_profiles} = $dir{clusters}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles";
+	$outfile{cluster_median_profiles} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles";
+	$outfile{cluster_median_profiles_table} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table";
 
 	&ProfileClustering() if ($task{clusters});
       }
@@ -1264,7 +1270,7 @@ OPTIONS
 
 		   clusters: cluster oligonucleotides according to
 		        their occurrence profiles.
-		   
+
 		   graphs: generate a XY graph with the occurernce
 		        profile of each oligonucleotide.
 
@@ -1366,6 +1372,27 @@ OPTIONS
 	-title
 		Title for the index table and position profile plots.
 
+   CLUSTERING OPTIONS
+
+       Oligonucleotide clusters are defined by running hierarchical
+       clustering on the word occurrence profiles, and by cutting the
+       tree with a predefined number of clusters.
+
+       -clust_method
+
+	    Agglomeration rule for the hierarchical
+	    clustering. Supported: complete, average, single,
+	    ward. Default: complete.
+
+	-clust_nb #
+	    Number of clusters (default: 8).
+
+	-clust_suffix
+
+	    Suffix to append to the cluster file and the directory
+	    contianing cluster graphics. Default: 'clusters'.
+
+
 End_of_help
   close HELP;
   exit(0);
@@ -1417,7 +1444,9 @@ position-analysis options
 -nofilter	don\'t discard oligos which do not fit applicability condition
 -header         info for header of distribution columns. Supported: mid,min,max,interval
 -title		title for the index table and position profile plots.
-
+-clust_nb	number of clusters (cutting level of the hierarchical tree)
+-clust_method	clustering method (complete | average | single | ward). Default: complete.
+-clut_suffix	Suffix appended to the cluster file and directory. Default: "clusters".
 End_of_help
     close HELP;
     exit(0);
@@ -2010,15 +2039,15 @@ sub PrintProfiles {
     }
     print $out_profile "\n";
   }
-  &RSAT::message::TimeWarn("Expected occurrence profiles", $outfile{exp_occ}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn($profile_type, "profiles", $outfile{$profile_type}) if ($main::verbose >= 2);
   close ($out_profile);
 
   ## Generate an HTML output file if required
-  if ($outfile{exp_occ_html}) {
-    &RSAT::message::TimeWarn("Generating HTML table", $outfile{html}) if ($main::verbose >= 2);
+  if ($outfile{$profile_type.'_html'}) {
+    &RSAT::message::TimeWarn("Generating HTML table", $outfile{$profile_type.'_html'}) if ($main::verbose >= 2);
     my $cmd = $SCRIPTS."/text-to-html";
-    $cmd .= " -i ".$outfile{exp_occ};
-    $cmd .= " -o ".$outfile{exp_occ_html};
+    $cmd .= " -i ".$outfile{$profile_type};
+    $cmd .= " -o ".$outfile{$profile_type.'_html'};
     &doit($cmd);
   }
 
