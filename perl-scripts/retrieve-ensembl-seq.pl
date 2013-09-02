@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.81 2013/05/08 15:30:38 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.82 2013/09/02 12:36:15 rsat Exp $
 #
 # Time-stamp
 #
@@ -1716,28 +1716,29 @@ sub GetSequence {
       my $compara_dbname = 'Multi';
 #     my $compara_dbname = 'compara'; ## works also...
 
-      my $ma = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Member');
+#     my $ma = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Member');
+      my $ma = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','GeneMember');
 
 #     Sample Ids to test
 #     $ortho_id = 'ENSMUSG00000038253';
 #     $ortho_id = 'ENSG00000004059';
 
-      my $member = $ma->fetch_by_source_stable_id('ENSEMBLGENE', $ortho_id);
+      my $gene_member = $ma->fetch_by_source_stable_id('ENSEMBLGENE', $ortho_id);
 
       # print out some information about the Member
       &RSAT::message::Info("# Chrom_name Chrom_start Chrom_end Description Source_name Taxon_id") if ($main::verbose >= 1);
-      &RSAT::message::Info(join (" ", map { $member->$_ } qw(chr_name chr_start chr_end description source_name taxon_id))) if ($main::verbose >= 1);
+      &RSAT::message::Info(join (" ", map { $gene_member->$_ } qw(chr_name chr_start chr_end description source_name taxon_id))) if ($main::verbose >= 1);
 
-      my $compara_taxon = $member->taxon;
+      my $compara_taxon = $gene_member->taxon;
       &RSAT::message::Info("# Common_name; Genus; Species; Organism; Classification") if ($main::verbose >= 1);
       &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
 
-      $common_name = $member->taxon->common_name;
+      $common_name = $gene_member->taxon->common_name;
       if ($common_name) {
 	$common_name =~ s/\s+/_/g;
       }
 
-      my $gene = $member->get_Gene;
+      my $gene = $gene_member->get_Gene;
       &Main($gene, $org);
 #      &Main($ortho_id, $org);
 
@@ -1753,7 +1754,7 @@ sub GetSequence {
 
       # then you get the homologies where the member is involved
       my $ha = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Homology');
-      my $homologies = $ha->fetch_all_by_Member($member);
+      my $homologies = $ha->fetch_all_by_Member($gene_member);
       # That will return an array reference with all homologies (orthologues, and in some cases paralogues) against other species.
       # Then for each homology, you get all the Members implicated
 
@@ -1803,9 +1804,9 @@ sub GetSequence {
 	  foreach my $beast (@species) {
 	      my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($beast, 'Core', 'MetaContainer');
 #	      my $_species = $meta_container->get_Species();  # get_Species is deprecated
-	      my $_species = $meta_container->get_common_name();
-	      my %info = %{$_species};
-	      $classifications{$beast} = [@{$info{'classification'}}];
+	      my $_species = $meta_container->get_classification();
+	      my @info = @{$_species};
+	      $classifications{$beast} = [@info];
 	  }
       }
 
@@ -1815,12 +1816,14 @@ sub GetSequence {
 	&RSAT::message::Info("Homology type:",$homology->description,"Taxon:", $homology->subtype) if ($main::verbose >= 1);
 
 	# each homology relation have only 2 members, you should find there the initial member used in the first fetching
-	foreach my $member_attribute (@{$homology->get_all_Member_Attribute}) {
+#	foreach my $member_attribute (@{$homology->get_all_Members}) { # method depreceated from version 68
+	foreach my $member (@{$homology->get_all_GeneMembers}) {
 
 	    # for each Member, you get information on the Member specifically and in relation to the homology relation via Attribute object
-	    my ($member, $attribute) = @{$member_attribute};
+#	    my ($member, $attribute) = @{$member_attribute};  # Member object has all the attributes itself
 	    &RSAT::message::Info("Gene ID:", $member->stable_id, "Taxon ID:", $member->taxon_id) if ($main::verbose >= 1);
-	    &RSAT::message::Info("Perc. id.:", $attribute->perc_id,"Perc. pos.:",$attribute->perc_pos,"Perc. cov.:",$attribute->perc_cov) if ($main::verbose >= 1);
+#	    &RSAT::message::Info("Perc. id.:", $attribute->perc_id,"Perc. pos.:",$attribute->perc_pos,"Perc. cov.:",$attribute->perc_cov) if ($main::verbose >= 1);
+#	    &RSAT::message::Info("Perc. id.:", $member->perc_id,"Perc. pos.:",$member->perc_pos,"Perc. cov.:",$member->perc_cov) if ($main::verbose >= 1);
 
 	    unless ($member->stable_id eq $ortho_id) {
 
@@ -1839,13 +1842,16 @@ sub GetSequence {
 		if ($taxon) {
 #		    @homolog_classification = split (/ /, $member->taxon->classification); # this is too slow
 		    my $classif_name = lc($bin_name);
+		    if ($classif_name eq "canis_lupus_familiaris") {$classif_name = "canis_familiaris"};
+		    if ($classif_name eq "gorilla_gorilla_gorilla") {$classif_name = "gorilla_gorilla"};
 		    @homolog_classification = @{$classifications{$classif_name}};
 		    &RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 3);
 		}
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
-		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
+#		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
+		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $member->perc_id, $member->perc_pos, $member->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
 		}
 
 		if ($ortho_type) {
@@ -2105,5 +2111,5 @@ retrieve-ensembl-seq options
 
 End_short_help
   close HELP;
-  exit;
+exit;
 }
