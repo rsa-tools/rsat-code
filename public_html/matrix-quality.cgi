@@ -19,7 +19,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = $SCRIPTS."/matrix-quality";
-
 #$ENV{rsat_echo} = 1;
 
 ### Read the CGI query
@@ -47,6 +46,8 @@ local $parameters = " -v 0";
 #system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 #my $date = &AlphaDate();
 my $result_dir = &RSAT::util::make_temp_file("","matrix-quality", 1,1);
+system("mkdir -p $result_dir ; chmod 755 $result_dir ");
+
 my $file_prefix = "matrix-quality_".&AlphaDate();
 my $tmp_file_name = $result_dir."/".$file_prefix;
 
@@ -70,11 +71,11 @@ $matrix_file = $result_dir."/input_matrix";
 local $input_format = lc($query->param('matrix_format'));
 
 if ($query->param('matrix')) {
-    open MAT, "> $matrix_file";
+    open MAT, "> ".$matrix_file;
     print MAT $query->param('matrix');
     close MAT;
     &DelayedRemoval($matrix_file);
-      ($input_format) = split (/\s+/, $input_format);
+    ($input_format) = split (/\s+/, $input_format);
     if (  ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "transfac" ) ){
 	$parameters .= " -ms $matrix_file";
     }
@@ -107,7 +108,7 @@ if (&IsInteger($query->param('kfold'))) {
 ################################################################
 ## First sequence file
 my $sequence_format="fasta";
-($sequence_file1, $sequence_format1) = &MultiGetSequenceFile(1,$result_dir."sequence1.fasta", 1);
+($sequence_file1, $sequence_format1) = &MultiGetSequenceFile(1,$result_dir."/sequence1.fasta", 1);
 if ($query->param('tag1') ){
   $tag1 = $query->param('tag1') ;
   $tag1 =~ s|\s|_|g;
@@ -124,7 +125,7 @@ if (lc($query->param('nwd')) eq "on") {
 
 ################################################################
 ## Secod sequence file
-($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."sequence2.fasta", 0);
+($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."/sequence2.fasta", 0);
 if ($sequence_file2) {
   if ($query->param('tag2') ){
     $tag2 =$query->param('tag2') ;
@@ -221,7 +222,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ###############
 #output folder
 
-$parameters .= " -archive -o ".$result_dir."/".$file_prefix;
+$parameters .= " -archive -o ".$result_dir."/".$file_prefix ." ";
 
 ###########################
 #Command
@@ -234,7 +235,7 @@ $parameters .= " -archive -o ".$result_dir."/".$file_prefix;
 #$index_file = $result_subdir."/".$file_prefix."_synthesis.html";
 $index_file = $tmp_file_name."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+&EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
 
 print $query->end_html();
 
