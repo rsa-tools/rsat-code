@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.153 2013/04/23 21:47:37 jvanheld Exp $
+# $Id: matrix-quality,v 1.154 2013/09/10 22:35:26 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -588,7 +588,8 @@ package main;
 #      local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 #      $matrix_name =~ s/\.\S+$//;	## suppress the extension from the file name
       local $matrix_name = $matrix->get_attribute("name") ||
-	$matrix->get_attribute("id");
+	  $matrix->get_attribute("id");
+      $matrix_name=~s/\+/plus/;
       unless ($matrix_name =~ /\S/) {
 	$matrix_name = "matrix_".$m;
       }
@@ -2448,14 +2449,16 @@ sub CompareDistrib {
     $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
     $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_scan_";
     $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_";
-    $distrib_compa_cmd .= " -suppress _score_distrib.tab";
+    $distrib_compa_cmd .= " -suppress _score_distrib.tab ";
+    #$distrib_compa_cmd .= " -suppress ".$dir{output}." ";
+    #$distrib_compa_cmd .= " -suppress ".$matrix_name." ";
     $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
     $distrib_compa_cmd .= " -files ";
     $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @distrib_files);
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 0);
   }
-
+ # die "BOOM".$matrix_name;
   if ($tasks{graphs}) {
     &RSAT::message::TimeWarn("Generating comparison graphs")
       if ($main::verbose >= 2);
