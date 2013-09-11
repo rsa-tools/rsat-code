@@ -263,6 +263,7 @@ $time_directory = $properties['rsat_tmp']."/".date( "Y")."/".date( "m")."/".date
 if (!is_dir( $time_directory)) {
   umask(0);
   mkdir($time_directory, 0777, true);
+  system("chmod 777 ".$time_directory);
  }
 
 //////////////////////////////////////////////////////////////////////////////
