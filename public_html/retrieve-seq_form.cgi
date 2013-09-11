@@ -204,8 +204,6 @@ if ($query->param('taxon')) {
 &SelectOutput("server");
 
 ### data for the demo 
-#@demo_genes = qw ( MET1 MET2 MET3 MET6 MET14 MET19 MET25 MET30 MUP3
-#		    SAM1 SAM2);
 @demo_genes = qw (DAL5 GAP1 MEP1 MEP2 PUT4 MEP3 DAL80);
 $demo_genes = join "\n", @demo_genes;
 

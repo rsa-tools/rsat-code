@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% Parsing and installing new organisms
+%% Parsing and installing new organisms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -266,16 +266,16 @@ install-organism  -v 2 -org Ostreococcus_tauri_PRJNA51609 \
 
 \subsection{Warning: disk space requirement}
 
-The UCSC multi-genome alignment files occupy a hige disk space. The
+The UCSC multi-genome alignment files occupy a huge disk space. The
 alignments of 30 vertebrates onto the mouse genome (mm9 multiz30)
 requires 70Gb. If you intend to offer support for multi-genome
-alignments, it might be safe acquiring a separate hard drive for this
+alignments, it might be safe to acquire a separate hard drive for this
 data.
 
 The complete data set available at UCSC in April 2012 occupies 1Tb in
 compressed form, and probably 7 times more once uncompressed. For
 efficiency reasons, it is necessary to uncompress these files for
-using them with the indexing system of  \program{peak-footprints}.
+using them with the indexing system of \program{peak-footprints}.
 
 \subsection{Checking supported genomes at UCSC}
 
@@ -289,7 +289,6 @@ supported-organisms-ucsc
 Each genome is assocaited with a short identifier, followed by a
 description. For example, several versions of the mouse genome are
 currently available.
-
 
 \begin{small}
 \begin{verbatim}
@@ -314,13 +313,15 @@ genome, and install it in the proper directory for
 download-ucsc-multiz -v 1 -org mm9
 \end{lstlisting}
 
+\emph{Beware: } the download of all the multi-species alignments can
+take several hours for one genome.
+
 The program will create the sub-directory for the mm9 genome, download
 the coresponding compressed multiz files (files with extension
 \file{.maf.gz}), uncompress them, and call \program{peak-footprint}
 with specific options in order to create a position index, which will
 be further used for fast retrieval of the conserved regions under
 peaks.
-
 
 \section{Installing genomes from  NCBI/Genbank files}
 
