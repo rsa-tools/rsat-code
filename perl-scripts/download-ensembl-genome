@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.42 2013/08/12 10:11:10 rsat Exp $
+# $Id: download-ensembl-genome,v 1.43 2013/09/11 23:39:20 jvanheld Exp $
 #
 ############################################################
 
@@ -88,6 +88,7 @@ BEGIN {
 require "RSA.lib";
 require "RSAT_to_ensembl.lib.pl";
 use Bio::EnsEMBL::Registry;
+#use Bio::EnsEMBL::LookUp;
 
 ################################################################
 ## Main package
@@ -97,7 +98,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.42 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.43 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -108,6 +109,7 @@ package	main;
 
   our $db = "ensembl";
   our $species = "";
+  our $taxid = "";
   our $assembly_version = "";  
   our $safe_ensembl_version = &Get_ensembl_version_safe($db);
   our $latest_ensembl_version = &Get_ensembl_version($db);
@@ -145,7 +147,7 @@ package	main;
   &Verbose() if ($main::verbose >= 1);
 
   ###############################################################
-  ##Print available species
+  ## Print the list of available species
   if ($get_available_species) {
 
     &RSAT::message::TimeWarn("Getting available species", "host=".$host, "port=".$port) if ($main::verbose >= 2);
@@ -185,6 +187,19 @@ package	main;
 
   ###############################################################  
   ## Check arguments
+  ## Identify species by taxonomic ID
+#   if ($taxid) {
+#     my $lookup = Bio::EnsEMBL::LookUp->new(-URL=>"http://bacteria.ensembl.org/registry.json",-NO_CACHE=>1);
+#     my @dbas = @{$lookup->get_all_by_taxon_id($taxid)};
+#     if (scalar(@dbas) == 0) {
+#       &RSAT::error::FatalError("There is no species in Ensembl corresponding to the taxonomic ID", $taxid);
+#     } elsif (scalar(@dbas) > 1) {
+#       &RSAT::message::Warning("The taxonomic ID", $taxid, "matches several species. The first one will be used");
+#     }
+#     my $dba = shift @dbas;
+#     &RSAT::message::Debug("DBA", $dba);
+#     die "HELLO";
+#   }
 
   ## Check that the species has been specified
   unless ($species) {
@@ -194,13 +209,12 @@ package	main;
   ################################################################
   ## Connecting to ensembl
   &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
-  $registry->load_registry_from_db(
-    -host => $host,
-    -port => $port,
-    -user => 'anonymous',
-    -db_version => $ensembl_version,
-    -species => $species
-  );
+  $registry->load_registry_from_db (-host => $host,
+				    -port => $port,
+				    -user => 'anonymous',
+				    -db_version => $ensembl_version,
+				    -species => $species
+				   );
 
   ################################################################
   ## Get Adaptator
@@ -318,23 +332,22 @@ package	main;
 
   ################################################################
   ## Write last genome install
-  $supperted_organism_file = &Get_supported_file($data_dir);
-  &RSAT::message::TimeWarn("Updating supported organism file", $supperted_organism_file) if ($main::verbose >= 2);
+  $supported_organism_file = &Get_supported_file($data_dir);
+  &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
 
   @other_species = ();
 
-  if (-f $supperted_organism_file) {
+  if (-f $supported_organism_file) {
 
-      my ($s_o_file) = &OpenInputFile($supperted_organism_file);
+    my ($s_o_file) = &OpenInputFile($supported_organism_file);
 
-      while (<$s_o_file>) {
-        my @token = split("\t");
-
-        push (@other_species, $_) unless ($token[0] eq &Get_species_dir_name($species,$assembly_version,$ensembl_version) );
-      }
-      close $s_o_file;
+    while (<$s_o_file>) {
+      my @token = split("\t");
+      push (@other_species, $_) unless ($token[0] eq &Get_species_dir_name($species,$assembly_version,$ensembl_version) );
+    }
+    close $s_o_file;
   }
-  
+
   my $new_org_config = join ("\t", 
     &Get_species_dir_name($species,$assembly_version,$ensembl_version),
     ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
@@ -347,7 +360,7 @@ package	main;
 
   push (@other_species, $new_org_config."\n");
 
-  my $s_o_file = &OpenOutputFile($supperted_organism_file);
+  my $s_o_file = &OpenOutputFile($supported_organism_file);
   print $s_o_file join("",@other_species);
   close $s_o_file;
 
@@ -431,9 +444,24 @@ Same as -h
 
 Species that you want download variation (homo_sapiens, mus_musculus).
 
+Use the option I<-available_species> to print a list of available
+species at Ensembl, or options I<-available_species -ensembl_genomes>
+to get the species available at EnsemblGenomes (extended Ensembl).
+
 =cut
     } elsif (($arg eq "-species") || ($arg eq "-org")) {
       $main::species = lc(shift(@arguments));
+
+=pod
+
+=item B<-taxid #>
+
+Taxonomic ID of the species (organism), as defined in the NCBI
+taxonomy database (http://www.ncbi.nlm.nih.gov/taxonomy).
+
+=cut
+    } elsif ($arg eq "-taxid") {
+      $main::taxid = shift(@arguments);
 
 =pod
 
