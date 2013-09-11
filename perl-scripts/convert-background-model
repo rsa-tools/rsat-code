@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.30 2011/04/10 13:49:57 jvanheld Exp $
+# $Id: convert-background-model,v 1.31 2013/09/11 23:37:18 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -56,7 +56,7 @@ formats are supported only for input or for output.
 =head2 oligos (input/output)
 
 Oligonucleotide frequency table, as exported by the RSAT program
-I<oligo-analysis>. 
+I<oligo-analysis>.
 
 An oligo file containing k-mers frequencies corresponds to a Markov
 model of order I<m=k-1>. Frequencies are converted to transition
@@ -100,7 +100,7 @@ background sequence.
 
 MEME (http://meme.sdsc.edu/meme/) is a matrix-based motif discovery
 program developed by Tim Bailey, and supporting Marckov chain
-background models. 
+background models.
 
 MEME background files can be generated with the program
 I<fasta-get-markov>, which creates a Markov model from a background
@@ -165,9 +165,10 @@ package main;
     local $default_transition_decimals = 5;
     local $default_oligo_decimals = 8;
     local $to2str = 0;
-    
+    local $seq_type = "dna";
+
     local $noov="-ovlp";
-    local $str = ""; 
+    local $str = "";
 
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
@@ -207,54 +208,56 @@ package main;
 	$decimals = $default_transition_decimals;
       }
     }
-    
+
     if (defined ($bg_pseudo)) {
     	$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
-    	}
-    	
+      }
+
+    ## Set sequence type
+    $bg_model->force_attribute("seq_type", $seq_type);
+
     ## RSAT Background models
     ## Automatic identification of the background file
 	## An organism name has been provided
     if ($organism_name) {
     	my $organism = new RSAT::organism();
     	$organism->check_name($organism_name);
-    	
+
     	## bg provided
     	unless (defined($main::background_model)) {
-    		&RSAT::error::FatalError("You should provide the background model with -bg option");	
+    		&RSAT::error::FatalError("You should provide the background model with -bg option");
     	}
-    	
-    	## check the format    	
+
+    	## check the format
     	&RSAT::error::FatalError("For automatic loading of RSAT background model, -from option should be set to 'oligos' or 'dyads'")
     	unless (($input_format eq "oligo-analysis")||($input_format eq "oligos")||($input_format eq "dyads"));
     	my $input_type = "";
     	$input_type = "oligo-analysis" if ($input_format =~ /oligo/);
     	$input_type = "dyad" if ($input_format eq "dyads");
-    	
-    	
+
+
     	## markov order provided
     	my $oligo_length;
     	if (defined($main::markov_order)) {
     		$oligo_length = $main::markov_order + 1;
     	} else {
-    		&RSAT::error::FatalError("You should provide the markov order with -markov option");	
+    		&RSAT::error::FatalError("You should provide the markov order with -markov option");
     	}
-    	
+
     	## RSAT automatic loading of Background model and -i are mutally exclusive
     	if ($main::infile{input}){
     		&RSAT::error::FatalError("-i option is incompatible with automatic loading of RSAT precalculated background models.");
     	}
-    	
+
     	## strand provided
     	&RSAT::error::FatalError("You should specify the strand counting option with -1str or -2str")
-    	unless ($str ne "");	
-    	
+    	unless ($str ne "");
+
     	## identify the background model file
     	 $main::infile{input} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
 					    type=>$input_type,
-					    noov=>$noov, str=>$str);	
+					    noov=>$noov, str=>$str);
     }
-    
 
     ################################################################
     ### open output stream
@@ -293,32 +296,33 @@ package main;
 
 
 ################################################################
-#### display full help message 
+#### display full help message
 sub PrintHelp {
   system "pod2text -c $0";
   exit()
 }
 
 ################################################################
-#### display short help message
+## Display short help message
 sub PrintOptions {
     &PrintHelp();
 }
 
 ################################################################
-#### Read arguments 
+## Read arguments
 sub ReadArguments {
-#    foreach my $a (0..$#ARGV) {
-    my $arg = "";
-    
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
+  #    foreach my $a (0..$#ARGV) {
+  my $arg = "";
 
-    while ($arg = shift (@arguments)) {
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
 
-	## Verbosity
+
+  while ($arg = shift (@arguments)) {
+
+    ## Verbosity
+
 =pod
-	    
+
 
 =head1 OPTIONS
 
@@ -329,14 +333,15 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($arg eq "-v") {
-	    if (&IsNatural($arguments[0])) {
-		$main::verbose = shift(@arguments);
-	    } else {
-		$main::verbose = 1;
-	    }
-	    
-	    ## Help message
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+      ## Help message
+
 =pod
 
 =item B<-h>
@@ -344,10 +349,11 @@ Level of verbosity (detail in the warning messages during execution)
 Display full help message
 
 =cut
-	} elsif ($arg eq "-h") {
-	    &PrintHelp();
-	    
-	    ## List of options
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+      ## List of options
+
 =pod
 
 =item B<-help>
@@ -355,11 +361,11 @@ Display full help message
 Same as -h
 
 =cut
-	} elsif ($arg eq "-help") {
-	    &PrintOptions();
-	    
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
-	    ## Input file
+      ## Input file
+
 =pod
 
 =item B<-i input_file>
@@ -374,10 +380,11 @@ If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-i") {
-	    $main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
 
-	    ## Organism
+      ## Organism
+
 =pod
 
 =item B<-org organism_name>
@@ -390,10 +397,11 @@ B<Note:> Specify the format of the background model with '-from'
 option. Accepted values are oligos and dyad.
 
 =cut
-	} elsif ($arg eq "-org") {
-	    $main::organism_name = shift(@arguments);
+    } elsif ($arg eq "-org") {
+      $main::organism_name = shift(@arguments);
 
-	    ## Background model
+      ## Background model
+
 =pod
 
 =item B<-bg background model>
@@ -404,14 +412,28 @@ oligonucleotide frequencies.
 Supported models: see the help of I<choose-background-model>
 
 =cut
-	} elsif ($arg eq "-bg") {
-	    $main::background_model = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::background_model,
-					  "Invalid background model.",
-					  "Supported: ", $main::supported_bg))
-		unless ($main::supported_bg{$main::background_model});
-		
-		 ## Markov order
+    } elsif ($arg eq "-bg") {
+      $main::background_model = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::background_model,
+				    "Invalid background model.",
+				    "Supported: ", $main::supported_bg))
+	unless ($main::supported_bg{$main::background_model});
+
+
+
+
+=pod
+
+=item B<-seq_type>
+
+Sequence type (dna | protein).
+
+=cut
+    } elsif ($arg eq "-seq_type") {
+      $main::seq_type = shift(@arguments);
+      &RSAT::error::FatalError($main::seq_type,
+			       "Invalid value for -seq_type. Supported: dna || protein")
+	unless (($main::seq_type eq "dna") || ($main::seq_type eq "protein"));
 
 =pod
 
@@ -420,13 +442,14 @@ Supported models: see the help of I<choose-background-model>
 Markov chain order for the background model.
 
 =cut
-	} elsif ($arg eq "-markov") {
-	    $main::markov_order = shift(@arguments);
-	     &RSAT::error::FatalError(join("\t", $main::markov_order,
-					  "Invalid value for -markov, should be an integer."))
-		unless ((&IsInteger($main::markov_order))&& ($main::markov_order >= 0));
+    } elsif ($arg eq "-markov") {
+      $main::markov_order = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::markov_order,
+				    "Invalid value for -markov, should be an integer."))
+	unless ((&IsInteger($main::markov_order))&& ($main::markov_order >= 0));
 
-		 ## no overlap
+      ## no overlap
+
 =pod
 
 =item B<-noov>
@@ -436,10 +459,11 @@ Prevent overlap between successive occurrences of self-overlpping words.
 See I<oligo-analysis> for more details on this option
 
 =cut
-	} elsif ($arg eq "-noov") {
-	    $main::noov = "-noov";
-  
-		 ## overlap
+    } elsif ($arg eq "-noov") {
+      $main::noov = "-noov";
+
+      ## overlap
+
 =pod
 
 =item B<-ovlp>
@@ -449,10 +473,11 @@ Count overlapping occurrences of self-overlpping words.
 See I<oligo-analysis> for more details on this option
 
 =cut
-	} elsif ($arg eq "-ovlp") {
-	    $main::noov = "-ovlp";
-  
-		 ## 1str
+    } elsif ($arg eq "-ovlp") {
+      $main::noov = "-ovlp";
+
+      ## 1str
+
 =pod
 
 =item B<-1str>
@@ -460,10 +485,11 @@ See I<oligo-analysis> for more details on this option
 Strand-sensitive background model
 
 =cut
-	} elsif ($arg eq "-1str") {
-	    $main::str = "-1str"; 
+    } elsif ($arg eq "-1str") {
+      $main::str = "-1str";
 
-		 ## 1str
+      ## 1str
+
 =pod
 
 =item B<-2str>
@@ -471,10 +497,11 @@ Strand-sensitive background model
 Strand-insensitive background model
 
 =cut
-	} elsif ($arg eq "-2str") {
-	    $main::str = "-2str"; 
-   
-	    ## Output file
+    } elsif ($arg eq "-2str") {
+      $main::str = "-2str";
+
+      ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -483,10 +510,11 @@ If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
-	    
-	    ## Input format
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+      ## Input format
+
 =pod
 
 =item B<-from input_format>
@@ -497,15 +525,16 @@ Supported: motifsampler,ms,oligo-analysis,meme,oligos,dyads (see
 description below).
 
 =cut
-	} elsif ($arg eq "-from") {
-	    $main::input_format = lc(shift(@arguments));
-	    &RSAT::error::FatalError(join("\t", $main::input_format,
-					  "Invalid input format.",
-					  "Supported: ", $main::supported_input_formats))
-		unless ($main::supported_input_format{$main::input_format});
+    } elsif ($arg eq "-from") {
+      $main::input_format = lc(shift(@arguments));
+      &RSAT::error::FatalError(join("\t", $main::input_format,
+				    "Invalid input format.",
+				    "Supported: ", $main::supported_input_formats))
+	unless ($main::supported_input_format{$main::input_format});
 
 
-	    ## Output format
+      ## Output format
+
 =pod
 
 =item B<-to output_format>
@@ -516,14 +545,15 @@ Supported: transitions, tab, oligo-analysis, oligos, meme,
 motifsampler, ms, inclusive, patser, tables.
 
 =cut
-	} elsif ($arg eq "-to") {
-	    $main::output_format = lc(shift(@arguments));
-	    &RSAT::error::FatalError(join("\t", $main::output_format,
-					  "Invalid output format.",
-					  "Supported: ", $main::supported_output_formats))
-		unless ($main::supported_output_format{$main::output_format});
+    } elsif ($arg eq "-to") {
+      $main::output_format = lc(shift(@arguments));
+      &RSAT::error::FatalError(join("\t", $main::output_format,
+				    "Invalid output format.",
+				    "Supported: ", $main::supported_output_formats))
+	unless ($main::supported_output_format{$main::output_format});
 
-	    ## Pseudo-frequency 
+      ## Pseudo-frequency
+
 =pod
 
 =item B<-bg_pseudo #>
@@ -534,27 +564,29 @@ known, the value can be set to square-root of L divided by
 L+squareroot of L
 
 =cut
-	} elsif ($arg eq "-bg_pseudo") {
-	    $main::bg_pseudo = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
-					  "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
-		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+    } elsif ($arg eq "-bg_pseudo") {
+      $main::bg_pseudo = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+				    "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
+	unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 
-	    ## Number of decimals
+      ## Number of decimals
+
 =pod
 
 =item B<-decimals #>
 
-Number of decimals to print or the transition probabilities. 
+Number of decimals to print or the transition probabilities.
 
 =cut
-	} elsif ($arg eq "-decimals") {
-	    $main::decimals = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::decimals,
-					  "Invalid format for decimals, should be a Natural number."))
-		unless (&IsNatural($main::decimals));
+    } elsif ($arg eq "-decimals") {
+      $main::decimals = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::decimals,
+				    "Invalid format for decimals, should be a Natural number."))
+	unless (&IsNatural($main::decimals));
 
-	    ## Convert the bg model to 2 strands
+      ## Convert the bg model to 2 strands
+
 =pod
 
 =item B<-to2str>
@@ -563,14 +595,14 @@ Convert to a strand-insensitive background model, by averaging
 transition frequencies on each pair of reverse complements.
 
 =cut
-	} elsif ($arg eq "-to2str") {
-	    $main::to2str = 1;
+    } elsif ($arg eq "-to2str") {
+      $main::to2str = 1;
 
-	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
 
-	}
     }
+  }
 
 
 =pod
@@ -584,23 +616,23 @@ transition frequencies on each pair of reverse complements.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; convert-background-model ";
-    &PrintArguments($main::out);
-    if (%main::infile) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	    print $main::out ";\t$key\t$value\n";
-	}
+  print $main::out "; convert-background-model ";
+  &PrintArguments($main::out);
+  if (%main::infile) {
+    print $main::out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      print $main::out ";\t$key\t$value\n";
     }
-    if (%main::outfile) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	    print $main::out ";\t$key\t$value\n";
-	}
-      }
-    print $main::out "; Markov order\t", $bg_model->get_attribute("order"), "\n";
-    print $main::out "; Background pseudo-frequency\t", $bg_model->get_attribute("bg_pseudo"),"\n";
-    print $main::out "; Strand\t", $bg_model->get_attribute("strand"), "\n";
+  }
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      print $main::out ";\t$key\t$value\n";
+    }
+  }
+  print $main::out "; Markov order\t", $bg_model->get_attribute("order"), "\n";
+  print $main::out "; Background pseudo-frequency\t", $bg_model->get_attribute("bg_pseudo"),"\n";
+  print $main::out "; Strand\t", $bg_model->get_attribute("strand"), "\n";
 }
 
 
@@ -619,11 +651,11 @@ organisms supported in RSAT.
 
 =item B<seq-proba>
 
-Calculate the probability of a sequence fiven a background model. 
+Calculate the probability of a sequence fiven a background model.
 
 =item B<matrix-scan>
 
-Scan sequences with a PSSM, accepting various background models. 
+Scan sequences with a PSSM, accepting various background models.
 
 =item B<patser>
 
