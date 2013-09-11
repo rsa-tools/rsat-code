@@ -16,6 +16,9 @@ use Data::Dumper;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
+@dna_alphabet =  qw (a c g t);
+@pept_alphabet = qw (a c d e f g h i k l m n p q r s t v w y );
+
 %supported_input_formats = ("oligo-analysis"=>1, 
 			    "oligos"=>1, ## Abbreviation for oligo-analysis
 			    "dyads"=>1, ## Abbreviation for dyad-analysis
@@ -78,7 +81,6 @@ Class for handling a Markov model.
 =cut
 
 
-################################################################
 =pod
 
 =item B<new()>
@@ -96,7 +98,6 @@ sub new {
 
 
 
-################################################################
 =pod
 
 =item B<get_supported_input_formats()>
@@ -109,7 +110,6 @@ sub get_supported_input_formats {
     return %{$class."::supported_input_formats"}; 
 }
 
-################################################################
 =pod
 
 =item B<get_supported_output_formats()>
@@ -122,7 +122,6 @@ sub get_supported_output_formats {
     return %{$class."::supported_output_formats"}; 
 }
 
-################################################################
 =pod
 
 =item B<get_supported_bg()>
@@ -137,7 +136,6 @@ sub get_supported_bg {
 
 
 
-################################################################
 =pod
 
 =item B<load_from_file($bg_file, $format)>
@@ -183,7 +181,6 @@ sub load_from_file {
   $self->normalize_transition_frequencies();
 }
 
-################################################################
 =pod
 
 =item B<load_from_file_oligos($bg_file)>
@@ -344,7 +341,6 @@ sub transitions_to_oligo_frequencies {
 }
 
 
-################################################################
 =pod
 
 =item B<load_from_file_meme($bg_file)>
@@ -424,7 +420,6 @@ sub load_from_file_meme {
 }
 
 
-################################################################
 =pod
 
 =item B<load_from_file_MotifSampler($bg_file)>
@@ -517,7 +512,6 @@ sub load_from_file_MotifSampler {
 
 
 
-################################################################
 =pod
 
 =item B<init_prefixes_and_suffixes>
@@ -530,7 +524,7 @@ sub init_prefixes_and_suffixes_bof {
   my ($self) = @_;
 
   ## get alphabet
-  my @dna_alphabet =  qw (a c g t);
+#  my @dna_alphabet =  qw (a c g t);
 
   ################################################################
   ## Ensure that all possible suffixes are taken into consideration
@@ -551,7 +545,6 @@ sub init_prefixes_and_suffixes_bof {
 }
 
 
-################################################################
 =pod
 
 =item B<init_prefixes>
@@ -564,14 +557,24 @@ sub init_prefixes {
   my ($self) = @_;
 
   ## get alphabet
-  my @dna_alphabet =  qw (a c g t);
+#  my @dna_alphabet =  qw (a c g t);
+
+  ################################################################
+  ## Define alphabet
+  my $seq_type = $self->get_attribute("seq_type") || "dna";
+  my @alphabet;
+  if ($seq_type eq "protein") {
+    @alphabet = @pept_alphabet;
+  } else {
+    @alphabet = @dna_alphabet;
+  }
 
   ################################################################
   ## Calculate all possible prefix oligomers, even those
   ## which are not observed in the input background model
   my @possible_prefixes;
   if ($self->{order} > 0) {
-    @possible_prefixes  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @dna_alphabet);
+    @possible_prefixes  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @alphabet);
   } elsif ($self->{order} == 0) {
     @possible_prefixes  = ("");
   }
@@ -580,7 +583,6 @@ sub init_prefixes {
 }
 
 
-################################################################
 =pod
 
 =item B<get_prefixes>
@@ -597,7 +599,6 @@ sub get_prefixes {
   return $self->get_attribute("prefixes");
 }
 
-################################################################
 =pod
 
 =item B<init_suffixes>
@@ -609,17 +610,23 @@ that will be used as iterators for the subsequent processing.
 sub init_suffixes {
   my ($self) = @_;
 
-  ## get alphabet
-  my @dna_alphabet =  qw (a c g t);
+  ################################################################
+  ## Define alphabet
+  my $seq_type = $self->get_attribute("seq_type") || "dna";
+  my @alphabet;
+  if ($seq_type eq "protein") {
+    @alphabet = @pept_alphabet;
+  } else {
+    @alphabet = @dna_alphabet;
+  }
 
   ################################################################
   ## Ensure that all possible suffixes are taken into consideration
-  my @possible_suffixes = @dna_alphabet;
-  $self->set_array_attribute("suffixes", @possible_suffixes);
+  $self->set_array_attribute("suffixes", @alphabet);
   $self->force_attribute("suffixes_initiated", 1);
+  &RSAT::message::Debug("possible suffixes", join(",", @alphabet)) if ($main::verbose >= 3);
 }
 
-################################################################
 =pod
 
 =item B<get_suffixes>
@@ -636,7 +643,6 @@ sub get_suffixes {
   return $self->get_attribute("suffixes");
 }
 
-################################################################
 =pod
 
 =item B<calc_prefix_suffix_sums>
@@ -793,7 +799,6 @@ sub add_pseudo_freq {
   $self->force_attribute("pseudo_added", 1);
 }
 
-################################################################
 =pod
 
 =item B<normalize_transition_frequencies>
@@ -934,7 +939,6 @@ sub normalize_transition_frequencies {
 }
 
 
-################################################################
 =pod
 
 =item B<check_missing_transitions>
@@ -967,7 +971,6 @@ sub check_missing_transitions {
     }
 }
 
-################################################################
 =pod
 
 =item B<check_transition_alphabet>
@@ -1034,7 +1037,6 @@ sub check_transition_alphabet {
 }
 
 
-################################################################
 =pod
 
 =item B<calc_from_seq($sequence, [add=>0|1])>
@@ -1103,7 +1105,6 @@ sub calc_from_seq {
 
 }
 
-################################################################
 =pod
 
 =item B<two_words_update($added_word, $deleted_word)>
@@ -1115,92 +1116,91 @@ the prefix of the added and deleted words.
 
 =cut
 sub two_words_update {
-    my ($self, $added_word, $deleted_word, $window_offset) = @_;
+  my ($self, $added_word, $deleted_word, $window_offset) = @_;
 
-	my $pseudo_freq = $self->get_attribute("bg_pseudo");
-	my @dna_alphabet =  qw (a c g t);
+  my $pseudo_freq = $self->get_attribute("bg_pseudo");
+#	my @dna_alphabet =  qw (a c g t);
 
-    ## No need to update if added word equald deleted word
-    return(0) if ($added_word eq $deleted_word);
-    
+  ## No need to update if added word equald deleted word
+  return(0) if ($added_word eq $deleted_word);
+
     ## Update transition count for the added word
-    my $added_prefix = substr($added_word, 0, $self->{order});
-    my $added_suffix = substr($added_word, $self->{order}, 1);
-    $self->{oligo_counts}->{$added_prefix}->{$added_suffix}++;
-     if (($self->{oligo_counts}->{$added_prefix}->{$added_suffix} == 1) 
-	&&($main::verbose >= 4)){
-	&RSAT::message::Warning(join (" ", "Model update:", $added_word, 
-				      "appeared in updated window starting at", $window_offset));
-    }
+  my $added_prefix = substr($added_word, 0, $self->{order});
+  my $added_suffix = substr($added_word, $self->{order}, 1);
+  $self->{oligo_counts}->{$added_prefix}->{$added_suffix}++;
+  if (($self->{oligo_counts}->{$added_prefix}->{$added_suffix} == 1) 
+      &&($main::verbose >= 4)) {
+    &RSAT::message::Warning(join (" ", "Model update:", $added_word, 
+				  "appeared in updated window starting at", $window_offset));
+  }
    
 
-    ## Update transition count for the deleted word
-    my $deleted_prefix = substr($deleted_word, 0, $self->{order});
-    my $deleted_suffix = substr($deleted_word, $self->{order}, 1);
-    $self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix}--;
-     if (($self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix} == 0) 
-	&&($main::verbose >= 4)){
-	&RSAT::message::Warning(join (" ", "Model update:", $deleted_word, 
-				      "disappeared from updated window starting at", $window_offset));
-    }
+  ## Update transition count for the deleted word
+  my $deleted_prefix = substr($deleted_word, 0, $self->{order});
+  my $deleted_suffix = substr($deleted_word, $self->{order}, 1);
+  $self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix}--;
+  if (($self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix} == 0) 
+      &&($main::verbose >= 4)) {
+    &RSAT::message::Warning(join (" ", "Model update:", $deleted_word, 
+				  "disappeared from updated window starting at", $window_offset));
+  }
 
 
-	## Update relative frequencies for the added and deleted prefix
-	## added prefix
-	my $added_pattern_count = $self->{oligo_counts}->{$added_prefix}->{$added_suffix};	
-	my $added_pattern_rel_freq = $added_pattern_count / $self->{training_words};
-	$self->{oligo_freq}->{$added_prefix}->{$added_suffix} = $added_pattern_rel_freq;
-	##pseudo-count
-	my $added_pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$added_prefix}->{$added_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
-	$self->{oligo_freq}->{$added_prefix}->{$added_suffix} = $added_pattern_pseudo_freq;
-	## prefix sum
-	$self->{prefix_sum}->{$added_prefix} = 0;
-	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$added_prefix}})) {
-	    my $pattern_count = $self->{oligo_freq}->{$added_prefix}->{$suffix};	  
-	    $self->{prefix_sum}->{$added_prefix} += $pattern_count;
-	}
+  ## Update relative frequencies for the added and deleted prefix
+  ## added prefix
+  my $added_pattern_count = $self->{oligo_counts}->{$added_prefix}->{$added_suffix};	
+  my $added_pattern_rel_freq = $added_pattern_count / $self->{training_words};
+  $self->{oligo_freq}->{$added_prefix}->{$added_suffix} = $added_pattern_rel_freq;
+  ##pseudo-count
+  my $added_pattern_pseudo_freq = 
+    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$added_prefix}->{$added_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+  $self->{oligo_freq}->{$added_prefix}->{$added_suffix} = $added_pattern_pseudo_freq;
+  ## prefix sum
+  $self->{prefix_sum}->{$added_prefix} = 0;
+  foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$added_prefix}})) {
+    my $pattern_count = $self->{oligo_freq}->{$added_prefix}->{$suffix};	  
+    $self->{prefix_sum}->{$added_prefix} += $pattern_count;
+  }
 	
-	## deleted prefix
-	my $deleted_pattern_count = $self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix};	    
-	my $deleted_pattern_rel_freq = $deleted_pattern_count / $self->{training_words};
-	$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_rel_freq;
-	##pseudo-count
-	my $deleted_pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
-	$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_pseudo_freq;
-	## prefix sum
-	$self->{prefix_sum}->{$deleted_prefix} = 0;
-	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$deleted_prefix}})) {
-	    my $pattern_count = $self->{oligo_freq}->{$deleted_prefix}->{$suffix};	    
-	    $self->{prefix_sum}->{$deleted_prefix} += $pattern_count;
-	}
+  ## deleted prefix
+  my $deleted_pattern_count = $self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix};	    
+  my $deleted_pattern_rel_freq = $deleted_pattern_count / $self->{training_words};
+  $self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_rel_freq;
+  ##pseudo-count
+  my $deleted_pattern_pseudo_freq = 
+    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+  $self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_pseudo_freq;
+  ## prefix sum
+  $self->{prefix_sum}->{$deleted_prefix} = 0;
+  foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$deleted_prefix}})) {
+    my $pattern_count = $self->{oligo_freq}->{$deleted_prefix}->{$suffix};	    
+    $self->{prefix_sum}->{$deleted_prefix} += $pattern_count;
+  }
 
-    ## Update transition frequencies for the added and deleted prefix 
-    foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$added_prefix}})) {
-    	$self->{transitions}->{$added_prefix}->{$suffix} = 
-			$self->{oligo_freq}->{$added_prefix}->{$suffix}/$self->{prefix_sum}->{$added_prefix};	  
-	}
-	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$deleted_prefix}})) {
-    	$self->{transitions}->{$deleted_prefix}->{$suffix} = 
-			$self->{oligo_freq}->{$deleted_prefix}->{$suffix}/$self->{prefix_sum}->{$deleted_prefix};	  
-	}
+  ## Update transition frequencies for the added and deleted prefix 
+  foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$added_prefix}})) {
+    $self->{transitions}->{$added_prefix}->{$suffix} = 
+      $self->{oligo_freq}->{$added_prefix}->{$suffix}/$self->{prefix_sum}->{$added_prefix};	  
+  }
+  foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$deleted_prefix}})) {
+    $self->{transitions}->{$deleted_prefix}->{$suffix} = 
+      $self->{oligo_freq}->{$deleted_prefix}->{$suffix}/$self->{prefix_sum}->{$deleted_prefix};	  
+  }
     
-#     &RSAT::message::Debug("Updated model", 
-# 			  "added",$added_word,
-# 			  $added_prefix, 
-# 			  $self->{prefix_sum}->{$added_prefix},
-# 			  $added_suffix,
-# 			  $self->{transitions}->{$added_prefix}->{$added_suffix},
-# 			  "deleted", $deleted_word,
-# 			  $deleted_prefix, 
-# 			  $self->{prefix_sum}->{$deleted_prefix},
-# 			  $deleted_suffix,
-# 			  $self->{transitions}->{$deleted_prefix}->{$deleted_suffix},
-# 			  ) if ($main::verbose >= 10);
+  #     &RSAT::message::Debug("Updated model", 
+  # 			  "added",$added_word,
+  # 			  $added_prefix, 
+  # 			  $self->{prefix_sum}->{$added_prefix},
+  # 			  $added_suffix,
+  # 			  $self->{transitions}->{$added_prefix}->{$added_suffix},
+  # 			  "deleted", $deleted_word,
+  # 			  $deleted_prefix, 
+  # 			  $self->{prefix_sum}->{$deleted_prefix},
+  # 			  $deleted_suffix,
+  # 			  $self->{transitions}->{$deleted_prefix}->{$deleted_suffix},
+  # 			  ) if ($main::verbose >= 10);
 }
 
-################################################################
 =pod
 
 =item B<one_word_update($word, $mode,$window_offset)>
@@ -1216,7 +1216,7 @@ sub one_word_update {
   my ($self, $word, $mode,$window_offset) = @_;
 
   my $pseudo_freq = $self->get_attribute("bg_pseudo");
-  my @dna_alphabet =  qw (a c g t);
+#  my @dna_alphabet =  qw (a c g t);
 
   ## Update transition count for the added word
   my $curr_prefix = substr($word, 0, $self->{order});
@@ -1288,7 +1288,6 @@ sub one_word_update {
   # 			  ) if ($main::verbose >= 10);
 }
 
-################################################################
 =pod
 
 =item B<counts_to_transitions()>
@@ -1328,7 +1327,6 @@ sub counts_to_transitions {
 }
 
 
-################################################################
 =pod
 
 =item B<to_string($format, %args)>
@@ -1370,8 +1368,10 @@ sub to_string {
     if ($format eq ("tab")) {
       &RSAT::message::Warning("Output format tab is deprecated, please use format transitions instead.");
       $self->to_prefix_suffix_table(%args, type=>"transitions");
+
     } elsif ($format eq ("transitions")) {
       $self->to_prefix_suffix_table(%args, type=>"transitions");
+
     } elsif ($format eq ("tables")) {
       my $string = "";
 
@@ -1430,7 +1430,6 @@ sub to_string {
 }
 
 
-################################################################
 =pod
 
 =item B<to_prefix_suffix_table(%args)>
@@ -1455,15 +1454,17 @@ sub to_prefix_suffix_table {
     my @suffix = sort($self->get_suffixes());
     my $row_name_len = &RSAT::stats::max(5,$self->get_attribute("order"));
 
-    &RSAT::message::Debug("prefix/suffix table","type", 
-			    $type) if ($main::verbose >= 5);
+    &RSAT::message::Debug("prefix/suffix table","type",
+			  $type,
+			  scalar(@prefix)." prefixes",
+			  scalar(@suffix)." suffixes",
+			 ) if ($main::verbose >= 3);
 
     ## Print header
     $string .= join ("\t", "#pr\\suf",
 		     @suffix,
 		     "Sum",
 		     "P_prefix",
-
 		    );
     $string .= "\n";
 
@@ -1565,7 +1566,6 @@ sub to_prefix_suffix_table {
 }
 
 
-################################################################
 =pod
 
 =item B<to_string_oligos(%args)>
@@ -1631,7 +1631,6 @@ sub to_string_oligos {
 }
 
 
-################################################################
 =pod
 
 =item B<to_string_meme(%args)>
@@ -1694,7 +1693,6 @@ sub to_string_meme {
 }
 
 
-################################################################
 =pod
 
 =item B<to_string_MotifSampler(%args)>
@@ -1770,7 +1768,6 @@ sub to_string_MotifSampler {
 }
 
 
-################################################################
 =pod
 
 =item B<to_string_patser>
@@ -1827,7 +1824,6 @@ sub to_string_patser {
 }
 
 
-################################################################
 =pod
 
 =item B<average_strands>
