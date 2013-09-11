@@ -136,7 +136,7 @@ $max = $values[$#values];
 #$max = &max(@ListOfNumbers);
 $range = $max - $min;
 
-##### check value of class interval #####
+## Check value of class interval
 if ($class_interval eq "") {
   if ($range > 0) {
     $class_interval = $range/20;
@@ -232,7 +232,9 @@ $dcum = $count;
 
 $inv_rel_cum = 1;
 $next_inv_rel_cum = 1;
+$median_class = "NA";
 foreach $c (0.. $#ListOfClasses) {
+
     ### calculate relative and cumulated frequencies
     $cum += $ListOfFrequencies[$c];
     $dcum = $next_dcum;
@@ -240,11 +242,14 @@ foreach $c (0.. $#ListOfClasses) {
     if ($count > 0) {
 	$rel = $ListOfFrequencies[$c]/$count;
 	$rel_cum += $rel;
+	if (($median_class == "NA") && ($rel_cum > 0.5)) {
+	  $median_class = &max(0,$c-1);
+	}
 	$inv_rel_cum = $next_inv_rel_cum;
 	$next_inv_rel_cum -= $rel;
     }
 
-    ### print class result
+    ## Print frequencies for current class
     if (($ListOfClasses[$c] >= $display_from) && ($ListOfClasses[$c] <= $display_to))  {
 	if (($ListOfClasses[$c] <= 1.0e-12) &&
 	    ($ListOfClasses[$c] >= -1.0e-12)) {
@@ -279,14 +284,14 @@ foreach $c (0.. $#ListOfClasses) {
     }
 }
 
-##### print statistics #####
+## print statistics
 if ($verbose) {
   print $out "; Statistics:\n";
   print $out "; -----------\n";
   print $out "; input file\t$inputfile\n" unless ($inputfile eq "");
-  print $out "; class interval\t$class_interval\n";
-  print $out "; classes\t",  $#ListOfClasses + 1, "\n";
-  print $out "; count\t$count\n";
+  printf $out "; %-19s\t%g\n", "class interval", $class_interval;
+  printf $out "; %-19s\t%g\n", "classes",  $#ListOfClasses + 1;
+  printf $out "; %-19s\t%g\n", "count", $count;
   if ($count > 0) {
     $mean = $sum/$count;
     if ($max > $min) {
@@ -297,15 +302,16 @@ if ($verbose) {
     } else {
       $std  = 0;
     }
-    printf $out "; sum\t%g\n", $sum;
-    printf $out "; mean\t%g\n", $mean;
+    printf $out "; %-19s\t%g\n", "sum", $sum;
+    printf $out "; %-19s\t%g\n", "mean", $mean;
+    printf $out "; %-19s\t[%g..%g[\n", "median class", $ListOfClasses[$median_class], $ListOfClasses[$median_class]+$class_interval;
 ##    printf $out "; median\t%.3g\n", &RSAT::stats::median(@ListOfNumbers); ## The median requires to store and sort all values -> I don't return it for the sake of efficiency
-    printf $out "; var\t%.3g\n", $var;
-    printf $out "; std\t%.3g\n", $std;
+    printf $out "; %-19s\t%.3g\n", "var", $var;
+    printf $out "; %-19s\t%g\n", "std", $std;
   }
-  print $out "; min\t$min\n";
-  print $out "; max\t$max\n";
-  printf $out "; range\t%g\n",$max - $min;
+  printf $out "; %-19s\t%g\n", "min", $min;
+  printf $out "; %-19s\t%g\n", "max", $min;
+  printf $out "; %-19s\t%g\n", "range", $max - $min;
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
