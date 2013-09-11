@@ -259,7 +259,7 @@ sub ReadCalibration {
 ## Read pattern frequencies
 ##
 ## Usage: 
-##   my ($file_type, %patterns) = &ReadPatternFrequencies($pattern_freq_file [, $sum_rc, $rescale_freq]);
+##   my ($file_type, %patterns) = &ReadPatternFrequencies($pattern_freq_file, $sum_rc, $rescale_freq);
 ##
 sub ReadPatternFrequencies {
   my ($pattern_freq_file, $sum_rc, $rescale_freq) = @_;
@@ -283,7 +283,7 @@ sub ReadPatternFrequencies {
     my $pattern_seq = lc($fields[0]);
     next unless $pattern_seq;
 
-#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
+#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 0);
 
     #### check the format and extract expected frequency
     if (&IsReal($fields[1])) {
@@ -314,6 +314,8 @@ sub ReadPatternFrequencies {
   }
   close $exp if ($pattern_freq_file);
 
+  &RSAT::message::Debug("&ReadPatternFrequencies()", scalar(keys(%patterns)), "patterns") if ($main::verbose >= 3);
+
   ################################################################
   #### Check if reverse complements were included in the fequency file;
   #### if not, infer them from the direct strand 
@@ -335,6 +337,7 @@ sub ReadPatternFrequencies {
     &SumExpectedFrequencies(%patterns);
   }
 
+
   #### make sure that the sum of frequencies is positive
   my $freq_sum = 0;
   foreach my $pattern_seq (keys %patterns) {
@@ -343,7 +346,8 @@ sub ReadPatternFrequencies {
   if ($freq_sum <= 0) {
     &RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
   }
-  
+
+
   #### rescale expected frequencies to have a sum of 1
   if ($rescale_freq) {
     &RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=2);
@@ -351,6 +355,7 @@ sub ReadPatternFrequencies {
       $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
     }
   }
+
   return ($file_type, %patterns);
 }
 
