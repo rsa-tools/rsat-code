@@ -30,3 +30,6 @@ iterate_nodes:
 	done
 
 
+list_compile_nodes:
+	@echo "COMPILE_NODES"
+	@echo ${COMPILE_NODES}
