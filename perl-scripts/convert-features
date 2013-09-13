@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.39 2013/08/19 00:09:19 jvanheld Exp $
+# $Id: convert-features,v 1.40 2013/09/13 08:55:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -119,10 +119,13 @@ while (<$in>) {
   	next if (/^browser/);
   }
  if ($input_format eq "swembl") {
-  	next if (/^Region/);
+   next if (/^Region/);
   }
   if ($input_format eq "galaxy_seq") {
-  	next unless (/^\s*>/);
+    next unless (/^\s*>/);
+  }
+  if ($input_format eq "ucsc_seq") {
+    next unless (/^\s*>/);
   }
   chomp();
   my $feature = new RSAT::feature();
@@ -855,13 +858,13 @@ sub ReadArguments {
       ### input format
     } elsif ($ARGV[$a] eq "-from") {
       $input_format = $ARGV[$a+1];
-      &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: ", $RSAT::feature::supported_input_formats)
+      &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: ", $RSAT::feature::supported_input_formats)
 	unless ($RSAT::feature::supported_input_format{$input_format});
 
       ### output format
     } elsif ($ARGV[$a] eq "-to") {
       $output_format = $ARGV[$a+1];
-      &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: ", $RSAT::feature::supported_output_formats)
+      &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: ", $RSAT::feature::supported_output_formats)
 	unless ($RSAT::feature::supported_output_format{$output_format});
 
       ### add "chr" in front of chromosome names for BED output
