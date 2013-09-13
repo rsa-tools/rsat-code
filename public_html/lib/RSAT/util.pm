@@ -1089,14 +1089,15 @@ sub one_command {
 
   ## Store execution time in a file
   if ($time_file) {
-
       ## The time command has operating-system specific parameters. To
       ## fix this, I first get the operating system and adapt the
-      ## command accordingly. This is really tricky, I recognize. I
-      ## should try to use some Perl function to get elapsed tiem.
+      ## command accordingly. This is really tricky, I recognize. When
+      ## I have time, I should try to find some Perl function to get
+      ## elapsed time.
       my $OS = `uname -a`;
+      chomp($OS);
       &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 3);
-      if (($OS =~ /ubuntu/i) || ($OS != /bongcam/i)) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
+      if (($OS =~ /ubuntu/i) && ($OS !~ /bongcam/i)) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
       } else {
 	  $cmd = 'time ('.$cmd.') >& '.$time_file;
