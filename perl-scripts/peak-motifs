@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.254 2013/08/21 14:51:26 rsat Exp $
+# $Id: peak-motifs,v 1.255 2013/09/13 08:55:35 jvanheld Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.254 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.255 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -221,7 +221,7 @@ package main;
 
   ################################################################
   ## Supported sequence sources
-  local %supported_seq_source = ("galaxy"=>1);
+  local %supported_seq_source = ("galaxy"=>1, "ucsc"=>1);
   local @supported_seq_sources = sort (keys (%supported_seq_source));
   local $supported_seq_sources = join( ",", @supported_seq_sources);
   local @bed_files = (); ## List of bed files to upload on UCSC
@@ -4003,11 +4003,11 @@ This option is incompatible with -coord.
 
 =cut
     } elsif ($arg eq "-source") {
-      my $seq_source = shift(@arguments);
+      my $seq_source = lc(shift(@arguments));
       if ($supported_seq_source{$seq_source}) {
 	$main::param{seq_source} = $seq_source;
       } else {
-	&RSAT::message::Warning($seq_source, "invalid sequence source, will be ignored. Supported: ".$supported_seq_sources);
+	&RSAT::message::Warning($seq_source, "Invalid sequence source, will be ignored. Supported: ".$supported_seq_sources);
       }
 
 =pod
@@ -4765,12 +4765,6 @@ sub CheckArguments {
 
   } else {
     &RSAT::error::FatalError("You must define the test sequence set (option -i)");
-  }
-
-  if ($main::param{seq_source}) {
-    unless ($main::param{seq_source} eq "galaxy") {
-      &RSAT::error::FatalError("-from option: this sequence source is not supported", $main::param{seq_source});
-    }
   }
 
 
