@@ -731,7 +731,7 @@ sub parse_from_row {
     }
 
   } elsif ($in_format eq "ucsc_seq") {
-    if ($row =~ /^>(\d+):(\d+)\.\.(\d+)\:(\d+)/) {
+    if ($row =~ /^>(\S+):(\S+)\.\.(\S+)\:(\S+)/) {
 #    if ($row =~ />11:3052022..3052331:1	/target='11:3052022..3052331' /seq_id='11' /strand='+' /type='region' /original_strand='+' /end='3052331' /start='3052022'/) {
       @fields = ($1, $2, $3, $4);
     } else {
