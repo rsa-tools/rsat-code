@@ -11,6 +11,7 @@ package RSAT::feature;
 			  dnapat=>1,
 			  bed=>1,
 			  galaxy_seq=>1,
+			  ucsc_seq=>1,
 			  swembl=>1,
 			 );
 $supported_input_formats = join (",", keys %supported_input_format);
@@ -173,6 +174,16 @@ $header_char{swembl} = "#";
 @{$strands{galaxy_seq}} = ("+", "-");
 $comment_char{galaxy_seq} = "#";
 $header_char{galaxy_seq} = "#";
+
+
+## UCSC sequences
+## warning: the coordinates are zero-based
+@{$columns{ucsc_seq}} = qw (seq_name
+			    start
+			    end
+			    strand
+			   );
+@{$strands{ucsc_seq}} = ("1", "2");
 
 ## Define specific formats
 our %format = ();
@@ -604,9 +615,11 @@ items in this list should correspond to blockCount.
 
 =head2 galaxy_seq
 
-Fasta sequences retrieved from the website Galaxy (http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1)
-Warning: this format assumes that features are described with chromosomal positions, and should be zero-based (meaning that
-the first position is 0, not 1).
+Fasta sequences retrieved from the website Galaxy
+(http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1)
+Warning: this format assumes that features are described with
+chromosomal positions, and should be zero-based (meaning that the
+first position is 0, not 1).
 
 >hg17_chr7_127475281_127475310_+
 
@@ -633,12 +646,22 @@ chromEnd base is not included in the display of the feature. For
 example, the first 100 bases of a chromosome are defined as
 chromStart=0, chromEnd=100, and span the bases numbered 0-99.
 
-
 =item 5. strand
 
 Defines the strand - either '+' or '-'.
 
 =back
+
+=head2 ucsc_seq
+
+Fasta sequences retrieved from the UCSC server.  Warning: this format
+assumes that features are described with chromosomal positions, and
+should be zero-based (meaning that the first position is 0, not 1).
+
+Coordinates are parsed from the fasta header.
+
+>11:3052022..3052331:1
+
 
 =head3 Example of galaxy_seq format
 
@@ -699,13 +722,23 @@ sub parse_from_row {
     $row =~ s/^\s*>//;
 
     ## PROBLEM HERE: DOES NOT WORK IF THE ID CONTAINS "_" characters
-#    @fields = split("_", $row);
+    #    @fields = split("_", $row);
     if ($row =~ /(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
       @fields = ($1, $2, $3, $4, $5);
     } else {
       &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
       return();
     }
+
+  } elsif ($in_format eq "ucsc_seq") {
+    if ($row =~ /^>(\d+):(\d+)\.\.(\d+)\:(\d+)/) {
+#    if ($row =~ />11:3052022..3052331:1	/target='11:3052022..3052331' /seq_id='11' /strand='+' /type='region' /original_strand='+' /end='3052331' /start='3052022'/) {
+      @fields = ($1, $2, $3, $4);
+    } else {
+      &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
+      return();
+    }
+
   } else {
     @fields = split("\t", $row);
   }
