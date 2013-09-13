@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.41 2013/09/13 10:36:59 jvanheld Exp $
+# $Id: convert-features,v 1.42 2013/09/13 10:37:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -837,13 +837,14 @@ convert-features options
 -v		verbose
 -from		input format (Supported: $RSAT::feature::supported_input_formats)
 -to		output format (Supported: $RSAT::feature::supported_output_formats)
--add_chr         only valid for BED output: add "chr" in front of the chromosome name and change MT into chrM
--remove_chr      only valid for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
--summits         only valid for SWEMBL input: replace start and end coordinates by peak summit position
--extend          extend peak coordinates on both sides
--extend_start    extend start coordinate leftwise
--extend_end      extend end coordinate rightwise
--coord           bedfile with absolute coordinate of the sequence fragment
+-add_chr        only valid for BED output: add "chr" in front of the chromosome name and change MT into chrM
+-featname	Set a name for all features of the file. 
+-remove_chr     only valid for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
+-summits        only valid for SWEMBL input: replace start and end coordinates by peak summit position
+-extend         extend peak coordinates on both sides
+-extend_start   extend start coordinate leftwise
+-extend_end     extend end coordinate rightwise
+-coord          bedfile with absolute coordinate of the sequence fragment
 -origin [start|end|center] origin of coordinates relative to sequence fragment
 End_short_help
   close HELP;
