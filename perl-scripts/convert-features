@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.40 2013/09/13 08:55:20 jvanheld Exp $
+# $Id: convert-features,v 1.41 2013/09/13 10:36:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -35,6 +35,8 @@ local $output_format = "gff3";
 
 local $add_chr_bed = 0;
 local $remove_chr_gff = 0;
+
+local $set_feature_name = ""; ## User-defined name for the features (track)
 
 local $origin = "start";
 local %supported_origin = ('start'=>1, 'end'=>1, 'center' => 1);
@@ -159,11 +161,18 @@ while (<$in>) {
     $feature->force_attribute("end", $end + $extend_end);
   }
 
+  if ($set_feature_name) {
+    $feature->force_attribute("feature_name", $set_feature_name);
+  }
+
   ## Check BED-specific attributes
   if ($output_format eq "bed") {
 
     ## Add "chr" prefix to chromosome names if requested
     &add_chr($feature)  if ($add_chr_bed);
+
+    ## Make sure that the feature has a name
+    &check_name($feature);
 
     ## set feature color
     &set_color($feature);
@@ -190,6 +199,16 @@ while (<$in>) {
 }
 
 close $in if ($infile{input});
+
+################################################################
+## Check that the feature has a "name" attribute.
+sub check_name {
+  my ($feature) = @_;
+  my $feature_name = $feature->get_attribute("feature_name");
+  unless ($feature_name) {
+    $feature->force_attribute("feature_name", "feature");
+  }
+}
 
 ################################################################
 ## Set a color to the feature according to the feature_name attribute
@@ -463,6 +482,10 @@ OPTIONS
 	-to	output format (Supported: $RSAT::feature::supported_output_formats)
 
 	-add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
+
+	-featname
+		Set a name for all features of the file. This option
+		can be convenient for conversions to bed files.
 
 	-remove_chr
                  only valid for GFF output: remove the "chr" in front of the
@@ -870,6 +893,9 @@ sub ReadArguments {
       ### add "chr" in front of chromosome names for BED output
     } elsif ($ARGV[$a] eq "-add_chr") {
       $add_chr_bed = 1;
+
+    } elsif ($ARGV[$a] eq "-featname") {
+      $set_feature_name = $ARGV[$a+1];
 
       ### remove "chr" in front of chromosome names for GFF output
     } elsif ($ARGV[$a] eq "-remove_chr") {
