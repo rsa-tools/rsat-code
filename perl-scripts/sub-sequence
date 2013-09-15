@@ -177,9 +177,10 @@ sub OneFragment {
     &RSAT::message::Warning($current_id, "sub-sequence end", $subseq_to,"cannot be larger than sequence length (".$seq_len.")",  "clipped") if ($main::verbose >= 2);
     $subseq_to = $seq_len;
   }
-  my $offset = $subseq_from -1;
-  my $subseq_len = $subseq_to - $subseq_from + 1;
-  my $subseq = substr($current_seq, $subseq_from -1, $subseq_len);
+
+  local $offset = $subseq_from -1;
+  local $subseq_len = $subseq_to - $subseq_from + 1;
+  local $subseq = substr($current_seq, $subseq_from -1, $subseq_len);
 
 
 ################################################################
@@ -233,7 +234,7 @@ sub OneFragment {
   ## Store sub-sequence description as comment
   ## Initialize the comments
   my @comments = ();
-  push @comments, join(" ", "sub-seq", $current_from.":".$current_to, $subseq_from.":".$subseq_to, "seq_len=".$seq_len, "subseq_len=".$current_length);
+  push @comments, join(" ", "sub-seq", $current_from.":".$current_to, $subseq_from.":".$subseq_to, "seq_len=".$seq_len, "subseq_len=".$subseq_len);
   if ($limits) {
     $current_id .= "_".$current_from."_".$current_to;
   }
