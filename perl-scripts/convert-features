@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.42 2013/09/13 10:37:54 jvanheld Exp $
+# $Id: convert-features,v 1.43 2013/09/16 18:00:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -56,7 +56,7 @@ unless ($input_format) {
 }
 
 ## Initialize color palette
-if ($output_format eq "bed") {
+if (($output_format eq "bed") || ($output_format eq "great")) {
   @palette = &RSAT::Color::RGBColorPalette();
 }
 
@@ -166,7 +166,7 @@ while (<$in>) {
   }
 
   ## Check BED-specific attributes
-  if ($output_format eq "bed") {
+  if (($output_format eq "bed") || ($output_format eq "great")) {
 
     ## Add "chr" prefix to chromosome names if requested
     &add_chr($feature)  if ($add_chr_bed);
