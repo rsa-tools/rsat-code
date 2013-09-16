@@ -285,7 +285,7 @@ class PipelineManager:
             try:
                 pipelines = PipelineXMLParser.getPipelines( pipelines_filepath)
                 OptionManager.applyOptions( pipelines, pipeline_options)
-                PipelineXMLParser.toXMLFile( pipelines)
+                PipelineXMLParser.toXMLFile( self.config[ Constants.OUTPUT_DIR_PARAM], pipelines)
             except SyntaxError, syn_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( syn_exce))
             except ParsingException, par_exce:
@@ -314,12 +314,22 @@ class PipelineManager:
                 Log.trace("# Starting pipeline '" + pipeline.name + "'")
                 Log.trace("--------------------------------------------------------------------------")
                 pipeline_output = os.path.join( self.getParameter( Constants.OUTPUT_DIR_PARAM), pipeline.name)
+	        
+                liste_dir = FileUtils.getDirectoryList( os.path.dirname( pipeline_output))
+	        print "0/LISTE DIR AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_dir) 
+	        liste_file = FileUtils.getFileList( os.path.dirname( pipeline_output), None)
+        	print "0/LISTE FILE AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_file) 
+                
                 # Manage the pipeline output directory and the logs
+		print "self.getParameter( Constants.OUTPUT_DIR_PARAM) = " + self.getParameter( Constants.OUTPUT_DIR_PARAM)
+		print "pipeline_output = " + pipeline_output
+		print "Resume mode = " + str(resume)
                 if resume == False:
                     shutil.rmtree( pipeline_output, True)
                     FileUtils.createDirectory( pipeline_output, 0777)
                     Log.switchFiles( pipeline_output)
                 else:
+		    print "creating dir : " + pipeline_output
                     FileUtils.createDirectory( pipeline_output, 0777)
                     Log.initLog( pipeline_output)
                 ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.RUNNING_STATUS)

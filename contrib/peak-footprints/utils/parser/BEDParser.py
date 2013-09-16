@@ -28,7 +28,7 @@ class BEDParser:
                 if len( tokens) > BEDParser._endindex_col:
                     chrom = tokens[ BEDParser._chrom_col].lower()
                     #if chrom[ 0:3] == "chr":
-		    if chrom[0:1] != "#":
+		    if chrom[0:1] != "#" and chrom[ 0:3] == "chr":
 			if len(chrom) < 4:
 			    chrom = "chr" + chrom
                         start = BEDParser.getTokenAsint( tokens[ BEDParser._startindex_col])
