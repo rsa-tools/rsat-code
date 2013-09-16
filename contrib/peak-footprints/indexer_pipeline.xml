@@ -1,72 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pipelines>
-	<pipeline name="20120420_160511_MAFIndexer">			<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrI.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+	<pipeline name="20130913_180231_MAFIndexer">			<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr1.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrII.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr10.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrIII.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr11.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrIV.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr12.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrIX.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr13.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrM.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr14.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrV.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr15.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrVI.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr16.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrVII.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr17.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrVIII.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr18.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrX.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr19.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrXI.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr2.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrXII.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr3.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrXIII.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr4.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrXIV.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr5.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrXV.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr6.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
-			<param name="MAFFile" value="/no_backup/rsa-tools/data/UCSC_multiz//sacCer3/multiz7way/maf/chrXVI.maf"/>
-      			<param name="ReferenceSpecies" value="sacCer3"/>
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr7.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
+		</component>
+		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr8.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
+		</component>
+		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chr9.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
+		</component>
+		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chrM.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
+		</component>
+		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chrX.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
+		</component>
+		<component processor="processor.MAFIndexerProcessor.MAFIndexerProcessor">
+			<param name="MAFFile" value="/soft/rsa-tools/data/UCSC_multiz//mm9/multiz30way/maf/chrY.maf"/>
+      			<param name="ReferenceSpecies" value="mm9"/>
 		</component>
 	</pipeline>
 </pipelines>
