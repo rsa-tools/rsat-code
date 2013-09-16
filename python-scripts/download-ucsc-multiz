@@ -140,7 +140,7 @@ def main( argv):
 	peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
 	multiz_path = rsat_path + "/data/UCSC_multiz/"
 	fetch_maf_list_name = multiz_path+"fetch_maf_list.txt"
-
+	os.umask(0000); #remove all mask in chmod
 
 	#Check if multiz directory exist
 	check_path(multiz_path)
