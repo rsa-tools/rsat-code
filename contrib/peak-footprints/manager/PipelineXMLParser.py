@@ -10,6 +10,8 @@ from Component import Component
 from utils.log.Log import Log
 from utils.FileUtils import FileUtils
 
+import os
+
 class PipelineXMLParser:
     
     RANK = 0
@@ -172,7 +174,7 @@ class PipelineXMLParser:
     # --------------------------------------------------------------------------------------
     # Export the pipelines to an XML file
     @staticmethod
-    def toXMLFile( pipelines):
+    def toXMLFile( outpath, pipelines):
         
         pipelines_element = Element( PipelineXMLParser.PIPELINES_TAG)
         
@@ -193,7 +195,8 @@ class PipelineXMLParser:
 
         try:
             PipelineXMLParser.indent( pipelines_element, 0)
-            ElementTree( pipelines_element).write( "test_export_pipeline.xml")
+	    outfile = os.path.join( outpath, pipeline.name + ".xml")
+            ElementTree( pipelines_element).write( outfile)
         except IOError, exce:
             Log.log( "PipelineXMLParser.toXMLFile : Unable to write Pipelines to XML file. From:\n\t---> " + str( exce))
         except ParsingException, par_exce:
