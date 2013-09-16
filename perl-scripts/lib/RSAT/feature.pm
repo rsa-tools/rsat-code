@@ -23,6 +23,7 @@ $supported_input_formats = join (",", keys %supported_input_format);
 			   gff3=>1,
 			   dnapat=>1,
 			   bed=>1,
+			   great=>1, ## Great has specific requirements for the bed format -> we consider it as a bed dialect
 			  );
 $supported_output_formats = join (",", keys %supported_output_format);
 
@@ -122,6 +123,7 @@ $header_char{gff3} = "## ";
 		    "Ontology_term"	# cross-reference to an ontology term
 		   );
 
+################################################################
 ## UCSC BED
 ## http://genome.ucsc.edu/goldenPath/help/customTrack.html#BED
 ## warning: UCSC BED files should be zero-based
@@ -142,8 +144,19 @@ $header_char{gff3} = "## ";
 $comment_char{bed} = "## ";
 $header_char{bed} = "## ";
 
+################################################################
+## GREAT (Bejerano)
+##   http://bejerano.stanford.edu/great/public/html/
+## Great has specific requirements for the bed format -> we consider
+## it as a bed dialect
+@{$columns{great}} = @{$columns{bed}};
+@{$strands{great}} = @{$strands{bed}};
+$comment_char{great} = $comment_char{bed};
+$header_char{great} = $header_char{bed};
+
+################################################################
 ## SWEMBL
-## http://www.ebi.ac.uk/~swilder/SWEMBL/
+##   http://www.ebi.ac.uk/~swilder/SWEMBL/
 ## SWEMBL exports a bed-like format for the 3 first columns, and custom info in the other columns
 @{$columns{swembl}} = qw (seq_name
 		       start
@@ -160,7 +173,6 @@ $header_char{bed} = "## ";
 $comment_char{swembl} = "#";
 $header_char{swembl} = "#";
 #$header_char{swembl} = "Region";
-
 
 ## Galaxy sequences
 ## http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
@@ -712,7 +724,7 @@ Parse the feature from a text row.
 
 =cut
 sub parse_from_row {
-  my ($self, $row, $in_format, $out_format) = @_;
+  my ($self, $row, $in_format, $output_format) = @_;
   chomp($row);
   $row =~ s/\r//g;
 
@@ -776,13 +788,21 @@ sub parse_from_row {
     $self->set_attribute("description", $self->get_attribute("attribute"));
 
   } elsif ($in_format eq "swembl")  {
+
+    ## Start coordinate is zero-based in SWEMBL format. We correct
+    ## this by adding 1.
+    my $start = $self->get_attribute("start");
+    $start += 1;
+    $self->force_attribute("start", $start);
+
     ## SWEMBL occasionally returns peak with a negative start
     ## coordinate ! I guess this is due to the algorithm for defining
     ## the peak width, but it creates obvious problems with the
     ## programs used to further analyze the peaks. We circumvent this
-    ## by replacing negative and null values by 1.
-    if ($self->get_attribute("start") < 0) {
-      $self->force_attribute("start", 1)
+    ## by replacing negative and null values by 1 in 1-based
+    ## coordinates).
+    if ($start <= 0) {
+      $self->force_attribute("start", 1);
     }
 
     my $name = join("_",
@@ -801,7 +821,7 @@ sub parse_from_row {
   }
 
   ## Convert name
-  if (defined($out_format) && ($out_format =~ /gff/)) {
+  if (defined($output_format) && ($output_format =~ /gff/)) {
     if (($self->get_attribute('feature_name')) && (!$self->get_attribute("Name"))) {
       $self->force_attribute("Name", $self->get_attribute("feature_name"));
     }
@@ -809,6 +829,22 @@ sub parse_from_row {
 	($self->get_attribute("description") !~ /=/) &&
 	(!$self->get_attribute("Note"))) {
       $self->force_attribute("Note", $self->get_attribute("description"));
+    }
+  }
+
+
+
+  ## Some prorams like "GREAT (from Bejerano)" require integer values.
+  if ($output_format eq "great") {
+
+    ## Round summit coordinates
+    if (my $summit = $self->get_attribute("summit")) {
+      $self->force_attribute("summit", sprintf ("%d", $summit));
+    }
+
+    ## Round score
+    if (my $score = $self->get_attribute("score")) {
+      $self->force_attribute("score", sprintf ("%d", $score));
     }
   }
 
@@ -913,7 +949,7 @@ sub parse_from_row {
 
 =pod
 
-=item to_text($out_format)
+=item to_text($output_format)
 
 Converts the feature in a single-row string for exporting it in the
 specified format.
@@ -939,18 +975,19 @@ sub to_fasta {
 
 =pod
 
-=item to_text($out_format)
+=item to_text($output_format)
 
 Converts the feature in a single-row string for exporting it in the
 specified format.
 
 =cut
 sub to_text {
-  my ($self, $out_format, $null) = @_;
+  my ($self, $output_format, $null) = @_;
   $null = "" unless (defined($null));
 
+
   ## For the BED format
-  if ($out_format eq "bed") {
+  if (($output_format eq "bed") || ($output_format eq "great")) {
 
     ## Suppress sequence start and end features (temporary fix for
     ## UCSC genome browser)
@@ -993,17 +1030,18 @@ sub to_text {
   }
 
   ## Fasta format
-  if ($out_format eq "fasta") {
+  if ($output_format eq "fasta") {
     return $self->to_fasta();
   }
 
 
   ## Tab-delimited column files
-  my @cols = @{$columns{$out_format}};
+  my @cols = @{$columns{$output_format}};
 
 
   ## Index column number by contents
-  my ${col_index} = ();
+#  my ${col_index} = ();
+  my %col_index = ();
   foreach my $c (0..$#cols) {
     $col_index{$cols[$c]} = $c;
   }
@@ -1038,7 +1076,7 @@ sub to_text {
   ## Format-specific attributes
 
   ## Collect attributes for gff and gff3 formats
-  if ($out_format =~ /gff/) {
+  if ($output_format =~ /gff/) {
     #       unless ($self->get_attribute("gene")) {
     # 	if ($self->get_attribute("feature_name")) {
     # 	  $self->set_attribute("gene", $self->get_attribute("feature_name"));
@@ -1063,7 +1101,7 @@ sub to_text {
     if (scalar(@attributes) == 0) {
       my $description = $self->get_attribute("description");
       if ($description) {
-	if ($out_format =~ /gff/) {
+	if ($output_format =~ /gff/) {
 	  push @attributes, "Note=".$description;
 	}
       }
@@ -1075,7 +1113,7 @@ sub to_text {
   }
 
   ## Format-specific treatment for the strand
-  my @strands = @{$strands{$out_format}};
+  my @strands = @{$strands{$output_format}};
   my $strand = $self->get_attribute("strand") || $default{strand};
   my $f = $col_index{"strand"};
   my $s;
@@ -1100,7 +1138,7 @@ sub to_text {
   my $row = join ("\t", @fields);
   $row .= "\n";
 
-  #    &RSAT::message::Debig ("printing in format ", $out_format, $row) if ($main::verbose >= 10);
+  #    &RSAT::message::Debig ("printing in format ", $output_format, $row) if ($main::verbose >= 10);
 
   return($row);
 }
@@ -1109,15 +1147,15 @@ sub to_text {
 
 =pod
 
-=item header($out_format)
+=item header($output_format)
 
 Print the header in the specified format.
 
 =cut
 
 sub header {
-    my ($out_format) = @_;
-    if ($out_format eq "fasta") {
+    my ($output_format) = @_;
+    if ($output_format eq "fasta") {
       return();
     }
 
@@ -1126,11 +1164,11 @@ sub header {
 
     ## Print format
     my $header = "";
-    if ($out_format eq "gff3") {
-      $header .= $comment_char{$out_format};
+    if ($output_format eq "gff3") {
+      $header .= $comment_char{$output_format};
       $header .= "gff-version\t3";
       $header .= "\n";
-    } elsif ($out_format eq "bed") {
+    } elsif ($output_format eq "bed") {
       my $track_name =  "RSAT_features";
       if (defined($main::infile{input})) {
 	$track_name = $main::infile{input};
@@ -1139,13 +1177,13 @@ sub header {
       $header .= "browser dense ".$track_name."\n";
 #      $header .= "browser dense all\n";
     } else {
-      $header .= $comment_char{$out_format};
-      $header .= "Feature format:".$out_format."\n";
+      $header .= $comment_char{$output_format};
+      $header .= "Feature format:".$output_format."\n";
     }
 
     ## Print column content
-    my @cols = @{$columns{$out_format}};
-    $header .= $header_char{$out_format};
+    my @cols = @{$columns{$output_format}};
+    $header .= $header_char{$output_format};
     $header .= join ("\t", @cols);
     $header .= "\n";
     return $header;
