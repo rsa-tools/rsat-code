@@ -28,7 +28,10 @@ class FileUtils:
                 return None
         else:
             # if the path is a directory path, test if it contains files with the given extension
-            result = glob.glob(  os.path.join( path,  "*." + extension))
+	    if extension == None:
+                result = glob.glob(  os.path.join( path, "*"))
+            else:
+		result = glob.glob(  os.path.join( path, "*." + extension))
             if result == None or len( result) == 0:
                 # if directory does not contain serached files, search in given subdirectory if any
                 if subdir != None:
@@ -39,7 +42,6 @@ class FileUtils:
                 else:
                     return None
                 
-
         return result
         
         
@@ -66,10 +68,20 @@ class FileUtils:
     @staticmethod
     def createDirectory( path, chmod = 0777):
         
+	print "CREATING DIRECTORY : " + path
+	#liste_dir = FileUtils.getDirectoryList( os.path.dirname( path))
+	#print "LISTE DIR AVANT " + os.path.dirname( path) + " = " + str(liste_dir) 
+	#liste_file = FileUtils.getFileList( os.path.dirname( path), None)
+	#print "LISTE FILE AVANT " + os.path.dirname( path) + " = " + str(liste_file) 
+
         if os.path.exists( path):
             if not os.path.isdir( path):
+		print "ERROR : Cannot create directory : file with same path already exists!!!!!! : " + path
                 return False
         else:
+	    #liste_fichier = FileUtils.getDirectoryList( os.path.dirname(path))
+	    #print "LISTE APRES = " + str(liste_fichier) 
+            #print "CREATING DIR : " + path
             os.mkdir( path)
             os.chmod( path, chmod)
         
@@ -80,6 +92,8 @@ class FileUtils:
     @staticmethod
     def openFile( path, mode = "r", chmod = 0666):
         
+	print "OPENING FILE = " + path
+
         if os.path.exists(path):
             if not os.path.isfile( path):
                 raise ExecutionException( "FileUtils.openFile: unable to open file. Provided path is not a file : " + path)

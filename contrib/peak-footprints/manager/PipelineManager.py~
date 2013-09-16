@@ -5,6 +5,7 @@ from manager.Component import Component
 from manager.PipelineXMLParser import PipelineXMLParser
 from manager.ProgressionManager import ProgressionManager
 from manager.PipelineListener import PipelineListener
+from manager.OptionManager import OptionManager
 
 from utils.Constants import Constants
 from utils.FileUtils import FileUtils
@@ -16,7 +17,7 @@ from utils.exception.ConfigException import ConfigException
 from utils.log.Log import Log
 from utils.log.ListenerLog import ListenerLog
 
-import sys, os, shutil, time, threading
+import sys, os, shutil, time, threading, ast
 
 # This class is the central manager. It's role is to manage the pipelines execution.
 # It reads the definition of the pipelines from the XML file, create the corresponding object structure,
@@ -24,36 +25,43 @@ import sys, os, shutil, time, threading
 
 class PipelineManager:
 
-    SERVER_QUEUE_FILE_NAME = "serverQueue.txt"
-
     # --------------------------------------------------------------------------------------
-    def __init__( self):
+    def __init__( self, output_dir, rsat_path):
         
         self.config = {}
-        config_path = None
-        # Test if the project is installed in RSAT
-        if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
-            config_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
-            if config_path != None and len( config_path) > 0:
-                config_path = os.path.join( config_path, Constants.PROJECT_PATH_IN_RSAT)
-                if not os.path.exists( config_path):
-                    print "Project not installed in RSA-Tools"
-                    config_path = None
+        install_path = None
         
-        # If Project is not in RSAT, test if the project as its own environment variable set
-        if (config_path == None or len( config_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
-            config_path = os.environ[ Constants.PROJECT_INSTALL_PATH_ENV_VAR]
+        # Try to detect the RSAT install dir if not provided
+        if rsat_path == None:
+            self.config[ Constants.RSAT_DIR_PARAM] = ""
+            if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
+                rsat_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
         
-        # Test if a config_path has been found. If not, take the current working dir as path
-        if config_path != None and len( config_path) > 0:
-            self.config[ Constants.CONFIG_DIR_PARAM] = config_path
+        # Test the RSAT installation path
+        if rsat_path != None and len( rsat_path) > 0:
+            self.config[ Constants.RSAT_DIR_PARAM] = rsat_path
+            install_path = os.path.join( rsat_path, Constants.PROJECT_PATH_IN_RSAT)
+            if not os.path.exists( install_path):
+                print "Project not installed in RSA-Tools"
+                install_path = None
         else:
-            print "PipelineManager.init : No " + Constants.PROJECT_INSTALL_PATH_ENV_VAR + " environment variable set : using current directory"
-            self.config[ Constants.CONFIG_DIR_PARAM] = os.getcwd()
-            
-        self.readConfig( os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], Constants.MANAGER_CONFIG_FILE_NAME))
+            print "PipelineManager.init : Unable to find RSAT directory : using user HOME directory"
+            self.config[ Constants.RSAT_DIR_PARAM] = os.path.join( os.environ( "HOME"), Constants.PROJECT_NAME)
+                
+        # If Project is not in RSAT, test if the project as its own environment variable set
+        if (install_path == None or len( install_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
+            install_path = os.environ[ Constants.PROJECT_INSTALL_PATH_ENV_VAR]
         
-        self.initVariables()
+        # Test if a install_path has been found. If not, take the current working dir as path
+        if install_path != None and len( install_path) > 0:
+            self.config[ Constants.INSTALL_DIR_PARAM] = install_path
+        else:
+            print "PipelineManager.init : Unable to find peak-footprint installation directory : using user HOME directory"
+            self.config[ Constants.INSTALL_DIR_PARAM] = os.path.join( os.environ( "HOME"), Constants.PROJECT_NAME)
+            
+        self.readConfig( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], Constants.MANAGER_CONFIG_FILE_NAME))
+        
+        self.initVariables( output_dir)
         
         self.serverQueue = []
         self.serverQueueLock = threading.Lock()
@@ -65,8 +73,8 @@ class PipelineManager:
     def readConfig(self, param_file):
         
         try:
-            file = open( param_file, "r")
-            for line in file:
+            config_file = FileUtils.openFile( param_file)
+            for line in config_file:
                 if line.isspace() or line[0] == Constants.COMMENT_CHAR:
                     continue
                 tokens = line.split( "=")
@@ -79,40 +87,65 @@ class PipelineManager:
                 else:
                     raise ConfigException( "PipelineManager.readConfig : wrongly formated parameter line in config file '" + param_file + "'. Should be '<param_name>=<param_value>' instead of '" + line + "'")
         except IOError,  io_exce:
-            raise ConfigException( "PipelineManager.readConfig : unable to read parameters from config file '" + param_file + "'. From:\n\t---> " + str( io_exce))
+            Log.info( "PipelineManager.readConfig : unable to read parameters from config file '" + param_file + "'. From:\n\t---> " + str( io_exce))
 
 
     # --------------------------------------------------------------------------------------
     # Initialize some variables
-    def initVariables( self):
+    def initVariables( self, output_dir):
 
-        RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)
+        # Define and create the output directory parameter as the provided output_dir if non null
+        # or as the RSAT path + base output dir path retrieved from the manager.props
+        if output_dir != None:
+            self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = output_dir
+        else:
+            self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
+        FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
         
-        jaspar_path = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR")
-        RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( jaspar_path, self.getParameter( Constants.RSAT_JASPAR_MOTIF_DATABASE_PARAM))
+        # Initialize the output directory
+        self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
+        FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
         
-        MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.CONFIG_DIR_PARAM), "resources/jaspar/motif")
+        # Define the path to the listening dir according situations
+        if self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM) != None:
+            queue_path = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM))
+            FileUtils.createDirectory( queue_path, 0777)
+            self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( queue_path, self.getParameter( Constants.LISTENING_DIR_PARAM))
+        else:
+            self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM))
+        FileUtils.createDirectory( self.config[ Constants.LISTENING_DIR_PARAM], 0777)
+        
+        # Set the path for the job queue directory
+        if self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM) != None:
+            queue_path = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM))
+            FileUtils.createDirectory( queue_path, 0777)
+            self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( queue_path, Constants.QUEUE_DIR_NAME)
+        else:
+            self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), Constants.QUEUE_DIR_NAME)
+        FileUtils.createDirectory( self.config[ Constants.QUEUE_DIR_PARAM]) 
+
+        # Set the RSAT_PATH
+        RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
+        # Set the path to the jaspar database. This is used to create the motif logo
+        RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf")
+         
+        # Set the path to the Jaspar TF details files. Those files contains information on TF like family, class...
+        MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), "resources/jaspar/motif")
 
     
     # --------------------------------------------------------------------------------------
     # Manage the direct execution of the given pipelines definition
-    def execute(self, pipelines_filepath, verbosity=0, resume = False, working_dir=None):
+    def execute(self, pipelines_filepath, options, verbosity=0, resume = False, working_dir=None):
         
-        self.addToQueue( pipelines_filepath, verbosity, str( resume), working_dir)
+        self.addToQueue( pipelines_filepath, options, verbosity, str( resume), working_dir)
         return self.executePipelines()
 
 
-
     # --------------------------------------------------------------------------------------
-    # Set the mamanger in server mode, always running and managing queue
+    # Set the manager in server mode, always running and managing queue
     def server(self, listener_path = None):
         
-        # initialize logs and output directories
-        FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM])
-        self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
-        FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM])
-
-        # init the server queue with queue file if exists (restoring from previous run)
+        # Init the server queue with queue file if exists (restoring from previous run)
         self.initServerQueue()
         
         # Init the logs of the listener
@@ -135,12 +168,12 @@ class PipelineManager:
 
     # --------------------------------------------------------------------------------------
     # Adds a pipelines definition and params in queue
-    def addToQueue( self, pipelines_filepath, verbosity, resume, working_dir):
+    def addToQueue( self, pipelines_filepath, options, verbosity, resume, working_dir):
         
         self.serverQueueLock.acquire()
         
         if pipelines_filepath != None and len( pipelines_filepath) > 0:
-            self.serverQueue.append( (pipelines_filepath, resume, verbosity, working_dir))
+            self.serverQueue.append( (pipelines_filepath, options, verbosity, resume, working_dir))
 
         try:
             self.outputServerQueue()
@@ -174,12 +207,14 @@ class PipelineManager:
     def outputServerQueue(self):
         
         try:
-            queue_file_path = os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
-            queue_file = open( queue_file_path, "w")
+            queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
+            queue_file = FileUtils.openFile( queue_file_path, "w", 0666)
             for infos in self.serverQueue:
+                line = ""
                 for info in infos:
-                    queue_file.write( str(info) + "\t")
-                queue_file.write("\n")
+                    line = line + str(info) + "|**|"
+                line = line[:-4]
+                queue_file.write( line + "\n")
                 queue_file.flush()
             queue_file.close()
         except IOError, io_exce:
@@ -190,23 +225,23 @@ class PipelineManager:
     # Read the server queue file content to initialize the queue
     def initServerQueue(self):
         
-        queue_file_path = os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], PipelineManager.SERVER_QUEUE_FILE_NAME)
+        queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
         if os.path.exists( queue_file_path):
             try:
                 commands_list = []
-                file = open( queue_file_path, "r")
+                file = FileUtils.openFile( queue_file_path)
                 for line in file:
-                    command_params = [None, 0, "True", None]
+                    command_params = [None, None, 0, "True", None]
                     if not line.isspace() and line[0] != Constants.COMMENT_CHAR:
-                        tokens = line.split()
-                        if len( tokens) > 0 and len( tokens) <= 4:
+                        tokens = line.split("|**|")
+                        if len( tokens) > 0 and len( tokens) <= 5:
                             for index in range( len( tokens)):
                                 command_params[ index] = tokens[ index]
-                        print "PipelineManager.initServerQueue : Adding command to queue : " + str( command_params)
                         commands_list.append( command_params)
                 file.close()
+                options = ast.literal_eval( command_params[1])
                 for command_params in commands_list:
-                    self.addToQueue( command_params[0], command_params[1], command_params[2], command_params[3])
+                    self.addToQueue( command_params[0], options, command_params[2], command_params[3], command_params[4])
             except IOError, io_exce:
                 raise ExecutionException(" PipelineManager.initServerQueue : Unable to read Server queue from file : " + queue_file_path +". From:\n\t---> " + str( io_exce))
             
@@ -222,20 +257,24 @@ class PipelineManager:
             
             params = self.serverQueue[0]
             pipelines_filepath = params[0]
-            resume = (params[1].lower() == "true")
+            pipeline_options = params[1]
             try:
                 verbosity = int( params[2])
             except ValueError:
                 verbosity = 1
-            working_dir = params[3]
+            resume = (params[3].lower() == "true")
+            working_dir = params[4]
             
-            # Modifies the config if required and initialize logs and outputdirectory
+            # Modifies the config if required and initialize logs and output directory
             if working_dir != None and len( working_dir) > 0:
                 self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = working_dir
-            FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM])
                 
+            # Verify the base output dir and the output dir are created and create them if not
+            FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
             self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
-            FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM])
+            FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
+            
+            # Switch log location
             Log.switchFiles( self.getParameter( Constants.OUTPUT_DIR_PARAM), verbosity)
             
             # Parse the XML file to retrieve the pipelines definition
@@ -245,7 +284,9 @@ class PipelineManager:
             
             try:
                 pipelines = PipelineXMLParser.getPipelines( pipelines_filepath)
-            except SyntaxError,  syn_exce:
+                OptionManager.applyOptions( pipelines, pipeline_options)
+                PipelineXMLParser.toXMLFile( self.config[ Constants.OUTPUT_DIR_PARAM], pipelines)
+            except SyntaxError, syn_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( syn_exce))
             except ParsingException, par_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( par_exce))
@@ -261,7 +302,7 @@ class PipelineManager:
                 raise ParsingException( "PipelineManager.executePipelines : Canceling execution of pipelines. From:\n\t---> " + str( exe_exce))
 
             # Initialize the ProgressionManager
-            ProgressionManager.initialize( pipelines, self.getParameter( Constants.OUTPUT_DIR_PARAM), self.getParameter( Constants.CONFIG_DIR_PARAM))
+            ProgressionManager.initialize( pipelines, self.getParameter( Constants.OUTPUT_DIR_PARAM), self.getParameter( Constants.INSTALL_DIR_PARAM))
 
             # Execute the pipelines
             Log.trace( "**************************************************")
@@ -273,16 +314,26 @@ class PipelineManager:
                 Log.trace("# Starting pipeline '" + pipeline.name + "'")
                 Log.trace("--------------------------------------------------------------------------")
                 pipeline_output = os.path.join( self.getParameter( Constants.OUTPUT_DIR_PARAM), pipeline.name)
+	        
+                liste_dir = FileUtils.getDirectoryList( os.path.dirname( pipeline_output))
+	        print "0/LISTE DIR AVANT " + os.path.dirname( path) + " = " + str(liste_dir) 
+	        liste_file = FileUtils.getFileList( os.path.dirname( pipeline_output), None)
+        	print "0/LISTE FILE AVANT " + os.path.dirname( path) + " = " + str(liste_file) 
+                
                 # Manage the pipeline output directory and the logs
+		print "self.getParameter( Constants.OUTPUT_DIR_PARAM) = " + self.getParameter( Constants.OUTPUT_DIR_PARAM)
+		print "pipeline_output = " + pipeline_output
+		print "Resume mode = " + str(resume)
                 if resume == False:
                     shutil.rmtree( pipeline_output, True)
-                    os.mkdir( pipeline_output)
+                    FileUtils.createDirectory( pipeline_output, 0777)
                     Log.switchFiles( pipeline_output)
                 else:
-                    FileUtils.createDirectory( pipeline_output)
+		    print "creating dir : " + pipeline_output
+                    FileUtils.createDirectory( pipeline_output, 0777)
                     Log.initLog( pipeline_output)
                 ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.RUNNING_STATUS)
-                shutil.copy( os.path.join( self.config[ Constants.CONFIG_DIR_PARAM], os.path.join( Constants.PROGRESSION_XSL_PATH, Constants.PROGRESSION_XSL_FILE)), pipeline_output)
+                shutil.copy( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], os.path.join( Constants.PROGRESSION_XSL_PATH, Constants.PROGRESSION_XSL_FILE)), pipeline_output)
 
                 # Fill the queue with the pipeline first components
                 component_queue_list = pipeline.firstComponents
