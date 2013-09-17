@@ -13,7 +13,8 @@ ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 TAXON=Bacteria
 DEPTH=5
 #RES_DIR=results/phylo_profiles/${ORG}/${TAXON}
-RES_DIR=results/phylo_profiles/${ORG}_${TAXON}_depth${DEPTH}
+RES_ROOT=results
+RES_DIR=${RES_ROOT}/phylo_profiles/${ORG}_${TAXON}_depth${DEPTH}
 
 
 ## Threshold on BLAST identity
@@ -41,8 +42,8 @@ all_taxa:
 	${MAKE} merged_ortho
 	${MAKE} merged_profiles
 
-#one_taxon: ortho genus_species profiles profiles_sig profile_pairs sig_vs_MI
-one_taxon: genus_species profiles profiles_sig profile_pairs sig_vs_MI
+one_taxon: ortho genus_species profiles profiles_sig profile_pairs sig_vs_MI
+#one_taxon: genus_species profiles profiles_sig profile_pairs sig_vs_MI
 
 ################################################################
 ## Identify all the putative orthologs (BBH) 
@@ -61,7 +62,11 @@ ortho:
 		-o ${ORTHO}.tab
 	@echo "	${ORTHO}.tab"
 
-## Generate a tab-delimited file with the genus (col1), species (col2) and both names (col3)
+
+################################################################
+## Generate a tab-delimited file with the genus (col1), species (col2)
+## and both names (col3) for all the species found in the orthology
+## table. 
 GENUS_SPECIES=${RES_DIR}/${TAXON}_genus_species.tab
 genus_species:
 	@echo
@@ -98,11 +103,11 @@ profiles_sig:
 ## Generate a neetwork of co-occurrence (presence/absence)
 PROFILE_PAIRS=${ORTHO}_profile_pairs
 profile_pairs:
-	@grep primary ${CDS_NAMES} > results/${ORG}/cds_primary_names.tab
+	@grep primary ${CDS_NAMES} > ${RES_ROOT}/${ORG}/cds_primary_names.tab
 	compare-profiles -v 2 -i ${PROFILES}.tab \
 		-distinct -return counts,jaccard,hyper,entropy \
 		-na "NA" -inf Inf -lth AB 2 -lth sig 0 \
-		-names results/${ORG}/cds_primary_names.tab \
+		-names ${RES_ROOT}/${ORG}/cds_primary_names.tab \
 		-o ${PROFILE_PAIRS}.tab
 	@echo ${PROFILE_PAIRS}.tab
 
@@ -120,7 +125,7 @@ sig_vs_MI:
 
 ################################################################
 ## Merge the profiles from the trhee main taxa
-MERGED_DIR=results/${ORG}/all
+MERGED_DIR=${RES_ROOT}/${ORG}/all
 MERGED_ORTHO=${MERGED_DIR}/${ORG}_vs_all_bbh_len${TH_LEN}_ident${TH_ID}_e${TH_EXPECT}
 TAXA=Fungi Bacteria Archaea
 merged_ortho:
