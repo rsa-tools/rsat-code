@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.29 2013/07/02 17:29:56 jvanheld Exp $
+# $Id: compare-features,v 1.30 2013/09/17 01:20:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -343,7 +343,7 @@ package main;
   &Verbose() if ($verbose);
 
   ################################################################
-  ## Index of all the starting positions per sequence. 
+  ## Index of all the starting positions per sequence.
   ##
   ## Indexing keys:
   ## - sequence name
@@ -389,7 +389,7 @@ package main;
 				  "features in sequence",
 				  $s."/".$seq_nb,
 				  $seq_name)
-			    ) if ($main::verbose >= 2);
+			    ) if ($main::verbose >= 3);
     foreach my $f (0..$#sorted_features) {
       my $current_id = $sorted_features[$f];
       my $current_ft = $feature_ids{$current_id};
@@ -428,7 +428,6 @@ package main;
   ################################################################
   ## Calculate differences
   &Differences() if ($return{diff});
-
 
   ################################################################
   ## Print statistics
@@ -494,50 +493,52 @@ package main;
 ################################################################
 ## Count the number of intersection between each pair of files
 sub CountIntersections {
-    ## Count intersections per features
-    my %intersections_per_ft = ();
-    foreach my $inter_ft (@inter_features) {
-	my ($a, $b) = ($inter_ft->get_attribute("files"));
-	my ($id_a, $id_b) = ($inter_ft->get_attribute("feature_ids"));
-	$intersections_per_ft{$a}->{$b}->{$id_a}++; ## intersections for feature id_a of file A in file B
-	$intersections_per_ft{$b}->{$a}->{$id_b}++; ## intersections for feature id_b of file B in file A
-    }
+  &RSAT::message::TimeWarn("Counting intersections") if ($main::verbose >= 2);
 
-    ## Features with at least one intersection
-    foreach my $a (0..$#input_files) {
-	foreach my $b (0..$#input_files) {
-	    my $a_in_b = 0;
-	    if (!($self_comparison) && ($a == $b)) {
-		$a_in_b = "<NA>";
-	    } elsif (defined($intersections_per_ft{$b}->{$a})) {
-		$hash_ref = $intersections_per_ft{$b}->{$a};
-		$a_in_b = scalar(keys(%$hash_ref));
-	    } else {
-		$a_in_b = 0;
-	    }
-	    $one_inter_per_ft[$a][$b] = $a_in_b;
-	}
-    }
+  ## Count intersections per features
+  my %intersections_per_ft = ();
+  foreach my $inter_ft (@inter_features) {
+    my ($a, $b) = ($inter_ft->get_attribute("files"));
+    my ($id_a, $id_b) = ($inter_ft->get_attribute("feature_ids"));
+    $intersections_per_ft{$a}->{$b}->{$id_a}++; ## intersections for feature id_a of file A in file B
+    $intersections_per_ft{$b}->{$a}->{$id_b}++; ## intersections for feature id_b of file B in file A
+  }
 
-    ## FRACTION OF FEATURES WITH AT LEAST ONE INTERSECTION
-    for my $a (0..$#input_files) {
-	my $ref_a = $feature_lists[$a];
-	my $nb_features_a = scalar(@{$ref_a});
-	for my $b (0..$#input_files) {
-	    my $ref_b = $feature_lists[$b];
-	    my $nb_features_b = scalar(@{$ref_b});
-	    if (&IsReal($one_inter_per_ft[$a][$b]) && (&IsReal($nb_features_b))) {
-		$intersection_fraction[$a][$b] = $one_inter_per_ft[$a][$b]/$nb_features_b;
-	    } else {
-		$intersection_fraction[$a][$b] = $null;
-	    }
-	    if (&IsReal($one_inter_per_ft[$b][$a]) && (&IsReal($nb_features_a))) {
-		$intersection_fraction[$b][$a] = $one_inter_per_ft[$b][$a]/$nb_features_a;
-	    } else {
-		$intersection_fraction[$b][$a] = $null;
-	    }
+  ## Features with at least one intersection
+  foreach my $a (0..$#input_files) {
+    foreach my $b (0..$#input_files) {
+      my $a_in_b = 0;
+      if (!($self_comparison) && ($a == $b)) {
+	$a_in_b = "<NA>";
+      } elsif (defined($intersections_per_ft{$b}->{$a})) {
+	$hash_ref = $intersections_per_ft{$b}->{$a};
+	$a_in_b = scalar(keys(%$hash_ref));
+      } else {
+	$a_in_b = 0;
+      }
+      $one_inter_per_ft[$a][$b] = $a_in_b;
 	}
+  }
+
+  ## FRACTION OF FEATURES WITH AT LEAST ONE INTERSECTION
+  for my $a (0..$#input_files) {
+    my $ref_a = $feature_lists[$a];
+    my $nb_features_a = scalar(@{$ref_a});
+    for my $b (0..$#input_files) {
+      my $ref_b = $feature_lists[$b];
+      my $nb_features_b = scalar(@{$ref_b});
+      if (&IsReal($one_inter_per_ft[$a][$b]) && (&IsReal($nb_features_b))) {
+	$intersection_fraction[$a][$b] = $one_inter_per_ft[$a][$b]/$nb_features_b;
+      } else {
+	$intersection_fraction[$a][$b] = $null;
+      }
+      if (&IsReal($one_inter_per_ft[$b][$a]) && (&IsReal($nb_features_a))) {
+	$intersection_fraction[$b][$a] = $one_inter_per_ft[$b][$a]/$nb_features_a;
+      } else {
+	$intersection_fraction[$b][$a] = $null;
+      }
     }
+  }
 }
 
 ################################################################
@@ -995,19 +996,21 @@ sub CreateDifference {
 ################################################################
 ## Print statistics
 sub PrintStatistics {
-    &CountIntersections();
+  &CountIntersections();
 
-    ## Calculate max length of file names for aligning the stat tables
-    local $filename_len = 0;
-    foreach my $filename (@input_files) {
-	$filename_len = &RSAT::stats::max($filename_len, length($filename));
-    }
+  &RSAT::message::TimeWarn("Printing statistics") if ($main::verbose >= 2);
 
-    &PrintTable("INTERSECTION COUNTS", "%d", @intersection_counts);
+  ## Calculate max length of file names for aligning the stat tables
+  local $filename_len = 0;
+  foreach my $filename (@input_files) {
+    $filename_len = &RSAT::stats::max($filename_len, length($filename));
+  }
 
-    &PrintTable("FEATURES WITH LEAST ONE INTERSECTION", "%d", @one_inter_per_ft);
+  &PrintTable("INTERSECTION COUNTS", "%d", @intersection_counts);
 
-    &PrintTable("FRACTION OF FEATURES WITH LEAST ONE INTERSECTION", "%7.5f", @intersection_fraction);
+  &PrintTable("FEATURES WITH LEAST ONE INTERSECTION", "%d", @one_inter_per_ft);
+
+  &PrintTable("FRACTION OF FEATURES WITH LEAST ONE INTERSECTION", "%7.5f", @intersection_fraction);
 
 
 }
@@ -1224,14 +1227,22 @@ sub PrintTable {
     $format = $format || "%7g";
     print $out ";\n";
     print $out "; ",$title,"\n";
-    print $out join ("\t", ";", "file_nb", sprintf("%-${filename_len}s", "file name"));
+    print $out join ("\t", "#file_nb", 
+		     "feat_nb",
+		     sprintf("%-${filename_len}s", "file name"));
     for my $a (0..$#input_files) {
 	print $out "\t", &FileLabel($a);
     }
     print $out "\n";
 
     for my $a (0..$#input_files) {
-	print $out join "\t", ";", &FileLabel($a), sprintf("%-${filename_len}s", $input_files[$a]);
+	my $infile = $main::input_files[$f];
+	my $feature_list_ref = $main::feature_lists[$f];
+	my $nb_features = scalar(@{$feature_list_ref});
+	print $out join ("\t", &FileLabel($a),
+			 $nb_features,
+			 sprintf("%-${filename_len}s", $input_files[$a]),
+			 );
 	for my $b (0..$#input_files) {
 	    unless (defined($table[$a][$b])) {
 		if (($self_comparison) || ($a != $b)) {
@@ -1257,12 +1268,13 @@ sub Verbose {
     print $out "; compare-features ";
     &PrintArguments($out);
     print $out "; Input files\n";
-    print $out join ("\t", ";", "file#", "feat#", "label", "file name"), "\n";
+    print $out join ("\t", ";", "file_nb", "feat_nb", "label", "file name"), "\n";
     foreach my $f (0..$#main::input_files) {
 	my $infile = $main::input_files[$f];
 	my $feature_list_ref = $main::feature_lists[$f];
-	my @feature_list = @{$feature_list_ref};
-	my $nb_features = scalar(@feature_list);
+# 	my @feature_list = @{$feature_list_ref};
+# 	my $nb_features = scalar(@feature_list);
+	my $nb_features = scalar(@{$feature_list_ref});
 	print $out join("\t", ";",
 			$f+1,
 			$nb_features,
