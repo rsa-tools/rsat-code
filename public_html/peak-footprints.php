@@ -443,7 +443,7 @@ if (!$errors) {
   echo "<hr/><br/>";
 
   //Display progress page
-  info('<a href="'.rsat_path_to_url($output_path).'/progression.xml" target="_blank">Progress page</a>');
+  info('Result page will be available when running is complete. Check the <a href="'.rsat_path_to_url($output_path).'/progression.xml" target="_blank">progress page</a>');
   echo "<hr/><br/>";
 	
   flush();
@@ -501,7 +501,7 @@ if (!$errors) {
   }
 				
   // Run the command
-  exec($cmd, $output, $return_var);	
+  exec("$cmd >/dev/null &", $output, $return_var);	
   //print_r($output);
   //echo $return_var;
   
