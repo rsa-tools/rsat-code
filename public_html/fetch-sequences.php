@@ -273,7 +273,7 @@ if (!$errors) {
   }
   
   // Run the command
-  exec($cmd, $error);
+  exec("$cmd >/dev/null &", $error);
 
   // Display the command
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
