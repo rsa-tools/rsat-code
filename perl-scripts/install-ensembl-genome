@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.23 2013/08/13 22:58:38 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.24 2013/09/22 02:33:20 jvanheld Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -230,7 +230,7 @@ package main;
     my %species_taxon = ();
 
     ## Get the list of available species from Ensembl via download-ensembl-genome
-    &RSAT::message::TimeWarn("Getting the list of available genomes in ensembl") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Getting the list of available genomes in", $db) if ($main::verbose >= 2);
     my @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-genome  $arg};
     foreach (@species) {
 	chomp();
@@ -240,7 +240,7 @@ package main;
     }
 
     ## Get the list of genomes for which features are available
-    &RSAT::message::TimeWarn("Getting the list of available features in ensembl") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Getting the list of available features in ", $db) if ($main::verbose >= 2);
     @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-features -available_species $arg};
     foreach (@species) {
         chomp();
@@ -250,7 +250,7 @@ package main;
     }
 
     ## Get the list of genomes for which variations are available
-    &RSAT::message::TimeWarn("Getting the list of available variations in ensembl") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Getting the list of available variations in", $db) if ($main::verbose >= 2);
     @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-variations -available_species $arg};
     foreach (@species) {
       chomp();
@@ -313,7 +313,7 @@ package main;
       ## Declare the organism in RSAT
       if ($task{"config"}) {
 	  &RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config";
+	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $org -task config";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
 
@@ -322,7 +322,7 @@ package main;
       ## sequences, compute aa frequencies in protein sequences, ...)
       if ($task{"install"}) {
 	  &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1 -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
+	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
   }
