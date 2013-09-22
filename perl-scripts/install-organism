@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.123 2013/08/12 09:52:33 rsat Exp $
+# $Id: install-organism,v 1.124 2013/09/22 02:33:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -339,19 +339,24 @@ sub UpdateConfig {
       $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
     } else {
       ## Taxon-specific default values for sequence lengths
-      if (($taxonomy =~ /^Bacteria;/) || ($taxonomy =~ /^Archaea;/)) {
+      if (
+	  ($taxonomy =~ /^Bacteria;/) || ($taxonomy =~ /^Archaea;/) ||
+	  ($taxonomy =~ /;\s*Bacteria;/) || ($taxonomy =~ /;\s*Archaea;/)
+	 ) {
 	$up_from=-400;
-      } elsif ($taxonomy =~ /^Viruses;/) {
+      } elsif (($taxonomy =~ /^Viruses;/) ||
+	       ($taxonomy =~ /;\s*Viruses;/)
+	      ) {
 	$up_from=-400;
-      } elsif ($taxonomy =~ /^Eukaryota;.*Fungi;/) {
+      } elsif ($taxonomy =~ /;\s*Fungi;/) {
 	$up_from=-800;
-      } elsif ($taxonomy =~ /^Eukaryota;.*Nematoda;/) {
+      } elsif ($taxonomy =~ /;\s*Nematoda;/) {
 	$up_from=-3000;
-      } elsif ($taxonomy =~ /^Eukaryota;.*Insecta;/) {
+      } elsif ($taxonomy =~ /;\s*Insecta;/) {
 	$up_from=-3000;
-      } elsif ($taxonomy =~ /^Eukaryota;.*Metazoa/) {
+      } elsif ($taxonomy =~ /;\s*Metazoa/) {
 	$up_from=-3000;
-      } elsif ($taxonomy =~ /^Eukaryota;.*Viridiplantae/) {
+      } elsif ($taxonomy =~ /;\s*Viridiplantae/) {
 	$up_from=-2000;
       } else {
 	$up_from=-1000;
