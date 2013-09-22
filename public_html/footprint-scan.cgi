@@ -96,7 +96,7 @@ $tmp_file_name = join( "_", "footprint-scan", $taxon, $organism_name, $query_pre
 $result_subdir = $tmp_file_name;
 $result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);
 $result_prefix = "footprint-discovery";
-#system("mkdir -p $result_dir");
+system("mkdir -p $result_dir ; chmod 755 $result_dir ");
 #$tmp_file_name = join( "_", "footprint-scan", $taxon, $organism, $query_prefix, &AlphaDate());
 #$result_subdir = $tmp_file_name;
 #$result_dir = $TMP."/".$result_subdir;
