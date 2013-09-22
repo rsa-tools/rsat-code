@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.109 2013/09/22 22:33:52 jvanheld Exp $
+# $Id: footprint-discovery,v 1.110 2013/09/22 23:55:55 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -661,7 +661,7 @@ sub RunFootprintDisco {
 
     ################################################################
     ## Generate a feature-map of the discovered dyads
-    my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
+    my $map_title = join "; ", "dyad map", $taxon, $organism_name, $outfile_prefix;
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
     $cmd = $SCRIPTS."/dna-pattern -return limits,sites -origin -0 -N 4";
     $cmd .= " -pl ".$outfile{dyads};
@@ -678,7 +678,7 @@ sub RunFootprintDisco {
 
     ################################################################
     ## Generate a feature-map with the matrices
-    my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
+    $map_title = join "; ", "Site map", $taxon, $organism_name, $outfile_prefix;
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
     $cmd = $SCRIPTS."/matrix-scan -quick -return limits,sites,pval -origin end -consensus_name";
     $cmd .= " -matrix_format transfac -m ".$outfile{count_PSSM_tf};
