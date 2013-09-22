@@ -39,6 +39,7 @@ init:
 #	echo "Options -Indexes" > public_html/logs/.htaccess
 #	echo "<html><body>Forbidden</body></html>" > public_html/logs/index.html
 
+	chmod 755 bin/*
 	chmod 755 python-scripts/*
 	chmod 755 perl-scripts/*
 	chmod 755 perl-scripts/parsers/*
