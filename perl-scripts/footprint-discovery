@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.107 2013/05/02 07:31:26 jvanheld Exp $
+# $Id: footprint-discovery,v 1.108 2013/09/22 02:46:16 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.107 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -313,6 +313,7 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
+
   ## Check if some tasks require to perform gene-wise analysis
   local $some_gene_wise_task = 0;
   foreach my $task (keys %task) {
@@ -324,6 +325,7 @@ package main;
 
   ## Check that output directory exists or create it
   &RSAT::util::CheckOutDir($dir{output_root});
+
 
   ## Define main output directory by concatenagint output root, taxon
   ## and organism name
@@ -374,12 +376,12 @@ package main;
     $infile{bg_model} = $dir{bg_model}."/";
     $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
 #    dyads_3nt_sp0-20_upstream-noorf_Actinobacteria-noov-1str.freq.gz
-#    if ($task{bg_model}) {
-    my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
-    $cmd .= " -org_list ".$orglist_file;
-    $cmd .= " > ".$infile{bg_model};
-    &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
-#    }
+    if ($task{bg_model}) {
+      my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+      $cmd .= " -org_list ".$orglist_file;
+      $cmd .= " > ".$infile{bg_model};
+      &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+    }
 
   } elsif ($bg_model eq "taxfreq") {
     ## Check that the taxon has been specified
@@ -400,9 +402,8 @@ package main;
     ## If the required the taxon frequencies are not pre-installed,
     ## compute them before porocessing and store them in the result
     ## directory.
-    if ((-e $infile{bg_model}) ||
-	    (-e ($infile{bg_model}.".gz"))) {
-	&RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
+    if ((!$task{bg_model}) && ((-e $infile{bg_model}) || (-e $infile{bg_model}.".gz"))) {
+      &RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
 
     } else {
 
@@ -416,12 +417,12 @@ package main;
       &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
-#      if ($task{bg_model}) {
-	  my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
-	  $cmd .= " -taxon ".$taxon;
-	  $cmd .= " > ".$infile{bg_model};
-	  &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
-#      }
+      if ($task{bg_model}) {
+	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+	$cmd .= " -taxon ".$taxon;
+	$cmd .= " > ".$infile{bg_model};
+	&one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+     }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
     }
   } else {
@@ -692,6 +693,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Close query-specific output stream
+
   if ($main::verbose >= 1) {
       my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
       print $out $query_exec_time;
@@ -1290,6 +1292,7 @@ sub CoregulationNetwork {
   $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; push @network_files, "dyad_file_list";
   my $out= &OpenOutputFile($outfile{dyad_file_list});
   foreach my $query_prefix (sort keys %main_index) {
+    &RSAT::message::Debug($query_prefix, $main_index{$query_prefix}{dyads}) if ($main::verbose >= 0);
     print $out join ("\t", $main_index{$query_prefix}{dyads}, $query_prefix, $main_index{$query_prefix}{name}), "\n" if (-e $main_index{$query_prefix}{dyads});
   }
   &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);

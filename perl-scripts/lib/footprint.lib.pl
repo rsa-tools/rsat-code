@@ -320,7 +320,7 @@ sub GetOutfilePrefix {
     $dir{output_per_query} = join("/",$main::dir{main_output}, $query_prefix);
   }
   &RSAT::util::CheckOutDir($dir{output_per_query}, "", 775);
-  &RSAT::message::Debug("Checked query output directory", $query , $dir{output_per_query}) if ($main::verbose  >= 0);
+  &RSAT::message::Debug("Checked query output directory", $query , $dir{output_per_query}) if ($main::verbose  >= 5);
 
   ## Compute a query-specific file prefix including the main parameters
   my $outfile_prefix = $query_prefix;
@@ -1007,7 +1007,7 @@ sub IndexOneFile {
 ################################################################
 ## Predict operon leader genes of the query genes
 sub InferQueryOperons {
-  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 4);
   &CheckDependency("operons", "genes");
   my $cmd = $SCRIPTS."/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
@@ -1260,7 +1260,7 @@ sub PurgeOrthoSeq {
 
   ## Check if purged sequence file exists
   unless ((-e $outfile{purged}) || ($main::batch)) {
-    &RSAT::message::Warning("Missing purged sequence file", $outfile{purged}) if ($main::verbose >= 0);
+    &RSAT::message::Warning("Missing purged sequence file", $outfile{purged}) if ($main::verbose >= 2);
     $status = "Missing file: ".$outfile{purged};
   }
 
@@ -1420,7 +1420,7 @@ sub Select_interaction{
     $all_scores_occ_th{$one_occ_sig}{$one_score}=join ("\t", @fields[0..10]);
     if ( $one_score==0) {
       push(@zero_sig,$one_occ_sig);
-      &RSAT::message::Debug("Zero occurrence significance", $one_occ_sig, "Associated score",$one_score,$current_gene) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Zero occurrence significance", $one_occ_sig, "Associated score",$one_score,$current_gene) if ($main::verbose >= 2);
     }
 
     ## store the ones that pass both thresholds in the hash
@@ -1446,7 +1446,7 @@ sub Select_interaction{
       $top_sig{$current_gene} = $highest_occ_sig;
       $top_score{$current_gene} = $highest_occ_score;
       $top_sig_row{$current_gene} = $scores_occ_th{$highest_occ_sig}{$highest_occ_score};
-      &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
     }
   }
 
@@ -1455,7 +1455,7 @@ sub Select_interaction{
 
 
   if ($top_sig{$current_gene} ) {
-    &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 0);
+    &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
     $report_top_scores= join("\t", $top_sig{$current_gene}, $top_score{$current_gene} );
 
   } else {
@@ -1474,7 +1474,7 @@ sub Select_interaction{
 	  $all_highest_occ_score=pop(@zero_sig);
 	}
 
-	&RSAT::message::Debug("ALL Top sig", $current_gene,  $all_highest_occ_sig , "score",  $all_highest_occ_score ) if ($main::verbose >= 0);
+	&RSAT::message::Debug("ALL Top sig", $current_gene,  $all_highest_occ_sig , "score",  $all_highest_occ_score ) if ($main::verbose >= 5);
 	## Print information in the table for all the interactions
 	$report_top_scores= join("\t",$all_highest_occ_sig,  $all_highest_occ_score);
       }
@@ -1523,7 +1523,7 @@ sub GetMinWeight {
 			"pval2=".$pval2,
 			"pval=".$pval,
 			"min_weight=".$min_weight,
-		       ) if ($main::verbose >= 0);
+		       ) if ($main::verbose >= 10);
   &RSAT::message::Info("min weight", $min_weight) if ($main::verbose >= 2);
 
   return($min_weight);
