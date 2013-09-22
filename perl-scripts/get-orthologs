@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.64 2012/02/05 16:04:45 jvanheld Exp $
+# $Id: get-orthologs,v 1.65 2013/09/22 21:18:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -459,7 +459,7 @@ package main;
   my $r = 0;
   foreach my $ref_organism (@main::ref_organisms) {
     $r++;
-    &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 3);
 
     ## Load the ref organism only if required for the reference gene names
     my $ref_org_object = new RSAT::organism();
@@ -869,7 +869,7 @@ sub select_hits{
   }
   close HIT_HANDLE;
   #    close $hit_handle;
-  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 3);
   return($hits);
 }
 
