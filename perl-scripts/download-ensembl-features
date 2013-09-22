@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.28 2013/08/12 13:52:27 rsat Exp $
+# $Id: download-ensembl-features,v 1.29 2013/09/22 21:20:21 jvanheld Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -141,7 +141,7 @@ package main;
   ################################################################
   ##Print available species
   if ($get_available_species) {
-    &RSAT::message::TimeWarn("Getting the list of available species") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Getting the list of available species (download-ensembl-features)") if ($main::verbose >= 1);
     $registry->load_registry_from_db(
       -host => $host,
       -port => $port,
