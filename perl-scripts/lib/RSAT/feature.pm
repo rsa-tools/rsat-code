@@ -725,6 +725,7 @@ Parse the feature from a text row.
 =cut
 sub parse_from_row {
   my ($self, $row, $in_format, $output_format) = @_;
+  $output_format = $main::output_format unless (defined($output_format));
   chomp($row);
   $row =~ s/\r//g;
 
@@ -836,7 +837,6 @@ sub parse_from_row {
 
   ## Some prorams like "GREAT (from Bejerano)" require integer values.
   if ($output_format eq "great") {
-
     ## Round summit coordinates
     if (my $summit = $self->get_attribute("summit")) {
       $self->force_attribute("summit", sprintf ("%d", $summit));
