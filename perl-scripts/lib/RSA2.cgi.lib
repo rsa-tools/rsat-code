@@ -231,11 +231,12 @@ sub RSA_header {
     $css_body_class = shift;
   }
 
-#    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection" />
+  #    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection" />
 #    <link rel="stylesheet" type="text/css" href="print.css" media="print" />
 
-#  print &html_header();
+  #  print &html_header();
   print $query->header();
+
   print sorttable_script();
 
   ### print the header of the result page
@@ -243,12 +244,12 @@ sub RSA_header {
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -script=>[
-                                    { -type => 'text/javascript',
-                                      -src      => 'RSAT_menu.js'
-                                    },
-                                    { -type => 'text/javascript',
-                                      -src      => 'RSAT_tabs.js'
-                                    }
+				     { -type => 'text/javascript',
+				       -src      => 'RSAT_menu.js'
+				     },
+				     { -type => 'text/javascript',
+				       -src      => 'RSAT_tabs.js'
+				     }
                                  ],
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
