@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.108 2013/09/22 02:46:16 jvanheld Exp $
+# $Id: footprint-discovery,v 1.109 2013/09/22 22:33:52 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.108 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.109 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -575,7 +575,8 @@ sub RunFootprintDisco {
   $outfile{dyads} = $outfile{dyad_prefix}.".tab";
   $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
-  $outfile{map} = $outfile{dyad_prefix}.".".${map_format};
+  $outfile{map_dyads} = $outfile{dyad_prefix}.".".${map_format};
+  $outfile{map_pssm} = $outfile{dyad_prefix}."_pssm.".${map_format};
 
   ## Conversion to matrix
   $prefix{pssm} = $outfile{dyad_prefix}."_pssm";
@@ -652,15 +653,17 @@ sub RunFootprintDisco {
   local $matrix_nb = 0;
   ($dyad_nb, $matrix_nb) = &DyadAnalysis() if (($status eq "OK") || ($batch));
 
-  ################################################################
-  ## Generate a feature-map of the discovered dyads
-#  if ((($status eq "OK") || ($batch)) && ($task{map})) {
   if (($status eq "OK") || ($batch)) {
-    my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
+
+    ## Check dependencies
     &CheckDependency("map", "dyads");
     &CheckDependency("map", "seq");
-    &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 2);
-    $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0 -N 4";
+
+    ################################################################
+    ## Generate a feature-map of the discovered dyads
+    my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
+    &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
+    $cmd = $SCRIPTS."/dna-pattern -return limits,sites -origin -0 -N 4";
     $cmd .= " -pl ".$outfile{dyads};
     $cmd .= " -format fasta -i ".$outfile{seq};
     $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
@@ -669,11 +672,30 @@ sub RunFootprintDisco {
     $cmd .= " -format ".$map_format;
     $cmd .= " -scalebar -legend";
     $cmd .= " -scorethick";
-    $cmd .= " -o ".$outfile{map};
-    &one_command($cmd, 1, 0, task=>'map');
+    $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
+    $cmd .= " -o ".$outfile{map_dyads};
+    &one_command($cmd, 1, 0, task=>"map");
+
+    ################################################################
+    ## Generate a feature-map with the matrices
+    my $map_title = join "; ", $taxon, $organism_name, $outfile_prefix;
+    &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
+    $cmd = $SCRIPTS."/matrix-scan -quick -return limits,sites,pval -origin end -consensus_name";
+    $cmd .= " -matrix_format transfac -m ".$outfile{count_PSSM_tf};
+    $cmd .= " -pseudo 1 -decimals 1 -2str -bg_pseudo 0.01 -lth score 1 -uth pval 1e-4 -n score";
+    $cmd .= " -seq_format fasta -bginput -markov 1 -i ".$outfile{seq};
+    $cmd .= " | $SCRIPTS/feature-map";
+    $cmd .= " -title '".$map_title."'";
+    $cmd .= " -format ".$map_format;
+    $cmd .= " -scalebar -legend";
+    $cmd .= " -scorethick";
+    $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
+    $cmd .= " -o ".$outfile{map_pssm};
+    &one_command($cmd, 1, 0, task=>"map");
   }
-#  &RSAT::message::Debug("Indexing dyad map", $outfile{map}) if ($main::verbose >= 10);
-  &IndexOneFile("Dyad map", $outfile{map}, image=>1) if (($status eq "OK") || ($batch));
+#  &RSAT::message::Debug("Indexing dyad map", $outfile{map_dyads}) if ($main::verbose >= 10);
+  &IndexOneFile("Dyad map", $outfile{map_dyads}, image=>1) if (($status eq "OK") || ($batch));
+  &IndexOneFile("matrix-scan map", $outfile{map_pssm}, image=>1) if (($status eq "OK") || ($batch));
 
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
@@ -1102,7 +1124,7 @@ sub DyadAnalysis {
 
   &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
   &CheckDependency("dyads", "purged") if ($task{dyads});
-  $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
+  $cmd = $SCRIPTS."/dyad-analysis -v 1 ";
   $cmd .= " -return ".$dyad_return_fields;
   ## Backgroun model
   if ($bg_model eq "monads") {
@@ -1131,8 +1153,8 @@ sub DyadAnalysis {
   &IndexOneFile("Dyads (tab format)", $outfile{dyads});
 
   ## Generate a HTML table with the discovered dyads
-  &CheckDependency("dyads_html", "dyads");
-  $cmd = "$SCRIPTS/text-to-html";
+  &CheckDependency("dyads_html", "dyads") if ($task{dyads});
+  $cmd = $SCRIPTS."/text-to-html";
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
@@ -1153,7 +1175,7 @@ sub DyadAnalysis {
     ## Assemble significant dyads
     &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
     &CheckDependency("asmb", "dyads");
-    $cmd = "$SCRIPTS/pattern-assembly -v 1";
+    $cmd = $SCRIPTS."/pattern-assembly -v 1";
     $cmd .= " -i ".$outfile{dyads};
     $cmd .= " -subst 0 -maxfl 1 -toppat 50";
     $cmd .= " -o ".$outfile{asmb};
@@ -1168,7 +1190,7 @@ sub DyadAnalysis {
     &CheckDependency("pssm", "asmb");
     &CheckDependency("pssm", "seq");
 
-    $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
+    $cmd = $SCRIPTS."/matrix-from-patterns -v 1";
     $cmd .= " -seq ".$outfile{seq};
     $cmd .= " -asmb ".$outfile{asmb};
     $cmd .= " -format fasta " ;
