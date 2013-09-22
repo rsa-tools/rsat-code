@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.18 2011/02/17 04:54:49 rsat Exp $
+# $Id: mask-features,v 1.19 2013/09/22 21:20:35 jvanheld Exp $
 #
 ############################################################
 
@@ -15,10 +15,11 @@ mask-features
 
 =head1 DESCRIPTION
 
-The program takes as input a list of features and the position of a region of interest
-on a contig. The program first get the features that are located on this region, retrieves
-the sequence of this region and masks the features on the sequence. The types of features
-to be masked can be specified.
+The program takes as input a list of features and the position of a
+region of interest on a contig. The program first get the features
+that are located on this region, retrieves the sequence of this region
+and masks the features on the sequence. The types of features to be
+masked can be specified.
 
 =head1 AUTHORS
 
@@ -30,7 +31,7 @@ sequences
 
 =head1 USAGE
 
-=head2 providing an organism installed in RSAT    
+=head2 providing an organism installed in RSAT
 
 mask-features [-i regionOfInterest] [-org organism_name][-feattype feature_type] [-mask feature_type] [-o outputfile] [-v #] [...]
 
@@ -42,40 +43,41 @@ mask-features [-i regionOfInterest] [-c contig_list][-ft_list feature_file_list]
 
 =head2 Region of interest and Features
 
-The chromosomal position of the region of interest should be
-specified as a feature in gft or ft format. To obtain the description of this
+The chromosomal position of the region of interest should be specified
+as a feature in gft or ft format. To obtain the description of this
 format, you can type the following command: I<convert-features -h>
 
-To provide more than one features file, features can be specified
-in filelist format.
+To provide more than one features file, features can be specified in
+filelist format.
 
 =head2 Contig sequences
 
-Contig sequences are specified in filelist format, i.e.  a 2-column text file
-listing the names and IDs of the sequence file. 
-To get more information on the format for contig sequences, you can type the 
+Contig sequences are specified in filelist format, i.e.  a 2-column
+text file listing the names and IDs of the sequence file.  To get more
+information on the format for contig sequences, you can type the
 following command: I<retrieve-seq-quick -h>
 
 =head2 Organism
 
-Alternatively, an organism name can be provided. The contig sequences and features
-are extracted from the organism data. The program will first search for a "feature.tab"
-file. Otherwise, it will use value of -feattype and -mask options to guess the feature files.
-To get the names of installed organism in RSAT, type I<supported-organism>
+Alternatively, an organism name can be provided. The contig sequences
+and features are extracted from the organism data. The program will
+first search for a "feature.tab" file. Otherwise, it will use value of
+-feattype and -mask options to guess the feature files.  To get the
+names of installed organism in RSAT, type I<supported-organism>
 
 =head2 Type of feature to mask
 
-The type of features to be masked is provided as input. The feature type
-is specified in the second column of ft and gft format.
+The type of features to be masked is provided as input. The feature
+type is specified in the second column of ft and gft format.
 
 
 =head1 OUTPUT FORMAT
 
-Masked sequences are exported in raw and fasta format. 
+Masked sequences are exported in raw and fasta format.
 
-To convert sequences to another supported output sequence formats, type the following
-command: I<convert-seq -h>
-
+To convert sequences to another supported output sequence formats,
+type the following command:
+  I<convert-seq -h>
 
 =cut
 
@@ -110,24 +112,24 @@ package main;
     $main::lw = 60;
     $main::in = STDIN;
     $main::out = STDOUT;
-    
+
     our @ft_files =();
     our @ft_types = ();
-    
+
     $main::region_nb = 0;
-    
+
     our %total_nb_masked_ft = ();
     our %total_size_masked_ft = ();
     $main::size_masked_ft = 0;
-    
+
     our $rm = 0;
-    
+
      ## Parameters for the &doit() command
     our $die_on_error = 1;
     our $dry = 0;
     our $job_prefix = "mask-features";
-    our $cluster = 0; 
-    
+    our $cluster = 0;
+
 
     ################################################################
     ## Read argument values
@@ -135,7 +137,7 @@ package main;
 
     ################################################################
     ## Check argument values
-    
+
     ## features to mask
 	if ($main::mask_types){
 		our @masks = split(",",$main::mask_types);
@@ -145,14 +147,14 @@ package main;
 	} else {
 		 &RSAT::error::FatalError("The type of features to mask must be provided by -mask option");
 	}
-    
+
     ## An organism name has been provided
     if ($organism_name) {
     	$organism = new RSAT::organism();
     	$organism->check_name($organism_name);
 
     	my %tmp_ft_types = ();
-    	
+
     	## first check wether a "feature.tab" exists
     	my $annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", "feature.tab");
       	if (-e $annotation_table) {
@@ -160,23 +162,23 @@ package main;
 	  			push @ft_files, $annotation_table;
       	} else {
     		&RSAT::message::Warning("feature.tab not found, usind -feattype and -mask to find feature files") if ($main::verbose >=2);
-    		
-    		## get feature files that need to be masked  	
+
+    		## get feature files that need to be masked
     		## depending on the feattype option
     		if ($main::feat_types){
-    			foreach my $type (split(",",$main::feat_types)) {	
+    			foreach my $type (split(",",$main::feat_types)) {
     				$tmp_ft_types{lc($type)} = 0;
     			}
     		}
-    	
-    		## depending on the mask option    	
+
+    		## depending on the mask option
     		foreach my $type (@masks){
-    			$tmp_ft_types{lc($type)} = 0;		
+    			$tmp_ft_types{lc($type)} = 0;
     		}
 
     		@main::ft_types = keys(%tmp_ft_types); # prevent multiple times the same feature
-    	
-    		## check the features file actually exists  	
+
+    		## check the features file actually exists
     		foreach my $type (@ft_types) {
       			$annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
       			if (-e $annotation_table) {
@@ -203,47 +205,47 @@ package main;
 		if ($main::infile{features_list}) {
 			unless (-e $main::infile{features_list}) {
 	    	&RSAT::error::FatalError("Features filelist $main::infile{features_list} does not exist.");
-			}		
-		} 
+			}
+		}
 		if ((!$main::infile{features})&&(!$main::infile{features_list})) {
 			&RSAT::error::FatalError("No feature file provided. Use -ft or -ft_list options.");
 		}
     }
-    
+
     ## get all provided feature files
     if ($main::infile{features_list}) {
-    	 ## Open filelist  
+    	 ## Open filelist
     	my ($ft_list) = &OpenInputFile($main::infile{features_list});
  		 while (my $line = <$ft_list>) {
     		chomp($line);
     		push @ft_files, $line;
     	 }
     	close $ft_list;
-    }    
+    }
     if ($main::infile{features}) {
     	push @ft_files, $main::infile{features};
     }
-      
+
     ## Region of interest file
     unless (-e $main::infile{input}) {
 	    &RSAT::error::FatalError("Feature file for region of interest $main::infile{input} does not exist.");
 		}
-    
+
     ## check output format
 	&CheckOutputSeqFormat($out_format);
-	
+
 	if (($main::out_format ne "fasta")&&($main::out_format ne "raw")) {
     		&RSAT::message::Warning("$out_format not supported, fasta format is used. Use convert-seq to change format.") if ($main::verbose >= 0);
     	}
-	
+
 
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
-    
+
     $main::out_oft = &OpenOutputFile($main::outfile{output_oft}) if ($main::outfile{output_oft});
-    
-    
+
+
     ################################################################
     ## Load information concerning the region of interest
     &RSAT::message::Info(join("\t", "--- Reading input regions ---")) if ($main::verbose >= 1);
@@ -259,33 +261,33 @@ package main;
   	}
 
 	################################################################
-    ## Open contigs, check contig_id and modify if necessary the 
+    ## Open contigs, check contig_id and modify if necessary the
     ## gft file of the region of interest
     &RSAT::message::Info(join("\t", "--- Opening contigs ---")) if ($main::verbose >= 1);
     &OpenInputContigs($regions_ft);
 
    	################################################################
-    ## Use compare-features to get the features located 
-    ## on the region of interest	
+    ## Use compare-features to get the features located
+    ## on the region of interest
 	&RSAT::message::Info(join("\t", "--- Compare-features ---")) if ($main::verbose >= 2);
     &GetFeaturesOnRegion();
 
     ################################################################
     ## Extract the features that need to be masked
-    
+
     unless (($#main::ft_files == -1)||(-z $main::outfile{'comp_0_sort'})){ ## check that compare-feature file not empty
     	&RSAT::message::Info(join("\t", "--- Extracting features to be masked ---")) if ($main::verbose >= 2);
-    	our $pos2mask_by_region = &ExtractFeaturesToMask(\@main::masks);  
+    	our $pos2mask_by_region = &ExtractFeaturesToMask(\@main::masks);
     }
 
 	################################################################
     ## Retrieve the non-masked sequence of the region of interest
     ## And mask the sequence
-    
+
     ## Treat each region of interest, included in the input file
     my $region_nb = 0;
 
-    foreach my $region_ft_id (@regions_ft_ids) {	
+    foreach my $region_ft_id (@regions_ft_ids) {
   		my $region_ft = $regions_ft->{$region_ft_id};
    		$region_nb ++;
    		$main::size_masked_ft = 0;
@@ -296,13 +298,13 @@ package main;
     		&RSAT::message::Info(join("\t", "--- Masking sequences ---")) if ($main::verbose >= 2);
     	}
 		&RSAT::message::Info(join("\t", "Masking Region  ",$region_nb."/".($#regions_ft_ids+1))) if ($main::verbose >= 1);
-	
+
     	&MaskSequence($pos2mask_by_region->{$region_ft_id}, $region_ft,$region_nb);
-  		
+
     	## increase the counters
     	$total_size_masked_ft{$region_ft_id} = $main::size_masked_ft;
 	}
-    
+
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -313,16 +315,16 @@ package main;
     print $main::out $exec_time if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
     close $main::out_oft if ($main::outfile{output_oft});
-    
+
     ################################################################
-    ###### Clean temporary files    
+    ###### Clean temporary files
    	foreach my $i (0..$#main::ft_files) {
-    	my $comp_nb = "comp_".$i;  	
-    	my $comp_nb_sort = "comp_".$i."_sort"; 
+    	my $comp_nb = "comp_".$i;
+    	my $comp_nb_sort = "comp_".$i."_sort";
     	unlink($main::outfile{$comp_nb}) if($main::outfile{$comp_nb});
     	unlink($main::outfile{$comp_nb_sort}) if ($main::outfile{$comp_nb_sort});
-    	
-     }    	  
+
+     }
     exit(0);
 }
 
@@ -332,7 +334,7 @@ package main;
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
     system "pod2text -c $0";
     exit()
@@ -345,7 +347,7 @@ sub PrintOptions {
 }
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
     my $arg;
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -400,7 +402,7 @@ Same as -h
 Feature file in ft or gft format, containing the
 positions of a region of interest on a contig. The file format
 can be specified by -informat option. By default,
-gft format is used. 
+gft format is used.
 
 If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
@@ -409,15 +411,15 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
 
-	    ## Input format 
+	    ## Input format
 =pod
 
 =item B<-informat inputfileformat>
 
-The file format for the region of interest.  By default, 
-gft format is used. The format of the input region (-i option) 
-and the feature file (-ft option) must be the same. To convert 
-gft and ft formatted files, you can type the following command: 
+The file format for the region of interest.  By default,
+gft format is used. The format of the input region (-i option)
+and the feature file (-ft option) must be the same. To convert
+gft and ft formatted files, you can type the following command:
 I<convert-features -h>
 
 =cut
@@ -480,7 +482,7 @@ repeated elements are already masked
 
 Specifies an organism, installed in RSAT. This option
 replace -c and -ft / -ft_list as contig sequences and
-features are directly taken from the data in RSAT. 
+features are directly taken from the data in RSAT.
 To have the list of supported organism in RSAT, type the following
 command: I<supported-organism>
 
@@ -497,20 +499,20 @@ Specifies the type of features that will be masked
 by N characters. The feature types should be identical to
 the second column of the features files. Several types
 can be specified, separated by commas. If the type of feature
-is not found, the sequence returned is unmasked. 
-i.e: -mask 'none' 
+is not found, the sequence returned is unmasked.
+i.e: -mask 'none'
 
 =cut
 	} elsif ($arg eq "-mask") {
 	    $main::mask_types = shift(@arguments);
-	    
+
 =pod
 
 =item B<-feattype supported_feature_type>
 
 Feature type to be used for the organism specified
-by -org option. This option is necessary if the name of 
-the feature to mask (-mask option) is different from the 
+by -org option. This option is necessary if the name of
+the feature to mask (-mask option) is different from the
 name of the feature file installed for the organism.
 i.e. -feattype tRNA -mask Mt_tRNA.
 
@@ -518,20 +520,20 @@ Supported feature types: CDS,mRNA,tRNA,rRNA,scRNA,exon,intron,
 repeat_region,misc_rna
 
 Several types can be specified, separated by commas.
-If -feattype is not provided, the feature type will be assumed 
+If -feattype is not provided, the feature type will be assumed
 from -mask option.
 
 =cut
 	} elsif ($arg eq "-feattype") {
 	    $main::feat_types = shift(@arguments);
-	    
-	    ## output format 
+
+	    ## output format
 =pod
 
 =item B<-oformat output_format>
 
 Sequence output format. Default is fasta. Only fasta and raw
-format are available. To convert to another supported sequence 
+format are available. To convert to another supported sequence
 format, type the following command: I<convert-seq -h>
 
 =cut
@@ -552,7 +554,7 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 
-	    
+
 =pod
 
 =item	B<-oft output_feature_file>
@@ -595,7 +597,7 @@ sub Verbose {
   		my $region_ft = $regions_ft->{$region_ft_id};
     	print  ";\t".$region_ft->get_attribute("id")."\t".$region_ft->to_text("ft", $null);
   	}
-	
+
 	print  "; Features to mask\n";
 	foreach my $type (@masks) {
 		print  ";\t$type\n";
@@ -613,13 +615,13 @@ sub Verbose {
   		if (!$total_nb_masked_ft{$region_ft_id}){
   			$total_nb_masked_ft{$region_ft_id} = 0;
   		}
-  		
-  		print  ";\tNb of features masked\t".$total_nb_masked_ft{$region_ft_id}."\n";		
+
+  		print  ";\tNb of features masked\t".$total_nb_masked_ft{$region_ft_id}."\n";
  		print  ";\tSize of masked sequence\t".$total_size_masked_ft{$region_ft_id}."\n";
 		$total_size += $total_size_masked_ft{$region_ft_id};
 		$total_nb += $total_nb_masked_ft{$region_ft_id};
 	}
-	
+
 	print  "; Total Nb of features masked\t$total_nb\n";
 	print  "; Total size of masked sequence\t$total_size\n";
 
@@ -635,12 +637,12 @@ sub Verbose {
 #### Open the input file to get the start and end position
 #### of the region of interest
 sub ReadRegionOfInterest{
-	
+
 	my %regions_ft =();
 
 	($main::in) = &OpenInputFile($main::infile{input});
     	while (<$in>) {
-    		
+
     		 ## Comment lines
 	   		 if ((/^;\s+(.*)/) || (/^--\s+(.*)/)||(/^#/)) {
 				next;
@@ -651,9 +653,9 @@ sub ReadRegionOfInterest{
 	    	$main::region_nb ++;
 	    	my $new_id = "ft_".$main::region_nb;
 	    	$feature->parse_from_row($_, $main::informat);
-	    	$feature->set_attribute("id", $new_id);	 
+	    	$feature->set_attribute("id", $new_id);
 	    	my $length = $feature->get_attribute('end')-$feature->get_attribute('start')+1;
-    		$feature->set_attribute("len", $length);   
+    		$feature->set_attribute("len", $length);
     		$regions_ft{$new_id} = $feature;
     	}
     close $in;
@@ -667,7 +669,7 @@ sub OpenInputContigs{
 		my $regions_ft = shift;
 		%main::contig_seq = ();
 		my $id_to_change = 0;
-	
+
 		## get all contig IDs corresponding to regions of interest
 		my %regions_contig = ();
 		foreach my $region_ft_id (@main::regions_ft_ids) {
@@ -675,12 +677,12 @@ sub OpenInputContigs{
     		my $contig_id = $region_ft->get_attribute('seq_name');
     		$regions_contig{$contig_id} = 1;
   		}
-	    
+
 	    ## 1 - organism name provided : automatic detection of contigs
-	    if ($organism_name) { 	
+	    if ($organism_name) {
 	    	$main::infile{contigs} = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", "contigs.txt");
 	    }
-	    
+
 	   	## Separate the contig directory path and file name
 		our ($seq_dir, $seq_list) = &RSAT::util::SplitFileName($main::infile{contigs});
 
@@ -688,65 +690,65 @@ sub OpenInputContigs{
 	   		&RSAT::message::Info(join ("\t", "Contig dir", $seq_dir));
 	    	&RSAT::message::Info(join ("\t", "Sequence list", $seq_list));
 		}
-	    	
+
 	    ## Open filelist and process only the contigs of interest
    		my ($in) = &OpenInputFile($main::infile{contigs});
    		while (my $line = <$in>) {
     	chomp($line);
-		
+
 	   	my ($seq_file, $contig_id, $circular) = split (/\t/,$line);
-	    
+
 	    ## Contig ID
 	    $contig_id = $seq_file unless ($contig_id);
 	    &RSAT::message::Info(join ("\t", "Contig file: current Contig ID", $contig_id))
 	    if ($main::verbose >= 4);
-	   
+
 	    ## check in the list of regions of interest if this contig is needed
 	    ## compare the user-provided contig_id and the contig_id of the contig file.
 	   	if (!$regions_contig{$contig_id}) {
 	   		my $found = 0;
-	   		
+
 	   		foreach my $ft_contig_id (keys(%regions_contig)) {
 				 &RSAT::message::Info(join ("\t", "Contig ID", $contig_id, "Region contig ID",$ft_contig_id))
 	    		 if ($main::verbose >= 4);
-		    	
-		    	## try to match the contig ids anyway	
+
+		    	## try to match the contig ids anyway
 		    	my $chrom_no;
-	 		   	if ( $ft_contig_id =~ /^chr(\d+)/){ 
+	 		   	if ( $ft_contig_id =~ /^chr(\d+)/){
 	 		   		 $chrom_no = $1;
-	  		  	}  	
+	  		  	}
 	  		  	if (($contig_id =~ /^\w+:\w+:$ft_contig_id:/) ||
 	  		  	(($chrom_no) && ($contig_id =~ /^\w+:\w+:$chrom_no:/))) { # ie chromosome:NCBIM36:10:1:129959148:1
-	    			
+
 	    			$found = 1;
 	    			$id_to_change = 1;
-	    			
+
 	    			## modify the contig_id for use in compare-features
 	    			&RSAT::message::Warning(join("\t", "Changing Region contig id from",
-	    									$ft_contig_id, "to",$contig_id)) if ($main::verbose >= 1);	
-	    			  					
+	    									$ft_contig_id, "to",$contig_id)) if ($main::verbose >= 1);
+
 	    			foreach my $region_ft_id (@main::regions_ft_ids) {
-  						my $region_ft = $regions_ft->{$region_ft_id};  				
+  						my $region_ft = $regions_ft->{$region_ft_id};
   						next unless ($region_ft->{seq_name} eq $ft_contig_id);
     					$region_ft->force_attribute("seq_name", $contig_id);
   					}
-  					
+
 	    	} else{
-	    			next;	    		
+	    			next;
 	    	}
 			}
 		next if ($found == 0);
 	    }
 
 	    &RSAT::message::Info(join ("\t", "Opening Contig", $contig_id)) if ($main::verbose >= 1);
-	    
+
 	    ## Circular
 	    if (($circular)&&($circular eq "circular")) {
 	    	$circular = 1;
-	    } else { 
+	    } else {
 	    	$circular = 0;
 	    }
-		
+
 		  ## Repeat masked
 	    if ($rm) {
 			my $masked_seq_file = $seq_file;
@@ -767,11 +769,11 @@ sub OpenInputContigs{
 						 ));
 				}
 	    }
-	    
+
 	    &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular",$circular) )
 		if ($main::verbose >= 2);
 		$main::infile{$contig_id} = $seq_file;
-		
+
 		## Open the contig as a SequenceOnDisk object
 		$contig_seq{$contig_id} = new RSAT::SequenceOnDisk(
 							filename=>  $seq_dir.$seq_file,
@@ -779,11 +781,11 @@ sub OpenInputContigs{
 						       circular=>  $circular,
 						      organism=>  "");
     	}
-    close $in;  
-    
+    close $in;
+
     ## if some contig ids need to be changed, write here to a new file
    if ($id_to_change){
-   	
+
    		$main::infile{input_orig} = $main::infile{input};
 		$main::infile{input} =~  s/.\w+$//;
 		$main::infile{input} .= ".id_modified.gft";
@@ -792,57 +794,57 @@ sub OpenInputContigs{
   			my $region_ft = $regions_ft->{$region_ft_id};
     		print $out $region_ft->to_text($main::informat, $null);
   		}
-		close $out;    		
+		close $out;
    }
-   
-    die ("No Contig file could be opened. Check that the contig_id from the contig file correspond to the contig_id of the input file") 
+
+    die ("No Contig file could be opened. Check that the contig_id from the contig file correspond to the contig_id of the input file")
     if (keys(%main::contig_seq) <= 0 );
 }
 
 ################################################################
-#### Use compare-features to locate the features 
+#### Use compare-features to locate the features
 #### that span on the region of interest
 sub GetFeaturesOnRegion {
 
     ## process each provided feature files
     foreach my $i (0..$#main::ft_files) {
     	my $j = $i;
-    	
-    	## if several files have been provided 	
+
+    	## if several files have been provided
     	if ($#main::ft_files > 0) {
     		$j++;
-    	}	
+    	}
     	&RSAT::message::Info(join("\t", "Compare-features: input file: $main::infile{input}")) if ($main::verbose >= 1);
 
     	&RSAT::message::Info(join("\t", "\t feature file: $main::ft_files[$i]")) if ($main::verbose >= 1);
 
-    	my $comp_nb = "comp_".$j; 
-    	my $comp_nb_sort = "comp_".$j."_sort"; 
-    	
+    	my $comp_nb = "comp_".$j;
+    	my $comp_nb_sort = "comp_".$j."_sort";
+
     	$main::outfile{$comp_nb} = $main::infile{input};
     	$main::outfile{$comp_nb} =~ s/\.\w+$//;
     	$main::outfile{$comp_nb} .= "comp_ft_".$j.".ft";
     	$main::outfile{$comp_nb_sort} = $main::outfile{$comp_nb};
     	$main::outfile{$comp_nb_sort} =~ s/\.ft/\_sort.ft/;
-    	
+
     	my $comp_feat_cmd = "compare-features ";
-    	$comp_feat_cmd .= "-v  $main::verbose "; 
+    	$comp_feat_cmd .= "-v  $main::verbose ";
     	$comp_feat_cmd .= "-ref $main::infile{input} ";
     	$comp_feat_cmd .= "-i $ft_files[$i] ";
     	$comp_feat_cmd .= "-iformat $main::informat ";
     	$comp_feat_cmd .= "-oformat ft ";
-    	$comp_feat_cmd .= "-return inter "; 	
+    	$comp_feat_cmd .= "-return inter ";
     	$comp_feat_cmd .= "-oft $main::outfile{$comp_nb} ";
     	$comp_feat_cmd .= " > /dev/null ";
     	## sort the output feature file by increasing left position
     	$comp_feat_cmd .= "; sort -n +4 ";
     	$comp_feat_cmd .= "$main::outfile{$comp_nb} ";
     	$comp_feat_cmd .= "> $main::outfile{$comp_nb_sort}";
-    	
+
     	## Execute the command
   		&doit($comp_feat_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
     }
-    
+
     	## merge if several feature files
   		if ($#main::ft_files > 0) {
     		my $comp_nb_sort = "comp_0_sort";
@@ -852,29 +854,29 @@ sub GetFeaturesOnRegion {
 
 			my $merge_cmd = "cat ";
     		foreach my $j (1..($#main::ft_files+1)) {
-    			my $comp_nb_sort = "comp_".$j."_sort"; 		
-    			$merge_cmd .= "$main::outfile{$comp_nb_sort} "; 
+    			my $comp_nb_sort = "comp_".$j."_sort";
+    			$merge_cmd .= "$main::outfile{$comp_nb_sort} ";
     		}
     		$merge_cmd .= "| sort -n +4 ";
-    		$merge_cmd .= " > $main::outfile{$comp_nb_sort} "; 
+    		$merge_cmd .= " > $main::outfile{$comp_nb_sort} ";
     		## Execute the command
   			&doit($merge_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
     	}
 }
 
 ################################################################
-#### Use compare-features to locate the features 
+#### Use compare-features to locate the features
 #### that span on the region of interest
 sub ExtractFeaturesToMask {
-    my $masks = shift;   
+    my $masks = shift;
     my %pos2mask_by_region = ();
-     
+
     ## Only one output from compare-features (as merged if several ones)
-    	my $comp_nb_sort = "comp_0_sort"; 
-    	
+    	my $comp_nb_sort = "comp_0_sort";
+
     	my %curr2mask_by_region = ();
-    	
-    	## read and process each feature 
+
+    	## read and process each feature
     	&RSAT::message::TimeWarn(join("\t", "", "Reading features from file", ($i+1)."/".scalar(@main::ft_files), $main::outfile{$comp_nb_sort})) if ($main::verbose >= 2);
 		my ($in) = &OpenInputFile($main::outfile{$comp_nb_sort});
     	while (<$in>) {
@@ -886,19 +888,19 @@ sub ExtractFeaturesToMask {
 	    	chomp;
 	    	my $feature = new RSAT::feature();
 	    	$feature->parse_from_row($_, "ft");
-#print $feature->to_text("ft", $null);	    
+#print $feature->to_text("ft", $null);
 
 	    	## compare feature type with the type to mask
 	    	if(&IsMaskType($feature, $masks)) {
 
 	    		&RSAT::message::TimeWarn(join("\t", "", "Feature is to be masked", $feature->to_text("ft", $null))) if ($main::verbose >= 10);
-	    		
+
 	    		## get the input region corresponding to the current line
 	    		my $descr = $feature->get_attribute('description');
-	    		
+
 	    		if ($descr =~ /$main::infile{input}:(ft_\d+):/){
-	    			$feature->set_attribute("region_id", $1);   
-	    		} elsif ($descr =~ /between\s+(\S+)\s+and\s+(\S+)/){	    		    		
+	    			$feature->set_attribute("region_id", $1);
+	    		} elsif ($descr =~ /between\s+(\S+)\s+and\s+(\S+)/){
 	    			my $match1 = $1;
 	    			my $match2 = $2;
 	    			my $file1 = $match1;
@@ -907,17 +909,17 @@ sub ExtractFeaturesToMask {
 	    			my $file2 = $match2;
 	    			$file2 =~ s/:(\w+):\S+//;
 	    			my $ft_2 = $1;
-	    			
+
 	    			# check if the filenames contain weird characters
 	    			my $inputfile = $main::infile{input};
 	    			$inputfile =~ s/\W/_/g;
 					$file1 =~ s/\W/_/g;
 					$file2 =~ s/\W/_/g;
-					
+
 	    			if ($inputfile =~ /$file1/){
-	    				$feature->set_attribute("region_id", $ft_1);   
+	    				$feature->set_attribute("region_id", $ft_1);
 	    			} elsif ($inputfile =~ /$file2/) {
-	    				$feature->set_attribute("region_id", $ft_2);   
+	    				$feature->set_attribute("region_id", $ft_2);
 	    			} else {
 	    				&RSAT::message::Warning(join("\t", "", "Feature is to be masked", $feature->to_text("ft", $null), "corresponding input region NOT FOUND" ));
 	    				next;
@@ -933,13 +935,13 @@ sub ExtractFeaturesToMask {
 	    		} else {
 	    			$main::total_nb_masked_ft{$region_id} = 1;
 	    		}
-	    		
+
 	    		## get the right / left positions
 	    		## compare-features always return positions so that left < right
 				my $left = $feature->get_attribute('start');
 	   			my $right = $feature->get_attribute('end');
-	   			
-	    		
+
+
 	    		&RSAT::message::TimeWarn(join("\t", "", "Feature Left:", $left,"Feature Right:", $right)) if ($main::verbose >= 10);
 	    		## first feature case
 	    		if (!$pos2mask_by_region{$region_id}){
@@ -949,7 +951,7 @@ sub ExtractFeaturesToMask {
 	    			$curr2mask_by_region{$region_id} = 0;
 	    			$pos2mask_by_region{$region_id}->[0] = \%region;
 	    		} else {
-	    			
+
 	    		my @mask_regions = @{$pos2mask_by_region{$region_id}};
 	    		my $curr2mask = $curr2mask_by_region{$region_id};
 
@@ -957,7 +959,7 @@ sub ExtractFeaturesToMask {
 	    		if (($left >= $mask_regions[$curr2mask]{left})
 	    				&&($left <= $mask_regions[$curr2mask]{right})) {
 	    				## left  is unchanged
-	    				## right is changed if superior   				
+	    				## right is changed if superior
 	    				if ($right > $mask_regions[$curr2mask]{right} ) {
 	    					$mask_regions[$curr2mask]{right} = $right;
 	    				}
@@ -972,11 +974,11 @@ sub ExtractFeaturesToMask {
 	    			$region{right} = $right;
 	    			$pos2mask_by_region{$region_id}->[$curr2mask] = \%region;
 	    			}
-	    		}    		 
-	    	}	
+	    		}
+	    	}
     	}
-		close $in; 	
- 	return (\%pos2mask_by_region); 
+		close $in;
+ 	return (\%pos2mask_by_region);
 }
 
 ################################################################
@@ -1006,32 +1008,32 @@ sub MaskSequence {
 	my $mask_regions = shift;
 	my $region_ft = shift;
 	my $region_nb = shift;
-	
+
 	## input region to process
 	my $length = $region_ft->get_attribute('len');
 	my $start = $region_ft->get_attribute('start');
 	my $end = $region_ft->get_attribute('end');
 	my $strand = $region_ft->get_attribute('strand');
 	my $contig_id = $region_ft->get_attribute('seq_name');
-	
+
 	## for oft output
 	if ($main::outfile{output_oft}) {
-	foreach my $i (0..$#{$mask_regions}){	
+	foreach my $i (0..$#{$mask_regions}){
 			next if (!${$mask_regions}[$i]);
-						
+
 			my $feat_left = ${$mask_regions}[$i]{left};
 			my $feat_right = ${$mask_regions}[$i]{right};
-				
+
 			print $main::out_oft "$contig_id\tmasked_region\tmasked_region\tDR\t$feat_left\t$feat_right\n";
 		}
 	}
-	
-	
+
+
 	####################################################
 	## Define a buffer length for each slice of sequence
 	my $buffer = 10000;
-	
-	
+
+
 	## check that the buffer is at least as long as the region to retrieve
 	if ($buffer >= $length) {
 		$buffer = $length;
@@ -1042,7 +1044,7 @@ sub MaskSequence {
 	if ($main::out_format eq "fasta"){
 	## fasta header
 		print $main::out ">";
-		
+
 		if ($region_ft->get_attribute('ft_id') ne "") {
 			print $main::out $region_ft->get_attribute('ft_id');
 		} else {
@@ -1071,50 +1073,50 @@ sub MaskSequence {
 			$main::outfile{$seq_name} = $seq_name.".raw";
 			($raw) = &OpenOutputFile($main::outfile{$seq_name});
 			&RSAT::message::Info("Raw output format: opening new file $main::outfile{$seq_name} ") if ($main::verbose >= 1);
-			
+
 			## write in the output file the name of the sequence and the ID if the contig
 			## this file can then be used as contig list file
 			print $main::out $seq_name.".raw"."\t".$contig_id."\n";
 		}
-		
+
 	}
-	
-	
+
+
 	####################################################
 	## Process each slice of sequence
-	
+
 	for (my $slice = 1; $slice <= $length ; $slice+= $buffer) {
 
 		## get the sequence slice
 		my $left = $start + $slice -1 ;
-		my $right = $left + $buffer -1;		
+		my $right = $left + $buffer -1;
 		$right = $end if ($right >= $end);
-		
+
 		&RSAT::message::Info(join ("\t", "Slice from", $left, "to", $right) )
 		if ($main::verbose >= 4);
-			
+
 		my $current_seq = $contig_seq{$contig_id}->get_sequence($left,$right,$strand);
-		
+
 		###########################################
-		## mask this slice	
-		foreach my $i (0..$#{$mask_regions}){	
+		## mask this slice
+		foreach my $i (0..$#{$mask_regions}){
 			next if (!${$mask_regions}[$i]);
-			
+
 			my $feat_left = ${$mask_regions}[$i]{left};
 			my $feat_right = ${$mask_regions}[$i]{right};
-			
+
 			&RSAT::message::Info(join ("\t", "To Mask from", $feat_left, "to", $feat_right) )
 			if ($main::verbose >= 3);
-			
+
 			## get the positions to mask on this slice
 			if (($feat_left >= $left) &&
 				($feat_left <= $right)){
 
 				## case 1 : feature completly included in the slice
-				if ($feat_right <= $right){				
+				if ($feat_right <= $right){
 					&RSAT::message::Info(join ("\t", "Masking", $feat_left, "to", $feat_right) )
 					if ($main::verbose >= 3);
-									
+
 					&ReplaceByMaskCharacters(\$current_seq,$left,$right,$feat_left,$feat_right);
 					undef ${$mask_regions}[$i];
 				}
@@ -1123,12 +1125,12 @@ sub MaskSequence {
 					&RSAT::message::Info("Overlaps following slice") if ($main::verbose >= 3);
 					&RSAT::message::Info(join ("\t", "Masking", $feat_left, "to", $right) )
 					if ($main::verbose >= 3);
-					
+
 					&ReplaceByMaskCharacters(\$current_seq,$left,$right,$feat_left,$right);
-					${$mask_regions}[$i]{left} = ($right+1);					
+					${$mask_regions}[$i]{left} = ($right+1);
 				}
-			}	
-   		}				
+			}
+   		}
 	## write the sequence in raw format (do not use PrintNextSequence to avoid chariage return between each slice)
 	if ($main::out_format eq "raw") {
 		if ($main::outfile{output}){
@@ -1136,33 +1138,33 @@ sub MaskSequence {
 		}else{
 			print $main::out $current_seq;
 		}
-		
+
 	} elsif ($main::out_format eq "fasta"){
-	
+
 		#####################################
 		## write the sequence in fasta format
-	
+
 		## get the number of characters already written on the last line
-		## and write remaining characters to finish the last line	
+		## and write remaining characters to finish the last line
 		my $remaining_chars_to_print = $main::lw - $last_print_length;
-	
+
 		my $seq_end_of_line = substr($current_seq, 0, $remaining_chars_to_print);
 		substr($current_seq, 0, $remaining_chars_to_print) = "";
-    
+
 		print $main::out $seq_end_of_line."\n";
-	
+
 		## write following lines
 		$_ = $current_seq;
 		my $nb_subst =  s/(.{$main::lw})/$1\n/g;
 		print $main::out $_;
-	
+
 		## remember number of characters written on last line
 		$last_print_length = length($current_seq) - ($nb_subst * $main::lw );
 		}
 	}
-	
+
 	print $main::out "\n";
-	
+
 	if ($main::out_format eq "raw"){
 		close $raw;
 	}
@@ -1172,41 +1174,40 @@ sub MaskSequence {
 ####  Replace portions of sequences with NNN characters
 sub ReplaceByMaskCharacters {
 	my ($current_seq,$left,$right,$feat_left,$feat_right) = @_;
-	
+
 	&RSAT::message::Info(join("","SEQ:abs:\t", $left, "-", $right))
 					if ($main::verbose >= 10);
-	
+
 	## convert positions into relative coordinates
 	my $seq_length = $right - $left + 1;
 	my $seq_rel_start = 0;
-		
+
 
 	&RSAT::message::Info(join("","SEQ:rel:\t", $seq_rel_start, "-", $seq_length))
 				if ($main::verbose >= 10);
-	
-	
+
+
 	&RSAT::message::Info(join("","FEAT:abs:\t", $feat_left, "-", $feat_right))
-					if ($main::verbose >= 10);		
-					
-					
+					if ($main::verbose >= 10);
+
 	my $feat_rel_start  = $seq_rel_start + ($feat_left - $left);
 	my $feat_length = $feat_right - $feat_left + 1;
 	$main::size_masked_ft += $feat_length;
 
 	&RSAT::message::Info(join("","FEAT:rel:\t", $feat_rel_start, "-", ($feat_rel_start + $feat_length)))
 					if ($main::verbose >= 10);
-	
-		
+
+
 	# prepare masking string
 	my $feat_masked;
 	foreach (1..$feat_length) {
 		$feat_masked .= "N";
 	}
-	
+
 
 	&RSAT::message::Info(join("","FEAT:length:\t", $feat_length, "feat_masked",$feat_masked ))
 					if ($main::verbose >= 10);
-	
+
 
 	# mask the feature (beware, this is in relative coordinates !)
 	substr($$current_seq, $feat_rel_start, $feat_length) = $feat_masked;
@@ -1224,12 +1225,12 @@ This program is used to retrieve sequences, given their positions on a contig.
 
 =head2 convert-seq
 
-This program is used to convert sequences from and to several supported 
+This program is used to convert sequences from and to several supported
 sequence formats.
 
 =head2 convert-features
 
-This program is used to convert features from and to several supported 
+This program is used to convert features from and to several supported
 formats, such as ft and gft formats.
 
 =head2 supported-organism
