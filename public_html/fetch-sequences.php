@@ -43,7 +43,7 @@ if ($fs_genome == "none" or $fs_genome == "" ) {
 
 //Check syntax of email address (ensure the texte netered in email box was an email address)
 if($fs_output =="email") {
-  if (!preg_match("#^[^@\.]+(\.[^@]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$#", $fs_user_email)) {
+  if (!preg_match("#^[^@\.]+(\.[^@]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$#", $fs_user_email)) {
      error( "Email not valid");
      $errors=true;
   }
@@ -265,7 +265,7 @@ if (!$errors) {
   		ini_set ( "SMTP", $smtp);
   		$mail_sent = mail($to, $subject, $msg, $headers);
   		if ($mail_sent) {
-  			info("Job done, email sent to ".$to);
+  			info("Job start, email sent to ".$to);
   		} else {
   			error("Notification mail could not be sent.\n\n.".$msg);
   		}
