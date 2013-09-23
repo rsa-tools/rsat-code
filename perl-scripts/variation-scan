@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: variation-scan,v 1.14 2013/08/19 16:54:24 jeremy Exp $
+# $Id: variation-scan,v 1.15 2013/09/23 14:23:36 rsat Exp $
 #
 ############################################################
 
@@ -180,7 +180,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
   our $output_lines = 0;
 
   our %infile	= ();
@@ -439,14 +439,12 @@ package	main;
     next if ($matrix_length > $flank_len+1);
 
 
-
     ## Make matrix file on tab format
     my $outM = &OpenOutputFile($matrix_file_tab);
     foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
       print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
     }
     close($outM);
-
 
 
     ## Get distribution
@@ -570,7 +568,6 @@ package	main;
     my @scanning = qx{$scan_cmd};
     &Analyse_scanning(@scanning) unless (scalar(@scanning) == 0);
     @scanning = ();
-
     $out_fas = &OpenOutputFile($fasta_file); ##Just to make empty file
     close($out_fas);
 
@@ -673,7 +670,13 @@ sub Analyse_scanning {
 	chomp($line);
 
 	my %line_info = &getLineInfo($line);
+#<<<<<<< variation-scan
+
+#	my $same_variation = 0;
+#	$same_variation = 1 if (!$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'});
+#=======
 	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
+#>>>>>>> 1.14
 
 	$same_variant_len = 0 if ( length($line_info{'variant_alt'}) != length($line_info{'variant_ref'}) );
 	$same_variant_len = 0 if ( $line_info{'variant_alt'} eq '-' || $line_info{'variant_ref'} eq '-' );
@@ -708,7 +711,6 @@ sub Analyse_scanning {
 	$scanning_info{'coord'} = $line_info{'coord'};
 	$scanning_info{'same_len'} = $same_variant_len;
     }
-
     &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
 }
 
