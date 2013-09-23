@@ -4,9 +4,11 @@ require ('functions.php');
 UpdateLogFile("rsat","","");
 
 //print_r($properties);
+//echo "<br/>";
 //print_r($_POST);
+//echo "<br/>";
 //print_r($_FILES);
-
+//echo "<br/>";
 putenv("RSAT=" .$properties['RSAT']);
 
 // Import variables with prefix pf_ from form
@@ -272,7 +274,7 @@ if (!$errors) {
   $suffix = "_".date("Ymd_His")."_".randchar(3);
   $pipeline_name = "users_pipeline$suffix";
   $argument .= " --pipeline_name ".$pipeline_name;
-  
+
   // Bed data provided in text area
   if ($pf_bed != "") {
     $array_line = explode("\n",$pf_bed);
@@ -352,7 +354,7 @@ if (!$errors) {
       $argument .= " --input_peaks $bed_file";
 
     } else {
-      error(htmlentities($fs_sequence_url)." is not a valid URL (should start with http: or ftp:.");
+      error(htmlentities($pf_sequence_url)." is not a valid URL (should start with http: or ftp:.");
       $errors = true;
     }
   }
@@ -431,12 +433,12 @@ if (!$errors) {
 
   // Announce job starting
   $msg = "Starting job.";
-  if ($fs_output =="email")  {
-    $msg .= " After job completion, email will be sent to ".$fs_user_email;
+  if ($pf_output =="email")  {
+    $msg .= " After job completion, email will be sent to ".$pf_user_email;
   }
   info($msg);
   echo "<hr/><br/>";
-	
+
   // Display the command
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
@@ -445,19 +447,12 @@ if (!$errors) {
   //Display progress page
   info('Result page will be available when running is complete. Check the <a href="'.rsat_path_to_url($output_path).'/progression.xml" target="_blank">progress page</a>');
   echo "<hr/><br/>";
-	
-  flush();
-	
-  // Display the result
-  print_url_table($URL);
-	
-
 
   ///////////////////////////////////////////////////////////////
   // Send email with notification of starting task
-  if ($fs_output =="email")  {
+  if ($pf_output =="email")  {
     // Parammeters for sending the mail
-    $to = $fs_user_email;
+    $to = $pf_user_email;
     $subject = "[RSAT] $prog_name begin ".$suffix;
 	
     // Store the URL table in a variable
@@ -499,7 +494,12 @@ if (!$errors) {
       }
     }
   }
-				
+	
+  flush();
+	
+  // Display the result
+  print_url_table($URL);
+			
   // Run the command
   exec("$cmd >/dev/null &", $output, $return_var);	
   //print_r($output);
@@ -507,7 +507,7 @@ if (!$errors) {
   
   ///////////////////////////////////////////////////////////////
   // Send email with notification of task completion
-  if ($fs_output =="email")  {
+  if ($pf_output =="email")  {
     $subject = "[RSAT] $prog_name result ".$suffix;
 
     // Sending mail
