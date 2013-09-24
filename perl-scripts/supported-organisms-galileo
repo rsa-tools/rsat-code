@@ -1,0 +1,359 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-organisms-galileo,v 1.1 2013/09/24 13:23:28 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+supported-organisms-galileo
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Get the list of organisms supported at Galileo (REST interface of
+MICROSCOPE/CEA/Genoscope).
+
+=head1 AUTHORS
+
+Aurelie.Bergon@inserm.fr
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item genome management
+
+=item metabolic pathways
+
+=back
+
+=head1 USAGE
+
+supported-organisms-galileo
+
+=head1 OUTPUT FORMAT
+
+The program returns a tab-delimited text file with one row per
+organism, and one column per attribute.
+
+Organism attribtues
+
+=over
+
+=item B<rsat_organism_name>
+
+Name of the organism as installed in RSAT
+
+=item B<taxid>
+
+Taxonomic ID (compatible with taxonmic ID)
+
+=back
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use REST::Client;
+use JSON;
+use MIME::Base64;
+use JSON qw( decode_json );     # From CPAN
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+
+  our $username = '';
+  our $password = '';
+  our $query = 'organisms/list'; #$ARGV[2]; # 'organisms/list';
+  our $field = 'oname'; #$ARGV[3]; #'oname';
+
+  our $host = "http://mgalileo.genoscope.cns.fr";
+
+  our %field_description = ();
+  $field_description{micrid} = "Organism ID (oid) in the microscope database (http://www.genoscope.cns.fr/agc/microscope/).";
+  $field_description{taxid} = "Taxonomic ID (microscope 'otaxon'), compliant with NCBI taxonomy database (http://www.ncbi.nlm.nih.gov/taxonomy).";
+  $field_description{species} = "Organism species name ('oname' in microscope).";
+  $field_description{strain} = "Organism strain ('ostrain' in microscope).";
+
+
+  our @out_fields = qw(micrid taxid species strain);
+  our $null = "<NA>";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  # Set up the connection
+  &RSAT::message::TimeWarn("Opening connection to Galileo host", $host) if ($main::verbose >= 2);
+  my $client = REST::Client->new();
+  $client->setHost($host);
+
+  # Setup the basic authorization header with the encoded Userid and Password.
+  # These need to match a UserId and Password for a Stingray user
+  $client->addHeader("Authorization", "Basic " . encode_base64($username . ":" . $password));
+
+
+  # Do the HTTP GET to get the lists of pools
+  $client->GET("/api/microscope/" . $query);
+
+  #######################################################
+  ##  json output (decoded)
+  &RSAT::message::TimeWarn("Getting organism list from galileo") if ($main::verbose >= 2);
+  my $response = decode_json($client->responseContent());
+
+  ## print for all organisms :
+  ##      oid     :  microscope_organism_id
+  ##      otaxon  : taxid
+  ##      oname   : organism name
+  ##      ostrain : strain
+
+  print $out "#", join("\t", @out_fields), "\n";
+
+  my @decoded = @{ decode_json($client->responseContent())};
+
+
+  foreach my $d ( @decoded ) {
+    unless (defined($d->{'ostrain'})) {
+      $d->{'ostrain'} = $null;
+    }
+
+    print $out join ("\t",
+		     $d->{'oid'},
+		     $d->{'otaxon'},
+		     $d->{'oname'},
+		     $d->{'ostrain'},
+		    ), "\n";
+
+#    if(defined($d->{'ostrain'})){
+#      print $d->{'oid'} . "\t".  $d->{'otaxon'} . "\t". $d->{'oname'} . "\t". $d->{'ostrain'} ."\n";
+#    }else{
+#      print $d->{'oid'} . "\t".  $d->{'otaxon'} . "\t". $d->{'oname'} . "\t". "" ."\n";
+#    }
+  }
+
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+
+=pod
+
+=item B<-username username>
+
+(optional)
+
+A username is occasionally required to access some unpublished genomes
+in galileo.
+
+=cut
+    } elsif ($arg eq "-username") {
+      $main::username = shift(@arguments);
+
+=pod
+
+=item B<-pass password>
+
+(optional)
+
+A password is occasionally required to access some unpublished genomes
+in galileo.
+
+=cut
+    } elsif ($arg eq "-pass") {
+      $main::password = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; supported-organisms-galileo ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
