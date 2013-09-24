@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-galileo,v 1.1 2013/09/24 13:23:28 jvanheld Exp $
+# $Id: supported-organisms-galileo,v 1.2 2013/09/24 13:29:14 jvanheld Exp $
 #
 ############################################################
 
@@ -96,7 +96,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -160,6 +160,16 @@ package main;
   &RSAT::message::TimeWarn("Getting organism list from galileo") if ($main::verbose >= 2);
   my $response = decode_json($client->responseContent());
 
+
+  if ($main::verbose >= 1) {
+    print $out "; Column content\n";
+    my $f = 0;
+    foreach my $field (@out_fields) {
+      $f++;
+      print $out join ("\t", ";", $f, $field, $field_description{$field}), "\n";
+    }
+  }
+
   ## print for all organisms :
   ##      oid     :  microscope_organism_id
   ##      otaxon  : taxid
@@ -200,6 +210,7 @@ package main;
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out if ($outfile{output});
 
+  &RSAT::message::TimeWarn("Job finished") if ($main::verbose >= 2);
   exit(0);
 }
 
