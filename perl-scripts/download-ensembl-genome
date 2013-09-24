@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.44 2013/09/24 04:53:29 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.45 2013/09/24 04:57:21 jvanheld Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.44 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -228,9 +228,9 @@ package	main;
 
   my $csa = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "coordsystem" );
   if ($csa) {
-    &RSAT::message::Debug("CSA adaptor", $csa) if ($main::verbose >= 0);
+    &RSAT::message::Debug("Coordinate system adaptor (csa)", $csa) if ($main::verbose >= 0);
   } else {
-    &RSAT::error::FatalError("Cannot get CSA adaptor for species", $species);
+    &RSAT::error::FatalError("Cannot get coordinate system adaptor (csa) for species", $species);
   }
 
   ################################################################
