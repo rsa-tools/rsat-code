@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.49 2013/08/13 22:14:36 jvanheld Exp $
+# $Id: install_software.mk,v 1.50 2013/09/24 09:50:02 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -267,8 +267,8 @@ install_ext_apps:
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
 BIOPERL_DIR=${SOFT_DIR}/perllib/bioperl-release-${BIOPERL_VERSION}
-ENSEMBL_VERSION=72
-ENSEMBL_BRANCH=ensemblgenomes-19
+ENSEMBL_VERSION=73
+ENSEMBL_BRANCH=ensemblgenomes-20
 ENSEMBL_API_DIR=${SOFT_DIR}/perllib/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
