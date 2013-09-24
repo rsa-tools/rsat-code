@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-genome,v 1.45 2013/09/24 04:57:21 jvanheld Exp $
+# $Id: download-ensembl-genome,v 1.46 2013/09/24 07:17:11 rsat Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.45 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.46 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -236,7 +236,7 @@ package	main;
   ################################################################
   ## Get available sequence on Ensembl and compare with sequence already install
 
-  my $coordsystem = $csa->fetch_by_rank(1);
+  my $coordsystem = $csa->fetch_by_rank(0);
   if ($coordsystem) {
     &RSAT::message::Debug("CoordSystem", $coordsystem) if ($main::verbose >= 0);
   } else {
