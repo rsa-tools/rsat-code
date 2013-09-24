@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.31 2013/09/24 09:42:16 rsat Exp $
+# $Id: download-ensembl-features,v 1.32 2013/09/24 09:44:19 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -202,14 +202,6 @@ package main;
   }
 
   ################################################################
-  ## Get local dir
-  my $coordsystem = $csa->fetch_by_rank(0);
-  if ($coordsystem) {
-    &RSAT::message::Debug("CoordSystem", $coordsystem) if ($main::verbose >= 0);
-  } else {
-    &RSAT::error::FatalError("Cannot get CoordSystem");
-  }
-
   ## Get genome_dir
   $assembly_version = $mca->single_value_by_key('assembly.name');
   my $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
