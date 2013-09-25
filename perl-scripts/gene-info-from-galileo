@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: gene-info-from-galileo,v 1.1 2013/09/24 13:36:51 jvanheld Exp $
+# $Id: gene-info-from-galileo,v 1.2 2013/09/25 03:57:02 rsat Exp $
 #
 ############################################################
 
@@ -40,7 +40,7 @@ Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
-supported-organisms-galileo
+gene-info-from-galileo
 
 =head1 OUTPUT FORMAT
 
@@ -52,6 +52,7 @@ Organism attribtues
 =over
 
 =item B<gene_name>
+
 
 =item B<micrid>
 
@@ -107,7 +108,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -120,19 +121,19 @@ package main;
 
   our $username = '';
   our $password = '';
-  our $query = 'organisms/list'; #$ARGV[2]; # 'organisms/list';
-  our $field = 'oname'; #$ARGV[3]; #'oname';
+  our $query = 'genomes/genomic-objects/list/';
+  our $taxid = '31';
 
   our $host = "http://mgalileo.genoscope.cns.fr";
 
   our %field_description = ();
-  $field_description{micrid} = "Organism ID (oid) in the microscope database (http://www.genoscope.cns.fr/agc/microscope/).";
-  $field_description{taxid} = "Taxonomic ID (microscope 'otaxon'), compliant with NCBI taxonomy database (http://www.ncbi.nlm.nih.gov/taxonomy).";
-  $field_description{species} = "Organism species name ('oname' in microscope).";
-  $field_description{strain} = "Organism strain ('ostrain' in microscope).";
+  $field_description{GeneName} = "gene name ('goGeneName' in microscope).";
+  $field_description{micrID} = "gene ID (goOriId) in the microscope database (http://www.genoscope.cns.fr/agc/microscope/).";
+  $field_description{Refseq} = "gene ID into RefSeq ('refSeq' in microscope).";
+  $field_description{EcNumber} = "EC number ('goEc' in microscope).";
 
 
-  our @out_fields = qw(micrid taxid species strain);
+  our @out_fields = qw(GeneName micrID Refseq EcNumber);
   our $null = "<NA>";
 
   ################################################################
@@ -164,11 +165,11 @@ package main;
 
 
   # Do the HTTP GET to get the lists of pools
-  $client->GET("/api/microscope/" . $query);
+  $client->GET("/api/microscope/" . $query . $taxid);
 
   #######################################################
   ##  json output (decoded)
-  &RSAT::message::TimeWarn("Getting organism list from galileo") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Getting gene information for an organism from galileo") if ($main::verbose >= 2);
   my $response = decode_json($client->responseContent());
 
 
@@ -181,11 +182,7 @@ package main;
     }
   }
 
-  ## print for all organisms :
-  ##      oid     :  microscope_organism_id
-  ##      otaxon  : taxid
-  ##      oname   : organism name
-  ##      ostrain : strain
+
 
   print $out "#", join("\t", @out_fields), "\n";
 
@@ -193,22 +190,36 @@ package main;
 
 
   foreach my $d ( @decoded ) {
-    unless (defined($d->{'ostrain'})) {
-      $d->{'ostrain'} = $null;
+#    unless (defined($d->{'genomicObject'}{'goId'})) {
+#      $d->{'genomicObject'}{'goId'} = $null;
+#    }
+    unless (defined($d->{'genomicObject'}{'goOriId'})) {
+	$d->{'genomicObject'}{'goOriId'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goGeneName'})) {
+	$d->{'genomicObject'}{'goGeneName'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goEc'})) {
+	$d->{'genomicObject'}{'goEc'} = $null;
+    }else{
+# EC number need to be separated by ";" and not by ","
+        $d->{'genomicObject'}{'goEc'} =~ s/,/;/;
+    }
+    unless (defined($d->{'refSeq'})) {
+        $d->{'refSeq'} = $null;
     }
 
+## EnsemblID : not possible (not this information into microscope)
+## NCBI id : not possible (not this information into microscope)
+
+
     print $out join ("\t",
-		     $d->{'oid'},
-		     $d->{'otaxon'},
-		     $d->{'oname'},
-		     $d->{'ostrain'},
+		     $d->{'genomicObject'}{'goGeneName'},
+		     $d->{'genomicObject'}{'goOriId'},
+                     $d->{'refSeq'},
+		     $d->{'genomicObject'}{'goEc'},
 		    ), "\n";
 
-#    if(defined($d->{'ostrain'})){
-#      print $d->{'oid'} . "\t".  $d->{'otaxon'} . "\t". $d->{'oname'} . "\t". $d->{'ostrain'} ."\n";
-#    }else{
-#      print $d->{'oid'} . "\t".  $d->{'otaxon'} . "\t". $d->{'oname'} . "\t". "" ."\n";
-#    }
   }
 
 
@@ -318,6 +329,19 @@ allows to use the command within a pipe.
 
 
 =pod
+                                                                                                                                                                                                                        
+=item B<-taxid taxID> 
+
+A microscope organisme ID is required to access gene information in galileo.
+
+=cut
+    } elsif ($arg eq "-taxid") {
+	$main::taxid = shift(@arguments);
+
+
+=pod
+    
+
 
 =item B<-username username>
 
@@ -331,6 +355,7 @@ in galileo.
       $main::username = shift(@arguments);
 
 =pod
+
 
 =item B<-pass password>
 
@@ -347,7 +372,7 @@ in galileo.
       &FatalError(join("\t", "Invalid option", $arg));
 
     }
-  }
+ 
 
 =pod
 
@@ -355,7 +380,7 @@ in galileo.
 
 =cut
 
-}
+  }}
 
 ################################################################
 ## Verbose message
