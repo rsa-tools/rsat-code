@@ -254,7 +254,7 @@ if (integrer("Maximum number of reported motifs per family ", $pf_motif_number_f
 
 // Email address
 if($pf_output =="email") {
-  if (!preg_match("#^[^@]+@([a-z]+\.)+[a-z]{2,4}$#", $pf_user_email)) {
+  if (!preg_match("#^[^@]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$#", $pf_user_email)) {
     error( "Email not valid");
     $errors=true;
   }
