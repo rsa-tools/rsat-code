@@ -15,6 +15,7 @@ DEPTH=5
 #RES_DIR=results/phylo_profiles/${ORG}/${TAXON}
 RES_ROOT=results
 RES_DIR=${RES_ROOT}/phylo_profiles/${ORG}_${TAXON}_depth${DEPTH}
+ORG_DIR=${RES_ROOT}/${ORG}
 
 
 ## Threshold on BLAST identity
@@ -42,7 +43,7 @@ all_taxa:
 	${MAKE} merged_ortho
 	${MAKE} merged_profiles
 
-one_taxon: ortho genus_species profiles profiles_sig profile_pairs sig_vs_MI
+one_taxon: ortho genus_species profiles_prev profiles_sig profile_pairs sig_vs_MI
 #one_taxon: genus_species profiles profiles_sig profile_pairs sig_vs_MI
 
 ################################################################
@@ -102,12 +103,15 @@ profiles_sig:
 ################################################################
 ## Generate a neetwork of co-occurrence (presence/absence)
 PROFILE_PAIRS=${ORTHO}_profile_pairs
+PRIMARY_NAMES=${ORG_DIR}/cds_primary_names.tab
+INFINITE=300
 profile_pairs:
-	@grep primary ${CDS_NAMES} > ${RES_ROOT}/${ORG}/cds_primary_names.tab
+	@mkdir -p ${ORG_DIR}
+	grep primary ${CDS_NAMES} > ${PRIMARY_NAMES}
 	compare-profiles -v 2 -i ${PROFILES}.tab \
 		-distinct -return counts,jaccard,hyper,entropy \
-		-na "NA" -inf Inf -lth AB 2 -lth sig 0 \
-		-names ${RES_ROOT}/${ORG}/cds_primary_names.tab \
+		-na "NA" -inf ${INFINITE} -lth AB 2 -lth sig 0 \
+		-names ${PRIMARY_NAMES} \
 		-o ${PROFILE_PAIRS}.tab
 	@echo ${PROFILE_PAIRS}.tab
 
@@ -125,7 +129,7 @@ sig_vs_MI:
 
 ################################################################
 ## Merge the profiles from the trhee main taxa
-MERGED_DIR=${RES_ROOT}/${ORG}/all
+MERGED_DIR=${ORG_DIR}/all
 MERGED_ORTHO=${MERGED_DIR}/${ORG}_vs_all_bbh_len${TH_LEN}_ident${TH_ID}_e${TH_EXPECT}
 TAXA=Fungi Bacteria Archaea
 merged_ortho:
