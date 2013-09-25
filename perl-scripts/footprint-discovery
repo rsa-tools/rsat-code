@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.110 2013/09/22 23:55:55 jvanheld Exp $
+# $Id: footprint-discovery,v 1.111 2013/09/25 04:58:34 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.110 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -246,9 +246,13 @@ package main;
 			purge
 			dyads
 			map
+			maps
+			map_dyads
+			map_pssm
 			gene_index
 			network
 			index
+			test
 		       );
   $supported_tasks = join (",", @supported_tasks);
   %supported_task = ();
@@ -295,10 +299,13 @@ package main;
   local $die_on_error = 1;
   local $batch = 0;
   local $dry = 0;
-  local $max_jobs = 12000; ## Max number of allowed jobs to send to batch queue
+  local $max_jobs = 5000; ## Max number of allowed jobs to send to batch queue
 
   ## Network inference
   local $max_dyad_degree = 20;
+  local $score = "DPbits";
+  local $score_column = 21;
+  local $uth{gene_degree} = 50;
 
   ## File index
   local %main_index = ();
@@ -313,6 +320,15 @@ package main;
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
+  ## For backward compatibility
+  if ($task{maps}) {
+    $task{map_dyads} = 1;
+    $task{map_pssm} = 1;
+  }
+  if ($task{map}) {
+    &RSAT::message::Warning("Task 'map' has been changed to 'map_dyads'. Please adapt arguments on the command line." );
+    $task{map_dyads} = 1;
+  }
 
   ## Check if some tasks require to perform gene-wise analysis
   local $some_gene_wise_task = 0;
@@ -332,8 +348,8 @@ package main;
   &SetMainOutputDir();
 
   local ($main_index, $main_summary_table) = &OpenMainIndex() unless ($batch);
+  local  $main_prefix = &MainPrefix();
 
-  my $main_prefix = &MainPrefix();
   $outfile{main_log} = $dir{main_output}."/".$main_prefix."_log.txt";
   local $main_log = &OpenOutputFile($outfile{main_log});
   print $main_log &MainVerbose();
@@ -482,6 +498,8 @@ package main;
   ################################################################
   ## Generate co-regulation network by comparing gene-wise footprints
   &CoregulationNetwork() if ((scalar(@query_genes) > 1) && ($sep_genes));
+
+  &test();
 
   ################################################################
   ## Give a warning to report the gene-specific and main index files
@@ -656,8 +674,9 @@ sub RunFootprintDisco {
   if (($status eq "OK") || ($batch)) {
 
     ## Check dependencies
-    &CheckDependency("map", "dyads");
-    &CheckDependency("map", "seq");
+    &CheckDependency("map_dyads", "dyads");
+    &CheckDependency("map_dyads", "seq");
+
 
     ################################################################
     ## Generate a feature-map of the discovered dyads
@@ -674,13 +693,16 @@ sub RunFootprintDisco {
     $cmd .= " -scorethick";
     $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
     $cmd .= " -o ".$outfile{map_dyads};
-    &one_command($cmd, 1, 0, task=>"map");
+    &one_command($cmd, 1, 0, task=>"map_dyads");
 
     ################################################################
     ## Generate a feature-map with the matrices
+    &CheckDependency("map_pssm", "dyads");
+    &CheckDependency("map_pssm", "seq");
+
     $map_title = join "; ", "Site map", $taxon, $organism_name, $outfile_prefix;
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
-    $cmd = $SCRIPTS."/matrix-scan -quick -return limits,sites,pval -origin end -consensus_name";
+    $cmd = $SCRIPTS."/matrix-scan -quick -return limits,sites,pval -decimals 1 -origin end -consensus_name";
     $cmd .= " -matrix_format transfac -m ".$outfile{count_PSSM_tf};
     $cmd .= " -pseudo 1 -decimals 1 -2str -bg_pseudo 0.01 -lth score 1 -uth pval 1e-4 -n score";
     $cmd .= " -seq_format fasta -bginput -markov 1 -i ".$outfile{seq};
@@ -691,7 +713,7 @@ sub RunFootprintDisco {
     $cmd .= " -scorethick";
     $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
     $cmd .= " -o ".$outfile{map_pssm};
-    &one_command($cmd, 1, 0, task=>"map");
+    &one_command($cmd, 1, 0, task=>"map_pssm");
   }
 #  &RSAT::message::Debug("Indexing dyad map", $outfile{map_dyads}) if ($main::verbose >= 10);
   &IndexOneFile("Dyad map", $outfile{map_dyads}, image=>1) if (($status eq "OK") || ($batch));
@@ -1301,9 +1323,6 @@ sub CoregulationNetwork {
   my $main_prefix = &MainPrefix();
   my $dyad_suffix = &DyadSuffix();
 
-### TEMP FOR DEBUGGING
-  $verbose = 3;
-
   ## Create a directory for the inferred co-reglation network
   $dir{network} = $dir{main_output}."/network";
   &RSAT::util::CheckOutDir($dir{network});
@@ -1351,7 +1370,7 @@ sub CoregulationNetwork {
   $outfile{dyad_degree_distrib} = $dir{network}."/".$main_prefix."_dyad_degree_distrib.tab";  push @network_files, "dyad_degree_distrib";
   $outfile{dyad_degree_distrib_graph} = $dir{network}."/".$main_prefix."_dyad_degree_distrib_graph.pdf";  push @network_files, "dyad_degree_distrib_graph";
   my $degree_cmd = $SCRIPTS."/graph-node-degree -v 1";
-  $degree_cmd .= " -i ". $outfile{dyad_sig_classes};
+  $degree_cmd .= " -i ".$outfile{dyad_sig_classes};
   $degree_cmd .= " -in_format tab";
   $degree_cmd .= " -scol 1";
   $degree_cmd .= " -tcol 2";
@@ -1397,7 +1416,7 @@ sub CoregulationNetwork {
   ## score profiles between each pair of genes
   $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab"; push @network_files, "gene_pairs";
   my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyads_filtered};
-  $compare_classes_cmd .=  " | compare-classes -v 1";
+  $compare_classes_cmd .=  " | ".$SCRIPTS."/compare-classes -v 1";
   $compare_classes_cmd .= " -i /dev/stdin";
   $compare_classes_cmd .= " -triangle -distinct";
   $compare_classes_cmd .= " -return rank,occ,freq,proba,jac_sim,dotprod,entropy";
@@ -1411,7 +1430,7 @@ sub CoregulationNetwork {
   ################################################################
   ## Add columns with gene names and IDs
   $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab"; push @network_files, "gene_pairs_names";
-  my $cc_gene_info_cmd = "add-gene-info";
+  my $cc_gene_info_cmd = $SCRIPTS."/add-gene-info";
   $cc_gene_info_cmd .= " -i ".$outfile{gene_pairs};
   $cc_gene_info_cmd .= " -col 1 -col 2";
   $cc_gene_info_cmd .= " -org ".$organism_name;
@@ -1424,8 +1443,6 @@ sub CoregulationNetwork {
   ## Convert the compare-classes result into a graph
 
   ## Identify score column
-  my $score = "DPbits";
-  my $score_column = 21;
   if (-e $outfile{gene_pairs}) {
     my ($in) = &OpenInputFile($outfile{gene_pairs});
     while (<$in>) {
@@ -1441,12 +1458,11 @@ sub CoregulationNetwork {
   ## Convert tab-delimited network into GML file (that can be open
   ## with CytoScape or Yed).
   $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml"; push @network_files, "gene_pairs_gml";
-  my $convert_graph_cmd = "convert-graph";
-  $convert_graph_cmd .= " -scol 1 -tcol 2";
-  $convert_graph_cmd .= " -wcol ".$score_column;
+  my $convert_graph_cmd = $SCRIPTS."/convert-graph";
+  $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
+  $convert_graph_cmd .= " -scol 1 -tcol 2 -wcol ".$score_column;
   $convert_graph_cmd .= " -from tab -to gml";
   $convert_graph_cmd .= " -ewidth -ecolors fire";
-  $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
   $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
   &one_command($convert_graph_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
@@ -1455,7 +1471,7 @@ sub CoregulationNetwork {
   ################################################################
   ## Get the neighborhood of each gene in the co-regulation network
   $outfile{gene_neighbours} .= $dir{network}."/".$main_prefix."_gene_neighbours.tab"; push @network_files, "gene_neighbours";
-  my $gn_cmd = "graph-neighbours -v 1";
+  my $gn_cmd = $SCRIPTS."/graph-neighbours -v 1";
   $gn_cmd .= " -self";
 #  $gn_cmd .= " -seed $gene";
   $gn_cmd .= " -all";
@@ -1465,6 +1481,61 @@ sub CoregulationNetwork {
   &one_command($gn_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
 
+
+  ################################################################
+  ## Compute the degree of each node in the gene-gene co-regulation
+  ## network. Beware, this is different from the gene degree in the
+  ## gene-dyad network.
+  &RSAT::message::TimeWarn("Computing node degree in co-regulation network") if ($main::verbose >= 2);
+  $outfile{gene_degree} .= $dir{network}."/".$main_prefix."_gene_degree.tab"; push @network_files, "gene_degree";
+  my $deg_cmd = $SCRIPTS."/graph-node-degree";
+  $deg_cmd .= " -in_format tab";
+  $deg_cmd .= " -i ".$outfile{gene_pairs};
+  $deg_cmd .= " -scol 1 -tcol 2 -wcol ".$score_column;
+  $deg_cmd .= " -all";
+  $deg_cmd .= " -sort"; ## Sort genes by decreasing degree value
+  $deg_cmd .= " -o ".$outfile{gene_degree};
+  &one_command($deg_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene degree", $outfile{gene_degree}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Detect "hub" genes, i.e. gene with a high degree
+  &RSAT::message::TimeWarn("Detecting 'hub' genes in co-regulation network") if ($main::verbose >= 2);
+  $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
+  my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
+  $hub_cmd .= " | grep -v '^#'";
+  $hub_cmd .= " | awk '\$4 >=".$uth{gene_degree}."' ";
+  $hub_cmd .= "> ".$outfile{gene_hubs};
+  &one_command($hub_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
+
+  $outfile{gene_nohubs} .= $dir{network}."/".$main_prefix."_gene_nohubs.tab"; push @network_files, "gene_nohubs";
+  my $nohub_cmd = "grep -v '^;' ".$outfile{gene_degree};
+  $nohub_cmd .= " | grep -v '^#'";
+  $nohub_cmd .= " | awk '\$4 <".$uth{gene_degree}."' ";
+  $nohub_cmd .= $outfile{gene_degree};
+  $nohub_cmd .= "> ".$outfile{gene_nohubs};
+  &one_command($nohub_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene nohubs", $outfile{gene_nohubs}) if ($main::verbose >= 2);
+
+
+}
+
+
+sub test {
+  &RSAT::message::TimeWarn("Quick test procedure") if ($main::verbose >= 0);
+
+  ################################################################
+  ## Filter out hibs from the gene-gene co-regulation network
+  &RSAT::message::TimeWarn("Detecting 'hub' genes in co-regulation network") if ($main::verbose >= 2);
+  $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
+  my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
+  $hub_cmd .= " | grep -v '^#'";
+  $hub_cmd .=  "| awk '\$4 <".$uth{gene_degree}."' ";
+  $hub_cmd .= "> ".$outfile{gene_hubs};
+  &one_command($hub_cmd, 1, 0, task=>'test', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
+  die "HELLO";
 }
 
 ################################################################
