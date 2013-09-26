@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: phylo-profiles,v 1.1 2013/09/26 22:27:03 jvanheld Exp $
+# $Id: phylo-profiles,v 1.2 2013/09/26 23:38:13 jvanheld Exp $
 #
 ############################################################
 
@@ -139,8 +139,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
-
-
+require "RSA2.cgi.lib";
 
 ################################################################
 ## Main package
@@ -150,7 +149,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -158,8 +157,12 @@ package main;
 
   our @outfiles = ();
 
+  ## Thresholds
   our %lth = ();
   our %uth = ();
+  $lth{identity}=30; ## Threshold on BLAST identity percentage
+  $lth{len}=50; ## Threshold on BLAST alignment length
+  $uth{expect}=1e-10; ## Threshold on BLAST expect (e-value)
 
   our $verbose = 0;
   our $in = STDIN;
@@ -171,7 +174,7 @@ package main;
 
   ## Supported tasks
   our @supported_tasks = qw(
-			    ortho
+			    orthologs
 			    all
 			   );
   our $supported_tasks = join (",", @supported_tasks);
@@ -233,24 +236,17 @@ package main;
 
   ################################################################
   ## Identify all the putative orthologs (BBH)
-
-#   ORTHO=${RES_DIR}/${ORG}_vs_${TAXON}_bbh_len$lth{len}_ident$lth{identity}_e$uth{expect}
-#  ortho:
-# @echo
-#   @echo "Detecting all orthologs (BBH)	${ORG}	${TAXON}"
-#   @mkdir -p ${RES_DIR}
-# 	@echo ${ORTHO}.tab
-# 	get-orthologs -v 2 \
-# 		-all \
-# 		-org ${ORG} \
-# 		-taxon ${TAXON} \
-# 		-uth rank 1 -lth ali_len $lth{len} -lth ident $lth{identity} -uth e_value $uth{expect} \
-# 		-return e_value,bit_sc,ident,ali_len \
-# 		-o ${ORTHO}.tab
-# 	@echo "	${ORTHO}.tab"
-
-
-
+  &RSAT::message::TimeWarn("Detecting all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
+  my $ortho_cmd = $SCRIPTS."/get-orthologs -v 2";
+  $ortho_cmd .= " -all";
+  $ortho_cmd .= " -org ".$organism;
+  $ortho_cmd .= " -taxon ".${taxon};
+  $ortho_cmd .= " -uth rank 1 -lth ali_len ".$lth{len};
+  $ortho_cmd .= " -lth ident ".$lth{identity};
+  $ortho_cmd .= "  -uth e_value ".$uth{expect};
+  $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
+  $ortho_cmd .= " -o ".$outfile{orthologs};
+  &one_command($ortho_cmd, 1, 0, task=>"orthologs");
 
   ################################################################
   ## Generate the HMTL index of input/output files
