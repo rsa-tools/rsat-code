@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: gene-info-from-galileo,v 1.2 2013/09/25 03:57:02 rsat Exp $
+# $Id: gene-info-from-galileo,v 1.3 2013/09/26 18:27:19 rsat Exp $
 #
 ############################################################
 
@@ -108,7 +108,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -121,8 +121,10 @@ package main;
 
   our $username = '';
   our $password = '';
+  our $qtaxid = 'genomes/n2m/';
   our $query = 'genomes/genomic-objects/list/';
-  our $taxid = '31';
+  our $micrid ='2312';
+  our $taxid = '424717';
 
   our $host = "http://mgalileo.genoscope.cns.fr";
 
@@ -130,10 +132,24 @@ package main;
   $field_description{GeneName} = "gene name ('goGeneName' in microscope).";
   $field_description{micrID} = "gene ID (goOriId) in the microscope database (http://www.genoscope.cns.fr/agc/microscope/).";
   $field_description{Refseq} = "gene ID into RefSeq ('refSeq' in microscope).";
+  $field_description{Uniprot} = "uniprot ID ('uniprot' in microscope).";
+  $field_description{trembl} = "";
+  $field_description{protID} = "";
+  $field_description{Label} = "";
+  $field_description{Synonyms} = "";
+  $field_description{Product} = "";
   $field_description{EcNumber} = "EC number ('goEc' in microscope).";
+  $field_description{Reaction} = "";
+  $field_description{Function} = "";
+  $field_description{Process} = "";
+  $field_description{Location} = "";
+  $field_description{Begin} = "";
+  $field_description{End} = "";
+  $field_description{Frame} = "";
+  $field_description{Type} = "";
+  $field_description{Note} = "";
 
-
-  our @out_fields = qw(GeneName micrID Refseq EcNumber);
+  our @out_fields = qw(GeneName micrID Refseq Uniprot trembl protID Label Synonyms Product EcNumber Reaction Function Process Location Begin End Frame Type Note);
   our $null = "<NA>";
 
   ################################################################
@@ -154,7 +170,9 @@ package main;
   ################################################################
   ## Execute the command
 
+  ## First connexion : taxid (from NCBI) to taxid (from microscope)
   # Set up the connection
+
   &RSAT::message::TimeWarn("Opening connection to Galileo host", $host) if ($main::verbose >= 2);
   my $client = REST::Client->new();
   $client->setHost($host);
@@ -165,8 +183,29 @@ package main;
 
 
   # Do the HTTP GET to get the lists of pools
-  $client->GET("/api/microscope/" . $query . $taxid);
 
+  $client->GET("/api/microscope/" . $qtaxid . $taxid);
+
+  &RSAT::message::TimeWarn("Getting organism ID from galileo for a NCBI taxid") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("warning : for the moment, we can directly acces to the microscope taxID from REST ws") if ($main::verbose >= 2);
+#  $micrid = $client->responseContent();
+
+ 
+
+  # Set up the connection
+  &RSAT::message::TimeWarn("Opening connection to Galileo host", $host) if ($main::verbose >= 2);
+  $client = REST::Client->new();
+  $client->setHost($host);
+
+  # Setup the basic authorization header with the encoded Userid and Password.
+  # These need to match a UserId and Password for a Stingray user
+  $client->addHeader("Authorization", "Basic " . encode_base64($username . ":" . $password));
+
+  
+  # Do the HTTP GET to get the lists of pools
+  $client->GET("/api/microscope/" . $query . $micrid);
+
+ 
   #######################################################
   ##  json output (decoded)
   &RSAT::message::TimeWarn("Getting gene information for an organism from galileo") if ($main::verbose >= 2);
@@ -190,9 +229,6 @@ package main;
 
 
   foreach my $d ( @decoded ) {
-#    unless (defined($d->{'genomicObject'}{'goId'})) {
-#      $d->{'genomicObject'}{'goId'} = $null;
-#    }
     unless (defined($d->{'genomicObject'}{'goOriId'})) {
 	$d->{'genomicObject'}{'goOriId'} = $null;
     }
@@ -202,12 +238,62 @@ package main;
     unless (defined($d->{'genomicObject'}{'goEc'})) {
 	$d->{'genomicObject'}{'goEc'} = $null;
     }else{
-# EC number need to be separated by ";" and not by ","
-        $d->{'genomicObject'}{'goEc'} =~ s/,/;/;
+# EC number need to be separated by ";" and not by ", "
+        $d->{'genomicObject'}{'goEc'} =~ s/, /;/;
     }
     unless (defined($d->{'refSeq'})) {
         $d->{'refSeq'} = $null;
     }
+    unless (defined($d->{'uniprot'})) {
+        $d->{'uniprot'} = $null;
+    }
+    unless (defined($d->{'trembl'})) {
+        $d->{'trembl'} = $null;
+    }
+    unless (defined($d->{'protId'})) {
+        $d->{'protId'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goLabel'})) {
+        $d->{'genomicObject'}{'goLabel'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goSynonyms'})) {
+        $d->{'genomicObject'}{'goSynonyms'} = $null;
+# field need to be separated by ";" and not by ", "
+        $d->{'genomicObject'}{'goSynonyms'} =~ s/, /;/;
+    }
+    unless (defined($d->{'genomicObject'}{'goProduct'})) {
+        $d->{'genomicObject'}{'goProduct'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goNote'})) {
+        $d->{'genomicObject'}{'goNote'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goReaction'})) {
+        $d->{'genomicObject'}{'goReaction'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goType'})) {
+        $d->{'genomicObject'}{'goType'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goFrame'})) {
+        $d->{'genomicObject'}{'goFrame'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goBegin'})) {
+        $d->{'genomicObject'}{'goBegin'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goEnd'})) {
+        $d->{'genomicObject'}{'goEnd'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goLocation'})) {
+        $d->{'genomicObject'}{'goLocation'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goProcess'})) {
+        $d->{'genomicObject'}{'goProcess'} = $null;
+    }
+    unless (defined($d->{'genomicObject'}{'goFunction'})) {
+        $d->{'genomicObject'}{'goFunction'} = $null;
+    }
+
+
+
 
 ## EnsemblID : not possible (not this information into microscope)
 ## NCBI id : not possible (not this information into microscope)
@@ -217,7 +303,25 @@ package main;
 		     $d->{'genomicObject'}{'goGeneName'},
 		     $d->{'genomicObject'}{'goOriId'},
                      $d->{'refSeq'},
+		     $d->{'uniprot'},
+		     $d->{'trembl'},
+		     $d->{'protId'},
+		     $d->{'genomicObject'}{'goLabel'},
+		     $d->{'genomicObject'}{'goSynonyms'},
+		     $d->{'genomicObject'}{'goProduct'},
 		     $d->{'genomicObject'}{'goEc'},
+		     $d->{'genomicObject'}{'goReaction'},
+                     $d->{'genomicObject'}{'goFunction'},
+                     $d->{'genomicObject'}{'goProcess'},
+		     $d->{'genomicObject'}{'goLocation'},
+                     $d->{'genomicObject'}{'goBegin'},
+                     $d->{'genomicObject'}{'goEnd'},
+                     $d->{'genomicObject'}{'goFrame'},
+		     $d->{'genomicObject'}{'goType'},
+                     $d->{'genomicObject'}{'goNote'},
+
+
+
 		    ), "\n";
 
   }
