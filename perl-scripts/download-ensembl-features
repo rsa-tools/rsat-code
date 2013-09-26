@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.32 2013/09/24 09:44:19 rsat Exp $
+# $Id: download-ensembl-features,v 1.33 2013/09/26 18:26:59 rsat Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -192,34 +192,12 @@ package main;
   ## Get Adaptator
   &RSAT::message::TimeWarn("Getting species slice from Ensembl") if ($main::verbose >= 2);
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
-  my $mc = $registry->get_adaptor( $species, 'Core', 'MetaContainer' );
+  my $mca = $registry->get_adaptor( $species, 'Core', 'MetaContainer' );
+  my $tla = $registry->get_adaptor( $species, 'Core', 'Translation' );
 
-  my $mca = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "metacontainer" );
-  if ($mca) {
-      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 0);
-  } else {
-      &RSAT::error::FatalError("Cannot get coordinate system adaptor (mca) for species", $species);
-  }
-
-  ################################################################
-  ## Get genome_dir
-  $assembly_version = $mca->single_value_by_key('assembly.name');
-  my $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
-
-  &RSAT::util::CheckOutDir($genome_dir);
-
-  ################################################################
-  ## Open outputfile file
-  my %out_stream = &OpenOutputStreams(@features_to_download);
-  &Verbose() if ($verbose >= 1);
-
-  ################################################################
-  ## Transform feat to download from array to hash
-  my %feat_to_download = ();
-  foreach (@features_to_download) {
-    $feat_to_download{$_} = 1;
-  }
-
+  my $dba = $registry->get_DBAdaptor( $species, 'Core' );
+  my $dbc = $dba->dbc();
+  my $sql_helper = $dbc->sql_helper();
 
   ################################################################
   # Get all Top Level slice
@@ -247,25 +225,659 @@ package main;
       @slices = @slice_tmp;
   }
 
+  ################################################################
+  ## Get genome_dir
+  my @token = split(":",$slices[0]->name());
+  $assembly_version = $token[1];
+  my $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
+
+  &RSAT::util::CheckOutDir($genome_dir);
+
+  ################################################################
+  ## Open outputfile file
+  my %out_stream = &OpenOutputStreams(@features_to_download);
+
+  my $outstream_organism = $out_stream{'organism'};
+  my $outstream_organism_names = $out_stream{'organism_names'};
+  my $outstream_gene = $out_stream{'gene'};
+  my $outstream_gene_names = $out_stream{'gene_names'};
+  my $outstream_cds = $out_stream{'cds'};
+  my $outstream_utr = $out_stream{'utr'};
+  my $outstream_aa_seq = $out_stream{'aa_seq'};
+
+  &Verbose() if ($verbose >= 1);
+
+  ################################################################
+  ## Transform transcript feature to download from array to hash
+  my %feat_to_download = ();
+  foreach (@features_to_download) {
+    $feat_to_download{$_} = 1;
+  }
+
+  ################################################################
+  # Dowloading feature
+
   ## Organism
   &RSAT::message::TimeWarn("Getting info on species",$species) if ($verbose >= 2);
 
-  my $outstream_organism = $out_stream{'organism'};
+  my ($c1,$c2) = split(" ",$mca->get_scientific_name());
 
-  print $outstream_organism $mc->get_taxonomy_id(),"\t";
-  my ($c1,$c2) = split(" ",$mc->get_scientific_name());
-  print $outstream_organism join(";",reverse(@{$mc->get_classification ( )})),";",$c1,";",ucfirst($c2),"\t";
-  print $outstream_organism $mc->get_scientific_name(),"\n";
+  print $outstream_organism $mca->get_taxonomy_id(),"\t";
+  print $outstream_organism join(";",reverse(@{$mca->get_classification ( )})),";",$c1,";",ucfirst($c2),"\t";
+  print $outstream_organism $mca->get_scientific_name(),"\n";
 
-  ## Get the alternative organism names ("aliases" according to Ensembl nomenclature)
-  if ($names) {
-    my $outstream_organism_names = $out_stream{'organism_names'};
-    print $outstream_organism_names $mc->get_taxonomy_id(),"\t",$species,"\t","primary","\n";
-    my @alias = @{$registry->get_all_aliases($species)};
-    foreach (@alias) {
-      print $outstream_organism_names $mc->get_taxonomy_id(),"\t",$_,"\t","alternate","\n";
+
+
+  ## Get organism names
+  &RSAT::message::TimeWarn("Getting organism names") if ($verbose >= 2);
+
+  print $outstream_organism_names $mca->get_taxonomy_id(),"\t",$species,"\t","primary","\n";
+  my @alias = @{$registry->get_all_aliases($species)};
+  foreach (@alias) {
+    print $outstream_organism_names $mca->get_taxonomy_id(),"\t",$_,"\t","alternate","\n";
+  }
+
+
+
+  ##Get gene
+  &RSAT::message::TimeWarn("Getting gene") if ($verbose >= 2);
+
+  my $gene_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, g.status, g.biotype, g.display_xref_id, g.seq_region_start, g.seq_region_end, g.seq_region_strand, g.description, s.name, s.length, cs.name from gene g join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { 
+        gene_id => $row[0], gene_status => $row[1], gene_biotype => $row[2], gene_external_name => $row[3], 
+        gene_start => $row[4], gene_end => $row[5], gene_strand => $row[6], gene_description => $row[7],
+        seq_name => $row[8], seq_length => $row[9], 
+        contig_name => $row[10] 
+      };
+    },
+    -PARAMS => [$species]
+  );
+
+  while ( my $row = shift @{$gene_list} ) {
+    my %row = %{$row};
+
+    my $strand = "D";
+    $strand = "R" unless ($row{'gene_strand'} == 1);
+
+    my $description = "<no descrition>";
+    $description = $row{'gene_description'} if ($row{'gene_description'});
+
+    my $gene_external_name = $row{'gene_external_name'};
+    $gene_external_name = $row{'stable_id'} unless ($row{'gene_external_name'});
+
+    $row{'contig_name'} = join(":",split('.',$row{'contig_name'}));
+
+    print $outstream_gene $row{'gene_id'},"\t",$row{'gene_status'},"\t",$row{'gene_biotype'},"\t",$gene_external_name,"\t";
+    print $outstream_gene $row{'contig_name'}.":".$assembly_version.":".$row{'seq_name'}.':1:'.$row{'seq_length'}.':1',"\t"; #slice name
+    print $outstream_gene $row{'gene_start'},"\t",$row{'gene_end'},"\t",$strand,"\t",$description,"\n";
+  }
+
+
+
+  ##Get gene names
+  &RSAT::message::TimeWarn("Getting gene names") if ($verbose >= 2);
+
+  my $names_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label from gene g join object_xref ox1 on (g.gene_id=ox1.ensembl_id and ox1.ensembl_object_type='Gene') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { gene_id => $row[0], source => $row[1], synonym1 => $row[2], synonym2 => $row[3] };
+    },
+    -PARAMS => [$species]
+  );
+
+  while ( my $row = shift @{$names_list} ) {
+    my %row = %{$row};
+    my %printed_name = ();
+
+    print $outstream_gene_names $row{'gene_id'},"\t",$row{'gene_id'},"\t";
+    print $outstream_gene_names 'primary',"\n";
+    $printed_name{ $row{'gene_id'} } = 1;
+
+    unless ( $printed_name{ $row{'synonym1'} }) {
+      print $outstream_gene_names $row{'gene_id'},"\t",$row{'synonym1'},"\t";
+      print $outstream_gene_names 'alternate',"\t",$row{'source'},"\n";
+      $printed_name{ $row{'synonym1'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym2'} }) {
+      print $outstream_gene_names $row{'gene_id'},"\t",$row{'synonym2'},"\t";
+      print $outstream_gene_names 'alternate',"\t",$row{'source'},"\n";
     }
   }
+
+
+
+  ##Get transcript
+  &RSAT::message::TimeWarn("Getting transcript") if ($verbose >= 2);
+
+  my $transcript_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, g.description,  tr.stable_id,tr.status, tr.biotype, tr.display_xref_id, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, s.name, s.length, cs.name from gene g join transcript tr using (gene_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return {
+        gene_id => $row[0], gene_description => $row[1],
+        transcript_id => $row[2], transcript_status => $row[3], transcript_biotype => $row[4], transcript_external_name => $row[5], 
+        transcript_start => $row[6], transcript_end => $row[7], transcript_strand => $row[8],
+        seq_name => $row[9], seq_length => $row[10], 
+        contig_name => $row[11] };
+    },
+    -PARAMS => [$species]
+  );
+
+  while ( my $row = shift @{$transcript_list} ) {
+    my %row = %{$row};
+    next unless ($feat_to_download{$row{'transcript_biotype'}});
+    my $outstream_transcript = $out_stream{$row{'transcript_biotype'}};
+
+    my $strand = "D";
+    $strand = "R" unless ($row{'transcript_strand'} == 1);
+
+    my $description = "<no descrition>";
+    $description = $row{'gene_description'} if ($row{'gene_description'});
+
+    my $transcript_external_name = $row{'transcript_external_name'};
+    $transcript_external_name = $row{'transcript_id'} unless ($row{'transcript_external_name'});
+
+    $row{'contig_name'} = join(":",split('.',$row{'contig_name'}));
+
+    print $outstream_transcript $row{'gene_id'},"\t",$description,"\t";
+    print $outstream_transcript $row{'transcript_id'},"\t",$row{'transcript_status'},"\t",$row{'transcript_biotype'},"\t",$transcript_external_name,"\t";
+    print $outstream_transcript $row{'contig_name'}.":".$assembly_version.":".$row{'seq_name'}.':1:'.$row{'seq_length'}.':1',"\t"; #slice name
+    print $outstream_transcript $row{'transcript_start'},"\t",$row{'transcript_end'},"\t",$strand,"\t","\n";
+  }
+
+
+
+  ## Transcript names
+  &RSAT::message::TimeWarn("Getting transcript names") if ($verbose >= 2);
+  my $transcript_names_list = $sql_helper->execute(
+    -SQL      => "select tr.stable_id,tr.biotype, g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label from gene g join transcript tr using (gene_id) join object_xref ox1 on (tr.transcript_id=ox1.ensembl_id and ox1.ensembl_object_type='Transcript') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { transcript_id => $row[0], transcript_biotype => $row[1], gene_id => $row[2], source => $row[3], synonym1 => $row[4], synonym2 => $row[5] };
+    },
+    -PARAMS => [$species] );
+
+  while ( my $row = shift @{$transcript_names_list} ) {
+    my %row = %{$row};
+    my %printed_name = ();
+    
+    next unless ($feat_to_download{$row{'transcript_biotype'}});
+    my $outstream_transcript_names = $out_stream{$row{'transcript_biotype'}."_names"};
+
+
+    print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'transcript_id'},"\t";
+    print $outstream_transcript_names 'primary',"\t",'transcript_id',"\n";
+    $printed_name{ $row{'transcript_id'} } = 1;
+
+    unless ( $printed_name{ $row{'gene_id'} }) {
+      print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'gene_id'},"\t";
+      print $outstream_transcript_names 'alternate',"\t",'gene_id',"\n";
+      $printed_name{ $row{'gene_id'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym1'} }) {
+      print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'synonym1'},"\t";
+      print $outstream_transcript_names 'alternate',"\t",$row{'source'},"\n";
+      $printed_name{ $row{'synonym1'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym2'} }) {
+      print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'synonym2'},"\t";
+      print $outstream_transcript_names 'alternate',"\t",$row{'source'},"\n";
+    }
+  }
+
+
+
+  ##Get CDS and UTR
+  &RSAT::message::TimeWarn("Getting CDS and UTR") if ($verbose >= 2);
+
+  my $cds_utr_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, g.description, tr.stable_id, tr.status, tr.display_xref_id, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, tl.stable_id, tl.seq_start, tl.seq_end, ex.seq_region_start, ex.seq_region_end, s.name, s.length, cs.name from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join exon ex on (ex.exon_id=tl.end_exon_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+    -CALLBACK => sub {
+     my @row = @{ shift @_ };
+      return { 
+        gene_id => $row[0], gene_description => $row[1], 
+        transcript_id => $row[2], transcript_status => $row[3], transcript_external_name => $row[4], 
+        transcript_start => $row[5], transcript_end => $row[6], transcript_strand => $row[7], 
+        translate_id => $row[8], translate_start => $row[9], translate_end => $row[10], 
+        exon_start => $row[11], exon_end => $row[12], 
+        seq_name => $row[13], seq_length => $row[14], 
+        contig_name => $row[15]
+        };
+    },
+    -PARAMS => [$species]
+  );
+
+  while ( my $row = shift @{$cds_utr_list} ) {
+    my %row = %{$row};
+
+    my $strand = "D";
+    $strand = "R" unless ($row{'transcript_strand'} == 1);
+
+    my $description = "<no descrition>";
+    $description = $row{'gene_description'} if ($row{'gene_description'});
+
+    my $transcript_external_name = $row{'transcript_external_name'};
+    $transcript_external_name = $row{'transcript_id'} unless ($row{'transcript_external_name'});
+
+    $row{'contig_name'} = join(":",split('.',$row{'contig_name'}));
+
+    ### CDS
+    print $outstream_cds $row{'translate_id'},"\t",$row{'transcript_status'},"\t",$row{'translate_id'},"\t"; # translate id, status, external name
+    print $outstream_cds $row{'contig_name'}.":".$assembly_version.":".$row{'seq_name'}.':1:'.$row{'seq_length'}.':1',"\t"; #slice name
+    print $outstream_cds $row{'translate_start'},"\t",$row{'translate_end'},"\t",$strand,"\t"; # translate coordinate
+    print $outstream_cds $description,"\t",$row{'transcript_id'},"\t",$row{'gene_id'},"\n"; # description transcript_id, gene_id
+
+    ### UTR
+    my $left_utr = "5'UTR";
+    my $left_start = $row{'transcript_start'};
+    my $left_end = $row{'transcript_start'} + $row{'translate_start'}-2;
+    my $right_utr = "3'UTR";
+    my $right_start = $row{'exon_start'} + $row{'translate_end'};
+    my $right_end = $row{'transcript_end'};
+
+    if ( $strand eq "R" ) {
+      $left_utr = "3'UTR";
+      $left_start = $row{'transcript_end'} - $row{'translate_start'}+2;
+      $left_end = $row{'transcript_end'};
+      $right_utr = "5'UTR";
+      $right_start = $row{'transcript_start'} ;
+      $right_end = $row{'exon_end'} - $row{'translate_end'};
+    }
+
+    if ($row{'transcript_id'} eq "ENST00000342878") {
+      print $row{'transcript_start'},"\t",$row{'transcript_end'},"\n";
+      print $row{'translate_start'},"\t",$row{'translate_end'},"\n";
+      print $row{'exon_start'},"\t",$row{'exon_end'},"\n\n";
+      print $row{'transcript_start'},"\t",$row{'transcript_start'} + $row{'translate_start'}-2,"\n";
+      print $row{'exon_start'} + $row{'translate_end'},"\t",$row{'transcript_end'},"\n";
+      print $row{'transcript_end'} - $row{'translate_start'}+2,"\t",$row{'transcript_end'},"\n";
+      print $row{'transcript_start'},"\t",$row{'exon_end'} - $row{'translate_end'},"\n";
+    }
+
+
+    if ( $left_start ne $left_end+1 ) {
+      print $outstream_utr $left_utr."-".$row{'transcript_id'},"\t",$left_utr,"\t",$left_utr."-".$transcript_external_name,"\t"; # utr id, status, external name
+      print $outstream_utr $row{'contig_name'}.":".$assembly_version.":".$row{'seq_name'}.':1:'.$row{'seq_length'}.':1',"\t"; #slice name
+      print $outstream_utr $left_start,"\t",$left_end,"\t",$strand,"\t"; # utr coordinate
+      print $outstream_utr $row{'transcript_id'},"\t",$row{'gene_id'},"\n"; # transcript_id, gene_id
+    }
+
+    if ( $right_start ne $right_end+1 ) {
+      print $outstream_utr $right_utr."-".$row{'transcript_id'},"\t",$right_utr,"\t",$right_utr."-".$transcript_external_name,"\t"; # utr id, status, external name
+      print $outstream_utr $row{'contig_name'}.":".$assembly_version.":".$row{'seq_name'}.':1:'.$row{'seq_length'}.':1',"\t"; #slice name
+      print $outstream_utr $right_start,"\t",$right_end,"\t",$strand,"\t"; # utr coordinate
+      print $outstream_utr $row{'transcript_id'},"\t",$row{'gene_id'},"\n"; # transcript_id, gene_id
+    }
+  }
+
+  ## CDS names
+  &RSAT::message::TimeWarn("Getting cds names") if ($verbose >= 2);
+  my $outstream_cds_names = $out_stream{'cds_names'};
+  my $cds_names_list = $sql_helper->execute(
+    -SQL      => "select tl.stable_id,tr.stable_id,g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { translate_id => $row[0], transcript_id => $row[1], gene_id => $row[2], source => $row[3], synonym1 => $row[4], synonym2 => $row[5] };
+    },
+    -PARAMS => [$species] );
+
+  while ( my $row = shift @{$cds_names_list} ) {
+    my %row = %{$row};
+    my %printed_name = ();
+
+    print $outstream_cds_names $row{'translate_id'},"\t",$row{'translate_id'},"\t";
+    print $outstream_cds_names 'primary',"\t",'translate_id',"\n";
+    $printed_name{ $row{'translate_id'} } = 1;
+
+    unless ( $printed_name{ $row{'gene_id'} }) {
+      print $outstream_cds_names $row{'translate_id'},"\t",$row{'gene_id'},"\t";
+      print $outstream_cds_names 'alternate',"\t",'gene_id',"\n";
+      $printed_name{ $row{'gene_id'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'transcript_id'} }) {
+      print $outstream_cds_names $row{'translate_id'},"\t",$row{'transcript_id'},"\t";
+      print $outstream_cds_names 'alternate',"\t",'transcript_id',"\n";
+      $printed_name{ $row{'transcript_id'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym1'} }) {
+      print $outstream_cds_names $row{'transcript_id'},"\t",$row{'synonym1'},"\t";
+      print $outstream_cds_names 'alternate',"\t",$row{'source'},"\n";
+      $printed_name{ $row{'synonym1'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym2'} }) {
+      print $outstream_cds_names $row{'transcript_id'},"\t",$row{'synonym2'},"\t";
+      print $outstream_cds_names 'alternate',"\t",$row{'source'},"\n";
+    }
+  }
+
+
+
+
+
+
+  &RSAT::message::TimeWarn("Getting gene") if ($verbose >= 2);
+
+  foreach my $slice (@slices) {
+
+  ##Get gene
+  my $gene_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, g.status, g.biotype, g.display_xref_id, g.seq_region_start, g.seq_region_end, g.seq_region_strand, g.description from gene g join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and s.name=? and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { 
+        gene_id => $row[0], gene_status => $row[1], gene_biotype => $row[2], gene_external_name => $row[3], 
+        gene_start => $row[4], gene_end => $row[5], gene_strand => $row[6], gene_description => $row[7],
+      };
+    },
+    -PARAMS => [$slice->seq_region_name(), $species]
+  );
+
+  while ( my $row = shift @{$gene_list} ) {
+    my %row = %{$row};
+
+    my $strand = "D";
+    $strand = "R" unless ($row{'gene_strand'} == 1);
+
+    my $description = "<no descrition>";
+    $description = $row{'gene_description'} if ($row{'gene_description'});
+
+    my $gene_external_name = $row{'gene_external_name'};
+    $gene_external_name = $row{'stable_id'} unless ($row{'gene_external_name'});
+
+    print $outstream_gene $row{'gene_id'},"\t",$row{'gene_status'},"\t",$row{'gene_biotype'},"\t",$gene_external_name,"\t";
+    print $outstream_gene $slice->name(),"\t"; #slice name
+    print $outstream_gene $row{'gene_start'},"\t",$row{'gene_end'},"\t",$strand,"\t",$description,"\n";
+  }
+
+
+
+  ##Get gene names
+
+  my $names_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label from gene g join object_xref ox1 on (g.gene_id=ox1.ensembl_id and ox1.ensembl_object_type='Gene') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and s.name=? and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { 
+        gene_id => $row[0], source => $row[1], synonym1 => $row[2], synonym2 => $row[3]
+      };
+    },
+    -PARAMS => [$slice->seq_region_name(), $species]
+  );
+
+  while ( my $row = shift @{$names_list} ) {
+    my %row = %{$row};
+    my %printed_name = ();
+
+    print $outstream_gene_names $row{'gene_id'},"\t",$row{'gene_id'},"\t";
+    print $outstream_gene_names 'primary',"\n";
+    $printed_name{ $row{'gene_id'} } = 1;
+
+    unless ( $printed_name{ $row{'synonym1'} }) {
+      print $outstream_gene_names $row{'gene_id'},"\t",$row{'synonym1'},"\t";
+      print $outstream_gene_names 'alternate',"\t",$row{'source'},"\n";
+      $printed_name{ $row{'synonym1'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym2'} }) {
+      print $outstream_gene_names $row{'gene_id'},"\t",$row{'synonym2'},"\t";
+      print $outstream_gene_names 'alternate',"\t",$row{'source'},"\n";
+    }
+  }
+
+
+
+  ##Get transcript
+
+  my $transcript_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, g.description,  tr.stable_id,tr.status, tr.biotype, tr.display_xref_id, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand from gene g join transcript tr using (gene_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and s.name=? and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return {
+        gene_id => $row[0], gene_description => $row[1],
+        transcript_id => $row[2], transcript_status => $row[3], transcript_biotype => $row[4], transcript_external_name => $row[5], 
+        transcript_start => $row[6], transcript_end => $row[7], transcript_strand => $row[8],
+      };
+    },
+    -PARAMS => [$slice->seq_region_name(), $species]
+  );
+
+  while ( my $row = shift @{$transcript_list} ) {
+    my %row = %{$row};
+    next unless ($feat_to_download{$row{'transcript_biotype'}});
+    my $outstream_transcript = $out_stream{$row{'transcript_biotype'}};
+
+    my $strand = "D";
+    $strand = "R" unless ($row{'transcript_strand'} == 1);
+
+    my $description = "<no descrition>";
+    $description = $row{'gene_description'} if ($row{'gene_description'});
+
+    my $transcript_external_name = $row{'transcript_external_name'};
+    $transcript_external_name = $row{'transcript_id'} unless ($row{'transcript_external_name'});
+
+    print $outstream_transcript $row{'gene_id'},"\t",$description,"\t";
+    print $outstream_transcript $row{'transcript_id'},"\t",$row{'transcript_status'},"\t",$row{'transcript_biotype'},"\t",$transcript_external_name,"\t";
+    print $outstream_transcript $slice->name(),"\t"; #slice name
+    print $outstream_transcript $row{'transcript_start'},"\t",$row{'transcript_end'},"\t",$strand,"\t","\n";
+  }
+
+
+
+  ## Transcript names
+
+  my $transcript_names_list = $sql_helper->execute(
+    -SQL      => "select tr.stable_id,tr.biotype, g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label from gene g join transcript tr using (gene_id) join object_xref ox1 on (tr.transcript_id=ox1.ensembl_id and ox1.ensembl_object_type='Transcript') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and s.name=? and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { transcript_id => $row[0], transcript_biotype => $row[1], gene_id => $row[2], source => $row[3], synonym1 => $row[4], synonym2 => $row[5] };
+    },
+    -PARAMS => [$slice->seq_region_name(), $species] );
+
+  while ( my $row = shift @{$transcript_names_list} ) {
+    my %row = %{$row};
+    my %printed_name = ();
+    
+    next unless ($feat_to_download{$row{'transcript_biotype'}});
+    my $outstream_transcript_names = $out_stream{$row{'transcript_biotype'}."_names"};
+
+
+    print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'transcript_id'},"\t";
+    print $outstream_transcript_names 'primary',"\t",'transcript_id',"\n";
+    $printed_name{ $row{'transcript_id'} } = 1;
+
+    unless ( $printed_name{ $row{'gene_id'} }) {
+      print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'gene_id'},"\t";
+      print $outstream_transcript_names 'alternate',"\t",'gene_id',"\n";
+      $printed_name{ $row{'gene_id'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym1'} }) {
+      print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'synonym1'},"\t";
+      print $outstream_transcript_names 'alternate',"\t",$row{'source'},"\n";
+      $printed_name{ $row{'synonym1'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym2'} }) {
+      print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'synonym2'},"\t";
+      print $outstream_transcript_names 'alternate',"\t",$row{'source'},"\n";
+    }
+  }
+
+
+
+  ##Get CDS and UTR
+
+  my $cds_utr_list = $sql_helper->execute(
+    -SQL      => "select g.stable_id, g.description, tr.stable_id, tr.status, tr.display_xref_id, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, tl.stable_id, tl.seq_start, tl.seq_end, ex.seq_region_start, ex.seq_region_end from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join exon ex on (ex.exon_id=tl.end_exon_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and s.name=? and meta_value=?",
+    -CALLBACK => sub {
+     my @row = @{ shift @_ };
+      return { 
+        gene_id => $row[0], gene_description => $row[1], 
+        transcript_id => $row[2], transcript_status => $row[3], transcript_external_name => $row[4], 
+        transcript_start => $row[5], transcript_end => $row[6], transcript_strand => $row[7], 
+        translate_id => $row[8], translate_start => $row[9], translate_end => $row[10], 
+        exon_start => $row[11], exon_end => $row[12], 
+        };
+    },
+    -PARAMS => [$slice->seq_region_name(), $species]
+  );
+
+  while ( my $row = shift @{$cds_utr_list} ) {
+    my %row = %{$row};
+
+    my $strand = "D";
+    $strand = "R" unless ($row{'transcript_strand'} == 1);
+
+    my $description = "<no descrition>";
+    $description = $row{'gene_description'} if ($row{'gene_description'});
+
+    my $transcript_external_name = $row{'transcript_external_name'};
+    $transcript_external_name = $row{'transcript_id'} unless ($row{'transcript_external_name'});
+
+    ### CDS
+    print $outstream_cds $row{'translate_id'},"\t",$row{'transcript_status'},"\t",$row{'translate_id'},"\t"; # translate id, status, external name
+    print $outstream_cds $slice->name(),"\t"; #slice name
+    print $outstream_cds $row{'translate_start'},"\t",$row{'translate_end'},"\t",$strand,"\t"; # translate coordinate
+    print $outstream_cds $description,"\t",$row{'transcript_id'},"\t",$row{'gene_id'},"\n"; # description transcript_id, gene_id
+
+    ### UTR
+    my $left_utr = "5'UTR";
+    my $left_start = $row{'transcript_start'};
+    my $left_end = $row{'transcript_start'} + $row{'translate_start'}-2;
+    my $right_utr = "3'UTR";
+    my $right_start = $row{'exon_start'} + $row{'translate_end'};
+    my $right_end = $row{'transcript_end'};
+
+    if ( $strand eq "R" ) {
+      $left_utr = "3'UTR";
+      $left_start = $row{'transcript_end'} - $row{'translate_start'}+2;
+      $left_end = $row{'transcript_end'};
+      $right_utr = "5'UTR";
+      $right_start = $row{'transcript_start'} ;
+      $right_end = $row{'exon_end'} - $row{'translate_end'};
+    }
+
+    if ($row{'transcript_id'} eq "ENST00000342878") {
+      print $row{'transcript_start'},"\t",$row{'transcript_end'},"\n";
+      print $row{'translate_start'},"\t",$row{'translate_end'},"\n";
+      print $row{'exon_start'},"\t",$row{'exon_end'},"\n\n";
+      print $row{'transcript_start'},"\t",$row{'transcript_start'} + $row{'translate_start'}-2,"\n";
+      print $row{'exon_start'} + $row{'translate_end'},"\t",$row{'transcript_end'},"\n";
+      print $row{'transcript_end'} - $row{'translate_start'}+2,"\t",$row{'transcript_end'},"\n";
+      print $row{'transcript_start'},"\t",$row{'exon_end'} - $row{'translate_end'},"\n";
+    }
+
+
+    if ( $left_start ne $left_end+1 ) {
+      print $outstream_utr $left_utr."-".$row{'transcript_id'},"\t",$left_utr,"\t",$left_utr."-".$transcript_external_name,"\t"; # utr id, status, external name
+      print $outstream_utr $slice->name(),"\t"; #slice name
+      print $outstream_utr $left_start,"\t",$left_end,"\t",$strand,"\t"; # utr coordinate
+      print $outstream_utr $row{'transcript_id'},"\t",$row{'gene_id'},"\n"; # transcript_id, gene_id
+    }
+
+    if ( $right_start ne $right_end+1 ) {
+      print $outstream_utr $right_utr."-".$row{'transcript_id'},"\t",$right_utr,"\t",$right_utr."-".$transcript_external_name,"\t"; # utr id, status, external name
+      print $outstream_utr $slice->name(),"\t"; #slice name
+      print $outstream_utr $right_start,"\t",$right_end,"\t",$strand,"\t"; # utr coordinate
+      print $outstream_utr $row{'transcript_id'},"\t",$row{'gene_id'},"\n"; # transcript_id, gene_id
+    }
+  }
+
+  ## CDS names
+  my $outstream_cds_names = $out_stream{'cds_names'};
+  my $cds_names_list = $sql_helper->execute(
+    -SQL      => "select tl.stable_id,tr.stable_id,g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and s.name=? and meta_value=?",
+    -CALLBACK => sub {
+      my @row = @{ shift @_ };
+      return { translate_id => $row[0], transcript_id => $row[1], gene_id => $row[2], source => $row[3], synonym1 => $row[4], synonym2 => $row[5] };
+    },
+     -PARAMS => [$slice->seq_region_name(), $species] );
+
+  while ( my $row = shift @{$cds_names_list} ) {
+    my %row = %{$row};
+    my %printed_name = ();
+
+    print $outstream_cds_names $row{'translate_id'},"\t",$row{'translate_id'},"\t";
+    print $outstream_cds_names 'primary',"\t",'translate_id',"\n";
+    $printed_name{ $row{'translate_id'} } = 1;
+
+    unless ( $printed_name{ $row{'gene_id'} }) {
+      print $outstream_cds_names $row{'translate_id'},"\t",$row{'gene_id'},"\t";
+      print $outstream_cds_names 'alternate',"\t",'gene_id',"\n";
+      $printed_name{ $row{'gene_id'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'transcript_id'} }) {
+      print $outstream_cds_names $row{'translate_id'},"\t",$row{'transcript_id'},"\t";
+      print $outstream_cds_names 'alternate',"\t",'transcript_id',"\n";
+      $printed_name{ $row{'transcript_id'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym1'} }) {
+      print $outstream_cds_names $row{'transcript_id'},"\t",$row{'synonym1'},"\t";
+      print $outstream_cds_names 'alternate',"\t",$row{'source'},"\n";
+      $printed_name{ $row{'synonym1'} } = 1;
+    }
+
+    unless ( $printed_name{ $row{'synonym2'} }) {
+      print $outstream_cds_names $row{'transcript_id'},"\t",$row{'synonym2'},"\t";
+      print $outstream_cds_names 'alternate',"\t",$row{'source'},"\n";
+    }
+  }
+  }
+
+  &RSAT::message::TimeWarn("Getting rege") if ($verbose >= 2);
+
+exit(0);
+  ##Get Aa_seq
+  &RSAT::message::TimeWarn("Getting aa sequence") if ($verbose >= 2);
+
+  my $translates = $tla->fetch_all();
+  while ( my $translate = shift @{$translates} ) {
+    #if ($translate->seq()) {
+      &PrintNextSequence($outstream_aa_seq, "fasta", 60, $translate->seq(), $translate->display_id());
+    #}
+  }
+
+  &RSAT::message::TimeWarn("Getting end") if ($verbose >= 2);
+
+
+  
+
+
+  ##Get gene_to_reaction
+  &RSAT::message::TimeWarn("Getting gene") if ($verbose >= 2);
+
+  my $gene_reaction_list = "";#$sql_helper->execute(
+ #   -SQL      => "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label from gene g  join xref gx on (g.display_xref_id=gx.xref_id) join transcript tr using (gene_id)  join translation tl using (transcript_id)  join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')  join xref x1 on (x1.xref_id=ox1.xref_id)  join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id)  join coord_system using (coord_system_id)  join meta using (species_id)  where meta.meta_key='species.production_name' and meta_value=? and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')",
+ #  -CALLBACK => sub {
+ #     my @row = @{ shift @_ };
+ #    return { gene_id => $row[0], label => $row[1], description => $row[2], db => $row[3], db_label => $row[4] };
+ #   },
+#   -PARAMS => [$species]
+#  );
+
+  while ( my $row = shift @{$gene_reaction_list} ) {
+    my %row = %{$row};
+
+    my $description = "<no descrition>";
+    $description = $row{'description'} if ($row{'description'});
+
+    print  $row{'gene_id'},"\t",$row{'label'},"\t",$description,"\t",$row{'db'},"\t",$row{'db_label'},"\n";
+  }
+
+exit(0);
+
 
   ## Get all features
   my $s=0;
@@ -284,8 +896,8 @@ package main;
       $g++;
 
       if (($max_genes > 0) && ($g > $max_genes)) {
-	&RSAT::message::Warning("Stopping gene names after", $g, "genes");
-	last;
+	      &RSAT::message::Warning("Stopping gene names after", $g, "genes");
+	      last;
       }
 
       my $gene_known = "Novel";
@@ -306,34 +918,34 @@ package main;
       print $outstream_gene $slice->name(),"\t",$gene->start(),"\t",$gene->end(),"\t",$strand,"\t",$description,"\n";
 
       if ($main::verbose >= 2) {
-	if (($g%100==1) || ($main::verbose >= 3)) {
-	  &RSAT::message::TimeWarn("Gene", $g."/".$nb_genes, $gene_external_name);
-	}
+      	if (($g%100==1) || ($main::verbose >= 3)) {
+	        &RSAT::message::TimeWarn("Gene", $g."/".$nb_genes, $gene_external_name);
+	      }
       }
 
       ## Gene name
-      if ($names) {
-        my $outstream_gene_names = $out_stream{'gene_names'};
-        my %print_name = ();
+#      if ($names) {
+#        my $outstream_gene_names = $out_stream{'gene_names'};
+#        my %print_name = ();
 
-        my @names_list = @{ $gene->get_all_DBEntries() };
-        foreach my $name (@names_list) {
-          next if ($print_name{$name->display_id()});
+#        my @names_list = @{ $gene->get_all_DBEntries() };
+#        foreach my $name (@names_list) {
+#          next if ($print_name{$name->display_id()});
 
-          my $status = "alternate";
-          $status = "primary" if ($name->display_id() eq $gene_external_name);
+#          my $status = "alternate";
+#          $status = "primary" if ($name->display_id() eq $gene_external_name);
 
-          print $outstream_gene_names $gene->display_id(),"\t",$name->display_id(),"\t";
-          print $outstream_gene_names $status,"\t",$name->dbname(),"\n";
+#          print $outstream_gene_names $gene->display_id(),"\t",$name->display_id(),"\t";
+#          print $outstream_gene_names $status,"\t",$name->dbname(),"\n";
 
-          $print_name{$name->display_id()} = 1;
-        }
+#          $print_name{$name->display_id()} = 1;
+#        }
 
-	unless ($print_name{$gene_external_name}) {
-          print $outstream_gene_names $gene->display_id(),"\t",$gene_external_name,"\t";
-          print $outstream_gene_names 'primary',"\t",'',"\n";
-	}
-      }
+#	      unless ($print_name{$gene_external_name}) {
+#          print $outstream_gene_names $gene->display_id(),"\t",$gene_external_name,"\t";
+#          print $outstream_gene_names 'primary',"\t",'',"\n";
+#	      }
+#      }
 
 
       ## Transcript
@@ -342,16 +954,16 @@ package main;
       while ( my $transcript = shift @{$transcripts} ) {
         next unless ($feat_to_download{$transcript->biotype()});
 
-	## Choose the appropriate output stream depending on the biotype of the current transcript
+      	## Choose the appropriate output stream depending on the biotype of the current transcript
         my $outstream_transcript = $out_stream{$transcript->biotype()};
 
-	## Define transcript (evidence) type
+        ## Define transcript (evidence) type
         my $trans_known = "putative";
         $trans_known = "known" if ($transcript->is_known());
 
-	## Define external_name for current transcript
-	my $trans_external_name = $transcript->external_name() || 
-	    $transcript->display_id() || $gene_external_name || "";
+        ## Define external_name for current transcript
+        my $trans_external_name = $transcript->external_name() || 
+        $transcript->display_id() || $gene_external_name || "";
 
         my $coding_s = ".";
         my $coding_e = ".";
@@ -364,42 +976,42 @@ package main;
         print $outstream_transcript $description,"\t",$gene->display_id(),"\n";
 
         ## Transcript names
-        if ($names) {
-          my $outstream_transcript_names = $out_stream{$transcript->biotype()."_names"};
+#        if ($names) {
+#          my $outstream_transcript_names = $out_stream{$transcript->biotype()."_names"};
 
-          my %print_name = ();
-          my @names_list = @{ $transcript->get_all_DBEntries() };
-          foreach $name (@names_list) {
-            next if ($print_name{$name->display_id()});
+#          my %print_name = ();
+#          my @names_list = @{ $transcript->get_all_DBEntries() };
+#          foreach $name (@names_list) {
+#            next if ($print_name{$name->display_id()});
 
-            my $status = "alternate";
-            $status = "primary" if (($trans_external_name) && ($name->display_id() eq $trans_external_name));
+#            my $status = "alternate";
+#            $status = "primary" if (($trans_external_name) && ($name->display_id() eq $trans_external_name));
 
-            print $outstream_transcript_names $transcript->display_id(),"\t",$name->display_id(),"\t";
-            print $outstream_transcript_names $status,"\t",$name->dbname(),"\n";
+#            print $outstream_transcript_names $transcript->display_id(),"\t",$name->display_id(),"\t";
+#            print $outstream_transcript_names $status,"\t",$name->dbname(),"\n";
 
-            $print_name{$name->display_id()} = 1;
-          }
+#            $print_name{$name->display_id()} = 1;
+#          }
 
-          unless ($print_name{$trans_external_name}) {
-            print $outstream_transcript_names $transcript->display_id(),"\t",$trans_external_name,"\t";
-            print $outstream_transcript_names 'primary',"\t",'',"\n";
-          }
+#          unless ($print_name{$trans_external_name}) {
+#            print $outstream_transcript_names $transc        next unless ($feat_to_download{$transcript->biotype()});ript->display_id(),"\t",$trans_external_name,"\t";
+#            print $outstream_transcript_names 'primary',"\t",'',"\n";
+#          }
 
-	  ## Add GeneId as synonym for transcript
-	  print $outstream_transcript_names join("\t",
-						 $transcript->display_id(),
-						 $gene_id,
-						 "alternate",
-						 "GeneId"), "\n";
+#	  ## Add GeneId as synonym for transcript
+#	  print $outstream_transcript_names join("\t",
+#						 $transcript->display_id(),
+#						 $gene_id,
+#						 "alternate",
+#						 "GeneId"), "\n";
 	  
 	  ## Add gene name as synonym for transcript
-	  print $outstream_transcript_names join("\t",
-						 $transcript->display_id(),
-						 $gene_external_name,
-						 "alternate",
-						 "gene_name"), "\n";
-        }
+#	  print $outstream_transcript_names join("\t",
+#						 $transcript->display_id(),
+#						 $gene_external_name,
+#						 "alternate",
+#						 "gene_name"), "\n";
+#        }
 
 
 
@@ -466,42 +1078,42 @@ package main;
           print $outstream_cds $description,"\t",$transcript->display_id(),"\t",$gene->display_id(),"\n";
 
           ## CDS Name
-          if ($names) {
-            my $outstream_cds_names = $out_stream{'cds_names'};
-            my %print_name = ();
+#          if ($names) {
+#            my $outstream_cds_names = $out_stream{'cds_names'};
+#            my %print_name = ();
 
-            my @names_list = @{$prot->get_all_DBEntries()};
-            foreach my $name (@names_list) {
-              next if ($print_name{$name->display_id()});
+#            my @names_list = @{$prot->get_all_DBEntries()};
+#            foreach my $name (@names_list) {
+#              next if ($print_name{$name->display_id()});
 
-              my $status = "alternate";
-              $status = "primary" if (($trans_external_name) && ($name->display_id() eq $trans_external_name));
+#              my $status = "alternate";
+#              $status = "primary" if (($trans_external_name) && ($name->display_id() eq $trans_external_name));
 
-              print $outstream_cds_names $prot->display_id(),"\t",$name->display_id(),"\t";
-              print $outstream_cds_names $status,"\t",$name->dbname(),"\n";
+#              print $outstream_cds_names $prot->display_id(),"\t",$name->display_id(),"\t";
+#              print $outstream_cds_names $status,"\t",$name->dbname(),"\n";
 
-              $print_name{$name->display_id()} = 1;
-            }
+#              $print_name{$name->display_id()} = 1;
+#            }
 
-            unless ($print_name{$trans_external_name}) {
-              print $outstream_cds_names $prot->display_id(),"\t",$trans_external_name,"\t";
-              print $outstream_cds_names 'primary',"\t",'',"\n";
-            }
+#            unless ($print_name{$trans_external_name}) {
+#              print $outstream_cds_names $prot->display_id(),"\t",$trans_external_name,"\t";
+#              print $outstream_cds_names 'primary',"\t",'',"\n";
+#            }
 
 	    ## Add GeneId as synonym for CDS
-	    print $outstream_cds_names join("\t",
-					    $prot->display_id(),
-					    $gene_id,
-					    "alternate",
-					    "GeneId"), "\n";
+#	    print $outstream_cds_names join("\t",
+#					    $prot->display_id(),
+#					    $gene_id,
+#					    "alternate",
+#					    "GeneId"), "\n";
 	  
 	    ## Add gene name as synonym for cds
-	    print $outstream_cds_names join("\t",
-					    $prot->display_id(),
-					    $gene_external_name,
-					    "alternate",
-					    "gene_name"), "\n";
-          }
+#	    print $outstream_cds_names join("\t",
+#					    $prot->display_id(),
+#					    $gene_external_name,
+#					    "alternate",
+#					    "gene_name"), "\n";
+#          }
 
           ## Aminoacid sequences
           if ($prot->seq()) {
