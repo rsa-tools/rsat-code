@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.50 2013/09/24 09:50:02 rsat Exp $
+# $Id: install_software.mk,v 1.51 2013/09/26 18:25:50 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -58,6 +58,9 @@ PERL_MODULES= \
 	Util::Properties \
 	Class::Std::Fast  \
 	GD \
+	REST::Client \
+	JSON \
+	MIME::Base64 \
 	XML::LibXML \
 	XML::Compile \
 	XML::Compile::Cache \
