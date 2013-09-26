@@ -1117,6 +1117,10 @@ sub PrintArguments {
   &RSAT::util::PrintArguments(@_);
 }
 
+sub PrintThresholdValues {
+  &RSAT::util::PrintThresholdValues(@_);
+}
+
 sub ConvertStrand {
     return &RSAT::util::ConvertStrand(@_);
 }
