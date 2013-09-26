@@ -1159,7 +1159,7 @@ sub GetOrthologs {
     $ortholog_nb = `grep -v '^;' $outfile{orthologs} | grep -v '^#' | wc -l `;
     chomp($ortholog_nb);
     if ($ortholog_nb < 1) {
-      $main::status = "No ortholog";
+      $main::status = "No ortholog (no BBH)";
     }
   } elsif (!$batch) {
     &RSAT::message::Warning("Missing orthologs file", $outfile{orthologs}) if ($main::verbose >= 1);
