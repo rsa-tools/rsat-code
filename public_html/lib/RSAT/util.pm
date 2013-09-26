@@ -1163,6 +1163,30 @@ sub PrintArguments {
 }
 
 
+################################################################
+## Print threshold values for verbosity
+sub PrintThresholdValues {
+    my %th = (%lth, %uth);
+    my @keys = keys %th;
+    my $message = "";
+    if (scalar(@keys > 0)) {
+	$message .= sprintf "; Threshold values\n";
+	$message .= sprintf  ";\t%-15s\t%s\t%s\n", "Parameter", "Lower", "Upper";
+	foreach my $key (@keys) {
+	    my $lth = "none";
+	    my $uth = "none";
+	    if (defined($lth{$key})) {
+		$lth = $lth{$key};
+	    }
+	    if (defined($uth{$key})) {
+		$uth = $uth{$key};
+	    }
+	    $message .= sprintf  ";\t%-15s\t%s\t%s\n", $key, $lth, $uth;
+	}
+    }
+    return $message;
+}
+
 
 return 1;
 
