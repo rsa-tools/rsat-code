@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.111 2013/09/25 04:58:34 jvanheld Exp $
+# $Id: footprint-discovery,v 1.112 2013/09/26 18:20:11 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.111 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -499,7 +499,7 @@ package main;
   ## Generate co-regulation network by comparing gene-wise footprints
   &CoregulationNetwork() if ((scalar(@query_genes) > 1) && ($sep_genes));
 
-  &test();
+  &test() if ($task{test});
 
   ################################################################
   ## Give a warning to report the gene-specific and main index files
@@ -1526,7 +1526,7 @@ sub test {
   &RSAT::message::TimeWarn("Quick test procedure") if ($main::verbose >= 0);
 
   ################################################################
-  ## Filter out hibs from the gene-gene co-regulation network
+  ## Filter out hubs from the gene-gene co-regulation network
   &RSAT::message::TimeWarn("Detecting 'hub' genes in co-regulation network") if ($main::verbose >= 2);
   $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
   my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
