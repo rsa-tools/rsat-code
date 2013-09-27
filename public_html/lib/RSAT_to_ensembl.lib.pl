@@ -81,6 +81,47 @@ sub Get_fasta_ftp {
 }
 
 
+## Get ftp pep fasta species url
+#######  Quick way to download features 
+#######  Work only for version 72-73
+
+sub Get_pep_fasta_ftp {
+  my ($db,$species,$ensembl_version) = @_;
+  my @fasta_ftps = &Get_fasta_ftp($db,$ensembl_version);
+
+  if ($db eq "ensembl") {                                                    ## Ensembl
+    my $pep_fasta_ftp = $fasta_ftps[0].$species."/pep/";
+    my @available_pep_fasta = qx{wget -S --spider $pep_fasta_ftp 2>&1};
+
+    foreach my $fasta (@available_pep_fasta) {
+      chomp ($fasta);
+      my @token = split(" ",$fasta);
+      return $pep_fasta_ftp.$token[-1] if ( $fasta =~ 'all' );
+    }
+  }
+
+  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+                                                                             
+    foreach my $fasta_ftp (@fasta_ftps) {
+      
+      my @available_species = qx{wget -S --spider $fasta_ftp 2>&1};
+      foreach my $spe (@available_species) {
+        chomp($spe);
+        next unless ($spe =~ /$species/);
+          
+        my $pep_fasta_ftp = $fasta_ftp.$species."/pep/";
+        my @available_pep_fasta = qx{wget -S --spider $pep_fasta_ftp 2>&1};
+
+        foreach my $fasta (@available_pep_fasta) {
+          chomp ($fasta);
+          my @token = split(" ",$fasta);
+          return $pep_fasta_ftp.$token[-1] if ( $fasta =~ 'all' );
+        }
+      }
+    }
+  }
+}
+
 
 ## Get ftp variation url
 sub Get_variation_ftp {
@@ -140,8 +181,8 @@ sub Get_variation_species_ftp {
     foreach my $variation_ftp (@variation_ftps) {
       my @available_species = qx{wget -S --spider $variation_ftp 2>&1};
       foreach my $spe (@available_species) {
-        chomp;
-        next unless ($file =~ /$species/);
+        chomp($spe);
+        next unless ($spe =~ /$species/);
         return $variation_ftp.$species."/" if ($spe eq $species);
       }
     }
@@ -244,7 +285,7 @@ sub Get_host_port {
 sub Get_species_dir_name {
   my ($species,$assembly_version,$ensemb_version) = @_;
   $species = ucfirst($species);
-  return $species."_ensembl_".$assembly_version."_".$ensembl_version;
+  return $species."_ensembl_".$ensembl_version."_".$assembly_version;
 }
 
 sub Get_assembly_version {
