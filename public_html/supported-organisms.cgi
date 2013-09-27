@@ -13,8 +13,10 @@ BEGIN {
 	|| die "Unable to redirect log\n";
     carpout(*LOG);
 }
+
 require "RSA.lib";
 require "RSA2.cgi.lib";
+
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ##$tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate();
 $prefix = "supported-organisms";
@@ -22,7 +24,6 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 
 $font{variable} = 1;
 $command = "$SCRIPTS/supported-organisms -v 1";
-
 
 ### Read the CGI query
 $query = new CGI;
