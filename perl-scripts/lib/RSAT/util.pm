@@ -873,7 +873,6 @@ sub make_temp_file {
     my $login = getpwuid($<) || "temp_user";
     $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
   }
-
   &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
 
   ## Create an index file in the nexw directory to prevent Web users from seing its whole content
