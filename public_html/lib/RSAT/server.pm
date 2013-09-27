@@ -7,8 +7,12 @@ require RSAT::error;
 unless ($ENV{RSAT}) {
     $ENV{RSAT} = $0; #
 #    $ENV{RSAT} =~ s|\/[^\/]+$||g; ## Guess RSAT path from module full name
-    $ENV{RSAT} =~ s|/+perl-scripts.*||; ## Guess RSAT path from module full name
-    $ENV{RSAT} =~ s|/+public_html.*||; ## Guess RSAT path from module full name
+    $ENV{RSAT} =~ s|/*perl-scripts.*||; ## Guess RSAT path from module full name
+    $ENV{RSAT} =~ s|/*public_html.*||; ## Guess RSAT path from module full name
+    if ($ENV{RSAT} eq "") {
+      $ENV{RSAT} = `pwd`;
+      chomp $ENV{RSAT};
+    }
 }
 
 ################################################################
@@ -413,7 +417,6 @@ package main;
 ## Read props file
 sub ReadProperties {
   if ($0 =~ /([^(\/)]+)$/) {
-
     ## This flag is activated if the site-specific config is not found
     my $default_props = 0;
 
@@ -539,7 +542,6 @@ sub InitRSAT {
   &LoadLocalOrganisms();
 
 
-
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
@@ -555,6 +557,7 @@ sub InitRSAT {
 #   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
 #   $year_month = sprintf("%02d_%02d", $day, $month+1, 1900+$year);
 #   $main::TMP .= "/".$year_month;
+
    &RSAT::util::CheckOutDir($main::TMP);
    chmod(0777, $main::TMP);
 #   &RSAT::message::Debug("Temporary dir", $main::TMP) if ($main::verbose >= 5);
