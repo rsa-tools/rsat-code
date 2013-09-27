@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.124 2013/09/22 02:33:55 jvanheld Exp $
+# $Id: install-organism,v 1.125 2013/09/27 08:35:23 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
   $verbose = 0;
   $batch = 0;
   $die_on_error = 0;
-  $seq_format = "ft";
+  $seq_format = "fasta"; ## default format for exporting sequences
   $img_format = $ENV{rsat_img_format} || "png";
   $noov="";
   $strands="-1str";
