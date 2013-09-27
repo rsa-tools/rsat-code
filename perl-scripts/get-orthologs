@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.65 2013/09/22 21:18:05 jvanheld Exp $
+# $Id: get-orthologs,v 1.66 2013/09/27 06:23:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -812,7 +812,7 @@ sub select_hits{
       next;
     }
     &RSAT::message::Info("Matching line", $l, $query_id) if ($main::verbose >= 4);
-	
+
     ################################################################
     ## Build a hash table with the attributes of the BLAST hit
     my $hit = {};
@@ -820,7 +820,7 @@ sub select_hits{
     foreach my $field (@{$blast_columns}) {
       # get hit
       $hit->{$field} = shift @fields;
-	    
+
       # check lower threshold
       if (defined($lth{$field})) {
 	if ($hit->{$field} < $lth{$field}) {
