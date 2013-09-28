@@ -3,6 +3,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::OrganismManager;
 
 use Storable qw(nstore retrieve);
 
@@ -37,7 +38,7 @@ $supported_info_types = join ",", @supported_info_types;
 $out = &OpenOutputFile($outputfile);
 
 #### organism
-&CheckOrganism($organism_name);
+&RSAT::OrganismManager::CheckOrganism($organism_name);
 
 
 #### Information types
