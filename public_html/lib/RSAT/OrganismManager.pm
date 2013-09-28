@@ -20,17 +20,37 @@ use RSAT::TreeNode;
 
 @ISA = qw( RSAT::GenericObject );
 
+
 ################################################################
 ## Class variables
 
 ## Fields for supported organisms
-our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format source nb);
+our @supported_org_fields = qw(ID
+			       name
+			       data
+			       last_update
+			       taxonomy
+			       up_from
+			       up_to
+			       genome
+			       seq_format
+			       source
+			       nb
+			       selected_taxon
+			       taxon_depth
+			       org_per_taxon
+			      );
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
 
 ## Null value for undefined fields
 our $null = "<NA>";
+
+
+## Taxonomic tree (should be loaded only once)
+our $tree;
+our %count_per_taxon = ();
 
 =pod
 
@@ -254,7 +274,7 @@ Restrict only return organisms belonging to a given taxon.
 
 =cut
 sub supported_organism_table {
-  my ($header,$relative_path, $taxon, @fields) = @_;
+  my ($header,$relative_path, $taxon, $depth, @fields) = @_;
   my $table = "";
 
   &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "taxon: ".$taxon, "fields", join( ";", @fields)) 
@@ -288,23 +308,21 @@ sub supported_organism_table {
   ## Select the organisms
   my @selected_organisms = ();
   if ($taxon) {
-    my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
-    my $node = $tree->get_node_by_id($taxon);
-    if ($node){
-      @selected_organisms = $node->get_leaves_names();
-    }else{
-      &RSAT::error::FatalError("Taxon $taxon is not supported\n");
-    }
+    @selected_organisms = &GetOrganismsForTaxon($taxon, $depth);
   } else {
     @selected_organisms = sort keys %main::supported_organism;
+    if ($depth != 0) {
+      @selected_organisms = &OneOrgPerTaxonomicDepth($depth, @selected_organisms);
+    }
   }
+
 
   ## Add fields for each organism
   my $n = 0;
   foreach my $org (@selected_organisms) {
     $n++;
     $main::supported_organism{$org}->{'ID'} = $org;
+    $main::supported_organism{$org}->{'nb'} = $n; ## Reset nb in case of filtering
     my @values = ();
     foreach my $field (@fields) {
       my $value = $null;
@@ -314,8 +332,8 @@ sub supported_organism_table {
 	  $value =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|;
 	  $value =~ s|\/+|\/|g;
 	}
-      } elsif ($field eq "nb") {
-	$value = $n;
+#      } elsif ($field eq "nb") {
+#	$value = $n;
       } else {
 	$value = $null;
 	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
@@ -361,6 +379,129 @@ return a list with the IDs of the supported organisms.
 
 sub get_supported_organisms {
   return sort keys %main::supported_organism;
+}
+
+
+################################################################
+#### Check if an organism is supported on the current installation,
+#### and open streams to read its genome sequence.
+####
+#### Usage
+#### -----
+#### Automatic selection of genome and feature file : 
+####    &CheckOrganism($organism_name); 
+####
+#### Manual specification of input files :
+#### &CheckOrganism($organism_name, 
+####                $annotation_table, 
+####                $input_sequence_format);
+sub CheckOrganism {
+    my ($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format) = @_;
+    my $organism_object = new RSAT::organism();
+    $organism_object->OpenContigs($organism_name, 
+				  $annotation_table, 
+				  $input_sequence_file, 
+				  $input_sequence_format);
+    return $organism_object;
+}
+
+
+################################################################
+## Collect all organisms belonging to a given taxon
+sub GetOrganismsForTaxon {
+  my ($taxon, $depth) = @_;
+  my @organisms = ();
+  unless ($tree) {
+    $tree = new RSAT::Tree();
+  }
+  $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
+  my $node = $tree->get_node_by_id($taxon);
+  if ($node){
+    @organisms = $node->get_leaves_names();
+
+    ## Cut the taxonomic tree by selecting only one organism for each
+    ## taxon at a given depth of the taxonomic tree.
+    if ($depth != 0) {
+      @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
+    }
+  }else{
+    &RSAT::error::FatalError("Taxon $taxon is not supported\n");
+  }
+  return @organisms;
+}
+
+################################################################
+## Select one organism per taxonomic depth.
+##
+## Positive depth values: from root (level 1) to leaves.
+##
+## Negative depth values: from leaves (level -1) to root. Beware:
+## level 0 is the species -> level -1 is the last taxonomy level
+sub OneOrgPerTaxonomicDepth {
+  my ($depth, @organisms) = @_;
+  my @selected_organisms = ();
+  foreach my $org (@organisms) {
+    my $taxonomy = $main::supported_organism{$org}->{'taxonomy'};
+    my @taxonomy = split (/;\s*/, $taxonomy);
+    my $max_depth = scalar(@taxonomy);
+    my $selected_depth;
+    if ($depth < 0) {
+      $selected_depth = $max_depth + $depth;
+    } else {
+      $selected_depth = &RSAT::stats::min($depth, $max_depth);
+    }
+    my $selected_taxon = $taxonomy[$selected_depth -1];
+    $main::supported_organism{$org}->{'taxon_depth'} = $selected_depth;
+    $main::supported_organism{$org}->{'selected_taxon'} = $selected_taxon;
+    unless (defined($count_per_taxon{$selected_taxon})) {
+      push @selected_organisms, $org;
+    }
+    $count_per_taxon{$selected_taxon}++;
+    &RSAT::message::Debug("&SelectOneOrgPerTaxon()",
+			  $org,
+			  $taxonomy,
+			  "depth=".$depth,
+			  "max_depth=".$max_depth, $selected_taxon, $count_per_taxon{$selected_taxon})
+      if ($main::verbose >= 5);
+  }
+
+  foreach my $org (@selected_organisms) {
+    $main::supported_organism{$org}->{'org_per_taxon'} = $count_per_taxon{$main::supported_organism{$org}->{'selected_taxon'}};
+  }
+  return (@selected_organisms);
+}
+
+################################################################
+## Check if there is at least one supported organism belonging to the
+## specified taxon on this RSAT server.
+sub CheckTaxon {
+  my ($query_taxon, $warn_only) = @_;
+
+  ## Load the taxonomic tree of organisms supported in RSAT
+  unless ($tree) {
+    $tree = new RSAT::Tree();
+  }
+
+  &RSAT::message::Info("CheckTaxon()", $query_taxon, $tree) if ($main::verbose >= 0);
+
+  unless ($tree->get_attribute("is_loaded")) {
+    my @supported_organisms = sort keys (%supported_organism);
+    $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
+  }
+
+  my @organisms = $tree->get_node_descendents_names($query_taxon, "DFS", "leaf");
+
+  &RSAT::message::Info("CheckTaxon", $query_taxon, scalar(@organisms), "organisms") if ($main::verbose >= 4);
+  if (scalar(@organisms) > 0) {
+    return @organisms;
+  } else {
+    my $message = join("\t", "There is no supported organism for taxon", $query_taxon, "\nType supported-organisms -format full for a list of supported taxa");
+    if ($warn_only) {
+      &RSAT::message::Warning($message);
+    } else {
+      &RSAT::error::FatalError($message);
+    }
+  }
 }
 
 ################################################################
