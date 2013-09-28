@@ -307,19 +307,20 @@ sub supported_organism_table {
     $main::supported_organism{$org}->{'ID'} = $org;
     my @values = ();
     foreach my $field (@fields) {
+      my $value = $null;
       if (defined($main::supported_organism{$org}->{$field})) {
-	my $value = $main::supported_organism{$org}->{$field};
+	$value = $main::supported_organism{$org}->{$field};
 	if ($relative_path) {
 	  $value =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|;
 	  $value =~ s|\/+|\/|g;
 	}
-	push @values, $value;
       } elsif ($field eq "nb") {
-	push @values, $n;
+	$value = $n;
       } else {
-	push @values, $null;
+	$value = $null;
 	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
       }
+      push @values, $value;
     }
     my $row = join ("\t", @values);
 #    &RSAT::message::Debug($org, $row) if ($main::verbose >= 3);

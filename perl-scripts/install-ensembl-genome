@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.25 2013/09/24 07:17:30 rsat Exp $
+# $Id: install-ensembl-genome,v 1.26 2013/09/28 03:09:05 jvanheld Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -183,9 +183,9 @@ package main;
 
     ## Set default tasks if no task has been specified
     if (scalar(@tasks) < 1) {
-	@tasks= @default_tasks;
+      @tasks= @default_tasks;
     }
-#    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
+    #    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
 
     ## Check the requested tasks
     &RSAT::message::Info("Requested tasks:", join(",", @tasks)) if ($main::verbose >= 2);
