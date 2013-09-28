@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.80 2013/04/03 01:10:38 jvanheld Exp $
+# $Id: compare-classes,v 1.81 2013/09/28 13:05:13 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -221,12 +221,12 @@ unless ($infile{query_classes}) {
 }
 
 if ($catalog) {
-    if ($organism_name) {
-	$infile{ref_classes} = $supported_organism{$organism_name}->{'data'}."/catalogs/${organism_name}_${catalog}.tab";
-    } else {
-	&RSAT::error::FatalError("The option -cat requires to specify an organism");
-    }
-} 
+  if ($organism_name) {
+    $infile{ref_classes} = $supported_organism{$organism_name}->{'data'}."/catalogs/${organism_name}_${catalog}.tab";
+  } else {
+    &RSAT::error::FatalError("The option -cat requires to specify an organism");
+  }
+}
 
 unless ($infile{ref_classes}) {
     &RSAT::error::FatalError("You must specify a file containing reference classes");
@@ -1003,7 +1003,7 @@ sub ReadArguments {
       #### organism
     } elsif ($ARGV[$a] eq "-org") {
       $organism_name =$ARGV[$a+1];
-      &CheckOrganismName($organism_name);
+      &RSAT::OrganismManager::check_name($organism_name);
 
       ### input file (both reference and query)
     } elsif ($ARGV[$a] eq "-i") {

@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.168 2013/06/20 00:30:05 jvanheld Exp $
+# $Id: oligo-analysis,v 1.169 2013/09/28 13:05:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -15,12 +15,13 @@ require "RSA.seq.lib";
 require "RSA.disco.lib";
 require RSAT::Tree;
 require RSAT::MarkovModel;
+require RSAT::OrganismManager;
 #require RSAT::TreeNode;
 
 ################################################################
 ## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
-local $program_version = do { my @r = (q$Revision: 1.168 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.169 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "oligos";
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
@@ -2031,7 +2032,7 @@ sub ReadArguments {
 		&RSAT::message::FatalError("Options -org and -taxon are mutually exclusive");
 	    }
 	    $org_or_taxon = shift(@arguments);
-	    &CheckOrganismName($org_or_taxon);
+	    &RSAT::OrganismManager::check_name($org_or_taxon);
 
 	    ### taxon (for selecting a taxon-specific background model)
 	  } elsif ($arg =~ /^-taxon/i) {
