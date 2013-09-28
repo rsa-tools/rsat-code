@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.26 2013/09/28 03:09:05 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.27 2013/09/28 04:00:49 rsat Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -131,6 +131,7 @@ package main;
   our $verbose = 0;
   our $dry_run = 0;
   our $die_on_error = 1;
+  our $batch = 0;
   our $out = STDOUT;
 
   our $db = "ensembl";
@@ -154,6 +155,7 @@ package main;
   }
   our $supported_tasks = join ",", keys %supported_task;
   our @species_names = ();
+
 
   ################################################################
   ## Read argument values
@@ -323,6 +325,7 @@ package main;
       if ($task{"install"}) {
 	  &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
 	  my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
+	  $command .= " -batch" if ($batch);
 	  &doit($command, $dry_run, $die_on_error, $verbose);
       }
   }
@@ -578,6 +581,19 @@ incomplete.
 
 } elsif ($arg eq "-nodie") {
   $main::die_on_error = 0;
+
+=pod
+
+=item B<-batch>
+
+Run the last installation tasks in batch. This option requires to
+dispose of a PC cluster, and to properly configure it in the
+configuration file $RSAT/RSAT_config.props.
+
+
+=cut
+} elsif ($arg eq "-batch") {
+    $batch = 1;
 
 
 
