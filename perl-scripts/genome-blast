@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: genome-blast,v 1.30 2013/04/28 21:28:07 rsat Exp $
+# $Id: genome-blast,v 1.31 2013/09/28 04:01:01 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -752,7 +752,7 @@ Don't die on error.
 	} elsif ($ARGV[$a] eq "-nodie") {
 	    $die_on_error = 0;
 
-	    #### batch
+
 =pod
 
 =item B<-batch>
