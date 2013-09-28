@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.22 2013/08/14 07:25:13 jvanheld Exp $
+# $Id: gene-info,v 1.23 2013/09/28 13:05:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -52,7 +52,6 @@ package main;
   &RSAT::OrganismManager::check_name($organism_name);
   my $organism = new RSAT::organism();
   $organism->set_attribute("name", $organism_name);
-  #&CheckOrganism($organism_name);
 
   ## Accepted feature types
   $organism->DefineAcceptedFeatureTypes(sort(keys(%accepted_feature_types)));
