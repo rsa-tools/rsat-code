@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.125 2013/09/27 08:35:23 rsat Exp $
+# $Id: install-organism,v 1.126 2013/09/28 03:09:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -462,11 +462,11 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'source'} = $args{source} || $main::source;
 
   ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
-  unless ($source eq 'ensembl') {
+#  unless ($source eq 'ensembl') {
     $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
     $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $main::outfile{genome};
     $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
-  }
+#  }
   $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $main::taxonomy;
   if (defined($main::outfile{synonyms})) {
     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
@@ -585,9 +585,9 @@ sub AllUpstream {
       my @seq_formats = qw(fasta ft);
       #      my @seq_formats = qw(ft);
 
-      ## Retrieve sequences in two formats:
-      ## fasta is used for computing oligo and dyad frequencies
-      ## ft is convenient for retrieve-seq-multigenome
+      ## Retrieve sequences in two formats: fasta is used for
+      ## computing oligo and dyad frequencies, whereas ft is convenient for
+      ## retrieve-seq-multigenome
       foreach $format (@seq_formats) {
 	my $command = "retrieve-seq -all";
 	$command .= " -type upstream -org ".$organism_short_name;
