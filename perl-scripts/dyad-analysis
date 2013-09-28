@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.77 2013/02/27 10:16:22 jvanheld Exp $
+# $Id: dyad-analysis,v 1.78 2013/09/28 13:05:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -15,12 +15,13 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.disco.lib";
+require RSAT::OrganismManager;
 
 ################################################################
 #### Initialise parameters
 local $start_time = &RSAT::util::StartScript();
 
-local $program_version = do { my @r = (q$Revision: 1.77 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.78 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 local $pattern_type = "dyads";
 
 %supported_return_field = (proba=>1,
@@ -883,7 +884,7 @@ sub ReadArguments {
 	&RSAT::message::FatalError("Options -org and -taxon are mutually exclusive");
       }
       $org_or_taxon = $ARGV[$a+1];
-      &CheckOrganismName($org_or_taxon);
+      &RSAT::OrganismManager::check_name($org_or_taxon);
 
       ### taxon (for selecting a taxon-specific background model)
     } elsif ($ARGV[$a] =~ /^-taxon/i) {
