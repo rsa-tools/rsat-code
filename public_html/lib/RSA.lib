@@ -620,64 +620,20 @@ $supported_feature_types = join ",", @supported_feature_types;
 ################################################################
 ## Check if the specified organism name is supported on this server
 sub CheckOrganismName {
-    my ($organism_name) = @_;
-    &RSAT::OrganismManager::check_name($organism_name);
-#     unless ($supported_organism{$organism_name}) {
-#	&RSAT::error::FatalError("Organism $organism_name is not supported.",
-#		    "Supported on this site : \n".&ListSupportedOrganisms());
-#    }
+  return(&RSAT::OrganismManager::check_name(@_));
 }
 
 ################################################################
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
-  my ($query_taxon) = @_;
-  &RSAT::message::Warning("GetOrganismsForTaxon is obsolete, the class RSAT::Tree should be used instead");
-  my @organisms = ();
-  if ($query_taxon eq "Organisms") {
-    @organisms =  (sort keys %supported_organism);
-  } else {
-    foreach my $org (sort keys %supported_organism) {
-      my $taxonomy = $supported_organism{$org}->{'taxonomy'};
-      my @org_taxa = split /\s*;\s*/, $taxonomy;
-      &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "checking", $org) if ($main::verbose >= 3);
-      foreach my $orf_taxon (@org_taxa) {
-	if (lc($orf_taxon) eq lc($query_taxon)) {
-	  push @organisms, $org;
-	  &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "collected", $org) if ($main::verbose >= 4);
-	}
-      }
-    }
-  }
-  return @organisms;
+  return (&RSAT::OrganismManager::GetOrganismsForTaxon(@_));
 }
 
 ################################################################
 ## Check if there is at least one supported organism belonging to the
 ## specified taxon on this RSAT server.
 sub CheckTaxon {
-  my ($query_taxon, $warn_only) = @_;
-#  &RSAT::message::Info("CheckTaxon", $query_taxon, $main::tree) if ($main::verbose >= 10);
-  ## Load the taxonomical tree of organisms supported in RSAT
-  unless ($main::tree) {
-    $main::tree = new RSAT::Tree();
-  }
-  unless ($main::tree->get_attribute("is_loaded")) {
-    my @supported_organisms = sort keys (%supported_organism);
-    $main::tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
-  }
-  my @organisms = $main::tree->get_node_descendents_names($query_taxon, "DFS", "leaf");
-  &RSAT::message::Info("CheckTaxon", $query_taxon, scalar(@organisms), "organisms") if ($main::verbose >= 4);
-  if (scalar(@organisms) > 0) {
-    return @organisms;
-  } else {
-    my $message = join("\t", "There is no supported organism for taxon", $query_taxon, "\nType supported-organisms -format full for a list of supported taxa");
-    if ($warn_only) {
-      &RSAT::message::Warning($message);
-    } else {
-      &RSAT::error::FatalError($message);
-    }
-  }
+  return(&RSAT::OrganismManager::CheckTaxon(@_));
 }
 
 ################################################################
@@ -687,20 +643,14 @@ sub CheckTaxon {
 #### Usage
 #### -----
 #### Automatic selection of genome and feature file : 
-####    &CheckOrganism($organism_name); 
+####    &CheckOrganism($organism_name);
 ####
 #### Manual specification of input files :
 #### &CheckOrganism($organism_name, 
 ####                $annotation_table, 
 ####                $input_sequence_format);
 sub CheckOrganism {
-    my ($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format) = @_;
-    my $organism_object = new RSAT::organism();
-    $organism_object->OpenContigs($organism_name, 
-				  $annotation_table, 
-				  $input_sequence_file, 
-				  $input_sequence_format);
-    return $organism_object;
+  &RSAT::OrganismManager::CheckOrganism(@_);
 }
 
 
@@ -713,9 +663,11 @@ sub ListSupportedOrganisms {
   my ($out_format, $header, @fields) = @_;
 #  &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
 
-  $out_format = $out_format || "text";
-  $header = $header || 0;
-  return (&RSAT::OrganismManager::supported_organism_table($header, 0, "", @fields));
+  my $out_format = $main::out_format || "text";
+  my $header = $main::header || 0;
+  my $taxon = "";
+  my $depth = 0;
+  return (&RSAT::OrganismManager::supported_organism_table($header, 0, $taxon, $depth, @fields));
 }
 
 sub ListSupportedOrganisms_old {
