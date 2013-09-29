@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathways-from-genome,v 1.35 2013/08/09 22:43:57 rsat Exp $
+# $Id: pathways-from-genome,v 1.36 2013/09/29 05:00:36 jvanheld Exp $
 #
 ############################################################
 
@@ -103,7 +103,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
 
@@ -130,11 +130,11 @@ package main;
   our @supported_tasks = qw(all
 			    metanet
 			    ger
-			    pathways_vs_genome
 			    operons
 			    directons
 			    footprints
 			    genesets2ecs
+			    pathways_vs_genome
 			    pathway_proj
 			    pathway_disco
 			    synthesis
@@ -219,6 +219,12 @@ package main;
     %task = %supported_task;
   }
 
+  ## Check necessary files
+  if (($task{pathways_vs_genome}) ||
+      ($task{pathway_proj}) ||
+      ($task{pathway_disco})) {
+    &RSAT::error::FatalError("Pathway analysis tasks require to define the EC <-> pathway file (option -ec2pathway)") unless ($infile{ec2pathway});
+  }
 
   ## Check conditions for which the organism cross-reference table is
   ## required.
@@ -732,7 +738,7 @@ numbers (first column) and annotated pathways second column).
 
 =pod
 
-=item	B<-o output_base>
+=item B<-o output_base>
 
 Base for the output directories. Subdirectories will be created for
 each organism, and with organism-specific directories, for each result
@@ -741,12 +747,13 @@ type.
 Mandatory argument.
 
 =cut
+
     } elsif ($arg eq "-o") {
       $output_dir = shift(@arguments); ## We reserve the hash table %outfile to organism-specific directories
 
 =pod
 
-=item B<-task>
+=item B<-task task1,task2,...>
 
 Specify a subset of tasks to be executed.
 
@@ -788,9 +795,10 @@ considered as inter-operons) and false negatives (the opposite).
 
 =item I<directons>
 
-Compute directons from gene orientations. Directons are defined as maximal
-(non-extendable) sets of contiguous genes transcribed in the same
-direction. A directon can contain one or several successive operons.
+Compute directons from gene orientations. Directons are defined as
+maximal (non-extendable) sets of contiguous genes transcribed in the
+same direction. A directon can contain one or several successive
+operons.
 
 Note: in practice, we detect by running I<infer-operon> with a
 virtually infinite threshold on intergenic distance. Since all genes
@@ -907,7 +915,7 @@ sub Verbose {
   printf $out "; %-22s\t%s\n", "Organism name", $organism_name;
   my %org_info = %{$organism_info{$organism_name}};
   foreach my $key (sort keys %org_info) {
-    my $value = $org_info{$key};
+    my $value = $org_info{$key} || "NA";
     printf $out ";\t%-22s\t%s\n", $key, $value;
   }
 
@@ -1113,14 +1121,19 @@ sub InferOperonsOrDirectons {
       $organism_info{$organism_name}->{$operons_or_directons."_max_size"} = $stats{max};
 
       ## Add information in the organism-specific synthesis
-      print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{nb_genes};
-      print $syn "<br>Nb ".$operons_or_directons.": ", $organism_info{$organism_name}->{$operons_or_directons};
-      print $syn "<br>Mean size: ", sprintf("%.1f", $organism_info{$organism_name}->{$operons_or_directons."_mean_size"});
-      print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_directons."_max_size"};
+      print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{nb_genes} || "NA";
+      print $syn "<br>Nb ".$operons_or_directons.": ", $organism_info{$organism_name}->{$operons_or_directons} || "NA";
+      my $mean_size = "NA";
+      if ($organism_info{$organism_name}->{$operons_or_directons."_mean_size"}) {
+	$mean_size = sprintf("%.1f", $mean_size = $organism_info{$organism_name}->{$operons_or_directons."_mean_size"});
+      }
+      print $syn "<br>Mean size: ", $mean_size;
+      print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_directons."_max_size"} || "NA";
 
       ## Add info in the main synthesis
       print $main_syn "<td>", $organism_info{$organism_name}->{nb_genes},  "</td>\n" if ($operons_or_directons eq 'operons');
-      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_directons}, $organism_info{$organism_name}->{$operons_or_directons}),  "</td>\n";
+#      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_directons}, $organism_info{$organism_name}->{$operons_or_directons}),  "</td>\n";
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_directons}, "[".$operons_or_directons."]"),  "</td>\n";
 
     } else {
       print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_directons."_stats"}, "</font></p>\n";
@@ -1617,10 +1630,15 @@ sub CheckGERFile {
     $ger_file = $outfile{"gene-ec_rsat_id"};
   }
   &RSAT::message::Info("GER file", $ger_file) if ($main::verbose >= 3);
-  if ($die_on_error) {
-    &RSAT::error::FatalError("Cannot read GER file", $ger_file) unless (-r $ger_file);
+
+  ## Check that GER file exists and is readable
+  unless (-r $ger_file) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Cannot read GER file", $ger_file);
+    } else {
+      &RSAT::message::Warning("Cannot read GER file", $ger_file);
+    }
   }
-  &RSAT::message::Warning("Cannot read GER file", $ger_file) unless (-r $ger_file);
   return($ger_file);
 }
 
