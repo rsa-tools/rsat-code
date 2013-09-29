@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.29 2013/09/29 21:50:31 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.30 2013/09/29 21:54:55 jvanheld Exp $
 #
 ############################################################
 
@@ -121,7 +121,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -169,8 +169,14 @@ package main;
   if ($infile{input}) {
     my ($file) = &OpenInputFile($infile{input});
     while (<$file>) {
+      next unless (/\S/); ## Skip empty rows
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header line
       chomp();
-      push (@species_names,$_);
+      my ($species_name) = split(/\s/);
+      if ($species_name) {
+	push (@species_names,$species_name);
+      }
     }
   }
 
