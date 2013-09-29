@@ -81,10 +81,15 @@ sub Get_fasta_ftp {
 }
 
 
-## Get ftp pep fasta species url
-#######  Quick way to download features 
-#######  Work only for version 72-73
-
+################################################################
+##
+## Get the URL of the peptidic sequences fasta file on Ensembl ftp
+## site.
+##
+## This URL can then be used to download peptidic sequences in a quick
+## way.
+##
+## Beware: the method is only valid for Ensembl version >= 72.
 sub Get_pep_fasta_ftp {
   my ($db,$species,$ensembl_version) = @_;
   my @fasta_ftps = &Get_fasta_ftp($db,$ensembl_version);
@@ -98,20 +103,14 @@ sub Get_pep_fasta_ftp {
       my @token = split(" ",$fasta);
       return $pep_fasta_ftp.$token[-1] if ( $fasta =~ 'all' );
     }
-  }
-
-  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
-                                                                             
+  } elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
     foreach my $fasta_ftp (@fasta_ftps) {
-      
       my @available_species = qx{wget -S --spider $fasta_ftp 2>&1};
       foreach my $spe (@available_species) {
         chomp($spe);
         next unless ($spe =~ /$species/);
-          
         my $pep_fasta_ftp = $fasta_ftp.$species."/pep/";
         my @available_pep_fasta = qx{wget -S --spider $pep_fasta_ftp 2>&1};
-
         foreach my $fasta (@available_pep_fasta) {
           chomp ($fasta);
           my @token = split(" ",$fasta);
