@@ -663,8 +663,8 @@ sub ListSupportedOrganisms {
   my ($out_format, $header, @fields) = @_;
 #  &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
 
-  my $out_format = $main::out_format || "text";
-  my $header = $main::header || 0;
+  $out_format = "text" unless ($main::out_format);
+  $header = 0 unless ($header);
   my $taxon = "";
   my $depth = 0;
   return (&RSAT::OrganismManager::supported_organism_table($header, 0, $taxon, $depth, @fields));
