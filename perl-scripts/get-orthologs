@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.66 2013/09/27 06:23:23 jvanheld Exp $
+# $Id: get-orthologs,v 1.67 2013/09/29 04:56:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -312,7 +312,7 @@ package main;
   ################################################################
   ## Select all supported organisms belonging to the reference taxon
   ## or included on the org_list
-  &RSAT::message::TimeWarn("Selecting reference organism") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Selecting reference organisms in taxon", $taxon) if ($main::verbose >= 2);
   foreach my $org (keys (%supported_organism)) {
     if (%main::query_orgs) {
       if ($main::query_orgs{$org}) {
