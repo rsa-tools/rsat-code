@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.36 2013/09/29 09:52:59 rsat Exp $
+# $Id: download-ensembl-features,v 1.37 2013/09/29 17:10:48 jvanheld Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -190,7 +190,7 @@ package main;
 
   ################################################################
   ## Get Adaptator
-  &RSAT::message::TimeWarn("Getting species slice from Ensembl") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Getting species slices from Ensembl") if ($main::verbose >= 2);
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
   my $mca = $registry->get_adaptor( $species, 'Core', 'MetaContainer' );
   my $tla = $registry->get_adaptor( $species, 'Core', 'Translation' );
@@ -270,7 +270,7 @@ package main;
   # Change Ensembl version to Ensembl Genomes version
   my $ftp_ensembl_version = $ensembl_version;
   if ($db eq "ensembl_genomes") {
-    &RSAT::message::TimeWarn("Changing Ensembl version to ensembl genome version") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Converting Ensembl version to EnsemblGenomes version") if ($main::verbose >= 2);
     $registry->load_registry_from_db(
         -host => $host,
         -port => $port,
@@ -474,7 +474,7 @@ package main;
 
 
     ## Getting Exon and intron
-    &RSAT::message::TimeWarn("Getting Exon and Intron") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Getting exons and introns") if ($verbose >= 2);
     my $exon_list = $sql_helper->execute(
       -SQL      => "select g.stable_id, tr.stable_id, tr.biotype, ex.stable_id, ex.seq_region_start, ex.seq_region_end, ex.seq_region_strand, s.name, xref.display_label from gene g join transcript tr using (gene_id) join exon_transcript cod_ex on (tr.transcript_id=cod_ex.transcript_id) join exon ex on (ex.exon_id=cod_ex.exon_id) join xref on (g.display_xref_id = xref.xref_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
       -CALLBACK => sub {
@@ -531,7 +531,7 @@ package main;
 
 
     ## Getting Coding Exon
-    &RSAT::message::TimeWarn("Getting Coding Exon") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Getting coding exons") if ($verbose >= 2);
     my $coding_exon_list = $sql_helper->execute(
       -SQL      => "select g.stable_id, tr.stable_id, tr.biotype, ex.stable_id, ex.seq_region_start, ex.seq_region_end, ex.seq_region_strand, s.name from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join exon_transcript ex_tran on (tr.transcript_id=ex_tran.transcript_id)  join exon ex on (ex.exon_id=ex_tran.exon_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
       -CALLBACK => sub {
@@ -645,7 +645,7 @@ package main;
 
 
     ## CDS names
-    &RSAT::message::TimeWarn("Getting CDS Names") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Getting CDS names") if ($verbose >= 2);
 
     my $cds_names_list = $sql_helper->execute(
       -SQL      => "select tl.stable_id,tr.stable_id,g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
@@ -691,7 +691,7 @@ package main;
 
 
     ##Get AA_seq
-    &RSAT::message::TimeWarn("Getting Prot Sequence") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Getting protein sequences") if ($verbose >= 2);
 
     my $prot_seq_ftp = &Get_pep_fasta_ftp($db,$species,$ftp_ensembl_version);
     system("wget -NL -nv $prot_seq_ftp -P $genome_dir");
@@ -699,9 +699,7 @@ package main;
     @token = split(/\//, $prot_seq_ftp);
     my $aa_file = $genome_dir."/".&Get_species_dir_name($species, $assembly_version,$ensembl_version)."_aa.fasta".".gz";
     system("mv $genome_dir/$token[-1] $aa_file");
-
     system("gzip -df $aa_file");
-
   }
 
   ##################
