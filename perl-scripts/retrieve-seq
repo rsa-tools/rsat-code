@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.94 2013/07/09 15:52:49 rsat Exp $
+# $Id: retrieve-seq,v 1.95 2013/09/29 04:57:53 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -880,7 +880,6 @@ sub ReadArguments {
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
-#	    &CheckOrganismName($organism_name);
 
 	    #### input sequence file
 	} elsif ($ARGV[$a] eq "-seq") {
