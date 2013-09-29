@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.17 2012/01/18 17:33:46 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.18 2013/09/29 04:56:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -12,6 +12,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require RSAT::util;
+require RSAT::OrganismManager;
+
 
 ################################################################
 #### initialise parameters
@@ -59,7 +61,7 @@ if ($task{all}) {
 }
 
 ## organism name
-&CheckOrganismName($organism_name);
+&RSAT::OrganismManager::CheckOrganismName($organism_name);
 
 ## Sequence length
 if ($seq_len) {

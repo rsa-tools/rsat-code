@@ -3,7 +3,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-#require "RSA.classes";
+require RSAT::OrganismManager;
+
 &FatalError ("add-orf-function is obsolete. Use add-gene-info instead"); 
 
 
@@ -108,7 +109,7 @@ foreach $a (0..$#ARGV) {
 $out = &OpenOutputFile($outputfile);
 
 #### organism
-&CheckOrganism($organism_name);
+&RSAT::OrganismManager::CheckOrganism($organism_name);
 
 #### read data
 $feature_types = sort keys %supported_feature_types;
