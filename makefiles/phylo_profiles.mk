@@ -166,19 +166,7 @@ merged_profiles:
 ORGANISMS=Escherichia_coli_K_12_substr__MG1655_uid57779 Bacillus_subtilis_168_uid57675 Pseudomonas_putida_KT2440_uid57843 Salmonella_enterica_serovar_Typhimurium_LT2_uid57799
 
 ## Run all the tasks for one organism
-one_org: gene_names select_species bbh profiles compa sig_vs_mi network_genes result_summary
-
-################################################################
-## Extract the primary name of each gene
-CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
-CDS_NAMES=${RSAT}/data/genomes/${ORG}/genome/cds_names.tab
-GENE_NAMES=${RES_DIR}/${ORG}_gene_names.tab
-gene_names:
-	@echo
-	@echo "Getting gene names	${ORG}"
-	@mkdir -p ${RES_DIR}
-	grep -v '^--'  ${CDS} | cut -f 1 | add-gene-info -org ${ORG} -info name -o ${GENE_NAMES}
-	@echo "	${GENE_NAMES}"
+one_org: select_species bbh profiles gene_names compa sig_vs_mi network_genes result_summary
 
 
 ################################################################
@@ -280,6 +268,18 @@ profiles_evalue:
 
 ################################################################
 ## Pairwise comparisons between each gene pair 
+
+################################################################
+## Extract the primary name of each gene
+CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
+CDS_NAMES=${RSAT}/data/genomes/${ORG}/genome/cds_names.tab
+GENE_NAMES=${RES_DIR}/${ORG}_gene_names.tab
+gene_names:
+	@echo
+	@echo "Getting gene names	${ORG}"
+	@mkdir -p ${RES_DIR}
+	grep -v '^--'  ${CDS} | cut -f 1 | add-gene-info -org ${ORG} -info name -o ${GENE_NAMES}
+	@echo "	${GENE_NAMES}"
 
 ## Compare profiles using compare-classes
 COMPA=${PROFILES}_compa
