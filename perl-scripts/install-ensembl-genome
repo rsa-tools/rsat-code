@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.28 2013/09/29 18:49:40 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.29 2013/09/29 21:50:31 jvanheld Exp $
 #
 ############################################################
 
@@ -60,7 +60,6 @@ space, no carriage return), which is indispensable in order to enable
 direct access to any piece of sequences on the hard drive, rather than
 loading the whole chromosome in memory.
 
-
 =head2 Genomic features
 
 Genomic features (genes, CDS, mRNAs, ...) are exported in gft format
@@ -106,7 +105,6 @@ RSAT data directory.
 
 =cut
 
-
 BEGIN {
   if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
@@ -123,7 +121,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -156,7 +154,6 @@ package main;
   our $supported_tasks = join ",", keys %supported_task;
   our @species_names = ();
   our $only_api = 0;
-
 
   ################################################################
   ## Read argument values
@@ -212,7 +209,6 @@ package main;
       &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
 #      &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can not be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
   }
-
 
   ################################################################
   ## Print verbose
@@ -277,7 +273,6 @@ package main;
     exit(0);
   }
 
-
   ################################################################
   ## Run the download and installation tasks
   my $s=0;
@@ -316,7 +311,6 @@ package main;
       $org =~ s|/+$||;
       $org =~ s|.*\/||;
 
-
       ## Declare the organism in RSAT
       if ($task{"config"}) {
 	  &RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
@@ -343,11 +337,9 @@ package main;
   exit(0);
 }
 
-
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
-
 
 ################################################################
 ## Display full help message 
@@ -370,7 +362,6 @@ sub ReadArguments {
   while (scalar(@arguments) >= 1) {
     $arg = shift (@arguments);
 
-
 =pod
 
 =head1 OPTIONS
@@ -389,7 +380,6 @@ Level of verbosity (detail in the warning messages during execution)
 	$main::verbose = 1;
       }
 
-
 =pod
 
 =item B<-h>
@@ -399,7 +389,6 @@ Display full help message
 =cut
     } elsif ($arg eq "-h") {
       &PrintHelp();
-
 
 =pod
 
@@ -429,18 +418,28 @@ Name of the species (organism).
 
 This option can be used iteratively to install multiple
 genomes. Alternatively, a file contianing a list of species names can
-be entered with the option I<-i>.
-
+be entered with the option I<-species_file>.
 
 Use the option I<-available_species> to print a list of available
 species at Ensembl, or options I<-available_species -ensembl_genomes>
 to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
-
     } elsif (($arg eq "-species") || ($arg eq "-org")) { 
       push @species_names, shift(@arguments);
 
+=pod
+
+=item B<-species_file #>
+
+File containing the list of species to install.  The file mut be in
+text format. The first word of each row (everything that precedes a
+space or tab) is considered as a species name. Further information on
+the line is ignored.
+
+=cut
+    } elsif ($arg eq "-species_file") {
+      $main::infile{input} = shift(@arguments);
 
 =pod
 
@@ -509,7 +508,6 @@ Declare the organism to RSAT. This step is necessary for this organism
 to become supported on the local RSAT installation.  This task is
 executed by running I<install-organism>.
 
-
 =item B<-task install>
 
 Perform a series of installation tasks in order to have the organims
@@ -561,7 +559,6 @@ allows to use the command within a pipe.
     } elsif ($arg eq "-o") {
 	$outfile{output} = shift(@arguments);
 
-
 =pod
 
 =item B<-only_api>
@@ -583,7 +580,6 @@ Dry run: print the commands but do not execute them.
     } elsif ($arg eq "-dry") {
 	$main::dry_run = 1;;
 
-
 =pod
 
 =item B<-nodie>
@@ -596,28 +592,24 @@ incomplete.
 
 =cut
 
-} elsif ($arg eq "-nodie") {
-  $main::die_on_error = 0;
+      } elsif ($arg eq "-nodie") {
+	$main::die_on_error = 0;
 
 =pod
 
 =item B<-batch>
 
-Run the last installation tasks in batch. This option requires to
-dispose of a PC cluster, and to properly configure it in the
-configuration file $RSAT/RSAT_config.props.
-
+Run the last installation tasks (I<install-organism>) in batch. This
+option requires to dispose of a PC cluster, and to configure it
+properly in the configuration file $RSAT/RSAT_config.props.
 
 =cut
-} elsif ($arg eq "-batch") {
-    $batch = 1;
+      } elsif ($arg eq "-batch") {
+	$batch = 1;
 
-
-
-    } else {
-      &FatalError(join("\t", "Invalid option", $arg));
-
-    }
+      } else {
+	&FatalError(join("\t", "Invalid option", $arg));
+      }
   }
 
 =pod
@@ -647,6 +639,5 @@ sub Verbose {
     }
   }
 }
-
 
 __END__
