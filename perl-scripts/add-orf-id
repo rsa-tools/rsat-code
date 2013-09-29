@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: add-orf-id,v 1.9 2010/05/24 13:51:08 rsat Exp $
+# $Id: add-orf-id,v 1.10 2013/09/29 04:56:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:40 jvanheld>
 #
@@ -11,7 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-#require "RSA.classes";
+require RSAT::OrganismManager;
 
 $start_time = &RSAT::util::StartScript(); 
 $date = $start_time;
@@ -31,7 +31,7 @@ unless (defined %accepted_feature_types) {
 $feature_types = join ",", keys (%accepted_feature_types);
 
 #### organism
-&CheckOrganism($organism_name);
+&RSAT::OrganismManager::CheckOrganism($organism_name);
 
 ### read ORF information
 &ReadFeatures($organism_name,"",$feature_types);
