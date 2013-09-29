@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: phylo-profiles,v 1.2 2013/09/26 23:38:13 jvanheld Exp $
+# $Id: phylo-profiles,v 1.3 2013/09/29 04:57:10 jvanheld Exp $
 #
 ############################################################
 
@@ -149,7 +149,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -170,11 +170,12 @@ package main;
 
   our $taxon;
   our $organism;
-  our $depth = 5;
+  our $taxonomic_depth = 5;
 
   ## Supported tasks
   our @supported_tasks = qw(
-			    orthologs
+			    species
+			    bbh
 			    all
 			   );
   our $supported_tasks = join (",", @supported_tasks);
@@ -212,9 +213,11 @@ package main;
   &RSAT::util::CheckOutDir($dir{output});
 
   ## Specify output files
-  $prefix{output} = $dir{output}."/".$organism."_vs_".$taxon;
+  $prefix{output} = $dir{output}."/".$organism."_".$taxon."_depth".$taxonomic_depth;
   $outfile{html_index} = $prefix{output}."_index.html"; push @outfiles, "html_index";
-  $outfile{orthologs} = $prefix{output}."_bbh_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}.".tab"; push @outfiles, "orthologs";
+  $outfile{bbh} = $prefix{output}."_bbh_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
+  $outfile{species}=$prefix{output}."_selected_species.tab"; push @outfiles, "species";
+  $outfile{species_html}=$prefix{output}."_selected_species.html"; push @outfiles, "species_html";
 
   ################################################################
   ## Open output stream
@@ -225,14 +228,38 @@ package main;
   my $header = &PrintHtmlResultHeader(program=>"phylo-profiles", refresh_time=>120);
   print $html_index $header;
 
-  ## Report command
-  print $html_index "<p><tt><b>Command:</b> compare-matrices ";
+  ## Report command and arguments
+  print $html_index "<p><b>Command:</b> <tt>phylo-profiles ";
   &PrintArguments($html_index, 1);
   print $html_index "</tt></p>\n";
 
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Select a set of species in a way to reduce redundancy between
+  ## closely related species. This is a bit tricky: we cut the organism
+  ## tree at a given depth (e.g. 5) and select a single species of each
+  ## taxon at this depth.
+  &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
+  my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
+  $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
+  $species_cmd .= " -depth ".$taxonomic_depth;
+  $species_cmd .= " -o ".$outfile{species};
+  $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
+  $species_cmd .= " -i ".$outfile{species};
+  $species_cmd .= " -o ".$outfile{species_html};
+  &one_command($species_cmd, 1, 0, task=>"species");
+  &RSAT::message::Info("species file (tab)", $outfile{species}) if ($main::verbose >= 2);
+  &RSAT::message::Info("species file (html)", $outfile{species_html}) if ($main::verbose >= 2);
+#   my $species_cmd = $SCRIPTS."/supported-organisms -return ID,taxonomy";
+#   $species_cmd .= " | awk '$$1 == \"".$organism."\"' > ".$outfile{species};
+#   $species_cmd .= "; ".$SCRIPTS."/supported-organisms -return ID,taxonomy -taxon ".$taxon;
+#   $species_cmd .= " | perl -pe 's|; |\t|g'";
+#   $species_cmd .= " | cut -f 1-".$taxonomic_depth." | sort -k 2 -u | perl -pe 's|\t|; |g' | perl -pe 's|; |\t|'";
+#   $species_cmd .= " >> ${SPECIES}";
+#   &RSAT::message::Info("BBH file", $outfile{species}) if ($main::verbose >= 2);
 
   ################################################################
   ## Identify all the putative orthologs (BBH)
@@ -245,8 +272,9 @@ package main;
   $ortho_cmd .= " -lth ident ".$lth{identity};
   $ortho_cmd .= "  -uth e_value ".$uth{expect};
   $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
-  $ortho_cmd .= " -o ".$outfile{orthologs};
-  &one_command($ortho_cmd, 1, 0, task=>"orthologs");
+  $ortho_cmd .= " -o ".$outfile{bbh};
+  &one_command($ortho_cmd, 1, 0, task=>"bbh");
+  &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
 
   ################################################################
   ## Generate the HMTL index of input/output files
@@ -353,8 +381,8 @@ list).
 
 =item B<-taxon ref_taxon>
 
-Reference taxon. Orthologs are returned for each supported organism belonging
-to the reference taxon.
+Reference taxon. Orthologs are returned for each supported organism
+belonging to the reference taxon.
 
 =cut
 
@@ -372,9 +400,9 @@ tree in order to select "non-redundant" species.
 =cut
 
 	} elsif ($arg eq "-depth") {
-	    $main::depth = shift (@arguments);
-	    &RSAT::error::FatalError("Depth must be a stricly positive Natural number") 
-	      unless (&IsNatural($depth) && ($depth > 0));
+	    $main::taxonomic_depth = shift (@arguments);
+	    &RSAT::error::FatalError($main::taxonomic_depth, "Invalid value for depth:  must be n Integer number") 
+	      unless (&IsNatural($taxonomic_depth) && ($taxonomic_depth > 0));
 
 
 =pod
@@ -388,6 +416,36 @@ the output directory.
 =cut
     } elsif ($arg eq "-o") {
       $dir{output} = shift(@arguments);
+
+=pod
+
+=item B<-task task1,task2,...>
+
+Supported tasks:
+
+=over
+
+=item I<species>
+
+Select species at a given depth of the taxonomic tree.
+
+=item I<bbh>
+
+Detect bidirectional best hits (BBH).
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	}
+      }
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
