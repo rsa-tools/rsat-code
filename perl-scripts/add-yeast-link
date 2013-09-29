@@ -4,6 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::OrganismManager;
 
 $start_time = &RSAT::util::StartScript();
 
@@ -35,12 +36,12 @@ $feature_types = join ",", keys (%accepted_feature_types);
 
 #### databases
 if ($#databases <= 0) {
-    @databases = @supported_db;
+  @databases = @supported_db;
 }
 
 #### organism
 warn "; Checking organism $organism_name\n" if ($verbose >= 1);
-&CheckOrganism($organism_name, $annotation_table);
+&RSAT::OrganismManager::CheckOrganism($organism_name, $annotation_table);
 
 warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
 &ReadFeatures($organism_name, $annotation_table, $feature_types);
