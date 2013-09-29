@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.14 2011/02/17 04:54:48 rsat Exp $
+# $Id: calc-neighbour-limits,v 1.15 2013/09/29 04:55:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:37 jvanheld>
 #
@@ -12,6 +12,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::OrganismManager;
 
 #### initialise parameters ####
 local $start_time = &AlphaDate;
@@ -45,7 +46,7 @@ $out = &OpenOutputFile($outfile{output});
 &Verbose if ($verbose);
 
 ###### execute the command #########
-&CheckOrganism($organism_name);
+&RSAT::OrganismManager::CheckOrganism($organism_name);
 &ReadFeatures($organism_name,"",$feature_types);
 &CalcNeighbourLimits();
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery-quality,v 1.12 2011/04/21 15:00:20 rsat Exp $
+# $Id: footprint-discovery-quality,v 1.13 2013/09/29 04:56:22 jvanheld Exp $
 #
 ############################################################
 
@@ -60,6 +60,7 @@ BEGIN {
 }
 require "RSA.lib";
 require "RSA.disco.lib";
+require RSAT::OrganismManager;
 use List::Util 'shuffle';
 
 
@@ -74,7 +75,7 @@ package main;
     ################################################################
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
-    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -120,7 +121,7 @@ package main;
     if ($organism eq "") {
       &RSAT::error::FatalError("Please specify an organism with the -org option");
     } else {
-      &CheckOrganism($organism);
+      &RSAT::OrganismManager::CheckOrganism($organism);
     }
     
     my $batch_arg = "";  

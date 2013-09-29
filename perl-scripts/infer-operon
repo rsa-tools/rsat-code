@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: infer-operon,v 1.20 2012/04/17 18:59:17 jvanheld Exp $
+# $Id: infer-operon,v 1.21 2013/09/29 04:57:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -296,7 +296,7 @@ package main;
 
     ## Organism
     &RSAT::error::FatalError("You should specify an organism") unless ($organism_name);
-    &CheckOrganism($organism_name);
+    &RSAT::OrganismManager::CheckOrganism($organism_name);
     $organism = new RSAT::organism();
     $organism->check_name($organism_name);
     $organism->set_attribute("name", $organism_name);
