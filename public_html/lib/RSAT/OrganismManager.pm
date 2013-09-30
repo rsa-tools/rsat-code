@@ -389,7 +389,7 @@ sub get_supported_organisms {
 #### Usage
 #### -----
 #### Automatic selection of genome and feature file : 
-####    &CheckOrganism($organism_name); 
+####    &CheckOrganism($organism_name);
 ####
 #### Manual specification of input files :
 #### &CheckOrganism($organism_name, 
@@ -515,14 +515,22 @@ site. If not, die.
 
 =cut
 sub check_name {
-  my ($organism_name) = @_;
+  my ($organism_name, $no_die) = @_;
   unless ($organism_name) {
-    &RSAT::error::FatalError("You should specify an organism name");
+    if ($no_die) {
+      &RSAT::message::Warning("You should specify an organism name");
+    } else {
+      &RSAT::error::FatalError("You should specify an organism name");
+    }
   }
   my $supported = &is_supported($organism_name);
   unless ($supported) {
-    &RSAT::error::FatalError("Organism $organism_name is not supported.",
-			     "Use the command supported-organisms for a list of supported organisms");
+    my $message = "Organism $organism_name is not supported.\nUse the command supported-organisms for a list of supported organisms";
+    if ($no_die) {
+      &RSAT::message::Warning($message);
+    } else {
+      &RSAT::error::FatalError($message);
+    }
   }
 }
 
