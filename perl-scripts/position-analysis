@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.94 2013/08/23 21:44:33 jvanheld Exp $
+# $Id: position-analysis,v 1.95 2013/09/30 12:48:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -71,7 +71,7 @@ package main;
     our $seq_type = "any";
 
     ## Supported tasks
-    our @supported_tasks = qw(pos clusters matrices graphs index);
+    our @supported_tasks = qw(pos clusters matrices graphs index all);
     our %supported_task = ();
     foreach my $field (@supported_tasks) {
 	$supported_task{$field} = 1;
@@ -106,7 +106,8 @@ package main;
 
     ## Parameters for clustering (delegated to R)
 #    our $column_offset = 0;
-    our $clust_nb = 8;
+    our $min_clust_nb = 8;
+    our $max_clust_nb = 8;
     our $clust_method = "complete";
     our $clust_suffix = "";
 
@@ -122,10 +123,11 @@ package main;
     ## Check parameter values
 
     ## Tasks
-    if (scalar(keys(%task)) == 0) {
-      foreach my $task (@supported_tasks) {
-	$task{$task} = 1;
-      }
+    if (($task{all}) ||
+	(scalar(keys(%task)) == 0)) {
+	foreach my $task (@supported_tasks) {
+	    $task{$task} = 1;
+	}
     }
 
     &RSAT::message::Info("Running tasks", join(",",sort(keys(%task)))) if ($main::verbose >= 2);
@@ -190,13 +192,6 @@ package main;
 	$dir{output} = ".";
     }
     push @dirs , "output";
-
-    ## Automatic assignation of suffix for cluster file and directory
-    if ($return{clusters}) {
-	unless ($clust_suffix) {
-	    $clust_suffix = "clusters_".$clust_method."_k".$clust_nb;
-	}
-    }
 
 
     ################################################################
@@ -322,20 +317,39 @@ package main;
       &PrintProfiles("freq_per_word") if ($return{freq_per_word});
     }
 
-    ## Cluster oligonucleotides based on their occurrence profiles
+    ################################################################
+    ## Oligonucleotide clustering, based on their occurrence profiles
+
+    ## Automatic assignation of suffix for cluster file and directory
     if ($return{clusters}) {
-	$outfile{clusters} = $output_prefix."_".$clust_suffix.".tab"; push @outfiles, "clusters";
-	$dir{clusters} = $output_prefix."_".$clust_suffix; push @dirs, "clusters";
+	unless ($clust_suffix) {
+	    $clust_suffix = "clusters_".$clust_method;
+	}
+    }
+    if ($return{clusters}) {
+	&RSAT::message::TimeWarn("k-mer clustering", 
+				 "min_clust_nb=".$min_clust_nb, 
+				 "max_clust_nb=".$max_clust_nb) if ($main::verbose >= 0);
 
-	## Define output file names for clusters
-	my $cluster_prefix = &ShortFileName($output_prefix);
-	$outfile{cluster_heatmap} = $dir{clusters}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap";
-	$outfile{cluster_occ_profiles} = $dir{clusters}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles";
-	$outfile{cluster_freq_profiles} = $dir{clusters}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles";
-	$outfile{cluster_median_profiles} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles";
-	$outfile{cluster_median_profiles_table} = $dir{clusters}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table";
+	for my $clust_nb ($min_clust_nb..$max_clust_nb) {
+	    &RSAT::message::TimeWarn("k-mer clustering", 
+				     "clust_nb=".$clust_nb,
+				     "suffix=".$clust_suffix) if ($main::verbose >= 0);
+	    my $clust_suffix_k = $clust_suffix."_k".$clust_nb;
 
-	&ProfileClustering() if ($task{clusters});
+	    $outfile{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k.".tab"; push @outfiles, "clusters_k".$clust_nb;
+	    $dir{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k; push @dirs, "clusters_k".$clust_nb;
+	    
+	    ## Define output file names for clusters
+	    my $cluster_prefix = &ShortFileName($output_prefix); ## Attention: prefix cannot be changed, because it must correspond to the one defined in the R file cluster_position_profiles.R
+	    $outfile{"cluster_heatmap_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap_k".$clust_nb;
+	    $outfile{"cluster_occ_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles_k".$clust_nb;
+	    $outfile{"cluster_freq_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles_k".$clust_nb;
+	    $outfile{"cluster_median_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_k".$clust_nb;
+	    $outfile{"cluster_median_profiles_table_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table_k".$clust_nb;
+	    
+	    &ProfileClustering($clust_nb, $clust_suffix_k) if ($task{clusters});
+	}
       }
 
     ## Convert k-mer assemblies into matrices
@@ -1271,11 +1285,17 @@ OPTIONS
 		   clusters: cluster oligonucleotides according to
 		        their occurrence profiles.
 
+		   matrices: build position-specific scoring matrices
+		   	from clusters of oligonucleotides occupying
+		   	similar positions.
+
 		   graphs: generate a XY graph with the occurernce
 		        profile of each oligonucleotide.
 
 		   index: generate the HTML file with links to the
    		        result files.
+
+		   all: run all the tasks above
 
 		Run specific tasks rather than the whole analysis. 
 
@@ -1384,8 +1404,16 @@ OPTIONS
 	    clustering. Supported: complete, average, single,
 	    ward. Default: complete.
 
-	-clust_nb #
-	    Number of clusters (default: 8).
+	-min_clust_nb #
+	    Minimal number of clusters (default: 8).
+
+	    The choice of the number of clusters is generally
+	    tricky. Selecting different cluster numbers allows to
+	    generate the profiles and motifs and evaluate them a
+	    posteriori.
+
+	-max_clust_nb #
+	    Maximal number of clusters (default: 8).
 
 	-clust_suffix
 
@@ -1428,7 +1456,7 @@ position-analysis options
 -noov		no overlap
 -sort		sort oligonucleotides according to the chi2 statistics
 -return		fields to return. Supported: html,chi,distrib,exp_occ,graph,rank,clusters
--task		run specific tasks. Supported: pos, clusters, graphs
+-task		run specific tasks. Supported: pos, clusters, matrices, graphs, index, all
 -markov		markov order for computing background k-mer frequencies
 -lth_chi	lower threshold on chi2
 -lth_sig	lower threshold on significance of the chi2 statistics
@@ -1445,6 +1473,8 @@ position-analysis options
 -header         info for header of distribution columns. Supported: mid,min,max,interval
 -title		title for the index table and position profile plots.
 -clust_nb	number of clusters (cutting level of the hierarchical tree)
+-min_clust_nb	minimal number of clusters (cutting level of the hierarchical tree)
+-max_clust_nb	maximal number of clusters (cutting level of the hierarchical tree)
 -clust_method	clustering method (complete | average | single | ward). Default: complete.
 -clut_suffix	Suffix appended to the cluster file and directory. Default: "clusters".
 End_of_help
@@ -1699,9 +1729,18 @@ sub ReadArguments {
 	    ################################################################
 	    ## Clustering parameters
 	} elsif ($ARGV[$a] eq "-clust_nb") {
-	    $clust_nb = $ARGV[$a+1];
+	    $min_clust_nb = $ARGV[$a+1];
+	    $max_clust_nb = $ARGV[$a+1];
 	    &RSAT::error::FatalError($clust_nb, "invalid number of clusters, must be a Natural number >= 2")
 	      unless ((&IsNatural($clust_nb) && ($clust_nb >= 2)));
+	} elsif ($ARGV[$a] eq "-min_clust_nb") {
+	    $min_clust_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($min_clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	      unless ((&IsNatural($min_clust_nb) && ($min_clust_nb >= 2)));
+	} elsif ($ARGV[$a] eq "-max_clust_nb") {
+	    $max_clust_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($max_clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	      unless ((&IsNatural($max_clust_nb) && ($max_clust_nb >= 2)));
 
 	    ################################################################
 	    ## matrix parameters
@@ -1779,7 +1818,7 @@ sub Verbose {
     if ($noov) {
 	printf $out ";\t%-21s\t%d\n", "Total overlaps", $sum_overlaps;
     }
-
+ 
     print $out "; Position interval parameters:\n";
     printf $out ";\t%-21s\t%d\n", "Position interval", $pos_interval;
     printf $out ";\t%-21s\t%d\n", "Min position", $min_pos if (&IsInteger($min_pos));
@@ -1789,6 +1828,12 @@ sub Verbose {
     printf $out ";\t%-21s\t%d\n", "Number of windows", $calc_window_nb;
     printf $out ";\t%-21s\t%d\n", "Total positions", $sum_pos_per_window;
     printf $out ";\t%-21s\t%d\n", "Degrees of freedom", $calc_window_nb - 1;
+
+
+    print $out "; K-mer clustering parameters:\n";
+    printf $out ";\t%-21s\t%d\n", "Min number of clusters", $min_clust_nb;
+    printf $out ";\t%-21s\t%d\n", "Max number of clusters", $max_clust_nb;
+    printf $out ";\t%-21s\t%s\n", "Clustering method", $clust_method;
 
     &PrintWindowLimits($out);
 }
@@ -2074,30 +2119,30 @@ sub CheckDNA {
 ## Note: this function requires a working installation of the R
 ## statistical package.
 sub ProfileClustering {
-  &RSAT::message::TimeWarn("Clustering oligomers on the basis of their positional occurrence profiles.") if ($main::verbose >= 2);
+    my ($clust_nb, $clust_suffix_k) = @_;
+    &RSAT::message::TimeWarn("Clustering oligomers on the basis of their positional occurrence profiles.") if ($main::verbose >= 2);
+    
+    my $r_path = &RSAT::server::GetProgramPath("R", 1);
+    &RSAT::message::Info("R path", $r_path) if ($main::verbose >= 3);
 
-  my $r_path = &RSAT::server::GetProgramPath("R", 1);
-  &RSAT::message::Info("R path", $r_path) if ($main::verbose >= 3);
-
-  my $pos_cluster_script  = $ENV{RSAT}."/R-scripts/cluster_position_profiles.R";
-  &RSAT::error::FatalError("Cannot read position clustering script", $pos_cluster_script) unless (-r $pos_cluster_script);
+    my $pos_cluster_script  = $ENV{RSAT}."/R-scripts/cluster_position_profiles.R";
+    &RSAT::error::FatalError("Cannot read position clustering script", $pos_cluster_script) unless (-r $pos_cluster_script);
 
 #  my $pos_drawing_offset = -($pos_interval-1)/2;
-  my $pos_drawing_offset = 0;
-
-  my  $pos_cluster_cmd = "cat ".$pos_cluster_script;
-  $pos_cluster_cmd .= " | R --slave --no-save --no-restore --no-environ";
-  $pos_cluster_cmd .= " --args \"";
-  $pos_cluster_cmd .= "file.pos='".$outfile{output}."'";
-  $pos_cluster_cmd .= ";pos.offset=".$pos_drawing_offset;
-  $pos_cluster_cmd .= ";display.intervals=FALSE";
+    my $pos_drawing_offset = 0;
+    my  $pos_cluster_cmd = "cat ".$pos_cluster_script;
+    $pos_cluster_cmd .= " | R --slave --no-save --no-restore --no-environ";
+    $pos_cluster_cmd .= " --args \"";
+    $pos_cluster_cmd .= "file.pos='".$outfile{output}."'";
+    $pos_cluster_cmd .= ";pos.offset=".$pos_drawing_offset;
+    $pos_cluster_cmd .= ";display.intervals=FALSE";
 #  $pos_cluster_cmd .= ";column.offset=".$column_offset;
-  $pos_cluster_cmd .= ";clust.nb=".$clust_nb;
-  $pos_cluster_cmd .= ";clust.method='".$clust_method."'";
-  $pos_cluster_cmd .= ";clust.suffix='".$clust_suffix."'";
-  $pos_cluster_cmd .= ";round.positions=TRUE";
-  $pos_cluster_cmd .= "\"";
-  &doit($pos_cluster_cmd, $dry_run, $die_on_error, $verbose);
+    $pos_cluster_cmd .= ";clust.nb=".$clust_nb;
+    $pos_cluster_cmd .= ";clust.method='".$clust_method."'";
+    $pos_cluster_cmd .= ";clust.suffix='".$clust_suffix_k."'";
+    $pos_cluster_cmd .= ";round.positions=TRUE";
+    $pos_cluster_cmd .= "\"";
+    &doit($pos_cluster_cmd, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
