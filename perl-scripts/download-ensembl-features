@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.37 2013/09/29 17:10:48 jvanheld Exp $
+# $Id: download-ensembl-features,v 1.38 2013/09/30 12:51:51 jvanheld Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -1064,7 +1064,21 @@ Species that you want download variation (Homo_sapiens, Mus_musculus).
 
 =item B<-only_api>
 
-Only use API to download
+Only use API to download.
+
+This option is maintained for the sake of safety, in case the SQL
+interface would be modified.  The download of features (genes, CDS,
+mRNA, ...) initially relied on Ensembl Perl Application Programmatic
+Interface (API). However, this required a lot of time, because the API
+required to treat objects sequentially in order to get the dependent
+objects (e.g. several thousands of queries to collect the gene
+synonyms). 
+
+In the current versio, we replaced this by a direct extraction of all
+the required information by SQL queries. This however assumes that the
+schema of the relational database is unchanged. In case of trouble
+with changes of the SQL structure, the API should in principle still
+allow to download the data.
 
 =cut
     } elsif ($arg eq "-only_api") {
