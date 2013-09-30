@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.67 2013/09/29 04:56:48 jvanheld Exp $
+# $Id: get-orthologs,v 1.68 2013/09/30 12:50:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -287,7 +287,15 @@ package main;
     if (($main::ref_taxon) && ($main::orglist_file));
 
   ## Open orglist
-  if ($main::orglist_file) {
+  if ($main::ref_taxon) {
+    &RSAT::message::TimeWarn("Selecting reference organisms in taxon", $ref_taxon) if ($main::verbose >= 2);
+    @main::ref_organisms = &GetOrganismsForTaxon($ref_taxon);
+    if (scalar(@main::ref_organisms) == 0) {
+      &RSAT::error::FatalError("There is no  supported organism corresponding to the reference taxon", $main::ref_taxon,
+			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
+			      ) if ($main::ref_taxon);
+    }
+  } elsif ($main::orglist_file) {
     ($main::orglist) = &OpenInputFile($main::orglist_file);
     &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose > 1);
     while (<$main::orglist>) {
@@ -297,56 +305,64 @@ package main;
       next if /^\#/;		## Header line
       next if /^\--/;		## SQL comment line
       next unless /\S/;		## Empty line
-      my ($query_org) = split "\t";
-      $query_org = &trim($query_org); ## Remove leading and trailing spaces
-      $main::query_orgs{$query_org}=1;
+      my ($ref_org) = split /\s/;
+      $ref_org = &trim($ref_org); ## Remove leading and trailing spaces
+      &RSAT::OrganismManager::check_name($ref_org);
+#      $main::query_org{$ref_org} = 1;
+      push @main::ref_organisms, $ref_org;
     }
-    close $main::orglist if ($main::orglist_file);
-    &RSAT::error::FatalError(join("\t", "The organism file should contain at least one valid organism name.",
-				  $main::orglist_file),
-			    ) unless (%main::query_orgs) ;
+    close $main::orglist;
+    &RSAT::error::FatalError("The organism file", $main::orglist_file, "should contain at least one valid organism name.",
+			     "Use the command supported-organisms -format full to obtain the supported taxonomy.")
+      if (scalar(@main::ref_organisms) == 0) ;
+  } else {
+    &RSAT::error::FatalError("You must either specify a reference taxon (option -taxon) or a list of reference organisms (option -org_list)");
   }
+  &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
 
 
 
   ################################################################
   ## Select all supported organisms belonging to the reference taxon
   ## or included on the org_list
-  &RSAT::message::TimeWarn("Selecting reference organisms in taxon", $taxon) if ($main::verbose >= 2);
-  foreach my $org (keys (%supported_organism)) {
-    if (%main::query_orgs) {
-      if ($main::query_orgs{$org}) {
-	push @main::ref_organisms, $org;
-      }
-    } elsif ($main::ref_taxon) {
-      my $taxonomy = $supported_organism{$org}->{"taxonomy"};
-      my @taxa = split( /;\s*/, $taxonomy);
-      push @taxa, $org;     
-      foreach my $taxon (@taxa) {
-        my $taxon_wt_underscore = $ref_taxon;
-        $taxon_wt_underscore =~ s/_/ /;
-	if (lc($taxon) eq lc($ref_taxon) || lc($taxon) eq lc($taxon_wt_underscore)) {
-	  push @main::ref_organisms, $org;
-	}
-      }
-    }
-  }
+#  &RSAT::message::TimeWarn("Selecting reference organisms in taxon", $ref_taxon) if ($main::verbose >= 2);
+#  foreach my $org (keys (%supported_organism)) {
+#    if (%main::query_orgs) {
+#      if ($main::query_orgs{$org}) {
+#	push @main::ref_organisms, $org;
+#      }
+#    } elsif ($main::ref_taxon) {
+#      my $taxonomy = $supported_organism{$org}->{"taxonomy"};
+#      my @taxa = split( /;\s*/, $taxonomy);
+#      push @taxa, $org;     
+#      foreach my $taxon (@taxa) {
+#        my $taxon_wt_underscore = $ref_taxon;
+#        $taxon_wt_underscore =~ s/_/ /;
+#	if (lc($taxon) eq lc($ref_taxon) || lc($taxon) eq lc($taxon_wt_underscore)) {
+#	  push @main::ref_organisms, $org;
+#	}
+#      }
+#    }
+#  }
 
-  ## Check that there is at least one reference orgainsm
-  if (scalar(@main::ref_organisms) == 0) {
-    &RSAT::error::FatalError("There is no  supported organism corresponding to the reference taxon", $main::ref_taxon,
-			     "Use the command supported-organisms -format full to obtain the supported taxonomy."
-			    ) if ($main::ref_taxon);
-    &RSAT::error::FatalError("There is no supported organism in the organisms list", $main::orglist_file,
-			     "Use the command supported-organisms -format full to obtain the supported taxonomy."
-			    ) if ($main::orglist_file) ;
-  }
+#   ## Check that there is at least one reference orgainsm
+#   if (scalar(@main::ref_organisms) == 0) {
+#     &RSAT::error::FatalError("There is no  supported organism corresponding to the reference taxon", $main::ref_taxon,
+# 			     "Use the command supported-organisms -format full to obtain the supported taxonomy."
+# 			    ) if ($main::ref_taxon);
+#     &RSAT::error::FatalError("There is no supported organism in the organisms list", $main::orglist_file,
+# 			     "Use the command supported-organisms -format full to obtain the supported taxonomy."
+# 			    ) if ($main::orglist_file) ;
+#   }
 
+
+  ## Select the subset of organisms for which BLATS has been run (using genome-blast)
   if ($warn_missing_blast_files) {
     my (@filtered_ref_org) = &FilterOrganismsHavingBlast();
     #      print "; List of filtered reference organisms\n\t".join("\n\t",@filtered_ref_org)."\n";
     @main::ref_organisms = (@filtered_ref_org);
   }
+  &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
 
   ################################################################
   ## Get taxonomy for ordering results
@@ -610,7 +626,6 @@ package main;
 	      }
 	      $nb_hits++;
 	      $genome_hits{$org}++; # count genomes where hits have been found
-	      
 	  }
 	} else {
 	  next;
@@ -734,7 +749,7 @@ sub FilterOrganismsHavingBlast{
       push @main::missing_blast_files, $blast_file;
       #       unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
       # 	      ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      # 	&RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+      &RSAT::message::Warning("Missing BLAST file", $blast_file) if ($main::verbose >= 3);
       #      }
     }
     my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
