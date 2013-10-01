@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.63 2013/10/01 03:58:36 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.64 2013/10/01 10:41:40 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -134,6 +134,7 @@ package main;
     local $asmb_subst = 1;
     local $max_asmb_size = 50;
     local $max_asmb_nb = 5;
+    local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
 
@@ -263,9 +264,13 @@ package main;
       $assembly_cmd .= " -subst ".$asmb_subst;
       $assembly_cmd .= " -toppat ".$top_pattern_nb;
       $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
-      $assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
       $assembly_cmd .= " -sc ".$score_column if ($score_column > 0);
-      $assembly_cmd .= " -cc ".$cluster_column if ($cluster_column > 0);
+      if ($cluster_column > 0) {
+	$assembly_cmd .= " -cc ".$cluster_column;
+	$assembly_cmd .= " -max_asmb_per_cluster ".$max_asmb_per_cluster;
+      } else {
+	$assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
+      }
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -304,7 +309,7 @@ package main;
     $convert_cmd .= " -from assembly -to tf";
     $convert_cmd .= " -return counts";
     $convert_cmd .= " -flanks ".$flanks;
-    $convert_cmd .= " -top ".$max_asmb_nb;
+    $convert_cmd .= " -top ".$max_asmb_nb unless ($cluster_column);
     $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
@@ -542,6 +547,21 @@ argument is pased to I<pattern-assembly>.
 
 =pod
 
+=item B<-max_asmb_per_cluster>
+
+This parameter is passed to pattern-assembly, to indicate the maximal
+number of assemblies to return per cluster. It makes only sense when
+the option -cc is used.
+
+=cut
+	} elsif ($arg eq "-max_asmb_per_cluster") {
+	  $max_asmb_per_cluster = shift(@arguments);
+	  &RSAT::error::FatalError($max_asmb_per_cluster, "is not a valid value for option -max_asmb_per_cluster (should be Natural number).")
+	    unless (&IsNatural($max_asmb_per_cluster));
+
+
+=pod
+
 =item B<-subst>
 
 Maximum number of allowed substitution for pattern assembly.  This
@@ -551,7 +571,7 @@ parameter is passed to the program I<pattern-assembly>.
 =cut
 	} elsif ($arg eq "-subst") {
 	  $asmb_subst = shift(@arguments);
-	  &RSAT::error::FatalError($asmb_subst, "is not a valid value for option -max_asmb_nb (should be Natural number).")
+	  &RSAT::error::FatalError($asmb_subst, "is not a valid value for option -subst (should be Natural number).")
 	    unless (&IsNatural($asmb_subst));
 
 
