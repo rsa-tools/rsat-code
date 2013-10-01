@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.31 2013/10/01 12:26:46 jvanheld Exp $
+# $Id: compare-features,v 1.32 2013/10/01 22:30:04 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1227,7 +1227,7 @@ sub PrintTable {
     $format = $format || "%7g";
     print $out ";\n";
     print $out "; ",$title,"\n";
-    print $out join ("\t", "#file_nb", 
+    print $out join ("\t", "#filenb", 
 		     "feat_nb",
 		     sprintf("%-${filename_len}s", "file name"));
     for my $a (0..$#input_files) {
