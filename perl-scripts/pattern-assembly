@@ -16,7 +16,7 @@ our $strand_insensitive = 1;
 our $pattern_nb = 0;
 our $max_pattern_nb = 0;
 our $max_asmb_nb = 0;
-our $max_asmb_nb_per_cluster = 1;
+our $max_asmb_per_cluster = 2;
 our $top_pattern_nb = 100;
 our $separate_singletons = 0; ## Report isolated words separately from the assemblies
 our $score_column = 0;
@@ -76,7 +76,9 @@ if (($top_pattern_nb > 0) &&
 
 # Run the assembly
 if ($cluster_column > 0) {
+    our $current_cluster = 0;
     foreach our $cluster (@clusters) {
+	$current_cluster++;
 	@cluster_patterns = @{$cluster_index{$cluster}};
 	&RSAT::message::TimeWarn("Assembling",scalar(@cluster_patterns),"patterns for cluster", $cluster) if ($main::verbose >= 2);
 #	print $out ("\n; Asembling\t", scalar(@cluster_patterns),"\tpatterns for cluster\t", $cluster) if ($main::verbose >= 1);
@@ -179,6 +181,10 @@ sub IndexClusters {
 
   ## Sort clusters
   @clusters = sort {$a <=> $b} keys %patterns_per_cluster;
+
+  ## Compute the total max assembly number 
+  $clust_nb = scalar(@clusters);
+  $max_asmb_nb = $max_asmb_per_cluster * $clust_nb;
   &RSAT::message::Info("cluster col", $cluster_column, scalar(@pattern_clusters), "pattern clusters", join(",", @clusters)) if ($main::verbose >= 3);
 }
 
@@ -567,6 +573,13 @@ OPTIONS
 	-max_asmb_nb #
 		maximal number of assemblies (default: $max_asmb_nb)
 
+	-max_asmb_per_cluster #
+		maximal number of assemblies per cluster
+ 		(default: $max_asmb_per_cluster).
+
+		This option is only valid in combination with the
+		option -cc. 
+
 	-max_asmb_size #
 		maximal assembly size, i.e. the number of patterns per
 		alignment group (default: $max_asmb_size)
@@ -648,6 +661,7 @@ pattern-assembly options
 -maxfl #	maximum flanking segment size (default $max_flanking).
 -subst #	maximum allowed substitutions (default $max_subst).
 -max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb)
+-max_asmb_per_cluster #	maximal number of assemblies per cluster (default: $max_asmb_per_cluster)
 -max_asmb_size #	maximal assembly size, i.e. number of patterns per assembly (default: $max_asmb_size)
 -maxpat #	maximum number of allowed patterns
 -toppat #	maximum number of patterns to assemble
@@ -730,11 +744,18 @@ sub ReadArguments {
 	&RSAT::error::FatalError("the flanking segment size must be a positive integer");
       }
 
-      ### max number of clusters
+      ### max number of assemblies
     } elsif ($ARGV[$a] =~ /^-max_asmb_nb/i) {
       $max_asmb_nb = $ARGV[$a+1];
       unless (&IsNatural($max_asmb_nb)) {
 	&RSAT::error::FatalErro("maximal number of assemblies must be a positive integer");
+      }
+
+      ### max number of assemblies per cluster
+    } elsif ($ARGV[$a] eq "-max_asmb_per_cluster") {
+      $max_asmb_per_cluster = $ARGV[$a+1];
+      unless (&IsNatural($max_asmb_per_cluster)) {
+	  &RSAT::error::FatalErro("maximal number of assemblies per cluster must be a positive integer");
       }
 
       ### max cluster size
@@ -780,8 +801,14 @@ sub AssemblePatterns {
     }
 
     if ($cluster_column) {
-	if (($max_asmb_nb_per_cluster > 0) && ($assembly_nb_current_cluster >= $max_asmb_nb_per_cluster)) {
-	    print $out ("; Maximal number of assemblies (".$max_asmb_nb_per_cluster.") ",
+	&RSAT::message::Debug("pattern-assembly", "&AssemblePatterns()", 
+			      "current_cluster=".$current_cluster,
+			      "cluster_column=".$cluster_column,
+			      "assembly_nb_current_cluster=".$assembly_nb_current_cluster,
+			      "max_asmb_per_cluster=".$max_asmb_per_cluster,
+	    ) if ($main::verbose >= 3);
+	if (($max_asmb_per_cluster > 0) && ($assembly_nb_current_cluster >= $max_asmb_per_cluster)) {
+	    print $out ("; Maximal number of assemblies (".$max_asmb_per_cluster.") ",
 			" reached for cluster ", $current_cluster,
 			". Remaining patterns: ", $#to_assemble, ".\n") if (scalar(@to_assemble) >= 1);
 	    $max_asmb_per_cluster_reached = 1;
