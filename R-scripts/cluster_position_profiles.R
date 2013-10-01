@@ -335,6 +335,8 @@ if (draw.plots) {
   ## x11(width=6*mfrow.cols, height=4*mfrow.rows)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=6*mfrow.cols, height=4*mfrow.rows)
   par(mfrow=c(mfrow.rows, mfrow.cols))
+  max.freq <- max(as.vector(as.matrix(pos.profiles.freq.norm)))
+  min.freq <- min(as.vector(as.matrix(pos.profiles.freq.norm)))
   for (i in 1:clust.nb) {
     cluster.size <- sum(clusters==i)
     profile.stats <- plot.profiles(as.data.frame(pos.profiles.freq.norm[names(clusters[clusters==i]),]),
@@ -344,6 +346,7 @@ if (draw.plots) {
                                    col.profiles="gray",
 #                                   col.profiles=rainbow(n=cluster.size),
                                    plot.median.profile=T, plot.mean.profile=F, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                                   ylim=c(min.freq, max.freq),
                                    ylab='Longitudinal frequencies'
                                    )
   }
@@ -380,6 +383,8 @@ if (draw.plots) {
   ##  x11(width=6*mfrow.cols, height=4*mfrow.rows)
   open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=6*mfrow.cols, height=4*mfrow.rows)
   par(mfrow=c(mfrow.rows, mfrow.cols))
+  max.occ <- max(as.vector(as.matrix(pos.profiles)))
+  min.occ <- min(as.vector(as.matrix(pos.profiles)))
   for (i in 1:clust.nb) {
     cluster.size <- sum(clusters==i)
     plot.profiles(as.data.frame(pos.profiles[names(clusters[clusters==i]),]),
@@ -388,6 +393,7 @@ if (draw.plots) {
                                    col.profiles="gray",
 #                  col.profiles=rainbow(n=cluster.size),
                   plot.median.profile=T, plot.mean.profile=F, plot.sd.profile=F, xlab.by=xlab.by,las=2,
+                  ylim=c(min.occ, max.occ),
                   ylab='Occurrences'
                   )
   }
