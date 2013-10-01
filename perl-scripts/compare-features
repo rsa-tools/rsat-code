@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.30 2013/09/17 01:20:46 jvanheld Exp $
+# $Id: compare-features,v 1.31 2013/10/01 12:26:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1236,8 +1236,8 @@ sub PrintTable {
     print $out "\n";
 
     for my $a (0..$#input_files) {
-	my $infile = $main::input_files[$f];
-	my $feature_list_ref = $main::feature_lists[$f];
+	my $infile = $main::input_files[$a];
+	my $feature_list_ref = $main::feature_lists[$a];
 	my $nb_features = scalar(@{$feature_list_ref});
 	print $out join ("\t", &FileLabel($a),
 			 $nb_features,
