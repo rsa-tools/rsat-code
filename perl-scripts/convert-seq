@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.46 2013/06/26 14:58:46 rsat Exp $
+# $Id: convert-seq,v 1.47 2013/10/01 03:58:04 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -97,7 +97,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
       last;
     }
     if (($skip) && ($seq_nb <= $skip)) {
-      next;	
+      next;
     }
 
     &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp", $comments[0]) if ($main::verbose >= 2);
