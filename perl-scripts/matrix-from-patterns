@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.62 2013/08/20 03:24:26 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.63 2013/10/01 03:58:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -135,6 +135,7 @@ package main;
     local $max_asmb_size = 50;
     local $max_asmb_nb = 5;
     local $top_pattern_nb = 100;
+    local $top_seq = 0;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -183,13 +184,15 @@ package main;
     &RSAT::error::FatalError("You must specify the output prefix (option -o)")
       unless (defined($outfile{output}));
 
+    ## The patterns should be provided, either as a pattern file or as an assembly file
+    &RSAT::error::FatalError("You must give as input either a pattern file (option -pl) or an assembly file (option -asmb)")
+      unless ((defined($infile{patterns})) || (defined($infile{assembly})));
+
+
     ## The input sequence is mandatory
     &RSAT::error::FatalError("You must specify the sequence file (option -seq)")
       unless (defined($infile{sequence}));
 
-    ## The patterns should be provided, either as a pattern file or as an assembly file
-    &RSAT::error::FatalError("You must give as input either a pattern file (option -pl) or an assembly file (option -asmb)")
-      unless ((defined($infile{patterns})) || (defined($infile{assembly})));
 
     ################################################################
     ## Specify output files
@@ -216,6 +219,23 @@ package main;
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
+
+    ## Sequences to scan
+    our $seq_to_scan;
+    if ($top_seq) {
+      &RSAT::message::TimeWarn("Selecting top ".$top_seq."sequences", $seq_to_scan)
+	if ($main::verbose >= 2);
+      ## Create a temporary file with the top  sequences
+      $seq_to_scan = $outfile{output}."_top".$top_seq."_seq.".$seq_format;
+      my $top_seq_cmd = $SCRIPTS."/convert-seq";
+      $top_seq_cmd .= " -i ".$infile{sequence};
+      $top_seq_cmd .= " -from ".$seq_format." -to ".$seq_format;
+      $top_seq_cmd .= " -top ".$top_seq;
+      $top_seq_cmd .= " -o ".$seq_to_scan;
+      &doit($top_seq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    } else {
+      $seq_to_scan = $infile{sequence};
+    }
 
     ################################################################
     ## Assemble the patterns (unless the input is already an assembly
@@ -455,7 +475,7 @@ I<pattern-assembly>.
 
 	} elsif ($arg eq "-toppat") {
 	  $main::top_pattern_nb = shift (@arguments);
-	  &RSAT::error::FatalError($top_pattern_nb, "is not a valid value for option -top_pattern_nb (should be Natural number).")
+	  &RSAT::error::FatalError($top_pattern_nb, "is not a valid value for option -toppat (should be Natural number).")
 	    unless (&IsNatural($top_pattern_nb));
 
 
@@ -478,6 +498,19 @@ Note that when matrix-from-patterns is fed with pre-assembled patterns
 	  $max_asmb_nb = shift(@arguments);
 	  &RSAT::error::FatalError($max_asmb_nb, "is not a valid value for option -max_asmb_nb (should be Natural number).")
 	    unless (&IsNatural($max_asmb_nb));
+
+=pod
+
+=item B<-top_seq #>
+
+Max number of sequences to scan for building final matrices.
+
+=cut
+	} elsif ($arg eq "-top_seq") {
+	  $main::top_seq = shift (@arguments);
+	  &RSAT::error::FatalError($top_seq, "is not a valid value for option -top_seq (should be Natural number).")
+	    unless (&IsNatural($top_seq));
+
 
 =pod
 
@@ -863,7 +896,7 @@ sub QuickScanForSites {
     if ((defined($matrix_file)) && (-e $matrix_file)) {
 #      $matrix_scan_cmd = $ENV{RSAT_BIN}."/matrix-scan-quick";
       my $scan_cmd = $matrix_scan_cmd." -v 1";
-      $scan_cmd .= " -i ".$infile{sequence};
+      $scan_cmd .= " -i ".$seq_to_scan;
       $scan_cmd .= " -m ".$matrix_file;
       $scan_cmd .= " -name ".$matrix_name;
       $scan_cmd .= " ".$strands;
@@ -897,7 +930,7 @@ sub ScanForSites {
   $scan_parameters .= " -return sites,pval";
 
   my $scan_cmd = $matrix_scan_cmd." -v 1";
-  $scan_cmd .= " -i ".$infile{sequence};
+  $scan_cmd .= " -i ".$seq_to_scan;
   $scan_cmd .= " -m ".$outfile{sig_matrices};
   $scan_cmd .= " ".$strands;
   $scan_cmd .= $scan_parameters;
@@ -959,7 +992,7 @@ sub InfoGibbs {
       unless ($gibbs_cmd);
 
     $gibbs_cmd .= " -v 1";
-    $gibbs_cmd .= " -i ".$infile{sequence};
+    $gibbs_cmd .= " -i ".$seq_to_scan;
     $gibbs_cmd .= " --seedmatrix=".$outfile{sig_matrices};
     $gibbs_cmd .= " --mean_sps=".$gibbs_msps;
     if ($strands eq "-2str") {
@@ -1010,6 +1043,14 @@ sub terminate {
   close $log if ($outfile{output});
   &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
     if ($main::verbose >= 2);
+
+
+  ## Suppress temporary sequences
+  if ($top_seq) {
+    &RSAT::message::TimeWarn("Deleting temporary top sequence file", $seq_to_scan)
+      if ($main::verbose >= 2);
+    system("rm -f ".$seq_to_scan);
+  }
 
   exit(0);
 }
