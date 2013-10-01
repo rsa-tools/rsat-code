@@ -1554,7 +1554,7 @@ sub _readFromAssemblyFile {
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       my $matrix_id;
       if ($cluster) {
-	$matrix_id = "cluster_".$cluster;
+	$matrix_id = "assembly_".$current_matrix_nb."_cluster_".$cluster;
       } else {
 	$matrix_id =  "assembly_".$current_matrix_nb;
       }
