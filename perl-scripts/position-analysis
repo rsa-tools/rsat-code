@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.95 2013/09/30 12:48:30 jvanheld Exp $
+# $Id: position-analysis,v 1.96 2013/10/01 03:56:39 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -57,6 +57,7 @@ package main;
     our $last_seq = 0;   ## max number of sequences to treat (for quick testing)
     our $max_seq_nb = 0;  ## max number of sequences to treat (for quick testing)
     our $max_graphs = -1;		#  maximal number of graphs to export
+    our $top_seq_for_matrices = 0;
 
     our $nb_possible_pos = 0;
     our $sum_seq_length = 0;
@@ -326,59 +327,65 @@ package main;
 	    $clust_suffix = "clusters_".$clust_method;
 	}
     }
-    if ($return{clusters}) {
+
+    &RSAT::message::TimeWarn("k-mer clustering",
+			     "min_clust_nb=".$min_clust_nb,
+			     "max_clust_nb=".$max_clust_nb) if ($main::verbose >= 2);
+    
+    for my $clust_nb ($min_clust_nb..$max_clust_nb) {
 	&RSAT::message::TimeWarn("k-mer clustering", 
-				 "min_clust_nb=".$min_clust_nb, 
-				 "max_clust_nb=".$max_clust_nb) if ($main::verbose >= 0);
+				 "clust_nb=".$clust_nb,
+				 "suffix=".$clust_suffix) if ($main::verbose >= 4);
+	my $clust_suffix_k = $clust_suffix."_k".$clust_nb;
+	
+	$outfile{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k.".tab"; push @outfiles, "clusters_k".$clust_nb;
+	$dir{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k; push @dirs, "clusters_k".$clust_nb;
 
-	for my $clust_nb ($min_clust_nb..$max_clust_nb) {
-	    &RSAT::message::TimeWarn("k-mer clustering", 
-				     "clust_nb=".$clust_nb,
-				     "suffix=".$clust_suffix) if ($main::verbose >= 0);
-	    my $clust_suffix_k = $clust_suffix."_k".$clust_nb;
-
-	    $outfile{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k.".tab"; push @outfiles, "clusters_k".$clust_nb;
-	    $dir{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k; push @dirs, "clusters_k".$clust_nb;
-	    
-	    ## Define output file names for clusters
-	    my $cluster_prefix = &ShortFileName($output_prefix); ## Attention: prefix cannot be changed, because it must correspond to the one defined in the R file cluster_position_profiles.R
-	    $outfile{"cluster_heatmap_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap_k".$clust_nb;
-	    $outfile{"cluster_occ_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles_k".$clust_nb;
-	    $outfile{"cluster_freq_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles_k".$clust_nb;
-	    $outfile{"cluster_median_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_k".$clust_nb;
-	    $outfile{"cluster_median_profiles_table_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table_k".$clust_nb;
-	    
-	    &ProfileClustering($clust_nb, $clust_suffix_k) if ($task{clusters});
-	}
-      }
-
-    ## Convert k-mer assemblies into matrices
-    if ($return{matrices}) {
-      ## Define output file names for matrices
-      $prefix{pssm} = $output_prefix."_pssm"; 
-      $outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
-      $outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
-      $outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
-
-      if ($return{clusters}) {
-	for my $c (1..$clust_nb) {
-	  $graphfile{'logo_clust'.$c} =  $prefix{pssm}."_count_matrices_logo_m".$c.".png"; push @graphfiles, 'logo_clust'.$c;
-	}
-      } else {
-	for my $m (1..$max_asmb_nb) {
-	  $graphfile{'logo_m'.$m} =  $prefix{pssm}."_count_matrices_logo_m".$m.".png"; push @graphfiles, 'logo_m'.$m;
-	}
-      }
-      &ClustersToMatrices() if ($task{matrices});
+	## Define output file names for clusters
+	my $cluster_prefix = &ShortFileName($output_prefix); ## Attention: prefix cannot be changed, because it must correspond to the one defined in the R file cluster_position_profiles.R
+	$outfile{"cluster_heatmap_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap_k".$clust_nb;
+	$outfile{"cluster_occ_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles_k".$clust_nb;
+	$outfile{"cluster_freq_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles_k".$clust_nb;
+	$outfile{"cluster_median_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_k".$clust_nb;
+	$outfile{"cluster_median_profiles_table_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table_k".$clust_nb;
+	
+	
+	&ProfileClustering($clust_nb, $clust_suffix_k) if ($task{clusters});
     }
 
+    ## Convert k-mer assemblies into matrices.  For the sake of time
+    ## efficiency and readability of the HTML report, matrices and
+    ## logos are only generated for one number of cluster
+    ## (max_clust_nb).
+    if ($return{matrices}) {
+	our $clust_nb = $max_clust_nb;
+#	our $clust_suffix_k = $clust_suffix."_k".$clust_nb;
+	## Define output file names for matrices
+	$prefix{pssm} = $output_prefix."_pssm"; 
+	$outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
+	$outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
+	$outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
+	
+	if ($return{clusters}) {
+	    for my $c (1..$clust_nb) {
+		$graphfile{'logo_clust'.$c} =  $prefix{pssm}."_count_matrices_logo_m".$c.".png"; push @graphfiles, 'logo_clust'.$c;
+	    }
+	} else {
+	    for my $m (1..$max_asmb_nb) {
+		$graphfile{'logo_m'.$m} =  $prefix{pssm}."_count_matrices_logo_m".$m.".png"; push @graphfiles, 'logo_m'.$m;
+	    }
+	}
+	&ClustersToMatrices($clust_nb) if ($task{matrices});
+    }
+
+    
     if  ($return{graphs}) {
-      ## Define index file for the word-specific graphs
-      $outfile{graph_index} = $outfile{output};
-      $outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
-      $outfile{graph_index} .= "_graph_index.html";
-      push @outfiles, "graph_index";
-      &GenerateGraphs() if ($task{graphs});
+	## Define index file for the word-specific graphs
+	$outfile{graph_index} = $outfile{output};
+	$outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
+	$outfile{graph_index} .= "_graph_index.html";
+	push @outfiles, "graph_index";
+	&GenerateGraphs() if ($task{graphs});
     }
 
     ## Generate the HTML report
@@ -1289,6 +1296,13 @@ OPTIONS
 		   	from clusters of oligonucleotides occupying
 		   	similar positions.
 
+		        When different values would be entered for
+			options -min_clust_nb and -max_clust_nb,
+			matrices and logos are only generated for the
+			maximal number of cluster (max_clust_nb), for
+			the sake of time efficiency and readability of
+			the HTML reports.
+
 		   graphs: generate a XY graph with the occurernce
 		        profile of each oligonucleotide.
 
@@ -1386,6 +1400,18 @@ OPTIONS
 
                   interval: class intervals: [min,max]
 
+	-top_seq_for_matrices #
+
+	     Select the top # sequences for building position-specific
+	     scoring matrices (PSSM).  This argument is passed to the
+	     program matrix-from-pattern.
+
+	     This option does not affect the number of sequences used
+	     for motif discovery (detecting positionally biased
+	     oligonucelotides), but it can be useful to test the
+	     second phase of motif discovery: extracion of matrices
+	     from the selected oligonucleotides. 
+
 	-img_format
 		Image format (this parameter is passed to XYgraph).
 
@@ -1404,16 +1430,8 @@ OPTIONS
 	    clustering. Supported: complete, average, single,
 	    ward. Default: complete.
 
-	-min_clust_nb #
-	    Minimal number of clusters (default: 8).
-
-	    The choice of the number of clusters is generally
-	    tricky. Selecting different cluster numbers allows to
-	    generate the profiles and motifs and evaluate them a
-	    posteriori.
-
-	-max_clust_nb #
-	    Maximal number of clusters (default: 8).
+	-clust_nb #
+	    Number of clusters (default: 8).
 
 	-clust_suffix
 
@@ -1433,50 +1451,49 @@ sub PrintOptions {
   print HELP <<End_of_help;
 position-analysis options
 ----------------------
--h		display complete help message
--help		display this list of options
--i		input file
--seqtype        sequence type (dna|any)
--last #	        Stop after # sequences
--skip #	        Skip the # top sequences
--first #        Start at the # sequences
--seqnb #	Analyse up to seqnb sequences
+-h			display complete help message
+-help			display this list of options
+-i			input file
+-seqtype        	sequence type (dna|any)
+-last #	        	Stop after # sequences
+-skip #	        	Skip the # top sequences
+-first #        	Start at the # sequences
+-seqnb #		Stop the analysis after # sequences
+-top_seq_for_matrices #	Only use the top # sequences to build matrices.
 -mask upper|lower	mask upper- or lowercases, respectively
--format		input sequence format
--o 		output file
--v \#		verbose level
--l		oligonucleotide length
--ci		window interval (default 20 bases).
+-format			input sequence format
+-o 			output file
+-v #			verbose level
+-l			oligonucleotide length
+-ci			window interval (default 20 bases).
 -origin [start|center|end]	Define pos as the origin for calculating positions
--offset #	add a given number to site positions (change the reference point).
--1str		inactivate summation of occ on both strands
--2str		sum occurences on both strands (default)
--grouprc	group reverse complement pairs (default)
--nogrouprc	do not group reverse complement pairs
--noov		no overlap
--sort		sort oligonucleotides according to the chi2 statistics
--return		fields to return. Supported: html,chi,distrib,exp_occ,graph,rank,clusters
--task		run specific tasks. Supported: pos, clusters, matrices, graphs, index, all
--markov		markov order for computing background k-mer frequencies
--lth_chi	lower threshold on chi2
--lth_sig	lower threshold on significance of the chi2 statistics
--lth_occ       	lower threshold on occurrences
--uth_rank      	upper threshold on rank
--max_graphs #	maximal number of graphs to export
--pl		pattern list
--img_format	image format (this parameter is passed to XYgraph)
--sc		score column
--minpos		minimal position for chi-square calculation
--maxpos		maximal position for chi-square calculation
--nocheck	do not check applicability condition for the chi2
--nofilter	don\'t discard oligos which do not fit applicability condition
--header         info for header of distribution columns. Supported: mid,min,max,interval
--title		title for the index table and position profile plots.
--clust_nb	number of clusters (cutting level of the hierarchical tree)
--min_clust_nb	minimal number of clusters (cutting level of the hierarchical tree)
--max_clust_nb	maximal number of clusters (cutting level of the hierarchical tree)
--clust_method	clustering method (complete | average | single | ward). Default: complete.
--clut_suffix	Suffix appended to the cluster file and directory. Default: "clusters".
+-offset #		add a given number to site positions (change the reference point).
+-1str			inactivate summation of occ on both strands
+-2str			sum occurences on both strands (default)
+-grouprc		group reverse complement pairs (default)
+-nogrouprc		do not group reverse complement pairs
+-noov			no overlap
+-sort			sort oligonucleotides according to the chi2 statistics
+-return			fields to return. Supported: html,chi,distrib,exp_occ,graph,rank,clusters
+-task			run specific tasks. Supported: pos, clusters, matrices, graphs, index, all
+-markov			markov order for computing background k-mer frequencies
+-lth_chi		lower threshold on chi2
+-lth_sig		lower threshold on significance of the chi2 statistics
+-lth_occ       		lower threshold on occurrences
+-uth_rank      		upper threshold on rank
+-max_graphs #		maximal number of graphs to export
+-pl			pattern list
+-img_format		image format (this parameter is passed to XYgraph)
+-sc			score column
+-minpos			minimal position for chi-square calculation
+-maxpos			maximal position for chi-square calculation
+-nocheck		do not check applicability condition for the chi2
+-nofilter		don\'t discard oligos which do not fit applicability condition
+-header         	info for header of distribution columns. Supported: mid,min,max,interval
+-title			title for the index table and position profile plots.
+-clust_nb		number of clusters (cutting level of the hierarchical tree)
+-clust_method		clustering method (complete | average | single | ward). Default: complete.
+-clut_suffix		Suffix appended to the cluster file and directory. Default: "clusters".
 End_of_help
     close HELP;
     exit(0);
@@ -1641,6 +1658,13 @@ sub ReadArguments {
 	    $max_seq_nb = lc($ARGV[$a+1]);
 	    unless (&IsNatural($max_seq_nb)) {
 		&RSAT::error::FatalError("$max_seq_nb is not a valid value for -seqnb. Must be a Natural number.");
+	    }
+
+	    ## top sequences for matrix building
+	} elsif ($ARGV[$a] eq "-top_seq_for_matrices") {
+	    $top_seq_for_matrices = lc($ARGV[$a+1]);
+	    unless (&IsNatural($top_seq_for_matrices)) {
+		&RSAT::error::FatalError("$top_seq_for_matrices is not a valid value for -top_seq_for_matrices. Must be a Natural number.");
 	    }
 
 	    ## skip
@@ -1831,8 +1855,9 @@ sub Verbose {
 
 
     print $out "; K-mer clustering parameters:\n";
-    printf $out ";\t%-21s\t%d\n", "Min number of clusters", $min_clust_nb;
-    printf $out ";\t%-21s\t%d\n", "Max number of clusters", $max_clust_nb;
+    printf $out ";\t%-21s\t%d\n", "Number of clusters", $clust_nb;
+#    printf $out ";\t%-21s\t%d\n", "Min number of clusters", $min_clust_nb;
+#    printf $out ";\t%-21s\t%d\n", "Max number of clusters", $max_clust_nb;
     printf $out ";\t%-21s\t%s\n", "Clustering method", $clust_method;
 
     &PrintWindowLimits($out);
@@ -2148,22 +2173,24 @@ sub ProfileClustering {
 ################################################################
 ## Generate position-specific scoring matrices from k-mer clusters
 sub ClustersToMatrices {
-  &RSAT::message::TimeWarn("Extracting matrices from k-mers in sequences.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/matrix-from-patterns";
-  $cmd .= " -v 1";
-  $cmd .= " -seq ".$infile{sequences};
-  $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30";
-  if ($return{clusters}) {
-    $cmd .= " -pl ".$outfile{clusters};
-    $cmd .= " -sc 4 -cc 2 ";
-  } else {
-    $cmd .= " -pl ".$outfile{output};
-    $cmd .= " -max_asmb_nb ".$max_asmb_nb;
-  }
-  $cmd .= " -max_asmb_nb 8";
-  $cmd .= " -flanks 2 -logo";
-  $cmd .= " -o ".$prefix{pssm};
-  &doit($cmd, $dry_run, $die_on_error, $verbose);
+    my ($clust_nb) = @_;
+    &RSAT::message::TimeWarn("Extracting matrices from k-mers in sequences.") if ($main::verbose >= 2);
+    my $cmd = $SCRIPTS."/matrix-from-patterns";
+    $cmd .= " -v 1";
+    $cmd .= " -seq ".$infile{sequences};
+    $cmd .= " -top_seq ".$top_seq_for_matrices if ($top_seq_for_matrices);
+    $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30";
+    if ($return{clusters}) {
+	$cmd .= " -pl ".$outfile{"clusters_k".$clust_nb};
+	$cmd .= " -sc 4 -cc 2 ";
+	$cmd .= " -max_asmb_nb ".$clust_nb;
+    } else {
+	$cmd .= " -pl ".$outfile{output};
+	$cmd .= " -max_asmb_nb ".$max_asmb_nb;
+    }
+    $cmd .= " -flanks 2 -logo";
+    $cmd .= " -o ".$prefix{pssm};
+    &doit($cmd, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
