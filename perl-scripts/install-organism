@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.126 2013/09/28 03:09:05 jvanheld Exp $
+# $Id: install-organism,v 1.127 2013/10/02 00:17:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -78,6 +78,8 @@ package main;
   $source = "NCBI";
   $taxonomy = $null;
   @taxa = ();
+  our %infile = ();
+  $infile{organisms} = "";
   @organisms = ();
 
   our $backup_org_table = 0;
@@ -120,6 +122,18 @@ package main;
   if (($task{protein_freq}) && !($task{oligos})) {
     &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
   }
+
+  ## If an organism file has been specified, read organism list
+  my ($orgs) = &OpenInputFile($infile{organisms});
+  while (<$orgs>) {
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
+    my ($org) = split /\s+/;
+    push @organisms, $org;
+  }
+
 
   ## If a taxon has been specified, collect the list of organisms
   if (scalar(@taxa) > 0) {
@@ -277,10 +291,14 @@ sub Verbose {
     printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
 
     print $out ";\n; Organism parameters:\n";
-    printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
-    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
-    printf $out ";    %-25s\t%s\n", "Update date", $install_date;
-    printf $out ";    %-25s\t%s\n", "data source", $source;
+    if ($infile{organisms}) {
+      printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
+    } else {
+      printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
+      printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
+      printf $out ";    %-25s\t%s\n", "Update date", $install_date;
+      printf $out ";    %-25s\t%s\n", "data source", $source;
+    }
 
     print $out ";\n; Directories and files:\n";
     if ($task{genome}) {
@@ -1004,7 +1022,13 @@ OPTIONS
 		command line to iterate the installation over multiple
 		organisms.
 
-       -taxon  taxon name (mutually exclusive with -org)
+        -org_file organism_file_name
+		Text file containing a list of organisms to install.
+		The first word of each row is taken as a query
+		orgnanism. Further information of the same row is
+		ignored.
+
+      	-taxon  taxon name (mutually exclusive with -org)
 
 		The installation will iterate over all organisms of
 		the selected taxon. Note that the command will only
@@ -1208,6 +1232,7 @@ install_organism options
 -v		verbose
 -n		dry run (print commands without executing them)
 -org		organism name without spaces (e.g. Saccharomyces_cerevisiae);
+-org_file	organism_file_name
 -taxon		iterate installation tasks over all the previously installed organisms of a taxon
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
 -source		data source (e.g. ncbi);
@@ -1268,10 +1293,13 @@ sub ReadArguments {
 
       ## Organism name in one word (spaces replaced  by underscores)
     } elsif ($arg eq "-org") {
-
       my $organism_short_name = shift(@arguments);
       &RSAT::error::FatalError( $organism_short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
       push @organisms, $organism_short_name;
+
+      ## Input file with organism list
+    } elsif ($arg eq "-org_file") {
+      $infile{organisms} = shift(@arguments);
 
       ## Taxon
     } elsif ($arg eq "-taxon") {
