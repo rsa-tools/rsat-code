@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.47 2012/03/18 10:29:49 jvanheld Exp $
+# $Id: template,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
 #
 ############################################################
 
@@ -73,7 +73,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -98,7 +98,10 @@ package main;
   ## Read input
   ($main::in) = &OpenInputFile($main::infile{input});
   while (<$main::in>) {
-
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
   }
   close $main::in if ($main::infile{input});
 
