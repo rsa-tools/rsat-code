@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: gene-info-from-galileo,v 1.3 2013/09/26 18:27:19 rsat Exp $
+# $Id: gene-info-from-galileo,v 1.4 2013/10/03 17:23:59 jvanheld Exp $
 #
 ############################################################
 
@@ -108,7 +108,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -121,10 +121,10 @@ package main;
 
   our $username = '';
   our $password = '';
-  our $qtaxid = 'genomes/n2m/';
+  our $qtaxid = 'organisms/n2m/';
   our $query = 'genomes/genomic-objects/list/';
-  our $micrid ='2312';
-  our $taxid = '424717';
+  our $taxid = '';
+  our $micrid ='';
 
   our $host = "http://mgalileo.genoscope.cns.fr";
 
@@ -163,16 +163,12 @@ package main;
   ## Open output stream
   $out = &OpenOutputFile($outfile{output});
 
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
 
   ################################################################
   ## Execute the command
 
-  ## First connexion : taxid (from NCBI) to taxid (from microscope)
+  ## First connexion
   # Set up the connection
-
   &RSAT::message::TimeWarn("Opening connection to Galileo host", $host) if ($main::verbose >= 2);
   my $client = REST::Client->new();
   $client->setHost($host);
@@ -184,13 +180,16 @@ package main;
 
   # Do the HTTP GET to get the lists of pools
 
+  ## Convert query taxid (from NCBI) to MICROSCOPE-specific taxonomic ID (from microscope)
+  &RSAT::message::TimeWarn("Getting MICROSCOPE species ID corresponding to NCBI taxid", $taxid) if ($main::verbose >= 2);
   $client->GET("/api/microscope/" . $qtaxid . $taxid);
+  $micrid = $client->responseContent();
+  &RSAT::message::Info("Taxid", $taxid, "corresponds to MICROSCOPE organism ID", $micrid) if ($main::verbose >= 2);
 
-  &RSAT::message::TimeWarn("Getting organism ID from galileo for a NCBI taxid") if ($main::verbose >= 2);
-  &RSAT::message::TimeWarn("warning : for the moment, we can directly acces to the microscope taxID from REST ws") if ($main::verbose >= 2);
-#  $micrid = $client->responseContent();
 
- 
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
 
   # Set up the connection
   &RSAT::message::TimeWarn("Opening connection to Galileo host", $host) if ($main::verbose >= 2);
@@ -201,15 +200,14 @@ package main;
   # These need to match a UserId and Password for a Stingray user
   $client->addHeader("Authorization", "Basic " . encode_base64($username . ":" . $password));
 
-  
   # Do the HTTP GET to get the lists of pools
   $client->GET("/api/microscope/" . $query . $micrid);
 
- 
   #######################################################
   ##  json output (decoded)
   &RSAT::message::TimeWarn("Getting gene information for an organism from galileo") if ($main::verbose >= 2);
   my $response = decode_json($client->responseContent());
+
 
 
   if ($main::verbose >= 1) {
@@ -292,13 +290,8 @@ package main;
         $d->{'genomicObject'}{'goFunction'} = $null;
     }
 
-
-
-
-## EnsemblID : not possible (not this information into microscope)
-## NCBI id : not possible (not this information into microscope)
-
-
+    ## EnsemblID : not possible (not this information into microscope)
+    ## NCBI id : not possible (not this information into microscope)
     print $out join ("\t",
 		     $d->{'genomicObject'}{'goGeneName'},
 		     $d->{'genomicObject'}{'goOriId'},
@@ -308,8 +301,8 @@ package main;
 		     $d->{'protId'},
 		     $d->{'genomicObject'}{'goLabel'},
 		     $d->{'genomicObject'}{'goSynonyms'},
-		     $d->{'genomicObject'}{'goProduct'},
-		     $d->{'genomicObject'}{'goEc'},
+ 		     $d->{'genomicObject'}{'goProduct'}, ## with Bacillus subtilis (taxid 224308) we get a strange warning: Wide character in print
+ 		     $d->{'genomicObject'}{'goEc'},
 		     $d->{'genomicObject'}{'goReaction'},
                      $d->{'genomicObject'}{'goFunction'},
                      $d->{'genomicObject'}{'goProcess'},
@@ -319,9 +312,6 @@ package main;
                      $d->{'genomicObject'}{'goFrame'},
 		     $d->{'genomicObject'}{'goType'},
                      $d->{'genomicObject'}{'goNote'},
-
-
-
 		    ), "\n";
 
   }
@@ -504,6 +494,11 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
+
+  printf $out ";\t%-13s\t%s\n", "Query taxid", $taxid;
+  printf $out ";\t%-13s\t%s\n", "MICROSCOPE taxid", $micrid;
+
+
 }
 
 
