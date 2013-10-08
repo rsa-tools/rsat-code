@@ -39,7 +39,7 @@ init:
 #	echo "Options -Indexes" > public_html/logs/.htaccess
 #	echo "<html><body>Forbidden</body></html>" > public_html/logs/index.html
 
-	chmod 755 bin/*
+	chmod -R 755 bin
 	chmod 755 python-scripts/*
 	chmod 755 perl-scripts/*
 	chmod 755 perl-scripts/parsers/*
@@ -78,9 +78,11 @@ init:
 	fi
 	@if [ -f "${RSAT}/RSAT_config.mk" ] ; then \
 		echo "RSAT makefiles config already exists	${RSAT}/RSAT_config.mk" ; \
+		include ${RSAT}/RSAT_config.mk
 	else \
 		echo "Creating RSAT config for makefiles ${RSAT}/RSAT_config.mk" ; \
 		cp ${RSAT}/RSAT_config_default.mk ${RSAT}/RSAT_config.mk; \
+		include ${RSAT}/RSAT_config.mk
 	fi
 	chmod a+w ${COUNT_FILE}
 
