@@ -78,11 +78,9 @@ init:
 	fi
 	@if [ -f "${RSAT}/RSAT_config.mk" ] ; then \
 		echo "RSAT makefiles config already exists	${RSAT}/RSAT_config.mk" ; \
-		include ${RSAT}/RSAT_config.mk
 	else \
 		echo "Creating RSAT config for makefiles ${RSAT}/RSAT_config.mk" ; \
 		cp ${RSAT}/RSAT_config_default.mk ${RSAT}/RSAT_config.mk; \
-		include ${RSAT}/RSAT_config.mk
 	fi
 	chmod a+w ${COUNT_FILE}
 
