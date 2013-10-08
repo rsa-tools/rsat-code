@@ -356,96 +356,100 @@ sub LoadSupportedTaxonomy {
       %supported_organisms [hash]   ( '$organism_name' => '$taxonomy')
 
 =cut
+
 sub LoadSupportedTaxonomy_rj {
-  my ($self,$root_name,$supported_organism) = @_;
-  unless ($root_name) {
-    $root_name = "Organisms";
-  }
+    my ($self,$root_name,$supported_organism) = @_;
+    unless ($root_name) {
+	$root_name = "Organism";
+    }
 
-  &RSAT::message::Info("RSAT::Tree", "Loading supported taxonomy with root", $root_name)
-    if ($main::verbose >= 3);
+    &RSAT::message::Info("RSAT::Tree", "Loading supported taxonomy with root", $root_name)
+	if ($main::verbose >= 3);
 
-  my %supported_organism=%{$supported_organism};
-  my %nodes = ();		# node index
+    my %supported_organism=%{$supported_organism};
+    my %nodes = ();		# node index
 
-  ## Instantiate the root of the taxonomy
-  my $root_node = new RSAT::TreeNode("id"=>$root_name,
-				     "name"=>$root_name,
-				     "type"=>"root"
-				    );
-  $nodes{$root_name} = $root_node;
-  my $root=$self->set_root_node($root_node);
+    ## Instantiate the root of the taxonomy
+    my $root_node = new RSAT::TreeNode("id"=>$root_name,
+				       "name"=>$root_name,
+				       "type"=>"root"
+	);
+    $nodes{$root_name} = $root_node;
+    my $root=$self->set_root_node($root_node);
 
-  ## Get  the taxonomy
-  my $c = 0;
-  foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
-		   keys (%supported_organism)) {
-    $c++;
-    my $taxonomy = $supported_organism{$org}->{"taxonomy"};
-    $taxonomy = &RSAT::util::trim($taxonomy);
-    $taxonomy =~ s/\s+/ /g;
-    $taxonomy =~ s/\.$//g;
-    my @taxa = split /\s*;\s*/, $taxonomy;
-    @taxa = map {$_ =~ s/\s+/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
-    @taxa = map {$_ =~ s/(\(|\))/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
-    &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxa),"taxa"), "\n")  if ($main::verbose >= 5);
-    &RSAT::message::Warning(join ("\t","taxa",(@taxa)), "\n") if ($main::verbose >= 6);;
+    ## Get  the taxonomy
+    my $c = 0;
+    foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
+		     keys (%supported_organism)) {
 
-    # Instantiate the leaf
-    my $org_id = $org;
-    $org_id =~ s/\s+/_/g;
-    my $leaf = new RSAT::TreeNode(id=>$org_id,
-				  name=>$org,
-				  type=>"leaf"
-				 );
-    $nodes{$org_id}=$leaf; ## Index the leaves by organism ID
-    &RSAT::message::Warning(join("\t","Instantiated leaf",$leaf->get_name())) if ($main::verbose >= 5);
+	## Define organism identifier
+	my $org_id = $org;
+	$org_id =~ s/\s+/_/g;
+
+	$c++;
+	my $taxonomy = $supported_organism{$org}->{"taxonomy"};
+	$taxonomy = &RSAT::util::trim($taxonomy);
+	$taxonomy =~ s/\s+/ /g;
+	$taxonomy =~ s/\.$//g;
+	my @taxa = split /\s*;\s*/, $taxonomy;
+	@taxa = map {$_ =~ s/\s+/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
+	@taxa = map {$_ =~ s/(\(|\))/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
+	&RSAT::message::Warning($c, $org,scalar(@taxa),"taxa"),  if ($main::verbose >= 5);
+	&RSAT::message::Warning($c, $org_id, "taxa", join ("::",(@taxa))) if ($main::verbose >= 0);
+
+	# Instantiate the leaf
+	my $leaf = new RSAT::TreeNode(id=>$org_id,
+				      name=>$org,
+				      type=>"leaf"
+	    );
+	$nodes{$org_id}=$leaf; ## Index the leaves by organism ID
+	&RSAT::message::Warning(join("\t","Instantiated leaf",$leaf->get_name())) if ($main::verbose >= 5);
 
 #    &RSAT::message::Debug("Created TreeNode for organism", $org, $org_id, $species_node) if ($main::verbose >= 10);
 
 
 
-    for my $t (0..$#taxa) {
+	for my $t (0..$#taxa) {
 
-      # TEMPORARY PATCH
-      # correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
-      if (($taxa[$t] =~ "^SC-B67")||($taxa[$t] =~ "^9150")) {
-	$taxa[$t]="Bacteria";
-      }
+#	    # TEMPORARY PATCH
+#	    # correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
+#	    if (($taxa[$t] =~ "^SC-B67")||($taxa[$t] =~ "^9150")) {
+#		$taxa[$t]="Bacteria";
+#	    }
 
-      # start top->down to build the tree
-      if (defined $nodes{$taxa[$t]}) {
-	if ($t == $#taxa) {
-	  ## Link the lowest-level taxon to the organism node (the leaf)
-	  $nodes{$taxa[$t]}->add_child($leaf);
-	} else {
-	  next;
+	    # start top->down to build the tree
+	    if (defined $nodes{$taxa[$t]}) {
+		if ($t == $#taxa) {
+		    ## Link the lowest-level taxon to the organism node (the leaf)
+		    $nodes{$taxa[$t]}->add_child($leaf);
+		} else {
+		    next;
+		}
+	    } else {
+		my $node = new RSAT::TreeNode(id=>$taxa[$t],
+					      name=>$taxa[$t],
+					      type=>"node",
+					      ## all_leaves=>[$org]
+		    );
+		$nodes{$taxa[$t]}=$node; ## Index taxa by name
+		&RSAT::message::Debug("Created TreeNode for taxon", $t, $taxa[$t], $node) 
+		    if ($main::verbose >= 5);
+		
+		if ((defined $nodes{$taxa[$t-1]})&&($t-1>=0)) {
+		    $nodes{$taxa[$t-1]}->add_child($node);
+		} else {
+		    # attach first taxon to the root
+		    $nodes{$root_name}->add_child($node);
+		}
+
+		# attach organism as leaf if it is the last taxon
+		if ($t == $#taxa) {
+		    $node->add_child($leaf);
+		}
+	    }
 	}
-      } else {
-	my $node = new RSAT::TreeNode(id=>$taxa[$t],
-				      name=>$taxa[$t],
-				      type=>"node",
-				      ## all_leaves=>[$org]
-				     );
-	$nodes{$taxa[$t]}=$node; ## Index taxa by name
-	&RSAT::message::Debug("Created TreeNode for taxon", $t, $taxa[$t], $node) 
-	  if ($main::verbose >= 5);
-
-	if ((defined $nodes{$taxa[$t-1]})&&($t-1>=0)) {
-	  $nodes{$taxa[$t-1]}->add_child($node);
-	} else {
-	  # attach first taxon to the root
-	  $nodes{$root_name}->add_child($node);
-	}
-
-	# attach organism as leaf if it is the last taxon
-	if ($t == $#taxa) {
-	  $node->add_child($leaf);
-	}
-      }
     }
-  }
-  return $self;
+    return $self;
 }
 
 
