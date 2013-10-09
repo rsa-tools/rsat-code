@@ -137,12 +137,12 @@
       $response =  $echoed->response;
       $command = $response->command;
       //       echo "COMMAND $command";
-      $server = $response->server;
       $client = $response->client;
-      $temp_file = explode('/',$server);
-      $temp_file = end($temp_file);
-#      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      $server = $response->server;
       $resultURL = rsat_path_to_url($server);
+#      $temp_file = explode('/',$server);
+#      $temp_file = end($temp_file);
+#      $resultURL = $WWW_RSA."/tmp/".$temp_file;
 #      $URL['Display (png)'] = $resultURL;
       hourglass("off");
       
