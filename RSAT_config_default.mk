@@ -25,11 +25,14 @@ ARCHITECTURE=x64
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
-## Main directory for installing third-party software)
-SOFT_DIR=${PWD}
-
 ## Directory to store the downloaded software (sources, before compilation)
-SRC_DIR=${SOFT_DIR}/src
+SRC_DIR=${SOFT_DIR}/app_sources
+
+## Main directory for installing third-party software)
+SOFT_DIR=${RSAT}/app_sources
+
+## Directory to store libraries
+PERLLIB_DIR=${RSAT}/lib
 
 ## The sudo command is required for installing some software. If you
 ## are not sudoer of your server, you can let this variable
