@@ -51,6 +51,18 @@ BIN_DIR=${RSAT}/bin
 #BIN_DIR=/usr/local/bin
 
 ################################################################
+## Web services
+##
+## This may differ from the RSAT site, because some tasks may be
+## delegated to remote RSAT web services.
+RSAT_WS=http://www.rsat.eu/web_services/RSATWS.wsdl
+
+## URL used by the RSAT Web services to give Web access to temporary
+## files
+RSAT_WS_TMP=http://www.rsat.eu/tmp
+
+
+################################################################
 ##
 ## Configuration of a PC cluster
 ##
