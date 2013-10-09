@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('graph_neighb_cmd');
+  $cmd_file = getTempFileName('graph_neighb_cmd', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('graph-neighbours - results');

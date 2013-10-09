@@ -59,15 +59,21 @@ Function uploadFile($file) {
 }
 
 
-Function getTempFileName($prefix) {
+Function getTempFileName($prefix, $ext) {
   $tmpDir = "tmp/";
-  $tmpFile = $_FILES[$file]["name"];
-  $tmpFile = $tmpFile.$prefix;
-  
+
+  $processUser = posix_getpwuid(posix_geteuid());
+  $pwuname = $processUser['name'];
+  $tmpDir .= $pwuname."/"; #get_current_user()."/";
+  $tmpDir .=  date("Y/m/d/");
+  mkdir($tmpDir, 0777, TRUE); ## Create temporary subdir if it does not exist
+#  $tmpFile = $_FILES[$file]["name"];
+#  $tmpFile = $tmpFile.$prefix;
   $now = date("Ymd_His");
-  $suffix = randchar(3);  
+  $suffix = randchar(4);  
   #  $suffix = mktemp('XXXXX');
-  $tmpFile = $tmpFile.'_'.$suffix."_".$now;
+  $tmpFile = $prefix.'_'.$suffix."_".$now.$ext;
+#  $tmpFile .= $ext;
 #  $tmpFile = tempnam($tmpDir , $prefix."_".$now);
   return $tmpDir.$tmpFile;
 }

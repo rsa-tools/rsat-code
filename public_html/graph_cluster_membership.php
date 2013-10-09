@@ -17,7 +17,7 @@
   title('graph-cluster-membership - results');
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_graph-cluster-membership');
+  $cmd_file = getTempFileName('commands_graph-cluster-membership', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   # Error status
