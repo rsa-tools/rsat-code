@@ -28,7 +28,6 @@ init:
 	mkdir -p public_html/logs/peak-footprints_logs; chmod 777 public_html/logs/peak-footprints_logs
 	mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
 	mkdir -p bin
-	mkdir -p libs
 	mkdir -p lib
 	@${MAKE} _create_download_dir
 
@@ -99,6 +98,11 @@ ws_stubb:
 	@echo
 	@echo "Initiating Web services at ${RSAT_WWW}"
 	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stubb SERVER=${RSAT_WWW})
+
+ws_stubb_test:
+	@echo
+	@echo "Testing Web services at ${RSAT_WWW}"
+	(cd ${RSAT}/ws_clients/perl_clients/; make test)
 
 
 ################################################################
