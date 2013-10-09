@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_cclasses');
+  $cmd_file = getTempFileName('commands_cclasses', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('convert-classes - results');

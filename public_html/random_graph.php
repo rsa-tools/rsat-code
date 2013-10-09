@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_rdmgraph');
+  $cmd_file = getTempFileName('commands_rdmgraph', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('random-graph - results');

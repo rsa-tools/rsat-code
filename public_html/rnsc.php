@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_rnsc');
+  $cmd_file = getTempFileName('commands_rnsc', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('RNSC - results');

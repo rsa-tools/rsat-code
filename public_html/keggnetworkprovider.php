@@ -15,7 +15,7 @@ require ('functions.php');
 # log file update thanks to Sylvain
 UpdateLogFile("neat","","");
 # File to store the commands
-$cmd_file = getTempFileName('commands_keggnetworkprovider');
+$cmd_file = getTempFileName('commands_keggnetworkprovider', '.txt');
 $cmd_handle = fopen($cmd_file, 'a');
 # Sylvain's upload function modified to accept upload location
 Function uploadFileToGivenLocation($file, $location) {
