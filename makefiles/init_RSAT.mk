@@ -98,7 +98,7 @@ _create_download_dir:
 ws_stubb:
 	@echo
 	@echo "Initiating Web services at ${RSAT_WWW}"
-	(cd ${RSAT}/ws_clients/perl_clients/; make stubb SERVER=${RSAT_WWW})
+	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stubb SERVER=${RSAT_WWW})
 
 
 ################################################################
