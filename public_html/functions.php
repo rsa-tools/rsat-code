@@ -60,11 +60,27 @@ Function uploadFile($file) {
 
 
 Function getTempFileName($prefix, $ext) {
-  $tmpDir = "tmp/";
+  ## Main directory
+  global $tmp;
+  if (isset($tmp)) {
+    $tmpDir = $tmp."/";
+  } else {
+    $tmpDir = "tmp/";
+  }
 
-  $processUser = posix_getpwuid(posix_geteuid());
-  $pwuname = $processUser['name'];
-  $tmpDir .= $pwuname."/"; #get_current_user()."/";
+  ## Append user name
+  global $_ENV; ## ceci ne marche pas
+  $user = $_ENV["USER"]; ## ceci ne marche pas
+#  $user = getenv('REMOTE_USER'); ## ceci ne marche pas
+#  $user = getenv('USER'); ## ceci ne marche pas
+#  $processUser = posix_getpwuid(posix_geteuid()); ## ceci ne marche pas sur
+               #  RSAT mais bien sur mon portable, je suppose qu'il faut
+               #  installer posix, mais je prefere eviter car je devrais le
+               #  faire sur tous les miroirs
+#  $user = $processUser['name'];
+  $tmpDir .= $user."/";
+
+  ## Append
   $tmpDir .=  date("Y/m/d/");
   mkdir($tmpDir, 0777, TRUE); ## Create temporary subdir if it does not exist
 #  $tmpFile = $_FILES[$file]["name"];
@@ -72,9 +88,12 @@ Function getTempFileName($prefix, $ext) {
   $now = date("Ymd_His");
   $suffix = randchar(4);  
   #  $suffix = mktemp('XXXXX');
-  $tmpFile = $prefix.'_'.$suffix."_".$now.$ext;
-#  $tmpFile .= $ext;
-#  $tmpFile = tempnam($tmpDir , $prefix."_".$now);
+  $tmpFile = $prefix.'_'.$suffix."_".$now;
+  if (isset($ext)) {
+    $tmpFile .= $ext;
+  }
+#  print "HELLo\t".$tmpDir."\t".$tmpFile;
+
   return $tmpDir.$tmpFile;
 }
 
