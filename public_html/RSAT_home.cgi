@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.79 2013/06/26 15:00:03 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.80 2013/10/09 07:04:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -170,23 +170,12 @@ print <<EndText;
       </td>
 -->
 
-<!--
-    <td>
-      <a href="http://tagc.univ-mrs.fr/metabolix/" target="_top">
-	<b>Marseille - France</b>
-    <br/>
-    <img src="images/frites.jpg" height=80 border=0><br>
-  http://tagc.univ-mrs.fr/metabolix/
-    </a>
-    </td>
--->
 
       <td align=center>
-	<a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
+	<a href='http://www.rsat.fr/' target='_top'>
 	  <b>Marseille TAGC - France</b><br>
-	  <img src="images/calanques.jpg" height=80 border=0><br>
-	  http://tagc.univ-mrs.fr/rsa-tools/</a>
-	<br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
+	  <img src="images/marseille_calanques.jpg" height=80 border=0><br>
+	  http://www.rsat.fr/</a>
       </td>
 
       <td ALIGN=CENTER>
