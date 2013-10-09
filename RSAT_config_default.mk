@@ -32,18 +32,20 @@ SOFT_DIR=${PWD}
 SRC_DIR=${SOFT_DIR}/src
 
 ## The sudo command is required for installing some software. If you
-## are not sudoer of your server, you can let this variable empty.
+## are not sudoer of your server, you can let this variable
+## empty. This might make some problems for the "install" step of some
+## software tools.
 ##
-# SUDO=''
-SUDO=sudo
+SUDO=''
+#SUDO=sudo
 
 ## Default installation dir for binaries. By default, will beinstalled
 ## in /usr/local/bin so they will be accessible to all users. This
 ## however requires admin rights. If you don't dispose of admin
 ## rights, an alternative is to set this directory in the RSAT fodler.
 ##
-#BIN_DIR=${RSAT}/bin
-BIN_DIR=/usr/local/bin
+BIN_DIR=${RSAT}/bin
+#BIN_DIR=/usr/local/bin
 
 ################################################################
 ##
