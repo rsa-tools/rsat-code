@@ -16,11 +16,10 @@ This should display the on-line help for the random sequence
 generator.
 
 \begin{lstlisting}
-random-seq -l 200 -n 4 -a a:t 0.3 c:g 0.2
+random-seq -l 200 -n 4
 \end{lstlisting}
 
-Should generate a random sequence of 200 nucleotides, with approximate
-proportions of 60\% A/T and 40\% G/C.
+Should generate a random sequence of 200 nucleotides.
 
 
 \subsection{Testing Perl graphical librairies}
@@ -47,24 +46,22 @@ administrator to install the missing modules.
 
 \subsection{Python scripts}
 
-From 2009 releases, the \RSAT distribution includes some Python
-scripts. To test that they are running correctly, you can try.
+The \RSAT distribution includes some Python scripts. To test if they
+are running correctly, you can try the proram \program{random-motif}.
 
 \begin{lstlisting}
-random-motif  -l 10 -c 0.85 -n 20
+random-motif  -l 10 -c 0.85 -n 3
 \end{lstlisting}
 
-This command will generate 20 position-specific scoring
-matrix (PSSM) of 10-columns  with 85\% conservation of one residue in each column.
+This command will generate 3 position-specific scoring matrix (PSSM)
+of 10-columns with 85\% conservation of one residue in each column.
 
 \subsection{C programs}
 
 You can test the correct installation of the C programs with the
 following command.
 
-\begin{lstlisting}
-  random-seq -l 1000 -a a:t 0.4 c:g 0.1 \
-    | count-words -l 2 -v 1 -2str -i /dev/stdin
+\begin{lstlisting}random-seq -l 1000 -n 10 | count-words -l 2 -v 1 -2str -i /dev/stdin
 \end{lstlisting}
 
 The first program (\program{random-seq}) is a Perl script, which
