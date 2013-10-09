@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.51 2013/09/26 18:25:50 jvanheld Exp $
+# $Id: install_software.mk,v 1.52 2013/10/09 03:25:45 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -269,10 +269,10 @@ install_ext_apps:
 ## 1.2.4, major changes were made to the BioPerl API which have made
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
-BIOPERL_DIR=${SOFT_DIR}/perllib/bioperl-release-${BIOPERL_VERSION}
+BIOPERL_DIR=${SOFT_DIR}/lib/bioperl-release-${BIOPERL_VERSION}
 ENSEMBL_VERSION=73
 ENSEMBL_BRANCH=ensemblgenomes-20
-ENSEMBL_API_DIR=${SOFT_DIR}/perllib/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
+ENSEMBL_API_DIR=${SOFT_DIR}/lib/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
