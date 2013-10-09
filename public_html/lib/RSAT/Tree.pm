@@ -35,7 +35,7 @@ use RSAT::message;
 use RSAT::TreeNode;
 
 # useful for debugging (print contents of hashes, objects)
-use Data::Dumper; 
+use Data::Dumper;
 
 @ISA = qw( RSAT::GenericObject );
 $default_indent_string = ":-";
@@ -155,7 +155,7 @@ sub get_all_descendents{
 
 sub get_node_descendents{
   my ($self, $node_id, $order, $type, $max_depth, $max_leaves) = @_;
-#  &RSAT::message::Info("RSAT::Tree", $self, "Getting node descendents", $node_id, $order, $type) if ($main::verbose >= 0);
+#  &RSAT::message::Info("RSAT::Tree", $self, "Getting node descendents", $node_id, $order, $type) if ($main::verbose >= 10);
   if ($node_id){
     my $node = $self->get_node_by_id($node_id);
 #    &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 10);
@@ -395,7 +395,7 @@ sub LoadSupportedTaxonomy_rj {
 	@taxa = map {$_ =~ s/\s+/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
 	@taxa = map {$_ =~ s/(\(|\))/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
 	&RSAT::message::Warning($c, $org,scalar(@taxa),"taxa"),  if ($main::verbose >= 5);
-	&RSAT::message::Warning($c, $org_id, "taxa", join ("::",(@taxa))) if ($main::verbose >= 0);
+	&RSAT::message::Warning($c, $org_id, "taxa", join ("::",(@taxa))) if ($main::verbose >= 6);
 
 	# Instantiate the leaf
 	my $leaf = new RSAT::TreeNode(id=>$org_id,
