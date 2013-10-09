@@ -186,6 +186,7 @@ make -f makefiles/init_RSAT.mk init
 % Config file
 \section{Adapting \RSAT \  local configuration}
 
+
 \subsection{Creating site-specific configuration files}
 
 The \RSAT distribution comes with two template configuration files
@@ -235,6 +236,7 @@ perl perl-scripts/update_rsat_config.pl
 
 Alternatively, you can edit the file \file{RSAT\_config.props} with a
 text editor of your choice.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check the RSAT paths
@@ -540,7 +542,7 @@ command accordingly.
 \begin{lstlisting}
 ## Install the ensembl library witha  specific branch number.
 make -f makefiles/install_software.mk install_ensembl_api \
-   ENSEMBL_VERSION=72
+   ENSEMBL_VERSION=73
 \end{lstlisting}
 %%$ 
 
@@ -550,9 +552,9 @@ and ensembl libraries on your computer. \emph{The path must be adapted
   to fit your local configuration}.
 
 \begin{lstlisting}
-ensembl=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-variation/modules
 \end{lstlisting}
 
 You also need to define the URL of the Ensembl database in that
@@ -575,18 +577,29 @@ If your shell is bash, add the following lines in the file
 \file{.bashrc} at the root of your account.
 
 \begin{lstlisting}
-export PERL5LIB=${RSAT}/perllib/ensembl/modules:${PERL5LIB}
-export PERL5LIB=${RSAT}/perllib/ensembl-compara/modules:${PERL5LIB}
-export PERL5LIB=${RSAT}/perllib/ensembl-variation/modules:${PERL5LIB}
+## Ensembl Perl API
+export PERL5LIB=${RSAT}/lib/bioperl-release-1-2-3/bioperl-live::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-compara/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-external/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-functgenomics/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-tools/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-variation/modules::${PERL5LIB}
 \end{lstlisting}
+%$
 
 If your shell is tcsh or chs, add the following lines in the file
 \file{.cshrc} at the root of your account.
 
 \begin{lstlisting}
-setenv PERL5LIB ${PERL5LIB}:${RSAT}/perllib/ensembl/modules
-setenv PERL5LIB ${PERL5LIB}:${RSAT}/perllib/ensembl-compara/modules
-setenv PERL5LIB ${PERL5LIB}:${RSAT}/perllib/ensembl-variation/modules
+## Ensembl Perl API
+setenv PERL5LIB ${RSAT}/lib/bioperl-release-1-2-3/bioperl-live::${PERL5LIB}
+setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl/modules::${PERL5LIB}
+setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-compara/modules::${PERL5LIB}
+setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-external/modules::${PERL5LIB}
+setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-functgenomics/modules::${PERL5LIB}
+setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-tools/modules::${PERL5LIB}
+setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-variation/modules::${PERL5LIB}
 \end{lstlisting}
 
 The EnsEMBL libraries also require the SQL client Perl module
@@ -614,19 +627,14 @@ order to synchronize the Perl modules of your client with the service
 specification of the server.
 
 \begin{lstlisting}
-## Change directory to the sample Perl Web services clients
-cd $RSAT/ws_clients/perl_clients
-
-## give execution rights for wsdl2perl.pl and convert_matrix_soap_wsdl_2.pl
-chmod a+x wsdl2perl.pl
-chmod a+x convert_matrix_soap_wsdl_2.pl
-
 ## Compile the stubb.
 ## Your computer will open a connection to the Web services server 
 ## and collect the WSDL specifications of the supported services.
-make stubb
+cd $RSAT
+make -f makefiles/init_RSAT.mk ws_stubb
 
 ## Test the connection to the Web services
+cd $RSAT/ws_clients/perl_clients
 make test
 \end{lstlisting}
 %$
