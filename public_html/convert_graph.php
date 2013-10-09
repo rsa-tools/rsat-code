@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_file = getTempFileName('commands_convert_graphs', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('convert-graph - results');

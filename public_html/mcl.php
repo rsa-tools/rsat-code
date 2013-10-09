@@ -16,7 +16,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-   $cmd_file = getTempFileName('commands_mcl');
+   $cmd_file = getTempFileName('commands_mcl', '.txt');
    $cmd_handle = fopen($cmd_file, 'a');
 
   title('MCL - results');

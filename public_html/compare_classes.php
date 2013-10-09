@@ -18,7 +18,7 @@
   title('compare-classes - results');
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_compare-classes');
+  $cmd_file = getTempFileName('commands_compare-classes', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   ## Error status
