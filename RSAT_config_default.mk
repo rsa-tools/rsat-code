@@ -25,11 +25,11 @@ ARCHITECTURE=x64
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
-## Directory to store the downloaded software (sources, before compilation)
-SRC_DIR=${SOFT_DIR}/app_sources
+## Main directory for installing third-party software
+SOFT_DIR=${RSAT}
 
-## Main directory for installing third-party software)
-SOFT_DIR=${RSAT}/app_sources
+## Directory to store the downloaded software (sources, before compilation)
+SRC_DIR=${RSAT}/app_sources
 
 ## Directory to store libraries
 PERLLIB_DIR=${RSAT}/lib
