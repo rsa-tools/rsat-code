@@ -136,13 +136,15 @@
     if (!$soap_error) {
       $response =  $echoed->response;
       $command = $response->command;
-//       echo "COMMAND $command";
+      //       echo "COMMAND $command";
       $server = $response->server;
       $client = $response->client;
       $temp_file = explode('/',$server);
       $temp_file = end($temp_file);
-      $resultURL = $WWW_RSA."/tmp/".$temp_file;
-       hourglass("off");
+#      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      $resultURL = rsat_path_to_url($server);
+#      $URL['Display (png)'] = $resultURL;
+      hourglass("off");
       
       # Display the results 
       echo "The results is available at the following URL ";
