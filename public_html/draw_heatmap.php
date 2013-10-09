@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('drawheatmap_cmd');
+  $cmd_file = getTempFileName('drawheatmap_cmd', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('draw-heatmap - results');

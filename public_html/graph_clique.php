@@ -17,7 +17,7 @@
   UpdateLogFile("neat","","");
 
   # File to store the commands
-  $cmd_file = getTempFileName('commands_mcl');
+  $cmd_file = getTempFileName('commands_graphclique', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
 
   title('graph-cliques - results');

@@ -22,7 +22,7 @@ import_request_variables('P','fs_');
 // Initialize variables
 $basedir=$properties['RSAT']."/public_html/data/metabolic_networks";
 #$outputdir = $properties['RSAT']."/public_html/tmp/";
-$outputdir =  $properties['RSAT']."/public_html/".getTempFileName('pathway-extractor');
+$outputdir =  $properties['RSAT']."/public_html/".getTempFileName('pathway-extractor', '.txt');
 $URL['Output directory'] = rsat_path_to_url($outputdir);
 
 $outdir_created = mkdir($outputdir, 0775, TRUE);

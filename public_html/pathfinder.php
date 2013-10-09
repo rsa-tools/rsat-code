@@ -15,7 +15,7 @@
   # log file update thanks to Sylvain
   UpdateLogFile("neat","","");
   # File to store the commands
-  $cmd_file = getTempFileName('commands_pathfinder'); 
+  $cmd_file = getTempFileName('commands_pathfinder', '.txt'); 
   $cmd_handle = fopen($cmd_file, 'a');
   title('Results Pathfinder');
   # Error status
