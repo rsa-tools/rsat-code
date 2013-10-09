@@ -223,12 +223,14 @@
      $xy_all_server = rtrim ($xy_all_server);
      $xy_all_temp_file = explode('/',$xy_all_server);
      $xy_all_temp_file = end($xy_all_temp_file);
-     $xy_all_resultURL = "tmp/".$xy_all_temp_file;
+#     $xy_all_resultURL = "tmp/".$xy_all_temp_file;
      store_command($xy_all_command, "degree distrib graph", $cmd_handle);
-     $URL['Degree distribution (png)'] = rsat_path_to_url($xy_all_server);
+#     $URL['Degree distribution (png)'] = rsat_path_to_url($xy_all_server);
+     $xy_all_resultURL = rsat_path_to_url($xy_all_server);
+     $URL['Degree distrib graph (png)'] = $xy_all_resultURL;
     
     
-# xy graph (log)
+     ## xy graph (log)
      $xy_all_parameters_log = array( 
 				    "request" => array(
 						       "inputFile"=>$cf_all_results,
@@ -259,7 +261,9 @@
      $xy_all_server_log = rtrim ($xy_all_server_log);
      $xy_all_temp_file_log = explode('/',$xy_all_server_log);
      $xy_all_temp_file_log = end($xy_all_temp_file_log);
-     $xy_all_resultURL_log = "tmp/".$xy_all_temp_file_log;
+#     $xy_all_resultURL_log = "tmp/".$xy_all_temp_file_log;
+     $xy_all_resultURL_log = rsat_path_to_url($xy_all_server_log);
+     $URL['Degree distrib graph in log (png)'] = $xy_all_resultURL_log;
 
      if ($directed) {
        ### CLASSFREQ + XY-GRAPH (intra nodes degree)
