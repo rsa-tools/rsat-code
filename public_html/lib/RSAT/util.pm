@@ -1096,7 +1096,7 @@ sub one_command {
       my $OS = `uname -a`;
       chomp($OS);
       &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 3);
-      if (($OS =~ /ubuntu/i) && ($OS !~ /bongcam/i)) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
+      if (($OS =~ /ubuntu/i) || ($OS =~ /bongcam/i)) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
       } else {
 	  $cmd = 'time ('.$cmd.') >& '.$time_file;
