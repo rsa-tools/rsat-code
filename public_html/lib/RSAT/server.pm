@@ -80,9 +80,11 @@ sub GetProgramPath {
 	&RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
       } else {
 	&RSAT::message::Warning("The program ".$program_name." is not found in your path.");
+	return();
       }
     }
 
+    ## Check if the program can be executed
     unless (-x $program_path) {
       if ($die_on_error) {
 	&RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
