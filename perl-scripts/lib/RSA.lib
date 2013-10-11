@@ -1114,7 +1114,7 @@ sub SplitFileName {
 }
 
 sub ShortFileName {
-    return &RSAT::util::ShortFileName(@_);
+  return &RSAT::util::ShortFileName(@_);
 }
 
 sub ExtractPath {
