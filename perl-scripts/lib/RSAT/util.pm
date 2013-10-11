@@ -369,9 +369,9 @@ Usage: $file_name = &RSAT::util::ShortFileName($full_file_name);
 
 =cut
 sub ShortFileName {
-    my $full_file_name = $_[0];
-    my ($dir, $short_file_name) = &SplitFileName($full_file_name);
-    return $short_file_name;
+  my $full_file_name = $_[0];
+  my ($dir, $short_file_name) = &SplitFileName($full_file_name);
+  return $short_file_name;
 }
 
 ################################################################
