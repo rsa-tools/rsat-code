@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.98 2013/10/11 04:17:50 rsat Exp $
+# $Id: position-analysis,v 1.99 2013/10/11 10:55:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -1757,10 +1757,9 @@ sub ReadArguments {
 	    ################################################################
 	    ## Clustering parameters
 	} elsif ($ARGV[$a] eq "-clust_nb") {
-	    $min_clust_nb = $ARGV[$a+1];
-	    $max_clust_nb = $ARGV[$a+1];
-	    &RSAT::error::FatalError($clust_nb, "invalid number of clusters, must be a Natural number >= 2")
-	      unless ((&IsNatural($clust_nb) && ($clust_nb >= 2)));
+	  $clust_nb = $min_clust_nb = $max_clust_nb = $ARGV[$a+1];
+	  &RSAT::error::FatalError($clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	    unless ((&IsNatural($clust_nb) && ($clust_nb >= 2)));
 	} elsif ($ARGV[$a] eq "-min_clust_nb") {
 	    $min_clust_nb = $ARGV[$a+1];
 	    &RSAT::error::FatalError($min_clust_nb, "invalid number of clusters, must be a Natural number >= 2")
