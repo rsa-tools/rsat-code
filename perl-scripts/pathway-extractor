@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: pathway-extractor,v 1.38 2013/04/24 07:37:20 jvanheld Exp $
+# $Id: pathway-extractor,v 1.39 2013/10/11 10:55:31 jvanheld Exp $
 #
 ############################################################
 
@@ -458,14 +458,16 @@ Default is 4;
 
 =pod
 
-=item	B<-gd group descriptor>
+=item	B<-prefix group descriptor>
 
 Give a group descriptor. a prefix name to teh output files.
 
 =cut
+    } elsif ($arg eq "-prefix") {
+      $group_descriptor = shift(@arguments);
     } elsif ($arg eq "-gd") {
       $group_descriptor = shift(@arguments);
-
+      &RSAT::message::Warning("Option -gd is obsolete, has been replaced by -prefix");
 
 =pod
 
