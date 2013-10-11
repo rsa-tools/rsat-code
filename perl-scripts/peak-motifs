@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: peak-motifs,v 1.255 2013/09/13 08:55:35 jvanheld Exp $
+# $Id: peak-motifs,v 1.256 2013/10/11 04:21:13 rsat Exp $
 #
 ############################################################
 
@@ -114,7 +114,7 @@ package main;
   $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-  $program_version = do { my @r = (q$Revision: 1.255 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.256 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1390,7 +1390,7 @@ sub PositionAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'positions_'.$len.'nt';
     &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/position-analysis -v 2";
+    my $cmd = $SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"test_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
@@ -2322,7 +2322,7 @@ sub MotifEnrichment {
   my ($seq_file, $matrix_file, $out_file, $graph_file) = @_;
 
   ## Compute the significance of enrichment in matrix hits
-  $cmd = $SCRIPTS."/matrix-scan -v 3";
+  $cmd = $SCRIPTS."/matrix-scan -v 1";
   $cmd .= " -quick";	   ## TO DO : CHECK IF THIS AFFECTS THE RESULT
   $cmd .= " -seq_format fasta -i ".$seq_file;
   $cmd .= " -matrix_format transfac -m ".$matrix_file;
