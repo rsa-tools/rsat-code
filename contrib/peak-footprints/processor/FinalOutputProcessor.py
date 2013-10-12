@@ -230,7 +230,7 @@ class FinalOutputProcessor( Processor):
 
 
     # --------------------------------------------------------------------------------------
-    # Create the logo image file for each motif in the motis statistics
+    # Create the logo image file for each motif in the motif statistics
     def createLogos(self, input_commstruct):
         
         
