@@ -281,7 +281,7 @@ if ($query->param('output') =~ /display/i) {
       ## Assemble the significant patterns with pattern-assembly
       $assembly_file = $tmp_file_path.".asmb";
       push @result_files, ('Assembly', $assembly_file);
-      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -top 50";
+      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -toppat 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
       } else {
