@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: install-ensembl-genome,v 1.31 2013/10/13 07:56:18 jvanheld Exp $
+# $Id: install-ensembl-genome,v 1.32 2013/10/13 12:25:26 rsat Exp $
 #
 ############################################################
 
@@ -121,7 +121,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   our %infile = ();
   our %outfile = ();
@@ -294,8 +294,12 @@ package main;
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
     while (scalar(@arguments) >= 1) {
       $arg = shift (@arguments);
-      if (($arg eq "-species") || ($arg eq "-org")) { 
+      if (($arg eq "-species") 
+	  || ($arg eq "-org")
+	  || ($arg eq "-species_file")) { 
 	shift(@arguments);
+      } elsif ($arg eq "-batch") {
+	  ## Skip batch to avoid multiplying the jobs
       } else {
 	if ($arg =~ /\s/) {
 	  $passed_arguments .= " '".$arg."'";
