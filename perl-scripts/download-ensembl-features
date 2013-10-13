@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: download-ensembl-features,v 1.39 2013/10/03 17:24:14 jvanheld Exp $
+# $Id: download-ensembl-features,v 1.40 2013/10/13 08:16:28 jvanheld Exp $
 #
 ############################################################
 
@@ -84,7 +84,7 @@ package main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.40 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
 
   our $out = SDTOUT;
   our %outfile = ();
@@ -382,28 +382,35 @@ package main;
     ##Get gene_to_reaction
     &RSAT::message::TimeWarn("Getting Gene_to_reaction") if ($verbose >= 2);
 
-    my $sql_query = "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label";
-    $sql_query .= " from gene g";
-    $sql_query .= "   join xref gx on (g.display_xref_id=gx.xref_id) join transcript tr using (gene_id) ";
-    $sql_query .= "   join translation tl using (transcript_id)";
-    $sql_query .= "   join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')";
-    $sql_query .= "   join xref x1 on (x1.xref_id=ox1.xref_id)";
-    $sql_query .= "    join external_db e1 on (e1.external_db_id=x1.external_db_id)";
-    $sql_query .= "    join seq_region s on (g.seq_region_id=s.seq_region_id) ";
-    $sql_query .= " coord_system using (coord_system_id) ";
-    $sql_query .= " meta using (species_id) ";
-    $sql_query .= " where meta.meta_key='species.production_name'";
-    $sql_query .= "   and meta_value=? ";
-    $sql_query .= "   and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')";
+#     my $sql_query = "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label";
+#     $sql_query .= " from gene g";
+#     $sql_query .= "   join xref gx on (g.display_xref_id=gx.xref_id) join transcript tr using (gene_id) ";
+#     $sql_query .= "   join translation tl using (transcript_id)";
+#     $sql_query .= "   join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')";
+#     $sql_query .= "   join xref x1 on (x1.xref_id=ox1.xref_id)";
+#     $sql_query .= "    join external_db e1 on (e1.external_db_id=x1.external_db_id)";
+#     $sql_query .= "    join seq_region s on (g.seq_region_id=s.seq_region_id) ";
+#     $sql_query .= " coord_system using (coord_system_id) ";
+#     $sql_query .= " meta using (species_id) ";
+#     $sql_query .= " where meta.meta_key='species.production_name'";
+#     $sql_query .= "   and meta_value=? ";
+#     $sql_query .= "   and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')";
 
+#     my $gene_reaction_list = $sql_helper->execute(-SQL      => $sql_query,
+# 						  -CALLBACK => sub {
+# 						    my @row = @{ shift @_ };
+# 						    return { gene_id => $row[0], gene_external_name => $row[1], gene_description => $row[2], db => $row[3], db_label => $row[4] };
+# 						  },
+# 						  -PARAMS => [$species]
+# 						 );
     my $gene_reaction_list = $sql_helper->execute(
-						  -SQL      => $sql_query,
-						  -CALLBACK => sub {
-						    my @row = @{ shift @_ };
-						    return { gene_id => $row[0], gene_external_name => $row[1], gene_description => $row[2], db => $row[3], db_label => $row[4] };
-						  },
-						  -PARAMS => [$species]
-						 );
+      -SQL      => "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label from gene g  join xref gx on (g.display_xref_id=gx.xref_id) join transcript tr using (gene_id)  join translation tl using (transcript_id)  join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')  join xref x1 on (x1.xref_id=ox1.xref_id)  join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id)  join coord_system using (coord_system_id)  join meta using (species_id)  where meta.meta_key='species.production_name' and meta_value=? and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')",
+     -CALLBACK => sub {
+        my @row = @{ shift @_ };
+          return { gene_id => $row[0], gene_external_name => $row[1], gene_description => $row[2], db => $row[3], db_label => $row[4] };
+        },
+     -PARAMS => [$species]
+    );
 
     while ( my $row = shift @{$gene_reaction_list} ) {
       my %row = %{$row};
