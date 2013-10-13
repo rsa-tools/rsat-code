@@ -242,7 +242,7 @@ if ($query->param('output') =~ /display/i) {
 #     $assembly_file = $tmp_file_path.".asmb";
 #     #      $assembly_file = "$TMP/$tmp_file_name.asmb";
 #     push @result_files, ('assembly', $assembly_file);
-#     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
+#     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -toppat 50";
 #     if ($query->param('strand') =~ /single/) {
 #       $pattern_assembly_command .= " -1str";
 #     } else {

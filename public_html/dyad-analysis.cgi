@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.51 2012/08/06 22:52:40 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.52 2013/10/13 07:58:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -229,7 +229,7 @@ if ($query->param('output') eq "display") {
     $assembly_file = $tmp_file_path.".asmb";
 #    $assembly_file = "$TMP/$tmp_file_name.asmb";
     push @result_files, ('assembly', $assembly_file);
-    $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -top 50";
+    $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -toppat 50";
     if ($query->param('strand') =~ /single/) {
       $pattern_assembly_command .= " -1str";
     } else {
