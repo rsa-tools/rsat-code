@@ -1,11 +1,13 @@
 #!/usr/bin/perl
-#### redirect error log to a file
+
+## Get the path for RSAT Perl libraries
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
+
+## Redirect error log to a file
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-#### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
 #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
@@ -22,10 +24,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 #$ENV{rsat_echo}=2;
 @result_files = ();
 
-$position_analysis_command = "$SCRIPTS/position-analysis";
-$convert_seq_command = "$SCRIPTS/convert-seq";
-$purge_sequence_command = "$SCRIPTS/purge-sequence";
-
+$position_analysis_command = $SCRIPTS."/position-analysis";
+$convert_seq_command = $SCRIPTS."/convert-seq";
+$purge_sequence_command = $SCRIPTS."/purge-sequence";
 
 ################################################################
 ## Output paths
@@ -78,19 +79,17 @@ if ($purge) {
 
 
 ## fields to return
-@return_fields = ();
+@output_fields = ();
 
 ## threshold on occurrences
 my $lth_occ = $query->param('lth_occ');
 if (&IsNatural($lth_occ)) {
   $parameters .= " -lth_occ ".$lth_occ;
 }
-#&FatalError("$lth_occ Invalid threshold on occurrences") unless &IsNatural($lth_occ);
-#$parameters .= " -lth_occ ".$lth_occ;
 
 ## Chi2
 if ($query->param('return_chi')) {
-  push @return_fields, ("chi", "sig");
+  push @output_fields, ("chi", "sig");
 
   ## Threshold on chi2 statistics
   my $lth_chi = $query->param('lth_chi');
@@ -105,25 +104,24 @@ if ($query->param('return_chi')) {
   }
 }
 
-## rank
+## Rank
 if ($query->param('return_rank')) {
-  push @return_fields, "rank";
+  push @output_fields, "rank";
 }
 
-## distrib
+## Positional distribution of occurrences
 if ($query->param('return_distrib')) {
-  push @return_fields, "distrib";
+  push @output_fields, "distrib";
 }
 
 ## Expected occurrences
 if ($query->param('return_exp')) {
-  push @return_fields, "exp";
+  push @output_fields, "exp_occ";
 }
 
 ## Clusters
 if ($query->param('return_clusters')) {
-  push @return_fields, "clusters";
-
+  push @output_fields, "clusters";
 
   ## Number of clusters
   my $clust_nb = $query->param('clust_nb');
@@ -136,7 +134,7 @@ if ($query->param('return_clusters')) {
 
 ## Matrices
 if ($query->param('return_matrices')) {
-  push @return_fields, "matrices";
+  push @output_fields, "matrices";
 
 
   ## Number of matrices
@@ -150,50 +148,46 @@ if ($query->param('return_matrices')) {
 
 ## Graphs
 if ($query->param('return_graphs')) {
-  push @return_fields, "graphs";
+  push @output_fields, "graphs";
 }
 
-$return_fields = join ",", @return_fields, "index";
+
+## Concatenate the output fields
+$output_fields = join ",", @output_fields, "index";
+$parameters .= " -return ".$output_fields;
 
 
-$parameters .= " -return $return_fields";
-
-
-## single or both strands
+## Single or both strands
 if ($query->param('strand') =~ /single/) {
   $parameters .= " -1str";
 } else {
   $parameters .= " -2str";
+  ## Group patterns by pairs of reverse complements
+  unless ($query->param('grouprc')) {
+    $parameters .= " -nogrouprc";
+  }
 }
 
-
-## group patterns by pairs of reverse complements
-unless ($query->param('grouprc')) {
-  $parameters .= " -nogrouprc";
-} 
-
-## prevent overlapping matches of the same pattern
+## Prevent overlapping matches of the same pattern
 if ($query->param('noov')) {
   $parameters .= " -noov";
 }
 
-#### oligo length
+## Oligo length
 $oligo_length = $query->param('oligo_length') ;
 &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
 $parameters .= " -l $oligo_length";
 
-#### class interval
+## Class interval
 $class_interval = $query->param('class_interval') ;
 &FatalError("$class_interval Invalid class interval") unless &IsNatural($class_interval);
 $parameters .= " -ci $class_interval";
 
-################################################################
-#### origin
+## Origin
 $origin = $query->param('origin');
 $parameters .= " -origin ".$origin;
 
-################################################################
-#### Offset
+## Offset
 my $offset = $query->param('offset');
 if ((&IsInteger($offset)) && ($offset != 0)) {
   $parameters .= " -offset ".$offset;
@@ -254,7 +248,7 @@ if ($query->param('output') =~ /display/i) {
 #     #     }
 #     #     $pattern_assembly_command .= " -i ".$result_file;
 #     #     $pattern_assembly_command .= " -o ".$assembly_file;
-#     # 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+#     # 	$pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1";
 #     # 	if ($query->param('strand') =~ /single/) {
 #     # 	    $pattern_assembly_command .= " -1str";
 #     # 	} else {
