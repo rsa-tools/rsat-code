@@ -1,17 +1,20 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.52 2013/10/13 07:58:08 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.53 2013/10/14 10:09:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
 ############################################################
+
+## Get the path for RSAT Perl libraries
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+
 #### redirect error log to a file
 BEGIN {
   $ERR_LOG = "/dev/null";
@@ -21,12 +24,15 @@ BEGIN {
     || die "Unable to redirect log\n";
   carpout(*LOG);
 }
+
+## Load RSAT libraries
 require "RSA.lib";
 require "RSA2.cgi.lib";
 require "RSA.disco.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
+## Commands to be used
 $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";

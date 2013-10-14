@@ -1,10 +1,12 @@
 #!/usr/bin/perl
-#### redirect error log to a file
+
+## Get the path for RSAT Perl libraries
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
@@ -15,12 +17,15 @@ BEGIN {
 	|| die "Unable to redirect log\n";
     carpout(*LOG);
 }
+
+## Load required libraries
 require "RSA.lib";
 require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
+## Commands to be used
 $motif_command = "$ENV{RSAT}/python-scripts/local-word-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
