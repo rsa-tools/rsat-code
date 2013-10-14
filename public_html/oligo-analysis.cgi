@@ -1,12 +1,13 @@
 #!/usr/bin/perl
 
-#### redirect error log to a file
+## Get the path for RSAT Perl libraries
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
+
+#### redirect error log to a file
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-#### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
 #    $ERR_LOG = "/tmp/RSA_ERROR_LOG.txt";
@@ -16,13 +17,15 @@ BEGIN {
 	|| die "Unable to redirect log\n";
     carpout(*LOG);
 }
+
+## Load RSAT librarires
 require "RSA.lib";
 require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
-#### commands
+## Commands
 $oligo_analysis_command = $SCRIPTS."/oligo-analysis";
 $convert_seq_command = $SCRIPTS."/convert-seq";
 $purge_sequence_command = $SCRIPTS."/purge-sequence";
