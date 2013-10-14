@@ -94,8 +94,10 @@ sub readFromFile {
     if (($format eq "consensus") || ($format =~ /^wc/i)) {
 	@matrices = _readFromConsensusFile($file);
     } elsif ($format eq "transfac") {
-	@matrices = _readFromTRANSFACFile($file);
+	@matrices = _readFromTRANSFACFile($file, "transfac");
     } elsif ($format eq "stamp") {
+	@matrices = _readFromTRANSFACFile($file, "stamp");
+    } elsif ($format eq "stamp-previous") {
 	@matrices = _readFromSTAMPFile($file);
     } elsif ($format eq "infogibbs") {
 	@matrices = _readFromInfoGibbsFile($file);
@@ -297,14 +299,14 @@ sub readMatrixFileList {
 
 =pod
 
-=item _readFromTRANSFACFile($file)
+=item _readFromTRANSFACFile($file, $format)
 
 Read a matrix from a TRANSFAC file. This method is called by the method 
 C<readFromFile($file, "TRANSFAC")>.
 
 =cut
 sub _readFromTRANSFACFile {
-  my ($file) = @_;
+  my ($file, $format) = @_;
   &RSAT::message::Info ("Reading matrix from TRANSFAC file", $file) if ($main::verbose >= 3);
 
   ## open input stream
@@ -315,6 +317,7 @@ sub _readFromTRANSFACFile {
   my $command = "";
   my $ncol = 0;
   my $transfac_consensus = "";
+  my $short_file_name = &RSAT::util::ShortFileName($file);
 
   my %prior = ();
   my $l = 0;
@@ -335,22 +338,29 @@ sub _readFromTRANSFACFile {
     } elsif (/^XX/) {
 
       ## Start a new matrix (one TRANSFAC file contains several matrices)
-    } elsif (/^AC\s+(\S+)/) {
+    } elsif (/^AC\s*(\S*)/) {
       my $accession = $1;
-      &RSAT::message::Info("TRANSFAC accession number", $accession) if ($main::verbose >= 5);
       $current_matrix_nb++;
       $transfac_consensus = "";
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("program", "transfac");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
-      if ($accession) {
-	$matrix->set_parameter("accession", $accession);
-	$matrix->set_parameter("AC", $accession);
-	## TRANSFAC Accession number corresponds to our matrix ID
-	## TRANSFAC ID corresponds to our matrix name
-	$matrix->set_parameter("id", $accession);
+      unless ($accession) {
+	&RSAT::message::Info("Empty accession, set to", $accession) if ($main::verbose >= 3);
+	$accession = $short_file_name."_".$current_matrix_nb;
       }
+      &RSAT::message::Info("Setting AC, accession, id and name", $accession) if ($main::verbose >= 5);
+      $matrix->set_parameter("accession", $accession);
+      $matrix->set_parameter("AC", $accession);
+
+      ## TRANSFAC Accession number corresponds to our matrix ID
+      $matrix->set_parameter("id", $accession);
+
+      ## TRANSFAC ID corresponds to our matrix name. We temporarily
+      ## set the name to AC, since some badly formated fomres
+      ## (e.g. coming from STAMP) do not contain the ID field.
+      $matrix->set_parameter("name", $accession);
       $matrix->set_parameter("version", $version);
       $ncol = 0;
 #      next;
@@ -417,21 +427,15 @@ sub _readFromTRANSFACFile {
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
 
-	## Matrix identifier
-      } elsif (/^ID\s+/) {
+	## TRANSFAC identifier corresponds to our name
+      } elsif ((/^ID\s+(\S+)/)
+	       || ((/^NA\s+(\S+)/) && ($format eq "stamp")) ## For TRANSFAC-like format exported by STAMP
+	      ) {
+
 	## TRANSFAC identifier corresponds to our matrix name
 	## Our ID is in the TRANSFAC field AC (accession)
-	$matrix->set_parameter("name", $'); #'
+	$matrix->set_parameter("name", $1);
 
-	## Automatically set matrix name
-#	if ($matrix->get_attribute("accession") eq $matrix->get_attribute("identifier")) {
-#	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
-#	}  else {
-#	  $matrix->force_attribute("name", join("_",
-#						$matrix->get_attribute("accession"),
-#						$matrix->get_attribute("identifier"),
-#					       ));
-#	}
 	&RSAT::message::Info("TRANSFAC",
 			     "AC -> id", $matrix->get_attribute("id"),
 			     "ID -> name", $matrix->get_attribute("name")
@@ -480,6 +484,7 @@ sub _readFromTRANSFACFile {
   }
   close $in if ($file);
 
+
   return @matrices;
 
 }
@@ -495,7 +500,7 @@ Read a matrix from a STAMP file. This method is called by the method
 C<readFromFile($file, "STAMP")>.
 
 =cut
-sub _readFromSTAMPFile {
+sub _readFromSTAMPFile_PreviousFormat {
   my ($file) = @_;
   &RSAT::message::Info ("Reading matrix from STAMP file", $file) if ($main::verbose >= 3);
 
@@ -548,14 +553,20 @@ sub _readFromSTAMPFile {
       ## Start a new matrix (one STAMP file contains several matrices)
     } elsif ((/^(DE)\s+(.+)/) || (/^(NA)\s+(.+)/)) {
       ## Problem: STAMP has 2 formats (so called "TRANSFAC" and the
-      ## "TRANSFAC-like", but actually the TRANSFAC is not TRANSFAC
-      ## for example, it has no AC field, whereas this is an essential
-      ## field for TRANSFAC).
+      ## "TRANSFAC-like", but actually the TRANSFAC is not properly speaking TRANSFAC.
+      ##
+      ## In early versions, there was no AC field, whereas this is an
+      ## essential field for TRANSFAC).
       ##
       ## The beginning of a record is marked EITHER by "NA"
       ## ("TRANSFAC" format) OR by "DE" ("TANSFAC-like" format).
       ## We have to fiddle around to circumvent this ambiguity.
+      ##
+      ## Apparently in 2013 there is an AC field. I adapted
+      ## _readFromTRANSFACFile() to support the new STAMP format. This
+      ## one is maintained for backwards compatibility.
 
+      my $field = $1;
       my $accession = $2; ## Name and description are both acceptable
 			  ## as AC.
 
@@ -570,7 +581,7 @@ sub _readFromSTAMPFile {
 
       my $name = "";
       my $description = "";
-      if ($1 eq "NA") {
+      if ($field eq "NA") {
 	## If field "name" is defined, we are in the so-called
 	## "TRANSFAC" format. The "name" is then used as accession +
 	## as ID + as name
