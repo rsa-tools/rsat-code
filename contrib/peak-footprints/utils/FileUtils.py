@@ -68,7 +68,7 @@ class FileUtils:
     @staticmethod
     def createDirectory( path, chmod = 0777):
         
-	print "CREATING DIRECTORY : " + path
+	#print "CREATING DIRECTORY : " + path
 	#liste_dir = FileUtils.getDirectoryList( os.path.dirname( path))
 	#print "LISTE DIR AVANT " + os.path.dirname( path) + " = " + str(liste_dir) 
 	#liste_file = FileUtils.getFileList( os.path.dirname( path), None)
@@ -76,7 +76,7 @@ class FileUtils:
 
         if os.path.exists( path):
             if not os.path.isdir( path):
-		print "ERROR : Cannot create directory : file with same path already exists!!!!!! : " + path
+                print "ERROR : Cannot create directory : file with same path already exists!!!!!! : " + path
                 return False
         else:
 	    #liste_fichier = FileUtils.getDirectoryList( os.path.dirname(path))
@@ -92,7 +92,7 @@ class FileUtils:
     @staticmethod
     def openFile( path, mode = "r", chmod = 0666):
         
-	print "OPENING FILE = " + path
+	#print "OPENING FILE = " + path
 
         if os.path.exists(path):
             if not os.path.isfile( path):

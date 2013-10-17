@@ -116,9 +116,9 @@ class RSATUtils:
         cmd += " -xcol 3 -ycol 4"
         if other_columns != None and len( other_columns) > 0:
             cmd += "," + ",".join( other_columns)
-        cmd += " -xleg1 '" + legendx + "' -lines"
+        cmd += " -xleg1 '" + legendx + "'"
         cmd += " -yleg1 '" + legendy + "'"
-        cmd += " -legend -header -format png"
+        cmd += " -legend -header -format png -fhisto"
         cmd += " -o '" + graph_path + "'"
         
         cmd_result = commands.getstatusoutput( cmd)

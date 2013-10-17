@@ -46,6 +46,12 @@ class Pipeline:
         return None
 
     # --------------------------------------------------------------------------------------
+    # Return the component list of the pipeline
+    def getComponentList(self):
+        
+        return self.componentList
+
+    # --------------------------------------------------------------------------------------
     # Return a string representation of the pipeline
     def toString( self):
         

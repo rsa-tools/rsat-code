@@ -203,10 +203,10 @@ class HistogramProcessor( Processor):
                 cmd += " -i '" + all_histo_path + "'"
                 cmd += " -title1 '" + self.component.pipelineName + "'" 
                 cmd += " -title2 ''" 
-                cmd += " -xcol 1 -ycol 3,4"
-                cmd += " -xleg1 'Distance to peak maximum' -lines"
+                cmd += " -xcol 3 -ycol 4,5"
+                cmd += " -xleg1 'Distance to peak maximum'"
                 cmd += " -yleg1 'Number of motif hits'"
-                cmd += " -legend -header -format png"
+                cmd += " -legend -header -format png -fhisto"
                 cmd += " -o '" + graph_path + "'"
                 
                 cmd_result = commands.getstatusoutput( cmd)
@@ -444,10 +444,11 @@ class HistogramProcessor( Processor):
     
         try:
             file = open( path, "w")
-            file.write("# x_min \t x_max \t " + label1 + "\t" + label2 + "\n")
+            file.write("# x_min \t x_max \t x_mean \t " + label1 + "\t" + label2 + "\n")
             for classe in sorted( null_histo.keys()):
                 file.write( str( classe) + "\t")
                 file.write( str( classe + histo_interval) + "\t")
+                file.write( str( classe + (histo_interval/2.0)) + "\t")
                 if classe in motif_histo.keys():
                     file.write( str( motif_histo[ classe]) + "\t")
                 else:

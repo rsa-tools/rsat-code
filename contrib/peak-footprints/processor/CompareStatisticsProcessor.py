@@ -165,7 +165,7 @@ class CompareStatisticsProcessor( Processor):
                     cmd += " -xcol 1 -ycol " + value_cols
                     cmd += " -xleg1 'Position against peak maximum' -lines"
                     cmd += " -yleg1 'Number of occurence'"
-                    cmd += " -legend -header -format png"
+                    cmd += " -legend -header -format png -histo"
                     cmd += " -o " + graph_path
                     
                     cmd_result = commands.getstatusoutput( cmd)
