@@ -104,7 +104,7 @@ class Component:
     # If resume is True, verify if the output data of the associate processor can be retrieved from
     # previous runs. If so, the class of the output CommStruct is retrieved and the Component is declared as 'resumed'
     # If not, the processor is run and the component declared as 'executed'
-    def start( self, pipeline_out, runtime_params, resume = False):
+    def start( self, pipeline, pipeline_out, runtime_params, resume = False):
 
         self.outputDir = pipeline_out
         self.runtimeParameters = runtime_params
@@ -158,7 +158,7 @@ class Component:
                 self.removePreviousOutputs()
 
         
-        return self.executeProcessor()
+        return self.executeProcessor( pipeline)
 
 
 
@@ -166,7 +166,7 @@ class Component:
     # --------------------------------------------------------------------------------------
     # Instanciate and execute the processor associated to the component, 
     # store the config and the result and declares the Component as 'executed'
-    def executeProcessor( self):
+    def executeProcessor( self, pipeline):
         
         ProgressionManager.setComponentStatus( self, ProgressionManager.RUNNING_STATUS)
         
@@ -179,6 +179,7 @@ class Component:
         # Creates an instance of associated processor and execute it
         processor_instance = ProcessorFactory.getProcessorInstance( self.processorName, self)
         self.processorDisplayName = processor_instance.getDisplayName()
+        processor_instance.setPipeline( pipeline)
         output_commstruct = processor_instance.execute( input_commstructs)
         
         # Manage the result and generate the XML output
@@ -405,6 +406,11 @@ class Component:
                 return None
 
 
+    # --------------------------------------------------------------------------------------
+    # Return the value of the parameter if exists
+    def getParameterDic(self):
+        
+        return self.parameters
 
     # --------------------------------------------------------------------------------------
     # Remove the possible output files and dir remaning from previous runs
