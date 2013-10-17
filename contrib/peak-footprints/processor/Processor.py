@@ -14,7 +14,12 @@ class Processor:
         
         self.component = None
         self.parameters = {}
+        self.pipeline = None
 
+    # ---------------------------------------------------------------------------------------
+    # Set the pipeline the processor is part of
+    def setPipeline(self, pipe):
+        self.pipeline = pipe
 
     # --------------------------------------------------------------------------------------
     # This method must be redefined in the inherited classes
@@ -63,7 +68,7 @@ class Processor:
     # --------------------------------------------------------------------------------------
     # This method must be redefined in the inherited classes
     # it must execute the processor analysis part
-    def execute(self, comm_struct):
+    def execute(self, comm_struct, pipeline):
         
         Log.log( "The method 'execute' must be implemented at the inherited class level")
         return None
