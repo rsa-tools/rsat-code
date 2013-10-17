@@ -316,20 +316,20 @@ class PipelineManager:
                 pipeline_output = os.path.join( self.getParameter( Constants.OUTPUT_DIR_PARAM), pipeline.name)
 	        
                 liste_dir = FileUtils.getDirectoryList( os.path.dirname( pipeline_output))
-	        print "0/LISTE DIR AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_dir) 
-	        liste_file = FileUtils.getFileList( os.path.dirname( pipeline_output), None)
-        	print "0/LISTE FILE AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_file) 
+                print "0/LISTE DIR AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_dir) 
+                liste_file = FileUtils.getFileList( os.path.dirname( pipeline_output), None)
+                print "0/LISTE FILE AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_file) 
                 
                 # Manage the pipeline output directory and the logs
-		print "self.getParameter( Constants.OUTPUT_DIR_PARAM) = " + self.getParameter( Constants.OUTPUT_DIR_PARAM)
-		print "pipeline_output = " + pipeline_output
-		print "Resume mode = " + str(resume)
+                print "self.getParameter( Constants.OUTPUT_DIR_PARAM) = " + self.getParameter( Constants.OUTPUT_DIR_PARAM)
+                print "pipeline_output = " + pipeline_output
+                print "Resume mode = " + str(resume)
                 if resume == False:
                     shutil.rmtree( pipeline_output, True)
                     FileUtils.createDirectory( pipeline_output, 0777)
                     Log.switchFiles( pipeline_output)
                 else:
-		    print "creating dir : " + pipeline_output
+                    print "creating dir : " + pipeline_output
                     FileUtils.createDirectory( pipeline_output, 0777)
                     Log.initLog( pipeline_output)
                 ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.RUNNING_STATUS)
@@ -362,7 +362,7 @@ class PipelineManager:
                         
                         # Execute the component
                         try:
-                            executed = current_component.start( pipeline_output, self.config, resume)
+                            executed = current_component.start( pipeline, pipeline_output, self.config, resume)
                         except ExecutionException, exe_exce:
                             Log.log( "PipelineManager.executePipelines : Aborting execution of component : '" + current_component.getComponentPrefix() + "' . From:\n\t---> " + str( exe_exce))
                             

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<!--xsl:import href="JS-SortTable.xsl"/-->
 <xsl:output method="html" encoding="ISO-8859-1" />
 
 
@@ -20,6 +21,165 @@
 <!-- ************************************************************************************************* -->
 <xsl:template match="classification">
     <head>
+    	<!-- Loading the Jquery library -->
+		<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+		<!-- Load the JQuery DataTables library -->
+		<script type="text/javascript" language="javascript" src="./jquery.dataTables.js"></script>
+		<script type="text/javascript" charset="utf-8">
+		    //Define function to show and hide parameter table
+			$( "#hide_optional_parameters" ).click(function() {
+	  			$( "#optional_parameters" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_optional_parameters" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_optional_parameters" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+			});
+			
+			$( "#show_optional_parameters" ).click(function() {
+	  			$( "#optional_parameters" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_optional_parameters" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_optional_parameters" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+			});
+		
+			// Insure the DOM Is loaded
+			$(document).ready(function() {
+				$( "#optional_parameters" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_optional_parameters" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_optional_parameters" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  		});
+	  		
+	  		//Define function to show and hide global statistics table
+			$( "#hide_global_statistics" ).click(function() {
+	  			$( "#global_statistics" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_global_statistics" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_global_statistics" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+			});
+			
+			$( "#show_global_statistics" ).click(function() {
+	  			$( "#global_statistics" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_global_statistics" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_global_statistics" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+			});
+		
+			// Insure the DOM Is loaded
+			$(document).ready(function() {
+				$( "#global_statistics" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_global_statistics" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_global_statistics" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  		});
+	  		
+	  		//Define function to show and hide documentation table
+			$( "#hide_documentation" ).click(function() {
+	  			$( "#documentation" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_documentation" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_documentation" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+			});
+			
+			$( "#show_documentation" ).click(function() {
+	  			$( "#documentation" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_documentation" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_documentation" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+			});
+		
+			// Insure the DOM Is loaded
+			$(document).ready(function() {
+				$( "#documentation" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#show_documentation" ).show( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  			$( "#hide_documentation" ).hide( "fast", function() {
+	    			// Animation complete.
+	  			});
+	  		});
+	  		
+		
+			/* Define two custom functions (asc and desc) for scientific number sorting */
+			jQuery.fn.dataTableExt.oSort['scientific-number-case-asc'] = function(a,b) {
+		          var x = parseFloat(a);
+		          var y = parseFloat(b);
+			      return ((x &lt; y) ? -1 : ((x &gt; y) ?  1 : 0));
+			};
+ 
+			jQuery.fn.dataTableExt.oSort['scientific-number-case-desc'] = function(a,b) {
+		          var x = parseFloat(a);
+		          var y = parseFloat(b);
+			      return ((x &lt; y) ?  1 : ((x &gt; y) ? -1 : 0));
+			};
+			
+			$(document).ready(function() {
+				// Apply the JQuery DataTables style on the 'result_table' table
+				$('#result_table').dataTable({
+					// Sorting table with the third column (rank)
+			 		"aaSorting": [[ 2, "asc" ]],
+					"sPaginationType": "full_numbers",
+					"aoColumns": [
+            					null,
+            					null,
+            					null,
+            					null,
+            					null,
+            					null,
+					        { "sType": 'scientific-number-case' },
+					        { "sType": 'scientific-number-case' },
+				                null,
+				                null,
+				                null,
+				                null,
+				                null,
+				                null
+        				]
+				});
+			} );
+		</script>
+    	<link rel="stylesheet" type="text/css" href = "./peak-footprints.css" media="screen"/>
         <title>
             Results of <xsl:value-of select="@name"/>
         </title>
@@ -27,7 +187,7 @@
 
     <body style="font-family:Arial; font-size:12pt;">
 
-	<div style="text-align:center; font-size:20pt; background-color:#555555; color:white; padding:4px"> 
+	<div style="text-align:center; font-size:20pt; background-color:#A9E2F3; color:#2E9AFE; padding:4px">  
 		<b>Results of <xsl:value-of select="@name"/></b>
 	</div>
 
@@ -36,31 +196,52 @@
         <br></br>
 
 	<!-- ................................................................................................. -->
-	<!-- Table containg the information on data input                                                      -->
+	<!-- Table containing the information on data input                                                      -->
 	<!-- ................................................................................................. -->
-	<table ALIGN="center">
-		<tr><td><b>Reference Species</b></td><td>:<xsl:value-of select="@referenceSpecies"/></td></tr>
-		<tr><td><b>Reference Motif</b></td><td>:<xsl:value-of select="@referenceMotif"/></td></tr>
-		<tr><td><b>Aligned Species</b></td><td>:<xsl:value-of select="@alignedSpecies"/></td></tr>
-		<tr><td><b>BED Output file</b></td><td><a><xsl:attribute name="href"> <xsl:value-of select="@bedOutput"/> </xsl:attribute>:BED Output</a></td></tr>
+	<table class="section_table">
+		<tr><th>Analysis parameters</th></tr>
 	</table>
-
-	<br></br>
-        <br></br>
+	<table class="no_line_table" id="experiment_parameters">
+		<tr><td><b>Reference Species</b></td><td> : <xsl:value-of select="@referenceSpecies"/></td></tr>
+		<tr><td><b>Reference Motif</b></td><td> : <xsl:value-of select="@referenceMotif"/></td></tr>
+		<tr><td><b>Aligned Species</b></td><td> : <xsl:value-of select="@alignedSpecies"/></td></tr>
+		<tr><td><b>BED Output file</b></td><td> : <a><xsl:attribute name="href"> <xsl:value-of select="@bedOutput"/> </xsl:attribute>BED Output</a></td></tr>
+	</table>
+	     
+	<table class="section_table" width="50%">
+		<tr><th id="show_optional_parameters">+ Additional parameters</th></tr>
+		<tr><th id="hide_optional_parameters">- Additional parameters</th></tr>
+	</table>
+	<table class="no_line_table" id="optional_parameters">
+		<tr><td><b>Input BED file</b></td><td> : <a><xsl:attribute name="href"><xsl:value-of select="@BEDFile"/> </xsl:attribute>Input BED File</a></td></tr>
+	    <tr><td><b>Residue Conservation Limit</b></td><td> : <xsl:value-of select="@ResiduConservationLimit"/></td></tr>
+	    <tr><td><b>Detection Window size</b></td><td> : <xsl:value-of select="@WindowSize"/></td></tr>
+	    <tr><td><b>Detection Window conservation limit</b></td><td> : <xsl:value-of select="@WindowConservationLimit"/></td></tr>
+	    <tr><td><b>Motif Databases root path</b></td><td> : <xsl:value-of select="@MotifDatabasePath"/></td></tr>
+	    <tr><td><b>Motif Databases List</b></td><td> : <xsl:value-of select="@MotifDatabaseFileList"/></td></tr>
+	    <tr><td><b>Custom Motif Databases List</b></td><td> : <a><xsl:attribute name="href"> <xsl:value-of select="@CustomMotifDatabaseFile"/></xsl:attribute>Custom Motifs</a></td></tr>
+	    <tr><td><b>Max Hypergeometric p-value</b></td><td> : <xsl:value-of select="@MaxHypergeometricEValue"/></td></tr>
+	    <tr><td><b>Max Chi2 p-value</b></td><td> : <xsl:value-of select="@MaxChi2EValue"/></td></tr>
+	    <tr><td><b>Max Reported Motif Number</b></td><td> : <xsl:value-of select="@MaxMotifNumber"/></td></tr>
+    </table>
 
 	<!-- ................................................................................................. -->
-	<!-- Table containg the information on global statistics                                               -->
+	<!-- Table containing the information on global statistics                                               -->
 	<!-- ................................................................................................. -->
-	<table ALIGN="center" border="1">
-		<tr align="center" bgcolor="#339933"><td colspan="7" ><b>Global Statistics</b></td></tr>
-		<tr bgcolor="#66cc66">
+	
+	<table class="section_table">
+		<tr id="show_global_statistics"><th>+ Global Statistics</th></tr>
+		<tr id="hide_global_statistics"><th>- Global Statistics</th></tr>
+	</table>
+	<table class="statistic_table" id="global_statistics">
+		<tr>
 			<th></th>
-			<th><b>Number</b></th>
-			<th><b>Min Size</b></th>
-			<th><b>Max Size</b></th>
-			<th><b>Mean Size</b></th>
-			<th><b>Total Size</b></th>
-			<th><b>Size distribution</b></th>
+			<th>Number</th>
+			<th>Min Size</th>
+			<th>Max Size</th>
+			<th>Mean Size</th>
+			<th>Total Size</th>
+			<th>Size distribution</th>
 		</tr>
 		<tr><td><b>Initial Sequences</b></td>	
 			<td align="center"><xsl:value-of select="@bedSequencesNumber"/></td>
@@ -143,95 +324,82 @@
 		</tr>
 	</table>
 
+
+	<!-- ................................................................................................. -->
+	<!-- Table headers containing a line for each motif and its statistics data                              -->
+	<!-- ................................................................................................. -->
+
+	<table class="section_table">
+		<tr><th>Detected Motif Classification</th></tr>
+	</table>
 	<br></br>
-        <br></br>
-
-
-	<!-- ................................................................................................. -->
-	<!-- Table headers containg a line for each motif and its statistics data                              -->
-	<!-- ................................................................................................. -->
-
-        <br></br>
-        <br></br>
-
-	<div style="text-align:center; font-size:10pt; color:black; padding:4px"> 
-        <table ALIGN="center" WIDTH='95%' border="1">
-            <tr HEIGHT='5' BGCOLOR="#339933"> 
-                <th><b>Name</b></th>
-		<th><b>Rank</b></th>
-                <th><b>Hits number</b></th>
-                <th><b>Expected hits number</b></th>
-                <th><b>Ratio with hits numbers</b></th>
-                <th><b>Hypergeometric P-value</b></th>
-                <th><b>Chi2 P-value</b></th>
-		<th><b>Chi2</b></th>
+	
+        <table id="result_table">
+        	<thead>
+            <tr> 
+                <th>Name</th>
+                <th>Family</th>
+				<th>Rank</th>
+                <th>Hits number</th>
+                <th>Expected hits number</th>
+                <th>Ratio with hits numbers</th>
+                <th>Hypergeometric P-value</th>
+                <th>Chi2 P-value</th>
+				<th>Chi2 value</th>
                 <th>% Overlapping sites with <xsl:value-of select="@referenceMotif"/></th>
-                <th ALIGN="left"><b> 
-                        <ul>
-				<li style='margin-left:20px'>Class</li>
-				<li style='margin-left:20px'>Type</li>
-			</ul>
-                </b></th>
-                <th><b>Logo</b></th>
-                <th><b>Motif hit distribution in peaks</b></th>
-                <th><b>Distance to nearest <xsl:value-of select="@referenceMotif"/></b></th>
-                <!--th><b>Peak scores of hits</b></th-->
+                <th>Class/ Type</th>
+                <th>Logo</th>
+                <th>Distance to peak center</th>
+                <th>Distance to nearest <xsl:value-of select="@referenceMotif"/></th>
            </tr>
-            
-	    <!-- Apply the template at the family level -->
-            <xsl:apply-templates select="family"/>
+           </thead>
+           <tbody>
+	    		<!-- Apply the template at the family motifs level -->
+            	<xsl:apply-templates select="family/motif"/>
+           </tbody>
 
         </table>
-	</div>
-
-
-	<br></br>
-	<br></br>
-
-
-
+        
 	<!-- ................................................................................................. -->
 	<!-- Documentation                                                                                     -->
 	<!-- ................................................................................................. -->
 
-	<center></center>
-	<table ALIGN="center" WIDTH='95%'>
-		<tr ALIGN="center" BGCOLOR="#339933"><td colspan="2"><h2>Documentation</h2></td></tr>
-		<tr ALIGN="center" HEIGHT='5' BGCOLOR="#66cc66">
-			<th>
-				<b>Table entry</b>
-			</th>
-			<th>
-				<b>Details</b>
-			</th>
-		</tr>
-		<tr><td WIDTH='30%'>Reference Species</td><td>The species on which the initial data where analyzed from</td></tr>
-		<tr><td WIDTH='30%'>Reference Motif</td><td>The motif that have been used for the ChIP-seq analysis</td></tr>
-		<tr><td WIDTH='30%'>Aligned Species</td><td>The list of species that vae been used to create the Multiple Sequence Alignements (MSA)</td></tr>
-		<tr><td WIDTH='30%'>Number of initial sequences</td><td>The initial number of sequence found in the input data file</td></tr>
-		<tr><td WIDTH='30%'>Number of sequences associated to MSA</td><td>The number of sequence that were effectively associate to a MSA</td></tr>
-		<tr><td WIDTH='30%'>Number of detected conserved regions</td><td>The number of conserved regions identified through all the MSA</td></tr>
+	<br></br>
+	<br></br>
+	<table class="section_table">
+		<tr id="show_documentation"><th>+ Documentation</th></tr>
+		<tr id="hide_documentation"><th>- Documentation</th></tr>
+	</table>
+	<table class="no_line_table" id="documentation">
+		<tr><td>Reference Species</td><td> : The species on which the initial data where analyzed from</td></tr>
+		<tr><td>Reference Motif</td><td> : The motif that have been used for the ChIP-seq analysis</td></tr>
+		<tr><td>Aligned Species</td><td> : The list of species that vae been used to create the Multiple Sequence Alignements (MSA)</td></tr>
+		<tr><td>Number of initial sequences</td><td> : The initial number of sequence found in the input data file</td></tr>
+		<tr><td>Number of sequences associated to MSA</td><td> : The number of sequence that were effectively associate to a MSA</td></tr>
+		<tr><td>Number of detected conserved regions</td><td> : The number of conserved regions identified through all the MSA</td></tr>
+		<tr><td></td></tr>
+		<tr><td>Distribution of sequences sizes </td><td> : The histogram of the sizes of the initial sequences</td></tr>
+		<tr><td>Distribution of MSA sizes </td><td> : The histogram of the sizes of the composed MSA</td></tr>
+		<tr><td>Distribution of conserved regions sizes </td><td> : The histogram of the sizes of the identified conserved regions</td></tr>
+		<tr><td></td></tr>
+		<tr><td>Name</td><td> : The name and ID of the motif</td></tr>
+		<tr><td>Family</td><td> : The motif family name</td></tr>
+		<tr><td>Rank</td><td> : The rank of the motif in the classification</td></tr>
+		<tr><td>Hits Number</td><td> : The number of occurence of the motif through the conserved regions</td></tr>
+		<tr><td>Expected hits number</td><td> : The number of occurence of the motif permuted matrix</td></tr>
+		<tr><td>Ratio with hits numbers</td><td> : The ratio of this number with the motif hits number</td></tr>
+		<tr><td>Hypergeometric P-value</td><td> : The p-value computed from the hypergeometric test</td></tr>
+		<tr><td>Chi2 P-value</td><td> : The p-value computed from the Chi2 test executed against an homogen distribution</td></tr>
+		<tr><td>Chi2</td><td> : The Chi2 value of the Chi2 test executed against an homogen distribution</td></tr>
+		<tr><td>% Overlapping sites with <xsl:value-of select="@referenceMotif"/></td><td> : The percentage of motif site that overlap a site of the reference motif (at least 50% of overlap)</td></tr>
+		<tr><td>Class/Type</td><td> : The motif class and type</td></tr>
+		<tr><td>Logo</td><td> : The motif logo</td></tr>
+		<tr><td>Distance to peak center</td><td> : Histogram of the distances between each motif site and the peak center. The corresponding homogen distributiopn is also graphed.</td></tr>
+		<tr><td>Distance to nearest <xsl:value-of select="@referenceMotif"/></td><td> : Histogram of the distances between each motif site and the nearest reference motif site. Distances above the provided limit are ignored</td></tr>
 	</table>
 	<br></br>
-	<table ALIGN="center" WIDTH='95%'>
-		<tr><td WIDTH='30%'>Distribution of sequences sizes </td><td>The histogram of the sizes of the initial sequences</td></tr>
-		<tr><td WIDTH='30%'>Distribution of MSA sizes </td><td>The histogram of the sizes of the composed MSA</td></tr>
-		<tr><td WIDTH='30%'>Distribution of conserved regions sizes </td><td>The histogram of the sizes of the identified conserved regions</td></tr>
-	</table>
 	<br></br>
-	<table ALIGN="center" WIDTH='95%'>
-		<tr><td WIDTH='30%'>Name</td><td>The name of the family or of the motif</td></tr>
-		<tr><td WIDTH='30%'>Hits Number</td><td>The number of occurence of the motif through the conserved regions</td></tr>
-		<tr><td WIDTH='30%'>Expected hits number/Ratio with hits numbers</td><td>The number of occurence of the motif permuted matrix/The ratio of this number with the motif hits number</td></tr>
-		<tr><td WIDTH='30%'>Hypergeometric P-value</td><td>The p-value computed from the hypergeometric test</td></tr>
-		<tr><td WIDTH='30%'>Chi2 P-value/Chi2</td><td>The p-value computed from the Chi2 test executed against an homogen distribution/the Chi2 value of the test</td></tr>
-		<tr><td WIDTH='30%'>% Overlapping sites with <xsl:value-of select="@referenceMotif"/></td><td>The percentage of motif site that overlap a site of the reference motif (at least 50% of overlap)</td></tr>
-		<tr><td WIDTH='30%'>Class/Type</td><td>The motif class and type</td></tr>
-		<tr><td WIDTH='30%'>Logo</td><td>The motif logo</td></tr>
-		<tr><td WIDTH='30%'>Distance to peak maximum</td><td>Histogram of the distances between each motif site and the sequence maximum. This maximum is the sequence center or the sequence maximal signal position. The corresponding homogen distributiopn is also graphed.</td></tr>
-		<tr><td WIDTH='30%'>Distance to nearest <xsl:value-of select="@referenceMotif"/></td><td>Histogram of the distances between each motif site and the nearest reference motif site. Distances above the provided limit are ignored</td></tr>
-	</table>
-    </body>
+   </body>
 	
 </xsl:template>
 
@@ -243,8 +411,8 @@
 <xsl:template match="family">
 
 	
-	<tr HEIGHT='5' BGCOLOR="#66cc66" ALIGN="center">
-		<td HEIGHT='30' colspan="13">
+	<tr>
+		<td>
 			<b>Motif Family : <xsl:value-of select="@name"/></b>
 		</td>
 	</tr>
@@ -263,47 +431,47 @@
 
 <xsl:template match="motif">
 
-    <tr HEIGHT='10' ALIGN="center">
-        <td WIDTH='15%' HEIGHT='30' >
+    <tr>
+        <td>
 		   <a>
 			<xsl:attribute name="href"> <xsl:value-of select="@matrix"/> </xsl:attribute>
 			<xsl:value-of select="@id"/> <br/>
 			(<xsl:value-of select="@name"/>)
 		   </a>
         </td>
-        <td WIDTH='5%' HEIGHT='30' >
+        <td>
+        	<xsl:value-of select="@family"/>	
+        </td>
+        <td>
 		<xsl:value-of select="@rank"/>       
         </td>
-        <td WIDTH='5%' HEIGHT='30' >
+        <td>
 		<xsl:value-of select="@hitscore"/>       
         </td>
-        <td WIDTH='5%' HEIGHT='30' >
+        <td>
 		<xsl:value-of select="@hyphitsscore"/>       
         </td>
-        <td WIDTH='10%' HEIGHT='30'> 
+        <td> 
 		<xsl:variable name="A"><xsl:value-of select="@hitscore"/></xsl:variable>
 		<xsl:variable name="B"><xsl:value-of select="@hyphitsscore"/></xsl:variable>
 		<xsl:value-of select="round(($A div $B)*100)"/>%
         </td>
-        <td WIDTH='10%' HEIGHT='30' > 
+        <td > 
 		<xsl:value-of select="@hyppvalue"/>     
         </td>
-        <td WIDTH='10%' HEIGHT='30' > 
+        <td > 
 		<xsl:value-of select="@chi2pvalue"/>     
         </td>
-        <td WIDTH='10%' HEIGHT='30' > 
+        <td > 
 		<xsl:value-of select="@chi2"/>     
         </td>
-        <td WIDTH='10%' HEIGHT='30' > 
+        <td > 
 		<xsl:value-of select="@ratioHomoLocation"/>
         </td>
-        <td WIDTH='10%' HEIGHT='30' ALIGN="left"> 
-		<ul>
-			<li style='margin-left:-20px'><font size="2"><xsl:value-of select="@class"/></font></li>
-			<li style='margin-left:-20px'><font size="2"><xsl:value-of select="@type"/></font></li>
-		</ul>
+        <td> 
+        <xsl:value-of select="@class"/>/ <xsl:value-of select="@type"/>
         </td>
-        <td WIDTH='25%' HEIGHT='30' > 
+        <td> 
 		<xsl:choose >
 		   <xsl:when test="@logo">
 				
@@ -322,7 +490,7 @@
    		   </xsl:otherwise>
 		</xsl:choose >
         </td>
-        <td WIDTH='25%' HEIGHT='30' > 
+        <td> 
 		<xsl:choose >
 		   <xsl:when test="@distanceHistogramGraph">
 			   <center><a> 
@@ -346,7 +514,7 @@
    		   </xsl:otherwise>
 		</xsl:choose >
         </td>
-        <td WIDTH='25%' HEIGHT='30' >
+        <td>
 		<xsl:choose >
 		   <xsl:when test="@coLocationHistogramGraph">
 			   <center><a> 
