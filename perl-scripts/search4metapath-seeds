@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: search4metapath-seeds,v 1.2 2012/04/11 14:46:19 rsat Exp $
+# $Id: search4metapath-seeds,v 1.3 2013/10/18 06:01:47 jvanheld Exp $
 #
 ############################################################
 
@@ -167,6 +167,19 @@ package main;
 
   ################################################################
   ## Check argument values
+  my @queries = ();
+#  my $isInputFile=0;
+#   print STDERR "inputfile:" .$infile{input}."\n";
+#  if ($infile{input}){
+#    $isInputFile=1;
+  ($main::in) = &OpenInputFile($infile{input});
+#  }
+  my $seeds = "";
+
+  ################
+  ################################################################
+  ################ ORIGINAL ################
+  ################################################################
   my $input="";
   my $isInputFile=0;
 #   print STDERR "inputfile:" .$infile{input}."\n";
@@ -175,21 +188,37 @@ package main;
     ($main::in) = &OpenInputFile($infile{input});
   }
   while (<$main::in>) {
-    $input .= $_;
+    chomp();
+    $input .= &RSAT::util::trim($_);
+    $input .= "\n";
   }
 #    $input = do { local $/;  <($main::in) > };
-  
+
    print STDERR "SEEDS:" .$input."\n";
 
   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
+
+
+#   while (<$main::in>) {
+# #    $seeds .= $_;
+#     next unless (/\S/); ## Skip empty rows
+#     next if (/^;/); ## Skip comment rows
+#     next if (/^#/); ## Skip header rows
+#     chomp();
+
+#     my @fields = split(/\s+/, $_);
+#     my $query = &RSAT::util::trim($fields[0]);
+#     push @queries, $query;
+#     &RSAT::message::Info("SEED", $query) if ($main::verbose >= 2);
+#   }
+#   $seeds = join "\n", @queries;
+#   &RSAT::message::Info("SEEDS", $seeds) if ($main::verbose >= 2);
+#   &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
+
   my $output = &RSAT::PathwayExtraction::QueryExactMetabNames($input,$infile{gnn},$infile{nnn},$partial,$verbose);
   my %ouputhash = %{$output};
-  
   print $out "#Matches\tEC\tnode ids\tnode type\tdescription\n";
-  
   print $out $output;
-  
-  
 }
 
 
