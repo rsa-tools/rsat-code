@@ -421,7 +421,8 @@ sub GetOrganismsForTaxon {
 
     ## Cut the taxonomic tree by selecting only one organism for each
     ## taxon at a given depth of the taxonomic tree.
-    if ($depth != 0) {
+
+    if (defined($depth) && ($depth != 0)) {
       @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
     }
   }else{
