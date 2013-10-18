@@ -119,6 +119,17 @@ sub SelectReferenceOrganisms {
 ## (footprint-discovery or footprint-scan).
 sub CheckFootprintParameters {
 
+
+  ################################################################
+  ## Run all tasks except bg_model
+  if ($task{all_except_bg}) {
+    foreach my $task (keys %supported_task) {
+      next if ($task eq "bg_model");
+      &RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
+      $task{$task} = 1;
+    }
+  }
+
   ################################################################
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
@@ -128,7 +139,9 @@ sub CheckFootprintParameters {
 	$task{$task} = 1;
     }
   }
+
   &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 2);
+
 
   ##############################################################
   ## If orthologs_list is specified omit the tasks that are not longer necesary
