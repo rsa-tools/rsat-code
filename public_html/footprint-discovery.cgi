@@ -41,7 +41,7 @@ $parameters = " -v 1";
 ##
 ## -task operon because the option has not been introduced in the Web
 ##   form (could be fixed some day).
-$tasks .= " -task query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,map,gene_index,index";
+$tasks .= " -task query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
