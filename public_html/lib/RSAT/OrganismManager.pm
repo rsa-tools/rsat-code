@@ -482,7 +482,7 @@ sub CheckTaxon {
     $tree = new RSAT::Tree();
   }
 
-  &RSAT::message::Info("CheckTaxon()", $query_taxon, $tree) if ($main::verbose >= 0);
+  &RSAT::message::Info("CheckTaxon()", $query_taxon, $tree) if ($main::verbose >= 3);
 
   unless ($tree->get_attribute("is_loaded")) {
     my @supported_organisms = sort keys (%supported_organism);
