@@ -125,6 +125,7 @@ sub CheckFootprintParameters {
   if ($task{all_except_bg}) {
     foreach my $task (keys %supported_task) {
       next if ($task eq "bg_model");
+      next if ($task eq "test");
       &RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
       $task{$task} = 1;
     }
@@ -135,8 +136,9 @@ sub CheckFootprintParameters {
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
     foreach my $task (keys %supported_task) {
-	&RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
-	$task{$task} = 1;
+      next if ($task eq "test");
+      &RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
+      $task{$task} = 1;
     }
   }
 
