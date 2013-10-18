@@ -46,7 +46,7 @@ sub ReadOrganismsFromFile {
   }
   close $main::orglist if ($main::orglist_file);
   if (scalar(@org_from_lists) > 0) {
-    &RSAT::message::Info(scalar(@org_from_lists), "organisms specified in file", $main::orglist_file) if ($main::verbose >= 1);
+    &RSAT::message::Info(scalar(@org_from_lists), "organisms specified in file", $main::orglist_file) if ($main::verbose >= 2);
   } else {
     &RSAT::error::FatalError("The organism file does not contain any valid organism name.", $main::orglist_file);
   }
@@ -189,7 +189,7 @@ sub CheckFootprintParameters {
       my @fields = split (/\s+/,$genes);
       push @query_genes, @fields;
   }
-  &RSAT::message::Info("Genes analyzed taken from orthologs_list file",join(" ", @query_genes)) if ( ($main::verbose >= 1) && ($main::orthologs_list_file) );
+  &RSAT::message::Info("Genes analyzed taken from orthologs_list file",join(" ", @query_genes)) if ( ($main::verbose >= 2) && ($main::orthologs_list_file) );
 
   ################################################################
   ## Check query genes
@@ -1104,7 +1104,7 @@ sub ComputeFilterScan {
     $filter_genes = &OpenOutputFile($outfile{genes});
     print  $filter_genes $filterg;
     close $filter_genes if ($outfile{genes} && $main::filter);
-    &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 1);
+    &RSAT::message::Info("Filter genes  ", $outfile{genes} ) if ($main::verbose >= 2);
     &IndexOneFile("Filter genes", $outfile{genes});
     $main::skip_gene = 1 unless ($filterg=~/\w/);
 }
@@ -1162,7 +1162,7 @@ sub GetOrthologs {
       $main::status = "No ortholog (no BBH)";
     }
   } elsif (!$batch) {
-    &RSAT::message::Warning("Missing orthologs file", $outfile{orthologs}) if ($main::verbose >= 1);
+    &RSAT::message::Warning("Missing orthologs file", $outfile{orthologs}) if ($main::verbose >= 2);
     $main::status = "Missing file: ".$outfile{orthologs};
   }
   return($ortholog_nb);
