@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.113 2013/10/18 01:22:45 jvanheld Exp $
+# $Id: footprint-discovery,v 1.114 2013/10/18 01:38:49 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -232,7 +232,8 @@ package main;
   local %uth = (rank=>50);	    ## Upper thresholds
   local $strands = "-2str"; ## Strands for motif discovery and pattern matching
   local $start_time = &RSAT::util::StartScript();
-  $main::orthologs_list_file=0;
+  local $orthologs_list_file = 0;
+  our $status = "OK"; ## this has to be a global variable, because it is modified by procedures of the footprint-lib.pl library
 
   ## Supported tasks
   @supported_tasks = qw(
@@ -467,7 +468,7 @@ package main;
 
     if ($some_gene_wise_task) {
       foreach $query (@query_genes) {
-	local $status = "OK";
+	$main::status = "OK";
 	local $status_color = "#CC0000";
 	$q++;
 	if ($feature_index->contains(uc($query))) {

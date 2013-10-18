@@ -1048,6 +1048,8 @@ sub RetrieveQueryPromoters {
     if ($query_prom_len < 1) {
       ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
       $main::status = "Query promoter has length 0";
+    } else {
+      $main::status = "OK";
     }
   } else {
     $main::status = "Missing file:  $outfile{query_seq}";
