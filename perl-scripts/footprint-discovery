@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.112 2013/09/26 18:20:11 jvanheld Exp $
+# $Id: footprint-discovery,v 1.113 2013/10/18 01:22:45 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.112 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.113 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -305,7 +305,7 @@ package main;
   local $max_dyad_degree = 20;
   local $score = "DPbits";
   local $score_column = 21;
-  local $uth{gene_degree} = 50;
+  local $max_gene_degree = 50;
 
   ## File index
   local %main_index = ();
@@ -1504,7 +1504,7 @@ sub CoregulationNetwork {
   $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
   my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
   $hub_cmd .= " | grep -v '^#'";
-  $hub_cmd .= " | awk '\$4 >=".$uth{gene_degree}."' ";
+  $hub_cmd .= " | awk '\$4 >=".$max_gene_degree."' ";
   $hub_cmd .= "> ".$outfile{gene_hubs};
   &one_command($hub_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
@@ -1512,7 +1512,7 @@ sub CoregulationNetwork {
   $outfile{gene_nohubs} .= $dir{network}."/".$main_prefix."_gene_nohubs.tab"; push @network_files, "gene_nohubs";
   my $nohub_cmd = "grep -v '^;' ".$outfile{gene_degree};
   $nohub_cmd .= " | grep -v '^#'";
-  $nohub_cmd .= " | awk '\$4 <".$uth{gene_degree}."' ";
+  $nohub_cmd .= " | awk '\$4 <".$max_gene_degree."' ";
   $nohub_cmd .= $outfile{gene_degree};
   $nohub_cmd .= "> ".$outfile{gene_nohubs};
   &one_command($nohub_cmd, 1, 0, task=>'network', out=>$main_log);
@@ -1531,7 +1531,7 @@ sub test {
   $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
   my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
   $hub_cmd .= " | grep -v '^#'";
-  $hub_cmd .=  "| awk '\$4 <".$uth{gene_degree}."' ";
+  $hub_cmd .=  "| awk '\$4 <".$max_gene_degree."' ";
   $hub_cmd .= "> ".$outfile{gene_hubs};
   &one_command($hub_cmd, 1, 0, task=>'test', out=>$main_log);
   &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
