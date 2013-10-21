@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.114 2013/10/18 01:38:49 jvanheld Exp $
+# $Id: footprint-discovery,v 1.115 2013/10/21 01:16:25 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.114 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -238,6 +238,7 @@ package main;
   ## Supported tasks
   @supported_tasks = qw(
 			all
+			all_except_bg
 			bg_model
 			operons
 			query_seq
@@ -1201,6 +1202,7 @@ sub DyadAnalysis {
     $cmd = $SCRIPTS."/pattern-assembly -v 1";
     $cmd .= " -i ".$outfile{dyads};
     $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+    $cmd .= " -max_asmb_nb 5";
     $cmd .= " -o ".$outfile{asmb};
 #    &report_command ($cmd, "pattern-assembly");
     &one_command($cmd, 1, 0, task=>'dyads');
@@ -1536,7 +1538,6 @@ sub test {
   $hub_cmd .= "> ".$outfile{gene_hubs};
   &one_command($hub_cmd, 1, 0, task=>'test', out=>$main_log);
   &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
-  die "HELLO";
 }
 
 ################################################################
