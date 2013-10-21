@@ -15,6 +15,7 @@ our $max_asmb_size = 50;
 our $strand_insensitive = 1;
 our $pattern_nb = 0;
 our $max_pattern_nb = 0;
+our $max_asmb_nb_default = 5;
 our $max_asmb_nb = 0;
 our $max_asmb_per_cluster = 2;
 our $top_pattern_nb = 100;
@@ -182,10 +183,16 @@ sub IndexClusters {
   ## Sort clusters
   @clusters = sort {$a <=> $b} keys %patterns_per_cluster;
 
-  ## Compute the total max assembly number 
-  $clust_nb = scalar(@clusters);
-  $max_asmb_nb = $max_asmb_per_cluster * $clust_nb;
-  &RSAT::message::Info("cluster col", $cluster_column, scalar(@pattern_clusters), "pattern clusters", join(",", @clusters)) if ($main::verbose >= 3);
+  ## Compute the total max assembly number
+  if ($cluster_column > 0) {
+    $clust_nb = scalar(@clusters);
+    $max_asmb_nb = $max_asmb_per_cluster * $clust_nb;
+    &RSAT::message::Info("cluster col", $cluster_column, scalar(@pattern_clusters), "pattern clusters", join(",", @clusters)) if ($main::verbose >= 3);
+  } else {
+    if ($max_asmb_nb == 0) {
+      $max_asmb_nb = $max_asmb_nb_default;
+    }
+  }
 }
 
 ################################################################
@@ -571,7 +578,7 @@ OPTIONS
 		maximum allowed substitutions (default $max_subst)
 
 	-max_asmb_nb #
-		maximal number of assemblies (default: $max_asmb_nb)
+		maximal number of assemblies (default: $max_asmb_nb_default)
 
 	-max_asmb_per_cluster #
 		maximal number of assemblies per cluster
@@ -660,7 +667,7 @@ pattern-assembly options
 -cc		cluster column
 -maxfl #	maximum flanking segment size (default $max_flanking).
 -subst #	maximum allowed substitutions (default $max_subst).
--max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb)
+-max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb_default)
 -max_asmb_per_cluster #	maximal number of assemblies per cluster (default: $max_asmb_per_cluster)
 -max_asmb_size #	maximal assembly size, i.e. number of patterns per assembly (default: $max_asmb_size)
 -maxpat #	maximum number of allowed patterns
