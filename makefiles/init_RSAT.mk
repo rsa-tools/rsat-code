@@ -18,26 +18,42 @@ SUPPORTED_ORGANISMS=public_html/data/supported_organisms.pl
 COUNT_FILE=public_html/logs/count-file
 CONFIG_FILE=RSA.config
 init:
+	@echo ""
 	@echo "Creating directories"
+
+	@echo ""
+	@echo "Initializing directory	public_html/data"
+	mkdir -p public_html/data
+	echo "Options -Indexes" > public_html/data/.htaccess
 	mkdir -p public_html/data/genomes
 	mkdir -p public_html/data/KEGG
 	mkdir -p public_html/data/metabolic_networks
 	mkdir -p public_html/data/metabolic_networks/GER_files
-	mkdir -p public_html/tmp
-	mkdir -p public_html/logs
-	mkdir -p public_html/logs/peak-footprints_logs; chmod 777 public_html/logs/peak-footprints_logs
-	mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
 	mkdir -p bin
 	mkdir -p lib
 	@${MAKE} _create_download_dir
 
+	@echo ""
+	@echo "Initializing directory	public_html/tmp"
+	mkdir -p public_html/tmp
+	mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
 	chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
-#	echo "<html><body>Forbidden</body></html>" > public_html/tmp/index.html
-	chmod 777 public_html/logs
-#	echo "Options -Indexes" > public_html/logs/.htaccess
-#	echo "<html><body>Forbidden</body></html>" > public_html/logs/index.html
+	echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
+	chmod 644 public_html/tmp/index.html
 
+	@echo ""
+	@echo "Initializing directory	public_html/logs"
+	chmod 777 public_html/logs
+	mkdir -p public_html/logs
+	mkdir -p public_html/logs/peak-footprints_logs; chmod 777 public_html/logs/peak-footprints_logs
+#	echo "Options -Indexes" > public_html/logs/.htaccess
+	echo "<html><body></b<Forbidden</b></body></html>" > public_html/logs/index.html
+	chmod 644 public_html/logs/index.html
+
+
+	@echo
+	@echo "Setting exec rights to script directories"
 	chmod -R 755 bin
 	chmod 755 python-scripts/*
 	chmod 755 perl-scripts/*
@@ -46,10 +62,13 @@ init:
 	chmod 755 public_html/web_services/*.cgi
 	chmod 755 ws_clients/perl_clients/*.pl
 
+	@echo ""
+	@echo "Creating links"
 	ln -fs public_html/data .
 	ln -fs public_html/tmp .
 	ln -fs public_html/logs .
 
+	@echo ""
 	@echo "Checking config files"
 	@if [ -f "${SUPPORTED_ORGANISMS}" ] ; then \
 		echo "file already exists	${SUPPORTED_ORGANISMS}" ; \
@@ -83,10 +102,10 @@ init:
 	fi
 	chmod a+w ${COUNT_FILE}
 
-	chmod a+x perl-scripts/*
-#	chmod a+x public_html/*.cgi
 
-## Creating a directory for downloading genomes
+
+################################################################
+## Create a directory for downloading genomes
 _create_download_dir:
 	cd ${RSAT}
 	mkdir -p downloads
