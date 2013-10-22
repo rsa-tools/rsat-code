@@ -24,7 +24,7 @@ init:
 	@echo ""
 	@echo "Initializing directory	public_html/data"
 	mkdir -p public_html/data
-	echo "Options -Indexes" > public_html/data/.htaccess
+	echo "Options +Indexes" > public_html/data/.htaccess
 	mkdir -p public_html/data/genomes
 	mkdir -p public_html/data/KEGG
 	mkdir -p public_html/data/metabolic_networks
