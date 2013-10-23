@@ -203,8 +203,24 @@ sub readFromFile {
       if ((my $map = $matrix->get_attribute("MAP")) && (my $sites = $matrix->get_attribute("sites"))) {
 	$matrix->set_parameter("MAP.per.site", $map/$sites);
       }
+
+      ## Suppress invalid characters from the matrix ID
+      my $id = $matrix->get_attribute("id");
+      $id =~ s/[\(\)\/]/_/g;
+      $matrix->force_attribute("id", $id);
+
+      ## Suppress invalid characters from the matrix accession, and ensure that matrices always have an accession
+      my $ac = $matrix->get_attribute("accession");
+      if ($ac) {
+	  $ac =~ s/[\(\)\/]/_/g;
+      } else {
+	  $ac = $id;
+      }
+      $matrix->force_attribute("accession", $ac);
+      $matrix->force_attribute("AC", $ac);
     }
 
+    ## Only retain the N top matrices if requested
     if (defined($args{top})) {
       my $top = $args{top};
       if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
@@ -217,6 +233,9 @@ sub readFromFile {
 	}
       }
     }
+
+
+    ## Return the matrices
     return @matrices;
 }
 
