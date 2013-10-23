@@ -122,7 +122,7 @@ class HistogramProcessor( Processor):
         motif_size_max = statistics[ 2]
         hits_peakscore = statistics[ 3]
         
-        print "motif_size_max = " + str( motif_size_max)
+        #print "motif_size_max = " + str( motif_size_max)
         
         # Compute the uniform distribution probabilities
         Log.info( "HistogramProcessor.buildHistogramsAndGraphs : computing uniform distribution")
