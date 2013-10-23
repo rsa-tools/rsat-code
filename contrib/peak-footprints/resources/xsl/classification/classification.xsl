@@ -216,7 +216,7 @@
 	</table>
 	<table class="no_line_table" id="experiment_parameters">
 		<tr><td><b>Reference Species</b></td><td> : <xsl:value-of select="@referenceSpecies"/></td></tr>
-		<tr><td><b>Reference Motif</b></td><td> : <xsl:value-of select="@referenceMotif"/></td></tr>
+		<tr><td><b>Reference Motif</b></td><td> : <xsl:value-of select="@ReferenceMotifID"/> (<xsl:value-of select="@referenceMotif"/>)</td></tr>
 		<tr><td><b>Aligned Species</b></td><td> : <xsl:value-of select="@alignedSpecies"/></td></tr>
 		<tr><td><b>Input BED file</b></td><td> : <a><xsl:attribute name="href"><xsl:value-of select="@BEDFile"/> </xsl:attribute>Input BED File</a></td></tr>
 		<tr><td><b>Output BED file</b></td><td> : 
@@ -242,8 +242,19 @@
 	    <tr><td><b>Detection Window size</b></td><td> : <xsl:value-of select="@WindowSize"/></td></tr>
 	    <tr><td><b>Detection Window conservation limit</b></td><td> : <xsl:value-of select="@WindowConservationLimit"/></td></tr>
 	    <tr><td><b>Motif Databases root path</b></td><td> : <xsl:value-of select="@MotifDatabasePath"/></td></tr>
-	    <tr><td><b>Motif Databases List</b></td><td> : <xsl:value-of select="@MotifDatabaseFileList"/></td></tr>
-	    <tr><td><b>Custom Motif Databases List</b></td><td> : <a><xsl:attribute name="href"> <xsl:value-of select="@CustomMotifDatabaseFile"/></xsl:attribute>Custom Motifs</a></td></tr>
+	    <tr><td><b>Motif Databases List</b></td><td> : 
+	    	<xsl:value-of select="@MotifDatabaseFileList"/> 
+	    	(<xsl:value-of select="@MotifDatabaseFileListSize"/> motifs)</td></tr>
+	    <tr><td><b>Custom Motif Databases List</b></td><td> :
+		    <xsl:variable name="CustomDB"><xsl:value-of select="@CustomMotifDatabaseFile"/></xsl:variable> 
+	    	<xsl:if test="not($CustomDB = '')">
+	    		<a><xsl:attribute name="href"> <xsl:value-of select="@CustomMotifDatabaseFile"/></xsl:attribute>Custom Motifs</a>
+	    	 	(<xsl:value-of select="@CustomMotifDatabaseFileSize"/> motifs)
+	    	</xsl:if>
+	    	<xsl:if test="$CustomDB = ''">
+	    		No Custom Motif
+	    	</xsl:if>
+	    </td></tr>
 	    <tr><td><b>Max Hypergeometric p-value</b></td><td> : <xsl:value-of select="@MaxHypergeometricEValue"/></td></tr>
 	    <tr><td><b>Max Chi2 p-value</b></td><td> : <xsl:value-of select="@MaxChi2EValue"/></td></tr>
 	    <tr><td><b>Max Reported Motif Number</b></td><td> : <xsl:value-of select="@MaxMotifNumber"/></td></tr>
