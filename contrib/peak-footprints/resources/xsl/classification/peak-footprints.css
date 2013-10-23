@@ -1,6 +1,7 @@
 /* Style sheet for the HTML formatting of RSAT results */
 
 /* BODY  */
+/*
 body {
        font-family: Verdana, Helvetica, Arial, sans-serif;
        font-size: 10pt;
@@ -10,12 +11,40 @@ body {
        background: #ffffff;
        margin-right: 20px;
 
+}*/
+
+/*
+* Table title_table
+*/
+
+
+table.title_table {
+	width: 100%;
+	font-size: 20pt;
+	font-weight: bold;
+	text-align: center;
+	border-top: 1px solid #000000;
+	border-right: 1px solid #000000;
+	border-bottom: 1px solid #000000;
+	border-left: 1px solid #000000;
+	background-color: #A9E2F3;
+	color: #2E9AFE 
+}
+
+table.title_table th{
+	width: 100%;
+	font-size: 20pt;
+	font-weight: bold;
+	text-align: center;
+	background-color: #A9E2F3;
+	color: #2E9AFE 
 }
 
 
 /*
  * Table section_table
  */
+
 
 table.section_table {
 	/*margin: 10px 20px 20px;*/
@@ -30,6 +59,9 @@ table.section_table th {
 	width: 100%;
 	font-size: 12pt;
 	padding: 2px 10px;
+	margin-left:10px;
+	margin-top:30px;
+	text-align: justify;
 	background-color: #A9E2F3;
 	color: #000000 /*#2E9AFE*/
 }
@@ -54,7 +86,7 @@ table.no_line_table {
 
 
 table.statistic_table {
-	margin-left:10px; 
+	margin-left:20px; 
 	margin-top:5px;
 	margin-bottom:5px;
 	color: #000000;
@@ -82,10 +114,11 @@ table.statistic_table td {
 /*
  * Table dataTable
  */
+
 table.dataTable {
 	clear: both;
 	width: 100%;
-	margin-left:10px; 
+	margin-left:20px; 
 	margin-top:5px;
 	margin-bottom:5px;
 	color: #000000;
@@ -130,6 +163,15 @@ table.dataTable td.dataTables_empty {
 table.dataTable tr.odd { background-color: #E2E4FF; }
 table.dataTable tr.even { background-color: white; }
 
+tr.referenceMotifRow td{
+	font-size: 10pt;
+	padding: 2px 10px;
+	background-color: #A9F3E2;
+	text-align: center;
+	border-right: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
+}
+
 /*
 table.dataTable tr.odd td.sorting_1 { background-color: #A9E2F3; }
 table.dataTable tr.odd td.sorting_2 { background-color: #A9E2F3; }
@@ -154,7 +196,7 @@ table.dataTable tr.even td.sorting_3 { background-color: #2E9AFE; }
  */
 .dataTables_length {
 	float: left;
-	margin-left:10px; 
+	margin-left:20px; 
 }
 
 
@@ -174,7 +216,7 @@ table.dataTable tr.even td.sorting_3 { background-color: #2E9AFE; }
 .dataTables_info {
 	clear: both;
 	float: left;
-	margin-left:10px;
+	margin-left:20px;
 }
 
 

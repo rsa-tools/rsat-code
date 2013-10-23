@@ -105,7 +105,7 @@ class CoLocationAnalysisProcessor(Processor):
                     title2 = "Distribution of distances between " + motif_name + " and " + reference_motif
                     legendx = "Distance to " + reference_motif
                     legendy = "Number of occurence"
-                    result_info = RSATUtils.outputHistogram(final_distances[ motif_name], histogram_interval, dir_path, prefix, title1, title2, legendx, legendy, None)
+                    result_info = RSATUtils.outputHistogram(final_distances[ motif_name], histogram_interval, dir_path, prefix, title1, title2, legendx, legendy, None, True)
                     motif_stats.setAttribute(MotifStatistics.MOTIF_COLOCATION_HISTOGRAM, result_info[ 0])
                     motif_stats.setAttribute(MotifStatistics.MOTIF_COLOCATION_HISTOGRAM_GRAPH, result_info[ 1])
             count_motif += 1

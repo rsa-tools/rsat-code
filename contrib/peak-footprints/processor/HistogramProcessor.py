@@ -189,7 +189,7 @@ class HistogramProcessor( Processor):
                 motif_stats.setAttribute( MotifStatistics.MOTIF_DISTANCE_HISTOGRAM, all_histo_path)
                 
                 # Execute a chi2 test on the motif distribution against the motif homogen distribution
-                chi2_test = RSATUtils.executeChi2Test( all_histo_path, 3, 4)
+                chi2_test = RSATUtils.executeChi2Test( all_histo_path, 4, 5)
                 if chi2_test != None:
                     motif_stats.setAttribute( MotifStatistics.MOTIF_CHI2, chi2_test[0])
                     motif_stats.setAttribute( MotifStatistics.MOTIF_CHI2_PVALUE, chi2_test[1])
@@ -203,7 +203,8 @@ class HistogramProcessor( Processor):
                 cmd += " -i '" + all_histo_path + "'"
                 cmd += " -title1 '" + self.component.pipelineName + "'" 
                 cmd += " -title2 ''" 
-                cmd += " -xcol 3 -ycol 4,5"
+                #cmd += " -xcol 3 -ycol 4,5"
+                cmd += " -xcol 3 -ycol 4"
                 cmd += " -xleg1 'Distance to peak maximum'"
                 cmd += " -yleg1 'Number of motif hits'"
                 cmd += " -legend -header -format png -fhisto"
@@ -230,7 +231,7 @@ class HistogramProcessor( Processor):
                         title2 = "Distribution of peak score for " + motif_name + prefix_id
                         legendx = "Peak Score"
                         legendy = "Number of occurence"
-                        pathes = RSATUtils.outputHistogram( hits_peakscore[ motif_name], histogram_interval, dir_path, score_histo_prefix, title1, title2, legendx, legendy, None)
+                        pathes = RSATUtils.outputHistogram( hits_peakscore[ motif_name], histogram_interval, dir_path, score_histo_prefix, title1, title2, legendx, legendy, None, True)
                         motif_stats.setAttribute( MotifStatistics.MOTIF_PEAK_SCORE_HISTOGRAM, pathes[0])
                         motif_stats.setAttribute( MotifStatistics.MOTIF_PEAK_SCORE_HISTOGRAM_GRAPH, pathes[1])
 

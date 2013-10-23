@@ -53,13 +53,13 @@
 		
 			// Insure the DOM Is loaded
 			$(document).ready(function() {
-				$( "#optional_parameters" ).hide( "fast", function() {
+			//	$( "#optional_parameters" ).hide( "fast", function() {
+	    		//	// Animation complete.
+	  		//	});
+	  			$( "#show_optional_parameters" ).hide( "fast", function() {
 	    			// Animation complete.
 	  			});
-	  			$( "#show_optional_parameters" ).show( "fast", function() {
-	    			// Animation complete.
-	  			});
-	  			$( "#hide_optional_parameters" ).hide( "fast", function() {
+	  			$( "#hide_optional_parameters" ).show( "fast", function() {
 	    			// Animation complete.
 	  			});
 	  		});
@@ -91,13 +91,13 @@
 		
 			// Insure the DOM Is loaded
 			$(document).ready(function() {
-				$( "#global_statistics" ).hide( "fast", function() {
+			//	$( "#global_statistics" ).hide( "fast", function() {
+	    		//	// Animation complete.
+	  		//	});
+	  			$( "#show_global_statistics" ).hide( "fast", function() {
 	    			// Animation complete.
 	  			});
-	  			$( "#show_global_statistics" ).show( "fast", function() {
-	    			// Animation complete.
-	  			});
-	  			$( "#hide_global_statistics" ).hide( "fast", function() {
+	  			$( "#hide_global_statistics" ).show( "fast", function() {
 	    			// Animation complete.
 	  			});
 	  		});
@@ -116,13 +116,13 @@
 			});
 			
 			$( "#show_documentation" ).click(function() {
-	  			$( "#documentation" ).show( "fast", function() {
+	  		//	$( "#documentation" ).show( "fast", function() {
+	    		//	// Animation complete.
+	  		//	});
+	  			$( "#show_documentation" ).show( "fast", function() {
 	    			// Animation complete.
 	  			});
-	  			$( "#show_documentation" ).hide( "fast", function() {
-	    			// Animation complete.
-	  			});
-	  			$( "#hide_documentation" ).show( "fast", function() {
+	  			$( "#hide_documentation" ).hide( "fast", function() {
 	    			// Animation complete.
 	  			});
 			});
@@ -167,15 +167,25 @@
             					null,
             					null,
             					null,
-					        { "sType": 'scientific-number-case' },
-					        { "sType": 'scientific-number-case' },
+					        	{ "sType": 'scientific-number-case' },
+					        	{ "sType": 'scientific-number-case' },
 				                null,
 				                null,
 				                null,
 				                null,
 				                null,
 				                null
-        				]
+        				],
+					"fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+						// Colorize the table row of the reference motif
+						var motifname = aData[0];
+						var refmotifname = "(" + '<xsl:value-of select="@referenceMotif"/>' + ")";
+						if ( motifname.indexOf( refmotifname) !=-1 )
+						{
+							nRow.className='referenceMotifRow';
+						}
+						return nRow;
+					}
 				});
 			} );
 		</script>
@@ -187,9 +197,12 @@
 
     <body style="font-family:Arial; font-size:12pt;">
 
-	<div style="text-align:center; font-size:20pt; background-color:#A9E2F3; color:#2E9AFE; padding:4px">  
-		<b>Results of <xsl:value-of select="@name"/></b>
-	</div>
+	<table class="title_table">
+	<!-- div style="text-align:center; font-size:20pt; background-color:#A9E2F3; color:#2E9AFE; padding:4px"-->
+		<th>  
+			Results of <xsl:value-of select="@name"/>
+		</th>
+	</table>
 
 
         <br></br>
@@ -205,7 +218,19 @@
 		<tr><td><b>Reference Species</b></td><td> : <xsl:value-of select="@referenceSpecies"/></td></tr>
 		<tr><td><b>Reference Motif</b></td><td> : <xsl:value-of select="@referenceMotif"/></td></tr>
 		<tr><td><b>Aligned Species</b></td><td> : <xsl:value-of select="@alignedSpecies"/></td></tr>
-		<tr><td><b>BED Output file</b></td><td> : <a><xsl:attribute name="href"> <xsl:value-of select="@bedOutput"/> </xsl:attribute>BED Output</a></td></tr>
+		<tr><td><b>Input BED file</b></td><td> : <a><xsl:attribute name="href"><xsl:value-of select="@BEDFile"/> </xsl:attribute>Input BED File</a></td></tr>
+		<tr><td><b>Output BED file</b></td><td> : 
+			<a><xsl:attribute name="href"> <xsl:value-of select="@bedOutput"/> </xsl:attribute>BED Output</a> (
+			<a>
+				<xsl:attribute name="href"> 
+					http://genome.ucsc.edu/cgi-bin/hgTracks?db=<xsl:value-of select="@referenceSpecies"/>&amp;hgct_customText=track%20type=bigBed%20name=<xsl:value-of select="@name"/>%20description=<xsl:value-of select="@name"/>%22%20visibility=full%20itemRgb=On%20bigDataUrl=http://pf:4test@139.124.66.4/pf/results/data/<xsl:value-of select="@name"/>/<xsl:value-of select="@name"/>_9_FinalOutputProcessor/BigBEDOutput/<xsl:value-of select="@name"/>_Motifs.bb
+				</xsl:attribute>
+				<xsl:attribute name="target">
+					_blank
+				</xsl:attribute>
+				Show in UCSC Genome Browser
+			</a>)
+		</td></tr>
 	</table>
 	     
 	<table class="section_table" width="50%">
@@ -213,7 +238,6 @@
 		<tr><th id="hide_optional_parameters">- Additional parameters</th></tr>
 	</table>
 	<table class="no_line_table" id="optional_parameters">
-		<tr><td><b>Input BED file</b></td><td> : <a><xsl:attribute name="href"><xsl:value-of select="@BEDFile"/> </xsl:attribute>Input BED File</a></td></tr>
 	    <tr><td><b>Residue Conservation Limit</b></td><td> : <xsl:value-of select="@ResiduConservationLimit"/></td></tr>
 	    <tr><td><b>Detection Window size</b></td><td> : <xsl:value-of select="@WindowSize"/></td></tr>
 	    <tr><td><b>Detection Window conservation limit</b></td><td> : <xsl:value-of select="@WindowConservationLimit"/></td></tr>

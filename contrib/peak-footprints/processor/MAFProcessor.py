@@ -666,7 +666,7 @@ class MAFProcessor( Processor):
         FileUtils.createDirectory( out_path, 0777)
         
         # Output the histogram
-        file_infos = RSATUtils.outputHistogram( msa_lenghts, 10, out_path, "MSASize", self.component.pipelineName, "", "Conserved region size", "Number of regions", ('5', '6'))
+        file_infos = RSATUtils.outputHistogram( msa_lenghts, 10, out_path, "MSASize", self.component.pipelineName, "", "Conserved region size", "Number of regions", ('5', '6'), False)
 
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_SIZE_PATH] = file_infos[0]
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.MSA_SIZE_GRAPH_PATH] = file_infos[1]

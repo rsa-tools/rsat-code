@@ -209,7 +209,7 @@ class BEDProcessor( Processor):
         FileUtils.createDirectory( dir_path, 0777)
         
         # Output the histogram
-        file_infos = RSATUtils.outputHistogram( sizes, 10, dir_path, "sequenceSize", self.component.pipelineName, "",  "Peak Size",  "Number of peaks", ('5', '6'))
+        file_infos = RSATUtils.outputHistogram( sizes, 10, dir_path, "sequenceSize", self.component.pipelineName, "",  "Peak Size",  "Number of peaks", ('5', '6'), False)
 
         output_comm_struct.paramStatistics[ BedSeqCommStruct.BED_SEQUENCES_SIZE_PATH] = file_infos[0]
         output_comm_struct.paramStatistics[ BedSeqCommStruct.BED_SEQUENCES_SIZE_GRAPH_PATH] = file_infos[1]
