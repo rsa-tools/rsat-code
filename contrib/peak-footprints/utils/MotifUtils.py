@@ -53,6 +53,57 @@ class MotifUtils:
 
 
     # ---------------------------------------------------------------------------------------------
+    # Retrieve the number of the motifs in given Transfac database file
+    @staticmethod
+    def getMotifsNumberFromTransfac( database_file_path = None):
+
+        motif_count = 0
+
+        if database_file_path == None:
+            database_file_path = RSATUtils.RSAT_JASPAR_MOTIF_DATABASE
+
+        try:
+            database_file = open( database_file_path, "r")
+            for line in database_file:
+                # detect the transfac definition starting line
+                if line[0:2] == "AC":
+                    motif_count = motif_count + 1
+        except IOError, io_exce:
+            raise ExecutionException( "MotifUtils.getMotifsNumberFromTransfac : Unable to read motif definition from database file '" + database_file_path + "'. From:\n\t---> " + str( io_exce))
+
+        return sizes
+
+
+    # ---------------------------------------------------------------------------------------------
+    # Retrieve the motif details (id, family, type, class) of the motifs in given Transfac database file
+    @staticmethod
+    def getMotifIDFromTransfac( searched_motif_name, database_file_path = None):
+        
+        if database_file_path == None:
+            database_file_path = RSATUtils.RSAT_JASPAR_MOTIF_DATABASE
+
+        try:
+            database_file = open( database_file_path, "r")
+            for line in database_file:
+                # detect the transfac definition starting line
+                if line[ 0:2] == "AC":
+                    tokens = line.split()
+                    motif_name = tokens[1]
+                    if( searched_motif_name == motif_name):
+                        # get the ID
+                        for line in database_file:
+                            if line[ 0:2] == "ID":
+                                sub_tokens = line.split()
+                                return sub_tokens[ 1]
+                            if line[0:2] == "//":
+                                break
+        except IOError, io_exce:
+            raise ExecutionException( "MotifUtils.getMotifIDFromTransfac : Unable to read motif definition from database file '" + database_file_path + "'. From:\n\t---> " + str( io_exce))
+
+        return None
+
+
+    # ---------------------------------------------------------------------------------------------
     # Retrieve the motif details (id, family, type, class) of the motifs in given Transfac database file
     @staticmethod
     def getMotifsDetailsFromTransfac( database_file_path = None):

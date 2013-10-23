@@ -254,7 +254,7 @@ class BlockProcessor( Processor):
     def outputBlockLenghtHistogram( self, block_lengths, input_commstruct, out_path):
         
         # Output the histogram
-        file_infos = RSATUtils.outputHistogram( block_lengths, 10, out_path, "conservedRegionSize", self.component.pipelineName, "", "Conserved block size", "Number of blocks", ('5', '6'))
+        file_infos = RSATUtils.outputHistogram( block_lengths, 10, out_path, "conservedRegionSize", self.component.pipelineName, "", "Conserved block size", "Number of blocks", ('5', '6'), False)
 
         input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH] = file_infos[0]
         input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH] = file_infos[1]

@@ -49,7 +49,6 @@ class BedSeqAlignmentStatsCommStruct( CommStruct):
     REFERENCE_MOTIF = "ReferenceMotif"
     CLASSIFICATION_SCORE = "ClassificationScore"
     BED_OUTPUT_PATH = "BEDOutput"
-    BIGBED_OUTPUT_PATH = "BigBEDOutput"
 
     # --------------------------------------------------------------------------------------
     def __init__( self):
@@ -618,39 +617,39 @@ class MotifStatistics:
         if stats1.motifName == stats2.motifName:
             return 0
 
-         # Get the values of hypergeometric and chi2 p-values
+	# Get the values of hypergeometric and chi2 p-values
         hyp_pvalue_1 = stats1.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE)
-        hyp_pvalue_2 = stats2.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE)    
+        hyp_pvalue_2 = stats2.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE)	
         chi2_pvalue_1 = stats1.getAttributeAsfloat( MotifStatistics.MOTIF_CHI2_PVALUE)
         chi2_pvalue_2 = stats2.getAttributeAsfloat( MotifStatistics.MOTIF_CHI2_PVALUE)
         
-        # Compare the products of log of hypergeometric and chi2 p-values to have the greatest first
-        product_1 = 1.0
-        if hyp_pvalue_1 > 0:
-            product_1 = product_1 * math.log10(hyp_pvalue_1)
+	# Compare the products of log of hypergeometric and chi2 p-values to have the greatest first
+	product_1 = 1.0
+	if hyp_pvalue_1 > 0:
+	    product_1 = product_1 * math.log10(hyp_pvalue_1)
         else:
-            product_1 = -400.0 * product_1
-        if chi2_pvalue_1 > 0:
-            product_1 = product_1 * math.log10(chi2_pvalue_1)
+	    product_1 = -400.0 * product_1
+	if chi2_pvalue_1 > 0:
+	    product_1 = product_1 * math.log10(chi2_pvalue_1)
         else:
-            product_1 = -400.0 * product_1
-    
-        product_2 = 1.0
-        if hyp_pvalue_2 > 0:
-            product_2 = product_2 * math.log10(hyp_pvalue_2)
+	    product_1 = -400.0 * product_1
+
+	product_2 = 1.0
+	if hyp_pvalue_2 > 0:
+	    product_2 = product_2 * math.log10(hyp_pvalue_2)
         else:
-            product_2 = -400.0 * product_2
-        if chi2_pvalue_2 > 0:
-            product_2 = product_2 * math.log10(chi2_pvalue_2)
+	    product_2 = -400.0 * product_2
+	if chi2_pvalue_2 > 0:
+	    product_2 = product_2 * math.log10(chi2_pvalue_2)
         else:
-            product_2 = -400.0 * product_2
-    
-        if product_1 != product_2:
+	    product_2 = -400.0 * product_2
+
+	if product_1 != product_2:
             if product_1 < product_2:
                 return 1
             else:
                 return -1
-    
+
         # Compare the hypergeometric p-value to have the littlest first
         if hyp_pvalue_1 != hyp_pvalue_2:
             if hyp_pvalue_1 < hyp_pvalue_2:
@@ -666,7 +665,7 @@ class MotifStatistics:
                 return -1
             else:
                 return 1
-    
+
         # Compare the chi2 to have the greatest first
         chi2_1 = stats1.getAttributeAsfloat( MotifStatistics.MOTIF_CHI2)
         chi2_2 = stats2.getAttributeAsfloat( MotifStatistics.MOTIF_CHI2)

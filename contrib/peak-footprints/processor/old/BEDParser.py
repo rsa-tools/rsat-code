@@ -29,24 +29,26 @@ class BEDParser:
                     chrom = tokens[ BEDParser._chrom_col].lower()
                     #if chrom[ 0:3] == "chr":
 		    if chrom[0:1] != "#":
-    			if len(chrom) < 4:
-    			    chrom = "chr" + chrom
-                start = BEDParser.getTokenAsint( tokens[ BEDParser._startindex_col])
-                end = BEDParser.getTokenAsint( tokens[ BEDParser._endindex_col])
-                if start < end:
-                    start = start - extension_5p;
-                    if start < 0:
-                        start = 0;
-                    end = end + extension_3p;
-                    bedsequence = BEDSequence( species, chrom, start, end )
-                    if len( tokens) > BEDParser._id_col:
-                        bedsequence.id = tokens[ BEDParser._id_col]
-                    bedsequence_key = bedsequence.getKey()
-                    if not sequence_dic.has_key( bedsequence_key):
-                        sequence_dic[ bedsequence_key] = []
-                    sequence_dic[ bedsequence_key].append( bedsequence)
-                else:
-                    Log.log( "BEDParser.getBEDSequenceDictionnary : A sequence has inversed start and end coordinates : " + line)
+			if len(chrom) < 4:
+			    chrom = "chr" + chrom
+                        start = BEDParser.getTokenAsint( tokens[ BEDParser._startindex_col])
+                        end = BEDParser.getTokenAsint( tokens[ BEDParser._endindex_col])
+                        if start < end:
+                            start = start - extension_5p;
+                            if start < 0:
+                                start = 0;
+                            end = end + extension_3p;
+                            bedsequence = BEDSequence( species, chrom, start, end )
+                            if len( tokens) > BEDParser._id_col:
+                                bedsequence.id = tokens[ BEDParser._id_col]
+                            bedsequence_key = bedsequence.getKey()
+                            if not sequence_dic.has_key( bedsequence_key):
+                                sequence_dic[ bedsequence_key] = []
+                            sequence_dic[ bedsequence_key].append( bedsequence)
+                        else:
+                            Log.log( "BEDParser.getBEDSequenceDictionnary : A sequence has inversed start and end coordinates : " + line)
+		else:
+		    Log.log( "No 'chr' in line :" + line)
         except ParsingException, par_exce:
             raise ParsingException( "BEDParser.getBEDSequenceDictionnary : Some attributes are mor numbers. From:\n\t-->  " +  str( par_exce))
         except IOError, io_exce:

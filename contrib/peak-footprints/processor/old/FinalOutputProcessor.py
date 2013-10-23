@@ -88,9 +88,6 @@ class FinalOutputProcessor( Processor):
         
         input_commstruct = input_commstructs[0]
         
-        # Get all the pipeline parameters
-        parameter_dic = self.collectAllParameters()
-        
         # Retrieve the processor parameters
         self.dbPath = self.getParameter( FinalOutputProcessor.MOTIF_DATABASE_PATH_PARAM)
         
@@ -108,7 +105,7 @@ class FinalOutputProcessor( Processor):
         custom_database_file_line = self.getParameter( FinalOutputProcessor.CUSTOM_MOTIF_DATABASE_FILE_PARAM, False)
         if custom_database_file_line != None and not custom_database_file_line.isspace():
             self.dbFiles.append( custom_database_file_line)
-                   
+        
         limit_value = self.getParameter( FinalOutputProcessor.DISPLAY_LIMIT_VALUE, False)
         if limit_value == None:
             limit_value = 1.0
@@ -123,22 +120,9 @@ class FinalOutputProcessor( Processor):
         
         # Create motif logos
         self.createLogos( input_commstruct)
-                
-        # Copy input BED and custom motif files
-        input_bed_file_destination_path = os.path.join(self.outPath, FinalOutputProcessor.PARAM_BEDFile)
-        FileUtils.createDirectory( input_bed_file_destination_path)
-        FileUtils.copyFile( parameter_dic[ FinalOutputProcessor.PARAM_BEDFile],input_bed_file_destination_path) 
-        parameter_dic[ FinalOutputProcessor.PARAM_BEDFile] = os.path.join( input_bed_file_destination_path, os.path.basename(parameter_dic[ FinalOutputProcessor.PARAM_BEDFile]))
-
-        # Copy the custom motif file if any to output location
-        if FinalOutputProcessor.PARAM_CustomMotifDatabaseFile in parameter_dic.keys() and parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile] != None:
-            custom_db_file_destination_path = os.path.join(self.outPath, FinalOutputProcessor.PARAM_CustomMotifDatabaseFile)
-            FileUtils.createDirectory( custom_db_file_destination_path)
-            FileUtils.copyFile( parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile],custom_db_file_destination_path) 
-            parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile] = os.path.join( custom_db_file_destination_path, os.path.basename( parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile]))
-                
+        
         # Output Results
-        self.outputClassification( input_commstruct, analysis, limit_value, parameter_dic)
+        self.outputClassification( input_commstruct, analysis, limit_value)
         
         # Copy other information
         FileUtils.copyFile( os.path.join( self.component.outputDir, Constants.PROGRESSION_XSL_FILE), self.outPath) 
@@ -168,7 +152,6 @@ class FinalOutputProcessor( Processor):
 
         # copy the BED output file
         self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.BED_OUTPUT_PATH, FinalOutputProcessor.BED_OUTPUT_ATT, file_pathes)
-        self.copyWorkflowResultFileToFinalOutput( stats_param, BedSeqAlignmentStatsCommStruct.BIGBED_OUTPUT_PATH, FinalOutputProcessor.BIGBED_OUTPUT_ATT, file_pathes)
         
         # Retrieve the motifs statistics information
         identified_motif_names = input_commstruct.motifStatistics.keys()
@@ -247,7 +230,7 @@ class FinalOutputProcessor( Processor):
 
 
     # --------------------------------------------------------------------------------------
-    # Create the logo image file for each motif in the motif statistics
+    # Create the logo image file for each motif in the motis statistics
     def createLogos(self, input_commstruct):
         
         
@@ -276,11 +259,11 @@ class FinalOutputProcessor( Processor):
 
     # --------------------------------------------------------------------------------------
     # Output the motif classification
-    def outputClassification(self, input_commstruct, analysis, limit_value, parameter_dic):
+    def outputClassification(self, input_commstruct, analysis, limit_value):
 
         try:
             # Create and write to file the XML element
-            root_element = self.toXML( input_commstruct, analysis, limit_value, parameter_dic)
+            root_element = self.toXML( input_commstruct, analysis, limit_value)
             self.indent( root_element, 0)
             # Output the XML to file
             doc = ET.ElementTree( root_element)
@@ -292,8 +275,6 @@ class FinalOutputProcessor( Processor):
             outfile.close()
             # Copy the XSL file in the same directory than the XML
             shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/classification.xsl"), self.outPath)
-            shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/jquery.dataTables.js"), self.outPath)
-            shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/peak-footprints.css"), self.outPath)
         except IOError, exce:
             Log.log( "ClassificationProcessor.outputClassification : Unable to write classification to XML file. From:\n\t---> " + str( exce))
 
@@ -301,13 +282,12 @@ class FinalOutputProcessor( Processor):
 
     # --------------------------------------------------------------------------------------
     # Write the Classification to XML file
-    def toXML( self, input_commstruct, analysis, limit_value, parameter_dic):
+    def toXML( self, input_commstruct, analysis, limit_value):
         
         # Retrieve the data from the analyzed statistics
         classified_families = analysis[ 0]
         motif_classification = analysis[ 1]
         file_pathes = analysis[2]
-        
         
         # Create the root element with its attributes
         classification_element = Element( FinalOutputProcessor.CLASSIFICATION_TAG)
@@ -337,11 +317,6 @@ class FinalOutputProcessor( Processor):
         classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT]
         classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT]
 
-        # Add all other parameters values
-        for param_name in parameter_dic.keys():
-            if not param_name in classification_element.attrib.keys():  
-                classification_element.attrib[ param_name] = parameter_dic[ param_name]
-
         # Insert the path to the BED sequences sizes histogram and graph
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT, file_pathes)
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT, file_pathes)
@@ -356,7 +331,6 @@ class FinalOutputProcessor( Processor):
 
         # Insert the path to the BED output file if any
         self.addFilePathAttribute( classification_element, FinalOutputProcessor.BED_OUTPUT_ATT, file_pathes)
-        self.addFilePathAttribute( classification_element, FinalOutputProcessor.BIGBED_OUTPUT_ATT, file_pathes)
 
         # Create a root son element for each family
         for family_rank in sorted( classified_families):
@@ -383,7 +357,6 @@ class FinalOutputProcessor( Processor):
                 
                 # fill the motif element attributes
                 motif_element.attrib[ FinalOutputProcessor.MOTIF_NAME_ATT] = motif_name
-                motif_element.attrib[ FinalOutputProcessor.MOTIF_FAMILY_ATT] = family
                 motif_element.attrib[ FinalOutputProcessor.MOTIF_ID_ATT] = motif_stats.motifID
                 motif_element.attrib[ FinalOutputProcessor.MOTIF_CLASS_ATT] = motif_stats.motifClass
                 motif_element.attrib[ FinalOutputProcessor.MOTIF_TYPE_ATT] = motif_stats.motifType
@@ -444,18 +417,6 @@ class FinalOutputProcessor( Processor):
                 element.attrib[ attribute] = file_pathes[ attribute][ name]
 
 
-    # --------------------------------------------------------------------------------------
-    # Collect all the parameters used by the various processors of the executed pipeline
-    def collectAllParameters(self):
-        
-        option_dic ={}
-        
-        for component in self.pipeline.getComponentList():
-            parameter_dic = component.getParameterDic()
-            for parameter_name in parameter_dic.keys():
-                option_dic[ parameter_name] = parameter_dic[ parameter_name]
-                
-        return option_dic
 
 
     # --------------------------------------------------------------------------------------
@@ -466,19 +427,7 @@ class FinalOutputProcessor( Processor):
     REFERENCE_SPECIES_ATT = "referenceSpecies"
     ALIGNED_SPECIES_ATT = "alignedSpecies"
     REFERENCE_MOTIF_ATT = "referenceMotif"
-    
-    PARAM_BEDFile = "BEDFile"
-    PARAM_ResiduConservationLimit= "ResiduConservationLimit"
-    PARAM_WindowSize= "WindowSize"
-    PARAM_WindowConservationLimit= "WindowConservationLimit"
-    PARAM_CustomMotifDatabaseFile= "CustomMotifDatabaseFile"
-    PARAM_MotifDatabasePath= "MotifDatabasePath"
-    PARAM_MotifDatabaseFileList= "MotifDatabaseFileList"
-    PARAM_MaxHypergeometricEValue= "MaxHypergeometricEValue"
-    PARAM_MaxChi2EValue= "MaxChi2EValue"
-    PARAM_MaxMotifByFamily= "MaxMotifByFamily"
-    PARAM_MaxMotifNumber= "MaxMotifNumber"
-    
+
     BEDSEQUENCES_NUMBER_ATT = "bedSequencesNumber"
     BEDSEQUENCES_MIN_SIZE_ATT = "bedSequencesMinSize"
     BEDSEQUENCES_MAX_SIZE_ATT = "bedSequencesMaxSize"
@@ -505,7 +454,6 @@ class FinalOutputProcessor( Processor):
     MSA_SIZE_PATH_ATT = "MSASizeHistogram"
     MSA_SIZE_GRAPH_PATH_ATT = "MSASizeHistogramGraph"
     BED_OUTPUT_ATT = "bedOutput"
-    BIGBED_OUTPUT_ATT = "bigbedOutput"
     
     FAMILY_TAG = "family"
     FAMILY_NAME_ATT = "name"
@@ -513,7 +461,6 @@ class FinalOutputProcessor( Processor):
     
     MOTIF_TAG = "motif"
     MOTIF_NAME_ATT = "name"
-    MOTIF_FAMILY_ATT = "family"
     MOTIF_ID_ATT = "id"
     MOTIF_CLASS_ATT = "class"
     MOTIF_TYPE_ATT = "type"
