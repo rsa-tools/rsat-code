@@ -94,13 +94,19 @@ class FinalOutputProcessor( Processor):
         # Retrieve the processor parameters
         self.dbPath = self.getParameter( FinalOutputProcessor.MOTIF_DATABASE_PATH_PARAM)
         
-        # Retrieve the list of motif database files to use
+        # Retrieve the list of motif database files to use and count motifs in the list
         database_file_line = self.getParameter( FinalOutputProcessor.MOTIF_DATABASE_FILE_LIST_PARAM)
         if database_file_line != None and not database_file_line.isspace():
             file_list = database_file_line.split()
             self.dbFiles = []
+            count_motif_in_db = 0
             for file_path in file_list:
-                self.dbFiles.append( os.path.join( self.dbPath, file_path))
+                current_path = os.path.join( self.dbPath, file_path)
+                current_size = MotifUtils.getMotifsNumberFromTransfac( current_path)
+                if current_size != None:
+                    count_motif_in_db = count_motif_in_db + current_size
+                self.dbFiles.append( current_path)
+            parameter_dic[ FinalOutputProcessor.PARAM_MotifDatabaseFileListSize] = str(count_motif_in_db)
         else:
             raise ExecutionException( "FinalOutputProcessor.getMethodParameters : No motif database file specified in parameter '" + FinalOutputProcessor.MOTIF_DATABASE_FILE_LIST_PARAM + "'")
 
@@ -109,6 +115,15 @@ class FinalOutputProcessor( Processor):
         if custom_database_file_line != None and not custom_database_file_line.isspace():
             self.dbFiles.append( custom_database_file_line)
                    
+        # Retrieve the ID and the name of the reference motif
+        motif_name = parameter_dic[ FinalOutputProcessor.PARAM_ReferenceMotif]
+        for current_database in self.dbFiles:
+            motif_ID = MotifUtils.getMotifIDFromTransfac( motif_name, current_database)
+            if motif_ID != None:
+                break
+        parameter_dic[ FinalOutputProcessor.PARAM_ReferenceMotifID] = motif_ID           
+        
+        # Retrieve the Hypergeometric p-value threshold
         limit_value = self.getParameter( FinalOutputProcessor.DISPLAY_LIMIT_VALUE, False)
         if limit_value == None:
             limit_value = 1.0
@@ -130,12 +145,17 @@ class FinalOutputProcessor( Processor):
         FileUtils.copyFile( parameter_dic[ FinalOutputProcessor.PARAM_BEDFile],input_bed_file_destination_path) 
         parameter_dic[ FinalOutputProcessor.PARAM_BEDFile] = os.path.join( input_bed_file_destination_path, os.path.basename(parameter_dic[ FinalOutputProcessor.PARAM_BEDFile]))
 
-        # Copy the custom motif file if any to output location
+        # Copy the custom motif file (if any) to output location and count motifs in this db
         if FinalOutputProcessor.PARAM_CustomMotifDatabaseFile in parameter_dic.keys() and parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile] != None:
             custom_db_file_destination_path = os.path.join(self.outPath, FinalOutputProcessor.PARAM_CustomMotifDatabaseFile)
             FileUtils.createDirectory( custom_db_file_destination_path)
             FileUtils.copyFile( parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile],custom_db_file_destination_path) 
             parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile] = os.path.join( custom_db_file_destination_path, os.path.basename( parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile]))
+            count_custom_motif = MotifUtils.getMotifsNumberFromTransfac( parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFile])
+            if( count_custom_motif != None):
+                parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFileSize] = str(count_custom_motif)
+            else:
+                parameter_dic[ FinalOutputProcessor.PARAM_CustomMotifDatabaseFileSize] = "0"
                 
         # Output Results
         self.outputClassification( input_commstruct, analysis, limit_value, parameter_dic)
@@ -467,13 +487,17 @@ class FinalOutputProcessor( Processor):
     ALIGNED_SPECIES_ATT = "alignedSpecies"
     REFERENCE_MOTIF_ATT = "referenceMotif"
     
+    PARAM_ReferenceMotif = "ReferenceMotif"
+    PARAM_ReferenceMotifID = "ReferenceMotifID"
     PARAM_BEDFile = "BEDFile"
     PARAM_ResiduConservationLimit= "ResiduConservationLimit"
     PARAM_WindowSize= "WindowSize"
     PARAM_WindowConservationLimit= "WindowConservationLimit"
     PARAM_CustomMotifDatabaseFile= "CustomMotifDatabaseFile"
+    PARAM_CustomMotifDatabaseFileSize= "CustomMotifDatabaseFileSize"
     PARAM_MotifDatabasePath= "MotifDatabasePath"
     PARAM_MotifDatabaseFileList= "MotifDatabaseFileList"
+    PARAM_MotifDatabaseFileListSize= "MotifDatabaseFileListSize"
     PARAM_MaxHypergeometricEValue= "MaxHypergeometricEValue"
     PARAM_MaxChi2EValue= "MaxChi2EValue"
     PARAM_MaxMotifByFamily= "MaxMotifByFamily"
