@@ -33,7 +33,6 @@ class FinalOutputProcessor( Processor):
     CUSTOM_MOTIF_DATABASE_FILE_PARAM = "CustomMotifDatabaseFile"
     DISPLAY_LIMIT_VALUE = "DisplayLimitValue"
     
-    
     LOGOS_DIR_NAME = "Logos"
     
     # --------------------------------------------------------------------------------------
@@ -123,7 +122,7 @@ class FinalOutputProcessor( Processor):
                 break
         parameter_dic[ FinalOutputProcessor.PARAM_ReferenceMotifID] = motif_ID           
         
-        # Retrieve the Hypergeometric p-value threshold
+        # Retrieve the Hypergeometric e/p-value threshold
         limit_value = self.getParameter( FinalOutputProcessor.DISPLAY_LIMIT_VALUE, False)
         if limit_value == None:
             limit_value = 1.0
@@ -393,8 +392,11 @@ class FinalOutputProcessor( Processor):
                 motif_name = motif_classification[ family][ motif_rank]
                 motif_stats = input_commstruct.motifStatistics[ motif_name]
                 
-                # If the motif has its hypergeometric p-value avove the limit, it is ignored
-                if not motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_PVALUE) or motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE) > limit_value:
+                # If the motif has its hypergeometric p-value above the limit, it is ignored
+                #if not motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_PVALUE) or motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE) > limit_value:
+                #    continue
+                # If the motif has its hypergeometric e-value above the limit, it is ignored
+                if not motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_EVALUE) or motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_EVALUE) > limit_value:
                     continue
                 
                 # Create the motif XML element
@@ -418,6 +420,8 @@ class FinalOutputProcessor( Processor):
                     motif_element.attrib[ FinalOutputProcessor.MOTIF_HYP_HIT_SCORE_ATT] = motif_stats.getAttribute( MotifStatistics.MOTIF_HYP_HIT_SCORE)
                 if motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_PVALUE):
                     motif_element.attrib[ FinalOutputProcessor.MOTIF_HYP_PVALUE_ATT] = motif_stats.getAttribute( MotifStatistics.MOTIF_HYP_PVALUE)
+                if motif_stats.hasAttribute( MotifStatistics.MOTIF_HYP_EVALUE):
+                    motif_element.attrib[ FinalOutputProcessor.MOTIF_HYP_EVALUE_ATT] = motif_stats.getAttribute( MotifStatistics.MOTIF_HYP_EVALUE)
 
                 # fill the motif chi2 and chi2 p-value attributes
                 if motif_stats.hasAttribute( MotifStatistics.MOTIF_CHI2):
@@ -547,6 +551,7 @@ class FinalOutputProcessor( Processor):
     MOTIF_CHI2_PVALUE_ATT ="chi2pvalue"
     MOTIF_HYP_HIT_SCORE_ATT = "hyphitsscore"
     MOTIF_HYP_PVALUE_ATT ="hyppvalue"
+    MOTIF_HYP_EVALUE_ATT ="hypevalue"
     MOTIF_RATIO_HOMOLOCATION = "ratioHomoLocation"
     MOTIF_LOGO_ATT = "logo"
     MOTIF_MATRIX_ATT = "matrix"
