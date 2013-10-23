@@ -310,7 +310,7 @@ if ($verbose) {
     printf $out "; %-19s\t%g\n", "std", $std;
   }
   printf $out "; %-19s\t%g\n", "min", $min;
-  printf $out "; %-19s\t%g\n", "max", $min;
+  printf $out "; %-19s\t%g\n", "max", $max;
   printf $out "; %-19s\t%g\n", "range", $max - $min;
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
