@@ -1193,7 +1193,7 @@ class MotifProcessor( Processor):
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_TOTAL_SIZE] = total_size
         
         # Output the histogram
-        file_infos = RSATUtils.outputHistogram( motif_size_list, 10, self.out_path, "conservedRegionSize", self.component.pipelineName, "", "Conserved block size", "Number of blocks", ('5', '6'), False)
+        file_infos = RSATUtils.outputHistogram( motif_size_list, 10, self.out_path, "conservedRegionSize", self.component.pipelineName, "", "Conserved block size", "Number of blocks", ('5', '6'))
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_PATH] = file_infos[0]
         output_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.CONSERVED_BLOCKS_SIZE_GRAPH_PATH] = file_infos[1]
         
