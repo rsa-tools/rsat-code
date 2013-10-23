@@ -255,7 +255,7 @@
 	    		No Custom Motif
 	    	</xsl:if>
 	    </td></tr>
-	    <tr><td><b>Max Hypergeometric p-value</b></td><td> : <xsl:value-of select="@MaxHypergeometricEValue"/></td></tr>
+	    <tr><td><b>Max Hypergeometric E-value</b></td><td> : <xsl:value-of select="@MaxHypergeometricEValue"/></td></tr>
 	    <tr><td><b>Max Chi2 p-value</b></td><td> : <xsl:value-of select="@MaxChi2EValue"/></td></tr>
 	    <tr><td><b>Max Reported Motif Number</b></td><td> : <xsl:value-of select="@MaxMotifNumber"/></td></tr>
     </table>
@@ -378,7 +378,7 @@
                 <th>Hits number</th>
                 <th>Expected hits number</th>
                 <th>Ratio with hits numbers</th>
-                <th>Hypergeometric P-value</th>
+                <th>Hypergeometric E-value</th>
                 <th>Chi2 P-value</th>
 				<th>Chi2 value</th>
                 <th>% Overlapping sites with <xsl:value-of select="@referenceMotif"/></th>
@@ -492,7 +492,7 @@
 		<xsl:value-of select="round(($A div $B)*100)"/>%
         </td>
         <td > 
-		<xsl:value-of select="@hyppvalue"/>     
+		<xsl:value-of select="@hypevalue"/>     
         </td>
         <td > 
 		<xsl:value-of select="@chi2pvalue"/>     

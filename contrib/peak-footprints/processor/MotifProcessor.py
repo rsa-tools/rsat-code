@@ -150,7 +150,7 @@ class MotifProcessor( Processor):
         data_stats = self.executeTool( method, arguments, output_commstruct)
     
         # Finalize motif statistics
-        self.finalizeStatistics( data_stats, output_commstruct)
+        self.finalizeStatistics( data_stats, arguments, output_commstruct)
         
         return output_commstruct
         
@@ -332,10 +332,16 @@ class MotifProcessor( Processor):
     # ---------------------------------------------------------------------------------------------
     # Set the motif details (family, type, class) in the MotifStatistics and 
     # compute the p-value with the hyperbolic test
-    def finalizeStatistics(self, data_stats, output_commstruct):
+    def finalizeStatistics(self, data_stats, arguments, output_commstruct):
         
         # Get the motif details from Jaspar database
         motif_details = MotifUtils.getMotifsDetailsFromJaspar()
+        
+        motif_number_in_db = 0
+        for database_path in arguments[ MotifProcessor.MOTIF_DATABASE_FILE_LIST_PARAM]:
+            current_number = MotifUtils.getMotifsNumberFromTransfac( database_path)
+            if current_number != None:
+                motif_number_in_db = motif_number_in_db + current_number
         
         for motif_name in output_commstruct.motifStatistics.keys():
             motif_stats = output_commstruct.motifStatistics[ motif_name]
@@ -344,7 +350,7 @@ class MotifProcessor( Processor):
             self.setMotifStatsDetails( motif_stats, motif_details)
             
             # compute hyperbolic test p-value
-            self.computeHypergeometricPValue( motif_stats, data_stats)
+            self.computeHypergeometricPValue( motif_stats, data_stats, motif_number_in_db)
 
 
 
@@ -386,7 +392,7 @@ class MotifProcessor( Processor):
 
     # ---------------------------------------------------------------------------------------------
     # Prepare the computation of the p-value with the hyperbolic test
-    def computeHypergeometricPValue( self, motif_stats, data_stats): 
+    def computeHypergeometricPValue( self, motif_stats, data_stats, motif_number_in_db): 
 
         if not motif_stats.hasAttribute( MotifStatistics.MOTIF_HIT_SCORE):
             Log.log( "MotifProcessor.computeHypergeometricPValue : the motif " + motif_stats.motifName + " has not been identified with non-permuted matrix")
@@ -416,7 +422,7 @@ class MotifProcessor( Processor):
             if length_to_add > 0:
                 possible_position += length_to_add
 
-	m = (2 * possible_position) - motif_stats.getAttributeAsint( MotifStatistics.MOTIF_UNCOUNT)
+	    m = (2 * possible_position) - motif_stats.getAttributeAsint( MotifStatistics.MOTIF_UNCOUNT)
 
         # compute the total number of failure "balls"
         # n = total number of possible motif start index in the conserved regions (input motifs)
@@ -435,8 +441,10 @@ class MotifProcessor( Processor):
         #print "number of drawned black balls (x)=" + str( x) 
         #print "TO min( m, k)= " + str( min( m, k))
         p_value = self.hypergeometric( m, m+n, k, x, min( m, k))
-        #print "  p-value = " + str( p_value)
+        e_value = p_value * motif_number_in_db
+        
         motif_stats.setAttribute( MotifStatistics.MOTIF_HYP_PVALUE, "%(number)2e" %{ "number" : p_value})
+        motif_stats.setAttribute( MotifStatistics.MOTIF_HYP_EVALUE, "%(number)2e" %{ "number" : e_value})
         
 
     # ---------------------------------------------------------------------------------------------
