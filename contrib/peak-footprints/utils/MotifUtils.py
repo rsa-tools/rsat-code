@@ -71,7 +71,7 @@ class MotifUtils:
         except IOError, io_exce:
             raise ExecutionException( "MotifUtils.getMotifsNumberFromTransfac : Unable to read motif definition from database file '" + database_file_path + "'. From:\n\t---> " + str( io_exce))
 
-        return sizes
+        return motif_count
 
 
     # ---------------------------------------------------------------------------------------------
