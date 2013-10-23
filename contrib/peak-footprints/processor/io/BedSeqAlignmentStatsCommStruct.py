@@ -525,6 +525,7 @@ class MotifStatistics:
     MOTIF_HYP_HIT_SCORE = "HypergeometricTestHitScore"
     MOTIF_HYP_UNCOUNT = "HypergometricUncount"
     MOTIF_HYP_PVALUE = "HypergeometricPValue"
+    MOTIF_HYP_EVALUE = "HypergeometricEValue"
     MOTIF_CHI2 = "Chi2"
     MOTIF_CHI2_PVALUE = "Chi2PValue"
     
