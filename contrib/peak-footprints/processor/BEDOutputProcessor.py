@@ -1,5 +1,5 @@
 
-import os, shutil
+import os, shutil, commands, threading
 
 from processor.Processor import Processor
 from processor.io.BedSeqAlignmentStatsCommStruct import BedSeqAlignmentStatsCommStruct
@@ -7,6 +7,7 @@ from processor.io.BedSeqAlignmentStatsCommStruct import BedSeqAlignmentStatsComm
 from common.BEDSequence import BEDSequence
 
 from utils.log.Log import Log
+from utils.Constants import Constants
 from utils.MotifUtils import MotifUtils
 from utils.exception.ExecutionException import ExecutionException
 from utils.FileUtils import FileUtils
@@ -117,10 +118,10 @@ class BEDOutputProcessor(Processor):
         try:
             bed_file = open(bed_file_path, "w")
 
-            bed_file.write("track name='" + self.component.pipelineName + "' visibility=3 itemRgb='On' use_score=1\n")
-            bed_file.write("browser dense RSAT\n")
-            bed_file.write("browser dense\n") 
-            bed_file.write("## seq_name	start	end	feature_name	score	strand	thickStart	thickEnd	itemRgb	blockCount	blockSizes	blckStarts\n")
+            #bed_file.write("track name='" + self.component.pipelineName + "' visibility=3 itemRgb='On' use_score=1\n")
+            #bed_file.write("browser dense RSAT\n")
+            #bed_file.write("browser dense\n") 
+            #bed_file.write("## seq_name	start	end	feature_name	score	strand	thickStart	thickEnd	itemRgb	blockCount	blockSizes	blckStarts\n")
 
             current_color = None
             bedseq_list = input_commstruct.bedToMA.keys()
@@ -147,7 +148,14 @@ class BEDOutputProcessor(Processor):
                             #else:
                             if color_method == BEDOutputProcessor.COLOR_METHOD_FAMILY:
                                 if motif_name in motif_family.keys():
-                                    item_rgb = self.getNextFamilyColor(motif_family[ motif_name], family_rgb, current_color)
+                                    #print("-----------------------------")
+                                    #print "Current color = " + str(current_color)
+                                    #print "Motif name=" + motif_name
+                                    #print "Motif family=" + motif_family[ motif_name]
+                                    family_rgb = self.updateFamilyRGB(motif_family[ motif_name], family_rgb, current_color)
+                                    #print "Family RGB = " + str(family_rgb)
+                                    item_rgb = family_rgb[ motif_family[ motif_name]]
+                                    #print "Item rgb = ", str(item_rgb)
                                     current_color = item_rgb
                                 else:
                                     item_rgb = BEDOutputProcessor.COLORS[ 0]
@@ -155,7 +163,10 @@ class BEDOutputProcessor(Processor):
                                 item_rgb = self.getColorForScore(score, score_min, score_max)
                             
                             # Write the lines to output file
-                            line_out = chromosom
+                            if len( chromosom) <4:
+                                line_out = "chr" + chromosom
+                            else:
+                                line_out = chromosom
                             line_out += "\t" + str(start_position)
                             line_out += "\t" + str(end_position)
                             line_out += "\t" + out_name
@@ -192,6 +203,65 @@ class BEDOutputProcessor(Processor):
 
             bed_file.close()
             input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BED_OUTPUT_PATH] = bed_file_path
+            
+            # Sort bed_file (used for bigBed conversion)
+            sorted_bed_file_path = os.path.join(out_path, self.component.pipelineName + "_Motifs_sorted.bed")
+            cmd = "sort -k1,1 -k2,2n"
+            cmd += " " + bed_file_path
+            cmd += " > " + sorted_bed_file_path
+            
+            Log.info( "BEDOuputProcessor.execute : Sorting BED file")
+            Log.info( "BEDOuputProcessor.execute  : command used is : " + cmd)
+            
+            cmd_result = commands.getstatusoutput( cmd)
+            Log.trace( "BEDOuputProcessor.execute : " + threading.currentThread().getName() + " : status returned is :" + str( cmd_result[0]))
+            if cmd_result[0] != 0:
+                Log.log( "BEDOuputProcessor.execute : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
+                Log.log( "BEDOuputProcessor.execute : command output is = \n" + str( cmd_result[1]))
+                return input_commstruct
+                        
+            # Fetch the chrom sizes that will be use to convert BED file to bigBed file
+            chrom_sizes_path = os.path.join(out_path, self.component.pipelineName + "_chrom_size.txt")
+            
+            RSAT_PATH = self.component.getParameter( Constants.RSAT_DIR_PARAM)
+            cmd = os.path.join( RSAT_PATH , "contrib/peak-footprints/tools/fetchChromSizes")
+            cmd += " " + input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES]
+            cmd += " > " + chrom_sizes_path
+            
+            Log.info( "BEDOuputProcessor.execute : Fetching Chrom sizes for species : " + input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.REFERENCE_SPECIES])
+            Log.info( "BEDOuputProcessor.execute  : command used is : " + cmd)
+            
+            cmd_result = commands.getstatusoutput( cmd)
+            Log.trace( "BEDOuputProcessor.execute : " + threading.currentThread().getName() + " : status returned is :" + str( cmd_result[0]))
+            if cmd_result[0] != 0:
+                Log.log( "BEDOuputProcessor.execute : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
+                Log.log( "BEDOuputProcessor.execute : command output is = \n" + str( cmd_result[1]))
+                return input_commstruct
+            
+            # Build the bigBed file
+            # sudo ln -s /lib/x86_64-linux-gnu/libssl.so.1.0.0 /usr/lib/libssl.so.10
+            # sudo ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.0.0 /usr/lib/libcrypto.so.10
+            
+            big_bed_path = os.path.join(out_path, self.component.pipelineName + "_Motifs.bb")
+            
+            RSAT_PATH = self.component.getParameter( Constants.RSAT_DIR_PARAM)
+            cmd = os.path.join( RSAT_PATH , "contrib/peak-footprints/tools/bedToBigBed")
+            cmd += " " + sorted_bed_file_path
+            cmd += " " + chrom_sizes_path
+            cmd += " " + big_bed_path
+            
+            Log.info( "BEDOuputProcessor.execute : Converting BED file to bigBed file")
+            Log.info( "BEDOuputProcessor.execute  : command used is : " + cmd)
+            
+            cmd_result = commands.getstatusoutput( cmd)
+            Log.trace( "BEDOuputProcessor.execute : " + threading.currentThread().getName() + " : status returned is :" + str( cmd_result[0]))
+            if cmd_result[0] != 0:
+                Log.log( "BEDOuputProcessor.execute : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
+                Log.log( "BEDOuputProcessor.execute : command output is = \n" + str( cmd_result[1]))
+                return input_commstruct
+                        
+            input_commstruct.paramStatistics[ BedSeqAlignmentStatsCommStruct.BIGBED_OUTPUT_PATH] = big_bed_path
+            
         except IOError, io_exce:
             Log.log("BEDOutputProcessor.execute : Unable to save the BED file of recognized motifs : " + str(io_exce))
         
@@ -201,7 +271,7 @@ class BEDOutputProcessor(Processor):
 
     # --------------------------------------------------------------------------------------
     # Assign a color to the motif family if required and return this color
-    def getNextFamilyColor(self, family, family_rgb, current_color):
+    def updateFamilyRGB(self, family, family_rgb, current_color):
         
         if not family in family_rgb.keys():
             if current_color == None:
@@ -215,7 +285,7 @@ class BEDOutputProcessor(Processor):
                     next_color = BEDOutputProcessor.COLORS[ 0]
                 family_rgb[ family] = next_color
             
-        return family_rgb[ family]
+        return family_rgb
         
         
         

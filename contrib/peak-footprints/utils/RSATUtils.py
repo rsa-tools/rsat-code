@@ -84,7 +84,7 @@ class RSATUtils:
     # ---------------------------------------------------------------------------------------------
     # Compute the histogram of chosen indexes and graph it
     @staticmethod
-    def outputHistogram( table, histogram_interval, dir_path, prefix, title1, title2,  legendx,  legendy, other_columns):
+    def outputHistogram( table, histogram_interval, dir_path, prefix, title1, title2,  legendx,  legendy, other_columns, fhisto):
         
         # save the stats to a tabbed file for classfreq command
         input_path = os.path.join( dir_path, prefix + ".tab")
@@ -118,7 +118,11 @@ class RSATUtils:
             cmd += "," + ",".join( other_columns)
         cmd += " -xleg1 '" + legendx + "'"
         cmd += " -yleg1 '" + legendy + "'"
-        cmd += " -legend -header -format png -fhisto"
+        cmd += " -legend -header -format png"
+        if fhisto:
+            cmd += " -fhisto"
+        else:
+            cmd += " -lines"
         cmd += " -o '" + graph_path + "'"
         
         cmd_result = commands.getstatusoutput( cmd)
