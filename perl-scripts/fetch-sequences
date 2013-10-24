@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fetch-sequences,v 1.33 2013/06/24 09:09:09 jvanheld Exp $
+# $Id: fetch-sequences,v 1.34 2013/10/24 07:22:08 morgane Exp $
 #
 ############################################################
 
@@ -174,7 +174,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -461,8 +461,10 @@ package main;
       $header = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
       $header .= "\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
     } elsif ($header_format eq "galaxy") {
-      ## Galaxy header reports 0-based coordinates
-      $header = ">".$genome."_".$chrom."_".$zero_left."_".$right."_".$strand;
+      ## Galaxy header reports 1-based coordinates
+      ## Please do not change this, several programs rely on having these header 1-based
+      ## and we need to ensure that the obtained sequences are the same as provided by galaxy	
+      $header = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
     } else {
       $header = ">";
       if ($name) {
