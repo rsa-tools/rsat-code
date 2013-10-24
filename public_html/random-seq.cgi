@@ -27,7 +27,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &S
 #$tmp_file_name = sprintf "random-seq.%s", &AlphaDate();
 @result_files = ();
 
-$size_limit = 5e+6;
+$size_limit = 10e+6;
 
 ### Read the CGI query
 $query = new CGI;
