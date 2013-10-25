@@ -263,10 +263,14 @@ sub CheckDependency {
     my $file = $outfile{$type};
     if ((-s $file) || (-s $file.".gz")) {
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 5);
       return(1);
     } else {
-      &RSAT::error::FatalError("Missing or empty file of type", $type, "required for task", $task, "file name", $file);
+      if ($task{task}) {
+	&RSAT::error::FatalError("Missing or empty file of type", $type, "required for task", $task, "file name", $file);
+      } else {
+	&RSAT::message::Warning("Missing or empty file of type", $type, "required for task", $task, "file name", $file);
+      }
     }
   }
 }
