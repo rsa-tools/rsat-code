@@ -9,10 +9,10 @@ require RSAT::TreeNode;
 require RSAT::OrganismManager;
 
 ## SOAP::WSDL modules are required for getting supported organisms on remote server
-#use SOAP::WSDL;
-#use XML::Compile::SOAP11;
-#use XML::Compile::WSDL11;
-#use XML::Compile::Transport::SOAPHTTP;
+use SOAP::WSDL;
+use XML::Compile::SOAP11;
+use XML::Compile::WSDL11;
+use XML::Compile::Transport::SOAPHTTP;
 #use strict;
 
 
@@ -70,47 +70,38 @@ package main;
     ################################################################
     ## Get the list supported organisms from a remote RSAT server
     if ($from_server) {
-	&RSAT::message::Warning("option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
-
-	## Pass the query to supported-organisms-server
-	my $cmd = $SCRIPTS."/supported-organisms-server";
-	my $parameters = &PrintArguments();
-	&doit($cmd." ".$parameters);
-
-	exit(0);
-
-	# # import the modules we need for this test; XML::Compile is included on the server
-	# # by default.
+	# import the modules we need for this test; XML::Compile is included on the server
+	# by default.
 	
-	# ## Retrieve-seq parameters
-	# my %args = (
-	#     'taxon' => $taxon,
-	#     'format'=> $out_format,
-	#     'return'=> $return_fields,
-	#     );
+	## Retrieve-seq parameters
+	my %args = (
+	    'taxon' => $taxon,
+	    'format'=> $out_format,
+	    'return'=> $return_fields,
+	    );
 	
-	# # Retrieving and processing the WSDL
-	# my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
-	# &RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url) if ($main::verbose >= 2);
-	# my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
-	# my $proxy = XML::Compile::WSDL11->new($wsdl);
+	# Retrieving and processing the WSDL
+	my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
+	&RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url) if ($main::verbose >= 2);
+	my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
+	my $proxy = XML::Compile::WSDL11->new($wsdl);
 	
-	# ## Compiling the client for supported-organisms
-	# &RSAT::message::TimeWarn("Compiling client") if ($main::verbose >= 2);
-	# my $client = $proxy->compileClient('supported_organisms');
+	## Compiling the client for supported-organisms
+	&RSAT::message::TimeWarn("Compiling client") if ($main::verbose >= 2);
+	my $client = $proxy->compileClient('supported_organisms');
 	
-	# # Calling the service and getting the response
-	# &RSAT::message::TimeWarn("Sending query to server", $server) if ($main::verbose >= 2);
-	# my $answer = $client->( request => {%args});
+	# Calling the service and getting the response
+	&RSAT::message::TimeWarn("Sending query to server", $server) if ($main::verbose >= 2);
+	my $answer = $client->( request => {%args});
 	
-	# if ($main::verbose >= 1) {
-	#     print $out "; Server : ", $server, "\n";
-	#     print $out "; WSDL : ", $wsdl_url, "\n";
-	#     my $server_command = $answer->{output}->{response}->{command};
-	#     print $out "; Server command : ".$server_command."\n";
-	#     print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
-	# }
-	# print $out $answer->{output}->{response}->{client}."\n";
+	if ($main::verbose >= 1) {
+	    print $out "; Server : ", $server, "\n";
+	    print $out "; WSDL : ", $wsdl_url, "\n";
+	    my $server_command = $answer->{output}->{response}->{command};
+	    print $out "; Server command : ".$server_command."\n";
+	    print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
+	}
+	print $out $answer->{output}->{response}->{client}."\n";
 	
 # } elsif ($from_server) {
 	
@@ -261,8 +252,7 @@ OPTIONS
 		supported on the main RSAT server, before downloading
 		them.
 
-		Ex: 
-		   supported-organisms -taxon Fungi -server
+		Ex: supported-organisms -taxon Fungi -server
 
 		An alternative server RSAT server can be selected by
 		specifying the URL of the Web server.
@@ -311,11 +301,11 @@ sub ReadArguments {
 
       ### detailed help
     } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp();
+      &PrintHelp;
 
       ### list of options
     } elsif ($ARGV[$a] eq "-help") {
-      &PrintOptions();
+      &PrintOptions;
 
       ### output format
     } elsif ($ARGV[$a] eq "-format") {
