@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.115 2013/10/21 01:16:25 jvanheld Exp $
+# $Id: footprint-discovery,v 1.116 2013/11/01 07:44:06 jvanheld Exp $
 #
 ############################################################
 
@@ -211,7 +211,7 @@ package main;
   ################################################################
   ## Initialize parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.115 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.116 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   local $skip = 0;
@@ -1336,7 +1336,7 @@ sub CoregulationNetwork {
   $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; push @network_files, "dyad_file_list";
   my $out= &OpenOutputFile($outfile{dyad_file_list});
   foreach my $query_prefix (sort keys %main_index) {
-    &RSAT::message::Debug($query_prefix, $main_index{$query_prefix}{dyads}) if ($main::verbose >= 0);
+    &RSAT::message::Debug($query_prefix, $main_index{$query_prefix}{dyads}) if ($main::verbose >= 5);
     print $out join ("\t", $main_index{$query_prefix}{dyads}, $query_prefix, $main_index{$query_prefix}{name}), "\n" if (-e $main_index{$query_prefix}{dyads});
   }
   &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);
