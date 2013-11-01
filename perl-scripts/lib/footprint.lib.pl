@@ -1136,7 +1136,8 @@ sub GetOrthologs {
   if ($task{orthologs}) {
     &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 2);
     &CheckDependency("orthologs", "genes");
-    my $cmd = "$SCRIPTS/get-orthologs";
+    my $cmd = $SCRIPTS."/get-orthologs";
+    $cmd .= " -nowarn";
     $cmd .= " -i ".$outfile{genes};
     $cmd .= " -org ".$organism_name;
     if ($main::tf_ortho_file) {
