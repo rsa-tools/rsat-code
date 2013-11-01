@@ -38,7 +38,7 @@ Given a key, return the list of associated values.
 sub get_values {
     my ($self, $key) = @_;
     my @values = ();
-    if (defined(@{$self->{$key}})) {
+    if (defined($self->{$key})) {
 	@values = @{$self->{$key}};
 #    } else {
 #	&RSAT::message::Warning("Index contains no value associated to key $key") if ($main::verbose >= 0);
@@ -75,7 +75,7 @@ Returns true if the index contains the specified key.
 =cut
 sub contains {
     my ($self, $key) = @_;
-    if (defined(@{$self->{$key}})) {
+    if (defined($self->{$key})) {
 	return 1;
     } else {
 	return 0;
@@ -93,7 +93,7 @@ Usage: if ($index->contains_key($key, $value)) { ... }
 =cut
 sub contains_pair {
     my ($self, $key, $value) = @_;
-    if (defined(@{$self->{$key}})) {
+    if (defined($self->{$key})) {
 	foreach my $indexed_value ($self->get_value($key)) {
 	    return 1 if ($value eq $indexed_value);
 	}
