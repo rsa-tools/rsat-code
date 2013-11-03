@@ -524,7 +524,7 @@ sub CheckOutDir {
 
   unless ($output_dir) {
     &RSAT::message::Warning("&RSAT::util::CheckOutDir()", "No directory has been specified.", "Command ignored.") if ($main::verbose >= 1);
-    return;
+    return();
   }
 
 
@@ -537,11 +537,13 @@ sub CheckOutDir {
     &RSAT::message::Info("Current directory", $wd);
   }
 
+
   if ($output_dir) {
     if (-d $output_dir) {
       &RSAT::message::Warning("&RSAT::util::CheckOutDir()", "Directory $output_dir already exists") if ($main::verbose >= 4);
-      return;
+      return();
     }
+
 
     &RSAT::message::Info("Creating directory", $output_dir) if ($main::verbose >= 3);
     mkdir ($output_dir, $chmod);
@@ -549,17 +551,19 @@ sub CheckOutDir {
 
     unless (-d $output_dir) {
       &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 3);
-      system "mkdir -p $output_dir"; ## create output directory with all parents
+      system("mkdir -p $output_dir"); ## create output directory with all parents
     }
     chmod $chmod, $output_dir; ## Not sure the $chmod argument works with mkdir)
 
     unless (-d $output_dir) {
-      &RSAT::error::FatalError("Cannot create output directory $output_dir");
+      &RSAT::error::FatalError("Could not create output directory $output_dir");
     }
+
 
   } else {
     $output_dir = ".";
   }
+
 
   ## Change access mode if required
   if ((defined($chmod)) && ($chmod =~ /\d{3}/)) {
@@ -869,11 +873,12 @@ sub make_temp_file {
 
   ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
-    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-    my $login = getpwuid($<) || "temp_user";
-    $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
+      my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+      my $login = getpwuid($<) || "temp_user";
+      $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
   }
   &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
+
 
   ## Create an index file in the nexw directory to prevent Web users from seing its whole content
   my $index_file = $tmp_dir."/index.html";
