@@ -15,6 +15,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{genes} = "selection";
 $default{organism} = "Escherichia coli K12";
+#$default{organism} = "Escherichia_coli_K_12_substr__MG1655_uid57779";
 $default{dist_thr} = 55;
 $default{min_gene_nb} = 2;
 $default{return_leader} = "checked";
@@ -97,7 +98,7 @@ print $query->start_multipart_form(-action=>"infer-operons.cgi");
 #        "</a>\n"
 #       );
 
-&OrganismPopUp;
+&OrganismPopUp();
 
 ### query (gene list)
 print "<p>";
@@ -164,6 +165,7 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
+## Demo 1: selected genes
 print $query->start_multipart_form(-action=>"infer-operons_form.cgi");
 print "<TD><B>";
 print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
@@ -172,7 +174,20 @@ print $query->hidden(-name=>'dist_thr',-default=>"55");
 print $query->hidden(-name=>'leader',-default=>"checked");
 print $query->hidden(-name=>'query',-default=>"checked");
 print $query->hidden(-name=>'operon',-default=>"checked");
-print $query->submit(-label=>"DEMO");
+print $query->submit(-label=>"DEMO 1 (selected genes)");
+print "</B></TD>\n";
+print $query->end_form;
+
+## Demo 2: all genes
+print $query->start_multipart_form(-action=>"infer-operons_form.cgi");
+print "<TD><B>";
+print $query->hidden(-name=>'genes',-default=>'all');
+print $query->hidden(-name=>'organism',-default=>"Escherichia coli K12");
+print $query->hidden(-name=>'dist_thr',-default=>"55");
+print $query->hidden(-name=>'leader',-default=>"checked");
+print $query->hidden(-name=>'query',-default=>"checked");
+print $query->hidden(-name=>'operon',-default=>"checked");
+print $query->submit(-label=>"DEMO 2 (all genes)");
 print "</B></TD>\n";
 print $query->end_form;
 

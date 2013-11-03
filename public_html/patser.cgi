@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.32 2012/08/06 23:00:42 jvanheld Exp $
+# $Id: patser.cgi,v 1.33 2013/11/03 19:33:31 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -25,16 +25,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
-
-$command = $BIN."/patser";
-#$convert_seq_command = $SCRIPTS."/convert-seq";
-$features_from_patser_cmd = $SCRIPTS."/features-from-patser -v 1";
-$add_yeast_link_command = $SCRIPTS."/add-yeast-link";
-#$tmp_file_name = sprintf "patser.%s", &AlphaDate();
-$prefix = "patser";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-
 ### Read the CGI query
 $query = new CGI;
 
@@ -44,13 +34,21 @@ $query = new CGI;
 &RSA_header("patser result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
 
+@result_files = ();
+
+$command = $BIN."/patser";
+#$convert_seq_command = $SCRIPTS."/convert-seq";
+$features_from_patser_cmd = $SCRIPTS."/features-from-patser -v 1";
+$add_yeast_link_command = $SCRIPTS."/add-yeast-link";
+#$tmp_file_name = sprintf "patser.%s", &AlphaDate();
+$prefix = "patser";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
 ################################################################
 #### sequence file

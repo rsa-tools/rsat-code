@@ -19,12 +19,6 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = $SCRIPTS."/convert-matrix";
-$prefix = "convert-matrix";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
-$ENV{rsat_echo} = 1;
-@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -38,7 +32,14 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-#### read parameters ####
+$command = $SCRIPTS."/convert-matrix";
+$prefix = "convert-matrix";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
+$ENV{rsat_echo} = 1;
+@result_files = ();
+
+## Read parameters
 local $parameters;
 
 

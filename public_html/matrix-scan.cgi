@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.45 2012/09/13 08:51:56 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.46 2013/11/03 19:33:31 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -25,12 +25,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = $SCRIPTS."/matrix-scan -v 1 ";
-$prefix = "matrix-scan";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
-@result_files = ();
-
 ### Read the CGI query
 $query = new CGI;
 
@@ -40,12 +34,17 @@ $query = new CGI;
 &RSA_header("matrix-scan result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
+
+$command = $SCRIPTS."/matrix-scan -v 1 ";
+$prefix = "matrix-scan";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
+@result_files = ();
 
 ################################################################
 ## quick  mode

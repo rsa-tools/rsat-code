@@ -8,15 +8,12 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/roc-stats2";
-@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
 
 ### Print the header
 &NeAT_header("roc-stats result", "results");
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -27,15 +24,18 @@ $query = new CGI;
 #$ENV{rsat_echo}= 2; # TMP
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
+@result_files = ();
+$command = "$SCRIPTS/roc-stats2";
+#my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
+$prefix = "roc-stats";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+
 #### read parameters ####
 my $parameters = " -v 1 ";
 my $img_format = $query->param('img_format')||'png';
 
 ################################################################
 #### Get input
-#my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
-$prefix = "roc-stats";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
 my $score_file = $tmp_file_path."_input.tab";
 push @result_files, "Input score file", $score_file;

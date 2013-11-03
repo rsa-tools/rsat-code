@@ -18,7 +18,21 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
-$ENV{rsat_echo}=1;
+#$ENV{rsat_echo}=1;
+
+### Read the CGI query
+$query = new CGI;
+
+## Open result page
+&RSA_header("feature-map result", "results");
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
+
 
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map ";
@@ -39,21 +53,6 @@ $features_from_dnapat_cmd = "$SCRIPTS/features-from-dnapat";
 $features_from_tffact_cmd = "$SCRIPTS/features-from-tffact";
 $features_from_tfgene_cmd = "$SCRIPTS/features-from-tfgene";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser";
-
-
-### Read the CGI query
-$query = new CGI;
-
-## Open result page
-&RSA_header("feature-map result", "results");
-&ListParameters() if ($ENV{rsat_echo} >= 2);
-
-## Check security issues
-&CheckWebInput($query);
-
-## update log file
-&UpdateLogFile();
-
 
 $title = "feature-map result";
 

@@ -17,11 +17,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/convert-background-model";
-$prefix = "convert-bg";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
-@result_files = ();
+
 
 ## Draw a heat map for the transition table
 my $draw_heatmap = 0;
@@ -40,6 +36,12 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$command = "$SCRIPTS/convert-background-model";
+$prefix = "convert-bg";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
+@result_files = ();
 
 #### read parameters ####
 my $parameters;

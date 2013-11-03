@@ -17,19 +17,12 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/random-genes";
-$prefix = "random-genes";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = &RSAT::util::make_temp_file("","random-genes", 1);
-#$tmp_file_name = sprintf "random-genes.%s", &AlphaDate;
-@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the header
 &RSA_header("Random gene selection result", "results");
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -38,6 +31,13 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$command = "$SCRIPTS/random-genes";
+$prefix = "random-genes";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = &RSAT::util::make_temp_file("","random-genes", 1);
+#$tmp_file_name = sprintf "random-genes.%s", &AlphaDate;
+@result_files = ();
 
 #### read parameters ####
 $parameters = "";

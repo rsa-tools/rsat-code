@@ -25,11 +25,6 @@ use File::Basename;
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$prefix = "retrieve-ensembl-seq";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
-#@result_files = ();
-
 ### Read the CGI query
 $query = new CGI;
 
@@ -45,6 +40,11 @@ $query = new CGI;
 
 # $ENV{rsat_echo}=2;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$prefix = "retrieve-ensembl-seq";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
+#@result_files = ();
 
 ################################################################
 ## Single or multi-genome query

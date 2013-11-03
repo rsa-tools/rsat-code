@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.24 2012/08/06 08:43:50 jvanheld Exp $
+# $Id: consensus.cgi,v 1.25 2013/11/03 19:33:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -12,6 +12,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
@@ -25,14 +26,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = $BIN."/consensus";
-#$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
-$convert_matrix_command = "$SCRIPTS/convert-matrix -from consensus -return counts";
-$convert_seq_command = "$SCRIPTS/convert-seq";
-#$tmp_file_name = sprintf "consensus.%s", &AlphaDate();
-$prefix = "consensus";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -48,9 +41,18 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
+$command = $BIN."/consensus";
+#$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -from consensus -return counts";
+$convert_seq_command = "$SCRIPTS/convert-seq";
+#$tmp_file_name = sprintf "consensus.%s", &AlphaDate();
+$prefix = "consensus";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+@result_files = ();
+
 ################################################################
 #
-# read parameters
+# Read parameters
 #
 
 ### sequence file ####

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.53 2013/10/14 10:09:47 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.54 2013/11/03 19:33:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -30,15 +30,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 require "RSA.disco.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
-
-## Commands to be used
-$dyad_analysis_command = "$SCRIPTS/dyad-analysis";
-$convert_seq_command = "$SCRIPTS/convert-seq";
-$purge_sequence_command = "$SCRIPTS/purge-sequence";
-$prefix = "dyad-analysis";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
@@ -53,6 +44,17 @@ $query = new CGI;
 
 ## update log file
 &UpdateLogFile();
+
+
+## Commands to be used
+$dyad_analysis_command = "$SCRIPTS/dyad-analysis";
+$convert_seq_command = "$SCRIPTS/convert-seq";
+$purge_sequence_command = "$SCRIPTS/purge-sequence";
+$prefix = "dyad-analysis";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
+
+@result_files = ();
 
 #### read parameters ####
 $parameters = " -v 1 -quick -sort";
