@@ -17,9 +17,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "cgi-lib.pl";
-$XYgraph_command = "$SCRIPTS/XYgraph";
-$prefix = "XYgraph";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
@@ -36,6 +33,10 @@ $ENV{rsat_echo}=1;
 
 ## update log file
 &UpdateLogFile();
+
+$XYgraph_command = "$SCRIPTS/XYgraph";
+$prefix = "XYgraph";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 
 #### read parameters ####
 $parameters = " -v 1";

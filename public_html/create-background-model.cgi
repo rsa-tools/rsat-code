@@ -17,18 +17,12 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/oligo-analysis -v 1 -quick ";
-$prefix = "create-bg";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-@result_files = ();
-
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the header
 &RSA_header("create-background-model result", 'results');
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -37,6 +31,11 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$command = "$SCRIPTS/oligo-analysis -v 1 -quick ";
+$prefix = "create-bg";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+@result_files = ();
 
 #### read parameters ####
 my $parameters;

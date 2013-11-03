@@ -19,19 +19,12 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = $SCRIPTS."/permute-matrix";
-$prefix = "permute-matrix";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "permute-matrix.%s", &AlphaDate();
-$ENV{rsat_echo} = 1;
-@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the header
 &RSA_header("permute-matrix result", 'results');
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -40,6 +33,13 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$command = $SCRIPTS."/permute-matrix";
+$prefix = "permute-matrix";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "permute-matrix.%s", &AlphaDate();
+$ENV{rsat_echo} = 1;
+@result_files = ();
 
 #### read parameters ####
 local $parameters = " -v 0";
@@ -160,7 +160,6 @@ sub PipingForm {
 -->
 
 <td valign="bottom" align="center">
-<b><font color=red>new</a></b>
 <form method="POST" action="matrix-scan_form.cgi">
 <input type="hidden" name="title" value="$title">
 <input type="hidden" name="matrix_file" value="$result_file">

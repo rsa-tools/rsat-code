@@ -5,6 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
@@ -27,16 +28,14 @@ $query = new CGI;
 &RSA_header("print-env result");
 &ListParameters if ($ENV{rsat_echo} >=2);
 
-
-#
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
 
-#### execute the command #####
-
+################################################################
+## Execute the command
 print "<PRE>\n";
 $result = `$print_env_command`;
 print $result;

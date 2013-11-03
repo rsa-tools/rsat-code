@@ -8,11 +8,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/get-orthologs";
-$prefix = "get-orthologs";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
-@result_files = ();
 
 #$ENV{rsat_echo}=2;
 
@@ -22,7 +17,6 @@ $query = new CGI;
 ### Print the header
 &RSA_header("get-orthologs result", "results");
 
-
 ## Check security issues
 &CheckWebInput($query);
 
@@ -31,9 +25,15 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-&cgiMessage(join("<P>",
-		 "The computation can take a more or less important time depending on the taxon size.",
-		 "If the answer does not appear in due time, use the option <i>output email</i>"));
+$command = "$SCRIPTS/get-orthologs";
+$prefix = "get-orthologs";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
+@result_files = ();
+
+
+&RSAT::message::Warning("The computation can take a more or less important time depending on the taxon size.",
+			"If the answer does not appear in due time, use the option <i>output email</i>");
 
 
 #### read parameters ####

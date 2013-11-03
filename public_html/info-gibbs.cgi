@@ -22,17 +22,6 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
-
-$command = "$ENV{RSAT}/contrib/info-gibbs/info-gibbs";
-#$command = "$ENV{RSAT}/python-scripts/info-gibbs-python";
-
-
-#$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
-$convert_seq_command = "$SCRIPTS/convert-seq";
-$prefix = "info-gibbs";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -47,6 +36,15 @@ $query = new CGI;
 
 ## update log file
 &UpdateLogFile();
+
+@result_files = ();
+$command = "$ENV{RSAT}/contrib/info-gibbs/info-gibbs";
+#$command = "$ENV{RSAT}/python-scripts/info-gibbs-python";
+#$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
+$convert_seq_command = "$SCRIPTS/convert-seq";
+$prefix = "info-gibbs";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate();
 
 ################################################################
 #

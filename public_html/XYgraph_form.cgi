@@ -9,10 +9,6 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
-$XYgraph_command = "$SCRIPTS/XYgraph";
-##$tmp_file_name = sprintf "XYgraph.%s", &AlphaDate();
-$prefix = "XYgraph";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
