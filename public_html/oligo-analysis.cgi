@@ -23,16 +23,6 @@ require "RSA.lib";
 require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
-
-## Commands
-$oligo_analysis_command = $SCRIPTS."/oligo-analysis";
-$convert_seq_command = $SCRIPTS."/convert-seq";
-$purge_sequence_command = $SCRIPTS."/purge-sequence";
-$prefix = "oligo-analysis";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-
-#$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -46,6 +36,17 @@ $query = new CGI;
 
 ## update log file
 &UpdateLogFile();
+
+@result_files = ();
+
+## Commands
+$oligo_analysis_command = $SCRIPTS."/oligo-analysis";
+$convert_seq_command = $SCRIPTS."/convert-seq";
+$purge_sequence_command = $SCRIPTS."/purge-sequence";
+$prefix = "oligo-analysis";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+
+#$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 #### read parameters ####
 $parameters = "";

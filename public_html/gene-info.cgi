@@ -16,13 +16,6 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/gene-info";
-$prefix = "gene-info";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
-@result_files = ();
-
 
 ### Read the CGI query
 $query = new CGI;
@@ -32,6 +25,13 @@ $query = new CGI;
 
 ## Check security issues
 &CheckWebInput($query);
+
+$command = "$SCRIPTS/gene-info";
+$prefix = "gene-info";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
+@result_files = ();
 
 #### read parameters ####
 $parameters = " -v 1";

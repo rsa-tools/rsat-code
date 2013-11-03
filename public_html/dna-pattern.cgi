@@ -18,11 +18,6 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 @result_files = ();
 
-$command = "$SCRIPTS/dna-pattern";
-$prefix = "dna-pattern";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
-
 ### Read the CGI query
 $query = new CGI;
 
@@ -31,17 +26,20 @@ $query = new CGI;
 
 &ListParameters if ($ENV{rsat_echo} >= 2);
 
-
-
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
 
+
+$command = "$SCRIPTS/dna-pattern";
+$prefix = "dna-pattern";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
+
 #### read parameters ####
-$parameters = "";
-$parameters .= " -v";
+$parameters = " -v 1";
 
 ### pattern file ####
 unless ($query->param('patterns') =~ /\S/) {

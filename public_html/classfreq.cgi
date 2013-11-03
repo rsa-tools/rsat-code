@@ -15,11 +15,6 @@ BEGIN {
 }
 require "RSA.lib";
 require "RSA2.cgi.lib";
-$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/classfreq";
-$prefix = "classfreq";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-@result_files = ();
 
 ### Read the CGI query
 $query = new CGI;
@@ -34,6 +29,12 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+$command = "$SCRIPTS/classfreq";
+$prefix = "classfreq";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+@result_files = ();
 
 #### read parameters ####
 $parameters = " -v 1";

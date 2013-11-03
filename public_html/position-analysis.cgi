@@ -20,10 +20,22 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-#### TEMPORARY
 #$ENV{rsat_echo}=2;
-@result_files = ();
 
+## Read the CGI query
+$query = new CGI;
+
+## print the result page
+&RSA_header("position-analysis result", "results");
+&ListParameters() if ($ENV{rsat_echo} >=2);
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
+
+@result_files = ();
 $position_analysis_command = $SCRIPTS."/position-analysis";
 $convert_seq_command = $SCRIPTS."/convert-seq";
 $purge_sequence_command = $SCRIPTS."/purge-sequence";
@@ -40,19 +52,6 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 #$prefix = "position-analysis";
 #$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 #$tmp_file_name = sprintf "position-analysis.%s", &AlphaDate;
-
-## Read the CGI query
-$query = new CGI;
-
-## print the result page
-&RSA_header("position-analysis result", "results");
-&ListParameters() if ($ENV{rsat_echo} >=2);
-
-## Check security issues
-&CheckWebInput($query);
-
-## update log file
-&UpdateLogFile();
 
 ## Read parameters ####
 $parameters = " -v 2";
