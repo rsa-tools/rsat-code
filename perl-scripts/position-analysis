@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.99 2013/10/11 10:55:12 jvanheld Exp $
+# $Id: position-analysis,v 1.100 2013/11/03 23:51:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -118,6 +118,8 @@ package main;
     our %outfile = (); our @outfiles = ();
     our %graphfile = (); our @graphfiles = (); ## graph files to index + display
 
+    our $html_index;
+
     &ReadArguments();
 
     ##############################
@@ -201,6 +203,7 @@ package main;
     ## HTML file(s)
     if ($return{index}) {
       $outfile{html_index} = $output_prefix."_index.html";
+      &OpenHtmlIndex();
     }
 
     ## Export output in HTML format (beware, this can take a lot of space)
@@ -2354,11 +2357,23 @@ sub GenerateGraphs {
 
 
 ################################################################
-## Generate a HTML index
-sub HtmlIndex {
+## Open the HTML index at the beginning of the script, in order to
+## have the header ready for the Web site (rather than a "Not found"
+## error)
+sub OpenHtmlIndex {
 #    &RSAT::message::Info("Writing HTML index") if ($main::verbose >= 2);
-    local $html_index = &OpenOutputFile($main::outfile{html_index});
+    $html_index = &OpenOutputFile($main::outfile{html_index});
+    
+
+    my $refresh_time;
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+	$refresh_time = 120;
+    } else {
+	$refresh_time = 0;
+    }
+
     my $header = &PrintHtmlResultHeader(program=>"position-analysis", refresh_time=>0);
+#    my $header =  &PrintHtmlResultHeader(program=>"position-analysis", "result_toc"=>0, refresh_time=>$refresh_time);
     print $html_index $header;
 
     ## Report command
@@ -2366,6 +2381,11 @@ sub HtmlIndex {
     &PrintArguments($html_index, 1);
     print $html_index "</tt></p>\n";
 
+}
+
+################################################################
+## Generate a HTML index
+sub HtmlIndex {
 
     &IndexFiles();
 
