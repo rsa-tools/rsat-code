@@ -234,10 +234,12 @@ sub RSA_header {
   #    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection" />
 #    <link rel="stylesheet" type="text/css" href="print.css" media="print" />
 
+
   #  print &html_header();
   print $query->header();
 
   print sorttable_script();
+
 
   ### print the header of the result page
   print $query->start_html(-title=>"RSA-tools : $title",
@@ -409,6 +411,9 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
 
   } else {
+
+#      &RSAT::message::Debug("default sequence",$default{sequence});
+#      &RSAT::message::Debug("default sequence_url",$default{sequence_url});
 
     ## text area to copy-paste the sequence
     $sequenceChoiceString .=  "&nbsp;"x5;
@@ -681,24 +686,28 @@ sub PipingWarning {
 }
 
 
-### display a pop-up menu with a selection of organism on the basis of
-### the server-specific list of supported organisms
-
+################################################################
+## Display a pop-up menu with a selection of organism on the basis of
+## the server-specific list of supported organisms.
 sub OrganismPopUp {
     print &OrganismPopUpString(@_);
 }
+
 sub OrganismPopUpString {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
 ##	@selected_organisms = &ListSupportedOrganisms("keys");
 	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
+#	die join("\n", @selected_organisms, "HELLO");
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     $organismPopup .=  "<SELECT NAME='organism'>\n";
     foreach my $org (@selected_organisms) {
 	if (defined($supported_organism{$org})) {
-	    $name = $supported_organism{$org}->{'name'};
+	    my $name = $org;
+	    $name =~ s/\_/ /g;
+#	    $name = $supported_organism{$org}->{'name'};
 	    if ((lc($org) eq lc($default{organism})) ||
 		(lc($name) eq lc($default{organism}))) {
 		$organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
