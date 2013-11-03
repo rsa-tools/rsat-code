@@ -10,9 +10,6 @@ require "RSA2.cgi.lib";
 require "footprint.lib.pl";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/footprint-discovery";
-
-#$ENV{rsat_echo}=2;
 
 ### Read the CGI query
 $query = new CGI;
@@ -28,6 +25,10 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$command = "$SCRIPTS/footprint-discovery";
+
+#$ENV{rsat_echo}=2;
 
 #### read parameters ####
 $parameters = " -v 1";
@@ -104,20 +105,8 @@ unless ($taxon = $query->param('taxon')) {
 $parameters .= " -taxon $taxon";
 
 ################################################################
-## File prefix
-#$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
-#$result_subdir = $tmp_file_name;
-#$result_dir = $TMP."/".$result_subdir;
-#$result_dir =~ s|\/\/|\/|g;
-#&RSAT::util::CheckOutDir($result_dir);
-
-#$prefix = "footprint-discovery";
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$result_subdir = $tmp_file_name;
-#$result_dir = $tmp_file_dir."/".$result_subdir;
-#$result_dir =~ s|\/\/|\/|g;
-#&RSAT::util::CheckOutDir($result_dir);
-
+## Create output directory. This must be done after having read the
+## organism and taxon, in order to include these in the path.
 $tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
 $result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);

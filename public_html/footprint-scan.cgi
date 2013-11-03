@@ -9,7 +9,6 @@ require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/footprint-scan";
 
 #$ENV{rsat_echo}=2;
 
@@ -19,7 +18,6 @@ $query = new CGI;
 ### Print the header
 &RSA_header("footprint-scan result", "results");
 
-
 ## Check security issues
 &CheckWebInput($query);
 
@@ -27,6 +25,8 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
+
+$command = "$SCRIPTS/footprint-scan";
 
 #### read parameters ####
 $parameters = " -v 2 -synthesis  -sep_genes ";
@@ -91,7 +91,8 @@ unless ($taxon = $query->param('taxon')) {
 $parameters .= " -taxon $taxon";
 
 ################################################################
-## Create output directory
+## Create output directory. This must be done after having read the
+## organism and taxon, in order to include these in the path.
 $tmp_file_name = join( "_", "footprint-scan", $taxon, $organism_name, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
 $result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);

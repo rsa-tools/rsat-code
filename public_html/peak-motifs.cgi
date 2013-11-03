@@ -20,6 +20,21 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+################################################################
+## result page header
+### Read the CGI query
+$query = new CGI;
+
+### print the result page
+&RSA_header("peak-motifs result", "results");
+
+&ListParameters() if ($ENV{rsat_echo} >=2);
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
 
 ## peak-motifs command
 $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
@@ -34,20 +49,6 @@ $output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1
 $output_prefix = "peak-motifs";
 system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 
-################################################################
-## result page header
-### Read the CGI query
-$query = new CGI;
-
-### print the result page
-&RSA_header("peak-motifs result", "results");
-&ListParameters() if ($ENV{rsat_echo} >=2);
-
-## Check security issues
-&CheckWebInput($query);
-
-## update log file
-&UpdateLogFile();
 
 ################################################################
 ## command line paramters

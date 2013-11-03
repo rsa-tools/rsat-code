@@ -448,15 +448,15 @@ exit(0);
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
 
-print '<b><a href="help.local-word-analysis.html#thresholds">Thresholds</b><a/><br />';
+print '<b><a href="help.local-word-analysis.html#thresholds">Thresholds</a><br />', "\n";
 
 #print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>CENTER},
 			 [
 			  $query->th(["Fields ",
-				   " <a href='help.local-word-analysis.html#thresholds'>Lower<br />Threshold</a> ",
-				   " <a href='help.local-word-analysis.html#thresholds'>Upper<br />Threshold</a> "]),
+				   " <a href='help.local-word-analysis.html#thresholds'>Lower<br>Thresholds</a>\n",
+				   " <a href='help.local-word-analysis.html#thresholds'>Upper<br>Thresholds</a>\n"]),
 
 			  ### occurrences
 			  $query->td(['Occurrences',

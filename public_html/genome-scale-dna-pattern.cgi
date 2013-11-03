@@ -17,15 +17,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$ENV{RSAT}/public_html/genome-scale.lib.pl";
-@result_files = ();
-
-$dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
-$add_linenb_command = "$SCRIPTS/add-linenb";
-$add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
-$link_command = "$SCRIPTS/add-yeast-link -db all ";
-$prefix = "gs-dna-pattern";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
@@ -35,13 +26,21 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-
-
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
+
+@result_files = ();
+$dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
+$add_linenb_command = "$SCRIPTS/add-linenb";
+$add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
+$link_command = "$SCRIPTS/add-yeast-link -db all ";
+$prefix = "gs-dna-pattern";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
+
 
 ################################################################
 #

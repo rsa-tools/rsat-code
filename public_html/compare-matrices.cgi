@@ -21,17 +21,6 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ################################################################
-## Output paths
-$command = "$ENV{RSAT}/perl-scripts/compare-matrices";
-
-$output_prefix = "compare-matrices";
-$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
-
-## We need to create the output directory before starting
-## compare-matrices, since it will generate multiple output files.
-system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
-
-################################################################
 ## result page header
 ### Read the CGI query
 $query = new CGI;
@@ -46,6 +35,18 @@ $query = new CGI;
 
 ## update log file
 &UpdateLogFile();
+
+
+################################################################
+## Output paths
+$command = "$ENV{RSAT}/perl-scripts/compare-matrices";
+
+$output_prefix = "compare-matrices";
+$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
+
+## We need to create the output directory before starting
+## compare-matrices, since it will generate multiple output files.
+system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 
 ################################################################
 ## command line paramters

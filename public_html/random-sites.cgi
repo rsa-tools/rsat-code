@@ -22,13 +22,6 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-@result_files = ();
-
-$command = "$ENV{RSAT}/python-scripts/random-sites";
-$convert_matrix_command = "$SCRIPTS/convert-matrix -return counts";
-$prefix = "random-sites";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "random-sites.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -37,12 +30,19 @@ $query = new CGI;
 &RSA_header("random-sites result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
-
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
+
+@result_files = ();
+
+$command = "$ENV{RSAT}/python-scripts/random-sites";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -return counts";
+$prefix = "random-sites";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "random-sites.%s", &AlphaDate();
 
 ################################################################
 #

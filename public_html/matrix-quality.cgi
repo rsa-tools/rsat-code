@@ -18,7 +18,7 @@ require RSAT::util;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = $SCRIPTS."/matrix-quality";
+
 #$ENV{rsat_echo} = 1;
 
 ### Read the CGI query
@@ -26,7 +26,6 @@ $query = new CGI;
 
 ### print the header
 &RSA_header("matrix-quality result", 'results');
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -36,11 +35,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-#### read parameters ####
-local $parameters = " -v 0";
-################################################################
-## File prefix
-
+$command = $SCRIPTS."/matrix-quality";
 #$prefix = "matrix-quality";
 #$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 #system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
@@ -57,6 +52,12 @@ my $tmp_file_name = $result_dir."/".$file_prefix;
 		     "<br>Result dir: ", $result_dir,
 #		     "<br>Result subdir: ", $result_subdir, 
 		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 1);
+
+#### read parameters ####
+local $parameters = " -v 0";
+################################################################
+## File prefix
+
 
 #####################
 #Title specification

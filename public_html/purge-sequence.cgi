@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.16 2012/08/06 23:00:42 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.17 2013/11/03 19:33:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -25,13 +25,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = "$SCRIPTS/purge-sequence";
-$prefix = "purge-sequence";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "purge-sequence.%s", &AlphaDate;
-$out_format = "fasta";
-@result_files = ();
-
 ### Read the CGI query
 $query = new CGI;
 
@@ -39,12 +32,19 @@ $query = new CGI;
 &RSA_header("purge-sequence result", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-
 ## Check security issues
 &CheckWebInput($query);
 
 ## update log file
 &UpdateLogFile();
+
+$command = "$SCRIPTS/purge-sequence";
+$prefix = "purge-sequence";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+#$tmp_file_name = sprintf "purge-sequence.%s", &AlphaDate;
+$out_format = "fasta";
+@result_files = ();
+
 
 ################################################################
 #
