@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_software.mk,v 1.53 2013/10/09 03:35:56 jvanheld Exp $
+# $Id: install_software.mk,v 1.54 2013/11/03 19:35:38 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -12,7 +12,7 @@
 ## and the configuration of the paths and environment variables for
 ## the users.
 
-include makefiles/util.mk
+include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/install_software.mk
 MAKE=make -f ${MAKEFILE}
 V=1
@@ -55,6 +55,10 @@ PERL_MODULES= \
 	File::Spec \
 	POSIX \
 	Data::Dumper \
+	Digest::MD5::File \
+	IO::All \
+	LockFile::Simple \
+	Object::InsideOut \
 	Util::Properties \
 	Class::Std::Fast  \
 	GD \
@@ -62,6 +66,7 @@ PERL_MODULES= \
 	JSON \
 	MIME::Base64 \
 	XML::LibXML \
+	XML::LibXML::Simple \
 	XML::Compile \
 	XML::Compile::Cache \
 	XML::Compile::SOAP11 \
@@ -83,8 +88,12 @@ PERL_MODULES= \
 
 PERL_MODULES_PROBLEMS= \
 
+PERLMOD_TO_UPGRADE=Archive::Tar
 
 list_perl_modules:
+	@echo
+	@echo "Perl modules to be upgraded (manually)"
+	@echo ${}
 	@echo
 	@echo "Perl modules to be installed"
 	@echo "----------------------------"
@@ -103,6 +112,17 @@ PERL='/usr/bin/perl'
 _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
+
+# ## Some modules must be upgraded befinre installing required ones
+# upgrade_perl_modules:
+# 	@for module in ${PERLMOD_TO_UPGRADE}; do \
+# 		${MAKE} _upgrade_one_perl_module PERL_MODULE=$${module}; \
+# 	done
+
+# ## Upgrade a single Perl module
+# _upgrade_one_perl_module:
+# 	@echo "Upgrading Perl module ${PERL_MODULE}"
+# 	@${SUDO} ${PERL} -MCPAN -e 'upgrade ${PERL_MODULE}'
 
 
 ################################################################
