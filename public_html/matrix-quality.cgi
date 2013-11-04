@@ -36,10 +36,6 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 $command = $SCRIPTS."/matrix-quality";
-#$prefix = "matrix-quality";
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#system("rm -f $tmp_file_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
-#my $date = &AlphaDate();
 my $result_dir = &RSAT::util::make_temp_file("","matrix-quality", 1,1);
 system("mkdir -p $result_dir ; chmod 755 $result_dir ");
 
