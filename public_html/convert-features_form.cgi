@@ -20,10 +20,10 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 #local @supported_input_formats = sort(keys(%RSAT::feature::supported_input_format));
-local @supported_input_formats = qw(bed dnapat ft galaxy_seq gft gff gff3bed great swembl ucsc_seq);
+local @supported_input_formats = qw(bed dnapat ft galaxy_seq gft gff gff3bed swembl ucsc_seq);
 
 #local @supported_output_formats = sort(keys(%RSAT::feature::supported_output_format));
-local @supported_output_formats = qw(bed dnapat ft fasta gft gff gff3);
+local @supported_output_formats = qw(bed dnapat ft fasta gft gff gff3 great);
 
 ##my $input_formats = join (",",@supported_input_formats);
 
