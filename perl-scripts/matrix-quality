@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.155 2013/09/10 22:36:03 amedina Exp $
+# $Id: matrix-quality,v 1.156 2013/11/04 01:14:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -244,6 +244,7 @@ BEGIN {
 }
 
 require "RSA.lib";
+require "RSA2.cgi.lib";
 use POSIX qw(ceil floor);
 use RSAT::matrix;
 use RSAT::MatrixReader;
@@ -3029,23 +3030,26 @@ sub PostVerbose {
 ################################################################
 ## Summarize results in a HTML report
 sub GenerateHTMLReport {
-    local $synthesis_per_matrix_file=$_[0];
+    local ($synthesis_per_matrix_file) = @_;
     &RSAT::message::Debug("Generating report per matrix", $synthesis_per_matrix_file) if ($main::verbose >=1);
 
   ################################################################
   ## Open HTML outstream
   my $synthesis_per_matrix = &OpenOutputFile($synthesis_per_matrix_file);
 
-  print $synthesis_per_matrix "<html>\n";
-  print $synthesis_per_matrix "<head>\n";
-  print $synthesis_per_matrix "<title>matrix-quality result: ",$matrix_name,"</title>\n";
-  print $synthesis_per_matrix "</head>\n\n";
-  print $synthesis_per_matrix "<body>\n\n";
+#  print $synthesis_per_matrix "<html>\n";
+#  print $synthesis_per_matrix "<head>\n";
+#  print $synthesis_per_matrix "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+#  print $synthesis_per_matrix "</head>\n\n";
+#  print $synthesis_per_matrix "<body>\n\n";
+
+    my $header = &PrintHtmlResultHeader(program=>"matrix-quality", title=>"matrix-quality result: ".$matrix_name,refresh_time=>0);
+    print $synthesis_per_matrix $header;
 
   ## Print the command
   print $synthesis_per_matrix "<h1>matrix-quality result: ", $local_html_title,"</h1>\n\n";
-  print $synthesis_per_matrix "<b>Command:</b>\n";
-  print $synthesis_per_matrix "<pre>matrix-quality ";
+  print $synthesis_per_matrix "<pre><b>Command:</b> ";
+  print $synthesis_per_matrix "matrix-quality ";
   &PrintArguments($synthesis_per_matrix);
   print $synthesis_per_matrix "</pre>";
 
@@ -3170,27 +3174,31 @@ sub OpenGeneralHTMLReport{
     ## Open HTML outstream
     $synthesis_general = &OpenOutputFile($synthesis_general_file);
 
-    print $synthesis_general "<html>\n";
-    print $synthesis_general "<head>\n";
-    print $synthesis_general "<title>matrix-quality result</title>\n";
-    print $synthesis_general "</head>\n\n";
-    print $synthesis_general "<body>\n\n";
+#    print $synthesis_general "<html>\n";
+#    print $synthesis_general "<head>\n";
+#    print $synthesis_general "<title>matrix-quality result</title>\n";
+#    print $synthesis_general "</head>\n\n";
+#    print $synthesis_general "<body>\n\n";
+
+    my $header = &PrintHtmlResultHeader("program"=>"matrix-quality", "title"=>"matrix-quality result");
+    print $synthesis_general $header;
 
     ## Print the command
     print $synthesis_general "<h1>matrix-quality result: ", $main::html_title,"</h1>\n\n";
-    print $synthesis_general "<b>Command:</b>\n";
-    print $synthesis_general "<pre>matrix-quality ";
+    print $synthesis_general "<pre><b>Command:</b> ";
+    print $synthesis_general "matrix-quality ";
     &PrintArguments($synthesis_general);
-    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
+    print $synthesis_general "</pre>\n";
+
+#    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
+    print $synthesis_general "<td><table class='whitebg'>\n";
     print  $synthesis_general "<tr>";
     print  $synthesis_general "<th>Matrix name</th>" ;
     print  $synthesis_general "<th>Logo</th>";
     print  $synthesis_general "<th>HTML report</th>" ;
-
 }
 
 sub CloseGeneralHTMLReport{
-
     my $synthesis_general_file=$_[0];
     print  $synthesis_general   "</table>";
 
@@ -3218,10 +3226,6 @@ sub CloseGeneralHTMLReport{
 	    print  $synthesis_general   "</table>"; 
 	}
     }
-
- 
-
-
     print $synthesis_general "</pre>";
     ## Close the index file
     print $synthesis_general "</body></html>\n";
@@ -3253,12 +3257,8 @@ sub Add_info_to_GeneralHTML_Report{
     }
 
     print  $synthesis_general "</tr>";
-
 	 
     #}
-
-
-
 }
 
 __END__
