@@ -17,7 +17,6 @@ $query = new CGI;
 ### Print the header
 &RSA_header("footprint-discovery result", "results");
 
-
 ## Check security issues
 &CheckWebInput($query);
 

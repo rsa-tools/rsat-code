@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.64 2013/10/01 10:41:40 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.65 2013/11/04 01:19:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -894,15 +894,16 @@ sub QuickScanForSites {
     }
   }
 
-  ## Delete previous versions of the sig_sites before appending
+  ## Delete previous versions of the sig_sites before apending
   ## new scanning results for each matrix
-  unlink($outfile{'sig_sites'});
+  unlink($outfile{sig_sites});
 
   ## Append the sites for each matrix in a feature file
   my $matrix_nb = scalar(@split_files);
   for my $m (1..$matrix_nb) {
     my $matrix_file = $split_files[$m-1];
     my $matrix_id = $split_ids[$m-1];
+    $outfile{"sig_sites_m".$m} =  $outfile{output}."_sig_sites_m".$m.".ft";
 
     my $matrix_name;
     if ($main::matrix_prefix) {
@@ -921,8 +922,9 @@ sub QuickScanForSites {
       $scan_cmd .= " -name ".$matrix_name;
       $scan_cmd .= " ".$strands;
       $scan_cmd .= $quick_scan_parameters;
-      $scan_cmd .= " >> ".$outfile{'sig_sites'};
-      print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+#      $scan_cmd .= " > ".$outfile{"sig_sites_m".$m};
+      $scan_cmd .= " >> ".$outfile{sig_sites};
+      print $log "\n; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
       &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
   }
