@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:fa7beb90-8d1e-4f95-9b1a-17434ffee8be" author="" title="RSAT_retrieve_purge_oligo" />
+  <s:processor name="retrieve_seq">
+    <s:description>Returns upstream, downstream or coding DNA sequences
+           for list of query genes.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>retrieve_seq</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="retrieve_seq" name="parameters" qname="{urn:RSATWS}retrieve_seq">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="RetrieveSequenceRequest" name="request" qname="&gt;retrieve_seq&gt;request">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="RetrieveSequenceRequest&gt;output" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="organism" qname="RetrieveSequenceRequest&gt;organism" />
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="query" qname="RetrieveSequenceRequest&gt;query">
+                  <s:elementtype>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  </s:elementtype>
+                </s:arraytype>
+                <s:basetype optional="true" unbounded="false" typename="int" name="all" qname="RetrieveSequenceRequest&gt;all" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="noorf" qname="RetrieveSequenceRequest&gt;noorf" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="from" qname="RetrieveSequenceRequest&gt;from" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="to" qname="RetrieveSequenceRequest&gt;to" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="feattype" qname="RetrieveSequenceRequest&gt;feattype" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="type" qname="RetrieveSequenceRequest&gt;type" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="RetrieveSequenceRequest&gt;format" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="lw" qname="RetrieveSequenceRequest&gt;lw" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="label" qname="RetrieveSequenceRequest&gt;label" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="label_sep" qname="RetrieveSequenceRequest&gt;label_sep" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="nocom" qname="RetrieveSequenceRequest&gt;nocom" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="repeat" qname="RetrieveSequenceRequest&gt;repeat" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="imp_pos" qname="RetrieveSequenceRequest&gt;imp_pos" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="RetrieveSequenceRequest" name="request" qname="&gt;retrieve_seq&gt;request">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="RetrieveSequenceRequest&gt;output" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="organism" qname="RetrieveSequenceRequest&gt;organism" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="query" qname="RetrieveSequenceRequest&gt;query">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="true" unbounded="false" typename="int" name="all" qname="RetrieveSequenceRequest&gt;all" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="noorf" qname="RetrieveSequenceRequest&gt;noorf" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="from" qname="RetrieveSequenceRequest&gt;from" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="to" qname="RetrieveSequenceRequest&gt;to" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="feattype" qname="RetrieveSequenceRequest&gt;feattype" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="type" qname="RetrieveSequenceRequest&gt;type" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="RetrieveSequenceRequest&gt;format" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="lw" qname="RetrieveSequenceRequest&gt;lw" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="label" qname="RetrieveSequenceRequest&gt;label" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="label_sep" qname="RetrieveSequenceRequest&gt;label_sep" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="nocom" qname="RetrieveSequenceRequest&gt;nocom" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="repeat" qname="RetrieveSequenceRequest&gt;repeat" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="imp_pos" qname="RetrieveSequenceRequest&gt;imp_pos" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="outputXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="retrieve_seqResponse" name="output" qname="{urn:RSATWS}retrieve_seqResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="RetrieveSequenceResponse" name="response" qname="&gt;retrieve_seqResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="RetrieveSequenceResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="RetrieveSequenceResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="RetrieveSequenceResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseXML">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="RetrieveSequenceResponse" name="response" qname="&gt;retrieve_seqResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="RetrieveSequenceResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="RetrieveSequenceResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="RetrieveSequenceResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="purge_seq">
+    <s:description>Mask repeated fragments of an input sequence.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>purge_seq</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="purge_seq" name="parameters" qname="{urn:RSATWS}purge_seq">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PurgeSequenceRequest" name="request" qname="&gt;purge_seq&gt;request">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="PurgeSequenceRequest&gt;output" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="PurgeSequenceRequest&gt;sequence" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="tmp_infile" qname="PurgeSequenceRequest&gt;tmp_infile" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="PurgeSequenceRequest&gt;format" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="match_length" qname="PurgeSequenceRequest&gt;match_length" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="mismatch" qname="PurgeSequenceRequest&gt;mismatch" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="str" qname="PurgeSequenceRequest&gt;str" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="delete" qname="PurgeSequenceRequest&gt;delete" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="mask_short" qname="PurgeSequenceRequest&gt;mask_short" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PurgeSequenceRequest" name="request" qname="&gt;purge_seq&gt;request">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="PurgeSequenceRequest&gt;output" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="PurgeSequenceRequest&gt;sequence" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="tmp_infile" qname="PurgeSequenceRequest&gt;tmp_infile" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="PurgeSequenceRequest&gt;format" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="match_length" qname="PurgeSequenceRequest&gt;match_length" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="mismatch" qname="PurgeSequenceRequest&gt;mismatch" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="str" qname="PurgeSequenceRequest&gt;str" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="delete" qname="PurgeSequenceRequest&gt;delete" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="mask_short" qname="PurgeSequenceRequest&gt;mask_short" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="outputXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="purge_seqResponse" name="output" qname="{urn:RSATWS}purge_seqResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PurgeSequenceResponse" name="response" qname="&gt;purge_seqResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="PurgeSequenceResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="PurgeSequenceResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="PurgeSequenceResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseXML1">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PurgeSequenceResponse" name="response" qname="&gt;purge_seqResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="PurgeSequenceResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="PurgeSequenceResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="PurgeSequenceResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="oligo_analysis">
+    <s:description>Analysis of the statistical significance of all the oligomers
+	   of a given size in a sequence. Commonly used to detect
+	   over-represented oligonucleotides in a set of promoter
+	   sequences.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>oligo_analysis</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="oligo_analysis" name="parameters" qname="{urn:RSATWS}oligo_analysis">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="OligoAnalysisRequest" name="request" qname="&gt;oligo_analysis&gt;request">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="OligoAnalysisRequest&gt;output" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="verbosity" qname="OligoAnalysisRequest&gt;verbosity" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="OligoAnalysisRequest&gt;sequence" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="tmp_infile" qname="OligoAnalysisRequest&gt;tmp_infile" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="OligoAnalysisRequest&gt;format" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="length" qname="OligoAnalysisRequest&gt;length" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="organism" qname="OligoAnalysisRequest&gt;organism" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="background" qname="OligoAnalysisRequest&gt;background" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="stats" qname="OligoAnalysisRequest&gt;stats" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="noov" qname="OligoAnalysisRequest&gt;noov" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="str" qname="OligoAnalysisRequest&gt;str" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="sort" qname="OligoAnalysisRequest&gt;sort" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="lth" qname="OligoAnalysisRequest&gt;lth" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="pseudo" qname="OligoAnalysisRequest&gt;pseudo" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="OligoAnalysisRequest" name="request" qname="&gt;oligo_analysis&gt;request">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="OligoAnalysisRequest&gt;output" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="verbosity" qname="OligoAnalysisRequest&gt;verbosity" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="OligoAnalysisRequest&gt;sequence" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="tmp_infile" qname="OligoAnalysisRequest&gt;tmp_infile" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="OligoAnalysisRequest&gt;format" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="length" qname="OligoAnalysisRequest&gt;length" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="organism" qname="OligoAnalysisRequest&gt;organism" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="background" qname="OligoAnalysisRequest&gt;background" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="stats" qname="OligoAnalysisRequest&gt;stats" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="noov" qname="OligoAnalysisRequest&gt;noov" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="str" qname="OligoAnalysisRequest&gt;str" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="sort" qname="OligoAnalysisRequest&gt;sort" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="lth" qname="OligoAnalysisRequest&gt;lth" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="pseudo" qname="OligoAnalysisRequest&gt;pseudo" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="Stats" boring="true">
+    <s:stringconstant>occ,proba,rank</s:stringconstant>
+  </s:processor>
+  <s:processor name="outputXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="oligo_analysisResponse" name="output" qname="{urn:RSATWS}oligo_analysisResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="OligoAnalysisResponse" name="response" qname="&gt;oligo_analysisResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="OligoAnalysisResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="OligoAnalysisResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="OligoAnalysisResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseXML2">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="OligoAnalysisResponse" name="response" qname="&gt;oligo_analysisResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="OligoAnalysisResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="OligoAnalysisResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="OligoAnalysisResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="dyad_analysis">
+    <s:description>Analysis of the statistical significance of all the
+	   spaced dyads
+	   of a given size in a sequence. Commonly used to detect
+	   over-represented spaced dyads in a set of promoter
+	   sequences.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>dyad_analysis</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="parametersXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="dyad_analysis" name="parameters" qname="{urn:RSATWS}dyad_analysis">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="DyadAnalysisRequest" name="request" qname="&gt;dyad_analysis&gt;request">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="DyadAnalysisRequest&gt;output" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="DyadAnalysisRequest&gt;sequence" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="tmp_infile" qname="DyadAnalysisRequest&gt;tmp_infile" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="DyadAnalysisRequest&gt;format" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="length" qname="DyadAnalysisRequest&gt;length" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="spacing" qname="DyadAnalysisRequest&gt;spacing" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="organism" qname="DyadAnalysisRequest&gt;organism" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="background" qname="DyadAnalysisRequest&gt;background" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="stats" qname="DyadAnalysisRequest&gt;stats" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="type" qname="DyadAnalysisRequest&gt;type" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="noov" qname="DyadAnalysisRequest&gt;noov" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="str" qname="DyadAnalysisRequest&gt;str" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="sort" qname="DyadAnalysisRequest&gt;sort" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="under" qname="DyadAnalysisRequest&gt;under" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="two_tails" qname="DyadAnalysisRequest&gt;two_tails" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="zeroocc" qname="DyadAnalysisRequest&gt;zeroocc" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="lth" qname="DyadAnalysisRequest&gt;lth" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="uth" qname="DyadAnalysisRequest&gt;uth" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="DyadAnalysisRequest" name="request" qname="&gt;dyad_analysis&gt;request">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="DyadAnalysisRequest&gt;output" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sequence" qname="DyadAnalysisRequest&gt;sequence" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="tmp_infile" qname="DyadAnalysisRequest&gt;tmp_infile" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="format" qname="DyadAnalysisRequest&gt;format" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="length" qname="DyadAnalysisRequest&gt;length" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="spacing" qname="DyadAnalysisRequest&gt;spacing" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="organism" qname="DyadAnalysisRequest&gt;organism" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="background" qname="DyadAnalysisRequest&gt;background" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="stats" qname="DyadAnalysisRequest&gt;stats" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="type" qname="DyadAnalysisRequest&gt;type" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="noov" qname="DyadAnalysisRequest&gt;noov" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="str" qname="DyadAnalysisRequest&gt;str" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="sort" qname="DyadAnalysisRequest&gt;sort" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="under" qname="DyadAnalysisRequest&gt;under" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="two_tails" qname="DyadAnalysisRequest&gt;two_tails" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="zeroocc" qname="DyadAnalysisRequest&gt;zeroocc" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="lth" qname="DyadAnalysisRequest&gt;lth" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="uth" qname="DyadAnalysisRequest&gt;uth" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="outputXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="dyad_analysisResponse" name="output" qname="{urn:RSATWS}dyad_analysisResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="DyadAnalysisResponse" name="response" qname="&gt;dyad_analysisResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="DyadAnalysisResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="DyadAnalysisResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="DyadAnalysisResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseXML3">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="DyadAnalysisResponse" name="response" qname="&gt;dyad_analysisResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="DyadAnalysisResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="DyadAnalysisResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="DyadAnalysisResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="runMotifSampler">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://tomcat.esat.kuleuven.be/axis/ToucanSOAPService.jws?wsdl</s:wsdl>
+      <s:operation>runMotifSampler</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="strand" boring="true">
+    <s:stringconstant>1</s:stringconstant>
+  </s:processor>
+  <s:processor name="prior" boring="true">
+    <s:stringconstant>0.2</s:stringconstant>
+  </s:processor>
+  <s:processor name="mnr" boring="true">
+    <s:stringconstant>4</s:stringconstant>
+  </s:processor>
+  <s:processor name="len" boring="true">
+    <s:stringconstant>8</s:stringconstant>
+  </s:processor>
+  <s:processor name="overlap" boring="true">
+    <s:stringconstant>1</s:stringconstant>
+  </s:processor>
+  <s:processor name="runs" boring="true">
+    <s:stringconstant>1</s:stringconstant>
+  </s:processor>
+  <s:link source="background" sink="requestXML3:background" />
+  <s:link source="backgroundMotifSampler" sink="runMotifSampler:bg" />
+  <s:link source="feattype" sink="requestXML:feattype" />
+  <s:link source="from" sink="requestXML:from" />
+  <s:link source="lth" sink="requestXML2:lth" />
+  <s:link source="noorf" sink="requestXML:noorf" />
+  <s:link source="organism" sink="requestXML:organism" />
+  <s:link source="outputs" sink="requestXML:output" />
+  <s:link source="Stats:value" sink="requestXML2:stats" />
+  <s:link source="background" sink="requestXML2:background" />
+  <s:link source="length" sink="requestXML2:length" />
+  <s:link source="noov" sink="requestXML2:noov" />
+  <s:link source="organism" sink="requestXML2:organism" />
+  <s:link source="Stats:value" sink="requestXML3:stats" />
+  <s:link source="dyad_analysis:output" sink="outputXML3:input" />
+  <s:link source="lengthDyad" sink="requestXML3:length" />
+  <s:link source="lth" sink="requestXML3:lth" />
+  <s:link source="noov" sink="requestXML3:noov" />
+  <s:link source="oligo_analysis:output" sink="outputXML2:input" />
+  <s:link source="organism" sink="requestXML3:organism" />
+  <s:link source="outputXML1:response" sink="responseXML1:input" />
+  <s:link source="outputs" sink="requestXML1:output" />
+  <s:link source="outputXML2:response" sink="responseXML2:input" />
+  <s:link source="outputXML3:response" sink="responseXML3:input" />
+  <s:link source="parametersXML2:output" sink="oligo_analysis:parameters" />
+  <s:link source="parametersXML3:output" sink="dyad_analysis:parameters" />
+  <s:link source="parametersXML:output" sink="retrieve_seq:parameters" />
+  <s:link source="query" sink="requestXML:query" />
+  <s:link source="purge_seq:output" sink="outputXML1:input" />
+  <s:link source="requestXML2:output" sink="parametersXML2:request" />
+  <s:link source="requestXML3:output" sink="parametersXML3:request" />
+  <s:link source="requestXML:output" sink="parametersXML:request" />
+  <s:link source="to" sink="requestXML:to" />
+  <s:link source="outputXML:response" sink="responseXML:input" />
+  <s:link source="parametersXML1:output" sink="purge_seq:parameters" />
+  <s:link source="requestXML1:output" sink="parametersXML1:request" />
+  <s:link source="responseXML1:server" sink="requestXML2:tmp_infile" />
+  <s:link source="responseXML1:server" sink="requestXML3:tmp_infile" />
+  <s:link source="responseXML:server" sink="requestXML1:tmp_infile" />
+  <s:link source="retrieve_seq:output" sink="outputXML:input" />
+  <s:link source="sort" sink="requestXML2:sort" />
+  <s:link source="sort" sink="requestXML3:sort" />
+  <s:link source="spacing" sink="requestXML3:spacing" />
+  <s:link source="len:value" sink="runMotifSampler:len" />
+  <s:link source="mnr:value" sink="runMotifSampler:mnr" />
+  <s:link source="overlap:value" sink="runMotifSampler:overlap" />
+  <s:link source="prior:value" sink="runMotifSampler:prior" />
+  <s:link source="responseXML1:client" sink="runMotifSampler:fasta" />
+  <s:link source="responseXML2:client" sink="resultOligo" />
+  <s:link source="responseXML3:client" sink="resultDyad" />
+  <s:link source="runMotifSampler:runMotifSamplerReturn" sink="resultMotifSampler" />
+  <s:link source="runs:value" sink="runMotifSampler:runs" />
+  <s:link source="strand:value" sink="runMotifSampler:strand" />
+  <s:source name="outputs" />
+  <s:source name="organism" />
+  <s:source name="query" />
+  <s:source name="noorf" />
+  <s:source name="from" />
+  <s:source name="to" />
+  <s:source name="feattype" />
+  <s:source name="length" />
+  <s:source name="background" />
+  <s:source name="noov" />
+  <s:source name="sort" />
+  <s:source name="lth" />
+  <s:source name="lengthDyad" />
+  <s:source name="spacing" />
+  <s:source name="backgroundMotifSampler" />
+  <s:sink name="resultOligo" />
+  <s:sink name="resultDyad" />
+  <s:sink name="resultMotifSampler" />
+</s:scufl>
+

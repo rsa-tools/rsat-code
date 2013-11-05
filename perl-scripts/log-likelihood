@@ -1,0 +1,181 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	log-likelihood
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        log-likelihood [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Calculates the log-likelihood value for a given table 
+	of numerical values.
+	
+CATEGORY
+	statistics
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+		returns a data report, i.e. a table with the input values
+		and the marginal sums.
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.		
+	
+INPUT FORMAT
+	The input must be a table containing exclusively numerical 
+	values. Within each row, the values are separated by a single 
+	tabulation. All rows must contain the same number of values.
+	All values must be positive numbers.
+	Blank lines are ignored.
+
+STATISTICS
+	The log-likelihood value is calculated by:
+
+	 LL = N*log(N) + SUMi SUMj x_ij*log(x_ij)
+	      - SUMi x_i+*log(x_i+) - SUMj x_+j*log(x_+j)
+
+	where
+	x_ij is the value of the i^th row and j^th column of the table
+	x_i+ is the marginal sum of row i
+	x_+j is the marginal sum of column j
+
+OUTPUT FORMAT
+	The output is a single number comprized between 0 and 1, 
+	indicating the probability for the hypothesis of homogeneity 
+	to be true.
+
+REFERENCE
+	log-likelihood statistics are described in about any textbook 
+	of statistics. I read the definition in:
+		B.W. Lindgren (1976). Statistical Theory.
+		Macmillan Publishers co. 3rd edition. 	
+	
+EXAMPLES
+       log-likelihood -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+#### display short help message #####
+if ($ARGV[0] eq "-help") {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+log-likelihood options
+-------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+	$report_data = 1;
+
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    }
+}
+
+
+#### check argument values ####
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out ";log-likelihood result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+}
+
+### read a table of positive values ###
+$row = 0;
+while (<$in>) {
+    if (/\S/) {
+	$row++;
+	@fields = split /\s+/;
+	if ($row == 1) {
+	    $col_nb = $#fields + 1;
+	} elsif ($#fields + 1 != $col_nb) {
+	    print "Error: each line must contain the same number of values\n";
+	    print "Type log-likelihood -h for info.\n";
+	    exit;
+	}
+	foreach $f (@fields) {
+	    if (&IsReal($f)) {
+		push(@values, $f);
+	    } else {
+		print "Error: $f is not a positive value\n";
+		print "Type log-likelihood -h for info.\n";
+		exit;
+	    }
+	}
+    }
+}
+$row_nb = $row;
+
+$log_likelihood = &LogLikelihood($row_nb, $col_nb, @values);
+
+#### print output ####
+print $out $log_likelihood, "\n";
+
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subroutine definition ############################

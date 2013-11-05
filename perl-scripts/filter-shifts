@@ -1,0 +1,297 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	filter_shifts
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        filter_shifts [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Starting from a list of patterns, suppress those that are
+	1-base shifts from an already seen pattern.
+
+CATEGORY
+	util
+	sequences
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-sc	score column
+	-cc	cluster column
+	-format input_format
+		Format of the input file (see hereafter)
+
+INPUT FORMAT
+	Different input formats are accepted.
+	-format col	(default)
+		The input file must contain 1 pattern per line. 
+		The first word of each line is the pattern.
+		A score column can be specified with the -sc option. 
+		If not, the rank of appearance of the patterns in the input 
+		file is supposed to reflect their order of importance (the
+		most important coming first).
+	-format clusters
+		Each line contains a separate cluster. The first word 
+		of the line is the cluster identifier. All words coming 
+		thereafter are considered as elements of the cluster,
+		and the filtering is performed on them. 
+		A new filtering begins at each new line.
+	
+OUTPUT FORMAT
+	A subselection of the input file, showing only the patterns
+	that are not a single-base shift frm a previous pattern.
+	
+EXAMPLES
+       filter_shifts -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+filter_shifts options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-sc	score column
+-format col|clusters
+-cc	cluster column
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+
+$in_format = "columns";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  ### verbose ###
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+    
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-format") {
+    if ($ARGV[$a+1] =~ /clust/i) {
+      $in_format = "clusters";
+    } elsif ($ARGV[$a+1] =~ /col/i) {
+      $in_format = "columns";
+    } else {
+      die "Error: invalid input format\n";
+    }
+    
+    ### output file ###
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+    
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-sc") {
+    $score_col = $ARGV[$a+1];
+    unless (&IsNatural($score_col)) {
+      die "Invalid specification of the score column\n";
+    }
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-cc") {
+    $cluster_col = $ARGV[$a+1];
+    unless (&IsNatural($cluster_col)) {
+      die "Invalid specification of the cluster column\n";
+    }
+  }
+}
+
+
+#### check argument values ####
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out "; filter_shifts ";
+  &PrintArguments($out);
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  if ($score_col ne "") {
+    print $out ";score column	$score_col\n";
+  }
+  if ($cluster_col ne "") {
+    print $out ";cluster column	$cluster_col\n";
+  }
+}
+
+
+if ($in_format eq "columns") {
+  ###### read the patterns
+  while (<$in>) {
+    next unless (/\S/);
+    next if (/^;/);
+    $count++;
+    chomp;
+    @fields = split, /\s+/;
+    $pattern = shift @fields;
+    $word = &ExpandSeq($pattern);
+    $rank{$word} = $count;
+    $count++;
+    $info{$word} = $_;
+    ### score associated to each word
+    if (&IsNatural($score_col-1)) {
+      if (&IsReal($fields[$score_col-2])) {
+	$score{$word} = $fields[$score_col-2];
+      } else {
+	$score{$word} = "nd";
+      }
+    }
+    ### predefined word clusters
+    if ((&IsNatural($cluster_col - 1)) && ($fields[$cluster_col-2] =~ /\S/)) {
+      $id = $fields[$cluster_col-2];
+      $cluster{$word} = $id;
+      $cluster_ids{$id} = 1;
+    } else {
+      $cluster{$word} = "nd";
+      $cluster_ids{'nd'} = 1;
+    } 
+
+  }
+  
+    
+  foreach $cluster_id (sort keys %cluster_ids) {
+    @words = ();
+    @sorted_words = ();
+    foreach $word (keys %cluster) {
+      if ($cluster{$word} eq $cluster_id) {
+	push @words, $word;
+      }
+    }
+    ### sort the patterns
+    if  (&IsNatural($score_col-1)) {
+      @sorted_words = sort {$score{$b} <=> $score{$a}} @words;
+    } else {
+      @sorted_words = sort {$rank{$a} <=> $rank{$b}} @words;
+    }
+    
+    &FilterShifts;
+
+    ###### print output ######
+    if ($verbose) {
+      print $out ";cluster\t$cluster_id\n";
+    }
+    foreach $word (@sorted_words) {
+      unless ($suppress{$word}) {
+	print $out "$word";
+	print $out "\t$info{$word}";
+	print $out "\n";
+      }
+    }
+    
+    if ($verbose) {
+      foreach $word (@sorted_words) {
+	if ($suppress{$word}) {
+	  print $out "; suppressed";
+	  print $out "\t$word";
+	  print $out "\tshift\t$shift_from{$word}";
+	  print $out "\n";
+	}
+      }
+    }
+  }
+
+} elsif ($in_format eq "clusters") {
+  ###### read the patterns
+  while (<$in>) {
+    if ((/^;/) || !(/\S/)) {
+      print;
+      next;
+    }
+    chomp;
+    @sorted_words = split /\s+/;
+    $cluster_id = shift @sorted_words;
+    &FilterShifts;
+    print $out "$cluster_id\t";
+    foreach $word (@sorted_words) {
+      print $out "$word " unless $suppress{$word};
+    }
+    print $out "\n";
+  }  
+}
+
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub FilterShifts {
+  undef %suppress;
+  undef %shift_from;
+
+  ###### filter out the patterns which are single-base shifts from an already listed pattern
+  for $i (0..$#sorted_words) {
+    $new_word = lc($sorted_words[$i]);
+    $length = length($new_word) - 1;
+    $head = substr($new_word,0,$length);
+    $tail = substr($new_word, -$length);
+    for $j (0..$i-1) {
+      $prev_word = lc($sorted_words[$j]);
+      $prev_head = substr($prev_word,0,$length);
+      $prev_tail = substr($prev_word,-$length);
+      if (($prev_tail eq $head) || ($prev_head eq $tail)) {
+	$suppress{$new_word} = 1;
+	$shift_from{$new_word} = $prev_word;
+	last;
+      }
+    }
+  }
+}
+  
+

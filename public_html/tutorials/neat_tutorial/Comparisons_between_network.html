@@ -1,0 +1,806 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Comparisons between networks</TITLE>
+<META NAME="description" CONTENT="Comparisons between networks">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Node_degree_statistics.html">
+<LINK REL="previous" HREF="Network_visualization_forma.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Node_degree_statistics.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html291"
+  HREF="Node_degree_statistics.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html287"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html281"
+  HREF="Network_visualization_forma.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html289"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html292"
+  HREF="Node_degree_statistics.html">Node degree statistics</A>
+<B> Up:</B> <A NAME="tex2html288"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html282"
+  HREF="Network_visualization_forma.html">Network visualization and format</A>
+ &nbsp; <B>  <A NAME="tex2html290"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html293"
+  HREF="Comparisons_between_network.html#SECTION00410000000000000000">Introduction</A>
+<LI><A NAME="tex2html294"
+  HREF="Comparisons_between_network.html#SECTION00420000000000000000">Computing the intersection, union and differences between two graphs</A>
+<UL>
+<LI><A NAME="tex2html295"
+  HREF="Comparisons_between_network.html#SECTION00421000000000000000">Study case</A>
+<LI><A NAME="tex2html296"
+  HREF="Comparisons_between_network.html#SECTION00422000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html297"
+  HREF="Comparisons_between_network.html#SECTION00423000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html298"
+  HREF="Comparisons_between_network.html#SECTION00424000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html299"
+  HREF="Comparisons_between_network.html#SECTION00424100000000000000">Union, intersection and differences</A>
+<LI><A NAME="tex2html300"
+  HREF="Comparisons_between_network.html#SECTION00424200000000000000">Sizes of the union, intersection and differences</A>
+<LI><A NAME="tex2html301"
+  HREF="Comparisons_between_network.html#SECTION00424300000000000000">Statistical significance of the intersection between two graphs</A>
+<LI><A NAME="tex2html302"
+  HREF="Comparisons_between_network.html#SECTION00424400000000000000">Summary</A>
+</UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html303"
+  HREF="Comparisons_between_network.html#SECTION00430000000000000000">Strengths and weaknesses of the approach</A>
+<LI><A NAME="tex2html304"
+  HREF="Comparisons_between_network.html#SECTION00440000000000000000">Exercises</A>
+<LI><A NAME="tex2html305"
+  HREF="Comparisons_between_network.html#SECTION00450000000000000000">Troubleshooting</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00400000000000000000">
+Comparisons between networks</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00410000000000000000">
+Introduction</A>
+</H1>
+
+<P>
+Protein interaction networks have deserved a special attention for
+molecular biologists, and several high-throughput methods have been
+developed during the last years, to reveal either pairwise
+interactions between proteins (two-hybrid technology) or protein
+complexes (methods relying on mass-spectrometry). The term
+<A NAME="612"></A><I>interactome</I> has been defined to denote the complete set of
+interactions between proteins of a given organism.
+
+<P>
+Interactome data is typically represented by an un-directed graph,
+where each node represents a polypeptide, and each edge an interaction
+between two polypeptides.
+
+<P>
+The yeast interactome was characterized by the two-hybrid method by
+two independent groups, Uetz and co-workers [<A
+ HREF="Bibliography.html#Uetz:2000">32</A>], and Ito
+and co-workers [<A
+ HREF="Bibliography.html#Ito:2001">13</A>], respectively. Surprisingly, the two
+graphs resulting from these experiments showed a very small
+intersection.
+
+<P>
+In this tutorial, we will use the program <B><I>compare-graphs</I></B> to
+analyze the interactome graphs published by from Uetz and Ito,
+respectively.
+
+<P>
+We will first perform a detailed comparison, by merging the two
+graphs, and labelling each node according to the fact that it was
+found in Ito's network, in Uetz' network, or in both. We will then
+compute some statistics to estimate the significance of the intersection
+between the two interactome graphs.
+
+<P>
+
+<H1><A NAME="SECTION00420000000000000000">
+Computing the intersection, union and differences between two graphs</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00421000000000000000">
+Study case</A>
+</H2>
+
+<P>
+In this demonstration, we will compare the networks resulting from the
+two first publications reporting a complete characterization of the
+yeast interactome, obtained using the two-hybrid method.The first
+network [<A
+ HREF="Bibliography.html#Uetz:2000">32</A>] contains 865 interactions between 926
+proteins.The second network [<A
+ HREF="Bibliography.html#Ito:2001">13</A>] contains 786 interactions
+between 779 proteins. We will merge the two networks (i.e. compute
+their union), and label each edge according to the fact that it is
+found in Ito's network, Uetz' network, or both. We will also compute
+the statistical significance of the intersection between the two
+networks.
+
+<P>
+
+<H2><A NAME="SECTION00422000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>network
+    comparison</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``compare-graphs''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO</TT>. 
+
+<P>
+The form is now filled with two graphs, and the parameters have been
+  set up to their appropriate value for the demonstration. At the top
+  of the form, you can read some information about the goal of the
+  demo, and the source of the data.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+
+<P>
+The computation should take a few seconds only. The result page
+  shows you some statistics about the comparison (see interpretation
+  below), and a link pointing to the full result file. 
+
+<P>
+</LI>
+<LI>Click on the link to see the full result file. 
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00423000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the program <B><I>compare-graphs</I></B> on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+<P>
+We will now describe the use of <B><I>compare-graphs</I></B> as a command line tool. 
+The two two-hybrid datasets described
+in the previous section may be downloaded at the following address http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/. 
+These are the files <I>uetz_2001.tab</I> and <I>ito_2002.tab</I>.
+
+<P>
+
+<OL>
+<LI>Go in the directory where the files containing the graphs to compare are 
+	located. 
+
+<P>
+</LI>
+<LI>Type the following command
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+			compare-graphs -v 1 -Q ito_2002.tab -R uetz_2001.tab -return union \ 
+			-o uetz_2001_union_ito_2002.tab
+</PRE><FONT COLOR="#0000ff"></FONT>		
+</LI>
+</OL>
+Using these options, some comparaison statistics are displayed and the results are stored in the tab-delimited 
+file <I>uetz_2001_union_ito_2002.tab</I>.
+
+<P>
+In order to compute the difference or the intersection, you must change the <TT>-return</TT> option. For example, to compute the intersection, you shoud type. 
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+			compare-graphs -v 1 -Q ito_2002.tab -R uetz_2001.tab -return intersection \ 
+			-o uetz_2001_inter_ito_2002.tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+
+<H2><A NAME="SECTION00424000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+The program <B><I>compare-graphs</I></B> uses symbols <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$"> and <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$">
+respectively, to denote the two graphs to be compared. Usually, <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$">
+stands for reference, and <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$"> for query. 
+
+<P>
+In our case, <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$"> indicates Ito's network, whereas <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$"> indicates Uetz'
+network. The two input graphs are considered equivalent, there is no
+reason to consider one of them as reference, but this does not really
+matter, because the statistics used for the comparison are
+symmetrical,as we will see below.
+
+<P>
+
+<H3><A NAME="SECTION00424100000000000000">
+Union, intersection and differences</A>
+</H3>
+
+<P>
+The result file contains the union graph, in tab-delimited
+format. This format is very convenient for inspecting the result, and
+for importing it into statistical packages (R, Excel, ...).
+
+<P>
+The rows starting with a semicolon (;) are comment lines. They provide
+you with some information (e.g. statistics about the intersection),
+but they will be ignored by graph-reading programs. The description of
+the result graph comes immediately after these comment lines.
+
+<P>
+Each row corresponds to one arc, and each column specifies one
+attribute of the arc.
+
+<P>
+
+<OL>
+<LI><B>source</B>: the ID of the source node
+
+<P>
+</LI>
+<LI><B>target</B>: the ID of the target node
+
+<P>
+</LI>
+<LI><B>label</B>: the label of the arc. As labels, we selected
+  the option ``Weights on the query and reference''. Since the
+  input graphs were un-weighted, edge labels will be used instead
+  of weights. The label <TT>&lt;NULL&gt;</TT> indicates that an edge is
+  absent from one input network.
+
+<P>
+</LI>
+<LI><B>color</B> and <B>status</B>: the status of the arc
+  indicates whether it is found at the intersection, or in one graph
+  only.  A color code reflects this status, as indicated below.
+  
+<UL>
+<LI><A NAME="632"></A><I>R.and.Q</I>: arcs found at the intersection between graphs <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$">
+    and <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$">. Default color: green.
+</LI>
+<LI><A NAME="634"></A><I>R.not.Q</I>: arcs found in graph <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$"> but not in graph
+    <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$">. Default color: violet.
+</LI>
+<LI><A NAME="636"></A><I>Q.not.R</I>: arcs found in graph <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$"> but not in graph
+    <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$">. Default color: red.
+  
+</LI>
+</UL>
+
+<P>
+The result file contains several thousands of arcs, and we will of
+  course not inspect them by reading each row of this file. Instead,
+  we can generate a drawing in order to obtain an intuitive perception
+  of the graph.
+
+<P>
+</LI>
+</OL>
+<H3><A NAME="SECTION00424200000000000000">
+Sizes of the union, intersection and differences</A>
+</H3>
+
+<P>
+The beginning of the result file gives us some information about the
+size of the two input files, their union, intersection, and
+differences.
+
+<P>
+<PRE>
+; Counts of nodes and arcs
+;    Graph    Nodes    Arcs     Description
+;    R        779      786      Reference graph
+;    Q        926      865      Query graph
+;    QvR      1359     1529     Union
+;    Q^R      346      122      Intersection
+;    Q!R      580      743      Query not reference
+;    R!Q      433      664      Reference not query
+</PRE>
+
+<P>
+
+<H3><A NAME="SECTION00424300000000000000">
+Statistical significance of the intersection between two graphs</A>
+</H3>
+
+<P>
+The next lines of the result file give some statistics about the
+intersection between the two graphs. These statistics are computed in
+terms of arcs.
+
+<P>
+<PRE>
+; Significance of the number of arcs at the intersection
+;  Symbol   Value     Description                        Formula
+;  N        1359      Nodes in the union                    
+;  M        922761    Max number of arcs in the union    M = N*(N-1)/2
+;  E(Q^R)   0.74      Expected arcs in the intersection  E(Q^R) = Q*R/M
+;  Q^R      122       Observed arcs in the intersection
+;  perc_Q   14.10     Percentage of query arcs           perc_Q = 100*Q^R/Q
+;  perc_R   15.52     Percentage of reference arcs       perc_R = 100*Q^R/R
+;  Jac_sim  0.0798    Jaccard coefficient of similarity  Jac_sim = Q^R/(QvR)
+;  Pval     2.5e-228  P-value of the intersection        Pval=P(X &gt;= Q^R)
+</PRE>
+
+<P>
+A first interesting point is the maximal number of arcs (<IMG
+ WIDTH="22" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$M$">) that can
+be traced between any two nodes of the union graph. In our study case,
+the graph obtained by merging Ito's and Uetz' data contains <IMG
+ WIDTH="72" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="$N=1359$">
+nodes. This graph is un-directed, and there are no self-loops. The
+maximal number of arcs is thus <!-- MATH
+ $M=N*(N-1)/2=922,761$
+ -->
+<IMG
+ WIDTH="219" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img10.png"
+ ALT="$M=N*(N-1)/2=922,761$">. This number
+seems huge, compared to the number of arcs observed in either Uetz'
+(<IMG
+ WIDTH="72" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img11.png"
+ ALT="$A_Q=865$">) or Ito's (<IMG
+ WIDTH="72" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img12.png"
+ ALT="$A_R=786$">) graphs. This means that these two
+graphs are sparse: only a very small fraction of the node pairs are
+linked by an arc.
+
+<P>
+The next question is to evaluate the statistical significance of the
+intersection between the two graphs. For this, we can already compute
+the size that would be expected if we select two random sets of arcs
+of the same sizes as above (<IMG
+ WIDTH="72" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img11.png"
+ ALT="$A_Q=865$">, <IMG
+ WIDTH="87" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img13.png"
+ ALT="$A_R=4,038$">). 
+
+<P>
+If the same numbers of arcs were picked up at random in the union
+graph, we could estimate the probability for an arc to be found in the
+network <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$"> as follows: <!-- MATH
+ $P(R) = A_R/M = 0.000852$
+ -->
+<IMG
+ WIDTH="191" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img14.png"
+ ALT="$P(R) = A_R/M = 0.000852$">. Similarly, the
+probability for an arc of the union graph to be part of the network
+<IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$"> is <!-- MATH
+ $P(Q) = A_Q/M = 0.000937$
+ -->
+<IMG
+ WIDTH="191" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img15.png"
+ ALT="$P(Q) = A_Q/M = 0.000937$">.  The probability for an arc to be
+found independently in two random networks of the same sizes as <IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$">
+and <IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$"> is the product of these probabilities.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+P(QR) = P(Q)*P(R) = A_R/M \cdot A_Q/M = 7.98e-07
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="379" HEIGHT="29" BORDER="0"
+ SRC="img16.png"
+ ALT="\begin{displaymath}P(QR) = P(Q)*P(R) = A_R/M \cdot A_Q/M = 7.98e-07\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+
+<P>
+The number of arcs expected by chance in the intersection is the
+probability multiplied by the maximal number of arcs.
+
+<P>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray*}
+E(QR) & = & P(QR) \cdot M  \\
+ & = & (A_Q \cdot A_R)/M \\
+ & = &  7.98e-07 \cdot 922761 = 0.74
+\end{eqnarray*}
+ -->
+<IMG
+ WIDTH="274" HEIGHT="73" BORDER="0"
+ SRC="img17.png"
+ ALT="\begin{eqnarray*}
+E(QR) &amp; = &amp; P(QR) \cdot M \\
+&amp; = &amp; (A_Q \cdot A_R)/M \\
+&amp; = &amp; 7.98e-07 \cdot 922761 = 0.74
+\end{eqnarray*}"></DIV>
+<BR CLEAR="ALL"><P></P>
+
+<P>
+Thus, at the intersection between two random sets of interaction, we
+would expect on the average a bit less than one interaction. It seems
+thus clear that the 122 interactions found at the intersection between
+he two published experiments is much higher than the random
+expectation.
+
+<P>
+We can even go one step further, and compute the <A NAME="638"></A><I>P-value</I>
+of this intersection, i.e. the probability to select at least that
+many interactions by chance. 
+
+<P>
+The probability to observe <I>exactly</I> <IMG
+ WIDTH="14" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img18.png"
+ ALT="$x$"> arcs at the
+intersection is given by the hypergeometrical distribution.
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT">
+
+<!-- MATH
+ \begin{equation}
+P(QR=x)=\frac{C^{x}_{R}C^{Q-x}_{M-R}}{C^Q_{M}}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><A NAME="eq:hypergeometric_density"></A><IMG
+ WIDTH="170" HEIGHT="52" BORDER="0"
+ SRC="img19.png"
+ ALT="\begin{displaymath}
+P(QR=x)=\frac{C^{x}_{R}C^{Q-x}_{M-R}}{C^Q_{M}}
+\end{displaymath}"></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(3.1)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+where 
+<DL COMPACT>
+<DT><IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$R$"></DT>
+<DD>is the number of arcs in the reference graph;
+</DD>
+<DT><IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$Q$"></DT>
+<DD>i the number of arcs in the query graph;
+</DD>
+<DT><IMG
+ WIDTH="22" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$M$"></DT>
+<DD>is the maximal number of arcs;
+</DD>
+<DT><IMG
+ WIDTH="14" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img18.png"
+ ALT="$x$"></DT>
+<DD>is the number of arcs at the intersection between the two
+  graphs.
+</DD>
+</DL>
+
+<P>
+By summing this formula, we obtain the P-value of the intersection,
+i.e. the probability to observe <I>at least</I> <IMG
+ WIDTH="14" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img18.png"
+ ALT="$x$"> arcs at the
+intersection.
+
+<P>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray*}
+Pval = P(QR>=x)=\sum_{i=x}^{min(Q,R)}P(X=i)=\sum_{i=x}^{min(Q,R)} \frac{C^i_{R}C^{Q-i}_{M-R}}{C^Q_{M}}
+\end{eqnarray*}
+ -->
+<A NAME="eq:hypergeometric_density_cdf"></A><IMG
+ WIDTH="445" HEIGHT="58" BORDER="0"
+ SRC="img20.png"
+ ALT="\begin{eqnarray*}
+Pval = P(QR&gt;=x)=\sum_{i=x}^{min(Q,R)}P(X=i)=\sum_{i=x}^{min(Q,R)} \frac{C^i_{R}C^{Q-i}_{M-R}}{C^Q_{M}}
+\end{eqnarray*}"></DIV>
+<BR CLEAR="ALL"><P></P>
+
+<P>
+We can replace the symbols by the numbers of our study case.
+
+<P>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray*}
+Pval & = & P(QR>=122) \\
+ & = & \sum_{i=x}^{min(865,786)} \frac{C^i_{786}C^{865-i}_{922761-786}}{C^{865}_{922761}}  \\
+ & =  2.5e-228
+\end{eqnarray*}
+ -->
+<A NAME="eq:hypergeometric_density_cdf"></A><IMG
+ WIDTH="345" HEIGHT="104" BORDER="0"
+ SRC="img21.png"
+ ALT="\begin{eqnarray*}
+Pval &amp; = &amp; P(QR&gt;=122) \\
+&amp; = &amp; \sum_{i=x}^{min(865,786)} \fr...
+...{786}C^{865-i}_{922761-786}}{C^{865}_{922761}} \\
+&amp; = 2.5e-228
+\end{eqnarray*}"></DIV>
+<BR CLEAR="ALL"><P></P>
+
+<P>
+This probabilty is so small that it comes close to the limit of
+precision of our program (<!-- MATH
+ $\approx 10^{-321}$
+ -->
+<IMG
+ WIDTH="67" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img22.png"
+ ALT="$\approx 10^{-321}$">).
+
+<P>
+
+<P>
+
+<H3><A NAME="SECTION00424400000000000000">
+Summary</A>
+</H3>
+
+<P>
+In summary, the comparison revealed that the number of arcs found in
+common between the two datasets (Ito and Uetz) is highly significant,
+despite the apparently small percentage of the respective graphs it
+represents (14.10% of Ito, and 15.52% of Uetz).
+
+<P>
+
+<H1><A NAME="SECTION00430000000000000000">
+Strengths and weaknesses of the approach</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00440000000000000000">
+Exercises</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>Using the tool the tool <B><I>network randomization</I></B>,
+  generate two random graphs of 1000 nodes and 1000 arcs each (you
+  will need to store these random networks on your hard drive).  Use
+  the tool <B><I>network comparison</I></B> to compare the two random
+  graphs.
+  Discuss the result, including the following questions: 
+  
+<OL>
+<LI>What is the size of the intersection ? Does it correspond to
+    the expected value ? 
+</LI>
+<LI>Which P-value do you obtain ? How do you interpret this P-value ? 
+  
+</LI>
+</OL>
+
+<P>
+</LI>
+<LI>Randomize Ito's network with the tool <B><I>network
+    randomization</I></B>, and compare this randomized graph with Uetz'
+  network. Discuss the result in the same way as for the previous
+  exercise.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H1><A NAME="SECTION00450000000000000000">
+Troubleshooting</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>The P-value of the intersection between two graphs is 0. Does it
+  mean that it is impossible to have such an intersection by chance
+  alone ?
+
+<P>
+No. Any intersection that you observe in practice might occur by
+  chance, but the limit of precision for the hypergeometric P-value is
+  <!-- MATH
+ $\approx 10^{-321}$
+ -->
+<IMG
+ WIDTH="67" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img22.png"
+ ALT="$\approx 10^{-321}$">. Thus, a value of 0 can be interpreted as <!-- MATH
+ $Pval <
+  10^{-321}.$
+ -->
+<IMG
+ WIDTH="110" HEIGHT="34" ALIGN="MIDDLE" BORDER="0"
+ SRC="img23.png"
+ ALT="$Pval &lt;
+10^{-321}.$">
+
+<P>
+</LI>
+<LI>The web server indicates that the result will appear, and after
+  a few minutes my browser displays a message ``No response the
+  server''.
+
+<P>
+How big are the two graphs that you are comparing ? In principle,
+  compare-graphs can treat large graphs in a short time, but if your
+  graphs are very large (e.g. several hundreds of thousands of arcs),
+  the processing time may exceed the patience of your browser. In such
+  case, you should consider either to install the stand-alone version
+  of <B><I>NeAT</I></B>on your computer, or write a script that uses <B><I>NeAT</I></B>via
+  their Web services interface.
+
+<P>
+</LI>
+</OL>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html291"
+  HREF="Node_degree_statistics.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html287"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html281"
+  HREF="Network_visualization_forma.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html289"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html292"
+  HREF="Node_degree_statistics.html">Node degree statistics</A>
+<B> Up:</B> <A NAME="tex2html288"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html282"
+  HREF="Network_visualization_forma.html">Network visualization and format</A>
+ &nbsp; <B>  <A NAME="tex2html290"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

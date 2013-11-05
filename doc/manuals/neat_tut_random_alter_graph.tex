@@ -1,0 +1,221 @@
+\chapter{Influence of graph alteration and randomization on clustering}
+
+\section{Introduction}
+Although negative controls and method evaluation are crucial points to the experimental biologist, 
+this is far from being the same in bioinformatics where, too often, no negative control is associated to 
+the predictions, so that one cannot estimate the probability of these predictions to biogically valid.
+
+For this reason, in NeAT we developped programs allowing to randomize and to add some specified levels of noise to networks. This allows the user to apply the techniques used to find relevant results on networks where there is less or no signal and thus were no interesting result should emerge.
+
+NeAT programs are able to generate randomized networks according to three methods. 
+\begin{enumerate}
+ \item \textit{Node degree conservation} : this approach consists in shuffling the edges, each node keeping the same number of neighbors as in the original graph.
+ \item \textit{Node degree distribution conservation} : in which the global distribution of the node degree is conserved but each node presents a different degree than in the original graph.
+ \item \textit{Erdos-Renyi randomization} :  where edges are distributed between pairs of nodes with equal probability.
+\end{enumerate}
+
+
+\section{Quantitative assessment of a clustering algorithm}
+\subsection{Study case}
+
+In this demonstration, we will use the approach developped in \cite{Brohee2006} where we evaluated the performances of different graph clustering algorithms. Graph clustering algorithms allow to retrieve in a graph the groups of nodes that contain more connections between them than with the rest of the nodes of the graph. Clustering algorithms are often used in biology in order to extract coherent groups of nodes from networks (complexes detection (e.g. see \cite{Sharan2007,Krogan2006,Brohee2006,Pereira-Leal2004}), protein families detection \cite{Enright2002}, co-expressed genes detection in co-expression networks (e.g see \cite{Lattimore2005}), \ldots). The NeAT web server proposes the \program{MCL} (\textit{Markov Cluster algorithm}) clustering algorithm developped by Stijn van Dongen \cite{VanDongenPHD2000,Enright2002}. To follow the command-line tools instructions, you should have  MCL installed on your computer (available at \url{http://micans.org/mcl/}).
+
+MCL simulates a flow on the graph by
+calculating successive powers of the associated adjacency matrix. At
+each iteration, an \textit{inflation step} is applied to enhance the
+contrast between regions of strong or weak flow in the graph. The
+process converges towards a partition of the graph, with a set of 
+high-flow regions (the clusters) separated by boundaries with no 
+flow. The value of the \textit{inflation parameter} strongly 
+influences the number of clusters. According to \cite{Brohee2006}, the optimal inflation
+value for clustering protein interaction networks is 1.8.
+
+We will use an artificial interaction network created from the complexes annotated in the MIPS database by creating an edge between all the nodes belonging to the same complex \cite{Mewes2007}. This network contains 12262 edges between 1095 nodes. We will then use the MCL clustering algorithm on this network, on a little altered network, on a highly altered network and finally on a randomized network. 
+
+We will then compare these clusters to the MIPS complexes and estimate how well MCL can retrieve protein complexes from a protein-protein interaction and the influence of the noise on the results.
+
+In this example, we will only use random alteration, i.e., the edges that are removed are randomly chosen. This is done to mimick what happens really in biological experiments where some inter-relationships between the nodes (genes, proteins, metabolites, \ldots) may not be discovered (false negatives) or are erroneously discovered (false positives). However the \program{alter-graph} program also allows to alterate the network with targeted attack on user-selected nodes. In their study, Spirin and Mirny \cite{Spirin2003} showed the affect of node targeted attacks on clustering results.
+
+\subsection{Protocol for the web server}
+
+\subsubsection{Dataset download}
+Go on the demo dataset web page.\url{http://rsat.ulb.ac.be/rsat/data/neat\_tuto\_data/} and download the MIPS complex network file (\file{complexes\_rm\_00\_ad\_00.tab}) and the complexes (\file{mips\_complexes.tab}).
+
+\subsubsection{Network alteration}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{network alteration}. 
+\item In the \textit{Upload graph from file} text area, load the file \file{complexes\_rm\_00\_ad\_00.tab} containing the MIPS complexes network that you just downloaded.
+\item In the \option{edges to add} text area, enter 10\%.
+\item In the \option{edges to remove} text area, enter 10\%.
+\item Click on the button \option{GO}. 
+\item Right click on the resulting file and save it with name \file{complexes\_rm\_10\_ad\_10.tab}.
+
+Re-do the this alteration procedure using 50\% of edges removal and 100\% of edges addition. Save the resulting file with name \file{complexes\_rm\_50\_ad\_100.tab}.
+
+\end{enumerate}
+
+\subsubsection{Network randomization}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{network randomization}. 
+\item In the \textit{Upload graph from file} text area, load the file \file{complexes\_rm\_00\_ad\_00.tab}.
+\item Select the \option{Node degree conservation} randomization type.
+\item Click on the button \option{GO}. 
+\item Right click on the resulting file and save with name \file{complexes\_rm\_00\_ad\_00\_random.tab}.
+
+\end{enumerate}
+
+\subsubsection{Networks clustering and clustering assessment}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{graph-based clustering MCL}. 
+\item In the \textit{Upload graph from file} text area, load the file \file{complexes\_rm\_00\_ad\_00.tab}.
+\item Click on the button \option{GO}. You should now obtain a link to the clustering results and the distribution of the sizes of the different clusters.
+\item In the \textit{Next step} pannel, click on the button \textit{Compare these clusters to other clusters}.
+\item In the \textit{Upload reference classes from file } text area, load the \file{mips\_complexes.tab} file.
+\item Choose the \textit{matrix file} output format
+\item Click on the button \option{GO}. You now obtain a contingency table, i.e, a table with $N$ rows and $M$ columns ($N$ being the number of MIPS complexes and $M$, the number of clusters). Each cell contains the number of protein common to one complex and one cluster.
+\item To calculate some statistics on this contingency table, click on the \option{contingency-table statistics} button in the \option{Next step} pannel.
+\item The \program{contingency-stats} form appears. As the contingency table is already uploaded, just lick on the \option{GO} button. 
+\item Save the resulting file under name  \file{contigency\_stats\_rm\_00\_ad\_00.tab} 
+
+\end{enumerate}
+
+Repeat these steps for \file{complexes\_rm\_10\_ad\_10.tab}, \file{complexes\_rm\_50\_ad\_100.tab} and \file{complexes\_rm\_00\_ad\_00\_random.tab} and save the resulting files under the names \file{contigency\_stats\_ad\_10\_rm\_10.tab}, \file{contigency\_stats\_ad\_50\_rm\_100.tab}, \file{contigency\_stats\_ad\_00\_rm\_00\_random.tab}, respectively.
+
+
+\subsection{Protocol for the command-line tools}
+
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the programs \program{random-graph} and \program{alter-graph} on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+We will now describe the use of \program{random-graph}, \program{alter-graph}, \program{compare-classes}  and \program{contingency-stats} as command line tools. For this tutorial, you need to have the MCL program installed. 
+
+Start by going on the demo dataset download web page.\url{http://rsat.ulb.ac.be/rsat/data/neat\_tuto\_data/} and downloading the MIPS complex network file (\file{complexes\_rm\_00\_ad\_00.tab}) and the complexes (\file{mips\_complexes.tab}).
+
+
+\subsubsection{Network alteration}
+
+\begin{enumerate}
+
+\item Go in the directory where you downloaded the file.
+\item Use the following commands to alter the graph. Note that MCL is not an RSAT / NeAT program and thus cannot treat RSAT comments lines (starting with ``\#'' or with ``;''). We thus have to suppress them in the command.
+{\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+			alter-graph	-v 1 -i complexes_rm_00_ad_00.tab \
+					-rm_edges 10% -add_edges 10% \
+					| cut -f 1,2 | grep -v ';' > complexes_rm_10_ad_10.tab
+		\end{verbatim} \end{footnotesize}
+	}
+Re-use this command, but modify the percentage of removed (-rm\_edges 50\%) and added edges (-add\_edges 100\%). Save the resulting file with name \file{complexes\_rm\_50\_ad\_100.tab}.
+\end{enumerate}
+\subsubsection{Network randomization}
+\begin{enumerate}
+\item Use the following commands to randomize the graph by shuffling the edges. The node degrees will be conserved.
+{\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+		random-graph 	-v 1 -i complexes_rm_00_ad_00.tab \
+				-random_type node_degree \
+				| cut -f 1,2 | grep -v ';' > complexes_rm_00_ad_00_random.tab
+		\end{verbatim} \end{footnotesize}
+	}
+\end{enumerate}
+\subsubsection{Networks clustering and clustering assessment}
+\begin{enumerate}
+  \item Use the following commands to apply MCL on the network
+  {\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+  		mcl 	complexes_rm_00_ad_00.tab \
+  			--abc -I 1.8 -o complexes_rm_00_ad_00_clusters.mcl
+  \end{verbatim} \end{footnotesize}}
+  \item Convert the cluster file obtained with MCL with the program \program{convert-classes} into a file that is readable by NeAT / RSAT (two column cluster file).
+    {\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+  		convert-classes	-i complexes_rm_00_ad_00_clusters.mcl 
+  				-from mcl -to tab -o complexes_rm_00_ad_00_clusters.tab 
+  \end{verbatim} \end{footnotesize}}
+  \item Compare the obtained clusters to the MIPS complexes with the program \program{compare-classes}
+    {\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+  		compare-classes	-q complexes_rm_00_ad_00_clusters.tab \
+  				-r mips_complexes.tab \
+  				-matrix QR \
+  				-o complexes_rm_00_ad_00_clusters_cc_complexes_matrix.tab 
+  \end{verbatim} \end{footnotesize} } 
+  \item Study the obtained matrix with the \program{contingency-stats} program
+    {\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+		contingency-stats -i complexes_rm_00_ad_00_clusters_cc_complexes_matrix.tab \
+				  -o contigency_stats_ad_00_rm_00.tab
+  \end{verbatim} \end{footnotesize}  }  
+\end{enumerate}
+
+Repeat these steps for \file{complexes\_rm\_10\_ad\_10.tab}, \file{complexes\_rm\_50\_ad\_100.tab} and \file{complexes\_rm\_00\_ad\_00\_random.tab} and save the resulting files under the names \file{contigency\_stats\_ad\_10\_rm\_10.tab}, \file{contigency\_stats\_ad\_50\_rm\_100.tab}, \file{contigency\_stats\_ad\_00\_rm\_00\_random.tab}, respectively.
+
+
+\subsection{Interpretation of the results}
+
+We will now compare the performances of MCL when applied to networks containing an increasing proportion of noise or no signal at all.
+
+\subsubsection{Files description}
+
+\paragraph{Randomized network}
+As the real MIPS complexes network, this randomized network contains 12262 edges between 1095 nodes. With our parameter choice, no edge should be duplicated. However, as in \program{random-graph} the iterative process designed to avoid duplicated edges may not be totally efficient, some duplicated edges may subsist in the randomized network. 
+
+\paragraph{Altered networks}
+  This file is a classical NeAT tab-delimited edge list. However, there is a fifth column that indicates
+  whether the edge comes from the original graph (\textit{original}) or was added randomly (\textit{random}).
+\begin{itemize}
+ \item As the MIPS complex newtwork, the network with 10\% of added and removed edges contains 12262 edges between 1095 nodes, which is logical as we removed and added the same number of edge (in this case 1226).
+ \item The network with 100\% of added edges (+ 12262 edges) and 50\% of removed edges (-6131 edges) contains 18393 edges between 1095 nodes. This graph contains thus more noisy than relevant edges.
+\end{itemize}
+
+
+\paragraph{Contingency table}
+
+See the previous chapter (Graph clustering) for a complete description of a contigency table.
+
+\paragraph{Contingency table metrics}
+ A list of metrics and their value. These will be described in the next section.
+
+\subsubsection{Metrics description}
+
+\paragraph{Sensitivity, Positive predictive value and geometric accuracy}
+See the previous chapter (Graph clustering) for a complete description of a contigency table.
+
+
+\subsubsection{Score comparaison}
+
+The table summarizes the kind of values that should be obtained for the metrics described in the previous section. As the alteration and the randomization procedure are random processes, you should not obtain exactly the same results.
+
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\# & \textbf{true }& \textbf{ad10 / rm10} & \textbf{ad100 / rm50} & \textbf{random} \\ \hline
+\textit{ncol} & 125 & 114 & 713 & 361 \\ \hline
+\textit{nrow} & 220 & 220 & 220 & 220 \\ \hline
+\textit{mean} & 0.0569 & 0.0624 & 0.00998 & 0.0197 \\ \hline
+\textit{Sn} & 0.998 & 0.985 & 0.418 & 0.291 \\ \hline
+\textit{PPV} & 0.884 & 0.836 & 0.867 & 0.459 \\ \hline
+\textit{acc} & 0.941 & 0.91 & 0.642 & 0.375 \\ \hline
+\textit{acc\_g} & 0.939 & 0.907 & 0.602 & 0.365 \\ \hline
+\textit{Sn\_w} & 0.997 & 0.992 & 0.502 & 0.157 \\ \hline
+\textit{PPV\_w} & 0.621 & 0.62 & 0.688 & 0.244 \\ \hline
+\textit{acc\_g\_w} & 0.787 & 0.785 & 0.588 & 0.196 \\ \hline
+\textit{sep\_r} & 0.567 & 0.507 & 0.676 & 0.192 \\ \hline
+\textit{sep\_c} & 0.998 & 0.979 & 0.208 & 0.117 \\ \hline
+\textit{sep} & 0.752 & 0.704 & 0.375 & 0.15 \\ \hline
+\end{tabular}
+
+
+As expected, the value of the global parameters, the geometric accuracy (row acc\_g), the weighted geometric accuracy (row acc\_g\_w) and the separation (row sep) decrease drastically as the network contain less and less relevant information.
+
+We can observe that the sensitivity is more affected than the \textit{PPV} and that the complex wise separation (sep\_r) is more affected than the cluster wise separation. This is due to the fact that by increasing the noise, MCL increases the number of small sized clusters (ncol) too and, as we saw in previous section, this has an impact on the sensitivity.
+
+Note that with a random graph, we would have a separation of 0.15 but an unweighted geometric accuracy of 0.365 which is far from being 0. The relatively good performances of MCL on the highly altered graph must thus be taken with caution as the gain in performances is only of 23\%. This illustrates the interest of using negative controls.

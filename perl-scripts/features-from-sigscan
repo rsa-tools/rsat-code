@@ -1,0 +1,170 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	features-from-sigscan
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        features-from-sigscan [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	converts the output from the program Signal Scan 
+	(http://bimas.dcrt.nih.gov/molbio/signal/) into a file
+	that can be used as input for the program feature-map.
+
+CATEGORY
+	util
+	conversion
+	drawing
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-map	map name.
+
+INPUT FORMAT
+	See the web site for Signal Scan at
+	http://bimas.dcrt.nih.gov/molbio/signal/
+
+OUTPUT FORMAT
+	The output is a file that corresponds to the input format of 
+	feature-map.
+	
+EXAMPLES
+       features-from-sigscan -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+features-from-sigscan options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-map	map name
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript(); 
+$date = $start_time;
+
+#### initialise parameters ####
+$type="sigscan";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    ### map name ###
+    } elsif ($ARGV[$a] eq "-map") {
+	$map = $ARGV[$a+1];
+
+    }
+}
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+    print $out ";features-from-sigscan result\n";
+    if ($inputfile ne "") {
+	print $out ";Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+}
+
+###### execute the command #########
+
+while (<$in>) {
+    s/^\s+//;
+    chomp;
+    if (/input.seq:/) {
+	$map = "signal" unless ($map =~ /\S/);
+	$map_defined = 1;
+    } elsif ((/\([\+\-]\)/) && ($map_defined)) {
+	s/ +/\t/g;
+	@fields = split, "\t";
+	$id = $fields[0];
+	$seq = $fields[4];
+	$seq_length = length($seq);
+	$start = $fields[2];
+	$end = $start + $seq_length -1;
+	if ($fields[3] eq "(-)") {
+	    $strand = "R";
+	} else {
+	    $strand = "D";
+	}
+	$ref = $fields[5];
+	$descr = "$seq $ref";
+	&PrintFeature;
+    }
+}
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintFeature {
+    print $out $map;
+    print $out "\t$type";
+    print $out "\t$id";
+    print $out "\t$strand";
+    print $out "\t$start";
+    print $out "\t$end";
+    print $out "\t$descr";
+    print $out "\n";
+}

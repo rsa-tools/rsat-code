@@ -1,0 +1,80 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Tutorials for the Network Analysis Tools (NeAT)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\documentclass{article}
+%\documentclass{book}
+\documentclass[12pt,a4paper, twoside]{scrreprt} % KOMA-class Neukam and Kohm, scrbook alternatively
+%\documentstyle[makeidx]{book}
+\makeindex
+\include{rsat_latex_commands}
+ % inclut du code
+
+
+\begin{document}
+
+\title{Network Analysis Tools (NeAT) \\
+Tutorial}
+
+\author{
+	Sylvain Broh\'ee \\
+	\email{sbrohee@ulb.ac.be} \\
+        \and \\
+	Karoline Faust \\
+	\email{kfaust@ulb.ac.be} \\
+        \and \\
+	Jacques van Helden \\
+	\email{jvhelden@ulb.ac.be}\\
+        \\
+        \\
+        \bigre
+}
+
+
+
+\maketitle
+
+\newpage
+\tableofcontents
+\newpage
+
+\section*{Warning}
+
+This tutorial is in construction. The current version only covers a
+very small fraction of the \neat tools. For the tools not covered yet
+by the tutorial, the \option{DEMO} buttons already give some hints
+about typical cases of utilization. We intend to develop further those
+tutorials very soon.
+
+\input{neat_tut_intro.tex}
+
+\input{neat_tut_convert_display_graph.tex}
+% 
+\input{neat_tut_compare_graphs.tex}
+
+\input{neat_tut_graph_node_degree}
+
+\input{neat_tut_graph_neighbours.tex}
+
+\input{neat_tut_network_clustering.tex}
+
+\input{neat_tut_random_alter_graph.tex}
+
+\input{neat_tut_pathfinding.tex}
+
+\input{neat_tut_metabolicpathfinding.tex}
+
+\input{neat_tut_keggnetworkprovider.tex}
+
+\input{neat_tut_pathwayinference.tex}
+
+% Karoline: we never wrote any exercises, so I outcomment this
+\input{neat_exercises.tex}
+
+% Bibliography is not working yet. I have to debug
+\bibliographystyle{plain}
+\bibliography{neat_bibliography}
+
+\end{document}

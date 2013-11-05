@@ -1,0 +1,123 @@
+<html>
+<head>
+   <title>RNSC-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about RNSC</h2>
+</center>
+
+
+
+<h4>Description</h4>
+<ul>
+
+<p>RNSC is a cost-based local search algorithm that works to minimize a
+cost function in the solution space. The basic principle underlying
+local search is to start from an initial candidate solution and then,
+iteratively, to make moves from one candidate solution to another of
+the candidate solutions from its direct neighbourhood.  The moves are
+based on local information, and continue until a termination condition
+is met. Starting from an initial random or user input clustering, RNSC
+searches a better clustering using a simple integer-valued cost
+function, the naive cost function.  This naive cost function
+calculates the sum for each vertex  <i>i</i> :
+
+<ul>
+  <li> The number of neighbours of <i>i</i> that are not in the same cluster
+  <li> The number of vertices that are in the same cluster than <i>i</i> but not connected to it.
+</ul>
+
+<p>This sum is divided by 2.  For an optimal clustering, these values
+have to be low for all vertices.  When a user-defined number of moves 
+has been done without decreasing the naive cost function, the program shifts 
+to the real-value scaled cost function which also takes into account the size of the cluster during the calculations.</p>
+
+<p>At each iteration, one node is moved from one cluster to another. If this move decreased the naive or the scaled cost function, this move (considered as an <i>intensification move</i>) is conserved.</p>
+
+<p>In order to avoid local minima, a user-defined number of nodes are moved to random clusters according to a user-defined frequency.</p>
+
+<p>In order to avoid cycling back to the previously explored partitioning, a list of vertices that may not move is maintained. The size of this list and the number of time a vertex must be in the list before being considered as <i>non movable</i> are user-defined.</p>
+
+<p>The RNSC program was developed by <a target=_blank href='http://cgm.cs.mcgill.ca/~aking6/'>Andrew King</a>.
+	(<a  target = _blank' href='http://cgm.cs.mcgill.ca/~aking6/papers/thesis.pdf'>King, 2004, M.Sc. thesis</a>; 
+	<a  target=_blank href='http://cgm.cs.mcgill.ca/~aking6/papers/bio_adv.pdf'>King et al, 2004</a>) and is available upon request.<br>The input / output parsers, the webservices and the web interface were developped by Sylvain Broh&eacute;e.
+	</p>
+
+</ul>
+
+
+<h3>This manual is freely adapted from the help of the command line tool written by Andrew King.</h3>
+
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input and output formats</h4>
+<ul>
+<h4>Input formats</h4>
+The accepted input formats are GML, tab-delimited and adjacency matrix. 
+For more explanations about these, refer to the <a href = 'help.convert_graph.html'>manual of convert-graph</a>.
+
+
+<h4>Output format</h4>
+A tab-delimited text file with 2 columns. The first column
+indicates the element, the second column the class (cluster). 
+
+</ul>
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+
+<h4><A NAME="max_clust"></A>Maximal number of clusters</h4>
+<ul> 	
+If set to <i>num</i>, allow no more than <i>num</i> clusters.  <i>num</i> must be between 2 and <i>n</i>, where <i>n</i> is the number of vertices in the graph.  If this value is not specified or invalid, <i>n</i> clusters are used.
+</ul>
+
+<h4><A NAME="tabulength"></A>Tabu length</h4>
+<ul> 	
+If set to <i>num</i>, set the tabu length to <i>num</i>.  Default value is 1.  Note that when the tabu list tolerance is used, vertices can appear on the tabu list more than once and moving them is only forbidden when they are on the tabu list more than TabuTol times, where TabuTol is the tabu list tolerance value.
+</ul>
+
+<h4><A NAME="tabulist"></A>Tabu list tolerance</h4>
+<ul> 	
+If set to <i>num</i>, set the tabu list tolerance to <i>num</i>. The tabu
+list tolerance is the number of times a vertex must appear on the tabu
+list before moving it is forbidden.
+</ul>
+
+<h4><A NAME="naive_stop"></A>Naive stopping tolerance</h4>
+<ul> 	
+Number of steps that the naive scheme will continue without improving the best cost. If you run the scaled scheme, using a higher
+naive stopping tolerance isn't likely to improve your results. (Default : 5)
+</ul>
+
+<h4><A NAME="scale_stop"></A>Scaled stopping tolerance</h4>
+<ul> 	
+This is the number of steps that the scaled scheme will continue without
+improving the best cost.  Setting the tolerance to 0 will cause the
+algorithm to skip the scaled scheme. (Default : 5)
+</ul>
+
+<h4><A NAME="div_freq"></A>Diversification frequency</h4>
+<ul> 	
+If set to <i>num</i>, set the diversification frequency to <i>num</i>.  Without this option, no diversification will be performed. If the <i>shuffling diversification length</i> option is also used, then <i>num</i> is the shuffling diversification frequency.  If the <i>shuffling diversification length</i> option is
+not used, then <i>num</i> is the destructive diversification frequency.  However, it
+is recommended to use the <i>shuffling diversification length</i> option, because destructive diversification isn't much help.
+</ul>
+
+<h4><A NAME="shf_div_len"></A>Shuffling diversification length</h4>
+<ul> 	
+If set to <i>num</i>, set the shuffling diversification length to <i>num</i>.  That means that the
+last <i>num</i> moves in the diversification period will be diversification
+moves. Don't set this to be higher than the diversification frequency.
+</ul>
+
+
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+</h4>
+
+</blockquote>
+</body>
+</html>

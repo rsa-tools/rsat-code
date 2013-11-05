@@ -1,0 +1,214 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	features-from-dssp
+
+        v1.0, 1997 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        features-from-dssp [-i inputfile] [-o outputfile] [-v]
+	[-strand R|D|DR] [-min #] [-minH #] [-minS #] [-minB #] 
+	[-minT #]
+
+DESCRIPTION
+	extracts features from a dssp file.
+	dssp: definition of secondary structures in proteins
+
+CATEGORY
+	util
+	conversion
+	drawing
+
+REFERENCES
+	Kabsch, W., and Sander, C. (1983). Dictionary of protein
+	secondary structure: pattern recognition of hydrogen-bonded 
+	and geometrical features. Biopolymers 22, 2577-2637.
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-map mapname
+	-strand [D | R | DR] for compatibility with feature-map
+	-min #	minimum feature size. Shorter structures are not printed.
+	-minH #	minimum H (helix) size
+	-minB #	minimum B (strand) size
+	-minS #	minimum E (strand) size
+	-minT #	minimum T (turn) size
+
+INPUT FORMAT
+	Any output file from the program dssp (see reference).	
+	
+OUTPUT FORMAT
+	The output format is a file that can be used as input 
+	by the program feature-map.
+	
+EXAMPLES
+       features-from-dssp -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+features-from-dssp options
+--------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-map mapname
+-strand [D | R | DR] for compatibility with feature-map
+-min #	min feature size.
+-minH #	minimum helix size
+-minB #	minimum B strand size
+-minS #	minimum S strand size
+-minT #	minimum turn size
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+$strand = "DR";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-map") {
+    $map = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-strand") {
+    $strand = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-min") {
+    $minsize = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] =~ /^-min([a-z])$/i) {
+    $minsize{uc($1)} = $ARGV[$a+1];
+
+  }
+}
+
+
+### check argument values
+if ($map eq "") {
+    $map = $inputfile;
+}
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out ";features-from-dssp result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  print $out ";min feature size	$minsize\n" unless ($minsize eq "");
+  foreach $k (sort keys %minsize) {
+      print $out ";min $k size\t$minsize{$k}\n";
+  }
+  print $out ";map\ttype\tid\tstrand\tstart\tend\tdescr\n";
+}
+
+###### execute the command #########
+$field_width = 8;
+$started = 0;
+$current_struct = "";
+while (<$in>) {
+    if ($started) {
+	$seq_res_nb = substr($_,0,5);
+	$residue = substr($_,5,5);
+	$aa = substr($_,13,1);
+	$structure = substr($_,16,1);
+	if ($structure ne $current_struct) {
+	    $end = $residue -1;
+	    $length = $end - $start + 1;
+	    &PrintFeature if (($current_struct =~ /\S/) && ($length >= $minsize) && ($length >= $minsize{uc($current_struct)}));
+	    $start = $residue;
+	    $current_struct = $structure;
+	}
+    } elsif (/^\s*#/) {
+	$started = 1;
+    }
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintFeature {
+    $struct_name{T} = "turn";
+    $struct_name{H} = "a_helix";
+    $struct_name{B} = "b_bridg";
+    $struct_name{E} = "e_str";
+    $struct_name{G} = "3-10";
+    $struct_name{I} = "pi";
+    $struct_name{S} = "bend";
+
+
+    $description = "$struct_name{$current_struct} $current_struct, length: $length";
+
+
+    print $out $map;
+    print $out "\tsec_str";
+    if (defined  $struct_name{$current_struct}) {
+	print $out "\t$struct_name{$current_struct}";
+    } else {
+	print $out "\t$current_struct";
+    }
+    print $out "\t$strand";
+    print $out "\t$start";
+    print $out "\t$end";
+    print $out "\t$description";
+    print $out "\n";
+}

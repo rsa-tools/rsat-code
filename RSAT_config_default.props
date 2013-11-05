@@ -1,0 +1,202 @@
+################################################################
+## This file specifies the configuration  of this server for the
+## Regulatory Sequence Analysis Tools (RSAT).
+##
+## In particular, you MUST replace all instances of
+## [RSAT_PARENT_PATH] by the FULL path of the directry containing the
+## folder rsa-tools.
+
+
+## name of the local server (which will appear in the log file)
+rsat_site=your_server_name
+
+## Administrator of this RSAT server (to whom the error reports should be sent by email)
+rsat_server_admin=your.mail@your.mail.server
+
+## Main RSAT directory
+RSAT=[RSAT_PARENT_PATH]/rsa-tools
+
+## RSAT binary directory. This directory should contain the executable
+## files resulting from the compilation of C programs in RSAT
+## (matrix-scan-quick, count-words, ...) as well as the applications
+## developed by external developers but required for some RSAT
+## functions (vmatch, mkvtree) or any other application considered as
+## complementary to RSAT (patser, consensus, ...).
+RSAT_BIN=[RSAT_PARENT_PATH]/rsa-tools/bin
+
+## Directory for storing temporary file (for stand-alone scripts + web server + web services)
+rsat_tmp=[RSAT_PARENT_PATH]/rsa-tools/public_html/tmp
+
+## Server for sending mail (SMTP) is site-dependent
+smtp=[smtp.at.your.site]
+
+################################################################
+## URL of the web server (important for the links).
+## This is necessary only if you want to install a local Web server
+rsat_www=http://www.rsat.eu/
+
+## Obsolete version of the web server, for backwards compatibility
+## This is necessary only if you want to install a local Web server
+www_rsa=http://www.rsat.eu/
+
+## Echo level of the web server (default 0, set to 1 or 2 for debugging).
+## This option should usually be left to 0, because it exposes all
+## parameters of the Web forms, which can be confising for the users.
+rsat_echo=0
+
+################################################################
+## Set the options
+##
+##     exec_time=1
+##     start_time=1
+##
+## if you want to report respectively the start time and execution
+## time of each task in a monthly log file.  
+##
+## Log file names:
+##    $RSAT/logs/exec_time_log_[SERVER]_[YEAR]_[MONTH].txt 
+##    $RSAT/logs/start_time_log_[SERVER]_[YEAR]_[MONTH].txt 
+##
+## These report files are useful for detecting time-consuming tasks on
+## the server.  All RSAT Perl scripts are monitored, whether they are
+## run on the Web server or on the command-line.  
+start_time=0
+exec_time=0
+
+################################################################
+## URL for the web services.
+##
+## This is necessary only if you want to install a local Web services
+## (beware of the distinction between Web server and Web
+## services. If you ignore the difference, you probably don't need
+## to configure the Web services)
+##
+## This URL may be distinct from rsat_www because some web servers
+## might delegate the web services to another server.
+rsat_ws=http://www.rsat.eu/web_services/RSATWS.wsdl
+
+## URL used by the RSAT Web services to give Web access to temporary files
+rsat_ws_tmp=http://www.rsat.eu/tmp
+
+## Default image format
+rsat_img_format=png
+
+################################################################
+## Parameters for sending commands to a PC cluster
+##
+## These options are useful only if you run the server on a PC
+## cluster.
+
+## Queue manager (e.g. torque, SGE, ...)
+QSUB_MANAGER=torque
+
+## Indicate the name of the cluster queue
+## This parameter is required to run tasks on the cluster
+CLUSTER_QUEUE=
+
+## Email reports
+##  `b'     Mail is sent at the beginning of the job.
+##  `e'     Mail is sent at the end of the job.
+##  `a'     Mail is sent when the job is aborted or  rescheduled.
+##  `s'     Mail is sent when the job is suspended.
+##  `n'     No mail is sent.
+BATCH_MAIL=as
+
+## Preferred shell for cluster jobs.  If defined, this shell will be
+## inserted at the beginning of each job script file, in order to run
+## the cluster jobs in a particular shell.
+CLUSTER_SHELL=
+
+## Additional options for the cluster
+QSUB_OPTIONS=
+
+## Restrict the cluster to a subset of the nodes
+NODES=
+
+################################################################
+## Mirror of the NCBI genomes (which are parsed to install genomes in RSAT)
+## Example: GENBANK_DIR=/databases/ftp.ncbi.nih.gov/genomes/
+GENKBANK_DIR=
+
+################################################################
+## Libraries required for direct access to the EnsEMBL genomes.
+
+## EnsEMBL host
+## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
+## get-ensembl-genome).
+## URL of the server for the EnsEMBL DB. By default, the
+## main ensembl server is called, but a local server can be specified.
+ensembl_host=ensembldb.ensembl.org
+
+## rsync site to download the ensembl data
+ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
+
+## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
+ensembl_version_safe=72
+
+## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
+ensembl=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-variation/modules
+
+################################################################
+## Parameters for Network Analysis Tools (NeAT)
+neat_supported=0
+
+## URL of the Web server hosting the NeAT Web services, where the result files
+## are to be found 
+neat_www_root=http://www.rsat.eu/
+
+## URL for the NeAT web services.  NeAT requires to install some
+## specific programs for path finding and graph layout.  Before
+## changing this URL, check that all the required tools are installed
+## on the new neat_ws server
+neat_ws=http://www.rsat.eu/web_services/RSATWS.wsdl
+
+## URL for the NeAT Web services temporary directory, where the result files
+## are to be found
+neat_ws_tmp=http://www.rsat.eu/tmp/
+
+## URL for java-based NeAT web services. The same remark as above holds,
+## please check the RSAT web server install guide to install the additional
+## programs before changing this variable.
+neat_java_ws=http://www.rsat.eu/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
+
+## The java programs on the Web interface are currently supported only at the
+## ULB server.
+neat_java_host=http://www.rsat.eu/
+
+# if forwarding to apache is not activated, indicate the tomcat port
+tomcat_port=
+
+################################################################
+## Directories for programs developed by third parties
+##
+## Those programs are not necessary for running RSAT commands, but
+## provide useful complements.
+
+## seqlogo, program to draw sequence logos used by convert-matrix
+seqlogo_dir=[parent_path_of_weblogo]/weblogo/
+
+## MEME, motif discovery program developed by Tim Bailey
+# meme_dir=/rsat/applications/meme.3.0.5/
+
+## MCL , graph-based clustering algorithm developed by Stijn Van Dongen, and
+## integrated in the NeAT suite.
+mcl_dir=[RSAT_PARENT_PATH]/rsa-tools/bin
+
+## RNSC , graph-based clustering algorithm developed by Andrew King and Igor
+## Jurisica, and integrated in the NeAT suite.
+rnsc_dir=[RSAT_PARENT_PATH]/rsa-tools/bin
+
+## BLAST
+blast_dir=[your_path_to_blast]
+
+
+## REA, k-shortest path finding program by Jimenez and Marzal. 
+## Used for the path finding algorithms in the NeAT suite.
+REA_ROOT=[RSAT_PARENT_PATH]/rsa-tools/contrib/REA
+
+## kWalks, subgraph extraction program by Pierre Dupont and Jerome Callut
+## Used for the pathway extraction hybrid algorithm in the NeAT suite.
+KWALKS_ROOT=[RSAT_PARENT_PATH]/rsa-tools/contrib/kwalks/bin

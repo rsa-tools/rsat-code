@@ -1,0 +1,279 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% DRAWING GRAPHS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Drawing graphs}
+
+
+\section{feature-map}
+
+The program \program{feature-map} draws a graphical map of a list of
+features. A typical usage of feature-map is to draw maps with the
+positions of regulatory motifs detected by pattern matching programs
+such \program{dna-pattern} (string-based matching) or \program{patser}
+(matrix-based matching).
+
+\subsection{Converting \textit{dna-pattern} matches into features}
+
+We will analyze the same PHO family as in the tutorial on pattern
+discovery. We will use successively \program{oligo-analysis},
+\program{dna-pattern} and \program{convert-features} to obtain a
+list of features with the matching locations of the over-represented
+hexanucleotides.
+
+\begin{enumerate}
+
+\item Run \program{oligo-analysis} to detect over-represented 
+hexanucleotides in the upstream sequences of the PHO
+genes.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim} 
+oligo-analysis -i PHO_up800.fasta -format fasta      \
+    -v -l 6 -2str                                    \
+    -return occ,proba -lth occ_sig 0 -bg upstream         \
+    -org Saccharomyces_cerevisiae -sort              \
+    -o PHO_up800_6nt_2str_ncf_sig0 
+\end{verbatim} \end{footnotesize}
+}
+
+\item Run \program{dna-pattern} to locate these patterns in 
+the upstream sequences.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim} 
+dna-pattern -i PHO_up800.fasta -format fasta    \
+    -pl PHO_up800_6nt_2str_ncf_sig0 -origin -0  \
+    -o  PHO_up800_6nt_2str_ncf_sig0_matches.tab
+\end{verbatim} \end{footnotesize}
+}
+
+\item Run \program{convert-features} to convert these pattern matches
+  into features.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-features                               \
+    -from dnapat -to ft                        \
+    -i PHO_up800_6nt_2str_ncf_sig0_matches.tab \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.ft 
+\end{verbatim} \end{footnotesize}
+}
+
+\end{enumerate}
+
+We will now play with this feature file, in order to obtain different
+drawings.
+
+\subsection{Basic feature maps}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+feature-map -format jpg                            \
+    -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg
+\end{verbatim} \end{footnotesize}
+}
+
+You can now open the file
+\file{PHO\_up800\_6nt\_2str\_ncf\_sig0\_matches.jpg} with a web
+browser or a drawing application.
+
+This is a very simple representation: each feature is represented as a
+box. A specific color is associated to each pattern (feature ID). 
+
+\subsection{Refining the feature map}
+
+We will use a few additional options to add information on this
+feature map. 
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+feature-map -format jpg                        \
+    -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
+    -legend -scalebar -scalestep 50            \
+    -from -800 -to 0 -scorethick               \
+    -title 'Over-represented 6nt in PHO upstream sequences' \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg
+\end{verbatim} \end{footnotesize}
+}
+
+This example illustrates some capabilities of \program{feature-map}:
+
+\begin{itemize}
+\item A title has been added to the drawing. 
+
+\item A specific height is associated to each box, to reflect
+the score associated to the corresponding feature.
+
+\item The scale bar indicates the location, in base pairs. 
+
+\item A legend indicates the color associated to each pattern, as well 
+as its score. 
+
+\end{itemize}
+
+\subsection{Map orientation}
+
+Feature-maps can be oriented horizontally or vertically. The
+horizontal orientation is usually the most convenient, but when labels
+are attached to each feature, the vertical orientation prevents them
+from expanding over each other.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+feature-map -format jpg                        \
+    -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
+    -legend -scalebar -scalestep 50            \
+    -from -800 -to 0                           \
+    -vertical -symbol -label pos               \
+    -title 'Over-represented 6nt in PHO upstream sequences'  \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg 
+\end{verbatim} \end{footnotesize}
+}
+
+In this representation, a \concept{label} is written besides each
+feature box. In addition, a \concept{symbol} has been attached to each
+feature ID (pattern). This symbol improves the readability of the map, 
+and is convenient for monochrome printers. 
+
+\subsection{Export formats}
+
+Feature-map can be exported in different formats, specified with the
+option \option{-format}.
+
+\begin{description}
+
+\item[jpg] (default) The \concept{jpg} format (also called
+  \concept{jpeg}) is a bitmap format recognized by all the web
+  browsers and most drawing applications. The jpg standard includes a
+  compression protocol, so that the resulting images occupy a
+  reasonable space on the hard disk.
+
+\item[png] The \concept{png} format is a bitmap format which gives a
+  better color rendering than jpg. It is not compressed, and requires
+  more space for storage. It is recognized by most browsers.
+
+\item[ps] The \concept{postscript} (\concept{ps}) format is a
+  vectorial format, which ensures a high quality result on printing
+  devices. Postscript files can be opened with specific applications,
+  depending on the operating system (ghostview, ghostscript). This
+  format is recommended for drawing graphs to be included in
+  publications.
+
+\end{description}
+
+\subsection{HTML maps}
+
+A HTML map can be created, which allows to display dynamically the
+feature-map in a web browser. When the users positions the mouse over
+a feature, the corresponding information is displayed in the status
+bar.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+feature-map -format jpg                        \
+    -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
+    -legend -scalebar -scalestep 50            \
+    -from -800 -to 0                           \
+    -scorethick  -dots                         \
+    -title 'Over-represented 6nt in PHO upstream sequences' \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg \
+    -htmap > PHO_up800_6nt_2str_ncf_sig0_matches.html
+\end{verbatim} \end{footnotesize}
+}
+
+Notice that we used the option \option{-dot} to attach a colored filled 
+circle to each feature box. 
+
+Open the file \file{PHO\_up800\_6nt\_2str\_ncf\_sig0\_matches.html}
+with a web browser (e.g. Netscape, Mozilla, Safari). Position the
+mouse cursor over a feature (either the box or the filled circle
+attached to it), and look the status bar at the bottom of the browser
+window.
+
+\subsection{Other options}
+
+The program \program{feature-map} includes a few other options.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+feature-map -help
+\end{verbatim} \end{footnotesize}
+}
+
+A complete description of their functionality is provided in 
+the help pages.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+feature-map -h
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Feature converters}
+
+In the previous tutorial, we used the program
+\program{convert-features} to convert matches from
+\program{dna-pattern} to features. 
+
+\RSAT includes a few additional converters (these are older versions,
+and their functionalities will progressively be incorporated in
+\program{convert-features}).
+
+\begin{description}
+
+\item[features-from-dssp] extracts features from the output file of
+\program{dssp} (secondary structures)
+
+\item[features-from-fugue] extracts features from the output file of
+\program{fugue}
+
+\item[features-from-gibbs] extracts features from the \program{gibbs} 
+motif sampler, developed by Andrew Neuwald. 
+
+\item[features-from-matins] extracts features from the result of 
+\program{matinspector}, developed in Thomas Werner's team. 
+
+\item[features-from-msf] converts a multiple alignment file from 
+format \file{msf} for features. 
+
+\item[features-from-patser] extracts features from the result of the 
+matrix-based pattern matching \program{patser}, developed by Jerry Hertz. 
+
+\item[features-from-sigscan] extracts features from the results of the
+\program{sigscan} program. 
+
+\item[features-from-swissprot] extracts features from a \program{Swissprot} file. 
+
+\end{description}
+
+
+If you need to draw features from any other type of program 
+output, it is quite simple to write your own converter. The feature-map 
+input is a tab-delimited text file, with one row per feature, and 
+one column per attribute. 
+
+\begin{enumerate}
+\item map label (eg gene name)
+\item feature type
+\item feature identifier (ex: GATAbox, Abf1\_site)
+\item strand (D for Direct, R for Reverse),
+\item feature start position
+\item feature end position
+\item (optional) description 
+\item (optional) score
+\end{enumerate}
+
+\section{XYgraph}
+
+The program \program{XYgraph} is a simple utility which plots graphs
+from a series of (x,y) coordinates.
+
+\subsection{Exercise: drawing features from patser}
+
+In the section on pattern-matching, we scanned all yeast upstream
+sequences with the PHO matrix and stored the result in a file
+(\texttt{PHO\_matrix\_matches\_allup.txt}).
+
+With the programs \textit{features-from-patser} and
+\textit{feature-map}, draw a map of the sites found in this analysis.

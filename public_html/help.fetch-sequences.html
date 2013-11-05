@@ -1,0 +1,244 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+  <head>
+    <title>manual fetch-sequences</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" href="main.css" type="text/css" />
+  </head>
+
+  <body class="info">
+
+    <center><h2><a href="RSAT_home.cgi">RSA-tools</a> - <a href='fetch_sequence_form.php'>fetch-sequences</a> manual</h2></center>
+
+    <!-- INDEX BEGIN -->
+    <div name="index">
+    <p><a name="__index__"></a></p>
+
+    <ul>
+	    <li><a href="#name">NAME</a></li>
+	    <li><a href="#version">VERSION</a></li>
+	    <li><a href="#description">DESCRIPTION</a></li>
+	    <li><a href="#authors">AUTHORS</a></li>
+	    <li><a href="#category">CATEGORY</a></li>
+	    <li><a href="#usage">USAGE</a></li>
+	    <li><a href="#input_format">INPUT FORMAT</a></li>
+	    <li><a href="#output_format">OUTPUT FORMAT</a></li>
+	    <li><a href="#options">OPTIONS</a></li>
+	    <li><a href="#see_also">SEE ALSO</a></li>
+	    <li><a href="#wish_list">WISH LIST</a></li>
+    </ul>
+
+    <hr name="index" />
+    </div>
+    <!-- INDEX END -->
+
+    <hr />
+    <h1><a name="name">NAME</a></h1>
+    <p>fetch-sequences</p>
+    <hr />
+    
+    <h1><a name="version">VERSION</a></h1>
+    <p>$program_version</p>
+    <hr />
+
+    <h1><a name="description">DESCRIPTION</a></h1>
+    <p>Retrieve genome sequences for a set of coordinates specified in a bed file.</p>
+    <hr />
+
+    <h1><a name="authors">AUTHORS</a></h1>
+    <dl>
+    <dt><strong><a name="jacques_van_helden_jacques_van_helden_ulb_ac_be" class="item">Jacques van Helden &lt;<a href="mailto:Jacques.van.Helden@ulb.ac.be">Jacques.van.Helden@ulb.ac.be</a>&gt;</a></strong></dt>
+    <p>Adapted from a script developed by Carl Herrmann.</p>
+    <hr />
+    
+    <h1><a name="category">CATEGORY</a></h1>
+    <p>genomics<br/>sequences</p>
+    <hr />
+
+    <h1><a name="usage">USAGE</a></h1>
+    <p>fetch-sequences [-i bedfile] [-o seqfile] [-v #] [...]<br/><br/>
+      Examples
+      <dl>
+        <dt>Retrieve peaks identified by the peak-calling program MACS.
+          <dd>fetch-sequences -i MACS_output_peaks.bed -genome mm8</dd></dt><br/>
+        <dt>To retrieve regions of fixed width (200bp) centred on the peak summitsreturned by MACS.
+          <dd>fetch-sequences -i MACS_output_summits.bed -genome mm8 -extend 100</dd></dt>
+      <dl>
+    </p>
+    <hr />
+
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<ol>
+    The definition of the BED format is provided on the UCSC Genome Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).<br/>
+    The first three required BED fields are:<br/><br/>
+
+  <li>Chrom</li>
+        The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold (e.g. scaffold10671).<br/><br/>
+
+  <li>ChromStart</li>
+        The starting position of the feature in the chromosome or scaffold.
+        The first base in a chromosome is numbered 0.<br/><br/>
+
+  <li>ChromEnd</li>
+        The ending position of the feature in the chromosome or scaffold.<br/>
+        The chromEnd base is not included in the display of the feature. For example, the first 100 bases of a chromosome are defined as chromStart=0, chromEnd=100, and span the bases numbered 0-99.<br/><br/>
+
+    The 9 additional optional BED fields are:<br/><br/>
+
+  <li>Name</li>
+        Defines the name of the BED line. This label is displayed to the left of the BED line in the Genome Browser window when the track is open to full display mode or directly to the left of the item in pack mode.<br/><br/>
+
+  <li>Score</li>
+        A score between 0 and 1000. If the track line useScore attribute is set to 1 for this annotation data set, the score value will determine the level of gray in which this feature is displayed (higher numbers = darker gray).<br/><br/>
+
+  <li>Strand</li>
+        Defines the strand - either '+' or '-'.<br/><br/>
+
+  <li>ThickStart</li>
+        The starting position at which the feature is drawn thickly (for example, the start codon in gene displays).<br/><br/>
+
+  <li>ThickEnd</li>
+        The ending position at which the feature is drawn thickly (for example, the stop codon in gene displays).<br/><br/>
+
+  <li>ItemRgb</li>
+        An RGB value of the form R,G,B (e.g. 255,0,0). If the track line itemRgb attribute is set to "On", this RBG value will determine the display color of the data contained in this BED line. NOTE: It is recommended that a simple color scheme (eight colors or less) be used with this attribute to avoid overwhelming the color resources of the Genome Browser and your Internet browser.<br/><br/>
+
+  <li>BlockCount</li>
+        The number of blocks (exons) in the BED line.<br/><br/>
+
+  <li>BlockSizes</li>
+        A comma-separated list of the block sizes. The number of items in this list should correspond to blockCount.<br/><br/>
+
+  <li>BlockStarts</li>
+        A comma-separated list of block starts. All of the blockStart positions should be calculated relative to chromStart. The number of items in this list should correspond to blockCount.
+</ol>
+    <hr />
+
+    <h1><a name="output_format">OUTPUT FORMAT</a></h1>
+    <p>Sequences are exported in fasta format.</p>
+    <hr />
+
+    <h1><a name="options">OPTIONS</a></h1>
+    <dl>
+      <dt><a name="v" class="item"><strong>-v #</strong></a>
+        <dd>Level of verbosity (detail in the warning messages during execution)</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="h" class="item"><strong>-h</strong></a>
+        <dd>Display full help message</dd>
+      </dt>
+      
+      <br/>  
+          
+      <dt><a name="help" class="item"><strong>-help</strong></a>
+        <dd>Same as -h</dd>
+      </dt>
+      
+      <br/> 
+           
+      <dt><a name="inputfile" class="item"><strong>-i inputfile</strong></a>
+        <dd>The input file should be in bed format (see section INPUT FORMATS above).</dd>
+        <dd>If no input file is specified, the standard input is used. This allows to use the command within a pipe.</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="genome" class="item"><strong>-genome genome_version</strong></a> (mandatory)
+        <dd>Genome version (e.g. mm9, hg19).</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="header" class="item"><strong>-header_format header_format</strong></a>
+        <dd>Format for sequence headers.</dd><br/>
+        <dd>Supported header formats.</dd>
+        <dd>- UCSC (default)</dd>
+        <dd>- galaxy</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="upstr_ext" class="item"><strong>-upstr_ext #</strong></a>
+        <dd>Extend each region by # base pairs on the upstream side (i.e. left side for + strands, right side for - strand).</dd>
+        <dd>Under others, this option is convenient to retrieve regions of fixed width around the summits of peak calling results (e.g. summit file produced by MACS).</dd>
+      </dt>
+      
+      <br/>
+            
+      <dt><a name="downstr_ext" class="item"><strong>-downstr_ext #</strong></a>
+        <dd>Extend each region by # base pairs on the downstream side (i.e. right for + strand, left for - strand).</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="extend" class="item"><strong>-extend #</strong></a>
+        <dd>Extend each region by # base pairs on both upstream and downstream sides.</dd>
+      </dt>
+      
+      <br/>
+
+      <dt><a name="reference" class="item"><strong>-reference segment|end|start</strong></a>
+        <dd>Reference from which the sequences should be fetched.</dd></br>
+        <dd>segment (default)</dd>
+        <dd>Retrieve sequences from the start to the end positions of each feature (possibly extended with the options -upstr_ext, -downstr_ext or -extend).</dd><br/>
+        <dd>start | end</dd>
+        <dd>Retrieve sequences relative to repsectively the start or the end position of each feature.</dd>
+        <dd>This option is generally combined with the options -upstr_ext, -downstr_ext or -extend, in order to retrieve sequences of a fixed width around the end coordinate.</dd>
+      </dt>
+            
+      <br/>
+
+      <dt><a name="top" class="item"><strong>-top #</strong></a>
+        <dd>Only consider the # top features of the bed file as queries.</dd></br>
+        <dd>This option is convenient for restricting the number of peak sequences, and for testing.</dd>
+      </dt>
+      
+      <br/>
+
+      <dt><a name="chunk" class="item"><strong>-chunk #</strong></a>
+        <dd>Send queries to UCSC by chunk of # features (default: chunk=10000).</dd></br>
+        <dd>This can be useful to fix problems of timeout, which can occur if too many queries are sent to UCSC in one shot.</dd>
+      </dt>
+      
+      <br/>
+
+      <dt><a name="outputfile" class="item"><strong>-o outputfile</strong></a>
+        <dd>The output file is in fasta format.</dd></br>
+        <dd>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</dd>
+      </dt>   
+    </dl>
+    <hr />
+
+    <h1><a name="see_also">SEE ALSO</a></h1>
+    <dl><dt><strong><a name="peak-motifs" class="item">peak-motifs</a></strong>
+      <dd>A common utilization of fetch-sequences is to retrieve UCSC sequences for the peak coordinates produced by a peak calling program (e.g. MACS, SICER, SWEMBL, ...).
+      </dd>
+    </dt></dl>
+    <hr />
+
+    <h1><a name="wish_list">WISH LIST</a></h1>
+    <dl>
+      <dt><a name="maf" class="item"><strong>-maf</strong></a>
+        <dd>Get multi-genome alignment files instead of single-genome sequence.</dd>
+        <dd>The maf output requires to specify either a taxon (option -taxon) or a list of organisms (option -org_list organism_file.txt).</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="taxon" class="item"><strong>-taxon</strong></a>
+        <dd>Taxonomic level for multi-genome alignment files.</dd>
+      </dt>
+      
+      <br/>
+      
+      <dt><a name="mask" class="item"><strong>-mask</strong></a>
+        <dd>Add support for UCSC masking options (coding, repetitive, ...).</dd></br>
+        <dd>For the time being, all sequences are transformed to uppercases.</dd>
+      </dt>       
+    </dl>
+  </body>
+</hmtl>

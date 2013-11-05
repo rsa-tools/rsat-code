@@ -1,0 +1,389 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>KEGG network provider</TITLE>
+<META NAME="description" CONTENT="KEGG network provider">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Pathway_inference.html">
+<LINK REL="previous" HREF="Metabolic_path_finding.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Pathway_inference.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html471"
+  HREF="Pathway_inference.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html467"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html461"
+  HREF="Metabolic_path_finding.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html469"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html472"
+  HREF="Pathway_inference.html">Pathway inference</A>
+<B> Up:</B> <A NAME="tex2html468"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html462"
+  HREF="Metabolic_path_finding.html">Metabolic path finding</A>
+ &nbsp; <B>  <A NAME="tex2html470"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html473"
+  HREF="KEGG_network_provider.html#SECTION001110000000000000000">Introduction</A>
+<LI><A NAME="tex2html474"
+  HREF="KEGG_network_provider.html#SECTION001120000000000000000">Construction of yeast and E. coli metabolic networks</A>
+<UL>
+<LI><A NAME="tex2html475"
+  HREF="KEGG_network_provider.html#SECTION001121000000000000000">Study case</A>
+<LI><A NAME="tex2html476"
+  HREF="KEGG_network_provider.html#SECTION001122000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html477"
+  HREF="KEGG_network_provider.html#SECTION001123000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html478"
+  HREF="KEGG_network_provider.html#SECTION001124000000000000000">Interpretation of the results</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html479"
+  HREF="KEGG_network_provider.html#SECTION001130000000000000000">Summary</A>
+<LI><A NAME="tex2html480"
+  HREF="KEGG_network_provider.html#SECTION001140000000000000000">Troubleshooting</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION001100000000000000000">
+KEGG network provider</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION001110000000000000000">
+Introduction</A>
+</H1>
+
+<P>
+KEGG network provider allows you to extract metabolic networks from KEGG [<A
+ HREF="Bibliography.html#Kanehisa2008">15</A>] that are specific to a set of organisms.
+In addition, you can exclude certain compounds or reactions from these networks.
+
+<P>
+A range of tools works with KGML files. Click on ``Manual -&gt; Related tools'' to see a selection of them.
+KEGG network provider differs from these tools by allowing also the extraction of RPAIR networks and by supporting
+filtering of compounds, reactions and RPAIR classes.
+
+<P>
+KEGG network provider itself has no network analysis or visualization functions,
+but you can use a NeAT tool (a choice of them will appear upon termination of network construction)
+or any other graph analysis tool that reads gml, VisML or dot format for these purposes.
+
+<P>
+For visualization of KEGG networks, you can use iPATH [<A
+ HREF="Bibliography.html#ipath">22</A>], KGML-ED [<A
+ HREF="Bibliography.html#kgmled">17</A>] or
+metaSHARK [<A
+ HREF="Bibliography.html#metashark">12</A>].
+Yanasquare [<A
+ HREF="Bibliography.html#yana">27</A>] and Pathway Hunter Tool [<A
+ HREF="Bibliography.html#pht">26</A>] offer
+organism-specific KEGG network construction in combination
+with analysis functions. With [<A
+ HREF="Bibliography.html#kegggrah">36</A>], you can construct KEGG metabolic networks in R.
+
+<P>
+It should be noted that KEGG annotators omitted side compounds in the KGML files. Thus, certain molecules
+(such as CO2, ATP or ADP) might be absent from the metabolic networks extracted from these files.
+
+<P>
+It is also worth noting that constructing metabolic networks from KGML files produces networks of much lower quality
+than those obtained by manual metabolic reconstruction. In manual reconstruction, several resources are taken into account,
+such as the biochemical literature, databases and genome annotations (e.g. [<A
+ HREF="Bibliography.html#Foerster2003">8</A>]). This is why
+the metabolism of only a few organisms has been manually reconstructed so far.
+<BR>
+In automatically reconstructed networks, reactions might not be balanced and compounds might occur more
+than once with different identifiers (see e.g. [<A
+ HREF="Bibliography.html#Poolman2006">25</A>] for annotation problems in KEGG).
+For the purpose of path finding the automatically reconstructed metabolic networks may still be of interest.
+
+<P>
+
+<H1><A NAME="SECTION001120000000000000000">
+Construction of yeast and E. coli metabolic networks</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION001121000000000000000">
+Study case</A>
+</H2>
+
+<P>
+Our study case consists in the construction of two metabolic networks: one for five yeast species and the other for
+<I>Escherichia coli K-12 MG1655</I>.
+We will compare path finding results obtained for these two networks for a metabolic reference pathway (Lysine biosynthesis).
+
+<P>
+
+<H2><A NAME="SECTION001122000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the entry <B><I>Download organism-specific networks from KEGG</I></B>.
+
+<P>
+In the right panel, you should now see a form entitled
+  ``KEGG network provider''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO</TT> located at the bottom of the form.
+
+<P>
+The KEGG network provider form has now loaded the organism identifiers of five yeast species. As explained
+  in the form, the species concerned are: <I>Saccharomyces bayanus</I>, <I>Saccharomyces mikatae</I>,
+  <I>Saccharomyces paradoxus</I>, <I>Schizosaccharomyces pombe</I> and <I>Saccharomyces cerevisiae</I>.
+
+<P>
+</LI>
+<LI>Click the checkbox <TT>directed network</TT> to construct a directed metabolic network.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>.
+
+<P>
+The network extraction should take only a few seconds.
+  Then, a link to the extracted network is displayed.
+  In addition (for formats <I>tab-delimited</I> and <I>gml</I>), the Next step panel should appear.
+
+<P>
+</LI>
+<LI>Click on the button ``Find metabolic paths in this graph'' in the Next step panel. This button opens the
+Metabolic pathfinder with the yeast network pre-loaded.
+
+<P>
+</LI>
+<LI>Enter C00049 (L-Aspartate) as source node and C00047 (L-Lysine) as target node.
+
+<P>
+</LI>
+<LI>In section <B>Path finding options</B>, set the rank to 1. We are only interested in the first rank.
+
+<P>
+</LI>
+<LI>In section <B>Output</B>, select <TT>Graph</TT> as output with ``paths unified into one graph''
+
+<P>
+</LI>
+<LI>Click <TT>GO</TT>.
+  The seed node selection form appears to confirm our seed node choice.
+
+<P>
+</LI>
+<LI>Click <TT>GO</TT>.
+	After no more than one minute of computation, the graph unifying first rank paths between L-aspartate and L-lysine should appear.
+	You can store the graph image on your machine for later comparison.
+
+<P>
+</LI>
+</OL>
+
+<P>
+Repeat the previous steps, but instead of selecting <TT>DEMO</TT> in the KEGG network provider form, enter eco
+in the organisms text input field. Make sure to select <TT>directed network</TT> in the KEGG network provider form,
+then follow steps 4 to 10 as described above.
+
+<P>
+
+<H2><A NAME="SECTION001123000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+The command-line version of this tutorial is restricted to the <I>E. coli</I> and <I>S. cerevisiae</I>
+metabolic networks. It is assumed that you have installed the required command-line tools.
+
+<P>
+
+<OL>
+<LI>First we construct the directed metabolic network of <I>E. coli</I>.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		java graphtools.util.MetabolicGraphProvider -i eco -d -o eco_metabolic_network_directed.txt
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+</LI>
+<LI>Then, we search for the lightest paths in this network as follows:
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049
+		-t C00047 -r 1 -d -y con -b -T pathsUnion -O gml -o lysinebiosyn_eco.gml
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+</LI>
+<LI>To visualize the inferred pathway, you may open lysinebiosyn_eco.gml in Cytoscape or in yED.
+
+<P>
+</LI>
+<LI>We proceed by constructing the metabolic network of <I>S. cerevisiae</I>:
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		java graphtools.util.MetabolicGraphProvider -i sce -d -o sce_metabolic_network_directed.txt
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+</LI>
+<LI>Then, we enumerate paths between L-aspartate and L-lysine in it:
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049
+		-t C00047 -d -r 1 -y con -b -T pathsUnion -O gml -o lysinebiosyn_sce.gml
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+</LI>
+<LI>As before, we can visualize the lysinebiosyn_sce.gml file in a graph editor capable of reading gml files
+     (such as yED or Cytoscape).
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION001124000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+After having executed the steps of this tutorial, you should have obtained two pathway images:
+one for the yeast network and one for the <I>E. coli</I> network. Both pathways differ quite substantially.
+If we compare each of these pathways with the respective organism-specific pathway map in KEGG, we notice that
+the pathway inferred for the <I>E. coli</I> network reproduces the reference pathway correctly.
+<BR>
+The yeast pathway deviates from the <I>S. cerevisiae</I> KEGG pathway map from L-aspartate to but-1-ene-1,2,4-tricarboxylate,
+but recovers otherwise the reference pathway correctly (ignoring the intermediate steps 5-adenyl-2-aminoadipate and
+alpha-aminoadipoyl-S-acyl enzyme associated to EC number 1.2.1.31). 
+<BR>
+For comparison purposes, we have chosen the same start and end compound for both metabolic networks, but it should
+be noted that the reference lysine biosynthesis pathway in <I>S. cerevisiae</I> starts from 2-oxoglutarate.
+
+<P>
+The lysine biosynthesis KEGG map for yeast is available at:
+<PRE>
+http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&amp;mapno=00300
+</PRE>
+
+<P>
+The one for <I>E. coli</I> is available at:
+<PRE>
+http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&amp;mapno=00300
+</PRE>
+
+<P>
+
+<H1><A NAME="SECTION001130000000000000000">
+Summary</A>
+</H1>
+
+<P>
+The study case demonstrated that different organisms may employ different metabolic pathways for the synthesis or
+degradation of a given compound. For this reason, it is useful to be able to construct metabolic networks that are
+specific to a selected set of organisms.
+
+<P>
+
+<H1><A NAME="SECTION001140000000000000000">
+Troubleshooting</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>An empty graph (with zero nodes and edges) is returned.
+Make sure that the entered organism identifiers are valid in KEGG.
+They should consist of three to four letters only. If in doubt,
+check in the provided KEGG organism list.
+
+<P>
+</LI>
+</OL>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html471"
+  HREF="Pathway_inference.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html467"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html461"
+  HREF="Metabolic_path_finding.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html469"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html472"
+  HREF="Pathway_inference.html">Pathway inference</A>
+<B> Up:</B> <A NAME="tex2html468"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html462"
+  HREF="Metabolic_path_finding.html">Metabolic path finding</A>
+ &nbsp; <B>  <A NAME="tex2html470"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

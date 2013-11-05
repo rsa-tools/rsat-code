@@ -1,0 +1,2554 @@
+#!/usr/bin/perl
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
+#    push @INC, "$ENV{RSAT}/extlib/arch/";
+#    if ($config_site eq "uppsala") {
+#	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
+#		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
+#    }
+#    if ($config_site eq "ccg") {
+#	use lib ('/data/lib/bin', 
+#		 '/data/lib/lib/', 
+#		 '/data/lib/lib/perl5/site_perl/5.8.0/');
+#    }
+}
+
+require "RSA.lib";
+use RSAT::PostscriptWrapper;
+use GD;
+
+$start_time = &RSAT::util::StartScript();
+
+##################################################################
+##################### DEFAULT PARAMETERS #########################
+##################################################################
+%supported_format = ("jpg"=>1, 
+		     "gif"=>1,
+		     "png"=>1,
+		     "ps"=>1,
+		     );
+
+$img_format = $ENV{rsat_img_format} || "png";
+$supported_formats = join (",", keys %supported_format); 
+
+## General parameters
+$map_names = 1; ## Print map names
+$legend = 0; ## Draw legend box
+$draw_handles = 0;
+$draw_dots = 0;
+
+#### font sizes ####
+$small_font_width = 6;
+$small_font_height = 8;
+$large_font_width = 8;
+$large_font_height = 16;
+
+## Map parameters 
+$horizontal_map = 1;
+$verbose = 0;
+$view_from = "auto";
+$view_to = "auto";
+$map_spacing = 4;
+$map_thick = "auto";
+$map_length = 600;
+$x_border = 10;
+$y_border = 10;
+$max_feature_thick = 12;
+$min_feature_thick = 0;
+$feature_thick{'ORF'} = 14;
+$origin = 0;
+$dot_thick = 6;
+$dot_length = 6;
+$symbol_thick = 8;
+$symbol_length = 8;
+$handle_bar_length = 10;
+
+## Colors
+$monochrome = 0;
+$aa_colors= 0;
+%aa_color = ();
+$color_file = "";
+%feature_color = ();
+#$bg_rgb = "214,238,250",
+#$bg_rgb = "255,255,255",
+$bg_rgb = "220,220,220",
+
+
+## data 
+@keys = ('map','feature_type', 'id', 'strand', 'start_pos', 'end_pos', 'description', 'score');
+$format = "feature-map";
+$col{map} = 0;
+$col{feature_type} = 1;
+$col{id} = 2;
+$col{strand} = 3;
+$col{start_pos} = 4;
+$col{end_pos} = 5;
+$col{description} = 6;
+$col{score} = 7;
+@features = ();
+@label_keys = ();
+@id_list = ();
+@sorted_ids = (); ## feature identifiers sorted by max score value
+
+## Sequence format for reading sequence lengths
+$sequence_format = "fasta";
+
+## Read arguments
+&ReadArguments();
+
+################################################################
+#### check argument values
+if ($view_from > $view_to) {
+  $tmp = $view_from;
+  $view_from = $view_to;
+  $view_to = $tmp;
+}
+
+
+if (($map_thick > 0) && ($map_thick < (2*$max_feature_thick + 1))) {
+  $max_feature_thick = int(($map_thick -1)/2);
+}
+
+if ($#label_keys >= 0) {
+  $labels = 1;
+  $side_labels = 1 unless ($box_labels);
+}
+
+################################################################
+## Handles (symbols or dots) require a sufficient map thickness
+if (($draw_dots) || ($draw_symbols)) {
+  if ((&IsNatural($map_thick)) && ($map_thick < 60)) {
+    &RSAT::error::FatalError("Feature handles (dots or symbools) require a sufficient map thickness (at least 60 pixels). Please increase the thickness, or avoid the -symbol and -dot options");
+  }
+}
+
+################################################################
+## Read Data 
+($in, $input_dir) = &OpenInputFile($inputfile);
+&ReadMapData();
+&ReadSequenceLengths($sequence_file, $sequence_format) if ($sequence_file);
+
+################################################################
+## Calculate map dimensions
+&CalcDimensions();
+
+
+################################################################
+## Output
+
+$out = &OpenOutputFile($outputfile);
+
+### verbose (data report) ####
+&Verbose() if ($verbose);
+
+## Report input data
+&DataReport() if ($data_report);
+
+## HTML map 
+&OpenHTMLmap() if ($HTML_map);
+
+## Image Initialization 
+&OpenFeatureMap();
+
+## Map title 
+&DrawTitle();
+
+## Legend
+if ($legend) {
+  &DrawLegend();
+}
+
+## Export feature colors
+if ($ftcol_file) {
+  &ExportFtColors();
+}
+
+## Scale bar
+if ($scalebar) {
+  &DrawScaleBar();
+}
+
+
+## Draw the maps
+&DrawMaps();
+
+## Save the image file 
+if ($img_format eq "gif") {
+    print $out $image->gif;
+} elsif (($img_format eq "jpeg") ||
+	 ($img_format eq "jpg")) {
+    print $out $image->jpeg;
+} elsif ($img_format eq "png") {
+    print $out $image->png;
+
+} elsif ($img_format eq "ps") {
+    $image->output($outputfile);
+} else {
+    &RSAT::error::FatalError("Error: Format $img_format cannot be exported\n");
+}
+
+close $out if ($outputfile);
+
+&PrintHTMLmap() if ($HTML_map);
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+
+exit(0);
+
+######### END ##########
+
+
+####################################################################
+######################## SUBROUTINE DEFINITION #####################
+####################################################################
+
+################################################################
+# Draw a specific shape (symbol). 
+#
+# usage
+# DrawSymbol($symbol_type,$symbol_left,$symbol_top,$symbol_right,$symbol_bottom,$symbol_color);
+sub DrawSymbol {
+    my ($s_type,
+	$s_left, $s_top, $s_right, $s_bottom, 
+	$s_color) = @_;
+    my $s_x_center = ($s_left + $s_right)/2;
+    my $s_y_center = ($s_top + $s_bottom)/2;
+    my $s_width = abs($s_right - $s_left) + 1;
+    my $s_height = abs($s_top - $s_bottom) + 1;
+
+    if ($s_type eq "rectangle") {
+      $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "filled_rectangle") {
+      $image->filledRectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "filled_butterfly") {
+	if ($img_format eq "ps") {
+	    $image->filledPolygon($s_color, 
+				  $s_left, $s_top,
+				  $s_right, $s_bottom, 
+				  $s_right, $s_top,
+				  $s_left, $s_bottom,
+				  $s_left, $s_top
+				  );
+	} else {
+	    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+	    $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+	    $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+	    $image->fillToBorder($s_left+1,$s_y_center,$s_color,$s_color);
+	    $image->fillToBorder($s_right-1,$s_y_center,$s_color,$s_color);
+	}
+
+    } elsif ($s_type eq "butterfly") {
+      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+      $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+      $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "triangle_left") {
+      $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+      $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+      $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+
+    } elsif ($s_type eq "filled_triangle_left") {
+	if ($img_format eq "ps") {
+	    $image->filledPolygon($s_color, 
+				  $s_left, $s_y_center, 
+				  $s_right, $s_bottom,
+				  $s_right, $s_top,
+				  $s_left, $s_y_center
+				  );
+	} else {
+	    $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+	    $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+	    $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+	    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	}
+
+    } elsif ($s_type eq "triangle_right") {
+      $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+      $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+      $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+
+    } elsif ($s_type eq "filled_triangle_right") {
+	if ($img_format eq "ps") {
+	    $image->filledPolygon($s_color, 
+				  $s_left, $s_bottom, 
+				  $s_right, $s_y_center,
+				  $s_left, $s_top,
+				  $s_left, $s_bottom
+				  );
+	} else {
+	    $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+	    $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+	    $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+	    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	}
+
+    } elsif ($s_type eq "triangle_up") {
+      $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+      $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+      $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "filled_triangle_up") {
+	if ($img_format eq "ps") {
+	    $image->filledPolygon($s_color, 
+				  $s_left, $s_bottom, 
+				  $s_right, $s_bottom,
+				  $s_x_center, $s_top,
+				  $s_left, $s_bottom
+				  );
+	} else {
+	    $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+	    $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+	    $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+	    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	}
+
+    } elsif ($s_type eq "triangle_down") {
+      $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+      $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+      $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+
+    } elsif ($s_type eq "filled_triangle_down") {
+	if ($img_format eq "ps") {
+	    $image->filledPolygon($s_color, 
+				  $s_left, $s_top, 
+				  $s_right, $s_top,
+				  $s_x_center, $s_bottom,
+				  $s_left, $s_top
+				  );
+	} else {
+	    $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+	    $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+	    $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+	    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	}
+
+    } elsif ($s_type eq "circle") {
+      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+
+    } elsif ($s_type eq "filled_circle") {
+
+	### Temporarily inactivated because there is a bug. TO DEBUG
+      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+#      $image->filledArc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+
+    } elsif ($s_type eq "crossrect_diag") {
+      $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "crossrect_med") {
+      $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+      $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+      $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "crosscircle_diag") {
+      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "crosscircle_med") {
+      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+      $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+      $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "cross1") {
+      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "cross2") {
+      $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+      $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+    } elsif ($s_type eq "vbars") {
+      for ($h = $s_left; $h <= $s_right; $h += 2) {
+        $image->line($h, $s_top, $h, $s_bottom, $s_color);
+      }
+
+    } elsif ($s_type eq "hbars") {
+      for ($h = $s_top; $h <= $s_bottom; $h += 2) {
+        $image->line($s_left, $h, $s_right, $h, $s_color);
+      }
+    }
+}
+
+
+################################################################
+## Calculate the maximum score associated to each feature ID
+sub MaxScorePerID {
+    %max_score_per_id = ();
+    $no_scores = 1; ## Boolean variable indicating if there i at least one score
+    foreach my $map (keys %features) {
+	foreach my $f (@{$features{$map}}) {
+	    my $id = $f->{id};
+	    my $score = $f->{score};
+	    $no_scores = 0 if (&IsReal($score));
+	    $max_score_per_id{$id} = &max ($max_score_per_id{$id}, $score);
+	}
+    }
+    if ($no_scores) {
+	@sorted_ids = @id_list;
+    } else {
+	@sorted_ids = sort {$max_score_per_id{$b} <=> $max_score_per_id{$a}} keys(%max_score_per_id);
+    }
+}
+
+################################################################
+## Legend Initialization 
+sub InitLegend {
+    &RSAT::message::TimeWarn("Initializing the legend") if ($main::verbose >= 2);
+
+    #### calculate the max score for each feature ID
+    &MaxScorePerID();
+
+    #### calculate the limits of the legend box
+    $legend_spacing = 4;
+    if ($horizontal_map) {
+	$legend_top = $y_border;
+	$legend_top += $large_font_height + 8 unless ($title eq "");
+    } else {
+	$legend_top = $box_top;
+    }
+    $legend_height =  scalar(@id_list)*($small_font_height+$legend_spacing) + 2*$legend_spacing + $large_font_height;
+    $legend_bottom = $legend_top + $legend_height;
+
+    $legend_border = 4;
+    $max_id_length = 0;
+    foreach $id (@sorted_ids) {
+	$legend_text{$id} = $id." ".$max_score_per_id{$id};
+	$max_id_length = &max ($max_id_length, length($legend_text{$id}));
+    }
+    $legend_width = $max_id_length * $small_font_width + 3*$legend_border + $max_feature_thick;
+    $legend_width  = &max ($legend_width, 6*$small_font_width + 2*$legend_border);
+    if ($draw_handles) {
+	$legend_width += $handle_thick + $handle_bar_length;
+    }
+}
+
+################################################################
+## Export the features colors
+## TEMPORARY ?
+sub ExportFtColors {
+  &RSAT::message::TimeWarn("Writing the feature colors in $ftcol_file") if ($main::verbose >= 2);
+  ## get sequence IDs
+  $i = 0;
+  $ft_out = &OpenOutputFile($ftcol_file);
+  foreach my $id (@sorted_ids) {
+    $i++;
+    if ($aa_colors) {
+      $rect_color = $aa_color{$id};
+    } else {
+      $rect_color = $color_list[$i%($#color_list+1)];
+    }
+    $rect_color = &ChooseFeatureColor($id);
+    ($r,$g,$b)=split / /,$rect_color;
+    print $ft_out "$id\t$r,$g,$b\n";
+  }
+  close $ft_out;
+}
+
+################################################################
+## Draw the legend
+sub DrawLegend {
+    &RSAT::message::TimeWarn("Drawing the legend") if ($main::verbose >= 2);
+
+    #### Calculate limits of the legend box
+    $legend_right = $graph_x_size - $x_border;
+    $legend_left = $legend_right - $legend_width;
+
+    $image->filledRectangle($legend_left, $legend_top, $legend_right, $legend_bottom, $white);
+
+    $rect_left = $legend_left + $legend_border;
+    $rect_right = $rect_left + $max_feature_thick;
+
+    #### Take into account the feature handle associated to each ID
+    if ($draw_handles) {
+	$handle_left = $rect_right + $handle_bar_length + 1;
+	$handle_right = $handle_left + $handle_thick -1;
+	$legend_x = $handle_right + $legend_border + 1;
+    } else {
+	$legend_x = $rect_right + $legend_border + 1;
+    }
+    $legend_y = $legend_top + $legend_spacing;
+    $image->string($small_font, $rect_left, $legend_y, "Legend", $text_color);
+    $legend_y += $large_font_height + $legend_spacing;
+
+    ## Draw sequence IDs
+    $i = 0;
+    foreach my $id (@sorted_ids) {
+	$i++;
+#	$id =  $sorted_ids[$i];
+#	$id =  $id_list[$i];
+	$rect_top = $legend_y + 2;
+	$rect_bottom = $rect_top + $small_font_height - 1;
+	$rect_middle = ( $rect_top + $rect_bottom ) /2 + 1;
+	if ($aa_colors) {
+	    $rect_color = $aa_color{$id};
+	} else {
+	    $rect_color = $color_list[$i%($#color_list+1)];
+	}
+	$rect_color = &ChooseFeatureColor($id);
+#	print "$id\t$rect_color\n" if ($main::verbose >= 3); ## TEMPORARY IN ORDER TO EXTRACT THE COLOURS
+
+	if ($id eq "ORF") {
+	    #### a specific symbol for ORFs (empty box)
+	    $image->rectangle($rect_left, $rect_top, $rect_right, $rect_bottom, $rect_color);
+	} else {
+	    $image->filledRectangle($rect_left, $rect_top, $rect_right, $rect_bottom, $rect_color);
+
+	    ### draw handle
+	    if ($draw_handles) {
+		$image->line($rect_right, $rect_middle, $rect_right + $handle_bar_length, $rect_middle,  $rect_color);
+		if ($draw_symbols) {
+		    $handle_symbol =  $symbol_list[$i%($#symbol_list+1)];
+		    $handle_color =  $color_list[$i%($#symbol_list+1)];
+#		    $handle_color = $black;
+		} elsif ($draw_dots) {
+##		  $rect_color = $color_list[$i%($#color_list+1)];
+		  $handle_color =  $rect_color; ##$color_list[$i%($#symbol_list+1)];
+		  $handle_symbol = "filled_circle";
+		}
+		$handle_top = $legend_y + 2 + ($small_font_height - $handle_length)/2;
+		$handle_bottom = $handle_top + $handle_length;
+		DrawSymbol($handle_symbol, $handle_left, $handle_top, $handle_right, $handle_bottom, $handle_color) unless (($handle_left < 0) || ($handle_top < 0) || ($handle_rigth > $graph_x_size) || ($handle_bottom > $graph_y_size));
+	    }
+	}
+
+	$image->string($small_font, $legend_x, $legend_y,$legend_text{$id}, $text_color);
+	$legend_y += $small_font_height + $legend_spacing;
+    }
+}
+
+
+################################################################
+## Scale bar initialization 
+sub InitScaleBar {
+    if ($view_from eq "") {
+	$view_from = 0;
+    }
+    if ($view_to eq "") {
+	$view_to = 0;
+    }
+    if ($view_from == $view_to) {
+	$view_to++;
+    }
+    $range = abs($view_to - $view_from);
+    $range_order = int(log($range)/log(10));
+    unless ($scale_bar_step > 0) {
+        $scale_bar_step = 10**$range_order;
+        while ($range <= 5*$scale_bar_step) {
+	    $scale_bar_step /=2;
+	    $scale_bar_step =~ s/25/20/g;
+	    $scale_bar_step =~ s/2.5/2.0/g;
+        }
+    }
+    $from_letters = length(sprintf "%d", $view_from);
+    $to_letters =  length(sprintf "%d", $view_to);
+    $sb_letters = &max ($from_letters, $to_letters);
+
+    if ($horizontal_map) {
+	$sb_title_width = $small_font_height + 8;
+	$sb_thick = 16 + $small_font_height;
+    } else {
+	$sb_title_width = 5*$small_font_width + 8;
+	$sb_thick = 16 + $small_font_width*$sb_letters;
+	$sb_thick = &max ($sb_thick, $sb_title_width);
+    }
+    $grid_min = int($view_from/$scale_bar_step) * $scale_bar_step;
+    $grid_min += $scale_bar_step if ($grid_min < $view_from);
+}
+
+
+
+################################################################
+## Draw the scale bar
+sub DrawScaleBar {
+    warn "; Drawing the scale bar\n" if ($main::verbose >= 2);
+
+    if ($horizontal_map) {
+	$sb_left = $box_left;
+	$sb_right = $box_right;
+#	$sb_left = $map_start -$from_letters*$small_font_width/2 - 4;
+#	$sb_left -= $small_font_width * (length("scale") + $from_letters) - 4;
+#	$sb_right = $map_end + $to_letters*$small_font_width/2 + 4;
+	$sb_top = $x_border;
+	unless ($title eq "") {
+	    $sb_top += $large_font_height + 8;
+	}
+	$sb_bottom = $sb_top + $sb_thick;
+	$image->filledRectangle($sb_left, $sb_top, $sb_right, $sb_bottom, $white);
+
+#	$image->string($small_font, $map_start - $small_font_width*(length("Scale")) - 4 -$from_letters*$small_font_width/2, $sb_top+4, "Scale", $text_color);
+	$sb_y = $sb_bottom - 4;
+	$image->line($map_start, $sb_y, $map_end, $sb_y, $black);
+
+	$pos = $grid_min;
+	while ($pos <= $view_to) {
+	    $text = sprintf "%d", $pos;
+	    $y = $sb_y - 8 - $small_font_height;
+	    $x = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
+	    $image->string($small_font, $x - length($text)/2*$small_font_width, $y, $text, $text_color);
+	    $image->line($x, $sb_y - 2, $x, $sb_y + 2, $black);
+	    $pos += $scale_bar_step;
+	}
+
+    } else {
+	$sb_left = $x_border;
+	$sb_right = $sb_left + $sb_thick;
+	$sb_top = $box_top;
+	$sb_bottom = $box_bottom;
+	$image->filledRectangle($sb_left, $sb_top, $sb_right, $sb_bottom, $white);
+
+	$image->string($small_font, $sb_left+4, $sb_top+4, "Scale", $text_color);
+	$sb_x = $sb_right - 4;
+	$image->line($sb_x, $map_end, $sb_x, $map_start, $black);
+
+	$pos = $grid_min;
+	while ($pos <= $view_to) {
+	    $text = sprintf "%d", $pos;
+	    $x = $sb_x - 8 - length($text) * $small_font_width;
+	    $y = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
+	    $image->string($small_font, $x, $y - ($small_font_height/2), $text, $text_color);
+	    $image->line($sb_x - 2, $y, $sb_x + 2, $y, $black);
+	    $pos += $scale_bar_step;
+	}
+    }
+}
+
+################################################################
+##### Read input data 
+sub ReadMapData {
+    &RSAT::message::TimeWarn( "Reading map data") if ($main::verbose >= 2);
+
+    while ($new_data_line = <$in>) {
+	next if ($new_data_line =~ /^#/); ### skip header lines
+	next if ($new_data_line =~ /^;/); ### skip comment lines
+	next unless ($new_data_line =~ /\S/); ## skip empty lines
+	$new_data_line =~ s/\r//g; ## Remove DOS-specific carriage return
+	chomp($new_data_line);
+	unless ($new_data_line =~ /\t/) {   # if there are no tabs,
+	    $new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+	}
+	#    $new_data_line =~ s/\n//;
+	#print "$new_data_line\n";
+	$new_data_line =~ s/^ *//; ### suppress white spaces at the beginning af the line
+	@input_fields = split(/\t/, $new_data_line);
+
+	foreach $key (keys %col) {
+	    $temp_features{$key} = $input_fields[$col{$key}];
+	}
+
+	#### map name ####
+	$temp_features{map} =~ s/\'/_/g;
+	$current_map = $temp_features{map};
+	unless (defined $map_hash{$current_map}) {
+	    push @map_list, $current_map;
+	    $map_hash{$current_map} = 1;
+	}
+	
+	### max score
+	if (defined($fixed_max_score)) {
+	    $max_score = $fixed_max_score;
+	} else {
+	    $max_score = &max($max_score, $temp_features{score});
+	}
+
+	### min score
+	if (defined($fixed_min_score)) {
+	    $min_score = $fixed_min_score;
+	} else {
+	    $min_score = &min($min_score, $temp_features{score});
+	}
+
+	#### feature type ####
+	if (lc($temp_features{id}) eq "start_end") {   ### map end position
+	    $map_start{$current_map} = $temp_features{start_pos};
+	    $map_end{$current_map} = $temp_features{end_pos};
+	} elsif (lc($temp_features{id}) eq "seq_end") {   ### map end position
+	    $map_end{$current_map} = $temp_features{start_pos};
+	} elsif (lc($temp_features{id}) eq "seq_start") {   ### map start position
+	    $map_start{$current_map} = $temp_features{start_pos};
+	} elsif (lc($temp_features{feature_type}) eq "seq_origin") {   ### map origin position
+	    $map_origin{$current_map} = $temp_features{start_pos};
+
+	## Add the new feature to the map
+	} else 	{ 
+	    #### feature identifier ####
+	    if ($id_number{$temp_features{id}} eq "") {
+		push (@id_list, $temp_features{id});
+		@id_number{$temp_features{id}} = $#id_list;
+	    }
+	    next if (($id_selection) && ($selected{$temp_features{id}} <1));
+
+	    #### feature strand ####
+	    $temp_features{strand} = uc($temp_features{strand});
+	    $temp_features{strand} =~ s/W/D/i;
+	    $temp_features{strand} =~ s/C/R/i;
+	    $temp_features{strand} =~ s/\+/D/i;
+	    $temp_features{strand} =~ s/F/D/i;
+	    $temp_features{strand} =~ s/\-/R/i;
+	    if ($temp_features{strand} =~ /D/i) {
+		$features_on_D_strand = 1;
+	    } elsif ($temp_features{strand} =~ /R/i) {
+		$features_on_R_strand = 1;
+	    } else {
+		$temp_features{strand} ="DR";
+		$features_on_D_strand = 1;
+	    }
+
+	    #### start and end positions ####
+	    if (&IsReal($temp_features{start_pos})) {
+		unless (&IsReal($temp_features{end_pos})) {
+		    $temp_features{end_pos} = $temp_features{start_pos};
+		}
+		if  ($temp_features{start_pos} > $temp_features{end_pos}) {
+		    $tmp = $temp_features{end_pos};
+		    $temp_features{end_pos} = $temp_features{start_pos};
+		    $temp_features{start_pos} = $tmp;
+		}
+		$temp_features{end_pos} -= $origin;
+		$temp_features{start_pos} -= $origin;
+		
+		### store new record in the feature list
+		$f = $#{$features{$current_map}} + 1;
+		foreach $key (@keys) {
+		    $features{$current_map}[$f]{$key} = $temp_features{$key};
+		}
+	    }
+	}
+    }
+}
+
+################################################################
+#
+# Read the lengths of the reference sequences, for calculating 
+# the length of the backbones
+#
+sub ReadSequenceLengths {
+    warn "; Reading sequence lengths\n" if ($main::verbose >= 2);
+
+    my ($seq_file, $seq_format) = @_;
+
+    open LEN,  "sequence-lengths -i $seq_file -format $seq_format |";
+    while (<LEN>) {
+	next if (/^;/);
+	@fields = split;
+	$seq_id = $fields[0];
+	$seq_len = $fields[1];
+	if (&IsNatural($seq_len)) {
+	    warn "$seq_id\t$seq_len\n" if ($verbose >= 2);
+	    $map_end{$seq_id} = $seq_len;
+	}
+    }
+#    $map_end{$current_map};
+#    die join "\t", $seq_file, $seq_format, "\n";;
+}
+
+
+################################################################
+## Create a new feature map
+sub OpenFeatureMap {
+    warn "; Opening feature map\n" if ($main::verbose >= 2);
+
+    my ($format) = @_;
+
+    ### create new image ####
+    if ($img_format eq "ps") {
+	$image = new RSAT::PostscriptWrapper($graph_x_size, $graph_y_size);
+	$small_font = "Courier 10";
+	$large_font = "Courier 13";
+    } else {
+	$image = new GD::Image($graph_x_size, $graph_y_size);
+	$small_font = gdSmallFont;
+	$large_font = gdLargeFont;
+    }
+
+    ################################################################
+    ## Allocate background color
+    $bg_color = &set_bg_color($bg_rgb);
+
+    ################################################################
+    #### define colors
+    if ($monochrome) {
+	&GrayScalePalette();
+    } else {
+	&StandardPalette();
+    }
+    &AminoAcidPalette() if ($aa_colors);
+
+    ## Read color specification from a file
+    &ReadColors($color_file) if ($color_file);
+
+    ## Fill the background
+    $image->filledRectangle(1,1,$graph_x_size, $graph_y_size, $bg_color);
+
+    #### define symbol list ####
+    if ($horizontal_map) { ### avoid symbols with no horizontal symmetry
+	push(@symbol_list, "filled_rectangle");
+	push(@symbol_list, "filled_butterfly");
+	push(@symbol_list, "filled_circle");
+	push(@symbol_list, "filled_triangle_right");
+	push(@symbol_list, "triangle_left");
+	push(@symbol_list, "rectangle");
+	push(@symbol_list, "circle");
+	push(@symbol_list, "crossrect_diag");
+	push(@symbol_list, "butterfly");
+	push(@symbol_list, "vbars");
+	push(@symbol_list, "crosscircle_med");
+	push(@symbol_list, "cross1");
+	push(@symbol_list, "cross2");
+	push(@symbol_list, "filled_triangle_left");
+	push(@symbol_list, "triangle_right");
+	push(@symbol_list, "hbars");
+	    push(@symbol_list, "crossrect_med");
+	push(@symbol_list, "crosscircle_diag");
+    } else {
+	push(@symbol_list, "filled_triangle_right");
+	$vertical_mirror{"filled_triangle_right"} = "filled_triangle_left"; 
+	push(@symbol_list, "filled_rectangle");
+	push(@symbol_list, "filled_butterfly");
+	push(@symbol_list, "filled_circle");
+	push(@symbol_list, "filled_triangle_left");
+	$vertical_mirror{"filled_triangle_left"} = "filled_triangle_right"; 
+	    push(@symbol_list, "filled_triangle_up");
+	push(@symbol_list, "filled_triangle_down");
+	push(@symbol_list, "vbars");
+	push(@symbol_list, "hbars");
+	push(@symbol_list, "triangle_right");
+	$vertical_mirror{"triangle_right"} = "triangle_left"; 
+	push(@symbol_list, "triangle_left");
+	$vertical_mirror{"triangle_left"} = "triangle_right"; 
+	push(@symbol_list, "triangle_up");
+	push(@symbol_list, "triangle_down");
+	push(@symbol_list, "rectangle");
+	push(@symbol_list, "circle");
+	push(@symbol_list, "cross1");
+	push(@symbol_list, "cross2");
+	push(@symbol_list, "butterfly");
+	push(@symbol_list, "crossrect_diag");
+	push(@symbol_list, "crossrect_med");
+	push(@symbol_list, "crosscircle_med");
+	push(@symbol_list, "crosscircle_diag");
+    }
+}
+
+################################################################
+### Return the coordinates in pixels for a feature position
+sub PixelPos {
+    local($l_feature_pos) = $_[0]; 
+    local($l_pixel_pos);
+    $l_pixel_pos = $map_start + $map_length*($l_feature_pos - $view_from)/($view_to +1 - $view_from);
+    return $l_pixel_pos;
+}
+
+################################################################
+#### Calculate map dimensions
+sub CalcDimensions {
+    &RSAT::message::Info("Calculating map dimensions") if ($main::verbose >= 2);
+
+    $nb_of_maps = $#map_list +1;
+    $max_pos = "ND";
+    $min_pos = "ND";
+    $max_label_length{'D'} = 0;
+    $max_label_length{'R'} = 0;
+    $max_map_name_length - 0;
+    foreach $map (@map_list) {
+	#### maximal map name length ####
+      if ($map_names) {
+	$max_map_name_length = &max($max_map_name_length, length($map));
+	$max_end_letters = &max($max_end_letters, length($map_end{$map}));
+	$max_start_letters = &max($max_start_letters, length($map_start{$map}));
+      }
+
+	#### Feature labels and maximum label length ####
+	if ($labels) {
+	    foreach $f (@{$features{$map}}) {
+		$label = "";
+		foreach $k (@label_keys) {
+		    if ($f->{strand} =~ /^R$/i) {
+			$label_strand = "R";
+		    } else {
+			$label_strand = "D";
+		    }
+		    if ($k eq "id") {
+			$add_label = $f->{id};
+		    } elsif($k eq "strand") {
+			$add_label = $f->{strand};
+		    } elsif($k eq "descr") {
+			$add_label = $f->{description};
+		    } elsif($k eq "score") {
+			$add_label = $f->{score};
+		    } elsif($k eq "pos") {
+			$add_label = $f->{start_pos};
+			$add_label .= ":";
+			$add_label .= $f->{end_pos};
+		    } else {
+			$add_label = "";
+		    }
+		    unless ($add_label eq "") {
+			if ($f->{strand} =~ /^R$/i) {
+			    $label = "$add_label $label";
+			} else {
+			    $label = "$label $add_label";
+			}
+		    }
+		}
+		$label =~ s/\s+$//; ### remove spaces at the end
+		$label =~ s/^\s+//; ### remove spaces at the beginning
+		if ($f->{strand} =~ /D/i) {
+		    $label = " $label"; ### add one space at the beginning
+		} else {
+		    $label = "$label "; ### add 1 space at the end
+		}
+		$f->{label} = $label;
+		
+		#### max label length ####
+		if (length($label) > $max_label_length{$label_strand}) {
+		    $max_label_length{$label_strand} = length($label);
+		}
+	    }
+	}
+    }
+    
+    
+    #### min and max positions ####
+    unless (&IsReal($view_from) && (&IsReal($view_to))) {
+	foreach $map (@map_list) {
+	    foreach $f (@{$features{$map}}) {
+		push(@pos_list, $f->{start_pos}) if (&IsReal( $f->{start_pos}));
+		push(@pos_list, $f->{end_pos}) if (&IsReal( $f->{end_pos}));
+	    }
+	    if (&IsReal($map_start{$map})) {
+		push(@pos_list,$map_start{$map});
+	    }
+	    if (&IsReal($map_end{$map})) {
+		push(@pos_list,$map_end{$map});
+	    }
+	}
+	$min_pos = &min(@pos_list);
+	$max_pos = &max(@pos_list);
+    }
+    if (&IsReal($view_from)) {
+	$view_from -= $origin;
+    } else {
+	$view_from = $min_pos;
+    }
+    if (&IsReal($view_to)) {
+	$view_to -= $origin;
+    } else {
+	$view_to = $max_pos;
+    }
+    
+    #### auto determination of map thickness
+    @feature_thick_list = values %feature_thick;
+    if (&IsNatural($map_thick)) {
+	$map_border = $map_thick -1;
+	$map_border -= 2* $max_feature_thick; #feature boxes
+	$map_border -=  $handle_thick if (($draw_handles) && ($features_on_D_strand));
+	$map_border -= $handle_thick if (($draw_handles) && ($features_on_R_strand));	#symbols
+	$map_border -= $handle_bar_length if ((($side_labels)|| ($draw_handles)) && ($features_on_D_strand));	#line
+	$map_border -= $handle_bar_length if ((($side_labels)|| ($draw_handles)) && ($features_on_R_strand));	#line
+	
+	if ($horizontal_map) {
+	    $map_border -= 2 * $small_font_height if ($side_labels);	#label
+	} else {
+	    $map_border -= ($max_label_length{'D'} + $max_label_length{'R'}) * $small_font_width;	#label
+	}
+	
+	$map_border = max(0,$map_border);
+    } else {
+	$max_feature_thick = &max($max_feature_thick, @feature_thick_list);
+	$map_border = 4;
+	$map_thick = 1 + 2*$map_border;
+	$map_thick += 2* $max_feature_thick; #feature boxes
+	$map_thick += $handle_thick if (($draw_handles) && ($features_on_D_strand));	#symbols
+	$map_thick += $handle_thick if (($draw_handles) && ($features_on_R_strand));	#symbols
+	$map_thick += $handle_bar_length if ((($side_labels)|| ($draw_handles)) && ($features_on_D_strand));	#line
+	$map_thick += $handle_bar_length if ((($side_labels)|| ($draw_handles)) && ($features_on_R_strand));	#line
+	
+	if ($horizontal_map) {
+	    $map_thick += 2 * $small_font_height if ($side_labels);	#label
+	} else {
+	    $map_thick += ($max_label_length{'D'} + $max_label_length{'R'}) * $small_font_width;	#label
+	    $map_thick = &max($map_thick, $max_map_name_length*$small_font_width);
+	}
+    }
+    
+    
+    if ($horizontal_map) {
+	#### X dimensions ####
+	$map_start = $x_border;
+	$map_start  += $max_start_letters*$small_font_width + 4; #### start value
+	$map_start  += $large_font_width * $max_map_name_length + 8; #### map name
+	
+	$map_end = $map_start + $map_length;
+	
+	$box_left = $x_border;
+	$box_right = $map_end + $small_font_width*$max_end_letters + 4;
+	$box_right += $to_letters * $small_font_width/2 + 4;
+	$graph_x_size = $box_right + $x_border;
+	
+	if ($legend) {
+	    &InitLegend;
+	    $graph_x_size += $legend_width + 8;
+	}
+	
+	#### Y dimensions ####
+	$graph_y_size = 2*$y_border;
+	$graph_y_size += $nb_of_maps*$map_thick + ($nb_of_maps-1)*$map_spacing;
+	if ($scalebar) {
+	    &InitScaleBar;
+	    $graph_y_size += $sb_thick + 8;
+	}
+	$graph_y_size += $large_font_height + 8 unless ($title eq ""); #### title
+	$graph_y_size = &max($graph_y_size , $legend_bottom + $y_border);
+
+    } else { ### vertical map
+	#### Y dimensions ####
+	$map_start = $y_border;
+	$map_start  += ($small_font_height + 4); #### start value
+	$map_start  += ($large_font_height + 8); #### map name
+	unless ($title eq "") {
+	    $map_start += $large_font_height + 8; #### title
+	}
+	$box_top = $map_start - 4 - $small_font_height - 8 - $large_font_height;
+	$map_end = $map_start + $map_length;
+	$graph_y_size = $map_end + $small_font_height + 4;
+	$graph_y_size += $y_border;
+	if ($legend) {
+	    &InitLegend;
+	}
+	$graph_y_size = &max($graph_y_size, $legend_bottom + $y_border);
+
+	$box_bottom = $graph_y_size - $y_border;
+	#	$box_bottom = $map_end + 4 + $small_font_height;
+
+	#### X dimensions ####
+	$graph_x_size = 2*$x_border;
+	$graph_x_size += $nb_of_maps*$map_thick + ($nb_of_maps-1)*$map_spacing;
+	$graph_x_size += $legend_width + 8 if ($legend);
+	if ($scalebar) {
+	    &InitScaleBar;
+	    $graph_x_size += $sb_thick + 8;
+	}
+    }
+    if ($view_to == $view_from) {
+	$scale = 1;
+    } else {
+	$scale = $map_length/($view_to - $view_from);
+    }
+}
+
+
+################################################################
+### Calculate positions for feature labels
+sub CalcLabelPos {
+    warn "; Calculating label positions\n" if ($main::verbose >= 2);
+    @{$rank{'D'}} = @{$rank{'R'}} = ();
+    @label_pos = ();
+    @{$label_pos{R}} = ();
+    @{$label_pos{D}} = ();
+
+    for $f (0..$#{$features{$map}}) {
+	$label_strand = $features{$map}[$f]{strand};
+	if ($label_strand =~ /^R$/i) {
+	    $label_strand = "R";
+	} else {
+	    $label_strand = "D";
+	}
+	$feature_mid_pos = (&PixelPos($features{$map}[$f]{start_pos}) + &PixelPos($features{$map}[$f]{end_pos}+1) - 1)/2;
+	$rank{$label_strand}[$f] = $f;
+	$label_pos{$label_strand}[$f] = $feature_mid_pos;
+    }
+
+    ################################################################
+    ### Adjust label pos for close features,
+    ### to avoid overlap between their labels
+    if ($horizontal_map) {
+	if ($draw_handles) {
+	    $overlap_width = $handle_length + 3;
+	}
+    } else {
+	$overlap_height = $small_font_height + 2;
+    }
+
+    foreach $s ('D', 'R') {
+	$last_pos = $last_f = "";
+	@sorted_rank = 0;
+
+	@sorted_rank = sort {
+	    $label_pos{$s}[$a] <=> $label_pos{$s}[$b];
+	} @{$rank{$s}};
+	$f =  $sorted_rank[0];
+	$pos =  $label_pos{$s}[$f];
+
+	foreach $r (1..$#sorted_rank) {
+	    $last_f = $f;
+	    $f = $sorted_rank[$r];
+	    if ($horizontal_map) {
+		$overlap_width = &max($handle_length + 3, 8 + $small_font_width*length($features{$map}[$f]{label}));
+	    }
+	    if (&IsReal($f)) {
+		$last_pos = $pos;
+		$pos = $label_pos{$s}[$f];
+		$label_width = length($features{$map}[$f]{'label'})*$small_font_width;
+		$current_overlap_width = &max($overlap_width,$label_width/2);
+		#print "$f\t$features{$map}[$f]{label}\t$label_width\t$current_overlap_width\n";
+		if ($horizontal_map) {
+		    if ($pos < $last_pos + $current_overlap_width) {
+			$label_pos{$s}[$f] =  $pos = $last_pos + $current_overlap_width;
+		    }
+		} else { ### vertical map
+		    if ($pos < $last_pos + $overlap_height) {
+			$label_pos{$s}[$f] =  $pos = $last_pos + $overlap_height;
+		    }
+		}
+	    }
+	}
+    }
+}
+
+
+
+
+################################################################
+#### Draw the title of the feature map
+sub DrawTitle {
+    warn "; Drawing title\n" if ($main::verbose >= 2);
+    if ($title ne "") {
+	$title_y_pos = $y_border + 2;
+	$title_x_pos = ($graph_x_size - length($title)*$large_font_width)/2;
+	if ($title_x_pos < 0) {
+	    $title_x_pos = 5;
+	    $title_font = $small_font;
+	    $title_font_width = $small_font_width;
+	} else {
+	    $title_font = $large_font;
+	    $title_font_width = $large_font_width;
+	}
+	$image->filledRectangle($title_x_pos - 4, $title_y_pos - 2, $title_x_pos + 4 + length($title)*$large_font_width, $title_y_pos + $large_font_height+ 2, $box_color);
+	$image->string($title_font, $title_x_pos, $title_y_pos, $title, $text_color);
+    }
+
+}
+
+
+################################################################
+# Draw a rectangle that does not exceed a given box. Exceeding parts
+# are clipped
+# Usage:
+#   RectInLimits($rect_left,$rect_top,$rect_right,$rect_bottom,$rect_color);
+sub RectInLimits {
+    local($rect_left)   = $_[0];
+    local($rect_top)    = $_[1];
+    local($rect_right)  = $_[2];
+    local($rect_bottom) = $_[3];
+
+    local($rect_color) = $_[4];
+    $rect_color = $black if ($rect_color eq "");
+
+    local($draw_rect_left)   = 1;
+    local($draw_rect_top)    = 1;
+    local($draw_rect_right)  = 1;
+    local($draw_rect_bottom) = 1;
+
+    if ($horizontal_map) {
+	$limit_top = $box_top;
+	$limit_bottom = $box_bottom;
+	$limit_left = $map_start;
+	$limit_right = $map_end;
+    } else {
+	$limit_top = $map_start;
+	$limit_bottom = $map_end;
+	$limit_left = $box_left;
+	$limit_right = $box_right;
+    }
+
+
+    if ($rect_left > $rect_right) {
+	$tmp = $rect_left;
+	$rect_left = $rect_rigth;
+	$rect_right = $tmp;
+    }
+    if ($rect_bottom < $rect_top) {
+	$tmp = $rect_bottom;
+	$rect_bottom = $rect_top;
+	$rect_top = $tmp;
+    }
+    if ($limit_left > $limit_right) {
+	$tmp = $limit_left;
+	$limit_left = $limit_rigth;
+	$limit_right = $tmp;
+    }
+    if ($limit_bottom < $limit_top) {
+	$tmp = $limit_bottom;
+	$limit_bottom = $limit_top;
+	$limit_top = $tmp;
+    }
+
+    unless (($rect_left > $limit_right) 
+            || ($rect_right < $limit_left) 
+            || ($rect_top > $limit_bottom) 
+            || ($rect_bottom <  $limit_top) )    
+                 { ### nothing to draw
+
+	if ($rect_left < $limit_left) {
+	    $rect_left = $limit_left;
+	    $draw_rect_left = 0;
+	} 
+	if ($rect_right > $limit_right) {
+	    $rect_right = $limit_right;
+	    $draw_rect_right = 0;
+        } 
+	if ($rect_top < $limit_top) {
+	    $rect_top = $limit_top;
+	    $draw_rect_top = 0;
+	} 
+	if ($rect_bottom > $limit_bottom) {
+	    $rect_bottom = $limit_bottom;
+	    $draw_rect_bottom = 0;
+        }
+
+	$image->line($rect_left, $rect_top, $rect_left, $rect_bottom, $rect_color) if ($draw_rect_left);
+	$image->line($rect_right, $rect_top, $rect_right, $rect_bottom, $rect_color) if ($draw_rect_right);
+	$image->line($rect_left, $rect_top, $rect_right, $rect_top, $rect_color) if ($draw_rect_top);
+	$image->line($rect_left, $rect_bottom, $rect_right, $rect_bottom, $rect_color) if ($draw_rect_bottom);
+    }
+}
+
+
+################################################################
+## Define the standard color palette
+sub StandardPalette {
+    &RSAT::message::Info("Defining standard palette") if ($main::verbose >= 2);
+
+    $white = $image->colorAllocate(255,255,255);
+    $black = $image->colorAllocate(0,0,0);
+    $gray_032 = $image->colorAllocate(32,32,32);
+    $gray_064 = $image->colorAllocate(64,64,64);
+    $gray_096 = $image->colorAllocate(96,96,96);
+    $gray_125 = $image->colorAllocate(125,125,125);
+    $gray_150 = $image->colorAllocate(150,150,150);
+    $gray_200 = $image->colorAllocate(200,200,200);
+    $gray_225 = $image->colorAllocate(225,225,225);
+
+    $yellow = $image->colorAllocate(255,255,0);
+    $yellow_225 = $image->colorAllocate(225,225,0);
+    $yellow_200 = $image->colorAllocate(200,200,0);
+    $yellow_127 = $image->colorAllocate(127,127,0);
+    $yellow_light = $image->colorAllocate(255,255,150);
+    $yellow_pale = $image->colorAllocate(255,255,200);
+
+    $green = $image->colorAllocate(0,255,0);
+    $green_200 = $image->colorAllocate(0,200,0);
+    $green_175 = $image->colorAllocate(0,175,0);
+    $green_127 = $image->colorAllocate(0,127,0);
+    $green_096 = $image->colorAllocate(0,96,0);
+    $green_064 = $image->colorAllocate(0,64,0);
+
+    $cyan = $image->colorAllocate(0,255,255);
+    $cyan_200 = $image->colorAllocate(0,200,200);
+    $cyan_127 = $image->colorAllocate(0,127,127);
+    $cyan_096 = $image->colorAllocate(0,96,96);
+
+    $blue = $image->colorAllocate(0,0,255);
+    $blue_191 = $image->colorAllocate(0,0,191);
+    $blue_127 = $image->colorAllocate(0,0,127);
+    $blue_096 = $image->colorAllocate(0,0,96);
+    $blue_064 = $image->colorAllocate(0,0,64);
+
+
+    $magenta = $image->colorAllocate(255,0,255);
+    $magenta_191 = $image->colorAllocate(191,0,191);
+
+    $red = $image->colorAllocate(255,0,0);
+    $red_191 = $image->colorAllocate(191,0,0);
+    $red_127 = $image->colorAllocate(127,0,0);
+    $red_096 = $image->colorAllocate(96,0,0);
+    $red_064 = $image->colorAllocate(64,0,0);
+
+    $pink = $image->colorAllocate(255,80,180);
+    $orange = $image->colorAllocate(255,100,0);
+    $violet = $image->colorAllocate(120,0,200);
+    $brown = $image->colorAllocate(100,31,31);
+    $pistache = $image->colorAllocate(100,225,150);
+
+    $violet_pale = $image->colorAllocate(230, 215, 255);
+    $pink_pale = $image->colorAllocate(255,230,210);
+    $champagne = $image->colorAllocate(255,240,200);
+    $pistache_pale = $image->colorAllocate(200,255,200);
+
+    push @color_list, $blue;
+    push @color_list, $red;
+    push @color_list, $green_175;
+    push @color_list, $pink;
+    push @color_list, $cyan_200;
+    push @color_list, $orange;
+    push @color_list, $violet;
+    push @color_list, $gray_125;
+    push @color_list, $brown;
+    push @color_list, $black;
+    push @color_list, $yellow_225;
+    push @color_list, $cyan;
+    push @color_list, $pistache;
+    push @color_list, $magenta;
+    push @color_list, $green;
+    push @color_list, $green_127;
+    push @color_list, $gray_150;
+    push @color_list, $red_191;
+    push @color_list, $blue_127;
+    push @color_list, $cyan_096;
+
+    push @color_list, $blue_096;
+    push @color_list, $red_096;
+    push @color_list, $blue_064;
+    push @color_list, $gray_064;
+
+#    $bg_color = $violet_pale;
+    $box_color = $white;
+    $backbone_color = $black;
+    $text_color = $black;
+
+}
+
+
+################################################################
+## Define the background color
+sub set_bg_color {
+  my ($bg_rgb) = @_;
+  my ($r,$g,$b) = split (",", $bg_rgb);
+  &RSAT::error::FatalError($bg_rgb, "Invalid red value", $r, "should be a natural between 0 and 255")
+    unless (&IsNatural($r) && ($r <= 255));
+  &RSAT::error::FatalError($bg_rgb, "Invalid red value", $g, "should be a natural between 0 and 255")
+    unless (&IsNatural($g) && ($g <= 255));
+  &RSAT::error::FatalError($bg_rgb, "Invalid red value", $b, "should be a natural between 0 and 255")
+    unless (&IsNatural($b) && ($b <= 255));
+  $bg_color= $image->colorAllocate($r,$g,$b);
+  return $bg_color;
+}
+
+################################################################
+## Define a grayscale palette
+sub GrayScalePalette {
+    warn "; Defining grayscale palette\n" if ($main::verbose >= 2);
+
+    $white = $image->colorAllocate(255,255,255);
+    $black = $image->colorAllocate(0,0,0);
+    $gray_050 = $image->colorAllocate(50,50,50);
+    $gray_075 = $image->colorAllocate(75,75,75);
+    $gray_100 = $image->colorAllocate(100,100,100);
+    $gray_125 = $image->colorAllocate(125,125,125);
+    $gray_150 = $image->colorAllocate(150,150,150);
+    $gray_175 = $image->colorAllocate(175,175,175);
+    $gray_200 = $image->colorAllocate(200,200,200);
+    $gray_225 = $image->colorAllocate(225,225,225);
+
+    push @color_list, $black;
+    push @color_list, $gray_050;
+    push @color_list, $gray_075;
+    push @color_list, $gray_100;
+    push @color_list, $gray_125;
+    push @color_list, $gray_150;
+    push @color_list, $gray_175;
+    push @color_list, $gray_200;
+    push @color_list, $gray_225;
+
+#    $bg_color = $gray_175;
+    $box_color = $white;
+    $backbone_color = $black;
+    $text_color = $black;
+}
+
+
+
+################################################################
+## Read command line arguments
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+
+	    ### input, output files ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	    ### image format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $img_format = lc($ARGV[$a+1]);
+	    unless ($supported_format{$img_format}) {
+		&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
+	    }
+
+	    ### data report ###
+	} elsif ($ARGV[$a] eq "-data") {
+	    $data_report = 1;
+
+	    ### HTML map ###
+	} elsif ($ARGV[$a] eq "-htmap") {
+	    $HTML_map = 1;
+
+	    ### reference sequence file (for calculating backbone lengths)
+	} elsif ($ARGV[$a] eq "-seq") {
+	    $sequence_file = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-seqformat") {
+	    $sequence_format = $ARGV[$a+1];
+
+	    ### amino acid specific colors ###
+	} elsif ($ARGV[$a] eq "-aacolors") {
+	    $aa_colors = 1;
+
+	    ### specific colors ###
+	} elsif ($ARGV[$a] eq "-colors") {
+	    $color_file = $ARGV[$a+1];
+
+	    ### export the colors
+	  } elsif ($ARGV[$a] eq "-export_colors") {
+	    $ftcol_file = $ARGV[$a+1];
+
+	    ### specify the background color
+	  } elsif ($ARGV[$a] eq "-bg") {
+	    &RSAT::message::Warning("option -bg is obsolete, please use -bgcolor instead.");
+	    $bg_rgb = $ARGV[$a+1];
+
+	    ### specify the background color
+	  } elsif ($ARGV[$a] eq "-bgcolor") {
+	    $bg_rgb = $ARGV[$a+1];
+
+	    ### monochrome palette ###
+	} elsif ($ARGV[$a] =~ /^-mono/) {
+	    $monochrome = 1;
+
+	    ### map orientation
+	} elsif  ($ARGV[$a] =~ /^-horiz/) {
+	    $horizontal_map = 1;
+	} elsif  ($ARGV[$a] =~ /^-vertic/) {
+	    $horizontal_map = 0;
+
+	    ### title ###
+	} elsif ($ARGV[$a] eq "-title") {
+	    $title = $ARGV[$a+1];
+
+	    ### legend ###
+	} elsif ($ARGV[$a] eq "-legend") {
+	    $legend = 1;
+
+	    ### scale bar ###
+	} elsif ($ARGV[$a] eq "-scalebar") {
+	    $scalebar = 1;
+	    ### scale bar step ###
+	} elsif ($ARGV[$a] eq "-scalestep") {
+	    $scale_bar_step = $ARGV[$a+1];
+
+	    ### map name
+	} elsif ($ARGV[$a] =~ /^-no_name/) {
+	    $map_names = 0;
+
+	    ### label keys
+	} elsif ($ARGV[$a] eq "-label") {
+	    @label_keys = split(/,/, $ARGV[$a+1]);
+	}elsif ($ARGV[$a] =~ /^-boxlabel/) {
+	    $box_labels = 1;
+
+	    ### ID selection ###
+	} elsif ($ARGV[$a] eq "-select") {
+	    $id_selection = 1;
+	    @selected_ids = split(/,/, $ARGV[$a+1]);
+	    foreach $id (@selected_ids) {
+		$id =~ s/\'//g;
+		$id =~ s/\s//g;
+		$selected{$id} = 1;
+	    }
+
+	    ### feature handle ###
+	} elsif ($ARGV[$a] =~ /^-symbol/) {
+	    $draw_symbols = 1;
+	    $draw_dots = 0;
+	    $draw_handles = 1;
+	    $handle_thick = $symbol_thick;
+	    $handle_length = $symbol_length;
+
+	} elsif ($ARGV[$a] =~ /^-dot/) {
+	    $draw_dots = 1;
+	    $draw_symbols = 0;
+	    $draw_handles = 1;
+	    $handle_thick = $dot_thick;
+	    $handle_length = $dot_length;
+
+	    ### from, to coordinates and origin ###
+	} elsif (($ARGV[$a] eq "-origin") && (&IsReal($ARGV[$a+1]))){
+	    $origin = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))){
+	    $view_from = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-to") &&  (&IsReal($ARGV[$a+1]))){
+	    $view_to = $ARGV[$a+1];
+
+	    ### thickness proportional to score
+	} elsif ($ARGV[$a] =~ /^-score/) {
+	    $score_thick = 1;
+
+	    ### max and min score values
+	} elsif (($ARGV[$a] =~ /^-maxscore/) && (&IsReal($ARGV[$a+1]))) {
+	    $fixed_max_score = $ARGV[$a+1];
+	} elsif (($ARGV[$a] =~ /^-minscore/) && (&IsReal($ARGV[$a+1]))) {
+	    $fixed_min_score = $ARGV[$a+1];
+
+	    ### max and min feature thickness
+	} elsif (($ARGV[$a] =~ /^-maxfthick/) && (&IsNatural($ARGV[$a+1]))) {
+	    $max_feature_thick = $ARGV[$a+1];
+	} elsif (($ARGV[$a] =~ /^-minfthick/) && (&IsNatural($ARGV[$a+1]))) {
+	    $min_feature_thick = $ARGV[$a+1];
+
+	    ### axis size (in pixels) ###
+	} elsif (($ARGV[$a] eq "-mlen") && (&IsNatural($ARGV[$a+1]))){
+	    $map_length = $ARGV[$a+1];
+
+	} elsif (($ARGV[$a] eq "-mapthick") && ((&IsNatural($ARGV[$a+1]))) || ($ARGV[$a+1] eq "auto")){
+	    $map_thick = $ARGV[$a+1];
+
+	} elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
+	    $map_spacing = $ARGV[$a+1];
+
+	    ## image border
+	} elsif (($ARGV[$a] eq "-border") && (&IsNatural($ARGV[$a+1]))){
+	    $border = $ARGV[$a+1];
+	}
+    }
+
+}
+
+
+################################################################
+## Print the detailed help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_Help;
+NAME
+	feature-map
+
+	1997-2008 by Jacques van Helden
+
+DESCRIPTION
+        Draws a graphical map of features (e.g. results of pattern
+        matching) in a set of sequences.
+
+CATEGORY
+	drawing
+
+OPTIONS
+	-i inputfile    The input file contains a list of features 
+			(ORFs, regulatory sites).
+			Each feature is represented by a single line, which 
+			should provide the following information:
+			Input file columns:
+			1. map label (eg gene name)
+			2. feature type
+			3. feature identifier (ex: GATAbox, Abf1_site)
+			4. strand (D for Direct, R for Reverse),
+			5. feature start position
+			6. feature end position
+			7. (optional) description 
+			8. (optional) score
+			The standard input format assumes that these topics 
+			are provided in this order, separated by tabs. 
+			Start and end positions can be positive or negative.
+			If no input file is specified, the data are taken 
+			from the standard input (keyboard).
+			Lines beginning with ";" are ignored.
+
+	-o outpufile    The name under which the graph will be saved, in the 
+			form of a GIF document. 
+			If no output file is specified, the result is sent 
+			to the standard output (screen).
+
+	-format		output image format
+			Supported: $supported_formats
+			Default: $img_format
+
+	-from #		lower limit of the positions represented on the graph
+
+	-to #		upper limit of the positions represented on the graph
+
+	-title		Generic Title for the feature map.
+
+	-label	keylist	define the info to display for each feature. 
+			valid keys are 
+			- id,
+			- strand,
+			- descr (feature description),
+			- pos (feature start and end positions).
+			Several keys can be entered separated by commas 
+			without space.
+			ex: -label pos,id.
+			Default is id.
+
+	-boxlabels	writes the label within the feature box 
+			(by default, the label is written outside of this box).
+
+ 	-symbol		associates a graphical symbol (i.e. rectangle, circle, 
+			buterfly, ...) to each feature. 
+			This is convenient to distinguish the 
+			features on black and white printings.
+			Mutually exclusive with the -dot option
+
+	-dot		a color dot is associated to each feature. 
+			This allows to distinguish overlapping structures on a 
+			color screen.
+			Mutually exclusive with the -symbol option.
+
+	-mlen	#	map length (in pixels). Default is 600.
+			Length refers to either height (for vertical maps)
+			of width (for horizontal maps).
+
+	-mapthick	#	map thickness. 
+			Thickness refers to either width (for vertical maps) 
+			or height (horizintal maps). 
+			This parameter allows to change the thickness
+			allocated to each map. This is useful when labels 
+			are too large. Default is 150.
+
+	-mspacing #	map spacing
+                        (default: $map_spacing)
+			The size of the border between maps (in pixel).
+
+	-border	#	image border (default=10 pixels)
+
+	-origin #	all coordinates are recalculated relative to #.
+			This allows to display all coordinates with respect to
+			the ORF start or transcription start site
+
+        -legend  Draws a legend on the graph, showing the symbol associated to 
+                 each distinct feature.
+
+        -scalebar
+                 Draw a scale bar on the left of the graph
+
+        -scalestep #
+                 Step between annotations of the scale bar.
+                 If not specified, a reasonable stp is calculated on basis of 
+                 the scale bar range.
+
+	-no_name
+		Do not print sequence names besides each sequence. 
+
+	-scorethick
+		each feature is displayed with a thickness proportional to 
+		its score. Only positive scores are represented.
+
+	-maxscore # (only valid when -scorethick is active)
+		maximal allowed score value. Higher score values are clipped for 
+		the drawing. 
+
+	-minscore # (only valid when -scorethick is active)
+		minimal allowed score value. Features with smaller score are not
+		displayed. 
+
+	-maxfthick #
+		max feature thickness
+
+	-minfthick #
+		min feature thickness
+
+	-htmap	HTML map
+		An HTML document is automatically generated, which includes 
+		the feature map GIF file as an HTML map. In other words,
+		this document displays a figure with sensitive areas. 
+		Each time the mouse is positioned above a feature, 
+		information about this particuliar feature is displayed 
+		at the bottom of the browser window.
+
+	-mono	monochrome palette (for printing on black/white printer)
+
+	-aacolors
+		amino acid specific colors. 
+		See the following reference for their definition:
+		Taylor (1997). Protein Engeneering 10 (7): 743-746.
+
+	-colors color_file
+		Provide a file containing feature-specific colors.
+		The file contains 2 columns
+		1) Feature identifier
+		2) Red,Green,Blue intensity in a scale from 0 to 255.
+    		Example:
+			Met4p	255,0,0
+			Pho4p	0,128,0
+			Met31p	0,0,64
+
+		will assign the red color to all features identified
+		as "Met4p", dark green to features "Pho4p", and very
+		dark blue to features identified as "Met31p".
+
+	-export_colors color_file
+                Export the feature-specific colors in a separate file
+                as a color file. This file can then be re-used to
+                specify the same colors for other feature-maps
+                (option -colors)
+
+	-bgcolor R,G,B
+		Background color in R,G,B format. R,G,B should be
+		Natural numbers comprized between 0 and 255.
+
+	-horiz	horizontal map (default).
+
+	-vertic	
+		vertical map (default is horizontal).
+
+	-select id_list
+		only display the features whose ID is in id_list.
+		the id_list contains one or several IDs, separated by commas.
+		IDs may be embraced in single quotes to allow multiple words
+		within the IDs. Commas and single quotes are not allowed 
+		within an ID.
+		Example:
+			-select 'gataag','gattag'
+		only displays features identified by gataag or gattag.
+
+	-seq	reference sequence file
+		This file is used for calculating the sequence
+		length. Each backbone (the black line) has a length that reflects the lengths of the sequence.
+
+	-seqformat
+		format of the reference sequence file. 
+
+SUPPORTED FEATURE TYPES
+	A few special types are defined
+	- START_END     start and en position of the sequence
+ 	  		(represented by a thin bar on the map)
+	- SEQ_START     start position (obsolete, please use START_END instead)
+	- SEQ_END	end position (obsolete, please use START_END instead)
+	- ORIGIN	map-specific origin (all coordinates of the map
+			are recalculated relative to this value)
+
+OUTPUT FORMATS
+
+        The supported image formats depend on th local configuration
+        of the GD library. If correctly installed, the library
+        supports png, jpg, gif. The default output is a png, which can
+        be opened by most graphical applications, and by web
+        browsers. All these formats are suitable for producing
+        screen-resolution images, but not for high-quality printing.
+
+	The Postscript format produces a vectorial image, that can be
+	used to produce high-resolution printouts.
+
+End_of_Help
+  close HELP;
+  exit(0);
+}
+
+################################################################
+## Print the list of options
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_Help;
+feature-map options
+-------------------
+-help		(first argument) displays the current message
+-h		(first argument) long help message
+-v		verbose
+-data   	report data
+-htmap		HTML map
+-i 		inputfile
+-o 		outpufile 
+-format		image format (supported $supported_formats; default $img_format)
+-from #		lower limit of the positions represented
+-to #		upper limit of the positions represented
+-title		Generic Title for the feature map.
+-label	keylist	accepted keys: id,strand,descr,pos
+-boxlabels	writes the label within the feature box 
+-symbol		attach symbol to each feature (exclusive with -dot)
+-dot		attach dot to each feature (exclusive with -symbol)
+-mlen	#	map length (in pixels). Default is 600.
+-mapthick #	map thickness (default: auto)
+-mspacing	map spacing (default: $map_spacing)
+-border         image border (default: 10)
+-origin #	all coordinates are recalculated relative to #.
+-legend		Draws a legend
+-scalebar	Draws a scale bar
+-no_name	Do not print sequence names besides each sequence. 
+-scalestep #	step of the scale bar
+-scorethick	each feature is displayed with a thickness proportional to its score. 
+-maxscore #	maximal allowed score value
+-minscore #	minimal allowed score value
+-maxfthick #	max feature thickness
+-minfthick #	min feature thickness
+-mono		monochrome palette (for printing on black/white printer)
+-aacolors	amino acid specific colors
+-colors		color file
+-bgcolor R,G,B	background color (R,G,B are Natural numbers <= 255)		
+-horiz		horizontal map (default).
+-vertic		vertical map (default is horizontal).
+-select id_list	only display features with an ID included in id_list
+-seq		reference sequence file
+-seqformat	format of the reference sequence file
+Input file columns:
+	1. map label (eg gene name)
+	2. feature type
+	3. feature identifier (ex: GATAbox, Abf1_site)
+	4. strand (D for Direct, R for Reverse),
+	5. feature start position
+	6. feature end position
+	7. (optional) description 
+	8. (optional) score
+End_short_Help
+  close HELP;
+  exit(0);
+}
+
+
+################################################################
+## Print the header of the HTML file 
+sub OpenHTMLmap {
+  $href = ShortFileName($inputfile);
+  
+  print "<HTML>\n";
+  print "<HEAD>\n";
+  print "<TITLE>Feature map ";
+  print ShortFileName($inputfile);
+  print "</TITLE>\n";
+  print "</HEAD>\n";
+  print "<BODY>\n";
+  print "<img src=\"";
+  print ShortFileName($outputfile);
+  print "\" border=0 usemap=\"#map1\">\n";
+  print "<map name=\"map1\">\n";
+}
+
+################################################################
+## Print a HTML map, allowing to display dynamically the information
+## about each feature in the status bar of a web browser.
+sub PrintHTMLmap {
+    warn "; Printing HTML map\n" if ($main::verbose >= 2);
+
+    ###### end of the HTML file #####
+    print "</map>";
+    print <<EndZoomForm;
+    <FORM METHOD="POST" ACTION="$ENV{rsat_www}/feature-map.cgi">
+	<BLOCKQUOTE>
+        <TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 VALIGN="top"><TR><TD VALIGN="top">
+	<B>Display from</B> <INPUT TEXT NAME="from" SIZE=7 VALUE="$view_from">
+	<B>to</B> <INPUT TEXT NAME="to" SIZE=7 VALUE="$view_to">
+	<INPUT TYPE=hidden NAME="htmap" VALUE=on>
+	<INPUT TYPE=hidden NAME="title" VALUE="$title">
+	<INPUT TYPE=hidden NAME="feature_file" VALUE="$inputfile">
+	<INPUT TYPE=hidden NAME="mlen" SIZE=5 VALUE=$map_length>
+	<INPUT TYPE=hidden NAME="mspacing" SIZE=5 VALUE=$map_spacing>
+	<INPUT TYPE=hidden NAME="mapthick" VALUE=$map_thick>
+EndZoomForm
+    if ($horizontal_map) {
+        print "\t<INPUT TYPE=hidden NAME=\"orientation\" VALUE=\"Horizontal\">\n";
+    } else {
+        print "\t<INPUT TYPE=hidden NAME=\"orientation\" VALUE=\"Vertical\">\n";
+    }
+    
+    if ($map_names){
+    	print "\t<INPUT TYPE=hidden NAME=\"seq_names\" VALUE=on>\n";
+    }
+    
+    if ($legend) {
+	print "\t<INPUT TYPE=hidden NAME=\"legend\" VALUE=on>\n";
+    }
+    if ($scalebar) {
+		print "\t<INPUT TYPE=hidden NAME=\"scalebar\" VALUE=on>\n";
+		if ($scale_bar_step > 0){
+    		print "\t<INPUT TYPE=hidden NAME=\"scalestep\" VALUE=$scale_bar_step>\n";
+    	}
+		else {
+			print "\t<INPUT TYPE=hidden SIZE=5 NAME=\"scalestep\" VALUE=\"auto\">\n";
+		}
+    }
+    
+     if ($score_thick){
+    	print "\t<INPUT TYPE=hidden NAME=\"scorethick\" VALUE=on>\n";
+    }
+    
+    if ($draw_dots) {
+	print "\t<INPUT TYPE=hidden NAME=\"handle\" VALUE=\"color dot\">\n";
+    } elsif ($draw_symbols) {
+	print "\t<INPUT TYPE=hidden NAME=\"handle\" VALUE=\"symbols\">\n";
+    } else {
+	print "\t<INPUT TYPE=hidden NAME=\"handle\" VALUE=\"none\">\n";
+    }
+    foreach $k (@label_keys) {
+        $label_key{$k} = 1;
+    }
+    if ($label_key{'strand'}) {
+        print "\t<INPUT TYPE=hidden NAME=\"label_strand\" VALUE=on>\n";
+    }  
+    if ($label_key{'pos'}) {
+        print "\t<INPUT TYPE=hidden NAME=\"label_pos\" VALUE=on>\n";
+    }  
+    if ($label_key{'id'}) {
+        print "\t<INPUT TYPE=hidden NAME=\"label_id\" VALUE=on>\n";
+    }  
+    if ($label_key{'descr'}) {
+        print "\t<INPUT TYPE=hidden NAME=\"label_descr\" VALUE=on>\n";
+    }  
+
+    print "\t</TD><TD VALIGN=\"top\">\n";
+
+    ### id selection  ####
+    if ($#id_list > 0) {
+	print "\t<B>Select ID</B> ";
+	print "\t</TD><TD VALIGN=\"top\">\n";
+	print "\t<SELECT NAME=\"id_selection\" MULTIPLE SIZE=4>";
+	print "\t<OPTION>*all*";
+	foreach $id (@id_list) {
+	    if ($selected{$id}) {
+		print "\t<OPTION SELECTED>";
+	    } else {
+		print "\t<OPTION>";
+	    }
+	    print "$id\n";
+	}
+	print "\t</SELECT>";
+	print "</TD><TD valign=\"top\">\n";
+    }
+
+    print "\t<B><INPUT TYPE=submit VALUE=\"Redraw\"></B>\n";
+    print "\t</TD></TR></TABLE>\n";
+    print "\t</BLOCKQUOTE>";
+    print "</FORM>\n";
+
+    print "</BODY>\n";
+    print "</HTML>\n";
+}
+
+
+################################################################
+## Draw the maps
+sub DrawMaps {
+    warn "; Drawing feature maps\n" if ($main::verbose >= 2);
+
+    foreach $m (0..$#map_list) {
+	$map = $map_list[$m];
+	if (($labels) || ($draw_symbols) || ($draw_dots)) {
+	    &CalcLabelPos();
+	}
+	&DrawMapBackground();
+	&DrawMapBackbone();
+	&WriteMapName() if ($map_names);
+
+	## Draw the features
+	foreach $f (0..$#{$features{$map}}) { 
+	    &DrawFeature();
+	}
+    }
+}
+
+################################################################
+### Draw features for one map
+sub DrawFeature {
+    $start = $features{$map}[$f]{start_pos};
+    $end = $features{$map}[$f]{end_pos};
+    $strand = $features{$map}[$f]{strand};
+    $label =  $features{$map}[$f]{label};
+    if ($strand =~ /^R$/i) {
+	$label_strand = "R";
+    } else {
+	$label_strand = "D";
+    }
+    $label_pos = $label_pos{$label_strand}[$f];
+    $id = $features{$map}[$f]{id};
+    $feature_type = $features{$map}[$f]{feature_type};
+    $description = $features{$map}[$f]{description};
+    $score =  $features{$map}[$f]{score};
+    
+    ### Check that the score is sufficient
+    next if ($score < $min_score);
+    	 
+    ### check that the features falls within the limits
+    next unless ((($start <= $view_to) && ($start >= $view_from)) ||
+		 (($end <= $view_to) && ($end >= $view_from))  ||
+		 (($end >= $view_to) && ($start <= $view_from)));
+    
+    
+    &ChooseFeatureColor($id);
+    
+    &DrawFeatureBox();
+    &DrawFeatureHandle();
+    
+    &DrawFeatureLabel();
+	
+    ################################################################
+    #### HTML map area
+    if ($HTML_map) {
+	$map_message = "";
+	$map_message .= "score: $score   " unless ($score eq "");
+	$map_message .= "descr: $description   " unless ($description eq "");
+	$map_message .= "pos: ${start}:${end}${strand}   ";
+	$map_message .= "id: $id   ";
+	$map_message .= "map: $map   ";
+	$map_message .= "type: $feature_type   ";
+	$map_message =~ s/\'/_/g;
+	$map_message =~ s/\t/    /g;
+	$map_message =~ s/\n/ /g;
+
+	#### area over the handle
+	if ($draw_handles) {
+	    print "   <area href=\"$href\" ";
+	    print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
+	    print "shape=rect ";
+	    if ($horizontal_map) {
+		if ($label_strand eq "D") {
+		    print "coords=\"", int($handle_left), ",", int($box_top), ",",int($handle_right), ",", int($handle_bottom), "\">\n";
+		} else {
+		    print "coords=\"", int($handle_left), ",", int($handle_top), ",",int($handle_right), ",", int($box_bottom), "\">\n";
+		}
+	    } else { ### vertical map
+		if ($label_strand eq "D") {
+		    print "coords=\"", int($handle_left), ",", int($handle_top), ",",int($box_right), ",", int($handle_bottom), "\">\n";
+		} else {
+		    print "coords=\"", int($box_left), ",", int($handle_top), ",",int($handle_right), ",", int($handle_bottom), "\">\n";
+		}
+	    }
+	}
+	
+	#### area over the feature box
+	print "   <area href=\"$href\" ";
+	print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
+	print "shape=rect ";
+	print "coords=\"", int($feature_left), ",", int($feature_top), ",",int($feature_right), ",", int($feature_bottom), "\">\n";
+
+	
+    }
+}
+
+
+################################################################
+## Read the file containing feature-specific color specification
+sub ReadColors {
+    my ($color_file) = @_;
+    my ($col) = &OpenInputFile($color_file);
+    my $l = 0;
+    while (<$col>) {
+	$l++;
+#	&RSAT::message::Debug("color file line", $l, $_) if ($main::verbose >= 0);
+	next unless (/\S/); ## Skip empty lines
+	next if (/^\#/); ## Skip header lines
+	next if (/^;/); ## Skip comment lines
+	s/\r//; ## Suppress windows-specific carriage return char
+	chomp();
+	s/\s+/\t/;
+	my @fields = split(/\t/);
+	my $id = shift(@fields);
+	unless ($id) {
+	    &RSAT::message::Warning("Color file: skipped line", $l, "because it does not start with a valid ID");
+	}
+	my $rgb = shift(@fields);
+	if ($rgb =~/^(\d+),(\d+),(\d+)$/) {
+	    my ($r,$g,$b) = ($1,$2,$3);
+	    &RSAT::error::FatalError($bg_rgb, "Invalid red value", $r, "should be a natural between 0 and 255")
+	      unless (&IsNatural($r) && ($r <= 255));
+	    &RSAT::error::FatalError($bg_rgb, "Invalid red value", $g, "should be a natural between 0 and 255")
+	      unless (&IsNatural($g) && ($g <= 255));
+	    &RSAT::error::FatalError($bg_rgb, "Invalid red value", $b, "should be a natural between 0 and 255")
+	      unless (&IsNatural($b) && ($b <= 255));
+#	    &RSAT::error::FatalError("Invalid R,G,B values, must be <= 255")
+#		if (($r > 255) || ($g > 255) || ($b > 255));
+	    $feature_color{$id} = $image->colorAllocate($r,$g,$b);
+#	    &RSAT::message::Debug("feature-specific color", $id, $r, $g, $b, $feature_color{$id}) if ($main::verbose >= 0);
+	} else {
+	    &RSAT::message::Warning("Color file: skipped line", $l, "because the second column does not contain a valid R,G,B color specification");
+	}
+    }
+    close($color_file);
+}
+
+################################################################
+### Choose feature color
+sub ChooseFeatureColor {
+    my ($id) = @_;
+
+    ## If a color has been specified in the color file, use this one
+    if (($color_file) && (defined($feature_color{$id}))) {
+	$feature_color = $feature_color{$id};
+
+    ### special choice of colors for amino acids
+    } elsif ($aa_colors)  {
+	$feature_color = $aa_color{$id};
+
+    ## Automatic color selection
+    } else {
+	$feature_color = $color_list[$id_number{$id}%($#color_list+1)];
+#	$feature_color = $color_list[$id_number{$features{$map}[$f]{id}}%($#color_list+1)];
+    }
+    return $feature_color;
+}
+
+
+################################################################
+### Draw feature box
+sub DrawFeatureBox {
+    ################################################################
+    ### Calculate the thickness of the feature box
+    if (defined($feature_thick{uc($feature_type)})) {
+	$feature_thick = $feature_thick{uc($feature_type)};
+    } elsif (($score_thick) &&  ### thick propotional to feature score
+	     (&IsReal($score)) && 
+	     ($max_score > 0) &&
+	     ($max_score > $min_score)) {
+	$feature_thick = $max_feature_thick * ($score - $min_score)/($max_score - $min_score);
+	$feature_thick = &min($max_feature_thick, $feature_thick);
+	$feature_thick = &max($min_feature_thick, $feature_thick);
+    } else {
+	$feature_thick = $max_feature_thick;
+    }
+    $feature_thick = min($max_feature_thick,$feature_thick);
+    
+
+    ################################################################
+    ### calculate position of the corners of the feature box 
+    if ($horizontal_map) {
+	$feature_left = &PixelPos($start);
+	$feature_right = &PixelPos($end +1) -1;
+	if (($strand =~ /^DR$/i) || ($strand =~ /^RD$/i)) {
+	    $feature_bottom = $backbone_pos + $feature_thick;
+	    $feature_top = $backbone_pos  - $feature_thick;
+	} elsif ($strand =~ /^R$/i) {   
+	    $feature_top = $backbone_pos + 1;
+	    $feature_bottom = $backbone_pos + $feature_thick;
+	} elsif ($strand =~ /^D$/i) {
+	    $feature_bottom = $backbone_pos - 1;
+	    $feature_top = $backbone_pos - $feature_thick;
+	} else {
+	    $feature_bottom = $backbone_pos + $feature_thick;
+	    $feature_top = $backbone_pos  - $feature_thick;
+	}
+	$feature_mid_pos = ($feature_left + $feature_right)/2;
+    } else { 
+	$feature_top = &PixelPos($start);
+	$feature_bottom = &PixelPos($end +1) -1;
+	if (($strand =~ /^DR$/i) || ($strand =~ /^RD$/i)) {
+	    $feature_right = $backbone_pos + $feature_thick;
+	    $feature_left = $backbone_pos  - $feature_thick;
+	} elsif ($strand =~ /^D$/i) {   
+	    $feature_left = $backbone_pos + 1;
+	    $feature_right = $backbone_pos + $feature_thick;
+	} elsif ($strand =~ /^R$/i) {
+	    $feature_right = $backbone_pos - 1;
+	    $feature_left = $backbone_pos - $feature_thick;
+	} else {
+	    $feature_right = $backbone_pos + $feature_thick;
+	    $feature_left = $backbone_pos  - $feature_thick;
+	}
+	$feature_mid_pos = ($feature_top + $feature_bottom)/2;
+    }
+    if ($feature_top > $feature_bottom) {
+	$tmp = $feature_bottom;
+	$feature_bottom = $feature_top;
+	$feature_top = $tmp;
+    }
+    if ($feature_left > $feature_right) {
+	$tmp = $feature_left;
+	$feature_left = $feature_right;
+	$feature_right = $tmp;
+    }
+    
+    
+    ################################################################
+    #### Draw feature line (between the feature and the handle or label)
+    if ((($side_labels) || ($draw_dots) || ($draw_symbols)) &&
+	($feature_type ne "ORF")) { 
+	if ($horizontal_map) {
+	    if ($label_strand eq "R") {
+		$line_top = $feature_bottom + 1;
+		#	      $line_bottom = $line_top + $handle_bar_length -1;
+		$line_bottom = $backbone_pos + $max_feature_thick + $handle_bar_length - 1;
+		$image->line($feature_mid_pos, $line_top, $feature_mid_pos, $line_bottom - $handle_bar_length,$feature_color);
+		$image->line($feature_mid_pos, $line_bottom - $handle_bar_length, $label_pos, $line_bottom - 2,$feature_color);
+		$image->line($label_pos, $line_bottom - 2, $label_pos, $line_bottom,$feature_color);
+		
+	    } else { ### strand D
+		$line_bottom = $feature_top - 1;
+#	      $line_top = $line_bottom - $handle_bar_length + 1;
+		$line_top = $backbone_pos - $max_feature_thick - $handle_bar_length + 1;
+		$image->line($feature_mid_pos, $line_bottom, $feature_mid_pos, $line_top + $handle_bar_length, $feature_color);
+		$image->line($feature_mid_pos, $line_top + $handle_bar_length, $label_pos, $line_top + 2, $feature_color);
+		$image->line($label_pos, $line_top + 2, $label_pos, $line_top, $feature_color);
+	    }
+	} else { ### vertical map
+	    if ($label_strand eq "R") {
+		$line_right = $feature_left - 1;
+		$line_left = $line_right - $handle_bar_length + 1;
+		$image->line($line_right, $feature_mid_pos, $line_left + 2, $label_pos,  $feature_color);
+		$image->line($line_left + 2, $label_pos, $line_left, $label_pos,  $feature_color);
+	    } else { ### strand D
+		$line_left = $feature_right + 1;
+		$line_right = $line_left + $handle_bar_length -1;
+		$image->line($line_left, $feature_mid_pos, $line_right - 2, $label_pos,  $feature_color);
+		$image->line($line_right - 2, $label_pos, $line_right, $label_pos,  $feature_color);
+	    }
+	}
+    }
+
+    ################################################################
+    #### draw feature box
+    if (uc($feature_type) eq "ORF") {
+	&RectInLimits($feature_left,$feature_top,$feature_right,$feature_bottom,$feature_color);
+    } else {
+	$image->filledRectangle($feature_left, $feature_top, $feature_right, $feature_bottom, $feature_color);
+    }
+}
+
+
+################################################################
+### Draw feature handle (symbols and dots)
+sub DrawFeatureHandle {
+    $handle_color = $feature_color;
+    if ((($draw_symbols) || ($draw_dots)) &&
+	($feature_type ne "ORF")) {
+	if ($draw_symbols) {
+	    $feature_symbol =  $symbol_list[$id_number{$features{$map}[$f]{id}}%($#symbol_list+1)];
+	} elsif ($draw_dots) {
+	    $feature_symbol = "filled_circle";
+	}
+	if (($horizontal_map) && 
+	    ($label_pos > 0) && 
+	    ($label_pos <=  $graph_x_size)) {
+
+	    $handle_left = $label_pos - $handle_length/2;
+	    $handle_right = $handle_left + $handle_length;
+	    if ($label_strand eq "R") {
+		$handle_top = $line_bottom + 1;
+		$handle_bottom = $handle_top + $handle_thick -1;
+		$feature_symbol = $horizontal_mirror{$feature_symbol} if defined($vertical_mirror{$feature_symbol});
+	    } else {
+		$handle_bottom = $line_top -1;
+		$handle_top = $handle_bottom - $handle_thick + 1;
+	    }
+	    &DrawSymbol($feature_symbol,$handle_left,$handle_top,$handle_right,$handle_bottom,$handle_color);
+	} elsif (($label_pos > 0) &&
+		 ($label_pos <=  $graph_y_size)) {
+	    $handle_top = $label_pos - $handle_length/2;
+	    $handle_bottom = $handle_top + $handle_length;
+	    if ($label_strand eq "R") {
+		$handle_right = $line_left -1;
+		$handle_left = $handle_right - $handle_thick + 1;
+		$feature_symbol = $vertical_mirror{$feature_symbol} if defined($vertical_mirror{$feature_symbol});
+	    } else {
+		$handle_left = $line_right + 1;
+		$handle_right = $handle_left + $handle_thick -1;
+	    }
+	    &DrawSymbol($feature_symbol,$handle_left,$handle_top,$handle_right,$handle_bottom,$handle_color);
+	}
+    }
+}
+
+################################################################
+### Draw white background for the map, ver the general
+### background of the image
+sub DrawMapBackground {
+    if ($horizontal_map) {
+	$box_top = $y_border + $m*($map_thick + $map_spacing) + $scalebar*($sb_thick + 8);
+	$box_top += $large_font_height + 8 unless ($title eq "");
+	$box_bottom = $box_top + $map_thick;
+    } else {
+	$box_left = $x_border + $m*($map_thick + $map_spacing) + $scalebar*($sb_thick + 8);
+	$box_right = $box_left + $map_thick;
+    }
+    $image->filledRectangle($box_left, $box_top, $box_right, $box_bottom, $box_color);  
+}
+
+################################################################
+### Write map name
+sub WriteMapName {
+    if ($horizontal_map) {
+	$map_y =  $backbone_pos - $large_font_height/2;
+	$map_x = $map_start -  $large_font_width*length($map) - 4;
+	$image->string($large_font, $map_x, $map_y, $map, $text_color);
+    } else {
+	if ($max_map_name_length*$large_font_width > $map_thick) {
+	    if (length($map)*$small_font_width > $map_thick) {
+		$map_x =  $box_left + 1;
+	    } else {
+		$map_x =  $box_left + ($map_thick - $small_font_width*length($map))/2;
+	    }
+	    $image->string($small_font, $map_x, $map_start - 2 - $small_font_height -$large_font_height - 4, $map, $text_color);
+	} else {
+		$map_x =  $box_left + ($map_thick - $large_font_width*length($map))/2;
+		$image->string($large_font, $map_x, $map_start - 2 - $small_font_height -$large_font_height - 4, $map, $text_color);
+	    }
+    }
+}
+
+
+################################################################
+### Draw feature label
+sub DrawFeatureLabel {
+    ################################################################
+    #### calculate label text position 
+    if ($horizontal_map) {
+	if ($box_labels) {
+	    #		    $text_x_pos = ($feature_left + $feature_right - length($label)*$small_font_width)/2 -1;
+	    #		    $text_y_pos = $feature_mid_pos;
+	} elsif ($label_strand eq "R") {
+	    $text_y_pos = $backbone_pos + $max_feature_thick + $handle_bar_length + $draw_handles*$handle_thick + 4;
+	    $text_x_pos = $label_pos -  length($label)*$small_font_width/2;
+	} else {
+	    $text_y_pos = $backbone_pos - $max_feature_thick - $handle_bar_length - $draw_handles*$handle_thick - 4 - $small_font_height;
+	    $text_x_pos = $label_pos -  length($label)*$small_font_width/2;
+	}
+    } else {
+	if ($box_labels) {
+	    $text_x_pos = ($feature_left + $feature_right - length($label)*$small_font_width)/2 -1;
+	    $text_y_pos = $feature_mid_pos;
+	} elsif ($label_strand eq "R") {
+	    $text_x_pos = $backbone_pos - $feature_thick - $handle_bar_length - length($label)*$small_font_width - $draw_handles*$handle_thick +2;
+	    $text_y_pos = $label_pos;
+	} else {
+	    $text_x_pos = $backbone_pos + $feature_thick + $handle_bar_length + $draw_handles*$handle_thick + 2;
+	    $text_y_pos = $label_pos;
+	}
+	
+    }
+    
+    ################################################################
+    #### write label
+    $image->string($small_font, $text_x_pos, $text_y_pos - $small_font_height/2, $label, $text_color) unless (($text_y_pos >  $graph_y_size) || ($text_y_pos < 0));
+}
+
+
+################################################################
+### Draw backbone 
+sub DrawMapBackbone {
+    if ($horizontal_map) {
+	if (($features_on_D_strand) && ($features_on_R_strand)) {
+	    $backbone_pos = $box_top + $map_thick/2;
+	} elsif ($features_on_D_strand) {
+	    $backbone_pos = $box_top + $map_thick - $max_feature_thick - $map_border -1;
+	    $backbone_pos = max($backbone_pos,$large_font_height/2);
+	} else {
+	    $backbone_pos = $box_top + $map_border + $max_feature_thick;
+	}
+    } else {
+	$backbone_pos = $box_left + $map_border + $max_feature_thick + 1;
+	if ($features_on_R_strand) {
+	    $backbone_pos += $max_label_length{'R'} * $small_font_width;
+	    $backbone_pos += $handle_thick if ($draw_handles);
+	    $backbone_pos += $handle_bar_length if (($side_labels) || ($draw_handles));	#line
+	}
+    }
+    if ((defined($map_start{$map})) && ($map_start{$map}>=$view_from) && ($map_start{$map}<=$view_to)) {
+	$map_start{$map} =~ s/\s//g;
+	$backbone_start = &PixelPos($map_start{$map});
+    } else {
+	$backbone_start = $map_start;
+    }
+    if ((defined($map_end{$map})) && ($map_end{$map} >= $view_from) && ($map_end{$map} <= $view_to)) {
+	$backbone_end = &PixelPos($map_end{$map} + 1) -1;
+    } else {
+	$backbone_end = $map_end -1;
+    }
+    
+    if ($backbone_start > $backbone_end) {
+	$tmp = $backbone_start;
+	$backbone_start = $backbone_end;
+	$backbone_end = $tmp;
+    }
+
+    ### horizontal map
+    if ($horizontal_map) {
+	$image->line($backbone_start, $backbone_pos, $backbone_end, $backbone_pos, $backbone_color);
+	$image->line($backbone_start, $backbone_pos-2, $backbone_start, $backbone_pos+2, $backbone_color);
+	$image->line($backbone_end, $backbone_pos-2, $backbone_end, $backbone_pos+2, $backbone_color);
+
+	#### scale on the backbone
+	if (($scalebar) && ($scale_bar_step > 0)) {
+	    $pos = $grid_min;
+	    $x = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
+	    while ($x <= $backbone_end) {
+		if ($x >= $backbone_start) {
+		    $image->line($x, $backbone_pos - 2, $x, $backbone_pos + 2,  $black);
+		}
+		$pos += $scale_bar_step;
+		$x = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
+	    }
+	}
+
+	### vertical map
+    } else {
+	$image->line($backbone_pos, $backbone_start, $backbone_pos, $backbone_end,  $backbone_color);
+	$image->line($backbone_pos - 2, $backbone_start, $backbone_pos + 2, $backbone_start,  $backbone_color);
+	$image->line($backbone_pos - 2, $backbone_end, $backbone_pos + 2, $backbone_end,  $backbone_color);
+	$image->string($small_font, $backbone_pos - length($map_start{$map})*$small_font_width/2, $backbone_start - 4 - $small_font_height , $map_start{$map}, $text_color);
+	$image->string($small_font, $backbone_pos - length($map_end{$map})*$small_font_width/2, $backbone_end + 2, $map_end{$map}, $text_color);
+	
+	#### scale on the backbone
+	if (($scalebar) && ($scale_bar_step > 0)) {
+	    $pos = $grid_min;
+	    $y = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
+	    while ($y <= $backbone_end) {
+		if ($y >= $backbone_start) {
+		    $image->line($backbone_pos - 2, $y, $backbone_pos + 2, $y, $black);
+		}
+		$pos += $scale_bar_step;
+		$y = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
+	    }
+	}
+    }
+    
+}
+
+
+################################################################
+## Print verbosity
+sub Verbose {
+    print "; feature-map";
+    &PrintArguments;
+    print "\n";
+    print ";Title		$title\n";
+    if ($horizontal_map) {
+	print ";Horizontal map\n";
+    } else {
+	print ";Vertical map\n";
+    }
+    print ";Nb of maps	", $#map_list+1, "\n";
+    print ";Map names:\n";
+    foreach $map (keys %features) {
+	print ";\t$map\n";
+    }
+    
+    print ";Feature IDs:\n";
+    for $i (0..$#id_list) {
+	print ";\t$id_list[$i]"; # NICE IF COLOR APPEARS HERE !
+	print "\tselected" if ($selected{$id_list[$i]});
+	print "\n";
+    }
+    
+    print ";Feature selection:\n";
+    foreach $id (@selected_ids) {
+	print ";\t$id\n";
+    }
+    
+    print ";min data pos	$min_pos\n";
+    print ";max data pos	$max_pos\n";
+    print ";view from	$view_from\n";
+    print ";     to	$view_to\n";
+    if ($labels) {
+	print ";label keys	";
+	foreach $k (@label_keys) {
+	    print "$k ";
+	}
+	print "\n";
+	print ";max D label length	$max_label_length{'D'}\n";
+	print ";max R label length	$max_label_length{'R'}\n";
+    }
+    
+    print ";Graph dimensions	$graph_x_size x $graph_y_size\n";
+    print ";map length		$map_length\n";
+    print ";map thickness	$map_thick\n";
+    print ";map border  	$map_border\n";
+    print ";map spacing 	$map_spacing\n";
+    print ";max feature thickness	$max_feature_thick\n";
+    print ";scale		$scale\n";
+}
+
+
+
+################################################################
+## Report input data
+sub DataReport {
+    warn "; Printing data report\n" if ($main::verbose >= 2);
+
+    print ";Feature list\n";
+    print ";map\t";
+    print "type\t";
+    print "id\t";
+    print "strand\t";
+    print "start\t";
+    print "end\t";
+    print "description\t";
+    print "score\n";
+    foreach $map (@map_list) {
+	foreach $f (@{$features{$map}}) {   
+	    print $f->{map}, "\t";
+	    print $f->{feature_type}, "\t";
+	    print $f->{id}, "\t";
+	    print $f->{strand}, "\t";
+	    print $f->{start_pos}, "\t";
+	    print $f->{end_pos}, "\t";
+	    print $f->{description}, "\t";
+	    print $f->{score}, "\n";
+
+	}
+    }
+}
+
+
+
+### amino acid specific colors ###
+sub AminoAcidPalette {
+    #### Original colors from 
+    #### Taylor (1997). Protein Engeneering 10 (7): 743-746
+#	@aa_color{D} = $rrr = $red = $image->colorAllocate(255,0,0);
+#	@aa_color{S} = $yrr = $scarlet = $image->colorAllocate(255,51,0);
+#	@aa_color{T} = $ryr = $vermillon = $image->colorAllocate(255,102,0);
+#	@aa_color{G} = $yry = $orange = $image->colorAllocate(255,153,0);
+#	@aa_color{P} = $ryy = $tangerine = $image->colorAllocate(255,204,0);
+#	@aa_color{C} = $yyy = $yellow = $image->colorAllocate(255,255,0);
+#	@aa_color{A} = $gyy = $lemon = $image->colorAllocate(204,255,0);
+#	@aa_color{V} = $ygy = $lemon_lime = $image->colorAllocate(153,255,0);
+#	@aa_color{I} = $gyg = $lime = $image->colorAllocate(102,255,0);
+#	@aa_color{L} = $ygg = $grass = $image->colorAllocate(51,255,0);
+#	@aa_color{M} = $ggg = $green = $image->colorAllocate(0,255,0);
+#	@aa_color{F} = $bgg = $emerald = $image->colorAllocate(0,255,102);
+#	@aa_color{Y} = $gbg = $turquoise = $image->colorAllocate(0,255,204);
+#	@aa_color{W} = $bgb = $cyan = $image->colorAllocate(0,204,255);
+#	@aa_color{H} = $gbb = $peacock = $image->colorAllocate(0,102,255);
+#	@aa_color{R} = $bbb = $blue = $image->colorAllocate(0,0,255);
+#	@aa_color{K} = $rbb = $indigo = $image->colorAllocate(102,0,255);
+#	@aa_color{N} = $brb = $purple = $image->colorAllocate(203,0,255);
+#	@aa_color{Q} = $rbr = $magenta = $image->colorAllocate(255,0,204);
+#	@aa_color{E} = $brr = $violet = $image->colorAllocate(255,0,102);
+
+    ### I corrected the colors defined in the original paper 
+    ### so that they appear on the scrren more or less as in the journal
+    @aa_color{D} = $rrr_corr = $red = $image->colorAllocate(255,0,0);
+    @aa_color{S} = $yrr_corr = $scarlet = $image->colorAllocate(255,51,0);
+    @aa_color{T} = $ryr_corr = $vermillon = $image->colorAllocate(255,102,0);
+    @aa_color{G} = $yry_corr = $orange = $image->colorAllocate(255,153,0);
+    @aa_color{P} = $ryy_corr = $tangerine = $image->colorAllocate(255,204,0);
+    @aa_color{C} = $yyy_corr = $yellow = $image->colorAllocate(255,255,0);
+    @aa_color{A} = $gyy_corr = $lemon = $image->colorAllocate(204,255,0);
+    @aa_color{V} = $ygy_corr = $lemon_lime = $image->colorAllocate(140,220,0);
+    @aa_color{I} = $gyg_corr = $lime = $image->colorAllocate(80,200,0);
+    @aa_color{L} = $ygg_corr = $grass = $image->colorAllocate(30,180,0);
+    @aa_color{M} = $ggg_corr = $green = $image->colorAllocate(0,160,0);
+    @aa_color{F} = $bgg_corr = $emerald = $image->colorAllocate(0,255,102);
+    @aa_color{Y} = $gbg_corr = $turquoise = $image->colorAllocate(0,255,204);
+    @aa_color{W} = $bgb_corr = $cyan = $image->colorAllocate(0,204,255);
+    @aa_color{H} = $gbb_corr = $peacock = $image->colorAllocate(0,102,255);
+    @aa_color{R} = $bbb_corr = $blue = $image->colorAllocate(0,0,255);
+    @aa_color{K} = $rbb_corr = $indigo = $image->colorAllocate(102,0,255);
+    @aa_color{N} = $brb_corr = $purple = $image->colorAllocate(203,0,255);
+    @aa_color{Q} = $rbr_corr = $magenta = $image->colorAllocate(255,0,255);
+    @aa_color{E} = $brr_corr = $violet = $image->colorAllocate(255,0,102);
+    
+    @aa_color{'.'} = $black;
+    
+}
+
+

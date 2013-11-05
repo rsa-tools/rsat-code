@@ -1,0 +1,2346 @@
+#!/usr/bin/perl
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
+    require "RSA.lib";
+    push @INC, "$ENV{RSAT}/extlib/arch/";
+}
+
+use GD;
+
+%supported_format = ();
+
+################################################################
+#### select output format depending on the site configuration
+%supported_format = ("jpg"=>1,
+		     "gif"=>1,
+		     "png"=>1,
+		     "eps" =>1,
+		     "pdf" =>1
+		     );
+
+$img_format = $ENV{rsat_img_format} || "png";
+$supported_formats = join (",", keys %supported_format);
+
+################################################################
+##### initialize default parameters #####
+$start_time = &RSAT::util::StartScript();
+$x_log_base=10;
+$y_log_base=10;
+$data_fields = "columns";
+$bg = "white";
+$verbose = 0;
+$x_grids = 10;
+$y_grids = 10;
+$border = 10;
+$x_scale_border = 40;
+$y_scale_border = 20;
+$point_size = 2;
+@y_col_list = (1);
+$x_col = -1;
+$lines = 0;
+$legend = 0;
+$legend_size = 0;
+$x_axis_max = "ND";
+$y_axis_max = "ND";
+$x_axis_min = "ND";
+$y_axis_min = "ND";
+$same_limits = 0;
+$x = 0;
+$y = 0;
+
+$x_axis_size = 400;
+$y_axis_size = 400;
+
+$force_lines = 0;
+
+#### font sizes ####
+$small_font_width = 6;
+$small_font_height = 8;
+$large_font_width = 8;
+$large_font_height = 16;
+
+
+#### Condition for  highligth lines ####
+$hline=0;
+$viline=0;
+
+&ReadArguments();
+
+## check arguments compatibility
+if ($force_lines && (!$lines && scalar @lines == 0)) {
+  &RSAT::message::Warning("-force_lines option used without any line to trace specification is useless.") ;
+}
+
+
+if (($img_format eq "eps")||($img_format eq "pdf")) {
+
+  if (($xgstep1) || ($ygstep1) || ($xgstep2) || ($ygstep2)) {
+    &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.") ;
+    #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
+    #     $img_format = "png";
+    #     $outputfile .=".png";
+  }
+  if ($force_lines) {
+    &RSAT::message::Warning("-force_lines option is not compatible with the vectorial format") ;
+  }
+  if ($bg ne "white") {
+    &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.") ;
+    # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.") ;
+    # 	 $img_format = "png";
+    # 	 $outputfile .=".png";
+  }
+
+  if (($histogram)||($filled_histogram)) {
+    &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.") ;
+    # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
+    # 	  $img_format = "png";
+    # 	  $outputfile .=".png";
+  }
+
+  if ($HTML_map) {
+    &RSAT::message::Warning("-htmap is not compatible with eps format..") ;
+    # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.") ;
+    # 	  $img_format = "png";
+  }
+
+  if (($hbox_bottom)||($tbox_low_x)) {
+    &RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format.") ;
+    # 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.") ;
+    # 	 $img_format = "png";
+    # 	 $outputfile .=".png";
+  }
+
+  if ($data_fields != "columns") {
+    &RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.") ;
+    $img_format = "png";
+    $outputfile .=".png";
+  }
+}
+
+
+################################################################
+# Load user-specified colors from a file
+%header_colors = ();
+if ($colorfile) {
+	&RSAT::message::TimeWarn("Reading colors from file", $colorfile) if ($main::verbose >= 2);
+   my ($colorsfromfile) = &OpenInputFile($colorfile);
+  while (<$colorsfromfile>) {
+    if ($_=~/(.+)\t(.+)/){
+      my $series_name = $1;
+      $series_name = &trim($series_name);
+      my $color = $2;
+      $header_colors{$series_name}= $color;
+      &RSAT::message::Debug("Series", $series_name, "color", $header_colors{$series_name}) if ($main::verbose >= 3);
+    }
+  }
+  close $colorsfromfile;
+}
+
+################################################################
+## use gnuplot if format is eps
+if (($img_format eq "eps")||($img_format eq "pdf")){
+  &GnuPlotEPS();
+  exit();
+}
+
+## Other Format
+if ($x_log_base eq "e") {
+    $x_ref_log = 1;
+} else {
+    $x_ref_log=log($x_log_base);
+}
+if ($y_log_base eq "e") {
+    $y_ref_log = 1;
+} else {
+    $y_ref_log=log($y_log_base);
+}
+
+
+#### check parameter values ####
+if ($HTML_map) {
+    $verbose = 0;
+}
+
+#### if log representation, check user-entered axis values  ###
+if ($xlog) {
+  if (x_axis_max ne "ND") {
+    if ($x_axis_max > 0) {
+      $x_axis_max = log($x_axis_max)/$x_ref_log;
+    } else {
+      $x_axis_max = "ND";
+    }
+  }
+  if (x_axis_min ne "ND") {
+    if ($x_axis_min > 0) {
+      $x_axis_min = log($x_axis_min)/$x_ref_log;
+    } else {
+      $x_axis_min = "ND";
+    }
+  }
+}
+
+if ($ylog) {
+  if (y_axis_max ne "ND") {
+    if ($y_axis_max > 0) {
+      $y_axis_max = log($y_axis_max)/$y_ref_log;
+    } else {
+      $y_axis_max = "ND";
+    }
+  }
+  if (y_axis_min ne "ND") {
+    if ($y_axis_min > 0) {
+      $y_axis_min = log($y_axis_min)/$y_ref_log;
+    } else {
+      $y_axis_min = "ND";
+    }
+  }
+}
+
+#### open output file ####
+$out = &OpenOutputFile($outputfile);
+&InitHTMLmap() if ($HTML_map);
+
+&ReadData();
+&CalcLimits();
+
+#### convert tbox into an hbox ###
+if ($tbox_low_x ne "") {
+    $hbox_left = &XPixelPos($tbox_low_x);
+    $hbox_right = &XPixelPos($tbox_high_x);
+    $hbox_top = &YPixelPos($tbox_high_y);
+    $hbox_bottom = &YPixelPos($tbox_low_y);
+}
+
+### check hbox dimensions ###
+if ($hbox_left ne "") {
+  if ($hbox_left < $left) {
+    $hbox_left = $left
+  } elsif ($hbox_left > $right) {
+    $hbox_left = $right;
+  }
+  if ($hbox_right < $left) {
+    $hbox_right = $left
+  } elsif ($hbox_right > $right) {
+    $hbox_right = $right;
+  }
+  if ($hbox_top < $top) {
+    $hbox_top = $top
+  } elsif ($hbox_top > $bottom) {
+    $hbox_top = $bottom;
+  }
+  if ($hbox_bottom < $top) {
+    $hbox_bottom = $top
+  } elsif ($hbox_bottom > $bottom) {
+    $hbox_bottom = $bottom;
+  }
+  #### convert hbox into a tbox ###
+  $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
+  $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
+  $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min;
+  $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min;
+}
+
+#### report graph parameters ####
+if ($main::verbose >= 2) {
+  print "; XYgraph";
+  foreach $a (@ARGV) {
+    if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)) {
+      print " '$a'";
+    } else {
+      print " $a";
+    }
+  }
+  print "\n";
+  print ";Files\n";
+  print ";	input file 	$inputfile\n";
+  print ";	output file 	$outputfile\n";
+  print ";General options\n";
+  print ";	1st title	$title1\n";
+  print ";	2nd title	$title2\n";
+  print ";	border		$border\n";
+  print ";	point size	$point_size\n";
+  if ($hbox_left ne "") {
+    print ";	highlight box	left: $hbox_left, top: $hbox_top, right: $hbox_right, bottom: $hbox_bottom\n";
+  }
+  if ($tbox_low_x ne "") {
+    print ";	threshold box	X data between $tbox_low_x and $tbox_high_x\n";
+    print ";			Y data between $tbox_low_y and $tbox_high_y\n";
+  }
+  print ";X data\n";
+  print ";	first X legend  ", $x_legend1, "\n";
+  print ";	second X legend ", $x_legend2, "\n";
+  print ";	X data column	", $x_col+1, "\n";
+  print ";	nb of x values  ", $#X_values+1, "\n";
+  print ";	min x value	$min_x_value\n";
+  print ";	max x value	$max_x_value\n";
+  print ";	X axis min	$x_axis_min\n";
+  print ";	X axis max	$x_axis_max\n";
+  print ";	X axis size	$x_axis_size\n";
+  print ";	X scale		$x_scale\n";
+  print ";	graph X size	$graph_x_size\n";
+  print ";	left		$left\n";
+  print ";	right		$right\n";
+  print ";	1st X grid step	$xgstep1\n";
+  print ";	2nd X grid step	$xgstep2\n";
+  print ";Y data\n";
+  print ";	first Y legend  ", $y_legend1, "\n";
+  print ";	second Y legend ", $y_legend2, "\n";
+  print ";	Y data colum(s)\t";
+  foreach $c (0..$#y_col_list -1) {
+    print $y_col_list[$c] +1, ", ";
+  }
+  print $y_col_list[$#y_col_list]+1, "\n";
+  print ";	Y data legend(s) ";
+  for $series (0..$#y_col_list-1) {
+    print "$header_fields[$y_col_list[$series]], ";
+  }
+  print "$header_fields[$y_col_list[$#y_col_list]]\n";
+
+  print ";	min y value	$min_y_value\n";
+  print ";	max y value	$max_y_value\n";
+  print ";	Y axis min	$y_axis_min\n";
+  print ";	Y axis max	$y_axis_max\n";
+  print ";	Y axis size	$y_axis_size\n";
+  print ";	Y scale		$y_scale\n";
+  print ";	graph Y size	$graph_y_size\n";
+  print ";	1st Y grid step	$ygstep1\n";
+  print ";	2nd Y grid step	$ygstep2\n";
+}
+
+### create new image ####
+$image = new GD::Image($graph_x_size, $graph_y_size);
+&AssignColors();
+$image->filledRectangle(0,0,$graph_x_size, $graph_y_size, $bg_color);
+
+#### draw grid and limits ####
+
+#### second grid (only when the axis is not in log
+unless ($xlog) {
+  ### second X grid
+  if ($xgstep2 > 0) {
+    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $xgstep2) {
+      $grid_pos = $left + ($g-$x_axis_min)*$x_scale;
+      $image->line($grid_pos, $bottom, $grid_pos, $top, $grid2_color);
+    }
+  }
+}
+
+unless ($ylog) {
+  ### second Y grid
+  if ($ygstep2 > 0) {
+    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $ygstep2) {
+      $grid_pos = &YPixelPos($g);
+      $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
+    }
+  }
+}
+
+### first X grid
+if ($xgstep1 > 0) {
+    if ($xlog) {
+	$min_log = int($x_axis_min);
+	$max_log = int($x_axis_max)+1;
+	for ($g = $min_log; $g <= $max_log; $g++) {
+	    $grid_value = $x_log_base^$g;
+	    $grid_text = sprintf("%s^%-6g", $x_log_base, $g);
+	    $grid_pos = &XPixelPos($g);
+	    $image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
+	    $image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
+	}
+    } else {
+	for ($g = $x_axis_min; $g <= $x_axis_max; $g += $xgstep1) {
+	    $grid_value = $g;
+	    $grid_text = sprintf("%6g", $grid_value);
+	    $grid_pos = &XPixelPos($g);
+	    $image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
+	    $image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
+	}
+    }
+}
+
+#### first Y grid
+if ($ygstep1 > 0) {
+    if ($ylog) {
+	$min_log = int($y_axis_min);
+	$max_log = int($y_axis_max)+1;
+	for ($g = $min_log; $g <= $max_log; $g++) {
+	    $grid_value = $y_log_base^$g;
+	    $grid_text = sprintf("%s^%-6g", $y_log_base, $g);
+	    $grid_pos = &YPixelPos($g);
+#	    warn ("\t", $y_gid_step1, $g, $grid_value, $grid_text, $grid_pos), "\n";
+	    $image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
+	    $image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
+	}
+    } else {
+	for ($g = $y_axis_min; $g <= $y_axis_max; $g += $ygstep1) {
+	    $grid_value = $g;
+	    $grid_text = sprintf("%6g", $grid_value);
+	    $grid_pos = &YPixelPos($g);
+	    $image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
+	    $image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
+	}
+    }
+}
+
+### draw axes
+$image->line($left, $bottom, $left, $top, $axis_color);
+$image->line($left, $bottom, $right, $bottom, $axis_color);
+
+
+
+#### draw highlight box ####
+unless ($hbox_left eq ""){
+  $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
+}
+
+################################################################
+## Assign a color to each series
+&RSAT::message::TimeWarn("Assigning series colors") if ($main::verbose >= 2);
+@series_color = ();
+for $series (0..$#y_col_list) {
+  my $series_name = $header_fields[$y_col_list[$series]];
+  if (defined($header_colors{$series_name})) {
+    my $color_string = $header_colors{$series_name};
+    my ($R, $G, $B) = ();
+    if ($color_string =~ /^\d+\,\d+\,\d+$/) {
+      ($R,$G,$B) = split (",", $header_colors{$series_name});
+    } elsif ($color_string =~ /^#\S{6}$/) {
+      ($R,$G,$B) = &RSAT::util::hex2rgb($color_string);
+    } else {
+      &RSAT::message::Warning("series:".$series, $series_name, "Invalid color specification", $color_string);
+#      return();
+    }
+    $series_color[$series] = $image->colorAllocate($R,$G,$B);
+    &RSAT::message::Debug("series:".$series,
+			"column:".$y_col_list[$series],
+			"color:".$series_color[$series],
+			$color_string,
+			"RGB=($R,$G,$B)",
+			$series_name)
+    if ($main::verbose >= 3);
+  } else {
+    $series_color[$series] = $color_list[$series%($#color_list+1)];
+  }
+  &RSAT::message::Debug("series:".$series,
+			"column:".$y_col_list[$series],
+			"color:".$series_color[$series],
+			$series_name)
+    if ($main::verbose >= 3);
+}
+
+#### draw dots ####
+for $series (0..$#y_col_list) {
+  $prev_x = "ND";
+  $prev_y = "ND";
+  $last_defined_x = "ND";
+  $last_defined_y = "ND";
+  my $current_color = $series_color[$series];
+  $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
+
+
+  for $p (0..$#X_values) {
+    if (($X_values[$p] eq "ND") || ($Y_values[$series][$p] eq "ND")) {
+      $bar_left = "ND";
+      $bar_right = "ND";
+      $x = "ND";
+      $y = "ND";
+    } else {
+      ### position of the next point ###
+      if (($histogram) || ($filled_histogram)) {
+	if ($p == 0) {
+	  $bar_left = &XPixelPos($X_values[$p]);
+	} else {
+	  $bar_left = &XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
+	}
+	if ($p == $#X_values) {
+	  $bar_right = $right;
+	} else {
+	  $bar_right = &XPixelPos(($X_values[$p] + $X_values[$p+1])/2);
+	}
+      } else {
+	$x = &XPixelPos($X_values[$p]);
+      }
+      $y = &YPixelPos($Y_values[$series][$p]);
+
+      ### check whether next point lies in the highlight box ###
+      if (($hbox_left ne "") &&
+	  ($x >= $hbox_left) &&
+	  ($x <= $hbox_right) &&
+	  ($y >= $hbox_top) &&
+	  ($y <= $hbox_bottom)) {
+	$current_color = $hilight_color;
+	print "$data_lines[$p]";
+      }
+
+      ### draw the point (and the line if required) ###
+      if ($histogram) {
+	if (($bar_left ne "ND") && ($bar_right ne "ND")) {
+	  $image->line($bar_left, $y, $bar_right, $y, $current_color);
+	  if (($prev_bar_right ne "ND") && ($prev_y ne "ND")) {
+	    $image->line($prev_bar_right, $prev_y, $bar_left, $y, $current_color);
+	  }
+	}
+      } elsif ($filled_histogram) {
+	if (($bar_left ne "ND") && ($bar_right ne "ND")) {
+	  $image->filledRectangle($bar_left, $y, $bar_right, $bottom, $current_color);
+	}
+      } else {
+	if (($x ne "ND") && ($y ne "ND")) {
+	  DrawSymbol($current_symbol,
+		     $x-$point_size/2,
+		     $y-$point_size/2,
+		     $x+$point_size/2,
+		     $y+$point_size/2,
+		     $current_color);
+	  #          $image->arc($x,$y,$point_size,$point_size,0,360,$current_color);
+	  if (($HTML_map) && ($p < $max_map_elements)) {
+	    my $series_legend = $header_fields[$y_col_list[$series]];
+
+	    my $point_label = $data_lines[$p];
+	    $point_label =~ s/\'/prime/g;
+	    $point_label =~ s/\t/    /g;
+	    $point_label =~ s/\n/ /g;
+
+	    my $coord = sprintf "($X_values[$p],$Y_values[$series][$p])";
+
+	    my $map_message = "$series_legend\t$p\t$coord\t$point_label";
+
+	    #### area over the point
+	    print "\t<area ";
+	    print "href=\"$href\" ";
+	    print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
+	    print "shape=rect ";
+	    print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
+	  }
+	  if ($lines || $lines[$y_col_list[$series]]) {
+	    my $prev_x_coord = $prev_x;
+	    my $prev_y_coord = $prev_y;
+	    if (($prev_x eq "ND" || $prev_y eq "ND") && $force_lines) {
+	      $prev_x_coord = $last_defined_x;
+	      $prev_y_coord = $last_defined_y;
+	    }
+	    if (($prev_x_coord ne "ND" && $prev_y_coord ne "ND")) {
+	      $image->line($prev_x_coord, $prev_y_coord, $x, $y, $current_color);
+	    }
+	  }
+	}
+      }				#if historgram
+    }				# values are determined
+
+    if (($histogram) || ($filled_histogram)) {
+      $prev_bar_right = $bar_right;
+    } else {
+      $prev_x = $x;
+      $last_defined_x = $x if ($x ne "ND");
+    }
+    $prev_y = $y;
+    $last_defined_y = $y if ($y ne "ND");
+  }				# for p
+}				# for series
+
+### draw hlines
+if ($hline){
+  for $h (0..$#hline_pos) {
+    $hline_color = $hline_colors[$h];
+    $hline_pos = $hline_pos[$h];
+    if ($ylog) {
+      $hline_pos = log($hline_pos)/$y_ref_log;
+    }
+
+    ## Accept some predefined colors
+    my $hline_color_converted = $black;
+    if ($hline_color eq "orange") {
+      $hline_color_converted = $orange;
+    } elsif ($hline_color eq "red") {
+      $hline_color_converted = $red;
+    } elsif ($hline_color eq "blue") {
+      $hline_color_converted = $blue;
+    } elsif ($hline_color eq "green") {
+      $hline_color_converted = $green;
+    } elsif ($hline_color eq "violet") {
+      $hline_color_converted = $violet;
+    }
+
+    $hline_pos_new = &YPixelPos($hline_pos);
+
+#    &RSAT::message::Debug("Horizontal line", $hline_pos[$h], $hline_pos, $hline_pos_new, $hline_color) if ($main::verbose >= 10);
+
+    $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_converted);
+  }
+}
+
+## draw vlines
+if ($vline) {
+  for $v (0..$#vline_pos) {
+    $vline_color = $vline_colors[$v];
+    $vline_pos = $vline_pos[$v];
+    if ($xlog) {
+      $vline_pos = log($vline_pos)/$x_ref_log;
+    }
+
+    ## Accept some predefined colors
+    my $vline_color_converted = $black;
+    if ($vline_color eq "orange") {
+      $vline_color_converted = $orange;
+    } elsif ($vline_color eq "red") {
+      $vline_color_converted = $red;
+    } elsif ($vline_color eq "blue") {
+      $vline_color_converted = $blue;
+    } elsif ($vline_color eq "green") {
+      $vline_color_converted = $green;
+    } elsif ($vline_color eq "violet") {
+      $vline_color_converted = $violet;
+    }
+
+    $vline_pos_new = $left + ($vline_pos-$x_axis_min)*$x_scale;
+    $image->line($vline_pos_new, $bottom, $vline_pos_new, $top, $vline_color_converted);
+  }
+}
+
+#### draw graph legends and titles ####
+$title1_x_pos = ($graph_x_size - $large_font_width * length($title1))/2;
+if ($title1_x_pos < 0) {
+    $title1_x_pos = 0;
+}
+$title1_y_pos = $border;
+$title2_x_pos = ($graph_x_size - $large_font_width * length($title2))/2;
+if ($title2_x_pos < 0) {
+    $title2_x_pos = 0;
+}
+$title2_y_pos = $title1_y_pos + $large_font_height + 2;
+$x_legend1_x_pos = $left + ($x_axis_size - length($x_legend1) * $small_font_width)/2;
+$x_legend1_y_pos = $top + $y_axis_size + 12 + $small_font_height;
+$x_legend2_x_pos = $left + ($x_axis_size - length($x_legend2) * $small_font_width)/2;
+$x_legend2_y_pos = $x_legend1_y_pos + 3 + $small_font_height;
+$y_legend1_x_pos = $border;
+$y_legend1_y_pos = $top + ($y_axis_size + length($y_legend1) * $small_font_width)/2;
+$y_legend2_x_pos = $y_legend1_x_pos + 3 + $small_font_height;
+$y_legend2_y_pos = $top + ($y_axis_size + length($y_legend2) * $small_font_width)/2;
+$image->string(gdLargeFont, $title1_x_pos, $title1_y_pos, $title1, $text_color);
+$image->string(gdLargeFont, $title2_x_pos, $title2_y_pos, $title2, $text_color);
+$image->string(gdSmallFont, $x_legend1_x_pos, $x_legend1_y_pos, $x_legend1, $text_color);
+$image->string(gdSmallFont, $x_legend2_x_pos, $x_legend2_y_pos, $x_legend2, $text_color);
+$image->stringUp(gdSmallFont, $y_legend1_x_pos, $y_legend1_y_pos, $y_legend1, $text_color);
+$image->stringUp(gdSmallFont, $y_legend2_x_pos, $y_legend2_y_pos, $y_legend2, $text_color);
+
+
+################################################################
+## Draw the legend ####
+if ($legend) {
+  $legend_point_size = &checked_max(5,$point_size);
+  $legend_x_pos = $right + $legend_point_size + 20;
+  $point_x_pos = $right + 10;
+  $line_spacing = &checked_max($small_font_height, $legend_point_size) + 6;
+  $series = 0;
+  $legend_y_pos = 0;
+  while ($series <= $#y_col_list) {
+    my $legend_text = $header_fields[$y_col_list[$series]];
+    $current_color = $series_color[$series];
+#    $current_color = $color_list[$series%($#color_list+1)];
+    $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
+    if ($legend_text) {
+      &RSAT::message::Debug("Legend item", "series", $series, "column", $y_col_list[$series], "legend text", $legend_text) if ($main::verbose >= 2);
+      $legend_y_pos = $top + $series*$line_spacing;
+      last if ($legend_y_pos >= $graph_y_size - $small_font_height);
+      $point_y_pos = $legend_y_pos + $small_font_height/2 + 3 - $legend_point_size/2;
+      DrawSymbol($current_symbol,$point_x_pos,$point_y_pos,$point_x_pos+$legend_point_size,$point_y_pos+$legend_point_size,$current_color);
+      $image->string(gdSmallFont, $legend_x_pos, $legend_y_pos, $legend_text, $text_color);
+    }
+    $series++;
+  }
+}
+
+
+################################################################
+## Save the image file
+if ($img_format eq "gif") {
+    print $out $image->gif;
+} elsif (($img_format eq "jpeg") ||
+	 ($img_format eq "jpg")) {
+    print $out $image->jpeg;
+} elsif ($img_format eq "png") {
+    print $out $image->png;
+} else {
+    &RSAT::error::FatalError("Error: Format $img_format is not supported\n");
+}
+
+&CloseHTMLmap if ($HTML_map);
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+exit(0);
+
+
+
+####################################################################
+######################## SUBROUTINE DEFINITION #####################
+####################################################################
+
+################################################################
+## Generate the graph with GnuPlot and export it in eps format
+sub GnuPlotEPS {
+
+  ## remove lines starting by ; and adapt the comment line
+    ($in, $input_dir) = &OpenInputFile($inputfile);
+    our $tmp_file = "tmp_gnuplot_for_input.tab";
+    my ($out) = &OpenOutputFile($tmp_file);
+    while (<$in>) {
+      next if (/^;/); # skip comment lines
+#      next if (/^#/); # We don't want to skip header line
+      if (/^#/) {
+	s/^#//;
+      }
+      print $out $_;
+    }
+    close $out;
+    close $in;
+
+    ## do not process if no data
+  die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
+
+ ## will use this new file as input for gnuplot
+  my $input_data_file = $tmp_file;
+
+  #export color file
+  if ($colorexportfile){
+  	#output file
+  	($outcolor) = &OpenOutputFile($colorexportfile);
+
+  	#get the column headers
+    $header = `head -n 1 $input_data_file`;
+    chomp($header);
+    @header_list = split ('\t',$header);
+  }
+
+  ## check if .pdf format
+  if ($img_format eq "pdf") {
+    ## will first write a temporary eps file and then use ps2pdf to convert it into a pdf file
+    our $pdf_outputfile = $outputfile;
+    $outputfile = "tmp_gnuplot_eps_for_pdf.eps";
+  }
+
+  $gnuplot_cmd = "gnuplot << EOF\n";
+  ## fonts
+  $gnuplot_cmd .= "small='Arial,9';\n";
+  $gnuplot_cmd .= "big='Arial,11';\n";
+  ## add the ; to the default comment character #
+  $gnuplot_cmd .= "set datafile commentschars '#;'\n";
+
+  ## color
+  if ($monochrome) {
+    $color = "color";
+  } else {
+    $color = "";
+  }
+
+  ## plot size ##
+
+  ## size in gnuplot eps format is not in pixel but in inches.
+  ## the idea here is to get the ratio from the input x and y size
+  ## and let gnuplot adapt automatically
+
+  $gnuplot_cmd .= "set term post landscape enh ".$color." font small;\n";
+
+  if (($x_axis_size)&&($y_axis_size)) {
+    my $ratio = $y_axis_size/$x_axis_size;
+    $gnuplot_cmd .= "set size ratio '".$ratio."';\n";
+  }
+
+  ## output file
+  $gnuplot_cmd .= "set output '".$outputfile."';\n";
+
+  ## title
+  if ($title1) {
+    $title = '';
+    if ($title2) {
+      $title = '\n'.$title2;
+    }
+    $title = $title1.$title;
+    $title =~ s/_/-/g;
+    $gnuplot_cmd .= 'set title "'.$title.'" font big'.";\n";
+  }
+
+  ## labels
+  if ($x_legend1) {
+    $x_legend = "";
+    if ($x_legend2) {
+      $x_legend = '\n'.$x_legend2;
+    }
+    $x_legend = $x_legend1.$x_legend;
+    $x_legend =~ s/_/-/g;
+    $gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'.";\n";
+  }
+
+  if ($y_legend1) {
+    $y_legend = "";
+    if ($y_legend2) {
+      $y_legend = '\n'.$y_legend2;
+    }
+    $y_legend = $y_legend1.$y_legend;
+    $y_legend =~ s/_/-/g;
+    $gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'.";\n";
+  }
+
+  ## default linewidth
+  $lw = 4;
+  ## default pointsize
+  $gnuplot_cmd .= "set pointsize ".($point_size/2).";\n";
+
+  ## tics
+  $gnuplot_cmd .= "set tics font big;\n";
+
+  ## grid
+  $gnuplot_cmd .= "set grid '".($lw-1)."';\n";
+
+  ## x axis
+  if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
+    if ($x_axis_min eq "ND") {
+      $x_axis_min = "";
+    }
+    if ($x_axis_max eq "ND") {
+      $x_axis_max = "";
+    }
+
+    if ($xlog) {
+      if (($x_axis_min ne "")&&($x_axis_min <=0)) {
+	$x_axis_min = "";
+      }
+      if (($x_axis_max ne "")&&($x_axis_max <=0)) {
+	$x_axis_max = "";
+      }
+    }
+    $gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."];\n";
+  }
+
+  ## y axis
+  if (($y_axis_min ne "ND") || ($y_axis_max ne "ND")) {
+    if ($y_axis_min eq "ND") {
+      $y_axis_min = "";
+    }
+    if ($y_axis_max eq "ND") {
+      $y_axis_max = "";
+    }
+
+    ##log
+    if ($ylog) {
+      if (($y_axis_min ne "")&&($y_axis_min <=0)) {
+	$y_axis_min = "";
+      }
+      if (($y_axis_max ne "")&&($y_axis_max <=0)) {
+	$y_axis_max = "";
+      }
+    }
+    $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."];\n";
+  }
+
+  ## log
+  if ($xlog) {
+    $gnuplot_cmd .= "set logscale x ".$x_log_base.";\n";
+  }
+  if ($ylog) {
+    $gnuplot_cmd .= "set logscale y ".$y_log_base.";\n";
+  }
+
+  ## legend (key box)
+  if (($header)||($legend)) {
+    $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox;\n";
+  } else {
+    $gnuplot_cmd .= "set key off;\n";
+  }
+  ## get legend from columnheader
+  if (($header)||($legend)) {
+    ## remove # from data file comments charaters
+    $gnuplot_cmd .= "set datafile commentschars '!;%';\n";
+    $gnuplot_cmd .= "set key autotitle columnheader samplen 1;\n";
+  }
+
+  ## colors
+  if ($colorfile){
+    @color_list = ();
+
+    #get the column headers (no more lines starting by ; above the header)
+    my $header = `head -n 1 $input_data_file`;
+    chomp($header);
+    my @header_list = split ('\t',$header);
+    &RSAT::message::Debug("File", $input_data_file, "Header", $header, "\n", join(";", @header_list)) if ($main::verbose >= 5);
+    foreach my $series_name (@header_list){
+      if ($header_colors{$series_name}){
+	push @color_list, $header_colors{$series_name};
+      }
+      &RSAT::message::Debug("Color for gnuplot", $series_name, $header_colors{$series_name}) if ($main::verbose >= 4);
+    }
+  } else {
+
+  &GnuplotPalette();
+
+  @color_list = ();
+  push @color_list, $blue;
+  push @color_list, $green_175;
+  push @color_list, $champagne;
+  push @color_list, $cyan_200;
+  push @color_list, $orange;
+  push @color_list, $violet;
+  push @color_list, $gray_125;
+  push @color_list, $brown;
+  push @color_list, $black;
+  push @color_list, $red;
+  push @color_list, $yellow_225;
+  push @color_list, $cyan_128;
+  push @color_list, $pistache;
+  push @color_list, $magenta;
+  push @color_list, $green;
+  push @color_list, $green_128;
+  push @color_list, $gray_150;
+  push @color_list, $red_191;
+  push @color_list, $blue_128;
+  push @color_list, $cyan_096;
+  push @color_list, $blue_096;
+  push @color_list, $red_096;
+  push @color_list, $blue_064;
+  push @color_list, $gray_064;
+
+  ## monochrome
+  if ($monochrome) {
+    foreach my $i (0..$#color_list) {
+      $color_list[$i] = "black";
+    }
+  }
+ }
+
+  ## symbols
+  if ($symbols) {
+    foreach my $i (0..$#color_list) {
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."';\n";
+    }
+  } else {
+    ## no symbols (only lines and circle points)
+    foreach my $i (0..$#color_list) {
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."';\n";
+    }
+  }
+  $gnuplot_cmd .= "set style increment user;\n";
+
+  ## hlines and vlines
+  if ($hline){
+    for $h (0..$#hline_pos) {
+      $hline_color = $hline_colors[$h];
+      $hline_pos = $hline_pos[$h];
+      $gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."';\n";
+    }
+  }
+  if ($vline){
+    for $v (0..$#vline_pos) {
+      $vline_color = $vline_colors[$v];
+      $vline_pos = $vline_pos[$v];
+      $gnuplot_cmd .= "set arrow from first ".$vline_pos.", graph 0  to first ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."';\n";
+    }
+  }
+
+  ## additional user-specified commands
+  if ($gp_supp_commands) {
+    @gp = split(",",$gp_supp_commands);
+    foreach my $cmd (@gp) {
+      $gnuplot_cmd .= $cmd.";\n";
+    }
+  }
+
+  ## plot
+  $gnuplot_cmd .= "plot ";
+  foreach my $k (0..$#y_col_list) {
+
+    $gnuplot_cmd .= " '".$input_data_file."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
+
+    ## draw lines
+    if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
+    	if ($point_size == 0 ){
+      		$gnuplot_cmd .= "lines";
+      	} else {
+      		 $gnuplot_cmd .= "linespoints";
+      	}     
+    } else {
+      $gnuplot_cmd .= "points";
+    }
+
+    ## end line
+    if ($k == $#y_col_list) {
+      $gnuplot_cmd .= ";\n";
+    } else {
+      $gnuplot_cmd .= ",";
+    }
+
+    ##export color file
+    if ($colorexportfile){
+      print $outcolor $header_list[$y_col_list[$k]]."\t".$color_list[$k]."\n";
+    }
+  }
+
+  close $outcolor if ($outcolor);
+  $gnuplot_cmd .= "EOF\n";
+#  print $gnuplot_cmd;
+  ## Execute the command
+  &doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  if ($verbose) {
+    print "; XYgraph";
+    foreach $a (@ARGV) {
+      if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)) {
+	print " '$a'";
+      } else {
+	print " $a";
+      }
+    }
+    print "\n";
+    print "; gnuplot command:\n";
+    $gnuplot_cmd =~ s/\n/\n; /g;
+    print "; $gnuplot_cmd\n";
+    print ";Job started $start_time";
+    print ";Job done    ", `date`;
+  }
+
+  if ($tmp_file) {
+    unlink $tmp_file;
+  }
+
+  ##  use ps2pdf to convert it into a pdf file
+  if ($img_format eq "pdf") {
+    my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";
+
+    ## Execute the command
+    ## if ps2pdf not found, will try to use use pstopdf
+    my $stderr = `$ps2pdf_cmd 2>&1 1>/dev/null`;
+    if ($stderr) {
+      $ps2pdf_cmd = "pstopdf $outputfile -o $pdf_outputfile >/dev/null";
+      &doit($ps2pdf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+    unlink $outputfile;
+  }
+}
+
+################################################################
+## Computation of pixel position
+sub XPixelPos {
+  local($x_pos) = $_[0];
+  local($x_pixel_pos);
+  if (($x_pos < $x_axis_min) or ($x_pos > $x_axis_max)) {
+    $x_pixel_pos = "ND";
+  } else {
+    $x_pixel_pos = $left + ($x_pos - $x_axis_min)*$x_scale;
+  }
+  return $x_pixel_pos;
+}
+
+sub YPixelPos {
+  local($y_pos) = $_[0];
+  local($y_pixel_pos);
+  if (($y_pos < $y_axis_min) or ($y_pos > $y_axis_max)) {
+    $y_pixel_pos = "ND";
+    &RSAT::message::Warning("YPixelPos", "y_pos=".$ypos, "out of range (".$y_axis_min.":".$y_axis_max.")") if ($main::verbose >= 2);
+  } else {
+    $y_pixel_pos = $bottom - ($y_pos - $y_axis_min)*$y_scale;
+  }
+  return $y_pixel_pos;
+}
+
+#### color allocation ####
+sub AssignColors {
+
+    &StandardPalette();
+
+    @color_list = ();
+    if ($bg eq "black") {
+      $bg_color = $black;
+
+      #$grid1_color = $gray_150;
+      #$grid2_color = $gray_064;
+
+      $grid1_color = $gray_175;
+      $grid2_color = $gray_245;
+
+      $text_color = $white;
+      $axis_color = $white;
+      if ($monochrome) {
+	push(@color_list, $white);
+      } else {
+	push(@color_list, $cyan_pale_064);
+	push(@color_list, $magenta_pale_096);
+	push(@color_list, $yellow_pale_096);
+	push(@color_list, $white);
+	push(@color_list, $champagne);
+	push(@color_list, $magenta);
+	push(@color_list, $green);
+	push(@color_list, $red);
+	push(@color_list, $yellow_light);
+      }
+    } elsif ($bg eq "blue") {
+      $bg_color = $blue_128;
+      $grid1_color = $blue;
+      $grid2_color = $blue_175;
+      $text_color = $white;
+      $axis_color = $blue;
+      push(@color_list, $yellow_pale_096);
+      push(@color_list, $cyan_pale_064);
+      push(@color_list, $magenta_pale_064);
+      push(@color_list, $yellow_light);
+      push(@color_list, $champagne);
+      push(@color_list, $white);
+      push(@color_list, $magenta);
+      push(@color_list, $green);
+      push(@color_list, $red);
+    } else {			#### light background, dark foreground
+      $text_color = $black;
+      $axis_color = $black;
+      if ($bg eq "gray") {
+	$bg_color = $gray_245;
+	$grid1_color = $white;
+	$grid2_color = $gray_200;
+      } else {
+	$bg_color = $white;
+	$grid1_color = $gray_175;
+	$grid2_color = $gray_245;
+      }
+      if ($monochrome) {
+	push(@color_list, $black);
+      } else {
+	### here
+	push @color_list, $blue;
+	push @color_list, $green_175;
+	push @color_list, $pink;
+	push @color_list, $cyan_200;
+	push @color_list, $orange;
+	push @color_list, $violet;
+	push @color_list, $gray_125;
+	push @color_list, $brown;
+	push @color_list, $black;
+	push @color_list, $red;
+	push @color_list, $yellow_225;
+	push @color_list, $cyan;
+	push @color_list, $pistache;
+	push @color_list, $magenta;
+	push @color_list, $green;
+	push @color_list, $green_128;
+	push @color_list, $gray_150;
+	push @color_list, $red_191;
+	push @color_list, $blue_128;
+	push @color_list, $cyan_096;
+	push @color_list, $blue_096;
+	push @color_list, $red_096;
+	push @color_list, $blue_064;
+	push @color_list, $gray_064;
+	push @color_list, $gray_245;
+      }
+    }
+
+    if (($monochrome) || ($symbols)) {
+      #### define symbol list ####
+      push(@symbol_list, "filled_circle");
+      push(@symbol_list, "filled_rectangle");
+      push(@symbol_list, "filled_butterfly");
+      push(@symbol_list, "filled_triangle1");
+      push(@symbol_list, "rectangle");
+      push(@symbol_list, "circle");
+      push(@symbol_list, "cross1");
+      push(@symbol_list, "cross2");
+      push(@symbol_list, "filled_triangle2");
+      push(@symbol_list, "filled_triangle3");
+      push(@symbol_list, "filled_triangle4");
+      push(@symbol_list, "vbars");
+      push(@symbol_list, "hbars");
+      push(@symbol_list, "triangle1");
+      push(@symbol_list, "triangle2");
+      push(@symbol_list, "triangle3");
+      push(@symbol_list, "triangle4");
+      push(@symbol_list, "butterfly");
+      push(@symbol_list, "crossrect1");
+      push(@symbol_list, "crossrect2");
+      push(@symbol_list, "crosscircle1");
+      push(@symbol_list, "crosscircle2");
+    } else {
+      push(@symbol_list, "filled_circle");
+    }
+  }
+
+
+################################################################
+## Draw symbol ####
+##
+## Usage:
+##    DrawSymbol($symbol_type,$symbol_left,$symbol_top,$symbol_right,$symbol_bottom,$symbol_color);
+sub DrawSymbol {
+  local($s_type) = $_[0];
+  local($s_left) = $_[1];
+  local($s_top) = $_[2];
+  local($s_right) = $_[3];
+  local($s_bottom) = $_[4];
+  local($s_color) = $_[5];
+  local($s_x_center) = ($s_left + $s_right)/2;
+  local($s_y_center) = ($s_top + $s_bottom)/2;
+  local($s_width) = abs($s_right - $s_left) + 1;
+  local($s_height) = abs($s_top - $s_bottom) + 1;
+
+  if ($s_type eq "rectangle") {
+    $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "filled_rectangle") {
+    $image->filledRectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "filled_butterfly") {
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+    $image->fillToBorder($s_left+1,$s_y_center,$s_color,$s_color);
+    $image->fillToBorder($s_right-1,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "butterfly") {
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "triangle2") {
+    $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+    $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+
+  } elsif ($s_type eq "filled_triangle2") {
+    $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+    $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "triangle1") {
+    $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+    $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+    $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+
+  } elsif ($s_type eq "filled_triangle1") {
+    $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+    $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+    $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "triangle3") {
+    $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+    $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "filled_triangle3") {
+    $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+    $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "triangle4") {
+    $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+    $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+
+  } elsif ($s_type eq "filled_triangle4") {
+    $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+    $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "circle") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+
+  } elsif ($s_type eq "filled_circle") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "crossrect1") {
+    $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "crossrect2") {
+    $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+    $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "crosscircle2") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "crosscircle1") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+    $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "cross1") {
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "cross2") {
+    $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+    $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "vbars") {
+    for ($h = $s_left; $h <= $s_right; $h += 2) {
+      $image->line($h, $s_top, $h, $s_bottom, $s_color);
+    }
+
+  } elsif ($s_type eq "hbars") {
+    for ($h = $s_top; $h <= $s_bottom; $h += 2) {
+      $image->line($s_left, $h, $s_right, $h, $s_color);
+    }
+  }
+}
+
+
+
+################################################################
+## Compute te size of the grid
+##
+## Usage
+##   ($grid_min, $grid_step, $grid_max) = &AutoGrid($min_value, $max_value);
+sub AutoGrid {
+  local($min_value) = $_[0];
+  local($max_value) = $_[1];
+
+  local($range);
+  local($range_order);
+  local($grid_step);
+  local($grid_min);
+  local($grid_max);
+
+  $range = abs($min_value -$max_value);
+  $range_order = int(log($range)/$x_ref_log);
+  if ($range_order < 0) {
+    $range_order -= 1;
+  }
+  $grid_step = 10**$range_order;
+  while ($range < 5*$grid_step) {
+    $grid_step /=2;
+    $grid_step =~ s/25/20/;
+    $grid_step =~ s/2\.5/2\.0/;
+  }
+
+  if ($min_value >= 0) {
+    $grid_min = int($min_value/$grid_step) * $grid_step;
+  } else {
+    $grid_min = (int($min_value/$grid_step) -1)* $grid_step;
+  }
+
+  $grid_max = (int($max_value/$grid_step)+1)*$grid_step;
+
+  return($grid_min, $grid_step, $grid_max);
+}
+
+
+################################################################
+## Define a standard palette
+sub StandardPalette {
+  ### black and white
+  $white = $image->colorAllocate(255,255,255);
+  $black = $image->colorAllocate(0,0,0);
+
+  ### gray series
+  $gray_032 = $image->colorAllocate(32,32,32);
+  $gray_064 = $image->colorAllocate(64,64,64);
+  $gray_096 = $image->colorAllocate(96,96,96);
+  $gray_125 = $image->colorAllocate(125,125,125);
+  $gray_150 = $image->colorAllocate(150,150,150);
+  $gray_175 = $image->colorAllocate(175,175,175);
+  $gray_200 = $image->colorAllocate(200,200,200);
+  $gray_225 = $image->colorAllocate(225,225,225);
+  $gray_245 = $image->colorAllocate(245,245,245);
+
+  ### yellow series
+  $yellow = $image->colorAllocate(255,255,0);
+  $yellow_225 = $image->colorAllocate(225,225,0);
+  $yellow_200 = $image->colorAllocate(200,200,0);
+  $yellow_128 = $image->colorAllocate(128,128,0);
+  $yellow_light = $image->colorAllocate(255,255,150);
+  $yellow_pale = $image->colorAllocate(255,255,200);
+  $yellow_pale_064 = $image->colorAllocate(255,255,64);
+  $yellow_pale_096 = $image->colorAllocate(255,255,96);
+  $yellow_pale_128 = $image->colorAllocate(255,255,128);
+
+
+  ### green series
+  $green = $image->colorAllocate(0,255,0);
+  $green_200 = $image->colorAllocate(0,200,0);
+  $green_175 = $image->colorAllocate(0,175,0);
+  $green_128 = $image->colorAllocate(0,128,0);
+  $green_096 = $image->colorAllocate(0,96,0);
+  $green_064 = $image->colorAllocate(0,64,0);
+
+  ### cyan series
+  $cyan = $image->colorAllocate(0,255,255);
+  $cyan_200 = $image->colorAllocate(0,200,200);
+  $cyan_128 = $image->colorAllocate(0,128,128);
+  $cyan_096 = $image->colorAllocate(0,96,96);
+  $cyan_pale_064 = $image->colorAllocate(64,255,255);
+  $cyan_pale_096 = $image->colorAllocate(96,255,255);
+  $cyan_pale_128 = $image->colorAllocate(128,255,255);
+
+  ### blue series
+  $blue = $image->colorAllocate(0,0,250);
+  $blue_064 = $image->colorAllocate(0,0,64);
+  $blue_096 = $image->colorAllocate(0,0,96);
+  $blue_128 = $image->colorAllocate(0,0,128);
+  $blue_175 = $image->colorAllocate(0,0,175);
+  $blue_191 = $image->colorAllocate(0,0,191);
+  $blue_200 = $image->colorAllocate(0,0,200);
+
+  ### magenta
+  $magenta = $image->colorAllocate(255,0,255);
+  $magenta_191 = $image->colorAllocate(191,0,191);
+  $magenta_pale_064 = $image->colorAllocate(255,64,255);
+  $magenta_pale_096 = $image->colorAllocate(255,96,255);
+  $magenta_pale_128 = $image->colorAllocate(255,128,255);
+
+
+  ### red series
+  $red = $image->colorAllocate(255,0,0);
+  $red_191 = $image->colorAllocate(191,0,0);
+  $red_128 = $image->colorAllocate(128,0,0);
+  $red_096 = $image->colorAllocate(96,0,0);
+  $red_064 = $image->colorAllocate(64,0,0);
+
+  ### mscellaneous
+  $pink = $image->colorAllocate(255,70,120);
+  $orange = $image->colorAllocate(255,100,0);
+  $violet = $image->colorAllocate(120,0,200);
+  $brown = $image->colorAllocate(100,31,31);
+  $pistache = $image->colorAllocate(100,225,150);
+  $violet_pale = $image->colorAllocate(230, 215, 255);
+  $pink_pale = $image->colorAllocate(255,230,210);
+  $champagne = $image->colorAllocate(255,240,200);
+  $pistache_pale = $image->colorAllocate(200,255,200);
+}
+
+
+
+################################################################
+## Read data ####
+sub ReadData {
+  ($in, $input_dir) = &OpenInputFile($inputfile);
+
+  ################################################################
+  #### point series correspond to columns
+  if ($data_fields eq "columns") {
+    ### read X and Y values ###
+    $l = 0;		## Counter for non-comment and non-empty lines
+    while ($new_data_line = <$in>) {
+      next unless ($new_data_line =~ /\S/);
+      $l++;
+      if (($header) && ($l == 1) || ($new_data_line =~ /^#/)) {
+
+	#### read legend ####
+	$header_line = $new_data_line;
+	$header_line =~ s/^;//; ## Suppress leading comment char
+	$header_line =~ s/^#//; ## Suppress leading header char
+	unless ($header_line =~ /\t/) {	# if there are no tabs,
+	  $header_line =~ s/ {1,}/\t/g;	# single or multiple spaces are considered as a singlew tab
+	}
+	@header_fields = split(/[\t\n\r]/, $header_line);
+	&RSAT::message::Info(join("\t", "Legend fields\t", join (";", @header_fields))) if ($main::verbose >= 1);
+
+	### calculate legend width
+	if ($legend) {
+	  $legend_length = 0;
+	  for $series (0..$#y_col_list) {
+	    $new_length = length($header_fields[$y_col_list[$series]]);
+	    $legend_length = &checked_max($legend_length,$new_length);
+	  }
+	  $legend_size = $legend_length * $small_font_width + $point_size + 20;
+	  &RSAT::message::Info("Legend length", $legend_length, "size", $legend_size) if ($main::verbose >= 1);
+	} else {
+	  $legend_size = 0;
+	}
+      }
+      next if ($new_data_line =~ /^;/);	   ## Comment line
+      if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
+	$new_data_line =~ s/ //g;   # remove all blank spaces
+      } else {			    # if there are no tabs,
+	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+      }
+
+      $new_data_line =~ s/\,//g; # remove all commas
+      @data_fields = split(/[\t\n\r]/, $new_data_line);
+
+      if ($x_col == -1) {
+	push @X_values, $#X_values +2;
+      } elsif (&IsReal($data_fields[$x_col])) {
+	if ($xlog) {
+	  if ($data_fields[$x_col] > 0) {
+	    $new_x = log($data_fields[$x_col])/$x_ref_log;
+	  } else {
+	    $new_x = "ND";
+	  }
+	} else {
+	  $new_x = $data_fields[$x_col];
+	}
+	push (@X_values, $new_x);
+      } else {
+	next;
+      }
+      if ($label_col > 0) {
+	push @data_lines, @data_fields[$label_col -1];
+      } else {
+	push @data_lines, $new_data_line;
+      }
+
+      #### read Y values
+      for $series (0..$#y_col_list) {
+	if ((IsReal($data_fields[$y_col_list[$series]]))) {
+	  if ($ylog) {
+	    if ($data_fields[$y_col_list[$series]] > 0) {
+	      $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]])/$y_ref_log;
+	    } else {
+	      $Y_values[$series][$#X_values] = "ND";
+	    }
+	  } else {
+	    $Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]];
+	  }
+	} else {
+	  $Y_values[$series][$#X_values] = "ND";
+	}
+      }
+    }
+
+    ################################################################
+    #### point series correspond to rows
+  } else {
+    $line_nb = -1;
+    $xline = $x_col;	foreach $c (0..$#y_col_list) {
+      $yline{$y_col_list[$c]} = $c;
+    }
+
+    while ($new_data_line = <$in>) {
+      next if ($new_data_line =~ /^;/);
+      next unless ($new_data_line =~ /\S/);
+      $line_nb++;
+
+      next unless (($line_nb == $xline) || (defined($yline{$line_nb})));
+
+      ### split data line
+      if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
+	$new_data_line =~ s/ //g;   # remove all blank spaces
+      } else {			    # if there are no tabs,
+	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+      }
+      $new_data_line =~ s/\,//g; # remove all commas
+      @data_fields = split(/[\t\n\r]/, $new_data_line);
+
+      ### read legend
+      if ($header) {
+	$line_legend = shift @data_fields; ### take first word as legend
+	$header_fields[$line_nb] =  $line_legend;
+	$legend_length = &checked_max($legend_length,length($line_legend));
+	$legend_size = $legend_length * $small_font_width + $point_size + 20;
+      }
+
+      ### read X values
+      if ($x_col == -1) {
+	$max_col = &checked_max($max_col, $#data_fields+1);
+      } elsif ($line_nb == $x_col) {
+	for $c (0..$#data_fields) {
+	  if ($xlog) {
+	    if ($data_fields[$c] > 0) {
+	      $new_x = log($data_fields[$c])/$x_ref_log;
+	    } else {
+	      $new_x = "ND";
+	    }
+	  } else {
+	    $new_x = $data_fields[$c];
+	  }
+	  push (@X_values, $new_x);
+	}
+      }
+
+      ### read Y values
+      if (defined($yline{$line_nb})) {
+	for $c (0..$#data_fields) {
+	  $new_y = "ND";
+	  if ($ylog) {
+	    if ($data_fields[$c] > 0) {
+	      $new_y = log($data_fields[$c])/$y_ref_log;
+	    }
+	  } elsif (&IsReal($data_fields[$c])) {
+	    $new_y = $data_fields[$c];
+	  }
+	  $Y_values[$yline{$line_nb}][$c] = $new_y;
+	}
+      }
+    }
+    if ($x_col == -1) {
+      for $x (1..$max_col) {
+	push @X_values, $x;
+      }
+    }
+  }
+
+  close $in unless ($inputfile eq "");
+
+}				#### ReadData
+
+################################################################
+## Calculate limits for X and Y axes
+sub CalcLimits {
+
+  $max_x_value = "ND";
+  $min_x_value = "ND";
+  $max_y_value = "ND";
+  $min_y_value = "ND";
+
+  ## Calculate max and min X values
+  $min_x_value = &checked_min(@X_values);
+  $max_x_value = &checked_max(@X_values);
+  unless ((&IsReal($max_x_value)) &&
+	  (&IsReal($min_x_value))) {
+    &RSAT::error::FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
+  }
+  if ($max_x_value == $min_x_value) {
+    $max_x_value *= 2;
+    $min_x_value /= 2;
+  }
+
+  ## Calculate max and min Y values
+  for $series (0..$#y_col_list) {
+    $min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
+    $max_y_value = &checked_max($max_y_value,@{$Y_values[$series]});
+  }
+  if ($max_y_value == $min_y_value) {
+    $max_y_value *= 2;
+    $min_y_value /= 2;
+  }
+
+  unless ((&IsReal($max_y_value)) &&
+	  (&IsReal($min_y_value))) {
+    &RSAT::error::FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
+			     ") are not numeric.");
+  }
+
+  #### min and max axis values ####
+  ($tmp_xmin,$tmp_xgrid,$tmp_xmax) = &AutoGrid($min_x_value,$max_x_value);
+  if ($x_axis_min eq "ND") {
+    $x_axis_min = $tmp_xmin;
+  }
+  if ($x_axis_max eq "ND") {
+    $x_axis_max = $tmp_xmax;
+  }
+  ($tmp_ymin,$tmp_ygrid,$tmp_ymax) = &AutoGrid($min_y_value,$max_y_value);
+  if ($y_axis_min eq "ND") {
+    $y_axis_min = $tmp_ymin;
+  }
+  if ($y_axis_max eq "ND") {
+    $y_axis_max = $tmp_ymax;
+  }
+
+  ## If specified, use same limits for X and Y axes
+  if ($same_limits) {
+    $x_axis_max = &max($x_axis_max, $y_axis_max);
+    $y_axis_max = &max($x_axis_max, $y_axis_max);
+    $x_axis_min = &min($x_axis_min, $y_axis_min);
+    $y_axis_min = &min($x_axis_min, $y_axis_max);
+  }
+
+  ## Automatic grid size
+  if ($xgstep1 eq "") {
+    ($x_grid_min, $xgstep1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
+  }
+  if ($ygstep1 eq "") {
+    ($y_grid_min, $ygstep1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
+  }
+
+  #### graph dimensions
+  $top = $border;
+  $left = $border + 2*$small_font_height + 6 + $x_scale_border;
+  $right = $left + $x_axis_size;
+  if ($title1 ne "") {
+    $top += $large_font_height;
+  }
+  if ($title2 ne "") {
+    $top += $large_font_height + 4;
+  }
+  $bottom = $top + $y_axis_size;
+  $graph_x_size = $right + $border + $legend_size + $point_size + 20;
+  $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
+
+#  &RSAT::error::FatalError($x_axis_size, $left, $border, $right, $legend_size, $graph_x_size);
+
+
+  ### scale ###
+  if ($x_axis_max > $x_axis_min) {
+    $x_scale = $x_axis_size/($x_axis_max - $x_axis_min);
+  } else {
+    $x_scale = $x_axis_size;
+  }
+  if ($y_axis_max > $y_axis_min) {
+    $y_scale = $y_axis_size/($y_axis_max - $y_axis_min);
+  } else {
+    $y_scale = $y_axis_size;
+  }
+}
+
+################################################################
+## Initialize HTML map
+sub InitHTMLmap {
+  $max_map_elements = 5000;
+  $href = ShortFileName($inputfile);
+
+  ###### header of the HTML file #####
+  print "<HTML>\n";
+  print "<HEAD>\n";
+  print "<TITLE>XYgraph ";
+  print ShortFileName($inputfile);
+  print "</TITLE>\n";
+  print "</HEAD>\n";
+  print "<BODY>\n";
+  print "<img src=\"";
+  print ShortFileName($outputfile);
+  print "\" border=0 usemap=\"#map1\">\n";
+  print "<map name=\"map1\">\n";
+}
+
+##### terminate the HTML map #####
+sub CloseHTMLmap {
+  print "</map>";
+  print "</BODY>\n";
+  print "</HTML>\n";
+}
+
+
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    open SHORTHELP, "| more";
+    print SHORTHELP <<End_of_options;
+XYgraph options
+---------------
+-i		inputfile
+-o		outpufile
+-format		image format (supported $supported_formats; default $img_format)
+-v		verbose.
+-title1 "t1"	first graph title.
+-title2 "t2"	second graph title.
+-xleg1 "legend"	First X legend.
+-xleg2 "legend"	Second X legend.
+-yleg1 "legend"	First Y legend.
+-yleg2 "legend"	Second Y legend.
+-xmax #	        maximal value represented on X axis.
+-ymax #	        maximal value represented on Y axis.
+-xmin #	        minimal value represented on X axis.
+-ymin #	        minimal value represented on Y axis.
+-same_limits	use same limits (min, max) for the X and Y axis
+-min #	        minimal value represented on both X and Y axis
+-max #	        maximal value represented on both X and Y axis.
+-xgstep1 #      1st step value for the grid across X axis.
+-ygstep1 #      1st step value for the grid across Y axis.
+-gstep1 #       1st step value for the grid across both X and Y axis.
+-xgstep2 #      2nd step value for the grid across X axis.
+-ygstep2 #      2nd step value for the grid across Y axis.
+-gstep2 #       2nd step value for the grid across both X and Y axis.
+-xsize #        size of the X axis (in pixels). Default is 400.
+-ysize #        size of the Y axis (in pixels). Default is 400.
+-size #		size of X and Y axes (in pixels).
+-pointsize #    point size (in pixels).
+-columns	data fields are in columns (default)
+-rows		data fields are in rows
+-xcol #	        column containing data for the X axis.
+-ycol #,#,#     columns containing data for the Y axis.
+-xlog #		logarithm X axis base #, default 10)
+-ylog #		logarithm Y axis (base #, default 10)
+-log #		same as combining -xlog # -ylog #
+-lines	        points are jointed by lines
+-force_lines	points are jointed by lines even if there are missing values on the Y axis
+-line #		points of the #th column are jointed by lines
+-header		first row (column) of the data file contains a column header
+-legend		use the first line as legend for Y data.
+-histo		histogram.
+-fhisto		filled histogram.
+-hbox #,#,#.#   Highlight box.
+-tbox #,#,#.#   Threshold box.
+-bg		background color (white, blue, black or gray).
+-mono		monochrome output.
+-symbols	represent points by symbols
+-htmap		HTML map
+-lc		label column
+-colors		colorfile
+-export_colors	export a color file
+-gp		gnuplot additional commands
+-vline color #  vertical line(s) at position(s) # (multiple positions separated by commas)
+-hline color #   horizontal line(s) at position(s) # (multiple positions separated by commas)
+End_of_options
+    close SHORTHELP;
+}
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_Help;
+NAME
+	XYgraph
+
+	1997-98 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+	Draws a XY plot using the numeric values in selected columns
+	of a tab-delimited file.
+
+CATEGORY drawing
+
+USAGE
+	XYgraph [-i inputfile] [-o outputfile] [-v]
+		[-title1 "title1"][-title2 "title2"]
+		[-xmax #] [-xmin #] [-ymax #] [-ymin #]
+		[-xleg1 "legend"] [-xleg2 "legend"]
+		[-yleg1 "legend"] [-yleg2 "legend"]
+		[-xsize #][-ysize #] [-ycol #,#,#]
+		[-lines][-legend][-header] [-histo|-fhisto]
+                [-xgstep1 #][-ygstep1 #][-xgstep2 #][-ygstep2 #]
+
+OPTIONS
+	-i inputfile    The input file should contain columns with
+			numeric data.
+			Each line contains info about one point of the graph.
+			By default, the first column is considered to contain
+			X data, and the second column Y data.
+			X and Y columns can be changed with -xcol and -ycol
+			options.
+			Columns should be separated by tabs.
+			If no input file is specified, the data are taken
+			from the standard input (keyboard).
+	-o outpufile    The name under which the graph will be saved, in
+			the form of a GIF document.
+			If no output file is specified, the result is sent
+			to the standard output (screen).
+	-format		output image format
+			Supported: $supported_formats
+			Default: $img_format
+			For eps and pdf formats, Gnuplot (v4.2 or later) needs to be installed (http://www.gnuplot.info/)
+			For pdf format, ps2pdf must be installed.
+	-v		verbose. Comments about data and graph parameters
+			are printed on the screen.
+	-title1 "t1"	first graph title. The title string should be
+			embedded in double quotes if is contains spaces or
+			special chars.
+	-title2 "t2"	second graph title.
+ 	-xleg1 "legend"	First X legend.
+	-xleg2 "legend"	Second X legend.
+	-yleg1 "legend"	First Y legend.
+	-yleg2 "legend"	Second Y legend.
+	-xmax #	        maximal value represented on X axis.
+	-ymax #	        maximal value represented on Y axis.
+	-xmin #	        minimal value represented on X axis.
+	-ymin #	        minimal value represented on Y axis.
+	-same_limits	use same limits (max, min) for the X and Y axes.
+	-min #	        minimal value represented on both X and Y axis
+			(combinates the effects of -xmin and -ymin).
+	-max #	        maximal value represented on both X and Y axis.
+			(combinates the effects of -xmax and -ymax).
+	-xgstep1 #      1st step value for the grid across X axis.
+	-ygstep1 #      1st step value for the grid across Y axis.
+	-gstep1 #       1st step value for the grid across both X and Y axis.
+			(combinates the effects of -xgstep1 and -ygstep1).
+	-xgstep2 #      2nd step value for the grid across X axis.
+	-ygstep2 #      2nd step value for the grid across Y axis.
+	-gstep2 #       2nd step value for the grid across both X and Y axis.
+			(combinates the effects of -xgstep2 and -ygstep2).
+	-xsize #        size of the X axis (in pixels). Default is 400.
+	-ysize #        size of the Y axis (in pixels). Default is 400.
+	-size #		size of X and Y axes (in pixel).
+			(combinates the effects of -xsize and -ysize).
+	-pointsize #    point size (in pixels).
+
+	-columns	data fields are in columns (default)
+			(one column for X and one or several for Y values)
+	-rows		data fields are in row
+			(one row for X and one or several for Y values)
+	-xcol #	        column containing data for the X axis.
+			A zero value indicates that there is no column with X values.
+			In this case, X values are ordinal.
+	-ycol #		column containing data for the Y axis.
+			Several columns can be specified by:
+				-ycol #,#,#
+			A range of columns can be specified by:
+			They have to be separated by commas without spaces.
+	-xlog #		X data are displayed on a logarithmic scale
+			If the next argument is a number, it provides the
+			log base. Default log base is 10.
+	-ylog #		Y data are displayed on a logarithmic scale
+			If the next argument is a number, it provides the
+			log base. Default log base is 10.
+	-log #		same as combining -xlog # -ylog #
+
+	-lines 		points are jointed by lines. When there are missing Y
+			values, the points are not joined by a line (see -force_lines
+         		option).
+	-force_lines	points are jointed by lines. Even if there are missing values
+			on the Y axis.
+	-line #		same as lines, but for the #th column only
+			can be used recursively to specify several columns for
+			which a line must be drawn between points.
+	-header		first line of the data file contains a column header
+			if option -legend is active, this header is used as
+			legend, else it is ignored.
+	-legend		use the content of the first line from input file as
+			legend for Y data.
+	-histo		histogram. The X data should in this case contain the
+			middle position of ach class, and Y data the
+			frequencies.
+	-fhisto		filled histogram.
+	-hbox #,#,#.#   Highlight box. All points located within this box are
+			highlighted, and the data corresponding to these
+			points are are printed on the standard output
+			device (screen).
+			#,#,#,# are the coordinates of the highlighted
+			box in pixels (left, top, right, bottom respectively).
+
+	-tbox #,#,#.#   Threshold box. All points located within these
+			thresholds are highlighted, and the corresponding data
+			are printed on the standard output device (screen).
+			#,#,#,# are in units of X and Y data
+			(low_x, high_x, low_y, high_y respectively).
+
+	-bg bg_color	background color.
+			The following colors are currently supported:
+			- white (default),
+			- gray,
+			- blue
+			- black.
+			The foreground colors are automatically adapted to
+			provide a good contrast with the bg color.
+
+	-mono		monochrome. All dots are drawn in black, and a
+			specific symbol is associated to each.
+
+	-htmap	HTML map
+		An HTML document is automatically generated, which includes
+		the XYgraph GIF file as an HTML map. In other words,
+		this document displays a figure with sensitive areas.
+		Each time the mouse is positioned above a point of the XYgraphs,
+		information about this particuliar point is displayed
+		at the bottom of the browser window.
+
+	-lc	label column
+		this column contains the label associated to each point
+		(this info is used when the -htmap option is active).
+
+	-colors colorfile
+		Provide a file containing curve-specific colors.
+                The file contains 2 columns
+                1) column identifier (header of the column of the input file)
+                2) Gnuplot RGB colorname and/or RGB hexadecimal constant #RRGGBB
+                Example:
+					theoretical	salmon
+					random	dark-green
+					matrix_sites	#000000
+					matrix_sites_permuted	skyblue
+
+                will assign the "salmon" color to the curve drawn from the
+                column having the header "theoretical" in the input file.
+                To get the complete list of Gnuplot RGB colorname, type "gnuplot" in the terminal
+                and then type "show palette colornames".
+
+	-export_colors color_file
+		Only working with eps and pdf formats
+		Export the curve-specific colors in a separate file
+		as a color file. This file can then be re-used to
+		specify the same colors for other XY plots
+		(option -colors)
+
+	-gp	gnuplot additional commands
+		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
+		Additional gnuplot commands can be specified, separated by commas.
+		e.g. -gp 'set size ratio 0.5'
+
+	-hline Draw an horizontal line on the indicated position.
+		This helps to mark some relevant positions on the graph.
+		The following colors are currently supported:
+			red, blue, green, violet, orange
+		For eps and pdf format, all Gnuplot RGB colorname are supported
+		e.g. salmon, dark-green ...
+
+		 -hline red 0
+
+		 will draw a red line at the y position 0
+
+		 -hline red 0,10,20,30
+
+		 will draw a red line at the y positions 0, 10, 20 and
+		 30
+
+	-vline Draw a vertical line on the indicated position.
+		This helps to mark some relevant positions on the graph.
+		The following colors are currently supported:
+			red, blue, green, violet, orange
+		For eps and pdf format, all Gnuplot RGB colorname are supported
+		e.g. salmon, dark-green ...
+
+		 -vline green 0
+
+		 will draw a green line at the x position 0
+
+		 -vline green 1,2,4,8,16
+
+		 will draw a green line at the x positions 1, 2, 4, 8
+		 and 16
+
+Web VERSION
+	http://rsat.ulb.ac.be/rsat/
+
+End_of_Help
+  close HELP;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+
+  for $a (0..$#ARGV) {
+
+    #### help messages
+    if ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+      exit(0);
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+      exit(0);
+
+      ### input, output files ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+
+      ### image format
+    } elsif ($ARGV[$a] eq "-format") {
+      $img_format = lc($ARGV[$a+1]);
+      unless ($supported_format{$img_format}) {
+	&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
+      }
+
+      ### verbose ###
+    } elsif ($ARGV[$a] eq "-v") {
+      $verbose = 1;
+
+      ### legends and titles ###
+    } elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
+      $title1 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-title2") {
+      $title2 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-xleg1") {
+      $x_legend1 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-xleg2") {
+      $x_legend2 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-yleg1") {
+      $y_legend1 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-yleg2") {
+      $y_legend2 = $ARGV[$a+1];
+
+      ### grid steps ###
+    } elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $ygstep1 = $ARGV[$a+1];
+      $xgstep1 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $xgstep1 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $ygstep1 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $ygstep2 = $ARGV[$a+1];
+      $xgstep2 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $xgstep2 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $ygstep2 = $ARGV[$a+1];
+
+      ### min and max values to represent ###
+    } elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_max = $ARGV[$a+1];
+      $y_axis_max = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_max = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $y_axis_max = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_min = $ARGV[$a+1];
+      $y_axis_min = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_min = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $y_axis_min = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-same_limits") {
+      $same_limits = 1;
+
+      ### axis size (in pixels) ###
+    } elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $x_axis_size = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $y_axis_size = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $x_axis_size = $ARGV[$a+1];
+      $y_axis_size = $ARGV[$a+1];
+
+      ### backgreound color ####
+    } elsif ($ARGV[$a] eq "-bg") {
+      $bg = $ARGV[$a+1];
+
+      ### monochrome output
+    } elsif ($ARGV[$a] =~ /-mono/i) {
+      $monochrome = 1;
+
+      ### monochrome output
+    } elsif ($ARGV[$a] =~ /-symb/i) {
+      $symbols = 1;
+
+      ### logarithmic representation
+    } elsif ($ARGV[$a] eq "-log") {
+      $xlog= 1;
+      $ylog= 1;
+      if (($ARGV[$a+1] eq "e")
+	  || (&IsReal($ARGV[$a+1]))) {
+	$x_log_base = $ARGV[$a+1];
+	$y_log_base = $ARGV[$a+1];
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.")
+	  unless (($x_log_base > 1) || ($x_log_base eq "e"));
+      }
+    } elsif ($ARGV[$a] eq "-xlog") {
+      $xlog= 1;
+      if (($ARGV[$a+1] eq "e")
+	  || (&IsReal($ARGV[$a+1]))) {
+	$x_log_base = $ARGV[$a+1];
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.")
+	  unless (($x_log_base > 1) || ($x_log_base eq "e"));
+      }
+    } elsif ($ARGV[$a] eq "-ylog") {
+      $ylog= 1;
+      if (($ARGV[$a+1] eq "e")
+	  || (&IsReal($ARGV[$a+1]))) {
+	$y_log_base = $ARGV[$a+1];
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.")
+	  unless (($y_log_base > 1) || ($y_log_base eq "e"));
+      }
+
+      ### histogram ###
+    } elsif ($ARGV[$a] eq "-histo") {
+      $histogram = 1;
+
+      ### filled histogram ###
+    } elsif ($ARGV[$a] eq "-fhisto") {
+      $filled_histogram = 1;
+
+      ### join points by lines ###
+    } elsif ($ARGV[$a] eq "-lines") {
+      $lines = 1;
+      ### force the joining of points by lines (even where there are missing values)
+    } elsif ($ARGV[$a] eq "-force_lines") {
+      $force_lines = 1;
+      ### join points of a specific column by lines ###
+    } elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
+      $lines[$ARGV[$a+1]-1] = 1;
+
+      ### first input line contains Y data legends ###
+    } elsif ($ARGV[$a] eq "-header") {
+      $header = 1;
+
+    } elsif ($ARGV[$a] eq "-legend") {
+      $legend = 1;
+
+      ### point size ###
+    } elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $point_size = $ARGV[$a+1];
+
+      ### data columns ###
+    } elsif ($ARGV[$a] eq "-xcol") {
+      $x_col = $ARGV[$a+1] -1;	#indexes begin at 0
+
+    } elsif ($ARGV[$a] eq "-ycol") {
+      $y_col_string = $ARGV[$a+1];
+      ### single column
+      if (&IsNatural($ARGV[$a+1])) {
+	@y_col_list = ();
+	push @y_col_list, $ARGV[$a+1]-1;
+
+	### range of columns
+      } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
+	       (&IsNatural($1)) &&
+	       (&IsNatural($2)) &&
+	       ($2 >= $1)) {
+	@y_col_list = ();
+	for $col ($1-1..$2-1) {
+	  push  @y_col_list, $col;
+	}
+
+	### comma-separated list of columns
+      } elsif ($ARGV[$a+1] =~ /\,/) {
+	@y_col_list = split(/,/,$y_col_string);
+	foreach $col (0..$#y_col_list) {
+	  if ($y_col_list[$col] =~ /\d+/) {
+	    $y_col_list[$col]--; #indexes begin at 0
+	  } else {
+	    print "	Invalid Y column specification.\n";
+	    print "	Type XYgraph -h for help.\n";
+	    exit;
+	  }
+	}
+
+      } else {
+	print "	Invalid Y column specification.\n";
+	print "	Type XYgraph -h for help.\n";
+	exit;
+      }
+
+      ### highlight box ###
+    } elsif (($ARGV[$a] eq "-hbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)) {
+      $hbox_left = $1;
+      $hbox_top = $2;
+      $hbox_right = $3;
+      $hbox_bottom = $4;
+
+      ### threshold box ###
+    } elsif (($ARGV[$a] eq "-tbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)) {
+      $tbox_low_x = $1;
+      $tbox_high_x = $2;
+      $tbox_low_y = $3;
+      $tbox_high_y = $4;
+
+      ### data fields ####
+    } elsif ($ARGV[$a] eq "-rows") {
+      $data_fields = "rows";
+    } elsif ($ARGV[$a] eq "-columns") {
+      $data_fields = "columns";
+
+      ### HTML map ###
+    } elsif ($ARGV[$a] eq "-htmap") {
+      $HTML_map = 1;
+
+
+      ### hline ###
+    } elsif ($ARGV[$a] eq "-hline") {
+	$hline=1;
+	my $color = $ARGV[$a+1];
+	my @positions = split(",", $ARGV[$a+2]);
+	&RSAT::error::FatalError("-hline option requires 2 arguments") unless (scalar(@positions) >=1);
+	foreach my $pos (@positions) {
+	  push @hline_colors, $color;
+	  push @hline_pos, $pos;
+	}
+
+	### vline ###
+    } elsif ($ARGV[$a] eq "-vline") {
+	$vline=1;
+	my $color = $ARGV[$a+1];
+	my @positions = split(",", $ARGV[$a+2]);
+	&RSAT::error::FatalError("-vline option requires 2 arguments") unless (scalar(@positions) >=1);
+	foreach my $pos (@positions) {
+	  push @vline_colors, $color;
+	  push @vline_pos, $pos;
+	}
+#	$vline=1;
+#	push @vline_colors,  $ARGV[$a+1];
+#	push @vline_pos,  $ARGV[$a+2];
+#	&RSAT::error::FatalError("-vline option requires 2 arguments") unless defined($ARGV[$a+2]);
+
+	### label column
+    } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
+	$label_col = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-colors") {
+      $colorfile = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-export_colors") {
+      $colorexportfile = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-gp") {
+      $gp_supp_commands = $ARGV[$a+1];
+
+    }
+  }
+}
+
+
+################################################################
+## Define a color palette for gnuplot (used to generate pdf and ps files)
+sub GnuplotPalette {
+  ### black and white
+  $white = "white";
+  $black = "black";
+
+  ### gray series
+  $gray_032 = "gray10";
+  $gray_064 = "gray30";
+  $gray_096 = "gray40";
+  $gray_125 = "gray50";
+  $gray_150 = "gray60";
+  $gray_175 = "gray70";
+  $gray_200 = "gray80";
+  $gray_225 = "gray90";
+  $gray_245 = "gray90";
+
+  ### yellow series
+  $yellow = "yellow";
+  $yellow_225 = "dark-yellow ";
+  $yellow_200 = "dark-yellow ";
+  $yellow_128 = "dark-yellow ";
+  $yellow_light = "light-yellow";
+  $yellow_pale = "light-yellow";
+  $yellow_pale_064 = "light-yellow";
+  $yellow_pale_096 = "light-yellow";
+  $yellow_pale_128 = "light-yellow";
+
+
+  ### green series
+  $green = "green";
+  $green_200 = "light-green";
+  $green_175 = "dark-green";
+  $green_128 = "spring-green";
+  $green_096 = "forest-green";
+  $green_064 = "sea-green";
+
+  ### cyan series
+  $cyan = "cyan";
+  $cyan_200 = "skyblue";
+  $cyan_128 = "dark-cyan";
+  $cyan_096 = "cyan";
+  $cyan_pale_064 = "light-cyan";
+  $cyan_pale_096 = "light-cyan";
+  $cyan_pale_128 = "light-cyan";
+
+  ### blue series
+  $blue = "blue";
+  $blue_064 = "light-blue";
+  $blue_096 = "dark-blue";
+  $blue_128 = "midnight-blue";
+  $blue_175 = "navy";
+  $blue_191 = "medium-blue";
+  $blue_200 = "royalblue";
+
+  ### magenta
+  $magenta = "magenta";
+  $magenta_191 = "dark-magenta";
+  $magenta_pale_064 = "light-magenta";
+  $magenta_pale_096 = "light-magenta";
+  $magenta_pale_128 = "light-magenta";
+
+
+  ### red series
+  $red = "red";
+  $red_191 = "dark-red";
+  $red_128 = "dark-red";
+  $red_096 = "light-red";
+  $red_064 = "light-red";
+
+  ### miscellaneous
+  $pink = "pink";
+  $orange = "orange";
+  $violet = "violet";
+  $brown = "brown";
+  $pistache = "dark-khaki";
+  $violet_pale = "plum";
+  $pink_pale = "light-pink";
+  $champagne = "salmon";
+  $pistache_pale = "khaki";
+}

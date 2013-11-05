@@ -1,0 +1,716 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-snp-seq,v 1.15 2013/04/29 13:58:58 jeremy Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+retrieve-snp-seq
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Retrieve snp and haplotype sequences for a set of coordinates
+specified in a bed-formatted file.
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ retrieve-snp-seq -i bedfile -len # [-org #] [-population #] [-o outputfile] [-v#] [...]
+
+=head2 Example
+
+  Get the list of supported populations for a given species
+      retrieve-snp-seq -org Homo_sapiens -pop
+
+  Get the SNPs for a given population
+    retrieve-snp-seq -v 2 \
+      -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
+      -org Homo_sapiens \
+      -population 1000GENOMES:phase_1_ALL \
+      -len 30 \
+      -o variations.tab
+
+    retrieve-snp-seq -v 2 \
+      -i $RSAT/public_html/demo_files/seq_mm9_galaxy.bed  \
+      -org Mus_musculus \
+      -population EUROPE \
+      -len 30 \
+      -o variations.tab
+
+=head1 INPUT FORMAT
+
+=head2 Genomic coordinate file
+
+The option I<-i> allows to specify a genomic coordinate file in bed
+format. The program only takes into account the 3 first columns of the
+bed file, which specify the genomic coordinates. 
+
+B<Note> (from Jacques van Helden): the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), but the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end.
+
+=head Example of bed file
+
+ chr1	3473041	3473370
+ chr1	4380371	4380650
+ chr1	4845581	4845781
+ chr1	4845801	4846260
+
+
+The definition of the BED format is provided on the UCSC Genome
+Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+
+This program only takes into account the 3 first columns, which
+specify the genomic coordinates.
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+(e.g. scaffold10671).
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome or
+scaffold. For RSAT programs, the first base in a chromosome is
+numbered 1 (this differs from the UCSC-specific zero-based notation
+for the start).
+
+B<Note> from Jacques van Helden: the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), and the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end. We find this representation completely counter-intuitive, and we
+herefore decided to adopt a "normal" convention, where:
+
+=over
+
+=item start and end position represent the first and last positions
+I<included> in the region of interest.
+
+=item start and end positions are provided in one-based notation
+(first base of a chromosome or contig has coordinate 1).
+
+=back
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome or scaffold.
+
+=head1 OUTPUT FORMAT
+
+A tab delimited file with the following column content.
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. 1, X, 8...)
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome
+
+=item 4. chromStrand
+
+The strand of the feature in the chromosome
+
+=item 5. snp
+
+rsID, variant and position on which the sequence is center. All information
+are separate by a '-'.
+
+=item 6. NeighboorsSnp
+
+rsID, variant and position of all snp present in the sequence except the
+center snp. All neighboors snp are separate by a "/".
+
+=item 7. sequence
+
+=item 8. number
+
+The numer of time that this sequence is observed in the population
+
+=back
+
+=head2 SNPs and haplotypes
+
+Ideally, we would like to restrict the analysis to all the haplotypes
+present in a population. We are facing problems to retrieve
+haplotypes. An alternative is to reconstruct haplotypes from
+individual genotypes, but this represents a huge transfer (140Gb for
+the Human genome).
+
+For the time being, we report all possible combinations of SNPs in the
+neighborhood of the reference SNP, irrespective of the fact that these
+combinations do or not occur in a population.
+
+=head1 SEE ALSO
+
+=head2 install-enembl-genome
+
+I<retrieve-snp-seq> uses the sequencezs and SNP coordinates downloaded
+from Ensembl using the tool I<install-ensembl-genome>.
+
+=head2 supported-organisms-ensembl
+
+Returns the list of genomes supported at Ensembl.
+
+=head2 snp-scan
+
+Scan SNP sequences with one or several position-specific scoring
+matrices.
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    push (@INC, "/jolidisk/software/rsa-tools/perl-scripts/lib");
+    push (@INC, "../rsa-tools/perl-scripts/lib");
+	$ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
+}
+
+require "RSA.lib";
+#use Bio::EnsEMBL::Registry; ##require to connect to Ensembl API
+
+################################################################
+## Main package
+package	main;
+{
+
+    ###############################################################
+    ## Initialise parameters
+    our $start_time = &RSAT::util::StartScript();
+    our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+    our %infile	= ();
+    our %outfile = ();
+
+    our $verbose = 0;
+    our $validate = 0;
+    our $in = STDIN;
+    our $out = STDOUT;
+
+	our $genomes_dir = $ENV{'RSAT'}."/data/genomes/";
+    our $species = 'homo_sapiens';
+    our $flank_len = 29;
+
+    our $margin = 50; ## In case of indel on extremity of slice
+
+	our @three_prime_var = ();
+	our @five_prime_var = ();
+	our @interest_variation_info = ();
+	our $new_end = 500000000;
+	our $nb_var = 0;
+	our $ref_seq = "";
+	
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+	
+	$latest_file = $genomes_dir."latest_genome.tab";
+	$latest_genome = "";
+	
+	#Check if genomes install
+	if (-f $latest_file) {
+	
+		my ($file) = &OpenInputFile($latest_file);
+		while (<$file>) {
+			my ($species_l,$version) = split("\t");
+			$version =~ s/\n//g;
+			$latest_genome = $version if ($species_l eq $species);
+		}
+		close $file;
+
+	} else {
+		&RSAT::error::FatalError("No species install. Use install-ensembl-genome");
+	}
+
+	#Check if $species install
+	if ($latest_genome eq "") {
+		&RSAT::error::FatalError("$species not install in $genomes_dir. Use install-ensembl-genome");		
+	}
+	
+	$genomes_dir .= ucfirst($species);
+	unless (-d $genomes_dir) {
+		&RSAT::error::FatalError("$species not install in $genomes_dir");
+	} 
+	
+	#Check if genome install for $species
+	$genomes_dir .= "/$latest_genome";
+	unless (-d $genomes_dir) {
+		&RSAT::error::FatalError("$genomes_dir not found. Please reinstall $species");
+	}	
+	
+	unless (-d $genomes_dir."/genome") {
+		&RSAT::error::FatalError("No genome install install in $genomes_dir");
+	}
+
+
+	$start_time = &RSAT::util::StartScript();
+	
+    ################################################################	
+	my $raw_file = $genomes_dir."/genome/"."chromosome_GRCh37_22_1_51304566_1_dna_rm.raw";	
+	$ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);	
+	
+	
+    ################################################################
+	my ($file) = &OpenInputFile($genomes_dir."/variations/22.tab");
+	my @neigboor_var = ();
+	
+	while (<$file>) {
+		$_ =~ s/\n//g;
+		my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
+
+		next if ($invar && $validate == 0);
+		next if ($valide == 0 && $validate);
+		
+		
+		if ($start < $new_end) {
+			$nb_var++;	
+			$new_end = $end+$flank_len+$margin;
+			push (@neigboor_var, $_);
+			
+		} else {			
+			&neiVar(@neigboor_var);
+			@neigboor_var = ();
+			$new_end = $end+$flank_len+$margin;
+			push (@neigboor_var, $_);	
+		} 
+	}
+
+	##For the last variation
+	&neiVar(@neigboor_var);
+	@neigboor_var = ();
+
+	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+	print $exec_time if ($main::verbose >= 2); ## only report exec time if verbosity is specified
+	
+exit(0);
+
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message
+sub PrintHelp {
+    system "pod2text -c $0";
+exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Analyse neibhoor variations
+sub neiVar {
+	my @neigboor_var = @_;
+    foreach (@neigboor_var) {
+		$nb_var++;
+		&RSAT::message::TimeWarn("Analyse variation : $nb_var") if ($main::verbose >= 2);
+
+		my ($chr,$start,$end,$strand,$id,$ref,$vars,$type,$valide,$suvar,$invar) = split("\t",$_);				
+		my $mar_start = $start-($margin+$flank_len);
+		my $mar_end = $end+($margin+$flank_len);
+		my $five_ref_seq =  substr($ref_seq,$start-$flank_len-$margin-1,$flank_len);
+		my $three_ref_seq = substr($ref_seq,$end,$flank_len+$margin);
+		#my $five_ref_seq  = "行行行行行行行行行行行行行行行行行行行行行行行行行_____________________________"
+		#my $three_ref_seq = "_____________________________行行行行行行行行行行行行行行行行行行行行行行行行行"
+				
+		##Get co-variation
+		foreach my $covar (@neigboor_var) {
+			my ($nei_chr,$nei_start,$nei_end,$nei_strand,$nei_id) = split("\t",$covar);		
+			#print "----",$covar,"\n" if ($id eq $nei_id);
+			next if ($nei_start < $mar_start || $id eq $nei_id);				
+			last if ($end+$margin+$flank_len < $nei_start);
+							
+			if ($nei_end < $start ) {
+				push (@five_prime_var, $covar);
+				#print "<---",$covar,"\n";
+			} elsif ($nei_start > $end ) {
+				push (@three_prime_var, $covar);
+				#print "--->",$covar,"\n";
+			}	
+		}
+				
+		my ($chr_zero,$start_zero,$end_zero) = split("\t",$_);
+		$new_end = $end_zero+$flank_len+$margin;	
+	
+		##call fonction
+		@five_prime_var = reverse(@five_prime_var);
+		@interest_variation_info = split("\t",$_);	 
+		$vars .= ",$ref";
+				
+		foreach (split(",",$vars)) {
+			&GetSequence(0,0,$flank_len,$flank_len,$five_ref_seq,$three_ref_seq,$_,"");
+		}
+							
+		##Reinitialise liste
+		@five_prime_var = ();
+		@three_prime_var = ();
+	}
+}
+
+
+################################################################
+## Create sequence
+sub GetSequence() {
+	my $to_print =0;
+	my ($i,$ii,$five_flank,$three_flank,$five_seq,$three_seq,$variant_interest,$co_vars) = @_;
+	my $start = $interest_variation_info[1];
+	my $end = $interest_variation_info[2];
+	
+	if (scalar(@five_prime_var) > $i) {	
+		my ($nei_chr,$nei_start,$nei_end,$nei_strand,$nei_id,$nei_ref,$nei_vars) = split("\t",$five_prime_var[$i]);
+		$nei_ref = "" if ($nei_ref eq "-");		
+
+		if ($nei_end >= $start-$five_flank ) {	
+			my @nei_variants = split(",",$nei_vars);
+			push(@nei_variants,$nei_ref);
+			
+			##Trunk variant if a part is outside seq of interest and remove identical trunk_var
+			if ($nei_start < $start-$five_flank) {
+				my $max_len_var = $nei_end-($start-$five_flank)+1;
+				my @nei_variants_tmp = ();
+
+				if (length($nei_ref) > $max_len_var) {
+					$nei_ref = substr($nei_ref,0,$max_len_var);
+				}
+				
+				foreach my $nei_var_tmp (@nei_variants) {
+					if (length($nei_var_tmp) > $max_len_var) {
+						push(@nei_variants_tmp, substr($nei_var_tmp,-$max_len_var)) unless ( grep($_ eq substr($nei_var_tmp,-$max_len_var), @nei_variants_tmp ));
+					} else {
+						push(@nei_variants_tmp, $nei_var_tmp);
+					}
+				}
+				
+				@nei_variants = @nei_variants_tmp
+			}
+			
+			##Make sequence foreach variants										
+			foreach my $nei_var (@nei_variants) {		
+				my $co_var = "_".$nei_id."/";
+				$nei_var = "" if ($nei_var eq "-");
+										
+				my $left_side_len = $flank_len-($start-$nei_start);
+				my $right_side_start = length($five_seq) - ($start-$nei_end-1) + ($five_flank-$flank_len);
+				my $diff = $five_flank+(length($nei_ref) - length($nei_var));								
+
+				if ($nei_var eq "") {
+					$co_var .= "-/";
+				} else {
+					$co_var .= $nei_var."/";
+				}
+				
+				my $start_on_seq = $left_side_len-$five_flank;
+				$start_on_seq ++ if ($nei_ref eq "");
+				if (length($nei_var)>1) {
+					$co_var .= $start_on_seq."to".($start_on_seq+length($nei_ref)-1)."/".$co_vars;
+				} else {
+					$co_var .= $start_on_seq."/".$co_vars;
+				}
+
+
+				$five_seq = substr($five_seq,0,$left_side_len+$margin).$nei_var.substr($five_seq,$right_side_start);
+							
+				&GetSequence($i+1,$ii,$diff,$three_flank,$five_seq,$three_seq,$variant_interest,$co_var);
+			}
+		} else {
+			&GetSequence($i+500,$ii,$five_flank,$three_flank,$five_seq,$three_seq,$variant_interest,$co_vars);
+		}
+		
+	} elsif (scalar(@three_prime_var) > $ii) {
+		my ($nei_chr,$nei_start,$nei_end,$nei_strand,$nei_id,$nei_ref,$nei_vars) = split("\t",$three_prime_var[$ii]);
+		$nei_ref = "" if ($nei_ref eq "-");
+		
+		if ($nei_start <= $end+$three_flank ) {
+			my @nei_variants = split(",",$nei_vars);
+			
+			##Trunk variant if a part is outside seq of interest and remove identical trunk_var
+			if ($nei_end > $end+$three_flank) {
+				my $max_len_var = $end+$three_flank-$nei_start+1;
+				my @nei_variants_tmp = ();
+				
+				if (length($nei_ref) > $max_len_var) {
+					$nei_ref = substr($nei_ref,0,$max_len_var);
+				}
+				
+				foreach my $nei_var_tmp (@nei_variants) {
+					if (length($_) > $max_len_var) {
+						push(@nei_variants_tmp, substr($nei_var_tmp,0,$max_len_var)) unless ( grep($_ eq $nei_var_tmp, @nei_variants_tmp ));
+					} else {
+						push(@nei_variants_tmp, $nei_var_tmp);
+					}
+				}
+				
+				@nei_variants = @nei_variants_tmp
+			}
+			
+			push(@nei_variants,$nei_ref);
+			
+			##Make sequence foreach variants						
+			foreach my $nei_var (@nei_variants) {
+				my $co_vars = $co_vars."_".$nei_id."/";
+				$nei_var = "" if ($nei_var eq "-");
+				
+				my $left_side_len = $nei_start-$end+($flank_len-$three_flank);
+				$left_side_len = 0 if ($nei_start-$end < 0);
+				my $right_side_start = $nei_end-$end+1+($flank_len-$three_flank);
+				
+				if ($nei_var eq "") {
+					$co_vars .= "-/";
+				} else {
+					$co_vars .= $nei_var."/";
+				}
+				
+				$co_vars .= $left_side_len+1;
+		
+				my $diff = $three_flank+(length($nei_ref) - length($nei_var));							
+				my $three_tmp_seq = substr($three_seq,0,$left_side_len).$nei_var.substr($three_seq,$right_side_start);
+				#print "$nei_var\t\t",$three_tmp_seq," $diff\n";	
+				
+				&GetSequence($i,$ii+1,$five_flank,$diff,$five_seq,$three_tmp_seq,$variant_interest,$co_vars);
+			}
+			
+		} else {
+			$to_print = 1;
+		}
+	} else {
+		$to_print = 1;
+	}
+	
+	if ($to_print) {
+		print $out $interest_variation_info[0],"\t",$start,"\t",$end,"\t",$interest_variation_info[3],"\t",$interest_variation_info[4],"/$variant_interest/0","\t";
+		print $out substr($co_vars,1),"\t" if (length($co_vars) > 0);
+		print $out $start-$five_flank,"\t",$end+$three_flank,"\t";
+		$variant_interest =  "" if ($variant_interest eq "-"); 
+		print $out substr($five_seq,-$flank_len).$variant_interest.substr($three_seq,0,$flank_len)."\n";
+	}
+}	
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-i inputfile>
+
+The input file should be in bed format (see section INPUT FORMATS
+above).
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+This option is mutually exclusive with option I<-u>.
+
+=cut
+    } elsif ($arg eq "-i") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input_url});
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-u input_file_URL>
+
+Use as input a file available on a remote Web server (e.g. a bed file
+on your Galaxy account).
+
+This option is mutually exclusive with option I<-i>.
+
+=cut
+    } elsif ($arg eq "-u") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input});
+      $main::infile{input_url} = shift(@arguments);
+
+=pod
+
+=item B<-org species_name>
+
+Species (e.g. "Homo_sapiens","mus_musculus").
+
+Default: "Homo_sapiens".
+
+Help : Use supported-organisms-ensembl to get all avalaible species
+
+=cut
+    } elsif ($arg eq "-org") {
+      $main::species = ucfirst(shift(@arguments));
+
+=pod
+
+=item B<-population population_name>
+
+Population name on ensembl data base (e.g. '1000GENOMES:phase_1_YRI').
+
+Default : 1000GENOMES:phase_1_ALL
+
+Help : Use retrieve-snp-seq -org # -pop to get all avalaible population for this species.
+
+=cut
+    } elsif ($arg eq "-species") {
+      $main::species = shift(@arguments);
+
+=pod
+
+=item B<-len #>
+
+Flanking sequence length, i.e. the length of the sequence to be
+returned on each side of the SNP. The total length of each SNP
+sequence will thus be
+
+  seq_len = 2*flank_length + snp_length
+
+Default value=: 30
+
+=cut
+    } elsif ($arg eq "-len") {
+      $flank_len = shift(@arguments);
+      unless (&IsNatural($flank_len)) {
+	&RSAT::error::FatalError($flank_len, "Invalid value for option -len. Must be a Natural value.");
+      }
+
+=pod
+
+=item B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $out "; retrieve-snp-seq ";
+    &PrintArguments($out);
+    printf $out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    printf $out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    printf $out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+
+    print $out ";  column headers\n";
+    print $out ";  \t1\tchr\tChromosome id (ex 1, X, 12)\n";
+    print $out ";  \t2\tstart\tStarting position of the sequence\n";
+    print $out ";  \t3\tend\tEnding position of the sequence\n";
+    print $out ";  \t4\tstrand\tStrand of the sequence\n";
+    print $out ";  \t5\tvar\trsID, variant, position on the center of sequence. Information are separate by / \n";
+    print $out ";  \t6\tco-var\trsID, variant, position of all variations present in sequence. Information are separate by '/', Co-variation are separate by ',' \n";
+    print $out ";  \t7\tseq\tsequence\n";
+    print $out ";  \t8\tcount\tNumber of time that this sequence is observed\n";
+}
+
+__END__

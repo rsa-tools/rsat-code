@@ -1,0 +1,2397 @@
+#!/usr/bin/perl
+
+############################################################
+#
+# $Id: position-analysis,v 1.100 2013/11/03 23:51:12 jvanheld Exp $
+#
+# Time-stamp: <2003-10-21 01:16:40 jvanheld>
+#
+############################################################
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA2.cgi.lib";
+require RSAT::util;
+require RSAT::stats;
+use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
+#use Math::CDF;
+use Statistics::Distributions;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialize parameters
+    our $pos_interval = 20;
+    our $in_format = "fasta";
+    our $strands = "1str";
+    our $group_rc = 0;
+    our $img_format = $ENV{rsat_img_format} || "png";
+    our $XYgraph_command = "$SCRIPTS/XYgraph";
+    our $log_base = log(10);
+    our $max_sig = 300; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
+
+    our $bg_method = "homogeneous repartition";
+#    our $bg_method = "markov";
+    our $markov = 0;
+    our $export_transitions = 0; ## For debugging
+    our $export_markov_freq = 0; ## For debugging
+
+    ## Origin and offset
+    our $origin = "start";
+    @supported_origins = qw(start center end);
+    foreach my $ori (@supported_origins) {
+	$supported_origin{$ori} = 1;
+    }
+    our $supported_origins = join ",", @supported_origins;
+    our $offset = 0;
+
+    our $start_time = &RSAT::util::StartScript();
+    our $sequence_number = 0;
+
+    our $max_seq_length = 0;
+    our $skip_seq = 0; ## number of sequences to skip at the beginning of the file
+    our $last_seq = 0;   ## max number of sequences to treat (for quick testing)
+    our $max_seq_nb = 0;  ## max number of sequences to treat (for quick testing)
+    our $max_graphs = -1;		#  maximal number of graphs to export
+    our $top_seq_for_matrices = 0;
+
+    our $nb_possible_pos = 0;
+    our $sum_seq_length = 0;
+    our $no_check = 0;
+    our $no_filter = 0;
+    our $no_filter_graphs = 0;
+
+    ## Supported sequence types
+    our %supported_seq_type = ("dna"=>1,
+			       "any"=>1);
+    our $supported_seq_types = sort keys %supported_seq_type;
+    our $seq_type = "any";
+
+    ## Supported tasks
+    our @supported_tasks = qw(pos clusters matrices graphs index all);
+    our %supported_task = ();
+    foreach my $field (@supported_tasks) {
+	$supported_task{$field} = 1;
+    }
+    our $supported_tasks = join ",", @supported_tasks;
+    our %task=();
+
+    ## Supported return fields
+    our @supported_return_fields = qw(distrib
+				      occ
+				      index
+				      exp_occ
+				      freq_per_window
+				      freq_per_word
+				      chi
+				      sig
+				      rank
+				      graphs
+				      clusters
+				      matrices
+				      html
+				     );
+
+    our %supported_return_field = ();
+    foreach my $field (@supported_return_fields) {
+	$supported_return_field{$field} = 1;
+    }
+    our $supported_return_fields = join ",", @supported_return_fields;
+    our %return = (); ## Hash table with selected return fields
+
+    our $window_header = "mid";
+
+    ## Parameters for clustering (delegated to R)
+#    our $column_offset = 0;
+    our $min_clust_nb = 8;
+    our $max_clust_nb = 8;
+    our $clust_method = "complete";
+    our $clust_suffix = "";
+    our $max_asmb_nb = 5;
+    our $max_asmb_per_cluster = 2;
+
+    our %infile = (); our @infiles = ();
+    our %outfile = (); our @outfiles = ();
+    our %graphfile = (); our @graphfiles = (); ## graph files to index + display
+
+    our $html_index;
+
+    &ReadArguments();
+
+    ##############################
+    ## Check parameter values
+
+    ## Tasks
+    if (($task{all}) ||
+	(scalar(keys(%task)) == 0)) {
+	foreach my $task (@supported_tasks) {
+	    $task{$task} = 1;
+	}
+    }
+
+    &RSAT::message::Info("Running tasks", join(",",sort(keys(%task)))) if ($main::verbose >= 2);
+
+    ## Check oligonucleotide length
+    unless ($oligo_length > 0) {
+	print "\tYou should specify an oligonucleotide length > 0.\n";
+	print "\tType position-analysis -h for more info..\n";
+	exit;
+    }
+
+    ## Markov order
+    if ($bg_method eq "markov") {
+#    if (defined($markov)) {
+	if ($markov < 0) {
+	    $markov += $oligo_length;
+	}
+	&RSAT::error::FatalError($markov, "Invalid markov order for ", $oligo_length."-mer analysis. Markov order should be <= k-2=".($oligo_length-2))
+	    unless ($markov <= $oligo_length-2);
+	&RSAT::error::FatalError($markov, "Invalid markov order for ", $oligo_length."-mer analysis.")
+	    unless (($markov >= 0) && ($markov <= $oligo_length-2));
+    }
+
+    ## Min and max positions to take into account for chi-square calculation.
+    if ((&IsInteger($min_pos)) && (&IsInteger($max_pos))) {
+	if ($max_pos < $min_pos) {
+	    &RSAT::error::FatalError( "min position should be smaller than max position");
+	}
+    }
+
+    ## Title
+    unless ($title) {
+	$title = "position-analysis";
+    }
+
+    ## Number of sequences to analyze
+    if ($max_seq_nb > 0) {
+	$last_seq = $skip_seq + $max_seq_nb;
+    }
+
+    ## Check dependencies between output types
+    $return{chi} = 1 if ($return{sig});
+
+
+    ################################################################
+    ## Specific treatment for output file, because if other files
+    ## (graphs, clusters, frequency profiles) are requested, they must
+    ## be saved in the same directory as the output file.
+    if ($outfile{output}) {
+	push @outfiles, "output";
+	$dir{output} =`dirname $outfile{output}`; 
+	$output_prefix = $outfile{output};
+	$output_prefix =~ s/\.tab$//;
+	chomp $dir{output};
+    } else {
+	## Output profile is required for some return types
+	for my $return_type (qw(graphs exp_occ freq_per_window freq_per_pos clusters index html)) {
+	    if ($return{$return_type}) {
+		&RSAT::error::FatalError("The option '-return $return_type' requires to specify an output file (-o)");
+	    }
+	}
+	$dir{output} = ".";
+    }
+    push @dirs , "output";
+
+
+    ################################################################
+    ## Specify output file names
+
+    ## HTML file(s)
+    if ($return{index}) {
+      $outfile{html_index} = $output_prefix."_index.html";
+      &OpenHtmlIndex();
+    }
+
+    ## Export output in HTML format (beware, this can take a lot of space)
+    if ($return{html}) {
+	$outfile{output_html} = $output_prefix.".html"; push @outfiles, "output_html";
+    }
+
+    ## Observed occurrence profiles
+    if ($return{occ}) {
+	$outfile{occ} = $output_prefix."_occ.tab"; push @outfiles, "occ";
+	if ($return{html}) {
+	    $outfile{occ_html} = $output_prefix."_occ.html"; push @outfiles, "occ_html";
+	}
+    }
+
+    ## Expected frequency profiles
+    if ($return{exp_occ}) {
+	$outfile{exp_occ} = $output_prefix."_exp_occ.tab"; push @outfiles, "exp_occ";
+	if ($return{html}) {
+	    $outfile{exp_occ_html} = $output_prefix."_exp_occ.html"; push @outfiles, "exp_occ_html";
+	}
+    }
+
+    ## Frequencies per window ("vertical" frequencies)
+    if ($return{freq_per_window}) {
+	$outfile{freq_per_window} = $output_prefix."_freq_per_window.tab"; push @outfiles, "freq_per_window";
+	if ($return{html}) {
+	    $outfile{freq_per_window_html} = $output_prefix."_freq_per_window.html"; push @outfiles, "freq_per_window_html";
+	}
+    }
+
+    ## Frequencies per word ("longitudinal" frequencies)
+    if ($return{freq_per_word}) {
+	$outfile{freq_per_word} = $output_prefix."_freq_per_word.tab"; push @outfiles, "freq_per_word";
+	if ($return{html}) {
+	    $outfile{freq_per_word_html} = $output_prefix."_freq_per_word.html"; push @outfiles, "freq_per_word_html";
+	}
+    }
+
+
+    ## Check output directory
+    &RSAT::util::CheckOutDir($dir{output});
+
+    ## Analyze oligonucleotide positional occurrence profiles
+    if ($task{pos}) {
+      ## Open output stream
+      our $out = &OpenOutputFile($outfile{output});
+
+      ### open sequence file
+      &CheckInputSeqFormat($in_format);
+      ($in, $input_dir) = &OpenInputFile($infile{sequences});
+
+      &LocalReadPatterns() if ($pattern_file);
+
+      &ReadSequence();
+      &CheckDNA() if ($seq_type == "dna");
+
+      &CheckZeroOcc();
+      &CalcWindows();
+
+      ### statistics on oligo occurrences
+      &RSAT::message::TimeWarn("Calculating sums of occurrences") if ($main::verbose >= 2);
+      foreach my $oligo_seq (sort keys %pattern) {
+	$sum_occurrences += $pattern{$oligo_seq}->{occ};
+	$sum_overlaps += $pattern{$oligo_seq}->{overlaps};
+      }
+
+      &CalcInboundOcc();
+
+      if ($bg_method eq "markov") {
+	&CalcExpectedUsingMarkov();
+      } else {
+	&CalcExpected();
+      }
+
+      &SumStrands() if ($strands eq "2str");
+
+      &RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >= 2);
+
+      ## If a pattern file has been specified, forget info about other patterns
+      if ($pattern_file) {
+	foreach my $oligo_seq (sort keys %pattern) {
+	  unless ($selected_pattern{$oligo_seq}) {
+	    delete $pattern{$oligo_seq};
+	    #	    delete $pattern{$oligo_seq}->{occ};
+	  }
+	}
+	&RSAT::message::Info("Filtered non-selected patterns (pattern file $pattern_file)", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
+      }
+
+
+      ## Check threshold on occurrences
+      if (defined($lth{'occ'})) {
+	foreach my $oligo_seq (sort keys %pattern) {
+	  if ($pattern{$oligo_seq}->{occ} < $lth{'occ'}) {
+	    delete $pattern{$oligo_seq};
+	    #	    delete $pattern{$oligo_seq}->{occ};
+	  }
+	}
+	&RSAT::message::Info("Filtered by occurrences", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
+      }
+
+      ## Compute the chi-squared statistics and p-value
+      &CalcChi() if ($return{chi});
+
+      &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
+
+      &Verbose() if ($main::verbose >= 1);
+
+      ## Print the main result file
+      &PrintResult();
+      &PrintProfiles("occ") if ($return{occ});
+      &PrintProfiles("exp_occ") if ($return{exp_occ});
+      &PrintProfiles("freq_per_window") if ($return{freq_per_window});
+      &PrintProfiles("freq_per_word") if ($return{freq_per_word});
+    }
+
+    ################################################################
+    ## Oligonucleotide clustering, based on their occurrence profiles
+
+    ## Automatic assignation of suffix for cluster file and directory
+    if ($return{clusters}) {
+	unless ($clust_suffix) {
+	    $clust_suffix = "clusters_".$clust_method;
+	}
+    }
+
+    &RSAT::message::TimeWarn("k-mer clustering",
+			     "min_clust_nb=".$min_clust_nb,
+			     "max_clust_nb=".$max_clust_nb) if ($main::verbose >= 2);
+    
+    for my $clust_nb ($min_clust_nb..$max_clust_nb) {
+	&RSAT::message::TimeWarn("k-mer clustering", 
+				 "clust_nb=".$clust_nb,
+				 "suffix=".$clust_suffix) if ($main::verbose >= 4);
+	my $clust_suffix_k = $clust_suffix."_k".$clust_nb;
+	
+	$outfile{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k.".tab"; push @outfiles, "clusters_k".$clust_nb;
+	$dir{"clusters_k".$clust_nb} = $output_prefix."_".$clust_suffix_k; push @dirs, "clusters_k".$clust_nb;
+
+	## Define output file names for clusters
+	my $cluster_prefix = &ShortFileName($output_prefix); ## Attention: prefix cannot be changed, because it must correspond to the one defined in the R file cluster_position_profiles.R
+	$outfile{"cluster_heatmap_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_profile_heatmap.pdf"; push @outfiles, "cluster_heatmap_k".$clust_nb;
+	$outfile{"cluster_occ_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_occ_profiles_per_cluster.pdf"; push @outfiles, "cluster_occ_profiles_k".$clust_nb;
+	$outfile{"cluster_freq_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles_k".$clust_nb;
+	$outfile{"cluster_median_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_k".$clust_nb;
+	$outfile{"cluster_median_profiles_table_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table_k".$clust_nb;
+	
+	
+	&ProfileClustering($clust_nb, $clust_suffix_k) if ($task{clusters});
+    }
+
+    ## Convert k-mer assemblies into matrices.  For the sake of time
+    ## efficiency and readability of the HTML report, matrices and
+    ## logos are only generated for one number of cluster
+    ## (max_clust_nb).
+    if ($return{matrices}) {
+      our $clust_nb = $max_clust_nb;
+      #	our $clust_suffix_k = $clust_suffix."_k".$clust_nb;
+      ## Define output file names for matrices
+      $prefix{pssm} = $output_prefix."_pssm"; 
+      $outfile{assembly} = $prefix{pssm}.".asmb" ; push @outfiles, "assembly";
+      $outfile{sig_matrices} = $prefix{pssm}."_sig_matrices.tf" ; push @outfiles, "sig_matrices";
+      $outfile{count_matrices} = $prefix{pssm}."_count_matrices.tf" ; push @outfiles, "count_matrices";
+
+      &ClustersToMatrices($clust_nb) if ($task{matrices});
+
+      if ($return{clusters}) {
+	$max_asmb_nb = $max_asmb_per_cluster * $max_clust_nb;
+      }
+
+#      if ($return{clusters}) {
+#	for my $c (1..$clust_nb) {
+#	  $graphfile{'logo_clust'.$c} =  $prefix{pssm}."_count_matrices_logo_m".$c.".png"; push @graphfiles, 'logo_clust'.$c;
+#	}
+#      } else {
+      for my $m (1..$max_asmb_nb) {
+	$graphfile{'logo_m'.$m} =  $prefix{pssm}."_count_matrices_logo_m".$m.".png"; push @graphfiles, 'logo_m'.$m if (-e $graphfile{'logo_m'.$m});
+      }
+#      }
+    }
+
+    if ($return{graphs}) {
+      ## Define index file for the word-specific graphs
+      $outfile{graph_index} = $outfile{output};
+      $outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
+      $outfile{graph_index} .= "_graph_index.html";
+      push @outfiles, "graph_index";
+      &GenerateGraphs() if ($task{graphs});
+    }
+
+    ## Generate the HTML report
+    &HtmlIndex() if (($return{index}) && ($task{index}));
+
+    exit(0);
+}
+
+################################################################
+## Sum occurrences and profiles of reverse complement patterns for strand insensitive analysis ###
+sub SumStrands {
+  &RSAT::message::TimeWarn("Summing occurrences of reverse complementary patterns") if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Sum occurrences
+  my %occurrences_2strands = ();
+  my %inbound_occ_2strands = ();
+  foreach my $oligo_seq (keys %pattern) {
+    $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+    if ($rc_oligo_seq eq $oligo_seq) {
+	$occurrences_2strands{$oligo_seq}  = $pattern{$oligo_seq}->{occ} + $pattern{$rc_oligo_seq}->{occ};
+	$inbound_occ_2strands{$oligo_seq}  = $pattern{$oligo_seq}->{in_bound_occ} + $pattern{$rc_oligo_seq}->{in_bound_occ};
+    } else {
+    }
+  }
+  foreach my $oligo_seq (keys %pattern_2strands) {
+    $pattern{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
+    $pattern{$oligo_seq}->{in_bound_occ} = $inbound_occ_2strands{$oligo_seq};
+  }
+  undef %pattern_2strands;
+
+  ################################################################
+  ## Sum position profiles
+  my %window_occ_2str = ();
+  my %exp_occ_2str = ();
+  for my $window ($min_window..$max_window) {
+    foreach my $oligo_seq (sort keys %pattern) {
+      $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+      if ($rc_oligo_seq eq $oligo_seq) {
+	$window_occ_2str{$oligo_seq}{$window} = $window_occ{$oligo_seq}{$window};
+	$exp_occ_2str{$oligo_seq}{$window} = $exp_occ{$oligo_seq}{$window};
+      } else {
+	$window_occ_2str{$oligo_seq}{$window} = $window_occ{$oligo_seq}{$window} + $window_occ{$rc_oligo_seq}{$window};
+	$exp_occ_2str{$oligo_seq}{$window} = $exp_occ{$oligo_seq}{$window} + $exp_occ{$rc_oligo_seq}{$window};
+      }
+    }
+    foreach my $oligo_seq (sort keys %pattern) {
+      $window_occ{$oligo_seq}{$window} = $window_occ_2str{$oligo_seq}{$window};
+      $exp_occ{$oligo_seq}{$window} = $exp_occ_2str{$oligo_seq}{$window};
+    }
+  }
+
+  ## if requested, group results by pairs of reverse complements ####
+  if ($group_rc) {
+    &RSAT::message::TimeWarn("Grouping patterns by pairs of reverse complements") if ($main::verbose >= 2);
+    foreach my $oligo_seq (keys %pattern) {
+      my $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+      if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad
+	delete $pattern{$rc_oligo_seq};
+	delete $window_occ{$rc_oligo_seq};
+	delete $exp_occ{$rc_oligo_seq};
+	delete $exp_freq{$rc_oligo_seq};
+      }
+    }
+  }
+}
+
+
+################################################################
+#### read patterns from a file
+sub LocalReadPatterns {
+  $date = &AlphaDate();
+  chomp $date;
+  &RSAT::message::TimeWarn("Reading pattern file", $pattern_file) if ($main::verbose >= 1);
+  open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
+  while (<PATTERNS>) {
+    next if (/^;/);
+    next if (/^#/);
+    next unless (\S);
+    chomp();
+    @fields = split, "\t";
+    $oligo_seq = lc($fields[0]);
+    $selected_pattern{$oligo_seq} = 1;
+    if ($score_column > 0) {
+      $pattern{$oligo_seq}->{score} = $fields[$score_column-1];
+    } else {
+      $pattern{$oligo_seq}->{score} = "NA";
+    }
+    &RSAT::message::Debug( "pattern", $oligo_seq, $pattern{$oligo_seq}->{score}) if ($main::verbose >= 3);
+  }
+  close PATTERNS;
+  @selected_patterns = keys %selected_pattern;
+}
+
+
+################################################################
+#### Read input sequence and calculate oligo distributions
+sub ReadSequence {
+  &RSAT::message::TimeWarn("Reading sequences", $infile{sequences})
+    if ($main::verbose >= 2);
+
+  ## Read all sequences and count oligo occurrences per position interval
+  $sequence_number = 0;
+  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
+	 (($current_seq ne "") || ($current_id ne ""))) {
+
+
+    $sequence_number++;
+
+    if (($skip_seq > 0) && ($sequence_number <= $skip_seq)) {
+      &RSAT::message::Warning("Skipped $skip_seq top sequences (option -skip).")
+	  if ($sequence_number == $skip_seq);
+      next;
+    }
+
+    ### remove tabs and blank spaces ###
+    $current_seq = &FoldSequence($current_seq,0);
+
+    ### statistics about sequences ###
+    $seq_length[$sequence_number] = length($current_seq);
+    $sum_seq_length += $seq_length[$sequence_number];
+    $id_list[$sequence_number] = $current_id;
+    my $last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
+    $max_last_pos = &max($max_last_pos, $last_pos);
+
+    my $ref_pos = 0;
+
+    ## Compute the origin
+    if ($origin eq "center") {
+      $ref_pos = &round(($seq_length[$sequence_number]+1)/2);
+    } elsif ($origin eq "end") {
+      $ref_pos = $seq_length[$sequence_number] + 1;
+    } else {
+      $ref_pos = 0;
+    }
+    $ref_pos += $offset;
+
+
+    #	if (($origin eq "-0") || ($origin < 0)) {
+    #	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
+    #	} else {
+    #	    $ref_pos = $origin;
+    #	}
+
+    &RSAT::message::TimeWarn ("",
+			      "Reading sequence",
+			      $sequence_number,
+			      "id=".$current_id,
+			      "length_sum=".$sum_seq_length,
+			      "last_pos=".$last_pos,
+			      "ref_pos=".$ref_pos,
+			     ) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==1)));
+
+
+    ## count oligonucleotides ####
+    my $current_pos = 1;
+    my %windows_in_this_seq = ();
+    while ($current_pos <= $last_pos) {
+      $relative_pos = $current_pos - $ref_pos;
+      if (($origin eq "-0") || ($origin < 0)) {
+	$window = POSIX::floor($relative_pos/$pos_interval);
+      } else {
+	$window = POSIX::floor(($relative_pos - 1)/$pos_interval);
+      }
+      $pos_per_window{$window}++;
+      $windows_in_this_seq{$window}++;
+      $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
+      $rc = lc(&ReverseComplement($oligo_seq));
+#       &RSAT::message::Debug($sequence_number,
+# 			    "len = ".$seq_length[$sequence_number],
+# 			    "pos = ".$current_pos,
+# 			    "last_pos = ".$last_pos,
+# 			    "ref_pos = ".$ref_pos,
+# 			    "rel_pos = ".$relative_pos,
+# 			    "window = ".$window,
+# 			    "oligo_seq = ".$oligo_seq
+# 			   ) if ($main::verbose >= 10);
+      if ((%selected_pattern) &&
+	  !($selected_pattern{$oligo_seq}) &&
+	  !($selected_pattern{$rc})) {
+	$current_pos++;
+	next;
+      }
+      if (($noov)
+	  && ($last_pos{$oligo_seq} > 0)
+	  && ($current_pos < ($last_pos{$oligo_seq} + $oligo_length))) {
+	$pattern{$oligo_seq}->{overlaps}++;
+      } else {
+	$pattern{$oligo_seq}->{occ}++;
+	$window_occ{$oligo_seq}{$window}++;
+	$last_pos{$oligo_seq} = $current_pos;
+      }
+      $current_pos++;
+    }
+
+
+    ## max and min windows
+    my $current_min_window = &min (keys %windows_in_this_seq);
+    my $current_max_window = &max (keys %windows_in_this_seq);
+    if (defined($min_window)) {
+      $min_window = &min ($current_min_window, $min_window);
+    } else {
+      $min_window = $current_min_window;
+    }
+    if (defined($max_window)) {
+      $max_window = &max ($current_max_window, $max_window);
+    } else {
+      $max_window = $current_max_window;
+    }
+
+    &RSAT::message::Debug (
+			   "current_min_window = ".$current_min_window,
+			   "min_window = ".$min_window,
+			   "current_max_window = ".$current_max_window,
+			   "max_window = ".$max_window,
+			  ) if ($main::verbose >= 4);
+
+    for my $window ($current_min_window..$current_max_window) {
+      $seq_per_window{$window}++;
+      $sum_seq_per_window++;
+    }
+
+    undef %last_pos;
+
+    ## Stop if last sequence has been reached
+    if (($last_seq > 0) && ($sequence_number >= $last_seq)) {
+      &RSAT::message::Warning("Stopped after $last_seq sequences (option -last).");
+      last;
+    }
+
+  }
+  undef $current_seq;		### release the memory occupied
+  close $in;
+
+
+
+  ### statistics on sequence lengths
+  &RSAT::message::TimeWarn ("Calculating stats on sequence lengths")
+    if ($main::verbose >= 2);
+
+  for my $s (1..$sequence_number) {
+    if ($seq_length[$s] >= $oligo_length) {
+      if ($strands eq "2str") {
+	$nb_possible_pos += 2*($seq_length[$s] + 1 - $oligo_length);
+      } else {
+	$nb_possible_pos += $seq_length[$s] + 1 - $oligo_length;
+      }
+    }
+    $max_seq_length = &max($max_seq_length, $seq_length[$s]);
+
+    &RSAT::message::Debug($s, $seq_length[$s], $sum_seq_length, $nb_possible_pos) if ($main::verbose >= 4);
+
+
+  }
+  &RSAT::message::TimeWarn(join("\t", "Finished reading sequences. Number of patterns", scalar(keys %pattern)))
+    if ($main::verbose >= 2);
+
+}
+
+## Explicitly set to 0 the oligos not found in a given window
+sub CheckZeroOcc {
+  &RSAT::message::TimeWarn("Setting zero values to patterns absent in specific windows.") if ($main::verbose >= 2);
+  foreach my $oligo_seq (sort keys %pattern) {
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      unless ($window_occ{$oligo_seq}{$window}) {
+	$window_occ{$oligo_seq}{$window} = 0;
+      }
+    }
+  }
+}
+
+################################################################
+## Calculate window intervals
+sub CalcWindows {
+    &RSAT::message::TimeWarn("Calculating windows") if ($main::verbose >= 2);
+
+    ### Window definition
+    $window_nb = $max_window + 1;
+    for my $window ($min_window..$max_window) {
+	if (($origin eq  '-0') || ($origin < 0)) {
+	    $window_min{$window} = $window *$pos_interval;
+	    $window_max{$window} = ($window+1)*$pos_interval -1;
+	} else {
+	    $window_min{$window} = $window *$pos_interval + 1;
+	    $window_max{$window} = ($window+1)*$pos_interval;
+	}
+
+	$window_center{$window} = ($window_min{$window} + $window_max{$window})/2;
+	$window_interval{$window} = "[".$window_min{$window}.",".$window_max{$window}."]"; ## For display
+
+	if ($window_header eq "mid") {
+	  $window_header{$window} = $window_center{$window};
+	} elsif ($window_header eq "midfloor") {
+	  $window_header{$window} = POSIX::floor($window_center{$window});
+	} elsif ($window_header eq "min") {
+	  $window_header{$window} = $window_min{$window};
+	} elsif ($window_header eq "max") {
+	  $window_header{$window} = $window_max{$window};
+	} else {
+	  $window_header{$window} = $window_interval{$window};
+	}
+
+	&RSAT::message::Debug ($window,
+			       "window_min=".$window_min{$window},
+			       "window_max=".$window_max{$window},
+			       "window_center=".$window_center{$window},
+			      ) if ($main::verbose >= 4);
+    }
+
+    ## min and max windows for calculating the chi2
+    if (&IsInteger($min_pos)) {
+	$min_calc_window = POSIX::floor($min_pos/$pos_interval);
+	if ($min_calc_window < $min_window) {
+	  $min_calc_window = $min_window;
+	}
+    } else {
+	$min_calc_window = $min_window;
+    }
+    if (&IsInteger($max_pos)) {
+	$max_calc_window = POSIX::floor($max_pos/$pos_interval);
+	if ($max_calc_window > $max_window) {
+	  $max_calc_window = $max_window;
+	}
+    } else {
+#	die $max_window , "\n";
+	$max_calc_window = $max_window;
+    }
+    $calc_window_nb = $max_calc_window - $min_calc_window + 1;
+
+    &RSAT::message::Debug("pos_interval", $pos_interval,
+			  "min_pos", $min_pos,
+			  "min_pos/pos_interval", $min_pos/$pos_interval,
+			  "min_calc_window", $min_calc_window,
+			  "min_window", $min_window,
+			 ) if ($main::verbose >= 5);
+    &RSAT::message::Debug("pos_interval", $pos_interval,
+			  "max_pos", $max_pos,
+			  "max_pos/pos_interval", $max_pos/$pos_interval,
+			  "max_calc_window", $max_calc_window,
+			  "max_window", $max_window,
+			 ) if ($main::verbose >= 5);
+
+    ## 2013-08: temporarily set display windows to the same values as
+    ## calc windows. I will estimate later if it is worth maintaining
+    ## the display of profiles beyond the calculation windows.
+    $min_display_window = $min_calc_window;
+    $max_display_window = $max_calc_window;
+    $display_window_nb = $max_display_window - $min_display_window + 1;
+
+    ## positions per window
+    $sum_pos_per_window  = 0;
+    for my $window ($min_calc_window..$max_calc_window) {
+	$sum_pos_per_window += $pos_per_window{$window};
+    }
+}
+
+
+################################################################
+## Calculate the sum of in-bound occurrences for each oligo, and for each window
+sub CalcInboundOcc {
+  foreach my $oligo_seq (sort keys %pattern) {
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
+      $occ_per_window{$window} += $window_occ{$oligo_seq}{$window};
+    }
+  }
+}
+
+################################################################
+## Calculate expected occurrences per window interval
+sub CalcExpected {
+    ## Calculate expected occurrences for each window
+    &RSAT::message::TimeWarn("Calculating expected occurrences (homogeneous repartition model)") if ($main::verbose >= 2);
+    foreach my $oligo_seq (sort keys %pattern) {
+
+      ## Note 2013-06-20: moved to a separte routine because required as well for Markov bg mmodels.
+      #	foreach my $window ($min_calc_window..$max_calc_window) {
+      #	    $pattern{$oligo_seq}->{in_bound_occ} += $window_occ{$oligo_seq}{$window};
+      #	}
+
+	foreach my $window ($min_calc_window..$max_calc_window) {
+
+	  ################################################################
+	  ## check that the window_occ has been defined
+	  ## Note: 2013-06-20: I disactivate the checking from here, it has to come earlier, with sequence reading
+	  #	    unless (&IsNatural($window_occ{$oligo_seq}{$window})) {
+	  #		$window_occ{$oligo_seq}{$window} = 0;
+	  #	    }
+
+	  ## Compute expected occurrences for a given oligo in a given window
+	  if ($sum_pos_per_window <= 0) {
+#	    $exp_occ{$oligo_seq}{$window} =  "NA";
+	    $exp_occ{$oligo_seq}{$window} =  0;
+	  } else {
+	    $exp_occ{$oligo_seq}{$window} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_window{$window}/$sum_pos_per_window;
+	    $pattern{$oligo_seq}->{in_bound_exp_occ} += $exp_occ{$oligo_seq}{$window};
+	  }
+	  #	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+	  #	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+	}
+      }
+  }
+
+################################################################
+## Calculate expected occurrences per window interval using a Markov model
+sub CalcExpectedUsingMarkov {
+  ## Calculate expected occurrences for each window
+  &RSAT::message::TimeWarn("Calculating expected occurrences (Markov model, m=".$markov.")") if ($main::verbose >= 2);
+
+  if ($export_transitions) {
+    ## Open a file to store windows-specific transition frequencies
+    $outfile{transitions} = $output_prefix."_markov".$markov."_transitions.tab"; push @outfiles, "transitions";
+    my $transition_out = &OpenOutputFile($outfile{transitions});
+    print $transition_out join ("\t", "#window",
+				"[left",
+				"right[",
+				"center",
+				"occ_sum",
+				"prefix",
+				"pr_occ",
+				"pr_freq",
+				"suffix",
+				"tr_occ",
+				"tr_freq"), "\n";
+  }
+
+  if ($export_markov_freq) {
+    ## Open a file to store expected oligonucleotide frequencies
+    $outfile{markov_freq} = $output_prefix."_markov".$markov."_exp_freq.tab"; push @outfiles, "markov_freq";
+    my $markov_freq_out = &OpenOutputFile($outfile{markov_freq});
+    print $markov_freq_out join ("\t", "#window",
+				 "[left",
+				 "right[",
+				 "center",
+				 "oligo",
+				 "occ",
+				 "exp_occ",
+				 "exp_frq"), "\n";
+  }
+
+
+  foreach my $window ($min_calc_window..$max_calc_window) {
+    ################################################################
+    ## Compute transition frequencies from the frequencies of all
+    ## oligonucleotides found in the current window (note, this is
+    ## not perfect because we only take into account the m+1
+    ## residues of each oligonucleotide. The alternative would
+    ## require to count all occurrences pf m+1-mers in the
+    ## sequences. I still have to think about the pros and cons.
+    my %transition_occ = ();
+    my %prefix_occ = ();
+    my %suffix_occ = ();
+    my %transition_freq = ();
+    my %prefix_freq = ();
+    my $window_occ_sum = 0;
+    foreach my $oligo_seq (sort keys %pattern) {
+      my $prefix = substr($oligo_seq,0,$markov) || "n";
+      my $suffix = substr($oligo_seq,$markov,1);
+      #&RSAT::message::Debug("Markov", $markov, "window", $window, $oligo_seq, $prefix, $suffix) if ($main::verbose >= 10);
+      $transition_occ{$prefix}{$suffix} += $window_occ{$oligo_seq}{$window};
+      $prefix_occ{$prefix} += $window_occ{$oligo_seq}{$window};
+      $suffix_occ{$suffix} += $window_occ{$oligo_seq}{$window};
+      $window_occ_sum +=  $window_occ{$oligo_seq}{$window};
+    }
+
+    ## Compute transition frequencies from transition occurrences
+    foreach my $prefix (keys(%prefix_occ)) {
+      if ($window_occ_sum <= 0) {
+	$prefix_freq{$prefix} = 0;
+      } else {
+	$prefix_freq{$prefix} = $prefix_occ{$prefix}/$window_occ_sum;
+      }
+      foreach my $suffix (keys(%suffix_occ)) {
+	if (($window_occ_sum <= 0) || ($prefix_occ{$prefix} <= 0)) {
+	  $transition_freq{$prefix}{$suffix} = 0;
+	} else {
+	  $transition_freq{$prefix}{$suffix} = $transition_occ{$prefix}{$suffix} / $prefix_occ{$prefix};
+	}
+	## Store transition frequencies (for checking, can be
+	## suppressed later, or set as option).
+	if ($export_transitions) {
+	  print $transition_out join ("\t", $window,
+				      $window_min{$window},
+				      $window_max{$window},
+				      $window_center{$window},
+				      $window_occ_sum,
+				      $prefix,
+				      $prefix_occ{$prefix},
+				      $prefix_freq{$prefix},
+				      $suffix,
+				      $transition_occ{$prefix}{$suffix},
+				      $transition_freq{$prefix}{$suffix}), "\n";
+	}
+      }
+    }
+
+    ################################################################
+    ## Compute expected word frequencies for the current window
+    foreach my $oligo_seq (sort keys %pattern) {
+      if ($sum_pos_per_window <= 0) {
+#	$exp_freq{$oligo_seq}{$window} =  "NA";
+#	$exp_occ{$oligo_seq}{$window} =  "NA";
+	$exp_freq{$oligo_seq}{$window} =  0;
+	$exp_occ{$oligo_seq}{$window} =  0;
+      } else {
+	my $prefix = substr($oligo_seq, 0, $markov) || "n";
+	$exp_freq{$oligo_seq}{$window} = $prefix_freq{$prefix} || 0;
+	#	    &RSAT::message::Debug("first prefix", "m=".$markov, "w=".$window, $oligo_seq, $offset, $prefix, $prefix_freq{$prefix}, $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
+	for my $offset (0..($oligo_length - $markov -1)) {
+	  $prefix = substr($oligo_seq, $offset, $markov) || "n";
+	  $suffix = substr($oligo_seq, $offset+$markov, 1);
+	  $exp_freq{$oligo_seq}{$window} *= $transition_freq{$prefix}{$suffix};
+	  #		&RSAT::message::Debug("extension", "m=".$markov, "w=".$window, $oligo_seq, $offset, $suffix."|".$prefix,
+	  #				      $transition_freq{$prefix}{$suffix},
+	  #				      $exp_freq{$oligo_seq}{$window}) if ($main::verbose >= 10);
+	}
+	$exp_occ{$oligo_seq}{$window} = $window_occ_sum * $exp_freq{$oligo_seq}{$window};
+	$pattern{$oligo_seq}->{in_bound_exp_occ} += $exp_occ{$oligo_seq}{$window};
+	if ($export_markov_freq) {
+	  print $markov_freq_out join ("\t", $window,
+				       $window_min{$window},
+				       $window_max{$window},
+				       $window_center{$window},
+				       $oligo_seq,
+				       $window_occ{$oligo_seq}{$window} || 0,
+				       sprintf("%.1f", $exp_occ{$oligo_seq}{$window}),
+				       $exp_freq{$oligo_seq}{$window}), "\n";
+	}
+      }
+    }
+  }
+
+  ################################################################
+  ## Rescale expected frequencies and occurrences to obtain, for each
+  ## oligo, the same sum for observed and expected occurrences. If
+  ## not, the program will detect words that are globally over- or
+  ## under-represented relative to the Markov expectation, rather than
+  ## positionnally biased oligos.
+  foreach my $oligo_seq (sort keys %pattern) {
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      &RSAT::message::Debug("Rescaling expected occurrences",
+			    "w=".$window,
+			    $oligo_seq,
+			    $pattern{$oligo_seq}->{in_bound_exp_occ},
+			    $pattern{$oligo_seq}->{in_bound_occ},
+			    "expinwind=".$exp_occ{$oligo_seq}{$window},
+			   ) if ($main::verbose >= 10);
+      if ($pattern{$oligo_seq}->{in_bound_exp_occ} == 0) {
+#	$exp_occ{$oligo_seq}{$window} = "NA";
+	$exp_occ{$oligo_seq}{$window} = 0;
+      } else {
+	$exp_occ{$oligo_seq}{$window} *= $pattern{$oligo_seq}->{in_bound_occ};
+	$exp_occ{$oligo_seq}{$window} /= $pattern{$oligo_seq}->{in_bound_exp_occ};
+      }
+    }
+  }
+
+  ## Close the transition and Markov frequency files
+  close $transition_out;
+  &RSAT::message::Info("Markov transitions", $outfile{transitions}) if ($main::verbose >= 2);
+
+  close $markov_freq_out;
+  &RSAT::message::Info("Markov frequencies", $outfile{markov_freq}) if ($main::verbose >= 2);
+
+  # 	    $max_freq = &max($max_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+  # 	    $min_freq = &min($min_freq,$window_occ{$oligo_seq}{$window},$exp_occ{$oligo_seq}{$window});
+}
+
+################################################################
+#### calculate chi square statistics to compare expected and observed
+#### frequencies
+sub CalcChi {
+
+  ### calculate chi2 to compare the position distribution with a flat line
+  &RSAT::message::TimeWarn("Calculating chi values") if ($main::verbose >= 2);
+  my $nb_tests = scalar(keys(%pattern));
+  foreach my $oligo_seq (sort keys %pattern) {
+
+    @chi_values = ();
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      push @chi_values, $window_occ{$oligo_seq}{$window} || 0;
+    }
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      push @chi_values, $exp_occ{$oligo_seq}{$window} || 0;
+    }
+#    &RSAT::message::Debug("chi_values", join(" ", @chi_values)) if ($main::verbose >= 10);
+
+    ($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_window_nb, 1, @chi_values);
+    #	&RSAT::message::Debug($oligo_seq, "chi2=".$pattern{$oligo_seq}->{chi_square}, "df=".$pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
+
+    ## Compute P-value
+    #	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
+    #									      $pattern{$oligo_seq}->{df}));
+    if ($pattern{$oligo_seq}->{chi_square} > 0) {
+      $pattern{$oligo_seq}->{Pval} = &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
+									    $pattern{$oligo_seq}->{chi_square});
+    } else {
+      $pattern{$oligo_seq}->{Pval} = 1;
+    }
+
+    if ($pattern{$oligo_seq}->{Pval} <= 0) {
+      $pattern{$oligo_seq}->{Pval} = 0;	## Lower boundary for the computation of P-values with the CDF library
+      $pattern{$oligo_seq}->{Eval} = 0;
+      $pattern{$oligo_seq}->{sig} = $max_sig;
+    } else {
+      $pattern{$oligo_seq}->{Eval} = $pattern{$oligo_seq}->{Pval}*$nb_tests;
+      $pattern{$oligo_seq}->{sig} = sprintf ("%.2f", -log($pattern{$oligo_seq}->{Eval})/$log_base);
+    }
+
+    # 	&RSAT::message::Debug("chisquare P-value",
+    # 			      "df=".$pattern{$oligo_seq}->{df},
+    # 			      "chi2=".$pattern{$oligo_seq}->{chi_square},
+    # 			      "Pval=".$pattern{$oligo_seq}->{Pval},
+    # 			      "Eval=".$pattern{$oligo_seq}->{Eval},
+    # 			      "sig=".$pattern{$oligo_seq}->{sig},
+    # 	    ) if ($main::verbose >= 5);
+
+    ## check threshold on occurrences
+    if (defined($lth{sig})) {
+      if ($pattern{$oligo_seq}->{sig} < $lth{sig}) {
+	&RSAT::message::Debug( "Deleting pattern", $oligo_seq, "significance", $pattern{$oligo_seq}->{sig}, "sig threshold", $lth{sig}) if ($main::verbose >= 5);
+	delete $pattern{$oligo_seq};
+	#	    delete $pattern{$oligo_seq}->{occ};
+	next;
+      }
+    }
+
+    ## chek or not the applicability condition for the chi2
+    if ($no_check) {
+      ## suppress parentheses in the output
+      $pattern{$oligo_seq}->{chi_square} =~ s/\(//;
+      $pattern{$oligo_seq}->{chi_square} =~ s/\)//;
+    } else {
+      unless (&IsReal($pattern{$oligo_seq}->{chi_square})) {
+	&RSAT::message::Info($oligo_seq, $pattern{$oligo_seq}->{chi_square}, "does not fit conditions for the chi-square")
+	  if ($main::verbose >= 2);
+	unless ($no_filter) {
+	  print $out "; WARNING: $oligo_seq discarded\n"
+	    if ($main::verbose >= 3);
+	  delete $pattern{$oligo_seq};
+	  #		    delete $pattern{$oligo_seq}->{occ};
+	  #		    delete $pattern{$oligo_seq}->{chi_square};
+	}
+      }
+    }
+
+
+    ##	warn join ("\t", $oligo_seq, $pattern{$oligo_seq}->{occ}, ${chi_square{$oligo_seq}}, $low_th{chi}), "\n";
+
+
+    ## check the threshold on chi-square
+    if ((&IsReal($lth{chi})) &&
+	($pattern{$oligo_seq}->{chi_square} < $lth{chi})) {
+      &RSAT::message::Debug( "Deleted pattern", $oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, "below threshold", $lth{chi})
+	if ($main::verbose >= 5);
+
+      delete $pattern{$oligo_seq};
+      #	    delete $pattern{$oligo_seq}->{occ};
+      #	    delete $pattern{$oligo_seq}->{chi_square};
+    }
+  }
+}
+
+
+################################################################
+## Compute the P-value of over-representation for word in each window.
+sub CalcWindowPvalues {
+
+  ### BEGINNING OF DEVELOPMENT, NOT AT ALL FUNCTIONAL
+
+  ### calculate chi2 to compare the position distribution with a flat line
+  &RSAT::message::TimeWarn("Calculating chi values") if ($main::verbose >= 2);
+  my $nb_tests = scalar(keys(%pattern));
+  foreach my $oligo_seq (sort keys %pattern) {
+
+    @chi_values = ();
+    foreach my $window ($min_calc_window..$max_calc_window) {
+      $pval{$oligo_seq}{$window} = &sum_of_poisson($m,$s,$r);;
+      push @chi_values, $exp_occ{$oligo_seq}{$window};
+    }
+  }
+}
+
+################################################################
+#### help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	position-analysis
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+	Calculates the positional distribution of oligonucleotides in
+	a set of sequences, and detects those which significantly
+	discard from a homogeneous repartition.
+
+CATEGORY
+	sequences
+	pattern-discovery
+
+DETAILED DESCRIPTION
+
+	This programs takes a sequence set as input, and calculates
+	the number of occurrences of each word in a set of
+	non-overlapping positional windows. The window width (in
+	number of residues) is specified with the option -ci (window
+	interval).
+
+	The expected number of occurrences per window is then computed
+	on the basis of a model of homogeneous repartition of the
+	occurrences. Beware : homogeneous repartition does not
+	necessarily mean "flat". Indeed, if the sequence set contains
+	sequences of unequal lengths, the number of sequence fragments
+	varies from window to window.
+
+	Observed and expected occurrences are compared using the
+	chi-squared formula:
+
+		chisq = SUM_i ( (obs-exp)^2 / exp )
+
+	where i is the window number.
+
+	A P-value is calculated for each word.
+
+	  Pval = P(chisq >= x)
+
+USAGE
+	position-analysis [-i inputfile]  [-format input_format]
+                [-o outputfile] -l length -ci pos_interval
+                [-1str | -2str] [-grouprc | -nogrouprc]
+
+	position-analysis [-h | -help]
+		provides a detailed or synthetic documentation
+
+
+OPTIONS
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-seqtype dna|any
+		  Sequence type
+
+	-last #
+	      Stop after # sequences (for quick testing)
+
+	      The possibility to limit the analysis to a few sequences
+	      (e.g.50 of the input file can be useful for fine-tuning
+	      the options and ensuring that the result will appear as
+	      requested. Note that this option should not be used for
+	      the final analysis, since the significance drastically
+	      depends on the number of input sequences.
+
+	-skip #
+	      Skip the first # sequences.
+
+	-first #
+
+	     First sequence to analyze.
+
+	     The option "-first n" has the same effect as "-skip x",
+	     where x = n-1.  These two somewhat redundant options
+	     exist because in some cases it is easier to indicate the
+	     first sequences (e.g. for naming result files according
+	     to the first and last sequences analyzed).
+
+	     The options -skip, -last, -first and -seqnb are
+	     convenient for analyzing successive slices of at
+	     different depths in the sequence file (e.g. from 1 to
+	     1000, then from 5001 to 6000, then from 10001 to 11000,
+	     etc). This allows to test if the position bias of a
+	     pattern is consistent over the whole sequence file, or if
+	     it is confined to the top sequences.
+
+	     An example of useful application of this slice-based
+	     analysis is to estimate the number of relevant sequences
+	     in peaks returned by applying peak-calling programs on
+	     ChIP-seq reads.  Peak sequences should be sorted by
+	     decreasing score values.
+
+        -seqnb #
+
+	     Maximal number of sequences to analyze. The program stops
+	     reading the sequences after having reached this
+	     number. This option is convenient for analyzing
+	     successive slices of at different depths in the sequence
+	     file (e.g. for peak sequences sorted by decreasing
+	     scores.
+
+	     Example: analyze N sequences starting from the X_th one.
+		-first X -seqnnb N
+
+	     When used without -skip or -first, the option -seqnb
+	     gives the same result as -last.
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
+	-format	input file format. Must be followed by one of the
+		following options:
+		   fasta (default)
+		   wconsensus
+		   IG
+		   filelist
+		   raw
+		See below for the description of these formats.
+
+	-o file	outputfile. Returns a list of the oligonucleotides
+		encountered in the sequences, with their frequencies.
+
+	-v \#	verbose level.
+
+	-l	oligonucleotide length.
+
+	-ci	window interval (default 20 bases).
+		The width of the position windows (in number of bases)
+
+	-origin start | center | end
+		Reference for calculating positions.
+
+
+		The value should be chosen according to the sequence
+		type. For instance:
+
+		-origin start for downstream sequences
+
+		-origin end for promoter sequences
+
+		-origin center can be useful for ChIP-seq peaks, which
+			can have variable lengths, but are supposed to
+			be more or less centred on the TF binding
+			qsites.
+
+	-offset
+		Add an offset to site positions. The offset value must
+		be an Integer number (positive, null or
+		negative). This option allows to select an arbitrary
+		position as origin.
+
+		Example: the option I<-offset -100> can be used to
+		specify the transcription start site (TSS) as origin,
+		in a collection of promoter sequences including 100
+		residues downstream of the TSS.
+
+		Note: in previous versions, -origin was used to
+		specify both the reference point and the offset. Since
+		March 2010, the offset is specified with the option
+		-offset.
+
+	-grouprc        group reverse complement pairs
+
+	-nogrouprc      do not group reverse complement pairs
+
+	-sort
+		sort oligonucleotides according to the chi2
+		statistics, reflecting the level of bias in
+		distribution profile
+
+	-1str
+		inactivates the summation of occurrences on both
+		strands.
+
+	-2str
+		oligonucleotide occurrences found on both stands are
+		summed.
+
+	-noov	no overlap
+			overlapping occurrences of the same pattern are
+			only taken into account once
+
+	-return	fields_to_return
+		supported fields:
+
+		html	HTML formatted results + index file
+
+		distrib	k-mer occurrences per position window
+
+		exp_occ	expected occurrences for each window
+
+		chi	chi-square value
+
+		rank 	rank of the pattern according to the sorting
+			criterion
+
+		graphs	one graph file per oligont profile
+
+		clusters run k-mer clustering (regroup k-mers having
+			similar occurrence profiles).
+
+		Several return fields can be entered, separated by
+		commas.
+
+	-task   task1,task2,...
+
+		Supported tasks:
+
+		   pos: analyze oligonucleotide occurrences ("main"
+		   	analysis)
+
+		   clusters: cluster oligonucleotides according to
+		        their occurrence profiles.
+
+		   matrices: build position-specific scoring matrices
+		   	from clusters of oligonucleotides occupying
+		   	similar positions.
+
+		        When different values would be entered for
+			options -min_clust_nb and -max_clust_nb,
+			matrices and logos are only generated for the
+			maximal number of cluster (max_clust_nb), for
+			the sake of time efficiency and readability of
+			the HTML reports.
+
+		   graphs: generate a XY graph with the occurernce
+		        profile of each oligonucleotide.
+
+		   index: generate the HTML file with links to the
+   		        result files.
+
+		   all: run all the tasks above
+
+		Run specific tasks rather than the whole analysis. 
+
+		This option mainly serve to avoir re-running the whole
+		sequence analysis for re-running cluster analysis with
+		modified parameters.
+
+	-markov markov_order
+		Order for the Markov model use to compute
+		position-specific expected word frequencies.
+
+		By default, expected frequencies are estimated by
+		assuming a homogeneous repartition of k-mer
+		occurrences (as in the original publication by van
+		Helden et al., 2000).
+
+		Alternatively, the option -markov indicates that
+		expected frequency of each k-mer in each position
+		window will be calculated on the basis of the observed
+		frequencies for smaller words.
+
+	-lth_chi #	lower threshold on chi2
+		return only words with a chi2 value > #
+
+	-lth_sig #	lower threshold on significance
+		return only words with a sig value > #
+
+	-lth_occ #	lower threshold on occurrences
+		return only words with a number of occurrences > #
+
+	-uth_rank #	upper threshold on rank
+		return maximum # words
+
+	-max_graphs #	maximal number of graphs to export
+
+	-pl pattern_file
+		A file containing a selection of patterns.  The
+		analysis is then restricted to these patterns.  The
+		first word of each new line is considered as a new
+		pattern.  A score can be associated to each pattern
+		with the option -sc.
+
+	-sc #	score column
+		(only valid whith the option -pl)
+		The column containing a score value for each pattern
+		of the pattern file
+
+	-minpos #
+		minimal position to take into account for the
+		chi-square calculation This value must be a multiple
+		of the window interval.
+
+	-maxpos #
+		maximal position to take into account for the
+		chi-square calculation This value must be a multiple
+		of the window interval.
+
+	-nocheck
+		do not check the applicability condition on the
+		chi-square. By default, the program checks that each
+		window has at least 5 observations. The chi-square is
+		bracketed for words which do not fill this
+		conditions. It is now recognized that this condition
+		is too restrictive, and that the chi2 is still valid
+		with smaller clas effective. We allow to suppress the
+		checking, but the responsibility is left to the user,
+		to decide whether the chi2 is or not significant.
+
+	-nofilter
+		Do not discard oligos which do not fit the condition
+		of applicability. Instead, mark them by including the
+		chi2 value in curly brackets.
+
+	-header mid | midfloor | min | max | interval
+
+		Information to display in column headers of the
+		distributions.
+
+                  mid: class middle points (centers)
+
+                  midfloor: floor of class middle points (centers).
+                      this avoids to display non-integer mid points
+                      (e.g. for interval 1-10 the midpoint is 5.5)
+
+                  min: class min
+
+                  max: class max
+
+                  interval: class intervals: [min,max]
+
+	-top_seq_for_matrices #
+
+	     Select the top # sequences for building position-specific
+	     scoring matrices (PSSM).  This argument is passed to the
+	     program matrix-from-pattern.
+
+	     This option does not affect the number of sequences used
+	     for motif discovery (detecting positionally biased
+	     oligonucelotides), but it can be useful to test the
+	     second phase of motif discovery: extracion of matrices
+	     from the selected oligonucleotides. 
+
+	-img_format
+		Image format (this parameter is passed to XYgraph).
+
+	-title
+		Title for the index table and position profile plots.
+
+   CLUSTERING OPTIONS
+
+       Oligonucleotide clusters are defined by running hierarchical
+       clustering on the word occurrence profiles, and by cutting the
+       tree with a predefined number of clusters.
+
+       -clust_method
+
+	    Agglomeration rule for the hierarchical
+	    clustering. Supported: complete, average, single,
+	    ward. Default: complete.
+
+	-clust_nb #
+	    Number of clusters (default: 8).
+
+	-clust_suffix
+
+	    Suffix to append to the cluster file and the directory
+	    contianing cluster graphics. Default: 'clusters'.
+
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+################################################################
+#### short description of the options
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+position-analysis options
+----------------------
+-h			display complete help message
+-help			display this list of options
+-i			input file
+-seqtype        	sequence type (dna|any)
+-last #	        	Stop after # sequences
+-skip #	        	Skip the # top sequences
+-first #        	Start at the # sequences
+-seqnb #		Stop the analysis after # sequences
+-top_seq_for_matrices #	Only use the top # sequences to build matrices.
+-mask upper|lower	mask upper- or lowercases, respectively
+-format			input sequence format
+-o 			output file
+-v #			verbose level
+-l			oligonucleotide length
+-ci			window interval (default 20 bases).
+-origin [start|center|end]	Define pos as the origin for calculating positions
+-offset #		add a given number to site positions (change the reference point).
+-1str			inactivate summation of occ on both strands
+-2str			sum occurences on both strands (default)
+-grouprc		group reverse complement pairs (default)
+-nogrouprc		do not group reverse complement pairs
+-noov			no overlap
+-sort			sort oligonucleotides according to the chi2 statistics
+-return			fields to return. Supported: html,chi,distrib,exp_occ,graph,rank,clusters
+-task			run specific tasks. Supported: pos, clusters, matrices, graphs, index, all
+-markov			markov order for computing background k-mer frequencies
+-lth_chi		lower threshold on chi2
+-lth_sig		lower threshold on significance of the chi2 statistics
+-lth_occ       		lower threshold on occurrences
+-uth_rank      		upper threshold on rank
+-max_graphs #		maximal number of graphs to export
+-pl			pattern list
+-img_format		image format (this parameter is passed to XYgraph)
+-sc			score column
+-minpos			minimal position for chi-square calculation
+-maxpos			maximal position for chi-square calculation
+-nocheck		do not check applicability condition for the chi2
+-nofilter		don\'t discard oligos which do not fit applicability condition
+-header         	info for header of distribution columns. Supported: mid,min,max,interval
+-title			title for the index table and position profile plots.
+-clust_nb		number of clusters (cutting level of the hierarchical tree)
+-clust_method		clustering method (complete | average | single | ward). Default: complete.
+-clut_suffix		Suffix appended to the cluster file and directory. Default: "clusters".
+End_of_help
+    close HELP;
+    exit(0);
+}
+
+################################################################
+#### read arguments ####
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+
+	## verbose
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$main::verbose = $ARGV[$a+1];
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	    ### input file
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{sequences} = $ARGV[$a+1]; push @infiles, "sequences";
+
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);
+
+	    ### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### oligomer length
+	} elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
+	    $oligo_length = $ARGV[$a+1];
+
+	    ### window interval
+	} elsif (($ARGV[$a] eq "-ci") && (&IsNatural($ARGV[$a+1]))) {
+	    $pos_interval = $ARGV[$a+1];
+
+	    ### sequence format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = lc($ARGV[$a+1]);
+
+	    ### strands
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $strands = "1str";
+	    $sum_rc = 0;
+	    $group_rc = 0;
+
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $strands = "2str";
+	    $sum_rc = 1;
+	    $group_rc = 1;
+
+	    ### grouping of reverse complements
+	} elsif ($ARGV[$a] eq "-grouprc") {
+	    $strands = "2str";
+	    $group_rc = 1;
+	} elsif ($ARGV[$a] eq "-nogrouprc") {
+	    $group_rc = 0;
+
+	    ### sort the result according to chi2 statistics
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort_result = 1;
+
+	    ### no overlap between successive matches
+	} elsif ($ARGV[$a] eq "-noov") {
+	    $noov = 1;
+
+	    ### lower threshold on chi square
+	} elsif ($ARGV[$a] =~ /^-lth_chi/) {
+	    $lth{chi} = $ARGV[$a+1];
+	    $return{chi} = 1;
+	    unless (($lth{chi} >= 0) && (&IsReal($lth{chi}))) {
+		&RSAT::error::FatalError("Threshold on chi2 must be a positive number") ;
+	    }
+
+	    ### lower threshold on significance
+	  } elsif ($ARGV[$a] =~ /^-lth_sig/) {
+	    $lth{sig} = $ARGV[$a+1];
+	    $return{sig} = 1;
+	    unless (&IsReal($lth{sig})) {
+	      &RSAT::error::FatalError("Threshold on sig must be a Real number") ;
+	    }
+
+	    ### lower threshold on occurrences
+	} elsif ($ARGV[$a] eq "-lth_occ") {
+	    $lth{'occ'} = $ARGV[$a+1];
+	    unless (&IsNatural($lth{'occ'})) {
+		&RSAT::error::FatalError("Threshold on occurrences must be a natural number") ;
+	    }
+	} elsif ($ARGV[$a] eq "-oth") {
+	    $lth{'occ'} = $ARGV[$a+1];
+	    unless (&IsNatural($lth{'occ'})) {
+		&RSAT::error::FatalError("Threshold on occurrences must be a natural number") ;
+	    }
+	    &RSAT::message::Warning("option -oth is obsolete, please use -lth_occ instead");
+
+	    ### Upper threshold on rank
+	} elsif ($ARGV[$a] eq "-uth_rank") {
+	    $uth{rank} = $ARGV[$a+1];
+	    unless (&IsNatural($uth{rank})) {
+		&RSAT::error::FatalError("Threshold on rank must be a natural number") ;
+	    }
+	} elsif ($ARGV[$a] eq "-rth") {
+	    $uth{rank} = $ARGV[$a+1];
+	    unless (&IsNatural($uth{rank})) {
+		&RSAT::error::FatalError("Threshold on rank must be a natural number") ;
+	    }
+	    &RSAT::message::Warning("option -rth is obsolete, please use -uth_rank instead");
+
+	    ### return values
+	} elsif ($ARGV[$a] eq "-return") {
+	    my @fields_to_return = split ",", lc($ARGV[$a+1]);
+	    foreach my $field (@fields_to_return) {
+	      &RSAT::error::FatalError($field, "is not a valid return field. Supported: ".$supported_return_fields)
+		unless ($supported_return_field{$field});
+	      $return{$field} = 1;
+	    }
+
+	    ## Tasks
+	} elsif ($ARGV[$a] eq "-task") {
+	    my @tasks_to_run = split ",", lc($ARGV[$a+1]);
+	    foreach my $task (@tasks_to_run) {
+	      &RSAT::error::FatalError($task, "is not a valid task. Supported: ".$supported_tasks)
+		unless ($supported_task{$task});
+	      $task{$task} = 1;
+	    }
+
+	    ## Markov order
+	} elsif ($ARGV[$a] =~ /^-markov/i) {
+	    $main::markov = lc($ARGV[$a+1]);
+	    $main::bg_method = "markov";
+	    unless (&IsInteger($markov)) {
+		&RSAT::error::FatalError($markov, "is not a valid value for -markov. Must be an Integer number.");
+	    }
+
+	    ## sequence type
+	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
+	    $seq_type = lc($ARGV[$a+1]);
+	    unless ($supported_seq_type{$seq_type}) {
+		&RSAT::error::FatalError("$seq_type is not a supported sequence type. Supported: $supported_seq_types");
+	    }
+
+	    ## last
+	} elsif ($ARGV[$a] =~ /^-last/i) {
+	    $last_seq = lc($ARGV[$a+1]);
+	    unless (&IsNatural($last_seq)) {
+		&RSAT::error::FatalError("$last_seq is not a valid value for -last. Must be a Natural number.");
+	    }
+
+	    ## seqnb
+	} elsif ($ARGV[$a] =~ /^-seqnb/i) {
+	    $max_seq_nb = lc($ARGV[$a+1]);
+	    unless (&IsNatural($max_seq_nb)) {
+		&RSAT::error::FatalError("$max_seq_nb is not a valid value for -seqnb. Must be a Natural number.");
+	    }
+
+	    ## top sequences for matrix building
+	} elsif ($ARGV[$a] eq "-top_seq_for_matrices") {
+	    $top_seq_for_matrices = lc($ARGV[$a+1]);
+	    unless (&IsNatural($top_seq_for_matrices)) {
+		&RSAT::error::FatalError("$top_seq_for_matrices is not a valid value for -top_seq_for_matrices. Must be a Natural number.");
+	    }
+
+	    ## skip
+	} elsif ($ARGV[$a] =~ /^-skip/i) {
+	    $skip_seq = lc($ARGV[$a+1]);
+	    unless (&IsNatural($skip_seq)) {
+		&RSAT::error::FatalError("$skip_seq is not a valid value for -skip. Must be a Natural number.");
+	    }
+
+	    ## first
+	} elsif ($ARGV[$a] =~ /^-first/i) {
+	    my $first = lc($ARGV[$a+1]);
+	    unless ((&IsNatural($first)) && ($first > 0)) {
+		&RSAT::error::FatalError("$first is not a valid value for -first. Must be a strictly positive Natural number.");
+	    }
+	    $skip_seq = $first - 1;
+
+	    ## max number of graphs
+	} elsif ($ARGV[$a] =~ /^-max_graphs/i) {
+	    $max_graphs = lc($ARGV[$a+1]);
+	    unless ((&IsNatural($max_graphs)) && ($max_graphs > 1)) {
+		&RSAT::error::FatalError("$max_graphs is not a valid value for the option -max_graphs. Must be a strictly positive Natural number.");
+	    }
+
+	    ### do not check applicability condition for the chi2
+	} elsif ($ARGV[$a] eq "-nocheck") {
+	    $no_check = 1;
+
+	    ### do not discard oligos which do not fit the applicability condition
+	} elsif ($ARGV[$a] eq "-nofilter") {
+	    $no_filter = 1;
+
+	    ### predefined pattern list
+	} elsif ($ARGV[$a] =~ /-pl/) {
+	    $pattern_file = $ARGV[$a+1];
+
+	    ### score column
+	} elsif ($ARGV[$a] eq "-sc") {
+	    $score_column = $ARGV[$a+1];
+	    unless (&IsNatural($score_column)) {
+		&RSAT::error::FatalError( "Score column must be a natural number\n");
+	    }
+
+	    ### origin for positions
+	} elsif ($ARGV[$a] eq "-origin") {
+	    $origin = $ARGV[$a+1];
+
+	    ## For backwards compatibility
+	    if (&IsInteger($origin)) {
+		if ($origin eq "-0") {
+		    $offset = 0;
+		    $origin = "end";
+		} elsif ($origin < 0) {
+		    $offset = $origin;
+		    $origin = "end";
+		} else {
+		    $offset = $origin;
+		    $origin = "start";
+		}
+	    } elsif (!$supported_origin{$origin}) {
+		&RSAT::error::FatalError($origin, "Invalid value for origin. Supported: $supported_origins.");
+	    }
+
+	    ### offset
+	} elsif ($ARGV[$a] eq "-offset") {
+	    $offset = $ARGV[$a+1];
+	    &RSAT::message::Warning("Offset", $offset);
+	    &RSAT::error::FatalError($offset, "is not a valid value for offset. Should be an Integer number.")
+		unless (&IsInteger($offset));
+
+	} elsif ($ARGV[$a] eq "-img_format") {
+	    $img_format = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-header") {
+	    $window_header = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-title") {
+	    $title = $ARGV[$a+1];
+
+	    ### min and max positions
+	} elsif (($ARGV[$a] eq "-minpos") && (&IsInteger($ARGV[$a+1]))) {
+	    $min_pos = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-maxpos") && (&IsInteger($ARGV[$a+1]))) {
+	    $max_pos = $ARGV[$a+1];
+
+	    ################################################################
+	    ## Clustering parameters
+	} elsif ($ARGV[$a] eq "-clust_nb") {
+	  $clust_nb = $min_clust_nb = $max_clust_nb = $ARGV[$a+1];
+	  &RSAT::error::FatalError($clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	    unless ((&IsNatural($clust_nb) && ($clust_nb >= 2)));
+	} elsif ($ARGV[$a] eq "-min_clust_nb") {
+	    $min_clust_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($min_clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	      unless ((&IsNatural($min_clust_nb) && ($min_clust_nb >= 2)));
+	} elsif ($ARGV[$a] eq "-max_clust_nb") {
+	    $max_clust_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($max_clust_nb, "invalid number of clusters, must be a Natural number >= 2")
+	      unless ((&IsNatural($max_clust_nb) && ($max_clust_nb >= 2)));
+
+	    ################################################################
+	    ## matrix parameters
+
+	} elsif ($ARGV[$a] eq "-clust_method") {
+	    $clust_method = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-clust_suffix") {
+	    $clust_suffix = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-max_asmb_nb") {
+	    $max_asmb_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($max_asmb_nb, "invalid number of matrices, must be a Natural number >= 1")
+	      unless ((&IsNatural($max_asmb_nb) && ($max_asmb_nb >= 1)));
+
+	} elsif ($ARGV[$a] eq "-max_asmb_per_cluster") {
+	    $max_asmb_per_cluster = $ARGV[$a+1];
+	    &RSAT::error::FatalError($max_asmb_per_cluster, "invalid number of matrices, must be a Natural number >= 1")
+	      unless ((&IsNatural($max_asmb_per_cluster) && ($max_asmb_per_cluster >= 1)));
+
+
+	}
+    }
+}
+
+################################################################
+## Verbose
+sub Verbose {
+    print $out "; position-analysis";
+    &PrintArguments($out);
+
+    printf $out "; %s\n", "Citation: van Helden, et al. (2000).  Nucleic Acids Res 28, 1000-1010.";
+
+    printf $out "; %-29s\t%s\n", "Sequence file", $infile{sequences} if ($infile{sequences});
+    printf $out "; %-29s\t%s\n", "Sequence format", $in_format;
+    printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
+    printf $out "; %-29s\t%s\n", "Output file", $outfile{output} if ($outfile{output});
+    printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
+    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{chi} if (&IsReal($lth{chi}));
+    printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
+    if ($strands eq "2str") {
+	printf $out "; %s\n", "Occurrences counted  on both strands";
+	if ($group_rc) {
+	    printf $out "; %s\n", "Grouping reverse complements";
+	}
+    } else {
+	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
+    }
+    print $out "; Conditions of applicability not checked !\n" if ($no_check);
+    print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfied.\n" if ($no_filter);
+
+    print $out "; Background model estimation: $bg_method\n";
+    if ($bg_method eq "markov") {
+      printf $out ";\t%-29s\t%d\n", "Markov order", $markov;
+    }
+
+    print $out "; Sequence statistics:\n";
+    printf $out ";\t%-29s\t%d\n", "Skipped sequence", $skip_seq if ($skip_seq > 0);
+    printf $out ";\t%-29s\t%d\n", "First sequence", $skip_seq + 1 if ($skip_seq > 0);
+    printf $out ";\t%-29s\t%d\n", "Last sequence", $last_seq if ($last_seq > 0);
+    printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
+    printf $out ";\t%-29s\t%d\n", "Sum of sequence lengths", $sum_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Min sequence length", $min_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Max sequence length", $max_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Average sequence length", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
+    printf $out ";\t%-29s\t%d\n", "Possible positions", $nb_possible_pos;
+    unless ($sequence_number > 100) {
+	print $out "; Sequences:\n";
+	print $out ";\t#\tlength\tID\n";
+	foreach my $s (1..$sequence_number) {
+	    print $out ";\t$s\t$seq_length[$s]\t$id_list[$s]\n";
+	}
+    }
+
+    if ($#selected_patterns >=0) {
+	print $out join ("\n;\t", "; Selected patterns", @selected_patterns), "\n";
+    }
+
+
+    print $out "; Oligonucleotide statistics:\n";
+    printf $out ";\t%-21s\t%d\n", "Total occurrences", $sum_occurrences;
+    if ($noov) {
+	printf $out ";\t%-21s\t%d\n", "Total overlaps", $sum_overlaps;
+    }
+ 
+    print $out "; Position interval parameters:\n";
+    printf $out ";\t%-21s\t%d\n", "Position interval", $pos_interval;
+    printf $out ";\t%-21s\t%d\n", "Min position", $min_pos if (&IsInteger($min_pos));
+    printf $out ";\t%-21s\t%d\n", "Max position", $max_pos if (&IsInteger($max_pos));
+#    printf $out ";\t%-21s\t%d\n", "Min window", $min_calc_window + 1 if (&IsInteger($min_calc_window));
+#    printf $out ";\t%-21s\t%d\n", "Max window", $max_calc_window + 1 if (&IsInteger($max_calc_window));
+    printf $out ";\t%-21s\t%d\n", "Number of windows", $calc_window_nb;
+    printf $out ";\t%-21s\t%d\n", "Total positions", $sum_pos_per_window;
+    printf $out ";\t%-21s\t%d\n", "Degrees of freedom", $calc_window_nb - 1;
+
+
+    print $out "; K-mer clustering parameters:\n";
+    printf $out ";\t%-21s\t%d\n", "Number of clusters", $clust_nb;
+#    printf $out ";\t%-21s\t%d\n", "Min number of clusters", $min_clust_nb;
+#    printf $out ";\t%-21s\t%d\n", "Max number of clusters", $max_clust_nb;
+    printf $out ";\t%-21s\t%s\n", "Clustering method", $clust_method;
+
+    &PrintWindowLimits($out);
+}
+
+################################################################
+## Print the window limits + number of sequences per window
+sub PrintWindowLimits {
+  my ($out_handle) = @_;
+    print $out_handle "; Position intervals:\n";
+    print $out_handle join ("\t", ';', 'window', '[min,max]', 'mid', 'seq', 'occ'), "\n";
+    for my $window ($min_calc_window..$max_calc_window) {
+	print $out_handle join ("\t",  ";",
+				$window - $min_calc_window + 1,
+				$window,
+#				"\[".$window_min{$window},
+#				$window_max{$window}."\]",
+				$window_interval{$window},
+				$window_center{$window},
+				$seq_per_window{$window},
+				$pos_per_window{$window}), "\n";
+    }
+    print $out_handle ";\n";
+}
+
+################################################################
+## Print the result file
+sub PrintResult {
+  &RSAT::message::TimeWarn("Printing results", scalar(keys(%pattern)), "patterns") if ($main::verbose >= 2);
+
+  ## Sort oligonucleotides, either according to their significance or
+  ## alphabetically.
+  if ($sort_result) {
+    &RSAT::message::TimeWarn("Sorting results") if ($main::verbose >= 2);
+    if ($score_column > 0) {
+      ## Sort according to scores specified in the input file
+      @sorted_keys = sort {
+	$pattern{$b}->{score} <=>  $pattern{$a}->{score}
+      } keys %pattern;
+    } elsif ($return{chi}) {
+      @sorted_keys = sort {
+	$pattern{$b}->{chi_square} <=>  $pattern{$a}->{chi_square}
+      } keys %pattern;
+    } else {
+      @sorted_keys = sort {
+	$pattern{$b}->{in_bound_occ} <=>  $pattern{$a}->{in_bound_occ}
+      } keys %pattern;
+    }
+  } else {
+    @sorted_keys = sort keys %pattern;
+  }
+  &RSAT::message::TimeWarn("Sorted", scalar(@sorted_keys), "patterns") if ($main::verbose >= 2);
+
+  ## Select top ranking patterns if required
+  if (defined($uth{rank})) {
+    my $max_rank = &min(scalar(@sorted_keys), $uth{rank});
+    @sorted_keys = @sorted_keys[0..($max_rank -1)];
+    &RSAT::message::TimeWarn("Retained", scalar(@sorted_keys), "top-raking patterns") if ($main::verbose >= 2);
+  }
+
+
+  ## Output columns
+  @out_col = (); @col_descriptions = ();
+  push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
+  if (($strands eq '2str') && ($oligo_len > 3)) {
+    push @out_col, 'identifier'; push @col_descriptions, 'pattern identifier';
+  } else {
+    push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
+  }
+  push @out_col, 'occ'; push @col_descriptions, 'pattern occurrences';
+  if ($noov) {
+    push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';
+  }
+  if ($return{chi}) {
+    push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';
+    push @out_col, "df" ; push @col_descriptions, 'degrees of freedom';
+    push @out_col, "Pval" ; push @col_descriptions, 'P-value (probability for one word to be a false positive)';
+    push @out_col, "Eval" ; push @col_descriptions, 'E-value; expected number of false positives (Eval = Pval * nb_tests)';
+    push @out_col, "sig" ; push @col_descriptions, 'Significance (sig = -log10(Eval))';
+  }
+  if ($return{rank}) {
+    push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';
+  }
+
+#  ## Keep track of the number of columns exported before the distribution, to be passed do cluster_position_profiles.R
+#  $column_offset = scalar(@out_col);
+
+  ################################################################
+  ## Print occurrence distribution in the main output file.
+  ##
+  ## Note: this should soon be changed (2013-08), it is cleaner to
+  ## export separate files with the different distributions
+  ## (occurrences, frequencies, expected frequencies, ...).
+  if ($return{distrib}) {
+    my $w=0;
+      for my $window ($min_calc_window..$max_calc_window) {
+	$w++;
+	push @out_col, $window_header{$window}; push @col_descriptions, join ("\t", 'occurrences in window', $w, $window_interval{$window});; #'observed window occurrences';
+      }
+  }
+
+  ## Column content description
+  if ($main::verbose >= 1) {
+    print $out "; Column headers\n";
+    foreach my $c (0..$#out_col) {
+      printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
+    }
+  }
+
+  ### Print header
+  print $out "#", join("\t", @out_col), "\n";
+
+  ### Pattern distributions
+  my $rank = 0;
+  foreach my $oligo_seq (@sorted_keys) {
+    $rank++;
+    $pattern{$oligo_seq}->{rank} = $rank;
+    print $out "$oligo_seq";	### Pattern sequence
+    print $out "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
+
+    ### Occurrences
+    print $out "\t", $pattern{$oligo_seq}->{in_bound_occ};
+    if ($noov) {
+      unless (defined($pattern{$oligo_seq}->{overlaps})) {
+	$pattern{$oligo_seq}->{overlaps} = 0;
+      }
+      print $out "\t", $pattern{$oligo_seq}->{overlaps};
+    }
+
+    ### chi-square value
+    if ($return{chi}) {
+      printf $out "\t%.1f", $pattern{$oligo_seq}->{chi_square};
+      printf $out "\t%d", $pattern{$oligo_seq}->{df};
+      printf $out "\t%.1e", $pattern{$oligo_seq}->{Pval};
+      printf $out "\t%.2g", $pattern{$oligo_seq}->{Eval};
+      print $out "\t", $pattern{$oligo_seq}->{sig};
+    }
+
+    ## Rank
+    if ($return{rank}) {
+      print $out "\t$rank";
+    }
+
+    ### Position distribution
+    if ($return{distrib}) {
+      for my $window ($min_calc_window..$max_calc_window) {
+	print $out "\t", $window_occ{$oligo_seq}{$window} || 0;
+      }
+    }
+
+    print $out "\n";
+  }
+
+  ################################################################
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  close $out;
+
+  ################################################################
+  ## Generate an HTML output file with the main output if required
+  if ($outfile{output_html}) {
+    &RSAT::message::TimeWarn("Generating HTML table", $outfile{html}) if ($main::verbose >= 2);
+    my $cmd = $SCRIPTS."/text-to-html";
+    $cmd .= " -i ".$outfile{output};
+    $cmd .= " -o ".$outfile{output_html};
+    &doit($cmd);
+  }
+}
+
+
+################################################################
+## Print a separate file with profiles:
+## - one row per oligonucleotide
+## - one column per position window
+sub PrintProfiles {
+
+  my $profile_type = shift(@_) || "occ";
+
+  my %profile_desc = ("occ"=>"observed occurrences",
+		      "exp_occ"=>"expected occurrences",
+		      "freq_per_window"=>"frequency per window (\"vertical\" frequency)",
+		      "freq_per_word"=>"frequency per word (\"longitudinal\" frequency)",
+		     );
+
+  &RSAT::message::TimeWarn("Printing", $profile_type,"profiles") if ($main::verbose >= 2);
+
+  my $out_profile = &OpenOutputFile($outfile{$profile_type});
+
+  ## Print header
+  print $out_profile "; position-analysis";
+  &PrintArguments($out_profile);
+
+  print $out_profile "; Profiles of ", $profile_desc{$profile_type},"\n";
+
+  ## Output columns
+  my @out_col = (); @col_descriptions = ();
+  push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
+  push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
+  my $w = 0;
+  for my $window ($min_calc_window..$max_calc_window) {
+    $w++;
+    push @out_col, $window_header{$window}; push @col_descriptions ,join ("\t", $profile_desc{$profile_type},'in window', $w, $window_interval{$window});
+  }
+  ## Column content
+
+  ## Print window limits
+  &PrintWindowLimits($out_profile);
+
+  ## Column content description
+  if ($main::verbose >= 1) {
+    print $out_profile "; column headers\n";
+    foreach my $c (0..$#out_col) {
+      printf $out_profile ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
+    }
+  }
+
+  ### Print header
+  print $out_profile "#", join("\t", @out_col), "\n";
+
+  ### Pattern distributions
+  foreach my $oligo_seq (@sorted_keys) {
+    print $out_profile "$oligo_seq";	### Pattern sequence
+    print $out_profile "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
+    my $value;
+    for my $window ($min_calc_window..$max_calc_window) {
+      if ($profile_type eq "exp_occ") {
+	$value =  sprintf "%.1f", $exp_occ{$oligo_seq}{$window} || 0;
+      } elsif ($profile_type eq "occ") {
+	$value = $window_occ{$oligo_seq}{$window} || 0;
+      } elsif ($profile_type eq "freq_per_window") {
+	$value = sprintf "%.3g ", $window_occ{$oligo_seq}{$window} / $occ_per_window{$window} || 0;
+      } elsif ($profile_type eq "freq_per_word") {
+	$value = sprintf "%.3g",$window_occ{$oligo_seq}{$window} / $pattern{$oligo_seq}->{in_bound_occ} || 0;
+      } else {
+	&RSAT::error::FatalError("Invalid profile type", $profile_type);
+      }
+      print $out_profile "\t", $value;
+#       &RSAT::message::Debug("Printing profile",
+# 			    $profile_type,
+# 			    $oligo_seq,
+# 			    "window=".$window,
+# 			    "min_window=".$min_window,
+# 			    "max_window=".$max_window,
+# 			    "min_calc_window=".$min_calc_window,
+# 			    "max_calc_window=".$max_calc_window,
+# 			    $value,
+# 			   ) if ($main::verbose >= 10);
+    }
+    print $out_profile "\n";
+  }
+  &RSAT::message::TimeWarn($profile_type, "profiles", $outfile{$profile_type}) if ($main::verbose >= 2);
+  close ($out_profile);
+
+  ## Generate an HTML output file if required
+  if ($outfile{$profile_type.'_html'}) {
+    &RSAT::message::TimeWarn("Generating HTML table", $outfile{$profile_type.'_html'}) if ($main::verbose >= 2);
+    my $cmd = $SCRIPTS."/text-to-html";
+    $cmd .= " -i ".$outfile{$profile_type};
+    $cmd .= " -o ".$outfile{$profile_type.'_html'};
+    &doit($cmd);
+  }
+
+}
+
+################################################################
+## Filter out oligos with non-canonical residues (for example
+## incompletely specified nucleotides).
+sub CheckDNA {
+    &RSAT::message::TimeWarn("Checking DNA") if ($main::verbose >= 2);
+    foreach my $oligo_seq (sort keys %pattern) {
+	if ($oligo_seq =~ /[^atcg]/i) {
+	    delete $pattern{$oligo_seq};
+	}
+    }
+    &RSAT::message::TimeWarn("Number of patterns after DNA filtering", scalar(keys %pattern))
+      if ($main::verbose >= 2);
+}
+
+################################################################
+## Cluster oligos on the basis of their positional occurrence
+## profiles.
+##
+## Note: this function requires a working installation of the R
+## statistical package.
+sub ProfileClustering {
+    my ($clust_nb, $clust_suffix_k) = @_;
+    &RSAT::message::TimeWarn("Clustering oligomers on the basis of their positional occurrence profiles.") if ($main::verbose >= 2);
+    
+    my $r_path = &RSAT::server::GetProgramPath("R", 0);
+    &RSAT::message::Info("R path", $r_path) if ($main::verbose >= 3);
+
+    my $pos_cluster_script  = $ENV{RSAT}."/R-scripts/cluster_position_profiles.R";
+    &RSAT::error::FatalError("Cannot read position clustering script", $pos_cluster_script) unless (-r $pos_cluster_script);
+
+#  my $pos_drawing_offset = -($pos_interval-1)/2;
+    my $pos_drawing_offset = 0;
+    my  $pos_cluster_cmd = "cat ".$pos_cluster_script;
+    $pos_cluster_cmd .= " | ".$r_path;
+    $pos_cluster_cmd .= " --slave --no-save --no-restore --no-environ";
+    $pos_cluster_cmd .= " --args \"";
+    $pos_cluster_cmd .= "file.pos='".$outfile{output}."'";
+    $pos_cluster_cmd .= ";pos.offset=".$pos_drawing_offset;
+    $pos_cluster_cmd .= ";display.intervals=FALSE";
+#  $pos_cluster_cmd .= ";column.offset=".$column_offset;
+    $pos_cluster_cmd .= ";clust.nb=".$clust_nb;
+    $pos_cluster_cmd .= ";clust.method='".$clust_method."'";
+    $pos_cluster_cmd .= ";clust.suffix='".$clust_suffix_k."'";
+    $pos_cluster_cmd .= ";round.positions=TRUE";
+    $pos_cluster_cmd .= "\"";
+    if ($r_path) {
+	&doit($pos_cluster_cmd, $dry_run, $die_on_error, $verbose);
+    } else {
+	&RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
+    }
+}
+
+################################################################
+## Generate position-specific scoring matrices from k-mer clusters
+sub ClustersToMatrices {
+    my ($clust_nb) = @_;
+    &RSAT::message::TimeWarn("Extracting matrices from k-mers in sequences.") if ($main::verbose >= 2);
+    my $cmd = $SCRIPTS."/matrix-from-patterns";
+    $cmd .= " -v 1";
+    $cmd .= " -seq ".$infile{sequences};
+    $cmd .= " -top_seq ".$top_seq_for_matrices if ($top_seq_for_matrices);
+    $cmd .= " -subst 1 -maxfl 1 -max_asmb_size 30";
+    if ($return{clusters}) {
+	$cmd .= " -pl ".$outfile{"clusters_k".$clust_nb};
+	$cmd .= " -sc 4 -cc 2 ";
+	$cmd .= " -max_asmb_per_cluster ".$max_asmb_per_cluster;
+    } else {
+	$cmd .= " -pl ".$outfile{output};
+	$cmd .= " -max_asmb_nb ".$max_asmb_nb;
+    }
+    $cmd .= " -flanks 2 -logo";
+    $cmd .= " -o ".$prefix{pssm};
+    &doit($cmd, $dry_run, $die_on_error, $verbose);
+}
+
+################################################################
+## Generate XYgraphs
+sub GenerateGraphs {
+
+    ## Directory for storing the graphs
+    $rel_dir{graphs}="graphs";
+    if ($outfile{output}) {
+	$basename = `basename $outfile{output}`;
+	$basename =~ s/\.tab$//;
+	chomp $basename;
+	$rel_dir{graphs} = $basename."_".$rel_dir{graphs};
+    }
+
+    $dir{graphs} = $dir{output}."/".$rel_dir{graphs}; push @dirs, "graphs";
+    &RSAT::util::CheckOutDir($dir{graphs});
+
+    $date = &AlphaDate();
+    chomp $date;
+    &RSAT::message::TimeWarn("Generating graphs") if ($main::verbose >= 2);
+
+    &RSAT::message::Info("Graph index", $outfile{graph_index}) if ($main::verbose >= 2);
+    local $graph_index = &OpenOutputFile($main::outfile{graph_index});
+    print $graph_index  &PrintHtmlResultHeader(program=>"position-analysis", "title"=>"$title  ; ${oligo_length}nt $strands $noov", "result_toc"=>0);
+
+    ## Links to output files
+    my ($short_outfile) = &ShortFileName($outfile{output});
+    my $link = &RSAT::util::RelativePath($outfile{graph_index}, $outfile{output});
+    print $graph_index "<p>Output file (tab): <a href='".$link."'>$short_outfile</a></p>";
+
+    #  my ($short_html_file) = &ShortFileName($outfile{html});
+    #  $link = &RSAT::util::RelativePath($outfile{graph_index}, $outfile{html});
+    #  print $graph_index "<p>Output file (html): <a href='".$link."'>$short_html_file</a></p>";
+
+    ## Open the table linking oligos to their position profile graphs
+    print $graph_index "<p><table window='sortable'>\n";
+    #  print $graph_index "<table>\n";
+    print $graph_index "<tr>\n";
+    print $graph_index "<th>Sequence</th>\n";
+    print $graph_index "<th>ID</th>\n";
+    print $graph_index "<th>Occ</th>\n";
+    print $graph_index "<th>Overlaps</th>\n";
+    print $graph_index "<th>Chi2</th>\n";
+    print $graph_index "<th>df</th>\n";
+    print $graph_index "<th>Pval</th>\n";
+    print $graph_index "<th>Eval</th>\n";
+    print $graph_index "<th>Sig</th>\n";
+    print $graph_index "<th>Rank</th>\n";
+    print $graph_index "<th>Score</th>\n" if ($score_column > 0);
+    print $graph_index "</tr>\n";
+    #  close $graph_index;
+
+    ################################################################
+    ## Generate one graph for each oligo
+    my $graphs_done = 0;
+    foreach my $oligo_seq (@sorted_keys) {
+	if ($return{chi}) {
+	    next unless (&IsReal($pattern{$oligo_seq}->{chi_square}) || ($no_filter_graphs));
+	}
+	$graphs_done++;
+
+	if (($max_graphs > 0) && ($graphs_done > $max_graphs)) {
+	    &RSAT::message::Warning("Exported $graphs_done graphs");
+	    last;
+	}
+
+	my $chi2 = "NA";
+	if (&IsReal($pattern{$oligo_seq}->{chi_square})) {
+	    $chi2 = sprintf "%.2f", $pattern{$oligo_seq}->{chi_square};
+	} else {
+	    $chi2 = $pattern{$oligo_seq}->{chi_square};
+	}
+	my $Eval = sprintf "%.1g", $pattern{$oligo_seq}->{Eval};
+	my $sig = $pattern{$oligo_seq}->{sig};
+	my $graph_file_name = join("", $oligo_seq, "_ci", $pos_interval, "_", $strands, "_pos_distrib.",$img_format);
+	my $xmax = ($max_window+1) * $pos_interval;
+	my $score = "NA";
+	if ($score_column > 0) {
+	    $score = sprintf "\t%.2f", $pattern{$oligo_seq}->{score};
+	}
+
+	## Compute the title for the XY plot
+	my $title2 = $pattern{$oligo_seq}->{in_bound_occ}." occurrences";
+	$title2 .= ", position interval=$pos_interval";
+	if ($score_column > 0) {
+	    $title2 .= "; score = ".$score;
+	}
+	if ($return{chi}) {
+	    $title2 .= "; chi2 =". $chi2;
+	    $title2 .= "; Eval=".$Eval;
+	    $title2 .= "; sig=".$sig;
+	}
+
+	&RSAT::message::Debug("Exporting graph for oligo", $oligo_seq, $dir{graphs}."/".$graph_file_name) if ($main::verbose >= 5);
+
+	my $command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
+	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
+	$command .= " -title1 '$title ; $oligo_seq distribution profile' ";
+	$command .= " -title2 '$title2' ";
+	$command .= " -xleg1 'Position' -yleg1 'Frequency' ";
+	$command .= " -ymin 0 -xmin $window_min[0] -xmax $window_max[$max_window] ";
+	$command .= " -xgstep2 $pos_interval -xsize 600 -ysize 200";
+	$command .= " -format ".$img_format;
+	print "; $command\n" if ($main::verbose >= 3);
+	open XY, "| $command";
+	print XY ";window\tocc_$oligo_seq\texp_occ_$oligo_seq\n"; ### header line
+	foreach my $window ($min_display_window..$max_display_window) {
+#	foreach my $window ($min_window..$max_window) {
+	    print XY "$window_center{$window}\t";
+	    print XY $window_occ{$oligo_seq}{$window} || 0, "\t";
+	    print XY "$exp_occ{$oligo_seq}{$window}\n";
+	}
+	close XYgraph;
+	#    open $graph_index, ">>".$outfile{graph_index};
+	print $graph_index "<tr>\n";
+	print $graph_index "<td><A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A></td>\n";
+	print $graph_index "<td>", &PatternID($oligo_seq, $sum_rc), "</td>\n";
+	print $graph_index "<td>", $pattern{$oligo_seq}->{in_bound_occ}, "</td>\n";
+	print $graph_index "<td>", $pattern{$oligo_seq}->{overlaps}, "</td>\n";
+	print $graph_index "<td>", sprintf("\t%.1f", $pattern{$oligo_seq}->{chi_square}), "</td>\n";
+	print $graph_index "<td>", sprintf("\t%d", $pattern{$oligo_seq}->{df}), "</td>\n";
+	print $graph_index "<td>", sprintf("\t%.1e", $pattern{$oligo_seq}->{Pval}), "</td>\n";
+	print $graph_index "<td>", sprintf("\t%.2g", $pattern{$oligo_seq}->{Eval}), "</td>\n";
+	print $graph_index "<td>", sprintf("\t%.1f", $pattern{$oligo_seq}->{sig}), "</td>\n";
+	print $graph_index "<td>", $pattern{$oligo_seq}->{rank}, "</td>\n";
+	print $graph_index "<td>", $score, "</td>\n" if ($score_column > 0);
+	print $graph_index "</tr>\n";
+	#    close $graph_index;
+	# ;	1	seq            	pattern sequence
+	# ;	2	id             	pattern identifier
+	# ;	3	occ            	pattern occurrences
+	# ;	4	over           	overlapping occurrences (discarded)
+	# ;	5	chi2           	observed chi-square
+	# ;	6	df             	degrees of freedom
+	# ;	7	Pval           	P-value (probability for one word to be a false positive)
+	# ;	8	Eval           	E-value; expected number of false positives (Eval = Pval * nb_tests)
+	# ;	9	sig            	Significance (sig = -log10(Eval))
+	# ;	10	rank           	rank of the pattern according to sorting criterion
+    }
+    #  open $graph_index, ">>".$outfile{graph_index};
+    print $graph_index "<table>\n";
+    print $graph_index "</body></html>\n";
+    close $graph_index;
+}
+
+
+################################################################
+## Open the HTML index at the beginning of the script, in order to
+## have the header ready for the Web site (rather than a "Not found"
+## error)
+sub OpenHtmlIndex {
+#    &RSAT::message::Info("Writing HTML index") if ($main::verbose >= 2);
+    $html_index = &OpenOutputFile($main::outfile{html_index});
+    
+
+    my $refresh_time;
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+	$refresh_time = 120;
+    } else {
+	$refresh_time = 0;
+    }
+
+    my $header = &PrintHtmlResultHeader(program=>"position-analysis", refresh_time=>0);
+#    my $header =  &PrintHtmlResultHeader(program=>"position-analysis", "result_toc"=>0, refresh_time=>$refresh_time);
+    print $html_index $header;
+
+    ## Report command
+    print $html_index "<p><tt><b>Command:</b> position-analysis ";
+    &PrintArguments($html_index, 1);
+    print $html_index "</tt></p>\n";
+
+}
+
+################################################################
+## Generate a HTML index
+sub HtmlIndex {
+
+    &IndexFiles();
+
+    print $html_index "<hr>";
+    print $html_index "</body>";
+    print $html_index "</html>";
+    close $html_index;
+    &RSAT::message::Info("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
+}

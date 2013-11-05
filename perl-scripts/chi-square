@@ -1,0 +1,300 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+#use Math::CDF;## Required for computing the P-value
+use Statistics::Distributions; ## Required for computing the P-value
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters
+$test = "homogeneity";
+$sort_by_exp = 1; ## Sort series by expected values for the goodness of fit test.
+&ReadArguments();
+
+#### check argument values
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($infile{input});
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+#### verbose
+if ($verbose) {
+  print $out ";chi-square result\n";
+  if ($infile{input}) {
+    print $out ";Input file	$infile{input}\n";
+  }
+  if ($outfile{output} ne "") {
+    print $out ";Output file	$outfile{output}\n";
+  }
+}
+
+################################################################
+## Read a table (all values must be positive)
+my $row = 0;
+while (<$in>) {
+  if (/\S/) {
+    $row++;
+    if (/\t/) {
+      @fields = split /\t/;
+    } else {
+      @fields = split /\s+/;
+    }
+    if ($row == 1) {
+      $col_nb = $#fields + 1;
+    } elsif ($#fields + 1 != $col_nb) {
+      print "Error: each line must contain the same number of values\n";
+      print "Type chi-square -h for info.\n";
+      exit;
+    }
+    foreach $f (@fields) {
+      $f =~ s/^\s*//;
+      $f =~ s/\s*$//;
+      if (&IsReal($f)) {
+	push(@values, $f);
+      } else {
+	print "Error: $f is not a positive value\n";
+	print "Type chi-square -h for info.\n";
+	exit;
+      }
+    }
+  }
+}
+
+my $row_nb = $row;
+
+## Compute value of ch2_obs
+($chi_square, $df, $left_group, $right_group) = &ChiSquare($test, $row_nb, $col_nb, $sort_by_exp, @values);
+
+## Compute P-value
+if ($chi_square > 0) {
+  $Pval = sprintf("%.2e", &Statistics::Distributions::chisqrprob($df, $chi_square));
+#  $Pval2 = sprintf("%.2e", 1 - &Math::CDF::pchisq($chi_square,$df));
+} else {
+  $Pval = 1;
+#  $Pval2 = 1;
+}
+
+#### print output
+my @header = ("chi2", "df", "Pval");
+my @results = ($chi_square, $df, $Pval);
+if ($test =~ /good/) {
+    if ($sort_by_exp) {
+	push (@header, "Sgroup");
+	push (@results, $left_group);
+    } else {
+	push (@header, "Lgroup", "Rgroup");
+	push (@results, $left_group, $right_group);
+    }
+}
+
+print $out "#", join ("\t", @header), "\n";
+print $out join ("\t", @results), "\n";
+
+
+###### close input file ######
+close $in unless ($infile{input} eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out unless ($outfile{output} eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+chi-square options
+-------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-no_sort do not sort by expected values before grouping (group on both tails separately)
+-o      output file
+-v      verbose
+-test goodfit | independence | homogeneity
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	chi-square
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+        chi-square [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Calculates the chi square value for a given table of numerical values.
+
+
+    Class grouping for the goodness of fit
+    ======================================
+
+	A condition of applicability of the chi-squared test is that
+	all expected values should be >= 5. With goodness of fit
+	tests, it is frequent that the left and/or right tails of the
+	expected distribution progressively decrease, and thus give
+	values << 5. A classical approach to circumvent this is to
+	group terminal classes on each side, and to run the test with
+	a restricted number of classes having all exp values >=
+	5. This grouping of course reduces the number of degrees of
+	freedom.
+
+	The program chi-square automatically groups the terminal
+	classes to ensure this applicability condition. 
+
+    Class sorting before grouping
+    =============================
+
+	By default chi-square applies a specific treatment before
+	grouping classes: the observed and expected vectors are sorted
+	by increasing expected values.
+
+	The result is that all the classes with small expected values
+	are on the same side of the vectors, which reduces the number
+	of classes to be grouped (and thus better preserves the
+	original values submitted to chi-squared test).
+
+	I am not sure this treatment is orthodox (I did not find it in
+	any textbook) but since the Chi2 test does not make any
+	assumption on the order of the columns, I see no reason to
+	forbid it.
+
+	The option -no_sort allows to disactivate this class sorting,
+	in which case the grouping is performed separately on the left
+	and right sides of the distribution.
+
+CATEGORY
+	statistics
+
+OPTIONS
+        -h      (must be first argument) display full help message
+
+        -help   (must be first argument) display options
+
+	-v	verbose
+		returns a data report, i.e. a table with the input values
+		and the marginal sums.
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-test goodfit | independence | homogeneity
+		the hypothesis to test can be indenpendence or
+		goodness of fit.
+		In case of goodness of fit, the table must contain exactly
+		2 lines, the second line providing the expected frequencies.
+		By default, the test oh homogeneity is performed.
+
+	-no_sort 
+		 (valid for goodness of fit test only)
+		 Do not sort by expected values before grouping (group
+		 on both tails separately).
+
+
+INPUT FORMAT The input must be a table containing exclusively
+	numerical values. Within each row, the values are separated by
+	a single tabulation. All rows must contain the same number of
+	values.  All values must be positive numbers.  Blank lines are
+	ignored.
+
+OUTPUT FORMAT
+	The output is a single number comprized between 0 and 1,
+	indicating the probability for the hypothesis of homogeneity
+	to be true.
+
+FORMULA
+
+	              (obs_j - exp_j)^2
+	 ChiSq = SUM  ----------------
+	          j      (exp_j)
+
+
+	Applicability
+	=============
+	One condition of applicability for the chi-square test is that
+	each class should contain a "sufficient" number of expected
+	observations.  One commonly takes 5 as the minimal number of
+	expected observations per class.  When the condition of
+	acceptability is not met, our ChiSquare function returns the
+	calculated value surrounded by parenthesis, in order to warn
+	the user that the chi2 value is not valid.
+
+
+REFERENCE
+	chi square is described in about any textbook of
+	statistics. I read the definition in:
+		B.W. Lindgren (1976). Statistical Theory.
+		Macmillan Publishers co. 3rd edition.
+
+EXAMPLES
+       chi-square -v -i mydata -o myresult
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    $report_data = 1;
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-no_sort") {
+	    $sort_by_exp = 0;
+
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-test") {
+	    $test = $ARGV[$a+1];
+
+	}
+    }
+}

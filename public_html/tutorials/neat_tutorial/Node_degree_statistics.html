@@ -1,0 +1,367 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Node degree statistics</TITLE>
+<META NAME="description" CONTENT="Node degree statistics">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Study_neighborhood_nodes.html">
+<LINK REL="previous" HREF="Comparisons_between_network.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Study_neighborhood_nodes.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html316"
+  HREF="Study_neighborhood_nodes.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html312"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html306"
+  HREF="Comparisons_between_network.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html314"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html317"
+  HREF="Study_neighborhood_nodes.html">Study of the neighborhood</A>
+<B> Up:</B> <A NAME="tex2html313"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html307"
+  HREF="Comparisons_between_network.html">Comparisons between networks</A>
+ &nbsp; <B>  <A NAME="tex2html315"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html318"
+  HREF="Node_degree_statistics.html#SECTION00510000000000000000">Introduction</A>
+<LI><A NAME="tex2html319"
+  HREF="Node_degree_statistics.html#SECTION00520000000000000000">Analysis of the node degree distribution of a biological network</A>
+<UL>
+<LI><A NAME="tex2html320"
+  HREF="Node_degree_statistics.html#SECTION00521000000000000000">Study case</A>
+<LI><A NAME="tex2html321"
+  HREF="Node_degree_statistics.html#SECTION00522000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html322"
+  HREF="Node_degree_statistics.html#SECTION00523000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html323"
+  HREF="Node_degree_statistics.html#SECTION00524000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html324"
+  HREF="Node_degree_statistics.html#SECTION00524100000000000000">graph-topology result file</A>
+<LI><A NAME="tex2html325"
+  HREF="Node_degree_statistics.html#SECTION00524200000000000000">Node degree distribution</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00500000000000000000">
+Node degree statistics</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00510000000000000000">
+Introduction</A>
+</H1>
+In a graph, the degree <IMG
+ WIDTH="13" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img24.png"
+ ALT="$k$"> of a node is the number of edges connected to this node.
+If the graph is directed, we can make a distinction between the in-degree 
+(the number input arcs) and the out-degree (number of output arcs). In this case, the degree of the 
+node consists in the sum of the in-degree and of the out-degree of this node.
+
+<P>
+Different nodes having different degrees, this variability
+is characterized by the degree distribution function <IMG
+ WIDTH="38" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img25.png"
+ ALT="$P(k)$">,
+which gives the probability that a node has exactly <IMG
+ WIDTH="13" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img24.png"
+ ALT="$k$"> edges,
+or, in other words gives the observed frequency of a node
+of degree <IMG
+ WIDTH="13" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img24.png"
+ ALT="$k$">.
+
+<P>
+Scale-free graphs were first described by Barabasi 
+based on the study of the web connectivity, followed
+by several different biological networks [<A
+ HREF="Bibliography.html#Jeong2000">14</A>].
+
+<P>
+A graph is scale-free if the distribution of the vertex degree (<IMG
+ WIDTH="13" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img24.png"
+ ALT="$k$">) follows a power-law distribution of
+the form <!-- MATH
+ $P(k) ~ k^{-\gamma}$
+ -->
+<IMG
+ WIDTH="69" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img26.png"
+ ALT="$P(k)&nbsp; k^{-\gamma}$">.
+
+<P>
+The main property of such graphs is that it should have on one hand some highly connected nodes, called hubs, which are central to the network topology, and <I>keep the network together</I> and on the other hand a lot of poorly connected nodes linked to the hubs.
+
+<P>
+In the following, we will check if this scale free property also applies to the two-hybrid network described by Uetz <I>et al</I> [<A
+ HREF="Bibliography.html#Uetz:2000">32</A>] by computing the degree of each node and plotting the node degree distribution of the graph.
+
+<H1><A NAME="SECTION00520000000000000000">
+Analysis of the node degree distribution of a biological network</A>
+</H1>
+
+<H2><A NAME="SECTION00521000000000000000">
+Study case</A>
+</H2>
+
+<P>
+In this demonstration, we will analyze the node degree distribution of 
+the first published yeast protein interaction network. This network is the first
+attemp to study the yeast interactome using the two-hybrid method  and contains 865 interactions between 926
+proteins [<A
+ HREF="Bibliography.html#Uetz:2000">32</A>].
+
+<P>
+
+<H2><A NAME="SECTION00522000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>node topology statistics</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``graph-topology''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO</TT>. 
+
+<P>
+The form is now filled with a graph in the tab-delimited format, and the parameters have been
+  set up to their appropriate value for the demonstration, i.e., the degree of all nodes will be computed. 
+  At the top of the form, you can read some information about the goal of the
+  demo, and the source of the data.
+
+<P>
+As this is a protein - protein interaction graph, we can consider that an interaction between a protein A with a 
+  protein B corresponds to an interaction between protein B and protein A. The graph is thus not directed. 
+
+<P>
+You can uncheck the compution of the closeness and betweenness as these statistics will not be discussed in this section and as this process will increase the computation time.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+
+<P>
+The computation should take less than one minute. 
+  On one hand, the result page displays a link to the result file and on the other hand the graphics and raw data of the node degree distribution are also available. These will be discussed in the <I>Interpretation of the results</I> section.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00523000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the program <B><I>graph-topology</I></B> on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+<P>
+We will now describe the use of <B><I>graph-topology</I></B> as a command line tool. 
+The two two-hybrid dataset described
+in the previous section may be downloaded at the following address http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/. 
+This is the file <I>uetz_2001.tab</I>.
+
+<P>
+
+<OL>
+<LI>The first step consist in applying <B><I>graph-topology</I></B> on the two-hybrid dataset. To this, go into the
+directory where you downloaded the file <I>uetz_2001.tab</I> and use this command. 
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	graph-topology -v 1 -i uetz_2001.tab -return degree -all -o uetz_2001_degrees.tab
+</PRE><FONT COLOR="#0000ff"></FONT>		
+The file <I>uetz_2001_degrees.tab</I> is created and contains the degree of each node of the Uetz <I>et al</I> data set.
+
+<P>
+</LI>
+<LI>In the second step, we will study the degree distribution of the nodes. To this, we use the program <B><I>classfreq</I></B> from the RSAT suite that compute the distribution of a set of number. As the graph we are working with is undirected, we will only compute this degree distribution for the global degree of the nodes which is the second column of the file <I>uetz_2001_degrees.tab</I> obtained in the previous step.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	classfreq -i uetz_2001_degrees.tab -v 1 -col 2 -ci 1 -o uetz_2001_degrees_freq.tab
+</PRE><FONT COLOR="#0000ff"></FONT>		
+
+<P>
+</LI>
+<LI>Finally, we will display the distribution graph in the PNG format in order to visualize the degree distribution and determine if it has a scale free behaviour. The program XYgraph from RSA-tools will be used for this purpose. Note that we could use other tools like <B><I>Microsoft Excel</I></B> or <B><I>R</I></B>. The results will be stored in the file <I>uetz_2001_degrees_freq.png</I> that you can open with any visualization tool.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		XYgraph -i uetz_2001_degrees_freq.tab \
+		-title 'Global node degree distribution for Uetz et al (2001) interaction graph' \
+		-xcol 2 -ycol 4,6 -xleg1 Degree -lines \
+		-yleg1 'Number of nodes' -legend -header -format png \
+		-o uetz_2001_degrees_freq.png
+</PRE><FONT COLOR="#0000ff"></FONT>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00524000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00524100000000000000">
+graph-topology result file</A>
+</H3>
+Open the resulting file produced by <B><I>graph-topology</I></B>. 
+According to the requested level of verbosity (<TT>-v #</TT> option), the file begins with some lines starting with the '#' or ';' symbols that contains some information about the graph and the description of the columns.
+
+<P>
+The results consists in a two columns data set.
+
+<OL>
+<LI>Node name
+</LI>
+<LI>Global degree
+</LI>
+</OL>
+
+<P>
+Note that if you used the '-directed' option, the resulting file contains 3 more columns specifying the in-degree, the out-degree and whether the node is only a source node or a target node.
+
+<P>
+
+<H3><A NAME="SECTION00524200000000000000">
+Node degree distribution</A>
+</H3>
+Let us first have a look at the node degree distribution data file produced by the <B><I>classfreq</I></B> program (raw data). 
+This file is a tab-delimited file containing 9 columns. Each line consists in a value interval. In our case,
+the value is the degree of the nodes. 
+
+<P>
+
+<OL>
+<LI>Minimal value of the interval
+</LI>
+<LI>Maximal value of the interval
+</LI>
+<LI>Central value of the interval
+</LI>
+<LI>Frequency : Number of elements in this class interval (number of nodes having a degree comprised betwee the minimal and the maximal values.
+</LI>
+<LI>Cumulative frequency.
+</LI>
+<LI>Inverse cumulative frequency
+</LI>
+<LI>Relative frequency : number of elements in this class over the total number of elements
+</LI>
+<LI>Relative cumulative frequency
+</LI>
+<LI>Inverse relative cumulative frequency
+</LI>
+</OL>
+
+<P>
+The first result line contains the distribution results for
+the nodes having only one neighbour (i.e. degree comprised between 1 and 2), from it
+we can see that 577 over 926, i.e., 62%  of the nodes have a degree of one. 
+Moreover, about 90% of the nodes have a degree lower than 4. This is indicative of the scale-free
+nature of the interaction network.
+
+<P>
+The figure best illustrates the scale-freeness of the graph. 
+When looking at the graphical representation of this distribution, we can see two curves.
+The blue curve represents the absolute frequency and the green curve the inverse cumulative 
+frequency. 
+The exponential decrease of both curves shows that there are a lot more nodes poorly 
+connected than highly connected (hubs). The Uetz graph thus presents a scale free behaviour.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html316"
+  HREF="Study_neighborhood_nodes.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html312"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html306"
+  HREF="Comparisons_between_network.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html314"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html317"
+  HREF="Study_neighborhood_nodes.html">Study of the neighborhood</A>
+<B> Up:</B> <A NAME="tex2html313"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html307"
+  HREF="Comparisons_between_network.html">Comparisons between networks</A>
+ &nbsp; <B>  <A NAME="tex2html315"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

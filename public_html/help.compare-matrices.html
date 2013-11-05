@@ -1,0 +1,901 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>compare-matrices manual</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body style="background-color: white">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href='compare_matrices_form.cgi'>compare-matrices</a> manual</h2>
+</center>
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_formats">INPUT FORMATS</a></li>
+	<li><a href="#output_formats">OUTPUT FORMATS</a></li>
+	<li><a href="#algorithm">ALGORITHM</a></li>
+	<li><a href="#_dis_similarity_metrics">(DIS)SIMILARITY METRICS</a></li>
+	<ul>
+
+		<li><a href="#symbols_used_for_the_metrics">Symbols used for the metrics</a></li>
+		<li><a href="#sum_of_squared_distances__ssd_">Sum of Squared Distances (SSD)</a></li>
+		<li><a href="#sandelin_wasserman_similarity__sw_">Sandelin-Wasserman similarity (SW)</a></li>
+		<li><a href="#normalized_sandelin_wasserman_similarity__nsw_">Normalized Sandelin-Wasserman similarity (NSW)</a></li>
+		<li><a href="#euclidian_distance__deucl_">Euclidian distance (dEucl)</a></li>
+		<li><a href="#normalized_euclidian_distance__ndeucl_">Normalized Euclidian distance (NdEucl)</a></li>
+		<li><a href="#normalized_euclidian_similarity__nseucl_">Normalized Euclidian similarity (NsEucl)</a></li>
+		<li><a href="#kullback_leibler_distance__dkl_">Kullback-Leibler distance (dKL)</a></li>
+		<li><a href="#covariance__cov_">Covariance (cov)</a></li>
+		<li><a href="#coefficient_of_correlation__cor_">Coefficient of correlation (cor)</a></li>
+		<li><a href="#normalized_correlation__ncor_">Normalized correlation (Ncor)</a></li>
+		<ul>
+
+			<li><a href="#note">Note</a></li>
+		</ul>
+
+		<li><a href="#correlation_of_the_information_content__icor_">Correlation of the information content (Icor)</a></li>
+	</ul>
+
+	<li><a href="#references">REFERENCES</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#wish_list">WISH LIST</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>compare-matrices</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>$program_version</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Compare two collections of position-specific scoring matrices (PSSM),
+and return various similarity statistics + matrix alignments
+(pairwise, one-to-n).</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="jacques_van_helden_jacques_van_helden_ulb_ac_be" class="item">Jacques van Helden &lt;<a href="mailto:Jacques.van.Helden@ulb.ac.be">Jacques.van.Helden@ulb.ac.be</a>&gt;</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<dl>
+<dt><strong><a name="sequences" class="item">sequences</a></strong></dt>
+
+<dt><strong><a name="pattern_matching" class="item">pattern matching</a></strong></dt>
+
+<dt><strong><a name="pssm" class="item">PSSM</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>compare-matrices -file1 inputfile1 -file2 inputfile2 [-o outputfile] [-v #] [...]</p>
+<p>
+</p>
+<hr />
+<h1><a name="input_formats">INPUT FORMATS</a></h1>
+<p>The user has to specify exactly input files (options <em>-file1</em> and
+<em>-file2</em>), each containing one or several PSSMs. Each matrix of file
+one is compared with each matrix of file2.</p>
+<p>Any PSSM format supported in RSAT (type <em>convert-matrix -h</em> for a
+description).</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_formats">OUTPUT FORMATS</a></h1>
+<p>By default, the output format is a tab-delimited file with one row per
+matrix comparison, and one column per statistics. Depending on the
+requested return fields, <em>compare-matrices</em> can also export a series
+of additional files.</p>
+<dl>
+<dt><strong><a name="output_prefix_tab" class="item">[output_prefix].tab</a></strong></dt>
+
+<dd>
+<p>Tab-delimited text file containing the primary result (comparison
+score table): one column per comparison (match or profile position),
+one row per field (score, matrix descriptor, ...).</p>
+</dd>
+<dt><strong><a name="output_prefix_html" class="item">[output_prefix].html</a></strong></dt>
+
+<dd>
+<p>HTML file presenting the comparison table in a user-friendly way. The
+clickable headers allow to re-order the table according to any column.</p>
+</dd>
+<dt><strong><a name="output_prefix_alignments_pairwise_tab" class="item">[output_prefix_alignments_pairwise.tab]</a></strong></dt>
+
+<dd>
+<p>Tab-delimited text file containing the shifted matrices resulting from
+pairwise alignments.</p>
+</dd>
+<dt><strong><a name="output_prefix_alignments_pairwise_html" class="item">[output_prefix_alignments_pairwise.html]</a></strong></dt>
+
+<dd>
+<p>HTML file presentig the pairwise alignments in a user-friendly way:
+motifs are presented as sequence logos.</p>
+</dd>
+<dt><strong><a name="output_prefix_alignments_1ton_tab" class="item">[output_prefix_alignments_1ton.tab]</a></strong></dt>
+
+<dd>
+<p>Tab-delimited text file containing the shifted matrices resulting from
+1-to-n alignments.</p>
+</dd>
+<dt><strong><a name="output_prefix_alignments_1ton_html" class="item">[output_prefix_alignments_1ton.html]</a></strong></dt>
+
+<dd>
+<p>HTML file presentig the 1-to-n alignments in a user-friendly way:
+motifs are presented as sequence logos.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="algorithm">ALGORITHM</a></h1>
+<p>The program successively computes one or several (dis)similiraty
+metrics between each matrix of the first input file and each matrix of
+the secnd input file.</p>
+<p>Since the matrices are not supposed to be in phase, for each pair of
+matrix, the program tests all possible <em>offset</em> (shift) values
+between the two matrices.</p>
+<p>
+</p>
+<hr />
+<h1><a name="_dis_similarity_metrics">(DIS)SIMILARITY METRICS</a></h1>
+<p>
+</p>
+<h2><a name="symbols_used_for_the_metrics">Symbols used for the metrics</a></h2>
+<p>In the formula below, symbols are defined as follows</p>
+<dl>
+<dt><strong><a name="m1_m2" class="item"><em>m1, m2</em></a></strong></dt>
+
+<dd>
+<p>Two position-specific scoring matrices.</p>
+</dd>
+<dt><strong><a name="w1_w2" class="item"><em>w1,w2</em></a></strong></dt>
+
+<dd>
+<p>Number of columns of matrices m1 and m2, respectively.</p>
+</dd>
+<dt><strong><a name="row_number_r" class="item">Row number <em>r</em></a></strong></dt>
+
+<dd>
+<p>Number of rows in each matrix, which correspond to the number of
+residues in the alphabet (A,C,G,T for DNA motifs).</p>
+</dd>
+<dt><strong><a name="aligned_length_w" class="item">Aligned length <em>w</em></a></strong></dt>
+
+<dd>
+<p>Number of aligned columns between matrices m1 and m2 (depends on the
+offset between the two matrices).</p>
+<pre>
+ w &lt;= w1
+ w &lt;= w2</pre>
+</dd>
+<dt><strong><a name="total_length_w" class="item">Total length <em>W</em></a></strong></dt>
+
+<dd>
+<p>Total length of the alignent between matrices m1 and m2.</p>
+<pre>
+ W = w1 + w2 - w</pre>
+</dd>
+<dt><strong><a name="relative_length_wr" class="item">Relative length <em>Wr</em></a></strong></dt>
+
+<dd>
+<p>A measure of the mutual overlap between the aligned matrices.</p>
+<p>Wr = w / W</p>
+<p>This actually corresponds to the Jaccard coefficient (intersection /
+union), applied to the alignment lengths.</p>
+</dd>
+<dt><strong><a name="s1_s2" class="item"><em>s1, s2</em></a></strong></dt>
+
+<dd>
+<p>Number of sites in matrices m1 and m2, respectively.</p>
+</dd>
+<dt><strong><a name="n" class="item"><em>n</em></a></strong></dt>
+
+<dd>
+<p>Number of cells in the aligned portion of the matrices.</p>
+<pre>
+ n = w * r</pre>
+</dd>
+<dt><strong><a name="i" class="item"><em>i</em></a></strong></dt>
+
+<dd>
+<p>Index of a row of the aligned PSSM (corresponds to a residue).</p>
+</dd>
+<dt><strong><a name="j" class="item"><em>j</em></a></strong></dt>
+
+<dd>
+<p>Index of a column of the aligned PSSM (corresponds to an aligned
+position).</p>
+</dd>
+<dt><strong><a name="f1" class="item"><em>f1{i,j}</em></a></strong></dt>
+
+<dd>
+<p>Frequency of residue <em>r</em> in the <em>jth</em> column of the aligned subset of the
+first matrix (taking the offset into account).</p>
+</dd>
+<dt><strong><a name="f2" class="item"><em>f2{i,j}</em></a></strong></dt>
+
+<dd>
+<p>Frequency of residue r in the jth column of the aligned subset of the
+second matrix (taking the offset into account).</p>
+</dd>
+<dt><strong><a name="f1m_f2m" class="item"><em>f1m, f2m</em></a></strong></dt>
+
+<dd>
+<p>Mean frequency computed over all cells of matrices m1 and m2, respectively.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="sum_of_squared_distances__ssd_">Sum of Squared Distances (SSD)</a></h2>
+<p>BEWARE: this metrics is the real SSD, i.e. the simple sum of squared
+distance. It is a distance metric, in contrast with the &quot;SSD&quot; defined
+in STAMP, which is converted to a similarity metrics (see
+Sandelin-Wasserman below).</p>
+<pre>
+ SSD = SUM{i=1-&gt;r} SUM{j=1-&gt;w} [(f1{i,j} - f2{i,j})^2)]</pre>
+<p>
+</p>
+<h2><a name="sandelin_wasserman_similarity__sw_">Sandelin-Wasserman similarity (SW)</a></h2>
+<p>Also implemented in STAMP (under the name SSD) and TOMTOM (under the
+name Sandelin-Wasserman). This is a distance to similarity conversion
+of the SSD. The conversion is ensured by substracting each squared
+distance to a constant 2 (the max distance between two columns
+containing relative frequencies, i.e. one residue has frequency 1 in
+one column, and another residue has ffrequency 1 in the other column).</p>
+<pre>
+ SW = SUM{i=1-&gt;r} SUM{j=1-&gt;w} [2 - (f1{i,j} - f2{i,j})^2) ]</pre>
+<p>Source: Sandelin A &amp; Wasserman WW (2004) J Mol Biol 338:207-215.</p>
+<p>
+</p>
+<h2><a name="normalized_sandelin_wasserman_similarity__nsw_">Normalized Sandelin-Wasserman similarity (NSW)</a></h2>
+<p>Sandelin-Wasserman (SW) similarity normalized by the number of aligned
+columns (<em>w</em>).</p>
+<pre>
+ NSW = SW / (2*w)</pre>
+<p>NSW takes a value comprized between 0 (not a single corresponding
+residue) and 1 (matrices are identical for all the aligned columns).</p>
+<p>
+</p>
+<h2><a name="euclidian_distance__deucl_">Euclidian distance (dEucl)</a></h2>
+<pre>
+ dEucl = sqrt( SUM{i=1-&gt;r} SUM{j=1-&gt;w} (f1{i,j} - f2{i,j})^2)</pre>
+<p>Since relative frequencies can take values from 0 to 1, the Euclidian
+distance can take values from 0 to sqrt(2)*w.</p>
+<p>
+</p>
+<h2><a name="normalized_euclidian_distance__ndeucl_">Normalized Euclidian distance (NdEucl)</a></h2>
+<p>Euclidian distance normalized by the number of aligned columns
+(<em>w</em>).</p>
+<pre>
+ NdEucl = dEucl / w</pre>
+<p>NdEucl can take values from 0 to <code>sqrt(2)</code>.</p>
+<p>Note that this differs from the definition provided in Pape et
+al. (2008).</p>
+<p>
+</p>
+<h2><a name="normalized_euclidian_similarity__nseucl_">Normalized Euclidian similarity (NsEucl)</a></h2>
+<p>A similarity metrics derived from the normalized Euclidian distance.</p>
+<pre>
+ NsEucl = (Max(NdEucl) - NdEucl) / Max(NdEucl)
+        = (sqrt(2) - NdEucl) / sqrt(2)</pre>
+<p>where <em>Max(NdEucl)</em>=sqrt(2) is the maximal possible Euclidian
+distance for the current pair of matrices. The Normalized Euclidian
+similarity can vary from 0 (idential matrices) to 1 (matrices with a
+single residue per column, and those residues systematically differ
+between the two matrices).</p>
+<p>
+</p>
+<h2><a name="kullback_leibler_distance__dkl_">Kullback-Leibler distance (dKL)</a></h2>
+<p>As defined in Aerts et al. (2003). Also called <strong>Mutual Information</strong>.</p>
+<pre>
+ dKL = 1/(2w) * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (
+                   f1{i,j}*log(f1{i,j}/f2{i,j})
+                   + f2{i,j}*log(f2{i,j}/f1{i,j}))</pre>
+<p>Note that the KL distance is problematic for matrices containing zero
+values: for example, if f1(i,k)=0 and f2(i,j)=1, we have :
+  KL(i,j) = (0*log(0) + 1*log(1/0)) = 0 + log(Inf) = Inf</p>
+<p>One can circumvent this problem by using pseudo-count corrected
+matrices (f'(i,j)), but then the KL distance is strongly dependent on
+the somewhat arbitrary choice of the pseudo-count value.</p>
+<p>
+</p>
+<h2><a name="covariance__cov_">Covariance (cov)</a></h2>
+<pre>
+ cov = 1/n * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (f1{i,j} - f1m) * (f2{i,j} - f2m)</pre>
+<p>Beware : this is the classical covariance defined in statistical
+textbooks. It has nothing to do with the &quot;natural covariance&quot; of Pape
+(which still needs to be implemented here).  What we compute here is
+simply the covariance between the counts in the aligned cells of the
+respective matrices.</p>
+<p>
+</p>
+<h2><a name="coefficient_of_correlation__cor_">Coefficient of correlation (cor)</a></h2>
+<pre>
+ v1 = 1/n * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (f1{i,j} - f1m)^2
+ v2 = 1/n * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (f2{i,j} - f2m)^2
+ cor = cov/ sqrt(v1*v2)</pre>
+<p>
+</p>
+<h2><a name="normalized_correlation__ncor_">Normalized correlation (Ncor)</a></h2>
+<p>The normalized correlation prevents matches covering only a small
+fraction of the matrix (e.g. matches between the last column of the
+query matrix and the first column of the reference matrix, or matches
+of a very small motif against a large one).</p>
+<p>The normalization factor is the relative length (Wr), i.e. the number
+of aligned columns divided by the total columns of the alignment.</p>
+<p>Ncor = cor * Wr</p>
+<p>This correction is particularly important to avoid selecting spurious
+alignments between short fragments of the flanks of the matrices
+(e.g. single-column alignments). For this reasons, <em>Ncor</em> generally
+gives a better estimation of motif similarity than <em>cor</em>, and we
+recommend it as similarity score.</p>
+<p>Imposing a too stringent lower threshold on Ncor may however reduce
+the sensitivity, and in particular prevent from detecting matches
+between half-motifs (e.g. in the case of dimeric transcription factor
+recognizing composite motifs).</p>
+<p>
+</p>
+<h3><a name="note">Note</a></h3>
+<p>An alternative would be to use as normalizing factor the length of the
+alignment (w) relative to the length of the shorter motif.</p>
+<pre>
+ Ncor = cor * w / min(w1,w2)</pre>
+<p>This however tends to favour matches between very short motifs (4-5
+residues) which cover only a fraction of the query motif.</p>
+<p>
+</p>
+<h2><a name="correlation_of_the_information_content__icor_">Correlation of the information content (Icor)</a></h2>
+<p>Pearson's correlation computed on the information content matrices
+(I1, I2) rather than on the frequencies.</p>
+<pre>
+ Icov = 1/n * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (I1{i,j} - f1m) * (I2{i,j} - f2m)
+ Iv1 = 1/n * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (I1{i,j} - f1m)^2
+ Iv2 = 1/n * SUM{i=1-&gt;r} SUM{j=1-&gt;w} (I2{i,j} - f2m)^2
+ cor = Icov/ sqrt(Iv1*Iv2)</pre>
+<p>The <em>Icor</em> score fixes a weakness of the <em>cor</em> score and all
+other other metrics above, which only take into account the residue
+frequencies whilst ignoring the background frequencies.</p>
+<p>A typical manifestation of this problem is that the <em>cor</em> score
+occasionally returns alignements between non-informative pieces of the
+matrices , which appear flat on the aligned logos. The reason why
+uninformative columns may have a good correlation is that, if both
+matrices have the same compositional bias (for example 30%A, 20%C,
+20%G and 30%T), they will be correlated. Consequently, the columns
+reflecting the background will contribute to increase the correlation
+coefficient.</p>
+<p>The information content corrects this bias by relativizing the matrix
+frequencies with respect to the background residue probaiblities.</p>
+<pre>
+ I{i,j} = f{i,j} log (f{i,j}/p{j})</pre>
+<p>where <em>p{j}</em> is the prior probability of residue <em>j</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="references">REFERENCES</a></h1>
+<p>Distances between PSSMs have been treated in many ways. The most
+recent and relevant articles are cited hereafter.</p>
+<dl>
+<dt><strong><a name="bioinformatics" class="item">Aerts et al. Computational detection of cis -regulatory
+modules. Bioinformatics (2003) vol. 19 Suppl 2 pp. ii5-14</a></strong></dt>
+
+<dt><strong><a name="biol" class="item">Gupta et al. Quantifying similarity between motifs. Genome Biol
+(2007) vol. 8 (2) pp. R24.</a></strong></dt>
+
+<dt><strong><a name="24" class="item">Pape, U.J., Rahman, S., and Vingron, M. (2008). Natural
+similarity measures between position frequency matrices with an
+application to clustering. Bioinformatics 24 (3) pp. 350-7.</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong></dt>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong></dt>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong></dt>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+<dt><strong><a name="file1_matrix_file1" class="item"><strong>-file1 matrix_file1</strong></a></strong></dt>
+
+<dd>
+<p>The first input file containing one or several matrices.</p>
+</dd>
+<dt><strong><a name="file2_matrix_file2" class="item"><strong>-file2 matrix_file2</strong></a></strong></dt>
+
+<dd>
+<p>The second input file containing one or several matrices.</p>
+</dd>
+<dt><strong><a name="file_single_matrix_file" class="item"><strong>-file single_matrix_file</strong></a></strong></dt>
+
+<dd>
+<p>Use a single matrix file as input. Each matrix of this file is
+compared to each other. This is equivalent to:
+ -file1 single_matrix_file -file2 single_matrix_file</p>
+</dd>
+<dt><strong><a name="mlist1_matrix_list" class="item"><strong>-mlist1 matrix list</strong></a></strong></dt>
+
+<dd>
+<p>The fisrt input file contaning a list of matrix files (given as paths)</p>
+</dd>
+<dt><strong><a name="mlist2_matrix_list" class="item"><strong>-mlist2 matrix list</strong></a></strong></dt>
+
+<dd>
+<p>The second input file contaning a list of matrix files (given as paths)
+The reverse complement is computed for this set of matrices.</p>
+</dd>
+<dt><strong><a name="format1_matrix_format1" class="item"><strong>-format1 matrix_format1</strong></a></strong></dt>
+
+<dd>
+<p>Specify the matrix format for the first input file only (requires
+-format2).</p>
+</dd>
+<dt><strong><a name="format2_matrix_format2" class="item"><strong>-format2 matrix_format2</strong></a></strong></dt>
+
+<dd>
+<p>Specify the matrix format for the second input file only (requires
+-format1).</p>
+</dd>
+<dt><strong><a name="format_matrix_format" class="item"><strong>-format matrix_format</strong></a></strong></dt>
+
+<dd>
+<p>Specify the matrix format for both input files (alternatively, see
+options -format1 and -format2).</p>
+</dd>
+<dt><strong><a name="bgfile_background_file" class="item"><strong>-bgfile background_file</strong></a></strong></dt>
+
+<dd>
+<p>Background model file.</p>
+</dd>
+<dt><strong><a name="bg_format_format" class="item"><strong>-bg_format format</strong></a></strong></dt>
+
+<dd>
+<p>Format for the background model file.</p>
+<p>Supported formats: all the input formats supported by
+convert-background-model.</p>
+</dd>
+<dt><strong><a name="top1_x" class="item"><strong>-top1 X</strong></a></strong></dt>
+
+<dd>
+<p>Only analyze the first X motifs of the first file. This options is
+convenient for quick testing before starting the full analysis.</p>
+</dd>
+<dt><strong><a name="top2_x" class="item"><strong>-top2 X</strong></a></strong></dt>
+
+<dd>
+<p>Only analyze the first X motifs of the second file. This options is
+convenient for quick testing before starting the full analysis.</p>
+</dd>
+<dt><strong><a name="o_output_prefix" class="item"><strong>-o output_prefix</strong></a></strong></dt>
+
+<dd>
+<p>Prefix for the output files. The output prefix is mandatory for some
+return fields (alignments, graphs, ...).</p>
+<p>This prefix will be appended with a series of suffixes for the
+different output types (see section OUTPUT FORMATS above for the
+detail).</p>
+</dd>
+<dt><strong><a name="mode_matches_profiles" class="item"><strong>-mode matches | profiles</strong></a></strong></dt>
+
+<dl>
+<dt><strong><a name="matches" class="item"><em>-format matches</em> (default)</a></strong></dt>
+
+<dd>
+<p>Return matches between any matrix of the file1 and any matrix of
+file2.</p>
+<p>This is the typical use of <em>compare-matrices</em>: comparing one or
+several query motifs (e.g. obtained from motif discovery) with a
+collection of reference motifs (e.f. a database of experimentally
+characterized transcription factor binding motifs, such as JASPAR,
+TRANSFAC, RegulonDB, ...).</p>
+<p>For a given pair of matrices (one from file1 and one from file2), the
+program tests all possible offsets, and measures one or several
+matching scores (see section &quot;(Dis)similarity metrics&quot; above). The
+program only returns the sore of the best alignemnt between the two
+matrices. The &quot;best&quot; alignement is the combination of offset and
+strand (with the option -strand DR) that maximizes the default score
+(Ncor). Alternative scores can be used as optimality criteria with the
+option -sort.</p>
+</dd>
+<dt><strong><a name="format_profiles" class="item"><em>-format profiles</em></a></strong></dt>
+
+<dd>
+<p>Return a table with one row for each possible alignment offset between
+two matrices, and various columns indicating the matching parameters
+(offset, strand, aligned width,...), the matching scores, and the
+consensus of the aligned columns of the matrices.</p>
+<p>Matching profiles are convenient for drawing the similarity profiles,
+or for analyzing the correlations between various similarity metrics,
+but they are too verbosy for the typical use of <em>compare-matrices</em>
+(detect matches between a query matrix and a database of reference
+matrices). The formats &quot;matches&quot; and &quot;table&quot; are more convenient for
+basic use.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="distinct" class="item"><strong>-distinct</strong></a></strong></dt>
+
+<dd>
+<p>Skip comparison between a matrix and itself.</p>
+<p>This option is useful when the program is sused to compare all
+matrices of a given file to all matrices of the same file, to avoid
+comparing each matrix to itself.</p>
+<p>Beware: the criterion for considering two matrices identical is that
+they have the same identifier. If two matrices have exactly the same
+content (in terms of occurrences per position) but different
+identifiers, they will be compared.</p>
+</dd>
+<dt><strong><a name="strand_d_r_dr" class="item"><strong>-strand D | R | DR</strong></a></strong></dt>
+
+<dd>
+<p>Perform matrix comparisons in direct (D) reverse complementary (R) or
+both orientations (DR, default option).</p>
+<p>When the R or DR options are activated, all matrices of the second
+matrix file are converted to the reverse complementary matrix.</p>
+<p>This option is useful to answer very particular questions, for example</p>
+<dl>
+<dt><strong><a name="way" class="item">Comparing motifs in a strand-insensitive way (-strand DR)</a></strong></dt>
+
+<dd>
+<p>DNA-binding motifs are usually strand-insensitive. A motif may be
+detected in one given orientation by a motif-discovery algorithm, but
+annotated in the reverse complementary orientation in a motif
+database. For DNA binding motifs, we thus recomment the DR option.</p>
+<p>On the contrary, RNA-related signals (termination, poly-adenylation,
+miRNA) are strand-sensitive, and should be compared in a single
+orientation (-strand D).</p>
+</dd>
+<dt><strong><a name="detecting_reverse_complementary_palindromic_motifs" class="item">Detecting reverse complementary palindromic motifs</a></strong></dt>
+
+<dd>
+<p>An example of reverse complementary palindromic motif is
+tCAGswwsGTGa. When a motif is reverse complementary palindromic, the
+matrix is correlated to its own reverse complement.</p>
+<p><em>Remark about a frequent misconception of biological palindromes</em></p>
+<p>Reverse complementary palindroms are frequent in DNA signals
+(e.g. transcription factor binding sites, restriction sites, ...)
+because they correspond to a rotational symmetry in the 3D
+structure. Such symmetrical motifs are often characteristic of sites
+recognized by homodimeric complexes.</p>
+<p>By contrast, simple string-based palindromes (e.g. CAGTTGAC) do
+absolutely not correspond to any symmetry on the biochemical point of
+view, because the 3D structure of the corresponding double helix is
+not symmetrical. The apparent symmetry is an artifact of the
+string-based representation, but the corresponding molecule has
+neither rotational nor translational symmetry.</p>
+<p>DNA signals can either be symmetrical (reverse complementary
+palindromes, tandem repeats) or asymmetrical.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="matrix_id" class="item"><strong>-matrix_id #</strong></a></strong></dt>
+
+<dd>
+<p>Obsolete option for returning matrix names, Replaced by -return
+matrix_name. Maintained for backward compatibility.</p>
+</dd>
+<dt><strong><a name="return_return_fields" class="item"><strong>-return return_fields</strong></a></strong></dt>
+
+<dd>
+<p>List of fields to return (only valid for the formats &quot;profiles&quot; and
+&quot;matches&quot;).</p>
+<p>Supported return fields:</p>
+<dl>
+<dt><strong><a name="offset" class="item"><em>offset</em></a></strong></dt>
+
+<dd>
+<p>ascending (default for the profile mode)</p>
+</dd>
+<dt><strong><a name="ncor" class="item"><em>Ncor</em></a></strong></dt>
+
+<dd>
+<p>decreasing (default for the matching mode)</p>
+</dd>
+<dt><strong><a name="cor" class="item"><em>cor</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="cov" class="item"><em>cov</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="ssd" class="item"><em>SSD</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="nsw" class="item"><em>NSW</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="sw" class="item"><em>SW</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="deucl" class="item"><em>dEucl</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="ndeucl" class="item"><em>NdEucl</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="nseucl" class="item"><em>NsEucl</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="dkl" class="item"><em>dKL</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="matrix_number" class="item"><em>matrix_number</em></a></strong></dt>
+
+<dd>
+<p>Number of the matrices in the input files</p>
+</dd>
+<dt><strong><em>matrix_id</em></strong></dt>
+
+<dd>
+<p>Identifiers of the matrices</p>
+</dd>
+<dt><strong><a name="matrix_name" class="item"><em>matrix_name</em></a></strong></dt>
+
+<dd>
+<p>Names of the matrices</p>
+</dd>
+<dt><strong><a name="matrix_ac" class="item"><em>matrix_ac</em></a></strong></dt>
+
+<dt><strong><a name="width" class="item"><em>width</em></a></strong></dt>
+
+<dd>
+<p>Width of the matrices and the alignment</p>
+</dd>
+<dt><strong><a name="strand" class="item"><em>strand</em></a></strong></dt>
+
+<dd>
+<p>Direct (D) or Reverse complementary (R) comparison</p>
+</dd>
+<dt><strong><em>offset</em></strong></dt>
+
+<dd>
+<p>Offset between the positions of the first and second matrix</p>
+</dd>
+<dt><strong><a name="pos" class="item"><em>pos</em></a></strong></dt>
+
+<dd>
+<p>Relative positions the aligned matrices (start, end, strand, width)</p>
+</dd>
+<dt><strong><a name="consensus" class="item"><em>consensus</em></a></strong></dt>
+
+<dt><strong><a name="rank" class="item"><em>rank</em></a></strong></dt>
+
+<dt><strong><a name="alignments_pairwise" class="item"><em>alignments_pairwise</em></a></strong></dt>
+
+<dd>
+<p>Shifted matrices resulting from the pairwise alignments.</p>
+</dd>
+<dt><strong><a name="alignments_1ton" class="item"><em>alignments_1ton</em></a></strong></dt>
+
+<dd>
+<p>Shifted matrices resulting from the 1-to-N alignments.</p>
+</dd>
+<dt><strong><a name="alignments" class="item"><em>alignments</em></a></strong></dt>
+
+<dd>
+<p>Shifted matrices resulting from the alignments (pairwise and 1-to-N).</p>
+</dd>
+<dt><strong><a name="all" class="item"><em>all</em></a></strong></dt>
+
+<dd>
+<p>All supported output fields, including all metrics.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="sort_sort_field" class="item"><strong>-sort sort_field</strong></a></strong></dt>
+
+<dd>
+<p>Field to sort the results. The sorting direction depends on the
+metric: ascending for dissimilarity metrics, decreasing for similarity
+metrics.</p>
+<p>Supported sort fields:</p>
+<dl>
+<dt><strong><em>offset</em></strong></dt>
+
+<dd>
+<p>ascending (default for the profile mode)</p>
+</dd>
+<dt><strong><a name="ncor2" class="item"><em>Ncor</em></a></strong></dt>
+
+<dd>
+<p>decreasing (default for the matching mode)</p>
+</dd>
+<dt><strong><em>cor</em></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><em>cov</em></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="ssd2" class="item"><em>SSD</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="sw2" class="item"><em>SW</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="nsw2" class="item"><em>NSW</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="deucl2" class="item"><em>dEucl</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="ndeucl2" class="item"><em>NdEucl</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+<dt><strong><a name="nseucl2" class="item"><em>NsEucl</em></a></strong></dt>
+
+<dd>
+<p>decreasing</p>
+</dd>
+<dt><strong><a name="dkl2" class="item"><em>dKL</em></a></strong></dt>
+
+<dd>
+<p>ascending</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="lth_param_lower_threshold" class="item"><strong>-lth param lower_threshold</strong></a></strong></dt>
+
+<dt><strong><a name="uth_param_upper_threshold" class="item"><strong>-uth param upper_threshold</strong></a></strong></dt>
+
+<dd>
+<p>Threshold on some parameter (-lth: lower, -uth: upper threshold).</p>
+<p>Supported threshold fields : rank, dEucl, cor, cov, ali_len, offset</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="convert_matrix" class="item"><strong>convert-matrix</strong></a></strong></dt>
+
+<dt><strong><a name="matrix_scan" class="item"><strong>matrix-scan</strong></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="wish_list">WISH LIST</a></h1>
+<dl>
+<dt><strong><a name="additional_metrics" class="item"><strong>Additional metrics</strong></a></strong></dt>
+
+<dl>
+<dt><strong><a name="mutual_information" class="item">Mutual information</a></strong></dt>
+
+<dd>
+<p>We should check if this fixes the problems of 0 values that we have
+with the KL distance.</p>
+</dd>
+<dt><strong><a name="the_natural_covariance" class="item">The &quot;natural covariance&quot;</a></strong></dt>
+
+<dd>
+<p>Pape, U. J., Rahmann, S. and Vingron, M. (2008). Natural similarity
+measures between position frequency matrices with an application to
+clustering. Bioinformatics 24, 350-7.</p>
+<p>This metrics measures the covariance between hits of two matrices
+above a given threshold for each of them.</p>
+</dd>
+<dt><strong><a name="value" class="item">chi2 P-value (for the sake of comparison).</a></strong></dt>
+
+<dd>
+<p>Note that a condition of applicability of the chi2 P-value is that the
+expected value should be &gt;= 5 for each cell of the matrix. This
+condition is usually not fulfilled for the PSSM we use for motif
+scanning.</p>
+</dd>
+<dt><strong><a name="ratio" class="item">Average Log Likelihood Ratio (ALLR)</a></strong></dt>
+
+<dd>
+<pre>
+ Source: Wang T &amp; Stormo GD (2003) Bioinformatics 19:2369-2380
+ Also implemented in STAMP.</pre>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="pseudo" class="item"><strong>-pseudo</strong></a></strong></dt>
+
+<dd>
+<p>Pseudo-counts to be added to all matrices.</p>
+</dd>
+<dt><strong><a name="comparison_mode_table_consensus" class="item"><strong>-comparison_mode table | consensus</strong></a></strong></dt>
+
+<dl>
+<dt><strong><a name="return_clusters" class="item"><em>-return clusters</em></a></strong></dt>
+
+<dd>
+<p>Cluster motifs (only valid with a single input file).</p>
+</dd>
+<dt><strong><a name="return_crosstable_field" class="item"><em>-return crosstable field</em></a></strong></dt>
+
+<dd>
+<p>Export a table with one row per matrix of the file 1, one column per
+matrix of file 2, where each cell indicates the value of the selected
+field for the corresponding pair of matrices.</p>
+</dd>
+<dt><strong><a name="return_graph" class="item"><em>-return graph</em></a></strong></dt>
+
+<dd>
+<p>Export a graph where nodes correspond to input matrices, and edges
+indicate similarities between them.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+
+</body>
+
+</html>

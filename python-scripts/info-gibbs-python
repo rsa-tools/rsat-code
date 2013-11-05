@@ -1,0 +1,350 @@
+#!/usr/bin/env python
+'''NAME
+        %(progname)s
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+DESCRIPTION
+        Gibbs sampling algorithm for motifs discovery.
+        Searches for highly conserved motifs in a set of DNA sequences.
+        Convervation is based on the motif information content (Relative Entropy).
+
+CATEGORY
+        sequences
+        motif discovery
+        
+USAGE        
+        %(usage)s
+
+ARGUMENTS
+  GENERAL OPTIONS
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit
+    -v #, --verbosity=#   set verbosity to level #
+    
+
+    -i #, --input=#       read sequence from # (must be in FASTA format)
+                          if not specified, the standard input is used
+    -o #, --output=#      output results to #
+                          if not specified, the standard output is used
+    -l #, --length=#      set oligomer length to #
+                          when the option dyad is used # represents the length of one monad
+                          EXAMPLE: --length=7
+    -d, --dyad            use dyad. -l option is the monad length. spacing should be used
+    --spacing=#           set the spacing.
+                          EXAMPLE: --spacing=0:10
+
+    -s #, --strand=#      search in foward strand + or in both strands +- (default)
+                          EXAMPLE: --strand=+
+
+    -m #, --markov=#      use a Markov model of order # calibrated from
+                          input sequences as a background model
+                          order 0 corresponds to single nucleotide frequencies
+                          EXAMPLE: --markov=2 (Markov chain of order 2)
+    -d #, --dmin=#        set minimal distance between 2 moitf occurrences to #
+
+    --bgfile=#            use a predefined ORM background model.
+                          # must be in ORM background format
+                          EXAMPLE --bgfile=mybgfile
+
+    --iter=#              maximum number of Gibbs sampling iterations
+                          DEFAULT: 100
+    --EM=#                number of Expecation Maximization cycles
+                          DEFAULT: 0
+    --words=#             number of motif occurrences that are expected to
+                          be found
+                          DEFAULT: 10
+    --motifs=#            number of motifs to extract (one by default)
+    --nrun=#              try to run the Gibbs sampling seach # times
+    --finalcycle          Try to optimise the number of words in a final cycle
+    --shift=#             try to shift the motif evey # iterations (10 by default)
+    --seed=#              use # for random number intialization
+    --fromwords=#         read words in # and use them as a starting motif
+    --frommatrix=#        read matrix in # and use it as a starting motif
+    --fromassembly=#      read assembly in # and use it as a starting motif
+
+'''
+USAGE = '''%s -l motiflength [-i inputfile] [-o outputfile] [-h | --help]'''
+
+VERSION='0.8.2'
+
+HEADER = ''';
+; info-gibbs
+; Detection of conserved motifs based on information content
+; %(command)s
+; version                          %(version)s
+; date                             %(date)s
+; running time                     %(runningTime)s
+; sequences                        %(sequences)s
+; expected motif occurrences       %(words)s
+; motifs                           %(motifs)s
+; random seed                      %(seed)d
+;'''
+
+########################################
+#                                      #
+# IMPORTS
+#                                      #
+########################################
+import os
+import sys
+import glob
+import optparse
+import time
+import random
+from pydoc import pager
+from math import *
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+# BEGIN DEPENDENCIES
+import cli
+import tab
+import dna
+import gibbs
+import markov
+import matrix
+import cache
+# END DEPENDENCIES
+
+########################################
+#                                      #
+#  COMMAND LINE OPTIONS
+#                                      #
+########################################  
+PROG_NAME = os.path.basename(sys.argv[0])
+parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
+
+parser.add_option("-l", "--length", action="store", dest="l", type="int")
+parser.add_option("-d", "--dmin",   action="store", dest="dmin", type="int", default=0)
+parser.add_option("-i", "--input",  action="store", dest="input",  default=sys.stdin)
+parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
+parser.add_option("-s", "--strand",                 dest="strand", choices=['+', '+-'], default='+-')
+parser.add_option("--dyad",         action="store_true", dest="dyad")
+parser.add_option("--spacing",      action="store", dest="spacing", type="string", default=None)
+parser.add_option("-n", "--iter",   action="store", dest="iter",    type="int",    default=500)
+parser.add_option("--EM",           action="store", dest="EM",      type="int",    default=0)
+parser.add_option("-w", "--words",  action="store", dest="words",   type="int",    default=10)
+parser.add_option("--pseudo",       action="store", dest="pseudo",  type="float",  default=1.0)
+parser.add_option("-t", "--temperature",action="store", dest="temperature",  type="float",  default=1.0)
+parser.add_option("--motifs",       action="store", dest="motifs",  type="int",    default=1)
+parser.add_option("--nrun",         action="store", dest="nrun",    type="int",    default=5)
+parser.add_option("--shift",        action="store", dest="shift",   type="int",    default=10)
+parser.add_option("--finalcycle",   action="store_true", dest="finalcycle")
+parser.add_option("-m", "--markov", action="store", dest="markov",          type="int",    default=0)
+parser.add_option("--bgfile",       action="store", dest="bg",              type="str", default=None)
+#parser.add_option("--type",         action="store", dest="type", default="93", choices=['93', '95'])
+parser.add_option("--seed",         action="store", dest="seed",            type="int", default=None)
+parser.add_option("--fromwords",    action="store", dest="fromwords",       type="str", default=None)
+parser.add_option("--frommatrix",   action="store", dest="frommatrix",      type="str", default=None)
+parser.add_option("--fromassembly", action="store", dest="fromassembly",    type="str", default=None)
+parser.add_option("--fulloutput",   action="store_true", dest="fulloutput", default=False, help=optparse.SUPPRESS_HELP)
+parser.add_option("--top",          action="store", dest="top",             type="int",   default=100, help=optparse.SUPPRESS_HELP)
+parser.add_option("--dir",          action="store", dest="dir",             type="str",   default="", help=optparse.SUPPRESS_HELP)
+parser.add_option("--minwords",     action="store", dest="minwords",        type="int",   default=0, help=optparse.SUPPRESS_HELP)
+parser.add_option("--maxwords",     action="store", dest="maxwords",        type="int",   default=0, help=optparse.SUPPRESS_HELP)
+parser.add_option("--alpha",        action="store", dest="alpha",           type="float", default=1, help=optparse.SUPPRESS_HELP)
+parser.add_option("--sampling", dest="sampling", choices=['llr', '93', 'IC'],   default="llr")
+
+parser.add_option("--normalize",    action="store", dest="normalize",       type="int",   default=0, help=optparse.SUPPRESS_HELP)
+parser.add_option("--percent",      action="store", dest="percent",         type="float", default=1.0, help=optparse.SUPPRESS_HELP)
+
+parser.add_option("-v", "--verbosity", action="store",      dest="verbosity", type="int", default=0)
+parser.add_option("--profile",         action="store_true", dest="profile", help=optparse.SUPPRESS_HELP)
+parser.add_option("--debug",           action="store_true", dest="debug",   help=optparse.SUPPRESS_HELP)
+parser.add_option("-h", "--help",      action="store_true", dest="help")
+parser.add_option("-f", "--fast",      action="store_true", dest="fast")
+
+(options, args) = parser.parse_args()
+
+#cli.UPDATE = 1
+cli.VERBOSITY = options.verbosity
+cli.trace = 0
+if options.debug:
+    cli.VERBOSITY = 10
+
+########################################
+#                                      #
+#  MAIN
+#                                      #
+########################################
+def main(args, options):
+    timer = tab.Timer()
+    
+    ##
+    #
+    # OPTIONS
+    #
+    ##
+    if options.seed == None:
+        options.seed = random.randrange(0, sys.maxint)
+    random.seed(options.seed)
+
+
+    if options.spacing:
+        options.spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
+    else:
+        options.spacing = (0,0)
+
+    # pseudo count + temperature
+    matrix.PSEUDO = options.pseudo
+    gibbs.T = options.temperature
+
+
+    ##
+    #
+    # INPUT SEQUENCES
+    #
+    ##
+    sequences = dna.read_fasta(options.input, options.strand)
+
+
+    ##
+    #
+    # OUPUT
+    #
+    ##
+    if type(options.output) is str:
+        output = open(options.output, 'w')
+    else:
+        output = options.output
+
+    ##
+    #
+    # BG MODEL
+    #
+    ##
+    if options.bg:
+        mm = markov.oligo2MM(options.bg)
+    else:
+        mm = markov.MM(options.markov)
+        mm.learn(sequences)
+        #print mm.priori
+
+    mm._logP = mm.logP
+    mmcache = cache.MemoryCache(mm._logP)
+    mm.logP = mmcache.__call__
+
+    ##
+    #
+    # STARTING MOTIF
+    #
+    ##
+    if options.fromassembly != None:
+        sites = tab.load_assemblies(options.fromassembly)[0]
+        if options.dyad:
+            parameters['spacing'] = len(sites[0]) - 2*options.l
+            spacing = parameters['spacing'], parameters['spacing']
+            parameters['l'] = len(sites[0])
+        startmotif = motif.words2motif(sites, sequences, mm, parameters)
+        #print startmotif.full_str()
+    elif options.fromwords != None:
+        sites = tab.load_oligo_file(options.fromwords).keys()
+        if options.dyad:
+            parameters['spacing'] = len(sites[0]) - 2*options.l
+            spacing = parameters['spacing'], parameters['spacing']
+            parameters['l'] = len(sites[0])
+        startmotif = motif.words2motif(sites, sequences, mm, parameters)
+        #print start.full_str()
+    elif options.frommatrix != None:
+        m = matrix.tab2matrix(options.frommatrix)
+        startmotif = gibbs.matrix2motif(m, options.l, options.words, sequences, mm)
+
+    else:
+        startmotif = None
+
+    # Trace
+    cli.DIR = options.dir
+
+    ##
+    #
+    # MAIN
+    #
+    ##
+    if options.dyad:
+        motifs_str = gibbs.run_dyad(sequences,
+                            startmotif = startmotif,
+                            bg = mm,
+                            length=options.l, 
+                            N=options.words,
+                            gibbsiterations=options.iter,
+                            EMiterations=options.EM,
+                            ntrials=options.nrun,
+                            nmotifs=options.motifs,
+                            score=options.sampling,
+                            strand=options.strand,
+                            spacing=options.spacing,
+                            finalcycle=options.finalcycle
+                            )
+    else:
+        motifs_str = gibbs.run(sequences,
+                            startmotif = startmotif,
+                            bg = mm,
+                            length=options.l, 
+                            N=options.words,
+                            gibbsiterations=options.iter,
+                            EMiterations=options.EM,
+                            ntrials=options.nrun,
+                            nmotifs=options.motifs,
+                            score=options.sampling,
+                            strand=options.strand,
+                            dmin=options.dmin,
+                            finalcycle=options.finalcycle,
+                            )
+        
+
+
+    output.write(HEADER % dict(command=os.path.basename(sys.argv[0]) + ' ' + ' '.join(sys.argv[1:]),
+                             date = time.ctime(),
+                             runningTime = str(timer),
+                             seed = options.seed,
+                             version = VERSION,
+                             sequences = len(sequences),
+                             motifs = options.motifs,
+                             words = options.words)
+                    )
+
+    output.write('\n')
+    output.write('\n//\n'.join(motifs_str) + '\n')
+
+    #print mmcache
+
+if __name__ == '__main__':
+    try:
+        if options.help:
+            doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
+            pager(doc)
+            sys.exit(0)
+        if not options.l:
+            parser.print_usage()
+            sys.exit(0)            
+
+        try:
+            if options.fast:
+                import psyco
+                psyco.full()
+        except ImportError:
+            if options.debug:
+                sys.stderr.write('Can not use psyco\n')
+
+        if options.profile:
+            import devel
+            devel.prof('main(args, options)')
+        else:
+            main(args, options)
+
+    except KeyboardInterrupt:
+        sys.stderr.write('\n')
+        sys.stderr.flush()
+        sys.exit(2)
+    except SystemExit:
+        pass
+    except:
+        sys.stderr.write('Fatal Error\n')
+        if options.debug:
+            raise
+        sys.exit(2)
+
+

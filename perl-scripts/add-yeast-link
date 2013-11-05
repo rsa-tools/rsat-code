@@ -1,0 +1,260 @@
+#!/usr/bin/perl
+
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::OrganismManager;
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+$organism_name = "Saccharomyces_cerevisiae";
+$orf_col = 1; ### column of the input file containing the ORF identifier (on the basis of which  the link is established)
+$database = "sgd";
+$supported_db{'sgd'} = 1;
+$supported_db{'ymgv'} = 1;
+$supported_db{'mips'} = 1;
+#$supported_db{'ypd'} = 1;
+
+@supported_db = sort keys %supported_db;
+
+$supported_db = join ",", @supported_db;
+
+&ReadArguments();
+
+################################################################
+## Check argument values
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    ## By default, accept all feature types
+    %accepted_feature_types = %supported_feature_types;
+#	$accepted_feature_types{cds} = 1;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
+
+#### databases
+if ($#databases <= 0) {
+  @databases = @supported_db;
+}
+
+#### organism
+warn "; Checking organism $organism_name\n" if ($verbose >= 1);
+&RSAT::OrganismManager::CheckOrganism($organism_name, $annotation_table);
+
+warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
+&ReadFeatures($organism_name, $annotation_table, $feature_types);
+warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
+&ReadSynonyms($organism_name);
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print ";add-yeast-link result\n";
+  if ($inputfile ne "") {
+    print ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print ";Output file	$outputfile\n";
+  }
+  print ";Databes\t$database";
+}
+
+###### execute the command #########
+
+#print $out "<HTML>\n";
+#print $out "<TITLE>$inputfile</TITLE></HEAD>\n" unless ($inputfile eq "");
+#print $out "<BODY>\n";
+#print $out "<H1>$inputfile</H1>\n";
+#print $out "<PRE>\n";
+
+
+$link_start{'mips'} = "<A TARGET=_blank HREF=\"http://mips.gsf.de/genre/proj/yeast/searchEntryAction.do?text=";
+#$link_start{'mips'} = "<A TARGET=_blank HREF=\"http://mips.gsf.de/cgi-bin/proj/yeast/search.pl?searchstr=";
+#$link_start{'mips'} = "<A TARGET=_blank HREF=\"http:\/\/speedy.mips.biochem.mpg.de\/htbin\/search_code\/";
+#$link_start{'ypd'} = "<A TARGET=_blank HREF=\"http:\/\/quest7.proteome.com\/YPD\/";
+#$link_start{'sgd'} = "<A TARGET=_blank HREF=\"http:\/\/genome-www.stanford.edu\/cgi-bin\/dbrun\/SacchDB?find+Locus+%22";
+$link_start{'sgd'} = "<A TARGET=_blank HREF=\"http://genome-www4.stanford.edu/cgi-bin/SGD/locus.pl?locus=";
+$link_start{'ymgv'} = "<A TARGET=_blank HREF=\"http://www.transcriptome.ens.fr/ymgv/incoming.php?query=";
+
+$link_end{'mips'} = "\">";
+#$link_end{'ypd'} = ".html\">";
+#$link_end{'sgd'} = "%22\">";
+$link_end{'sgd'} = "\">";
+$link_end{'ymgv'} = "\">";
+
+
+while ($line = <$in>) {
+    if ($line =~ /^;/) {
+	#### comment lines are printed as such
+	print $line;
+	next;
+    }
+    chomp($line);
+    my @links = ();
+    @fields = split "\t", $line;
+    $name = $fields[$orf_col -1];
+    $orf = $orf_id{uc($name)};
+    unless ($orf =~ /^;/) {
+	foreach my $database (@databases) {
+	    push @links, "[".$link_start{$database}.$orf.$link_end{$database}.$database."<\/a>]";
+	}
+    }
+#    s/(y[a-p][rl]\S*\d+\S+)/$link_start{$database}$1$link_end{$database}$1<\/a>/gi;
+    print $out "$line\t", "<font size=-2>", join (" ", @links), "</font>", "\n";
+}
+
+#print $out "<HR SIZE=3></PRE></BODY></HTML>\n";
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+
+
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	add-yeast-link
+	
+DESCRIPTION
+	Takes as input a text or HTML file, and insert HTML tags to
+	link yeast ORF names to the selected databases. 
+
+	The current version only supports the yeast Saccharomyces
+	cerevisiae.
+
+CATEGORY
+	genomics
+
+USAGE
+        add-yeast-link [-i inputfile] [-o outputfile] [-v] 
+                       [-db database]
+       
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+        -db database
+                Where database can be MIPS, SGD, yMGV, all. 
+		YPD is not supported anymore since 2002/06/03 due to
+		its privatisation.
+	-col #
+		ORF column.
+		Column of the input file containing the ORF identifier
+		(on the basis of which the link is established).
+
+INPUT FORMAT
+	Any text or html file
+	
+OUTPUT FORMAT
+	The same text of html file as in input, but with a link added to
+	all ORF identifiers found.
+	
+EXAMPLES
+       add-yeast-link -v -i mydata -o myresult -db MIPS -col 1
+ 	
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+add-yeast-link options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-db     database (supported_db: MIPS, SGD, yMGV). 
+-v      verbose
+-col #	ORF column
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach $a (0..$#ARGV) {
+	
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### ORF column
+	} elsif ($ARGV[$a] eq "-col") {
+	    $orf_col = $ARGV[$a+1];
+	    unless ((&IsNatural($orf_col)) && ($orf_col >=1)) {
+		&RSAT::error::FatalError("ORF column must be a natural number >= 1\n");
+	    }
+	    
+	    #### database
+	} elsif ($ARGV[$a] eq "-db") {
+	    $database = lc($ARGV[$a+1]);
+	    if ($database eq "all") {
+		push @databases, @supported_db;
+	    } elsif  (!$supported_db{$database}) {
+		&RSAT::error::FatalError("Database $database is not supported (Supported: $supported_db)\n");
+	    } else {
+		push @databases, $database;
+	    }
+	    
+	}
+    }
+}
+
+

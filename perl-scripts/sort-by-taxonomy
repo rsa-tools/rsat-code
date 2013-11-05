@@ -1,0 +1,311 @@
+#!/usr/bin/perl
+
+################################################################
+#
+# FILE : sort-by-taxonomy
+#
+# DESC :
+# This program sort lines by taxonomic order using the organism name.
+#
+# AUTH : Rekin's Janky <rekins@bigre.ulb.ac.be>
+#
+################################################################
+
+
+#### Librairies
+use Getopt::Long qw(:config bundling);
+use Pod::Text;
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+require "RSA.lib";
+require "RSA.disco.lib";
+
+#### package variables
+$verbose = 0;
+
+################################################################
+#### options
+my $options=0;
+my $help=0;
+my $input_file="";
+my $format="fasta";
+my $output_file="";
+my $root_node="Bacteria";
+my $taxon="";
+
+my %opt = ('opt|?'=>\$options, 
+	   'h|help'=>\$help,
+	   'v|verbose=i'=> \$verbose,
+	   'i|input_file=s'=>\$input_file,
+	   'f|format=s'=>\$format,
+	   'o|output_file=s'=>\$output_file,
+	   't|taxon=s'=>\$taxon,
+	   'r|root=s'=>\$root_node,
+	   );
+&GetOptions(%opt);
+&displayOptions(%opt) if ($options);
+
+################################################################
+#### MAIN
+################################################################
+if ($input_file){
+     
+     ################################################################
+     ## Get taxonomy for ordering results
+     my $tree = RSAT::Tree->new();
+     $tree->LoadSupportedTaxonomy($root_node,\%supported_organism);
+     
+     # get organism names sorted by taxonomic order
+     my @ref_organisms = ();
+     if ($taxon){
+#	 &RSAT::message::Info(join("\t","Found ",$tree->get_node_by_id($taxon)));
+	 @ref_organisms = $tree->RSAT::Tree::get_node_by_id("$taxon")->get_leaves_names();
+	 &RSAT::message::Info(join("\t","Found ",scalar(@ref_organisms),"organisms")) if ($main::verbose >= 5);
+     }else{
+	 @ref_organisms = $tree->get_leaves_names();
+     }
+     
+     ################################################################
+     # sort sequences by organisms name
+     my $data ="";
+     if ($format eq "fasta"){
+	 $data .= &sortFasta($input_file,\@ref_organisms);
+     }elsif($format eq "tab"){
+	 $data .= &sortTab($input_file,\@ref_organisms);
+     }else{
+	 &RSAT::error::FatalError( "Error ! invalid format. Must be : tab or fasta");
+     }
+     
+     ################################################################
+     ### open output stream
+     $main::out = &OpenOutputFile($output_file);
+     print $main::out $data;
+ }else{
+     &RSAT::error::FatalError( "Error ! input file must be defined.");
+ }
+
+################################################################
+#### Sort sequences by organisms name
+################################################################
+sub sortTab{
+    my $input_file = shift;
+    my $ref_organisms = shift;
+    my @ref_organisms = @{$ref_organisms};
+    &RSAT::message::Info( "Sort tabular format") if ($main::verbose >= 1);
+    
+    # get organisms from the fasta sequences
+    my (%selected_organisms) = &readInput($input_file);
+    
+    # Sort sequences
+    my $data ="";
+    foreach my $org (@ref_organisms){
+	if ($selected_organisms{$org}){
+	    &RSAT::message::Info(join("\t","Found line for:",$org)) if ($main::verbose >= 5);
+	    $data .= $selected_organisms{$org}."\n";
+	}else{
+	    &RSAT::message::Info( join("\t","No line has been identified for",$org)) if ($main::verbose >= 5);
+	}
+    }
+    return($data);
+} 
+
+################################################################
+#### READ A FILE AND Get the organisms related with the
+#### sequences from the fasta file
+################################################################
+sub readInput{
+    my $input_file = shift;
+    my %selected_organisms=();
+    &RSAT::message::Info( join("\t","Get the organisms related with the sequences from the input file : $input_file ")) if ($main::verbose >= 1);
+    open (FILE,"<$input_file")||die("Cannot open $input_file");
+    my $line_nb = 0;
+    while (<FILE>) {
+	$line_nb++;
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	chomp;
+	my (@data_line)=split "\t";
+	my $org=$data_line[0];
+	&RSAT::message::Info("Organism from input : $org") if ($main::verbose >= 2);
+	$selected_organisms{$org}.=$_;
+    }
+    close(FILE);
+    if ((scalar(keys %selected_organisms)) < 1 ){
+	&RSAT::message::Info("Warn ! No organism identified from $input_file.");
+	die(0); # exit the function if the file is empty
+    }
+    return (%selected_organisms);
+}
+
+################################################################
+#### Sort sequences by organisms name
+################################################################
+
+sub sortFasta{
+  use Bio::Seq;
+  use Bio::SeqIO;
+  use Bio::SeqFeature::Generic;
+  my $input_file = shift;
+  my $ref_organisms = shift;
+  my @ref_organisms = @{$ref_organisms};
+
+  # get organisms from the fasta sequences
+  my (%selected_organisms) = &readFasta($input_file);
+
+  # Sort sequences
+  my $data ="";
+  foreach my $org (@ref_organisms){
+      if ($selected_organisms{$org}){
+	   &RSAT::message::Info(join("\t","Found sequence :",$selected_organisms{$org}->display_id)) if ($main::verbose >= 5);
+	  $data .= ">".$selected_organisms{$org}->display_id."\t".$selected_organisms{$org}->desc()."\n";
+	  $data .= $selected_organisms{$org}->seq()."\n\n";
+      }else{
+	   &RSAT::message::Info( join("\t","No sequence has been identified for",$org)) if ($main::verbose >= 5);
+      }
+  }  
+  return($data);
+} 
+
+################################################################
+#### READ A FASTA FILE AND Get the organisms related with the
+#### sequences from the fasta file
+################################################################
+
+sub readFasta{
+  use Bio::Seq;
+  use Bio::SeqIO;
+  use Bio::SeqFeature::Generic;
+  my $fasta_file = shift;
+#  &cleanFasta($fasta_file);
+  my %selected_organisms=();
+   &RSAT::message::Info( join("\t","Get the organisms related with the sequences from the fasta file : $fasta_file ")) if ($main::verbose >= 1);
+  my $seqin = Bio::SeqIO->new( -format => 'Fasta' , -file => "$fasta_file");
+  #$seqout= Bio::SeqIO->new( -format => 'Fasta', -file => '>output.fa');
+  while ((my $seqobj = $seqin->next_seq())) {
+     &RSAT::message::Info(join("\t",join("","Sequence_id (length=", $seqobj->length(),") :"),$seqobj->display_id),"\n") if ($main::verbose >= 5);
+    # get the organim name and load the sequence by organism
+    my ($gene_id,$organism_name,$gene_name)= split('\|',$seqobj->display_id);
+    $selected_organisms{$organism_name}=$seqobj;
+     &RSAT::message::Info(join("\t",
+				   "accession number",$seqobj->accession_number(), # when there, the accession number
+				   "alphabet",$seqobj->alphabet(), # one of 'dna','rna',or 'protein'
+				   "start of seq ",substr($seqobj->seq,1,10),
+				   "desc",$seqobj->desc(), # description
+				   "primaryid",$seqobj->primary_id(), # a unique id for this sequence regardless
+				   # of its display_id or accession number
+				   "organism",$organism_name,
+				  )
+			   ) if ($main::verbose >= 5);
+  }
+  close($fasta_file);
+  if ((scalar(keys %selected_organisms)) < 1 ){
+       &RSAT::message::Info("Warn ! This fasta file $fasta_file is empty.");
+      die(0); # exit the function if the fasta_file is empty
+  }
+  return (%selected_organisms);
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+### Display options
+sub displayOptions{
+  my (%opt)=@_;
+  my $opts="";
+  foreach my $key (keys %opt) {
+#    &RSAT::message::Info("\t", $key, "\t", ${$opt{$key}}, "\n");
+    $opts .= ";\t".join("\t", $key, ${$opt{$key}}). "\n";
+  }
+   &RSAT::message::Info( "Options\n$opts");
+  exit(0);
+}
+
+
+
+__END__
+
+
+=head1 NAME
+
+sort-by-taxonomy.pl
+
+=head1 DESCRIPTION
+
+This program sort lines by taxonomic order (NCBI Taxonomy) using orgnanism names.
+
+=head1 USAGE
+
+=over
+
+sort-by-taxonomy -v 1 -i seq.fa -o sorted_seq.fa 
+
+=back
+
+=head1 OPTIONS
+
+=over
+
+=item --opt
+
+Prints the options and their value.
+
+=item -h|--help
+
+Prints this help message
+
+=item -v|--verbosity [integer]
+
+Level of verbosity (information displayed on the screen to indicate
+the processing)
+
+=item -i|--input [path/filename]
+
+Input file with sequences having organism name as referenced in RSAT by
+supported-organisms. If omitted, standard input will be used. This allows to
+use the program within a pipe.
+
+=item -f|--format [tab,fasta] (default : fasta)
+
+=over
+
+=item Fasta
+
+The organism name used for ordering the sequences is extraced from the
+sequence id which must be like '>id|organism|name'.
+
+=item Tab
+
+You can use a tab-delimited text file. The first column of the each row must
+contains the organism name. Additional columns are ignored by the program and
+will be exported.
+
+=back
+
+=item -o|--output [path/filename]
+
+output file with sequences in fasta format. Sequences will be sorted by
+ taxonomical order.  If omitted, standard output will be used.  This allows to
+ use the program within a pipe.
+
+=item -r|--root_node [root_name] (default: Bacteria)
+
+You can specify here the root of the reference taxonomic tree.
+
+=item -t|--taxon [node_name] (default: Bacteria)
+
+This option can be useful if you want to filter only sequences from a given
+taxonomical level (e.g all Gammaproteobacterial sequences from Bacterial
+sequences).
+
+=back

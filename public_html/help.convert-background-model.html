@@ -1,0 +1,304 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>RSA-tools:  convert-background-model manual</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="RSA_home.cgi">RSA-tools</A> - <a href=convert-background-model_form.cgi>convert-background-model</a> manual</h2>
+</center>
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#background_model_formats">BACKGROUND MODEL FORMATS</a></li>
+	<ul>
+
+		<li><a href="#oligos__input_output_">oligos (input/output)</a></li>
+		<li><a href="#dyads__input_">dyads (input)</a></li>
+		<li><a href="#motifsampler__input_output_">MotifSampler (input/output)</a></li>
+		<li><a href="#meme__input_output_">MEME (input/output)</a></li>
+		<li><a href="#patser__output_">patser (output)</a></li>
+		<li><a href="#transitions__output_">transitions (output)</a></li>
+		<li><a href="#tables__output_">tables (output)</a></li>
+	</ul>
+
+	<li><a href="#options">OPTIONS</a></li>
+	<ul>
+
+		<li><a href="#background_model_file">BACKGROUND MODEL FILE</a></li>
+		<ul>
+
+			<li><a href="#by_giving_the_path_of_the_file_"><strong>By giving the path of the file:</strong></a></li>
+			<li><a href="#by_loading_a_precalculated_background_model_from_the_rsat_collection"><strong>By loading a precalculated background model from the RSAT collection</strong></a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>convert-backgound-model</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Interconversions between formats of background models supported by
+different programs (oligo-analysis, dyad-analysis, matrix-scan,
+patser, consensus, MotifLocator, MotifSampler, MEME, ...).</p>
+<p>Background models can be automatically loaded from the RSAT collection
+of pre-calculated background models.</p>
+<p>This is a temporary version, with only some formats supported. Additional
+formats will be progressively added.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="item_jacques_van_helden_jvanheld_40bigre_2eulb_2eac_2eb">Jacques van Helden <a href="mailto:jacques.van.helden@ulb.ac.be">jacques.van.helden@ulb.ac.be</a></a></strong>
+
+<dt><strong><a name="item_jean_valery_turatsinze_jturatsi_40bigre_2eulb_2eac">Jean Valery Turatsinze <a href="mailto:jturatsi@bigre.ulb.ac.be">jturatsi@bigre.ulb.ac.be</a></a></strong>
+
+<dt><strong><a name="item_morgane_thomas_2dchollier_morgane_40bigre_2eulb_2e">Morgane Thomas-Chollier <a href="mailto:morgane@bigre.ulb.ac.be">morgane@bigre.ulb.ac.be</a></a></strong>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>util</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>convert-backgound-model [-i inputfile] [-o outputfile] [-v]</p>
+<p>
+</p>
+<hr />
+<h1><a name="background_model_formats">BACKGROUND MODEL FORMATS</a></h1>
+<p><strong>Note</strong>: some formats are supported for both input and output, but some
+formats are supported only for input or for output.</p>
+<p>
+</p>
+<h2><a name="oligos__input_output_">oligos (input/output)</a></h2>
+<p>Oligonucleotide frequency table, as exported by the RSAT program
+<em>oligo-analysis</em>. The simplest format is a two-column file with the
+oligonucleotide in the first column, and the frequency in the second
+one.</p>
+<p>An oligo file containing k-mers frequencies corresponds to a Markov
+model of order <em>m=k-1</em>. Frequencies are converted to transition
+probabilities by calculating the relative frequencies of all oligomers
+of size k having the same prefix (first m letters).</p>
+<p>
+</p>
+<h2><a name="dyads__input_">dyads (input)</a></h2>
+<p>Oligonucleotide frequency table, as exported by the RSAT program
+<em>dyad-analysis</em>. Dyads with spacing 0 are converted to oligos, and
+frequencies are converted into transition probabilities as for the
+format ``oligos''.</p>
+<p>
+</p>
+<h2><a name="motifsampler__input_output_">MotifSampler (input/output)</a></h2>
+<p>This format can be used by the various programs of the software suite
+INCLUSive developed by Gert Thijs
+(http://homes.esat.kuleuven.be/~thijs/download.html).</p>
+<p>MotifSampler background files can be generated with the program
+<em>CreateBackgroundModel</em>, which creates a Markov model from a
+background sequence.</p>
+<p>
+</p>
+<h2><a name="meme__input_output_">MEME (input/output)</a></h2>
+<p>MEME (http://meme.sdsc.edu/meme/) is a matrix-based pattern
+discovery program developed by Tim Bailey, and supporting Markov
+models.</p>
+<p>MEME background files can be generated with the program
+<em>fasta-get-markov</em>, which creates a Markov model from a background
+sequence.</p>
+<p>
+</p>
+<h2><a name="patser__output_">patser (output)</a></h2>
+<p>Export the Markov model in patser format. <em>patser</em> isa pattern
+matching program developed by Jerry Hertz.</p>
+<p>WARNING: patser only supports Bernoulli models ! If the Markov order is
+superior to 0, this function issues a fatal error.</p>
+<p>
+</p>
+<h2><a name="transitions__output_">transitions (output)</a></h2>
+<p>Transition table with one row per prefix, one column per suffix, each
+cell indicating the transition frequency.</p>
+<p>
+</p>
+<h2><a name="tables__output_">tables (output)</a></h2>
+<p>Export tables with various statistics:
+ - oligo frequencies</p>
+<pre>
+ - frequencies: oligomer frequencies, presented in a
+   prefix/suffix table</pre>
+<pre>
+  - relative frequencies: relative oligomer frequencies. These differ
+    from the raw frequencies only i the input file contained
+    non-normalized frequencies (e.g. pattern occurrences).</pre>
+<pre>
+  - transition frequencies: see the format &quot;transitions&quot; above.</pre>
+<p>This output is convenient for understanding the different steps for
+the conversion between oligomer frequencies (oligomer length k=m+1)
+and transition tables.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="item__2dv__23"><strong>-v #</strong></a></strong>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dh"><strong>-h</strong></a></strong>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dhelp"><strong>-help</strong></a></strong>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<h2><a name="background_model_file">BACKGROUND MODEL FILE</a></h2>
+<p>There are two ways to specify a background model file:</p>
+<p>
+</p>
+<h3><a name="by_giving_the_path_of_the_file_"><strong>By giving the path of the file:</strong></a></h3>
+<p><strong>-i inputfile</strong></p>
+<p>If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.</p>
+<p>
+</p>
+<h3><a name="by_loading_a_precalculated_background_model_from_the_rsat_collection"><strong>By loading a precalculated background model from the RSAT collection</strong></a></h3>
+<p><strong>Note:</strong> Specify the format of the background model with '-from' option. Accepted values
+are oligos and dyad.</p>
+<p><strong>-org organism_name</strong></p>
+<p>Specifies an organism, installed in RSAT. To have the list of supported organism in RSAT, type the following
+command: <em>supported-organism</em></p>
+<dl>
+<dt><strong><a name="item__2dmarkov__23"><strong>-markov #</strong></a></strong>
+
+<dd>
+<p>Markov order for the background model.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dnoov"><strong>-noov</strong></a></strong>
+
+<dd>
+<p>No overlapping. See <em>oligo-analysis</em> for more details on this option</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d1str"><strong>-1str</strong></a></strong>
+
+<dd>
+<p>Strand-sensitive background model</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d2str"><strong>-2str</strong></a></strong>
+
+<dd>
+<p>Strand-insensitive background model</p>
+</dd>
+</li>
+<dt><strong><a name="item__2do_outputfile"><strong>-o outputfile</strong></a></strong>
+
+<dd>
+<p>If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dfrom_input_format"><strong>-from input_format</strong></a></strong>
+
+<dd>
+<p>Input format. Supported: oligo-analysis, MotifSampler, meme,dyads.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dto_output_format"><strong>-to output_format</strong></a></strong>
+
+<dd>
+<p>Output format. Supported: transitions (default), tables, oligo-analysis, patser, MotifSampler.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dbg_pseudo__23"><strong>-bg_pseudo #</strong></a></strong>
+
+<dd>
+<p>Pseudo frequency for the background models. Value must be a real
+between 0 and 1 (default: 0.01) If the training sequence length (L) is
+known, the value can be set to square-root of L divided by
+L+squareroot of L</p>
+</dd>
+</li>
+<dt><strong><a name="item__2ddecimals__23"><strong>-decimals #</strong></a></strong>
+
+<dd>
+<p>Number of decimals to print or the transition probabilities.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2dto2str"><strong>-to2str</strong></a></strong>
+
+<dd>
+<p>Convert to a strand-insensitive background model, by averaging
+transition frequencies on each pair of reverse complements.</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="item_seq_2dproba"><strong>seq-proba</strong></a></strong>
+
+<dd>
+<p>Calculate the probability of a sequence fiven a background model. 
+
+</p>
+</dd>
+</li>
+<dt><strong><a name="item_matrix_2dscan"><strong>matrix-scan</strong></a></strong>
+
+<dd>
+<p>Scan sequences with a PSSM, accepting various background models. 
+
+</p>
+</dd>
+</li>
+<dt><strong><a name="item_patser"><strong>patser</strong></a></strong>
+
+<dd>
+<p>Scan sequences with a PSSM. Program developed by Jerry Hertz.
+
+</p>
+</dd>
+</li>
+</dl>
+
+</body>
+
+</html>

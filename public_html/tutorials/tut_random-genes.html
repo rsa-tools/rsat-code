@@ -1,0 +1,175 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - random-genes</title>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+<center>
+<h2><a href="../RSAT_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../random-genes_form.cgi">random-genes</a> 
+</h2>
+</center>
+
+
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href=#prerequisite>Prerequisite</a>
+<li><a href=#intro>Introduction</a>
+<li><a href=#example>Example of utilization</a>
+<li><a href=#interpret>Interpreting the result</a>
+<li><a href=#exercises>Additional exercises</a>
+</ol>
+
+<a name=prerequisite></a><h2>Prerequisite</h2>
+<ul>
+
+This tutorial does not require any prior knowledge, but in order to
+take the maximal benefit of it, you should first follow the tutorials
+on 
+<a href=tut_retrieve-seq.html>sequence retrieval</a> and 
+<a href=tut_oligo-analysis.html>oligo-analysis</a>.
+
+</ul>
+<a name=intro></a><h2>Introduction</h2>
+<ul>
+
+<p>In the context of transcriptome analysis, we are confronted with
+huge amounts of data, which can be processed in different ways to
+obtain clusters of co-expressed genes. A routine approach perform
+clustering on gene expression profiles, and to use a motif discovery
+program to each cluster of genes, in order to predict their specific
+regulatory elements.
+
+<p>It is well knwon that microarray data is noisy, and, in addition,
+there are dozens of ways to post-process this data (choice of a
+normalization method, fitering of , clustering algorithm, distance
+metrics, other clustering options, ...). It is thus expected that many
+of our supposedly "co-expressed" genes will be artifactual, resulting
+from all the possible biases of the data treatments, and will actually
+not correspond to a set of co-regulated genes (i.e. direct targeets of
+a same transcription factor).
+
+
+<p>The selection of a random set of genes is a very simple but very
+efficient way to check the rate of false positives of pattern
+discovery programs.
+
+</ul>
+<a name=example></a><h2>Example of utilization</h2>
+<ul>
+
+We will use the tool <i><b>random-genes</b></i> to select a randdom selection of 20
+genes in the yeast genome, and submit their promoters to
+oligo-analysis. 
+
+<p>
+<ol>
+
+<li>In the left frame, click on the link <b><i>random gene
+selection</i></b>.
+
+<li>Select as organism <i>Saccharomyces cerevisiae</i>
+
+<li>Set the number of genes to 20. 
+
+<li>Leave the number of groups to 1 (this option is used for
+generating multiple random gene clusters).
+
+<li>Select <b>CDS</b> as feature type.
+
+<li>Click <b>GO</b>
+
+</ol>
+
+The result is a list of gene identifiers. 
+
+<p>You can now send this list to the program
+<i><b>retrieve-seq</b></i>, to retrieve their upstream sequences, and
+then to different motif discovery programs
+(<b><i>oligo-analysis</i></b>, <b><i>consensus</i></b>,
+<b><i>gibbs</i></b>, ...) in order to test the response of these
+programs when the genes are not supposed to be co-regulated.
+
+
+
+</ul>
+<a name=interpret></a><h2>Interpreting the results</h2>
+<ul>
+
+<p>In principle, we expect for the program to return, most of the
+time, a negative answer, i.e. not a single significant motif. In some
+cases, a motif witth slight significance should emerge by chance, and
+highly significant motifs should appear very exceptionally. 
+
+<p>More precisely, if we repeat the experiment a large number of
+times, we expect to find more or less
+<ul>
+<li>one motif with E-value <= 1 (i.e. sig >= 1) per gene selection;
+<li>a motif with E-value <= 0.1 (sig >= 1) every 10 gene selections;
+<li>a motif with E-value <= 0.01 (sig >= 2) every 100 gene selections;
+<li>... and so on.
+</ul>
+
+<p>The analysis of random gene selections is thus a very practical way
+to estimate the rate of false positives of motif discovery programs,
+on the basis of real biological sequences.
+
+</ul>
+<a name=exercises></a><h2>Additional exercises</h2>
+<ol>
+
+<li>In order to check the rate of false positive of a program, you
+need to repeat the random control several times, and see how often a
+motif is selected by chance when there is supposedly no co-regulation.
+
+<p>
+
+<ul>
+
+<li>Repeat the test a few times. 
+
+<li>At each trial, take note of the top scoring motif, and of the
+score associated to it.
+
+<li>Analyze the results of the successive trials, and check if the
+behaviour more or less corresponds to the theoretical expectation.
+</ul>
+
+<p>
+<li>Perform the same test as above, with human genes. How does it
+compare with the yeast, in terms of false positives ?
+
+<p>
+<li>You can also use the upstream sequences of random gene selections
+to test other motif discovery programs available on the web (see the
+<a target=_blank href=../links.html#pattern_disco>link page</a>).
+
+</ol>
+
+
+</ul>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<h4 class="footer">
+<address>
+For suggestions or information request, please contact 
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address></h4>
+
+</blockquote>
+</body>
+</html>

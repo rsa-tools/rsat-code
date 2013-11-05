@@ -1,0 +1,671 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	profile-distance
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        profile-distance [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Calculates pairwise distances between the elements of 
+	set of class frequency distributions.
+
+	Application: 
+	The frequency distributions can for example be temporal 
+	profiles of gene expression (cf Eisen et al. 1995, PNAS 
+	95:14863-8), or word position distributions.
+		
+CATEGORY
+	statistics
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-vv	hyperverbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This retallows to place the command within a pipe.
+	-col #-#
+		data column range. 
+		Specifies the columns containing the profile values 
+		in the input file. 
+	-u	unique
+		return only once each pair of elements.
+	-uth	clustering threshold
+		cluster elements that have a lower distance than the 
+		specified threshold
+	-dist chi|correl
+		distance estimator
+			chi	chi-square value (default)
+			correl	correlation coefficient
+	-return	specify the output types
+		Output types
+		   matrix	tab file with the matrix
+		   pairs	one line per pai, showing 
+				the distance plus additional info
+		   clusters
+		   graphs	
+		   oc		OC format. OC is a small program
+				that performs hierarchical clustering
+				and returns a nice dendrogram.  
+				(http://barton.ebi.ac.uk/software.html)
+	-sc	score column
+		A column can optionally be indicated, which contains a score for each
+	-nocheck
+		do not check the applicability condition for the chi-square
+		An important applicability condition for the chi-square 
+		is that the frequency of each classe must be >= 5.
+		When this condition is not met, the program returns theµ
+		calculated value between parenthesis, to highlight its 
+		non-validity. The parenthesis are suppressed with the 
+		-nocheck option
+
+INPUT FORMAT
+	Each line of the input file contains one class distribution.
+	The first word of the line is the identifier of the series.
+	A series of columns (specified with the -col option) contain
+	the class frequencies.  
+
+OUTPUT FORMAT
+	Different formats are supported in output, which are selected 
+	specified with the -return option.
+	
+EXAMPLES
+       profile-distance -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+profile-distance options
+------------------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-vv		hyperverbose
+-col #-#	data column range
+-u		unique (return each pair only in one direction)
+-uth		clustering threshold
+-dist		chi|correl
+-return		output types: matrix,pairs,clusters,graphs,oc
+-sc		score column
+-nocheck	do not check the applicability for the chi-square
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+$distance_estimator = "chi";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  ### verbose ###
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+  } elsif ($ARGV[$a] eq "-vv") {
+    $hyperverbose = 1;
+    
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+    
+    ### output file ###
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-u") {
+    $unique = 1;
+    
+    ### clustering threshold
+  } elsif (($ARGV[$a] eq "-uth") && (&IsReal($ARGV[$a+1]))) {
+    $upper_threshold = $ARGV[$a+1];
+    
+    ### inactivation of the validity checking for the chi2
+  } elsif ($ARGV[$a] =~ /^-noch/) {
+    $nocheck = 1;
+
+    ### score column
+  } elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1]))) {
+    $score_col = $ARGV[$a+1];
+    
+    ### score column
+  } elsif ($ARGV[$a] eq "-dist") {
+    if ($ARGV[$a+1] =~ /^chi/i) {
+      $distance_estimator = "chi";
+    } elsif ($ARGV[$a+1] =~ /^cor/i) {
+      $distance_estimator = "correl";
+    } 
+    
+  ### columns containing the class frequencies
+  } elsif ($ARGV[$a] eq "-col") {
+    if ($ARGV[$a+1] =~ /^(\d+)\-(\d+)$/) {
+      $mincol = $1;
+      $maxcol = $2;
+    } elsif ($ARGV[$a+1] =~ /^(\d+)\-$/) {
+      $mincol = $1;
+      $up_to_last_col = 1;
+    } else {
+      die "Error: invalid column specification.\ntype profile-distance -h for help\n.";
+    }
+  
+
+    ### output format
+  } elsif ($ARGV[$a] eq "-return") {
+    @fields_to_return = split ",", $ARGV[$a+1];
+    foreach $field (@fields_to_return) {
+      if ($field =~ /^mat/) {
+	$return{'matrix'} = 1;
+	
+      } elsif ($field =~ /^pair/) {
+	$return{'pairs'} = 1;
+	
+      } elsif ($field =~ /^clust/) {
+	$return{'clusters'} = 1;
+	
+      } elsif ($field =~ /^mich/) {
+	$return{'michael'} = 1;
+	
+      } elsif ($field =~ /^OC/i) {
+	$return{'OC'} = 1;
+	
+      } elsif ($field =~ /^graph/) {
+	$return{'graphs'} = 1;
+	$return{'clusters'} = 1; ### required for the graphs
+	
+      }
+    }
+  }
+}
+
+
+#### check argument values ####
+unless (%return) {
+       print "Error: you did not specify the output (option -return)\n";
+       exit(1);
+}
+
+if (($return{'clusters'}) && !(defined($upper_threshold))) {
+   print "Error: you should define a threshold for clustering (option -uth).\n";
+   exit(1);
+}
+unless (defined($mincol)) {
+	die "Error: you should specify data column range\n";
+} 
+if (!($up_to_last_col) && ($mincol > $maxcol)) {
+	die "Error: the first column mut be smaller than the last one\n";
+}
+if ($mincol < 1) {
+	die "Error: column numbers must be >= 1.\n";
+}
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+	
+&ReadData;
+
+#### verbose ####
+if ($verbose) {
+	print $out "; profile-distance ";
+	&PrintArguments($out);
+	if ($inputfile ne "") {
+		print $out ";Input file	$inputfile\n";
+	}
+	if ($outputfile ne "") {
+		print $out ";Output file	$outputfile\n";
+	}
+	print $out ";data columns:	${mincol}-${maxcol}\n";
+	print $out ";nb of columns:	$colnb\n";
+}
+
+
+
+&CalcDistances;
+
+### sort clusters ###
+if (defined %score) {
+  @sorted_clusters = sort {$score{$b} <=> $score{$a}} keys %cluster_ids;
+} else {
+  @sorted_clusters = sort keys %cluster_ids;
+}
+
+
+&PrintPairs if ($return{'pairs'}); 
+&PrintMatrix if ($return{'matrix'});
+&PrintClusters if ($return{'clusters'});
+&DrawAllGraphs if ($return{'graphs'});
+&PrintMichael if ($return{'michael'});
+&PrintOC if ($return{'OC'});
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+sub DrawAllGraphs {
+### generate XYgraphs
+	if ($hyperverbose) {
+		$time = &AlphaDate();
+		chomp($time);
+		print "generating XY graphs\t$time\n";
+	}
+
+	$XYgraph_command = "$SCRIPTS/XYgraph";
+	$index_file = "cluster_graphs_${upper_threshold}.html";
+	open INDEX, ">$index_file";
+	print INDEX "<HTML><BODY><PRE>\n";
+	print INDEX "<B>Clusters (upper threshold = $upper_threshold)</B>\n";
+	close INDEX;
+	foreach $id1 (@sorted_clusters) {
+		&DrawGraph;
+	}
+
+	
+	open INDEX, ">>$index_file";
+	print INDEX "\n<B>Isolated</B>\n";
+	foreach $id1 (@sorted_keys) {
+		next if ($already_clustered{$id1});
+		&DrawGraph;
+		print INDEX "$id1\n";
+	}
+
+	print INDEX "</PRE></BODY></HTML>\n";
+	close INDEX;
+}
+
+sub DrawGraph {
+    ### normalize profile ###
+    foreach $id ($id1, @{$cluster{$id1}}) { 
+	unless ($absolute) {
+	    for $i (0..$colnb-1) {
+		if ($total{$id} > 0) {
+		    ${$rel_profile{$id}}[$i] = ${$profile{$id}}[$i]/$total{$id};
+	        } else {
+		    print $out ";WARNING: $id not taken into account because has a total of 0\n";
+		    undef @{$profile{$id}};
+		    undef $total{$id};
+		}
+            }
+        }
+    }
+    $graph_file_name = "${id1}_cluster_${upper_threshold}.gif";
+    $cluster_size = $#{$cluster{$id1}} + 2;
+    $last_col = $cluster_size + 1;
+    $parameters = "-lines -legend ";
+    $parameters .= "-xcol 1 -ycol 2-${last_col} ";
+	$parameters .= "-o $graph_file_name ";
+	$parameters .= "-title1 '$id1 cluster' ";
+	$parameters .= "-title2 '$cluster_size elements, threshold = $upper_threshold' ";
+	$command = "$XYgraph_command $parameters";
+
+	print "; $command\n" if ($hyperverbose);
+	open XY, "| $command";
+
+	### header ###
+	print XY ";id\t$id1";
+	print XY "_${score{$id1}}" if (%score);
+	foreach $id2 (@{$cluster{$id1}}) { 
+		print XY "\t$id2";
+		print XY "_${score{$id2}}" if (%score);
+		print XY "_${distance{$id1}{$id2}}";
+	}
+	print XY "\n";
+	foreach $i (0..$colnb) {
+		print XY "$i";
+		print XY "\t${$rel_profile{$id1}}[$i]";
+		foreach $id2 (@{$cluster{$id1}}) { 
+			print XY "\t${$rel_profile{$id2}}[$i]";
+		}
+		print XY "\n";
+	}
+	close XYgraph;
+	open INDEX, ">>$index_file";
+	print INDEX "<A HREF=\"$graph_file_name\">$id1</A>";
+	print INDEX "\t${score{$id1}}" if (%score);
+	print INDEX "\t$cluster_size";
+	print INDEX "\n";
+	close INDEX;
+}
+
+### print the matrix  ####
+sub PrintMatrix {
+	if ($hyperverbose) {
+		$time = &AlphaDate();
+		chomp($time);
+		print "printing matrix\t$time\n";
+	}
+	print $out ";id/id";
+	foreach $id1 (@sorted_keys) {
+		print $out "\t$id1";
+	}
+	print $out "\n";
+	
+	foreach $id1 (@sorted_keys) {
+		print $out "$id1";
+		foreach $id2 (@sorted_keys) {
+			if (($unique) && ($id2 le $id1)) {
+				print $out "\t-";
+			} else {
+				printf $out "\t%6.4f", $distance{$id1}{$id2};
+			}
+		}
+		print $out "\n";
+	}
+}
+
+
+#### output by pairs of elements
+sub PrintPairs {
+  if ($hyperverbose) {
+    $time = &AlphaDate();
+    chomp($time);
+    print "printing pairs\t$time\n";
+  }
+  if ($verbose) {
+    print $out ";ident1-ident2";
+    if ($distance_estimator eq "correl") {
+      print $out "\tcorrel";
+    } else {
+      print $out "\tchi2";
+    }
+    print $out "\ttotal1";
+    print $out "\ttotal2";
+    if (defined %score) {
+      print $out "\tscore1";
+      print $out "\tscore2";
+    }
+    print $out "\n";
+  }
+
+  foreach $id1 (@sorted_keys) {
+    foreach $id2 (@sorted_keys) {
+      next if (($unique) && ($id2 le $id1));
+      if (defined($distance{$id1}{$id2})) {
+	print $out "${id1}-${id2}";
+	if ($distance_estimator eq "correl") {
+	  printf $out "\t%.2f", $distance{$id1}{$id2};
+	} else {
+	  print $out "\t$distance{$id1}{$id2}";
+	}
+	print $out "\t$total{$id1}";
+	print $out "\t$total{$id2}";
+	if (defined %score) {
+	  print $out "\t$score{$id1}";
+	  print $out "\t$score{$id2}";
+	}
+	print $out "\n";
+      }
+    }
+  }
+}
+
+#### output in michael schroeder's format
+sub PrintMichael {
+	if ($hyperverbose) {
+		$time = &AlphaDate();
+		chomp($time);
+		print "printing in Michael Schroeder's format\t$time\n";
+	}
+
+	foreach $id1 (@sorted_keys) {
+		print $out "$id1\n";
+	}
+	print $out "------\n";
+	foreach $id1 (@sorted_keys) {
+		foreach $id2 (@sorted_keys) {
+			if (defined($distance{$id1}{$id2})) {
+				print $out "$distance{$id1}{$id2}\n";
+			} else {
+				print $out "NA\n";
+			}
+		}
+	}
+}
+
+#### output in OC format (http://barton.ebi.ac.uk/manuals/oc/)
+sub PrintOC {
+	if ($hyperverbose) {
+		$time = &AlphaDate();
+		chomp($time);
+		print "printing in OC format\t$time\n";
+	}
+
+	$id_nb = $#sorted_keys + 1;
+	print $out "$id_nb\n";
+	foreach $id1 (@sorted_keys) {
+		print $out "$id1\n";
+	}
+	foreach $i (0..$#sorted_keys) {
+		$id1 = $sorted_keys[$i];
+		foreach $j ($i+1..$#sorted_keys) {
+			$id2 = $sorted_keys[$j];
+			if (defined($distance{$id1}{$id2})) {
+				print $out "$distance{$id1}{$id2}\n";
+			} else {
+				print $out "NA\n";
+			}
+		}
+	}
+}
+
+
+#### print clusters ####
+sub PrintClusters {	
+  if ($hyperverbose) {
+    $time = &AlphaDate();
+    chomp($time);
+    print "printing clusters\t$time\n";
+  }
+  
+  print $out ";Clusters\n";
+  print $out ";=======\n";
+  foreach $id1 (@sorted_clusters) {
+    print $out ";cluster\t";
+    print $out "$id1\t";
+    foreach $id2 (sort {$distance{$id1}{$a} <=> $distance{$id1}{$b}} @{$cluster{$id1}}) {
+      print $out "$id2 ";
+    }
+    print $out "\n";
+  }
+  
+  foreach $id1 (@sorted_keys) {
+    next if ($already_clustered{$id1});
+    print $out ";isolated\t$id1\n";
+  }
+}
+
+
+
+sub ReadData {
+  ###### read the data #########
+  if ($hyperverbose) {
+    $time = &AlphaDate();
+    chomp($time);
+    print "reading data\t$time\n";
+  }
+  
+  while (<$in>) {
+    next if (/^;/);
+    next unless (/\S/);
+    chomp;
+    @fields = split, "\t";
+    $id = $fields[0];
+    @{$profile{$id}} = ();	### avoid to mix two data rows with the same ID
+    if ($score_col > 0) {
+      $score{$id} = $fields[$score_col-1];
+    }
+    if ($up_to_last_col) {
+      $maxcol = $#fields+1;
+    }
+    for $col ($mincol..$maxcol) {
+      $value = $fields[$col-1];
+      unless (&IsReal($value)) { 
+	print $out ";WARNING: $id data contain non-numeric value $value in col $col\n";
+      }
+      push @{$profile{$id}}, $value;
+      $total{$id} += $value;
+    }
+  }
+  $colnb = $maxcol - $mincol +1;
+  if (defined (%score)) {
+    @sorted_keys = sort {$score{$b} <=> $score{$a}} keys %profile;
+  } else {
+    @sorted_keys = sort keys %profile;
+  } 
+}
+
+
+sub CorrelCoeff {
+### usage
+###   $r = &CorrelCoeff($N , @values);
+### where
+###    $r      is the correlation coefficient
+###    $N      is the number of observations (N)
+###    @values is the list of values
+###            The list must contain 2N numerical values
+###            The first N values are taken as X values,
+###            the next N values are the Y values.
+  local($N) = shift;
+  local(@values) = @_;
+  local($val_nb) = $#values + 1;
+  
+  ### check the number of values
+  unless (($val_nb) == 2*$N) {
+    return "Error: invalid number of values";
+  }
+  for $i (0..$N-1) {
+    $value = $values[$i];
+#print "\t$i\t$value\n";
+    if (&IsReal($value)) {
+      $x[$i] = $value;
+    } else {
+      return "Error: non-numeric value $value ($i)";
+    }
+  }
+  for $i ($N..2*$N-1) {
+    $value = $values[$i];
+    if (&IsReal($value)) {
+      $y[$i-$N] = $value;
+#print "\t$i\t$value\n";
+    } else {
+      return "Error: non-numeric value $value ($i)";
+    }
+  }
+  $Xsum = 0;
+  $Ysum = 0;
+  $XYsum = 0;
+  $X2sum = 0;
+  $Y2sum = 0;
+  for $i (0..$N-1) {
+    $Xsum += $x[$i];
+    $X2sum += $x[$i]*$x[$i];
+    $Ysum += $y[$i];
+    $Y2sum += $y[$i]*$y[$i];
+    $XYsum += $x[$i]*$y[$i];
+  }
+#print "$Xsum\t$X2sum\t$Ysum\t$Y2sum\t$XYsum\n";  
+###   $Xavg = $Xsum/$N;
+###   $Yavg = $Ysum/$N;
+#print "Xavg\t$Xavg\n";
+#print "Yavg\t$Yavg\n";
+
+  $cov_x_N = $XYsum - $Xsum*$Ysum/$N;
+  $Sx_x_N  = sqrt($X2sum -$Xsum*$Xsum/$N);
+  $Sy_x_N  = sqrt($Y2sum -$Ysum*$Ysum/$N);
+  if ($Sx_x_N*$Sy_x_N == 0) {
+    return "ND";
+  }
+  $r =  $cov_x_N/($Sx_x_N*$Sy_x_N);
+  return $r;
+}
+
+
+sub CalcDistances {
+### calculate distances ###
+  if ($hyperverbose) {
+    $time = &AlphaDate();
+    chomp($time);
+    print "calculating distances\t$time\n";
+  }
+  foreach $id1 (@sorted_keys) {
+    if ($hyperverbose) {
+      $count1++;
+      $count3 += $count2;
+      $time = &AlphaDate();
+      chomp($time);
+      print "\t$count1\t$count2\t$count3\t$id1\t$time\n";
+      $count2 = 0;
+    }
+    
+    foreach $id2 (@sorted_keys) {
+      if ($id1 eq $id2) {
+	$distance{$id2}{$id1} = 0;
+	next;
+      }
+      next if (defined($distance{$id2}{$id1}));
+      $count2++;
+      @values = ();
+      push @values, @{$profile{$id1}};
+      push @values, @{$profile{$id2}};
+      
+      if ($distance_estimator eq "chi") {
+	($distance, $df) = &ChiSquare('homogeneity',2,$colnb, 0, @values);
+	if ($nocheck) {
+	  $distance =~ s/\(//;
+	  $distance =~ s/\)//;
+	}
+      } elsif ($distance_estimator eq "correl") {
+	$distance = &CorrelCoeff($colnb, @values);
+      }
+      
+      next if ((defined($upper_threshold)) && ($distance >= ($upper_threshold)));
+      $distance{$id1}{$id2} = $distance;
+      $distance{$id2}{$id1} = $distance;
+      if ($return{'clusters'}) {
+	next if (($unique) && ($already_clustered{$id1}));
+	push @{$cluster{$id1}}, $id2;
+	$cluster_ids{$id1} = 1;
+	$already_clustered{$id2} = 1;
+	unless ($unique) {
+	  push @{$cluster{$id2}}, $id1;
+	}
+      }
+    }
+    $already_clustered{$id1} = 1 if ($cluster_ids{$id1});
+  }
+}

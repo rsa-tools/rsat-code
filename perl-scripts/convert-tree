@@ -1,0 +1,185 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-tree,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+use Bio::TreeIO;
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+$in_format = "newick";
+$out_format = "tabtree";
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+#local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+##### read input
+#($in) = &OpenInputFile($infile{input});
+my $treeio = new Bio::TreeIO(-format => $in_format, 
+			     -file => $infile{input});
+my $tree = $treeio->next_tree();
+
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### execute the command
+
+################################################################
+###### print output
+
+$out = &OpenOutputFile($outfile{output});
+if ($outfile{output}) {
+    $out_stream = ">".$outfile{output};
+} else {
+    $out_stream = "";
+}
+
+my $out_tree = new Bio::TreeIO(-format => $out_format, 
+			       -file => $out_stream);
+$out_tree->write_tree($tree);
+
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-tree
+
+        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+	Convert-Tree for writing new perl scripts
+
+CATEGORY
+	util
+
+USAGE
+        convert-tree [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+convert-tree options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### input format  
+	} elsif ($ARGV[$a] eq "-informat") {
+	    $in_format = $ARGV[$a+1];
+
+	    ### output format  
+	} elsif ($ARGV[$a] eq "-outformat") {
+	    $out_format = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; convert-tree ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}

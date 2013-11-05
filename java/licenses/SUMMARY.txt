@@ -1,0 +1,152 @@
+SUMMARY LICENSES
+################
+
+NeAT_javatools.jar and the war files merge a number of jar files.
+Core jar files are covered by the RSAT license, all other jar files are covered by licenses as detailed below.
+
+
+CORE JAR FILES
+==============
+Pathfinding.jar
+north_graph_core.jar
+be_ac_ulb_scmbb_shortestpath_core.jar
+be_ac_ulb_scmbb_snow_graph_core.jar
+be_ac_ulb_scmbb_snow_data_core.jar
+be_ac_ulb_scmbb_snow_protege_owl_libbiopax.jar
+be_ac_ulb_bigre_pathwayinference_core.jar
+be_ac_ulb_bigre_metabolicdatabase.jar
+be_ac_ulb_bigre_keggclient.jar
+graphtools.jar
+RSATWS.jar
+
+
+DEPENDENCIES
+============
+
+Hibernate is used to access data stored in the metabolic database.
+Hibernate dependencies (in stand alone mode):
+ant.jar
+antlr-2.7.6.jar
+asm.jar
+asm-attrs.jar
+cglib-2.1.3.jar
+c3p0-0.9.1.jar
+commons-collections-2.1.1.jar
+commons-logging-1.0.4.jar
+dom4j-1.6.1.jar
+ehcache-1.2.3.jar
+jaxen-1.1-beta-7.jar
+jacc-1_0-fr.jar
+jdbc2_0-stdext.jar
+jta.jar
+log4j-1.2.14.jar
+xml-apis.jar
+
+Axis is used to provide web services.
+Axis dependencies:
+activation.jar
+commons-discovery-0.2.jar
+commons-logging-1.0.4.jar
+jaxrpc.jar
+mail.jar
+saaj.jar
+wsdl4j-1.5.1.jar
+xerces-2.7.1.jar
+xml-apis.jar
+xmlsec-1.4.1.jar
+
+JSP and Java servlet dependencies:
+jasper.jar
+jsp-api.jar
+servlet-api.jar
+
+Other dependencies (task):
+colt-1.2.0.jar	(matrix support)
+cos.jar	(data upload with JSP)
+concurrent-1.3.0.jar	(dependency of Didier Croes' path finding tool, which is wrapped by Pathfinder)
+gxl-0.9.2.jar	(graph conversion)
+htmlparser.jar	(KGML file download)
+icu4j_3_4.jar	(Biopax parsing)
+jargs.jar	(parsing commands from command line)
+jena-2.3.jar	(Biopax parsing)
+jung-1.7.6.jar	(graph conversion)
+postgresql-8.2-504.jdbc3.jar	(database connection)
+protege-3.2beta-build241.jar	(Biopax parsing)
+protege-owl-2006-01-24.jar	(Biopax parsing)
+sax2.jar	(KGML file parsing)
+be_ac_ucl_info_bioedge_graphutilities.jar	(graph analysis)
+RSATWS.jar (access to RSAT web services)
+
+
+LICENSES
+========
+
+The following libraries are covered by LICENSE.apache provided in the licenses directory:
+ant.jar
+antlr-2.7.6.jar
+axis.jar
+commons-collections-2.1.1.jar
+commons-discovery-0.2.jar
+commons-logging-1.0.4.jar
+log4j-1.2.14.jar
+jasper.jar
+jaxrpc.jar
+jsp-api.jar
+saaj.jar
+servlet-api.jar
+xml-apis.jar
+xmlrpc-2.0.jar
+xmlsec-1.4.1.jar
+
+The following libraries are covered by LICENSE.asm provided in the licenses directory:
+asm-attrs.jar
+asm.jar
+
+The following libraries are covered by LICENSE.hibernate (GNU Lesser General Public License) provided in the licenses directory:
+cglib-2.1.3.jar
+ehcache-1.2.3.jar
+hibernate3.jar
+jaxen-1.1-beta-7.jar
+jacc-1_0-fr.jar
+
+activation.jar is covered by LICENSE.activation (Sun Microsystems) in the licenses directory.
+
+c3p0-0.9.1.jar is covered by LICENSE.c3p0 (GNU Lesser General Public License) in the licenses directory.
+
+colt-1.2.0.jar is covered by LICENSE.colt in the licenses directory.
+
+cos.jar is covered by LICENSE.cos in the LICENSES directory.
+
+concurrent-1.3.2.jar see the section: Notes on page http://gee.cs.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html for license information.
+
+dom4j-1.6.1.jar is covered by LICENSE.dom in the licenses directory.
+
+gxl-0.9.2.jar is covered by LICENSE.gxl (GNU Lesser General Public License) in the licenses directory.
+
+htmlparser.jar is covered by LICENSE.htmlparser (GNU Lesser General Public License) in the licenses directory.
+
+icu4j_3_4.jar is covered by LICENSE.icu in the licenses directory.
+
+jargs.jar is covered by LICENSE.jargs in the licenses directory.
+
+jena-2.3.jar is covered by LICENSE.jena in the licenses directory.
+
+jta.jar is covered by LICENSE.jta (Sun Microsystems) in the licenses directory.
+
+jdbc2_0-stdext.jar is covered by LICENSE.jdbc2_0-stdext (Sun Microsystems) in the licenses directory.
+
+jung-1.7.6.jar is covered by LICENSE.jung (BSD) in the licenses directory.
+
+mail.jar is covered by LICENSE.mail (Sun Microsystems) in the licenses directory.
+
+postgresql-8.2-504.jdbc3.jar is covered by LICENSE.postgres in the licenses directory.
+
+protege-3.2beta-build241.jar and protege-owl-2006-01-24.jar are covered by LICENSE.protege in the licenses directory.
+
+sax2.jar is covered by LICENSE.sax in the LICENSES directory.
+
+wsdl4j-1.5.1.jar is covered by LICENSE.wsdl4j in the LICENSES directory.
+
+xerces-2.7.1.jar is covered by the LICENSE.xerces (Apache License) in the licenses directory.
+
+The jar file be_ac_ucl_info_bioedge_graphutilities.jar has been provided by the INGI Team at UCL (Louvain), which consequently holds all rights on it.

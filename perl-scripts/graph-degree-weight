@@ -1,0 +1,818 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-degree-weight,v 1.7 2011/02/17 05:15:54 rsat Exp $
+#
+############################################################
+
+#use strict;
+
+=pod
+
+
+=head1 NAME
+
+graph-degree-weight.pl
+
+
+=head1 DESCRIPTION
+
+Calculates the node degree and uses the degrees to assign weight to the edges. Several weight policies are possible, some of which are limited to directed graphs. 
+In undirected graphs, source and target nodes are indistinguishable. If the graph is directed, the program makes the distinction between the in and the out-degree.
+
+
+
+=head1 AUTHORS
+
+Gipsi Lima Mendez
+
+=head1 CATEGORY
+
+graph analysis
+
+=head1 USAGE
+
+graph-degree-weight.pl -graph graphfile [additional options]
+
+
+=head1 INPUT FORMAT
+
+
+=over 4
+
+=item B<gml>
+
+=item B<tab> (default)
+
+=item B<adj_matrix>
+
+=back
+
+See convert-graph for a description of the supported input formats.
+
+=head1 OUTPUT FORMAT
+
+=over 4
+
+=item B<table>
+
+A multi-column tab delimited table. First two columns are the nodes defining the edge, while the rest of the columns especified the weights of that edge, calculated from the degree, one column per criterion selected. This table can be further read as a graph (in tab-format) by specifying one column as the weight.
+
+=item B<graph> 
+
+Only possible when a unique combination of weight policy and math has been selected.
+
+
+=over 4
+
+=item B<gml>
+
+=item B<tab> (default)
+
+=item B<adj_matrix>
+
+=back
+
+See convert-graph for a description of the supported output formats.
+
+=back
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+require "RSA.stat.lib";
+	
+my $params;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+
+    ################################################################
+    ## Initialize the input graph # this is Sylvain stuff
+     my $graph = new RSAT::Graph2();
+     $graph->set_attribute("label", "graph");
+
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1,
+	adj_matrix=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    #local $weight_col = 0;
+    
+    local $output_format = "tab";
+    %supported_output_format =(
+	tab=>1,
+	gml=>1,
+	adj_matrix=>1
+    );
+    $supported_output_formats = join (",", keys %supported_output_format);
+	
+	
+	#$params->{'weight_policy'}->{'st'} = 1;
+	
+	local $directed = 0;
+	my $InputData;
+    my $Degree = {};
+	my $Weight;
+    %main::infile = ();
+    %main::outfile = ();
+    $main::verbose = 0;
+    $main::out = STDOUT;
+	local $weight_col = 2; # this is the column on the weight_file, nor in the graph file, whose weight will be assigned.
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    ################################################################
+    ## Check argument values
+    &Verbose() if ($main::verbose);
+	unless (defined $params->{'math'}) {
+		$params->{'math'}->{'mean'} = 1;
+	}
+	if (defined $params->{'tcol'}) {
+		$target_col = $params->{'tcol'};
+	}
+	if (defined $params->{'scol'}) {
+		$source_col = $params->{'scol'};
+	}
+	if (defined $params->{'wcol'}) {
+		$weight_col = $params->{'wcol'};
+	}
+	if ($output_format ne 'tab' && (scalar(keys %{$params->{'math'}}) > 1 || (scalar(keys %{$params->{'weight_policy'}})) > 1)) {
+		&RSAT::message::Info("If multiple weight policies or maths selected, a table is the only possible output");
+	}
+	if (defined $main::infile{weightfile}) {
+		unless (!defined $params->{'weight_policy'}) {
+			&RSAT::error::FatalError("You must not  select a weight policy and enter a file with weights as input");
+		}
+	}
+	
+	if (!defined $main::infile{weightfile}) {
+		unless (defined $params->{'weight_policy'}) {
+			&RSAT::error::FatalError("You must either select a weight policy or enter a file with weights as input");
+		}
+	}
+	if ($directed == 0) {
+		if (defined $params->{'weight_policy'}->{'sI'}) {
+			&RSAT::error::FatalError("sI is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		if (defined $params->{'weight_policy'}->{'sO'}) {
+			&RSAT::error::FatalError("sO is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		if (defined $params->{'weight_policy'}->{'tO'}) {
+			&RSAT::error::FatalError("tO is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		if (defined $params->{'weight_policy'}->{'tI'}) {
+			&RSAT::error::FatalError("tI is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		if (defined $params->{'weight_policy'}->{'sOtI'}) {
+			&RSAT::error::FatalError("sOtI is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		if (defined $params->{'weight_policy'}->{'sItO'}) {
+			&RSAT::error::FatalError("sItO is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		
+		if (defined $params->{'weight_policy'}->{'sItI'}) {
+			&RSAT::error::FatalError("sItI is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+		if (defined $params->{'weight_policy'}->{'sOtO'}) {
+			&RSAT::error::FatalError("sOtO is invalid weight policy for an undirected graph (default). You must declare -directed");
+		}
+	
+	}
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    
+    ## Read input graph # this is Sylvain stuff
+    if ($main::verbose > 2 ) {
+    	print "Loading graph from text: format: ",$input_format," file: ",$main::infile{graph}," source col: ",$source_col," target col: ",$target_col," directed: $directed\n";
+    }
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, 0,0,0, $directed, 0); # ask Sylvain whether more than two zeroes are needed.
+
+	### read weight file if supplied. In this file the first column is node name, and the column with the weight must be specified, otherwise is column 2.
+	if (defined $main::infile{weightfile}) {
+	    if ($main::verbose > 2 ) {
+	    	print "reading weights supplied in an additional file ",$main::infile{weightfile},"\n";
+	    }
+    	     ($main::in) = &OpenInputFile($main::infile{weightfile});
+    	    	while (my $line = <$main::in>) {
+    		    chomp $line;	
+		    next if ($line =~ /^#/ || $line =~ /^;/);
+
+		    my @line = split("\t",$line);
+		    #data->nodeName = nodeWeight
+		    $InputData->{$line[0]} = $line[$weight_col-1];
+
+    	    	}
+    	    	close $main::in;
+	}
+
+
+	################################################################
+	### Define output
+	my $out_graph;
+	my $weighted_arcs;   
+	my @out_graph_array = ();
+ 
+	unless (scalar(keys %{$params->{'math'}}) > 1 || (scalar(keys %{$params->{'weight_policy'}})) > 1) {
+		# output is a graph in the user-specified format
+		$out_graph = RSAT::Graph2->new();
+	}
+	
+
+    ################################################################
+	# get data from graph.
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @in_neighbours = $graph->get_attribute("in_neighbours");
+    my %all_nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %all_nodes_id_name= $graph->get_attribute("nodes_id_name");
+    my %nodes_color = $graph->get_attribute("nodes_color");
+    my @arcs = $graph->get_attribute("arcs");
+	
+
+#####################################################################################	
+####################	
+#### calculating the weights and storing them for further printing
+   
+   
+   if (defined $InputData) {
+    # here do with the weights entered as input. Apply chosen math
+	
+    	for (my $i = 0; $i < scalar(@arcs); $i++) {
+
+	    # $i is the arc ID
+	    my $s_name = $arcs[$i][0];
+	    my $t_name = $arcs[$i][1];
+
+	    my %val = &summary($InputData->{$s_name},$InputData->{$t_name});
+	    foreach $math (keys %{$params->{'math'}}) {
+		    print "Val: ",$val{$math},"\n";
+		    $Weight->{$s_name}->{$t_name}->{'weightfile'}->{$math} = $val{$math};
+	    }
+	}
+	
+   }
+   
+   elsif (defined $params->{'weight_policy'}) {
+   
+		foreach my $nodeID (keys %all_nodes_id_name) {
+		  # calculate the degree
+		  # parameter initialization
+		  print "Node id: $nodeID\n";
+
+			$Degree->{$nodeID}->{'out_deg'} = 0;
+			$Degree->{$nodeID}->{'in_deg'} = 0;   
+			$Degree->{$nodeID}->{'deg'}   = 0;
+
+    		# calculate in degree
+    		if (@{$in_neighbours[$nodeID]}) {
+    		  $Degree->{$nodeID}->{'in_deg'} = scalar(@{$in_neighbours[$nodeID]});
+			  print "in_degree: ",$Degree->{$nodeID}->{'in_deg'},"\n";
+    		}
+    		# calculate out degree
+    		if (@{$out_neighbours[$nodeID]}) {
+    		  $Degree->{$nodeID}->{'out_deg'} = scalar(@{$out_neighbours[$nodeID]});
+			  print "out_degree: ",$Degree->{$nodeID}->{'out_deg'},"\n";
+    		}
+    		# degree ( sum of in- and out-degree)
+    		$Degree->{$nodeID}->{'deg'} = $Degree->{$nodeID}->{'out_deg'} + $Degree->{$nodeID}->{'in_deg'};
+			print "degree: ",$Degree->{$nodeID}->{'deg'},"\n";
+		}
+	
+	
+	# calculate the weights
+
+    	for (my $i = 0; $i < scalar(@arcs); $i++) {
+
+			# $i is the arc ID
+			my $s_name = $arcs[$i][0];
+			my $t_name = $arcs[$i][1];
+
+
+
+			print "Node source name: $s_name\n";
+			print "Node target name: $t_name\n";
+
+			my $sID = $all_nodes_name_id{$s_name};
+			my $tID = $all_nodes_name_id{$t_name};
+
+			print "target node id: $tID\n";
+			print "source node id: $sID\n";
+
+			# weight or label is the element with index 2 and edge color is index 3 . we do not need them now.
+			my $weight = 0;
+			if ($params->{'weight_policy'}->{'s'}) {
+				$Weight->{$s_name}->{$t_name}->{'s'} = $Degree->{$sID}->{'deg'};
+			}
+			if ($params->{'weight_policy'}->{'t'}) {
+				$Weight->{$s_name}->{$t_name}->{'t'} = $Degree->{$tID}->{'deg'};
+			}
+			if ($params->{'weight_policy'}->{'sI'}) {
+				$Weight->{$s_name}->{$t_name}->{'sI'} = $Degree->{$sID}->{'in_deg'};
+			}
+			if ($params->{'weight_policy'}->{'tI'}) {
+				$Weight->{$s_name}->{$t_name}->{'tI'} = $Degree->{$tID}->{'in_deg'};
+			}
+			if ($params->{'weight_policy'}->{'sO'}) {
+				$Weight->{$s_name}->{$t_name}->{'s'} = $Degree->{$sID}->{'out_deg'};
+			}
+			if ($params->{'weight_policy'}->{'tO'}) {
+				$Weight->{$s_name}->{$t_name}->{'tO'} = $Degree->{$tID}->{'out_deg'};
+			}
+
+			if ($params->{'weight_policy'}->{'st'}) {
+				my %val = &summary($Degree->{$tID}->{'deg'},$Degree->{$sID}->{'deg'});
+				print "Calculating stats between ",$Degree->{$tID}->{'deg'}," and ",$Degree->{$sID}->{'deg'},"\n";
+				foreach $math (keys %{$params->{'math'}}) {
+					print "Val: ",$val{$math},"\n";
+					$Weight->{$s_name}->{$t_name}->{'st'}->{$math} = $val{$math};
+				}
+			}
+
+			if ($params->{'weight_policy'}->{'sItO'}) {
+				my %val = summary($Degree->{$tID}->{'out_deg'},$Degree->{$sID}->{'in_deg'});
+				foreach $math (keys %{$params->{'math'}}) {
+					$Weight->{$s_name}->{$t_name}->{'sItO'}->{$math} = $val{$math};
+				}
+			}
+
+			if ($params->{'weight_policy'}->{'sItI'}) {
+				my %val = summary($Degree->{$tID}->{'in_deg'},$Degree->{$sID}->{'in_deg'});
+				foreach $math (keys %{$params->{'math'}}) {
+					$Weight->{$s_name}->{$t_name}->{'sItI'}->{$math} = $val{$math};
+				}
+			}
+			if ($params->{'weight_policy'}->{'sOtI'}) {
+				my %val = summary($Degree->{$tID}->{'in_deg'},$Degree->{$sID}->{'out_deg'});
+				foreach $math (keys %{$params->{'math'}}) {
+					$Weight->{$s_name}->{$t_name}->{'sOtI'}->{$math} = $val{$math};
+				}
+			}
+			if ($params->{'weight_policy'}->{'sOtO'}) {
+				my %val = summary($Degree->{$tID}->{'in_deg'},$Degree->{$sID}->{'out_deg'});
+				foreach $math (keys %{$params->{'math'}}) {
+					$Weight->{$s_name}->{$t_name}->{'sOtO'}->{$math} = $val{$math};
+				}
+			}
+
+		}
+	
+	}
+	
+	
+	##############################################
+	#### Build new graph object if required
+	if (scalar(keys %{$params->{'weight_policy'}} == 1) && scalar(keys %{$params->{'math'}}) == 1) {
+	
+	    my $wp = (keys %{$params->{'weight_policy'}})[0];
+	    my $math = (keys %{$params->{'math'}})[0];
+			
+    	for (my $i = 0; $i < scalar(@arcs); $i++) {
+
+			# $i is the arc ID
+			my $s_name = $arcs[$i][0];
+			my $t_name = $arcs[$i][1];
+
+
+			my $sID = $all_nodes_name_id{$s_name};
+			my $tID = $all_nodes_name_id{$t_name};
+
+
+
+		    # take back the weight from $Weight Data Structure
+
+		    $weight = $Weight->{$s_name}->{$t_name}->{$wp}->{$math};
+
+		    $out_graph_array[$i][0] = $s_name;
+		    $out_graph_array[$i][1] = $t_name;
+		    $out_graph_array[$i][2] = $weight; # this is the calculated weight.
+		    $out_graph_array[$i][3] = $nodes_color{$sID}; # node color taken from ori graph.
+		    $out_graph_array[$i][4] = $nodes_color{$tID}; # node color taken from ori graph.
+		    $out_graph_array[$i][5] = $arcs[$i][3]; # edge color taken from ori graph.
+			
+          }
+	    $out_graph->load_from_array(@out_graph_array);
+    }
+	  
+	
+    ################################################################
+    ## Print output
+    
+	$main::out = &OpenOutputFile($main::outfile{output});
+	
+	if (scalar(keys %{$params->{'weight_policy'}} == 1) && scalar(keys %{$params->{'math'}}) == 1) {
+
+    	my $output_graph =  $out_graph->to_text($output_format, 0, $directed, 0);
+	
+    	print $out $output_graph;
+		
+	}
+	else {
+		# print a table
+		
+		# set the header
+
+		my @fields;
+
+		if ($params->{'weight_policy'}->{'s'}) {
+			push(@fields,'s');
+		}
+		if ($params->{'weight_policy'}->{'t'}) {
+			push(@fields,'t');
+		}
+		if ($params->{'weight_policy'}->{'sI'}) {
+			push(@fields,'sI');
+		}
+		if ($params->{'weight_policy'}->{'tI'}) {
+			push(@fields,'tI');
+		}
+		if ($params->{'weight_policy'}->{'sO'}) {
+			push(@fields,'sO');
+		}
+		if ($params->{'weight_policy'}->{'tO'}) {
+			push(@fields,'tO');
+		}
+
+		if ($params->{'weight_policy'}->{'st'}) {
+			foreach $math (keys %{$params->{'math'}}) {
+				push(@fields,'st_'.$math);
+			}
+		}
+
+		if ($params->{'weight_policy'}->{'sItO'}) {
+			foreach $math (keys %{$params->{'math'}}) {
+				push(@fields,'sItO_'.$math);
+			}
+		}
+
+		if ($params->{'weight_policy'}->{'sItI'}) {
+			foreach $math (keys %{$params->{'math'}}) {
+				push(@fields,'sItI_'.$math);
+			}
+		}
+		if ($params->{'weight_policy'}->{'sOtI'}) {
+			foreach $math (keys %{$params->{'math'}}) {
+				push(@fields,'sOtI_'.$math);
+			}
+		}
+		if ($params->{'weight_policy'}->{'sOtO'}) {
+			foreach $math (keys %{$params->{'math'}}) {
+				push(@fields,'sOtO_'.$math);
+			}
+		}
+	
+		print $out "#Source\tTarget";
+		foreach my $field (@fields) {
+			print $out "\t",$field;
+		}
+		print $out "\n";
+    	for (my $i = 0; $i < scalar(@arcs); $i++) {
+
+			# $i is the arc ID
+			my $s_name = $arcs[$i][0];
+			my $t_name = $arcs[$i][1];
+
+			print $out $s_name,"\t",$t_name;
+
+			foreach my $field (@fields) {
+				my @split = split("_",$field);
+
+				if ($split[1]) {
+					print $out "\t",$Weight->{$s_name}->{$t_name}->{$split[0]}->{$split[1]};
+				}
+				else {
+					print $out "\t",$Weight->{$s_name}->{$t_name}->{$split[0]};
+				}
+			}
+			print $out "\n";
+
+		}
+	
+	}
+
+
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+	
+	
+sub ReadArguments {
+	my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=back
+
+=cut
+		if ($arg eq "-v") {
+	    	if (&IsNatural($arguments[0])) {
+				$main::verbose = shift(@arguments);
+	    	} 
+			else {
+				$main::verbose = 1;
+	 		}
+		}
+
+=pod
+
+=over 4
+
+
+=item B<-h>
+
+Display full help message
+
+=back
+
+=cut
+		if ($arg eq "-h") {
+	    	&PrintHelp();
+
+	    	## List of options
+=pod
+
+=over 4
+
+=item B<-help>
+
+Same as -h
+
+=back
+
+=cut
+		} elsif ($arg eq "-help") {
+	    	&PrintOptions();
+
+	    	## Input file
+=pod
+
+=over 4
+
+=item B<-graph graphfile>
+
+graph file. 
+
+=back
+
+=cut
+
+    	  }  elsif ($arg eq '-graph') {
+            	$main::infile{graph} = shift(@arguments);
+
+=pod
+
+=item B<-w weightfile>
+
+A tab file, especifying a weight for each node. The first column lists the nodes and unless otherwise specified (see -wcol), the second column coresponds to the weight list. This allows to assign weight to the edges according to different criteria, e.g. closeness. 
+
+=back
+
+=cut
+
+
+    	  }  elsif ($arg eq '-wfile') {
+            	$main::infile{weightfile} = shift(@arguments);
+
+=pod
+
+=item B<-wcol weight column>
+
+Column containing the weights in the weight file. Default 2.
+
+
+=back
+
+=cut
+
+    	  }  elsif ($arg eq '-wcol') {
+            	$params->{'wcol'} = shift(@arguments);
+
+=pod
+
+=over 4
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe. 
+
+=back
+
+=cut
+		} elsif ($arg eq "-o") {
+	    	$main::outfile{output} = shift(@arguments);
+
+=over 4
+
+=item B<-scol>
+
+Source column. Column containing the source nodes in the tab-delimited
+graph file.  Default 1.
+
+
+=cut
+		} elsif ($arg eq "-scol") {
+	    	$params->{'scol'} = shift (@arguments);
+	    	## Target column
+=pod
+
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes in the tab-delimited
+graph file. Default 2.
+
+
+=cut
+		} elsif ($arg eq "-tcol") {
+	    	$params->{'tcol'} = shift (@arguments);
+
+	    	## Weight column
+=pod
+
+
+=item B<-wp>
+
+Weight policy. 
+
+The weight of the edge is defined based on the degree of one or both of its connected nodes. Several combinations are possible:
+
+=over 4
+
+=item B<s> sourceDegree
+
+=item B<sI>	sourceInDegree
+
+=item B<sO>	sourceOutDegree - not very clear its meaning
+
+=item B<t> targetDegree
+
+=item B<tI> targetInDegree - not very clear its meaning
+
+=item B<tO> targetOutDegree
+
+=item B<st> source_and_target
+
+=item B<sItO> sourceInDegree_targetOutDegree
+
+=item B<sOtI> sourceOutDegree_targetInDegree - not very clear its meaning
+
+=item B<sOtO> sourceOutDegree_targetOutDegree
+
+=item B<sItI> sourceInDegree_targetInDegree
+
+=back
+
+=cut
+		} elsif ($arg eq "-wp") {
+	    	$params->{'weight_policy'}->{shift (@arguments)} = 1;
+
+=pod
+
+
+=item B<-m>
+
+Mathematical treatment
+
+If the two terminal nodes have been selected to calculate the weight of an edge, there are also several possibilities:
+
+=over 4
+
+=item B<sum> the weight of the edge is the sum of the node degrees
+
+=item B<mean> the weight of the edge is the average of the node degrees
+
+=item B<max> the weight of the edge is the highest value between the two
+
+=item B<min> the weight of the edge is the lowest value between the two
+
+=back
+
+
+=cut
+		} elsif ($arg eq "-m") {
+	    	$params->{'math'}->{shift (@arguments)} = 1;
+
+=pod
+
+=item B<-directed>
+
+Specifies whether the graph is directed or not (i.e. edge A-B corresponds to edge B-A). By default the graph is not directed.
+
+=cut
+		} elsif ($arg eq "-directed") {
+	    	$directed = 1;
+
+
+=pod
+
+=item B<-in_format input_format>
+
+Input format for graph. See convert-garph for supported graph-formats
+
+=cut
+		} elsif ($arg eq "-in_format") {
+	    	$input_format = shift(@arguments);
+	    	&RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats") unless ($supported_input_format{$input_format});
+
+
+=pod
+
+=item B<-out_format output_format>
+
+Output format for graph. See convert-graph for supported graph-formats
+
+=cut
+		} elsif ($arg eq "-out_format") {
+	    	$output_format = shift(@arguments);
+	    	&RSAT::error::FatalError("$output_format\tInvalid input format. Supported: $supported_output_formats") unless ($supported_output_format{$output_format});
+			
+=pod
+
+=back
+
+
+=cut
+		}
+
+	}
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; graph-degree-weight ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+		print $main::out "; Input files\n";
+		while (my ($key,$value) = each %main::infile) {
+	    	print $main::out ";\t$key\t$value\n";
+		}
+    }
+    if (%main::outfile) {
+		print $main::out "; Output files\n";
+		while (my ($key,$value) = each %main::outfile) {
+	    	print $main::out ";\t$key\t$value\n";
+		}
+    }
+}
+
+__END__

@@ -1,0 +1,876 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: fetch-sequences,v 1.34 2013/10/24 07:22:08 morgane Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+fetch-sequences
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Retrieve genome sequences for a set of coordinates specified in a bed
+file.
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+Adapted from a script developed by Carl Herrmann.
+
+=head1 CATEGORY
+
+=over
+
+=item genomics
+
+=item sequences
+
+=back
+
+=head1 USAGE
+
+fetch-sequences [-i bedfile] [-o seqfile] [-v #] [...]
+
+Examples
+
+Retrieve peaks identified by the peak-calling program MACS.
+
+ fetch-sequences -i MACS_output_peaks.bed -genome mm8
+
+
+To retrieve regions of fixed width (200bp) centred on the peak
+summitsreturned by MACS.
+
+ fetch-sequences -i MACS_output_summits.bed -genome mm8 -extend 100
+
+
+=head1 INPUT FORMAT
+
+The definition of the BED format is provided on the UCSC Genome
+Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+
+This program only takes into account the 3 first columns, which
+specify the genomic coordinates.
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+(e.g. scaffold10671).
+
+=item 2. chromStart
+
+chromStart - The starting position of the feature in the chromosome or
+scaffold. The first base in a chromosome is numbered 0.
+
+=item 3. chromEnd
+
+UCSC definition: the ending position of the feature in the chromosome
+or scaffold. The chromEnd base is not included in the display of the
+feature. For example, the first 100 bases of a chromosome are defined
+as chromStart=0, chromEnd=100, and span the bases numbered 0-99.
+
+B<Note> from Jacques van Helden: the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), and the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end. We find this representation completely counter-intuitive, but we have
+to stick to it since it is the standard.
+
+Even worse: the Galaxy header indicate the start and end positions in
+one-based coordinates.
+
+For the sake of compatibility, we take the input bed as defined in
+UCSC (zero-based coordinates, start is first position of the feature,
+and end is the first position I<after> the feature), and we export the
+fasta headers in Galaxy convention (start and end are the first and
+last positions of the feature, in 1-based coordinates).
+
+
+=back
+
+=head1 OUTPUT FORMAT
+
+Sequences are exported in fasta format.
+
+=head1 SEE ALSO
+
+=over
+
+=item I<peak-motifs>
+
+A common utilization of fetch-sequences is to retrieve UCSC sequences
+for the peak coordinates produced by a peak callinf program
+(e.g. MACS, SICER, SWEMBL, ...).
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+
+=item B<-maf>
+
+Get multi-genome alignment files instead of single-genome sequence.
+The maf output requires to specify either a taxon (option I<-taxon>)
+or a list of organisms (option I<-org_list organism_file.txt>).
+
+=item B<-taxon>
+
+Taxonomic level for multi-genome alignment files.
+
+=item B<-mask>
+
+Add support for UCSC masking options (coding, repetitive, ...).
+
+For the time being, all sequences are transformed to uppercases.
+
+=item B<check chromosome size>
+
+When the coordinates of one feature exceed chromosome size, the whole
+UCSC query fails. In some cases, the UCSC Web server does not even
+issue an error, but all the sequences following the erroneous feature
+are empty.
+
+This poses problems with the option -extend, since the extended
+feature may reach chromosome ends. I should check the chromosome
+lengths, and restrict the extended end to these values.
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+use Bio::Das; ## Required to access UCSC Genome Browser
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our @supported_headers = qw(ucsc galaxy);
+  our $supported_headers = join ",", @supported_headers;
+  our %supported_header  =();
+  foreach my $header (@supported_headers) {
+    $supported_header{$header} = 1;
+  }
+  our $header_format = "ucsc";
+
+
+  our $genome = "";
+
+  ## Extend the coordinates on the left and right sides
+  our $upstr_extension = 0;
+  our $downstr_extension = 0;
+  our $reference = "segment";
+
+  ## Max number of sequences to retrieve
+  our $top = 0;
+  our $chunk = 10000;
+
+  our @queries = (); ## List of queries for the DAS server
+  our %header = (); ## Header for each sequence
+  our @skipped_rows = (); ## Invalid rows skipped during parsing
+
+  our $seq_nb = 0;
+  our $sum_seq_len = 0;
+
+  ## Parameters for connecting the DAS server
+  our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
+  our $timeout = 60; ## seconds for the timeout at UCSC
+  our $max_trials = 20; ## Number of trials in case of timeout
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  unless ($genome) {
+    &RSAT::error::FatalError("Genome version must be specified with option -genome (e.g. mm9, hg19)");
+  }
+
+  ## Define the URL fo the DAS server
+  our $das_server_url = $das_server.'/'.$genome;
+  &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
+
+  ## Open DAS client
+  my $das = Bio::Das->new($timeout);
+  unless ($das) {
+    &RSAT::error::FatalError("Cannot establish connection to UCSC DAS server", $das_server_url);
+  }
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ## Define log file
+  if ($outfile{output}) {
+    $outfile{log} = $outfile{output};
+    $outfile{log} =~ s/\.fasta$//;
+    $outfile{log} =~ s/\.fa$//;
+    $outfile{log} .= "_log.txt";
+  } else {
+    $outfile{log} = "";
+  }
+  $log = &OpenOutputFile($outfile{log});
+
+  ################################################################
+  ## Initialize parameter for length of each chr
+  our %chr_end  = ();
+
+  ## Send request to DAS server
+  my @entry_points = $das->entry_points(-dsn=>[$das_server_url]);
+
+  ## Treat request results
+  for my $id (@entry_points) {
+    if ($id->is_success) {
+      my @dsns = $id->results;
+      foreach (@dsns) {
+	my $chrom = "chr".$_->ref;
+        $chr_end{$chrom} = $_->end; ## put result in hash table with key "chr" and value "chr_end"
+#        $chr_end{"chr".$_->ref} = $_->end; #put result in hash table with key "chr" and value "chr_end"
+	&RSAT::message::Info("Chromosome", $chrom, "end", $chr_end{$chrom}) if ($main::verbose >= 3);
+      }
+    }
+  }
+  if (scalar(keys(%chr_end)) == 0) {
+    &RSAT::error::FatalError("Could not obtain entry points from UCSC DAS server", $das_server_url);
+  }
+
+  ################################################################
+  ## Download input from remote URL
+  if ($main::infile{input_url}) {
+    &RSAT::message::TimeWarn("Transferring input file from URL", $main::infile{input_url}) if ($main::verbose >= 2);
+    use LWP::Simple;
+    #    my $content = get($main::infile{input_url});
+    #    my @content_lines = split (/[\n\r]/, $content);
+    #    die "Could not get URL ".$infile{input_url} unless ($content);
+    if (defined($outfile{output})) {
+      $main::outfile{input} = $main::outfile{output};
+      $main::outfile{input} =~ s/\.fasta$//;
+      $main::outfile{input} =~ s/\.fa$//;
+
+      ## Add extension to the input file, in order to recognize compressed files
+      if ($main::infile{input_url} =~ /\.(\w+)$/) {
+	my $extension = $1;
+	$main::outfile{input} .= ".".$extension;
+      } else {
+	$main::outfile{input} .= ".bed";
+      }
+
+    } else {
+      ## Create a temporary directory to store the downloaded file
+#      $tmp_dir = &RSAT::util::make_temp_file("", "fetch-sequences", 1, 1);
+#      ## Define temporary directory
+#      if ($main::TMP) {
+#	$tmp_dir = $main::TMP;
+#      } else {
+#	$tmp_dir = ".";
+#      }
+      $main::outfile{input} = &RSAT::util::make_temp_file("", "fetch-sequences");
+      &RSAT::message::Info("Storing downloaded input file as", $main::outfile{input}) if ($main::verbose >= 3);
+    }
+    getstore($main::infile{input_url}, $main::outfile{input});
+    &RSAT::message::TimeWarn("Genomic coordinates transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
+    ($main::in) = &OpenInputFile($main::outfile{input});
+  } else {
+    ($main::in) = &OpenInputFile($main::infile{input});
+  }
+
+  ################################################################
+  ## Read input
+  &RSAT::message::TimeWarn("Reading genomic coordinates") if ($main::verbose >= 2);
+  my $i = 0;
+  my $l = 0;
+  my $query_nb = 0;
+  while (<$main::in>) {
+    $l++;
+    next if (/^#/); ## Skip comment lines
+    next if (/^;/); ## Skip RSAT-like comment lines
+    next unless (/\S/); ## Skip empty lines
+    next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+    chomp();
+
+    if (($top > 0) && ($i >= $top)) {
+      &RSAT::message::Info("Stopped after $top top queries. Further lines are ignored.");
+      last;
+    }
+
+    ################################################################
+    ## BEWARE! bed format has a strange convention for positions:
+    ##
+    ## - the start coordinate is zero-based (first chromosome base has
+    ##   coordinate 0);
+    ##
+    ## - end coordinate is also zero-based, but it represents the
+    ##   first position *after* the feature. We can thus simply take
+    ##   this value as the position of the last base of the feature in
+    ##   1-based coordinates, as expected by the DAS server.
+    my ($chrom, $zero_left, $right, $name, $score, $strand) = split(/\t/);
+
+    $left = $zero_left + 1;
+
+    ## Make sure that strand is defined
+    unless ((defined($strand)) && ($strand =~ /[+-]/)) {
+      $strand = "+";
+    }
+
+#    &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
+
+
+    ## Check validity of the chromosome
+    unless (defined($chr_end{$chrom})) {
+      if (defined($chr_end{"chr".$chrom})) {
+	$chrom = "chr".$chrom;
+	&RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l) if ($main::verbose >= 2);
+      } else {
+	&RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l) if ($main::verbose >= 2);
+	push @skipped_rows, "line ".$l."\t".$_."\tInvalid chromosome name";
+	next;
+      }
+    }
+
+    ## Check validity of left and right positions
+    unless (&RSAT::util::IsNatural($left)) {
+      &RSAT::message::Warning("Skipping line", $l, "Invalid left position: ",$left) if ($main::verbose >= 2);
+      push @skipped_rows, "line ".$l."\t".$_."\tInvalid end position";
+      next;
+    }
+    unless (&RSAT::util::IsNatural($right)) {
+      &RSAT::message::Warning("Skipping line", $l, "Invalid right position: ",$right) if ($main::verbose >= 2);
+      push @skipped_rows, "line ".$l."\t".$_."\tInvalid right position";
+      next;
+    }
+
+    ## Check that the left is smaller than the right
+    if ($left > $right) {
+#      &RSAT::message::Warning("Line", $l, "Swapping start ($left) and end ($right) positions, because start > end.", $l) if ($main::verbose >= 2);
+#      my $tmp = $left;
+#      $left = $right;
+#      $right = $tmp;
+      &RSAT::message::Warning("Skipping line", $l, "Left (".$left.") > right (".$right.").") if ($main::verbose >= 2);
+      push @skipped_rows, "line ".$l."\t".$_."\tLeft > right";
+      next;
+    }
+
+    ## Treat specific references (use start or end position as
+    ## reference, rather than the whole feature)
+    if ($reference eq "start") {
+      if ($strand eq "-") {
+	$left = $right;
+      } else {
+	$right = $left;
+      }
+    } elsif ($reference eq "end") {
+      if ($strand eq "-") {
+	$right = $left;
+      } else {
+	$left = $right;
+      }
+    } elsif ($reference eq "center") {
+      $center = ($left + $right)/2;
+      $left = $center;
+      $right = $center;
+    }
+
+    ## Check if the right position is not outside the chromosome
+    if ($right > $chr_end{$chrom}) {
+      &RSAT::message::Warning("Skipping line", $l, "Right coordinate (".$right.") > chromosome end (".$chr_end{$chrom}.").") if ($main::verbose >= 2);
+      push @skipped_rows, "line ".$l."\t".$_."\tright > chromosome end (".$chr_end{$chrom}.").";
+      next;
+    }
+
+    ## Check if the right position is not outside the chromosome
+    if ($left < 1) {
+      &RSAT::message::Warning("Skipping line", $l, "Left coordinate (".$left.") < 1") if ($main::verbose >= 2);
+      push @skipped_rows, "line ".$l."\t".$_."\tLeft < 1";
+      next;
+    }
+
+
+    ## Treat left and right extensions
+    if ($strand eq "-") {
+      $left = &RSAT::stats::max(1, $left - $downstr_extension);
+      $right = &RSAT::stats::min($chr_end{$chrom}, $right + $upstr_extension);
+      #$right += $upstr_extension;
+    } else {
+      $left = &RSAT::stats::max(1, $left - $upstr_extension);
+      $right = &RSAT::stats::min($chr_end{$chrom}, $right + $downstr_extension);
+      #$right += $downstr_extension;
+    }
+
+    ## Restore zero-based left after all these checks
+    $zero_left = $left - 1;
+
+#    &RSAT::message::Debug("chrom=".$chrom, "left=".$left, "right=".$right) aif ($main::verbose >= 5);
+
+
+    ################################################################
+    ## Formulate the query
+
+    ## Increment query counter
+    $query_nb++;
+
+    ## UCSC takes queries in one-based coordinates (although their bed format is zero-based for the left coordinate)
+    my $query = $chrom.":".$left.",".$right;
+
+    ## Store queries, strands and header in separate arrays.
+    push @queries, $query;
+    push @strand, $strand;
+    my $header = "";
+    if ($header_format eq 'ucsc') {
+      ## UCSC header reports 1-based coordinates
+      $header = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
+      $header .= "\trange=".$chrom.":".$left."-".$right." 5'pad=0 3'pad=0 strand=".$strand." repeatMasking=none";
+    } elsif ($header_format eq "galaxy") {
+      ## Galaxy header reports 1-based coordinates
+      ## Please do not change this, several programs rely on having these header 1-based
+      ## and we need to ensure that the obtained sequences are the same as provided by galaxy	
+      $header = ">".$genome."_".$chrom."_".$left."_".$right."_".$strand;
+    } else {
+      $header = ">";
+      if ($name) {
+	$header .= $name." ";
+      }
+      $header .= $query;
+      $header .= "_".$strand;
+    }
+    push @header, $header;
+    &RSAT::message::Debug("Query", $query_nb, $queries[$query_nb-1], $strand[$query_nb-1], $header[$query_nb-1],
+			  "1-based_left=".$left, "0-based_left=".$zero_left,
+			 ) if ($main::verbose >= 5);
+    $i++;
+  }
+  close $main::in if ($main::infile{input});
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Report skipped lines in the log file
+  if (scalar(@skipped_rows) > 0) {
+    &RSAT::message::Warning("Skipped ".scalar(@skipped_rows)." invalid rows in query file") if ($main::verbose >= 2);
+    print $log "; Skipped\t", scalar(@skipped_rows), "\trows in query file\n";
+    print $log ";\t", (join "\n;\t", @skipped_rows), "\n";
+  }
+
+  ## Split queries in chunks to avoid timeout
+  my @query_chunk = ();
+  my $error = 0;
+  my $next_chunk_size;
+  my $trial_nb = 1;
+  while ($remaining = scalar(@queries)) {
+    if ($error) {
+      &RSAT::message::TimeWarn("Retrying, trial number", $trial_nb);
+    } else {
+
+      ## Splice a chunk of queries from the list
+      $next_chunk_size = &RSAT::stats::min($chunk, $remaining);
+      @query_chunk = splice (@queries, 0, $next_chunk_size);
+      @strand_chunk = splice (@strand, 0, $next_chunk_size);
+      @header_chunk = splice (@header, 0, $next_chunk_size);
+      &RSAT::message::Debug("Query chunk", join "; ", @query_chunk) if ($main::verbose >= 10);
+      &RSAT::message::TimeWarn( "Remaining queries", $remaining, ,"Treating next chunk",$next_chunk_size, scalar(@query_chunk))
+	if ($main::verbose >= 2);
+    }
+
+    ## Send request to DAS server
+    &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
+    my @request = $das->dna(-dsn=>[$das_server_url],-segment=> \@query_chunk);
+
+#    &RSAT::message::Debug(join ("\n\t", "query chunk", @query_chunk)) if ($main::verbose >= 10);
+
+#    &RSAT::message::Debug(join ("\n\t", "request", @request)) if ($main::verbose >= 10);
+
+
+    ################################################################
+    ## Treat request results
+    for my $request (@request) {
+      &RSAT::message::TimeWarn("Treating result") if ($main::verbose >= 3);
+      if ($request->is_success) {
+	my %results = %{$request->results};
+
+#	&RSAT::message::Debug(scalar(keys(%results)), "results") if ($main::verbose >= 10);
+
+#	&RSAT::message::Debug("results", join "\n", keys(%results)) if ($main::verbose >= 10);
+
+
+#	foreach my $query (@query_chunk) {
+	foreach my $q (0..$#query_chunk) {
+	  $seq_nb++;
+	  my $query = $query_chunk[$q];
+	  my $sequence = $results{$query};
+	  $sequence = &FoldSequence($sequence, 0);
+	  $sum_seq_len += length($sequence);
+	  my $strand = $strand_chunk[$q];
+	  if ($strand eq '-') {
+	    $sequence = &ReverseComplement($sequence);
+	  }
+#	  &RSAT::message::Debug($q, $query, $sequence) if ($main::verbose >= 10);
+	  print $out $header_chunk[$q], "\n";
+	  print $out uc($sequence),"\n"; ## TEMPORARY: convert all sequences to uppercases
+#	  print $out $sequence,"\n";
+	}
+
+	## Reset error and trial counter
+	$error = 0;
+	$trial_nb = 1;
+      } else {
+	## Report error
+	$error = 1;
+	&RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
+	if ($trial_nb >= $max_trials) {
+	  &RSAT::error::FatalError("Giving up after ".$trial_nb." unsuccessful requests to DAS server", $das_server_url);
+	} else {
+	  $trial_nb++;
+	}
+      }
+    }
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  if ($main::verbose >= 1) {
+    print $log sprintf "; %-20s\t%d\n", "sequences", $seq_nb;
+    print $log sprintf "; %-20s\t%d\n", "length sum", $sum_seq_len;
+  }
+  print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+  close $log if ($outfile{log});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+The input file should be in bed format (see section INPUT FORMATS
+above).
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+This option is mutually exclusive with option I<-u>.
+
+=cut
+    } elsif ($arg eq "-i") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") 
+	if ($main::infile{input_url});
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-u input_file_URL>
+
+Use as input a file available on a remote Web server (e.g. a bed file
+on your Galaxy account).
+
+This option is mutually exclusive with option I<-i>.
+
+=cut
+    } elsif ($arg eq "-u") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") 
+	if ($main::infile{input});
+      $main::infile{input_url} = shift(@arguments);
+
+=pod
+
+=item B<-genome genome_version>
+
+Genome version (e.g. mm9, hg19).
+
+This option is mandatory, since the bed files generally does not
+contain information about the genome.
+
+
+=cut
+    } elsif ($arg eq "-genome") {
+      $main::genome = shift(@arguments);
+
+=pod
+
+=item B<-header_format header_format>
+
+Format for sequence headers.
+
+Supported header formats.
+
+=over
+
+=item I<UCSC (default)>
+
+=item I<galaxy>
+
+=back
+
+=cut
+    } elsif ($arg eq "-header_format") {
+      $main::header_format = lc(shift(@arguments));
+      &RSAT::error::FatalError($main::header_format, "Invalid header format. Supported: ".$supported_headers) unless ($supported_header{$main::header_format});
+
+=pod
+
+=item B<-upstr_ext #>
+
+Extend each region by # base pairs on the upstream side (i.e. left
+side for + strands, right side for - strand).
+
+Under others, this option is convenient to retrieve regions of fixed
+width around the summits of peak calling results (e.g. summit file
+produced by MACS).
+
+=item B<-downstr_ext #>
+
+Extend each region by # base pairs on the downstream side (i.e. right
+for + strand, left for - strand).
+
+=item B<-extend #>
+
+Extend each region by # base pairs on both upstream and downstream
+sides.
+
+=cut
+
+    } elsif ($arg eq "-upstr_ext") {
+      $main::upstr_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::upstr_extension, "Invalid value for upstream extension; should be an Integer") 
+	unless (&RSAT::util::IsInteger($upstr_extension));
+
+    } elsif ($arg eq "-downstr_ext") {
+      $main::downstr_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::downstr_extension, "Invalid value for downstream extension; should be an Integer") 
+	unless (&RSAT::util::IsInteger($upstr_extension));
+
+    } elsif ($arg eq "-extend") {
+      $main::upstr_extension = $main::downstr_extension = shift(@arguments);
+      &RSAT::error::FatalError($main::downstr_extension, "Invalid value for extension; should be an Integer") 
+	unless (&RSAT::util::IsInteger($upstr_extension));
+
+=pod
+
+=item B<-reference segment|end|start|center>
+
+Reference from which the sequences should be fetched.
+
+=over
+
+=item segment (default)
+
+Retrieve sequences from the start to the end positions of each feature
+(possibly extended with the options I<-upstr_ext>, I<-downstr_ext> or
+I<-extend>).
+
+=item start | end | center
+
+Retrieve sequences relative to repsectively the start, the end or the
+central position of each feature.
+
+This option is generally combined with the options I<-upstr_ext>,
+I<-downstr_ext> or I<-extend>, in order to retrieve sequences of a
+fixed width around the reference coordinate (e.g. 200 bp on each side
+of peak centers).
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-reference") {
+      $main::reference = shift(@arguments);
+
+=pod
+
+=item B<-top #>
+
+Only consider the # top features of the bed file as queries.
+
+This option is convenient for restricting the number of peak
+sequences, and for testing.
+
+=cut
+
+    } elsif ($arg eq "-top") {
+      $main::top = shift(@arguments);
+      &RSAT::error::FatalError($main::top, "Invalid value for top; should be a Natural number") unless (&RSAT::util::IsNatural($top));
+
+=pod
+
+=item B<-chunk #>
+
+Send queries to UCSC by chunk of # features (default: chunk=10000).
+
+This can be useful to fix problems of timeout, which can occur if too
+many queries are sent to UCSC in one shot.
+
+=cut
+
+    } elsif ($arg eq "-chunk") {
+      $main::chunk = shift(@arguments);
+      &RSAT::error::FatalError($main::chunk, "Invalid value for chunk; should be a Natural number") unless (&RSAT::util::IsNatural($top));
+
+
+=pod
+
+=item	B<-o outputfile>
+
+The output file is in fasta format.
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message is sent to the log file, because fasta files cannot
+## contain comments
+sub Verbose {
+  print $log "; fetch-sequences ";
+  &PrintArguments($log, 1);
+  printf $log "; %-22s\t%s\n", "Program version", $program_version;
+  printf $log "; %-22s\t%s\n", "Genome", $genome;
+  printf $log "; %-22s\t%s\n", "DAS server URL", $das_server_url;
+  printf $log "; %-22s\t%s\n", "Reference", $reference;
+  printf $log "; %-22s\t%d\n", "Upstream extension", $upstr_extension;
+  printf $log "; %-22s\t%d\n", "Downstream extension", $downstr_extension;
+  printf $log "; %-22s\t%d\n", "Invalid rows in query file", scalar(@main::skipped_rows);
+  if (%main::infile) {
+    print $log "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $log ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $log "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $log ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__

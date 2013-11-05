@@ -1,0 +1,677 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: alter-graph,v 1.11 2011/02/17 04:44:08 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+alter-graph
+
+=head1 DESCRIPTION
+
+Alter a graph either by adding or removing edges or nodes
+
+=head1 AUTHORS
+
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+graph tools
+
+=head1 USAGE
+
+alter-graph [-o outputfile] [-v #] [...]
+
+=head1 INPUT and OUTPUT FORMATS
+
+=head2 Graph format
+
+See I<convert-graph> for a description of the supported input graph
+formats. Default format for the input graph: tab.
+=head1 OUTPUT FORMAT
+
+Graph in GML, TAB or DOT format (to be specified by the -out_format option)
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+use List::Util 'shuffle';
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::out = STDOUT;
+    
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+
+    ## Output formats
+    local $output_format = "tab";
+    %supported_output_format =(
+			       dot=>1,
+			       gml=>1,
+			       tab=>1
+    );
+    $supported_output_formats = join (",", keys %supported_output_format);
+
+    ## Parameters
+    $add_edges = 0; 	# Number of edges to add
+    $add_nodes = 0; 	# Number of nodes to add
+    $rm_edges = 0; 	# Number of edges to remove
+    $rm_nodes = 0; 	# Number of nodes to remove
+    
+    $duplicated = 0; 	# duplicated edges
+    $directed = 0;   	# directed edges   
+    $self_loop = 0;       	# self loops
+    %targets =();	# list of nodes that must be removed
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+#     if (scalar(keys(@targets) > 0) && ($rm_edges > 0 || $rm_nodes > 0)) {
+#       &RSAT::error::FatalError("-target option cannot be used with -rm_nodes or -rm_edges option")
+#     }
+
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Initialize and read the input graph
+    $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "input graph");
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
+    
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    #### Transformation of the percentage values in absolute values
+    my ($nbnodes, $nbedges) = $graph->properties();
+    if ($add_edges  && $add_edges =~ /%/) {
+      $add_edges =~ s/%//;
+      $add_edges = int(($nbedges / 100)*$add_edges);
+    }
+    if ($rm_edges && $rm_edges =~ /%/) {
+      $rm_edges =~ s/%//;
+      $rm_edges = int(($nbedges / 100)*$rm_edges);
+    }
+    if ($add_nodes && $add_nodes =~ /%/) {
+      $add_nodes =~ s/%//;
+      $add_nodes = int(($nbnodes / 100)*$add_nodes);
+    }
+    if ($rm_nodes && $rm_nodes =~ /%/) {
+      $rm_nodes =~ s/%//;
+      $rm_nodes = int(($nbnodes / 100)*$rm_nodes);
+    }
+    my $total_requested_edge_number = $nbedges+$add_edges-$rm_edges;
+    ## Check that the number of nodes or edges to remove is reasonable
+    if ($rm_edges > $nbedges) {
+      &RSAT::error::FatalError("Too many edges to remove", "Graph $nbedges", "To remove $rm_edges");
+    }
+    if ($rm_nodes > $nbnodes) {
+      &RSAT::error::FatalError("Too many nodes to remove", "Graph $nbnodes", "To remove $rm_nodes");
+    }
+        
+    #### 1 #### Filtering out the target nodes (if any) or remove them placing all nodes in an array
+    my @arcs = $graph->get_attribute("arcs");
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my @nodes = keys %nodes_name_id;
+    my %nodes_color = $graph->get_attribute("nodes_color");
+    #### Check that the target nodes exist in the graph (if not remove them from the hash).
+    foreach my $node (keys %targets) {
+      if (!defined($nodes_name_id{$node})) {
+        delete $targets{$node};
+        &RSAT::message::Warning("Could not find target node $node"."\n") if ($main::verbose >= 2);
+      } else {
+        delete $nodes_name_id{$node};
+      }
+    }
+    my %degrees = ();
+
+    my @removed_nodes_graph_array = (); # First arcs array from which we remove the nodes
+    my @altered_graph_array = (); # Second arcs array from which we remove the edges and add the edges
+    my %arcs_id = (); # arcs existing in the @altered_graph_array
+    my @arcs_attribute = (); # Array corresponding to @altered_graph_array where we place the word original or random depending on the cases
+    # Select nodes to be removed randomly
+    my @shuffle_nodes = &shuffle(@nodes);
+    my $altered_edges = 0;
+    for (my $i = scalar(keys (%targets)); $i < $rm_nodes; $i++) {
+      $targets{$shuffle_nodes[$i]}++;
+      delete $nodes_name_id{$shuffle_nodes[$i]};
+    }
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      my $source_node = $arcs[$i][0];
+      my $target_node = $arcs[$i][1];
+      my $weight = $arcs[$i][2];
+      my $color = $arcs[$i][3];
+      if (!defined $targets{$source_node} && !defined $targets{$target_node}) {
+        $removed_nodes_graph_array[$altered_edges][0] = $source_node;
+        $removed_nodes_graph_array[$altered_edges][1] = $target_node;
+        $removed_nodes_graph_array[$altered_edges][2] = $weight;
+        $removed_nodes_graph_array[$altered_edges][3] = $nodes_color{$source_node};
+        $removed_nodes_graph_array[$altered_edges][4] = $nodes_color{$target_node};
+        $removed_nodes_graph_array[$altered_edges][5] = $color;
+        $degrees{$source_node}++;
+        $degrees{$target_node}++;
+        $altered_edges++;
+      } 
+    }
+    
+    
+    #### 2 #### Filtering out edges at random
+    ## Number of removed edges in the first run (while removing nodes).
+    my $removed_edges = scalar(@arcs) - scalar(@removed_nodes_graph_array);
+    ## Number of edges that still have to be removed $rm_edges - $removed_edges
+    my $edges_to_remove = $rm_edges - $removed_edges;
+    ## Select at random $edges_to_remove
+    my @arcs_size = 0 .. (scalar(@removed_nodes_graph_array)-1);
+    my @shuffled_arcs_size = shuffle(@arcs_size);
+    $altered_edges = 0;
+    # The first $edges_to_remove of this @shuffled_arcs_size array won't be added in the new array
+    # if the removal of an edge decreases the node degree to 0 -> then we consider 
+    # the next @shuffled_arcs_size element
+    # Place them in to a hash
+    my %edges_indices_to_remove = ();
+    for (my $i = 0; $i < $edges_to_remove; $i++) { 
+      $edges_indices_to_remove{$shuffled_arcs_size[$i]}++; # This hash contains the list of indices of the edge that will be removed from @removed_nodes_graph_array
+    } 
+    my $rm = 0;
+    for (my $i = 0; $i < scalar(@removed_nodes_graph_array); $i++) {
+      my $source_node = $removed_nodes_graph_array[$i][0];
+      my $target_node = $removed_nodes_graph_array[$i][1];
+      my $source_degree = $degrees{$source_node}-1;
+      my $target_degree = $degrees{$target_node}-1;
+      if (!defined($edges_indices_to_remove{$i}) || (defined($edges_indices_to_remove{$i}) && ($source_degree == 0 || $target_degree == 0))) {
+        # if $i is not in the list of edges to remove, or if by removing edge $i, we suppress a node -> we keep the edge
+        my $weight = $removed_nodes_graph_array[$i][2];
+        my $source_node_color = $removed_nodes_graph_array[$i][3];
+        my $target_node_color = $removed_nodes_graph_array[$i][4];
+        my $edge_color = $removed_nodes_graph_array[$i][5];
+        $altered_graph_array[$altered_edges][0] = $source_node;
+        $altered_graph_array[$altered_edges][1] = $target_node;
+        $altered_graph_array[$altered_edges][2] = $weight;
+        $altered_graph_array[$altered_edges][3] = $source_node_color;
+        $altered_graph_array[$altered_edges][4] = $target_node_color;
+        $altered_graph_array[$altered_edges][5] = $edge_color;
+        $arcs_attribute[$altered_edges] =  "original";
+        $degrees{$source_node}--;
+        $degrees{$target_node}--;
+        my $id = join("_",$source_node,$target_node);
+        $arcs_id{$id}++;
+        if ($directed) {
+          my $id_rev = join("_",$source_node,$target_node);
+          $arcs_id{$id_rev}++;
+        }
+        $altered_edges++;
+      } 
+      if (defined($edges_indices_to_remove{$i}) && ($source_degree == 0 || $target_degree == 0)) {
+        # If by removing the edge we remove one node, tag the next edge for deletion... if this one is already tagged for deletion
+        # we tag the following one
+        my $j = $i;
+        while (defined($edges_indices_to_remove{$j+1})) {
+          $j++;
+        }
+        $edges_indices_to_remove{$j+1}++;
+      }
+    }
+    #### 3 #### Adding nodes and edges
+    my %all_nodes = %nodes_name_id; ## Hash containing all nodes at disposition
+    my %new_nodes = ();
+    ## Add new nodes to %all_nodes if required
+    for (my $i = 0; $i < scalar($add_nodes); $i++) {
+      my $node_name = "added_node_".$i;
+      $new_nodes{$node_name}++;
+      $all_nodes{$node_name}++;
+    }
+    
+    $altered_edges = 0;
+    my $altered_graph_array_size = scalar @altered_graph_array;
+    my $index = 0;
+    my @random_nodes = &shuffle (keys (%all_nodes));
+    
+    # Check if there are enough nodes for the number of requested edges
+    my $available_nodes = scalar (keys (%all_nodes));
+    my $max_arc_number = 0;
+    if (!$duplicated) { 
+      if (!$directed && !$self_loop) {
+        $max_arc_number = ($available_nodes*($available_nodes-1))/2;
+     } elsif ($directed && $self_loop) {
+        $max_arc_number = ($available_nodes*$available_nodes);
+      } elsif ($directed && !$self_loop) {
+        $max_arc_number = ($available_nodes*($available_nodes-1));
+      } elsif (!$directed && $self_loop) {
+        $max_arc_number = ($available_nodes*($available_nodes+1))/2;
+      }
+    }
+    if ($max_arc_number <  $total_requested_edge_number) {
+      &RSAT::error::FatalError("Too many edges to add", "Maximum", "$max_arc_number", "Requested", $total_requested_edge_number);
+    }
+    
+    while ($altered_edges < $add_edges) {
+      my @random_nodes = &shuffle (keys (%all_nodes));
+      $factor = $index % (scalar(@random_nodes));  
+      $source_node = $random_nodes[($index) % (scalar(@random_nodes))];
+      $target_node = $random_nodes[($index+$factor) % (scalar(@random_nodes))];
+      $index++;
+      $id = join("_",$source_node,$target_node);
+      next if (!$duplicated && defined($arcs_id{$id}));
+      next if (!$self_loop && $source_node eq $target_node);
+      $source_node_color = $nodes_color{$source_node} || "#000088";
+      $target_node_color = $nodes_color{$target_node} || "#000088";
+      $edge_color = "#FF00FF";
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][0] = $source_node;
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][1] = $target_node;
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][2] = $id;
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][3] = $source_node_color;
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][4] = $target_node_color;
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][5] = $edge_color;
+      $arcs_attribute[$altered_graph_array_size+$altered_edges] = "random";
+      my $id = join("_",$source_node,$target_node);
+      $arcs_id{$id}++;
+      if ($directed) {
+        my $id_rev = join("_",$source_node,$target_node);
+        $arcs_id{$id_rev}++;
+      }
+      delete $new_nodes{$source_node};
+      delete $new_nodes{$target_node};
+      $altered_edges++;
+    }
+    foreach my $new_node (keys %new_nodes) {
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][0] = $new_node;
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][1] = "###NANODE###";
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][2] = "";
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][3] = "#000088";
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][4] = "";
+      $altered_graph_array[$altered_graph_array_size+$altered_edges][5] = "";
+#       $altered_edges++;
+    }
+
+    
+    ################################################################
+    ## Initialize and read the resulting altered graph
+    my $altered_graph = new RSAT::Graph2();
+    $altered_graph->set_attribute("label", "altered_graph");    
+    $altered_graph->set_array_attribute("arcs_attribute", @arcs_attribute);    
+    $altered_graph->load_from_array(@altered_graph_array);
+    my ($altered_nb_nodes, $altered_nb_edges) = $altered_graph->properties();
+    
+    
+    ################################################################
+    ## Print output
+    print $out $altered_graph->to_text($output_format);
+    my $message = "";
+    
+    $message .= join("\t", "Number of edges to remove", $rm_edges."\n");
+    $message .= join("\t", ";\tNumber of edges to add", $add_edges."\n");
+    $message .= join("\t", ";\tNumber of nodes to remove", $rm_nodes."\n");
+    $message .= join("\t", ";\tNumber of nodes to add", $add_nodes."\n");
+    $message .= join("\t", ";\tOriginal graph has", $nbnodes, "nodes and", $nbedges, "edges\n");
+    $message .= join("\t", ";\tAltered graph has", $altered_nb_nodes, "nodes and", $altered_nb_edges, "edges");
+
+    
+    
+    &RSAT::message::Info($message) if ($main::verbose >= 1);
+    
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+      if ($output_format eq 'tab') {
+	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+	print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+      } else {
+	warn &RSAT::util::ReportExecutionTime($start_time);
+      }
+    }
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{graph} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    ### Input format  
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml. By default, the output format is tab.
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+	    ### Output format  
+
+=item B<-out_format output_format>
+
+Output format. Supported: tab, dot, gml. By default, the output format is tab.
+
+=cut 
+	} elsif ($arg eq "-out_format") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
+=item B<-scol>
+
+Source column. Column containing the source nodes. 
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes. 
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes. 
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+=pod
+
+=item B<-rm_edges>
+
+Number of edges to add. This value can either be a percentage value or a discrete number.
+
+=cut
+	} elsif ($arg eq "-rm_edges") {
+	    $rm_edges = shift (@arguments);
+	    $check = $rm_edges;
+	    $check =~ s/\%//;
+	    unless (&IsNatural($check) && ($check > 0)) {
+		&RSAT::error::FatalError(join("\t", $rm_edges, "Invalid value for the number of edges to remove. Must be a strictly positive natural number or a integer proportion (%)"));
+	    }
+	    
+=item B<-rm_nodes>
+
+Number of edges to add. This value can either be a percentage value or a discrete number.
+
+=cut
+	} elsif ($arg eq "-rm_nodes") {
+	    $rm_nodes = shift (@arguments);
+	    $check = $rm_nodes;
+	    $check =~ s/\%//;
+	    unless (&IsNatural($check) && ($check > 0)) {
+		&RSAT::error::FatalError(join("\t", $rm_nodes, "Invalid value for the number of nodes to remove. Must be a strictly positive natural number or a integer proportion (%)"));
+	    }	    
+
+=pod
+
+=item B<-add_edges>
+
+Number of edges to add. This value can either be a percentage value or a discrete number.
+
+=cut
+	} elsif ($arg eq "-add_edges") {
+	    $add_edges = shift (@arguments);
+	    $check = $add_edges;
+	    $check =~ s/\%//;	    
+	    unless (&IsNatural($check) && ($check > 0)) {
+		&RSAT::error::FatalError(join("\t", $add_edges, "Invalid value for the number of edges to add. Must be a strictly positive natural number or a integer proportion (%)"));
+	    }
+=pod	
+    
+=item B<-add_nodes>
+
+Number of edges to add. This value can either be a percentage value or a discrete number.
+
+=cut
+	} elsif ($arg eq "-add_nodes") {
+	    $add_nodes = shift (@arguments);
+	    $check = $add_nodes;
+	    $check =~ s/\%//;
+	    unless (&IsNatural($check) && ($check > 0)) {
+		&RSAT::error::FatalError(join("\t", $add_nodes, "Invalid value for the number of nodes to add. Must be a strictly positive natural number or a integer proportion (%)"));
+	    }	    
+=pod
+
+=item B<-directed>
+
+Specifies whether the edges must be considered as directed, i.e., an edge 
+from node A to node B is different from an edge from B to A (by default, edges are not directed).
+
+=cut
+	    	    
+	} elsif ($arg eq "-directed") {
+	    $directed = 1;
+=pod
+
+=item B<-duplicate>
+
+Specifies whether more than one edge may link two nodes. (by default, duplicated edges are not allowed)
+
+=cut
+	    	    
+	} elsif ($arg eq "-duplicate") {
+	    $duplicated = 1;
+=pod
+
+=item B<-self>
+
+Allows self loops (by default, self loops are not allowed)
+
+
+=cut	    
+	} elsif ($arg eq "-self") {
+	    $self_loop = 1;
+
+=pod
+
+=item B<-target>
+
+Nodes that have to be removed in the graph (if existing). This option can be used iteratively or the nodes names 
+must be separated by comas. 
+
+
+=cut	    
+	} elsif ($arg eq "-target") {
+	  $targets = shift (@arguments);
+	  my @targets = split(/,/, $targets);
+	  foreach my $node (@targets) {
+	    $targets{$node}++;
+	  }
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; alter-graph ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut

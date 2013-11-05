@@ -1,0 +1,476 @@
+<html>
+  <head>
+    <title>RSA-tools - tutorials - Pathway extraction</title>
+    <!--   <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+  </head>
+  <body>
+
+
+    <center>
+      <h1><a href="../RSAT_home.cgi">RSA-tools</A> - 
+	<a href="tutorials.html">Tutorials</a> - Combining RSAT and
+	NeAt to predict metabolic pathways and their regulation
+      </h1>
+    </center>
+
+
+
+    <h2>Contents</h2>
+
+    <p>
+      <ol>
+	<li><a href='#prerequisite'>Prerequisite</a></li>
+	<li><a href='#intro'>Introduction</a></li>
+	<li><a href='#questions'>General goal and specific questions</a></li>
+	<li><a href='#ecocyc'>Browsing annotated pathways with EcoCyc</a></li>
+	<li><a href='#path_finding'>Two-ends path finding</a></li>
+	<li><a href='#operon prediction'>Operon prediction</a></li>
+	<li><a href='#fp_disco'>Footprint discovery</a></li>
+	<li><a href='#pathway_extraction'>Extracting a pathway from an operon</a></li>
+	<li><a href='#biblio'>Bibliography</a></li>
+      </ol>
+    </p>
+    <!--
+	<a name='prerequisite'></a><hr><h2>Prerequisite</h2>
+
+
+<p>The theoretical background required for this tutorial can be found
+in the <a href='../course/'>RSAT course</a>.</p>
+
+<p>In particular, we recommend to read the following slides before starting this tutorial.
+<ul>
+  <li><a href=''></a></li>
+</ul>
+</p>
+-->
+
+      <a name='intro'></a><hr><h2>Introduction</h2>
+
+    <p>We now dispose of the complete genome for more than 1,000
+      Bacteria, and this number is expected to grow even faster with
+      the advent of Next Generation Sequencing (NGS) methods. For most
+      of these bacteria, almost nothing is known about metabolism,
+      regulation. These bacteria were sequenced because they present
+      some interest for medicine, biotechnologies, agriculture, but
+      they have not yet been characterized by geneticists or
+      biochemists, and it is very likely that they will never be, just
+      because there are not enough people and financial resources to
+      perform all the required experiments. </p>
+    
+    <p>Bioinformatics is thus the most reasonable way to at least try
+      understanding the composition of these genomes, the function of
+      their genes, and the way they interact to allow an organism of
+      interest to survive in its environment. The first annotation
+      step consists in comparing the sequence of each gene product to
+      a database of protein functions (e.g. <a target='_blank'
+      href='http://www.uniprot.org'>Uniprot</a>), and to infer
+      individual gene function by sequence similarity. </p>
+    
+    <p>Gene-wise analysis is however restricted to a one-by-one
+      prediction, and does not inform us on how genes and proteins are
+      integrated into complex processes. However, several predictive
+      methods have been developed to address this question, in various
+      ways.
+      <ol>
+	<p><li><b>Operon prediction</b>:. In Bacteria, genes involved
+	    in the same process are often regrouped in operons
+	    (defined here as poly-cistronic transcription
+	    units). Genes belonging to the same operon are generally
+	    separated by a very short intergenic space (less than
+	    50bp) or can even overlap, since the stop codon of a gene
+	    (<tt>TAA</tt>, <tt>TAG</tt>, <tt>TGA</tt>) can overlap
+	    with the start codon (<tt>ATG</tt>) of the next gene in
+	    two ways. Operons can be predicted with a reasonable
+	    accuracy (~80%) by grouping genes separated by a distance
+	    shorter than a given limit (e.g. 55bp), using a simplified
+	    approach derived from Salgado et al., 2000;
+	    Moreno-Hagelsieb et al., 2002.</li></p>
+	<p><li><b>Inference of co-regulation networks and prediction
+	      of regulons</b>. Transcription (single genes or operons)
+	      involved in a same function are generally co-regulated
+	      at the transcriptional level by some specific
+	      transcription factor. For example, in <i>Escherichia
+	      coli</i> enzymes involved in methionine biosynthesis are
+	      regulated by the MetJ repressor, genes involved in
+	      arginine biosynthesis by the ArgR repressor, and so
+	      on. This regulation is relatively well conserved across
+	      species, up to a given taxonomical level
+	      (Gammaproteobacteria). We can predict the cis-regulatory
+	      elements of a gene by detecting phylogenetic footprints,
+	      i.e. sequence motifs that are conserved in the upstream
+	      sequences of its orthologs (Janky and van Helden,
+	      2008). We can further link genes having similar
+	      footprints, in order to infer a co-regulation network
+	      (Broh&eacute;e et al., 2011), and extract from this
+	      network the modules of highly connected genes, which are
+	      likely to reveal regulons. </li></p>
+	<p><li><b>Prediction of metabolic pathways</b>. Starting from
+	    a set of enzymes supposed to be involved in the same
+	    process (e.g. found in a predicted operon or regulon), we
+	    can identify the reactions they can catalyze, and apply
+	    path finding methods (Croes et al.; 2005; 2006; Faust et
+	    al., 2009a, 2009b) to find the link between pairs of
+	    reactions. More interestingly, we can use this set of
+	    reactions as seeds to extract a subgraph from the
+	    reaction/compound network, in order to predict the
+	    metabolic pathway that can be catalyzed by the products of
+	    a given operon or regulon (Faust et al., 200. </li></p>
+      </ol>
+    </p>
+    
+
+    <a name='questions'></a><hr><h2>General goal and specific questions</h2>
+    
+
+    <p>The general goal of the tutorial is to learn the use of a
+      series of bioinformatics tools to predict metabolic pathways and
+      their regulation. More specifically, we would like to address
+      the following question. </p>
+    
+    <ol>
+      <p><li><b>Browsing EcoCyc</b>. The first step of the tutorial
+	  will consists in selecting a pathway of interest, and
+	  analyzing the corresponding annotation in the E.coli pathway
+	  database EcoCyc. This will be considered as the reference
+	  pathway for the subsequent steps. </li></p>
+
+      <p><li><b>Two-ends path finding</b>. Can we recover our pathway
+	  of interest by finding the shortest path between its start
+	  and end compounds ?</li></p>
+
+      <p><li><b>Operon prediction</b>. Are the genes of the pathway
+	  regrouped in one or several operons, or are they scattered over
+	  the genome ?</li></p>
+
+      <p><li><b>Footprint discovery</b>. Using comparative genomics,
+	  can we predict the cis-acting elements of the genes coding
+	  for the enzymes involved in a pathway of interest ? How
+	  widely are these elements conserved across the taxonomy ? Do
+	  we detect similar conserved motifs (phylogenetic footprints)
+	  in the promoters of different genes of our pathway of
+	  interest ?
+      </li></p>
+
+      <p><li><b>Pathway extraction</b>. The distance-based method
+	  provides a quick and easy way to perform a rough prediction
+	  of all the operons of a given genome. some operons will
+	  contain a set of enzymes, supposedly involved in a common
+	  metabolic pathway. If an operon contains several
+	  enzyme-coding genes, can we predict the pathway catalyzed by
+	  these enzymes ?
+      </li></p>
+
+    </ol>
+    
+    <p>In this tutorial, we will combine the Regulatory Sequence Analysis
+      Tools (RSAT, <a target='_blank'
+		      href='http://rsat.ulb.ac.be/rsat/'>http://rsat.ulb.ac.be/rsat/</a>)
+      and Network Analysis Tools (NeAT, <a target='_blank'
+					   href='http://rsat.ulb.ac.be/neat/'>http://rsat.ulb.ac.be/neat/</a>) to
+      analyze metabolic pathways and their regulation.</p>
+    
+    <p>Each student will choose a different metabolic pathway as study
+      case, and run various bioinformatics tools to analyze this pathway and
+      its regulation. </p>
+
+    <a name='ecocyc'></a><hr><h2>Browsing annotated pathways with EcoCyc</h2>
+    
+
+    <div class='protocol'>
+      <h3>Protocol</h3>
+      <ol>
+	<li>Open a connection to EcoCyc (<a target='_blank'
+	href='http://www.ecocyc.org/'>http://www.ecocyc.org/</a>)</li>
+	<li>Enter the name of a pathway of interest (for example an
+	  "Lysine biosynthesis") and follow the link to that
+	  pathway. you should try to find a pathway with a sufficient
+	  number of reaction steps (at least 4).</li>
+	<li>By clicking on the button <i>More detail</i>, you can
+	  obtain a progressively more refined view of the pathway,
+	  with details about compound structure etc.</li>
+	<li>Read carefully the record, and pay a particular attention
+	  to the location of mapped genes and the genetic regulation
+	  schematic.
+
+	  <p><b>Note:</b> For the sake of this tutorial, you should
+	  better use a pathway that is regulated at the
+	  transcriptional level (e.g. methionine biosynthesis), or
+	  whose genes are grouped in operons (e.g. histidine
+	  biosynthesis). </li>
+      </ol>
+    </div>
+    
+
+    <a name='path_finding'></a><hr><h2>Two-ends path finding</h2>
+    
+    <div class='protocol'>
+      <h3>Protocol</h3>
+      <ol>
+	<li>Open a connection to the Network Analysis Tools (NeAT,
+           <a target='_blank'
+           href='http://rsat.ulb.ac.be/neat/'>http://rsat.ulb.ac.be/neat/</a>)
+           and select the tool <b>Metabolic path finding</b>.
+	</li>
+
+	<li>Try to find the shorter path between the initial substrate
+	  and end product of your study case pathway. For this, first
+	  leave all options to their default values.
+	  <br><b>Beware</b>:
+	  the first step of the analysis returns the list of comounds
+	  that match queries for the start and end compounds. Make
+	  sure you select the rigth compound (e.g. L-apsartate and
+	  L-lysine for the lysine biosynthesis pathway). </li>
+
+	<li>Compare the predicted pathways with the reference pathway
+	  (the one annotated in EcoCyc).</li>
+
+	<li>Redo the analysis by changing the option <b>Graph type</b>
+	  to <i>Reaction network (compounds and reactions)</i> </li>
+
+	<li>Reset the option <b>Graph type</b> to <i> RPAIR network
+	    (compounds and reactant pairs)</i>, and test the ipmpact
+	    of the <b>Weighting scheme</b>. What happens when you
+	    disable compound weighting ? </li>
+	
+	<li>For each parameter setting, compare the predicted
+	  pathway and the annotated one, by computing the numbers of
+	  TP, FP, TN, as well as the Sensitivity and Positive
+	    Predictive Value.
+	</li>
+      </ol>
+    </div>
+    
+    <div class='tips'>
+      <h3>Tips</h3>
+      <p>To compute the accuracy statistics, you can use the following
+	definitions.
+	<ul>
+	<li>Number of true positives (<b>TP</b>): reactions that are both
+	  found by path finding and annotated in the EcoCyc
+	  pathway. </li>
+	<li>Number of false positives (<b>FP</b>): reactions found in the
+	  predicted path but not in the annotated path.</li>
+	<li>Number of false negatives (<b>FN</b>): reactions present in
+	  the annotated pathway but not detected in the rpedicted
+	  pathway.</li>
+      </ul>
+      </p>
+      <p>You can then derive the statistics.
+	<ul>
+	  <li>Sensitivity: <b>Sn = TP / (TP + FN)</b>.  Fraction of the
+	    annotated reactions that were correctly recovered by
+	    path finding.</li>
+	  <li>Positive Predictive Value: PPV = TP / (TP + FP).
+	    Fraction of the predicted reactions that were part of
+	    the annotated pathway.</li>
+	  <li>Accuracy: <b>Acc<sub>geom</sub> = sqrt(Sn * PPV)</b>. The geometric accuracy
+	    of sensitivity and positive predictive value.</li>
+	</ul>
+      </p>
+    </div>
+
+    <div class='exo'>	
+      <h3>Questions</h3>
+      <ol>
+	<li>What is the impact of the following parameters on Sn, PPV
+	  and accuracy ?
+	<ul>
+	  <li>Network type: RPAIR versus reaction network.</li>
+	  <li>Weighting scheme: activating or not the compound weightinf.</li>
+	</ul>
+	<li>Are there interactions between the parameters ? More
+	  precisely, has the weighting scheme (unweighted versus
+	  weighted compounds) the same impact on the search in the
+	  RPAIR network as in the weighted reaction network ? </li>
+      </ol>
+    </div>
+
+    <a name='operon prediction'></a><hr><h2>Operon prediction</h2>
+    
+    <div class='protocol'>
+      <h3>Protocol</h3>
+      <ol>
+	<li>Open a connection to the Regulatory Sequence Analysis Tools (RSAT, 
+           <a target='_blank'
+           href='http://rsat.ulb.ac.be/rsat/'>http://rsat.ulb.ac.be/rsat/</a>)
+           open the toolbox <b>Genomes and genes</b> and select the
+           tool <b>Infer operon</b>.
+	</li>
+	<li>Enter the name of all the genes involved in your patwhay
+	  of interest, leave all other parameters to their default
+	  value and click GO.</li>
+      </ol>
+    </div>
+
+    <div class='exo'>
+      <h3>Questions</h3>
+      <ol>
+	<li>Compare the predicted operons with the annotations in
+	EcoCyc. How accurate was the simple distance-based method ?
+	Can you optimize the distance threshold to recover the
+	annotated operons for your genes ? </li>
+      </ol>
+    </div>
+
+
+    <a name='fp_disco'></a><h2>Footprint discovery</h2>
+    
+    <div class='protocol'>
+      <h3>Protocol</h3>
+      <ol>
+	<li>Open a connection to the Regulatory Sequence Analysis Tools (RSAT, 
+          <a target='_blank'
+           href='http://rsat.ulb.ac.be/rsat/'>http://rsat.ulb.ac.be/rsat/</a>).</li>
+        <li>Open the toolbox <b>Comparative genomics</b>, and select
+           the tool <b>footprint-discovery</b>.
+	</li>
+	<li>Enter the name of one of the enzyme-coding genes of your
+	  pathway of interest. Set the <b>Organism</b>
+	  to <i>Escherichia coli K12</i> and the <b>Taxon</b> option
+	  to <i>Enterobacteriales</i>. </li>
+	<li>Activate the option <b>predict operon leader genes</b>.</li>
+	<li>Enter your <b>email</b> address and click <b>GO</b>.
+	  <ul>
+	    <p>Beware, this analysis can take a bit of time (1-2
+	      minutes). While it is running, you can already perform the next
+	      section, and come back to the result after having received the
+	      email notification of the task completion.</p>
+	  </ul>
+	</li>
+	<li>Once you have received the task completion email, open the
+	  result page and click on the link "Final matrices (transfac
+	  format)". Copy the whole content of the file, and open a new
+	  connection to <a target='_blank'
+	  href='http://rsat.ulb.ac.be/rsat/'>RSAT</a>. In the
+	  toolbox <b>Matrix tools</b>,
+	  open <b>compare-matrices</b>. Paste your matrices, make sure
+	  that the rigth matrix format is selected
+	  (<i>transfac</i>). For the option <b>Reference matrices</b>,
+	  select <i>RegulondDB</i>. Leave all other parameters
+	  unchanged and type <b>GO</b>.</li>
+      </ol>
+    </div>
+
+    <div class='exo'>
+      <h3>Questions</h3>
+      <ol>
+	<li>Did the footprint-discovery program report significant dyads ?</li>
+	<li>Analyze the feature map : do you see conserved sites ? Do
+	  they occupy fixed positions or are they spread over the
+	  sequences ?</li>
+	<li>Are there know factors that are likey to bind the
+	  discovered motifs ? How do the discovered matrices compare
+	  with the known motifs in RegulonDB ? In case you found
+	  matches, are they consistent with the pathway of interest? </li>
+      </ol>
+    </div>
+    
+
+
+    <a name='pathway_extraction'></a><hr><h2>Extracting a pathway from an operon</h2>
+
+    <div class='exo'>
+      <h3>Questions</h3>
+    </div>
+
+
+    <a name='biblio'></a><hr><h2>Bibliography</h2>
+    
+    <ol>
+      <h3>Pathway prediction by subgraph extraction from metabolic networks</h3>
+      
+      <li>
+	Faust, K. and van Helden, J. (2012). Predicting Metabolic Pathways
+	by Sub-network Extraction. Methods Mol Biol 804, 107-30.
+	[<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/22144151'>PMID 22144151</a>]
+      </li>
+
+      <li>Faust, K., Croes, D. and van Helden, J. (2011). Prediction of
+	metabolic pathways from genome-scale metabolic networks. Biosystems
+	105, 109-21.
+	[<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/21645586'>PMID 21645586</a>]
+	[<a target='_blank'
+	    href='http://www.sciencedirect.com/science/article/pii/S0303264711000839'>doi:10.1016/j.biosystems.2011.05.004</a>]
+      </li>
+
+      <li>Faust, K., Dupont, P., Callut, J. and van Helden,
+	J. (2010). Pathway discovery in metabolic networks by subgraph
+	extraction. Bioinformatics 26:1211-8. 
+	[<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/20228128'>Pubmed 20228128]</a>]
+	[<a target='_blank' href='http://bioinformatics.oxfordjournals.org/content/26/9/1211.long'>Open access</a>]
+      </li>
+
+      <h3>Two-ends path finding</h3>
+      
+
+      <li>Faust, K., Croes, D. and van Helden, J. (2009b). In response to
+	"Can sugars be produced from fatty acids? A test case for pathway
+	analysis tools". Bioinformatics 2009 Sept 23. 
+	[<a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/19776213'>PMID 19776213</a>]
+      </li>
+
+      <li>
+	Faust, K., Croes, D. and van Helden, J. (2009a). Metabolic Pathfinding Using
+	RPAIR Annotation. J Mol
+	Biol. 
+	[<a href='http://www.ncbi.nlm.nih.gov/pubmed/19281817'>PMID 19281817</a>]</li>
+
+      <li>Croes, D., F. Couche, S.J. Wodak, J. van Helden (2006). Inferring
+	Meaningful Pathways in Weighted Metabolic Networks. J. Mol.
+	Biol. 356:222-36. <a
+			     href=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=16337962&query_hl=4&itool=pubmed_docsum>[PMID 16337962]</a>.</li>
+      
+      <li>Croes, D., F. Couche, S.J. Wodak, and J. van
+	Helden. 2005. Metabolic PathFinding: inferring relevant pathways in
+	biochemical networks. Nucleic Acids Res 33:
+	W326-330.<a
+		    href=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&dopt=Citation&list_uids=15980483>[PMID 15980483]</a>.</li>
+
+      <h3>Analysis of conserved cis-regulatory elements (phylogenetic footprints)</h3>
+
+      <li>
+	Brohee, S., Janky, R., Abdel-Sater, F., Vanderstocken, G., Andre,
+	B. and van Helden, J. (2011). Unraveling networks of co-regulated
+	genes on the sole basis of genome sequences. Nucleic Acids Res 39,
+	6340-58.
+	[<a target='_blank'href='http://www.ncbi.nlm.nih.gov/pubmed/21572103'>PMID 21572103</a>] 
+	[<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2011/05/13/nar.gkr264.long'>Open access</a>]
+      </li>
+
+      <li>Janky, R. and van Helden, J. Evaluation of phylogenetic
+	footprint discovery for the prediction of bacterial cis-regulatory
+	elements (2008). BMC Bioinformatics 2008, 9:37doi:10.1186/1471-2105-9-37. 
+	<a href='http://www.ncbi.nlm.nih.gov/pubmed/18215291'>[PMID 18215291].</a>
+	<a href='http://www.biomedcentral.com/1471-2105/9/37'>[Open access].</a>
+      </li>
+
+      <h3>Prediction of operons</h3>
+
+      <li>Moreno-Hagelsieb, G. & Collado-Vides, J. (2002). A powerful
+	non-homology method for the prediction of operons in
+	prokaryotes. Bioinformatics 18 Suppl 1, S329-36.</li>
+      
+      <li>Salgado, H., Moreno-Hagelsieb, G., Smith, T. F. & Collado-Vides,
+	J. (2000). Operons in Escherichia coli: genomic analyses and
+	predictions. Proc Natl Acad Sci U S A 97, 6652-7.</li>
+
+    </ol>
+
+
+
+
+    <a name='next'></a><hr><h2>Next steps</h2>
+
+    <p>
+      You can now come back to the <a href='tutorials.html'>tutorial main
+	page</a> and follow the next tutorials.</p>
+
+    <hr width="100%">
+    
+    <address>Last update 15 Jan 2012 - by <script type='text/javascript'><!--
+									 var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+									 //--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript></address>
+
+</body>
+</html>

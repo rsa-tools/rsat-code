@@ -1,0 +1,620 @@
+#!/usr/bin/perl -w
+
+############################################################
+#
+# $Id: download-ensembl-genome,v 1.49 2013/10/13 08:05:33 jvanheld Exp $
+#
+############################################################
+
+use warnings;
+
+=pod
+
+=head1 NAME
+
+download-ensembl-genome
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Download the genomic sequence of a user-specified organism from the
+Ensembl server, and convert the original format (fasta) into raw files
+required for RSAT sequence retrieval.
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+Revised by Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ download-ensembl-genome -species # [-ensembl_genomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
+
+=head2 Examples
+
+Get a list of species available at Ensembl
+
+ download-ensembl-genome -available_species
+
+Get raw genome sequences for the human genome (Homo sapiens)
+
+ download-ensembl-genome -species Homo_sapiens
+
+Get repeat-masked versio of the mouse genome (Mus musculus)
+
+ download-ensembl-genome -species Mus_musculus -rm
+
+=head1 OUTPUT FORMAT
+
+Sequence file in raw format
+
+=head1 SEE ALSO
+
+=head2 download-ensembl-variations
+
+Downloads variation for a species
+
+=head2 retrieve-variation-seq
+
+I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
+to make all the sequence of a variation.
+
+=head2 install-ensembl-genome
+
+Install genome from Ensembl on RSAT.
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
+use Bio::EnsEMBL::Registry;
+#use Bio::EnsEMBL::LookUp;
+
+################################################################
+## Main package
+package	main;
+{
+
+  ###############################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.49 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+  our $out = SDTOUT;
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $data_dir = &Get_data_dir();
+  our $registry = 'Bio::EnsEMBL::Registry';
+
+  our $db = "ensembl";
+  our $species = "";
+  our $taxid = "";
+  our $assembly_version = "";  
+  our $safe_ensembl_version = &Get_ensembl_version_safe($db);
+  our $latest_ensembl_version = &Get_ensembl_version($db);
+  our $ensembl_version = $safe_ensembl_version;
+
+  our $rm = 1;
+  our $get_available_species = 0;
+
+  our $force = 0; ## Force installation even if the genome is already installed
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version) if ($main::verbose >= 2);
+  &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version) if ($main::verbose >= 2);
+  &RSAT::message::Info("Selected ensembl version", $ensembl_version) if ($main::verbose >= 2);
+
+  if ($ensembl_version eq "safe") {
+      $ensembl_version = $safe_ensembl_version;
+
+  } elsif ($ensembl_version eq "latest") {
+      $ensembl_version = $latest_ensembl_version;
+
+  } else {
+    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
+    &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
+  }
+
+  &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 2);
+
+  my ($host,$port) = &Get_host_port($db);
+
+  ################################################################
+  ## Print verbose
+  $out = &OpenOutputFile($outfile{output});
+  &Verbose() if ($main::verbose >= 1);
+
+  ###############################################################
+  ## Print the list of available species
+  if ($get_available_species) {
+
+    &RSAT::message::TimeWarn("Getting available species", "host=".$host, "port=".$port) if ($main::verbose >= 2);
+
+    $registry->load_registry_from_db(
+      -host => $host,
+      -port => $port,
+      -user => 'anonymous',
+      -db_version => $ensembl_version
+    );
+
+    my @db_adaptors = @{ $registry->get_all_DBAdaptors(-group => 'core') };
+    my %species_taxon = ();
+
+    if ($db eq "ensembl_genomes") {
+      my $ens_version = &Get_ensembl_version_safe($db);
+      %species_taxon = &Get_species_taxon($db,$ens_version);
+    }
+
+    @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
+
+    foreach my $db_adaptor (@sort_species) {
+#       my $db_connection = $db_adaptor->dbc();
+#       if ($db_adaptor->group() eq "core") {
+         print $out ucfirst($db_adaptor->species());
+         print $out "\t",$species_taxon{$db_adaptor->species()} if ($species_taxon{$db_adaptor->species()});
+         print $out "\n";
+#      }
+    }
+    $registry->disconnect_all();
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
+    exit(0);
+  }
+
+  ###############################################################  
+  ## Check arguments
+  ## Identify species by taxonomic ID
+#   if ($taxid) {
+#     my $lookup = Bio::EnsEMBL::LookUp->new(-URL=>"http://bacteria.ensembl.org/registry.json",-NO_CACHE=>1);
+#     my @dbas = @{$lookup->get_all_by_taxon_id($taxid)};
+#     if (scalar(@dbas) == 0) {
+#       &RSAT::error::FatalError("There is no species in Ensembl corresponding to the taxonomic ID", $taxid);
+#     } elsif (scalar(@dbas) > 1) {
+#       &RSAT::message::Warning("The taxonomic ID", $taxid, "matches several species. The first one will be used");
+#     }
+#     my $dba = shift @dbas;
+#     &RSAT::message::Debug("DBA", $dba);
+#     die "HELLO";
+#   }
+
+  ## Check that the species has been specified
+  unless ($species) {
+    &RSAT::error::FatalError("You must specify a species to download. To get the list of supported species, type: download-ensembl-genome -available_species");
+  }
+
+  ################################################################
+  ## Connecting to ensembl
+  &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
+  $registry->load_registry_from_db (-host => $host,
+				    -port => $port,
+				    -user => 'anonymous',
+				    -db_version => $ensembl_version,
+				    -species => $species
+				   );
+
+  ################################################################
+  ## Get Adaptators
+  &RSAT::message::TimeWarn("Getting species slice from Ensembl") if ($main::verbose >= 2);
+  my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
+  if ($slice_adaptor) {
+    &RSAT::message::Debug("Slice adaptor", $slice_adaptor) if ($main::verbose >= 0);
+  } else {
+    &RSAT::error::FatalError("Cannot get slice adaptor for species", $species);
+  }
+
+  my $mca = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "metacontainer" );
+  if ($mca) {
+      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 0);
+  } else {
+      &RSAT::error::FatalError("Cannot get coordinate system adaptor (mca) for species", $species);
+  }
+
+  ################################################################  
+  # Get all Top Level slice
+  my @slices = @{$slice_adaptor->fetch_all('toplevel')};
+
+  ## Correct Ensembl error with the two Y human chr
+  if ($species eq "homo_sapiens") {
+    my @slice_tmp = ();
+    foreach my $slice (@slices) {
+      push (@slice_tmp,$slice) unless ($slice->name() =~ /:Y:/);
+    }
+    push (@slice_tmp,$slice_adaptor->fetch_by_region( 'chromosome', 'Y' ));
+    @slices = @slice_tmp;
+  }
+
+  ################################################################
+  ## Get available sequence on Ensembl and compare with sequence already install
+
+  ## Get genome_dir
+  my @token = split(":",$slices[0]->name());
+  $assembly_version = $token[1];
+  $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
+  &RSAT::util::CheckOutDir($genome_dir);
+
+
+  ## Get local install sequence
+  &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
+  my %seq_installed = ();
+  foreach ( glob($genome_dir."/*") ) {
+    next unless (/\.raw/);
+
+    $len = -s $_;
+    $_ =~ s/$genome_dir\///g;
+    $_ =~ s/\.raw//g;
+
+    my ($type,$slice) = split($assembly_version,$_);
+    $type =~ s/_/:/g;
+    $slice =~ s/_/:/g;
+
+    $seq_installed{$type.$assembly_version.$slice} = $len;
+  }
+
+
+
+  ################################################################
+  ##Download
+  &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);
+  foreach my $slice (@slices) {
+    &RSAT::message::TimeWarn("\tTreating slice",$slice->name()) if ($main::verbose >= 2);
+    my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
+    my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
+
+    if ( ($seq_norm_installed) && (!$force) ) {
+      &RSAT::message::TimeWarn("\tSkipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
+      next;
+    } else {
+      &RSAT::message::TimeWarn("\tDownloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
+      my $filename = $slice->name().".raw";
+      $filename =~ s/:/_/g;
+      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      print $out_seq_file $slice->seq();
+      close ($out_seq_file);
+    }
+
+    if ( (!$rm) || ( $seq_rm_installed && !$force ) ) {
+      &RSAT::message::TimeWarn("\tSkipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
+    } else {
+      &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
+      my $filename = $slice->name()."_repeatmasked.raw";
+      $filename =~ s/:/_/g;
+      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      print $out_seq_file $slice->get_repeatmasked_seq()->seq();
+      close ($out_seq_file);
+    }
+  }
+
+  ################################################################
+  ## Create contig description files (contigs.txt and contig.tab)
+  
+  &RSAT::message::TimeWarn("Creating contig description files (contigs.txt and contig.tab).") if ($main::verbose >= 2);
+  my $out_contigs = &OpenOutputFile($genome_dir."/contigs.txt");
+  my $out_contig =  &OpenOutputFile($genome_dir."/contig.tab");
+  print $out_contig "-- dump date","\t",&AlphaDate(),"\n";
+  print $out_contig "-- class","\t","EnsEMBL::Contig\n";
+  print $out_contig "-- table","\t","contig\n";
+  print $out_contig "-- table","\t","main\n";
+  print $out_contig "-- field 1","\t","id\n";
+  print $out_contig "-- field 2","\t","accession\n";
+  print $out_contig "-- field 3,","\t","version\n";
+  print $out_contig "-- field 4","\t","type\n";
+  print $out_contig "-- field 5","\t","length\n";
+  print $out_contig "-- field 6","\t","description\n";
+  print $out_contig "-- header\n";
+  print $out_contig "-- id","\t","accession","\t","version","\t","type","\t","length","\t","description\n";
+
+  foreach my $slice (@slices) {
+
+    ## contigs.txt
+    my $filename = $slice->name().".raw";
+    $filename =~ s/:/_/g;
+    print $out_contigs $filename,"\t",$slice->name(),"\n";
+
+
+    ## contig.tab
+    @token = split(":",$slice->name());
+    print $out_contig $slice->seq_region_name(),"\t",$slice->name(),"\t",$assembly_version,"\t",$token[0],"\t",$slice->length(),"\t",$token[0]," ",$slice->seq_region_name(),"\n";
+  }
+
+  close $out_contig;
+  close $out_contigs;  
+
+
+  ################################################################
+  ## Write last genome install
+  $supported_organism_file = &Get_supported_file($data_dir);
+  &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
+
+  @other_species = ();
+
+  if (-f $supported_organism_file) {
+
+    my ($s_o_file) = &OpenInputFile($supported_organism_file);
+
+    while (<$s_o_file>) {
+      my @token = split("\t");
+      push (@other_species, $_) unless ($token[0] eq &Get_species_dir_name($species,$assembly_version,$ensembl_version) );
+    }
+    close $s_o_file;
+  }
+
+  my $new_org_config = join ("\t", 
+    &Get_species_dir_name($species,$assembly_version,$ensembl_version),
+    ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
+    &Get_species_dir($data_dir,$species,$assembly_version,$ensembl_version)
+  );
+
+  ## Replace absolute paths by relative paths
+  $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|\/\/|/|g;
+
+  push (@other_species, $new_org_config."\n");
+
+  my $s_o_file = &OpenOutputFile($supported_organism_file);
+  print $s_o_file join("",@other_species);
+  close $s_o_file;
+
+  &RSAT::message::Info("Genome installed in folder", $genome_dir) if ($main::verbose >= 1);
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out;
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+        $main::verbose = shift(@arguments);
+      } else {
+        $main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-species species_name>
+
+Species that you want download variation (homo_sapiens, mus_musculus).
+
+Use the option I<-available_species> to print a list of available
+species at Ensembl, or options I<-available_species -ensembl_genomes>
+to get the species available at EnsemblGenomes (extended Ensembl).
+
+=cut
+    } elsif (($arg eq "-species") || ($arg eq "-org")) {
+      $main::species = lc(shift(@arguments));
+
+=pod
+
+=item B<-taxid #>
+
+Taxonomic ID of the species (organism), as defined in the NCBI
+taxonomy database (http://www.ncbi.nlm.nih.gov/taxonomy).
+
+=cut
+    } elsif ($arg eq "-taxid") {
+      $main::taxid = shift(@arguments);
+
+=pod
+
+=item B<-no_rm>
+
+Don't download repeat-masked genomic DNA.
+
+Interspersed repeats and low
+complexity regions are detected with the RepeatMasker tool and masked
+by replacing repeats with 'N's.
+
+=cut
+    } elsif ($arg eq "-no_rm") {
+      $main::rm = 0;
+
+=pod
+
+=item B<-ensembl_genomes>
+
+Download genome from ensembl genomes (Protist, fungi ...);
+
+=cut
+    } elsif ($arg eq "-ensembl_genomes") {
+      $main::db = "ensembl_genomes";
+
+=pod
+
+=item B<-available_species>
+
+Get all available species on Ensembl
+
+=cut
+    } elsif ($arg eq "-available_species") {
+      $main::get_available_species = 1;
+
+=pod
+
+=item B<-version #>
+
+The release version of ensEMBL.
+
+Supported versions: 70 to 72, safe, latest
+
+Default : I<safe>
+
+=over
+
+=item I<safe>
+
+The file locations and/or formats of the Ensembl rsync distribution
+may change between two Ensembl release.
+
+For this reason, we defined the "safe" version, which corresponds to
+the latest version of ensembl which has been checked to work with this
+script.
+
+=item latest
+
+This corresponds to the lastest version of Ensembl. Beware: this
+version is not guaranteed to be compatible with RSAT, in case Ensembl
+would change their file formats or locations.
+
+=back
+
+=cut
+    } elsif ($arg eq "-version") {
+      $ensembl_version = shift(@arguments);
+      &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.") 
+      unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
+
+=pod
+
+=item B<-force>
+
+Force installation even if the genome is already installed.
+
+=cut
+
+    } elsif ($arg eq "-force") {
+      $force = 1;
+
+=item B<-dir #>
+
+The directory in wich RSAT data must be installed. The selected
+species will be installed in a sub-directory composed of Species name
+and Ensembl genome version.
+
+Default : $RSAT/data/
+
+=cut
+    } elsif ($arg eq "-dir") {
+      $main::data_dir = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+The output file is used to hold a trace of the transfers (verbosity),
+and to store the list of species when the option -available_species is
+activated.
+
+If no output file is specified, the standard output is used.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    &RSAT::message::TimeWarn("Printing verbose") if ($main::verbose >= 3);
+  print $out "; download-ensembl-genome ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&Get_ensembl_version_safe($db);
+  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
+}

@@ -1,0 +1,65 @@
+#!/usr/bin/perl
+
+
+if (($ARGV[0] eq "-h")|| ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+NAME
+	factorial.pl
+	v 1.0, 31 July 1997 by Victoria
+
+DESCRIPTION
+	Calculates the factorial of a given number.
+
+CATEGORY
+	statistics
+
+USAGE
+	factorial.pl #
+
+ARGUMENTS
+	#	an integer number
+End_short_help
+  exit(0);
+}
+
+
+$number=$ARGV[0]; 
+
+if (($number eq "") || ($number < 0)) {
+    print "	Error: you should enter a positive integer\n";
+    exit;
+} elsif ($number =~ /\D/) {
+    print "	Error: your entered a non integer value\n";
+    exit(3);
+}
+
+print &factorial($number), "\n";
+
+
+exit(0);
+
+#### subroutine definition ####
+sub factorial {
+  if ($number < 170) {
+    $fact_n=1;
+    for $j (2..$number) {
+      $fact_n=$fact_n*$j;
+    }
+  } else {
+    $log_fac = 0;
+    for $j (2..$number) {
+     $log_fac += log($j);
+    }
+    $log_fac /= log(10);
+    $fact_n = 10**($log_fac - int($log_fac));
+    $fact_n .= "e";
+    if (int($log_fac)>0) {
+      $fact_n .= "+"; 
+    };
+    $fact_n .= int($log_fac);
+  }
+  return $fact_n
+}
+
+

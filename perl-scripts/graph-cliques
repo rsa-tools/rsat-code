@@ -1,0 +1,408 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-cliques,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+graph-cliques2
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Find all cliques in a graph
+
+=head1 AUTHORS
+
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+graph-clique [-i inputfile] [-o outputfile] [-v #] -size # [-size #]
+
+=head1 INPUT FORMATS
+
+Graph in GML or TAB format (to be specified by the -in_format option)
+
+See I<convert-graph> for a description of the supported input graph
+formats. Default format for the input graph: tab.
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited text file with 3 columns. 
+
+ 1) elements of the clique
+ 2) ID of the clique
+ 3) size of the clique
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+use warnings;
+use re 'eval';
+require "RSA.lib";
+require RSAT::Graph2;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+			      tab=>1,
+			      gml=>1
+			     );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+
+    # Size of the cliques
+    local $min_size = 3;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Initialize and read the input graph
+    $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "input graph");
+    $graph->graph_from_text($input_format, $main::infile{graph}, $source_col, $target_col, 0);
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    our %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    our @out_neighbours = $graph->get_attribute("out_neighbours");
+    our @in_neighbours = $graph->get_attribute("in_neighbours");
+    my %empty = ();
+    our %neighbours = ();
+    our $clique_nb = 1;
+    print $out join("\t", "#element" ,"clique", "size")."\n";
+    &cliques(\%empty, \%nodes_id_name, \%nodes_id_name);
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+############################################################################################################"
+## Calculate the cliques. This is a recursive function described in Johnston H.C. (1975) and based on the 
+## Bron-Kerbosch algorithm (1973). 
+## The call to the function is done with references to three sets represented by references to hashes
+## 1) Empty set
+## 2) Set containing all nodes
+## 3) Set containing all nodes
+
+sub cliques {
+  my ($combination_ref, $intersection_ref, $possible_ref) = @_;
+  my %combination = %{$combination_ref};
+  my %possible = %{$possible_ref};
+  my %intersection = %{$intersection_ref};
+  if (scalar (keys (%intersection)) == 0) {
+    print_clique (\%combination);
+  } else {
+    ## The efficiency of the algorithm can be improved
+    ## by adaptings the &calculate function
+    my $set_ref = &calculate(\%possible);
+    my %set = %{$set_ref};
+    while (scalar (keys (%set)) > 0) {
+      my @set_elem = sort keys %set;
+      my $i = $set_elem[0];
+      delete $set{$i};
+      delete $possible{$i};
+      my %combination_new = %combination;
+      $combination_new{$i}++;
+      my $neighbours_i_ref = &get_neighbours($i);
+      my %neighbours_i = %{$neighbours_i_ref};
+      my %intersection_new = ();
+      my %possible_new = ();
+      foreach my $neighbour (keys %neighbours_i) {
+        $intersection_new{$neighbour}++ if (defined $intersection{$neighbour});
+        $possible_new{$neighbour}++ if (defined $possible{$neighbour});
+      }
+      &cliques(\%combination_new,  \%intersection_new, \%possible_new);
+    }
+  }
+}
+# Simple version of the calculate function. See Johnston (1975) for a
+# more efficient implementation
+sub calculate {
+  my $possible_ref = shift;
+  return $possible_ref;
+}
+
+# Return the numerical id of a node specified by its numerical id
+sub get_neighbours {
+  my $id = shift;
+  my $neighbours_node_ref;
+  if (defined $neighbours{$id}) {
+    $neighbours_node_ref = $neighbours{$id};
+  } else {
+    my %neighbours_node = ();
+    if (defined $out_neighbours[$id]) {
+      for (my $i = 0; $i < scalar @{$out_neighbours[$id]}; $i++) {
+        $neighbours_node{$out_neighbours[$id][$i]}++;
+      }
+    }
+    if (defined $in_neighbours[$id]) {
+      for (my $i = 0; $i < scalar @{$in_neighbours[$id]}; $i++) {
+        $neighbours_node{$in_neighbours[$id][$i]}++;
+      }
+    }
+    $neighbours_node_ref = \%neighbours_node;
+    $neighbours{$id} = $neighbours_node_ref;
+  }
+  return $neighbours_node_ref;
+}
+
+sub print_clique {
+  my $combination_ref = shift;
+  my %combination = %{$combination_ref};
+  my $size = scalar (keys %combination);
+  if ($size >= $min_size) {
+    foreach my $elem (keys %combination) {
+      print $main::out join "\t", $nodes_id_name{$elem}, "clq_".$clique_nb, $size;
+      print $main::out "\n";
+    }
+    $clique_nb++;
+  }
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{graph} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ### Input format  
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml. By default, the output format is tab.
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+=item B<-scol>
+
+Source column. Column containing the source nodes. 
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes. 
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+		
+
+	    ### Minimum size of the clique
+=pod
+
+=item B<-min_size #>
+
+Minimum size of the clique to return
+
+=cut
+	} elsif ($arg eq "-min_size") {
+	    $min_size = shift(@arguments);
+	    unless (&IsNatural($min_size) && ($min_size > 0)) {
+		&RSAT::error::FatalError(join("\t", $min_size, "Invalid value for the size of the searched clique. Must be a strictly positive natural number"));
+	    }
+	    ### Minimum size of the clique
+
+		
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; graph-cliques2 ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut

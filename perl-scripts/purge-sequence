@@ -1,0 +1,340 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: purge-sequence,v 1.48 2013/08/09 16:56:25 rsat Exp $
+#
+# Time-stamp: <2003-10-05 23:01:33 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+my $vmatch_installed = 0;
+my $skdir = "$ENV{RSAT}/bin";
+
+if ((-e $skdir."/vmatch") && (-e $skdir."/mkvtree")) {
+    $vmatch_installed = 1;
+} else {
+    &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed on server (see http://www.vmatch.de/).");
+}
+
+my $delete_repeats=0;
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+my $convert_seq_command = $ENV{RSAT}."/perl-scripts/convert-seq";
+
+$both_strands = 1;
+$input_file = "";
+$output_file = "";
+$match_len = 40;
+$mismatches = 3;
+$in_format = "fasta";
+$verbose = 0;
+$dry_run = 0;
+$die_on_error = 1;
+
+&ReadArguments();
+
+
+#### check argument values ####
+### check input format 
+&CheckInputSeqFormat($in_format);
+
+$dir{execution} = `pwd`;
+chomp $dir{execution};
+
+## Define the name of the output file
+if ($output_file) {
+  $basename{out} = `basename ${output_file}`;
+  $dirname{out} = `dirname ${output_file}`;
+  chomp $dirname{out};
+  chdir $dirname{out};
+  $dir{output} = `pwd`;
+  chomp($dir{output});
+}
+
+chdir($dir{execution});
+
+## Define the name of the input file
+if ($input_file) {
+  $basename = `basename ${input_file}`;
+  chomp $basename;
+  $dirname = `dirname ${input_file}`;
+  chomp $dirname;
+  chdir $dirname;
+  $dir{input} = `pwd`;
+  chomp($dir{input});
+  #    warn join "\t", $dirname, $dir{input}, $basename, "\n"
+} else {
+  $dirname = ".";
+  $basename = $start_time;
+}
+&RSAT::message::Debug("Input dir and file", $dirname, $basename) if ($main::verbose >= 5);
+
+#### create a temp file to filter out non-conform lines 
+#$tmp_file = `mktemp tmp_".$basename.".fasta.XXXXXX`;
+#$tmp_file= `$tmp_file`;
+#chomp($tmp_file);
+#$command = "cd $TMP ; ";
+# $tmp_file = &RSAT::util::make_temp_file("", "purge");
+$prefix = "purge"; 
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+&RSAT::message::Debug("\ntmp_file_path = ", $tmp_file_path,
+		      "\ntmp_file_dir = ", $tmp_file_dir,
+		      "\ntmp_file_name = ", $tmp_file_name,
+		     ) if ($main::verbose >= 5);
+$command = " $convert_seq_command -from $in_format -to fasta -noempty ";
+$command .= " -mask_short ".$mask_short if ($mask_short);
+$command .= " -mask non-dna " if ($dna);
+$command .= " -i $dir{input}/$basename" if ($input_file);
+if ($vmatch_installed) {
+    $command .= " -o ".$tmp_file_path;
+} elsif ($output_file) {
+    $command .= " -o ".$output_file;
+}
+#&RSAT::message:Debug("convert-seq command", $command);
+&doit($command, $dry_run, $die_on_error, $verbose);
+
+if ($vmatch_installed) {
+
+    ## Define extensiosn for mkvtree
+    @extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds sti1);
+
+    ## build the tree
+    my $mkvtree_options = "";
+    $mkvtree_options .= " -bck"; # bucket boundaries ???
+    $mkvtree_options .= " -dna"; # input is DNA sequence
+    $mkvtree_options .= " -tis"; # output parsed and transformed input string to file
+    $mkvtree_options .= " -bwt"; # output Burrows & Wheeler Transform to file
+    $mkvtree_options .= " -suf"; # output suffix array to file
+    $mkvtree_options .= " -sti1"; # output reduced inverse suffix array (sti1tab) to file
+    $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
+    $mkvtree_options .= " -ois"; # output the parsed input string to a file
+    $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
+    $mkvtree_options .= " -db ".$tmp_file_name; # sequence file
+    $command = "cd $tmp_file_dir; $skdir/mkvtree $mkvtree_options";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ## options to locate duplications
+    my $vmatch_options = "-s"; # show the sequence content of a match
+    if ($delete_repeats) {
+	## delete repeats
+	$vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+    } else {
+	## mask repeats
+	$vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
+    }
+    $vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
+    $vmatch_options .= " -l $match_len"; # specify that match must have the given length
+    $vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
+    $vmatch_options .= " -d"; # compute direct matches 
+    $vmatch_options .= " -showdesc 0"; # use the original sequence identifier 
+    if ($both_strands) {
+	$vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
+    }
+    $vmatch_options .= " $tmp_file_name ";
+    $vmatch_options .= " | grep -v '^#' ";
+    ## $vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
+    $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
+    $vmatch_options .= "> $dir{output}/$basename{out}" if ($output_file);
+    $command = "cd $tmp_file_dir ; $skdir/vmatch $vmatch_options";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ## Remove temporary files
+    foreach $ext  (@extensions) {
+	my $command = "rm -f ".$tmp_file_path.".".$ext;
+	&doit($command, $dry_run, $die_on_error, $verbose);
+    }
+    $command = "rm -f $tmp_file_path";
+    ## $command = "rm -f ${TMP}/$tmp_file_name";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ################################################################
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+}
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	purge-sequence
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+        purge-sequence [-i input_file] [-o output_file] [-v] [-2str | -1str]
+
+DESCRIPTION
+
+	Mask redundant fragments in a sequence. This perl script is no
+	more than a wrapper to facilitate this specific usage for two
+	programs developed by Stefan Kurtz : mkvtree and vmatch.
+
+	When a fragment is duplicated, the first ocurrence is
+	conserved and the second masked (or optionally deleted). 
+
+	By default, the program also searches similarities between the
+	direct and reverse complement strand.
+
+CATEGORY
+	sequences
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i input_file
+	        The file containing the sequence to purge.
+		If input_file is not specified, the standard input is
+		used.  This allows to place the command within a pipe.
+	-format sequence format
+	-o output_file
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-n	dry run
+		print commands without executing them
+	-ml #	match length (default: $match_len)
+	-mis #	mismatches (default: $mismatches)
+	-1str	discard duplications on the direct strand only
+	-2str	discard duplications on the reverse complement as well
+	-del	delete repeats instead of masking them
+		By default, repeats are masked, i.e. each nucleotide
+		within a repeat is replaced by the letter n.  When the
+		option -del is selected, repeats are deleted. This
+		means that one sequence of input can be converted to
+		several fragments in the output.
+
+	-mask_short min_seq_len
+		Mask (replace by N characters) sequences shorter than
+		the specified length. This can be useful to discard
+		short intergenic segments from the motif discovery
+		step, especially when working with bacterial genomes,
+		where short intergenic sequences generally correspond
+		to intra-operon segments.
+
+	-nodie
+		The perl script purge-sequence does not die in case
+         	the encapsulated programs (mkvtree, vmatch) return an
+         	error message.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+purge-sequence options
+----------------
+-h			(must be first argument) display full help message
+-help			(must be first argument) display options
+-i			input file
+-o			output file
+-v			verbose
+-n			dry run
+-format 		sequence format
+-ml #			match length (default: $match_len)
+-mis #			mismatches (default: $mismatches)
+-1str			discard duplications on the direct strand only
+-2str			discard duplications on the reverse complement as well
+-del			delete repeats instead of masking them
+-mask_short min_seq_len	Mask sequences shorter than the specified length
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### dry run
+	} elsif ($ARGV[$a] eq "-n") {
+	    $dry_run  = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $input_file = $ARGV[$a+1];
+	    
+	    ### sequence format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = lc($ARGV[$a+1]);
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $input_file = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $output_file = $ARGV[$a+1];
+	    
+	    ### strands
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $both_strands = 0;
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $both_strands = 1;
+	    
+	    ### delete repeats instead of masking them
+	} elsif ($ARGV[$a] eq "-del") {
+	    $delete_repeats = 1;
+	    
+	    ### matching length
+	} elsif (($ARGV[$a] eq "-ml") && (&IsInteger($ARGV[$a+1]))) {
+	    $match_len = $ARGV[$a+1];
+	    
+	    ### mismatches
+	} elsif (($ARGV[$a] eq "-mis") && (&IsInteger($ARGV[$a+1]))) {
+	    $mismatches = $ARGV[$a+1];
+
+	    ## mask non-DNA code
+	} elsif ($ARGV[$a] eq "-dna") {
+	    $dna = 1;
+
+	    ## mask non-DNA code
+	} elsif ($ARGV[$a] eq "-nodie") {
+	    $die_on_error = 0;
+
+	    ## mask short sequences
+	} elsif ($ARGV[$a] eq "-mask_short") {
+	    $mask_short = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $mask_short,
+					  "Invalid value for the minimal masking length. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($mask_short) && ($mask_short > 0);
+	    
+	    
+	}
+    }
+}
+

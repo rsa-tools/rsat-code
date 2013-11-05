@@ -1,0 +1,563 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-graph-clusters,v 1.13 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+compare-graph-clusters
+
+=head1 DESCRIPTION
+
+Compares a graph with a classification/clustering file.
+
+The comparison is performed at the level of arcs: for each arc of the
+graph, the programs tests if the soure and target nodes are found in a
+common cluster (intra-cluster arcs) or in separate clusters
+(inter-cluster arcs).
+
+In the cluster file, each node can be associated to one or several
+clusters. For example, the "cluster" file could contain the result of
+a classification such as ghe Gene Ontology (GO), where each gene can
+be associated to multiple GO classes.
+
+=head1 AUTHORS
+
+=over
+
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+graph analysis
+
+=head1 USAGE
+
+compare-graph-clusters [-i graph_file] -clusters cluster_file [-o outputfile] [-v #] [-weights] [-return table|graph] [...] 
+
+=head1 INPUT FORMAT
+
+=head2 Graph format
+
+See I<convert-graph> for a description of the supported input graph
+formats. Default format for the input graph: tab.
+
+=head2 Cluster format
+
+A two column tab delimited file. First column corresponding to the
+nodes and second column to the cluster/class.
+
+=head1 OUTPUT FORMATS
+
+There are two possible output formats: a contingency table (option
+-return table) or an annotated graph (option -return graph).
+
+=head2 contingency table
+
+A tab-delimited file where each row represents a node of the graph,
+and each column a cluster (class). The cells indicate the number of
+arcs connecting each node to each cluster (class).
+
+=head2 annotated graph
+
+Each row correspond to one arc, identified by its source and target
+nodes, and with additional columns for the annotations, indicating the
+status of each arc (intra- or inter-cluster), plus some statistics
+about the clusters associated to the source and target
+nodes. Extra-columns are documented in the header of the file.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+require RSAT::Classification;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+    ################################################################
+    ## Initialize the input graph
+    $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "input graph");
+
+    ## Columns of the tab-delimited graph file
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);    
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+
+    ## Count the sum of the intra cluster edges or count their number
+    local $weights = 0;
+ 
+    %main::infile = ();
+    %main::outfile = ();
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    local $requested_return = "table";
+    %supported_return_format = ("table"=>1,
+    				"graph"=>1);
+    $supported_return_formats = join (",", keys %supported_return_format);
+    
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input graph
+    $graph->graph_from_text($input_format,$infile{graph}, $source_col, $target_col, $weight_col);
+    
+    ## Read and add the class specification to each node
+    $graph->load_classes($infile{clusters});
+
+    ################################################################
+    ## Count the number of intra-cluster edge by looking for each arc
+    ## if the target node is located in the same cluster than 
+    ## the source node
+    ## The results are stored in a two dimensional array. Rows represent
+    ## the nodes and edges represent the clusters.
+    
+    ## Indices of the two-dimensional array;
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    my %clusters_name_id = ();
+    my %clusters_edge_nb = ();
+    my @arcs_attribute = ();
+    for (my $i = 0; $i < scalar(@cluster_list); $i++) {
+     $cluster_name_id{$cluster_list[$i]} = $i;
+    }
+
+    my @arcs = $graph->get_attribute("arcs");
+    my @result = ();
+    my $arc_nb = scalar(@arcs);
+    &RSAT::message::TimeWarn("Comparing graph with clusters") if ($main::verbose >= 2);
+    for (my $i = 0; $i < @arcs; $i++) {
+      if (($main::verbose >= 2) && ($i%1000==0)) {
+	&RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
+      }
+      my $source_node = $arcs[$i][0];
+      my $target_node = $arcs[$i][1];
+      my @source_clusters = $graph->get_nodes_clusters($source_node);
+      my @target_clusters = $graph->get_nodes_clusters($target_node);
+      
+      my $add_value = 1;
+      if ($weights) {
+        $add_value = $arcs[$i][2];
+        $add_value /= 2;
+      }
+      
+      my $source_nb_clusters = scalar(@source_clusters);
+      my $target_nb_clusters = scalar(@target_clusters);
+      my $common_clusters = 0;
+      my %sclusters = ();
+      my %tclusters = ();
+      my %stclusters = ();
+      my $intra_cluster = "inter_cluster";
+      foreach my $scluster (@source_clusters) {
+        $sclusters{$scluster}++;
+        foreach my $tcluster (@target_clusters) {
+          $tclusters{$tcluster}++;
+          if ($scluster eq $tcluster) {
+            my $source_node_index = $nodes_name_id{$source_node};
+            my $target_node_index = $nodes_name_id{$target_node};
+            my $cluster_index = $cluster_name_id{$tcluster};
+            $result[$source_node_index][$cluster_index] += $add_value;
+            $result[$target_node_index][$cluster_index] += $add_value;
+            $clusters_edge_nb{$tcluster} += 1;
+            $common_clusters++;
+            $stclusters{$tcluster}++;
+            $intra_cluster = "intra_cluster";
+          }
+        }
+      }
+      my %s_not_tclusters = &set_difference(\%sclusters,\%stclusters);
+      my %not_s_tclusters = &set_difference(\%tclusters,\%stclusters);
+      $arcs_attribute[$i][0] = $intra_cluster;
+      $arcs_attribute[$i][1] = $source_nb_clusters; 
+      $arcs_attribute[$i][2] = $target_nb_clusters; 
+      $arcs_attribute[$i][3] = $common_clusters;
+      $arcs_attribute[$i][4] = ($source_nb_clusters-$common_clusters);
+      $arcs_attribute[$i][5] = ($target_nb_clusters-$common_clusters);
+      $arcs_attribute[$i][6] = join(";",keys(%sclusters));
+      $arcs_attribute[$i][7] = join(";",keys(%tclusters));
+      $arcs_attribute[$i][8] = join(";",keys(%stclusters));
+      $arcs_attribute[$i][9] = join(";",keys(%s_not_tclusters));
+      $arcs_attribute[$i][10] = join(";",keys(%not_s_tclusters));
+    }
+    my @arcs_attribute_header = ("type","#s","#t","#st","#s!t","#!st","cl_s","cl_t","cl_st","cl_s!t","cl_!st");
+    $graph->set_array_attribute("arcs_attribute",@arcs_attribute);
+    $graph->set_array_attribute("arcs_attribute_header", @arcs_attribute_header);
+    
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+    
+    ################################################################
+    ## Print the results
+    
+    if ($requested_return eq "table") {
+     ## Print cluster names
+      foreach my $cluster (@cluster_list) {
+        print $out "\t$cluster";
+      }
+      print $out "\tsum";
+    
+      ## Print node name and the number of intra-edge cluster
+      for (my $i = 0; $i < scalar(@result); $i++) {
+        print $out "\n";
+        print $out "$nodes_id_name{$i}";
+        my $sum = 0;
+        for (my $j = 0; $j < scalar(@cluster_list); $j++) {
+          my $cluster = $cluster_list[$j];
+          my $clusterIndex = $cluster_name_id{$cluster};
+          my $val = 0;
+          if (defined($result[$i][$j])) {
+            $val = $result[$i][$j];
+          }
+          $sum += $val;
+          print $out "\t$val";
+        }
+        print $out "\t$sum";
+      }
+      print $out "\n";
+      print $out "#Arcs";
+      foreach my $cluster (@cluster_list) {
+        my $val = ($clusters_edge_nb{$cluster});
+        if (!defined($val)) {
+          $val = 0;
+        }
+        print $out "\t$val";
+      }
+      print $out "\n";
+    } elsif ($requested_return eq "graph") {
+      if ($main::verbose >= 1) {
+        print $out join("\t",  ";","1","source","source node"), "\n";
+        print $out join("\t",  ";","2","target","target node"), "\n";
+        print $out join("\t",  ";","3","label","arc label"), "\n";
+        print $out join("\t",  ";","4","color","arc color"), "\n";
+        print $out join("\t",  ";","5","#s","number of clusters where source node is present"), "\n";
+        print $out join("\t",  ";","6","#t","number of clusters where target node is present"), "\n";
+        print $out join("\t",  ";","7","#st","number of clusters where both source node and target node are present"), "\n";
+        print $out join("\t",  ";","8","#s!t","number of clusters where only source node is present"), "\n";
+        print $out join("\t",  ";","9","#!st","number of clusters where only target node is present"), "\n";
+        print $out join("\t",  ";","10","cl_s","clusters where source node is present"), "\n";
+        print $out join("\t",  ";","11","cl_t","clusters where target node is present"), "\n";
+        print $out join("\t",  ";","12","cl_st","clusters where both source node and target node are present"), "\n";
+        print $out join("\t",  ";","13","cl_s!t","clusters where only source node is present"), "\n";
+        print $out join("\t",  ";","14","cl_!st","clusters where only target node is present"), "\n";
+      }
+      print $out $graph->to_tab();
+    }
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Graph file
+=pod
+
+=item B<-i graphfile>
+
+If no graph file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	  $main::infile{graph} = shift(@arguments);
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+=pod	    
+	    
+=item B<-return>
+
+Return format. table or graph
+
+=cut
+	} elsif ($arg eq "-return") {
+	    $requested_return = shift (@arguments);
+	    &RSAT::error::FatalError("$requested_return\tInvalid return option. Supported: $supported_return_formats")
+		unless ($supported_return_format{$requested_return});
+
+
+=pod
+
+=item B<-clusters cluster_file>
+
+Cluster file. The cluster file is a two columns tab-delimited indicating for each node the cluster to which it belongs.
+
+=cut
+	} elsif ($arg eq "-clusters") {
+	    $main::infile{clusters} = shift(@arguments);
+
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-input_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-input_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+		
+	    ## Weights
+=pod
+
+=item	B<-weights>
+
+Sums the weight of the intra cluster edges instead of counting them. Adds half the weight of each arc.
+Only compatible with -table option.
+
+=cut
+	} elsif ($arg eq "-weights") {
+	    $weights = 1;
+
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; compare-graph-clusters ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+
+    ## Report graph size
+    my ($nodes, $arcs) = $graph->get_size();
+    print $out "; Graph size\n";
+    print $out ";\tnodes\t",$nodes,"\n";
+    print $out ";\tarcs\t",$arcs,"\n";
+    ## Report clusters size
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    print $out "; Cluster file\n";
+    print $out ";\tclusters\t",scalar(@cluster_list),"\n";
+
+}
+
+
+################################################################
+#### Computes the difference between two sets (hash)
+sub set_difference {
+  my $setA_ref = $_[0];
+  my $setB_ref = $_[1];
+  my %setA = %{$setA_ref};
+  my %setB = %{$setB_ref};
+  my %setC = ();
+  foreach my $key (keys %setA) {
+    if (!exists($setB{$key})) {
+      $setC{$key}++;
+    }
+  }
+  return %setC;
+
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<graph-neighbours>
+
+=item I<convert-graph>
+
+=item I<graph-get-clusters>
+
+=item I<compare-graphs>
+
+=item I<compare-classes>
+
+=item I<convert-classes>
+
+=back
+
+=cut

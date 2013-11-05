@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+	<head>
+		<title>
+			RSA-tools: info-gibbs manual
+		</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<link rel="stylesheet" type="text/css" href="main.css" media="screen">
+	</head>
+<body class="info">
+<center>
+<h2>
+    <a href="RSAT_home.cgi">RSA-tools</a> - <a href="info-gibbs_form.cgi">info-gibbs</a> manual
+</h2>
+</center>
+
+<h4>Name</h4>
+<blockquote>
+    <p>
+        info-gibbs
+    </p>
+    <p>
+        2009 by Matthieu Defrance
+    </p>
+</blockquote>
+
+<h4>Description</h4>
+<blockquote>
+    info-gibbs is a motif discovery software based on a Gibbs sampling strategy.
+    Given a set of sequences, a motif length and a background model it searches for motifs (PSSMs) that have the best relative entropy (information content).
+</blockquote>
+
+
+<h4>Reference <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a></h4>
+<blockquote>
+Defrance M. and van Helden J. info-gibbs: a motif discovery algorithm that directly optimizes information content during sampling, Bioinformatics. 2009;25:2715-2722.
+</blockquote>
+
+<h4>Options</h4>
+<blockquote>
+<p>
+<a name="sequence" id="sequence"></a> <b>Input sequence:</b><br />
+The sequence that will be analyzed. Multiple sequences can be entered at once with several <a href="help.formats.html">sequence formats</a>.
+</p>
+<p>
+<a name="sequence_format" id="sequence_format"></a> <b>Format:</b><br />
+Input sequence format. <a href="help.formats.html">Various standards</a> are supported.
+</p>
+<p>
+<a name="sequence_type" id="sequence_type"></a> <b>Sequence type:</b><br />
+Only A, C, G, and T residues are accepted. oligomers that contain undefined (N) or partly defined (IUPAC code) nucleotides are discarded.
+</p>
+<p>
+<a name="purge" id="purge"></a> <b>Purge sequences (highly recommended)</b><br />
+When checked, large duplicated regions (&gt;= 40 bp alignment with less than 3 mismatches) are filtered out before analysis. Purging is essential for any motif discovery process, to avoid a bias due to non-independence of sequences. Purging is performed with the programs <tt>mkvtree</tt> and <tt>vmatch</tt> developed by <a href="http://www.zbh.uni-hamburg.de/kurtz">Stefan Kurtz</a> (<a href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
+</p>
+<p>
+<a name="strand" id="add_rc"></a> <b>Search both strands:</b> (single or both strands)<br />
+By selecting "search both strands", the occurrences of the motif are searched on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+</p>
+
+<p>
+<a name="length" id="length"></a> <b>Matrix length:</b><br />
+The length of the motif.
+For the detection of regulatory sites, we recommend starting with a length comprise between 6 and 16.
+<!-- The analysis can be performed with:
+<ul>
+    <li>fixed size of any size between 2 and 32. For the detection of regulatory sites, we recommend starting with an analysis of motifs of length comprise between 6 and 16.
+    </li>
+    <li>spaced motifs (dyads) with 2 monads of any size between 1 and 16 separated by a spacing. The spacing is the number of bases between the end of the first element (monad) and the start of the second one.
+    A single integer value means that the spacing is fixed (example from=10 to=10). Variable spacing can be introduced by entering the from and to values. For example from 8 to 12 means that all occurrences of the dyad with a spacing between 8 and 12 will be counted together and their significance estimated globally. Warning, this is different from scanning one by one the spacing values 8, 9, 10, 11 and 12.
+     </li> -->
+</ul>
+</p>
+<p>
+<a name="expected" id="expected"></a> <b>Expected number of matches per sequences:</b><br />
+This option allow to specify the number of the motif occurrences that are expected to be found in each of the input sequences.
+</p>
+<p>
+<a name="motifs" id="motifs"></a> <b>Number of motif to extract:</b><br />
+This option allows to search for more than one motif in the input sequences.
+</p>
+<p>
+<a name="iter" id="iter"></a> <b>Maximum number of iterations:</b><br />
+This option allows to set the maximal number of iteration of the algorithm.
+</p>
+<p>
+<a name="runs" id="runs"></a> <b>Number of runs:</b><br />
+Due to its stochastic behavior info-gibbs can return different results each time it is run. The core algorithm should be repeated a sufficient number of times in order to produce useful results.    
+</p>
+
+<p>
+<a name="runs" id="background"></a> <b>Background:</b><br />
+The background model used to compute expected frequencies can be computed from input sequences or loaded form a predefined Markov model. In this later case, a target organism and a Markov order should be selected.
+</p>
+
+
+
+</blockquote>
+
+</body>
+</html>

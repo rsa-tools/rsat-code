@@ -1,0 +1,283 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: draw-tree,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
+}
+require "RSA.lib";
+require "RSA.stat.lib";
+use GD;
+use Bio::TreeIO;
+#use Bio::Tree::Tree;
+use RSAT::PostscriptWrapper;
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+
+## Output format
+%supported_img_format = ("jpg"=>1, 
+			 "gif"=>1,
+			 "png"=>1,
+			 "ps"=>1,
+			);
+
+$img_format = $ENV{rsat_img_format} || "png";
+$supported_img_formats = join (",", keys %supported_img_format); 
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input tree
+my %nodes = (); # node index
+
+## Create a tree with the taxonomy
+my $tree_input = new Bio::TreeIO('-format' => 'newick',
+			     '-file'   => $infile{input});
+while (my $tree = $tree_input->next_tree()) {
+
+    
+    ## Identify the root of the tree
+    my $root = $tree->get_root_node();
+    
+#     &RSAT::message::Debug("tree: ".$tree, 
+# 			  "number_nodes: ".$tree->number_nodes,
+# 			  "root", $root, 
+# 			  $root->internal_id, 
+# 			 ) if ($main::verbose >= 10);
+
+    &layout($tree);
+
+#     ## Export the tree in SVG format
+#     my $tree_output = new Bio::TreeIO('-format' => 'svggraph',
+# 			     '-file'   => ">".$outfile{output});
+#     $tree_output->write_tree($tree);
+
+}
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	draw-tree
+
+        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Draws a tree. 
+
+CATEGORY
+	drawing
+
+USAGE
+        draw-tree [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+INPUT FORMAT
+    The input format is the widely used newick format.
+    For a description of the newick format:
+        http://evolution.genetics.washington.edu/phylip/newicktree.html
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+draw-tree options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; draw-tree ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+################################################################
+## Assign a layer to each node, and rank nodes within each layer
+## Nodes are traversed with a BFS algorithm
+sub layout {
+    my ($tree) = @_;
+    my $root = $tree->get_root_node();
+    my @queue = ();
+    my %layer_nodes = ();
+    my %layer_width = ();
+
+    my %layer = ();
+    my %level = ();
+
+    ## Enqueue root
+    push @queue, $root;
+
+    ## While queue is not empty
+    while ($#queue >= 0) {
+	## Dequeue a vertex and write it to the output list
+	my $node = shift @queue;
+	my $layer = $node->height;
+	push @{$layer_nodes[$layer]}, $node;
+	
+	my $level = scalar(@{$layer_nodes[$layer]});
+	my $width = length($node->id);
+	if ($width >= $layer_width{$layer}) {
+	    $layer_width{$layer} = $width;
+	}
+
+	
+	$mayer{$node} = $layer;
+	$level{$node} = $level;
+
+	## Enqueue its children left-to-right
+	my @children = $node->each_Descendent;
+	push @queue, @children;
+
+	&RSAT::message::Debug("node", $node->internal_id, 
+			      "layer",$layer, 
+			      "level", $level, scalar(@{$layer_nodes[$layer]}),
+			      "child",scalar(@children), $node->id) if ($main::verbose >= 0);
+    }
+
+    ## Assign vertical coordinates to non-leave nodes
+    ## Place each parent node at the middle level of its children
+    foreach my $node( @{$layer_nodes[0]}) {
+	$min_level{$node} = $level{$node};
+	$max_level{$node} = $level{$node};
+    }
+    foreach my $layer (1..$#layer_nodes) {
+	&RSAT::message::Debug("layer", $layer, scalar(@{$layer_nodes[$layer]}), $layer_width{$layer});
+	my @nodes = @{$layer_nodes[$layer]};
+	foreach my $node (@nodes) {
+	    my @children = $node->each_Descendent;
+	    $min_level{$node} = $min_level{$children[0]};
+	    $max_level{$node} = $max_level{$children[$#chldren]};
+	    $level{$node} = ($max_level{$node} + $min_level{$node})/2; 
+	    &RSAT::message::Debug("parent level", 
+				  $node->internal_id, 
+				  $layer,
+				  scalar(@children),
+				  $min_level{$node}, 
+				  $max_level{$node}, 
+				  $level{$node},
+				  $node->id) if ($main::verbose >= 0);
+	}
+    }
+
+}
+
+
+################################################################
+## Assign coordinates to each node

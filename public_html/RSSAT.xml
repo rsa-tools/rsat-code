@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<rss version="2.0">
+    <channel>
+   
+        <title>RSAT News</title>
+        <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
+        <description>Regulatory Sequence Analysis Tools - News and Updates</description>
+
+            <item>
+            <title>RSS feed has moved</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
+            <guid isPermaLink="false">rss8</guid>
+            <description><![CDATA[
+All news and questions are now posted to the <b>forum</b>, for which a RSS feed is available. The current RSS feed is discontinuted. To keep up to date with RSAT, please subscribe to our new RSS feed, on the forum page. The current RSS feed is discontinuted.
+           ]]></description>
+            <pubDate>Mon, 23 Nov 2009 12:30:00 GMT</pubDate>
+     </item>
+
+	    <item>
+            <title>A forum for RSAT</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
+            <guid isPermaLink="false">rss7</guid>
+            <description><![CDATA[
+A <b>forum</b> is available to discuss RSAT programs, report bugs and get in contact with the developers. The Forum is accessible in the Menu <b>"Help>Forum"</b>.
+           ]]></description>
+            <pubDate>Fri, 12 Dec 2008 12:30:00 GMT</pubDate>
+     </item>
+
+	<item>
+            <title>utr option in retrieve-ensembl-seq</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi</link>
+            <guid isPermaLink="false">rss6</guid>
+            <description><![CDATA[
+The program <b>retrieve-ensembl-seq</b> now allows to retrieve the sequence of the UTR
+of your choice or both.
+           ]]></description>
+            <pubDate>Fri, 3 Oct 2008 12:30:00 GMT</pubDate>
+     </item>
+
+	<item>
+            <title>Logo options in convert-matrix</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/convert-matrix_form.cgi</link>
+            <guid isPermaLink="false">rss5</guid>
+            <description><![CDATA[
+The program <b>convert-matrix</b> allows to generate a logo from a given matrix (using the program <b>seqlogo</b> from WebLogo http://weblogo.berkeley.edu). It is now possible to specify additional options for creating logos (error bars, small sample correction, stretching of the logo).
+           ]]></description>
+            <pubDate>Fri, 3 Oct 2008 12:30:00 GMT</pubDate>
+     </item>
+
+
+     <item>
+            <title>Retrieve-ensembl-seq able to access latest EnsEMBL version</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi</link>
+            <guid isPermaLink="false">rss4</guid>
+            <description><![CDATA[
+The RSAT program retrieve-ensembl-seq is now able to connect to the latest
+version of <b>EnsEMBL</b>.
+           ]]></description>
+            <pubDate>Wed, 1 Oct 2008 14:30:00 GMT</pubDate>
+     </item>
+
+     <item>
+            <title>Four articles on RSAT and NeAT in Nature protocols</title>
+            <link>http://www.nature.com/nprot/journal/v3/n10/index.html</link>
+            <guid isPermaLink="false">rss3</guid>
+            <description><![CDATA[
+Four articles explaining how to use RSAT and NeAT has been published in <b>Nature Protocols</b>
+           ]]></description>
+            <pubDate>Mon, 29 Sep 2008 12:00:00 GMT</pubDate>
+        </item>
+ 
+	<item>
+            <title>dna-pattern: new option</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/dna-pattern_form.cgi</link>
+            <guid isPermaLink="false">rss2</guid>
+            <description><![CDATA[
+We have added the option <b>non ACGT characters</b> to return positions of the sequence that do not contain ACGT characters (eg: N).
+           ]]></description>
+            <pubDate>Tue, 16 Sep 2008 12:00:00 GMT</pubDate>
+        </item>
+ 
+        <item>
+            <title>RSAT Web Services working with .NET clients</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/web_services.html</link>
+            <guid isPermaLink="false">rss1</guid>
+            <description><![CDATA[
+We have updated our server to accomodate <b>.NET</b> clients.
+	   ]]></description>
+            <pubDate>Wed, 3 Sep 2008 12:00:00 GMT</pubDate>
+        </item>
+ 
+    </channel>
+</rss>

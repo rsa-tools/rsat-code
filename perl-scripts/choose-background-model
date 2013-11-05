@@ -1,0 +1,502 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: choose-background-model,v 1.13 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+choose-background-model
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Select a background model file in the RSAT data repository, according
+to user-specified parameters.
+
+Several programs of the RSAT suite support Markov-chain models for
+estimating the background probabilities of a sequence.
+
+Such Markov models can be specified from various formats (see
+convert-background-models). In RSAT, the usual format for specifying a
+background model is a table of oligomer frequencies. A Markov model of
+order I<m> is derived from a I<k>-mer frequency table with I<k=m+1>.
+
+When an organism is installed on RSAT, a series of background models
+are automatically computed from genome-scale data sets (all upstream
+sequences, with or without clipping of upstream ORFs). These models
+are stored in an organism-specific directory:
+
+$RSAT/public_html/data/genomes/$ORG/oligo-frequencies
+
+Models are computed for various conditions (k from 1 to 8, single- or
+double-strand, with or without self-overlapping occurrences). The name
+of each model files indicates all these parameters.
+
+B<choose-background-model> facilitates the identification of the model
+files, in order to ensure consistency between the different programs
+using Markov chain background model.
+
+=head2 Parameters for choosing a background model
+
+=over
+
+=item organism (option -org organism_name)
+
+=item taxon (option -taxon taxon_name)
+
+=item sequence type (option -bg)
+
+Supported types: upstream, upstream-noorf, protein, upstream-rm,
+upstream-noorf-rm
+
+=item strands (-1str or -2str)
+
+=item self-overlap (-noov or -ovlp)
+
+=back
+
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+Organism-specific background models
+
+ choose-background-model -type oligo|dyad|protein \
+      -org organism_name [-1str|-2str] -l oligo_length \
+      -bg [background] -ovlp|-noov
+
+Taxon-specific background models
+
+ choose-background-model -type oligo|dyad|protein \
+      -taxon taxon_name [-1str|-2str] -l oligo_length \
+      -bg [background] -ovlp|-noov
+
+=head1 OUTPUT FORMAT
+
+The output is a single row, giving the name of the background model
+file (including the full path).
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    local $oligo_length;
+    local $str;
+    local $type="oligo";
+    local $overlap;
+    local $organism_name;
+    local $taxon_name;
+    local $background;
+
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    ## At this stage, we only check that the required parameters have been specified by the user. 
+    ## Their validity is checked by the function &ExpectedFreqFile()
+    &RSAT::error::FatalError("You must specify an organism (option -org) or a taxon (option -taxon)") unless (($organism_name)|| ($taxon_name));
+    &RSAT::error::FatalError("You must specify the pattern type (option -type oligo|dyad)") unless ($type);
+    &RSAT::error::FatalError("You must specify the oligo length (option -l)") unless ($oligo_length);
+    &RSAT::error::FatalError("You must specify the background type (option -bg upstream|upstream-noorf|protein)") unless ($background);
+    &RSAT::error::FatalError("You must specify the strand (option -1str or -2str)") unless (($str) || ($background eq 'protein'));
+    &RSAT::error::FatalError("You must specify the overlap  (option -ovlp or -noov)") unless ($overlap);
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    my $background_file;
+    if ($organism_name) {
+      $background_file = &ExpectedFreqFile($organism_name, $oligo_length, $background,
+					   str=>$str,noov=>$overlap,type=>$type, warn=>1, taxon=>0);
+    } elsif ($taxon_name) {
+      $background_file = &ExpectedFreqFile($taxon_name, $oligo_length, $background,
+					   str=>$str,noov=>$overlap,type=>$type, warn=>1, taxon=>1);
+    }
+
+    ################################################################
+    ## Print output
+    print $out $background_file, "\n";
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Organism
+=pod
+
+=item B<-org organims_name>
+
+The organism has to be supported on RSAT. To obtain a list of
+supported organisms, use the command B<supported-organisms>
+
+This option is mutually exclusive with -taxon.
+
+=cut
+	} elsif ($arg eq "-org") {
+	  &RSAT::error::FatalError("Options -org and -taxon are mutually exclusive") if ($main::taxon_name);
+	  $main::organism_name = shift(@arguments);
+
+	    ## Taxon
+=pod
+
+=item B<-taxon taxon_name>
+
+Choose a taxon-wide background model.
+
+The taxon has to be supported on RSAT. To obtain a list of supported
+organisms, use the command B<supported-organisms -format full>
+
+This option is mutually exclusive with -org.
+
+=cut
+	} elsif ($arg eq "-taxon") {
+	  &RSAT::error::FatalError("Options -org and -taxon are mutually exclusive") if ($main::organism_name);
+	  $main::taxon_name = shift(@arguments);
+
+	    ## Background type
+=pod
+
+=item B<-bg background>
+
+The type of sequences used to calibrate the background
+model.
+
+B<Supported background models>
+
+=over
+
+=item I<upstream>
+
+Trained on a set comprising upstream sequences of all the genes for
+the selected organism, with a fixed size.
+
+=item I<upstream-noorf>
+
+Based on a set of non-coding sequences upstream of all genes, with the
+same maximal size as for the option "upstream". When a gene is found
+closer than the upstream limit, the sequence is clipped to prevent
+including coding sequences from the upstream neighbout gene.
+
+=item I<protein>
+
+Calibrated on the complete set of proteins translated from all the
+coding genes of the selected organism.
+
+=item I<upstream-rm> and I<upstream-noorf-rm>
+
+For the organisms imported from EnsEMBL, we also support the models
+upstream-rm and upstream-noorf-rm (repeat masked).
+
+=back
+
+B<Not supported anymore>
+
+The following models were supported in previous versions of RSAT, but
+are not supported anymore, because fr higher organisms it takes too
+long to compute them systematically for all the oligo and dyad
+lengths, and they appear to be not very useful, since they mix various
+sequence types with distinct models (coding, upstream, downstream).
+
+The background files can however still be installed either manually or by
+fiddling around with the options of the program I<install-organism>.
+
+=over
+
+=item I<genomic>
+
+Estimated from the whole genome of the selected organism. 
+
+=item I<intergenic>
+
+Estimated from the whole set of intergenic sequences of the selected
+organism.
+
+=back
+
+=cut
+	} elsif ($arg eq "-bg") {
+	  $main::background = shift(@arguments);
+
+	    ## Oligo length
+=pod
+
+=item B<-l oligo_length>
+
+Length of the oligomer. When the pattern type is set to oligo, this is
+the oligonucleotide length. When the pattern type is set to dyad, the
+oligo length is the length of the monads.
+
+=cut
+	} elsif ($arg eq "-l") {
+	  $main::oligo_length = shift(@arguments);
+	  &RSAT::error::FatalError($main::oligo_length, "Invlaid value for oligo length. Must be a strictly positive Natural number")
+	    unless (&IsNatural($main::oligo_length) && ($main::oligo_length > 0));
+
+	    ## Scan direct strand only
+=pod
+
+=item B<-1str>
+
+single-strand search for DNA sequences.
+
+=cut
+	} elsif ($arg eq "-1str") {
+	    $main::str = "-1str";
+
+	    ## Scan both strands
+=pod
+
+=item B<-2str>
+
+Scan both strands for DNA sequences.
+
+=cut
+	} elsif ($arg eq "-2str") {
+	    $main::str = "-2str";
+
+	    ## Accept self-overlap
+=pod
+
+=item B<-ovlp>
+
+Count all occurrences of a k-mer, including mutually overlapping
+occurrences for self-overlapping k-mers (ex TATATA). Thus, the string
+TATATATATATA will be considered to contain 4 occurrences of the word
+TATATA.
+
+=cut
+	} elsif ($arg eq "-ovlp") {
+	    $main::overlap = "-ovlp";
+
+	    ## Do not accept self-overlap
+=pod
+
+=item B<-noov>
+
+Do not count mutually overlapping occurrences for self-overlapping
+k-mers (ex TATATA). Only renewing occurrences are counted. Thus, the
+string TATATATATATA will be consider to contain only 2 occurrences of
+the k-mer TATATA.
+
+=cut
+	} elsif ($arg eq "-noov") {
+	    $main::overlap = "-noov";
+
+	    ## K-mer type
+=pod
+
+=item B<-type oligo|dyad>
+
+Pattern type (oligonucleotide or dyad). Default value:  oligo.
+
+When the pattern type is dyad, the spacing is automatically set to
+0-20 (the vlaues of calibration files in RSAT), and the oligo length
+(option -l) is the length of the monad.
+
+=cut
+	} elsif ($arg eq "-type") {
+	    $main::type = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; choose-background-model ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head2 Programs supporting Markov chain models in RSAT
+
+=over
+
+=item convert-background-model
+
+=item taxon-frequencies
+
+=item seq-proba
+
+=item oligo-analysis
+
+=item matrix-scan
+
+=item random-seq
+
+=item seq-proba
+
+=item multiple-family-analysis
+
+=item ORM
+
+=item InfoGibbs
+
+=back
+
+=cut

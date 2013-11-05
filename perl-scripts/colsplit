@@ -1,0 +1,273 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: colsplit,v 1.16 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-10-21 01:21:08 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::util;
+
+
+#### initialise parameters ####
+local $start_time = &AlphaDate;
+
+local $output_dir = ".";
+local $column = 1;
+local $prefix = "";
+local $suffix = "";
+local $full_line = 1;
+local @output_fields = ();
+
+local %infile = ();
+local %outfile = ();
+local %counts = ();
+
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+local $separator = "\t";
+
+&ReadArguments;
+
+
+#### check argument 
+
+#### check existence of output dir
+&RSAT::util::CheckOutDir($output_dir);
+#unless (-d $output_dir) {
+#    `mkdir -p $output_dir`;
+#    unless (-d $output_dir) {
+#	&RSAT::error::FatalError("Cannot create output directory $output_dir");
+#    }
+#}
+
+##### read input
+($in) = &OpenInputFile($infile{input});
+my $l = 0; ### line counter
+while (my $line = <$in>) {
+    $l++;
+    chomp $line;
+    next if ($line =~ /^;/); #### ignore comment lines
+    next if ($line =~ /^\#/); #### ignore comment lines
+    next if ($line =~ /^\-\-/); #### ignore comment lines
+    next unless ($line =~ /\S/); #### ignore empty lines
+    my @fields = split $separator, $line;
+    my $key = $fields[$column-1];
+    my $filename = $output_dir."/".$prefix.$key.$suffix;
+    
+    unless ($key) {
+	&Warning("No value in the key column at line $l. This line is ignored.");
+	next;
+    }
+
+    if ($counts{$key}) {
+	open OUT, ">>$filename";
+    } else {
+	open OUT, ">$filename";
+    }
+    $counts{$key}++;
+    if ($full_line) {
+	print OUT $line, "\n";
+    } else {
+	print OUT join $separator, @fields[@output_fields];
+	print OUT "\n";
+    }
+    close OUT;
+}
+close $in if ($infile{input});
+
+#### verbose ####
+&Verbose if ($verbose);
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	colsplit
+
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        colsplit [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+
+	Splits a file accoding to the content of a specified column
+	(the key column).
+
+	A separate output file will be gnerated for each distinct
+	key found in the key column of the input file.
+
+CATEGORY
+	util
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-prefix prefix for output file names
+	-suffix suffix for output file names
+		Each output file name starts with the prefix, followed
+		by the value of the key column, followed by the 
+		suffix. 
+	-c key column (default $column)
+	-sep field separator
+	        (default \\t)
+	-outdir	output directory
+	-fields	output fields
+		output fields are olumn numbers, separated by commas.
+		Example:
+			-fields 1,3,2
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+colsplit options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-v	verbose
+-i	input file
+-prefix	prefix for output file names
+-suffix	suffix for output file names
+-c	key column (default $column)
+-sep	field separator (default \\t)
+-outdir	output directory
+-fields	output fields
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file prefix
+	} elsif ($ARGV[$a] eq "-prefix") {
+	    $prefix = $ARGV[$a+1];
+	    
+	    ### output file suffix
+	} elsif ($ARGV[$a] eq "-suffix") {
+	    $suffix = $ARGV[$a+1];
+	    
+	    ### output directory
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $output_dir = $ARGV[$a+1];
+	    
+	    ### field separator
+	} elsif ($ARGV[$a] eq "-sep") {
+	    $separator = $ARGV[$a+1];
+	    
+	    ### outpput fields
+	} elsif ($ARGV[$a] eq "-fields") {
+	    $full_line = 0;
+	    @output_fields = split ",", $ARGV[$a+1];
+	    foreach $field (@output_fields) {
+		unless (&IsNatural($field)) {
+		    &RSAT::error::FatalError("Field columns must be natural numbers");
+		}
+		unless ($field >=1)  {
+		    &RSAT::error::FatalError("Field columns must be strictly positive");
+		}
+	    }
+	    for $f (0..$#output_fields) {
+		$output_fields[$f] -= 1;
+	    }
+	    
+	    ### key column
+	} elsif ($ARGV[$a] eq "-c") {
+	    $column = $ARGV[$a+1];
+	    unless (&IsNatural($column)) {
+		&RSAT::error::FatalError("Key column must be a natural number");
+	    }
+	    unless ($column >=1)  {
+		&RSAT::error::FatalError("Key column must be strictly positive");
+	    }
+
+	}
+    }
+}
+
+
+################################################################
+#
+# Verbose
+#
+sub Verbose {
+    print $out "; colsplit ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key, $value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined($output_dir)) {
+	print $out "; Output directory\t$output_dir\n";
+    }
+
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+
+    if ($full_line) {
+	print $out "; Full line output\n";
+    } else {
+	print $out "; Output fields\t",join (",", @output_fields),"\n";	
+    }
+    print $out "; Key counts\n";
+    foreach my $key (sort {$counts{$b} <=> $counts{$a}} keys %counts) {
+	print $out ";\t$key\t$counts{$key}\n";
+    }
+}

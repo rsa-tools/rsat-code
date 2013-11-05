@@ -1,0 +1,14 @@
+output=both
+ref_classes=/home/rsat/rsa-tools/ws_clients/other_files/seed_list.tab
+query_classes=/home/rsat/rsa-tools/ws_clients/other_files/seed_list.tab
+return_fields=occ,proba
+score_column=
+input_classes=
+upper_threshold_field=
+upper_threshold_value=
+lower_threshold_field=
+lower_threshold_value=
+sort=E_val
+distinct=
+triangle=
+matrix=

@@ -1,0 +1,382 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Uppsala universitet</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<META NAME="description" CONTENT="V&auml;lkommen till Uppsala universitet! Fr&aring;n denna sida finns l&auml;nkar vidare till all information fr&aring;n Uppsala universitet som &auml;r tillg&auml;nglig p&aring; www.">
+<META NAME="keywords" CONTENT="Uppsala universitet,universitet,UPPSALA UNIVERSITET,h&ouml;gre utbildning,forskning,bibliotek,utbildning, universitetsstudier">
+<script type="text/javascript" language="JavaScript">
+<!--
+function openWin() {
+	ns4 = (document.layers)? true:false;
+	ie4 = (document.all)? true:false;
+	if (ns4) {
+	var appWin = window.open("http://mrmap.sun.arrowhead.com/uppsala/frameset.asp?stadsID=102&br=ns4", "", "width=625,height=510,status",true);	
+	}
+	else {
+		var appWindow = window.open("", "", "width=636,height=510,status",true);
+		appWindow.document.location.replace("http://mrmap.sun.arrowhead.com/uppsala/frameset.asp?stadsID=102&br=ie4");
+	}
+}
+//-->
+<!--
+// Nils Holml&scaron;v nils@macworld.se
+// feel free to use this script as long as this text remains intact
+function surfto(form) {
+        var myinst=form.inst.selectedIndex
+        top.location.href=(form.inst.options[myinst].value);
+}
+
+function surfto2(form) {
+       var mydest=form.dest.selectedIndex
+       top.location.href=(form.dest.options[mydest].value);
+}
+function MM_findObj(n, d) { //v4.01
+  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+  if(!x && d.getElementById) x=d.getElementById(n); return x;
+}
+
+//-->
+</script>
+<script language="JavaScript" type="text/javascript" >
+<!--
+// If Macintosh, then Macintosh style sheet.
+if (navigator.platform.indexOf('Mac') != -1) {
+document.write('<link rel="stylesheet" href="CSS/mac_profil.css">');
+// Else Windows style sheet.
+} else{
+document.write('<link rel="stylesheet" href="CSS/profil.css">');
+}
+
+function MM_swapImgRestore() { //v3.0
+  var i,x,a=document.MM_sr; for(i=0;a&&i<a.length&&(x=a[i])&&x.oSrc;i++) x.src=x.oSrc;
+}
+
+function MM_preloadImages() { //v3.0
+  var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+    var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+    if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+}
+
+function MM_swapImage() { //v3.0
+  var i,j=0,x,a=MM_swapImage.arguments; document.MM_sr=new Array; for(i=0;i<(a.length-2);i+=3)
+   if ((x=MM_findObj(a[i]))!=null){document.MM_sr[j++]=x; if(!x.oSrc) x.oSrc=x.src; x.src=a[i+2];}
+}
+//-->
+</script>
+</head>
+<body text="#000000" class="rededge" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0"  bgcolor="#FFFFFF" onLoad="MM_preloadImages('/images/nihongo_over.gif')">
+<table width="720" border="0" cellpadding="0" cellspacing="0">
+  <tr> 
+    <td width="160" valign="top" class="redleft"><a href="http://www.uu.se"><img src="http://www.uu.se/LOGO/uulogo_red160.gif" width="160" height="160" border="0" alt="Uppsala universitet"></a></td>
+    <td width="440" valign="top"> 
+      <table width="440" border="0" cellpadding="0" cellspacing="0">
+        <tr> 
+          <td width="10" valign="top">&nbsp; </td>
+          <td width="430" valign="top"> 
+            <p><br>
+              <img src="/images/uppsala_universitet1.gif" width="340" height="80" alt="V&auml;lkommen till Uppsala universitet"><br>
+              <span class="greymenu"><b>| <a href="http://www.uu.se/utbildning/">Utbildning</a> 
+              | <a href="http://info.uu.se/foguide.nsf/index?OpenView&Expand=1">Forskning</a> 
+              | <a href="http://www.student.uu.se/">Student</a> | <a href="http://info.uu.se/fakta.nsf/sidor/samverkan.med.idC9.html">N&auml;ringsliv 
+              och samh&auml;lle</a> |</b></span></p>
+          </td>
+        </tr>
+        <tr> 
+          <td></td>
+          <td></td>
+        </tr>
+        <tr> 
+          <td></td>
+          <td><img height="1" width="430" src="/images/spacer.gif" alt=""></td>
+        </tr>
+      </table>
+    </td>
+    <td width="120" valign="top">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="120" valign="top">  <p><br>
+            <div class='lang'> <a href= 
+'http://www.uu.se/index.eng.html'>In English</a><br>
+              <a href="http://info.uu.se/fakta.nsf/sidor/universitat.uppsala.idAB.html">Auf 
+              Deutsch</a><br>
+              <a href="http://info.uu.se/fakta.nsf/sidor/la.universidad.id32.html">En 
+              Espa&ntilde;ol</a><br>
+              <a href="http://info.uu.se/fakta.nsf/sidor/luniversite.duppsala.idE0.html">En 
+              Fran&ccedil;ais</a><br>
+              <a href="http://info.uu.se/fakta.nsf/sidor/luniversita.di.id23.html">In 
+              Italiano</a><br>
+              <a href="http://info.uu.se/fakta.nsf/sidor/uppsala.university.idD3.html" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('nihongo','','/images/nihongo_over.gif',1)"><img name="nihongo" border="0" src="/images/nihongo_GR.gif" alt="nihongo" width="45" height="15"></a> 
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr> 
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr> 
+    <td width="160"></td>
+    <td width="436"></td>
+    <td><img height="1" width="80" src="/images/spacer.gif" alt=" "></td>
+  </tr>
+</table>
+<table width="720" border="0" cellpadding="0" cellspacing="0">
+  <tr> 
+    <td width="160" valign="top"> 
+      <table width="160" border="0" cellpadding="0" cellspacing="0">
+        <tr> 
+          <td colspan="2"></td>
+          <td></td>
+        </tr>
+       
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/1">A 
+            till &Ouml;</a></td>
+        </tr>
+		 <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://www.uu.se/Adresser/">Adresser</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://publications.uu.se/theses/">Avhandlingar</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://w3.ub.uu.se">Bibliotek</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://www.diariet.uu.se/">Diarium</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="/doktorand/">Doktorand</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://exjobb.sunet.se/cgi-bin/seek2comp.pl?seekword=Uppsala%20universitet&mode=free">Exjobb</a></td>
+        </tr>
+		<tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/sidor/vetenskapsomraden.id8A.html">Fakulteter</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="/internt/">Internt</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/kalender.nsf/datum/">Kalendarium</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="javascript:openWin()">Karta</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/internt.nsf/regelsamlingen/12273FA54A6666EFC125690A003F154E">M&aring;l 
+            och strategier</a></td>
+        </tr>
+        
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/sidor/uppsala.universitet.id9D.html">Om 
+            Uppsala universitet</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/sidor/organisation.idD5.html">Organisation</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://www.personalavd.uu.se/ledigaplatser.html">Platsannonser</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="/popvet/">Popul&auml;rvetenskap</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="/media/">Pressmeddelanden</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/nyheter.nsf/rektorsrapport/?OpenView&Expand=1">Rektor 
+            har ordet</a></td>
+        </tr>
+        <tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/sidor/uu.i.id2E.html">UU 
+            i siffror</a></td>
+        </tr>
+		<tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/sidor/vetenskapsomraden.id8A.html">Vetenskapsomr&aring;den</a></td>
+        </tr>
+		<tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/fakta.nsf/sidor/arsredovisning.2000.idD2.html">&Aring;rsredovisning</a></td>
+        </tr>
+		<tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2">&nbsp;</td>
+        </tr>
+		<tr> 
+          <td valign="top" class="redleft"></td>
+          <td valign="top" class="sidomenyVIT" colspan="2"><a href="http://info.uu.se/IntPort.nsf/ViewCat?ReadForm&View=alla&Cat=Externa+lankar">Externa 
+            l&auml;nkar</a></td>
+        </tr>
+        <tr> 
+          <td height="1"><img height="1" width="7" src="/images/spacer.gif" alt=""></td>
+          
+        </tr>
+      </table>
+    </td>
+    <td width="560" valign="top"> 
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr> 
+          <td width="10">&nbsp;</td>
+          <td width="420" valign="top"> 
+            <table cellspacing=0 cellpadding=1 width='100%' bgcolor='#990000' border=0>
+              <tbody> 
+              <tr> 
+                <td> 
+                  <table cellspacing=0 cellpadding=0 width="100%" bgcolor='#ffffff' border=0>
+                    <tbody> 
+                    <tr> 
+                      <td width="300" valign="top"> 
+					    <div class="content"> 
+                          <a href='http://www.uu.se/Postcards/'><IMG SRC='http://www.uu.se/banner/julkort2001.gif' width='240' height='50' ALT='Skicka ett elektroniskt julkort' BORDER='0'></a><br>
+                          <IMG SRC='/images/spacer.gif' WIDTH='240' HEIGHT='50' ALT='' BORDER='0'>
+                          <!--hr size="1" width="240" align="left" noshade color="#990000"-->
+                        </div>
+						
+						<table width="164" border="0">
+                          <tr> 
+                            <td> 
+                              <div align="left" class="content"> 
+                                <form action="http://www.uu.se/cgi-bin/phinq_swe">
+                                  <span class="redhead">S&ouml;k: 
+                                  </span><br>
+                                  <hr size="1" noshade color="#990000">
+                                  Personal:<br>
+                                  <input type="text" name="Qname" title="Förnamn Efternamn" maxlength="256" size="17" style='width:160' class="formfields">
+                                  <input
+type="hidden" name="return" value="">
+                                  <input type="image" src= 
+"http://www.uu.se/images/2000/sok_grey.gif" border="0" align="right" name="return" alt="S&ouml;k">
+                                </form>
+                                <form method="GET" action="http://www.google.com/u/UppsalaUniversity">
+                                  Fritext:<br>
+                                  <input type="text" name="q" size="17" style='width:160' maxlength=255 class="formfields">
+                                  <input src= 
+"http://www.uu.se/images/2000/sok_grey.gif" border="0" type="Image" align="right" name="S&uml;k" alt="S&ouml;k">
+                                  <input
+type="hidden" name="return2" value="">
+                                </form>
+                                <form action="http://www.uu.se/cgi-bin/dep-extract-sv">
+                                  Institution/motsv:<br>
+                                    <input type="text" name="dep" size="17" style='width:160'  maxlength="40" class="formfields">
+                                    <input src= 
+"http://www.uu.se/images/2000/sok_grey.gif" border="0" type="Image" align="right" name="S&uml;k" alt="S&ouml;k">
+                                </form>
+                                <!--?php include("http://www.uu.se/enheter_select.inc")?-->
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td valign="top"> 
+                        <table width="100%" border="0" cellspacing="0" cellpadding="10">
+                          <tr> 
+                            <td width="100" valign="top" ><img src="images/uhuset.jpg" width="100" height="100" alt="Universitetshuset i Uppsala"></td>
+                          </tr>
+                          <tr> 
+                            <td valign="top" ><img src="images/100x100halltak.jpg" width="100" height="100" alt="Universitetshuset - interi&ouml;r"></td>
+                          </tr>
+                          <tr> 
+                            <td valign="top" ><img src="images/slott.jpg" width="100" height="100" alt="Uppsala slott"></td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    
+                    </tbody> 
+                  </table>
+                </td>
+              </tr>
+              </tbody> 
+            </table>
+          </td>
+          <td width="10">&nbsp;</td>
+          <td width="120" valign="top"> 
+            <table cellspacing=0 cellpadding=1 width='100%' bgcolor='#990000' border=0>
+              <tbody> 
+              <tr> 
+                <td> 
+                  <table cellspacing=0 cellpadding=3 width="100%" bgcolor='#cccccc' 
+        border=0>
+                    <tbody> 
+                    <tr> 
+                      <td width="100%" valign="top" bgcolor="#CCCCCC" class='redhead'>Aktuellt</td>
+                    </tr>
+                    <tr> 
+                      <td valign="top" class='normal' bgcolor="#FFFFFF"> 
+                        <span class="nyhet"><a href="http://info.uu.se/press.nsf/pm/starkt.hypotes.id4A.html" Title='Det finns ett samband mellan nitrat i grundvattnet och plötslig spädbarnsdöd. Detta nya samband stödjer uppfattningen att orsakerna till plötslig spädbarnsdöd kan sökas i en ofullständig bakteriell omvandling av urinämne i tarmen. Det är en slutsats som några Uppsalaforskare presenterar i decembernumret av European Journal of Clinical Investigation.'><b>Stärkt hypotes om plötslig spädbarnsdöd &raquo;</b></a></span><br><hr size='1' noshade color='#990000'><span class="nyhet"><a href="http://info.uu.se/press.nsf/pm/evolutionsbiologer.hamtar.id1A.html" Title='Moderna laborativa metoder ger enorma mängder genetiska data. Hittills har det krävts superdatorer för att analysera till exempel evolutionära samband. Med hjälp av en nygammal statistisk metod, som utgår från 1700-talsprästen Thomas Bayes statistiska teorier, kan beräkningarna nu göras på vanliga persondatorer, vilket är ett stort steg framåt för evolutionsbiologisk forskning. Uppsalaforskaren Fredrik Ronquist presenterar tillsammans med amerikanska kollegor de revolutionerande metoderna i det senaste numret av vetenskapstidskriften Science.'><b>Evolutionsbiologer hämtar metodhjälp från 1700-talspräst &raquo;</b></a></span><br><hr size='1' noshade color='#990000'>
+                        <!--b><font color="#990000">Idag</font></b><br-->
+                        <!--hr size="1" noshade color="#990000"-->
+                        <!--slut this.week-->
+                        <!--Disputationer<br>-->
+                        <!--hr size="1" noshade color="#990000"-->
+                        <!--?php include("http://publications.uu.se/theses/inst/spika.xsql")? -->
+                      </td>
+                    </tr>
+                  
+                    </tbody> 
+                  </table>
+                </td>
+              </tr>
+              </tbody> 
+            </table>
+          </td>
+        </tr>
+        <tr> 
+          <td><img height="1" width="10" src="/images/spacer.gif" alt=""></td>
+          <td><img height="1" width="420" src="/images/spacer.gif" alt=""></td>
+          <td><img height="1" width="10" src="/images/spacer.gif" alt=""></td>
+          <td></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr> 
+    <td><img height="1" width="160" src="/images/spacer.gif" alt=" "></td>
+    <td><img height="1" width="560" src="/images/spacer.gif" alt=" "></td>
+  </tr>
+</table>
+<table width="720" border="0" cellpadding="0" cellspacing="0">
+  <tr> 
+    <td width="160" valign="top">&nbsp; </td>
+    <td width="10" valign="top">&nbsp; </td>
+    <td valign="top"> 
+      <hr size="1" width="420" align="left" noshade>
+      <span class="sidfot">&copy;- 2001. UPPSALA UNIVERSITET | Org. nr: 202100-2932<br>
+      Box 256, 751 05 Uppsala | 018-471 00 00 | <a href="http://www.uu.se/webmaster/">Webmaster</a></span></td>
+  </tr>
+  <tr>
+    <td height="1"></td>
+    <td></td>
+    <td><img height="1" width="544" src="/images/spacer.gif" alt=""></td>
+  </tr>
+</table>
+</body>
+</html>

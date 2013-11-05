@@ -1,0 +1,4 @@
+output=both
+sequence_file=/home/rsat/rsa-tools/ws_clients/sequences/convert_test_sequence.fasta
+from=fasta
+to=raw

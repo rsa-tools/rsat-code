@@ -1,0 +1,966 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: split-matrix,v 1.10 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+# use strict;
+
+=pod
+
+=head1 NAME
+
+split-matrix
+
+=head1 VERSION
+
+0.1
+
+=head1 DESCRIPTION
+
+Split matrices based on the informational content of each column and 
+matrix media.
+
+=head1 AUTHORS
+
+Alejandra Medina-Rivera <amedinan@lcg.unam.mx>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+split-matrix [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The user has to specify exactly input file (options I<-file1>),
+containing one PSSMs. The matrix of the file is splited at the middel
+possition or based on informational conttent.  =head1 OUTPUT FORMAT
+The user has to specify exactly input files (options I<-file1> ), each
+containing one or several PSSMs. Each matrix of file one is compared
+with each matrix of fle2.  =head1 DESCRIPTION Split Methods.
+
+We split the matrix into two minor matrixes using tow approaches:
+
+1) At the middle.
+
+2) Following the distribution of informational content on each column
+   of the matrix.
+
+Motifs with internal symmetry usually have two groups of highly
+conserved residues (high informational content) separated by a central
+region of residues with lower conservation (low informational
+content).  This method looks after this tow groups of residues with
+high informational content separated by a central region of low
+informational content.
+
+One residue (column) has a high informational content if this is
+higher than the reported media of the informational content of all
+columns (information per column).
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+require "RSA.lib";
+
+use RSAT::MarkovModel;
+use RSAT::matrix;
+use RSAT::MatrixReader;
+use File::Basename;
+use Data::Dumper;
+
+
+################################################################
+## Main package
+package main;
+{
+  
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    $decimals = 1;
+   # $pseudo_weight = 1;
+    $pseudo_counts=1;
+    $equi_pseudo = 0;
+    $sep="\t";
+    $null = "NA";
+    $perm = 0;
+    $symmetry=0; # do not report symmetry
+
+    local %infile = ();
+    local %outfile = ();
+    local @matrix_files = ();
+  #  local @matrix_scan_options = ();
+    local $matrix_format = "";
+    local $output_format = "patser";
+    local $verbose = 0;
+    local $out = STDOUT;
+    local $info_log_base = exp(1);
+   #local $sort_key = "";
+   # local $sort_order = "";
+
+## Return type(s)
+    @return_fields = ();
+    %supported_return_type = (
+	"profile"=>1,
+	"counts"=>1,
+	"frequencies"=>1,
+	"weights"=>1,
+	"info"=>1,
+	"information"=>1,
+	"parameters"=>1,
+	"consensus"=>1,
+	"margins"=>1,
+	"sites"=>1,
+	"wdistrib"=>1,
+	);
+    $supported_return_fields = join ",", sort keys %supported_return_type;
+    
+## Split option
+    
+    %supported_split_option = (
+	"half"=>1,
+	"information"=>1,
+	);
+    $supported_split_options = join ",", sort keys %supported_return_type;
+
+## input formats
+    %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+    $supported_input_formats = join ",", sort keys %supported_input_format;
+   # local $strands="DR";
+    
+## # site formats
+#     %supported_site_format = ('fasta'=>1,
+# 			      "wc"=>1,
+# 			      "multi"=>1,
+# 	);
+#    # $supported_site_formats = join ",", sort keys %supported_site_format;
+      $site_format="fasta";
+    
+## bg formats
+    $bg_format = "oligo-analysis";
+    
+    
+    
+    
+    %main::infile = ();
+    %main::outfile = ();
+    
+    $main::verbose = 0;
+#    $main::in = STDIN;
+ #   $main::out = STDOUT;goto-line
+    
+   #  ## Parameters for the &doit() command
+#     $dry = 0;
+#     $die_on_error = 1;
+#     $job_prefix = "matrix-quality";
+#     $batch = 0;
+    
+    ################################################################
+    ## Read argument values
+    
+    &ReadArguments();
+    
+    &RSAT::message::Debug("read aguments done") if ($main::verbose >= 5);
+   ################################################################
+   #### check argument values ####
+
+   ## Input format
+    unless ($matrix_format) {
+	&RSAT::error::FatalError("You should specify the input matrix format.");
+    }
+    ## Split format
+    unless ($split) {
+	&RSAT::error::FatalError("You should specify the split option to be used.");
+    }
+   ## Matrix provided with -i option
+    if ($infile{input}) {
+	push @matrix_files, $infile{input}; 
+	&RSAT::message::Debug("matrix file", $infile{input}) if ($main::verbose >= 5); 
+    }
+  
+## Check that there is at least one input matrix
+## At least one matrix is file is mandatory
+    unless (scalar(@matrix_files >= 1)) {
+	&RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
+    }
+
+     
+
+    ################################################################
+    ## Read input matrix.
+    my $matrix_file = $infile{input};
+    &RSAT::message::Debug("matrix format", $matrix_format) if ($main::verbose >= 5);  
+    my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+    
+    ################################################################
+    ## Check that there is at least one input matrix
+    unless (scalar(@matrix_files >= 1)) {
+	&RSAT::error::FatalError("You must specify at least one matrix file.");
+    }
+
+
+    ## Check the number of parsed matrices
+    if (scalar(@matrices) > 1) {
+      &RSAT::message::Warning("File",  $matrix_file, 
+			      "contains ".scalar(@matrices)." matrices. ",
+			      "Only the first one will be evaluated.");
+    }
+
+    local $matrix = shift (@matrices);
+    $matrix->set_attribute("pseudo", $pseudo_counts);
+    $matrix->set_attribute("equi_pseudo", $equi_pseudo);
+    $matrix->set_attribute("decimals", $decimals);
+    $matrix->set_attribute("file", $matrix_file);
+    $matrix->force_attribute("max_profile", $max_profile);
+    $matrix->force_attribute("sep", $sep);
+    # $matrix->force_attribute("col_width", $col_width);
+    $matrix->force_attribute("margins", $return_fields{margins});
+    $matrix->setInfoLogBase($info_log_base);
+    $matrix->set_parameter("bg_markov_order", 0);
+    local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+    $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+    $matrix->set_attribute("name", $matrix_name);
+   # $matrix->setMarkovModel($bg_model) if ($main::infile{th_prior}) ;
+    local ($Wmin, $Wmax)  = $matrix->weight_range();
+    if ($infile{prior}) {
+	$matrix->setPrior(%prior);
+    }
+    $matrix->calcInformation();
+    ## Calculate parameters before sorting because sorting can be done on
+    ## a computed parameter rather than defined in the input file.
+    if ($return_fields{parameters}) {
+	$matrix->calcWeights();
+	$matrix->calcConsensus();
+	$matrix->calcGCcontent();
+    }
+    &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2); 
+
+ ################################################################
+ ## Background model specification
+
+    local $bg_model = new RSAT::MarkovModel();
+    if ($infile{bg}) {
+	## Read background model from a file
+	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
+	    if ($main::verbose >= 2);
+	$bg_model->load_from_file($infile{bg}, $bg_format);
+	$bg_model->check_missing_transitions();
+#	&RSAT::message::Debug($bg_model->to_string($bg_out_format)) if ($main::verbose >= 0);
+    }else {
+	#&RSAT::error::FatalError("You should  define  a file (-bgfile) for the background model.");
+    }
+   
+
+
+## return type(s)
+    local %return_fields = ();
+    unless (scalar(@return_fields)) {
+	if ((lc($output_format ) eq "transfac") ||
+	    (lc($output_format ) eq "consensus")) {
+	    push @return_fields, "counts";
+	} else {
+	    &RSAT::error::FatalError("You should define at least one return type");
+	}
+    }
+    foreach my $format (@return_fields) {
+	if ($supported_return_type{$format}) {
+	    $return_fields{$format}++;
+	} else {
+	    &RSAT::error::FatalError("Invalid return type $format. Supported: ".$supported_return_fields);
+	}
+    }
+    
+
+    
+## Prior residue frequencies
+    local %prior = ();
+    if ($infile{prior}) {
+	if (defined($bg_pseudo)) {
+	    $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+	}
+	$bg_model->load_from_file($infile{prior}, $bg_format);
+	%prior = $bg_model->get_attribute("suffix_proba");
+	foreach my $key (sort keys %prior) {
+	    my $residue = lc($key);
+	    &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 2);
+	}
+    }
+  
+    ###############
+    ## Split matrix
+    &Split_Matrix($matrix);
+    
+    
+    ################################################################
+    ## Open output stream
+    
+    local $out_dir=$main::outfile{output}."/".$matrix_name;
+    local $out_file = $out_dir."/".$matrix_name;
+    $main::out = &OpenOutputFile($out_file);
+
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Print output
+    ## Export the matrix in tab-delimited format
+    &ExportMatrix($matrix);
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    exit();
+}
+
+################################################################
+####################SUBROUTINE DEFINITION ######################
+
+
+
+
+#Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+    while (scalar(@arguments) >= 1) {
+	$arg = shift (@arguments);
+	## Verbosity
+=pod
+	    
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 10;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+ 
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Matrix file
+=pod
+
+=item B<-i matrix_file>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+ ## Matrix format
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Format of the matrix file.
+
+=cut
+	} elsif ($arg eq "-matrix_format") {
+	
+        $matrix_format = shift(@arguments);
+             &RSAT::error::FatalError($matrix_format,
+				     "Invalid maytix format",
+				     "Supported: ", $main::supported_input_formats)
+	      unless ($main::supported_input_format{$matrix_format}); 
+ 
+
+## Report symmetry  
+
+=pod
+
+=item B<-symmetry symmetry >
+
+If the matrix is spplited, report symmetry based in sequence scan.
+
+=cut
+	} elsif ($arg eq "-symmetry") {
+	  $symmetry = 1;
+
+
+
+
+  ## Split matrix option
+=pod
+
+=item B<-split split>
+
+Split Option.
+
+=cut
+	} elsif ($arg eq "-split") {
+	    $split = shift(@arguments);  
+             ## Check background input format
+	    &RSAT::error::FatalError($split,
+				     "Invalid split option.",
+				     "Supported: ", $supported_split_options)
+	      unless ($supported_split_option{$split});  
+
+
+ 
+  # return type(s)
+=pod
+
+=item B<-return return>
+
+Return Options.
+
+=cut
+
+
+	} elsif ($arg eq "-return") {
+	    my $return_fields = shift(@arguments); 
+	    push @return_fields, split(",", $return_fields);
+
+
+	    ## Pseudo weight
+=pod
+
+=item B<-pseudo pseudo_counts>
+
+Pseudo-weight.
+
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo_counts = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
+					  "Invalid value for a pseudo-weight. Must be a positive real number."))
+		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+			&& ($main::pseudo_counts >= 0)); 
+
+ ## Background model file
+=pod
+
+=item B<-bgfile background_file>
+
+Background model file.
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+	  $main::bg_method = "file";
+	  $main::infile{bg} = shift(@arguments);
+
+	  
+	    ## Background model format
+=pod
+
+=item B<-bg_format format>
+
+Format for the background model file.
+
+Supported formats: all the input formats supported by
+convert-background-model.
+
+=cut
+	} elsif ($arg eq "-bg_format") {
+	    $main::bg_format = lc(shift(@arguments));
+
+	    ## Check background input format
+	    &RSAT::error::FatalError($main::bg_format,
+				     "Invalid input format.",
+				     "Supported: ", $RSAT::MarkovModel::supported_input_formats)
+	      unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_format});
+
+
+## Number of decimals for computing scores
+=pod
+
+=item B<-decimals #>
+
+Number of decimals for computing weight scores (default 2).
+This arguments is passed to matrix-scan and matrix-distrib.
+
+=cut
+
+   
+
+	} elsif ($arg eq "-decimals") {
+
+	  $main::decimals = shift(@arguments);
+	  &RSAT::error::FatalError("The number of decimals must be a natural number")
+                   unless &IsNatural($main::decimals);
+
+   ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+        }
+    }
+ 
+}
+
+# ################################################################
+# ## Split Matrix
+
+sub Split_Matrix{
+    
+    my ($matrix) = @_;
+    #  $matrix->readFromFile($infile{input}, $input_format);
+    if ($infile{prior}) {
+	$matrix->setPrior(%prior);
+    }
+    my @counts_matrix = $matrix->getMatrix();
+    my $ncol = $matrix->ncol();
+    my $nrow = $matrix->nrow();
+    my $matrix_name = $matrix ->get_attribute("name");
+ 
+    
+    my $max_bits = $matrix->get_attribute("max.bits");
+    my @alphabet = $matrix -> getAlphabet();
+    local %prior2 =$matrix->getPrior();
+    my $max_possible_info_per_col = $matrix->get_attribute("max.possible.info.per.col");
+    my $prof=$matrix->get_attribute("profile");  
+    my @information = $matrix->getInformation();
+    my @info_sum = &RSAT::matrix::col_sum($nrow, $ncol, @information);
+    my $information_per_column = $matrix -> get_attribute("information.per.column");
+    &RSAT::message::Info("Information per column", $information_per_column) if ($main::verbose >=2) ;
+    #&RSAT::message::Info("Information content per column possition", "\n" ,  @information, "\n");
+    &RSAT::message::Info("Information content per column possition", "\n" ,  @info_sum, "\n")if ($main::verbose >=2);
+   
+    my $ncol_n1=0;
+    my $ncol_n2=0;
+    my ( @half1, @half2)= ();
+    my $m1 = new RSAT::matrix();
+    my $m2 = new RSAT::matrix();
+    my ($origin_m1,$origin_m2);
+
+################################################################
+## Split matrix  at the middle     
+    if ( $split eq "half"){
+ 
+	&RSAT::message::Info("Splitting matrix at the middle possition", "\n");
+	my $half=int ($ncol/2);
+ 	
+	## First Half values
+
+	@half1=@counts_matrix[0..$half-1]; 
+	$ncol_n1=$half;
+	
+	$m1->setMatrix ($nrow, $ncol_n1, @half1);
+	$m1->setAlphabet(@alphabet);
+	$m1->set_attribute("name", $matrix_name."_half_1");
+	
+	## Second Half values
+	
+	@half2=@counts_matrix[$half..$ncol+1];
+	$ncol_n2=($ncol)-$half;
+
+	$m2->setMatrix($nrow, $ncol_n2, @half2);
+	$m2->setAlphabet(@alphabet);
+	$m2->set_attribute("name", $matrix_name."_half_2");
+	$origin_m1="1-".$half;
+	$origin_m2=($half+1)."-".$ncol;
+
+  ###############################################################
+  #Split matrix by information content    
+
+    }elsif ( $split eq "information"){
+      	my $i=0; ## columns counter
+	my $max=0; ## detected maximum
+	my $cut1=0; ##Matrix column corresponding to the end column of first half
+	my $detect_min=0; ## Flag to mak whenever the max is just made of one possition 
+	my $cut2=0; ##Matrix column corresponding to the start column of second half
+	my $prev=0;
+
+	foreach $col_info (@info_sum) { ## Read each column information content
+	    $i++;
+	    print "columnn info $col_info ";
+	    if($col_info>$information_per_column){ ## Detect columns with info greater than the media
+		$max++;                              ## of the matrix
+	    }
+	    elsif( ($col_info<$information_per_column) && ($max>1) ){ ## Detect columns with less info
+		$detect_min--;          ## than the media, when more than tow previously contiguous
+	    }                                ## columns had shown a greater value
+	    elsif(  ($detect_min==0) && ($max==0) ){ ## Non minimuns nor maximuns have been detected 
+		$prev=$i; ## save 
+	    } 
+	    if( ($detect_min==-2 ) && ($cut1==0) ){ ## Detect if there is a section of 
+		$cut1=$i-1;  ## several positions with low info, here the first section of the matrix
+		$max=0;   ## is selected, and max is reseted to cero to look afeter a second section
+		print "cut1 $cut1\n";
+	    }
+	    if ($info_sum[$i]){
+		if( ($col_info>$information_per_column) 
+		    && ($info_sum[$i]>$information_per_column) ## this condition might work better 
+		    && ($cut1>0) ) {
+		    $cut2=$i-2;  ##Select de second section
+		    print "cut2 $cut2\n";
+		    last;
+		}
+	    }
+	    else {
+		if( ($col_info>$information_per_column) 		
+		    && ($cut1>0) ) {
+		    $cut2=$i-2;  ##Select de second section
+		    print "cut2 $cut2\n";
+		    last;
+		}
+	    }
+	}
+	
+	if($cut1 && $cut2){
+            @half1=@counts_matrix[$prev..$cut1]; 
+	    $ncol_n1=$#half1+1;
+	    $m1->setMatrix ($nrow, $ncol_n1, @half1);
+	    $m1->setAlphabet(@alphabet);
+	    $m1->force_attribute("name", $matrix_name."_half_1");
+	    
+	  
+	    @half2=@counts_matrix[$cut2..$#counts_matrix];
+	    $ncol_n2=$#half2+1;
+	    $m2->setMatrix ($nrow, $ncol_n2, @half2);
+	    $m2->setAlphabet(@alphabet);
+	    $m2->force_attribute("name", $matrix_name."_half_2");
+
+	    $origin_m1="1-".($cut1+1);
+	    
+	    $origin_m2=($cut2+1)."-".($#info_sum+1);
+
+	    
+	}else{
+	    print $main::out "Matrix $matrix_name Can't be splited by significant change in information content\n";
+	    return ();
+	}
+	
+    }	
+    
+    
+#Set attributes to half matrices
+    
+    $m1->force_attribute("pseudo", $pseudo_counts);
+    $m1->force_attribute("equi_pseudo", $equi_pseudo);
+    $m1->force_attribute("decimals", $decimals);
+    $m1->force_attribute("max_profile", $max_profile);
+    $m1->force_attribute("sep", $sep);
+    $m1->force_attribute("margins", $return_fields{margins});
+    $m1->setInfoLogBase($info_log_base);
+    $m1->set_parameter("bg_markov_order", 0);
+
+    
+    $m2->set_attribute("pseudo", $pseudo_counts);
+    $m2->set_attribute("equi_pseudo", $equi_pseudo);
+    $m2->set_attribute("decimals", $decimals);
+    $m2->force_attribute("max_profile", $max_profile);
+    $m2->force_attribute("sep", $sep);
+    $m2->force_attribute("margins", $return_fields{margins});
+    $m2->setInfoLogBase($info_log_base);
+    $m2->set_parameter("bg_markov_order", 0);
+
+    if ($infile{prior}) {
+	$m1->setPrior(%prior);
+	$m2->setPrior(%prior);
+    }else{
+	$m1->setPrior(%prior2);
+	$m2->setPrior(%prior2);
+    }
+
+    my $m1_name= $m1 -> get_attribute("name");
+    my $m2_name= $m2 -> get_attribute("name");
+    local $return_fields{parameters}=0;
+    ################################################################
+    ## Open output stream
+    
+    #local $out = &OpenOutputFile($main::outfile{output});
+    local $out_dir=$main::outfile{output}."/".$matrix_name;
+    #die "$out_dir";
+    system ("mkdir -p ". $out_dir );
+
+    local $out_file = $out_dir."/".$m1_name;
+    local $out= &OpenOutputFile($out_file);
+    print join("", ";Matrix: $m1_name","\n",";Possition in Original Matrix: $origin_m1", "\n", ";OutFile $out_file","\n");
+    &ExportMatrix($m1);  
+    
+    local $out_file = $out_dir."/".$m2_name;
+    local $out= &OpenOutputFile($out_file);
+     print join("", ";Matrix: $m2_name", "\n",";Possition in Original Matrix: $origin_m2","\n", ";OutFile $out_file", "\n");
+    &ExportMatrix($m2);
+   # print $out "; Possotions in Original Matrix  ".$." ".$;
+}
+
+
+
+
+
+# ################################################################
+# ## Export one matrix
+sub ExportMatrix {
+    my ($matrix) = @_;
+    #  $matrix->readFromFile($infile{input}, $input_format);
+    if ($infile{prior}) {
+	$matrix->setPrior(%prior);
+    } 
+    
+    ## Return parameters
+    if ($perm) {
+	&RSAT::message::Info("permutating matrix")
+	    if ($main::verbose >= 3);
+	
+	## permute matrix
+	for my $i (1..$perm) {
+	    
+	    # if ($i > 1) {
+	    #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+	    #}
+	    
+	    ##permute the matrix
+	    $matrix->permute_columns();
+	    
+	    ## print result
+	    print $out "; permutation $i/$perm\n" if ($verbose >=1);
+	    
+	    print $out $matrix->toString(sep=>"\t",
+					 type=>"perm_columns",
+					 format=>"tab",
+				   pipe=>"" ## We suppress the pipe for permute-table
+				  );
+    }
+  } else {
+
+    ## Print the counts matrix
+    if ($return_fields{counts}) {
+      print $out $matrix->toString(sep=>"\t",
+				   type=>"counts",
+				   format=>$output_format,
+				  );
+    }
+
+    ## Calculate frequency matrix
+    if ($return_fields{frequencies}) {
+      $matrix->calcFrequencies();
+      print $out $matrix->toString(col_width=>($decimals+4), 
+				   decimals=>$decimals, 
+				   type=>"frequencies",
+				   format=>$output_format);
+    }
+
+    ## Calculate weight matrix
+    if ($return_fields{weights}) {
+      $matrix->calcWeights();
+      print $out $matrix->toString(col_width=>($decimals+4), 
+				   decimals=>$decimals, 
+				   type=>"weights",
+				   format=>$output_format);
+    }
+
+    ## Print the profile matrix
+    if ($return_fields{profile}) {
+      print $out $matrix->toString(sep=>"\t",
+				   type=>"profile",
+				   format=>$output_format,
+				  );
+    }
+
+    ## Calculate information content matrix
+    if ($return_fields{info}) {
+      $matrix->calcInformation();
+      print $out $matrix->toString(col_width=>($decimals+4), 
+				   decimals=>$decimals, 
+				   type=>"information",
+				   format=>$output_format);
+    }
+
+
+    ## Return sites
+    if ($return_fields{sites}) {
+      print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+      my $s = 0;
+      my @site_ids = $matrix->get_attribute("site_ids");
+      foreach my $site_seq ($matrix->get_attribute("sequences")) {
+	$s++;
+	my $site_id =  $site_ids[$s-1] || $s;
+	&PrintNextSequence($out, $main::site_format, 0, $site_seq, $site_id);
+	#      print $out $s, "\t\\", supported$site_seq, "\\\n";
+      }
+    }
+
+    ## Calculate consensus
+    if ($return_fields{consensus}) {
+      $matrix->calcConsensus();
+      print $out $matrix->toString(type=>'consensus');
+    }
+
+    ## Return parameters
+    if ($return_fields{parameters}) {
+      $matrix->calcConsensus();
+      print $out $matrix->toString(type=>"parameters");
+    }
+
+    
+  }
+
+  ## Return weight distribution
+  if ($return_fields{wdistrib}) {
+    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
+    $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
+    my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+    my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
+    my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+
+    ## Print the description of column contents
+    my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
+    if ($main::verbose >= 1) {
+      print $out ";\n; Theoretical distribution of weight probabilities\n";
+      my %descr = ();
+      $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
+      $descr{"proba"} = "probability density function: P(W=w)";
+      $descr{"cum"} = "cumulative density function: P(W <= w)";
+      $descr{"Pval"} = "P-value = inverse cumulative density function: Pval = P(W >= w)";
+      $descr{"ln_Pval"} = "natural logarithm of the P-value";
+      $descr{"log_P"} = "base 10 logarithm of the P-value";
+      $descr{"sig"} = "significance: sig = -log10(Pval)";
+      $c =0;
+      foreach my $col (@columns) {
+	$c++;
+	print $out sprintf(";\t%d\t%-12s\t%s", $c, $col, $descr{$col}), "\n";
+      }
+    }
+
+    ## Print header
+    print $out "#", join ("\t", @columns), "\n";
+
+    ## Print the score distribution
+    my $log10 = log(10);
+    foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
+      $weight = sprintf("%.${decimals}f", $weight);
+      my $weight_proba = $null;
+      my $weight_proba_cum = $null;
+      my $weight_proba_inv_cum = $null;
+      my $ln_pval = $null;
+      my $log_P = $null;
+      my $sig = $null;
+      if (defined($weight_proba{$weight})) {
+	$weight_proba = sprintf("%.1e", $weight_proba{$weight});
+      }
+      if (defined($weight_proba_cum{$weight})) {
+	$weight_proba_cum = sprintf("%.1e", $weight_proba_cum{$weight});
+      }
+      if (defined($weight_proba_inv_cum{$weight})) {
+	$weight_proba_inv_cum = sprintf("%.1e", $weight_proba_inv_cum{$weight});
+	if ($weight_proba_inv_cum{$weight} > 0) {
+	  $ln_pval =  sprintf("%.3f",log($weight_proba_inv_cum{$weight}));
+	  $sig =  sprintf("%.3f",-log($weight_proba_inv_cum{$weight})/$log10);
+	  $sig =~ s/^-(0.0+)$/$1/;
+	  $log_P = -$sig;
+	} else {
+	  $ln_pval = "-Inf";
+	  $log_P = "-Inf";
+	  $sig = "Inf";
+	}
+      }
+      print $out join("\t", $weight, 
+		      $weight_proba,
+		      $weight_proba_cum,
+		      $weight_proba_inv_cum,
+		      $ln_pval,
+		      $log_P,
+		      $sig,
+		     ), "\n";
+    }
+  }
+
+}
+
+
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; split-matrix ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
+    

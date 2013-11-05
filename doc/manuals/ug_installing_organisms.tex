@@ -1,0 +1,914 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Parsing and installing new organisms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\chapter{Installing additional genomes on your machine}
+
+The easiest way to install genomes on your machine is to download them
+from the main \RSAT server, as indicated in the Chapter ``Downloading
+genomes'' (Chap.~\ref{downloading_genomes} of the installation guide).
+
+In some cases, you may however wish to install a genome by yourself,
+because this genome is not supported on the main \RSAT server. For
+this, you can use the programs that we use to install new genomes on
+the main \RSAT server.
+
+\section{Adding support for Ensembl genomes}
+
+In addition to the genomes imported and maintained on your local \RSAT
+server, the program \program{retrieve-ensembl-seq} allows you to
+retrieve sequences for any organism supported in the Ensembl database
+(\url{http://ensembl.org}).
+
+For this, you first need to install the Bioperl and Ensembl Perl
+libraries (see section \ref{sect:ensembl_libraries}).
+
+\subsection{Handling genomes from Ensembl}
+
+The first step to work with Ensembl genomes is to check the list of
+organisms currently supported on their Web server.
+
+\begin{lstlisting}
+supported-organisms-ensembl
+\end{lstlisting}
+
+You can then get more precise information about a given organism
+(build, chromosomes) with the command \program{ensembl-org-info}.
+
+\begin{lstlisting}
+ensembl-org-info -org Drosophila_melanogaster
+\end{lstlisting}
+
+Sequences can be retrieved from Ensembl with the command
+\program{retrieve-ensembl-seq}. 
+
+You can for example retrieve the 2kb sequence upstream of the
+transcription start site of the gene \gene{PAX6} of the mouse. 
+
+\begin{lstlisting}
+retrieve-ensembl-seq.pl -org Mus_musculus -q PAX6 \
+  -type upstream -feattype mrna -from -2000 -to -1 -nogene -rm \
+  -alltranscripts -uniqseqs
+\end{lstlisting}
+
+Options
+
+\begin{itemize}
+
+\item \option{-type upstream} specifies that we want to collect the
+  sequences located upstream of the gene (more procisely, upstream of
+  the mRNA).
+
+\item \option{-feattype mrna} indicates that the reference for computing
+  coordinates is the mRNA. Since we collect upstream sequences, the
+  5'most position of the mRNA has coordinate 0, and upstream sequences
+  have negative coordinates. Note that many genes are annotated with
+  multiple RNAs for different reasons (alternative splicing,
+  alternative transcription start sites). By default, the program will
+  return the sequences upstream of each mRNA annotated for the query
+  gene.
+
+\item \option{-nogene} clip the sequences to avoid overlapping the next
+  upstream gene.
+
+\item \option{-rm} repeat masking (important for pattern
+  discovery). Repetitive sequences are replaced by \seq{N} characters.
+
+\end{itemize} 
+
+
+\section{Installing genomes and variations from \ensembl}
+
+\subsection{\program{install-ensembl-genome}}
+
+The program \program{install-ensembl-genome} downloads the complete
+genomic sequence of a given organism from the \ensembl Web site, and
+installs it on the local \RSAT site. It also installs the descriptions
+of genomic features (genes, CDS, mRNAs, ...), and the variations.
+
+As usually, the complete help message can be obtained with the option
+\option{-help}.
+
+\begin{lstlisting}
+## Get the description of the program + all options
+install-ensembl-genome -help
+\end{lstlisting}
+
+Before installing a genome, it is generally a good idea to know which
+genomes are available. For this, use the option
+\option{-available\_species}.
+
+\begin{lstlisting}
+## Retrieve the list of supported species on EnsEMBL
+install-ensembl-genome -v 1  -available_species
+\end{lstlisting}
+
+\emph{Note:} inter-individual variations are available for a subset
+only of the genomes available in \ensembl. The option
+\option{-available\_species} indicates, for each species, the
+availability (genome, features, variations). Obviously, the analysis
+of regulatory variations only makes sense for the genomes documented
+with variations.
+
+We can now download the complete genomic sequence for the species of
+our choice. For the sake of space and time economy, we will use a
+small genome for this manual: the budding yeast \org{Saccharomyces
+  cerevisiae}. 
+
+\emph{Beware}: some installation steps take a lot of time, in
+particular the installation of genomic features, because the \ensembl
+interface requires to send individual queries for each gene
+separately. The full installation can thus take several hours. This is
+not a big issue, since installing a genome is not a daily task, but it
+is worth knowing that the whole process requires a continuous
+connection during several hours.
+
+\begin{lstlisting}
+## Install the genome sequences for a selected organism
+install-ensembl-genome -v 2 -species Saccharomyces_cerevisiae
+\end{lstlisting}
+
+The download time depends on genome size, on the speed of your
+internet connection, and on the number of genes.
+
+\subsection{Installing genomes from Ensembl genomes}
+
+The historical \ensembl project \urlref{http://www.ensembl.org/}
+was focused on vertebrate genomes + a few model organisms
+(\org{Saccharomyces cerevisiae}, \org{Drosophila melanogaster},
+\ldots).
+
+A more recent project called \ensemblgenomes
+\urlref{http://ensemblgenomes.org/} extends the \ensembl project to a
+wider taxonomic space.
+
+The program \program{install-ensembl-genome} supports the installation
+of genomes from \ensembl as well as \ensemblgenomes. By default, it
+opens a connection to the historical \ensembl database, but the option
+\option{-ensembl\_genomes} enables to install genomes from the new
+project \ensemblgenomes.
+
+\begin{lstlisting}
+## Get the list of available species from the extended project
+## EnsemblGenomes
+install-ensembl-genome -v 2 -available_species -ensembl_genomes \
+   -o available_species_at_EnsemblGenome.txt
+\end{lstlisting}
+
+You can then locate your genome of interest in the file
+\file{available\_species\_at\_EnsemblGenome.txt}, and start the
+installation (don't forget the option \option{-ensembl\_genomes}.
+
+\begin{lstlisting}
+## Install Escherichia coli (strain K12 MG1665) from EnsemblGenomes
+install-ensembl-genome -v 2 -ensembl_genomes \
+   -species Escherichia_coli_str_k_12_substr_mg1655
+\end{lstlisting}
+
+
+\subsection{Downloading variations}
+
+The program \program{download-ensembl-variations} downloads variations
+from the \ensembl Web site, and installs it on the local \RSAT
+site. 
+
+This program relies on \program{wget}, which must be installed
+beforehand on your computer.
+
+\begin{lstlisting}
+## Retrieve the list of supported species in the EnsEMBL variation database
+download-ensembl-variations -v 1  -available_species
+\end{lstlisting}
+
+We can now download all the variations available for the yeast.
+
+\begin{lstlisting}
+## Retrieve the list of supported species in the EnsEMBL variation database
+download-ensembl-variations -v 1 -species Saccharomyces_cerevisiae
+\end{lstlisting}
+
+\section{Importing genomes from NCBI BioProject}
+
+Tne BioProject database hosts the results of genome sequencing and
+transcriptome projects. 
+
+\begin{enumerate}
+\item Open a connection to the Bioproject Web site \\
+  \url{http://www.ncbi.nlm.nih.gov/bioproject}
+
+\item Enter a query to select the organism of interest.
+  E.g. \texttt{ostreococcus+tauri[orgn]}
+
+\item If the organism genome has been sequenced, you should see a
+  title ``Genome Sequencing Projects'' in the record. Find the
+  relevant project and open the link.
+
+  For example, for
+  \org{Ostreococcus tauri}, the most relevant project is PRJNA51609 \\
+  \url{http://www.ncbi.nlm.nih.gov/bioproject/51609}
+
+\item Take note of the \option{Accesssion} of this genome project:
+  since a same organism might have been sequenced several times, it
+  will be useful to include this Accession in the suffix of the name
+  of the file fo be downloaded.
+
+\item On the left side of the page, under \option{Related
+    information}, click the link ``\option{Nucleotide genomic
+    data}''. This will display a list of Genbank entries (one per contig).
+
+\item \textbf{Important:} we recommend to create one separate
+  directory per organism, and to name this directory according to the
+  organism name followed by the genome project Accession number. For
+  example, for \org{Ostreococcus tauri}, the folder name would be
+  \file{Ostreococcus\_tauri\_PRJNA51609}.
+
+  This convention will facilitate the further steps of installation,
+  in particular the parsing of genbank-formatted files with the
+  program \program{parse-genbank.pl}.
+
+\item In the top corner of the page, click on the \option{Send to}
+  link and activate the following options.
+
+  \option{Send to > File >  Genbank full > Create file} 
+
+  Save the file in the organism-specific directory described in the
+  previous step.
+
+\item You can now parse the genome with the program
+  \program{parse-genbank.pl}. Note that \program{parse-genbank.pl}
+  expects files with extension .gbk or .gbk.gz (as in the NCBI genome
+  repository), whereas the BioProject genome appends the extension
+  \file{.gb}. You should thus use the option \option{-ext gb}.
+
+\begin{lstlisting}
+parse-genbank.pl -v 2 -i Ostreococcus_tauri_PRJNA51609 -ext gb
+\end{lstlisting}
+
+After parsing, run the program \program{install-organism} with the
+following parameters (adapt organism name).
+
+\begin{lstlisting}
+install-organism  -v 2 -org Ostreococcus_tauri_PRJNA51609 \
+  -task config,phylogeny,start_stop,allup,seq_len_distrib \
+  -task genome_segments,upstream_freq,oligos,dyads,protein_freq
+\end{lstlisting}
+
+
+%% \item In 'Project Data', click the 'Genome: 20' link
+%%5) now you will be presented with a list of all 20 chromosomes. To get the full sequence + annotation in genbank format, set 'Display' to 'Genbank' (now your browser will take a while to load all the sequences).
+%%6) Use the download button to extract the files: Download -> GenBank (Full)
+\end{enumerate}
+
+
+\section{Importing multi-genome alignment files from UCSC}
+
+
+\subsection{Warning: disk space requirement}
+
+The UCSC multi-genome alignment files occupy a huge disk space. The
+alignments of 30 vertebrates onto the mouse genome (mm9 multiz30)
+requires 70Gb. If you intend to offer support for multi-genome
+alignments, it might be safe to acquire a separate hard drive for this
+data.
+
+The complete data set available at UCSC in April 2012 occupies 1Tb in
+compressed form, and probably 7 times more once uncompressed. For
+efficiency reasons, it is necessary to uncompress these files for
+using them with the indexing system of \program{peak-footprints}.
+
+\subsection{Checking supported genomes at UCSC}
+
+As a first step, we will check the list of supported genomes at the
+UCSC Genome Browser.
+
+\begin{lstlisting}
+supported-organisms-ucsc
+\end{lstlisting}
+
+Each genome is assocaited with a short identifier, followed by a
+description. For example, several versions of the mouse genome are
+currently available.
+
+\begin{small}
+\begin{verbatim}
+mm10	Mouse Dec. 2011 (GRCm38/mm10) Genome at UCSC
+mm9	Mouse July 2007 (NCBI37/mm9) Genome at UCSC
+mm8	Mouse Feb. 2006 (NCBI36/mm8) Genome at UCSC
+mm7	Mouse Aug. 2005 (NCBI35/mm7) Genome at UCSC
+\end{verbatim}
+\end{small}
+
+\subsection{Downloading multiz files from UCSC}
+
+Multi-genome alignments at UCSC are generated with the program
+\program{multiz}, which produces files in a custom text format called
+\concept{maf} for Multi-Alignment file.
+
+We show hereafter the command to download the mm9 version of the mouse
+genome, and install it in the proper directory for
+\program{peak-footprints} (\file{\$RSAT/data/UCSC\_multiz}).
+
+\begin{lstlisting}
+download-ucsc-multiz -v 1 -org mm9
+\end{lstlisting}
+
+\emph{Beware: } the download of all the multi-species alignments can
+take several hours for one genome.
+
+The program will create the sub-directory for the mm9 genome, download
+the coresponding compressed multiz files (files with extension
+\file{.maf.gz}), uncompress them, and call \program{peak-footprint}
+with specific options in order to create a position index, which will
+be further used for fast retrieval of the conserved regions under
+peaks.
+
+
+\section{Installing genomes from  NCBI/Genbank files}
+
+In the section \ref{downloading_genomes}, we saw that the genomes
+installed on the main \RSAT server can easily be installed on your
+local site. In some cases, you would like to install additional
+genomes, which are not published yet, or which are not supported on
+the main \RSAT server.
+
+If your genomes are available in Genbank (files .gbk) or EMBL (files
+.embl) format, this can be done without too much effort, using the
+installation tools of \RSAT. 
+
+The parsing of genomes from their original data sources is however
+more tricky than the synchronization from the \RSAT server, so this
+procedure should be used only if you need to install a genome that is
+not yet supported. 
+
+If this is not your case, you can skip the rest of this section.
+
+\subsection{Organization of the genome files}
+
+In order for a genome to be supported, \RSAT needs to find at least
+the following files.
+
+\begin{enumerate}
+\item organism description
+\item genome sequences
+\item feature tables (CDS, mRNA, \ldots)
+\item lists of names/synonyms
+\end{enumerate}
+
+From these files, a set of additional installation steps will be done
+by \RSAT programs in order to compute the frequencies of
+oligonucleotides and dyads in upstream sequences.
+
+If you installed \RSAT as specified above, you can have a look at the
+organization of a supported genome, for example the yeast
+\org{Saccharomyces cerevisiae}.
+
+\begin{footnotesize}
+\begin{verbatim}
+cd ${RSAT}/public_html/data/genomes/Saccharomyces_cerevisiae/genome
+ls -l
+\end{verbatim}
+\end{footnotesize}
+
+As you see, the folder \file{genome} contains the sequence files and
+the tables describing the organism and its features (CDSs, mRNAs,
+\ldots). The \RSAT parser exports tables for all the feature types
+found in the original genbank file. There are thus a lot of distinct
+files, but you should not worry too much, for the two following
+reasons:
+\begin{enumerate}
+\item \RSAT only requires a subset of these files (basically, those
+  describing organisms, CDSs, mRNAs, rRNAs and tRNAs).
+\item All these files can be generated automatically by \RSAT parsers.
+\end{enumerate}
+
+\subsubsection{Organism description} 
+
+The description of the organism is given in two separate files.
+
+
+\begin{footnotesize}
+\begin{verbatim}
+cd ${RSAT}/public_html/data/genomes/Saccharomyces_cerevisiae/genome
+ls -l organism*.tab
+
+more organism.tab
+
+more organism_names.tab
+\end{verbatim}
+\end{footnotesize}
+
+\begin{enumerate}
+\item \file{organism.tab} specifies the ID of the organism and its
+  taxonomy. The ID of an organism is the TAXID defined by the NCBI
+  taxonomical database, and its taxonomy is usually parsed from the
+  .gbk files (but yo may need to specify it yourself in case it would
+  be missing in your own data files).
+
+\item \file{organism\_name.tab} indicates the name of the organism.
+\end{enumerate}
+
+
+\subsubsection{Genome sequence} 
+
+A genome sequence is composed of one or more contigs. A contig is a
+contigous sequence, resulting from the assembly of short sequence
+fragments obtained during the sequencing. When a genome is completely
+sequenced and assembled, each chomosome comes as a single contig. 
+
+In \RSAT, the genome sequence is specified as one separate file per
+contig (chromosome) sequence. Each sequence file must be in raw format
+(i.e. a text file containing the sequence without any space or
+carriage return). 
+
+In addition, the genome directory contains one file indicating the
+list of the contig (chromosome) files.
+
+\begin{footnotesize}
+\begin{verbatim}
+cd $RSAT/data/genomes/Saccharomyces_cerevisiae/genome/
+
+## The list of sequence files
+cat contigs.txt
+
+## The sequence files
+ls -l *.raw
+
+\end{verbatim}
+\end{footnotesize}
+
+\subsubsection{Feature table}
+
+The \file{genome} directory also contains a set of feature tables
+giving the basic information about gene locations. Several feature
+types (CDS, mRNA, tRNA, rRNA) can be specified in separate files
+(\file{cds.tab}, \file{mrna.tab}, \file{trna.tab}, \file{rrna.tab}).
+
+Each feature table is a tab-delimited text file, with one row per
+feature (cds, mrna, \ldots) and one column per parameter. The
+following information is expected to be found.
+
+\begin{enumerate}
+
+\item Identifier
+
+\item Feature type (e.g. ORF, tRNA, ...)
+
+\item Name
+
+\item Chromosome. This must correspond to one of the sequence
+identifiers from the fasta file.
+
+\item Left limit
+
+\item Right limit
+
+\item Strand (D for direct, R for reverse complemet)
+
+\item Description. A one-sentence description of the gene function.
+
+\end{enumerate}
+
+
+\begin{footnotesize}
+\begin{verbatim}
+## The feature table
+head -30 cds.tab
+\end{verbatim}
+\end{footnotesize}
+
+
+\subsubsection{Feature names/synonyms}
+
+Some genes can have several names (synonyms), which are specified in
+separate tables.
+
+\begin{enumerate}
+\item ID. This must be one identifier found in the feature table
+\item Synonym
+\item Name priority (primary or alternate)
+\end{enumerate}
+
+
+\begin{footnotesize}
+\begin{verbatim}
+## View the first row of the file specifying gene names/synonyms
+head -30 cds_names.tab
+\end{verbatim}
+\end{footnotesize}
+
+
+Multiple synonyms can be given for a gene, by adding several lines with
+the same ID in the first column.
+
+\begin{footnotesize}
+\begin{verbatim}
+## An example of yeast genes with multiple names
+grep YFL021W cds_names.tab 
+\end{verbatim}
+\end{footnotesize}
+
+
+
+\subsection{Downloading genomes from NCBI/Genbank}
+
+The normal way to install an organism in \RSAT is to download the
+complete genome files from the NCBI
+\urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
+program \program{parse-genbank.pl}.
+
+However, rather than downloading genomes directly from the NCBI site,
+we will obtain them from a mirror
+\urlref{bio-mirror.net/biomirror/ncbigenomes/} which presents two
+advantages?
+
+\begin{itemize}
+\item Genome files are compressed (gzipped), which strongly reduces
+  the transfer and storage volume. 
+\item This mirror can be queried by \program{rsync}, which facilitates
+  the updates (with the appropriate options, \program{rsync} will only
+  download the files which are newer on the server than on your
+  computer).
+\end{itemize}
+
+\RSAT includes a makefile to download genomes from different sources.
+We provide hereafter a protocol to create a download directory in your
+account, and download genomes in this directory. Beware, genomes
+require a lot of disk space, especially for those of higher
+organisms. To avoid filling up your hard drive, we illustrate the protocol
+with the smallest procaryote genome to date: \textit{Mycoplasma
+  genitamlium}.
+
+
+\begin{footnotesize}
+\begin{verbatim}
+## Creating a directory for downloading genomes in your home account
+cd $RSAT
+mkdir -p downloads
+cd downloads
+
+## Creating a link to the makefile which allows you to dowload genomes
+ln -s $RSAT/makefiles/downloads.mk ./makefile
+\end{verbatim}
+\end{footnotesize}
+
+We will now download a small genome from NCBI/Genbank. 
+
+\begin{footnotesize}
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $RSAT/downloads/
+make one_genbank_dir NCBI_DIR=Bacteria/Mycoplasma_genitalium
+\end{verbatim}
+\end{footnotesize}
+
+We can now check the list of files that have been downloaded.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $RSAT/downloads/
+ls -l ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium/
+\end{verbatim}
+\end{footnotesize}
+
+\RSAT parsers only use the files with extension \file{.gbk.gz}.
+
+You can also adapt the commande to download (for example) all the
+Fungal genomes in a single run.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $RSAT/downloads/
+make one_ncbi_dir NCBI_DIR=Fungi
+\end{verbatim}
+\end{footnotesize}
+
+You can do the same for Bacteria, of for the whole NCBI genome
+repository, but this requires sveral Gb of free disck space.
+
+\subsection{Parsing a genome from NCBI/Genbank}
+
+The program \program{parse-genbank.pl} extract genome information
+(sequence, gene location, ...) from Genbank flat files, and exports
+the result in a set of tab-delimited files.
+
+\begin{footnotesize}
+\begin{verbatim}
+parse-genbank.pl -v 1 \
+    -i $RSAT/downloads/ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium 
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Parsing a genome from the Broad institute (MIT)}
+
+The website \url{http://www.broad.mit.edu/} offers a large collection of
+genomes that are not available on the NCBI website. We wrote a specific parser 
+for the Broad files.
+
+To this, download the following files for the organism of interest : the supercontig file, the protein sequences and the annotation file in the GTF format.
+
+These files contain sometimes too much information that shoud be removed. 
+
+This is an example of the beginning of the fasta file containing the protein traduction. In this file, we should remove 
+everything that follows the protein name.
+\begin{footnotesize}
+\begin{verbatim}
+>LELG_00001 | Lodderomyces elongisporus hypothetical protein (translation) (1085 aa)
+MKYDTAAQLSLINPQTLKGLPIKPFPLSQPVFVQGVNNDTKAITQGVFLDVTVHFISLPA
+ILYLHEQIPVGQVLLGLPFQDAHKLSIGFTDDGDKRELRFRANGNIHKFPIRYDGDSNYH
+IDSFPTVQVSQTVVIPPLSEMLRPAFTGSRASEDDIRYFVDQCAEVSDVFYIKGGDPGRL
+\end{verbatim}
+\end{footnotesize}
+This is an example of the beginning of the fasta file containing the contigs. In this file, we should remove 
+everything that follows the name of the contig. 
+\begin{footnotesize}
+\begin{verbatim}
+>supercontig_1.1 of Lodderomyces elongisporus
+AAGAGCATCGGGCAAATGATGTTTTTCAGTCCATCAATGTGATGGATCTGATAGTTGAAG
+GTCCTGATGAAGTTCAACCATTTGTAAACCCGATTTACAAAGTGTGAATTATCGAGTGGT
+TTATTCATCACAAGGACAAGAGCTTTGTTGGTTGACAGAGATGTTTTGCAGAAAGCCCTT
+AAGGATGGTATTGCCTTGTTCAAGAAGAAACCAGTTGTTACTGAAGTAAATCTGACGACC
+\end{verbatim}
+\end{footnotesize}
+
+
+This is an example of the beginning of the GTF file containing the contigs annotation. We should rename the contig
+name so that it corresponds to the fasta file of contig. To this, we will remove the text in the name of the contig (only keep the supercontig number)
+and add a prefix.
+\begin{footnotesize}
+\begin{verbatim}
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	start_codon	322	324	.	+	0	gene_id "LELG_00001"; transcript_id "LELT_00001";
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	stop_codon	3574	3576	.	+	0	gene_id "LELG_00001"; transcript_id "LELT_00001";
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	exon	322	3576	.	+	.	gene_id "LELG_00001"; transcript_id "LELT_00001";
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	CDS	322	3573	.	+	0	gene_id "LELG_00001"; transcript_id "LELT_00001";
+\end{verbatim}
+\end{footnotesize}
+We use the parse \program{parse-broad-mit}.
+\begin{footnotesize}
+\begin{verbatim}
+parse-broad-mit.pl -taxid 36914 -org Lodderomyces_elongisporus \
+		   -nuc_seq lodderomyces_elongisporus_1_supercontigs.fasta \
+		   -gtf lodderomyces_elongisporus_1_transcripts.gtf \
+		   -gtf_remove 'supercont' \
+		   -gtf_remove '%20of%20Lodderomyces%20elongisporus' \
+		   -contig_prefix LELG_ -nuc_remove supercontig_ \
+		   -nuc_remove ' of Lodderomyces elongisporus' \
+		   -aa lodderomyces_elongisporus_1_proteins.fasta -aa_remove ' .*'
+\end{verbatim}
+\end{footnotesize}
+
+This will create the raw files, the feature files and the protein sequence file.
+
+\subsection{Updating the configuration file}
+
+After having parsed the genome, you need to perform one additional
+operation in order for \RSAT to be aware of the new organism: update
+the configuration file.
+
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Mycoplasma_genitalium -task config
+
+## Check the last lines of the configuration file
+tail -15 $RSAT/data/supported_organisms.pl
+\end{verbatim}
+\end{footnotesize}
+
+From now on, the genome is considered as supported on your local \RSAT
+site. You can check this with the command \program{supported-organisms}. 
+
+\subsection{Checking the start and stop codon composition}
+
+Once the organism is found in your configuration, you need to check
+whether sequences are retrieved properly. A good test for this is to
+retrieve all the start codons, and check whether they are made of the
+expected codons (mainly ATG, plus some alternative start codons like
+GTG or TTG for bacteria).
+
+The script \program{install-organism} allows you to perform some
+additional steps for checking the conformity of the newly installed
+genome. For example, we will compute the frequencies of all the start
+and stop codons, i order to check that gene locations were corectly
+parsed.
+
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Mycoplasma_genitalium -task start_stop
+
+ls -l $RSAT/data/genomes/Mycoplasma_genitalium/genome/*start*
+
+ls -l $RSAT/data/genomes/Mycoplasma_genitalium/genome/*stop*
+\end{verbatim}
+\end{footnotesize}
+
+
+The stop codons should be TAA, TAG or TGA, for any organism. For
+eucaryotes, all start codons should be ATG. For some procaryotes,
+alternative start codons (GTG, TGG) are found with some
+genome-specific frequency.
+
+\begin{footnotesize}
+\begin{verbatim}
+cd $RSAT/data/genomes/Mycoplasma_genitalium/genome/
+
+## A file containing all the start codons
+more Mycoplasma_genitalium_start_codons.wc
+
+## A file with trinucleotide frequencies in all start codons
+more Mycoplasma_genitalium_start_codon_frequencies
+
+## A file containing all the stop codons
+more Mycoplasma_genitalium_stop_codons.wc
+
+## A file with trinucleotide frequencies in all stop codons
+more Mycoplasma_genitalium_stop_codon_frequencies
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
+
+The programs \program{oligo-analysis} and \program{dyad-analysis}
+require calibrated frequencies for the background models. These
+frequencies are calculated automatically with
+\program{install-organism}.
+
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task allup,oligos,dyads,upstream_freq,protein_freq
+\end{verbatim}
+\end{footnotesize}
+
+\textbf{Warning: } this task may require several hours of computation,
+depending on the genome size. For the \RSAT server, we use a PC
+cluster to regularly install and update genomes. As the task
+\textit{allup}, is a prerequisite for the computation of all
+oligonucleotide and dyad frequencies, it should be run directly on the
+main server before computing oligo and dyad frequencies on the nodes
+of the cluster. We will thus proceed in two steps. Note that this
+requires a PC cluster and a proper configuration of the batch
+management program.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Retrieve all upstream sequences
+## Executed directly on the server
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task allup
+
+## Launch a batch queue for computing all oligo and dyad frequencies
+## Executed on the nodes of a cluster
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task oligos,dyads,upstream_freq,protein_freq -batch
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Installing a genome in your own account}
+
+In some cases, you might want to install a genome in your own account
+rather than in the \RSAT folder, in order to be able to analyze this
+genome before putting it in public access.
+
+
+In this chapter, we explain how to add support for an organism on your
+local configuration of \RSAT. This assumes that you have the complete
+sequence of a genome, and a table describing the predicted location of
+genes.
+
+First, prepare a directory where you will store the data for your
+organism. For example:
+
+\begin{footnotesize}
+\begin{verbatim}
+mkdir -p $HOME/rsat-add/data/Mygenus_myspecies/
+\end{verbatim}
+\end{footnotesize}
+
+
+One you have this information, start the program
+\program{install-organism}. You will be asked to enter the information
+needed for genome installation.
+
+\subsubsection{Updating your local configuration}
+
+
+\begin{itemize}
+\item Modify the local config file
+
+\item You need to define an environment variable called
+  RSA\_LOCAL\_CONFIG, containing the full path of the local config
+  file.
+
+\end{itemize}
+
+
+\section{Installing genomes from EMBL files}
+
+\RSAT also includes a script \program{parse-embl.pl} to parse genomes
+from EMBL files. However, for practicaly reasons we generally parse
+genomes from the NCBI genome repository. Thus, unless you have a
+specific reason to parse EMBL files, you can skip this section.
+
+The program \program{parse-embl.pl} reads flat files in EMBL format,
+and exports genome sequences and features (CDS, tRNA, ...) in
+different files.
+
+As an example, we can parse a yeast genome sequenced by the
+``Genolevures'' project
+\urlref{http://natchaug.labri.u-bordeaux.fr/Genolevures/download.php}.
+
+Let us assume that you want to parse the genome of the species
+\textit{Debaryomyces hansenii}.
+
+Before parsing, you need to download the files in your account, 
+
+\begin{itemize}
+\item Create a directory for storing the EMBL files. The last level of
+  the directory should be the name of the organism, where spaces are
+  replaced by underscores. Let us assume that you store them in
+  the directory \file{\$RSAT/downloads/Debaryomyces\_hansenii}.
+
+\item Download all the EMBL file for the selected organism. Save each
+  name under its original name (the contig ID), followed by the
+  extension \texttt{.embl})
+
+\end{itemize}
+
+We will check the content of this directory.
+
+\begin{footnotesize}
+\begin{verbatim}
+ls -1 $RSAT/downloads/Debaryomyces_hansenii
+\end{verbatim}
+\end{footnotesize}
+
+On my computer, it gives the following result
+
+\begin{footnotesize}
+\begin{verbatim}
+CR382133.embl
+CR382134.embl
+CR382135.embl
+CR382136.embl
+CR382137.embl
+CR382138.embl
+CR382139.embl
+\end{verbatim}
+\end{footnotesize}
+
+The following instruction will parse this genome.
+
+\begin{footnotesize}
+\begin{verbatim}
+parse-embl.pl -v 1 -i  $RSAT/downloads/Debaryomyces_hansenii
+\end{verbatim}
+\end{footnotesize}
+
+If you do not specify the output directory, a directory is
+automatically created by combining the current date and the organism
+name.  The verbose messages will indicate you the path of this
+directory, something like
+\file{\$HOME/parsed\_data/embl/20050309/Debaryomyces\_hanseni}.
+
+You can now perform all the steps above (updating the config file,
+installing oligo- and dyad frequencies, \ldots) as for genomes parsed
+from NCBI.
+
+
+
+\subsubsection{Installing a genome in the main \RSAT directory}
+
+Once the genome has been parsed, the simplest way to make it available
+ for all the users is to install it in the \RSAT genome directory. You
+ can already check the genomes installed in this directory.
+
+\begin{footnotesize}
+\begin{verbatim}
+ls -1 $RSAT/data/genomes/
+\end{verbatim}
+\end{footnotesize}
+
+There is one subdirectory per organism. For example, the yeast data is
+ in \file{\$RSAT/data/genomes/Saccharomyces\_cerevisiae/}. This
+ directory is further subdivided in folders: \file{genome} and
+ \file{oligo-frequencies}.
+
+We will now create a directory to store data about
+ Debaryomyces\_hansenii, and transfer the newly parsed genome in this
+ directory.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Create the directory
+mkdir -p $RSAT/data/genomes/Debaryomyces_hansenii/genome
+
+## Transfer the data in this directory
+mv $HOME/parsed_data/embl/20050309/Debaryomyces_hanseni/* \
+  $RSAT/data/genomes/Debaryomyces_hansenii/genome
+
+## Check the transfer
+ls -ltr $RSAT/data/genomes/Debaryomyces_hansenii/genome
+\end{verbatim}
+\end{footnotesize}

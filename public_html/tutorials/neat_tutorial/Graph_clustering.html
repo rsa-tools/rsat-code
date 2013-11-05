@@ -1,0 +1,980 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Graph clustering</TITLE>
+<META NAME="description" CONTENT="Graph clustering">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Influence_graph_alteration.html">
+<LINK REL="previous" HREF="Study_neighborhood_nodes.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Influence_graph_alteration.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html356"
+  HREF="Influence_graph_alteration.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html352"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html346"
+  HREF="Study_neighborhood_nodes.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html354"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html357"
+  HREF="Influence_graph_alteration.html">Influence of graph alteration</A>
+<B> Up:</B> <A NAME="tex2html353"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html347"
+  HREF="Study_neighborhood_nodes.html">Study of the neighborhood</A>
+ &nbsp; <B>  <A NAME="tex2html355"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html358"
+  HREF="Graph_clustering.html#SECTION00710000000000000000">Introduction</A>
+<LI><A NAME="tex2html359"
+  HREF="Graph_clustering.html#SECTION00720000000000000000">Network clustering comparison</A>
+<UL>
+<LI><A NAME="tex2html360"
+  HREF="Graph_clustering.html#SECTION00721000000000000000">Study case</A>
+<LI><A NAME="tex2html361"
+  HREF="Graph_clustering.html#SECTION00722000000000000000">Protocol for the web server</A>
+<UL>
+<LI><A NAME="tex2html362"
+  HREF="Graph_clustering.html#SECTION00722100000000000000">Dataset download</A>
+<LI><A NAME="tex2html363"
+  HREF="Graph_clustering.html#SECTION00722200000000000000">Network clustering with MCL</A>
+<LI><A NAME="tex2html364"
+  HREF="Graph_clustering.html#SECTION00722300000000000000">Network clustering with RNSC</A>
+<LI><A NAME="tex2html365"
+  HREF="Graph_clustering.html#SECTION00722400000000000000">Clustering quality assessment</A>
+</UL>
+<LI><A NAME="tex2html366"
+  HREF="Graph_clustering.html#SECTION00723000000000000000">Protocol for the command-line tools</A>
+<UL>
+<LI><A NAME="tex2html367"
+  HREF="Graph_clustering.html#SECTION00723100000000000000">Network clustering with MCL</A>
+<LI><A NAME="tex2html368"
+  HREF="Graph_clustering.html#SECTION00723200000000000000">Network clustering with RNSC</A>
+<LI><A NAME="tex2html369"
+  HREF="Graph_clustering.html#SECTION00723300000000000000">Assessing clustering quality</A>
+</UL>
+<LI><A NAME="tex2html370"
+  HREF="Graph_clustering.html#SECTION00724000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html371"
+  HREF="Graph_clustering.html#SECTION00724100000000000000">Files description</A>
+<UL>
+<LI><A NAME="tex2html372"
+  HREF="Graph_clustering.html#SECTION00724110000000000000">Contingency table</A>
+<LI><A NAME="tex2html373"
+  HREF="Graph_clustering.html#SECTION00724120000000000000">Contingency table metrics</A>
+</UL>
+<LI><A NAME="tex2html374"
+  HREF="Graph_clustering.html#SECTION00724200000000000000">Metrics description</A>
+<UL>
+<LI><A NAME="tex2html375"
+  HREF="Graph_clustering.html#SECTION00724210000000000000">Sensitivity, Positive predictive value and geometric accuracy</A>
+<LI><A NAME="tex2html376"
+  HREF="Graph_clustering.html#SECTION00724220000000000000">Separation</A>
+</UL>
+<LI><A NAME="tex2html377"
+  HREF="Graph_clustering.html#SECTION00724300000000000000">Score comparaison</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00700000000000000000">
+Graph clustering</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00710000000000000000">
+Introduction</A>
+</H1>
+
+<P>
+Abruptely, graph clustering consists in grouping the nodes of the networks into different
+classes or clusters. The groupment of the nodes can be done according to various different criteria, i.e., nodes of 
+the same color, nodes of the same type, etc. Commonly, nodes are grouped according to the fact they present a relatively high number of connections between them compared to the number of connections with the other nodes 
+composing the network. In the following, we will only consider clustering methods aiming at retrieving highly interconnected groups of nodes in a network.
+
+<P>
+In bioinformatics, a lot of clustering approaches have already been applied to various types of network, e.g. protein-protein interaction network (see among others [<A
+ HREF="Bibliography.html#Spirin2003">31</A>,<A
+ HREF="Bibliography.html#King2004">16</A>,<A
+ HREF="Bibliography.html#Krogan2006">19</A>]), metabolic graphs [<A
+ HREF="Bibliography.html#Gagneur2003">9</A>], biological sequences ([<A
+ HREF="Bibliography.html#Enright2002">7</A>,<A
+ HREF="Bibliography.html#Leplae2004">21</A>]), etc. 
+
+<P>
+Clustering of protein interaction network may be of valuable help in order to retrieve in a large graphs real biological complexes in the cell. Moreover, if in the detected complexes some of proteins are of unknown function but the rest of the proteins present all present a similar function, this may give insights in the function of the unknown protein.
+
+<P>
+In the following, we will apply different graph based clustering approaches on the yeast protein - protein interaction network published by Gavin <I>et al</I> [<A
+ HREF="Bibliography.html#Gavin2006">10</A>] and obtained by multiple co-immunoprecipitation experiments with each yeast protein used as bait followed by a mass spectrometry procedure to identify all the proteins that precipitated with the baits.
+
+<P>
+The clustering algorithms we will apply are the <B><I>MCL</I></B> [<A
+ HREF="Bibliography.html#VanDongenPHD2000">33</A>,<A
+ HREF="Bibliography.html#Enright2002">7</A>] and <B><I>RNSC</I></B> [<A
+ HREF="Bibliography.html#King2004">16</A>]. Hereafter, follows a short description of both clustering algorithms copied from [<A
+ HREF="Bibliography.html#Brohee2006">2</A>].
+
+<P>
+The Markov Cluster algorithm (<B><I>MCL</I></B>) simulates a flow on the graph by
+calculating successive powers of the associated adjacency matrix. At
+each iteration, an <I>inflation step</I> is applied to enhance the
+contrast between regions of strong or weak flow in the graph. The
+process converges towards a partition of the graph, with a set of 
+high-flow regions (the clusters) separated by boundaries with no 
+flow. The value of the <I>inflation parameter</I> strongly 
+influences the number of clusters.
+
+<P>
+The second algorithm, Restricted Neighborhood Search Clustering (<B><I>RNSC</I></B>), 
+is a cost-based local search
+algorithm that explores the solution space to minimize a cost
+function, calculated according to the numbers of intra-cluster and
+inter-cluster edges. Starting from an initial random solution, <B><I>RNSC</I></B>
+iteratively moves a vertex from one cluster to another if this
+move reduces the general cost. When a (user-specified) number of moves
+has been reached without decreasing the cost function, the program
+ends up.
+
+<P>
+In order to dispose of a negative control, we advice the reader to read the next chapter about graph randomization and alteration. 
+
+<P>
+
+<H1><A NAME="SECTION00720000000000000000">
+Network clustering comparison</A>
+</H1>
+
+<H2><A NAME="SECTION00721000000000000000">
+Study case</A>
+</H2>
+
+<P>
+In this demonstration, we will compare the performances of two graph based clustering algorithms
+<B><I>MCL</I></B> and <B><I>RNSC</I></B>. First, we will apply them to the protein - protein interaction described by Gavin <I>et al</I> [<A
+ HREF="Bibliography.html#Gavin2006">10</A>], secondly we will compare the resulting clusters to the complexes annotated for the yeast in the MIPS database [<A
+ HREF="Bibliography.html#Mewes2007">23</A>].
+
+<P>
+Note that as the 
+interaction network and the MIPS complexes are different dataset (i.e. different proteins), the performances of the algorithm
+will be rather low.
+
+<P>
+To run this tutorial on the command line, you need to have both <B><I>RNSC</I></B> and <B><I>MCL</I></B> installed on your computer. You can find the MCL source code on <I>http://micans.org/mcl/</I> and <B><I>RNSC</I></B> on <I>http://rsat.scmbb.ulb.ac.be/&nbsp;rsat/rnsc/rnsc_rewritten_compiled32.zip</I>. 
+
+<P>
+
+<H2><A NAME="SECTION00722000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00722100000000000000">
+Dataset download</A>
+</H3>
+Go on the NeAT demo dataset web page (<I>http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/</I>) and download the MIPS complexes (<I>mips_complexes.tab</I>)..
+
+<P>
+
+<H3><A NAME="SECTION00722200000000000000">
+Network clustering with MCL</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>left menu, select the command <B><I>graph-based clustering (MCL)</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``MCL''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO</TT>. 
+
+<P>
+The form is now filled with the Gavin co-immunoprecipitation protein interaction network graph in the tab-delimited format, and the parameters have been set up to their appropriate value for the demonstration, i.e., the inflation value (the MCL main parameter) is set to 1.8, the optimal value for <B><I>MCL</I></B> protein interaction network clustering [<A
+ HREF="Bibliography.html#Brohee2006">2</A>]. 
+
+<P>
+The inflation acts mainly on the number of clusters resulting from the clustering, i.e., by increasing the inflation, you will obtain a larger number of smaller clusters.
+
+<P>
+Note that MCL accepts weighted networks (which is not the case here), a higher weight on an edge will reinforce the strength of the link between two nodes.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+
+<P>
+The computation should take less than one minute. 
+  On one hand, the result page displays a link to the result file and on the other hand a graphic showing the size distribution of the obtained complexes is also available. These will be discussed in the <I>Interpretation of the results</I> section. 
+
+<P>
+</LI>
+<LI>Save the resulting file under the name <I>gavin_2006_mcl_inf_1.8_clusters.tab</I> by right clicking on the resulting file and choosing <I>Save as ...</I>.
+</LI>
+</OL>
+<H3><A NAME="SECTION00722300000000000000">
+Network clustering with RNSC</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>left menu, select the command <B><I>graph-based clustering (RNSC)</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``RNSC''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO</TT>. 
+
+<P>
+The form is now filled with the Gavin co-immunoprecipitation protein interaction network graph in the tab-delimited format, and the parameters have been set up to their appropriate value for the demonstration, i.e., the numerous RNSC parameters are set to the optimal values for <B><I>RNSC</I></B> protein interaction network clustering determined in [<A
+ HREF="Bibliography.html#Brohee2006">2</A>]. However, in this study, we found that the <B><I>RNSC</I></B> performances were not strongly affected by the parameters values.
+
+<P>
+Note that, unlike MCL, RNSC does not accept weighted networks.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+
+<P>
+The computation should take less than one minute. 
+  On one hand, the result page displays a link to the result file and on the other hand a graphic showing the size distribution of the obtained complexes is also avaible. These will be discussed in the <I>Interpretation of the results</I> section. 
+
+<P>
+</LI>
+<LI>Save the resulting file under the name <I>gavin_2006_rnsc_clusters.tab</I> by right clicking on the resulting file and choosing <I>Save as ...</I>.
+
+<P>
+</LI>
+</OL>
+<H3><A NAME="SECTION00722400000000000000">
+Clustering quality assessment</A>
+</H3>
+In the following, we will only describe the procedure to quantify the performances of 
+the clustering algorithms by comparing the <B><I>MCL</I></B> obtained clusters to the 
+complexes annotated in the MIPS database.
+You will thus have to redo this whole section with the <B><I>RNSC</I></B> clustering results.
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>left menu, select the command <B><I>Compare classes/clusters</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``compare-classes''. This program will build a contigency table, i.e., a table where each line represents
+  the annotated complexes and each column the clusters of highly connected proteins. This matrix will then be used to 
+  compute quality statistics.
+
+<P>
+</LI>
+<LI>In the ``Upload query classes from file'' menu, select the file <I>gavin_2006_mcl_inf_1.8_clusters.tab</I> we just computed.
+</LI>
+<LI>In the ``Upload reference classes from file'' menu, select the file <I>mips_complexes.tab</I> we just downloaded.
+</LI>
+<LI>Select ``Matrix file'' as output format
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+</LI>
+<LI>The contigency table (see the resulting links as text or HTML file) can now be used in the next process by clicking on the button
+<TT>contingency table statistics</TT>.
+
+<P>
+In the right panel, you should now see a form entitled
+  ``contingency-stats''. This program will compute the statistics described in [<A
+ HREF="Bibliography.html#Brohee2006">2</A>], namely the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$">, the <I>sensitivity</I> and the <I>Separation</I> statistics in order 
+  to estimate the quality of a clustering results to predict the complexes annotated in the MIPS. 
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>.
+
+<P>
+The resulting statistics will be described in the following section <I>Interpretation of the results</I>, save them under the name <I>gavin_2006_mcl_inf_1.8_vs_mips_stats.tab</I>. 
+
+<P>
+Re-do the whole procedure with the file obtained with <B><I>RNSC</I></B> and save the contingency-stats output under the name <I>gavin_2006_rnsc_vs_mips_stats.tab</I>. 
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00723000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+If you have installed a stand-alone version of the NeAT distribution,
+you can also use all the programs on the 
+command-line. This requires to be familiar with the Unix shell
+interface. If you do not have the stand-alone tools, you can skip this
+section and read the next section (<I>Interpretation of the results</I>).
+
+<P>
+The explanation of the parameters used for <B><I>RNSC</I></B> and <B><I>MCL</I></B> in this approach are described in the <I>Web server</I> section of this chapter.
+
+<P>
+We will now describe the use of <B><I>RNSC</I></B>, <B><I>MCL</I></B>, <B><I>compare-classes</I></B>, <B><I>convert-classes</I></B>, <B><I>convert-graph</I></B>  and <B><I>contigency-stats</I></B> as command line tools. 
+As a preliminary step, go on the NeAT demo dataset web page (<I>http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/</I>) and download the MIPS complexes (<I>mips_complexes_names.tab</I>) and the Gavin interaction dataset (<I>gavin_2006_names.tab</I>).
+
+<P>
+
+<H3><A NAME="SECTION00723100000000000000">
+Network clustering with MCL</A>
+</H3>
+
+<OL>
+<LI>The first step consist in applying <B><I>MCL</I></B> on the co-immunoprecipitation dataset. 
+To this, go into the directory where you downloaded the file <I>uetz_2001.tab</I> and use this command. 
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	mcl gavin_2006_names.tab -I 1.8 --abc -o gavin_2006_mcl_inf_1.8_clusters.mcl
+</PRE><FONT COLOR="#0000ff"></FONT>		
+The file <I>gavin_2006_mcl_inf_1.8_clusters.mcl</I> is created and contains the clusters of highly connected node in the interaction dataset. However, this file is formatted in the <B><I>MCL</I></B> format that is not usable by the NeAT / RSAT tools. We will thus use the program <B><I>convert-classes</I></B> to convert this file in a tab delimited format with
+the following command.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	convert-classes -i gavin_2006_mcl_inf_1.8_clusters.mcl  \
+			-o gavin_2006_mcl_inf_1.8_clusters.tab \
+			-from mcl -to tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+The resulting file is a two column file containing for each node (first column) the cluster to which it belongs (second column).
+</LI>
+</OL>
+<H3><A NAME="SECTION00723200000000000000">
+Network clustering with RNSC</A>
+</H3>
+
+<OL>
+<LI>The first step will consist in converting the tab delimited format in which the protein interaction dataset
+is encoded into a format readable by the RNSC clustering algorithm. To this, we will use the convert-graph programwith
+the following command.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	convert-graph -from tab -to rnsc \
+	              -i gavin_2006_names.tab -o gavin_2006_rnsc
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+Two files are created, <I>gavin_2006_rnsc.rnsc</I> and <I>gavin_2006_rnsc_node_names.rnsc</I>. The first one contains the graph in itself, under the format of an adjacency list. However, each node is identified by a number. The protein names corresponding to the nodes identifiers are encoded in the second file (two column tab delimited file).
+
+<P>
+</LI>
+<LI>We can now apply <B><I>RNSC</I></B> on the network with the following command.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	rnsc -g gavin_2006_rnsc.rnsc -t 50 -T 1 -n 15 -N 15 -e 3 -D 50  \
+	     -d 3 -o gavin_2006_rnsc_clusters.rnsc
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+The file <I>gavin_2006_rnsc_clusters.rnsc</I> is created and contains the clusters of highly connected node in the interaction dataset. However, this file is formatted in the <B><I>RNSC</I></B> format that is not usable by the <I>NeAT / RSAT</I> tools. We will thus use the program <B><I>convert-classes</I></B> to convert this file in a tab delimited format with the following command.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	convert-classes -i gavin_2006_rnsc_clusters.rnsc  \
+                        -o gavin_2006_rnsc_clusters.tab  \
+                        -from rnsc -to tab \
+                        -names gavin_2006_rnsc_node_names.rnsc
+</PRE><FONT COLOR="#0000ff"></FONT>
+The resulting file is a two column file containing for each node (first column) the cluster to which it belongs (second column).
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H3><A NAME="SECTION00723300000000000000">
+Assessing clustering quality</A>
+</H3>
+
+<P>
+In this section, we will describe how to build a contingency table by comparing the clusters extracted from the networks by <B><I>MCL</I></B> and <B><I>RNSC</I></B> to annotated complexes and the way to compute statistics on this contingency-table.
+
+<P>
+We will only describe the procedure for the <B><I>MCL</I></B> results. You should redo this section for the <B><I>RNSC</I></B> clustering results. 
+
+<P>
+
+<OL>
+<LI>The program <B><I>compare-classes</I></B> can build (among other things) a contingency table, i.e., a table where each line represents the annotated complexes and each column the clusters of highly connected proteins. This table will then be used to compute quality statistics.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	compare-classes -q gavin_2006_inf_1.8.tab \
+                        -r mips_complexes_names.tab -matrix QR \
+                        -o gavin_2006_inf_1.8_cc_complexes_matrix.tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+The file <I>gavin_2006_inf_1.8_cc_complexes_matrix.tab</I> now contains a contigency table in a tab delimited format.
+
+<P>
+</LI>
+<LI>We can now study the quality of the clustering with the <B><I>contingency-stats</I></B> tool that was used in [<A
+ HREF="Bibliography.html#Brohee2006">2</A>] to computed standard evaluation statistics like the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$">, sensitivity and the accuracy that will be precisely described in the following.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	contingency-stats -i gavin_2006_inf_1.8_cc_complexes_matrix.tab  \
+                          -o gavin\_2006\_mcl\_inf\_1.8\_vs\_mips\_stats.tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+Re-do this section with the <I>gavin_2006_rnsc_clusters.rnsc</I> to obtain a file called <I>gavin_2006_rnsc_vs_mips_stats.tab</I>.
+</LI>
+</OL> 
+
+<P>
+
+<H2><A NAME="SECTION00724000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<H3><A NAME="SECTION00724100000000000000">
+Files description</A>
+</H3>
+
+<H4><A NAME="SECTION00724110000000000000">
+Contingency table</A>
+</H4>
+As already explained in a previous section, having <IMG
+ WIDTH="14" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img29.png"
+ ALT="$n$"> MIPS complexes and <IMG
+ WIDTH="18" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img30.png"
+ ALT="$m$"> clusters, the contingency table <IMG
+ WIDTH="16" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img31.png"
+ ALT="$T$"> is
+a <IMG
+ WIDTH="40" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img32.png"
+ ALT="$n \cdot m$"> matrix where row <IMG
+ WIDTH="10" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img3.png"
+ ALT="$i$"> corresponds to the <IMG
+ WIDTH="23" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img33.png"
+ ALT="$i^{th}$">
+annotated complex, and column <IMG
+ WIDTH="12" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$j$"> to the <IMG
+ WIDTH="25" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img34.png"
+ ALT="$j^{th}$"> cluster. The value
+of a cell <IMG
+ WIDTH="29" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img35.png"
+ ALT="$T_{i,j}$"> indicates the number of proteins found in common
+between complex <IMG
+ WIDTH="10" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img3.png"
+ ALT="$i$"> and cluster <IMG
+ WIDTH="12" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$j$">.
+
+<P>
+The clustering quality will be evaluated from this table by calculating the Sensitivity (<IMG
+ WIDTH="25" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img36.png"
+ ALT="$Sn$">), the Positive predictive
+value (<IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$">), the row wise separation (<IMG
+ WIDTH="38" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img37.png"
+ ALT="$Sep_{r}$">) and the cluster separation (<IMG
+ WIDTH="37" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img38.png"
+ ALT="$Sep_{c}$">).
+
+<P>
+
+<H4><A NAME="SECTION00724120000000000000">
+Contingency table metrics</A>
+</H4>
+  A list of metrics and their value. These will be described in the next section.
+
+<P>
+
+<H3><A NAME="SECTION00724200000000000000">
+Metrics description</A>
+</H3>
+
+<H4><A NAME="SECTION00724210000000000000">
+Sensitivity, Positive predictive value and geometric accuracy</A>
+</H4>
+
+<P>
+For each complex, we can calculate a sensitivity value. This corresponds to the maximal fraction of protein of a complex that are attributed by a clustering algorithm to the same cluster. <IMG
+ WIDTH="25" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img36.png"
+ ALT="$Sn$"> measures how well proteins belonging to the same complex are grouped within the same cluster.
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Sn_{i.}=\frac{max_{i.}(T_{ij})}{N_i}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="126" HEIGHT="42" BORDER="0"
+ SRC="img39.png"
+ ALT="\begin{displaymath}Sn_{i.}=\frac{max_{i.}(T_{ij})}{N_i}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+where <IMG
+ WIDTH="23" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img40.png"
+ ALT="$N_i$"> corresponds to the size of the complex.
+
+<P>
+Moreover, for each cluster <IMG
+ WIDTH="12" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$j$">, we calculated the Positive Predictive Value (<IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$">) which corresponds to the maximal fraction of a cluster belonging to the same complex. This reflects the ability of this cluster to detect one complex.
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+PPV_{.j}=\frac{max_{.j}(T_{ij})}{M_j}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="143" HEIGHT="45" BORDER="0"
+ SRC="img41.png"
+ ALT="\begin{displaymath}PPV_{.j}=\frac{max_{.j}(T_{ij})}{M_j}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+where <IMG
+ WIDTH="27" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img42.png"
+ ALT="$M_j$"> corresponds to the cluster size.
+
+<P>
+To summarize these values at the level of the confusion table, we calculated the average of these values. 
+First, we calculated their classical mean by averaging all the <IMG
+ WIDTH="49" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img43.png"
+ ALT="$PPV_{.j}$"> and <IMG
+ WIDTH="34" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img44.png"
+ ALT="$Sn_{i.}$"> values. We also calculated a weighted mean where the clusters and complexes have a weight proportional to their relative size on the the calculation of the mean.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Sn = \frac{\sum_{i=1}^nSn_{i.}}{n}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="114" HEIGHT="41" BORDER="0"
+ SRC="img45.png"
+ ALT="\begin{displaymath}Sn = \frac{\sum_{i=1}^nSn_{i.}}{n}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+PPV = \frac{\sum_{j=1}^mPPV_{.j}}{m}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="148" HEIGHT="43" BORDER="0"
+ SRC="img46.png"
+ ALT="\begin{displaymath}PPV = \frac{\sum_{j=1}^mPPV_{.j}}{m}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Sn_w = \frac{\sum_{i=1}^nN_iSn_{i.}}{\sum_{i=1}^nN_i}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="142" HEIGHT="46" BORDER="0"
+ SRC="img47.png"
+ ALT="\begin{displaymath}Sn_w = \frac{\sum_{i=1}^nN_iSn_{i.}}{\sum_{i=1}^nN_i}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+PPV_w = \frac{\sum_{j=1}^mM_jPPV_{.j}}{\sum_{j=1}^mM_j}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="177" HEIGHT="50" BORDER="0"
+ SRC="img48.png"
+ ALT="\begin{displaymath}PPV_w = \frac{\sum_{j=1}^mM_jPPV_{.j}}{\sum_{j=1}^mM_j}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+
+<P>
+Sensitivity and <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> reflect two contradictory tendencies of the clustering. <IMG
+ WIDTH="25" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img36.png"
+ ALT="$Sn$"> increases when all the proteins of the same complex are grouped in the same cluster and <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> decreases when proteins coming from different complexes are grouped in the same cluster. If all the proteins of the network are grouped in the same cluster, we maximize the <IMG
+ WIDTH="25" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img36.png"
+ ALT="$Sn$"> but the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> is almost 0. On the other hand, if each protein is placed in a different cluster, the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> is maximized  but the sensitivity is very low. A compromise must be found between these two cases by using another statistics. We defined the geometric accuracy as the geometrical mean of the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> and the <IMG
+ WIDTH="25" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img36.png"
+ ALT="$Sn$">.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Acc_g = \sqrt{PPV \cdot Sn}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="138" HEIGHT="29" BORDER="0"
+ SRC="img49.png"
+ ALT="\begin{displaymath}Acc_g = \sqrt{PPV \cdot Sn}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+
+<P>
+
+<H4><A NAME="SECTION00724220000000000000">
+Separation</A>
+</H4>
+
+<P>
+We also defined another metrics called <I>Separation</I> (<IMG
+ WIDTH="31" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img50.png"
+ ALT="$Sep$">). High <IMG
+ WIDTH="31" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img50.png"
+ ALT="$Sep$"> values indicated a high bidirectionnal correspondance between a cluster and a complex.
+
+<P>
+The row-wise separation estimates how a complex is isolated from the others. Its maximal value is 1 if this correspondance is perfect, i.e., when all the protein of a complex are grouped in one cluster and if this cluster does not contain any other protein. This maximal value may also be reached when the complex is separated between many clusters containing only members of the complex.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Sep_{r_{i.}} = \sum_{j=1}^{m}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="250" HEIGHT="55" BORDER="0"
+ SRC="img51.png"
+ ALT="\begin{displaymath}Sep_{r_{i.}} = \sum_{j=1}^{m}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+
+<P>
+The column-wise separation indicates how well a cluster isolates one or more complex from the other clusters. The maximal value 1 indicates that a cluster contains all the elements of one or more complexes.  
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Sep_{c_{.j}} = \sum_{i=1}^{n}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="251" HEIGHT="53" BORDER="0"
+ SRC="img52.png"
+ ALT="\begin{displaymath}Sep_{c_{.j}} = \sum_{i=1}^{n}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+
+<P>
+As for the sensitivity and the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$">, for each clustering result, all values of <IMG
+ WIDTH="47" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img53.png"
+ ALT="$Sep_{c_{.j}}$"> and <IMG
+ WIDTH="46" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img54.png"
+ ALT="$Sep_{r_{i.}}$"> are averaged over all clusters and all complexes. We then calculate a global separation value by calculating the geometrical mean of the average row wise separation and of the average column wise separation.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{displaymath}
+Sep = \sqrt{Sep_c \cdot Sep_r}
+\end{displaymath}
+ -->
+
+<IMG
+ WIDTH="141" HEIGHT="28" BORDER="0"
+ SRC="img55.png"
+ ALT="\begin{displaymath}Sep = \sqrt{Sep_c \cdot Sep_r}\end{displaymath}">
+</DIV>
+<BR CLEAR="ALL">
+<P></P>
+
+<P>
+
+<H3><A NAME="SECTION00724300000000000000">
+Score comparaison</A>
+</H3>
+
+<P>
+In the following, we can observe the statistics described in the previous paragraph computed for the clustering results of <B><I>RNSC</I></B> and <B><I>MCL</I></B>.
+
+<P>
+We can observe that <B><I>MCL</I></B> seems to produce slightly more valuable results as 
+
+<OL>
+<LI>The unweighted sensitivity is a bit higher for <B><I>MCL</I></B> than for <B><I>RNSC</I></B> and the weighted sensitivity is much higher.
+</LI>
+<LI>The <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> is a only bit lower for <B><I>MCL</I></B> than for <B><I>RNSC</I></B>.
+
+<P>
+These results might certainly be explained by the large number of clusters found by <B><I>RNSC</I></B> compared to <B><I>MCL</I></B>. Indeed, the <IMG
+ WIDTH="42" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img28.png"
+ ALT="$PPV$"> increases and the sensitivity decreases with the number of a clusters.
+We can observe the same tendencies for the other metrics.
+
+<P>
+</LI>
+<LI>Global metrics (accuracy and separation) are generally higher for MCL than for RNSC
+
+<P>
+</LI>
+</OL>
+
+<P>
+<TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT">metrics</TD>
+<TD ALIGN="LEFT">RNSC</TD>
+<TD ALIGN="LEFT">MCL</TD>
+</TR>
+<TR><TD ALIGN="LEFT">ncol</TD>
+<TD ALIGN="LEFT">470</TD>
+<TD ALIGN="LEFT">189</TD>
+</TR>
+<TR><TD ALIGN="LEFT">nrow</TD>
+<TD ALIGN="LEFT">220</TD>
+<TD ALIGN="LEFT">220</TD>
+</TR>
+<TR><TD ALIGN="LEFT">min</TD>
+<TD ALIGN="LEFT">0</TD>
+<TD ALIGN="LEFT">0</TD>
+</TR>
+<TR><TD ALIGN="LEFT">max</TD>
+<TD ALIGN="LEFT">18</TD>
+<TD ALIGN="LEFT">27</TD>
+</TR>
+<TR><TD ALIGN="LEFT">mean</TD>
+<TD ALIGN="LEFT">0.0086</TD>
+<TD ALIGN="LEFT">0.0214</TD>
+</TR>
+<TR><TD ALIGN="LEFT">sum</TD>
+<TD ALIGN="LEFT">889</TD>
+<TD ALIGN="LEFT">889</TD>
+</TR>
+<TR><TD ALIGN="LEFT">Sn</TD>
+<TD ALIGN="LEFT">0.603</TD>
+<TD ALIGN="LEFT">0.652</TD>
+</TR>
+<TR><TD ALIGN="LEFT">PPV</TD>
+<TD ALIGN="LEFT">0.424</TD>
+<TD ALIGN="LEFT">0.472</TD>
+</TR>
+<TR><TD ALIGN="LEFT">acc</TD>
+<TD ALIGN="LEFT">0.513</TD>
+<TD ALIGN="LEFT">0.562</TD>
+</TR>
+<TR><TD ALIGN="LEFT">acc_g</TD>
+<TD ALIGN="LEFT">0.505</TD>
+<TD ALIGN="LEFT">0.555</TD>
+</TR>
+<TR><TD ALIGN="LEFT">Sn_w</TD>
+<TD ALIGN="LEFT">0.622</TD>
+<TD ALIGN="LEFT">0.767</TD>
+</TR>
+<TR><TD ALIGN="LEFT">PPV_w</TD>
+<TD ALIGN="LEFT">0.642</TD>
+<TD ALIGN="LEFT">0.549</TD>
+</TR>
+<TR><TD ALIGN="LEFT">acc_w</TD>
+<TD ALIGN="LEFT">0.632</TD>
+<TD ALIGN="LEFT">0.658</TD>
+</TR>
+<TR><TD ALIGN="LEFT">acc_g_w</TD>
+<TD ALIGN="LEFT">0.632</TD>
+<TD ALIGN="LEFT">0.649</TD>
+</TR>
+<TR><TD ALIGN="LEFT">sep</TD>
+<TD ALIGN="LEFT">0.303</TD>
+<TD ALIGN="LEFT">0.353</TD>
+</TR>
+<TR><TD ALIGN="LEFT">sep_c</TD>
+<TD ALIGN="LEFT">0.207</TD>
+<TD ALIGN="LEFT">0.381</TD>
+</TR>
+<TR><TD ALIGN="LEFT">sep_r</TD>
+<TD ALIGN="LEFT">0.443</TD>
+<TD ALIGN="LEFT">0.327</TD>
+</TR>
+</TABLE>
+
+<P>
+<I>Remark</I>: The following table was generated using the RSAT program <B><I>compare-scores</I></B>, see the help of this command line tool for more information
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html356"
+  HREF="Influence_graph_alteration.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html352"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html346"
+  HREF="Study_neighborhood_nodes.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html354"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html357"
+  HREF="Influence_graph_alteration.html">Influence of graph alteration</A>
+<B> Up:</B> <A NAME="tex2html353"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html347"
+  HREF="Study_neighborhood_nodes.html">Study of the neighborhood</A>
+ &nbsp; <B>  <A NAME="tex2html355"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

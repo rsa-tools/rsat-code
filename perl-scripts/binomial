@@ -1,0 +1,220 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+#### initialise parameters ####
+$boe = 0;
+$soe = 0;
+$approx = 0;
+
+&ReadArguments();
+
+#### check argument values ####
+if ($p eq "") {
+  print "	Error: p was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif (($p > 1) || ($p < 0)) {
+  print "	Error: p should be comprised between 0 and 1.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+if ($r eq "") {
+  print "	Error: r was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif ($r < 1) {
+  print "	Error: r should be an integer >= 1.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+
+unless (defined($s) || $from_to) {
+  print "	Error: s was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif (($s < 0) || ($s > $r)) {
+  print "	Error: s should be an integer >= 0 and <= r.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+
+if ($verbose) {
+    if ($from_to) {
+	print "P($from<=s<=$to | r=$r,p=$p) = ";
+    } else {
+	if ($boe) {
+	    print "P(s>=$s | r=$r,p=$p) = ";
+	} elsif ($soe) {
+	    print "P(s<=$s | r=$r,p=$p) = ";
+	} else {
+	    print "P(s=$s | r=$r,p=$p) = ";
+	}
+    }
+}
+
+
+if ($approx) {
+    $b = &binomial_approx($p, $r, $s);
+} elsif ($boe) {
+    $b = &binomial_boe($p, $r, $s);
+} elsif ($soe) {
+    $b = sum_of_binomials($p,$r,$0,$s);
+} elsif (defined($from) && (defined($to))) {
+    $b = sum_of_binomials($p,$r,$from,$to);
+} else {
+    $b = &binomial($p, $r, $s);
+}
+
+
+if ($b < 0) {
+### this can happen when using boe or soe options,
+### due to the precision limit
+  $b = 0;
+}
+if ($b >= 0.0001) {
+    printf "%.7f\n", $b;
+} else {
+    printf "%.7g\n", $b;
+}
+
+exit(0);
+
+
+
+#### read arguments ####
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	
+	if ($ARGV[$a] eq "-p") {
+	    $p = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-r") {
+	    $r = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	} elsif ($ARGV[$a] eq "-s") {
+	    $s = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	} elsif ($ARGV[$a] eq "-boe") {
+	    $boe = 1;
+	    
+	} elsif ($ARGV[$a] eq "-soe") {
+	    $soe = 1;
+
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from_to = 1;
+	    $from = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-to") {
+	    $from_to = 1;
+	    $to = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-approx") {
+	    $boe = 1;
+	    $approx = 1;
+	}
+    }
+}
+
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+binomial options
+----------------
+-p #p		probability of success of the event at each trial. 
+-r #r		number of repetitions of the trial. #r mmust be an integer
+-s #s		number of succesful trials
+-v		verbose
+-boe		bigger or equal. 
+-soe		smaller or equal. 
+-approx		only valid in combination with -boe
+-from # -to #	sum of binomial between two values (inclusive)   
+End_short_help
+    close HELP;
+  exit;
+}
+
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	binomial
+	
+	v1.0 by Jacques van Helden, July 1997
+	
+DESCRIPTION
+	Calculates the probability that an event with probability p 
+	challenged r times successes s times, according to the binomial 
+	formula.
+
+CATEGORY
+	statistics
+
+USAGE
+	binomial -p single_proba -r repetitions -s nb_success 
+		[-v] [-boe]
+
+FORMULA
+	
+	              (r!)       s      (r-s)
+	P(s|r;p) = ---------- (p)  (1-p)
+	           (n!)(r-n)!
+  	
+  	With the -boe option, calculates the probability of >= -s 
+  	successes.
+  	
+  	              r                 s-1
+  	P(>=s|r;p) = SUM P(j|r;p) = 1 - SUM P(j|r;p) 
+  	             j=s                j=0
+  	           
+  	 With the -approx, the entropy formula is used to approximate 
+  	 the probability of >= -s successes.
+  	 
+  	 P(>=s|r;p) = exp(-r * H(p,b))
+  	 
+  	 with	H(p,b) = b*log(b/p) + (1-b)*log((1-b)/(1-p))
+  	 	where b = s/r
+  	 Important note: this formula is valid only when
+  	 	 p <= b = s/r < 1
+
+  	         
+	
+OPTIONS
+	-p #p	probability of success of the event at each trial. 
+		#p is a real such that 0 <= #p <= 1.
+	-r #r	number of repetitions of the trial. #r mmust be an integer		
+	-s #s	number of succesful trials
+		#s must be an integer such that 0 <= s <= r.
+	-v	verbose
+	-boe	bigger or equal. 
+		Calculate the probability of >= -s successes.
+	-soe	smaller or equal. 
+		Calculate the probability of <= -s successes.
+	-from # -to #
+		calculates the sum of binomials between two values 
+		(inclusive).
+	-approx	only valid in combination with -boe
+		Uses the entropy formulae instead of the exact binomial
+		for the calculation of Proba(r repetitions, success >= s).
+		This can be necessary if r is very high and s is very 
+		far from both r and 0 (ex: r=1000, s=500).
+
+	
+End_of_help
+    close HELP;
+  exit;
+}

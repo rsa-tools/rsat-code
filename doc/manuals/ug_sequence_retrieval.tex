@@ -1,0 +1,604 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Sequence retrieval
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Retrieving sequences}
+
+The program \program{retrieve-seq} allows you to retrieve sequences
+from a genome (provided this genome is supported on your machine). In
+particular (and by default), this program extracts the non-coding
+sequences located upstream the start codon of the query genes. The
+reason for selecting upstream sequences (rather than coding) is that
+regulatory elements are generally found upstream of the coding
+regions, at least in microbial organisms.
+
+\section{Retrieving a single upstream sequence}
+
+First trial: we will extract the upstream sequence for a single
+gene. Try:
+
+\begin{lstlisting}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -q metA -from -200 -to -1
+\end{lstlisting}
+
+
+This command retrieves a 200 bp upstream sequence for the gene
+\gene{metA} of the bacteria \org{Escherichia coli K12}. 
+
+By default, coordinates are calculated from the start codon. Ideally,
+we would prefer to retrieve sequences upstream of the Transcription
+Start Site (\concept{TSS}), since this is the place where the RNA
+polymerase starts to transcribe the gene. Unfortunately, the precise
+location of the TSS is unknown for most genes, in most sequecned
+genome. For this reason, the default reference is the start codon
+rather than the TSS.
+
+Note that for some organisms (e.g. \org{Homo sapiens}), genome
+annotations include mRNA boundaries. In this case, the option
+\option{-feattype mRNA} allows you to specify that the reference point
+is the start of the mRNA (thus the TSS) rather than the start codon.
+
+Whichever reference point you decide to use, negative coordinates
+indicate sequences upstream to this reference point, and positive
+coordinates downstream sequences. 
+
+\begin{samepage}
+With the default parameters, 
+\begin{itemize}
+\item[-] the reference point is the start codon;
+\item[-] position $-1$ corresponds to the first residue upstream of
+  the coding sequence; 
+\item[-] position 0 is the first letter from the start codon (the A from
+  ATG);
+\item[-] positive coordinates indicate the coding sequence (downstream
+  from the start codon).
+\end{itemize}
+\end{samepage}
+
+To better understand the system of coordinates, try to locate the
+start codon in the sequence obtained with the following commands.
+
+\begin{lstlisting}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -q metA -from -5 -to 6
+\end{lstlisting}
+
+
+\section{Combining upstream and coding sequence}
+
+For \org{E.coli} genes, regulatory signals sometimes overlap the 5'
+side of the coding sequence. By doing so, they exert a repression
+effect by preventing RNA-polymerase from binding DNA. The command
+\program{retrieve-seq} allows you to extract a sequence that overlaps
+the start codon, to combine an upstream and a coding segment.
+
+\begin{lstlisting}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -q metA -from -200 -to 49
+\end{lstlisting}
+
+\section{Retrieving a few upstream sequences}
+
+The option \option{-q} (query gene) can be used iteratively in a
+command to retrieve sequences for several genes.
+
+\begin{lstlisting}
+retrieve-seq -org Escherichia_coli_K12 \
+    -from -200 -to 49 -q metA -q metB -q metC
+\end{lstlisting}
+
+\section{Retrieving a larger list of upstream sequences}
+
+If you have to retrieve a large number of sequences, it might become
+cumbersome to type each gene name on the command-line. A list of gene
+names can be provided in a text file, each gene name coming as the
+first word of a new line.
+
+As an example, we willuse the command \command{gene-info} to collect
+all genes whose matches the prefix \texttt{PHO} followed by one or
+several numbers (this will return a list of genes involved in
+phosphate metabolism).
+
+\begin{lstlisting}
+gene-info -org Saccharomyces_cerevisiae -q 'PHO\d+' -o PHO_genes.txt
+\end{lstlisting}
+
+We can check the content of your file by typing
+
+\begin{lstlisting}
+cat PHO_genes.txt
+\end{lstlisting}
+
+This file can now be used as input to indicate the list of query genes
+for \command{retrieve-seq}, with the option \option{-i}.
+
+\begin{lstlisting}
+retrieve-seq -type upstream -i PHO_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1  
+\end{lstlisting}
+
+The option \option{-o} allows you to indicate the name of a file where
+the sequence will be stored.
+
+\begin{lstlisting}
+retrieve-seq -type upstream -i PHO_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1   -label name \
+    -o PHO_up800.fasta
+\end{lstlisting}
+
+Check the sequence file:
+
+\begin{lstlisting}
+more PHO_up800.fasta
+\end{lstlisting}
+
+
+\section{Preventing the inclusion of upstream ORFs}
+
+With the command above, we retrieved sequences covering precisely 200
+bp upstream the start codon of the selected genes. Intergenic regions
+are sometimes shorter than this size. In particular, in bacteria, many
+genes are organized in operons, and the intergenic distance is very
+short (typically between 0 and 50 bp). If your gene selection contains
+many intra-operon genes, the sequences will be mainly composed of
+coding sequences (more precisely ORF, open reading frame), which will
+bias subsequent analyses.
+
+The option \option{-noorf} of \textit{retrieve-seq} indicates that, if
+the upstream gene is closer than the specified limit, the sequence
+should be clipped in order to return only intergenic regions.
+
+As an example, we will store the list of histidin genes in a file and
+compare the results obtained with and without the option
+\option{-noorf}.
+
+Create a text file named \file{his\_genes.txt} with the following
+genes.
+
+\begin{footnotesize}
+\begin{verbatim}
+hisL
+hisG
+hisD
+hisC
+hisH
+hisA
+hisF
+hisI
+hisP
+hisM
+hisQ
+hisJ
+hisS
+\end{verbatim}
+\end{footnotesize}
+
+The default behaviour will return 200bp for each gene. 
+
+\begin{lstlisting}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -i his_genes.txt -from -200 -to -1
+\end{lstlisting}
+
+With the option \option{-noorf}, sequences are clipped depending on
+the position of the closest upstream neighbour.
+
+\begin{lstlisting}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -i his_genes.txt -from -200 -to -1 -noorf \
+    -o his_up200_noorf.fasta
+
+more his_up200_noorf.fasta
+\end{lstlisting}
+
+You can measure the length of the resulting sequences with the program
+\program{sequence-lengths}.
+
+\begin{lstlisting}
+sequence-lengths -i his_up200_noorf.fasta
+\end{lstlisting}
+
+Notice that some genes have very short upstream sequences (no more
+than a few bp, or even 0bp). These are the internal genes of the
+\gene{his} operon. 
+
+
+We will now apply the same option to the list of PHO genes entered
+above, in order to obtaine the corresponding non-coding upstream
+sequences, with a size up to 800bp.
+
+\begin{lstlisting}
+retrieve-seq -type upstream -i PHO_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1 -noorf  -label name \
+    -o PHO_up800-noorf.fasta
+\end{lstlisting}
+
+Check the sequence file:
+
+\begin{lstlisting}
+more PHO_up800-noorf.fasta
+\end{lstlisting}
+
+We can now use the command \command{sequence-lengths} to compare the
+sequence sizes of the files \file{PHO\_up800.fasta}, and
+\file{PHO\_up800-noorf.fasta}, respectively.
+
+\begin{lstlisting}
+sequence-lengths -i PHO_up800.fasta
+
+sequence-lengths -i PHO_up800-noorf.fasta
+\end{lstlisting}
+
+\section{Getting information about genes}
+
+\RSAT include several utilities to obtain information about a set of
+genes, we will illustrate some basic features. 
+
+\subsection{Getting gene location, names and description}
+
+In the previous section, we created a text file with the names of a
+set of genes related to phosphate metabolism. The command
+\command{gene-info} returns the complete information concerning a set
+of genes. By default, the first word of each row of the input file is
+considered as a query.
+
+\begin{lstlisting}
+gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae
+\end{lstlisting}
+
+
+\subsection{Selecting gene by name or description}
+
+Another common need is to search all the names whose name or
+description matches some string. For example, let us assume that we
+want to ollect all the genes whose name indicates a role in the
+methionine metabolism, in the yeast \org{Saccharomyces cerevisiae}.
+The program \concept{gene-info} allows us to specify this type of
+query. according to the naming convention in the yeast community, gene
+names start with three letters indicating the function (e.g. PHO for
+phosphate, MET for methionine), wollowed by a number. We can ask the
+program to return all the gene names having the string ``MET'' in
+their names. 
+
+In this example, we will enter the query string with the option
+\option{-q} on the command line, rather than in a file.
+
+\begin{lstlisting}
+gene-info -q 'MET' -org Saccharomyces_cerevisiae
+\end{lstlisting}
+
+We could also refine the query by taking advantage of our knowledge of
+the yeast gene nomenclature, and selecting the genes whose name starts
+with the prefix ``MET'', followed by one or several numbers.
+
+\begin{lstlisting}
+gene-info -q '^MET\d+' -org Saccharomyces_cerevisiae
+\end{lstlisting}
+
+The query is formulatd as a \concept{regular expression}, where
+\texttt{$\backslash$d} indicates a number, and the symbol $+$ is a
+multiplier, so \texttt{$\backslash$d+}, indicates that we accept a
+succession of one or more numbers after the string ``MET''. The
+character $\hat{ }$ indicates that the string MET should be at the start of
+the name (thus, there can be no letter before MET).
+
+We can now store this list of genes in a separate file, and retrieve
+the coresponding upstream sequences.
+
+
+\begin{lstlisting}
+gene-info -q '^MET\d+' -org Saccharomyces_cerevisiae -o MET_genes.txt
+
+retrieve-seq -type upstream -i MET_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1 -noorf  -label name \
+    -o MET_up800-noorf.fasta
+\end{lstlisting}
+
+
+\subsection{Selecting genes by their description}
+
+By default, the program \concept{gene-info} matches a query string
+against the list of gene names for the selected organism. The option
+\option{-descr} extends the search to the gene descriptions. For
+instance, we could search all the genes having the word ``methionine''
+in their description. 
+
+\begin{lstlisting}
+gene-info -descr -q methionine -org Saccharomyces_cerevisiae
+\end{lstlisting}
+
+\subsection{Adding selected fields to a list of gene}
+
+As we saw in the previous section, the program \program{gene-info}
+takes as input a list of gene names or identifiers, and return the
+complete description of each gene.
+
+In some cases, one needs only a part of this information (e.g. the
+common name, or the descripion), in order to to add some columns to a
+pre-existing tab-delimited file where each row represents one
+gene. For example, imagine that you have a file containing expression
+profiles for 6,000 yeast genes, measured by microarray experiments
+under 200 conditions. The file contains 201 columns: the first column
+indicates the ID of each gene, and the 200 next column give expression
+values measured in the 200 microarrays. In such case, you would
+typically use \program{add-gene-info} to add a few columns after each
+profile, in order to indicate the common name and the description of
+each gene.
+
+The program \concept{add-gene-info} allows add columns to an input
+file, with user-selected fields of information about the genes. For
+example, the options below will add the gene identifier and the list
+of synonym to each row of our PHO gene list. 
+
+\begin{lstlisting}
+add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae \
+  -info id,names
+\end{lstlisting}
+
+If the input file contains additional columns (e.g. expression
+profiles), these will be preserved in the output, and the requested
+information columns will be added at the end of each row.
+
+You can check the list of fields supported by \program{add-gene-info}
+by consulting the help message.
+
+\begin{lstlisting}
+add-gene-info -help
+\end{lstlisting}
+
+
+\section{Retrieving sequences of a random selection of genes}
+
+It is also sometimes interesting to select a set of random genes,
+which canbe used as negative control or some analyses. This is exactly
+the purporse of the program \program{random-genes}. We will perform a
+random selection of 20 yeast genes, and retrieve their upstream
+sequences. This selection will also be used in the next chapters.
+
+
+\begin{lstlisting}
+random-genes -org Saccharomyces_cerevisiae -n 20 -o RAND_genes.txt
+
+retrieve-seq -type upstream -i RAND_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1 -noorf  -label name \
+    -o RAND_up800-noorf.fasta
+\end{lstlisting}
+
+\section{Retrieving all upstream sequences}
+
+For genome-scale analyses, it is convenient to retrieve upstream
+sequences for all the genes of a given genome, without having to
+specify the complete list of names. For this, simply use the option
+\option{-all}.
+
+As an illustration, we will use \command{retrieve-seq} to retrieve all
+the start codons from \org{Escherichia coli}. As we saw before,
+negative coordinates specify upstream positions, 0 being the first
+base of the coding sequence. Thus, by specifying positions 0 to 2, we
+will extract the three first coding bases, i.e. the start codon. 
+
+\begin{lstlisting}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -from 0 -to 2 \
+    -all -format wc -nocomments -label id,name \
+    -o Escherichia_coli_K12_start_codons.wc
+\end{lstlisting}
+
+Check the result:
+
+\begin{lstlisting}
+more Escherichia_coli_K12_start_codons.wc
+\end{lstlisting}
+
+
+\section{Retrieving downstream sequences}
+
+\program{retrieve-seq} can also be used to retrieve downstream
+sequences. In this case, the origin (position 0) is the third base of
+the stop codon, positive coordinates indicate downstream (3')
+location, and negative coordinates locations upstream (5') from the
+stop codon (i.e. coding sequences). 
+
+For example, the following command will retrieve 200pb downstream
+sequences for a few yeast genes. The first nucleotides of the
+retrieved sequences are those immediately after the stop codon.
+
+\begin{lstlisting}
+retrieve-seq -type downstream -org Saccharomyces_cerevisiae \
+    -from 1 -to 200 -label id,name -q PHO5 -q MET4
+\end{lstlisting}
+
+Since with the option \option{-type downstream}, the coordinates
+smaller than 1 indicate positions upstream of the stop codon, we can
+use \program{retrieve-seq} to extract the stop codons for all the
+genes of \org{Escherichia coli}.
+
+\begin{lstlisting}
+retrieve-seq -type downstream -org Escherichia_coli_K12 \
+    -from -2 -to 0 \
+    -all -format wc -nocomments -label id,name \
+    -o Escherichia_coli_K12_stop_codons.wc
+\end{lstlisting}
+
+\section{Inferring operons}
+
+In Bacteria, genes are organized in operon, which means that several
+genes are transcribed in a single transcription unit. The
+transcription of a whole operon is driven by a single promoter,
+located upstream of the so-called \concept{leader gene}.
+
+Let us assume that we dispose of a set of bacterial genes for which we
+want to predict cis-acting elements (e.g. co-expressed genes in a
+microarray experiment). A good fraction of these genes might be
+located inside operons. For these, the putative regulatory elements
+should be searched in the promoter of the operon leader gene, rather
+than in the upstream sequence of the gene itself.
+
+The program \program{infer-operon} allows to infer the operons and
+return the corresponding leader genes for a set of input genes.  The
+approach is inspired by the Salgado-Hagelsieb method, which consists
+in predicting, for each upstream region, if it is within an operon
+(WO) or t a transcription unit border (TUB). This prediction is based
+on two rules:
+
+\begin{enumerate}
+\item \textbf{Orientation rule} If the intergenic region is flanked by two
+  genes located on different strands, it is a TUB.
+
+\item \textbf{[Distance rule} If the intergenic region is flanked two
+  \concept{tandem} genes (adjacent genes transcribed in the same
+  direction), it is classified as WO if the intergenic distance is
+  lower than some threshold (by default, 55bp), and as TUB otherwise.
+\end{enumerate}
+
+The default distance threshold was chosen to obtain a good balance
+between \concept{sensitivity} (\concept{Sn}, fraction of annotated WO
+regions which are correctly predicted) and \concept{positive
+  predictive value} (\concept{PPV}, fraction of predicted WO region
+which indeed correspond to annotations).
+
+The option \option{-dist} allows to specify a custom distance
+threshold. By increasing the threshold, the number of regions
+predicted as WO increases, at the expense of those predicted as
+WO. This will thus increase the Sn and decrease PPV.
+
+The \concept{accuracy} measures the balance between Sn and PPV by
+taking their arithmetic average. With the default value, one can
+expect ~78\% of accuracy (Reki's janky and Jacques van Helden,
+unpublished results).
+
+We will illustrate the use of \program{infer-operons} with a few
+examples.
+    
+\subsection{Inferring operon from a list of query genes}
+
+With the following command, we infer the operon for a set of input
+genes.
+
+\begin{lstlisting}
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
+  -q mhpA -q mhpD
+\end{lstlisting}
+
+Note that the prediction is incorrect for the gene \gene{hisD}: the
+program predict \gene{hisG} as operon leader, whereas the well known
+leader of the \gene{his} operon is \gene{hisL}. This is due to the
+fact that the intergenic distance between \gene{hisL} and \gene{hisG}
+is 145bp, which exceeds the default distance threshold (55bp). 
+
+One option would be to increase the distance threshold to 150bp. 
+
+
+\begin{lstlisting}
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
+  -q mhpA -q mhpD -dist 150
+\end{lstlisting}
+
+However, we should be very careful with this option, since it has a
+strong consequence on all the other operon inferenes in the same
+genome. Since a good fraction of promoters of \org{Escherichia coli}
+are shorted than 150bp, by increasing the distance threshold to 150,
+we will undully consider these promoters as WO.
+
+\subsection{Selecting custom return fields}
+
+The option \option{-return} allows to specify custom return fields.
+
+\begin{lstlisting}
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI -q lacZ \
+  -return q_info,up_info,leader,trailer,operon
+\end{lstlisting}
+
+Note that the famous \gene{lac} operon contains three genes:
+\gene{lacZ}, \gene{lacY} and \gene{lacA}, but the inferred operon only
+returns the two first genes because the distance between \gene{lacY}
+and \gene{lacA} is 65bp. This can be checked with the return field
+\option{down\_info}.
+
+\begin{lstlisting}
+infer-operon -v 1 -org Escherichia_coli_K12 -q lacZ -q lacY \
+  -return q_info,up_info,down_info,operon
+\end{lstlisting}
+
+\subsection{Operons with non-CDS genes}
+
+Note that operons can contain non-coding genes. For example, the
+metT operon contains a series of tRNA genes for methionine, leucine
+and glutamina, respectively.
+
+\begin{lstlisting}
+infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+-return q_info,up_info,operon
+\end{lstlisting}
+
+\subsection{Inferring all operons for a given organism}
+
+The option \option{-all} allows to infer operons for all the genes of
+an organism.
+
+\begin{lstlisting}
+infer-operon -v 1 -org Escherichia_coli_K12 -all \
+  -return q_info,up_info,leader,operon
+\end{lstlisting}
+
+\subsection{Retrieving operon leader genes and inferred
+  operon promoters}
+
+As explained above, a common usage of operon inference is to predict a
+list of leader genes from a set of query genes, in order to retrieve
+the corresponding promoter sequences. For this, we will use the option
+\option{-return} to obtain the leader gene in the first column of the
+result table. 
+
+\begin{lstlisting}
+infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+   -q lacI -q lacZ -q lacY -q mhpD -q mhpF
+\end{lstlisting}
+
+The first column now indicates the inferred leader genes rather than
+tne query genes, and that this column contains some redundancy: the
+same leader gene appears multiple times. This comes from the fact that
+several of our query genes were part of the same operon (e.g.:lacZ and
+lacY).
+
+To avoid including twice their leader, we use the unix command sort -u
+(unique).
+
+
+\begin{lstlisting}
+infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+   -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
+   | cut -f 1 \
+   | sort -u 
+\end{lstlisting}
+
+We can now use the resulting non-redundant list of operon leaders as
+input for retrieve-seq.
+
+\begin{lstlisting}
+infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+   -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
+   | cut -f 1 \
+   | sort -u \
+   | retrieve-seq -org Escherichia_coli_K12 -noorf
+\end{lstlisting}
+
+
+\subsection{Collecting all upstream regions from the query gene up to
+  the leader gene}
+
+\textbf{TO BE IMPLEMENTED}
+
+\subsection{Automatic inference}
+
+\textbf{TO BE IMPLEMENTED}
+
+
+\section{Purging sequences}
+
+\tbw

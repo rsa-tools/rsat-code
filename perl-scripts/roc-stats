@@ -1,0 +1,1746 @@
+#!/usr/bin/perl
+
+=pod
+
+=head1 NAME
+
+roc-stats
+
+=head1 DESCRIPTION
+
+This program takes as input a set of scored results associated with
+validation labels (TP for true positive, FP for false positive, FN for
+false negatives), and computes, for each score value, the derived
+statistics (Sn, PPV, FPR), which can be further used to draw a ROC
+curve.
+
+=head1 AUTHOR
+
+Rekin's Janky <rekins@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+statistics
+
+=head1 USAGE
+
+roc-stats -v 1 --input <file> [options]
+
+=cut
+
+#### Librairies
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require("RSA.stat.lib");
+require RSAT::Graph2;
+require RSAT::auc;
+use Getopt::Long qw(:config bundling);
+use Pod::Text;
+
+
+################################################################
+## Initialize parameters
+local $start_time = &RSAT::util::StartScript();
+
+#### package variables
+$verbose = 0;
+
+#### lexical variables
+my $options ="";
+my $help="";
+my $input="";
+my $output="";
+my %col=(id=>0, # column with id
+	 status=>5, # column with status
+	 score=>0); # column with score
+my %status=();
+my %ci=();
+my $score_format="score";
+my %thr=();
+my $param2return="TP,FP,FN,Sn,PPV,1-PPV,FPR,Acc,F1";#,QnotR,notQR";
+my $roc3D="";
+my $nodie=1;
+my $number_format = "%.3f";
+
+#### options
+my %opt = ('opt|?'=>\$options,
+	   'h|help'=>\$help,
+	   'v|verbose=i'=> \$verbose,
+	   'i|input=s'=> \$input,
+	   'o|output=s'=> \$output,
+	   'col=i%'=>\%col,
+	   'status=s%'=> \%status,
+	   'score_format=s'=> \$score_format,
+	   't|threshold=s%'=> \%thr,
+	   'ci=i%'=> \%ci,
+	   'r|return=s'=>\$param2return,
+	   '3D'=>\$roc3D,
+	   'nodie'=>\$nodie,
+	   );
+&GetOptions(%opt);
+
+################################################################
+## display help menu
+
+&PrintHelp if ($help);
+&displayOptions(%opt) if ($options);
+
+################################################################
+## Check all parameters
+
+# Check status 
+my %supported_status=("TP"=>"TP",
+		      "FP"=>"FP",
+		      "FN"=>"FN",
+		      "TN"=>"TN",
+		      "true"=>"TP",
+		      "false"=>"FP",
+		      "T"=>"TP",
+		      "F"=>"FP",
+#		      "TP"=>"T",
+#		      "FP"=>"F",
+#		      "T"=>"TP",
+#		      "F"=>"FP"
+		      );
+foreach my $st (keys %status){
+    &RSAT::message::Warning(join(" ","status",$st,"=>",$status{$st})) if ($main::verbose >= 0) ;
+    next if ($supported_status{$status{$st}});
+    &RSAT::message::Warning(join(" ","This status",$status{$st}," is not supported. Supported status :",join(",",keys %supported_status))) if ($main::verbose >= 0) ;; 
+    die;
+}
+%supported_status=(%supported_status,%status);
+
+################################################################
+## Check class interval on scores
+my %supported_scores=(score=>1, # class interval on all score
+		      Q=>1, # class interval on Q score
+		      R=>1, # class interval on R score
+		  );
+if (scalar (keys %ci) >=0){
+    foreach my $c (keys %ci){
+	&RSAT::message::Warning(join(" ","class interval",$c,"=>",$ci{$c})) if ($main::verbose >= 0) ;;
+	next if ($supported_scores{$c});
+	&RSAT::message::Warning(join(" ","This class interval",$c," is not supported. Supported class intervals :",join(",",keys %supported_scores))) if ($main::verbose >= 0) ; 
+	die;
+    }
+}
+
+################################################################
+## Check threshold on scores
+if(scalar (keys %thr) >=0){
+    foreach my $t (keys %thr){
+	&RSAT::message::Warning(join(" ","score threshold",$t,"=>",$thr{$t})) if ($main::verbose >= 0);
+	next if ($supported_scores{$t});
+	&RSAT::message::Warning(join(" ","This score threshold",$t," is not supported. Supported score thresholds :",join(",",keys %supported_scores))) if ($main::verbose >= 0) ; 
+	die;
+    }
+} 
+
+################################################################
+## Check score format
+my %supported_score_format=("score"=>1,
+			    "Q::R"=>1,
+#			    "Qscore"=>1,
+#			    "Rscore"=>1
+			    );
+$score_format="Q::R" if ($roc3D);
+unless ($supported_score_format{$score_format}){
+    &RSAT::message::Warning(join(" ","This score format",$score_format," is not supported. Supported format :",join(",",keys %supported_score_format))) if ($main::verbose >= 0) ;
+    die;    
+}
+
+
+################################################################
+## Check statistical parameters to return
+my %supported_param=(
+		     "TP"=>"True Positive",
+		     "TN"=>"True Negative",
+		     "FP"=>"False Positive",
+		     "FN"=>"False Negative",
+		     "Sn"=>"TP/TP+FN",
+		     "Sp"=>"TN/TN+FP",
+		     "PPV"=>"TP/TP+FP",
+		     "1-PPV"=>"FP/TP+FP",
+		     "NPV"=>"TN/TN+FN",
+		     "FPR"=>"FP/TN+FP",
+		     "Acc"=>"sqrt(Sn*PPV)",
+		     "QnotR"=>"QnotR",
+		     "notQR"=>"RnotQ",
+		     "AUC"=>"Area Under the Curve",
+		     "F1"=>"2(Sn*PPV)/(PPV+Sn)"
+		     );
+my %param2return=();
+my $description="; Statistics parameters\n";
+foreach my $p (split /,/,$param2return){
+    if ($supported_param{$p}){
+	$param2return{$p}=1;
+	if ($main::verbose >= 1){
+	    $description .= join("\t",";",$p,$supported_param{$p})."\n";
+	}
+    } else {
+	&RSAT::message::Warning(join(" ","This output parameter",$p," is not supported. Supported parameters :",join(",",keys %supported_param))); 
+	die;
+    }
+}
+
+################################################################
+#                                                              #
+#                         MAIN                                 #
+#                                                              #
+################################################################
+
+#### Calculate comparative parameters (Sn, PPV , Sp, NPV, Accuracy)
+my ($id2score)=&getId2score($input,\%col,$score_format,$nodie);
+
+#### get results
+my @datas=();
+if  ($score_format eq "Q::R"){ # use two scores (ROC 3D)
+    @datas = &getStatsByAllScores($id2score,\%ci,\%thr,\%param2return,$output);
+}elsif ($col{score}==0){ 
+    @datas = &getConfusionTable($id2score,\%param2return);
+    &write_file($output,@datas) if ($output);
+    &RSAT::message::Warning("Job done.");
+    exit(0);
+}else{
+    @datas = &ExportScores($output,\%param2return,undef,$score_format,&getStatsByScore($id2score,'score',$ci{score},$thr{score},\%param2return,$output));
+}
+
+#### Export results in output file
+if ($output){
+    my $header = &getHeader(\%param2return,$score_format);
+    $header = $description."\n".$header if ($main::verbose>=1);
+    &write_file($output,$header,@datas);
+}
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+exit(0);
+
+################################################################
+#                                                              #
+#                      SUBROUTINES                             #
+#                                                              #
+################################################################
+
+################################################################
+#### Read Input file and get a hash of status and score by id
+################################################################
+
+=pod
+    
+=head1 INPUT FORMAT
+    
+=item The format must be a tab-delimited file with one column for the
+    id, one column for the status and one column for the score (optional).
+
+=over
+
+=item B<id> (optional)
+    
+    Each item from this column must be unique. 
+    This can specify a link between two nodes (in the case of comparison of Query and Reference graphs).
+    Or an element from the prediction and/or the annotation set.
+
+=item B<status>
+    
+    This column define the status of item. 
+    By default, the status can be :
+
+=over
+
+=item I<TP> for True Positive  
+
+=item I<FP> for False Positive  
+
+=item I<TN> for True Negative  
+
+=item I<FN> for False Negative 
+
+=item I<T> or I<true> for True values
+
+=item I<F> or I<false> for False values
+
+=back
+
+=item B<score> (optional) 
+
+Use --col score <column> in order to specify a score column.  This column will
+contain scores (or weight) and "NA" when ther is no value.  If used with 
+option --3D, two scores can be defined in the same field separated by a :: (score_format Q::R)
+like Qscore::Rscore for Q.and.R element or Qscore::NA for Q.not.R element.
+
+=back
+
+=cut
+    
+sub getId2score{
+  my ($file,$col, $score_format,$nodie) = @_;
+  my @lines = &readfile("$file");
+  my %id_score=();
+  my %col=%{$col};
+  # careful of unvalid columns
+  my @fields = split (/\t/,$lines[0]);
+  my $nb_fields=scalar(@fields);
+  my %count_status=();
+  my %scores=();
+  my %Qscores=();
+  my %Rscores=();
+  if (($col{id} > $nb_fields)||($col{score} > $nb_fields)||($col{status} > $nb_fields)){
+      &RSAT::message::Warning(join(" ","Warning ! one column is improperly specified. Input file have only",scalar(@fields),"columns."));
+      &RSAT::message::Warning("\n\t",
+			      $col{id},"\t", "id column","\n\t",
+			      $col{status},"\t", "status column","\n\t",
+			      $col{score},"\t", "score column","\n",
+			      );
+      die;
+  }
+
+  my $i=0; # line counter
+  foreach my $line (@lines){
+      &RSAT::message::Warning("line : ",$line) if ($main::verbose >= 10);
+      my @fields = split(/\t/,$line);
+      $i++;
+
+      # Get id
+      my $id=$i;
+      if ($col{id}!=0){
+	  $id = $fields[$col{id}-1];
+	  if ($id_score{$id}){
+	      # Careful of doublons
+	      &RSAT::message::Warning(join(" ","Warning ! This id", $id," is a doublon"))if ($main::verbose >= 0);;
+	      die unless ($nodie);
+	  }
+      }
+      
+      # get status
+      if($col{status} != 0){
+	  my $status = $fields[$col{status}-1];
+	  if (!$supported_status{$status}){
+	      &RSAT::message::Warning(join(" ","Warning ! This status",$status," is not supported. Supported status :",join(",",keys %supported_status))) unless ($nodie);
+	      die unless ($nodie);	      
+	  }else {
+	      $id_score{$id}->{status} = $supported_status{$supported_status{$status}};
+#	      &RSAT::message::Warning(join(" ","id",$id,"status",$supported_status{$supported_status{$status}}));
+	      $count_status{$status}++;
+	  }
+      }
+
+      # associate the score to the id field
+      if  ($col{score} != 0){
+	  my $score = $fields[$col{score}-1];
+
+	  if($score_format eq "score"){
+	      $id_score{$id}->{score} = $score;	      
+	      $scores{$score}{$id_score{$id}->{status}}++;
+
+	  }elsif($score_format eq "Q::R"){ # check if two scores
+
+	      # TEMPORARY IN COMMENT (TO UPDATE WITH COMPARE GRAPH UPDATE)
+	      # REMOVE FOLLOWING PARAMS
+# 	      my ($Qscore, $Rscore)= split /::/,$score;
+# 	      $id_score{$id}->{Qscore} = $Qscore;
+# 	      $id_score{$id}->{Rscore} = $Rscore;
+# 	      &OPTOOLS::util::Warning(10,join("\t",
+# 					      "id",$id,
+# 					      "Qscore",$id_score{$id}->{Qscore},
+# 					      "Rscore",$id_score{$id}->{Rscore},
+# 					      "status",$id_score{$id}->{status})); 
+	      my ($Qscore, $Rscore)= split /::/,$score;
+
+	      if($id_score{$id}->{status} eq "TP"){ # Q.and.R
+		  $id_score{$id}->{Qscore} = $Qscore;
+		  $id_score{$id}->{Rscore} = $Rscore;
+		  $Rscores{$Rscore}{TP}++;
+		  $Qscores{$Qscore}{TP}++;
+		  &RSAT::message::Warning(join("\t",
+						 "id",$id,
+						 "Qscore",$id_score{$id}->{Qscore},
+						 "Rscore",$id_score{$id}->{Rscore},
+						 "status",$id_score{$id}->{status})) if ($main::verbose >= 10); 
+	      }elsif($id_score{$id}->{status} eq "FP"){ # Q.not.R
+		  $id_score{$id}->{Qscore} = $Qscore;
+		  $id_score{$id}->{Rscore} = "NA";
+		  $Qscores{$Qscore}{FP}++;
+		  &RSAT::message::Warning(join("\t",
+						 "id",$id,
+						 "Qscore",$id_score{$id}->{Qscore},
+						 "status",$id_score{$id}->{status})) if ($main::verbose >= 10); 
+	      }elsif($id_score{$id}->{status} eq "FN"){ # not.Q.R
+		  $id_score{$id}->{Qscore} = "NA";
+		  $id_score{$id}->{Rscore} = $Rscore;
+		  $Rscores{$Rscore}{FN}++;
+		  &RSAT::message::Warning(join("\t",
+						 "id",$id,
+						 "Rscore",$id_score{$id}->{Rscore},
+						 "status",$id_score{$id}->{status})) if ($main::verbose >= 10); 
+	      }
+#	  }else{
+#	      $id_score{$id}->{score} = $score;
+	  }
+      }
+      
+      &RSAT::message::Warning(join("\t","id",$id,"score",$id_score{$id}->{score},"status",$id_score{$id}->{status})) if ($main::verbose >= 10); 
+  }
+  if ($main::verbose >= 4){ 
+      if ($score_format eq "score"){
+	  foreach my $sc (sort {$a<=>$b} keys %scores){
+	      my $data=$sc;
+	      foreach my $st (keys %count_status){
+		  $data .= "\t".$supported_status{$st}."=".$scores{$sc}{$supported_status{$st}};
+	      }
+	      &RSAT::message::Info($data);
+	  }
+      }else{
+	  foreach my $st (keys %count_status){
+	      &RSAT::message::Info(join("\t",$count_status{$st},$st,$supported_status{$st}));
+	  }
+      }
+  }
+
+  return(\%id_score, \%scores);
+}
+
+################################################################
+#### Calculate and export results
+################################################################
+
+=pod
+
+=head1 OUTPUT FORMAT
+
+The output is a tab-delimited file.
+
+
+=item B<Scores>
+
+I<score> Column corresponding to a score threshold (if scores is specified in
+the input file), and following columns correspond to calculated statistical
+parameters (see below).
+
+=item if option B<--3D> selected :
+
+=over
+
+I<Qscore> Threshold on the Q scores (Query)
+
+I<Rscore> Threshold on the R scores (Reference)
+
+I<QnotR> Number of elements which are in the Query set but not in the Reference set.
+
+I<notQR> Number of elements which are in the Reference set but not in the Query set.
+
+=back
+
+=cut
+
+################################################################
+#### Calc stats by Qscore and Rscore
+################################################################
+sub getStatsByAllScores{
+    my ($id2score)=shift;
+    my ($ci)=shift;
+    my ($thr)=shift;
+    my ($return_params)=shift;
+    my $output=shift;
+
+    my %id2score=%{$id2score};
+    my %ci = %{$ci};
+    my %thr= %{$thr};
+
+    # Get Rscores (scores of reference set)
+    my @Rscores =();
+    if ($thr{R}){
+	@Rscores =($thr{R});
+    }else{
+	my $Rscores = &getScores($id2score,"Rscore",$ci{R});
+	@Rscores = sort {$a<=>$b} keys %{$Rscores};
+	&RSAT::message::Info("Rscore min: ", $Rscores[0]) if ($main::verbose >= 1);
+	&RSAT::message::Info("Rscore max: ", $Rscores[$#Rscores])  if ($main::verbose >= 1);
+    }
+
+    # Extract statistics for each given R threshold
+    my @datas =();
+    foreach my $Rscore (@Rscores){
+	&RSAT::message::Warning("Rscore threshold: ", $Rscore)  if ($main::verbose >= 1);
+	push @datas , &ExportScores($output,
+				    $return_params,
+				    $Rscore,
+				    "Q::R",
+				    &getStatsByScore($id2score,"Qscore",$ci{Q},$Rscore)
+				   );
+    }
+
+    return(@datas);
+#    # print results in output file
+#     if ($output){
+#       my $header = &getHeader($return_params,$score_format);
+#       &write_file($output,$header,@datas);
+#    }
+}
+
+################################################################
+#### Export Scores
+################################################################
+sub ExportScores{
+  my $output=shift;
+  my $return_params=shift;
+  my $Rscore=shift||"0";
+  my $score_format=shift;
+  my $Qscores=shift;
+  my $true_positives=shift;
+  my $false_positives=shift;
+  my $true_negatives=shift;
+  my $false_negatives=shift;
+  my $sensitivity=shift;
+  my $specificity=shift;
+  my $ppv=shift;
+  my $npv=shift;
+  my $fpr=shift;
+  my $accuracy_1=shift;
+  my $accuracy_2=shift;
+  my $accuracy_3=shift;
+  my $ACP=shift;
+  my $f1=shift;
+  my $Query_not_Ref=shift;
+  my $NnotQR=shift;
+
+  my %Qscores=%{$Qscores};
+  my %return_params=%{$return_params};
+  my %true_positives=%{$true_positives};
+  my %false_positives=%{$false_positives};
+  my %true_negatives=%{$true_negatives};
+  my %false_negatives=%{$false_negatives};
+  my %sensitivity=%{$sensitivity};
+  my %specificity=%{$specificity};
+  my %ppv=%{$ppv};
+  my %npv=%{$npv};
+  my %fpr=%{$fpr};
+  my %accuracy_1=%{$accuracy_1};
+  my %accuracy_2=%{$accuracy_2};
+  my %accuracy_3=%{$accuracy_3};
+  my %ACP=%{$ACP};
+  my %f1=%{$f1};
+  my %Query_not_Ref=%{$Query_not_Ref};
+  my @datas =();
+
+  if ($return_params{TP}||
+      $return_params{FP}||
+      $return_params{FN}||
+      $return_params{TN}||
+      $return_params{Sn}||
+      $return_params{Sp}||
+      $return_params{FPR}||
+      $return_params{PPV}||
+      $return_params{1-PPV}||
+      $return_params{NPV}||
+      $return_params{Acc}||
+      $return_params{F1}||
+      $return_params{ACP}||
+      $return_params{QnotR}||
+      $return_params{notQR}
+      ){
+      foreach my $Qscore (sort {$b<=>$a} keys %Qscores){
+	  my $data = "";
+	  $data .=$Rscore."\t" if ($score_format eq "Q::R");
+	  $data .=$Qscore;
+	  $data .="\t".$true_positives{$Qscore} if ($return_params{TP});
+	  $data .="\t".$false_positives{$Qscore} if ($return_params{FP});
+	  $data .="\t".$true_negatives{$Qscore} if ($return_params{TN});
+	  $data .="\t".$false_negatives{$Qscore} if ($return_params{FN});
+	  $data .="\t".$sensitivity{$Qscore} if ($return_params{Sn});
+	  $data .="\t".$specificity{$Qscore} if ($return_params{Sp});
+	  $data .="\t".$ppv{$Qscore} if ($return_params{PPV});
+	  if ($return_params{"1-PPV"}){
+	      $data .="\t";
+	      $data .= 1-$ppv{$Qscore};
+	  }
+	  $data .="\t".$npv{$Qscore} if ($return_params{NPV});
+	  $data .="\t".$fpr{$Qscore} if ($return_params{FPR});
+	  $data .="\t".$accuracy_3{$Qscore} if ($return_params{Acc});
+	  $data .="\t".$f1{$Qscore} if ($return_params{F1});
+	  $data .="\t".$ACP{$Qscore} if ($return_params{ACP});
+	  $data .="\t".$Query_not_Ref{$Qscore} if ($return_params{QnotR});
+	  $data .="\t".$NnotQR if ($return_params{notQR});
+	  #		$data .="\n" ;
+	  push @datas, $data;
+	  &RSAT::message::Warning($data) if ($main::verbose >=10);
+      } 
+  }
+
+  if ($return_params{AUC}){
+      my ($AUC_g_local,$AUC_g_total,$AUC_g_total_extended,$AUC_n)= &getAUC(\%sensitivity,\%fpr);
+      push @datas, ";\t".join("\t","AUCgl",sprintf("$number_format",$AUC_g_local),"(using geometric in local area)");
+      push @datas, ";\t".join("\t","AUCgt",sprintf("$number_format",$AUC_g_total),"(using geometric in total area)");
+      push @datas, ";\t".join("\t","AUCgtx",sprintf("$number_format",$AUC_g_total_extended),"(using geometric in total area + added points (0,0) and (1,1))");
+      push @datas, ";\t".join("\t","AUCn",sprintf("$number_format",$AUC_n),"(using Normal distribution assumption)");
+  }
+
+  # put datas in output file
+  # rewrite on the same file
+  #  if ($output){
+  #    &write_file($output,@datas);
+  #  }
+  return (@datas);
+}
+
+################################################################
+#### Get header of output file
+################################################################
+sub getHeader{
+  my ($return_params,$score_format)=@_;
+  my %return_params=%{$return_params};
+  my @score_names=($score_format);
+  if ($score_format eq "Q::R"){
+    @score_names=("Rscore","Qscore");
+  }
+  my $header = "#".join("\t",@score_names);
+  $header .="\tTPcum" if ($return_params{TP});
+  $header .="\tFPcum" if ($return_params{FP});
+  $header .="\tTNcum" if ($return_params{TN});
+  $header .="\tFNcum" if ($return_params{FN});
+  $header .="\tSn" if ($return_params{Sn});
+  $header .="\tSp" if ($return_params{Sp});
+  $header .="\tPPV" if ($return_params{PPV});
+  $header .="\t1-PPV" if ($return_params{PPV});
+  $header .="\tNPV" if ($return_params{NPV});
+  $header .="\tFPR" if ($return_params{FPR});
+  $header .="\tAcc" if ($return_params{Acc});
+  $header .="\tACP" if ($return_params{ACP});
+  $header .="\tF1" if ($return_params{F1});
+  $header .="\tQnotR" if ($return_params{QnotR});
+  $header .="\tnotQR" if ($return_params{notQR});
+  &RSAT::message::Warning($header) if ($main::verbose >= 5);
+  return($header);
+}
+
+################################################################
+#### group scores by class intervals
+################################################################
+sub getScores{
+    my ($id2score)=shift;
+    my $score_type=shift||"score";
+    my $ci=shift;
+    my %id2score=%{$id2score};
+    my %scores=();
+    foreach my $id (keys %id2score){
+	$scores{$id2score{$id}->{$score_type}}=1;
+    }
+    my %scores_class=();
+    if($ci){
+	foreach my $sc (sort {$b<=>$a} keys %scores){ # decreasing scores
+	    my ($class_min) = &ClassMin($sc, $ci);
+	    $scores_class{$class_min}=1;
+	}
+	%scores = %scores_class;
+    }
+    return(\%scores);
+}
+
+################################################################
+#### Calc stats by score
+################################################################
+sub getStatsByScore{
+    my ($id2score)=shift;
+    my ($score_type)=shift || "score";
+    my ($class_interval)=shift;
+    my ($Rscore_threshold)=shift;
+    my %scores = ();
+    my %id2score=%{$id2score};
+    my (@ids) = sort keys (%id2score);
+    my %tp=();
+    my %tn=();
+    my %fp=();
+    my %fn=();
+    my $Ntp=0;
+    my $Ntn=0;
+    my $Nfp=0;
+    my $Nfn=0;
+    my $NQnotR=0;
+    my $NnotQR=0;
+
+#    die if ($Rscore_threshold>500); # debug
+    # $Rscore_threshold = 50;
+    if ($Rscore_threshold){
+	&RSAT::message::Warning("Rscore threshold: ", $Rscore_threshold) if ($main::verbose >= 5);
+    }
+
+    ## Detect Total of True positives (TP), false positives (FP) and False negatives (FN) by score
+    my $i=0;
+    foreach my $id (@ids){
+	$i++;
+	my $status = $id2score{$id}->{status};
+	&RSAT::message::Warning(join("\t",
+				       $i,
+				       $id,
+				       $status)) if ($main::verbose >= 10);
+	
+	## If it is a False Negative
+	if ($status eq "FN"){ # not.Q.R
+
+	    unless ($Rscore_threshold){ # if no score thr (roc 2D)
+		my $score = $id2score{$id}->{$score_type};
+		&RSAT::message::Warning(join("\t",
+					     $i,
+					     $id,
+					     $status, 
+					     $score)) if ($main::verbose >= 10);
+		if ($score eq ""){
+		    $NnotQR++;
+		}else{	
+		    $fn{$score}++;
+		}
+		$Nfn++;		
+		next;
+	    }
+
+	    my $Rscore=$id2score{$id}->{Rscore};
+	    &RSAT::message::Warning(join("\t",
+					    $i,
+					    $id,
+					    $status, 
+					    $Rscore)) if ($main::verbose >= 10);
+	    if ($Rscore >= $Rscore_threshold){
+		$NnotQR++;
+		$Nfn++;
+	    }else{
+		&RSAT::message::Warning(join("\t",
+						$id,
+						"Not included in the reference set",)) if ($main::verbose >= 10);
+	    }	    
+	}else{
+	    ## Item has a score
+	    my $score = $id2score{$id}->{$score_type};
+#	    if (($score ne "NA")||($score ne "")){
+
+	    &RSAT::message::Warning(join("\t",
+					   $i,
+					   $id,
+					   $status, 
+					   $score)) if ($main::verbose >= 10);
+	    if ($status eq "TP"){ # Q.and.R
+		$scores{$score}=1 ; 
+		unless ($Rscore_threshold){ # if no score thr (roc 2D)
+		    if ($score ne "NA"){
+			$tp{$score}++;
+		    }
+		    $Ntp++;		
+		    next;
+		}
+
+		my $Rscore=$id2score{$id}->{Rscore};
+		if ($Rscore >= $Rscore_threshold){
+		    $tp{$score}++;
+		    $Ntp++;
+		}else{
+		    $fp{$score}++;
+		    $Nfp++;
+		}
+
+	    }elsif($status eq "FP"){ # Q.not.R
+		$QnotR{$score}++;
+		$fp{$score}++;
+		$Nfp++;
+#		$NQnotR++;
+		$scores{$score}=1 ; 
+# 	    }else{
+#  	       &OPTOOLS::util::Warning(5,join("\t","Warning ! Not well identified.",
+#  					      $i,
+#  					      $id,
+#  					      $status, $Rscore));
+#  	       die unless ($nodie);
+ 	   }	    
+	}
+	&RSAT::message::Warning(join("\t",
+					"Total TP",$Ntp,
+					"Total FP",$Nfp,
+					"Total FN",$Nfn,
+					#"Q.not.R",$NQnotR,
+					#"not.Q.R",$NnotQR
+				    )
+			       ) if ($main::verbose >= 5);        
+    }	
+
+    ## evaluation without any threshold
+    if ($main::verbose>=1){
+	if ($Rscore_threshold){
+	    &RSAT::message::Warning(join("\t","R>=$Rscore_threshold",$Ntp,"(Total TP)"));
+	    &RSAT::message::Warning(join("\t","R<$Rscore_threshold",$Nfp,"(Total FP)"));
+	    &RSAT::message::Warning(join("\t","not.Q.R",$NnotQR,"(Total FN)"));
+	}
+	&confusionTable($Ntp,$Ntn,$Nfp,$Nfn);  
+#      &stats($Ntp,$Ntn,$Nfp,$Nfn);
+    }
+
+ #   &RSAT::message::Warning(join("\t","Group data of scores : ",sort {$b<=>$a} keys %scores));
+    # check
+ #   my $tp_cum=0;
+#    my $fn_cum=0;
+#    my $fp_cum=0;
+#    foreach my $sc (sort {$b<=>$a} keys %scores){
+#      $tp_cum+=$tp{$sc};
+#      $fn_cum+=$fn{$sc};
+#      $fp_cum+=$fp{$sc};
+#      &RSAT::message::Warning(join(" ","score",$sc,
+#				   "TP",$tp{$sc},$tp_cum,#$Ntp,
+#				   "FP",$fp{$sc},$fp_cum,#$Nfp,
+#				   "FN",$Nfn,$fn_cum
+#					#"Q.not.R",$NQnotR,
+#					#"not.Q.R",$NnotQR
+#				  ));
+
+#    }
+#    die;
+
+    ################################################################
+    #### group scores by class intervals
+    if  ($class_interval){
+	&RSAT::message::Warning("Grouping $score_type by class interval of $class_interval");
+	my %tp_class=();
+	my %tn_class=();
+	my %fp_class=();
+	my %fn_class=();
+	my %QnotR_class=();
+	my %scores_class=();
+	foreach my $sc (sort {$b<=>$a} keys %scores){ # decreasing scores
+	    &RSAT::message::Warning("Group data of scores : ",$sc) if ($main::verbose>=10);
+#	    my ($class_min, $class_max, $class_mid) = &ClassRange($sc, $class_interval);
+	    my ($class_min) = &ClassMin($sc, $class_interval);
+	    $tp_class{$class_min}+=$tp{$sc};
+	    $tn_class{$class_min}+=$tn{$sc};
+	    $fp_class{$class_min}+=$fp{$sc};
+	    $fn_class{$class_min}+=$fn{$sc};
+	    $QnotR_class{$class_min}+=$QnotR{$sc};
+	    $scores_class{$class_min}=1;
+	}
+	# Fill gaps in classes
+ 	my @class_scores = sort {$a<=>$b} keys %scores_class;
+#	&OPTOOLS::util::Warning(0,join("\t",@class_scores));
+	my $cl_min = $class_scores[0];
+	my $cl_max = $class_scores[$#class_scores];
+#	&RSAT::message::Warning(join("\t","class min",$cl_min,"class max",$cl_max)) if ($main::verbose >= 0) ;
+	my $cl=$cl_max;
+	my $prev_cl = $cl_max;
+	for ($cl = $cl_max ; $cl >= $cl_min ; $cl = $cl-$class_interval){
+#	    &RSAT::message::Warning(join("\t","class",$cl)) if ($main::verbose >= 0);
+	    unless ($scores_class{$cl}){
+		$tp_class{$cl}=0;
+		$tn_class{$cl}=0;
+		$fp_class{$cl}=0;
+		$fn_class{$cl}=0;
+		$QnotR_class{$cl}=0;
+		$scores_class{$cl}=1;		
+	    }
+	    $prev_cl = $cl;
+	}
+	# update the results
+	%tp = %tp_class;
+	%fp = %fp_class;
+	%tn = %tn_class;
+	%fn = %fn_class;
+	%QnotR = %QnotR_class;
+	%scores = %scores_class;
+    }
+  #  # check
+#    my $tp_cum=0;
+#    my $fn_cum=0;
+#    my $fp_cum=0;
+#    foreach my $sc (sort {$b<=>$a} keys %scores){
+#      $tp_cum+=$tp{$sc};
+#      $fn_cum+=$fn{$sc};
+#      $fp_cum+=$fp{$sc};
+#      &RSAT::message::Warning(join(" ","score",$sc,
+#				   "TP",$tp{$sc},$tp_cum,#$Ntp,
+#				   "FP",$fp{$sc},$fp_cum,#$Nfp,
+#				   "FN",$Nfn,$fn_cum
+#					#"Q.not.R",$NQnotR,
+#					#"not.Q.R",$NnotQR
+#				  ));
+
+#    }
+#    die;
+    ################################################################
+    #### For each score , calculate the TP, TN, FP and FN
+    #### calculate cumulative functions
+    &RSAT::message::Warning("Calculating Statistical parameters :",join("\n",keys %return_param)) if ($main::verbose >= 1);
+    
+    my $tp_cum=0;
+    my $tn_cum=0;
+    my $fp_cum=0;
+    my $QnotR_cum=0;
+    my $fn_cum=0;
+    my %true_positives=();
+    my %false_positives=();
+    my %true_negatives=();
+    my %false_positives=();
+    my %Query_not_Ref=();
+    my %accuracy_1=();
+    my %accuracy_2=();
+    my %accuracy_3=();
+    my %f1=();
+    my %ACP=();
+
+    #### total references and total query
+    my $total_ref = 0;
+    my $total_query = 0;
+    unless ($Rscore_threshold){
+      $total_ref = $Ntp + $Nfn;
+    }
+
+    foreach my $score (sort {$b<=>$a} keys %scores){ # decreasing scores	
+
+	#### true positives
+	$tp_cum += $tp{$score};
+	$true_positives{$score} = $tp_cum;
+	#### false negatives
+	$fn_cum += $fn{$score};
+	$false_negatives{$score} = $Nfn + $Ntp - $tp_cum; #fn_cum;
+	#### true negatives
+	$tn_cum += $tn{$score};
+	$true_negatives{$score} = $tn_cum;
+	#### QnotR
+	$QnotR_cum += $QnotR{$score};
+	$Query_not_Ref{$score} = $QnotR_cum;
+	#### false positives
+	$fp_cum += $fp{$score};
+	$false_positives{$score} = $fp_cum ;#+ $Query_not_Ref{$score} ;
+
+	#### total references and total query
+	if ($Rscore_threshold){
+	  $total_ref = $true_positives{$score} + $false_negatives{$score};
+	}
+	$total_query = $true_positives{$score} + $false_positives{$score};
+	
+	&RSAT::message::Warning(join("\t",
+				       $score_type,$score	,
+				       "TP",$true_positives{$score},
+				       "FP",$false_positives{$score},
+				       "TN",$true_negatives{$score},
+				       "FN",$false_negatives{$score},
+	#			       "QnotR",$Query_not_Ref{$score},
+	#			       "notQR",$NnotQR,
+				       )) if ($main::verbose >= 3);
+	
+	################################################################
+	#### For each score , calculate the Sn, Sp, PPV and NPV
+	
+	#### Calculate Sensitivity 
+	#### (Sn = TP / (TP+FN))
+	$sensitivity{$score} = "NA";
+	if ($total_ref!=0){
+	    $sensitivity{$score} = ($true_positives{$score}/$total_ref);
+	}
+	
+	#### Calculate Specificity 
+	#### (Sp = TN / (TN+FP))
+	$specificity{$score} = "NA";
+	if ($true_negatives{$score}+$false_positives{$score}!=0){
+	    $specificity{$score} = (($true_negatives{$score})/
+						   ($true_negatives{$score}+$false_positives{$score}));
+	}
+	
+	#### Calculate Positive Predictive Value
+	#### (PPV = TP /(TP+FP))
+	$ppv{$score}="NA";
+	if ($total_query!=0){
+	    $ppv{$score} = (($true_positives{$score})/
+					   ($total_query));
+	}
+	
+	#### Calculate Negative Predictive Value
+	#### (NPV = TN /(TN+FN))
+	$npv{$score} = "NA";
+	if ($true_negatives{$score} + $false_negatives{$score}!=0){
+	    $npv{$score} = (($true_negatives{$score})/
+					   ($true_negatives{$score} + $false_negatives{$score}));
+	}
+	
+	#### Calculate the False Positive Rate (FPR)
+	#### (FPR = FP /(TN+FP))
+	$fpr{$score}="NA";
+	if ($total_query!=0){
+	    $fpr{$score} = (($false_positives{$score})/
+					   ($Nfp)); # ?
+#					   ($total_ref)); # ?
+	}
+	
+	&RSAT::message::Warning(join("\t",
+				       $score_type,$score,
+				       "Sn",$sensitivity{$score},
+				       "Sp",$specificity{$score},
+				       "PPV",$ppv{$score},
+				       "FPR",$fpr{$score},
+				       "NPV",$npv{$score},
+				       )) if ($main::verbose >= 3);
+
+	################################################################
+	#### For each score , calculate the accuracies and ACP
+	$accuracy_1{$score}="NA";
+	$accuracy_2{$score}="NA";
+	$accuracy_3{$score}="NA";
+	$f1{$score}="NA";
+	$ACP{$score}="NA";
+	
+	if ($sensitivity{$score} ne "NA"){
+	    if ($specificity{$score} ne "NA"){
+		#### Calculate Accuracy (average of sensitivity and specificity)
+	      $accuracy_1{$score}=  sprintf "$number_format",(sqrt($sensitivity{$score}*$specificity{$score}));
+	  }
+	    if ($ppv{$score} ne "NA"){
+		#### Calculate Accuracy (average of PPV and Sn)
+		$accuracy_3{$score}= sprintf "$number_format",(sqrt($ppv{$score}*$sensitivity{$score}));
+		# calculate F1 measure (Harmonique mean)
+		$f1{$score}=sprintf "$number_format", ((2*$ppv{$score}*$sensitivity{$score})/($ppv{$score}+$sensitivity{$score}));
+	    }
+	}
+	if (($ppv{$score} ne "NA")&&($npv{$score} ne "NA")){
+	    
+	    #### Calculate Accuracy (average of PPV and NPV)
+	    $accuracy_2{$score}= sprintf "$number_format",(sqrt($ppv{$score}*$npv{$score}));
+	    
+	    if (($sensitivity{$score} ne "NA")&&($specificity{$score} ne "NA")){
+	      #### The ACP (Average Conditional Probability) can be used as a measure
+		#### of the global prediction accuracy
+		$ACP{$score} =  sprintf "$number_format",(($sensitivity{$score}+$specificity{$score}+$ppv{$score}+$npv{$score})/4);
+	    }
+	}
+	
+	################################################################	
+	#### Round values
+	$sensitivity{$score} = sprintf "$number_format",$sensitivity{$score} if ($sensitivity{$score} ne "NA");
+	$specificity{$score} = sprintf "$number_format",$specificity{$score} if ($specificity{$score} ne "NA");
+	$fpr{$score} = sprintf "$number_format",$fpr{$score} if ($fpr{$score} ne "NA");
+	$ppv{$score} = sprintf "$number_format",$ppv{$score} if ($ppv{$score} ne "NA");
+	$npv{$score} = sprintf "$number_format",$npv{$score} if ($npv{$score} ne "NA");
+
+	################################################################
+	#### OPTIMAL SCORES
+	
+	#### optimal score with accuracy 1
+	if ($accuracy_1{$score} > $max_accuracy_1) {
+	    $max_accuracy_1 = $accuracy_1{$score};
+	    $optimal_score_1 = $score;
+	}
+	#### optimal score with accuracy 2
+	if ($accuracy_2{$score} > $max_accuracy_2) {
+	    $max_accuracy_2 = $accuracy_2{$score};
+	    $optimal_score_2 = $score;
+	}
+	#### optimal score with accuracy 3
+	if ($accuracy_3{$score} > $max_accuracy_3) {
+	    $max_accuracy_3 = $accuracy_3{$score};
+	    $optimal_score_3 = $score;
+	}
+	#### optimal score with accuracy 3
+	if ($accuracy_3{$score} > $max_accuracy_3) {
+	    $max_accuracy_3 = $accuracy_3{$score};
+	    $optimal_score_3 = $score;
+	}
+	#### optimal score with accuracy 3
+	if ($ACP{$score} > $max_ACP) {
+	    $max_ACP = $ACP{$score};
+	    $optimal_score_4 = $score;
+	}
+    }
+        
+    return(\%scores,
+	   \%true_positives,
+	   \%false_positives,
+	   \%true_negatives,
+	   \%false_negatives,
+	   \%sensitivity,
+	   \%specificity,
+	   \%ppv,
+	   \%npv,
+	   \%fpr,
+	   \%accuracy_1,
+	   \%accuracy_2,
+	   \%accuracy_3,
+	   \%ACP,
+	   \%f1,
+	   \%Query_not_Ref,
+	   $NnotQR
+	 );
+}
+
+################################################################
+#### Calc stats by score
+################################################################
+sub getStatsByScore_bis{
+    my ($scores)=shift;
+    my ($score_type)=shift || "score";
+    my ($class_interval)=shift;
+    my ($Rscore_threshold)=shift;
+    my %scores = %{$scores};
+    my %tp=();
+    my %tn=();
+    my %fp=();
+    my %fn=();
+    my $Ntp=0;
+    my $Ntn=0;
+    my $Nfp=0;
+    my $Nfn=0;
+    my $NQnotR=0;
+    my $NnotQR=0;
+
+    if ($Rscore_threshold){
+	&RSAT::message::Warning("Rscore threshold: ", $Rscore_threshold) if ($main::verbose >= 5);
+    }
+
+    ################################################################
+    #### group scores by class intervals
+    if  ($class_interval){
+	&RSAT::message::Warning("Grouping ",$score_type," by class interval of ",$class_interval)  if ($main::verbose >= 0);        ;
+	my %tp_class=();
+	my %tn_class=();
+	my %fp_class=();
+	my %fn_class=();
+	my %QnotR_class=();
+	my %scores_class=();
+	foreach my $sc (sort {$b<=>$a} keys %scores){ # decreasing scores
+#	    &OPTOOLS::util::Warning(1, "Group data of scores : ",$sc);
+	    my ($class_min, $class_max, $class_mid) = &ClassRange($sc, $class_interval);
+	    $tp_class{$class_min}+=$tp{$sc};
+	    $tn_class{$class_min}+=$tn{$sc};
+	    $fp_class{$class_min}+=$fp{$sc};
+	    $fn_class{$class_min}+=$fn{$sc};
+	    $QnotR_class{$class_min}+=$QnotR{$sc};
+	    $scores_class{$class_min}=1;
+	}
+	# Fill gaps in classes
+ 	my @class_scores = sort {$a<=>$b} keys %scores_class;
+#	&OPTOOLS::util::Warning(0,join("\t",@class_scores));
+	my $cl_min = $class_scores[0];
+	my $cl_max = $class_scores[$#class_scores];
+	&RSAT::message::Warning(join("\t","class min",$cl_min,"class max",$cl_max)) if ($main::verbose >= 0) ;
+	my $cl=$cl_max;
+	my $prev_cl = $cl_max;
+	for ($cl = $cl_max ; $cl >= $cl_min ; $cl = $cl-$class_interval){
+	    &RSAT::message::Warning(join("\t","class",$cl)) if ($main::verbose >= 0);
+	    unless ($scores_class{$cl}){
+		$tp_class{$cl}=$tp_class{$prev_cl};
+		$tn_class{$cl}=$tn_class{$prev_cl};
+		$fp_class{$cl}=$fp_class{$prev_cl};
+		$fn_class{$cl}=$fn_class{$prev_cl};
+		$QnotR_class{$cl}=$QnotR_class{$prev_cl};
+		$scores_class{$cl}=1;		
+	    }
+	    $prev_cl = $cl;
+	}
+	# update the results
+	%tp = %tp_class;
+	%fp = %fp_class;
+	%tn = %tn_class;
+	%fn = %fn_class;
+	%QnotR = %QnotR_class;
+	%scores = %scores_class;
+    }
+    
+    ################################################################
+    #### For each score , calculate the TP, TN, FP and FN
+    #### calculate cumulative functions
+    &RSAT::message::Warning("Calculating Statistical parameters :",join("\n",keys %desc_param)) if ($main::verbose >= 1);
+    
+    my $tp_cum=0;
+    my $tn_cum=0;
+    my $fp_cum=0;
+    my $QnotR_cum=0;
+    my $fn_cum=0;
+    my %true_positives=();
+    my %false_positives=();
+    my %true_negatives=();
+    my %false_positives=();
+    my %Query_not_Ref=();
+
+    foreach my $score (sort {$b<=>$a} keys %scores){ # decreasing scores
+
+	#### true positives
+	$tp_cum += $tp{$score};
+	$true_positives{$score} = $tp_cum;
+	#### false negatives
+	$fn_cum += $fn{$score};
+	$false_negatives{$score} = $Nfn + $Ntp - $tp_cum; #fn_cum;
+	#### true negatives
+	$tn_cum += $tn{$score};
+	$true_negatives{$score} = $tn_cum;
+	#### QnotR
+	$QnotR_cum += $QnotR{$score};
+	$Query_not_Ref{$score} = $QnotR_cum;
+	#### false positives
+	$fp_cum += $fp{$score};
+	$false_positives{$score} = $fp_cum + $Query_not_Ref{$score} ;
+
+	#### total references and total query
+	my $total_ref = $true_positives{$score} + $false_negatives{$score};
+	my $total_query = $true_positives{$score} + $false_positives{$score};
+      
+	&RSAT::message::Warning(join("\t",
+				       $score_type,$score	,
+				       "TP",$true_positives{$score},
+				       "FP",$false_positives{$score},
+				       "TN",$true_negatives{$score},
+				       "FN",$false_negatives{$score},
+				       "QnotR",$Query_not_Ref{$score},
+				       "notQR",$NnotQR,
+				       )) if ($main::verbose >= 1);
+	
+	################################################################
+	#### For each score , calculate the Sn, Sp, PPV and NPV
+	
+	#### Calculate Sensitivity 
+	#### (Sn = TP / (TP+FN))
+	$sensitivity{$score} = "NA";
+	if ($total_ref!=0){
+	    $sensitivity{$score} = sprintf "$number_format",($true_positives{$score}/$total_ref);
+	}
+	
+	#### Calculate Specificity 
+	#### (Sp = TN / (TN+FP))
+	$specificity{$score} = "NA";
+	if ($true_negatives{$score}+$false_positives{$score}!=0){
+	    $specificity{$score} = sprintf "$number_format",(($true_negatives{$score})/
+						   ($true_negatives{$score}+$false_positives{$score}));
+	}
+	
+	#### Calculate Positive Predictive Value
+	#### (PPV = TP /(TP+FP))
+	$ppv{$score}="NA";
+	if ($total_query!=0){
+	    $ppv{$score} = sprintf "$number_format",(($true_positives{$score})/
+					   ($total_query));
+	}
+	
+	#### Calculate Negative Predictive Value
+	#### (NPV = TN /(TN+FN))
+	$npv{$score} = "NA";
+	if ($true_negatives{$score} + $false_negatives{$score}!=0){
+	    $npv{$score} = sprintf "$number_format",(($true_negatives{$score})/
+					   ($true_negatives{$score} + $false_negatives{$score}));
+	}
+	
+	#### Calculate the False Positive Rate (FPR)
+	#### (FPR = FP /(TN+FP))
+	$fpr{$score}="NA";
+	if ($total_query!=0){
+	    $fpr{$score} = sprintf "$number_format",(($false_positives{$score})/
+					   ($total_query)); # ?
+	}
+	
+	&RSAT::message::Warning(join("\t",
+				       $score_type,$score,
+				       "Sn",$sensitivity{$score},
+				       "Sp",$specificity{$score},
+				       "PPV",$ppv{$score},
+				       "FPR",$fpr{$score},
+				       "NPV",$npv{$score},
+				       )) if ($main::verbose >= 5);
+	
+	################################################################
+	#### For each score , calculate the accuracies and ACP
+	$accuracy_1{$score}="NA";
+	$accuracy_2{$score}="NA";
+	$accuracy_3{$score}="NA";
+	$ACP{$score}="NA";
+	
+	if ($sensitivity{$score} ne "NA"){
+	    if ($specificity{$score} ne "NA"){
+		#### Calculate Accuracy (average of sensitivity and specificity)
+	      $accuracy_1{$score}=  sprintf "$number_format",(sqrt($sensitivity{$score}*$specificity{$score}));
+	  }
+	    if ($ppv{$score} ne "NA"){
+		#### Calculate Accuracy (average of PPV and Sn)
+		$accuracy_3{$score}= sprintf "$number_format",(sqrt($ppv{$score}*$sensitivity{$score}));
+	    }
+	}
+	if (($ppv{$score} ne "NA")&&($npv{$score} ne "NA")){
+	    
+	    #### Calculate Accuracy (average of PPV and NPV)
+	    $accuracy_2{$score}= sprintf "$number_format",(sqrt($ppv{$score}*$npv{$score}));
+	    
+	    if (($sensitivity{$score} ne "NA")&&($specificity{$score} ne "NA")){
+	      #### The ACP (Average Conditional Probability) can be used as a measure
+		#### of the global prediction accuracy
+		$ACP{$score} =  sprintf "$number_format",(($sensitivity{$score}+$specificity{$score}+$ppv{$score}+$npv{$score})/4);
+	    }
+	}
+	
+	################################################################
+	#### OPTIMAL SCORES
+	
+	#### optimal score with accuracy 1
+	if ($accuracy_1{$score} > $max_accuracy_1) {
+	    $max_accuracy_1 = $accuracy_1{$score};
+	    $optimal_score_1 = $score;
+	}
+	#### optimal score with accuracy 2
+	if ($accuracy_2{$score} > $max_accuracy_2) {
+	    $max_accuracy_2 = $accuracy_2{$score};
+	    $optimal_score_2 = $score;
+	}
+	#### optimal score with accuracy 3
+	if ($accuracy_3{$score} > $max_accuracy_3) {
+	    $max_accuracy_3 = $accuracy_3{$score};
+	    $optimal_score_3 = $score;
+	}
+	#### optimal score with accuracy 3
+	if ($accuracy_3{$score} > $max_accuracy_3) {
+	    $max_accuracy_3 = $accuracy_3{$score};
+	    $optimal_score_3 = $score;
+	}
+	#### optimal score with accuracy 3
+	if ($ACP{$score} > $max_ACP) {
+	    $max_ACP = $ACP{$score};
+	    $optimal_score_4 = $score;
+	}
+    }
+    
+    return(\%scores,
+	   \%true_positives,
+	   \%false_positives,
+	   \%true_negatives,
+	   \%false_negatives,
+	   \%sensitivity,
+	   \%specificity,
+	   \%ppv,
+	   \%npv,
+	   \%fpr,
+	   \%accuracy_1,
+	   \%accuracy_2,
+	   \%accuracy_3,
+	   \%ACP,
+	   \%Query_not_Ref,
+	   $NnotQR
+	 );
+}
+
+################################################################
+#### Calculate the  Area Under the Curve (AUC)
+sub getAUC {
+    my ($Sn,$FPR)=@_;
+    my %Sn=%{$Sn};
+    my %FPR=%{$FPR};
+    my @list_Sn=();
+    my @list_FPR=();
+    foreach my $sc (sort {$b<=>$a} keys %FPR){
+# 	&RSAT::message::Warning(join("\t",
+# 				     "Sn",$Sn{$sc},
+# 				     "FPR",$FPR{$sc}));
+	push @list_Sn,$Sn{$sc};
+	push @list_FPR,$FPR{$sc};
+    }
+    my ($AUC_gl,$AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@list_Sn,\@list_FPR);
+    my $AUC_n=&RSAT::auc::calc_normal(\@list_Sn,\@list_FPR);
+    &RSAT::message::Warning(join("\t","AUCgl",sprintf("$number_format",$AUC_gl),"(geometric in local area)"));
+    &RSAT::message::Warning(join("\t","AUCgt",sprintf("$number_format",$AUC_gt),"(geometric in total area)"));
+    &RSAT::message::Warning(join("\t","AUCgtx",sprintf("$number_format",$AUC_gtx),"(geometric in total area + added points (0,0) and (1,1))"));
+    &RSAT::message::Warning(join("\t","AUCn",sprintf("$number_format",$AUC_n)));
+    return ($AUC_gl,$AUC_gt,$AUC_gtx,$AUC_n);
+}
+
+################################################################
+#### Attribute type (TP,TN,FP,FN) to simple data (without score)
+sub getConfusionTable {
+  my ($id2score,$return_params)=@_;
+  my %id2score=%{$id2score};
+  my (@ids) = sort keys (%id2score);
+  my %tp=();
+  my %tn=();
+  my %fp=();
+  my %fn=();
+  foreach my $id (@ids){
+      my $score = $id2score{$id}->{status};
+      if ($score eq "TP"){
+	  $tp{$id}=1;
+	  &RSAT::message::Warning(join("\t",$id,"=> TP")) if ($main::verbose >= 8);
+      }
+      elsif ($score eq "TN"){
+	  $tn{$id}=1;
+	  &RSAT::message::Warning(join("\t",$id,"=> TN")) if ($main::verbose >= 8);
+      }elsif($score eq "FP"){
+	  $fp{$id}=1;
+	  &RSAT::message::Warning(join("\t",$id,"=> FP")) if ($main::verbose >= 8);
+      }elsif($score eq "FN"){
+	  $fn{$id}=1;
+	    &RSAT::message::Warning(join("\t",$id,"=> FN")) if ($main::verbose >= 8);
+      }else{
+	  &RSAT::message::Warning(join(" ","This status",$score," is not supported. Supported status :",join(",",keys %supported_status))) if ($main::verbose >= 0); 
+	  die;
+      }
+  }
+  my $Ntp=scalar (keys %tp);
+  my $Ntn=scalar (keys %tn);
+  my $Nfp=scalar (keys %fp);
+  my $Nfn=scalar (keys %fn);
+  my @data=();
+  push @data, &confusionTable($Ntp,$Ntn,$Nfp,$Nfn);
+  push @data, &stats($Ntp,$Ntn,$Nfp,$Nfn,$number_format,$return_params);
+#  return(\%tp,\%tn,\%fp,\%fn);
+  return(@data);
+}
+
+################################################################
+## Evaluation statistics
+
+=pod
+
+=head1 B<STATISTICAL PARAMETERS>
+
+=over
+    
+I<TP>    True Positive (cumulative)
+
+I<FP>    False Positive (cumulative)
+
+I<TN>    True Negative (cumulative)
+
+I<FN>    False Negative (cumulative)
+
+I<Sn>    Sensitivity 
+
+I<Sp>    Specificity
+
+I<PPV>   Positive Predictive Value
+
+I<NPV>   Negative Predictive Value
+
+I<FPR>   False Positive Rate
+
+I<Acc>   Accuracy (geometric average between Sn and PPV)
+
+I<F1>    F1 measure (harmonic average between Sn and PPV)
+
+I<ACP>   Average Conditional Probability
+
+I<AUC>   Area Under the Curve
+
+=back
+
+=cut
+    
+    
+
+my %param_fullname=(
+		    "TP"=>"True Positive",
+		    "TN"=>"True Negative",
+		    "FP"=>"False Positive",
+		    "FN"=>"False Negative",
+		    "Sn"=>"Sensitivity",
+		    "Sp"=>"Specificity",
+		    "PPV"=>"Positive Predictive Value",
+		    "NPV"=>"Negative Predictive Value",
+		    "FPR"=>"False Positive Rate",
+		    "accArit1"=>"Arithmetic Accuracy 1",
+		    "accGeom1"=>"Geometric Accuracy 1",
+		    "accArit2"=>"Arithmetic Accuracy 2",
+		    "accGeom2"=>"Geometric Accuracy 2",
+		    "accArit3"=>"Arithmetic Accuracy 3",
+		    "accGeom3"=>"Geometric Accuracy 3",
+		    "F1"=>"F1 measure",
+		    "AUC"=>"Area Under the Curve"
+		    );
+
+################################################################
+#### Make confusion table
+################################################################
+sub confusionTable{
+  my ($Ntp,$Ntn,$Nfp,$Nfn)=@_;
+  my $table="; Confusion Table\n";
+  $table .= join("\t","","Ref.T","Ref.N","Total")."\n";
+  $table .= join("\t","Pred.T",$Ntp,$Nfp,$Ntp+$Nfp)."\n";
+  $table .= join("\t","Pred.N",$Nfn,$Ntn,$Nfn+$Ntn)."\n";
+  $table .= join("\t","Total",$Nfn+$Ntp,$Ntn+$Nfp,$Nfn+$Ntn+$Ntp+$Nfp)."\n";
+  $table if ($main::verbose >=3);
+  return ($table);
+}
+
+################################################################
+#### Calculate statistics
+################################################################
+sub stats{
+  my ($Ntp,$Ntn,$Nfp,$Nfn,$number_format,$return_params)=@_;
+  my %return_params=%{$return_params};
+#   if (!$Ntn){
+#     &RSAT::message::Warning(join("\t","Warning ! No value for true negative (TN).")) if ($main::verbose >= 1);
+#   }
+  my $Sn ="NA";
+  my $PPV ="NA";
+  my $NPV="NA";
+  my $FPR="NA";
+  my $Sp="NA";
+  my $data="; Statistics\n";
+  $data .= $Ntp."\tTP\t".&desc_param("TP")."\n" if ($return_params{TP});
+  $data .= $Nfp."\tFP\t".&desc_param("FP")."\n" if ($return_params{FP});
+  $data .= $Nfn."\tFN\t".&desc_param("FN")."\n" if ($return_params{FN});
+  $data .= $Ntn."\tTN\t".&desc_param("TN")."\n" if ($return_params{TN});
+
+  $Sn=sprintf("$number_format",$Ntp/($Nfn+$Ntp))unless ($Nfn+$Ntp == 0);
+  $PPV=sprintf("$number_format",$Ntp/($Nfp+$Ntp))unless ($Nfp+$Ntp == 0);
+  $FPR=sprintf("$number_format",$Nfp/($Nfp+$Ntn))unless ($Nfp+$Ntp == 0);
+  $Sp=sprintf("$number_format",$Ntn/($Nfp+$Ntn)) unless ($Nfp+$Ntn == 0);
+  $NPV=sprintf("$number_format",$Ntn/($Nfn+$Ntn)) unless ($Nfn+$Ntn == 0);
+  $data .= $Sn."\tSn\t".&desc_param("Sn")."\n" if ($return_params{Sn});
+  $data .= $Sp."\tSp\t".&desc_param("Sp")."\n" if ($return_params{Sp});
+  $data .= $PPV."\tPPV\t".&desc_param("PPV")."\n" if ($return_params{PPV});
+  $data .= 1-$PPV."\t1-PPV\t".&desc_param("1-PPV")."\n" if ($return_params{"1-PPV"});
+  $data .= $NPV."\tNPV\t".&desc_param("NPV")."\n" if ($return_params{NPV});
+  $data .= $FPR."\tFPR\t".&desc_param("FPR")."\n" if ($return_params{FPR});
+
+  $Acc=sprintf("$number_format",sqrt($PPV*$Sn));
+  $ACP=sprintf "$number_format",(($Sn+$Sp+$PPV+$NPV)/4);
+  $F1=sprintf("$number_format",(2*($PPV*$Sn)/($PPV+$Sn)));
+  $data .= $Acc."\tAcc\t".&desc_param("Acc")."\n" if ($return_params{Acc});
+  $data .= $ACP."\tACP\t".&desc_param("ACP")."\n" if ($return_params{ACP});
+  $data .= $F1."\tF1\t".&desc_param("F1")."\n" if ($return_params{F1});
+
+  return($data);
+}
+
+################################################################
+#### Get description of parmaetesr
+sub desc_param{    
+    my $param = shift;
+    my %desc_param=(
+		    "TP"=>"True Positive",
+		    "TN"=>"True Negative",
+		    "FP"=>"False Positive",
+		    "FN"=>"False Negative",
+		    "TPcum"=>"True Positive cumulative",
+		    "TNcum"=>"True Negative cumulative",
+		    "FPcum"=>"False Positive cumulative",
+		    "FNcum"=>"False Negative cumulative",
+		    "Sn"=>"TP/TP+FN",
+		    "Sp"=>"TN/TN+FP",
+		    "PPV"=>"TP/TP+FP",
+		    "1-PPV"=>"FP/TP+FP",
+		    "NPV"=>"TN/TN+FN",
+		    "FPR"=>"FP/TN+FP",
+		    "accArit1"=>"(Sn+Sp)/2",
+		    "accGeom1"=>"sqrt(Sn*Sp)",
+		    "accArit2"=>"(PPV+NPV)/2",
+		    "accGeom2"=>"sqrt(PPV*NPV)",
+		    "accArit3"=>"(Sn+PPV)/2",
+		    "accGeom3"=>"sqrt(Sn*PPV)",
+		    "Acc"=>"sqrt(Sn*PPV)",
+		    "F1"=>"2(Sn*PPV)/(Sn+PPV)",
+		    "AUCg"=>"AUC geometric",
+		    "AUCgl"=>"AUC geometric in local area",
+		    "AUCgt"=>"AUC geometric in total area",
+		    "AUCn"=>"AUC (normal distribution)"
+		    );
+    my $desc = "NA";
+    $desc = $desc_param{$param} if ($desc_param{$param});
+    return($desc);
+}
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help 
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#####             SUBROUTINE DEFINITIONS                  ######
+################################################################
+
+################################################################
+#### Read a file
+################################################################
+sub readfile{
+  my ($file,$noskip)=@_;
+  &RSAT::message::Warning(join("\t","Reading file",$file)) if ($main::verbose >= 2);
+  # get the data from file
+  my @datas=();
+  open (FILE,"<$file")||die("Cannot open $file");
+  while (<FILE>){
+    chomp;
+    if ($noskip){ # don't skip comments
+      &RSAT::message::Warning($_) if ($main::verbose >= 10);
+      push (@datas, $_);
+    }else{
+	next if ($_ =~ /^;/ );    # skip comments
+	next if ($_ =~ /^#/ );    # skip comments
+	&RSAT::message::Warning($_) if ($main::verbose >= 10);
+	push (@datas, $_);
+    }
+  }
+  close (FILE);
+  &RSAT::message::Warning(join("\nread line: ",@datas)) if ($main::verbose > 4);
+  return(@datas);
+}
+
+################################################################
+#### WRITE A FILE
+################################################################
+sub write_file{
+  my ($output_file,@data) = @_;
+  &RSAT::message::Warning("Writing file : $output_file") if ($main::verbose >= 2);
+  # now open it to write
+  open (OUTPUT, ">$output_file");# || die ("Cannot open $output_file\n");
+  flock(OUTPUT, 2);         # and lock it
+  my $i = 0;
+  for ($i=0;$i<=$#data;$i++){
+    my $l = $i+1;
+    &RSAT::message::Warning("Writing line $l : $data[$i]\n") if ($main::verbose >= 5);
+    print OUTPUT "$data[$i]\n";  # write the unchanged line out to the file
+  }
+  flock(OUTPUT, 8);    # unlock the file
+  close(OUTPUT);       # and close it
+}
+
+################################################################
+#### Return the min, max and mid of a class
+################################################################
+sub ClassRange {
+    my ($d, $class_interval) = @_;
+    my $class_min = &ClassMin($d, $class_interval);
+#    die join "\t", $d, $class_interval, $class_min;
+    my $class_max = $class_min + $class_interval;
+    my $class_mid = $class_min + $class_interval/2;
+    return ($class_min, $class_max, $class_mid);
+}
+################################################################
+#### Calculate the minimum of a class
+################################################################
+
+sub ClassMin {
+    my ($d, $class_interval) = @_;
+    my $class_min;
+    if ($d >= 0) {
+	$class_min  = $class_interval*(int($d/$class_interval));
+    } else {
+	$class_min  = $class_interval*(int(($d+1)/$class_interval) - 1);	
+    }
+    return $class_min;
+}
+
+################################################################
+### Display options
+################################################################
+sub displayOptions{
+  my (%opt)=@_;
+  my $opts="";
+  foreach my $key (keys %opt) {
+    my ($k,$p) = split /=/,$key;# ) =~ s/=.*//g ;
+#    &OPTOOLS::util::Warning(6, "\t", $k, "\t",$p);
+    if ($p =~ /%/){
+	foreach my $k1 (keys %{$opt{$key}}){
+#	    &OPTOOLS::util::Warning(6, "\t", $k, "\t",$k1,"\t", ${$opt{$key}}{$k1}, "\n");
+	    $opts .= ";\t".join("\t", $k, $k1,${$opt{$key}}{$k1}). "\n";
+	}
+    }else{
+#	&OPTOOLS::util::Warning(6, "\t", $k, "\t", ${$opt{$key}}, "\n");
+	$opts .= ";\t".join("\t", $k, ${$opt{$key}}). "\n";
+    }
+  }
+  &RSAT::message::Warning(0, "Options\n$opts");
+  exit(0);
+}
+
+__END__
+
+
+=pod
+
+=over
+
+=head1 OPTIONS
+
+=over
+
+=item -h|--help
+
+Prints this help message
+
+=item -v|--verbosity [integer]
+
+Level of verbosity (information displayed on the screen to indicate
+the processing).
+
+=item --opt
+
+Print option values.
+
+=item -i|--input <file>
+
+Input file.
+
+=item -o|--output <file>
+
+Output file.
+
+=item --col [id|status|score]=<col_number> (default:id=0,status=5,score=0)
+
+Specify the column for the id, status or score.(e.g. --col id=3)
+
+=item --score_format [score|Q|R|Q::R] (default:score or Q::R with --3D)
+
+Specify the score format: "score" when using one score and "Q::R" with 3D.
+
+=item -t|--threshold [Q|R|score] 
+
+Put a threshold on one score.
+
+=item -s|--status <status>=[TP|FP|FN|TN|T|F|true|false]
+
+You can specify here other terms to assign to supported status.
+(e.g. --status R.and.Q=TP --status not.Q.R=FN --status Q.not.R=FP)
+
+=item --ci (score|Q|R)=<integer>
+
+Class interval for scores. 
+Use --ci Q <number> and --ci R <number> with --3D option.
+
+=item -r|--return [TN,FP,FN,Sn,PPV,FPR,Acc,...]
+
+Statistical parameters to return in the output file. See Previous section for
+description of these parameters. (By default: TN,FP,FN,Sn,PPV,FPR,Acc)
+
+=item --3D
+
+This option allows to consider the comparison of two data sets (Query and
+Reference) having both scores (or weight). For a given threshold on the
+Reference score (Rscore), all statistical parameters are returned considering
+only elements of the reference set with a Rscore >= threshold. Thus, for
+different thresholds on the Rscore (see --ci R), one can build several ROC
+curves. Graphically, this is like adding a Z axis for the Rscore threshold to the
+usual ROC representation (Sn=f(FPR)), leading to a "ROC 3D" representation.
+
+=item --nodie
+
+This option avoids the program to die when status is not supported. This is
+particularly useful with --3D if you want to calculate the statistics only on
+"Q.and.R" elements for different thresholds.
+
+=back
+
+=head1 SEE ALSO
+
+=item B<compare-graphs>
+
+=item B<XYgraph>
+
+Use XYgraph in order to draw the ROC curve (Options to be implemented in parenthesis):
+
+C<XYgraph -i ROC-table.tab -xcol 7 -ycol 5 -o ROC-curves.jpeg -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 "FPR" -yleg1 "TPR" -title "ROC" (-labelcol 1)>
+ 
+C<XY(Z)graph -i ROC-cube.tab -xcol 6 -ycol 5 (-zcol 9 -labelcol 1)>
+
+=back
+
+
+
+
+

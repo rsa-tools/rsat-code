@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding ='UTF-8' ?>
+<!--?xml-stylesheet type="text/xsl" href="RSATWS.xsl"?-->
+<definitions name="RSATWM"
+	     targetNamespace="urn:RSATWM"
+         xmlns:tns="urn:RSATWM"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns="http://schemas.xmlsoap.org/wsdl/"
+	     xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	     xmlns:html="http://www.w3.org/1999/xhtml"
+	     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+	<types>
+		<xsd:schema 
+			targetNamespace="urn:RSATWM"
+			xmlns="http://www.w3.org/2001/XMLSchema" 
+			xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xsd:complexType name="InferPathwayRequestType">
+				<xsd:sequence>
+					<xsd:element name="seeds" type="xsd:string" minOccurs="1" maxOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Seeds list tab delimited.
+								Accepted values: list of seeds gene names/synonyms, compound
+								names/synonyms or node names.
+	      					</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Organism name. the list of supported organisms
+								can be obtained by the command get_support_organisms.
+							</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="network" type="xsd:string" minOccurs="1" maxOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>network name. The list of supported networks
+								can be obtained by the command supported_networks_metab
+							</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="directed" type="xsd:int" minOccurs="0" maxOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>(true/false)If the network is
+								directed.(default:false)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="InferPathwayResponseType">
+				<xsd:sequence>
+					<xsd:element name="url" type="xsd:string" minOccurs="1" maxOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Location of the result file on the server.
+								This can be used as input for a further request.
+							</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="filename" type="xsd:string">
+						<xsd:annotation>
+							<xsd:documentation>File name of the attached file content
+							</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="file" type="xsd:base64Binary">
+						<xsd:annotation>
+							<xsd:documentation>File name of the attached file content
+							</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:element name="infer_pathway">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="request" type="tns:InferPathwayRequestType"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="infer_pathwayResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="response" type="tns:InferPathwayResponseType"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="supported_organisms_metab">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="request" type="xsd:string" minOccurs="0" maxOccurs="1"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="supported_organisms_metabResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="organismslist" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="supported_networks_metab">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="request" type="xsd:string" minOccurs="0" maxOccurs="1"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="supported_networks_metabResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="networks" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:schema>
+			
+	</types>
+
+	<message name="infer_pathwayRequestmsg">
+		<part name="parameters" element="tns:infer_pathway"></part>
+	</message>
+
+	<message name="infer_pathwayResponsemsg">
+		<part name="output" element="tns:infer_pathwayResponse"></part>
+	</message>
+
+	<message name="supported_organisms_metabRequestmsg">
+		<part name="parameters" element="tns:supported_organisms_metab"></part>
+	</message>
+	<message name="supported_organisms_metabResponsemsg">
+		<part name="organisms" element="tns:supported_organisms_metabResponse"></part>
+	</message>
+	<message name="supported_networks_metabRequestmsg">
+		<part name="parameters" element="tns:supported_networks_metab"></part>
+	</message>
+	<message name="supported_networks_metabResponsemsg">
+		<part name="networks" element="tns:supported_networks_metabResponse"></part>
+	</message>
+	
+	<message name="emptymsg"></message>
+
+	<portType name="RSATWMPortType">
+		<operation name="infer_pathway">
+			<documentation>infer a metabolic pathway connecting the input seeds after the seeds have been converted into node names</documentation>
+			<input name="infer_pathwayRequest" message="tns:infer_pathwayRequestmsg" />
+			<output name="infer_pathwayResponse" message="tns:infer_pathwayResponsemsg" />
+		</operation>
+		<operation name="supported_organisms_metab">
+			<documentation>get the list of supported organisms to use with infer_infer pathway</documentation>
+			<input name="supported_organisms_metabRequest" message="tns:supported_organisms_metabRequestmsg"></input>
+			<output name="supported_organisms_metabResponse" message="tns:supported_organisms_metabResponsemsg"></output>
+		</operation>
+		<operation name="supported_networks_metab">
+			<documentation>get the list of supported networks to use with infer_infer pathway</documentation>
+			<input name="supported_networks_metabRequest" message="tns:supported_networks_metabRequestmsg"></input>
+			<output name="supported_networks_metabResponse" message="tns:supported_networks_metabResponsemsg"></output>
+		</operation>
+	</portType>
+
+
+	<binding name="RSATWMBinding" type="tns:RSATWMPortType">
+	<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="supported_organisms_metab">
+			<soap:operation soapAction="" />
+			<input name="supported_organisms_metabRequest">
+				<soap:body use="literal" />
+			</input>
+			<output name="supported_organisms_metabResponse">
+				<soap:body use="literal" />
+			</output>
+		</operation>
+		<operation name="supported_networks_metab">
+			<soap:operation soapAction="" />
+			<input name="supported_networks_metabRequest">
+				<soap:body use="literal" />
+			</input>
+			<output name="supported_networks_metabResponse">
+				<soap:body use="literal" />
+			</output>
+		</operation>
+		<operation name="infer_pathway">
+		      <soap:operation soapAction=""/>
+		      <input name="infer_pathwayRequest">
+		        <soap:body use="literal" />
+		      </input>
+		      <output name="infer_pathwayResponse">
+		        <soap:body use="literal" />
+		      </output>
+		</operation>
+
+
+	</binding>
+	
+	<service name="RSATNetworkServices">
+		<documentation>Web services network pathway inference</documentation>
+		<port name="RSATWMPortType" binding="tns:RSATWMBinding">
+			<soap:address location="http://localhost/rsat/web_services/RSATWM.cgi" />
+		</port>
+	</service>
+
+
+
+</definitions>

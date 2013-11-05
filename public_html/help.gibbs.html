@@ -1,0 +1,116 @@
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: gibbs sampler manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - gibbs sampler manual</h2>
+</center>
+
+<H4>Name</H4>
+<UL>
+
+gibbs<P>
+
+<P>Program developed by <A HREF="mailto:neuwald@cshl.org (Andrew Neuwald)">Andrew Neuwald</A>.
+
+<P>Web interface 1998 by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</UL>
+
+<H4>Description</H4>
+<UL>
+The gibbs sampler detects motifs shared by a set of functionally related sequences. 
+</UL>
+
+<H4>Options</H4>
+<UL>
+
+
+<A NAME="sequence"></A>
+<B>Input sequence:</B><BR>
+The sequence that will be analyzed. Multiple sequences can be entered at once with most sequence formats (see below).<P>
+
+<A NAME="format">
+<B>Format:</B></A><BR>
+Input sequence format. Various standards are supported (click on the links for more details):
+<UL>
+<LI><A HREF="help.formats.html#raw"></A><B>raw</B>: the raw sequence without any identifier or comment.
+<LI><A HREF="help.formats.html#multi"></A><B>multi</B>: several raw sequences concatenated.
+<LI><A HREF="help.formats.html#ig"></A><B>IG</B>: IntelliGenetics format.
+<LI><A HREF="help.formats.html#fasta"></A><B>FastA</B>: the sequence format used by FastA, BLAST, Gibbs sampler and a lot of other bioinformatic programs.
+<LI><A HREF="help.formats.html#wconsensus"></A><B>Wconsensus</B>: the format defined by Jerry Hertz for his programs (patser, consensus, wconsensus).
+</UL>
+<P>
+
+<A NAME="seq_type"></A>
+<B>Sequence type</B><BR>
+The program can analyse either proteic or DNA sequences.
+<P>
+
+<A NAME="add_rc"> </A>
+<B> Add reverse complement strand</B><BR>
+For DNA sequences only, this option allows to detect motifs irrespective of the strand. The gibbs sampler does not include this option, we replace it by a trick consisting in analysing a modified sequence file including all the input sequences plus thir reverse complement.
+<P>
+
+<A NAME="length"></A>
+<B>Pattern length</B><BR>
+This option determines the expected length for the motif. It is anessential parameter of the algorithm. Some patterns can be found with a specific length and missed with a different one. 
+<P>
+
+<A NAME="expected"></A>
+<B>Expected number of sites</B><BR>
+
+<p>This is the second essential parameter for the gibbs
+sampler. Fiddling around with this parameter will allow you to detect
+different patterns.</p>
+
+</UL>
+
+<H4>Availability</H4>
+<UL>
+The gibbs sampler can be downloaded on Andrew Neuwald's ftp site 
+(<A HREF="ftp://ncbi.nlm.nih.gov/pub/neuwald/" TARGET=_blank>ftp://ncbi.nlm.nih.gov/pub/neuwald/</A>)
+gibbs is writen in C and runs on unix machines (SUN, SGI have been tested). The web interface is a perl-cgi script.
+</UL>
+
+<H4>Publications</H4>
+<ul>
+
+<li>
+Lawrence, C. E., Altschul, S. F., Boguski, M. S., Liu, J. S., Neuwald,
+A. F. & Wootton, J. C. (1993). Detecting subtle sequence signals: a
+
+Gibbs sampling strategy for multiple alignment. Science 262(5131),
+208-14.
+<a HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=8211139&dopt=Abstract" target=_blank> 
+PubMed ID 8211139
+</a>
+
+<li>
+Neuwald, A. F., Liu, J. S. & Lawrence, C. E. (1995). Gibbs motif
+sampling: detection of bacterial outer membrane protein
+repeats. Protein Sci 4(8), 1618-32.
+<a HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=8520488&dopt=Abstract" target=_blank> 
+PubMed ID 8520488
+</a>
+
+</ul>
+
+<HR SIZE=3></P>
+
+
+
+</BODY>
+</HTML>
+
+
+
+
+
+
+

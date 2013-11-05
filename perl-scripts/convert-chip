@@ -1,0 +1,262 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-chip,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-09-03 10:23:23 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+local $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+local $out_format = "tav";
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+($in) = &OpenInputFile($infile{input});
+&ReadStanfordFile($in);
+
+close $in if ($infile{input});
+
+################################################################
+#### print verbose
+&Verbose if ($verbose);
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-chip
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Interconversions between microarray data files. 
+
+CATEGORY
+	util
+
+USAGE
+        convert-chip [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-from in_format
+	        input format.
+	-to out_format
+		output format
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+convert-chip options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-from	input format
+-to	output format
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### output format
+	} elsif ($ARGV[$a] eq "-to") {
+	    $out_format = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; convert-chip ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+################################################################
+#
+# Read Stanford file, according to the standard described in
+# http://genome-www.stanford.edu/cellcycle/data/rawdata/desc.html
+#
+sub ReadStanfordFile {
+    my ($in) = @_;
+
+    #### column description is in the header
+    my $header = lc(<$in>);
+
+    my @columns = split "\t", $header;
+    my %col = ();
+    for my $c (0..$#columns) {
+	$col{$columns[$c]} = $c;
+    }
+
+    if ($verbose >= 1) {
+	print $out "# Input column contents\n";
+	print $out  join ("\t", "#", "index", "content", "column"), "\n";
+	foreach my $c (0..$#columns) {
+	    print $out join ("\t", "#", $c, $columns[$c], $c+1), "\n";
+	}
+    }
+
+
+
+    #### read data and print the result
+    while (<$in>) {
+	@fields = split "\t", $_;
+	if ($out_format eq "tav") {
+	    print $out join ("\t",
+			     $fields[$col{prow}],
+			     $fields[$col{pcol}],
+			     "",
+			     "",
+			     $fields[$col{spot}],
+			     $fields[$col{ch1i}],
+			     $fields[$col{ch2i}],
+			     ), "\n";
+	}
+    }   
+}
+
+
+__END__
+
+
+
+# Input column contents
+#       index   content column
+#       0       exp     1
+#       1       name    2
+#       2       type    3
+#       3       ch1i    4
+#       4       ch1b    5
+#       5       ch1d    6
+#       6       ch2i    7
+#       7       ch2b    8
+#       8       ch2d    9
+#       9       ch2in   10
+#       10      ch2bn   11
+#       11      ch2dn   12
+#       12      rat1    13
+#       13      rat2    14
+#       14      rat1n   15
+#       15      rat2n   16
+#       16      crt1    17
+#       17      crt2    18
+#       18      regr    19
+#       19      corr    20
+#       20      rflag   21
+#       21      plat    22
+#       22      prow    23
+#       23      pcol    24
+#       24      flag    25
+#       25      size    26
+#       26      spot    27
+#       27      left    28
+#       28      top     29
+#       29      right   30
+#       30      bot     31
+#       31      failed  32
+#       32
+        33

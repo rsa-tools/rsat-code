@@ -1,0 +1,137 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - Web Services - Taverna workflows</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</A> - 
+<a href="ws_workflows.html">Taverna workflows</a> (developped by Eric Vervisch)
+</h2>
+</center>
+<p/>
+The <a href="http://taverna.sourceforge.net/"> Taverna </a> workbench provides tools to build, edit and browse workflows. Its graphical interface facilitates an easy building and running of workflows over distributed computer resources. 
+<p/>
+We present below some workflows. They use RSAT and other resources exposed as Web Services. They can be interconnected into reusable  analysis workflows. 
+<p/>
+You can execute those workflows with your own data. Meanwhile data file examples are also available for each workflow.
+<p/><b>HOW TO ?</b> To execute these workflows in the Taverna Workbench, download the
+workflow (SCUFL XML format) on your machine and load it in Taverna with "File > Open workflow...". 
+Alternatively, copy and paste the URL of the workflow download link into
+Taverna with "File > Open workflow location...". Sample input data are
+provided for each workflow. To use a sample input, download  the
+file on your machine, then load this file in Taverna with "File > Run
+workflow >Load input".
+<h3> How to find the over-represented oligonucleotides in the upstream  sequences of  clustered genes?</h3>
+
+<table class="normal" border=0 >
+<tr>
+<td align="">
+<p/>
+<a href="web_services/taverna/Nature_protocol.png">
+<img src="web_services/taverna/Nature_protocol.png" width=100>
+</a>
+</td>
+<td valign="top">
+In this workflow, the following steps are performed:
+<p/>	     - first, upstream sequences of the genes are <a href="http://rsat.ulb.ac.be/rsat/help.retrieve-seq.html"> retrieved </a>  and <a href="http://rsat.ulb.ac.be/rsat/help.purge-sequence.html"> purged</a> for redundancy 
+<p/>	     - second, over-represented hexanucleotides are discovered with  <a href="http://rsat.ulb.ac.be/rsat/help.oligo-analysis.html"> oligo-analysis </a>   (motif discovery) 
+<p/>	- third, the discovered patterns are <a href="http://rsat.ulb.ac.be/rsat/help.dna-pattern.html"> matched </a>    back to the retrieved sequences (pattern matching)
+<p/>	- finally, a <a href="http://rsat.ulb.ac.be/rsat/help.feature-map.html"> feature map </a>     showing the occurrences of the matches is <a href="web_services/taverna/feature_map_example.png"> drawn </a>     .
+<p/> ---
+<p/><ul><li>
+<a href="web_services/taverna/Nature_protocol.xml"><b>Download Workflow File (SCUFL)</b></a></li> 
+<p/><li>
+<a href="web_services/taverna/nature_protocol_harbison_BAS_YPD_sig1_input"><b>Download Sample Input</b></a></li> 
+(This gene cluster comes from the <a href="http://www.nature.com/nature/journal/v431/n7004/abs/nature02800.html"> Harbison et al.</a> (2004) experiments. The others are also <a href="http://rsat.ulb.ac.be/rsat/data/published_data/nature_protocols/web_services/Harbison_2004/">available</a>.) 
+</ul>
+</td>
+
+</tr>
+
+
+<tr>
+<td>
+(click on the image to get the full size)
+</td>
+</tr>
+
+</table>
+<h3> How to compare the performance of different tools used to analyse upstream  sequences of gene sets?</h3>
+
+<table class="normal" border=0>
+<tr>
+<td>
+<a href="web_services/taverna/RSAT_retrieve_purge_oligo_dyad_motifSampler.png">
+<img src="web_services/taverna/RSAT_retrieve_purge_oligo_dyad_motifSampler.png" width=200>
+</a>
+</td>
+<td>
+In this workflow, we compare three different tools applied to upstream sequences of one gene set:
+<p/>	- <a href="http://rsat.ulb.ac.be/rsat/help.oligo-analysis.html"> oligo-analysis </a>    and <a href="http://rsat.ulb.ac.be/rsat/help.dyad-analysis.html"> dyad-analysis </a>    from RSAT
+<p/>	- and <a href="http://homes.esat.kuleuven.be/~thijs/Work/MotifSampler.html"> Motif Sampler </a> - a Gibbs sampling algorithm.
+<p/> ---
+<p/><ul><li>
+<a href="web_services/taverna/RSAT_retrieve_purge_oligo_dyad_motifSampler.xml"><b>Download Workflow File (SCUFL)</b></a> </li>
+
+<p/><li>
+<a href="web_services/taverna/RSAT_retrieve_purge_oligo_dyad_motifSampler_input"><b>Download Sample Input</b></a></li> 
+</ul>
+</td>
+
+</tr>
+
+
+<tr>
+<td>
+(click on the image to get the full size)
+</td>
+</tr>
+
+</table>
+
+<!-- this is a comment -->
+<h3> How to find the over-represented oligonucleotides in the yeast upstream sequences of genes involved in the amino acid metabolism pathways?</h3>
+
+<table class="normal" border=0>
+<tr>
+<td>
+<a href="web_services/taverna/Nature_protocol_Kegg.png">
+<img src="web_services/taverna/Nature_protocol_Kegg.png" width=150>
+</a>
+</td>
+<td valign="top">
+In this workflow, we download some gene lists from the <a href="http://www.genome.jp/kegg/pathway.html"> KEGG PATHWAY </a> database and  the following steps are performed:
+<p/>	     - first, upstream sequences of the genes are <a href="http://rsat.ulb.ac.be/rsat/help.retrieve-seq.html"> retrieved </a>  and <a href="http://rsat.ulb.ac.be/rsat/help.purge-sequence.html"> purged</a> for redundancy 
+<p/>	     - second, over-represented hexanucleotides are discovered with  <a href="http://rsat.ulb.ac.be/rsat/help.oligo-analysis.html"> oligo-analysis </a>   (motif discovery) 
+<p/>	- third, the discovered patterns are <a href="http://rsat.ulb.ac.be/rsat/help.dna-pattern.html"> matched </a>    back to the retrieved sequences (pattern matching)
+<p/>	- finally,<a href="http://rsat.ulb.ac.be/rsat/help.feature-map.html"> feature maps </a>     showing the occurrences of the matches are <a href="web_services/taverna/feature_map_example_lys.png"> drawn </a>     .
+<p/> ---
+<p/><ul><li>
+<a href="web_services/taverna/Nature_protocol_Kegg.xml"><b>Download Workflow File (SCUFL)</b></a> </li>
+<p/><li>
+<a href="web_services/taverna/Nature_protocol_Kegg_input"><b>Download Sample Input</b></a></li></ul> 
+
+</td>
+</tr>
+
+
+<tr>
+<td>
+(click on the image to get the full size)
+</td>
+</tr>
+
+</table>
+
+<!-- <h3> Next workflows ....... coming soon... </h3> -->
+
+<HR WIDTH="100%">
+
+</blockquote>
+</BODY>
+</HTML>

@@ -1,0 +1,12 @@
+output=both
+sequence=/home/rsat/rsa-tools/ws_clients/sequences/dyads_test_sequences.fasta
+format = fasta
+length = 3
+spacing = '8-12'
+organism = Saccharomyces_cerevisiae
+background = upstream-noorf
+stats = 'occ,proba,rank'
+noov = 1
+str = 2
+sort = 1
+lth = occ_sig 0

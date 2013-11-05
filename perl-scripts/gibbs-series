@@ -1,0 +1,371 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	gibbs-series
+	
+DESCRIPTION
+        performs several runs of the gibbs sampler to detect motifs shared by
+        functionally related DNA sequences. 
+
+CATEGORY
+	util
+	sequences
+	patern discovery
+
+USAGE
+        gibbs-series -i inputfile -l length [-e expect] [-r repet]
+                     [-o outputfile] [-v]
+	
+OPTIONS
+	-v	verbose.
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the comand within a pipe.
+	-o outputfile
+	-l #    length
+        -e #    expect
+        -r #    repetitions
+        -frag	allow pattern fragmentation
+	-mat	return matrices 
+		(by default only the degenerate consensi are returned).
+	
+INPUT FORMAT
+        Input file must contain a series of DNA sequences in FASTA 
+	format.
+
+OUTPUT FORMAT
+        The output is synthetic, showing only the consensus sequence from 
+        each distinct matrix, and the number of runs in which this consensus
+        was observed.
+		
+EXAMPLES
+        gibbs-series -i PHO-family.fasta -o PHO-family.gibbs.l6.e15.r100
+                -l 6 -e 15 -r 100 -v 
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+gibbs-series options
+====================
+-v	verbose.
+-i inputfile
+-o outputfile
+-l #    matrix length
+-e #    expected number of matches
+-r #    repetitions
+-frag	allow pattern fragmentation
+-mat	return matrices 
+End_of_help
+  close HELP;
+  exit;
+}
+
+
+#### initialise parameters ####
+$gibbs_command = "$BIN/gibbs";
+$start_time = &RSAT::util::StartScript();
+$fragmentation = 0;
+$repetitions = 1;
+$print_matrices = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-l") {
+    $length = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-e") {
+    $expect = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-r") {
+    $repetitions = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-gaps") {
+    $gaps = 1;
+
+  } elsif ($ARGV[$a] =~ /^-frag/i) {
+    $fragmentation = 1;
+
+  } elsif ($ARGV[$a] =~ /-mat/i) {
+    $print_matrices = 1;
+
+  }
+}
+
+
+#### check argument values ####
+
+unless ($length > 1) {
+    print "\tYou should specify a pattern length > 1\n";
+    print "\ttype gibbs-series -h for help\n";
+    exit;
+}
+
+
+unless ($repetitions > 0) {
+    print "\tYou should specify a number of repetitions > 0\n";
+    print "\ttype gibbs-series -h for help\n";
+    exit;
+}
+
+
+### open input file ###
+if ($inputfile ne "") {
+  unless (open(INPUT, $inputfile)) {
+    print "\tcannot open input file\n";
+    print "\ttype gibbs-series -h for help\n";
+    exit;
+  }
+  $in = INPUT;
+} else {
+  $in = STDIN;
+}
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype template -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+
+#### verbose ####
+if ($verbose) {
+    print $out "; gibbs-series ";
+    &PrintArguments($out);
+    print $out "\n";
+    if ($inputfile ne "") {
+        print $out ";Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+        print $out ";Output file	$outputfile\n";
+    }
+    print $out ";length\t$length\n";
+    print $out ";expect\t$expect\n";
+    print $out ";repet\t$repetitions\n";
+    print $out ";nucleic acid alphabet\n";
+    if ($fragmentation) {
+        print $out ";Fragmentation ON\n";
+    } else {
+       print $out ";Fragmentation OFF\n";
+    }
+}
+
+###### execute the command #########
+
+$parameters = "$inputfile $length ";
+$parameters .= "$expect " if ($expect >0);
+$parameters .= "-d " unless ($fragmentation);
+$parameters .= "-n ";
+
+for $r (1..$repetitions) {
+    $print = 0;
+    $entropy_matrix[$r] = "";
+
+    @result =  `$gibbs_command $parameters -s$r`;
+    foreach $line (@result) {
+    #### extract the entropy matrix
+        if ($line =~ /failed: no sites/) {
+            $occurences{'failed'}++;
+        }
+        if ($line =~ /relative entropy/) {
+            $print++;
+        } elsif (($print == 2) && ($line =~ /site/)) {
+            $print = 0;
+        }
+        if ($print == 2) {
+            push(@entropy_matrices,$line);
+        }
+    }
+}
+
+### convert matrices to consensi
+%occurences = &MatrixToConsensus(@entropy_matrices);
+
+
+#### print result ####
+print $out @entropy_matrices if ($print_matices);
+#print $out "\n\n";
+
+foreach $key (sort {$occurences{$a} <= $occurences{$b}} keys %occurences) {
+  print $out "$key\t";
+  if ($key eq "failed") {
+    print $out $key, "\t";
+  } else {
+    print $out &ReverseComplement($key), "\t";
+  }
+  print $out "$occurences{$key}\n";
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+############ subroutine definition ############################
+
+sub ReverseComplement {
+  local($orig_seq) = $_[0];
+  $complement = reverse $orig_seq;
+  $complement =~ tr/a-z/A-Z/;
+  ### simple nucleotides
+  $complement =~ s/A/t/g;
+  $complement =~ s/T/a/g;
+  $complement =~ s/C/g/g;
+  $complement =~ s/G/c/g;
+  ### degenerate code
+  $complement =~ s/R/y/g;
+  $complement =~ s/Y/r/g;
+  $complement =~ s/M/k/g;
+  $complement =~ s/K/m/g;
+  $complement =~ s/B/v/g;
+  $complement =~ s/V/b/g;
+  $complement =~ s/H/d/g;
+  $complement =~ s/D/h/g;
+  #  $complement =~ s/S/s/g;
+  #  $complement =~ s/W/w/g;
+  #  $complement =~ s/N/n/g;
+  ###  brackets
+  $complement =~ s/\[/temp/g;
+  $complement =~ s/\]/\[/g;
+  $complement =~ s/temp/\]/g;
+  $complement =~ tr/a-z/A-Z/;
+  ### multiplier
+  while (($complement =~ /(\}\d+\{)/) 
+         || ($complement =~ /(\}\d+,\d+\{)/) ) {
+    $rev_mul = reverse $1;
+    $complement =~ s/$1/$rev_mul/g;
+  }
+  $complement =~ s/(\{\d+\})(\w)/$2$1/g;
+  $complement =~ s/(\{\d+,\d+\})(\w)/$2$1/g;
+  $complement =~ s/(\{\d+\})(\[\w+\])/$2$1/g;
+  $complement =~ s/(\{\d+,\d+\})(\[\w+\])/$2$1/g;
+   return $complement;
+}# ReverseComplement
+
+
+
+##### convert gibbs matr
+##### convert gibbs matrices into consensus #######
+sub MatrixToConsensus {
+    $degenerate{'-'} = '-';
+    $degenerate{'-A'} = 'A';
+    $degenerate{'-C'} = 'C';
+    $degenerate{'-G'} = 'G';
+    $degenerate{'-T'} = 'T';
+    $degenerate{'-AG'} = 'R';
+    $degenerate{'-CT'} = 'Y';
+    $degenerate{'-AT'} = 'W';
+    $degenerate{'-CG'} = 'S';
+    $degenerate{'-AC'} = 'M';
+    $degenerate{'-GT'} = 'K';
+    $degenerate{'-ACT'} = 'H';
+    $degenerate{'-CGT'} = 'B';
+    $degenerate{'-ACG'} = 'V';
+    $degenerate{'-AGT'} = 'D';
+    $degenerate{'-ACGT'} = 'N';
+    local(@matrices) = @_;
+    local($counter) = 0;
+
+
+
+    foreach $line (@matrices) {
+	if ($line  =~ /POS/) {
+	    if ($counter > 0) {
+                $consensus = "";
+		for $p (1..$#cons) {
+		    if ($cons[$p] eq "") {
+			$consensus .= "N";                         ;
+		    } else {
+			$consensus .= $degenerate{$cons[$p]};
+		    }
+		}
+		$rev_consensus = ReverseComplement($consensus);
+		if ($rev_consensus le $consensus) {
+		    $occurences{$rev_consensus}++;
+		} else {
+		    $occurences{$consensus}++;
+		}
+	    }
+	    $counter++;
+	    @cons = ();
+	} elsif ($line =~ /(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
+	    $nucl = "\-";
+	    $pos = $1;
+	    $occ{'A'} = $2;
+	    $occ{'C'} = $3;
+	    $occ{'G'} = $4;
+	    $occ{'T'} = $5;
+	    if ($occ{'A'} =~ /\d+/) {
+		$nucl .= "A";
+	    }
+	    if ($occ{'C'} =~ /\d+/) {
+		$nucl .= "C";
+	    }
+	    if ($occ{'G'} =~ /\d+/) {
+		$nucl .= "G";
+	    }
+	    if ($occ{'T'} =~ /\d+/) {
+		$nucl .= "T";
+	    }
+	    $cons[$pos] = $nucl;
+	}
+    }
+    if ($counter > 0) {
+        $consensus = "";
+	for $p (1..$#cons) {
+	    if ($cons[$p] eq "") {
+		$consensus .= "N";                         ;
+	    } else {
+		$consensus .= $degenerate{$cons[$p]};
+	    }
+	}
+	$rev_consensus = ReverseComplement($consensus);
+	if ($rev_consensus le $consensus) {
+	    $occurences{$rev_consensus}++;
+	} else {
+	    $occurences{$consensus}++;
+	}
+    }
+    return %occurences;
+}

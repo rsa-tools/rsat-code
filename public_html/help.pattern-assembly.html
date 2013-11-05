@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>pattern-assembly help</TITLE>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - Help about pattern-assembly</h2>
+</center>
+
+<h3>Author</h3>
+<ul>
+1997-98 by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+
+</ul>
+<h3>Description</h3>
+<ul>	
+		Assemble a set of oligonucleotides or dyads into clusters of overlapping 
+		patterns (the assembly).
+
+</ul>
+
+<h3>Options</h3>
+<ul>
+
+<h4>Patterns</h4>
+
+<P>
+Patterns can be either oligonucleotides (e.g. <tt>CACGTG</tt>,
+<tt>CACGTT</tt>) or dyads (e.g. <tt>CGGn{11}CCG</tt>).
+
+<P>
+Patterns can be entered either in the text area, or by specifying a
+file on your machine (upload). Each pattern must appear as the first
+word of a line.  Lines starting with a semicolon (;) are ignored.
+	
+
+<h4>Strands</h4>
+
+Strand sensitive or insensitive assembly.
+
+With the strand insensitive option, patterns can be used either in
+direct or reverse complement orientation for assembly. For each
+pattern, the orientation which offers the best match is chosen.
+
+<h4>Score column</h4>
+		
+Pattern assembly is a NP-hard problem, i.e. the time of calculation
+increases exponentially with the number of patterns. Beyond a certain
+number of patterns, it is impossible to envisage all possible
+assemblie in order to select the best ones. pattern-assembly
+implements a heuristic which is sensitive to the order of entry of the
+patterns. When a score column is specified, patterns are incorporated
+accordingly to their scores (higher scores are incorporated first.
+
+<h4>Maximum flanking residues</h4>
+
+The flanking segment is the portion of a fragment that extends outside
+of the assembly on which it is aligned.
+
+<h4>maximum substitutions</h4>
+
+maximum allowed substitutions for incorporating a pattern into a
+cluster.
+
+<h4>Maximum number of patterns</h4>
+
+Assembly takes a huge time when too many patterns are submitted. In
+any cases, when too many patterns are obtained fom a motif discovery
+program, it generally reflects a problem (redundant sequences, wrong
+selection of the threshold). The option can however be changed to any
+value, but the time increases quadratically.
+
+
+	
+</ul>
+
+<h3>Output format</h3>
+
+<ul>
+
+The program returns clusters of aligned oligonucleotides.  The
+information associated to each oligo in the input file is returned
+besides the same oligo in the output file.
+
+</ul>	
+
+<HR SIZE=3>
+
+</body>
+</html>

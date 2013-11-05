@@ -1,0 +1,754 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: footprint-discovery-quality,v 1.13 2013/09/29 04:56:22 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+footprint-discovery-quality
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+This program computes the distribution of significance score values returned by dyad-analysis in promoters of orthologous clusters or in random selections of genes. 
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+UTIL
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+footprint-discovery-quality -n nb_of_genegroups -o output [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+footprint-discovery
+get-orthologs
+dyad-analysis
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require "RSA.disco.lib";
+require RSAT::OrganismManager;
+use List::Util 'shuffle';
+
+
+                    
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+    %main::outputdir = ();
+    $main::out = STDOUT;
+    
+    $main::verbose = 0;
+
+    $main::taxon_list = "";
+    @taxa = ();
+    $main::organism = "";
+    $main::orthogroups_nb = 100;
+    $main::scripts = $ENV{RSAT}."/perl-scripts/";
+    %main::bgmodel = ();
+    
+    ## Options for the &doit() command;
+    local $dry = 0;	  ## Do not run the command, just echo them as warning
+    local $batch = 0;		## Run the processes on a PC cluster
+    local $die_on_error = 1;
+    local $job_prefix = "footpring_qual";
+    local $bacteria = 1;
+    
+    ## Option for the sleep commands
+    my $sleep_time = 20;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    $taxon_list =~ s/ /_/g;
+    if ($taxon_list eq "") {
+      &RSAT::error::FatalError("Please specify at least one taxon with the -taxon option");
+    } else {
+      @taxa = split /,/, $taxon_list;
+      foreach my $taxon (@taxa) {
+        &CheckTaxon($taxon);
+      }
+    }
+    
+    if ($organism eq "") {
+      &RSAT::error::FatalError("Please specify an organism with the -org option");
+    } else {
+      &RSAT::OrganismManager::CheckOrganism($organism);
+    }
+    
+    my $batch_arg = "";  
+    if ($batch) {
+      $batch_arg = " -batch ";
+    }
+
+
+    ################################################################
+    ## Create the output directories, files and prefixes
+    my $absolute_path = `pwd`;
+    chomp $absolute_path;
+    $absolute_path .= "/";
+    $outputdir{root} = $absolute_path.'footprint_quality/';
+    $outputdir{random_genes_dir} = $outputdir{root}."/random_gene_selections/$organism/";
+    $outputdir{dyad_scores} = $outputdir{root}."/dyad_scores/$organism/";
+    $outputdir{bgmodels} = $outputdir{root}."/bgmodels/";
+    $outfile{random_genes_selection} = $outputdir{random_genes_dir}."random_gene_selection.tab";
+    
+    system("mkdir -p $outputdir{root}");
+    system("mkdir -p $outputdir{random_genes_dir}");
+    system("mkdir -p $outputdir{dyad_scores}");
+    system("mkdir -p $outputdir{bgmodels}");
+    
+    
+
+    ################################################################
+    ## Data treatment
+    
+    ################################################################
+    ## REAL DATA 
+    
+    ## Get orthogroups_nb groups of orthologs
+    ## Use the program rdm_genes
+    ## Unfortunately, there is an error using this program. In bacteria mainly, all genes present in cds.tab are not present in the org_name_aa.fasta and this leads to inconsistencies
+    ## We deciced to write our in house script to capture random genes.
+#     my $rdm_genes_cmd = $scripts."random-genes -feattype CDS -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
+#     &doit($rdm_genes_cmd);
+    my $all_genes_cmd = "cat $ENV{RSAT}/data/genomes/$organism/genome/$organism"."_aa.fasta | grep '>' | perl -pe 's/>//'";
+    my $genes = `$all_genes_cmd`;
+    my @all_genes = split /\n/, $genes;
+    my @all_genes_rdm = shuffle (@all_genes);
+
+    ## put the required number of genes in a hash
+    my %rdm_genes = ();
+    
+#     $orthogroups_nb++;
+    
+    ($main::genelist) = &OpenOutputFile($outfile{random_genes_selection});
+    
+    for (my $i = 0; $i < $orthogroups_nb; $i++) {
+      my $gene = $all_genes_rdm[$i];
+      my $leader = $gene;
+      if ($bacteria) {
+        $leader = `infer-operon -return leader -q $gene -org $organism | add-gene-info -info ID -org $organism | cut -f 2 | tail -n 1`;
+        chomp $leader;
+        &RSAT::message::TimeWarn ("Determining the operon leader of gene $gene ($i/$orthogroups_nb) : $leader") if ($main::verbose >= 3);
+
+      }
+      
+      print $main::genelist $leader."\n";
+      $rdm_genes{$leader}++;
+    }
+    my @rdm_genes_array = keys %rdm_genes;
+    
+    close $main::genelist;
+    ## Run footprint-discovery on each requested taxon and discover the motifs
+    foreach my $taxon (@taxa) {
+      my $taxon_frequency_file = $outputdir{bgmodels}."/".$taxon."_frequencies_noov_2str.tab";
+      my $taxon_frequency_cmd = "taxon-frequencies -taxon $taxon -type dyad -ml 3 -v $verbose -noov -2str > $taxon_frequency_file";
+      $bgmodel{$taxon} = $taxon_frequency_file;
+      $outfile{random_genes_selection} = $outputdir{random_genes_dir}."random_gene_selection.tab";
+      my $footprint_discovery_cmd = $scripts."footprint-discovery $batch_arg -task query_seq,bg_model,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon '$taxon' -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes -bg_model file -bgfile $taxon_frequency_file";
+      if (!-e $taxon_frequency_file) {
+        &RSAT::message::TimeWarn ("Computing expected word frequencies for taxon $taxon") if ($main::verbose >= 2);
+        &doit($taxon_frequency_cmd);
+      }
+      &doit($footprint_discovery_cmd);
+    }
+    
+    ##################################################################
+    ## RANDOM DATA
+    ## Determines for each taxon the average number of gene per group of orthologs
+    ## wait until the bbh search has been achieved
+    &RSAT::message::TimeWarn ("Estimating the average number of gene by orthology group") if ($main::verbose >= 2);
+    my $achieved = 0;
+    my %ortho_nb = ();
+    foreach my $taxon (@taxa) {
+      while (!$achieved) {
+        sleep($sleep_time);
+        &RSAT::message::TimeWarn ("All data are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 3);
+        $achieved = 1;
+        my $ortho_nb_sum = 0;
+        foreach my $gene (keys (%rdm_genes)) {
+          my $taxon_gene_dir = $outputdir{root}."/".$taxon."/".$organism."/".$gene;
+          my $ortho_seq_file = $taxon_gene_dir."/".$gene."_".$organism."_".$taxon."_ortho_seq.fasta";
+          my $ortho_file = $taxon_gene_dir."/".$gene."_".$organism."_".$taxon."_ortho_bbh.tab";
+          if (!-e $ortho_seq_file) {
+            $achieved = 0;
+            &RSAT::message::TimeWarn ("File $ortho_seq_file does not exist") if ($main::verbose >= 3);
+          } 
+          my $ortho_nb = 0;
+          next if (!$achieved);
+          $ortho_nb = `cat $ortho_file | grep -v '^;' | grep -v '^#' | wc -l`;
+          chomp $ortho_nb;
+          &RSAT::message::TimeWarn ("$ortho_nb orthologs for gene $gene of $organism in taxon $taxon") if ($main::verbose >= 3);
+          $ortho_nb_sum += $ortho_nb;
+        }
+        $ortho_nb{$taxon} = $ortho_nb_sum;
+      }
+      $achieved = 0;
+    }
+    # What is the expected frequency file (wait that at least one of the dyad result file is available for each taxon)
+#     &RSAT::message::TimeWarn ("Determining frequency file") if ($main::verbose >= 2);
+#     foreach my $taxon (@taxa) {
+#       my $dyad_file_result = "";
+#       my $bgmodel_taxon = "";
+#       while ($bgmodel_taxon eq "") {
+#          for (my $i = 0; $i < scalar @rdm_genes_array; $i++) {
+#           $dyad_file_result = "footprint_quality/".$taxon."/".$organism."/".$rdm_genes_array[$i]."/".$rdm_genes_array[$i]."_".$organism."_".$taxon."_ortho_dyads_3nt_sp0-20-2str-noov_taxfreq_sig0.tab";
+#           if (-e $dyad_file_result && !-z $dyad_file_result) {
+#             $bgmodel_taxon = `cat $dyad_file_result | grep 'exp. freq.' | cut -f 3`;
+#             chomp $bgmodel_taxon;
+#             if (-e $bgmodel_taxon) {
+#               &RSAT::message::TimeWarn ("Frequencies for taxon $taxon are stored in $bgmodel_taxon") if ($main::verbose >= 3);
+#               last;
+#             }
+#           } else {
+#             &RSAT::message::TimeWarn ("File $dyad_file_result is of size 0 ... waiting ".int($sleep_time/2)." seconds") if ($main::verbose >= 3);
+#             sleep($sleep_time / 2);
+#           }
+#         } 
+#       }
+#       $bgmodel{$taxon} = $bgmodel_taxon;
+#     }
+    &RSAT::message::TimeWarn ("Discovery of dyads in random set of sequences") if ($main::verbose >= 2);
+    foreach my $taxon (@taxa) {
+      my @taxon_organisms = &getAllTaxonOrganisms($taxon, \%supported_organism);
+      my @taxon_genes = &getAllOrganismsGenes(\@taxon_organisms);
+      my $cpt = 0;
+      my @taxon_genes_size = 0 .. (scalar(@taxon_genes)-1);  
+      my @shuffled_taxon_genes_size = shuffle(@taxon_genes_size);     
+      
+      my $nbgene_per_group = int ($ortho_nb{$taxon}  / $orthogroups_nb);
+      &RSAT::message::TimeWarn ("$nbgene_per_group random genes per group of genes in taxon $taxon") if ($main::verbose >= 2);
+      my $random_genes_dir_taxon =  $outputdir{random_genes_dir}."/".$taxon."/";
+      system ("mkdir -p $random_genes_dir_taxon");
+
+
+      for (my $i = 0; $i < $orthogroups_nb; $i ++) {
+        # constitute $orthogroups_nb groups of random genes (input of retrieve-seq-multigenome)
+        # the number of random genes per group is equal to the mean number of orthologs per taxon (determined in previous step).
+        my $random_genes_taxon_dir_i = $random_genes_dir_taxon."/"."random_genes_".$i;
+        my $file_root = $random_genes_taxon_dir_i."/"."random_genes_".$taxon."_".$i;
+        
+        my $random_gene_taxon_file = $file_root."_ref_gene.tab";
+        my $random_gene_seq_taxon_file = $file_root."_ref_gene.fasta";
+        my $random_gene_dyad_taxon_file = $file_root."_ref_gene_dyads.tab";
+        
+        my $random_genes_taxon_file = $file_root."_random_ortho_genes.tab";
+        my $random_genes_seq_taxon_file = $file_root."_random_ortho_genes.fasta";
+        my $random_genes_seq_purgednc_file = $file_root."_random_ortho_genes_purged_notclean.fasta";
+        my $random_genes_seq_purged_file = $file_root."_random_ortho_genes_purged.fasta";
+        
+        my $random_genes_dyad_taxon_file = $file_root."_random_ortho_genes_dyads.tab";
+        my $random_genes_dyad_taxon_file_done = $file_root."_random_ortho_genes_dyads.done";
+
+        
+        
+        system ("mkdir -p $random_genes_taxon_dir_i");
+        
+        
+        my ($random_genes_taxon_file_hdl) = &OpenOutputFile($random_genes_taxon_file);
+        for (my $i = 0; $i < $nbgene_per_group; $i++) {
+          print $random_genes_taxon_file_hdl join "\t", @{$taxon_genes[$shuffled_taxon_genes_size[$cpt++]]};
+          print $random_genes_taxon_file_hdl "\n";
+        }
+        close $random_genes_taxon_file_hdl;
+        
+        
+        system ("cat $random_genes_taxon_file | head -n 1 > $random_gene_taxon_file");
+        # write commands
+        my $rdm_footprint_cmd = $scripts."retrieve-seq-multigenome -v $verbose -i $random_genes_taxon_file -o $random_genes_seq_taxon_file ";
+        $rdm_footprint_cmd .= "; ".$scripts."retrieve-seq-multigenome -v $verbose -i $random_gene_taxon_file -o $random_gene_seq_taxon_file";
+        $rdm_footprint_cmd .= "; ".$scripts."purge-sequence -nodie -i $random_genes_seq_taxon_file -ml 30 -mis 0 -mask_short 30 -2str -o $random_genes_seq_purgednc_file";
+        $rdm_footprint_cmd .= "; ".$scripts."convert-seq -i $random_genes_seq_purgednc_file -mask non-dna -from fasta -to fasta -dna -o $random_genes_seq_purged_file";
+        $rdm_footprint_cmd .= "; ".$scripts."dyad-analysis -v $verbose -2str -noov -l 3 -sp 0-20 -i $random_gene_seq_taxon_file -o $random_gene_dyad_taxon_file";
+        $rdm_footprint_cmd .= "; ".$scripts."dyad-analysis -v $verbose -expfreq ".$bgmodel{$taxon}." -accept $random_gene_dyad_taxon_file -return occ,proba,rank -uth rank 50 -lth occ 1 -lth occ_sig 0 -l 3 -sp 0-20 -i $random_genes_seq_purged_file -o $random_genes_dyad_taxon_file -2str -noov";
+        $rdm_footprint_cmd .= "; touch $random_genes_dyad_taxon_file_done";
+
+        &doit($rdm_footprint_cmd, $dry, $die_on_error, $verbose, $job_prefix);
+      }
+    }
+    
+    ##########################################################################################################
+    ## Extract all dyad-analysis result files  (random and real data) and create one score file for each taxon
+    ## Check that all jobs are done (real cases) ... it is done when the asmb file is produced
+    &RSAT::message::TimeWarn ("Extract real dyad results") if ($main::verbose >= 2);
+    $achieved = 0;
+    foreach my $taxon (@taxa) {
+      my @dyads = ();
+      while (!$achieved) {
+        sleep($sleep_time);
+        &RSAT::message::TimeWarn ("All data for taxon $taxon are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 3);
+        $achieved = 1;
+        foreach my $gene (keys (%rdm_genes)) {
+          my $taxon_gene_dir = $outputdir{root}."/".$taxon."/".$organism."/".$gene;
+          my $asmb_file = $taxon_gene_dir."/".$gene."_".$organism."_".$taxon."_ortho_dyads_3nt_sp0-20-2str-noov_file_sig0.asmb";
+          my $dyad_file = $taxon_gene_dir."/".$gene."_".$organism."_".$taxon."_ortho_dyads_3nt_sp0-20-2str-noov_file_sig0.tab";
+
+          if (!-e $asmb_file) {
+            $achieved = 0;
+            $dyads = ();
+            &RSAT::message::TimeWarn ("File $asmb_file does not exist yet") if ($main::verbose >= 2);
+            next;
+          }
+          if (-e $dyad_file && !-z $dyad_file) {
+             @dyads = &readDyads($dyad_file, $gene, \@dyads);
+          } else {
+             &RSAT::message::Warning("Dyad file ".$dyad_file. " does not exist");            
+          }
+         
+        }
+      }
+      my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_real_dyad_scores.tab";
+      @dyads = &sort_table(\@dyads, 1);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
+      @dyads = leastMotifProportion(\@dyads, $orthogroups_nb);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
+      $achieved = 0;
+    }
+    
+    ## Check that all jobs are done (random cases) ... it is done when the .done file is produced
+    &RSAT::message::TimeWarn ("Extract random dyad results") if ($main::verbose >= 2);
+    $achieved = 0;
+    foreach my $taxon (@taxa) {
+      my @dyads = ();
+      my $random_genes_dir_taxon =  $outputdir{random_genes_dir}."/".$taxon."/";
+      while (!$achieved) {
+        sleep($sleep_time);
+        &RSAT::message::TimeWarn ("All data for taxon $taxon are not available yet ... wait $sleep_time seconds") if ($main::verbose >= 3);
+        $achieved = 1;
+        for (my $i = 0; $i < $orthogroups_nb; $i ++) {
+          
+          my $random_genes_taxon_dir_i = $random_genes_dir_taxon."/"."random_genes_".$i;
+          my $file_root = $random_genes_taxon_dir_i."/"."random_genes_".$taxon."_".$i;
+          my $random_genes_dyad_taxon_file_done = $file_root."_random_ortho_genes_dyads.done";
+          my $random_genes_dyad_taxon_file = $file_root."_random_ortho_genes_dyads.tab";
+          if (!-e $random_genes_dyad_taxon_file_done) {
+            $achieved = 0;
+            $dyads = ();
+            &RSAT::message::TimeWarn ("File $random_genes_dyad_taxon_file_done does not exist yet") if ($main::verbose >= 2);
+            next;
+          }
+          if (-e $random_genes_dyad_taxon_file && !-z $random_genes_dyad_taxon_file) {
+             @dyads = &readDyads($random_genes_dyad_taxon_file, "rand_".$i, \@dyads);
+          } else {
+             &RSAT::message::Warning("Dyad file ".$random_genes_dyad_taxon_file. " does not exist");            
+          }
+         
+          
+        }
+      }
+      my $dyad_score_taxon_file = $outputdir{dyad_scores}."/".$taxon."_rdm_dyad_scores.tab";
+      @dyads = &sort_table(\@dyads, 1);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
+      @dyads = leastMotifProportion(\@dyads, $orthogroups_nb);
+      &arrayToFile(\@dyads, $dyad_score_taxon_file);
+      $achieved = 0;
+    }
+    
+    
+    ## Computes the significance score distributions (using the RSAT classfreq program)
+    &RSAT::message::TimeWarn ("Computes tables and figures") if ($main::verbose >= 2);
+    my $compare_scores_rel_freq_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.tab";
+    my $compare_scores_least_sig_output = $outputdir{dyad_scores}."/sig_scores_least_sig_comparaison.tab";
+    my $xygraph_rel_freq_output = $outputdir{dyad_scores}."/sig_scores_rel_freq_comparaison.png";
+    my $xygraph_least_sig_output = $outputdir{dyad_scores}."/sig_scores_least_sig_comparaison.png";
+    my $ycolcpt = 2;
+    my $xy_graph_rel_freq_cmd = "XYgraph -force_lines -v $verbose -i $compare_scores_rel_freq_output -o $xygraph_rel_freq_output -xcol 1 -ylog -lines -legend -ycol $ycolcpt";
+    my $xy_graph_least_sig_cmd = "XYgraph -force_lines -v $verbose -i $compare_scores_least_sig_output -o $xygraph_least_sig_output -xcol 1  -lines -legend -ycol $ycolcpt";
+
+    my $control_line_file = $outputdir{dyad_scores}."/control.tab";
+    my ($control_line_file_hdl) = &OpenOutputFile($control_line_file);
+    my $control_line = "-4\t10000\n-3\t1000\n-2\t100\n-1\t10\n1\t0\n2\t0.01\n3\t0.001\n4\t0.0001\n";
+    print $control_line_file_hdl $control_line;
+    close $control_line_file_hdl;
+    my $compare_scores_rel_freq_cmd = "compare-scores -i $control_line_file -v $verbose -sc 2 -ic 1 -o $compare_scores_rel_freq_output  -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -suppress '.tab' -suppress '/' -numeric -null \'\' -v verbose ";
+    my $compare_scores_least_sig_cmd = "compare-scores -v 5 -sc 4 -ic 2 -o $compare_scores_least_sig_output  -suppress $outputdir{dyad_scores} -suppress _dyad_scores_rel_freq.tab -suppress '.tab' -suppress '/' -numeric -null \'\' -v verbose ";
+    my $xy_graph_col = "";
+    
+    foreach my $taxon (@taxa) {
+      my @real_rdm = qw (real rdm);
+      foreach my $type (@real_rdm) {
+        my $root = $outputdir{dyad_scores}."/".$taxon."_".$type;
+        my $dyad_score_taxon_file = $root."_dyad_scores.tab";
+        my $dyad_score_freq_taxon_file = $root."_dyad_scores_freq.tab";
+        my $dyad_score_rel_freq_taxon_file = $root."_dyad_scores_rel_freq.tab";
+        my $classfreq_cmd = "classfreq -i $dyad_score_taxon_file -col 2 -o $dyad_score_freq_taxon_file -v $verbose -ci 0.1 ;";
+        $classfreq_cmd .= "cat $dyad_score_freq_taxon_file | grep -v '^;' | grep -v '^#' | awk -F \"\\t\" '{print \$3\"\\t\"\$6/$orthogroups_nb}' > $dyad_score_rel_freq_taxon_file";
+        $compare_scores_rel_freq_cmd .= "-i $dyad_score_rel_freq_taxon_file ";
+        $compare_scores_least_sig_cmd .= "-i $dyad_score_taxon_file ";
+        $xy_graph_col .= ",".++$ycolcpt;
+        system("$classfreq_cmd");
+      }
+      
+      
+
+    }
+    
+    
+    $xy_graph_rel_freq_cmd .= $xy_graph_col;
+    $xy_graph_least_sig_cmd .= $xy_graph_col;
+    
+    
+    system $compare_scores_rel_freq_cmd;
+    system $xy_graph_rel_freq_cmd;
+    system $compare_scores_least_sig_cmd;
+    system $xy_graph_least_sig_cmd;
+
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Returns an array containing all the organism for a spe
+sub getAllTaxonOrganisms {
+   my @ref_organisms = ();
+   my $taxon = shift;
+   my $supported_organism_ref = shift;
+   my %supported_organism = %{$supported_organism_ref};
+   foreach my $org (keys %supported_organism) {
+     my $taxonomy = $supported_organism{$org}->{"taxonomy"};
+     my @taxa = split( /;\s*/, $taxonomy);
+     push @taxa, $org;     
+     foreach my $taxon_i (@taxa) {
+       if (lc($taxon) eq lc($taxon_i)) {
+         push @ref_organisms, $org;
+         
+       }
+     }
+   }
+   return @ref_organisms;
+}
+
+################################################################
+## Returns an array containing all the genes ids of a given set of organisms
+## $array[$i][0] = gene $i name
+## $array[$i][1] = organism name
+sub getAllOrganismsGenes {
+  my $organisms_ref = shift;
+  my @organisms = @{$organisms_ref};
+#   print join "\n", @organisms;
+  my @genes = ();
+  my $i = 0;
+  foreach my $org (@organisms) {
+    my $org_dir = $supported_organism{$org}->{'data'};
+    my $cds_name_file = $org_dir."/genome/cds.tab";
+    &RSAT::message::TimeWarn ("Reading CDS from file $cds_name_file") if ($main::verbose >= 3);
+    my ($genenames_file_handler) = &OpenInputFile($cds_name_file);
+    while (my $ligne = <$genenames_file_handler>) {
+      next if ($ligne =~ /^--/);
+      chomp $ligne;
+      my @lignecp = split /\t/, $ligne;
+      $genes[$i][0] = $lignecp[0];
+      $genes[$i][1] = $org;
+      $i++;
+    }
+    close $genenames_file_handler;
+  }
+  return @genes;
+}
+
+################################################################
+## Read a dyad-analysis output file and returns a string containing of the form 
+## dyad<tab>score<tab>genename, sorted by dyad significance.
+sub readDyads {
+  my $dyadfile = shift;
+  my $id = shift;
+  my $array_ref = shift;
+  my @result = @{$array_ref};
+  my ($dyadfile_handler) = &OpenInputFile($dyadfile) ;
+  my $i = scalar @result;
+  while (my $ligne = <$dyadfile_handler>) {
+    next if ($ligne =~ /^#/);
+    next if ($ligne =~ /^;/);
+    chomp $ligne;
+    my @lignecp = split /\t/, $ligne;
+    my $dyad = $lignecp[0];
+    my $sig = $lignecp[7];
+    $result[$i][0] = $dyad;
+    $result[$i][1] = $sig;
+    $result[$i][2] = $id;
+    $i++;
+  }
+  close $dyadfile_handler;
+  return @result;
+}
+
+################################################################
+# Export an array into a file
+
+sub arrayToFile {
+  my $array_ref = shift;
+  my $outputfile = shift;
+  my @array = @{$array_ref};
+  my ($out) = &OpenOutputFile($outputfile);
+  for (my $i = 0; $i < scalar @array; $i++) {
+    print $out join "\t", @{$array[$i]};
+    print $out "\n";
+  }
+}
+
+################################################################
+# Sort an array with multiple columns
+
+sub sort_table {
+  my $table_ref = shift;
+  my $col = shift;
+  my @table = @{$table_ref};
+  my @sortedByScore = sort {$a->[$col] <=> $b->[$col]} @table;
+  return @sortedByScore;
+}
+
+################################################################
+# with a sorted dyad file (as given by sort_table)
+# a sorted dyad file that gives the proportion of genes showing at least one dyad given the score
+
+sub leastMotifProportion {
+  my $input_table_ref = shift;
+  my $gene_nb = shift;
+  my @input_table = @{$input_table_ref};
+  my %genes = ();
+  for (my $i = 0; $i < scalar @input_table; $i++) {
+    $genes{$input_table[$i][2]}++;
+  }
+  for (my $i = 0; $i < scalar @input_table; $i++) {
+    my $gene = $input_table[$i][2];
+    my $gene_occ = $genes{$gene};
+    $genes{$gene}--;
+    delete $genes{$gene} if (!$genes{$gene}); 
+    my $proportion = (scalar keys %genes)/$gene_nb;
+    $input_table[$i][3] = $proportion;
+  }
+  return @input_table;
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+    ## Organism
+=pod
+
+=item	B<-org query_organism>
+
+Query organism, to which the query genes belong.
+
+=cut
+  } elsif ($arg eq "-org") {
+    $main::organism = shift(@arguments);
+
+    ## Taxon
+=pod
+
+=item	B<-taxon reference_taxon>
+
+Reference taxon, in which orthologous genes have to be collected. In principle, more than one taxon is given (coma sepated)
+
+=cut
+  } elsif ($arg eq "-taxon") {
+    $main::taxon_list = shift(@arguments);
+   
+    ## Taxon
+=pod
+
+=item	B<-n number_of_controls>
+
+Numbers of groups of orthologs. Default = 100
+
+=cut
+  } elsif ($arg eq "-n") {
+    $main::orthogroups_nb = shift(@arguments);
+
+=pod
+
+=item B<-batch>
+
+Generate one command per query gene, and post it on the queue of a PC
+cluster.
+
+=cut
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
+=pod
+
+=item B<-bacteria>
+
+Specify whether the tested organism is a bacteria. In this case, the gene leader is taken into account.
+
+=cut
+  } elsif ($arg eq "-bacteria") {
+    $main::bacteria = 1;
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; footprint-discovery-quality";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__

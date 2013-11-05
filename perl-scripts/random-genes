@@ -1,0 +1,373 @@
+#!/usr/bin/perl -w
+
+############################################################
+#
+# $Id: random-genes,v 1.26 2011/11/16 21:08:06 jvanheld Exp $
+#
+# Time-stamp: <2003-09-10 23:21:27 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.help.pl";
+require RSAT::organism;
+use POSIX;
+
+
+package main;
+
+#### initialise parameters 
+local $start_time = &RSAT::util::StartScript();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $out = STDOUT;
+local $n = 0; #### number of genes to return
+local $repeat = 1; #### number of repetitions of the input groups (with option -fam)
+local $groups = 1; #### number of gene groups to return
+#local $infile{group} = "";
+local @groups = ();
+local %group_count = ();
+local $pairs = 0;
+local %accepted_feature_types = ();
+
+&ReadArguments();
+
+
+################################################################
+#### check argument values 
+
+
+## Organism
+unless ($organism_name) {
+    &RSAT::error::FatalError("You should select an organism.");
+}
+
+$organism = new RSAT::organism();
+$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+$organism->check_name($organism_name);
+$organism->set_attribute("name", $organism_name);
+$organism->OpenContigs($organism_name);
+$organism->LoadFeatures($annotation_table);
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+##### read group file
+if ($infile{group}) {
+  ($fam) = &OpenInputFile($infile{group});
+  while (<$fam>) {
+    chomp;
+    next if (/^;/);
+    next if (/^\#/);
+    next unless (/\S/);
+    my ($gene, $group) = split "\t";
+    if ($group) {
+      $n++;
+      $group_count{$group}++;
+    }
+  }
+  close $fam;
+  @groups = keys %group_count;
+
+} elsif ($groups >= 1) {
+  for my $r (1..$groups) {
+    $group_count{"RAND".$r}=$n;
+  } 
+  @groups = keys %group_count;
+}
+# warn join ("\t", "genes: $n", 
+# 	   "groups: ", scalar(@groups)
+# 	   ), "\n";
+
+#### verbose 
+&Verbose if ($verbose);
+
+###### initialize the random seed
+if ($seed) { ### defined seed
+    srand($seed);
+} else {
+    srand (time); ### current time
+}
+
+###### print output ##
+## number of digits for group suffix
+my $grp_digits = POSIX::ceil(log(scalar(@groups)+1)/log(10));
+
+## number of digits for repeat suffix
+my $rep_digits = POSIX::ceil(log($repeat+1)/log(10));
+if ($#groups > -1) {
+  for my $f (0..$#groups) {
+    for my $r (1..$repeat) {
+      my $fam = $groups[$f];
+      my $count = $group_count{$fam};
+
+      $rand_group_name = "rand";
+      my $group_suffix = sprintf "%${grp_digits}d", $f+1;
+      $group_suffix =~s/ /0/g;
+      $rand_group_name .= $group_suffix;
+#      $rand_group_name .= $f+1;
+      if ($repeat > 1) {
+	my $rep_suffix = sprintf "%${rep_digits}d", $r;
+	$rep_suffix =~s/ /0/g;
+	$rand_group_name .= "_rep".$rep_suffix;
+#	$rand_group_name .= ".".$r;
+      }
+      @random_orfs = $organism->SelectRandomGenes($count, $replace);
+      foreach $orf (@random_orfs) {
+	print $out $orf, "\t", $rand_group_name. "\n";
+      }
+    } 
+  }
+} elsif ($pairs) {
+    $n = $pairs *2;
+    @random_orfs = $organism->SelectRandomGenes($n,$replace);
+    for my $p (1..$pairs) {
+	print $out shift @random_orfs, "\t";
+	print $out shift @random_orfs, "\n";
+    }
+} else {
+    @random_orfs = $organism->SelectRandomGenes($n, $replace);
+    print $out join ("\n", @random_orfs), "\n";
+}
+
+###### Close output file ##
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+################################################################
+########################## subroutine definition ###############
+################################################################
+
+#### display full help message #
+sub PrintHelp {
+    $HELP_GROUP_FILE = &help_message("class file");
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	random-genes
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+	Returns a random selection of genes for the specified
+	organism.
+
+	There are several modes of utilization.
+
+	   (1) -n	returns random genes.
+           (2) -g       groups. Create a group file with g groups of n
+			genes (n must be specified)
+	   (3) -pairs	returns random pairs of genes.
+	   (4) -fam	takes a group file (see multiple-group-analysis)
+			as input, and return another group file with
+			the same number of groups, the same number
+			of random genes per group as in the input
+			file. This allows to deal with groups of
+			different sizes in the same file, and to
+			perform negative controls in exactly the same
+			conditions as the test.
+
+CATEGORY
+	util
+
+USAGE
+        random-genes [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-org	organism
+	-features	
+		alternate feature table. This option allows to speify
+		an alternate file where the ORF locations are found. 
+		See below for a description of the feature file format.
+	-feattype
+		Feature type.
+		Supported: $supported_feature_types
+	-replace	
+		random selection with replacement
+		(a same ORF might appear several times in the output)
+
+    Exporting g groups of n genes
+	-n #	number of random genes to return
+	-g #	groups (number of random groups).
+
+    Exporting pairs of genes
+	-pairs #
+		number of random pairs of genes to return. Each row of
+		the output contains two genes, separated by a tab.
+
+    Using a group file as template
+	-fam group file
+		A 2-column file containing gene names in the first
+		column and group (cluster) name in the second column.
+		(same format as for multiple-group-analysis).
+		The program returns a file of the same size as the
+		input, where input genes have been substituted by 
+		random genes.
+	-repeat #
+		(requires the option -fam)
+		Number of repetitions for each input group. 
+		This option generates, for each input group, R output
+		random gene selections of the same size.
+
+FILE FORMATS
+    $HELP_GROUP_FILE
+End_of_help
+  close HELP;
+  exit;
+}
+
+#### display short help message 
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+random-genes options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-o		output file
+-v		verbose
+-org		organism
+-features	alternate feature table
+-feattype	accepted feature types. Supported: $supported_feature_types
+-replace	random selection with replacement
+-n		number of genes
+-g #		groups (number of random groups).
+-pairs		number of pairs of genes
+-fam		group file
+-repeat		number of repetitions (only with the option -fam)
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### output file 
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name = $ARGV[$a+1];
+
+	    #### alternative feature file
+	} elsif ($ARGV[$a] =~ /^-features/i) {
+	    $annotation_table = $ARGV[$a+1];
+	    
+	    #### feature types
+	} elsif ($ARGV[$a] eq "-feattype") {
+	    my @feature_types = split ",", $ARGV[$a+1];
+	    foreach my $feature_type (@feature_types) {
+		if ($supported_feature_types{lc($feature_type)}) {
+		    $accepted_feature_types{lc($feature_type)}++;
+		} else {
+		    &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
+		}
+	    }
+
+	    ### random selection with replacement
+	} elsif ($ARGV[$a] eq "-replace") {
+	    $replace = 1;
+	    
+	    ### group file 
+	} elsif ($ARGV[$a] eq "-fam") {
+	    $infile{group} = $ARGV[$a+1];
+	    
+	    ### number of genes
+	} elsif ($ARGV[$a] eq "-n") {
+	    $n = $ARGV[$a+1];
+	    unless (&IsNatural($n)) {
+		&RSAT::error::FatalError("$n\tInvalid number of genes. Should be a natural number.");
+	    }
+	    
+	    ### number of groups
+	} elsif ($ARGV[$a] eq "-g") {
+	    $groups = $ARGV[$a+1];
+	    unless (&IsNatural($groups)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of genes. Should be a natural number.");
+	    }
+	    
+	    ### number of groups
+	} elsif ($ARGV[$a] eq "-r") {
+	    &RSAT::message::Warning("The option -r is obsolete. Use -g instead");
+	    $groups = $ARGV[$a+1];
+	    unless (&IsNatural($groups)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of groups. Should be a natural number.");
+	    }
+	    
+	    ### number of repetitions of the groups from a group file (with the option -fam)
+	} elsif ($ARGV[$a] eq "-repeat") {
+	    $repeat = $ARGV[$a+1];
+	    unless (&IsNatural($repeat)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of repetitions. Should be a natural number.");
+	    }
+	    
+	    ### number of gene pairs
+	} elsif ($ARGV[$a] eq "-pairs") {
+	    $pairs = $ARGV[$a+1];
+	    unless (&IsNatural($pairs)) {
+		&RSAT::error::FatalError("$pairs\tInvalid number of pairs. Should be a natural number.");
+	    }
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; random-genes ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+
+    printf $out "; %-14s\t%s\n", "organism", $organism_name;
+    printf $out "; %-14s\t%d\n", "Number of groups", scalar(@groups) if ($infile{group});
+    printf $out "; %-14s\t%d\n", "Number of repetitions", $repeat if ($repeat > 1);
+    printf $out "; %-14s\t%d\n", "Number of pairs", $pairs if ($pairs);
+    printf $out "; %-14s\t%d\n", "Number of genes", $n;
+    printf $out "; %-14s\t%d\n", "Number of groups", $groups if ($groups);
+}

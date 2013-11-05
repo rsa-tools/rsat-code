@@ -1,0 +1,419 @@
+<html>
+<head>
+  <title>RSA-tools - tutorials - Position-specific scoring matrices</title>
+<!--  <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+  <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+</head>
+<body>
+
+
+  <center>
+  <h1><a href="../RSAT_home.cgi">RSA-tools</A> - 
+    <a href="tutorials.html">Tutorials</a> - 
+    Position-specific scoring matrices
+  </h1>
+</center>
+
+
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href='#prerequisite'>Prerequisite</a>
+<li><a href='#intro'>Introduction</a>
+<li><a href='#convert_matrix'>Converting and analyzing PSSM</a>
+<li><a href='#exercises'>Additional exercises</a>
+<li><a href='#next'>Next steps</a>
+</ol>
+
+
+<a name='prerequisite'></a><h2>Prerequisite</h2>
+
+<p>The theoretical background required for this tutorial can be found
+in the <a href='../course/'>RSAT course</a>.</p>
+
+<p>In particular, we recommend to read the following slides before starting this tutorial.
+<ul>
+  <li><a href='../course/pdf_files/01.3.sequence_models.pdf'>Sequence models</a></li>
+  <li><a href='../course/pdf_files/01.4.PSSM_theory.pdf'>PSSM theory</a></li>
+</ul>
+</p>
+
+<a name='intro'></a><h2>Introduction</h2>
+
+<p>Position-specific scoring matrices (PSSM) offer a flexible way to
+  represent the specificity of transcription factor/DNA
+  interactions. PSSM can be built on the basis of a set of known
+  binding sites for the factor of interest.</p>
+
+<P>
+Knowledge-based PSSM can be obtained from various transcription factor
+databases, for example: 
+<ul>
+<li><a target='_blank' href='http://jaspar.genereg.net/'>JASPAR</a> (Eukaryotes)</li>
+<li><a target='_blank' href='http://regulondb.ccg.unam.mx/'>RegulonDB</a> (<i>Escherichia coli K12</i>)</li>
+<li><a target='_blank' href='http://rulai.cshl.edu/SCPD/'>SCPD</a> (The Promoter Database of <i>Saccharomcyces cerevisiae</i>)</li>
+<li><a target='_blank' href='http://www.yeastract.com/'>Yeastract</a> (Yeast Search for Transcriptional Regulators And Consensus Tracking)</li>
+<li><a target='_blank' href='http://www.gene-regulation.com/pub/databases.html#transfac'>TRANSFAC</a>
+(Note: the full database access requires a commercial license)</li>
+</ul>
+
+
+<a name='example'></a><h3>Example</h3>
+
+<p>The matrix below was obtained from <a target='_blank'
+href="http://rulai.cshl.edu/SCPD/"> SCPD</a>, the
+<i>Saccharomyces cerevisiae</i> promoter database.  It has been built
+from an alignment of 12 binding sites for the yeast transcription
+factor Pho4p.</p>
+
+<h4><i>PHO4 matrix (source: SCPD)</i></h4> 
+<PRE>
+A  3   2   0  12   0   0   0   0   1   3
+C  5   2  12   0  12   0   1   0   2   1
+G  3   7   0   0   0  12   0   7   5   4
+T  1   1   0   0   0   0  11   5   4   4
+</PRE>
+
+<P>Each row represents one residue (A, C, G or T), and each column a
+position in a set of aligned binding sites. Some positions are
+perfectly conserved across all known binding sites (the
+motif <tt>CACGT</tt> starting at the 3rd position), whereas some other
+positions present two choices (e.g. <tt>G</tt> or <tt>T</tt> at
+position 8), and other position can contain any letter, but with
+different frequencies (e..g first and last position).
+
+
+<h3>Matrix scores</h3>
+
+<p>When the matrix is used to scan sequences for putative Pho4p
+binding sites, the more conserved positions impose stronger
+constraints than those where any nucleotide can be found. Matrix-based
+motif representations this provide a better support
+than <a href='tut_strings.html'>string-based representations</a> for
+representing the binding affinity</p>
+
+<p>Actually, the frequencies are not used as such to score putative
+sites. The score assigned assigned to a piece of sequence <i>S</i> is
+calculated as the log-ratio of two probabilities:
+<ul>
+<p><li><i>P(S|M)</i>, the probability to observe sequence <i>S</i> given
+the motif model <i>M</i> (the matrix).
+<p><li><i>P(S|B)</i>, the probability to observe sequence <i>S</i> given
+the background model <i>B</i> (the genomic context).
+<p><li>The score of a sequence segment is <i>W<sub>S</sub>=log[P(S|M)/P(S|B)]</i>
+</ul>
+</p>
+
+<p>With the matrix above, we could calculate the probability of a
+sequence <i>S</i> of 10 nucleotides, as the product of the relative
+frequencies of these nucleotides in the PSSM. 
+
+<p>A critical issue is to chose an appropriate background model. The
+simplest background models are based on a Bernoulli schema, which
+means that they rely on an assumption that the nucleotides succeed to
+each other independently. More elaborate models have been proposed,
+based on Markov chains (the description of these models can be found
+in the RSAT course, slides
+on <a href='../course/pdf_files/01.3.sequence_models.pdf'>sequence
+models</a>).</p>
+
+<h3>Higher order dependencies</h3>
+
+<p>One weakness of PSSM is that they do not take into account higher
+order dependencies between residues, i.e. correlations between the
+residue found at a given position and those found at other
+positions. Even if, with Markov-chain based background models, such
+dependencies are taken into account for the background model,
+correlations between different positions of the binding sites are
+still not taken into account.
+
+<p>For example, a PSSM does not allow to specify a pattern
+like <i>"either <tt>CACGTGGG</tt> or
+<tt>CACGTTTT</tt>"</i> : if one builds a matrix where <tt>G</tt>
+and <tt>T</tt> are allowed at the 3 last positions, any combination of
+them will be allowed (e.g.  CACGTGTG, CACGTTGT). Higher order
+dependencies can be represented with more elaborated methods, such as
+Hidden Markov Models (HMM), which are ou of scope for this tutorial.
+
+
+</ul><h2><a 'name'=convert_matrix></a>Converting and analyzing PSSM</h2>
+
+<p>The RSAT include a program called <a target='tools'
+href='../convert-matrix_form.cgi'>convert-matrix</a>, which allows to
+extract a PSSM from the output files of different programs
+(<a target=tools href=../consensus_form.cgi>consensus</a>,
+<a target=tools href=../gibbs_form.cgi>gibbs</a>, <a target=_blank
+href=http://meme.sdsc.edu/meme/>MEME</a>, clustal) or databases
+(<a target='_blank' href='http://jaspar.genereg.net/'>JASPAR</a>, <a target='_blank'
+href='http://www.gene-regulation.com/pub/databases.html#transfac'>TRANSFAC</a>).</p>
+
+
+<h3>Converting the counts into frequencies, weights and information</h3>
+
+<p>We will import a matrix representing the binding specificity of the
+  yeast transcription factor Abf1p, and analyze the different parameters
+  which characterize this PSSM.</p>
+
+<div class='tut'>
+<ol>
+    <p><li>Connect <a href="http://rulai.cshl.edu/SCPD/" target=_blank>
+	SCPD</a>, the Saccharomyces cerevisiae promoter database. To access
+      the list of sites by factor from the SCPD home page, click on the
+      Section "<a target=_blank
+		  href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactorlist>Regulatory
+	elements and transcriptional factors</a>".
+	
+	<p><li>Click on the link to <a target=_blank
+				       href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactor?ABF1,BAF1>ABF1</a>,
+	    and then on the button <b>Get matrix</b>. The following PSSM is
+	    displayed.
+
+<pre>
+>ABF17121SCPD
+
+A   0   0  11   2   3   7   3   5   5  14   0   1
+T  14   0   2   1   6   2   7   3   0   0   0   0
+G   0   0   0   0   2   3   1   2   3   0   1  13
+C   0  14   1  11   3   2   3   4   6   0  13   0. 
+</pre>
+</ol>
+</div>
+
+<p><b>Some basic questions</b></p>
+
+<div class='exo'>
+  <ul>
+    <li>What is the alphabet size ?
+      
+    <li>What is the matrix width ?
+      
+    <li>How many inding sites were used to build this matrix ? 
+      
+    <li>How many Abf1p binding sites are currently stored in SCPD (click on the button <b>Get sites</b>)?
+
+    <li>Open a connexion to the <a target='_blank'
+    href='http://biodev.hgen.pitt.edu/cgi-bin/enologos/enologos.cgi'>enologos
+	Web site and generate logos representing the occurrences,
+    frequencies, weights and information content of the matrix.  </li>
+
+    <li>Analyze the impact of the pseudo-weight on the matrix. Try
+      progressively larger values (0,1, 10, 100, 1000, 10000) and
+      analyze the impact on the frequencies, total information
+      content, and shape of the sequence logo.</li>
+
+  </ul>
+</div>
+  
+
+<p>We will now analyze the content of this matrix with the
+  program <i>convert-matrix</i>.</p>
+
+<div class='tut'>
+  <ol>
+  <p><li>In the left menu of the RSAT page, select the
+      form <a target='tools'
+      href='../convert-matrix_form.cgi'><b>convert matrix</b></a>
+      under the title <b>Matrix tools</b>.
+  </li></p>
+      
+  <p><li>Copy the ABF1 matrix from SCPD to the text area in the
+      form. 
+  
+      <ul><b>Beware</b>, you should only copy the 4 rows containing the
+	nucleotide information, and not the matrix header.</uL>
+  </li></p>
+
+  <p><li>Make sure that the selected matrix format is <b><i>tab</i></b>.
+  </li></p>
+	      
+  <p><li>Select a relevant <b>background model</b>. With the
+      factor Abf1p, check the option
+      <i>Organism-specific</i>, select the
+      organism <i>Saccharomyces cerevisiae</i>, and the sequence
+      type <i>upstream-noorf</i>.	
+  </li></p>
+  
+
+  <p><li>For the <b><i>Return fields</i></b>, select the following options:
+      <ul>
+	<li>counts</li>
+	<li>frequencies</li>
+	<li>weights</li>
+	<li>info</li>
+	<li>margins</li>
+	<li>parameters</li>
+	<li>logo</li>
+      </ul>
+  </li></p>
+
+  <p><li>Click <b>GO</b>.
+  </li></p>
+
+</div>
+
+</ol>
+
+<h3>Matrix conversions</h3>
+
+<p>The original matrix was converted into different formats. We will
+briefly comment these formats. </p>
+
+<h4><i>Counts</i></h4>
+
+<p><b><i>Counts</i></b> are the primary information obtained from
+SCPD. They represent the number of occurrences (absolute frequency) of
+each residue at each position of the alignment of the annotated
+binding sites for the transcription factor Abf1p.</p>
+
+<h4><i>Frequencies</i></h4>
+
+<p><b><i>Relative frequencies</i></b> are obtained by dividing the counts of each
+cell of the matrix by the sum of counts in its column.</p>
+
+<p>You will notice that the frequency matrix does not faithfully reflect
+the relative frequencies calculated from the counts. In particular,
+the cells of the original matrix with count values of 0 have values
+larger than 0 in the frequency matrix.</p>
+
+<p>You can check this by coming back to the convert-matrix form (click
+the <i>Back</i> button of your brower), and redoing the conversion
+with a value of 0 for the option <i><b>pseudo-weight</b></i> (note:
+this is only for illustrative purposes, it is generally recommended to
+use a pseudo-weight of at least 1).</p>
+
+<h4><i>Weights</i></h4>
+
+<p>The <b><i>weight</i></b> is the score described above, i.e. the
+log-likelihood between
+  <ul>
+    <li><i>P(S|M)</i>, the probability to observe the sequence <i>S</i>
+      given the motif model (matrix) <i>M</i>, and
+      
+    <li><i>P(S|B)</i>, the probability to observe the sequence <i>S</i>
+      given the background model <i>B</i>.
+  </ul>
+</p>
+
+<p>Positive weights indicate that the residue is considered to favour
+the binding of the transcription factor, negative weights that it is
+unfavorable.</p>
+
+<h4><i>Information</i></h4>
+
+<p>The <b><i>information content</i></b> of each cell of the matrix is calculated by
+multiplying the weight by the frequency. The information content of a
+row (column) is the sum of information contents of its cells.</p>
+
+</ul>
+
+<a name='exercises'></a><h2>Additional exercises</h2>
+
+<div class='exo'>
+  <ol>
+    <li>In the <a target='_blank'
+				    href='http://jaspar.genereg.net/'>JASPAR</a>
+				    database, retrieve the two
+				    alternative matrices for Klf4 (IDs
+				    MA0039.1 and MA0039.2, see tip
+				    below). These matrices both
+				    represent the TFBS of the mouse
+				    transcription factor Klf4. However
+				    their numbers are quite
+				    different. Make a guess about the
+				    origin of the data that served to
+				    build these two matrices. </li>
+    <li>Convert each matrix with the tool <a target='tools'
+					     href='../convert-matrix_form.cgi'>convert-matrix</a>,
+					     to extract the
+					     frequencies, weights,
+					     information content,
+					     parameters, and
+					     logo. Compare the
+					     results. How do you
+					     interpret the differences
+					     between these two
+					     matrices, supposed to
+					     represent the binding
+					     specificity of the same
+					     transcription
+					     factor. </li>
+  </ol>
+</div>
+
+<div class='tips'>
+  <h4>Tips</h4>
+  <ol>
+    <li>For some transcription factors, Jaspar contains several
+    databases built from different datasets. There are for example two
+    matrices for the mouse factor Klf4, denoted by the identifiers
+    MA0039.1 and MA0039.2, respectively.  By default, the Web
+    itnerface only returns the most recent version of the matrix. In
+    order to access all the versions:
+      <ul>
+	<li>search by name (with Klf4) will return the matrix MA0039.2; </li>
+	<li>click on the sequence logo of the Klf4 matrix;</li>
+	<li>in the detailed information window, click <i>Show me all
+	    versions</i></li>
+      </ul>
+    </li>
+
+    <li>Read carefully the detailed information of the JASPAR records
+      to understand the relationship between the data source and the
+      composition of the two matrices.</li>
+
+  </ol>
+</div>
+
+<a name='next'></a>
+<h2>Next steps</h2>
+
+<ol>
+
+<p><li>PSSM can be used to detect occurrences of a motif in
+    sequences. The theory underlying matrix-based pattern matching
+    will be introduced in the slides
+    <a
+    href='../course/pdf_files/02.3.pattern_matching_matrices.pdf>02.3.pattern_matching_matrices.pdf</p>.
+
+<p><li>The suite RSAT includes a matrix-based pattern matchin
+    tool, <a href='../matrix-scan_form.cgi'>matrix-scan</a>, which
+    permits to scan sequences with one or more matrices, under
+    different background models, in order to predict binding sites ad
+    cis-regulatory modules (CRM). A detailed protocol has been
+    published to explain the theoretical concepts and practical
+    aspects related to sequence scanning with matrices.
+    <ul>
+      <p><li>Turatsinze, J.V., Thomas-Chollier, M., Defrance, M. and van
+	  Helden, J. (2008) Using RSAT to scan genome sequences for
+	  transcription factor binding sites and cis-regulatory modules. Nat
+	  Protoc, 3, 1578-1588.
+	  <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed
+	    18802439</a></li></p>
+    </ul>
+</li></p>
+
+<p><li>Several pattern-discovery programs allow to detect significant
+    motifs represented as PSSM from a set of unaligned sequences. These
+    programs have been used to predict regulatory elements in the
+    regulatory regions of sets of co-regulated genes. Matrix-based pattern
+    discovery are discussed in the tutorials on
+    the <a href='tut_gibbs.html'>gibbs sampler</a>
+    and <a href='tut_consensus.html'>consensus</a>.
+</li></p>
+</ol>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+
+<address>Last update 15 Jan 2012 - by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript></address>
+
+</body>
+</html>

@@ -1,0 +1,333 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::OrganismManager;
+
+use Storable qw(nstore retrieve);
+
+# temporary directory
+my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
+
+## Initialization
+$start_time = &RSAT::util::StartScript();
+$calc_neighbours = 0;
+$info_before = 0;
+@ORF_column = ();
+$null = "<NULL>";
+
+
+@supported_info_types = qw(id ctg strand left right name descr names 
+                           upstr_neighb_name upstr_neighb_id upstr_limit upstr_size
+                           downstr_neighb_name downstr_neighb_id downstr_limit downstr_size
+                           right_neighb_name right_neighb_id right_limit right_size
+                           left_neighb_name left_neighb_id left_limit left_size
+			  );
+
+%supported_info_types = ();
+foreach my $type (@supported_info_types) {
+  $supported_info_types{lc($type)} = 1;
+}
+$supported_info_types{all} = 1;
+$supported_info_types = join ",", @supported_info_types;
+
+&ReadArguments();
+
+#### output file ####
+$out = &OpenOutputFile($outputfile);
+
+#### organism
+&RSAT::OrganismManager::CheckOrganism($organism_name);
+
+
+#### Information types
+if (scalar(@info_types < 1)) {
+  @info_types = "descr";
+}
+
+@null = ();
+
+## Check if all the info types were requested
+foreach my $type (@info_types) {
+  if ($type eq "all") {
+    @info_types = @supported_info_types;
+    last;
+  }
+}
+
+## Check that the column containing the ORF is specified.
+## If not only default ORF_column is 1
+
+if (scalar(@ORF_column) == 0) {
+  push @ORF_column, 1;
+}
+
+
+## Check the requested info types
+foreach my $col (@ORF_column) {
+  my $suffix = "";
+  if (scalar(@ORF_column) > 1) {
+    $suffix = "_".$col;
+  }
+  foreach my $type (@info_types) {
+    &RSAT::error::FatalError("Invalid information type $type. Supported: $supported_info_types") 
+      unless ($supported_info_types{$type});
+    if (($type =~ /^upstr_/) ||
+	($type =~ /^down_/) ||
+	($type =~ /^right_/) ||
+	($type =~ /^left_/) ) {
+      $calc_neighbours = 1;
+    }
+    my $type_header = $type;
+    $type_header =~ s/upstr_neighb_/up_/;
+    $type_header =~ s/upstr_/up_/;
+    $type_header =~ s/downstr_neighb_/dn_/;
+    $type_header =~ s/downstr_/dn_/;
+    $type_header =~ s/up_limit/up_lim/;
+    $type_header =~ s/^descr$/description/;
+    push @null, $null;
+    push @header, $type_header.$suffix;
+  }
+}
+
+################################################################
+## Instantiate organism
+$organism = new RSAT::organism();
+$organism->check_name($organism_name);
+$organism->set_attribute("name", $organism_name);
+$organism->OpenContigs($organism_name, $annotation_table);
+$organism->DefineAcceptedFeatureTypes(sort keys %supported_feature_types);
+
+### Load the organism
+my $imp_pos = 0;
+my $synonyms = 1;
+if ($organism->is_serialized($imp_pos, $synonyms)) {
+  ## Load organism from serialized file
+  my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
+  $organism = retrieve $serial_file;
+  &RSAT::message::TimeWarn("Retrieved organism", $organism_name, "from serialized file", $serial_file)
+    if ($main::verbose >= 3);
+} else {
+  ### Load organism from flat files (slower)
+  $organism->load_and_serialize($imp_pos, $synonyms);
+}
+$organism->CalcNeighbourLimits() if ($calc_neighbours);
+
+#### verbose ####
+if ($verbose) {
+  print $out "; add-gene-info ";
+  &PrintArguments($out);
+  print $out "; Input file	$inputfile\n" if ($inputfile);
+  print $out "; Output file	$outputfile\n" if ($outputfile);
+}
+
+#### input file ####
+($in) = &OpenInputFile($inputfile);
+
+###### execute the command #########
+my $l = 0;
+while ($current_line = <$in>) {
+  $l++;
+  chomp($current_line);
+  $current_line =~ s/\r//g; ## Suppress Windows-specific carriage return
+
+  ## Skip empty lines
+  unless ($current_line =~ /\S/) {
+    print $out $current_line, "\n";
+    next;
+  }
+
+  ## Print header line + info column names
+  if ($current_line =~ /^#/) {
+    if ($info_before) {
+      $current_line =~ s/^#//;
+      print $out "#", join ("\t", @header, $current_line), "\n";
+    } else {
+      print $out join ("\t", $current_line, @header), "\n";
+    }
+    next;
+  }
+
+  ## Print comment line as such
+  if ($current_line =~ /^;/) {
+    print $out join ("\t", $current_line), "\n";
+    next;
+  }
+  my @info = ();
+  foreach my $col (@ORF_column) {
+    if ($col > 0) {
+      @columns = split("\t", $current_line);
+      $query = uc($columns[$col - 1]);
+      $query = &RSAT::util::trim($query);
+
+      my $feature = $organism->get_feature_for_name($query);
+      &RSAT::message::Debug("identified feature", $query, $feature) if ($main::verbose >= 3);
+      if ($feature) {
+	foreach my $type (@info_types) {
+	  my $info = join( ";", $feature->get_attribute($type));
+	  &RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 6);
+	  push @info, $info;
+	}
+	&RSAT::message::Info(join ("\t", "Line", $l, "Info found", $query, join("\t", @info))) if ($main::verbose >= 3);
+      } else {
+	@info = @null;
+	&RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
+      }
+    }
+  }
+  if ($info_before) {
+    print $out join ("\t", @info, $current_line), "\n";
+  } else {
+    print $out join ("\t", $current_line, @info), "\n";
+  }
+}
+
+
+
+###### close input/output files
+close $in if $inputfile;
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+
+#### display full help message #####
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	add-gene-info
+
+DESCRIPTION
+	Takes as input a tab-delimited file with one ore more columns
+	containing ORFs names, and adds a column with a
+	description of the ORFs for the requested columns.
+	
+CATEGORY
+	genomics
+
+USAGE
+        add-gene-info [-i inputfile] [-o outputfile] [-v] 
+        [-col orf_column_1] [-col orf_column_2] -org organism
+	
+OPTIONS
+	-h	display full help message
+
+	-help	display options
+
+	-v	verbose
+	
+	-col	orf column
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-org organism
+
+	-info	information type (supported: $supported_info_types)
+
+	-before add the information before the input line (by default,
+         	the info is added at the end of each input line).
+	
+INPUT FORMAT
+	Any text file containing ORF identifiers or gene names.
+
+	The first word of each row is considered as a query name
+	(identifier). Additional text on the same row is not analyzed
+	(it appears unchanged in the output).
+	
+OUTPUT FORMAT
+	After each line containing reference to an ORF, a 
+        column with ORF function is added. 
+	
+End_of_help
+    close HELP;
+    exit;
+}
+
+
+#### display short help message #####
+sub PrintOptions {
+    open HELP, "| more";
+    print HELP <<End_short_help;
+add-gene-info options
+---------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-col #  ORF column (can be used recursively)
+-org	organism
+-info	information type (supported: $supported_info_types)
+-before	add info before rather than afte the input line
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+
+################################################################
+#### Read arguments 
+sub ReadArguments() {
+    foreach $a (0..$#ARGV) {
+
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    # column containing the ORF
+	} elsif ($ARGV[$a] eq "-col") {
+	    my $col = $ARGV[$a+1];
+	    unless (&RSAT::util::IsNatural($col) && ($col > 0)) {
+	      &RSAT::error::FatalError("Invalid column specification\n");
+	    } else {
+	      push @ORF_column, $col;
+	    }
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name =$ARGV[$a+1];
+
+	    #### information type
+	} elsif ($ARGV[$a] eq "-info") {
+	    @info_types = split ",", lc($ARGV[$a+1]);
+
+	    #### add info before the input line
+	} elsif ($ARGV[$a] eq "-before") {
+	    $info_before = 1;
+	}
+    }
+}

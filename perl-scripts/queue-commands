@@ -1,0 +1,298 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: queue-commands,v 1.7 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+template
+
+=head1 DESCRIPTION
+
+Send a set of commands to the queue of a cluster, using the RSAT function
+&doit().
+
+=head1 AUTHORS
+
+Jacques van Helden <jvhelden@ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+queue-commands [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The input file is a text file containing the commands that have to be
+sent to the cluster.
+
+Each non-empty row is considered to contain one command.
+
+Empty rows are skipped.
+
+Lines starting with # are considered as comments, and are echoed on the STDER. 
+
+=head1 OUTPUT FORMAT
+
+Each command is written in a separate script, which is then sent to the queue
+of the PC cluster.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+
+
+  %infile = ();
+  %outfile = ();
+
+  $verbose = 0;
+  $in = STDIN;
+  $out = STDOUT;
+
+  $dry_run = 0;
+  $die_on_error = 1;
+  $batch = 1;
+  $job_prefix = "RSAT_queue";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ## Print the cluster parameters in the output
+  if ($main::verbose >= 1) {
+    print $main::out "; CLUSTER PARAMETERS:\n";
+    foreach my $param qw (CLUSTER_QUEUE BATCH_MAIL QSUB_MANAGER NODES) {
+      printf $main::out ";\t%-15s\t%s\n", $param,  $ENV{$param};
+    }
+  }
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{commands});
+  while ($command = <$main::in>) {
+    chomp($command);
+    next unless ($command);
+    if ($command =~ /^\#/) {
+      warn $command, "\n";
+      next;
+    }
+    &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  }
+  close $main::in if ($main::infile{commands});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $main::out if ($main::outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{commands} = shift(@arguments);
+
+	    ## Job prefix
+=pod
+
+=item B<-prefix job_prefix>
+
+Prefix for the jobs. Default: RSAT_queue
+
+=cut
+	} elsif ($arg eq "-prefix") {
+	    $main::job_prefix = shift(@arguments);
+
+	    ## Dry run
+=pod
+
+=item	B<-n>
+
+Do not execute the commands, simply print them on the screen to check their
+correctness.
+
+=cut
+	} elsif ($arg eq "-n") {
+	    $main::dry_run = 1;
+
+=pod
+
+=item B<-queue>
+
+Choose the queue where the jobs will be sent.
+
+=cut
+	} elsif ($arg eq "-queue") {
+	    $ENV{CLUSTER_QUEUE} = shift(@arguments);
+
+
+=item B<-nodes>
+
+Restrict the executions to selected nodes of the cluster. Multiple
+nodes can be specified separated by commas, or by using iteratively
+the option -nodes.
+
+The option is simply passed to the queue manager. It has thus to
+conform to the options of the local queue manager.
+
+ Example (for the sge queue manager):
+  -nodes '-l nodes=1:k2.6'
+
+=cut
+	} elsif ($arg eq "-nodes") {
+	    $ENV{NODES} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; queue-commands ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut

@@ -1,0 +1,83 @@
+\chapter{Generating random sequences}
+
+Th program \program{random-seq} allows to generate random sequences
+wih different random models.
+
+It supports Bernoulli models (independence between successive
+residues) and Markov models of any order. Markov models are generally
+more suitable to represent biological sequences. 
+
+
+We will briely illustrate different ways to use this program. 
+
+\section{Sequences with identically and independently distributed (IID) nucleotides}
+
+\begin{small}
+\begin{verbatim}
+random-seq -l 200 -r 20 -o rand_L200_N20.fasta
+\end{verbatim}
+\end{small}
+
+We can now check th residue cmposition of this random sequence.
+
+\begin{small}
+\begin{verbatim}
+oligo-analysis -v 1 \
+  -i rand_L200_N20.fasta \
+  -l 1 -1str -return occ,freq \
+  -o rand_L200_N20_1nt-1str.tab
+\end{verbatim}
+\end{small}
+
+\section{Sequences with nucleotide-specific frequencies}
+
+In general, the residue composition of biological sequences is
+biased. We can impose residue-specific probabilities for the random
+sequence generation.
+
+\begin{small}
+\begin{verbatim}
+random-seq -l 200 -r 20 -a a:t 0.3 c:g 0.2 \
+  -o rand_L200_N20_at30.fasta 
+
+oligo-analysis -v 1 \
+  -i rand_L200_N20_at30.fasta \
+  -l 1 -1str -return occ,freq \
+  -o rand_L200_N20_at30_1nt-1str.tab
+\end{verbatim}
+\end{small}
+
+
+\section{Markov chain-based random sequences}
+
+The random generator \program{random-seq} supports Markov chains of
+any order (as far as the corresponding ferquency table has previously
+been calculated). The Markov model is specified by indicating an
+oligonucleotide frequency table. The table of oligonucleotides of
+length $k$ is automatically converted in a transition table of order
+$m=k-1$ duing the execution of \program{random-seq}. 
+
+
+\begin{small}
+\begin{verbatim}
+random-seq -l 200 -r 20 \
+  -expfreq $RSAT/data/genomes/Escherichia_coli_K12/oligo-frequencies/3nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz \
+  -o rand_L200_N20_mkv2.fasta 
+\end{verbatim}
+\end{small}
+
+A simpler way to obtain organism-specific Markov models is to use the
+options \option{-bg} and \option{-org} of \program{random-seq}. 
+
+\begin{small}
+\begin{verbatim}
+## This command generates random sequences with a Markov model of order 2,
+## calibrated on all the non-coding upstream sequences of E.coli.
+random-seq -l 200 -r 20 \
+  -org Escherichia_coli_K12 -bg upstream-noorf -ol 3 \
+  -o rand_L200_N20_mkv2.fasta 
+\end{verbatim}
+\end{small}
+
+
+

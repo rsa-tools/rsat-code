@@ -1,0 +1,2779 @@
+#!/usr/bin/perl -w
+
+
+use strict;
+
+=pod
+
+=head1 NAME
+
+matrix-bg-eval
+
+=head1 DESCRIPTION
+
+This program is a task manager which runs matrix-quality 
+in order to evaluate the quality of matrices and various Makrov chains-based 
+background models.
+
+This program is a way to automatize the systematic analysis of the quality 
+of a matrix using different negative sequence sets and different background models.
+
+The program perfoms different tasks for each matrix and generates results in 
+different dirctories created on the fly.
+
+=head1 AUTHORS
+
+=item Jean-Valery Turatsinze <jturatsi@ulb.ac.be>
+
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=item pattern matching
+
+=item PSSM
+
+=item evaluation
+
+=back
+
+=head1 USAGE
+    
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+require "RSA.lib";
+
+use RSAT::matrix;
+use RSAT::MatrixReader;
+use RSAT::SeqUtil;
+use Getopt::Long;
+use File::Spec;
+use File::Basename;
+use File::Copy;
+use POSIX qw(ceil floor);
+use Data::Dumper;
+
+################################################################
+## Main package
+package main;
+{
+	
+################################################################
+################# ARGUMENTS AND OPTIONS ########################
+################################################################
+  
+  our $start_time = &RSAT::util::StartScript();
+  
+  #####################################################################
+  ### Declaring command lines options variables
+  
+  our $verbose = 1; #default value
+  our $help;
+  our $dry;
+  
+  %main::infile = ();
+  %main::outfile = ();
+  %main::dirproject = ();
+  our @bg_methods = ();
+  
+  our $matrix_format = "meme";
+  our $seq_format = "fasta";
+  our $ref_feat;
+  our $pseudo_counts = 1;
+  our $bg_input = "-1";
+  our $bg_file;
+  our $window_size;
+  our $window = "-1";   
+  our $batch;
+  our $perm_neg;
+  our $perm_pos;
+  our $negative_sets;
+  our $roc_ref;
+  our $img_formats;
+  our $rand_gen;
+  our $rand_r = 1000;
+  our $rand_l = 100;
+  our $roc_stat_base ="sig";
+ 
+  
+   ## tasks
+   our %supported_tasks = (
+   			bg_input_rand_seq => 1, ## generate random sequence with nucleotide frequencies for bg_input
+			matrix_quality=>1, ## launch matrix-quality
+			roc_stat=>1, ## Launch roc-stat
+			perm => 1, ## also run roc-stat on permuted dataset
+#			p_matching_eval=>1, ## process data with pMatchingEval approach (matrix-scan + compare-features)
+			optimal_acc => 1, ## get best accuracy for roc-stat
+			compare_bg =>1, ## compare results of roc-stat among a given bg method
+			compare_method => 1, ##draw graphs to compare bg methods
+		       );
+    our $supported_tasks = join (",", sort(keys( %supported_tasks)));
+    our $tasks;
+    our %tasks2run = ();
+  
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+  
+  ################################################################
+  ## Check argument values
+  &printHelp() if $main::help;
+  
+  ## tasks
+  if ($tasks) {
+	chomp($tasks);
+	my @tasks = split ",", $tasks;
+	foreach my $task (@tasks) {
+		$task = lc($task);
+	   	if ($supported_tasks{$task}) {
+	   	  $tasks2run{$task} = 1;
+	   	} else {
+	   	  &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	   	}
+	 }
+  }
+	## if no tasks is specified, run default tasks
+  	unless (scalar(keys(%tasks2run))>0) {
+      %tasks2run = %supported_tasks;
+    }
+    unless ($rand_gen) {
+    	delete($tasks2run{genere_rand_seq});
+    }
+  
+  ## verbosity
+  $main::verbose=1 unless (&IsNatural($main::verbose)); 
+  
+  ## sequence sets
+  our @seq_pos_sets = ('matrix_sites');
+  our %seq_neg_sets = ();
+  
+  if ($negative_sets){
+ 	 our @tmp_neg_sets = split(',',$negative_sets);
+  	foreach my $neg_set (@tmp_neg_sets){
+  		my @tmp = split("=", $neg_set);
+  		$seq_neg_sets{$tmp[0]} = $tmp[1];
+  		}
+  }
+  ## to use generated sequences based on each bg_model
+  ## name of this negative set is : rand_gen
+  ## for bg_global, the path to the random sequences are given in the second
+  ## column of the bgfile list
+  ## for bg_input, the sequences are computed by this program
+  ## for bg_window, no random sequences as bg model is variable
+
+
+  ## matrix name
+  our $matrix_name = &RSAT::util::ShortFileName($main::infile{matrix});
+  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+  
+  ## pseudo counts
+  &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
+				"Invalid value for a pseudo-weight. Must be a positive real number."))
+    unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+	    && ($main::pseudo_counts >= 0));
+  
+	## bg models, can have several ones tested
+	 if ($bg_file) {
+	 	push @bg_methods, "global";
+	 } 
+	 if ($bg_input ne "-1") {
+	 	push @bg_methods,"input";
+	 } 
+	 if ($window ne "-1") {
+	 	push @bg_methods,"window";
+	 }	 
+	&RSAT::error::FatalError("At least one background model method must be provided with -bgfilelist, -bginput or -window") if ($#bg_methods == -1);
+	&RSAT::error::FatalError("Options -window must be specified along with -window_size") if (($window ne "-1")&&(!$window_size));
+
+	
+	## markov orders for the bg models	
+	if ($bg_input ne "-1") {
+		if ($bg_input =~ /(\d+):(\d+)/){
+			@main::bg_input_orders = ($1 .. $2);
+		}
+		else {
+			@main::bg_input_orders = split (/,/,join(',',$bg_input));
+		}
+		&RSAT::error::FatalError("At least one markov order must be specified by -bginput option.") unless (@main::bg_input_orders);		
+		foreach my $m (@main::bg_input_orders){
+			&RSAT::error::FatalError("Markov order must be a natural number.") 
+			unless &RSAT::util::IsNatural($m);
+		}
+	}
+	if ($window ne "-1") {
+		if ($window =~ /(\d+):(\d+)/){
+			@main::bg_window_orders = ($1 .. $2);
+		}
+		else {
+			@main::bg_window_orders = split (/,/,join(',',$window));
+		}
+		&RSAT::error::FatalError("At least one markov order must be specified by -window option.") unless (@main::bg_window_orders);		
+		foreach my $m (@main::bg_window_orders){
+			&RSAT::error::FatalError("Markov order must be a natural number.") 
+			unless &RSAT::util::IsNatural($m);
+		}
+	
+	
+		## window sizes
+		@main::window_sizes = split (/,/,join(',',$window_size)) if ($window_size);
+		foreach my $w (@main::window_sizes){
+			&RSAT::error::FatalError("Window size must be a natural number.") 
+			unless &RSAT::util::IsNatural($w);
+		}
+	}
+
+	## permutations
+	&RSAT::error::FatalError($perm_pos, "Invalid value for optin -perm_pos. Should be a Natural number.") 
+	      unless (&IsNatural($perm_pos));
+	&RSAT::error::FatalError($perm_neg, "Invalid value for optin -perm_neg. Should be a Natural number.") 
+	      unless (&IsNatural($perm_neg));
+   
+   	################################################################
+    ## Declare some global variables
+    our $decimals = 2;
+    our $loo_rm_twin = 1;
+    our @alphabet = ("a","c","g","t");
+    our $input_seq_length;
+    
+    our @dir_to_remove = ();
+    our @file_to_remove = ();
+    
+    ## Parameters for the &doit() command
+    our $die_on_error = 1;
+    our $job_prefix = "matrix-bg-eval"; 
+    our $cluster = 0; 
+    
+    
+    ###############################################################
+    ## Roc-stat options
+    
+    ## roc-stat columns
+	our %roc_stat_columns =();
+	
+	$roc_stat_columns{7}= 'Sn';
+	$roc_stat_columns{8}= 'PPV';
+	$roc_stat_columns{10}= 'Acc_g';
+	our $acc_g_col=10;
+	
+	## roc stat 
+	my $score_col=8;
+	my $pval_col=11;
+	my $sig_col=13;
+	our $roc_stat_base_col;
+	our $x_leg;
+	
+	if ($roc_stat_base eq "scores"){
+		$roc_stat_base_col = $score_col;
+		$x_leg = "'matrix scores'";
+	}elsif ($roc_stat_base eq "p_val"){
+		$roc_stat_base_col = $pval_col;
+		$x_leg = "'segment P-value'";
+	}elsif ($roc_stat_base eq "sig"){
+		$roc_stat_base_col = $sig_col;
+		$x_leg = "'segment significance: -log(Pval)'";
+	}
+	
+	###############################################################
+    ## Graphs options
+    
+    our %graph_optimal_acc = () ;
+    our @image_formats =  ('eps','pdf');
+    
+    if ($img_formats){
+		my @tmp_img_formats = split(',',$img_formats);
+		if (scalar(@tmp_img_formats)>0) {
+			@image_formats =  ();
+	   		foreach my $f (@tmp_img_formats) {
+        		push (@main::image_formats, $f);
+	    	}
+		}
+	} 
+
+   	
+   	## General options for all the graphs 
+   	our $all_graph_options = " -lines -pointsize 0";
+   	my $title1_name = &Replace_underscores($main::matrix_name);
+	$all_graph_options .= " -title1 $title1_name";
+    $all_graph_options .= " -legend";
+    $all_graph_options .= " -xsize 800 -ysize 400";
+    $all_graph_options .= " -gp 'set size ratio 0.5' ";
+    $all_graph_options .= " -xleg1  $x_leg";
+	
+	
+    
+    
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{prefix}."_log.txt");
+    
+    
+################################################################
+####### PREPARE DIRECTORY ARCHITECTURE AND SEQUENCES ###########
+################################################################
+    
+    ################################################################
+    ## Create directory architecture
+    
+    ## working directory
+    $main::dirproject{wd} = `pwd`;
+    chomp($main::dirproject{wd});
+    
+    ## 1 - prefix dir
+    mkdir($main::outfile{prefix});
+    $main::dirproject{prefix} = File::Spec->rel2abs($main::outfile{prefix},$main::dirproject{wd});
+
+    ## 2 - matrix name
+    $main::dirproject{$matrix_name} = File::Spec->rel2abs($matrix_name,$main::dirproject{prefix});
+    mkdir($main::dirproject{$matrix_name});
+
+    ## 3 - matrix directory
+    $main::dirproject{matrices} = File::Spec->rel2abs("matrices",$main::dirproject{$matrix_name});
+    mkdir($main::dirproject{matrices});
+    
+    ## 4 - sequences directory
+    $main::dirproject{sequences} = File::Spec->rel2abs("sequences",$main::dirproject{$matrix_name});
+    mkdir($main::dirproject{sequences}) ;
+    
+    ## 4 - Features files directory
+    $main::dirproject{features} = File::Spec->rel2abs("features",$main::dirproject{$matrix_name});
+    mkdir($main::dirproject{features});
+
+    ## copy input matrix file to this directory
+    copy(File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd}),File::Spec->rel2abs($matrix_name.".txt",$main::dirproject{matrices})) or die "File cannot be copied.";
+    copy(File::Spec->rel2abs($main::infile{ref_feat},$main::dirproject{wd}),File::Spec->rel2abs("input_reference_features.tab",$main::dirproject{features})) or die "File cannot be copied.";
+    
+
+    
+    ################################################################
+    ## Mask annotated sites from the sequence regions
+    our $annotated_sites = ReadAnnotatedSites();
+
+    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
+    # here we have 2 sets of sequence regions => TFBS masked / not masked	
+ 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
+	## add input_TFBS_masked as sequences to scan by default
+	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
+
+	#####################################################################
+ 	## For bg_window option
+ 	our %window_seqs = ();
+ 	if ($window ne "-1") {
+ 		foreach my $window_size (@main::window_sizes){
+ 			################################################################
+ 			## Extract TFBS in subsequences of defined size
+ 			my $TFBS_with_flank_seq_filename = "TFBS_with_flank".$window_size;
+    		$main::outfile{$TFBS_with_flank_seq_filename} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_with_TFBS_".$window_size."bp.fa",$main::dirproject{sequences});
+ 			my $input_sequences = $main::infile{ref_sequences};
+ 			my $sub_seqs = &extractAnnotatedSitesAndFlanks($annotated_sites,$window_size,$input_sequences,$main::outfile{$TFBS_with_flank_seq_filename},$sequences_length); 	
+
+ 			#######################################################################
+ 			## prepare prepare TFBS feature file for use with compare-feature
+ 			## positions are relative to each sub-sequence
+ 			my $subsequences = &getRelativeTFBSPositions($sub_seqs,$annotated_sites,$window_size);
+ 			
+ 			## store in a hash
+ 			$window_seqs{$window_size}->{sub_seqs} = $sub_seqs;
+ 			$window_seqs{$window_size}->{sub_sequences} = \$subsequences;
+ 		}
+ 		
+ 		#######################################################################
+ 		## Get sequence of sites from the matrix file
+ 		$main::matrix_sites_ref =  &getMatrixSites($main::infile{matrix}, $main::matrix_format);
+ 	}
+
+################################################################
+########## GET OR CALCULATE BACKGROUND MODELS ##################
+################################################################
+    
+   	## treat each bg method
+   	foreach my $method (@bg_methods){
+   		
+   		my $bg_method = "bg_".$method;
+   		RSAT::message::Info ("Background method ".$bg_method) if ($main::verbose >= 1);
+
+   		## directory architecture
+    	$main::dirproject{$bg_method} = File::Spec->rel2abs($bg_method,$main::dirproject{$matrix_name});
+    	mkdir($main::dirproject{$bg_method}) ;
+   		
+   		###########################################################
+   		## get background model files
+   		
+   		my @bg_file_list = ();
+   		my %bg_file_table = ();
+   		
+   		## bg global (file list) : get the bg files from the file list
+   		if ($bg_method eq "bg_global") {   
+	    	
+    		open(BG, File::Spec->rel2abs($main::bg_file,$main::dirproject{wd})) || die "can't open file $main::bg_file: $!";
+    		while (my $line = <BG>){
+    			my @fields = split("\t",$line);
+    			chomp($fields[0]);
+    			push (@bg_file_list,$fields[0]); ## first column contains bg file path
+				## random sequences
+    			if (($rand_gen)&&($fields[1])) { ## second column contains random sequence file path
+					## get the path to sequences from bgfilelist
+					chomp($fields[1]);
+					$main::seq_neg_sets{rand_gen}->{$bg_method}->{$fields[0]} = $fields[1];
+    			}
+    		}
+    		close(BG);
+   			}
+   		
+   		## bg input (calculate bg model)
+   		if ($bg_method eq "bg_input") {
+   			
+   			## directory architecture
+   			my $bg_dir = $bg_method."bg_model";
+    		$main::dirproject{$bg_dir} = File::Spec->rel2abs("bg_model",$main::dirproject{$bg_method});
+    		mkdir($main::dirproject{$bg_dir}) ;
+   			my $seq_dir;
+   			if ($main::rand_gen) {
+    			$seq_dir = File::Spec->rel2abs("sequences",$main::dirproject{$bg_method});
+   				mkdir($seq_dir);
+   			}
+   			
+   			## calculate input sequences total length
+   			$main::input_seq_length = 0;
+   			my ($in, $input_dir) = &OpenInputFile($main::infile{ref_sequences});
+ 			while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
+			(($current_seq ne "") || ($seq_id ne ""))) {
+		
+				## Sequence length
+				$main::input_seq_length += length($current_seq);
+      			}
+      		close $in;
+   			&RSAT::message::Info("Input sequences total length: $main::input_seq_length ") if ($main::verbose >= 3);
+   			
+   			## process each specified markov order	
+    		for my $order (@main::bg_input_orders) {
+    			## here calculate the ""input factor-specific" background model, on non-masked input sequences
+ 	#			if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
+ 	#				$input_bg_file = &BackgroundModels($main::outfile{ref_sequences_masked},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences_masked");
+ 	#			} else {
+ 				my	$input_bg_file = &BackgroundModels($main::infile{ref_sequences},"",$order,$main::dirproject{$bg_dir},"","1str","ref_sequences");
+ 	#			}
+    			push (@bg_file_list,$input_bg_file);
+    			
+    			if ($main::rand_gen) {
+    				my $rand_seq_name =  basename($input_bg_file);
+    				$rand_seq_name =~ s/\.freq/\_r\_$main::rand_r\_l\_$main::rand_l\.fa/;
+    				my $rand_seq_file = File::Spec->rel2abs($rand_seq_name,$seq_dir);
+    				$main::seq_neg_sets{rand_gen}->{$bg_method}->{$input_bg_file} = $rand_seq_file;
+    				## generate sequence
+    				if ($tasks2run{bg_input_rand_seq}) {
+    					`random-seq -r $main::rand_r -l $main::rand_l -o $rand_seq_file -format fasta -type dna -expfreq $input_bg_file`;
+    					}	
+    				}
+    			}
+   			}
+    			
+       		
+   		
+   		## bg context (calculate bg model)
+		if ($bg_method eq "bg_window") {
+						
+			## treat all specified window sizes
+			for my $w (@main::window_sizes){
+				
+				my @window_bg_file = ();
+				
+				## directory architecture
+				my $window_dir = "window_".$w."bp";
+    			$main::dirproject{$window_dir} = File::Spec->rel2abs($window_dir,$main::dirproject{$bg_method});
+    			mkdir($main::dirproject{$window_dir}) ;
+				
+   				my $bg_dir = $bg_method."bg_model";
+    			$main::dirproject{$bg_dir} = File::Spec->rel2abs("bg_model",$main::dirproject{$window_dir});
+    			mkdir($main::dirproject{$bg_dir}) ;
+				
+			
+				## process each specified markov order	
+    			for my $order (@main::bg_window_orders) {  			
+    				## calculate a bg model for each subsequence, centered on a TFBS    				
+    				foreach my $seq_id (keys(%{$main::window_seqs{$w}->{sub_seqs}})){
+    					my @TFBS_ids_on_subseq = keys(%{$main::window_seqs{$w}->{sub_seqs}->{$seq_id}->{'byTFBS'}});
+    				
+    					foreach my $i (0..$#TFBS_ids_on_subseq) {
+							my $TFBS_id = $TFBS_ids_on_subseq[$i];
+ 							my $seq2scan = $main::window_seqs{$w}->{sub_seqs}->{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'};
+ 							my $input_bg_file = &BackgroundModels("",\$seq2scan,$order,$main::dirproject{$bg_dir},$TFBS_id, "1str","ref_sequences_masked");
+    						push (@window_bg_file,$input_bg_file);
+    					}
+    				}
+    			}
+    		$bg_file_table{$w} = \@window_bg_file;
+    		}
+		}
+		
+################################################################
+########################### RUN ################################
+### matrix-quality + roc-stat
+### matrix-scan + compare-features (pMatchingEval approach)
+################################################################	
+
+	
+		###########################################################
+   		## BG-WINDOW
+		if ($bg_method eq "bg_window") {
+			
+			## treat all specified window sizes
+			for my $w (@main::window_sizes){
+				my $window_dir = "window_".$w."bp";
+				
+				my %pos_scores = ();
+				
+				###########################################################
+   				## Treat each bg file
+    			for my $bg_file (@{$bg_file_table{$w}}) {
+    				chomp($bg_file);
+    				RSAT::message::Info ("Background file ".$bg_file) if ($main::verbose >= 2);
+
+					## directory architecture
+    				my $bg_file_name = basename($bg_file);
+    				$main::dirproject{$bg_file_name} = File::Spec->rel2abs($bg_file_name,$main::dirproject{$window_dir});
+    				mkdir($main::dirproject{$bg_file_name}) ;
+    				push (@main::dir_to_remove,$main::dirproject{$bg_file_name}); 
+    				
+    				my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_file_name});
+    				mkdir($matrix_quality_dir);
+				
+					################################################################
+    				## run matrix-quality for positive set
+	
+					## matrix-quality
+    				if ($tasks2run{matrix_quality}){
+    					chdir($matrix_quality_dir);
+    					&RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >=1);	
+	  					&runMatrixQualityWindows($bg_method,$bg_file,$w);
+    					chdir($main::dirproject{wd});
+    							
+    				################################################################
+    				## get the line of interest in the positive result files
+    				foreach my $seq_id (keys(%{$main::window_seqs{$w}->{sub_seqs}})){
+						my @TFBS_ids= keys(%{$main::window_seqs{$w}->{sub_seqs}->{$seq_id}->{'byTFBS'}});
+				
+						foreach my $TFBS_id (@TFBS_ids) {
+							if ($bg_file_name =~ /$TFBS_id/) {
+								## get matrix-sequence corresponding to this TFBS id
+								my $site = $main::matrix_sites_ref->{$TFBS_id};
+								
+								## get in matrix-quality loo result file
+								## the line corresponding to this sequence
+								
+								## read features from LOO file
+								my ($in, $input_dir) = &OpenInputFile(File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_matrix_sites_loo.tab",$matrix_quality_dir));
+								while ( my $line = <$in>){							
+									next if ($line=~ /^[#|;]/);								
+									if ($line =~ /$site/i) {	
+										my $bg_order_oligo = $bg_file_name;
+										$bg_order_oligo =~ s/nt.*//;
+										$pos_scores{$bg_order_oligo}->{$TFBS_id}->{loo} = $line;
+										last;
+									}
+								}
+								close ($in);
+								
+								## read features from matrix-site file
+								($in, $input_dir) = &OpenInputFile(File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_matrix_sites_scores.tab",$matrix_quality_dir));
+								while ( my $line = <$in>){					
+									next if ($line=~ /^[#|;]/);								
+									if ($line =~ /$site/i) {		
+										my $bg_order_oligo = $bg_file_name;
+										$bg_order_oligo =~ s/nt.*//;
+										$pos_scores{$bg_order_oligo}->{$TFBS_id}->{matrix_sites} = $line;
+										last;
+									}
+								}
+								close ($in);
+								
+								## read features from permuted matrix-site file  
+								($in, $input_dir) = &OpenInputFile(File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_matrix_sites_perm_col_1-".$main::perm_pos."_scores.tab",$matrix_quality_dir));
+								my $count = 0;
+								while ( my $line = <$in>){					
+									next if ($line=~ /^[#|;]/);								
+									if ($line =~ /$site/i) {	
+										$count ++;	
+										my $bg_order_oligo = $bg_file_name;
+										$bg_order_oligo =~ s/nt.*//;
+										$pos_scores{$bg_order_oligo}->{$TFBS_id}->{matrix_sites_perm} .= $line;
+										last if ($count == $main::perm_pos);
+									}
+								}
+								close ($in);
+							}
+						}
+    				}
+    				}
+				}
+
+    			################################################################
+    			## run matrix-quality for negative sets
+    			
+    			my @oligo_length_list =();
+    			
+    			## process each specified markov order	
+    			for my $order (@main::bg_window_orders) {
+    				
+    				## directory architecture
+    				my $bg_window = ($order+1)."nt_sliding_window";
+    				push (@oligo_length_list, $bg_window);
+    				$main::dirproject{$bg_window} = File::Spec->rel2abs($bg_window,$main::dirproject{$window_dir});
+    				mkdir($main::dirproject{$bg_window}) ;
+    				my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_window});
+    				mkdir($matrix_quality_dir) ;
+    				my $roc_stat_dir = File::Spec->rel2abs("roc-stat",$main::dirproject{$bg_window});
+    				mkdir($roc_stat_dir) ;
+
+    				if ($tasks2run{matrix_quality}){
+    					chdir($matrix_quality_dir);
+    					## run matrix-quality on negative set with bg sliding window
+    					## negative set is the input sequences with TFBS masked or not
+    					&runMatrixQualitySlidingWindows($bg_method,$order,$w,$matrix_quality_dir);
+    					chdir($main::dirproject{wd});
+    				
+		
+    					## merge with results of LOO on positive sequence set
+    					my $loo_merged_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_matrix_sites_loo.tab";
+    					my $loo_merged_file = File::Spec->rel2abs($loo_merged_file_name,$matrix_quality_dir);
+    				
+    					my ($out_loo) = &OpenOutputFile($loo_merged_file);
+    					my $bg_order_oligo = $order + 1;
+    					foreach my $TFBS_id (keys(%{$pos_scores{$bg_order_oligo}})) {
+    						print $out_loo $pos_scores{$bg_order_oligo}->{$TFBS_id}->{loo};
+    					}
+    					close ($out_loo);
+    				
+    					## merge with results of 'matrix-site' on positive sequence set
+    					my $set = "matrix_sites";
+    					my $matrix_site_merged_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_scores.tab";
+    					my $matrix_site_merged_file = File::Spec->rel2abs($matrix_site_merged_file_name,$matrix_quality_dir);
+    				
+    					my ($out) = &OpenOutputFile($matrix_site_merged_file);
+    					foreach my $TFBS_id (keys(%{$pos_scores{$bg_order_oligo}})) {
+    						print $out $pos_scores{$bg_order_oligo}->{$TFBS_id}->{$set};
+    					}
+    					close ($out);
+    					
+    					## remove unnecessary files and directories test_pseudo1_scan_matrix_sites_perm_col_1-5_score_distrib.tab
+       					push (@main::file_to_remove,File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_score_distrib.tab",$matrix_quality_dir)); 
+       					
+    					
+    					## merge results of matrix_sites_perm on positive set
+    					$set = "matrix_sites_perm";
+    					$matrix_site_merged_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_col_1-".$main::perm_pos."_scores.tab";
+    					$matrix_site_merged_file = File::Spec->rel2abs($matrix_site_merged_file_name,$matrix_quality_dir);
+    				
+    					my ($out_perm) = &OpenOutputFile($matrix_site_merged_file);
+    					foreach my $TFBS_id (keys(%{$pos_scores{$bg_order_oligo}})) {
+    						print $out_perm $pos_scores{$bg_order_oligo}->{$TFBS_id}->{$set};
+    					}
+    					close ($out_perm);
+    				
+    					## remove unnecessary files and directories test_pseudo1_scan_matrix_sites_perm_col_1-5_score_distrib.tab
+       					push (@main::file_to_remove,File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_col_1-".$main::perm_pos."_score_distrib.tab",$matrix_quality_dir)); 
+    					}
+    				
+    				## run ROC stat
+    				&ProcessRocStat($matrix_quality_dir,$roc_stat_dir,$bg_window,$bg_method) if ($tasks2run{roc_stat});  
+    				&getOptimalAccuracy($roc_stat_dir,$matrix_quality_dir,$bg_method) if ($tasks2run{optimal_acc});		
+    			}	
+    		
+    		## Draw graphs for comparing the bg_models, for the current bg_method
+    		&compareBgModels($main::dirproject{$window_dir},\@oligo_length_list, $bg_method,$w) if ($tasks2run{compare_bg});	
+    		
+    		###### zip calculated background models to gain space
+    		chdir($main::dirproject{$window_dir});
+    		my $command = "tar -pczf bg_model.tar.gz bg_model/";
+			&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+			chdir($main::dirproject{wd});
+			push (@main::dir_to_remove,"$main::dirproject{$window_dir}/bg_model"); 
+			}
+    
+		} else {
+		
+		
+		###########################################################
+   		## BG-GLOBAL AND BG-INPUT		
+   		###########################################################
+   		## Treat each bg file
+    	for my $bg_file (@bg_file_list) {
+    		chomp($bg_file);
+    		RSAT::message::Info ("Background file ".$bg_file) if ($main::verbose >= 2);
+
+			## directory architecture
+    		my $bg_file_name = basename($bg_file);
+    		$main::dirproject{$bg_file_name} = File::Spec->rel2abs($bg_file_name,$main::dirproject{$bg_method});
+    		mkdir($main::dirproject{$bg_file_name}) ;
+    		my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_file_name});
+    		mkdir($matrix_quality_dir) ;
+    	#	my $matrix_scan_dir = File::Spec->rel2abs("matrix-scan",$main::dirproject{$bg_file_name});
+    	#	mkdir($matrix_scan_dir) ;
+    	#	my $compare_feat_dir = File::Spec->rel2abs("compare-feat",$main::dirproject{$bg_file_name});
+    	#	mkdir($compare_feat_dir) ;
+    		my $roc_stat_dir = File::Spec->rel2abs("roc-stat",$main::dirproject{$bg_file_name});
+    		mkdir($roc_stat_dir) ;
+
+    		  		
+    		################################################################
+    		## run matrix-quality + roc-stat
+	
+			## matrix-quality
+    		if ($tasks2run{matrix_quality}){
+    			chdir($matrix_quality_dir);
+    			&RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >=1);	
+	   			&runMatrixQuality($bg_method,$bg_file,$matrix_quality_dir);
+    			chdir($main::dirproject{wd});
+    			}
+
+    		## roc-stat
+    		&ProcessRocStat($matrix_quality_dir,$roc_stat_dir,$bg_file_name,$bg_method) if ($tasks2run{roc_stat});
+    		&getOptimalAccuracy($roc_stat_dir,$matrix_quality_dir,$bg_method) if ($tasks2run{optimal_acc});		
+   			
+   			################################################################
+    		## run matrix-scan + compare-features (pMatchingEval)
+   	#		&pMatchingEval($matrix_scan_dir,$bg_method,$bg_file,$compare_feat_dir,$main::subsequences) if ($tasks2run{p_matching_eval});
+
+    	}
+    	  	###### zip calculated background models to gain space
+    	  	if ($bg_method eq "bg_input") {
+    	  		chdir($main::dirproject{$bg_method});
+    			my $command = "tar -pczf bg_model.tar.gz bg_model/";
+				&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+				chdir($main::dirproject{wd});
+				push (@main::dir_to_remove,"$main::dirproject{$bg_method}/bg_model"); 
+    	  	}
+    	
+    	## Draw graphs for comparing the bg_models, for the current bg_method
+    	&compareBgModels($main::dirproject{$bg_method},\@bg_file_list, $bg_method,"no_window") if ($tasks2run{compare_bg});
+   	}
+   	}
+   	
+################################################################
+############## COMPARE ALL BG METHODS ##########################
+################################################################ 
+
+	################################################################
+    ###### clean temporary files
+
+#    if (scalar(@main::file_to_remove) > 0) {
+#    	unlink($_) for @file_to_remove;
+#    }
+#    
+#    if (scalar(@main::dir_to_remove) > 0) {
+#    	for my $dir (@main::dir_to_remove){
+#    		unlink glob $dir."/matrix-quality/*";
+#    		rmdir $dir."/matrix-quality/";
+#    		unlink glob $dir."/*";
+#    		rmdir $dir;
+#    	}
+#    }
+	
+
+
+    &compareBgMethods() if ($tasks2run{compare_method});
+
+  #### print verbosity
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $main::out if ($main::outfile{prefix});
+
+ 
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub printHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+
+	   GetOptions(	"verbose:s"  		=> \$main::verbose,## Help message
+					"help"  			=> \$main::help,
+					"dry" 				=> \$main::dry,## Dry run
+					"m=s" 				=> \$main::infile{matrix},  ## Matrix file
+					"matrix_format:s"	=> \$main::matrix_format,## Matrix format
+					"i=s"  				=> \$main::infile{ref_sequences},## File containing the sequence set with annotated sites
+					"seq_format:s" 		=> \$main::seq_format,## Sequence format
+					"ref_feat:s"  		=> \$main::infile{ref_feat},  ## Reference feature file
+					"neg_set=s"  		=> \$main::negative_sets,  ## file containing negative sequence set
+					"roc_ref=s"			=> \$main::roc_ref,  ## negative set used for roc_ref option
+					"pseudo:s"  		=> \$main::pseudo_counts,## Pseudo weight
+					"o=s"  				=> \$main::outfile{prefix},## Prefix for output file
+					"bgfilelist:s"  	=> \$main::bg_file,## Background model from files
+					"bginput:s"  		=> \$main::bg_input,## Background calculated from the input sequence set
+					"window:s"  		=> \$main::window, # adpatative bg model with sliding windows
+					"window_size:s"  	=> \$main::window_size, # size for the sliding windows
+					"roc_abs:s"			=> \$main::roc_stat_base, ## roc_stat_base
+					"rand_gen"			=> \$main::rand_gen, ## use random generated sequences for each bg_model
+					"rand_r:s"			=> \$main::rand_r, ## nb of repetions for generated random sequences
+  					"rand_l:s"			=> \$main::rand_l, ## length of generated random sequences
+					"batch:s"			=> \$main::batch, # send matrix-quality jobs to a cluster
+					"perm_neg:s"		=> \$main::perm_neg, # number of permutations for negative set
+					"perm_pos:s"		=> \$main::perm_pos, # number of permutations for positive set
+					"tasks:s"			=> \$main::tasks, #tasks
+					"img_format:s"		=> \$main::img_formats, #imag format
+					);
+	
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+
+	    
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them. 
+
+=cut
+	
+=pod
+
+=item B<-m matrixfile>
+
+Matrix file. The matrix should be in a format that contains
+both the matrix and its site. (e.g. meme)
+
+
+=cut
+	
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Format of the matrix file.
+
+=cut
+	
+=pod
+
+=item B<-i ref_seq_file>
+
+File containing the reference sequence set. 
+These sequences contain annotated sites. These
+annotations should be provided by -ref_feat option.
+
+=cut
+
+=pod
+
+=item B<-ref_feat feature_file>
+
+Feature file containing reference annotated sites.
+This file should be encoded with the feature format.
+
+=over
+
+Example:
+
+=item 1 -  seq_name
+
+=item 2 -  TFname
+
+=item 3 -  ORegAnnoID
+
+=item 4 -  strand
+
+=item 5 -  start
+
+=item 6 -  end
+
+=item 7 -  description
+
+=back
+
+
+The positions should be relative to the reference region sequences.
+For -window option to function properly, the 3rd column of the file
+should correspond to the ID of the sequences used to construct the matrix.
+
+=cut
+
+=pod
+
+=head2 <Negative sequence sets>
+
+=item B<-neg_set 'name=seq_file,name=seq_file'>
+
+Files containing the negative sequence sets. 
+Name is the identifier of the sequence set, seq_file is
+the path to the sequence file. For a given set, the name and 
+path are separated by a '=' character. 
+Multiple negative sets can be specified by separating them with commas. 
+
+=cut
+
+
+=pod
+
+=item B<-rand_gen>
+
+Add a "rand_gen" sequence set, consisting of sequences generated based on
+the frequencies of each background model. If these sequences covers an important
+number of nucleotides (> 1Mb), score distribution of this set can mimic the theorical
+distribution of the matrix, with each given background model.
+For bg_global, these sequence files should be pre-calculated and the path of the file is given in the
+-bgfilelist file.
+For bg_input, thses sequences are calculated inside the program.
+
+=cut
+
+=pod
+
+=item B<-rand_r #>
+
+Number of repetitions for rand_gen sequence set, fo bg_input background models.
+
+=cut
+
+=pod
+
+=item B<-rand_l #>
+
+Length of sequences for rand_gen sequence set, fo bg_input background models.
+
+=cut
+
+=pod
+
+=item B<-roc_ref name>
+
+Reference distribution for the ROC curve. This should be one of
+the specified negative set.
+
+=cut
+
+=pod
+
+=item B<-roc_abs name>
+
+Abscisse for graphs arising from roc-stat results. Values are scores,p_val,sig. Default: sig.
+
+=cut
+	
+	
+=pod
+
+=item B<-seq_format sequence_format>
+
+Sequence format. 
+
+=cut
+	
+
+
+=pod
+
+=item B<-perm_neg #>
+
+Number of permutations for the negative set (default 1)
+
+=cut
+
+=pod
+
+=item B<-perm_pos #>
+
+Number of permutations for the positive set (default 100)
+
+=cut
+
+	
+=pod
+
+=item B<-pseudo pseudo_counts>
+
+Pseudo-weight.
+
+=cut
+
+=pod
+
+=item	B<-img_format>
+
+Image format for the plots (ROC curve, score profiles, ...).
+To display the supported formats, type the following command:
+XYgraph -h.
+
+=cut
+	   
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix of the output files. The program generates various files, and
+automatically adds a specific suffix to each output file.
+
+=cut
+	
+=pod
+
+=head2 <Background Model options>
+
+These options specifies the background model parameters for matrix-scan.
+
+
+=cut
+	
+
+
+=pod
+
+=item B<-bgfilelist>
+
+Calculate background model from Background model files.
+Specifies the name of a file containing a list of absolute file paths.
+Each path corresponds to a background model file to be used.
+
+=cut
+	
+=pod
+
+=item B<-bginput #,#,#,# or #:#>
+
+Calculate background model from the input sequence set.
+Specifies the orders of the markov chain for the background model. 
+Multiple orders can be specified by separating them with commas or, for a range, by colons.
+
+=cut
+
+=pod
+
+=item B<-window #,#,#,# or #:#>
+
+Calculate background model with sliding windows.
+Specifies the orders of the markov chain for the background model. 
+Multiple orders can be specified by separating them with commas or, for a range, by colons.
+
+=cut
+		  
+	
+=pod
+
+=item B<-window_size #,#,#,#>
+
+Size of the sliding window for the background model calculation. 
+Multiple window sizes can be specified by separating them with commas.
+
+=cut
+
+	    ## Tasks
+=pod
+
+=head2 <Job processing options>
+
+=item B<-task tasks>
+
+List of tasks to perform. If this option is not specified, default
+tasks are performed. 
+
+Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.
+
+Supported fields:
+
+=over
+
+=item bg_input_rand_seq 
+
+=item matrix_quality
+
+=item roc_stat
+
+=item perm
+
+=item optimal_acc
+
+=item compare_bg
+
+=item compare_method
+
+=back
+
+=cut
+
+
+=pod
+
+=item B<-batch #>
+
+Dispatch matrix-quality jobs on a cluster.
+
+=cut
+
+	} 
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; matrix-bg-eval "; 
+    &PrintArguments($main::out);
+    if (%main::infile) {
+		print $main::out "; Input files\n";
+		foreach my $key (sort(keys %main::infile)) {
+	  		my $value = $main::infile{$key};
+	  		if (($key)&&($value)) {
+	    		printf $main::out ";\t%-21s\t%s\n", $key , $value;
+	  		}
+		}
+    }
+    if (%main::outfile) {
+		print $main::out "; Output files\n";
+		foreach my $key (sort(keys %main::outfile)) {
+	  		my $value = $main::outfile{$key};
+	 		printf $main::out ";\t%-21s\t%s\n", $key , $value;
+		}
+    }
+}
+
+sub Replace_underscores {
+	my $string = shift;
+	$string =~ s/_/-/g;
+	return ($string);
+}
+
+################################################################
+## Run matrix-quality command. (bg_global and bg_input)
+sub runMatrixQuality {
+	my ($bg_method, $bg_file, $matrix_quality_dir) = @_;
+
+	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
+   	
+	&RSAT::message::TimeWarn("Matrix-quality : Scoring sequences of with background method ".$bg_method." file:".$bg_file.", matrix ".$main::matrix_name) 
+	  if ($main::verbose >= 2);
+		
+  	my $matrix_quality_cmd = "matrix-quality -v ".$main::verbose;
+  	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
+  	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
+  	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
+ 
+  	foreach my $id (keys(%main::seq_neg_sets)){
+
+  		if ($id eq 'rand_gen'){ ## random sequences
+  			foreach my $bg (keys(%{$main::seq_neg_sets{$id}->{$bg_method}})){
+  					my $rand_seq = $main::seq_neg_sets{$id}->{$bg_method}->{$bg};
+  					if ($bg eq $bg_file){
+  						&RSAT::message::TimeWarn("seq id :".$id." random generated seq file ".$rand_seq) 
+	 					 if ($main::verbose >= 2);
+  						$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($rand_seq,$main::dirproject{wd});
+  						last;
+  					}
+  				}
+  		} else {
+  			$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd});
+  		}
+  		&RSAT::message::Debug("neg sets",$id, "-seq", File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd})) if ($main::verbose >= 0); 
+  		$matrix_quality_cmd .= " -perm ".$id." ".$main::perm_neg if ($main::perm_neg);
+  	}	
+	
+  	$matrix_quality_cmd .= " -perm matrix_sites ".$main::perm_pos if ($main::perm_pos);	
+  	$matrix_quality_cmd .= " -roc_ref ".$main::roc_ref if($main::roc_ref);
+  	$matrix_quality_cmd .= " -img_format ".join(",",@main::image_formats);
+  	$matrix_quality_cmd .= " -o ".$quality_prefix;
+  	$matrix_quality_cmd .= " -export_hits ";
+  	$matrix_quality_cmd .= " -return pval ";
+  	
+  	if ($bg_method eq "bg_global") {
+  		$matrix_quality_cmd .= " -bgfile ".File::Spec->rel2abs($bg_file,$main::dirproject{wd}); 		
+  	}  elsif ($bg_method eq "bg_input") {
+  		$matrix_quality_cmd .= " -bgfile ".$bg_file;
+  		if (($main::input_seq_length) && ($main::input_seq_length > 0)) {
+  			my $k = sqrt($main::input_seq_length)/(sqrt($main::input_seq_length) + $main::input_seq_length);
+  			$matrix_quality_cmd .= " -bg_pseudo ".$k;
+  		}
+  	} elsif ($bg_method eq "bg_window") {
+  		$matrix_quality_cmd .= " -bgfile ".$bg_file;
+  		}
+
+  ## Execute the command 
+  &RSAT::message::Info("matrix-quality command\n",  $matrix_quality_cmd) if ($main::verbose >= 2);
+  print $main::out "; matrix-quality command:\n" if ($main::verbose >= 1);
+  print $main::out "; $matrix_quality_cmd\n" if ($main::verbose >= 1);
+  &doit($matrix_quality_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+  
+  ## clean score files (save disk space)
+  opendir(DIR, $matrix_quality_dir) || die "can't opendir $matrix_quality_dir: $!";
+  my @matrix_quality_files = readdir(DIR);
+  closedir DIR;
+  
+  foreach my $i (2..$#matrix_quality_files){
+  	if ($matrix_quality_files[$i] =~ /scores\.tab/){
+  		chomp($matrix_quality_files[$i]);
+  		push (@main::file_to_remove, File::Spec->rel2abs($matrix_quality_files[$i], $matrix_quality_dir));
+  	}
+  }
+ }
+ 
+################################################################
+## Run matrix-quality command for bg-window option (positive set)
+sub runMatrixQualityWindows {
+	my ($bg_method, $bg_file,$window) = @_;
+
+	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
+   	
+	&RSAT::message::TimeWarn("Matrix-quality : Scoring matrix sites of with background method ".$bg_method." file:".$bg_file.", matrix ".$main::matrix_name) 
+	  if ($main::verbose >= 2);
+	
+		
+  	my $matrix_quality_cmd = "matrix-quality -v ".$main::verbose;
+  	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
+  	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
+  	## pseudo count is equi-pseudo with bg_window, here, force equi-pseudo to remain consistent with results of negative set
+  	$matrix_quality_cmd .= " -equi_pseudo ";
+  	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
+  	## calculate bg_pseudo 
+  	my $k = sqrt($window)/(sqrt($window) + $window);
+  	$matrix_quality_cmd .= " -bg_pseudo ".$k;
+  	$matrix_quality_cmd .= " -perm matrix_sites ".$main::perm_pos if ($main::perm_pos);	
+  	$matrix_quality_cmd .= " -task 'scan,loo,permute' -nocompa -nograph";
+  	$matrix_quality_cmd .= " -o ".$quality_prefix;
+  	$matrix_quality_cmd .= " -export_hits ";
+  	$matrix_quality_cmd .= " -bgfile ".$bg_file;
+  	$matrix_quality_cmd .= " -return sites,pval,bg_residues ";
+
+
+  ## Execute the command 
+  &RSAT::message::Info("matrix-quality command\n",  $matrix_quality_cmd) if ($main::verbose >= 2);
+  print $main::out "; matrix-quality command:\n" if ($main::verbose >= 1);
+  print $main::out "; $matrix_quality_cmd\n" if ($main::verbose >= 1);
+  &doit($matrix_quality_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+ }
+ 
+################################################################
+## Run matrix-quality command with sliding windows option for matrix-scan
+## bg_window (negative set)
+sub runMatrixQualitySlidingWindows {
+	my ($bg_method, $order,$window_size,$matrix_quality_dir) = @_;
+
+	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
+	 	
+	&RSAT::message::TimeWarn("Matrix-quality : Scoring sequences of with background method ".$bg_method." , matrix ".$main::matrix_name) 
+	  if ($main::verbose >= 2);
+
+	
+  	my $matrix_quality_cmd = "matrix-quality -v ".$main::verbose;
+  	$matrix_quality_cmd .= " -m ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
+  	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
+  	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
+  	$matrix_quality_cmd .= " -equi_pseudo ";
+  	
+ foreach my $id (keys(%main::seq_neg_sets)){
+  		next if ($id eq 'rand_gen');
+  		$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd});
+  		&RSAT::message::Debug("neg sets",$id, "-seq", File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd})) if ($main::verbose >= 0); 
+  		$matrix_quality_cmd .= " -perm ".$id." ".$main::perm_neg if ($main::perm_neg);
+  	}	 	
+  	
+  	$matrix_quality_cmd .= " -task 'scan,permute'";
+  	$matrix_quality_cmd .= " -o ".$quality_prefix;
+  	$matrix_quality_cmd .= " -export_hits ";
+  	$matrix_quality_cmd .= " -markov ".$order;
+  	$matrix_quality_cmd .= " -window ".$window_size;
+  	$matrix_quality_cmd .= " -return sites,pval,bg_residues ";
+
+
+  ## Execute the command 
+  &RSAT::message::Info("matrix-quality command\n",  $matrix_quality_cmd) if ($main::verbose >= 5);
+  print $main::out "; matrix-quality command:\n" if ($main::verbose >= 1);
+  print $main::out "; $matrix_quality_cmd\n" if ($main::verbose >= 1);
+  &doit($matrix_quality_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+  
+   ## clean score files (save disk space)
+  opendir(DIR, $matrix_quality_dir) || die "can't opendir $matrix_quality_dir: $!";
+  my @matrix_quality_files = readdir(DIR);
+  closedir DIR;
+  
+  foreach my $i (2..$#matrix_quality_files){
+  	if ($matrix_quality_files[$i] =~ /scores\.tab/){
+  		chomp($matrix_quality_files[$i]);
+  		push (@main::file_to_remove, File::Spec->rel2abs($matrix_quality_files[$i], $matrix_quality_dir));
+  	}
+  }
+  
+ }
+
+#################################################################
+## run roc-stat
+sub runRocStat {
+	
+	my $file = shift;
+	my $roc_stat_filename = shift;
+	
+	my $roc_stat_cmd = "roc-stats2 -v 1 ";
+    $roc_stat_cmd .= " -i ".$file;
+    $roc_stat_cmd .= " -scol 2 -lcol 1 ";
+    $roc_stat_cmd .= " -status site pos -status non-site neg "; 
+ #   $roc_stat_cmd .= " -graphs "; ## uncomment to add the graphs produced by roc-stat
+    $roc_stat_cmd .= " -o ".$roc_stat_filename;
+    			
+    ## Execute the command
+  	&doit($roc_stat_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+	&RSAT::message::Info("roc-stat command",  $roc_stat_cmd) if ($main::verbose >= 2);
+}
+
+################################################################
+## Calculate statistics on matrix-quality results
+## and draw graphs
+sub ProcessRocStat {   	
+ 	
+ 	my $matrix_quality_dir = shift;
+ 	my $roc_stat_dir = shift;
+ 	my $title =shift;
+ 	my $bg_method = shift;
+ 	
+
+ 	
+ 	&RSAT::message::TimeWarn("Preliminaries for roc-stat") if ($main::verbose >=1);	
+ 	#######################################
+    ## prepare input files for roc-stat
+ 		
+    ## get all matrix-scan files
+    my %roc_stat_input =();
+    
+    my %tmp_seq_neg_sets = %main::seq_neg_sets;
+    
+    ## change name of negative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
+    if ($bg_method eq "bg_window") {
+    	delete($tmp_seq_neg_sets{"rand_gen"});
+    	#if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    	#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    	#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 		#}
+    }
+
+    foreach my $set (keys(%tmp_seq_neg_sets)){
+    	my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_scores.tab";
+    	my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
+    	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col | awk ' {if (\$2 !~ /NA/) print "non-"\$1"\\t"\$2}'`;   				
+    	$roc_stat_input{$set} = $result;
+    	
+    	if ($main::tasks2run{perm}){
+    		my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_perm_col_1-".$main::perm_neg."_scores.tab";
+    		my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
+    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col | awk '{print "non-"\$1"\\t"\$2}'`;  
+    		my $key = $set."_perm"; 				
+    		$roc_stat_input{$key} = $result;
+    		}
+    	}
+    		
+    foreach my $set (@main::seq_pos_sets){
+    	my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_scores.tab";
+    	my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
+    	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col`;   				
+    	$roc_stat_input{$set} = $result;
+    	
+    	 if ($main::tasks2run{perm}){
+    		my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_perm_col_1-".$main::perm_pos."_scores.tab";
+    		my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
+    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col `; 
+    		my $key = $set."_perm"; 				
+    		$roc_stat_input{$key} = $result;
+    		}
+    	
+    	}
+    		
+    ## add LOO file
+    my $loo_file = File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_matrix_sites_loo.tab",$matrix_quality_dir);
+    my $result = `grep -v '^;' $loo_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col`;   				
+    $roc_stat_input{'loo'} = $result;
+    		
+    ## merge 'site ' to 'not-sites'	
+    my @roc_stat_input_files = ();
+    foreach my $set (keys(%tmp_seq_neg_sets)){
+    			
+    	## merge loo sites with each negative sets
+    	my $filename = $main::outfile{prefix}."_".$set."_loo_score_label.tab";
+    	my $name = $set."_loo";
+    	$main::outfile{$name}= File::Spec->rel2abs($filename,$roc_stat_dir);
+    	push (@roc_stat_input_files, $main::outfile{$name} );
+    			
+    	my ($fh) = &OpenOutputFile($main::outfile{$name});
+    	print $fh $roc_stat_input{'loo'};
+    	print $fh $roc_stat_input{$set};
+    	close($fh);
+    			
+    	## merge matrix_sites with each negative sets
+    	$filename = $main::outfile{prefix}."_".$set."_matrix_sites_score_label.tab";
+    	$name = $set."_matrix_sites";
+    	$main::outfile{$name}= File::Spec->rel2abs($filename,$roc_stat_dir);
+    	push (@roc_stat_input_files, $main::outfile{$name} );
+    			
+    	($fh) = &OpenOutputFile($main::outfile{$name});
+    	print $fh $roc_stat_input{'matrix_sites'};
+    	print $fh $roc_stat_input{$set};
+    	close($fh);
+    	
+    	## merge permuted matrices on matrix_sites and negative set
+    	if ($main::tasks2run{perm}){
+    		$filename = $main::outfile{prefix}."_".$set."_matrix_sites_perm_score_label.tab";
+    		$name = $set."_matrix_sites_perm";
+    		$main::outfile{$name}= File::Spec->rel2abs($filename,$roc_stat_dir);
+    		push (@roc_stat_input_files, $main::outfile{$name} );
+    			
+    		($fh) = &OpenOutputFile($main::outfile{$name});
+    		print $fh $roc_stat_input{'matrix_sites_perm'};
+    		print $fh $roc_stat_input{$set};
+    		close($fh);
+    	}
+    }
+		
+    #######################################
+    ## Run Roc-stat
+	&RSAT::message::TimeWarn("Running roc-stat") if ($main::verbose >=1);	
+    my @roc_stat_filenames = ();
+    foreach my $file (@roc_stat_input_files){ 
+    		my $roc_stat_filename = $file;
+    		$roc_stat_filename =~ s/score_label/roc_stat/;
+    		push(@roc_stat_filenames, $roc_stat_filename);
+    		&runRocStat($file,$roc_stat_filename);
+    		}
+		
+    ######################################################################
+    ## prepare graphs with XYgraph
+		
+	################################################################
+    ## Compare the distributions of roc-stat files
+    my @compare_scores_files =();
+    foreach my $column (keys(%main::roc_stat_columns)) {
+    			
+    	my $outfile = File::Spec->rel2abs($main::outfile{prefix}."_".$main::roc_stat_columns{$column}."_compa.tab",$roc_stat_dir);
+    	push (@compare_scores_files,$outfile);
+    			
+    	my $distrib_compa_cmd = "compare-scores ";
+    	$distrib_compa_cmd .= " -numeric";
+    	$distrib_compa_cmd .= " -ic 1"; 
+    	$distrib_compa_cmd .= " -sc ".$column;# score column for the observed distributions
+  		$distrib_compa_cmd .= " -o ".$outfile;
+   		$distrib_compa_cmd .= " -suppress ".$roc_stat_dir."/";
+   		$distrib_compa_cmd .= " -suppress ".$main::outfile{prefix}."_";
+    	$distrib_compa_cmd .= " -suppress _roc_stat.tab";
+    	$distrib_compa_cmd .= " -subst '_matrix_sites' '|complete_matrix'" ;
+    	$distrib_compa_cmd .= " -subst '_loo' '|loo_matrix'" ;
+    	$distrib_compa_cmd .= " -files ";
+    	$distrib_compa_cmd .= join(" ", @roc_stat_filenames);
+    	## Execute the command
+    	&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    	}
+				
+    ##########################################################
+    ## Graphs
+    foreach my $roc_stat_filename (@roc_stat_filenames) {
+    			
+    	## Generate the graphs for each image format
+    	foreach my $image_format (@main::image_formats) {
+    			
+    		## file names and sequence sets
+    		my $neg_set;
+    		my $pos_set;
+    		if ($roc_stat_filename =~ /$main::outfile{prefix}_(.*)_loo/ ) {
+    			$neg_set = $1;
+    			$neg_set = &Replace_underscores($neg_set);
+    			$pos_set = 'loo';
+    		} elsif ($roc_stat_filename =~ /$main::outfile{prefix}_(.*)_matrix_sites/ ) {
+    			$neg_set = $1;
+    			$neg_set = &Replace_underscores($neg_set);
+    			$pos_set = 'matrix_sites';
+    			$pos_set = &Replace_underscores($pos_set);
+    			}
+    			
+    		## distribution of PPV,Sn,Accuracy for each roc-stat result		
+    		my $outfile = $roc_stat_filename;
+    		$outfile =~ s/roc_stat/Sn_PPV_Acc_g/;
+    		$outfile =~ s/\.tab/\.$image_format/;
+    				
+    		my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    		$XYgraph_cmd .= " -format ".$image_format;
+    		my @ycols = keys(%main::roc_stat_columns);
+    		$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    		$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    		$XYgraph_cmd .= " -i ".$roc_stat_filename;
+    		$XYgraph_cmd .= " -yleg1 'Sn, PPV, Acc_g' ";
+    		my $bgfile_name_graph = &Replace_underscores($title);
+    		$XYgraph_cmd .= " -title2 '$bgfile_name_graph / Negative set: $neg_set / Positive set: $pos_set'";
+ 	  	    $XYgraph_cmd .= " -o ".$outfile;
+ 	  	    ## Execute the command	
+	    	&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    		}
+    	}
+    	
+    ####################################################################################
+    ## Graph comparing each statistic (Sn, PPV, Acc_g) for the different roc-stat result
+    foreach my $file (@compare_scores_files) {	
+    	
+    	## Generate the graphs for each image format
+    	foreach my $image_format (@main::image_formats) {
+    		## distribution of PPV,Sn,Accuracy for each roc-stat result		
+    		my $outfile = $file;
+    		$outfile =~ s/\.tab/\.$image_format/;
+    		my $statistic;
+    		if ($file =~ /$main::outfile{prefix}_(.*)_compa/ ) {
+    			$statistic = $1;
+    			$statistic = &Replace_underscores($statistic);
+    			}
+    				
+    		my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    		$XYgraph_cmd .= " -format ".$image_format;
+    		my @ycols = 2..($#roc_stat_filenames+2);
+    		$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    		$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    		$XYgraph_cmd .= " -i ".$file;
+    		$XYgraph_cmd .= " -yleg1 '$statistic' ";
+    		my $bgfile_name_graph = &Replace_underscores($title);
+    		$XYgraph_cmd .= " -title2 '$bgfile_name_graph / $statistic'";
+ 	  	    $XYgraph_cmd .= " -o ".$outfile;
+ 	  	    ## Execute the command		
+	    	&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    		}
+    	}
+ }  	
+
+############################################################
+## Draw graphs comparing results of roc-stat for the different background models
+## one graph per negative set
+sub compareBgModels {
+	
+	my $root_dir = shift;
+	my $bg_file_list_ref = shift;
+	my @bg_file_list = @$bg_file_list_ref;
+	my $bg_method = shift;
+	my $window_size = shift;
+	
+	&RSAT::message::TimeWarn("Comparing bg models") if ($main::verbose >=1);	
+  
+  	## create a directory to collect the graphs
+  	my $bg_global_graphs_dir = File::Spec->rel2abs("graphs",$root_dir);
+   	mkdir($bg_global_graphs_dir);
+   	
+   	
+   	 my %tmp_seq_neg_sets = %main::seq_neg_sets;
+    
+    ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
+    if ($bg_method eq "bg_window") {
+    	delete($tmp_seq_neg_sets{"rand_gen"});
+    	#if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    	#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    	#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 		#}
+    }
+   	
+   	## process each negative sets
+   	foreach my $neg_set (keys(%tmp_seq_neg_sets)){
+    	
+    	my @roc_stat_files =();
+    	
+    	## get roc-stat files for each bg model
+    	foreach my $bg_file (@bg_file_list) {
+    		my $bg_file_name = basename($bg_file);
+    		chomp($bg_file_name);
+    		my $roc_stat_file = $root_dir."/".$bg_file_name."/roc-stat/".$main::outfile{prefix}."_".$neg_set."_loo_roc_stat.tab";
+    		push (@roc_stat_files,$roc_stat_file);
+    		}
+    	
+    	my @compare_scores_files =();
+    	
+    	## run compare-scores
+    	foreach my $column (keys(%main::roc_stat_columns)) {
+    			
+    		my $outfile = File::Spec->rel2abs($main::outfile{prefix}."_".$main::roc_stat_columns{$column}."_".$neg_set."_compa.tab",$bg_global_graphs_dir);
+    		push (@compare_scores_files,$outfile);
+    			
+    		my $distrib_compa_cmd = "compare-scores ";
+    		$distrib_compa_cmd .= " -numeric";
+    		$distrib_compa_cmd .= " -ic 1"; 
+    		$distrib_compa_cmd .= " -sc ".$column;# score column for the observed distributions
+  			$distrib_compa_cmd .= " -o ".$outfile;
+   			$distrib_compa_cmd .= " -suppress ".$root_dir."/";   				
+   			$distrib_compa_cmd .= " -suppress /roc-stat/".$main::outfile{prefix}."_".$neg_set."_loo_roc_stat.tab";
+   			$distrib_compa_cmd .= " -subst 'nt.*' 'nt_oligo'";	
+   			$distrib_compa_cmd .= " -subst '_matrix_sites' '|complete_matrix'" ;
+    		$distrib_compa_cmd .= " -subst '_loo' '|loo_matrix'" ;
+    		$distrib_compa_cmd .= " -files ";
+    		$distrib_compa_cmd .= join(" ", @roc_stat_files);   
+    		$distrib_compa_cmd .= " |sort";		
+    		## Execute the command
+    		&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+
+    		}
+    		
+    	###################################################################################	
+    	## Graph comparing each statistic (Sn, PPV, Acc_g) for the different roc-stat result
+    	foreach my $file (@compare_scores_files) {	
+    	
+    	## Generate the graphs for each image format
+    	foreach my $image_format (@main::image_formats) {
+    		## distribution of PPV,Sn,Accuracy for each roc-stat result		
+    		my $outfile = $file;
+    		$outfile =~ s/\.tab/\.$image_format/;
+    		my $statistic;
+    		if ($file =~ /$main::outfile{prefix}_(.*)_compa/ ) {
+    			$statistic = $1;
+    			$statistic = &Replace_underscores($statistic);
+    			}
+    				
+    		my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    		$XYgraph_cmd .= " -format ".$image_format;
+    		my @ycols = 2..($#bg_file_list+2);
+    		$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    		$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    		$XYgraph_cmd .= " -i ".$file;
+    		$XYgraph_cmd .= " -yleg1 '$statistic' ";
+    		$XYgraph_cmd .= " -title2 '$statistic LOO'";
+ 	  	    $XYgraph_cmd .= " -o ".$outfile;
+ 	  	    ## Execute the command
+    		&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    		}
+    	}
+   	}
+    	###################################################################################	
+    	## Graph comparing best accuracies as a function of markov order
+	
+		my @optimal_accuracy_files =();
+		
+    	## store data in a file that serves as input for XYgraph
+    	my @neg_sets;
+    	my @pos_sets;
+    	my @markov_orders;
+   	
+    	## get negative sets
+        while ( my ($neg_set, $value2) = each(%{$main::graph_optimal_acc{$bg_method}->{$window_size}}) ) {
+        		push(@neg_sets,$neg_set);
+        }
+    	## get positive sets
+    	while ( my ($pos_set, $value) = each(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_sets[0]}}) ) {
+        	push(@pos_sets,$pos_set);
+    	}
+    	## get markov orders
+    	while ( my ($markov_order, $value) = each(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_sets[0]}->{$pos_sets[0]}}) ) {
+        	push(@markov_orders,$markov_order);
+    	}
+ 		
+ 		# iterate over each negative set
+    	for my $neg_set (@neg_sets){
+    		my $bg_order_best_acc_file_name = $main::outfile{prefix}."_".$neg_set."_best_acc_compa.tab";
+    		my $bg_order_best_acc_file = File::Spec->rel2abs($bg_order_best_acc_file_name,$bg_global_graphs_dir);
+    		push(@optimal_accuracy_files,$bg_order_best_acc_file);
+    		my ($fh) = &OpenOutputFile($bg_order_best_acc_file);
+    		my $header = "#markov_order\t";
+
+    		for my $pos_set (@pos_sets){
+    			$header .= $neg_set."_".$pos_set."\t";
+    		}
+    		## print header
+    		print $fh $header."\n";
+    		
+
+    		## print 1 line per markov order
+    		for my $markov_order (sort(@markov_orders)){
+    			
+    			## first column
+    			my $markov_order_number = $markov_order;
+    			$markov_order_number =~ s/markov_//;
+    			print $fh $markov_order_number."\t";
+    			
+    			## other columns
+    			for my $pos_set (@pos_sets){
+    				print $fh $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_acc}."\t";
+    			}
+    			print $fh "\n";
+    		}
+    	close($fh);
+    	}  	
+    	
+    	###################################################################################	
+    	## Draw graph with markov orders in x axis 
+    	
+    	foreach my $file (@optimal_accuracy_files) {	
+    	
+    		## Generate the graphs for each image format
+    		foreach my $image_format (@main::image_formats) {
+    			## distribution of PPV,Sn,Accuracy for each roc-stat result		
+    			my $outfile = $file;
+    			$outfile =~ s/\.tab/\.$image_format/;
+    			my $statistic;
+    			if ($file =~ /$main::outfile{prefix}_(.*)_compa/ ) {
+    				$statistic = $1;
+    				$statistic = &Replace_underscores($statistic);
+    				}
+    			
+    			$main::all_graph_options =~ s/matrix score/markov order/;
+    			
+    			my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    			$XYgraph_cmd .= " -format ".$image_format;
+    			$XYgraph_cmd .= " -xcol 1 -ycol 2,3";
+    			$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    			$XYgraph_cmd .= " -i ".$file;
+    			$XYgraph_cmd .= " -yleg1 '$statistic' ";
+    			$XYgraph_cmd .= " -title2 '$statistic LOO'";
+    			$XYgraph_cmd .= " -gp 'set xrange [0:9]'";
+ 	  		    $XYgraph_cmd .= " -o ".$outfile;
+ 	  		    ## Execute the command
+    			&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    		}
+    	}
+    	
+	}
+
+############################################################
+## Draw graphs comparing results of roc-stat for the different background methods
+sub compareBgMethods {
+
+	&RSAT::message::TimeWarn("Comparing bg methods") if ($main::verbose >=1);	 
+	
+	##  directory architecture
+    $main::dirproject{compare_method_graphs} = File::Spec->rel2abs("graphs",$main::dirproject{$main::matrix_name});
+    mkdir($main::dirproject{compare_method_graphs});
+    
+	my @optimal_accuracy_files =();
+
+	## get the path of best_accuracy files in each graph directory, for each bg method  
+    for my $method (@main::bg_methods) {
+		my $bg_method = "bg_".$method;
+    	if ($bg_method eq "bg_window") {
+    		my %bg_window_neg_sets = %main::seq_neg_sets;
+    		delete($bg_window_neg_sets{"rand_gen"});    	
+    		#unless ($main::bg_TFBS_mask){
+    		#	delete($bg_window_neg_sets{"input_TFBS_masked"});
+    		#	$bg_window_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+    		#}
+    		## iterate over each window size
+    		for my $window_size (@main::window_sizes) {
+    			my $graph_dir = $main::dirproject{$main::matrix_name}."/".$bg_method."/window_".$window_size."bp/graphs/";
+    			for my $neg_set (keys(%bg_window_neg_sets)){
+    				## no rand_gen for bg_window
+    				next if ($neg_set eq "rand_gen");
+    				my $optimal_accuracy_file = $graph_dir.$main::outfile{prefix}."_".$neg_set."_best_acc_compa.tab";
+    				push(@optimal_accuracy_files,$optimal_accuracy_file);
+    			}
+    		}
+    	} else {
+    	
+    	for my $neg_set (keys(%main::seq_neg_sets)){
+    		my $graph_dir = $main::dirproject{$main::matrix_name}."/".$bg_method."/graphs/";
+    		my $optimal_accuracy_file = $graph_dir.$main::outfile{prefix}."_".$neg_set."_best_acc_compa.tab";
+    		push(@optimal_accuracy_files,$optimal_accuracy_file);
+    		}
+    	}
+    }
+
+	################################################################
+    ## Compare the best accuracies distributions (LOO only) 
+     			
+    	my $bg_method_compa = File::Spec->rel2abs($main::outfile{prefix}."_bg_methods_loo_compa.tab",$main::dirproject{compare_method_graphs});
+		
+    	my $distrib_compa_cmd = "compare-scores ";
+    	$distrib_compa_cmd .= " -numeric";
+    	$distrib_compa_cmd .= " -ic 1"; 
+    	$distrib_compa_cmd .= " -sc 2"; # score column for the observed distributions
+  		$distrib_compa_cmd .= " -o ".$bg_method_compa;
+   		$distrib_compa_cmd .= " -suppress ".$main::dirproject{$main::matrix_name}."/";
+   		$distrib_compa_cmd .= " -suppress ".$main::outfile{prefix}."_";
+    	$distrib_compa_cmd .= " -suppress _best_acc_compa.tab";
+    	$distrib_compa_cmd .= " -suppress '\/window'";
+    	$distrib_compa_cmd .= " -subst '\/graphs\/' ':'";
+    	$distrib_compa_cmd .= " -files ";
+    	$distrib_compa_cmd .= join(" ", @optimal_accuracy_files);
+    	$distrib_compa_cmd .= " |sort ";	
+
+    	## Execute the command
+    	&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    	
+    #####################################################################################
+    ## Generate the graphs for each image format => all in one graph
+    
+   	 foreach my $image_format (@main::image_formats) {
+   	 	my $outfile = $bg_method_compa;
+    	$outfile =~ s/\.tab/\.$image_format/;	
+    	$main::all_graph_options =~ s/matrix score/markov order/;
+    			
+    	my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    	$XYgraph_cmd .= " -format ".$image_format;
+    	my @ycols = 2..($#optimal_accuracy_files+2);
+    	$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    	$XYgraph_cmd .= " -i ".$bg_method_compa;
+    	$XYgraph_cmd .= " -yleg1 'Best accuracy_g' ";
+    	$XYgraph_cmd .= " -title2 'Comparison of background model calculation methods in LOO'";
+    	$XYgraph_cmd .= " -gp 'set xrange [0:9]'";
+ 	  	$XYgraph_cmd .= " -o ".$outfile;
+ 	  	## Execute the command
+    	&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    	}
+    
+    #####################################################################################
+    ## Generate one graph per sequence set 
+    
+    ## get each sequence set from compare-scores file eg : #key	bg_window_500bp:input_seq	bg_window_500bp:rand	bg_window_1000bp:input_seq	bg_window_1000bp:rand
+    my $compare_score_header = `grep -v '^;' $bg_method_compa | head -1 `;
+    chomp($compare_score_header);
+    my @compare_scores_headers = split('\t', $compare_score_header);
+    my %compare_score_seq_sets = ();
+    foreach my $i (1..$#compare_scores_headers){
+    	my @tmp = split(/:/,$compare_scores_headers[$i]);
+    	my $seq_set = $tmp[1];
+    	$compare_score_seq_sets{$seq_set}->{($i+1)} = 1;
+    }
+
+    ## one graph per sequence set
+    foreach my $seq_set (keys(%compare_score_seq_sets)){
+   	 foreach my $image_format (@main::image_formats) {
+   	 	 my $outfile = $bg_method_compa;
+		$outfile =~ s/compa/compa_$seq_set/;	
+    	$outfile =~ s/\.tab/\.$image_format/;	
+    	$main::all_graph_options =~ s/matrix score/markov order/;
+    	my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    	$XYgraph_cmd .= " -format ".$image_format;
+    	my @ycols = keys(%{$compare_score_seq_sets{$seq_set}});
+    	$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    	$XYgraph_cmd .= " -i ".$bg_method_compa;
+    	$XYgraph_cmd .= " -yleg1 'Best accuracy_g' ";
+    	$XYgraph_cmd .= " -title2 'Comparison of background model calculation methods in LOO : $seq_set'";
+    	$XYgraph_cmd .= " -gp 'set xrange [0:9]'";
+ 	  	$XYgraph_cmd .= " -o ".$outfile;
+ 	  	## Execute the command
+    	&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    	}
+    }
+    
+    #####################################################################################
+    ## Generate one graph per markov order, with in x-axis the matrix scores
+    
+    ## get all markov model tested
+    my %markov_orders_to_compare = ();
+	foreach my $bg_method (keys(%main::graph_optimal_acc)) {
+		foreach my $window_size (keys(%{$main::graph_optimal_acc{$bg_method}})){
+			foreach my $neg_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}})){
+				foreach my $pos_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}})){
+					foreach my $markov_order (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}})){
+						$markov_orders_to_compare{$markov_order} -> {$bg_method} -> {$window_size}->{$neg_set} = 1;
+					}
+				}
+			}
+		}
+	}
+
+    ## get the bgfile directory for each markov order, and each bg method
+    foreach my $bg_method (@main::bg_methods) {
+    	$bg_method = "bg_".$bg_method;  	
+    	 my %bg_dirs = (); 	
+    	 if ($bg_method eq "bg_window") {
+    	 	foreach my $window_size (@main::window_sizes){
+    	 		my $window_dir_name = "window_".$window_size."bp";
+    	 		my @tmp = glob($main::dirproject{$window_dir_name}."/*");
+    	 		$bg_dirs{$window_size} = \@tmp;
+    	 	}
+    	 } else {
+    	 	my @tmp = glob($main::dirproject{$bg_method}."/*");
+    	 	$bg_dirs{no_window} = \@tmp;
+    	 }
+
+    	 foreach my $window_size (keys(%bg_dirs)) {
+    	 	foreach my $dir_name (@{$bg_dirs{$window_size}}){
+    	 		if (basename($dir_name) =~ /^(\d+)nt/){
+    	 			my $oligo = $1;
+    	 			my $markov_order = "markov_".($oligo-1);
+    	 			$markov_orders_to_compare{$markov_order} -> {$bg_method} -> {$window_size} -> {bg_dir} = $dir_name;
+    	 		}
+    	 	}
+    	 }
+    }    	 	
+
+    ## treat each markov order
+    foreach my $markov_order (keys(%markov_orders_to_compare)) {
+    	 ## directory architecture
+    	 my $markov_order_dir = File::Spec->rel2abs($markov_order,$main::dirproject{compare_method_graphs});
+    	 mkdir($markov_order_dir);
+    	 
+    	 my %roc_stat_files = ();
+    	 
+    	 ## get the roc-stat files to compare for this markov order
+    	 foreach my $bg_method (keys(%{$markov_orders_to_compare{$markov_order}})) {	 	
+    	 	
+    	 	 my %tmp_seq_neg_sets = %main::seq_neg_sets;
+    
+   			 ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
+    			if ($bg_method eq "bg_window") {
+    				delete($tmp_seq_neg_sets{"rand_gen"});
+    				#if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    				#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    				#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 					#	}
+   				 }
+   			   		
+   			## process each negative sets
+   			foreach my $neg_set (keys(%tmp_seq_neg_sets)){
+    			my @neg_set_roc_stat_files =();
+    			## get roc-stat files for each bg model
+    			foreach my $window_size (keys(%{$markov_orders_to_compare{$markov_order}->{$bg_method}})) {
+    				my $bg_file_dir = $markov_orders_to_compare{$markov_order} -> {$bg_method} -> {$window_size} -> {bg_dir};
+    				my $roc_stat_file = $bg_file_dir."/roc-stat/".$main::outfile{prefix}."_".$neg_set."_loo_roc_stat.tab";
+    				push (@neg_set_roc_stat_files,$roc_stat_file);
+    			}
+    			$roc_stat_files{$neg_set}->{$bg_method} = \@neg_set_roc_stat_files;
+   			}
+    	 }	
+    	
+    	## run compare-scores for each markov model
+    	foreach my $neg_set (keys(%roc_stat_files)) {		
+    			## run compare-scores
+    			my $outfile = File::Spec->rel2abs($main::outfile{prefix}."_Acc_g_".$neg_set."_compa.tab",$markov_order_dir);
+    			my @input_files =();
+    			while (my ($bg_method, $file_array) = each(%{$roc_stat_files{$neg_set}})){
+    				foreach my $file (@{$file_array}){
+    					push(@input_files,$file);
+    				}
+    			}
+    			my $distrib_compa_cmd = "compare-scores ";
+    			$distrib_compa_cmd .= " -numeric";
+    			$distrib_compa_cmd .= " -ic 1"; 
+    			$distrib_compa_cmd .= " -sc 8";# score column for the observed distributions
+  				$distrib_compa_cmd .= " -o ".$outfile;
+   				$distrib_compa_cmd .= " -suppress ".$main::dirproject{$main::matrix_name}."/";
+    			$distrib_compa_cmd .= " -suppress '\/window'";
+    			$distrib_compa_cmd .= " -suppress '\/.*\.tab'";	
+    			$distrib_compa_cmd .= " -files ";
+    			$distrib_compa_cmd .= join(" ", @input_files);   
+    			$distrib_compa_cmd .= " | sort";		
+    			## Execute the command
+    			&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    			
+    			## Draw the graph for this markov model
+    			## Generate the graphs for each image format
+    			my $roc_stat_file = $outfile;
+    			foreach my $image_format (@main::image_formats) {
+    				my $neg_set = $neg_set;			
+    				my $outfile = $roc_stat_file;
+    				$outfile =~ s/\.tab/\.$image_format/;
+					$main::all_graph_options =~ s/markov order/matrix score/;
+    				my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    				$XYgraph_cmd .= " -format ".$image_format;
+    				my @ycols = 2..($#input_files+2);
+    				$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    				$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    				$XYgraph_cmd .= " -i ".$roc_stat_file;
+    				$XYgraph_cmd .= " -yleg1 'Best accuracy_g' ";
+    				my $markov_order_number = $markov_order;
+    				$markov_order_number  =~ s/markov_//;
+  	 				$XYgraph_cmd .= " -title2 'Comparison of background model calculation methods in LOO : $neg_set , markov order : $markov_order_number'";
+ 	  	    		$XYgraph_cmd .= " -o ".$outfile;
+ 	  	    		## Execute the command
+    				&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    			}
+    		}
+		} 
+    
+    	#####################################################
+    	## print best accuracies values : 1 file for matrix-site, 1 file for loo
+		my @loo_best_acc =();
+		my @matrix_sites_best_acc = ();
+		
+    	## parse hash containing best accuracies for each sequence set
+    	foreach my $bg_method (keys(%main::graph_optimal_acc)) {
+    		foreach my $window_size (keys(%{$main::graph_optimal_acc{$bg_method}})){
+    			foreach my $neg_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}})){
+    				foreach my $pos_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}})){
+    					foreach my $markov_order (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}})){
+    						my %value =();
+    						$value{key} =  "$bg_method:$window_size:$neg_set:$pos_set:$markov_order";
+    						$value{opt_acc} = $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_acc};
+    						$value{opt_score} = $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_score};
+    						if($main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{p_value}) {
+    							$value{p_value} = $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{p_value};
+     						} 
+    						if ($pos_set eq "matrix_sites"){
+    							push(@matrix_sites_best_acc,\%value);
+    						} else {
+								push(@loo_best_acc,\%value);
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
+    	
+    	## sort the best accuracies hash by decreasing accuracies.
+    	my @ranked_loo_best_acc =  sort {$b->{opt_acc} <=> $a->{opt_acc}}
+	      @loo_best_acc;	    
+	    my @ranked_matrix_sites_best_acc =  sort {$b->{opt_acc} <=> $a->{opt_acc}}
+	      @matrix_sites_best_acc;
+		
+		## print to file
+		my $matrix_sites_best_acc_file = File::Spec->rel2abs($main::outfile{prefix}."_best_acc_matrix_sites_compa.tab",$main::dirproject{compare_method_graphs});
+    	my $loo_best_acc_file = File::Spec->rel2abs($main::outfile{prefix}."_best_acc_loo_compa.tab",$main::dirproject{compare_method_graphs});
+ 		my ($matrix_file) = &OpenOutputFile($matrix_sites_best_acc_file);
+    	my ($loo_file) = &OpenOutputFile($loo_best_acc_file);
+    	
+    	print $matrix_file "#seq_set\topt_acc\topt_score\tp-value\n";
+    	print $loo_file "#seq_set\topt_acc\topt_score\tp-value\n";
+    	
+    	foreach my $values_ref (@ranked_loo_best_acc) {
+    		   	 print $loo_file join("\t",
+    		   	 $values_ref -> {key},
+   		 		 $values_ref->{opt_acc},
+   		 		 $values_ref->{opt_score}
+   		 		 );
+   		 		 print $loo_file "\t".$values_ref->{p_value} if($values_ref->{p_value});
+ 				 print $loo_file "\n";		
+    	}
+    	foreach my $values_ref (@ranked_matrix_sites_best_acc) {
+    		   	 print $matrix_file join("\t",
+    		   	 $values_ref -> {key},
+   		 		 $values_ref->{opt_acc},
+   		 		 $values_ref->{opt_score}
+   		 		 );
+   		 		 print $matrix_file "\t".$values_ref->{p_value} if($values_ref->{p_value});
+ 				 print $matrix_file "\n";		
+    	}
+    	close $matrix_file;
+    	close $loo_file;
+}
+
+#################################################################
+## extract scores that maximize accuracy + associated p-value
+sub getOptimalAccuracy{
+	 
+   my $roc_stat_dir = shift;
+   my $matrix_quality_dir = shift;
+   my $bg_method = shift;
+   
+   my %tmp_seq_neg_sets = %main::seq_neg_sets;
+    
+    ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
+    if ($bg_method eq "bg_window") {
+    	delete($tmp_seq_neg_sets{"rand_gen"});
+    	#if (!$main::bg_TFBS_mask) { ## input sequences NOT with TFBS masked
+    	#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    	#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 		#}
+    }
+	
+    my @roc_stat_input_files = ();
+    foreach my $set (keys(%tmp_seq_neg_sets)){
+    			
+    	## merge loo sites with each negative sets
+    	my $filename = $main::outfile{prefix}."_".$set."_loo_score_label.tab";
+    	my $name = $set."_loo";
+    	$main::outfile{$name}= File::Spec->rel2abs($filename,$roc_stat_dir);
+    	push (@roc_stat_input_files, $main::outfile{$name} );
+    						
+    	## merge matrix_sites with each negative sets
+    	$filename = $main::outfile{prefix}."_".$set."_matrix_sites_score_label.tab";
+    	$name = $set."_matrix_sites";
+    	$main::outfile{$name}= File::Spec->rel2abs($filename,$roc_stat_dir);
+    	push (@roc_stat_input_files, $main::outfile{$name} );
+    			
+    	}
+   
+   my @roc_stat_filenames;
+   
+    foreach my $file (@roc_stat_input_files){ 
+    		my $roc_stat_filename = $file;
+    		$roc_stat_filename =~ s/score_label/roc_stat/;
+    		push(@roc_stat_filenames, $roc_stat_filename);
+    }
+   
+   ## search for best accuracy
+   
+    my $outfile = File::Spec->rel2abs($main::outfile{prefix}."_optimal_accuracy.txt",$roc_stat_dir) ;
+	
+	my $markov_order;
+	my $window_size;
+	if ($matrix_quality_dir =~ /$main::dirproject{$main::matrix_name}\/$bg_method\/(\d+)nt.*/ ){
+		$markov_order = "markov_".($1-1);
+	} elsif ($matrix_quality_dir =~ /$main::dirproject{$main::matrix_name}\/$bg_method\/window_(\d+)bp\/(\d+)nt.*/ ){
+		$window_size= $1;
+		$markov_order = "markov_".($2-1);
+	}
+		
+    my ($fh) = &OpenOutputFile($outfile);
+    print $fh `grep '^#' $roc_stat_filenames[0]`; 
+    foreach my $roc_stat_filename (@roc_stat_filenames) {
+    	print $fh "#".basename($roc_stat_filename)."\n";
+    	my $cmd="grep -v '^;' $roc_stat_filename | grep -v '^#' | sort -k ".$main::acc_g_col."nr | head -1";
+    	my $line = `$cmd`; 
+    	print $fh $line;
+    	my @fields = split("\t",$line);
+    	my $optimal_score = $fields[0];
+    	my $optimal_acc = $fields[$main::acc_g_col-1];
+    			 
+    	## find in matrix_quality directory the corresponding file 
+    	#test_input_TFBS_masked_loo_roc_stat.tab
+    	if (($roc_stat_filename =~ /$main::outfile{prefix}_(.*)_(loo)/) ||($roc_stat_filename =~ /$main::outfile{prefix}_(.*)_(matrix_sites)/)){
+    		my $neg_set = $1;
+    		my $pos_set = $2;
+    		my $matrix_quality_filename = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$neg_set."_score_distrib.tab";
+    		my $matrix_quality_file = File::Spec->rel2abs($matrix_quality_filename,$matrix_quality_dir) ;
+
+    		## get p-value associated to this score
+    		my $matrix_quality_line =  `grep "^$optimal_score" $matrix_quality_file`;
+    		chomp($matrix_quality_line);
+    		my @fields = split("\t",$matrix_quality_line);
+    		my $freq_inv_cum = pop(@fields);
+    		
+    		## store data in superhash
+    		unless ($window_size){
+    			$window_size = "no_window";
+    		}
+    		$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_score} = $optimal_score;
+    		$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_acc} = $optimal_acc;
+    		$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{p_value} = $freq_inv_cum;   		
+    		
+    		## print in a file
+    		print $fh "# corresponding inverse cumulative frequency for negative set (p-value): ".basename($matrix_quality_file)."\n";
+    		print $fh $freq_inv_cum if ($freq_inv_cum);
+    		print $fh "\n\n";
+    		}	
+    	}
+    close($fh);
+
+
+}
+
+################################################################
+## Run matrix-scan command.
+sub runMatrixScan {
+	my ($seq2scan,$outputfile,$matrix,$matrix_format,$bg_method, $bg_file, $order,$window_size) = @_;
+
+  	my ($out_matrix_scan) = &OpenOutputFile($outputfile);
+  	&RSAT::message::TimeWarn("Matrix-scan : Scoring sequences of with background method ".$bg_method." file:".$bg_file.", matrix ".$matrix) 
+	  if (($main::verbose >= 2)&&($bg_method eq "bg_global"));
+
+	my $matrix_scan_cmd = "echo '".$$seq2scan."' | ";
+   $matrix_scan_cmd .= " matrix-scan -v ".$main::verbose;
+  	if ($bg_method eq "bg_global") {
+  		$matrix_scan_cmd .= " -bgfile ".File::Spec->rel2abs($bg_file,$main::dirproject{wd});
+  	}  elsif ($bg_method eq "bg_input") {
+  		$matrix_scan_cmd .= " -bgfile ".$bg_file;
+  	} elsif ($bg_method eq "window") {
+  		$matrix_scan_cmd .= " -markov ".$order;
+  		$matrix_scan_cmd .= " -window ".$window_size;
+  	}
+	$matrix_scan_cmd .= " -m ".$matrix;
+	$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+	$matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts;
+	$matrix_scan_cmd .= " -return sites -2str -n skip  ";#-lth score 0 to prevent returning too many sites
+	$matrix_scan_cmd .= " -batch ".$main::batch if ($main::batch);
+	$matrix_scan_cmd .= " | grep -v '^#'";
+
+  ## Execute the command
+  &RSAT::message::Info("matrix-scan command",  $matrix_scan_cmd) if ($main::verbose >= 2);
+   my $matrix_scan_result = `$matrix_scan_cmd`;
+   print $out_matrix_scan $matrix_scan_result;
+   close $out_matrix_scan;
+  
+  my $classfreq_outputfile = $outputfile;
+  $classfreq_outputfile =~ s/\.tab/\_classfreq\.tab/;
+  
+  ## Prepare the classfreq command (to extract the distribution from the scores)
+  my $classfreq_cmd = " grep -v '^;' $outputfile | grep -v '^#'";
+  $classfreq_cmd .= " | cut -f 8";
+  $classfreq_cmd .= " | classfreq -v 1 -ci 0.01";
+  $classfreq_cmd .= " -o ".$classfreq_outputfile;
+  
+  system($classfreq_cmd);
+ }
+ 
+################################################################
+## Run compare-features command.
+sub runCompareFeatures {
+	my ($ref_TFBS,$pred_TFBS,$outfile) = @_;
+	
+	&RSAT::message::Info(join("\t", "Compare-features: ref TFBS file: $ref_TFBS")) if ($main::verbose >= 2);
+    &RSAT::message::Info(join("\t", "\t predict TFBS file: $ref_TFBS")) if ($main::verbose >= 2);
+
+   	my $comp_feat_cmd = "compare-features ";
+    	$comp_feat_cmd .= "-v  $main::verbose "; 
+    	$comp_feat_cmd .= "-ref $ref_TFBS ";
+    	$comp_feat_cmd .= "-i $pred_TFBS ";
+    	$comp_feat_cmd .= "-iformat ft ";
+    	$comp_feat_cmd .= "-oformat ft ";
+    	$comp_feat_cmd .= "-return stats "; 	
+    	$comp_feat_cmd .= " -o  $outfile";
+   	
+    	## Execute the command
+  		&doit($comp_feat_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+		&RSAT::message::Info("compare-features command",  $comp_feat_cmd) if ($main::verbose >= 2);
+ }
+
+################################################################
+## pMatchingEval approach
+sub pMatchingEval {
+	my $matrix_scan_dir = shift;
+	my $bg_method = shift;
+	my $bg_file = shift;
+	my $compare_feat_dir= shift;
+	my $subsequences = shift;
+
+    ## prepare matrix-scan run	 			
+    &RSAT::message::TimeWarn("Running matrix-scan and compare-features") if ($main::verbose >=1);	
+   			
+	## matrix-scan run on the whole set of sub-sequences
+	my $sub_seq_job = $main::outfile{prefix}."_all_subseq_unmasked_flank_".$main::window_size."_matrix_complete";
+ 	my $matrix_scan_output = File::Spec->rel2abs($sub_seq_job.".tab",$matrix_scan_dir);			
+	&runMatrixScan($subsequences,$matrix_scan_output,$main::infile{matrix},$main::matrix_format,$bg_method, $bg_file, "","");
+			
+	## run compare-features
+ 	my $comp_feat_output = File::Spec->rel2abs($sub_seq_job."comp_feat.tab",$compare_feat_dir);		
+ 	&runCompareFeatures($main::outfile{feat_all_rel},$matrix_scan_output,$comp_feat_output);		
+			
+	## graphs
+	
+	## Generate the graphs for each image format 
+   	foreach my $image_format (@main::image_formats) {
+
+		## General options for all the graphs below
+   		my $thisgraph_options = " -i ".$comp_feat_output;
+    	$thisgraph_options .= " -title2 'subsequences size:".$main::window_size."bp'";
+    	$thisgraph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
+   		
+    	################################################################
+   		## Draw a graph with all the inverse cumulative distributions
+    	my $XYgraph_cmd = "XYgraph ".$main::all_graph_options.$thisgraph_options;
+    	my $ycols = join (",", "10", "11", "13");
+    	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    	my $outfile = $comp_feat_output;
+    	$outfile =~ s/\.tab/\.$image_format/;
+		$XYgraph_cmd .= " -o ".$outfile;
+		$XYgraph_cmd .= " -format ".$image_format;
+		&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+   	}
+}
+
+################################################################
+#### Write in a new file the reference sequence regions,
+#### with annotated sites masked
+sub ReadAnnotatedSites {
+	
+	## read features from feature file
+	my ($in, $input_dir) = &OpenInputFile($main::infile{ref_feat});
+
+	my %annotated_sites = ();
+	while (my $line = <$in>){
+		chomp($line);
+		next if($line =~ /^[;|#|\n]/);
+		
+		# get the feature positions and gene ID
+		#seq_name	TFname	FeatureID	strand	start	end	description	speciesName
+		#Hoxb1	Hoxb1_Pbx	MTC00003	D	1733	1743	TGATTGAAGTG	Mouse
+		my @splitOnTab = split(/\t/,$line);
+
+		my $gene_id 	= $splitOnTab[0];
+		my $TFname		= $splitOnTab[1];
+		my $identifier	= $splitOnTab[2];
+		my $strand		= $splitOnTab[3];
+		my $feat_start 	= $splitOnTab[4];
+		my $feat_end 	= $splitOnTab[5];
+		if ($feat_start > $feat_end) {
+			my $tmp = $feat_end;
+			$feat_end = $feat_start;
+			$feat_start = $tmp;
+		}
+		my $site		= $splitOnTab[6];
+		
+		RSAT::message::Info(join("\t",$gene_id,$TFname,$identifier,$strand,$feat_start,,$feat_end,$site)) if ($main::verbose >= 6); 
+		
+		&RSAT::error::FatalError("Invalid reference feature file. 4th and 5th column should contain positions.") 
+	      unless (&IsNatural($feat_start)&&&IsNatural($feat_end));
+	    
+	   	# store features info for future use
+	    my %this_annotated_site = ( "TFname" => $TFname,
+	    							"Id" => $identifier,
+	    							"strand" => $strand,
+	    							"start" => $feat_start,
+	    							"end" => $feat_end,
+	    							"site" => $site    
+	    							);
+
+	    if ($annotated_sites{$gene_id}) {
+	    	push (@{$annotated_sites{$gene_id}},\%this_annotated_site);
+	    } else {
+	    	$annotated_sites{$gene_id}->[0] = \%this_annotated_site;
+	    }
+	}
+	    
+	  close $in;	
+	
+	# sort annotated sites
+	foreach my $seq_id (keys(%annotated_sites)) {
+		my @ranked_sites = @{$annotated_sites{$seq_id}};
+		@ranked_sites =
+	    sort {$a->{'start'} <=> $b->{'start'}}
+	      @ranked_sites;
+	    $annotated_sites{$seq_id} = \@ranked_sites;
+	}
+	return (\%annotated_sites);
+}
+
+################################################################
+#### Write in a new file the reference sequence regions,
+#### with annotated sites masked
+sub MaskAnnotatedSites {
+	my $sites2mask = shift;
+	my $input_seq_file = shift;
+	my $output_seq_file = shift;
+
+	&RSAT::message::TimeWarn("Masking annotated TFBS") if ($main::verbose >=1);
+
+	our %sequences = ();
+	our %sequences_length = ();
+
+   	## read sequences
+   	my ($in, $input_dir) = &OpenInputFile($input_seq_file);
+ 	while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
+			(($current_seq ne "") || ($seq_id ne ""))) {
+				$sequences{$seq_id}=$current_seq;
+				$sequences_length{$seq_id}=length($current_seq);
+			}
+	close $in;  
+	
+	## get TFBS to mask and mask them by NNN 
+	foreach my $seq_id (keys(%$sites2mask)){
+		my @this_seq_sites = @{$sites2mask->{$seq_id}};
+		
+		foreach my $i (0..$#this_seq_sites) {
+			my $feat_start 	= $this_seq_sites[$i]->{'start'};
+			my $feat_end 	= $this_seq_sites[$i]->{'end'};
+			
+			# prepare masking string
+			my $feat_length = $feat_end - $feat_start +1;
+			my $feat_masked;
+			foreach (1..$feat_length) {
+				$feat_masked .= "N";
+			}
+	
+#			## Debug
+#			if ($this_seq_sites[$i]->{'strand'} eq "D") {
+#				&RSAT::message::Debug("Masking TFBS", $seq_id, $feat_start, $feat_end,
+#			      "length", $feat_length, substr($sequences{$seq_id}, $feat_start-1, $feat_length)) 
+#	 		 	if ($main::verbose >= 10);
+#			} else {
+#				&RSAT::message::Debug("Masking TFBS", $seq_id, $feat_start, $feat_end,
+#			      "length", $feat_length, &RSAT::SeqUtil::ReverseComplement(substr($sequences{$seq_id}, $feat_start-1, $feat_length))) 
+#	 		 	if ($main::verbose >= 10);
+#			}
+
+			# mask the feature
+			substr($sequences{$seq_id}, $feat_start-1, $feat_length) = $feat_masked;
+			
+		}
+	}
+		
+	# copy to a new file
+	my $out = &OpenOutputFile($output_seq_file);
+	foreach my $seq_id (keys(%sequences)) {
+		&PrintNextSequence($out, $main::seq_format,60,$sequences{$seq_id},$seq_id);
+	}
+	close $out;	
+	return(\%sequences_length);
+}
+
+
+################################################################
+#### Get matrix sites 
+sub getMatrixSites{
+  my $matrix =shift;
+  my $matrix_format = shift;
+
+  my %matrix_sites = ();
+
+  $main::outfile{matrix_sites} = File::Spec->rel2abs($main::outfile{prefix}."_matrix_sites.fa",$main::dirproject{sequences});
+
+  ## run convert-matrix to extract the ID of each site and its sequence, as contained in the matrix
+  my $conv_matrix_cmd = "convert-matrix";
+  $conv_matrix_cmd .= " -i ".$matrix;
+  $conv_matrix_cmd .= " -return sites";
+  $conv_matrix_cmd .= " -from ".$matrix_format;
+  $conv_matrix_cmd .= " -o ".$main::outfile{matrix_sites};
+
+  &doit($conv_matrix_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+
+  ## parse the resulting fasta file and store in memory each matrix site
+  my ($in, $input_dir) = &OpenInputFile($main::outfile{matrix_sites});
+  while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
+	 (($current_seq ne "") || ($seq_id ne ""))) {
+    $matrix_sites{$seq_id} = $current_seq ;
+  }
+  close($in);
+
+  return(\%matrix_sites);
+}
+
+################################################################
+#### Extract with subsequence each annotated sites
+#### and flanking region, for matrix-scan run
+sub extractAnnotatedSitesAndFlanks {
+
+	my $annotated_sites = shift;
+	my $window_size = shift;
+	my $infile = shift;
+	my $outfile = shift;
+	my $sequences_length= shift;
+	
+	my %sub_seqs =();
+	
+	
+	RSAT::message::Info("Extracting and masking annotated TFBS centered in windows of ".$window_size." bp") if ($main::verbose >= 1); 
+	
+	## fragment file for subsequence
+	$main::outfile{fragmentfile} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_pos.tab",$main::dirproject{features});  
+	my ($out) = &OpenOutputFile($main::outfile{fragmentfile});
+	
+	## process each sequence to get subsequences of equal size, centered on each TFBS
+    foreach my $seq_id (keys(%$annotated_sites)){
+		my @this_seq_sites = @{$annotated_sites->{$seq_id}};
+		my $seq_end = $sequences_length->{$seq_id};
+		my %subseq_pos = ();
+		
+		## treat each TFBS on this sequence
+		foreach my $i (0..$#this_seq_sites) { 
+			my $TFBS_id = ($this_seq_sites[$i]->{'Id'});
+			
+			
+			# get positions of the subsequence to extract, centered on the TFBS
+			#my $left = ($this_seq_sites[$i]->{'start'})-1;
+			#my $right = ($this_seq_sites[$i]->{'end'})+1;
+			my $left = ($this_seq_sites[$i]->{'start'});
+			my $right = ($this_seq_sites[$i]->{'end'});
+			RSAT::message::Debug("Sequence ".$seq_id." TFBS id ".$TFBS_id,"pos relative to input seq","start",$left,"end",$right) if ($main::verbose >= 10);
+			my ($sub_seq_start,$sub_seq_end) = &CalcCenterSubseqPos($left, $right,$seq_end,$window_size);
+			$subseq_pos{$TFBS_id} -> {'start'} = $sub_seq_start;
+			$subseq_pos{$TFBS_id} -> {'end'} = $sub_seq_end;
+			$subseq_pos{$TFBS_id} -> {'strand'} = $this_seq_sites[$i]->{'strand'};
+			
+			$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'start'} = $sub_seq_start;
+    		$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'end'} = $sub_seq_end;
+    		
+			my $sub_seq_length = $sub_seq_end - $sub_seq_start +1 ;
+			
+			## adapt the positions into positions relative to sub-seq, to use compare-features with matrix-scan predictions
+			if (($this_seq_sites[$i]->{'start'} >= $sub_seq_start) && ($this_seq_sites[$i]->{'end'} <= $sub_seq_end)) {
+				my $rel_subseq_end = $sub_seq_length;
+				my $rel_TFBS_end = $rel_subseq_end - ($sub_seq_end - $this_seq_sites[$i]->{'end'});
+				my $rel_TFBS_start = $rel_subseq_end - ($sub_seq_end - $this_seq_sites[$i]->{'start'});
+				if ($subseq_pos{$TFBS_id} -> {'strand'} eq "R") { ## quick fix, not sure why TFBS on the reverse strand miss 1 nucleotide !
+					$rel_TFBS_end++;
+					$rel_TFBS_start++;
+				}
+				
+				$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'start'}= $rel_TFBS_start;
+    			$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'end'}= $rel_TFBS_end ;
+				
+			}
+		}
+ 			
+ 		$sub_seqs{$seq_id} -> {'pos'} = \%subseq_pos;	
+			
+			# create a fragment file for subsequence program
+ 			## subsequence fragment file specifications:
+ 			# 1) fragment ID
+    		# 2) sequence ID (must be the same as in the sequence file)
+    		# 3) fragment start
+    		# 4) fragment end
+    		# 5) strand 
+			
+			foreach my $TFBS_id (keys(%subseq_pos)){
+				my $start = $subseq_pos{$TFBS_id} -> {'start'};
+				my $end = $subseq_pos{$TFBS_id} -> {'end'};
+				my $strand = $subseq_pos{$TFBS_id} -> {'strand'};
+				
+				## check that each sub-sequence is of the correct length
+				RSAT::message::Warning("Subseq size (".($end-$start+1).") is not desired window size:".$window_size) if (($end-$start+1) != $window_size);
+			
+				print $out join("\t",$TFBS_id,$seq_id,$start,$end,$strand);    # fragments are taken on the strand where the TFBS lies
+    			print $out "\n";
+    			
+ 			}	
+    }
+	close ($out);
+
+	
+	## run sub-sequence to extract the sequences from the input sequence set, with annotated TFBS masked
+	my $sequences = `sub-sequence -i $infile -frag $main::outfile{fragmentfile} -iformat fasta -oformat fasta`;
+	
+	## keep those sequence in a temporary hash
+	my %seq_split = split (/\n/,$sequences);
+	my %seq_with_flanks =();
+	foreach my $key (keys(%seq_split)) {	
+			if ($key =~ /^>(\w+)/){
+				$seq_with_flanks{$1}->{$key} = $seq_split{$key};
+			}
+		}
+	undef(%seq_split);
+
+	## Process the sequences
+	($out) = &OpenOutputFile($outfile);
+	foreach my $seq_id (keys(%sub_seqs)){
+		my @TFBS_ids_on_subseq = keys(%{$sub_seqs{$seq_id}->{'byTFBS'}});
+			
+		## change the fasta header to keep the fragment file as the sequence id.
+		foreach my $i (0..$#TFBS_ids_on_subseq) {
+			my $TFBS_id = $TFBS_ids_on_subseq[$i];
+			my @header = keys(%{$seq_with_flanks{$TFBS_id}});
+			my $fasta_header = $header[0];
+			$fasta_header =~ s/>$TFBS_id/>$seq_id\_$TFBS_id\t$TFBS_id/;
+			RSAT::message::Debug($seq_id, "$TFBS_id",$fasta_header) if ($main::verbose >= 5);
+			
+			## Mask with NN the TFBS on each sequence
+			## necessary to mimic the behavior of 
+ 			## matrix-scan that excludes the scored segment from the bg model
+			my $rel_TFBS_start = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'start'};
+			my $rel_TFBS_end = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'end'};
+			my $feat_length = $rel_TFBS_end - $rel_TFBS_start +1;
+			my $feat_masked;
+			foreach (1..$feat_length) {
+				$feat_masked .= "N";
+			}
+			#RSAT::message::Debug("site to mask",	substr($seq_with_flanks{$TFBS_id}->{$header[0]}, $rel_TFBS_start-1, $feat_length)) 
+			#if ($main::verbose >= 0);
+			substr($seq_with_flanks{$TFBS_id}->{$header[0]}, $rel_TFBS_start-1, $feat_length) = $feat_masked;
+			
+			## print to file
+			print $out $fasta_header,"\n",$seq_with_flanks{$TFBS_id}->{$header[0]},"\n";
+			
+			## keep in hash for future use
+			$sub_seqs{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'} = $fasta_header."\n".$seq_with_flanks{$TFBS_id}->{$header[0]}."\n";
+	}
+		
+ 	}
+
+close $out;		
+
+   	
+#   		## Debug
+#	foreach my $seq_id (keys(%$annotated_sites)){
+#		my @this_seq_sites = @{$annotated_sites->{$seq_id}};
+#		foreach my $i (0..$#this_seq_sites) { 
+#			my $TFBS_id = ($this_seq_sites[$i]->{'Id'});
+#			my $site = ($this_seq_sites[$i]->{'site'});
+#			my $rel_TFBS_start = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'start'};
+#    		my $rel_TFBS_end = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'end'};
+#			RSAT::message::Debug($seq_id, "$TFBS_id", "start",$rel_TFBS_start,"end",$rel_TFBS_end,$site) if ($main::verbose >= 2);
+#			my $TFBS_seq = `sub-sequence -i $outfile -from $rel_TFBS_start -to $rel_TFBS_end -iformat fasta -oformat fasta`;
+#			RSAT::message::Debug("\n".$TFBS_seq) if ($main::verbose >= 2);
+#		}
+#	}
+   	
+	
+	## store subsequences in a hash for future reuse
+#	my @seqs = split(">",$sequences);
+#	foreach my $seq_id (keys(%sub_seqs)){
+#		my @TFBS_ids_on_subseq = keys(%{$sub_seqs{$seq_id}->{'byTFBS'}});
+#				
+#		foreach my $i (0..$#TFBS_ids_on_subseq) {
+#			my $TFBS_id = $TFBS_ids_on_subseq[$i];
+#			
+#			foreach my $seq (@seqs) {
+#				if ($seq =~ /^\w+\s+(\w+)\s+/){
+#					if ($1 eq $TFBS_id){
+#						$sub_seqs{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'} = ">".$seq;
+#					}
+#				}
+#			}
+#		}
+#	}
+	return (\%sub_seqs);
+}
+
+sub CalcCenterSubseqPos {
+	my $left = shift;
+	my $right = shift;
+	my $range = $right -$left +1;
+	my $seq_end = shift;
+	my $window_size = shift;
+	
+	my $flank_size = ($window_size - $range)/2;
+	my $flank_size_left;
+	my $flank_size_right;
+	unless (&IsNatural($flank_size)){
+		$flank_size_left = floor($flank_size);
+		$flank_size_right = ceil($flank_size);
+	} else {
+			$flank_size_left = $flank_size;
+			$flank_size_right = $flank_size;
+		}
+		
+	my $sub_seq_start = $left -$flank_size_left;
+	my $sub_seq_end   = $right + $flank_size_right;
+	
+	## treat the extreme left of the sequence
+	if ($sub_seq_start <= 1 ){
+		$sub_seq_start = 1;
+		$sub_seq_end   = $sub_seq_start + $window_size -1;
+	}
+	## treat the extreme right of the sequence
+	if ($sub_seq_end >= $seq_end ){
+		$sub_seq_end   = $seq_end;
+		$sub_seq_start = $sub_seq_end - $window_size +1;
+	}
+			
+	RSAT::message::Info("\tSubsequence start ".$sub_seq_start." end ".$sub_seq_end." size ".($sub_seq_end-$sub_seq_start+1)) if ($main::verbose >= 3);
+	return($sub_seq_start,$sub_seq_end);
+}
+
+
+################################################################
+#### calculate relative position of TFBS on the subsequences.
+sub getRelativeTFBSPositions {
+	my $sub_seqs = shift;
+	my $annotated_sites = shift;
+	my $window_size = shift;
+ 	
+ 	my $ft_files = "";
+ 	my $subsequences ="";
+ 	
+ 	$main::outfile{feat_all_rel} = File::Spec->rel2abs("feat_allseq_all_TFBS_rel_".$window_size.".ft",$main::dirproject{features});
+ 	
+ 	foreach my $seq_id (keys(%$sub_seqs)){
+			my @TFBS_ids_on_subseq = keys(%{$sub_seqs->{$seq_id}->{'byTFBS'}});
+			
+			foreach my $i (0..$#TFBS_ids_on_subseq) {
+				my $TFBS_id = $TFBS_ids_on_subseq[$i];
+				my $ft_file_id = "feat_".$seq_id."_".$TFBS_id."_rel_".$window_size;
+				$main::outfile{$ft_file_id} = File::Spec->rel2abs($ft_file_id.".ft",$main::dirproject{features});
+				$sub_seqs->{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_file'} = $main::outfile{$ft_file_id} ;
+				my ($out) = &OpenOutputFile($main::outfile{$ft_file_id} );
+				
+				$subsequences .= $sub_seqs->{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'};
+				$ft_files .= " $main::outfile{$ft_file_id}";
+				
+				## get all necessary info to put in the feature file
+				foreach my $TFBS (keys(%{$sub_seqs->{$seq_id}->{'byTFBS'}-> {$TFBS_id} -> {'rel_pos'}})){
+					my $rel_start = $sub_seqs->{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS} -> {'start'};
+					my $rel_end = $sub_seqs->{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS} -> {'end'};
+					my $TFname ;
+					my $strand ;
+					
+					my @this_seq_sites = @{$annotated_sites->{$seq_id}};
+					foreach my $i (0..$#this_seq_sites) {
+						if ($this_seq_sites[$i]->{'Id'} eq $TFBS) {
+							$TFname 	= $this_seq_sites[$i]->{'TFname'};
+							$strand 	= $this_seq_sites[$i]->{'strand'};
+							print $out join("\t",$seq_id."_".$TFBS_id,$TFname,$TFBS,$strand,$rel_start,$rel_end);
+							print $out "\n";
+						}
+					}
+				}
+				close $out;
+			}
+ 	}
+ 	## store all TFBS relative positions in a single file
+ 	system ("cat $ft_files > $main::outfile{feat_all_rel}");
+ 	
+ 	## draw a feature-map to visualise the position of the annotated sites on the subsequences
+	$main::outfile{feat_map_rel}= $main::outfile{feat_all_rel};
+	$main::outfile{feat_map_rel} =~ s/.ft/.gif/;
+ 	system ("feature-map -i $main::outfile{feat_all_rel} -from 1 -to $window_size -format gif -legend -title 'Positions of annotated TFBS on subsequences, size $window_size' -o $main::outfile{feat_map_rel}");
+	return (\$subsequences);
+}
+
+################################################################
+#### Calculate background models
+sub BackgroundModels{
+  my $seq = shift;
+  my $seq2scan = shift;
+  my $ord = shift;
+  my $bg_dir = shift;
+  my $TFBS_id = shift;
+  my $strand_sensitivity = shift;
+  my $seq_type =shift;
+
+  my $order = $ord+1;
+  my $model_file_key = "markov_".$ord."_".$seq_type;
+  
+  my $output_name = $order."nt_".$seq_type."_".$strand_sensitivity;
+  if ($TFBS_id ne "") {
+  	$output_name .= "_".$TFBS_id;
+  }
+  my $outputFile = File::Spec->rel2abs($output_name.".freq",$bg_dir); 
+  
+  
+  my $bg_model_cmd = "";
+  
+	if ($seq2scan ne "") {
+		if ($$seq2scan ne "") {
+  	 		$bg_model_cmd .= "echo '".$$seq2scan."' | ";
+		}
+  	 }
+  	$bg_model_cmd .= "oligo-analysis -v 1 ";
+  	if ($seq ne "") {
+  		$bg_model_cmd .= " -i ".$seq;
+  	 } 
+  	$bg_model_cmd .= " -$strand_sensitivity "; 
+  	$bg_model_cmd .= " -l ".$order;
+  	$bg_model_cmd .= " -type dna ";
+  	$bg_model_cmd .= " -return freq,occ ";
+  	$bg_model_cmd .= " -o ".$outputFile;
+
+  &doit($bg_model_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+  return $outputFile;
+
+}
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item B<matrix-quality>
+
+=item B<matrix-scan>
+
+=item B<roc-stat>
+
+=item B<compare-features>
+
+=back
+
+=cut

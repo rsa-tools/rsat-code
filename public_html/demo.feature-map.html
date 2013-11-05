@@ -1,0 +1,203 @@
+<HTML>
+<HEAD>
+<TITLE>Feature map</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<CENTER><P><B><FONT SIZE=+1><A HREF="RSAT_home.cgi">RSA-tools</A> - Feature-map</FONT></B><BR>
+Generates a physical map of genetic features for one or several
+sequences</P></CENTER>
+</CENTER>
+
+<P><FORM METHOD="POST" ACTION="feature-map.cgi"></P>
+
+<B>Feature list &nbsp;&nbsp;&nbsp;&nbsp;</B>
+(<A HREF="help.feature-map.html#formats">Format</A> 
+<SELECT name="format">
+<OPTION selected>Feature map
+<OPTION>DNA-pattern
+<OPTION>Patser
+<OPTION>Matinspector
+<OPTION>Signal scan
+<OPTION>Swissprot
+<OPTION>Transfac factor
+<OPTION>Transfac gene
+<OPTION>GCG msf
+<OPTION>DSSP
+<OPTION>Gibbs sampler
+<OPTION>Fugue
+</SELECT>)<BR>
+
+<TEXTAREA NAME="data" ROWS=4 COLS=60>PHO5	dnapat	acgtgc|gcacgt	R	438	443	ACGTGC	4.37
+PHO8	dnapat	acgtgc|gcacgt	D	268	273	ACGTGC	4.37
+PHO11	dnapat	acgtgc|gcacgt	R	586	591	ACGTGC	4.37
+PHO81	dnapat	acgtgc|gcacgt	D	458	463	ACGTGC	4.37
+PHO81	dnapat	acgtgc|gcacgt	D	794	799	ACGTGC	4.37
+PHO81	dnapat	acgtgc|gcacgt	R	456	461	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	D	242	247	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	D	540	545	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	R	213	218	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	R	386	391	ACGTGC	4.37
+PHO5	dnapat	acgtgg|ccacgt	D	549	554	ACGTGG	2.84
+PHO8	dnapat	acgtgg|ccacgt	R	266	271	ACGTGG	2.84
+PHO11	dnapat	acgtgg|ccacgt	D	519	524	ACGTGG	2.84
+PHO11	dnapat	acgtgg|ccacgt	R	384	389	ACGTGG	2.84
+PHO81	dnapat	acgtgg|ccacgt	D	86	91	ACGTGG	2.84
+PHO84	dnapat	acgtgg|ccacgt	D	366	371	ACGTGG	2.84
+PHO84	dnapat	acgtgg|ccacgt	D	388	393	ACGTGG	2.84
+PHO84	dnapat	acgtgg|ccacgt	R	364	369	ACGTGG	2.84
+PHO5	dnapat	cgcacg|cgtgcg	D	218	223	CGCACG	1.50
+PHO8	dnapat	cgcacg|cgtgcg	R	73	78	CGCACG	1.50
+PHO11	dnapat	cgcacg|cgtgcg	D	585	590	CGCACG	1.50
+PHO81	dnapat	cgcacg|cgtgcg	R	459	464	CGCACG	1.50
+PHO84	dnapat	cgcacg|cgtgcg	D	212	217	CGCACG	1.50
+PHO84	dnapat	cgcacg|cgtgcg	R	541	546	CGCACG	1.50
+PHO5	dnapat	ctgcac|gtgcag	D	29	34	CTGCAC	1.77
+PHO5	dnapat	ctgcac|gtgcag	D	411	416	CTGCAC	1.77
+PHO5	dnapat	ctgcac|gtgcag	D	461	466	CTGCAC	1.77
+PHO8	dnapat	ctgcac|gtgcag	R	270	275	CTGCAC	1.77
+PHO8	dnapat	ctgcac|gtgcag	R	390	395	CTGCAC	1.77
+PHO81	dnapat	ctgcac|gtgcag	D	671	676	CTGCAC	1.77
+PHO84	dnapat	ctgcac|gtgcag	R	244	249	CTGCAC	1.77
+PHO84	dnapat	ctgcac|gtgcag	R	457	462	CTGCAC	1.77
+PHO5	dnapat	tgccaa|ttggca	D	469	474	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	D	610	615	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	R	36	41	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	R	538	543	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	R	638	643	TGCCAA	2.57
+PHO11	dnapat	tgccaa|ttggca	D	597	602	TGCCAA	2.57
+PHO11	dnapat	tgccaa|ttggca	D	663	668	TGCCAA	2.57
+PHO81	dnapat	tgccaa|ttggca	R	287	292	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	D	184	189	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	D	348	353	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	D	634	639	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	R	598	603	TGCCAA	2.57
+PHO5	dnapat	cacgtg|cacgtg	D	548	553	CACGTG	1.79
+PHO5	dnapat	cacgtg|cacgtg	R	548	553	CACGTG	1.79
+PHO8	dnapat	cacgtg|cacgtg	D	267	272	CACGTG	1.79
+PHO8	dnapat	cacgtg|cacgtg	R	267	272	CACGTG	1.79
+PHO11	dnapat	cacgtg|cacgtg	D	518	523	CACGTG	1.79
+PHO11	dnapat	cacgtg|cacgtg	R	518	523	CACGTG	1.79
+PHO81	dnapat	cacgtg|cacgtg	D	457	462	CACGTG	1.79
+PHO81	dnapat	cacgtg|cacgtg	R	457	462	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	D	365	370	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	D	387	392	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	R	365	370	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	R	387	392	CACGTG	1.79
+PHO5	dnapat	cccacg|cgtggg	D	197	202	CCCACG	0.45
+PHO5	dnapat	cccacg|cgtggg	R	550	555	CCCACG	0.45
+PHO11	dnapat	cccacg|cgtggg	R	300	305	CCCACG	0.45
+PHO11	dnapat	cccacg|cgtggg	R	520	525	CCCACG	0.45
+PHO84	dnapat	cccacg|cgtggg	R	389	394	CCCACG	0.45
+PHO5	dnapat	aacgtg|cacgtt	D	77	82	AACGTG	0.22
+PHO5	dnapat	aacgtg|cacgtt	R	439	444	AACGTG	0.22
+PHO8	dnapat	aacgtg|cacgtt	D	421	426	AACGTG	0.22
+PHO11	dnapat	aacgtg|cacgtt	R	385	390	AACGTG	0.22
+PHO81	dnapat	aacgtg|cacgtt	D	793	798	AACGTG	0.22
+PHO84	dnapat	aacgtg|cacgtt	D	539	544	AACGTG	0.22
+PHO84	dnapat	aacgtg|cacgtt	R	214	219	AACGTG	0.22
+PHO5	dnapat	aaacgt|acgttt	D	76	81	AAACGT	0.79
+PHO5	dnapat	aaacgt|acgttt	D	695	700	AAACGT	0.79
+PHO5	dnapat	aaacgt|acgttt	R	440	445	AAACGT	0.79
+PHO8	dnapat	aaacgt|acgttt	D	420	425	AAACGT	0.79
+PHO8	dnapat	aaacgt|acgttt	D	700	705	AAACGT	0.79
+PHO8	dnapat	aaacgt|acgttt	R	702	707	AAACGT	0.79
+PHO11	dnapat	aaacgt|acgttt	D	672	677	AAACGT	0.79
+PHO11	dnapat	aaacgt|acgttt	R	386	391	AAACGT	0.79
+PHO81	dnapat	aaacgt|acgttt	D	792	797	AAACGT	0.79
+PHO81	dnapat	aaacgt|acgttt	R	54	59	AAACGT	0.79
+PHO84	dnapat	aaacgt|acgttt	D	538	543	AAACGT	0.79
+</TEXTAREA><BR>
+
+<TABLE><TR>
+<TD><TT><A HREF="help.feature-map.html#title"><B>Title</B></A></TT></TD>
+<TD><INPUT TEXT NAME="title" SIZE=40 VALUE="PHO family"></TT></TD>
+</TR>
+</TABLE>
+
+<TABLE><TR>
+<TD><TT><INPUT TYPE=checkbox NAME="legend" CHECKED> <B><A HREF="help.feature-map.html#legend">Legend</A></B>
+<TD><TT><INPUT TYPE=checkbox NAME="scalebar" CHECKED> <B><A HREF="help.feature-map.html#scalebar">Scale bar</A></B> (<B>Step</B> <INPUT TYPE="text" SIZE=5 NAME="scalebarstep" VALUE="auto">)</TT></TD>
+<TD><TT><B><A HREF="help.feature-map.html#orientation">Orientation</A></B><SELECT NAME="orientation">
+<OPTION SELECTED>Horizontal
+<OPTION>Vertical
+</SELECT></TT></TD>
+</TR></TABLE>
+
+<TABLE><TR>
+<TD><TT><B><A HREF="help.feature-map.html#limits">Display limits</A></B></TT></TD>
+<TD><TT><B>from</B> <INPUT TEXT NAME="from" SIZE=5 VALUE="0"></TT></TD>
+<TD><TT><B>to</B> <INPUT TEXT NAME="to" SIZE=5 VALUE="820"></TT></TD>
+<TD><TT><B><A HREF="help.feature-map.html#origin">Origin</A></B>
+<INPUT TEXT NAME="origin" SIZE=5 VALUE=801></TT></TD>
+</TR></TABLE>
+
+<TABLE><TR>
+<TD><TT><A HREF="help.feature-map.html#dimensions"><B>Map dimensions</B></A> </TT></TD>
+<TD><TT>length <INPUT TEXT NAME="mlen" SIZE=5 value=500></TT></TD>
+<TD><TT>thickness <INPUT TEXT NAME="mthick" SIZE=5 value="auto"></TT></TD> 
+<TD><TT>spacing <INPUT TEXT NAME="mspacing" SIZE=5 value="6"></TT></TD>
+</TR></TABLE>
+
+<TABLE>
+<TR>
+<TD><TT><B><A HREF="help.feature-map.html#handle">Feature handle</A></B>
+<SELECT NAME="handle">
+<OPTION>symbol
+<OPTION SELECTED>color dot
+<OPTION>none
+</SELECT>
+</TT>
+</TD>
+
+<TD>
+<TT>
+<INPUT TYPE=checkbox NAME="htmap" CHECKED>
+<A HREF="help.feature-map.html#dynamic">
+<B>Dynamic map</B></A></TT>
+</TD>
+
+<TD>
+<TT>
+<INPUT TYPE=checkbox NAME="scorethick" CHECKED>
+<A HREF="help.feature-map.html#scorethick">
+<B>Proportional thickness</B></A></TT>
+</TD>
+
+
+</TR>
+</TABLE>
+
+
+<TABLE>
+<TR>
+<TD><TT><B><A HREF="help.feature-map.html#keys">Label keys</A></B></TT></TD>
+<TD><TT><INPUT TYPE=checkbox NAME="label_strand"> strand</TT></TD>
+<TD><TT><INPUT TYPE=checkbox NAME="label_pos"> position</TT></TD>
+<TD><TT><INPUT TYPE=checkbox NAME="label_id"> identifier</TT></TD>
+<TD><TT><INPUT TYPE=checkbox NAME="label_descr"> description</TT></TD>
+<TD><TT><INPUT TYPE=checkbox NAME="label_score"> score</TT></TD>
+</TR>
+</TABLE>
+
+<CENTER><TABLE>
+<TR VALIGN=CENTER>
+<TD><INPUT type="submit" value="GO"></TD>
+<TD><INPUT type="reset" value="RESET"></TD>
+<TD WIDTH=40></TD>
+<TD><B><A HREF="help.feature-map.html">MANUAL</A></B></TD>
+<TD><B><A HREF="demo.feature-map.html">DEMO</A></B></TD>
+<TD VALIGN=CENTER><B>
+<script type='text/javascript'><!--
+var v2="MGM2C2YU85XKSUDWH6EDEGFQNNUE";var v7=unescape("%07%26.C6W*%7BNT6e%1B0%283-X%051%29%25h0-%607%20");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'email<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>email (using spam protection)</a></noscript>
+</B></TD>
+</TR>
+</TABLE></CENTER>
+
+</FORM>
+<HR SIZE=3>
+
+</BODY>
+</HTML>
+

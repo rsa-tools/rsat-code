@@ -1,0 +1,1705 @@
+#!/usr/bin/perl
+
+### CVS: added the option -mask
+
+############################################################
+#
+# $Id: dna-pattern,v 1.65 2013/06/24 09:08:54 jvanheld Exp $
+#
+# Time-stamp: <2003-08-13 12:16:03 jvanheld>
+#
+############################################################
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::pattern;
+require RSAT::match;
+&InitMatchScores();
+
+$start_time = &RSAT::util::StartScript();
+
+#### init variables ####
+@matches = (); ## Empty match list before analyzing the next sequence
+$merge_matches = 0;
+$pattern_score = 1;
+$noid = 0;
+$strands_to_search = "DR";
+$in_format = "fasta";
+$match_format = "table";
+#$search_method = "IUPAC";
+$search_method = "regexp";
+
+## Return fields
+%supported_return_fields = (
+    sites=>1,
+    limits=>1,
+    notacgt=>1,
+    counts=>1,
+    ct=>1,
+    table=>1,
+    scores=>1,
+    rank=>1,
+    colsum=>1,
+    rowsum=>1,
+    total=>1,
+    stats=>1,
+    profiles=>1,
+    );
+$supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+%return_fields = ();
+
+if ($HelpRequested) {
+    &Help;
+    exit;
+}
+
+
+&ReadArguments();
+
+################################################################
+#
+# check parameter values
+#
+
+#### return values
+unless (%return_fields) {
+    $return_fields{sites} = 1;
+}
+
+## Dependencies between the fields
+if ($calc{table}) {
+    $calc{counts} = 1;
+}
+if ($calc{scores}) {
+    $calc{counts} = 1;
+}
+if ($calc{total}) {
+    $calc{colsum} = 1;
+    $calc{rowsum} = 1;
+}
+if ($return_fields{total}) {
+  $return_fields{colsum} = 1;
+  $return_fields{rowsum} = 1;
+}
+if ($calc{stats}) {
+    $calc{colsum} = 1;
+    $calc{rowsum} = 1;
+}
+
+
+#### top scores only valid with sliding window
+if (($return_fields{top} ) && !($search_method eq "sliding window")) {
+    &RSAT::error::FatalError("The option -top is only valid with the option -window\n");
+}
+#if (($sort ) && !($return_fields{top})) {
+#    &RSAT::error::FatalError("The option -sort is only vlid with the option -top\n");
+#}
+
+
+&RSAT::message::Info("Fields to return", join( ";", sort (keys (%return_fields)))) if ($main::verbose >= 4);
+&RSAT::message::Info("Fields to calculate", join( ";", sort(keys (%calc)))) if ($main::verbose >= 4);
+
+#### check allowed substitutions ####
+unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
+    &RSAT::error::FatalError("Invalid number of allowed substitutions.\n");
+}
+
+### check input format
+&CheckInputSeqFormat($in_format);
+
+@patterns = &ReadPatterns(pattern_file=>$pattern_file,
+			  score_column=>$score_column,
+			  noid=>$noid,
+			  pattern_score=>$pattern_score,
+			  pattern_id=>$pattern_id,
+			  pattern_seq=>$pattern_seq,
+			  );
+
+@patterns = sort {$b->get_attribute("score") <=> $a->get_attribute("score")} @patterns;
+
+
+#### check patterns
+if ($main::verbose >= 2) {
+    warn "Patterns\n";
+    foreach my $pattern (@patterns) {
+	warn join ("\t",
+		   $pattern->get_attribute("sequence"),
+		   $pattern->get_attribute("id"),
+		   $pattern->get_attribute("score"),
+		   ), "\n";
+    }
+}
+
+### no pattern specified
+if ($#patterns < 0) {
+    &Warning("There is not a single pattern.") ;
+    exit(0);
+}
+
+#### prepare pattern hash for sliding window
+%pattern_scores = ();
+%pattern_lengths = ();
+if ($search_method eq "sliding window") {
+    #### calculate pattern length
+    my $first_pattern_seq =  $patterns[0]->get_attribute("sequence");
+    $pattern_length = length($first_pattern_seq);
+
+    foreach my $pattern (@patterns) {
+	my $pattern_seq = lc($pattern->get_attribute("sequence"));
+
+	#### index pattern length
+	$pattern_lengths{length($pattern_seq)}++;
+
+	#### check pattern length
+#	if (length($pattern_seq) != $pattern_length) {
+#	    &RSAT::error::FatalError("With the sliding window option, all patterns must have the same length");
+#	}
+
+	#### check non-degeneracy
+	if ($pattern_seq =~ /[^acgt]/i) { &RSAT::error::FatalError("With the sliding window option, only non-degenerate DNA alphabet is supported [ACGT]\n") };
+
+	#### index pattern score
+	my $pattern_score = $pattern->get_attribute("score");
+	$pattern_scores{$pattern_seq} = $pattern_score;
+    }
+
+    #### two strand search
+    if ($strands_to_search eq "DR") {
+	foreach my $pattern_seq (keys %pattern_scores) {
+	    $pattern_scores{lc(&ReverseComplement($pattern_seq))} = $pattern_scores{$pattern_seq};
+	}
+	$strand = "DR";
+    } else {
+	$strand = "D";
+    }
+
+    #### create an object for the composite pattern
+    $pattern = new RSAT::pattern(id => "composite",
+				 sequence => "*composite*",
+				 score => $pattern_score,
+				 min_length=>&min(keys(%pattern_lengths)),
+				 max_length=>&max(keys(%pattern_lengths)),
+				);
+
+}
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+&Verbose if ($verbose >=1);
+
+#### search ###
+### open sequence file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### read input sequences
+while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
+       (($current_seq) || ($sequence_id))) {
+    push @sequence_ids, $sequence_id;
+
+    #### remove tabs and blank spaces ####
+    $current_seq = &FoldSequence($current_seq, 0);
+
+    $sequence_length = length($current_seq);
+
+
+    #### verbose
+    $s++;
+    &RSAT::message::Info(join ("\t", "; Scanning sequence", $s, $sequence_id, $sequence_length)) if ($verbose >= 2);
+
+#    &RSAT::message::Debug($sequence_id, $current_seq) if ($main::verbose >= 10);
+
+    if (($origin <  0) || ($origin eq "-0")) {
+	$orig_pos = $sequence_length + $origin + 1;
+    } else {
+	$orig_pos = $origin;
+    }
+
+    ## Print sequence limits
+    &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos) if ($return_fields{limits});
+
+    ## Search for characters that do not correspond to ATGC
+   if ($return_fields{notacgt}){
+   		$pattern = new RSAT::pattern(id=>"notACGT",
+						description=>"notACGT",
+						sequence=>"[^ACGT]+",
+						score=>"1",
+					       );
+		$regular_expression = $pattern->get_attribute("sequence");
+		$regular_expression =~ tr/a-z/A-Z/;
+	    $pattern_length = length($regular_expression);
+	    $strand = "D";
+	    my $initial_noov = $no_overlap;
+	    unless ($initial_noov){
+	    	$no_overlap = 1;
+	    	}
+   		&RegExpSearch($current_seq, $regular_expression);
+   		unless ($initial_noov){
+	    	$no_overlap = 0;
+	    	}
+   }
+
+    if ($search_method eq "sliding window") {
+	&SlidingWindowSearch();
+    } else {
+	foreach $pattern (@patterns) {
+	    $expression = $pattern->get_attribute("sequence");
+	    $expression =~ tr/a-z/A-Z/;
+	    $pattern_length = length($expression);
+	    unless ($noIUPAC){
+	    	$D_regular_expression = &IUPAC_to_regular($expression);
+	    	$R_regular_expression = &ReverseComplement($D_regular_expression);
+	    	$RC_pattern = &ReverseComplement($expression);
+	    } else {
+	    	$D_regular_expression = $expression;
+	    	$R_regular_expression = $expression;
+	    	}
+
+	    $match_count = 0;
+	    #### palindromic patterns are searched only  on one strand
+	    if (($expression eq &ReverseComplement($expression)) &&
+		($strands_to_search eq "DR")) {
+		$regular_expression = $D_regular_expression;
+		$strand = "DR";
+		if ($search_method eq "regexp") {
+		    &RegExpSearch($current_seq, $regular_expression);
+		} else {
+		    &IUPACsearch();
+		}
+	    } else {
+
+		#### search on direct strand
+		if ($strands_to_search =~ /D/) {
+		    $regular_expression = $D_regular_expression;
+		    $strand = "D";
+		    if ($search_method eq "regexp") {
+			&RegExpSearch($current_seq, $regular_expression);
+		    } else {
+			&IUPACsearch();
+		    }
+		}
+		#### search on reverse complement strand
+		if ($strands_to_search =~ /R/) {
+		    $regular_expression = $R_regular_expression;
+		    $strand = "R";
+		    if ($search_method eq "regexp") {
+			&RegExpSearch($current_seq, $regular_expression);
+		    } else {
+			&IUPACsearch();
+		    }
+		}
+	    }
+
+	    #### increment the total counter for the pattern
+	    $sum_per_pattern{$pattern} += $match_count;
+	    $sum_per_sequence{$sequence_id} += $match_count;
+	    $score_per_sequence{$sequence_id} += $match_count*$pattern->get_attribute("score");
+	    $total_sum += $match_count;
+
+	    #### store match count if requested
+	    if ($calc{counts}) {
+		$match_count{$sequence_id}{$pattern} = $match_count;
+	    }
+	    &RSAT::message::Debug("match counts",
+				  "seq", $sequence_id, $sum_per_sequence{$sequence_id},
+				  "pattern", $pattern->get_attribute("id"), $sum_per_pattern{$pattern},
+				  $match_count{$sequence_id}{$pattern}) if ($main::verbose >= 5);
+	}
+    }
+
+    if ($merge_matches) {
+	my @merged_matches = &MergeMatches(@matches);
+	&PrintMatchLocations(@merged_matches);
+	@matches = ()
+    }
+}
+
+
+&MatchProfiles() if ($return_fields{profiles});
+
+&MatchCounts if ($return_fields{counts});
+
+&TopScores if ($return_fields{top});
+
+
+&CountTable if (($return_fields{table}) || ($return_fields{scores}));
+
+&MatchingStatistics() if ($return_fields{stats});
+
+
+################################################################
+## Close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
+
+
+################################################################
+#################### subroutine definition #####################
+################################################################
+
+
+################################################################
+# search with a regular expression
+#
+sub RegExpSearch {
+    my %pat_hash = &Substitute($regular_expression, $allowed_subst, 0);
+    my @keys = sort {
+	($pat_hash{$a} > $pat_hash{$b}) ||
+	    (($pat_hash{$a} == $pat_hash{$b}) and
+	     (lc($a) cmp lc($b)))
+	    } keys %pat_hash;
+    foreach my $regular_pattern (@keys) {
+	$seq_to_crop = $current_seq;
+	while ($seq_to_crop =~ /($regular_pattern)(.*)/i) {
+#	    &RSAT::message::Debug("Matching pattern", $regular_pattern, $seq_to_crop) if ($main::verbose >= 10);
+	    $match_count++;
+#	    if ($strand eq "DR") {
+#		$match_count++;
+#	    }
+	    $matching_seq = $1;
+	    $matching_seq_length = length($matching_seq);
+	    $remaining_seq = $2;
+	    $remaining_seq_len =  length($remaining_seq);
+	    $offset = $matching_seq_length + $remaining_seq_len -1;
+
+#	    &RSAT::message::Debug("Offset calculation",
+#				  "match len:".$matching_seq_length,
+#				  "remaining len:".$remaining_seq_len,
+#				  "offset:".$offset,
+#				  "matching:".$matching_seq,
+#				  "remaining:".$remaining_seq) if ($main::verbose >= 0);
+	    $up_flank = "";
+	    $down_flank = "";
+	    if ($return_fields{sites}) {
+		if ($strand eq "R") {
+#		    $matching_seq = &ReverseComplement($matching_seq);
+		    $up_flanking = $right_flanking;
+		    $down_flanking = $left_flanking;
+		} else {
+		    $up_flanking = $left_flanking;
+		    $down_flanking = $right_flanking;
+		}
+		if (($left_flanking) || ($right_flanking)){
+		    $up_flank = substr($current_seq,-$offset-$up_flanking-1,$up_flanking);
+		    $down_flank = substr($current_seq,-$offset+$matching_seq_length-1,$down_flanking);
+
+#		    if ($strand eq "R") {
+#			$up_flank = &ReverseComplement($up_flank);
+#			$down_flank = &ReverseComplement($down_flank);
+#			$matching_seq = lc($down_flank).uc($matching_seq).lc($up_flank);
+#		    } else {
+#			$matching_seq = lc($up_flank).uc($matching_seq).lc($down_flank);
+#		    }
+
+		}
+		$start_pos = $sequence_length - $offset - $orig_pos;
+		$end_pos = $start_pos + $matching_seq_length - 1;
+		$mismatches = $pat_hash{$regular_pattern};
+
+		my $match = new RSAT::match();
+		$match->set_attribute("type", "regexp");
+		$match->set_attribute("pattern_id", $pattern->get_attribute("id"));
+		$match->set_attribute("pattern_seq", $pattern->get_attribute("sequence"));
+		$match->set_attribute("expression", $regular_pattern);
+		$match->set_attribute("sequence_id", $sequence_id);
+		$match->set_attribute("start_pos", $start_pos);
+		$match->set_attribute("end_pos", $end_pos);
+		$match->set_attribute("strand", $strand);
+		$match->set_attribute("matching_seq", $matching_seq);
+		$match->set_attribute("up_flank", $up_flank);
+		$match->set_attribute("down_flank", $down_flank);
+		$match->set_attribute("mismatches", $mismatches);
+		&TreatMatch($match);
+	    }
+	    if ($no_overlap) {
+		$seq_to_crop = $remaining_seq;
+	    } elsif ($remaining_seq) {
+#		&RSAT::message::Debug("cropping sequence", length($seq_to_crop), $matching_seq_length, $offset, $regular_pattern, $seq_to_crop);
+		$seq_to_crop = substr($seq_to_crop,-$offset);
+#		&RSAT::message::Debug("cropped sequence", length($seq_to_crop), $offset, $regular_pattern, $seq_to_crop);
+	    } else {
+		$seq_to_crop = "";
+	    }
+	}
+    }
+} # RegExpSearch
+
+################################################################
+# search a IUPAC pattern
+#
+sub IUPACsearch {
+    $offset = 0;
+    $match_pos = 0;
+
+    if ($strand eq "R") {
+	$IUPAC_pattern = &ExpandSeq($RC_pattern);
+    } else {
+	$IUPAC_pattern = &ExpandSeq($pattern->get_attribute("sequence"));
+    }
+    $pattern_len = length($IUPAC_pattern);
+
+    do {
+	($match_pos,$matching_seq,$mismatches) = &NextMatch($current_seq, $IUPAC_pattern, $allowed_subst, $offset);
+	unless ($match_pos == -1) {
+	    $match_count++;
+	    if ($strand eq "DR") {
+		$match_count++;
+	    }
+
+	    unless ($return_fields{counts}) {
+		if ($strand eq "R") {
+		    $matching_seq = &ReverseComplement($matching_seq);
+		}
+		$start_pos = $match_pos -$orig_pos;
+		$end_pos = $start_pos + $pattern_len -1;
+
+		my $match = new RSAT::match();
+		$match->set_attribute("pattern_id", $pattern->get_attribute("id"));
+		$match->set_attribute("pattern_seq", $pattern->get_attribute("sequence"));
+		$match->set_attribute("expression", $IUPAC_pattern);
+		$match->set_attribute("type", "IPUAC");
+		$match->set_attribute("sequence_id", $sequence_id);
+		$match->set_attribute("start_pos", $start_pos);
+		$match->set_attribute("end_pos", $end_pos);
+		$match->set_attribute("strand", $strand);
+		$match->set_attribute("mismatches", $mismatches);
+		$match->set_attribute("matching_seq", $matching_seq);
+		&TreatMatch($match);
+	    }
+	    if ($no_overlap) {
+		$offset = $match_pos + $pattern_len;
+	    } else {
+		$offset = $match_pos;
+	    }
+	}
+    } until ($match_pos == -1);
+} # IUPACsearch
+
+
+################################################################
+## Treat a new match: either print it or store it if merge option has
+## been activated
+sub TreatMatch {
+  my ($match) = @_;
+
+
+  ################################################################
+  ## Calculate match score
+  if (($search_method eq "sliding window") ||
+      ($score_column > 0)) {
+    $score = $pattern->get_attribute("score");
+  } else {
+    $match_length = length($matching_seq);
+    $score = ($match_length - $mismatches)/$match_length;
+  }
+  $match->force_attribute("score", $score);
+
+  return if ((defined($threshold)) && ($score < $threshold));
+
+
+  ################################################################
+  ## Store or print depending on the merge option
+  if ($merge_matches) {
+    warn join ("\t",
+	       "Storing new match",
+	       $match->get_attribute("sequence_id"),
+	       $match->get_attribute("pattern_id"),
+	       $match->get_attribute("strand"),
+	       $match->get_attribute("start_pos"),
+	       $match->get_attribute("end_pos"),
+	       $match->get_attribute("matching_seq"),
+	       $score,
+	      ), "\n" if ($main::verbose >= 5);
+    push @matches, $match;
+  } else {
+    &PrintMatchLocation($match);
+  }
+}
+
+################################################################
+## Merge overlapping matches
+sub MergeMatches {
+    my (@matches) = @_;
+    my @merged_matches = ();
+
+    &RSAT::message::Info(join "\t", "Merging matches", @matches) if ($main::verbose >= 3);
+
+    ## Check that there are at least two patterns
+    unless (scalar(@matches) >= 2) {
+	return @matches;
+    }
+
+    ## index starting positions
+    my %start = ();
+    foreach my $match (@matches) {
+	$start{$match} = $match->get_attribute("start_pos");
+    }
+
+    ## Sort matches according to the start position
+    @matches = sort {$start{$a} <=> $start{$b}} @matches;
+    my $last_match = $matches[0];
+    for my $m (1..$#matches) {
+	$current_match = $matches[$m];
+	if ($current_match->get_attribute("start_pos") <= $last_match->get_attribute("end_pos")) {
+#  	    warn join( "\t", "Merging",
+#  		       "last",
+#  		       $last_match->get_attribute("matching_seq"),
+#  		       $last_match->get_attribute("start_pos"),
+#  		       $last_match->get_attribute("end_pos"),
+#  		       "current",
+#  		       $current_match->get_attribute("matching_seq"),
+#  		       $current_match->get_attribute("start_pos"),
+#  		       $current_match->get_attribute("end_pos"),
+#  		       ), "\n" if ($main::verbose >= 10);
+
+	    ## Set the ID to "merged"
+	    $last_match->force_attribute("pattern_id", "merged");
+	    $last_match->force_attribute("pattern_seq", "merged");
+
+	    ## merged score is the maximum score
+	    $last_match->force_attribute("score", &max($last_match->get_attribute("score"),
+						     $current_match->get_attribute("score")));
+
+	    ## Merged strand is the sum of last and current strands
+	    unless ($last_match->get_attribute("strand") eq
+		    $current_match->get_attribute("strand")) {
+		$last_match->force_attribute("strand", "DR");
+	    }
+
+	    ## calculate negative offset to take the end of the sequence
+	    my $offset = $last_match->get_attribute("end_pos")
+		- $current_match->get_attribute("end_pos");
+
+	    ## If right match extends wider than left match, extend left match
+	    if ($offset < 0) {
+
+		my $extension = substr($current_match->get_attribute("matching_seq"), $offset);
+
+		## extend the sequence
+		my $merged_sequence = $last_match->get_attribute("matching_seq");
+		$merged_sequence .= $extension;
+		&RSAT::message::Debug(
+		    "offset",
+		    $offset,
+		    "last",
+		    $last_match->get_attribute("matching_seq"),
+		    $last_match->get_attribute("start_pos"),
+		    $last_match->get_attribute("end_pos"),
+		    "current",
+		    $current_match->get_attribute("matching_seq"),
+		    $current_match->get_attribute("start_pos"),
+		    $current_match->get_attribute("end_pos"),
+		    $offset,
+		    $extension,
+		    $merged_sequence), if ($main::verbose >= 10);
+		$last_match->force_attribute("matching_seq", $merged_sequence);
+
+		## position
+		$last_match->force_attribute("end_pos",$current_match->get_attribute("end_pos"));
+
+		## downstream flank
+		$last_match->force_attribute("down_flank",$current_match->get_attribute("down_flank"));
+
+	    }
+#  	    warn join( "\t", "Merged match",
+#  		       $last_match,
+#  		       $last_match->get_attribute("matching_seq"),
+#  		       $last_match->get_attribute("start_pos"),
+#  		       $last_match->get_attribute("end_pos")),"\n" if ($main::verbose >= 10);
+	} else {
+	    push @merged_matches, $last_match;
+	    $last_match = $current_match;
+	}
+    }
+    push @merged_matches, $last_match;
+
+    return @merged_matches;
+}
+
+
+################################################################
+## Print a list of matches
+sub PrintMatchLocations {
+    my @matches = @_;
+    foreach my $match (@matches) {
+	&PrintMatchLocation($match);
+    }
+}
+
+################################################################
+# Print a single match location
+sub PrintMatchLocation {
+    my ($match) = @_;
+    my $matching_seq = uc($match->get_attribute("matching_seq"));
+
+    my $strand = $match->get_attribute("strand");
+
+    if ($match->get_attribute("type") eq "regexp") {
+	my $up_flank = $match->get_attribute("up_flank");
+	my $down_flank = $match->get_attribute("down_flank");
+	if ($strand eq "R") {
+	    $matching_seq = &SmartRC($matching_seq);
+	    $right_flank = &ReverseComplement($down_flank);
+	    $left_flank = &ReverseComplement($up_flank);
+	} else {
+	    $right_flank = $up_flank;
+	    $left_flank = $down_flank;
+	}
+
+	## Append flanking
+	$matching_seq = join ("", lc($right_flank),
+			       uc($matching_seq),
+			       lc($left_flank),
+			       );
+    }
+
+    if ($match_format eq "fasta") {
+	#### fasta identifier line
+	print $out ">";
+	print $out join ("_",
+			 $match->get_attribute("sequence_id"),
+			 $match->get_attribute("strand"),
+			 $match->get_attribute("start_pos"),
+			 $match->get_attribute("end_pos"),
+			 $match->get_attribute("pattern_id"),
+			 );
+	printf $out (" score: %.2f", $score);
+	print $out " pattern: ", $pattern->get_attribute("sequence");
+	print $out "\n";
+	print $out $matching_seq, "\n";
+    } else {
+	print $out join ("\t",
+			 $match->get_attribute("pattern_id"),
+			 $match->get_attribute("strand"),
+			 $match->get_attribute("pattern_seq"),
+			 $match->get_attribute("sequence_id"),
+			 $match->get_attribute("start_pos"),
+			 $match->get_attribute("end_pos"),
+			 $matching_seq,
+			 sprintf ("%.2f", $match->get_attribute("score")),
+			 ), "\n";
+    }
+}
+
+
+################################################################
+## Option list
+sub ShortHelp	{
+    open HELP, "|more";
+    print HELP <<EndShortHelp;
+dna-pattern options
+-------------------
+-h		complete help message
+-help		short help message
+-p		pattern
+-pl		pattern list file
+-i		sequence file.
+-mask upper|lower	mask upper- or lowercases, respectively
+-subst		allowed substitutions
+-noIUPAC	the pattern is considered as a standard regular expression.
+-sc		score column
+-o		output file.
+-format		sequence format (see convert-seq to obtain the list of supported input sequences)
+-id		pattern identifier (one word).
+-noid		use pattern sequence as id
+-noov		prevent detection of overlapping pattern
+-2str		search matches on both strands (default)
+-1str		search matches on the Direct strand only
+-R		search matches on the Reverse complementary strand only
+-match_format	format for returning matches (supported: fasta, table)
+-return		field(s) to return. Supported: $supported_return_fields
+-pos		return match positions (default). Obsolete: use '-return sites' instead.
+-limit 		return start and end positions for each input sequence. Obsolete: use '-return limits' instead.
+-c		return the count of matches for each pattern in each sequence. Obsolete: use '-return counts' instead.
+-table		return a table with the count of pattern matches per sequence. Obsolete: use '-return table' instead.
+-colsum		return total occ per sequence in the count table. Obsolete: use '-return colsum' instead.
+-rowsum		return total occ per pattern in the count table. Obsolete: use '-return rowsum' instead.
+-total		return total occ per sequence and per pattern in the count table. Obsolete: use '-return total' instead.
+-stats		return matching statistics. Obsolete: use '-return stats' instead.
+-ct		return total count in all sequences? Obsolete: use '-return ct' instead.
+-N #		return matching sequences with # flanking nucleotides.
+-NL #		return matching sequences with # left flanking nucleotides
+-NR #		return matching sequences with # right flanking nucleotides
+-merge		merge mutually overlapping matches.
+-window		sliding window size
+-top		only return the top score
+-sort		sort sequences according to their top score
+-th		threshold on occurrences: only return sequences with >= # pattern occurrences.
+-v		verbose
+-origin		origin (position 0)
+EndShortHelp
+    close HELP;
+    exit(0);
+}
+
+
+################################################################
+#
+# Read command line arguments
+#
+sub ReadArguments {
+    my $arg = "";
+
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+
+
+    while ($arg = shift (@arguments)) {
+
+#    foreach $a (0..$#ARGV) {
+	if ($arg eq "-h") {
+	    &Help;
+	} elsif  ($arg eq "-help") {
+	    &ShortHelp;
+
+	} elsif ($arg eq "-v") {
+	  if (&IsNatural($arguments[0])) {
+	    $main::verbose = shift(@arguments);
+
+	  } else {
+	    $main::verbose = 1;
+	  }
+
+	} elsif ($arg =~ /^-ori/) {
+	    $main::origin = shift(@arguments);
+	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be an Integer number.")
+		unless (($main::origin eq "-0") || (&RSAT::util::IsInteger($main::origin)));
+
+	} elsif ($arg eq "-subst") {
+	    $allowed_subst = shift @arguments;
+	    &RSAT::error::FatalError("$allowed_subst. Invalid number of substitutions, should be a Natural number.")
+		unless (&RSAT::util::IsNatural($allowed_subst));
+	    if ($allowed_subst > 0) {
+		$search_method = "IUPAC";
+		&RSAT::message::Info("Seach method: IUPAC") if ($verbose >=1);
+	    }
+
+	} elsif ($arg eq "-IUPAC") {
+	    $search_method = "IUPAC";
+	    warn "; Seach method: IUPAC\n" if ($verbose >=1);
+
+	    ################################################################
+	    #### pattern specification
+	} elsif ($arg eq "-id") {
+	    # directly read pattern identifier from the command line
+	    $pattern_id = shift(@arguments);
+
+	} elsif ($arg eq "-p") {
+	    # directly read pattern sequence from the command line
+	    $pattern_seq = shift(@arguments);
+	    &RSAT::message::Info ("Pattern sequence", $pattern_seq) if ($verbose >=4);
+
+	    # read name of file containing the list of patterns and check for its existence
+	} elsif ($arg eq "-pl") {
+	    $pattern_file = shift(@arguments);;
+	    &RSAT::error::FatalError("Cannot read pattern file '$pattern_file'.")
+		unless (-r $pattern_file);
+
+	    #### score column in the pattern file
+	} elsif ($arg eq "-sc") {
+	  $main::score_column = shift(@arguments);
+	  &RSAT::error::FatalError($main::score_column, "Invalid value for the score column: should be a Natural number")
+	    unless (&IsNatural($main::score_column));
+	  &RSAT::error::FatalError($main::score_column, "Invalid score column value. Should be > 1") unless ($main::score_column > 1);
+
+	    #### the pattern file contains no identifier
+	} elsif ($arg eq "-noid") {
+	    $noid = 1;
+
+	    	    #### the pattern file contains no identifier
+	} elsif ($arg eq "-noIUPAC") {
+	    $noIUPAC = 1;
+
+	    ################################################################
+	    #### sequence file
+	} elsif ($arg eq "-i") {
+	    # read input file name (sequence file)
+	    $inputfile = shift(@arguments)
+
+	} elsif ($arg eq "-format") {
+	    # read input format (sequence format)
+	    $in_format = lc(shift(@arguments));
+
+
+	    ################################################################
+	    #### output file
+	} elsif ($arg eq "-o") {
+	    $outputfile = shift(@arguments);
+
+	    ################################################################
+            #### matching options
+
+	    #### strands
+	} elsif (($arg eq "-1str") ||
+		 ($arg eq "-D") ||
+		 ($arg eq "-W") ||
+		 ($arg eq "-1str")) {
+	    $strands_to_search = "D";
+	} elsif (($arg eq "-R") ||($arg eq "-C")) {
+	    $strands_to_search = "R";
+	} elsif (($arg eq "-2str") ||
+		 ($arg eq "-DR") ||
+		 ($arg eq "-RD") ||
+		 ($arg eq "-CW") ||
+		 ($arg eq "-CW") ||
+		 ($arg =~ /-2str/)
+		 ) {
+	    $strands_to_search = "DR";
+
+	    #### threshold
+	} elsif ($arg eq "-th") {
+	    $threshold = shift(@arguments);
+	    unless (&IsReal($threshold)) {
+		&RSAT::error::FatalError("Threshold must have a real value");
+	    }
+
+	    #### merge matches
+	} elsif ($arg eq "-merge") {
+	    $merge_matches = 1;
+
+	    #### no overlap
+	} elsif ($arg eq "-noov") {
+	    $no_overlap = 1;
+
+	    ################################################################
+            #### output
+
+	    #### match format
+	} elsif ($arg eq "-match_format") {
+	    $match_format = shift(@arguments);
+
+	    ### Return fields
+        } elsif ($arg eq "-return") {
+	    $arg = shift (@arguments);
+            chomp($arg);
+            my @fields_to_return = split ",", $arg;
+            foreach my $field (@fields_to_return) {
+		$field = lc($field);
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                    $calc{$field} = 1;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+
+	    #### matching positions
+	} elsif ($arg eq "-pos") {
+	    &RSAT::message::Warning("'dna-pattern -pos' is obsolete, use '-return sites' instead");
+	    $return_fields{sites} = 1;
+
+	    ## Report sequence limits
+	} elsif ($arg =~ /^-limit/) {
+	    &RSAT::message::Warning("'dna-pattern -limit' is obsolete, use '-return limits' instead");
+	    $return_fields{limits} = 1;
+
+	    #### count matches
+	} elsif ($arg eq "-c") {
+	    &RSAT::message::Warning("'dna-pattern -c' is obsolete, use '-return counts' instead");
+	    $calc{counts} = 1;
+	    $return_fields{counts} = 1;
+
+	    #### sum matches over all sequences
+	} elsif ($arg eq "-ct") {
+	    &RSAT::message::Warning("'dna-pattern -ct' is obsolete, use '-return ct' instead");
+	    $return_fields{counts} = 1;
+	    $return_fields{sum_only} = 1;
+
+	    #### return results in a sequence x pattern_count table
+	} elsif ($arg eq "-table") {
+	    &RSAT::message::Warning("'dna-pattern -table' is obsolete, use '-return table' instead");
+	    $calc{counts} = 1;
+#	    $return_fields{sum_only} = 0;
+	    $return_fields{table} = 1;
+
+	    #### add to the output table  a row containing the sum of each column
+	} elsif ($arg eq "-colsum") {
+	    &RSAT::message::Warning("'dna-pattern -colsum' is obsolete, use '-return colsum' instead");
+	    $return_fields{colsum} = 1;
+
+	    #### add to the output table a column containing row sums
+	} elsif ($arg eq "-rowsum") {
+	    &RSAT::message::Warning("'dna-pattern -rowsum' is obsolete, use '-return rowsum' instead");
+	    $return_fields{rowsum} = 1;
+
+
+	    #### add a column and a row for totals to the output table
+	} elsif ($arg eq "-total") {
+	    &RSAT::message::Warning("'dna-pattern -total' is obsolete, use '-return total' instead");
+	    $return_fields{colsum} = 1;
+	    $return_fields{rowsum} = 1;
+
+	    #### return a summary of matching statistics
+	} elsif ($arg eq "-stats") {
+	    &RSAT::message::Warning("'dna-pattern -stats' is obsolete, use '-return stats' instead");
+	    $calc{counts} = 1;
+	    $calc{colsum} = 1;
+	    $calc{rowsum} = 1;
+	    $return_fields{stats} = 1;
+
+	    #### matching profiles
+	} elsif ($arg =~ /-prof/) {
+	    &RSAT::message::Warning("'dna-pattern -profiles' is obsolete, use '-return profiles' instead");
+	    $return_fields{profiles} = 1;
+
+	    #### sliding window
+	} elsif ($arg =~ /^-win/) {
+#	    die;
+	    $search_method = "sliding window";
+	    $sliding_window_size = shift(@arguments);
+	    unless (&IsNatural($sliding_window_size)) {
+		&RSAT::error::FatalError( "Sliding window size must be a natural number");
+	    }
+	    unless ($sliding_window_size > 0) {
+		&RSAT::error::FatalError( "Sliding window size must be > 0");
+	    }
+
+	    #### top score
+	} elsif ($arg eq "-top") {
+	    $return_fields{top} = 1;
+	    #### sort
+	} elsif ($arg eq "-sort") {
+	    $sort = 1;
+
+	    ## mask
+	} elsif ($arg eq "-mask") {
+	    $mask = shift(@arguments);
+	    &CheckMask($mask);
+
+	    #### flanking (return flanking residues)
+	} elsif ($arg eq "-N") {
+	    $left_flanking = $right_flanking = shift(@arguments);
+	    &RAT::error::FatalError($left_flanking, "Invalid value for the number of flanking residues: should be a Natural number")
+		unless (&IsNatural($left_flanking));
+
+	} elsif ($arg eq "-NL") {
+	    $left_flanking = shift(@arguments);
+	    &RAT::error::FatalError($left_flanking, "Invalid value for the number of flanking residues: should be a Natural number")
+		unless (&IsNatural($left_flanking));
+
+	} elsif ($arg eq "-NR") {
+	    $right_flanking = shift(@arguments);
+	    &RAT::error::FatalError($right_flanking, "Invalid value for the number of flanking residues: should be a Natural number")
+		unless (&IsNatural($right_flanking));
+
+	}
+    }
+}
+
+
+
+################################################################
+# scan the sequence with a sliding window
+sub SlidingWindowSearch {
+    my @pattern_lengths = keys(%pattern_lengths);
+    my $min_pattern_length = &min(@pattern_lengths);
+    my $max_pattern_length = &max(@pattern_lengths);
+
+
+    $last_pos = $sequence_length - $min_pattern_length;
+
+    return if ($last_pos < $sliding_window_size);
+
+    $current_seq = lc($current_seq);
+    my @scores = ();
+    my $current_score = 0;
+    my $previous_score = 0;
+    my $score_sum = 0;
+    my $top_score;
+
+    #### initialize score vector
+    for my $pos (0..($sliding_window_size-2)) {
+	my @current_position_scores = ();
+	for my $pattern_length (@pattern_lengths) {
+	    my $subseq = substr($current_seq, $pos, $pattern_length);
+	    push @current_position_scores, $current_score, $pattern_scores{$subseq};
+	}
+	my $current_score = &checked_max(@current_position_scores);
+	push @scores, $current_score;
+	$score_sum += $current_score;
+    }
+    $top_score = $score_sum;
+
+    #### scan the sequence with the sliding window
+    for my $pos (($sliding_window_size-1)..$last_pos) {
+	my @current_position_scores = ();
+	for my $pattern_length (@pattern_lengths) {
+	    my $subseq = substr($current_seq, $pos, $pattern_length);
+	    push @current_position_scores, $current_score, $pattern_scores{$subseq};
+	}
+	my $current_score = &checked_max(@current_position_scores);
+	push @scores, $current_score;
+	$score_sum += $current_score;
+
+#	warn join( "\t", $sliding_window_size, $last_pos, $subseq, $current_score, $score_sum, $threshold), "\n" if ($current_score);
+	if ($score_sum >= $threshold) {
+	    $pattern->force_attribute("score", $score_sum);
+	    $end_pos = $pos - $orig_pos + $pattern_length ;
+	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
+	    $matching_seq = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
+	    &PrintMatchLocation() if ($return_fields{sites});
+	    $profile_score{$sequence_id}{$start_pos} = $score_sum if ($return_fields{profiles});
+#	    die $profile_score{$sequence_id}{$start_pos};
+	}
+
+	$previous_score = shift @scores;
+	$score_sum -= $previous_score;
+	$top_score = &max($top_score, $score_sum);
+    }
+    if ($top_score >= $threshold) {
+	$top_score{$sequence_id} = $top_score;
+    }
+}
+
+
+################################################################
+#
+# Report sliding window profiles
+#
+sub MatchProfiles {
+
+    ################################################################
+    #### calculate min and max positions
+    warn "; Calculating min and max position\n" if ($verbose >= 2);
+    for my $id  (@sequence_ids) {
+	my %matches = %{$profile_score{$id}};
+	$min_pos = &min($min_pos, keys %matches);
+	$max_pos = &max($man_pos, keys %matches);
+    }
+
+    #### print header
+    print $out join( "\t",
+		     "; position",
+		     ($min_pos..$max_pos)
+		     ), "\n";
+
+    warn "; Printing matching profiles\n" if ($verbose >= 2);
+    #### print profiles
+    for my $id  (@sequence_ids) {
+	my %matches = %{$profile_score{$id}};
+	my @sites = sort {$a <=> $b} keys %matches;
+	print $out join( "\t",
+			 $id,
+			 @matches{@sites},
+			 ), "\n";
+    }
+}
+
+
+################################################################
+# Verbosity: report parameters
+#
+sub Verbose {
+    print $out "; dna-pattern ";
+    &PrintArguments($out);
+    print $out "; Citation: van Helden et al. (2000). Yeast 16(2), 177-187.\n";
+    printf $out "; %-21s\t%s\n", "Input file", $inputfile if ($inputfile);
+    printf $out "; %-21s\t%s\n", "Input format", $in_format;
+    printf $out "; %-21s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-21s\t%s\n", "Pattern file", $pattern_file if ($pattern_file);
+    printf $out "; %-21s\t%s\n", "Search method", $search_method;
+    if ($search_method eq "sliding window") {
+	printf $out "; %-21s\t%s\n", "Sliding window", $sliding_window_size;
+	printf $out "; %-21s\t%s\n", "Pattern length", $pattern_length;
+    }
+
+    printf $out "; %-21s\t%g\n", "Threshold", $threshold;
+    printf $out "; %-21s\t%d\n", "Allowed substitutions", $allowed_subst;
+    printf $out "; Return fields\n";
+    foreach $key (keys %return_fields) {
+	printf $out ";%-21s\t%s\n", "",$key;
+    }
+    print $out "; Patterns\n";
+    print $out "; \tseq\tid\tscore\n";
+    foreach my $pattern (@patterns) {
+	print $out ("; ",
+		    "\t", $pattern->get_attribute("sequence"),
+		    "\t", $pattern->get_attribute("id"),
+		    "\t", $pattern->get_attribute("score"),
+		    "\n");
+    }
+    print $out "; \n";
+
+    if ($return_fields{sites}) {
+	print $out "; Matching positions\n";
+
+	unless ($match_format eq "fasta") {
+	    print $out join ("\t",
+			     "; PatID",
+			     "Strand",
+			     "Pattern",
+			     "SeqID",
+			     "Start",
+			     "End",
+			     "matching_seq",
+			     "Score"), "\n";
+	}
+    }
+}
+
+
+
+
+
+################################################################
+# Matching statistics
+#
+sub MatchingStatistics {
+    my $nb_sequences = $#sequence_ids + 1;
+    my $nb_patterns = $#patterns + 1;
+    my $matching_patterns = 0;
+    my $matching_patterns_pct = 0;
+    my $max_matching_score_pct = 0;
+    my $max_matching_score;
+    my $max_score;
+    foreach my $pattern (@patterns) {
+	$max_score = &max($max_score, $pattern->get_attribute("score"));
+	if ($sum_per_pattern{$pattern} > 0) {
+	    $matching_patterns++ ;
+	    $max_matching_score = &max($max_matching_score, $pattern->get_attribute("score"));
+	}
+    }
+    if ($nb_patterns > 0) {
+	$matching_patterns_pct =  100*$matching_patterns/$nb_patterns;
+    }
+
+    if ($max_score > 0) {
+	$max_matching_score_pct =  100*$max_matching_score/$max_score;
+    }
+
+    my $matched_sequences = 0;
+    my $matched_sequences_pct = 0;
+    foreach my $sequence_id (@sequence_ids) {
+	$matched_sequences++ if ($sum_per_sequence{$sequence_id} > 0);
+    }
+    if ($nb_sequences > 0) {
+	$matched_sequences_pct = 100*$matched_sequences/$nb_sequences;
+    }
+
+    print $out "; Matching statistics\n";
+
+    printf $out ( "%-21s\t%s\t%s\t%s\n",
+		  "; statistics",
+		  "max",
+		  "matched",
+		  "percent"
+		  ), "\n";
+    printf $out ( "%-21s\t%d\t%d\t%.1f\n",
+		  "matching patterns",
+		  $nb_patterns,
+		  $matching_patterns,
+		  $matching_patterns_pct
+		  );
+    printf $out ( "%-21s\t%.2f\t%.2f\t%.1f\n",
+		  "matching scores",
+		  $max_score,
+		  $max_matching_score,
+		  $max_matching_score_pct
+		  );
+    printf $out ( "%-21s\t%d\t%d\t%.1f\n",
+		  "matching sequence",
+		  $nb_sequences,
+		  $matched_sequences,
+		  $matched_sequences_pct
+		  );
+}
+
+################################################################
+# print the matching table (patterns/sequences)
+sub CountTable {
+
+    ## Print the header of the count table
+    print $out "#seq";
+    print $out "\t", "rank" if ($return_fields{rank});
+    print $out "\t", "score" if ($return_fields{scores});
+    print $out "\t", "total" if ($return_fields{rowsum});
+    if ($return_fields{table}) {
+	foreach my $pattern (@patterns) {
+	    print $out "\t", $pattern->get_attribute("id");
+	}
+    }
+    print $out "\n";
+
+    ## Sort sequences according to total score or sum of pattern counts
+    if ($sort) {
+      if ($return_fields{scores}) {
+	@sequence_ids = sort {$score_per_sequence{$b} <=> $score_per_sequence{$a}} @sequence_ids;
+      } else {
+	@sequence_ids = sort {$sum_per_sequence{$b} <=> $sum_per_sequence{$a}} @sequence_ids;
+      }
+    }
+
+    ## Print scores and counts per sequence
+    my $total_score = 0;
+    my $rank = 0;
+    foreach $sequence_id (@sequence_ids) {
+      $rank++;
+      print $out $sequence_id;
+      print $out "\t", $rank if ($return_fields{rank});
+
+      if ($return_fields{scores}) {
+	$total_score += $score_per_sequence{$sequence_id};
+	print $out "\t", $score_per_sequence{$sequence_id};
+      }
+      print $out "\t", $sum_per_sequence{$sequence_id} if ($return_fields{rowsum});
+      if ($return_fields{table}) {
+	foreach my $pattern (@patterns) {
+	  print $out "\t", $match_count{$sequence_id}{$pattern};
+	}
+      }
+      print $out "\n";
+    }
+
+    #### print total of occurrences per pattern
+    if ($return_fields{colsum}) {
+      print $out "total";
+      print $out "\t", $rank if ($return_fields{rank});
+      print $out "\t", $total_score if ($return_fields{scores});
+      print $out "\t", $total_sum if ($return_fields{colsum});
+      foreach my $pattern (@patterns) {
+	print $out "\t", $sum_per_pattern{$pattern};
+      }
+      print $out "\n";
+    }
+}
+
+################################################################
+# match counts
+sub MatchCounts {
+    if ($return_fields{sum_only}) {
+	print $out "; Counts per pattern\n";
+	print $out "; PatID\tPattern\tMatches\n";
+	foreach my $pattern (@patterns) {
+	    print $out $pattern->get_attribute("id");
+	    print $out "\t", $pattern->get_attribute("sequence");
+	    print $out "\t", $sum_per_pattern{$pattern};
+	    print $out "\ttotal";
+	    print $out "\n";
+	}
+
+    } else {
+	print $out "; Counts per sequence and per pattern\n";
+	print $out "; SeqID\tPatID\tPattern\tMatches\n";
+	foreach $sequence_id (@sequence_ids) {
+	    foreach $pattern (@patterns) {
+		if ($match_count{$sequence_id}{$pattern} >= $threshold) {
+		    print $out join ("\t", "$sequence_id",
+				     $pattern->get_attribute("id"),
+				     $pattern->get_attribute("sequence"),
+				     $match_count{$sequence_id}{$pattern}
+			), "\n";
+		}
+	    }
+	}
+    }
+}
+
+################################################################
+## Match scores
+sub MatchScores {
+    print $out "; Score per sequence\n";
+    print $out "; SeqID\tcounts\tscore\n";
+    foreach $sequence_id (@sequence_ids) {
+	if ($match_count{$sequence_id}{$pattern} >= $score_threshold) {
+	    print $out join ("\t", "$sequence_id",
+		), "\n";
+	}
+    }
+}
+
+################################################################
+# top scores
+sub TopScores {
+    print $out "; Top score per sequence (sliding window)\n";
+    print $out "; SeqID\ttop\n";
+    if ($sort) {
+	@sequence_ids = sort {$top_score{$b} <=> $top_score{$a}} @sequence_ids;
+    }
+    foreach $sequence_id (@sequence_ids) {
+	printf $out  "$sequence_id\t%f\n", $top_score{$sequence_id};
+    }
+}
+
+############ HELP message ####################
+sub Help	{
+    open HELP, "|more";
+    print HELP <<EndOfHelp;
+NAME
+	dna-pattern
+	perl script v1.1 by Jacques van Helden, 30 July 1997.
+
+DESCRIPTION
+	Searches all occurrences of a pattern within DNA sequences.
+        The pattern can be entered as a simple nucleotide sequence,
+        but can also include degenerate nucleotide codes, or regular
+        expressions.
+
+CATEGORY
+	sequences
+	pattern matching
+
+USAGE
+	(get help)
+	dna-pattern -h
+
+	(directly enter the sequence to search)
+	dna-pattern  -i sequencefile -format seq_format -p pattern [-id identifier]
+			[-1str|-2str|-R] [-c|-ct] [-noov]
+			[-N flanking] [-v]
+
+	(read a list of patterns from a file)
+	dna-pattern -i sequencefile -format seq_format -pl pattern_file
+   			[-1str|-2str|-R] [-c|-ct]  [-noov]
+   			[-N flanking] [-v]
+
+ARGUMENTS
+	-h	help (displays the current message)
+
+	-help	short help message
+
+	-i	input sequence file. This file contains the sequences where the pattern(s)
+		will be searched for.
+		Various format are accepted
+		If omitted, standard input (eg keyboard) will be used.
+		This allows to use the program within a pipe.
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
+	-format	input sequence format. The accepted formats are
+		fasta	       FastA format
+		IG	       IntelliGenetics format
+		raw	       a single sequence in a file
+		multi	       each new line is a new sequence
+		filelist       a list of files containing each
+			       a single raw sequence
+	-o	output file.
+		If omitted, standard output (eg screen) will be used.
+		This allows to use the program within a pipe.
+
+	-p	pattern entered directly after -p.
+		Alternatively use -pl.
+
+	-pl	name of the file containing the patterns to search .
+		(see format below)
+
+	-subst #
+               allow # substitutions.
+	-noIUPAC
+		The pattern is considered as a standard regular expression.
+		It is convenient to specifically search for masked sequences represented
+		by "N" characters in sequences:
+		ie : dna-pattern -i your_sequence_file -p "N+" -noov -1str -noIUPAC
+	-sc #
+		score column
+
+		the #th column of the pattern file contains a number
+		indicating the score for a match of this pattern. This
+		option allows to weight the matches according to a
+		user-defined scheme.
+
+	-noid
+		do not search pattern identifier in the second column
+		of pattern file. instead the id takes the same content
+		as the pattern sequence.
+
+	-noov
+		Do not count overlapping matches for self-overlapping
+		patterns.
+
+	-2str	search matches on both strands (direct and reverse complement)
+
+	-1str	search matches only on the direct strand.
+
+	-R 	search matches only on the reverse complement strand.
+
+	-id	pattern identifier (one word).
+		Use this option combined with -p, to specify the ID of
+		a unique pattern entered on the command line. For
+		multple patterns, it is more convenient to use a
+		pattern file (option -pl).
+
+	-return field1[,field2,...]
+
+		List of fields to return. Multiple fields can be
+		entered separated by commas, or by using iteratively
+		the option.
+		    -return field1 [-return field2 ...]
+
+		Supported fields: $supported_return_fields.
+
+		-return sites:   return match positions (default)
+
+		-return limits: return start and end positions for each
+		    input sequence
+
+		-return notacgt: return positions for characters that
+		do not correspond not standard nucleotides (ACGT) eg: N, X and
+		degenerate nucleotides from IUPAC code (eg: W, K)
+
+		-return counts: return the count of matches per
+		    sequence.
+
+		-return rank: return the rank of the sequence (this is
+                     especially useful in combination with the option
+                     -sort).
+
+		-return score: return a score per sequence, computed
+                     by summing the scores of the matching patterns.
+
+		-return ct:    same as '-return counts', except that it
+		    returns the sum of matches in all the files of the
+		    sequence file list, instead of the count within
+		    each separate file.
+
+		-return table: return the count of pattern matches per
+		    sequence in the form of a table.  (one line per
+		    sequence, one column per pattern)
+
+		-return colsum (together with -return table) prints an extra
+		    column with the total occurrences per sequence
+
+		-return rowsum (together with -return table) prints an
+		    extra row with total occurrences per pattern
+
+		-return total (together with -return table) prints an
+		    extra column with the total occurrences per
+		    sequence and an extra row with total occurrences
+		    per pattern.  (amounts to combine -colsum and
+		    -rowsum)
+
+		-return stats return matching statistics
+
+		-return profiles return matching profiles with sliding
+                    windows.
+
+	-match_format
+		format for returning matches (supported: fasta, table)
+
+        -th #   Threshold.
+                Return match count only for sequences with >= # matches.
+                Only valid in combination with -c.
+
+	-merge  merge mutually overlapping matches. When succesive
+		matches overlap, they are converted into a single
+		match. The merged match takes the ID "merged". The
+		score is the highest score of the matching patterns.
+
+	-N #	return matching sequences with # flanking nucleotides
+
+	-NL #	return matching sequences with # left flanking nucleotides
+
+	-NR #	return matching sequences with # right flanking nucleotides
+
+	-v	verbose.
+
+        -origin #
+                define # as the origin for the calculation of positions.
+                -origin -0 defines the end of each sequence as the
+                origin. The matching positions are then negative values,
+                providing the distance between the match and the end of the
+                sequence.
+
+	-window #
+		Sliding window size. The score at each position is
+		calculated by summing the scores of all patterns
+		encountered within a sliding window of size #. This
+		option automatically returns matching positions.
+		A threshold can be specified to specify the minimal
+		matching score to be returned.
+
+	-top	(with sliding window only)
+		only return the top score obtained with the sliding
+		window for each sequence.
+
+	-sort	(with -top only)
+		sort sequences according to their top score
+
+PATTERN FORMATS
+
+    PATTERN SEQUENCE
+
+	The standard degenerate nucleotide code of the IUPAC-IUB
+	commission is supported (http://www.iupac.org/, see
+	http://www.chem.qmw.ac.uk/iupac/misc/naseq.html for complete
+	information).
+
+	The pattern sequence should thus only contain the following characters:
+
+            ------------------------------------------------------
+            Symbol  Nucleotide(s)   Description
+            ------------------------------------------------------
+            A       A               Adenosine
+            C       C               Cytidine
+            G       G               Guanosine
+            T       T               Thymidine
+            R       A or G          puRines
+            Y       C or T          pYrimidines
+            W       A or T          Weak hydrogen bonding
+            S       G or C          Strong hydrogen bonding
+            M       A or C          aMino group at common position
+            K       G or T          Keto group at common position
+            H       A, C or T       not G
+            B       G, C or T       not A
+            V       G, A, C         not T
+            D       G, A or T       not C
+            N       G, A, C or T    aNy
+            ------------------------------------------------------
+
+	Upper and lower case are considered equivalent.
+
+	Patterns can either be entered directly by the user, or listed
+	in a file.
+
+        The pattern can also contain regular expression elements:
+        - GAT\[TA\]AG means \"GATAAG or GATTAG\" (equivalent to GATWAG).
+        - CGGN{11}CCG means CGG followed by 10 N followed by CCG.
+        - GATAAGN{0,30}GATAAG means two GATAAG spaced by 0 to 30
+          nucleotides.
+
+    DIRECT PATTERN INPUT
+
+	Type the -p option directly followed by a pattern sequence.
+	An optional identifier can be further entered after the -id option.
+
+    PATTERN FILE
+
+	A pattern file is a tab-delimited text file. Each row contains
+	the description of one pattern. Column content:
+	  1) Pattern sequence. This is the only mandatory column.
+	  2) Pattern ID (optional).
+	Additional columns can be used to specify other pattern
+	attributes (description, score, ...), but they are by default
+	ignored by the program. The option -sc allows to specify a
+	score column.
+
+SEQUENCE FILE FORMAT
+        Different formats are supported:
+        - raw
+	- wc (=wconsensus)
+        - filelist
+        - IG (intelligenetics)
+
+	raw	The input file must contain raw sequences without any
+                comment or other text. Tabs (\\t), blank spaces and newline
+                characters (\\n) are accepted (they will be automatically
+                removed before analysis). The sequence must be terminated by
+                a newline character.
+
+	filelist
+		file list. Each line of the input file contains the
+		name of a file containing a single sequence in raw format.
+
+	IG	IntelliGenetics format.
+ 		The first non-comment line must be the sequence identifier
+		(a single word without spaces).
+		The sequence follows the identifier line identifier. It can
+                include spaces, tabs or newlines, that will be removed for
+                sequence analysis.
+                The end of one sequence is indicated by termination character:
+		1 for linear, 2 for circular sequences.
+		A single file may contain several sequences.
+
+		EXAMPLE of IG suite:
+
+		; sequence of the region upstream from NIL1
+	        ; Locus GAT1
+ 	        ; ORF YFL021W  coord:   6 95964 97496
+ 	        ; upstream region size: 100
+ 	        ; upstream region coord:        6 95864 95963
+ 	        GAT1
+ 	        ACAGAGCAACAATAATAACAGCACTATGAGTCGCACACTT
+  	        GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
+  	        CTCCCGGCCCCGGTATTAGC
+  	        1
+ 	        ; sequence of the region upstream from PUT4
+                ; Locus PUT4
+                ; ORF YOR348C  coord:   15 988773 986890
+                ; upstream region size: 100
+                ; upstream region coord:        15 988873 988774
+                PUT4
+                GGGTTTGTGTTCCTCTTCCTTTCCTTTTTTTTTCTCTCTT
+                CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
+                ACACCATCAATGAATAAATC
+                1
+
+OUTPUT
+	The output file contains columns separated by tabs (\\t).
+
+	Column contents:
+
+	1- pattern identifier
+	2- matching strand : direct (D) or reverse complement (R)
+	3- pattern sequence
+	4- name of the sequence matching the pattern
+	5- start position of the match
+	6- end position of the match
+	7- match sequence
+	8- matching score
+
+	If the -c option is entered, output file returns the following
+	columns :
+
+	1- query pattern identifier word
+	2- query pattern sequence
+	3- sequence file name
+	4- number of matches for the current pattern in the current file
+
+EXAMPLES
+	dna-pattern -i GATA -p GATWA -i my_file.fasta -c
+
+	will count all occurences of the strings 'GATAA' and 'GATTA' present
+	in the file my_file.fasta
+WEB VERSION
+	http://www.bigre.ulb.ac.be/bioinformatics/rsa-tools/
+EndOfHelp
+    close HELP;
+    exit(0);
+}
+
+
+################################################################
+## Print the start and end positions of the sequence
+sub PrintSequenceLimits {
+  my ($seq_id, $seq_len, $orig_pos) = @_;
+  my $start_end = new RSAT::pattern(
+				    sequence_id => $seq_id,
+				    pattern_id=>"START_END",
+				    strand => "DR",
+				    start_pos => 1-$orig_pos,
+				    end_pos => $seq_len - $orig_pos,
+				    pattern_seq => "-",
+				    matching_seq => "-",
+				    score=>0,
+				   );
+  &PrintMatchLocation($start_end);
+
+#   my $seq_start = new RSAT::pattern(
+# 				    sequence_id => $seq_id,
+# 				    pattern_id=>"SEQ_START",
+# 				    strand => "DR",
+# 				    start_pos => 1-$orig_pos,
+# 				    end_pos => 1-$orig_pos,
+# 				    pattern_seq => "-",
+# 				    matching_seq => "-",
+# 				    score=>0,
+# 				   );
+#   &PrintMatchLocation($seq_start);
+
+#     my $seq_end = new RSAT::pattern(
+# 				    sequence_id => $seq_id,
+# 				    pattern_id=>"SEQ_END",
+# 				    strand => "DR",
+# 				    start_pos => $seq_len - $orig_pos,
+# 				    end_pos => $seq_len - $orig_pos,
+# 				    pattern_seq => "-",
+# 				    matching_seq => "-",
+# 				    score=>0,
+# 				   );
+#   &PrintMatchLocation($seq_end);
+}
+
+

@@ -1,0 +1,1179 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: variation-scan,v 1.15 2013/09/23 14:23:36 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+
+=pod
+
+=head1 NAME
+
+retrieve-variation-seq
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Scan sequence with different matrice weigth-position of transcription factor
+
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]
+
+=head2 Example
+
+
+=head1 INPUT FORMAT
+
+=head2 Sequence file
+
+See I<retrieve-variation-seq> output format.
+
+=head2 Matrix file
+
+A list  of matrix in transfanc format
+
+=head2 Background file
+
+Oligo-analysis format
+
+=head1 OUTPUT FORMAT
+
+A tab delimited file with the following column content.
+
+=over
+
+=item 1. matrix
+
+Name of the matrice
+
+=item 2. variation
+
+Name of the variation
+
+=item 3. SO
+
+SO term of the variation.
+
+=item 4. var_coord
+
+Coordinate of the variation.
+
+=item 5. B_weight
+
+Best max weigth. 
+
+=item 8. W_weight
+
+Worst max weigth.
+
+=item 7. Diff
+
+Difference between the two max weigth.
+
+=item 8. variant
+
+Variant of the variation in the sequence.
+
+=item 9. B_pval
+
+Pvalue of the best max weigth.
+
+=item 10. W_pval
+
+Pvalue of the worst max weigth.
+
+item 11. sigma
+
+Log10 difference between the two p-value.
+
+item 12. B_var
+
+Variant(s) in the sequence with the best max weigth.
+
+Multiple variant are return comma separate if the highest max weigth
+ is the same in multiple sequence.
+
+item 13. W_var
+
+Variant(s) in the sequence with the worst max weigth.
+
+Multiple variant are return comma separate if the lowest max weigth
+ is the same in multiple sequence.
+
+item 14. B_offset
+
+
+item 15. W_offset
+
+
+item 14. B_seq
+
+Sequence with the highest max weigth.
+
+Multiple sequence are return comma separate if the best max weigth
+ is the same in multiple sequence.
+
+item 15. W_seq
+
+Sequence with the lowest max weigth.
+
+Multiple sequence are return comma separate if the worst  max weigth
+ is the same in multiple sequence.
+ 
+=back
+
+=head1 SEE ALSO
+
+=head2 download-ensembl-genome
+
+I<retrieve-variation-seq> uses the sequences downloaded
+from Ensembl using the tool I<download-ensembl-genome>.
+
+=head2 download-ensembl-variations
+
+I<retrieve-variation-seq> uses variation coordinates downloaded
+from Ensembl using the tool I<download-ensembl-variations>.
+
+=head2 variation-scan
+
+Scan variation sequences with one or several position-specific scoring
+matrices.
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+require "RSA.lib";
+
+
+################################################################
+## Main package
+package	main;
+{
+
+  ###############################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $output_lines = 0;
+
+  our %infile	= ();
+  $infile{'distrib_list'} = "";
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our %matrix_list = ();
+  our %matrix_PWM = ();
+  our $flank_len = 29;
+  our $only_biggest = 0;
+  our $pval_limit = 1;
+
+  our %uth = ();
+  our %supported_uth = ();
+  $supported_uth{'pval'} = 1;
+
+  our %lth = ();
+  our %supported_lth = ();
+  $supported_lth{'score'} = 1;
+  $supported_lth{'w_diff'} = 1;
+  $supported_lth{'pval_ratio'} = 1;
+
+  our $calc_distrib = 0;
+  our $distrib_dir = "";
+
+  our $html = 0;
+  our $top_matrix =-1;
+  our $top_variation = -1;
+  our $no_offset = 1;
+
+  our $nb_matrix = 0;
+  our $nb_variation =0;
+  our $nb_seq = 0;
+  our $nb_rvar =0;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+  $out = &OpenOutputFile($outfile{output});
+
+  ###############################################################
+  ## Check arguments
+  &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($infile{'bg'});
+  &RSAT::error::FatalError("You forgot to indicate a matrix file. Use -m option") unless ($infile{'matrixfile'});
+  &RSAT::error::FatalError("Background file",$infile{'bg'},"does not exist") unless (-f $infile{'bg'});
+  &RSAT::error::FatalError("Matrice file",$infile{'matrixfile'},"does not exist") unless (-f $infile{'matrixfile'});
+  
+  if ($calc_distrib) {
+    &RSAT::error::FatalError("You forgot to indicate distribution directory. Use -distrib_dir option") unless ($distrib_dir);
+    &RSAT::message::TimeWarn("Calculing distribution") if ($main::verbose >= 2);
+
+    my @bg_name = split('/',$infile{'bg'});
+    @bg_name = split('.',$bg_name[-1]);
+    my $bg_name = $bg_name[-1];
+    $outfile{'distrib_list'} = $bg_name."_list.tab";
+
+    &Verbose() if ($main::verbose >= 1);
+
+    my $split_dir = $distrib_dir."/split_dir/tmp";
+    &RSAT::util::CheckOutDir($split_dir);
+
+    &doit($ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from tf -to tf -split -i $infile{'matrixfile'} -o $split_dir", 0, 0, 0);
+
+
+    my $outD = &OpenOutputFile($distrib_dir.'/'.$outfile{'distrib_list'});
+    print $outD "#MATRIX_ID\tDISTRIB_FILE\tDB\tBG_PREFIX";
+
+    my ($file) = &OpenInputFile($split_dir.'_matrix_list.tab');
+    while (<$file>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      my @token = split("\t");
+      my $distrib_file = $token[1]."_".$bg_name.".tab";
+
+      &doit($ENV{'RSAT'}."matrix-distrib -m $token[2] -matrix_format tf -decimals 1 -bgfile $infile{'matrixfile'} -bg_pseudo 0.01 -bg_format oligos -pseudo 1 -o $distrib_dir/$distrib_file", 0, 0, 0);
+      print $outD $token[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n";
+    }
+    &RSAT::message::Info("Distrib_list :", $distrib_dir.'/'.$outfile{'distrib_list'}) if ($main::verbose >= 2);
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time  if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
+
+    exit(0);
+  }
+
+  if ($infile{'distrib_list'}) {
+    &RSAT::error::FatalError("Distrib list",$infile{'distrib_list'},"file does not exist") unless (-f $infile{'distrib_list'});
+  }
+
+
+  ################################################################
+  ## Print verbose
+  if ($main::verbose >= 1) {
+    &Verbose() if ($main::verbose >= 1);
+    print $out "; column content","\n";
+    print $out ";\t",'1',"\t",'ac_motif',"\t",'Accession number of the matrices',"\n";
+    print $out ";\t",'2',"\t",'motif',"\t",'Matrices current name',"\n";
+    print $out ";\t",'3',"\t",'var_id',"\t",'Id of the variation',"\n";
+    print $out ";\t",'4',"\t",'var_class',"\t",'SOterm of the variation',"\n";
+    print $out ";\t",'5',"\t",'var_coord',"\t",'Coordinate of the variation',"\n";
+    print $out ";\t",'6',"\t",'best_w',"\t",'Best weigth for the putative site',"\n";
+    print $out ";\t",'7',"\t",'worst_w',"\t",'Worst weigth for the putative site',"\n";
+    print $out ";\t",'8',"\t",'w_diff',"\t",'Difference between best and worst weigth',"\n";
+    print $out ";\t",'9',"\t",'best_pval',"\t",'P_value of the best putative site',"\n";
+    print $out ";\t",'10',"\t",'worst_pval',"\t",'P_value of the worst putative site',"\n";
+    print $out ";\t",'11',"\t",'pval_ratio',"\t",'Ratio between worst and best pval ( pval_ratio = worst_pval/best_pval )',"\n";
+    print $out ";\t",'12',"\t",'best_variant',"\t",'Variant in the best putative site',"\n";
+    print $out ";\t",'13',"\t",'worst_variant',"\t",'Variant in the worst putative site',"\n";
+    print $out ";\t",'14',"\t",'best_offest',"\t",'Offset of the best putative site',"\n";
+    print $out ";\t",'15',"\t",'worst_offset',"\t",'Offset of the worst putative site',"\n";
+    print $out ";\t",'16',"\t",'min_offset_diff',"\t",'Difference minimal between best and worst putative site',"\n";
+    print $out ";\t",'17',"\t",'best_strand',"\t",'Strand of the best putative site',"\n";
+    print $out ";\t",'18',"\t",'worst_strand',"\t",'Strand of the worst putative site',"\n";
+    print $out ";\t",'19',"\t",'str_change',"\t",'Indicate if strand have change between the offset of min_offset_diff',"\n";
+    print $out ";\t",'20',"\t",'best_seq',"\t",'Sequence of the worst putative site',"\n";
+    print $out ";\t",'21',"\t",'worst_seq',"\t",'Sequence of the worst putative site',"\n";
+  }
+
+  print $out "#",join("\t",qw(
+                      ac_motif
+                      motif
+                      var_id
+                      var_class
+                      var_coord
+                      best_w
+                      worst_w
+                      w_diff
+                      best_pval
+                      worst_pval
+                      pval_ratio
+                      best_variant
+                      worst_variant
+                      best_offset
+                      worst_offset
+                      min_offset_diff
+                      best_strand
+                      worst_strand
+                      str_change
+                      best_seq
+                      worst_seq)),"\n";
+
+  ################################################################
+  #Read Matrix File
+  &RSAT::message::TimeWarn("Reading Matrix File") if ($main::verbose >= 2);
+
+  my $length = 0;
+  my $need_count = 0;
+  my $ac = "";
+
+  my ($mat_file) = &OpenInputFile($main::infile{'matrixfile'});
+  while (<$mat_file>) {
+    next if (/^#/); ## Skip comment lines
+    next if (/^;/); ## Skip RSAT-like comment lines
+    next unless (/\S/); ## Skip empty lines
+    chomp();
+
+    my @token = split (" ",$_);
+
+    if ( $token[0] eq "AC") {
+      $ac = $token[-1];
+      $length = 0;
+    }
+
+    if ( $token[0] eq "ID" ) {
+      $matrix_list{$ac}{'id'} = $token[-1];
+    }
+
+    $need_count = 0 if ( $token[0] eq "XX" );
+
+    if ($need_count) {
+      $length += 1;
+
+      for (my $i = 1;$i < scalar(keys(%{$matrix_list{$ac}{'tab'}})+1);$i++ ) {
+        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, $token[$i] );
+      }
+    }
+
+    if ( $token[0] eq "P0" ||$token[0] eq "PO" ) {
+      $need_count = 1;
+
+      for (my $i = 1;$i < scalar(@token);$i++ ) {
+        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, lc($token[$i]) );
+      }
+    }
+
+    if ( $token[0] eq "//") {
+      $matrix_list{$ac}{'length'} = $length;
+      $nb_matrix++;
+    }
+
+    if ($top_matrix) {
+      last if ($top_matrix == $nb_matrix && $top_matrix > 0);
+    }
+
+  }
+  $matrix_list{$ac}{'length'} = $length;
+  $nb_matrix++;
+  close $mat_file;
+
+  ## Get distrib files
+  my %distrib_file_list = ();
+  if ( -f $infile{'distrib_list'} ) {
+    my $distrib_file_name = "";
+    ($distrib_dir, $distrib_file_name) = &SplitFileName($infile{'distrib_list'});
+
+    ($file) = &OpenInputFile($infile{'distrib_list'});
+    while (<$file>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      chomp();
+      my @token = split("\t");
+      $distrib_file_list{$token[0]} = $token[1];
+    }
+  }
+
+  ################################################################
+  my $fasta_file = &RSAT::util::make_temp_file("","variation-scan_fasta_seq", 1);
+  my $bg_file = &RSAT::util::make_temp_file("","variation-scan_bg_file", 1);
+  my $matrix_file_tab = &RSAT::util::make_temp_file("","variation-scan_matrices_tab", 1);
+  my $variation_seq = &RSAT::util::make_temp_file("","variation-scan_variant_seq_tab", 1);
+
+  ## Change bg_file format
+  my $command = "$ENV{'RSAT'}/perl-scripts/convert-background-model -i $main::infile{'bg'} -from oligos -to inclusive -o $bg_file -bg_pseudo 0.01";
+  &doit($command, 0, 0, 0);
+
+  ## Write pipe input into fie for multipl read
+  unless ($main::infile{input}) {
+    my $outstream_var_seq = &OpenOutputFile($variation_seq); 
+    while (<$main::in>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+      print $outstream_var_seq $_;
+    }
+    close $outstream_var_seq;
+    $main::infile{input} = $variation_seq;
+  }
+
+
+  ## Scan
+  our $matrix_length = 0;
+
+  foreach my $matrix_ac (keys(%matrix_list)) {
+    $matrix_length = $matrix_list{$matrix_ac}{'length'};
+    next if ($matrix_length == 0);
+    next if ($matrix_length > $flank_len+1);
+
+
+    ## Make matrix file on tab format
+    my $outM = &OpenOutputFile($matrix_file_tab);
+    foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
+      print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
+    }
+    close($outM);
+
+
+    ## Get distribution
+    &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
+
+    %matrix_info = ();
+
+    # Use precalculte distrib file
+    if ($distrib_file_list{$matrix_ac}) {
+      my %legend_col = ();
+
+      my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
+      my ($d_file) = &OpenInputFile($distrib_file);
+      while (<$d_file>) {
+        next if (/;/);
+        chomp;
+
+        if (/^#/) {
+          $_ = substr($_,1) ;
+          my @legends = split("\t");
+          for (my $i = 0; $i < scalar(@legends);$i++) {
+            $legend_col{$legends[$i]} = $i;
+          }
+        } else {
+          my @value = split("\t");
+          $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
+        }
+      }
+
+      $matrix_info{$matrix_ac}{'pval'}{'0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+      $matrix_info{$matrix_ac}{'pval'}{'-0.0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+
+      my @sorted_pval = sort {$a <=> $b} keys (%{$matrix_info{$matrix_ac}{'pval'}});
+      $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
+
+    # Calcul distrib file
+    } else {
+      my %legend_col = ();
+      my $arg = "-m $matrix_file_tab -matrix_format tab";
+      $arg .= " -decimals 1 -pseudo 1";
+      $arg .= " -bgfile $main::infile{'bg'} -bg_format oligos";
+      $arg .= " -bg_pseudo 0.01";
+
+      my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib $arg};
+
+      foreach (@result_distrib) {
+        chomp;
+
+        if (/^#/) {
+          $_ = substr($_,1) ;
+          my @legends = split("\t");
+          for (my $i = 0; $i < scalar(@legends);$i++) {
+            $legend_col{$legends[$i]} = $i;
+          }
+          next;
+        }
+
+        my @value = split("\t");
+        $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
+      }
+
+      $matrix_info{$matrix_ac}{'pval'}{'0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+      $matrix_info{$matrix_ac}{'pval'}{'-0.0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
+
+      my @sorted_pval = sort {$a <=> $b} keys (%{$matrix_info{$matrix_ac}{'pval'}});
+      $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
+    }
+
+
+
+    ## Scan sequences
+    my $last_id = "";
+    my $last_nb = 2000;
+
+    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    $scan_cmd .= " -i $fasta_file";
+    $scan_cmd .= " -m $matrix_file_tab";
+    $scan_cmd .= " -pseudo 1 -decimals 1 -2str -origin start";
+    $scan_cmd .= " -bgfile $bg_file";
+    $scan_cmd .= " -name $matrix_ac";
+
+    &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 3);
+    my $out_fas = &OpenOutputFile($fasta_file);
+
+    my ($var_seq) = &OpenInputFile($main::infile{input});
+    while (<$var_seq>) {
+      next if (/^#/); ## Skip comment lines
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+      chomp();
+
+      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq) = split(/\t/);
+
+      $ref = "-" if ($ref eq "");
+      
+      if ($last_id ne $id && $last_id ne "") {
+	$nb_variation ++;
+        last if ($nb_variation > $top_variation && $top_variation>0);
+
+        if ($nb_variation >= $last_nb) {
+	  my @scanning = qx{$scan_cmd};
+	  &Analyse_scanning(@scanning) unless (scalar(@scanning) == 0);
+
+          close($out_fas);
+          $out_fas = &OpenOutputFile($fasta_file);
+          $last_nb += 2000;
+        }
+      }
+
+      print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n";
+      print $out_fas substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
+
+      $nb_seq++;
+      $last_id = $id;
+    }
+    close ($var_seq);
+
+    close($out_fas);
+    $nb_variation ++;
+    my @scanning = qx{$scan_cmd};
+    &Analyse_scanning(@scanning) unless (scalar(@scanning) == 0);
+    @scanning = ();
+    $out_fas = &OpenOutputFile($fasta_file); ##Just to make empty file
+    close($out_fas);
+
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+
+  if ($main::verbose >= 1) {
+    print $out "; Total variations scan\t",$nb_variation/$nb_matrix,"\n";
+    print $out "; Total sequences scan\t",$nb_seq,"\n";
+    print $out "; Total matrices\t",$nb_matrix,"\n";
+    print $out $exec_time; ## only report exec time if verbosity is specified
+  }
+
+  close $out;
+
+  ################################################################
+  ## Make html output
+  if ($outfile{'output'} && $html) {
+    $html_file = $outfile{'output'};
+    $html_file =~ s/\.tab/\.html/g;
+    $command = $ENV{'RSAT'}."/perl-scripts/text-to-html -i ".$outfile{'output'};
+    $command .= " -no_sort -chunk 1000" if ($output_lines >= 5000);
+    $command .= " -o ".$html_file;
+#    $command = "$ENV{'RSAT'}/perl-scripts/text-to-html -i $outfile{'output'} -o $html_file";
+    &doit($command, 0, 0, $verbose);
+  }
+
+  exit(0);
+}
+
+
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+################################################################
+## Calclate log10
+sub log10 {
+  my $n = shift;
+  return log($n)/log(10);
+}
+
+################################################################
+##
+sub getLineInfo {
+    my %line_info = ();
+
+    my @token = split ("\t",$_[0]);  #var_info,site,matrice,site_strand,site_start_offset,site_end_offset,seq,score
+    $line_info{'matrice'} = $token[2];
+    $line_info{'site_strand'} = $token[3];
+    $line_info{'seq'} = $token[6];
+    $line_info{'score'} = sprintf("%.1f",$token[7]);
+
+    my @token2 = split(/\|/,$token[0]); #var_info, coord
+    $line_info{'coord'} = $token2[1];
+
+    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type
+    $line_info{'id'} = $token3[0];
+    $line_info{'variant_ref'} = $token3[1];
+    $line_info{'variant_alt'} = $token3[2];
+    $line_info{'type'} = $token3[3];
+
+    $diff_pos = 0;
+    $diff_pos ++ if ($line_info{'variant_ref'} eq "-"); 
+    $line_info{'site_offset_start'} = $token[4]+$diff_pos-$matrix_length;
+    return (%line_info);
+}
+
+################################################################
+## Analyse result of scanning
+sub Analyse_scanning {
+    @scanning = @_;
+
+    my %scanning_info = ();
+    my %scanning_score_pos = ();
+    my %scanning_score_var = ();
+    my $same_variant_len = 1;
+
+    while ( my $line = shift @scanning ) {
+
+	next if ($line =~ m/^#/);
+	next if ($line =~ m/^;/);
+	chomp($line);
+
+	my %line_info = &getLineInfo($line);
+#<<<<<<< variation-scan
+
+#	my $same_variation = 0;
+#	$same_variation = 1 if (!$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'});
+#=======
+	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
+#>>>>>>> 1.14
+
+	$same_variant_len = 0 if ( length($line_info{'variant_alt'}) != length($line_info{'variant_ref'}) );
+	$same_variant_len = 0 if ( $line_info{'variant_alt'} eq '-' || $line_info{'variant_ref'} eq '-' );
+
+	unless ( $same_variation ) {
+	    &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
+	    %scanning_score_pos = ();
+	    %scanning_score_var = ();
+	    %scanning_info = ();
+	    $same_variant_len = 1;
+	}
+
+	push (@{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'variant_alt'} },$line_info{'variant_alt'});
+	push (@{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'seq'} },$line_info{'seq'});
+
+	if ( !$scanning_score_var{$line_info{'variant_alt'}}{'score'} || $scanning_score_var{$line_info{'variant_alt'}}{'score'} < $line_info{'score'} ) {
+	    $scanning_score_var{$line_info{'variant_alt'}} = ();
+	    $scanning_score_var{$line_info{'variant_alt'}}{'score'} = $line_info{'score'};
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'});
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'});
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
+
+	} elsif ( $scanning_score_var{$line_info{'variant_alt'}}{'score'} == $line_info{'score'} ){
+	    push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'} );
+            push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
+            push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
+	}
+
+	$scanning_info{'matrice'} = $line_info{'matrice'};
+	$scanning_info{'variation'} = $line_info{'id'};
+	$scanning_info{'type'} = $line_info{'type'};
+	$scanning_info{'coord'} = $line_info{'coord'};
+	$scanning_info{'same_len'} = $same_variant_len;
+    }
+    &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
+}
+
+################################################################
+## analyse score for each variant of a variation
+sub Analyse_variation {
+    my ($scanning_info,$scanning_score_pos,$scanning_score_var) = @_;
+    my %scanning_info = %{ $scanning_info };
+    my %scanning_score_pos = %{ $scanning_score_pos };
+    my %scanning_score_var = %{ $scanning_score_var };
+
+    # Compare all position
+    if ($no_offset && $scanning_info{'same_len'}) {
+	foreach my $offset (keys( %scanning_score_pos )) {
+	    foreach my $site_strand (keys (%{ $scanning_score_pos{$offset} })) {
+		my %scanning_score =  %{ $scanning_score_pos{$offset}{$site_strand} };
+		my @scores =  keys ( %scanning_score );
+		foreach $score ( @scores ) {
+		    push (@{$scanning_score{$score}{'site_offset_start'}}, $offset);
+		    push (@{$scanning_score{$score}{'site_strand'}}, $site_strand);
+		}
+
+		if  (scalar( @scores ) == 1 ) {
+		    push (@{$scanning_score{$scores[0]}{'site_offset_start'}}, $offset);
+		    push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);
+		}
+
+		&Compare(\%scanning_info,\%scanning_score);
+	    }
+	}
+
+    # Compare best score for each variant
+    } else {
+	my %scanning_score  = ();
+	foreach my $variant ( keys (%scanning_score_var ) ) {
+	    $score = $scanning_score_var{$variant}{'score'};
+	    push (@{ $scanning_score{$score}{'variant_alt'} }, $variant);
+	    push (@{ $scanning_score{$score}{'site_offset_start'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
+	    push (@{ $scanning_score{$score}{'site_strand'} }, join(",",@{$scanning_score_var{$variant}{'site_strand'}}) );
+	    push (@{ $scanning_score{$score}{'seq'} }, join(",",@{$scanning_score_var{$variant}{'seq'}}) );
+	}
+	&Compare(\%scanning_info,\%scanning_score);
+    }
+}
+
+################################################################
+## Compare best and worst score
+sub Compare {
+    my ($scanning_info,$scanning_score) = @_;
+    my %scanning_info = %{ $scanning_info };
+    my %scanning_score = %{ $scanning_score };
+
+    my @sorted_score = sort {$b <=> $a} ( keys( %scanning_score ) );
+    
+    foreach my $score (@sorted_score) {
+	next if ($score == $sorted_score[-1] && scalar(@sorted_score) > 1);
+	my $best_score = $sorted_score[0];
+	my $best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
+
+	next if ( $lth{'score'} && $lth{'score'} > $best_score );
+	next if ( $uth{'pval'} && $uth{'pval'} < $best_pval);
+ 
+	my $worst_score = $sorted_score[-1];
+	my $worst_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$worst_score};
+
+	my $diff_1 = $best_score-$score;
+	my $diff_2 = $score-$worst_score;
+	my $pval_ratio_1 = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score}/$best_pval;
+	my $pval_ratio_2 = $worst_pval/$matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	my $nearest_score_worst = 0;
+	$nearest_score_worst = 1 if ( $lth{'score'} && $diff_1 > $diff_2);
+	$nearest_score_worst = 1 if ( $uth{'pval'} && $pval_ratio_1 > $pval_ratio_2);
+
+	if ( $nearest_score_worst) {
+	    next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_1 );
+	    next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_1);
+
+	    $scanning_info{'best_variant'} =  join(";", @{ $scanning_score{$best_score}{'variant_alt'} });
+	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$score}{'variant_alt'} });
+	    $scanning_info{'best_score'} = $best_score;
+	    $scanning_info{'worst_score'} = $score;
+	    $scanning_info{'w_diff'} = $diff_1;
+	    $scanning_info{'best_pval'} = $best_pval;
+	    $scanning_info{'worst_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
+	    $scanning_info{'best_offset'} =  join(";", @{ $scanning_score{$best_score}{'site_offset_start'} });
+	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
+	    $scanning_info{'best_strand'} =  join(";", @{ $scanning_score{$best_score}{'site_strand'} });
+	    $scanning_info{'worst_strand'} = join(";", @{ $scanning_score{$score}{'site_strand'} });
+	    $scanning_info{'best_seq'} =  join(";", @{ $scanning_score{$best_score}{'seq'} });
+	    $scanning_info{'worst_seq'} = join(";", @{ $scanning_score{$score}{'seq'} });
+	    &Printline(&GetMinOff(%scanning_info));
+
+	} elsif ($diff_1 == $diff_2) {
+	    next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_1 );
+	    next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_1);
+	    
+	    $scanning_info{'best_variant'} =  pop( @{ $scanning_score{$best_score}{'variant_alt'} });
+	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$best_score}{'variant_alt'} } );
+	    $scanning_info{'best_score'} = $best_score;
+	    $scanning_info{'worst_score'} = $scanning_info{'best_score'};
+	    $scanning_info{'w_diff'} = $diff_1;
+	    $scanning_info{'best_pval'} = $best_pval;
+	    $scanning_info{'worst_pval'} = $scanning_info{'best_pval'};
+	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
+            $scanning_info{'best_offset'} =  pop ( @{ $scanning_score{$best_score}{'site_offset_start'} });
+	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
+	    $scanning_info{'best_strand'} =  pop ( @{ $scanning_score{$best_score}{'site_strand'} });
+	    $scanning_info{'worst_strand'} = join(";", @{ $scanning_score{$score}{'site_strand'} });
+	    $scanning_info{'best_seq'} =  pop( @{ $scanning_score{$best_score}{'seq'} });
+	    $scanning_info{'worst_seq'} = join(";", @{ $scanning_score{$best_score}{'seq'} });
+            &Printline(&GetMinOff(%scanning_info));
+
+	} else  {
+            next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_2 );
+            next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_2);
+
+	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$worst_score}{'variant_alt'} });
+	    $scanning_info{'best_variant'} =  join(";", @{ $scanning_score{$score}{'variant_alt'} });
+	    $scanning_info{'worst_score'} = $worst_score;
+	    $scanning_info{'best_score'} = $score;
+	    $scanning_info{'w_diff'} = $diff_2;
+	    $scanning_info{'worst_pval'} = $worst_pval;
+	    $scanning_info{'best_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	    $scanning_info{'pval_ratio'} = $pval_ratio_2;
+	    $scanning_info{'worst_offset'} =  join(";", @{ $scanning_score{$worst_score}{'site_offset_start'} });
+	    $scanning_info{'best_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
+	    $scanning_info{'worst_strand'} =  join(";", @{ $scanning_score{$worst_score}{'site_strand'} });
+            $scanning_info{'best_strand'} = join(";", @{ $scanning_score{$score}{'site_strand'} });
+	    $scanning_info{'worst_seq'} =  join(";", @{ $scanning_score{$worst_score}{'seq'} });
+	    $scanning_info{'best_seq'} = join(";", @{ $scanning_score{$score}{'seq'} });
+	    &Printline(&GetMinOff(%scanning_info));
+	}
+	last if ($only_biggest);
+   }
+}
+
+################################################################
+## Get the min_offset_diff and if the strand change
+sub GetMinOff {
+    my %scanning_info = @_;
+
+    $scanning_info{'min_offset_diff'} = $flank_len;
+    $scanning_info{'strand_change'} = 0;
+
+    my @best_off_by_diff_variant = split(";", $scanning_info{'best_offset'});
+    
+    for ($b=0; $b < scalar(@best_off_by_diff_variant); $b++) {
+	my @best_off_by_same_variant = split(",",$best_off_by_diff_variant[$b]);
+
+	for ($b2 = 0; $b2 < scalar(@best_off_by_same_variant); $b2++) {
+	    my @worst_off_by_diff_variant =  split(";", $scanning_info{'worst_offset'});
+
+	    for ($w=0; $w < scalar(@worst_off_by_diff_variant); $w++) {
+		my @worst_off_by_same_variant = split(",",$worst_off_by_diff_variant[$w]);
+
+		for ($w2 = 0; $w2 < scalar(@worst_off_by_same_variant); $w2++) {
+
+		    if ( abs($worst_off_by_same_variant[$w2]-$best_off_by_same_variant[$b2]) < abs( $scanning_info{'min_offset_diff'}) ) {
+			 $scanning_info{'min_offset_diff'} = $worst_off_by_same_variant[$w2]-$best_off_by_same_variant[$b2];
+
+			my @best_strand_by_diff_variant = split(";", $scanning_info{'best_strand'});
+			my @worst_strand_by_diff_variant = split(";", $scanning_info{'worst_strand'});
+			my @best_strand_by_same_variant = split(",",$best_strand_by_diff_variant[$b]);
+			my @worst_strand_by_same_variant = split(",",$worst_strand_by_diff_variant[$w]);
+
+			if ($worst_strand_by_same_variant[$w2] ne $best_strand_by_same_variant[$b2]) {
+			    $scanning_info{'strand_change'} = 1;
+			}
+		    }
+		}
+	    }
+	}
+    }
+    return %scanning_info;
+}
+
+################################################################
+## Print
+sub Printline {
+  my (%scanning_info) = @_;
+  $output_lines++;
+
+  my $str = "";
+  $str .= $scanning_info{'matrice'}."\t";
+  $str .= $matrix_list{$scanning_info{'matrice'}}{'id'}."\t";
+  $str .= $scanning_info{'variation'}."\t".$scanning_info{'type'}."\t".$scanning_info{'coord'}."\t";
+  $str .= $scanning_info{'best_score'}."\t".$scanning_info{'worst_score'}."\t";  # weigth
+  $str .= sprintf("%.2f",$scanning_info{'w_diff'})."\t"; #w_diff
+  $str .= $scanning_info{'best_pval'}."\t".$scanning_info{'worst_pval'}."\t";  # pvalues
+  $str .= sprintf("%.2f",$scanning_info{'pval_ratio'})."\t";  # pvalues ratio
+  $str .= $scanning_info{'best_variant'}."\t".$scanning_info{'worst_variant'}."\t"; # variants
+  $str .= $scanning_info{'best_offset'}."\t".$scanning_info{'worst_offset'}."\t"; # off
+  $str .= $scanning_info{'min_offset_diff'}."\t";
+  $str .= $scanning_info{'best_strand'}."\t".$scanning_info{'worst_strand'}."\t"; # strand
+  $str .= $scanning_info{'strand_change'}."\t";
+  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\n"; # seq
+
+  print $out $str;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+        $main::verbose = shift(@arguments);
+      } else {
+        $main::verbose = 1;
+    }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-i #>
+
+Variation file RSAT format
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-m #>
+
+The matrix file transfac format
+
+=cut
+    } elsif ($arg eq "-m") {
+      $main::infile{matrixfile} = shift(@arguments);
+
+=pod
+
+=item B<-bg>
+
+Background file
+
+=cut
+    } elsif ($arg eq "-bg") {
+      $main::infile{bg} = shift(@arguments);
+
+=pod
+
+=item B<-i #>
+
+Input File
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+=pod
+
+=item B<-mml #>
+
+Length of the longest Matrix
+
+=cut
+    } elsif ($arg eq "-mml") {
+      if (&IsNatural($arguments[0])) {
+        $main::flank_len = shift(@arguments)-1;
+      } else {
+        &RSAT::error::FatalError("-mml argument : ",shift(@arguments)," is not natual");
+      }
+
+=pod
+
+=item B<-top_matrix #>
+
+Only work with the # top matrix
+
+=cut
+    } elsif ($arg eq "-top_matrix") {
+      if (&IsNatural($arguments[0])) {
+        $main::top_matrix = shift(@arguments);
+      } else {
+        &RSAT::error::FatalError("-top_matrix argument : ",shift(@arguments)," is not natual");
+      }
+
+=pod
+
+=item B<-top_variationmatrix #>
+
+Only work with the # top variation
+
+=cut
+    } elsif ($arg eq "-top_variation") {
+      if (&IsNatural($arguments[0])) {
+        $main::top_variation = shift(@arguments);
+      } else {
+        &RSAT::error::FatalError("-top_variation argument : ",shift(@arguments)," is not natural");
+      }
+
+=pod
+
+=item B<-lth type #>
+
+Only return rvar with type_score > #
+
+=cut
+    } elsif ($arg eq "-lth") {
+	my $type =  shift(@arguments);
+	if ( $supported_lth{$type} ) {
+	    if (&RSAT::util::IsReal($arguments[0])) {
+		$lth{$type} = shift(@arguments);
+	    } else {
+		&RSAT::error::FatalError("-lth argument : ",shift(@arguments)," is not natural");
+	    }
+	} else {
+	    &RSAT::error::FatalError("type $type not supported with lth. Supperted type :",join(", ",keys(%supported_lth)));	
+	}
+=pod
+
+
+=item B<-uth type #>
+
+=cut
+    } elsif ($arg eq "-uth") {
+        my $type =  shift(@arguments);
+        if ( $supported_uth{$type} ) {
+            if (&RSAT::util::IsReal($arguments[0])) {
+                $uth{$type} = shift(@arguments);
+            } else {
+                &RSAT::error::FatalError("-uth argument : ",shift(@arguments)," is not natural");
+            }
+        } else {
+	    &RSAT::error::FatalError("type $type not supported with uth. Supperted type :",join(", ",keys(%supported_uth)));
+        }
+=pod
+
+=item B<-html #>
+
+Convert the tab-delimited file into an HTML file, which facilitates the inspection of the results with a Web browser.
+The HTML file has the same name as the output file, but the extension (.tab, .txt) is replaced by the .html extension
+
+=cut
+    } elsif ($arg eq "-html") {
+      $main::html = 1;
+
+=pod
+
+=item B<-calc_distrib>
+
+Calcul and save distribution of matrices
+
+=cut
+    } elsif ($arg eq "-calc_distrib") {
+      $main::calc_distrib = 1;
+
+
+=pod
+
+=item B<-distrib_dir #>
+
+Directory of the distribution file 
+
+=cut
+    } elsif ($arg eq "-distrib_dir") {
+      $main::distrib_dir = shift(@arguments);
+
+=pod
+
+=item B<-distrib_list #>
+
+Name of the file contening the list of matrix distrib file name
+
+/!\ This file must be in the same directory as the distrib file
+
+=cut
+    } elsif ($arg eq "-distrib_list") {
+      $main::infile{'distrib_list'} = shift(@arguments);
+
+=pod
+
+
+=item B<-only_biggest>
+
+Only return the biggest difference of score between two variant of a variation
+
+=cut
+    } elsif ($arg eq "-only_biggest") {
+      $main::only_biggest = 1;
+
+=pod
+
+
+=item	B<-o outputfile>
+
+The output file is in fasta format.
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+=pod
+
+=back
+
+=cut
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; variation-scan ";
+
+  &PrintArguments($out);
+
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}

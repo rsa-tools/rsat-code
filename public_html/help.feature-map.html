@@ -1,0 +1,289 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools - feature map manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - feature map manual</h2>
+</center>
+
+
+
+<H4>Name</H4>
+<UL>
+feature-map<P>
+1997-98 by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</UL>
+
+<H4>Description and concept definitions</H4>
+<UL>
+Feature map draws a graphical map of a series of features. Given the diversity of feature types, we will illustrate this with a few examples:<BR>
+<UL>
+<LI><B>Regulatory sites:</B> each map represents a DNA sequence located upstream a given ORF. Each regulatory site constitutes a feature. 
+<LI><B>Swissprot records</B> each map represents a proteic sequence. Each swissprot feature (dna-binding domain, mutagen, ...) constitutes a feature.
+<LI><B>Multiple alignment</B> each map is a sequence (several maps are drawn in parallel), and each aminoacid is a feature. 
+</UL>
+Several maps can be drawn in parallel, allowing to detect conserved positions across them. 
+</UL>
+</UL>
+
+<H4>Options</H4>
+
+<UL>
+
+<A NAME="formats"></A>
+<B>Feature map format</B><BR>
+In the standard input format, each feature is represented by a single line,
+which must contain the following information: </P>
+<OL>
+<LI>- map name (eg: gene name), </LI>
+<LI>- feature type (site, ORF), </LI>
+<LI>- identifier(ex: GATA_box, Abf1_site) </LI>
+<LI>- strand (D for Direct, R for Reverse), </LI>
+<LI>- start position (may be negative)</LI>
+<LI>- end position (may be negative)</LI>
+<LI>- (optional) sequence (ex: AAGATAAGCG) </LI>
+<LI>- (optional) score (a real value) </LI>
+</OL>
+Fields must be provided in this order, separated by tabs. <P>
+
+Feature map also imports result files from some other programs or
+databases:
+<UL>
+<LI><A HREF="dna-pattern_form.cgi"><B>dna-pattern</B></A> a program which
+localizes the occurrences of your query patterns within your
+sequences.  <LI><A
+HREF="http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl"><B>Matinspector</B></A>,
+a program that scans a sequence with a library of matrices for
+regulatory sites.  <LI><A
+HREF="http://bimas.dcrt.nih.gov/molbio/signal/"><B>SignalScan</B></A>,
+a program which scans your sequences with a librairy of consensus for
+regulatory sites.
+</UL>
+These files are converted into the custom feature-map format before
+the map is drawn.
+</P>
+
+<A NAME="title"></A>
+<B>Title</B><BR> The title appears in large fonts at the top of the
+image. A single line of title is allowed. Its maximal length depends
+on the image width.
+<P>
+
+
+<A NAME="legend"></A>
+<B>Legend</B><BR> The legend is drawn at the left top of the image. It
+indicates the color (and optionally symbol) associated to each feature
+identifier.
+<P>
+
+<A NAME="scalebar"></A>
+<B>Scale bar</B><BR> The scale bar appears either under the title
+(horizontal map) or at the left side of the image (vertical map). It
+indicates the coordinates. The step is calculated automatically but
+can also be specified manually.
+<P>
+
+<A NAME="seq_names"></A>
+<B>Sequence names</B><BR> Write the name besides each sequence.
+<P>
+
+<A NAME="orientation"></A>
+<B>Orientation</B><BR> The maps can either be drawn horizontally or
+vertically.
+<P>
+
+
+<A NAME="limits"></A>
+<B>Display limits</B><BR> The options <B>from</B> and <B>to</B> define
+the maximum and minimum coordinated displayed in the map. This allows
+to zoom on a given part of the graph. If no value are entered, the min
+and max feature positions are used as limits.
+<P>
+
+<A NAME="origin"></A>
+<B>Origin</B><BR> All coordinates are recalculated relative to this
+value).
+<P>
+
+<A NAME="dimensions"></A>
+<B>Map dimensions</B><BR> All dimensions are in pixels. <BR>
+<UL>
+<LI>Map <B>length</B> refers to either width (horizontal map) or
+height (vertical map). It is the dimension of the map axis (the
+sequence backbone).
+
+<LI>Map <B>thick</B>refers to either height (horizontal map) or with
+(vertical map). It is calculated automatically according to the
+content of the map (handles, labels). It can also be adjusted
+manually.
+
+<LI>Map spacing refers to a margin between maps, which is displayed in
+the same color as the background.
+</UL>
+
+<B>Warning !</B> the bigger the surface of the map, the more time is
+required for its transfer to your client browser.
+<P>
+
+
+
+<a name="handle"></A>
+<b>Feature handle</b><br> A color dot or a symbol can be associated to
+each feature. This is particularly convenient to discernate
+overlapping features, because the handle are shifted in order to avoid
+overlap. Black symbols are conveninent to distinguish features on a
+black and white printing.<p>
+
+<a name="palette"></a>
+<b>Color palette</b><br> The default palette assigns one color to each
+feature identifier (e.g. each pattern). The monochrome palette is
+convenient for printing feature maps on a balck and white printer, and
+to avoid publication costs for color pictures.<p>
+
+<a name=color_file></a>
+<b>Color file</b><br>
+Provide a file containing feature-specific colors.
+<br>The file contains 2 columns:
+<br>                1) Feature identifier
+<br>               2) Red,Green,Blue intensity in a scale from 0 to 255.
+ <br>This example will assign the red color to all features identified
+                as "Met4p", dark green to features "Pho4p", and very
+                dark blue to features identified as "Met31p".
+ <table align=center cellspacing=5>
+<tr><td><font size=-1>Met4p</font></td><td><font size=-1><font color=#FF0000>255,0,0</font></td></tr>
+<tr><td><font size=-1>Pho4p</font></td><td><font size=-1><font color=#006600>0,128,0</font></td></tr>
+<tr><td><font size=-1>Met31p</font></td><td><font size=-1><font color=#0000CC>0,0,64</font></font></td></tr>
+</table>
+
+<p>
+
+<a name=bgcolor></a>
+<b>Background color (R,G,B)</b><br> Specify the color of the
+background color. Colors are specified with three numbers from 0 to
+255, separated by commas, representing the color intensity of the red
+(R), green (G) and blue (B) channels, respectively. The value 0 means
+null intensity, and 255 maximal intensity. Some examples:
+
+<table align=center cellspacing=5>
+<tr><td><font size=-1>0,0,0</font></td><td><font size=-1>black</font></td></tr>
+<tr><td><font size=-1>255,255,255</font></td><td><font size=-1>white</font></td></tr>
+<tr><td><font size=-1><font color=#FF0000>255,0,0</font></td><td><font size=-1>red</font></font></td></tr>
+<tr><td><font size=-1><font color=#00FF00>0,255,0</font></td><td><font size=-1>green</font></font></td></tr>
+<tr><td><font size=-1><font color=#0000FF>0,0,255</font></td><td><font size=-1>blue</font></font></td></tr>
+<tr><td><font size=-1><font color=#000080>0,0,128</font></td><td><font size=-1>dark blue</font></font></td></tr>
+<tr><td><font size=-1><font color=#888880>128,128,128</font></td><td><font size=-1>grey</font></font></td></tr>
+</table>
+<p>
+
+<A NAME="htmap"></A>
+<B>Dynamic map</B><BR> This option requires a recent browser (Netscape
+3 or later). When the mous is placed for a second on a given feature,
+a specific message appears at the bottom of the window, providing all
+characteristics of this feature (type, position, identifier,
+description).<P>
+
+
+<A NAME="keys"></A>
+<P><B>Label keys</B><BR> A label can be written nearby each feature,
+providing one or several of the following data:
+<UL>
+<LI>strand
+<LI>position (start and end coordinates), 
+<LI>identifier
+<LI>description
+</UL>
+Note that this option gives a better effect with vertical maps, where
+the labels have less tendency to overlap with each other.
+</P>
+
+<A NAME="scorethick"></A>
+<P><B>Proportional to score</B><BR> Feature box thickness reflects the
+score given in the eight column of the input.
+
+
+<A NAME="img_format"></A>
+<P><B>Image format</B><BR> output format for the image. Supported :
+png, jpg, ps. The formats jpg and png are bitmap formats, i.e. they
+are convenient for displaying on a computer screen, but their
+resolution is restricted to that of a monitor (72 dots per inch). The
+postscript (ps) format can adapt to the resolutio of any printer.
+
+
+</FONT>
+</UL>
+
+<H4>Credits</H4>
+<UL>
+<P>
+
+<B>feature-map</B> has been written by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>. This program can be used freely
+by academic users via its web interface. For commercial users, please
+read or <A HREF="disclaimer.html">disclaimer</A>.
+
+<P>
+feature-map uses the graphical library GD, developed by Thomas Boutell
+(<A HREF="mailto:boutell@boutell.com (Thomas
+Boutell)">(boutell@boutell.com)</A>.
+
+<P>Copyright statement for the graphical library GD:
+	<PRE>
+	Portions copyright 1994, 1995, 1996, 1997, 1998, by 
+	Cold Spring Harbor Laboratory. Funded under Grant P41-RR02188 by the
+	National Institutes of Health. 
+
+	Portions copyright 1996, 1997, 1998, by Boutell.Com, Inc. 
+
+	GIF decompression code copyright 1990, 1991, 1993, by David Koblas 
+	(koblas@netcom.com). 
+
+	Non-LZW-based GIF compression code copyright 1998, by Hutchison Avenue
+	Software Corporation (http://www.hasc.com/, info@hasc.com). 
+
+	Permission has been granted to copy and distribute gd in any context, 
+	including a commercial application, provided that this notice is 
+	present in user-accessible supporting documentation. 
+
+	This does not affect your ownership of the derived work itself, and 
+	the intent is to assure proper credit for the authors of gd, not to 
+	interfere with your productive use of gd. If you have questions, ask. 
+	"Derived works" includes all programs that utilize the library. 
+	Credit must be given in user-accessible documentation. 
+
+	Permission to use, copy, modify, and distribute this software and its 
+	documentation for any purpose and without fee is hereby granted, 
+	provided that the above copyright notice appear in all copies and 
+	that both that copyright notice and this permission notice appear in 
+	supporting documentation. This software is provided "as is" without 
+	express or implied warranty. 
+	</PRE>
+</UL>
+
+
+<P/>
+<hr size=3></p></center>
+
+<h4 class="footer">
+<address>
+For information, contact
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address>
+</h4>
+
+
+</BODY>
+</HTML>
+
+
+

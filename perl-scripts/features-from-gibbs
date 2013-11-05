@@ -1,0 +1,216 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	features-from-gibbs
+
+        v1.0, 1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        features-from-gibbs [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	extracts features from an output file from the Gibbs sampler,
+	and exports them in a format readable by the script feature-map. 
+	
+CATEGORY
+	util
+	conversion
+	drawing
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-s seq_file	
+		Sequence file. This is the name of the fasta file used as
+		input for the gibbs sampler. This information is necessary
+		to allow a sequence identifier to each sequence number 
+		reported by the gibbs sampler.	
+	
+INPUT FORMAT
+	Any output file from the Gibbs sampler. 
+	
+OUTPUT FORMAT
+	The output format corresponds to the input format of the 
+	program feature-map.
+	
+EXAMPLES
+       features-from-gibbs -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+features-from-gibbs options
+---------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-s	sequence file.
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-s") {
+    $sequence_file = $ARGV[$a+1];
+
+  }
+}
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+### open sequence file ####
+unless ($sequence_file eq "") {
+    unless (open SEQ, $sequence_file) {
+	print "Error: cannot open sequence file $sequence_file\n";
+	print "Type features-from-gibbs -help for more info\n";
+    }
+    $c = 0;
+    while (<SEQ>) {
+	if (/^>(\S*)/) {
+	    $c++;
+	    $id[$c] = $1;
+	    if ($id[$c] =~ /\|([^\|]+)$/) {
+		$id[$c] = $1;
+	    }
+	}
+    }
+}
+
+#### verbose ####
+if ($verbose) {
+  print $out ";features-from-gibbs result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  if ($sequence_file ne "") {
+    print $out ";Sequence file	$sequence_file\n";
+    print $out ";Sequence identifiers:\n";
+    foreach $s (1..$#id) {
+	print $out ";\t$s\t$id[$s]\n";
+    }
+  }
+
+  print $out ";map";
+  print $out "\ttype";
+  print $out "\tid";
+  print $out "\tstrand";
+  print $out "\tstart";
+  print $out "\tend";
+  print $out "\tdescr";
+  print $out "\n";
+}
+
+
+###### execute the command #########
+$feature{TYPE} = "gibbs_motif";
+$feature{STRAND} = "DR";
+
+while (<$in>) {
+    if (($sequence_file eq ~"") && (/^#(\d+)\s+(\S+)/)) {
+				    $id[$1] = $2;
+    }
+  chomp;
+  if (/(MOTIF\s+\S+)/) {
+      $feature{ID} = $1;
+      $feature{ID} =~ s/ /_/g;
+  }
+#  if (/(\d+)\-(\d+)\s+(\d+)\s+([a-z]+)\s+([a-z]+)\s+([a-z]+)\s+(\d+)\s+\((\S+)\)/i) {
+  if (/(\d+)-(\d+)\s+(\d+)\s+([a-z]+)\s+([a-z]+)\s+([a-z]+)\s+(\d+)\s+(\(\S+\))/i) {
+      $seq_nb = $1;
+      $match_nb = $2;
+      $start_pos = $3;
+      $left_seq = $4;
+      $motif_seq = $5;
+      $right_seq = $6;
+      $end_pos = $7;
+      $score = $8;
+      $map_name = $id[$seq_nb];
+      if  ($map_name eq "") {
+	  $map_name = $seq_nb;
+      }
+      $feature{START} = $start_pos;
+      $feature{END} = $end_pos;
+      $feature{DESCR} = $left_seq . $motif_seq . $right_seq . " " . $score;
+      &PrintFeature;
+  }
+}
+
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+sub PrintFeature {
+    print $out "$map_name";
+    print $out "\t$feature{TYPE}";
+    print $out "\t$feature{ID}";
+    print $out "\t$feature{STRAND}";
+    print $out "\t$feature{START}";
+    print $out "\t$feature{END}";
+    print $out "\t$feature{DESCR}";
+    print $out "\n";
+}
+
+sub NewRecord {
+    undef %record;
+}
+

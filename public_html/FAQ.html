@@ -1,0 +1,290 @@
+<html>
+<head>
+   <title>RSA-tools - FAQ</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</a> - Frquently Asked Questions (FAQ)</h2>
+</center>
+
+
+<h3>P-value and E-value</h3>
+
+<b>Remark: </b> the discussion below was about <i>compare-classes</i>,
+but it applies to all the RSAT programs involving multiple tests, for
+example <i>oligo-analysis</i>, <i>dyad-analysis</i>, <i>position-analysis</i>, <i>compare-progiles</i>,
+...
+
+<h4>Question</h4>
+
+I am using your program at
+http://rsat.ccb.sickkids.ca/compare-classes_form.cgi.  Could you
+please comment on the significant number of P and E cut off?  I guess
+if a number is less than 0.05 for p values, then we have a significant
+overlap.  Just like in any other statistical techniques.  How about
+E-value?  What is the significant threshold?
+
+<h4>Answer</h4>
+
+<p>
+There is an essential difference between P-value and E-value.
+
+<p>
+The P-value represents the risk to consider as significant one
+intersection, whereas it is not.  It is somehow the probability for
+one intersection to be selected as false positive.
+
+<p>Thus, if you have a query group with Q elements, and a reference group
+with R elements, and the intersection is X, a P-value of 0.05 means
+that there is 5% chances that two random groups of the same sizes
+would have at least X elements at their intersection.
+
+<p>
+This P-value should be interpreted with an extreme caution, because
+you generally compare several query classes with several reference
+classes, you take the same risk (e.g.5%) for each comparison. For
+example, if you are comparing a set 50 clusters of co-expression with
+a database containing 150 regulons, you will perform 50*150=7500
+comparisons. And for each of these comparisons, you take a risk of 5%
+to select a false positive. Thus, for the whole battery of tests, you
+would expect to select 7500*5%=375 false positives !
+
+<p>
+The E-value is precisely an estimation of the expected number of false
+positives. For a battery of T tests.
+
+<pre>
+E-value = Pvalue * T
+	= 7500*5% = 375
+</pre>
+
+<p>
+Some authors call the E-value "Bonferoni-corrected P-value", but I
+dont' like this expression, because the E-value is not a
+probability. Indeed, P-values must by definition be comprized between
+0 and 1, whereas the E-value can take any value between 0 and T (the
+number of tests).
+
+<p>
+Actually, Bonferoni's rule consists in selecting a threshold on
+P-value < 1/T. In practice, this is equivalent to select a threshold
+on E-value < 1, which means that you expect less than 1 false positive
+for the whole battery of tests.
+
+<p>
+In short, I recommend to interpret the results on the basis of the
+E-value, NOT the P-value.
+
+<h3>Supported genomes</h3><ul>
+
+<h4>Would it be possible to install the genome of XXX on the Regulatory Sequence Analysis Tools ? </h4>
+
+Genomes are parsed from the NCBI genome repository.
+
+<p><ul><a target=_blank href=ftp://ftp.ncbi.nih.gov/genomes/>ftp://ftp.ncbi.nih.gov/genomes/</a></ul>
+   
+<p>
+Some additional genomes are imported from the ENSEMBL database. 
+<p><ul><a target=_blank href=ftp://ftp.ensembl.org/pub/>ftp://ftp.ensembl.org/pub/</a></ul>
+
+<p>I am willing to install genomes from other sources as well, if they
+are available in the genbank (.gbk) or EMBL (.embl) flat file
+formats. The flat files must contain an annotated genome, i.e. a list
+of features.
+
+<br>An example of genbank file can be found at 
+<ul><a target=_blank href=ftp://ftp.ncbi.nih.gov/genomes/Bacteria/Escherichia_coli_K12/NC_000913.gbk>ftp://ftp.ncbi.nih.gov/genomes/Bacteria/Escherichia_coli_K12/NC_000913.gbk</a></ul>
+
+<p>A genome can correspond to one or several flat files. For examples,
+the NCBI eucaryote distribution contains one flat file per chromosome.
+<p><ul><a target=_blank
+href=ftp://ftp.ncbi.nih.gov/genomes/Saccharomyces_cerevisiae/>ftp://ftp.ncbi.nih.gov/genomes/Saccharomyces_cerevisiae/</a></ul>
+
+<p>If you want to add a genome to RSAT, please check if this genome is
+distributed in Genbank or EMBL flat file format, and then send me te
+URL from whicch the .gbk or .embl files can be downloaded.
+
+</ul><h3>I cannot find my gene(s)</h3><ul>
+
+<h4>Question</h4>
+I am trying to retrieve sequences from the genome of <i>Myorg
+sp.</i>, and for some genes (XXX, YYY and ZZZ), the progrm returns the
+following message:
+
+<ul><pre>
+;WARNING	invalid query XXX
+;WARNING	invalid query YYY
+;WARNING	invalid query ZZZ
+</pre></ul>
+
+Am I using the wrong names for these genes?  Can you help?
+</i>
+
+<h4>Answer</h4>
+Genomes are parsed from the NCBI distribution :
+
+<ul><a target=_blank href=ftp://ftp.ncbi.nih.gov/genomes/>ftp://ftp.ncbi.nih.gov/genomes/</a></ul>
+
+
+<p>
+Please check if your genes are correctly annotated at NCBI ? This is
+generally the reason why genes are not identified on rsa-tools.
+
+<p>
+In case your gene names would be annotated in the NCBI files and not
+in RSAT, please contact me and I will try to fix the problem. If the
+info is missing from the NCBI files, you should contact them.
+
+<p>
+If the genes are not there, you could have a look at the EMBL genome
+distribution.
+
+<ul><a target=_blank href=http://www.ebi.ac.uk/genomes/>
+http://www.ebi.ac.uk/genomes/</a></ul>
+
+<p>
+EMBL an Genbank/NCBI are supposed to be synchronized, but for some
+reason, their genome annotations (and in particular gene names) are
+not. It is frequent that some genes are annotated at Genbank, whilst
+some other at EMBL (fortunately, there is <i>some</i> overlap).
+
+</ul><h3>Patser and consensus</h3><ul>
+
+<h4>Question</h4>
+
+Is it possible to obtain an installable version of PATSER? I'd like to
+run it on a Linux box (at command line) to scan (eukaryotic)
+chromosome-length sequences. Thanks.
+
+<h4>Answer</h4>
+
+The programs <i>patser</i> and <i>consensus</i> was developed by Jerry Hertz, and is available on his web site: 
+
+<ul><a href=ftp://beagle.colorado.edu/pub/Consensus/>ftp://beagle.colorado.edu/pub/Consensus/</a></ul>
+
+
+</ul><h3>Sequence purging</h3><ul>
+
+<h4>Question</h4>
+<i>I am working on finding common motifs located in upstream of co-regulated
+genes in bacteria. Some software (and you) recommends masking or filtering
+repeated sequences before pattern discovering. I am worry about losing some
+binding sites by filtering.  I may not understand the meaning of repeated
+sequences. So could please explain me this point or recommend some lectures
+illustrated with examples. Thanks for your help. </i>
+
+<h4>Answer</h4>
+
+<p>Redundant sequences can occur for different reasons. Some examples:
+<ul>
+<li>50% of the human genomes is made of repetitive sequences (e.g. Alu, SINE, ...) which are probably not involved in regulation
+<li> in yeast, telomeric regions contain many recent duplications, where a gene can be found in several almost identicak copies, including its promoter
+<li>when you have two neighbour genes in opposite and divergent directions (one on the direct, one on the reversee strand), they sharee the same promoter
+</ul>
+
+<p>For this type of reasons, your set of upstream sequences could
+contain large duplicated fragments.
+
+<p>If this is the case, every single word of these duplicated segments
+will be found in several copies, not because it is involved in
+regulation but because the data set is redundant (the same sequence
+has been taken multiple times). Thus, the motif discovery programs
+will over-estimate its significance, and you will obtain a lot of
+false positives in your motifs.
+
+<p>My recommendation (and the default options of the web site)  is
+<ul>
+<li>for motif discovery, use the "purge" function, which masks all the duplicated segments
+<li>for pattern matching, use the non-masked sequences, because you want to see he regulatory motifs in all the promoters, even if they are at the same position. 
+</ul>
+
+<p>As an exampe, you could try the following cluster (Y', from Spellman 1998)
+<pre>
+YBL112C
+YBL113C
+YEL073C
+YEL075C
+YEL077C
+YFL046C
+YFL066C
+YFL067W
+YGR296W
+YLL067C
+YLR446W
+YLR463C
+YPR202W
+YBL111C
+YEL076C-A
+YER189W
+YER190W
+YFL065C
+YHL049C
+YHL050C
+YHR218W
+YHR219W
+YIL177C
+YJL225C
+YLL066C
+YLR462W
+YLR464W
+YLR467W
+YNL339C
+YPR203W
+YPR204W
+</pre>
+
+<p>Try oligo-analysis with the upstream sequences, with and without purging respectively. 
+<ul>
+<li>without purging, you get a lot of motifs, which cover almost all the sequences (see the feature-map). These motifs are artifactual: they do not reflect regulation but redundancy of whole sequences in the data set
+<li>without purging, you get no motif (apparently this group contains no significant motif).  
+</ul>
+
+
+</ul><h3>Analyzing larger dyads</h3><ul>
+
+<h4>Question</h4>
+
+<i>How is it possible to set the oligonucleotide size in dyad-analysis to 4 instead of 3?</i>
+
+<h4>Answer</h4>
+
+
+This option is not available on the web interface, because the time of
+computation increases exponentially with the oligonucleotide length.
+In my epxerience, the analysis of spaced pairs of trinucleotides is
+generally sufficient to return larger motifs as well, because if there
+is a pair of tetranucleotides, it is detected as multiple pairs of
+mutually overlapping trinucleotides. For example
+
+<ul><pre>
+TAGT......ACTA
+</pre></ul>
+
+Can be detected in the following form :
+
+<ul><pre>
+TAG........CTA
+TAG.......ACT.
+.AGT.......CTA
+</pre></ul>
+
+But this depends on the sequence type. If you really need to analyse
+pairs of 4nt or llarge, one possibility is to install a local version
+of your computer. For this, you need a unix machine, and some
+xperience with the unix system.
+
+If you wish to download the unix version of the tools, you can find the licence and user instruction on the web site:
+	
+<ul><a href=http://rsat.ulb.ac.be/rsat/distrib/>http://rsat.ulb.ac.be/rsat/distrib/</a></ul>
+
+
+</ul><hr size=3>
+</blockquote>
+</body>
+</html>
+

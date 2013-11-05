@@ -1,0 +1,475 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: ortho-dna-pattern,v 1.11 2011/02/17 05:15:54 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+ortho-dna-pattern
+
+=head1 DESCRIPTION
+
+Apply dna-pattern to a list of orthologous sequences.
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+=head1 USAGE
+    
+ortho-dna-pattern [-org Organism_name] [-qgene gene1] [-genefile genefile] [-taxon taxon] [-p pattern1] [-p pattern2] [-patternfile pattern_file]  [-dir data_dir] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::organism;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    #$main::in = STDIN;
+    $main::out = STDOUT;
+    
+    my $taxondir;
+    my $organism;
+    my $feature_index;
+    $temp = 0;
+    $repeat_masked = 0;
+    
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    
+#     if (defined($organism_name) && defined($dir)) {
+#       &FatalError(join("\t", "You cannot specify both a result directory and an organism"));
+#     }
+
+    if (!defined($taxon)) {
+      &FatalError(join("\t", "You must specify the taxon"));
+    }
+    
+    if (!defined($organism_name) && defined($dir)) {
+      &FatalError(join("\t", "You must specify a result directory and/or an organism"));
+    }
+    
+    
+    if (defined($dir)) {
+      $taxondir = $dir."/data/sequences/ortho_promoters/".$organism_name."/".$taxon."/";
+      if (! -e $taxondir) {
+        &FatalError(join("\t", "The data directory",$dir, "you entered is not valid"));
+      }
+    }
+    
+    
+    if (defined($organism_name)) {
+      $organism = new RSAT::organism();
+      $organism->check_name($organism_name);
+      $organism = &load_organism($organism_name);
+    }
+    if (!defined($main::infile{pattern_file}) && !(@pattern_seq))  {
+      &FatalError(join("\t", "You must specify patterns to be searched"));
+    } 
+    
+    if (defined($main::infile{pattern_file})) {
+      if (!-e $main::infile{pattern_file} ||  -z  $main::infile{pattern_file}){
+        &FatalError(join("\t", "Pattern file",$main::infile{pattern_file},"does not exist or is empty."));
+      }
+    }
+    
+    
+    
+    if (defined($gene_name))  {
+      $feature_index = $organism->get_attribute("name_index");
+      #$feature_index->export("tab","test.tab");
+      &trim($gene_name);
+      if (!$feature_index->contains(uc($gene_name))) {
+        &FatalError(join("\t", "Organism",$organism_name,"does not contain gene", $gene_name));
+      } 
+    } else {
+      &FatalError(join("\t", "You must specify the gene to be analyzed"));
+    }
+    
+    if (defined($main::infile{gene_file})) {
+      if (!-e $main::infile{gene_file} || -z  $main::infile{gene_file}){
+        &FatalError(join("\t", "Gene file",$main::infile{gene_file},"does not exist or is empty."));
+      }
+    }
+    
+    ################################################################
+    ## Load data
+    my @line;
+    my @fields;
+    
+    ## Load patterns
+    if (defined($main::infile{pattern_file})) {
+      my ($pattern_file_handle) = &OpenInputFile($infile{pattern_file});
+      while ($line = <$pattern_file_handle>) {
+        $l++;
+        next if ($line =~ /^\#/); ## Skip header lines
+        next if ($line =~ /^--/); ## Skip comment lines
+        next if ($line =~ /^;/); ## Skip comment lines
+        next unless ($line =~ /\S/); ## Skip empty lines
+        chomp($line);
+        @fields = split /\s+/, $line;
+        my $pattern = $fields[0];
+        if ($pattern) {
+          push @pattern_seq, $pattern;
+        } else {
+	  &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
+        }
+      }
+      close $pattern_file_handle;
+    }
+    
+    &RSAT::message::Info(scalar(@pattern_seq), "motifs searched in the promoters of the orthologs of",$gene_name) if ($main::verbose >= 2);
+    
+    my $seq;
+    
+    if ($dir) {
+      my @features = $feature_index->get_values(uc($gene_name));
+      my @names;
+      foreach my $feature (@features) {
+        push @names, $feature->get_attribute("names");
+      }
+      foreach my $name (@names) {
+        my $seqfile = $name."_".$organism_name."_".$taxon."_up.fasta.gz";
+	my $seqpath = $taxondir."/".$seqfile;
+	if (-e $seqpath) {
+	  $seq = `zcat $seqpath`;
+	  last;
+	}
+      }
+      if ($seq eq "") {
+        &FatalError(join("\t", "Could not find any sequence for gene",$gene_name,"in directory",$taxondir));        
+      }
+    } else {
+      my $command = "get-orthologs -q $gene_name -org $organism_name -taxon $taxon -uth rank 1";
+      $command .= " | retrieve-seq-multigenome -feattype cds -noorf";
+      $seq = `$command`;
+    }
+    
+    my $seqfile = $gene_name."_".$organism_name."_".$taxon."_up.fasta";
+    my $date = `date +%Y%m%d`;
+    chomp($date);
+    my $outputseqdir =  "ortho_pattern/".$date;
+    my $outputseqfile = $outputseqdir."/$seqfile";
+    my $outputpatternfile = $outputseqdir."/".$gene_name."_pattern_list.tab";
+    
+    ## Write sequences in a file
+    &RSAT::util::CheckOutDir($outputseqdir); # create directory
+    open(TEMP, ">$outputseqfile") || die ("Could not create file $outputseqfile\n");
+    print TEMP $seq;
+    close TEMP;
+    
+    ## Write pattern list in a file
+    open(PATTERNLIST, ">$outputpatternfile") || die ("Could not create file $outputpatternfile\n");
+    foreach my $pattern (@pattern_seq) {
+      print PATTERNLIST $pattern."\n";
+    }
+    close PATTERNLIST;
+    
+    
+    ## dna-pattern command
+    my $command = "dna-pattern ";
+    $command .= "-i $outputseqfile ";
+    $command .= "-v  $main::verbose ";
+    $command .= "-pl $outputpatternfile ";
+    if (defined($main::outfile{output})) {
+      $command .= "-o $main::outfile{output} ";
+    }
+    foreach my $arg (@to_pass) {
+      if ($arg =~ /\s/) {
+        $command .= " '".$arg."'";
+      } else {
+	$command .= " ".$arg;
+      }
+    }    
+    
+    &RSAT::message::Info($command) if ($main::verbose >= 2);
+    print $command."\n";
+    system $command;
+    
+    if ($temp) {
+      &RSAT::message::Info(scalar(@pattern_seq), "Removal of the tempory files") if ($main::verbose >= 2);
+      system ("rm $outputseqfile");
+      system ("rm $outputpatternfile");
+      opendir(TEMPDIR, $outputseqdir); 
+      my @allfiles = readdir(TEMPDIR);
+      if (scalar(@allfiles) == 2) {
+        rmdir ($outputseqdir);
+      }
+      opendir(TEMPDIR, "ortho_pattern"); 
+      @allfiles = readdir(TEMPDIR);
+      if (scalar(@allfiles) == 2) {
+        rmdir ("ortho_pattern");
+      }
+    }
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Having the name of an RSAT organism, this function load the organism and
+## returns it
+sub load_organism() {
+    &RSAT::message::psWarn("Loading organism", $organism_name) if ($main::verbose >= 2);
+    my $organism_name = $_[0];
+    my $organism = new RSAT::organism();
+    my $cdsfile = $ENV{"RSAT"}."/public_html/data/genomes/".$organism_name."/genome/cds.tab";
+    if (-e $cdsfile) {
+	$organism->check_name($organism_name);
+	$organism->set_attribute("name", $organism_name);
+	$organism->DefineAcceptedFeatureTypes("cds");
+	$organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
+	$imp_pos = 0;
+	$organism->LoadFeatures($annotation_table, $imp_pos);
+	$organism->LoadSynonyms();
+    } else {
+	$organism = 0;
+    }
+    return $organism;
+}
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+=item	B<-org Organism_name>
+
+When an organism is specified, the program will automatically
+the get-orthologs program to retrieve the orthologs of the requested gene.
+Without using the -dir, option, the program will retrieve the sequences using get-orthologs.
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	    $organism_name = shift(@arguments);	
+	    
+=item	B<-dir data_dir>
+
+Main directory where the data are stored.
+
+=cut
+
+	} elsif ($arg eq "-dir") {
+	    $dir = shift(@arguments);	
+
+=item	B<-qgene gene>
+
+Specify the gene (and its orthologs) for which you want to study a given pattern in the promoter.
+
+=cut
+	} elsif ($arg eq "-qgene") {
+	  $gene_name = shift(@arguments);
+	
+	    
+=item	B<-p pattern>
+
+Specify the patterns you want to retrieve in the sequences. This option can be used iteratively.
+
+=cut	    
+	} elsif ($arg eq "-p") {
+	    my $fields = shift(@arguments); 
+	    my @all_fields = split(/,/, $fields);
+	    foreach my $field (@all_fields) {
+	      push @pattern_seq, $field;
+	    }
+	    
+
+=item B<-taxon ref_taxon>
+
+Taxon in which you search the orthologous promoters of the requested genes.
+
+=cut
+
+	} elsif ($arg eq "-taxon") {
+	    $taxon = shift (@arguments);
+	    
+=item	B<-patternfile pattern_file>
+
+Pattern file
+
+This file specifies the list of patterns you want to study.
+
+
+=cut
+	} elsif ($arg eq "-patternfile") {
+	    $main::infile{pattern_file} = shift(@arguments);	    
+=item	B<-temp>
+
+Temporary file
+
+Using this option, you remove the sequences file.
+
+=cut	    
+	} elsif ($arg eq "-temp") {
+	    $temp = 1;	
+	    	    	       	
+	    ## Other arguments are passed to dna-pattern
+=pod
+
+=item B<other parameters>
+
+All other parameters are passed to the command dna-pattern
+
+See the manual of dna-pattern for a description of supported parameters.
+
+=cut
+
+	} else {
+	    push @to_pass, $arg;
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; ortho-dna-pattern ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut

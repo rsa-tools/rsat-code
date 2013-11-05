@@ -1,0 +1,192 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	waterman-parameters
+
+        24/10/97 by Jacques van Helden
+	
+CATEGORY
+        statistics
+	
+DESCRIPTION
+        calculates the probability to find a word within a given % of
+        a set of sequences, following the method of Waterman et al
+        (1984). Bulletin Math. Biol. 45 (4):515-527.
+
+USAGE
+        waterman-parameters -k word_length -W window_width 
+                -d allowed_mismatches -r nb_sequences 
+                -beta matching_seq_percentage -L sequence_length
+                [-o outputfile] [-v]
+
+OPTIONS
+	-v	verbose.
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the comand within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the comand within a pipe.
+	
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-k") {
+    ### word length
+    $k = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-W") {
+    ### window width
+    $W = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-d") {
+    ### allowed mismatches
+    $d = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-r") {
+    ### number of lines
+    $r = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-beta") {
+    ### percentage of lines which must contain the word
+    $beta = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-L") {
+    ### sequence length
+    $L = $ARGV[$a+1];
+
+  }
+}
+
+
+#### check argument values ####
+
+
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype waterman-parameters -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+#### verbose ####
+if ($verbose) {
+  print ";waterman-parameters result\n";
+  if ($outputfile ne "") {
+    print ";Output file	$outputfile\n";
+  }
+}
+
+###### execute the command #########
+
+### calculate F, the number of neighbours
+$possible_words = 4**$k;
+$word_proba = 1/$possible_words;
+$F = $possible_words * binomial_boe(0.25, $k, $k-$d); 
+
+### calculate alpha
+### alpha is the probability that some neighbour of w occurs 
+### on a given line with a given position of the window
+$alpha = ($W - $k + 1) * $F * $word_proba;
+if ($alpha > 1) {
+    $alpha = 1;
+}
+$alpha_prime = 1 - (1 - $F*$word_proba)**($W-$k+1);
+
+### calculate p
+### p is the probability to encounter an unknown pattern 
+### in beta% of the set of r sequences.
+if (($alpha < 1) && ($beta < 1)) {
+  $H = $beta * log($beta/$alpha) + (1-$beta) * log((1-$beta)/(1-$alpha));
+} elsif ($beta < 1)  {
+  $H = $beta * log($beta/$alpha_prime) + (1-$beta) * log((1-$beta)/(1-$alpha_prime));
+} else {
+    $H = "undef";
+}
+$n = $L;
+$p_known = $n * exp(-$r*$H);
+if ($p_known > 1) {
+    $p_known = 1;
+}
+$p_unknown = $possible_words * $p_known;
+if ($p_unknown > 1) {
+    $p_unknown = 1;
+}
+
+$min_matching_seq = int($beta * $r);
+$p_known_1col = binomial_boe($alpha_prime, $r, $min_matching_seq);
+$p_known_prime = binomial_boe($p_known_1col, $L, 1);
+$p_unknown_prime = 1 - (1 - $p_known_prime)**$possible_words;
+
+###### print output ######
+
+print $out <<End_of_results;
+Word length (k)              $k
+nb of lines (r)              $r
+sequence length (L)          $L
+Mismatches (d)               $d
+Window width (W)             $W
+% matching seq (beta)        $beta
+min matching sequences       $min_matching_seq
+
+Number of neighbours (F)     $F
+alpha                        $alpha
+alpha'                       $alpha_prime
+entropy (H[beta,alpha])      $H
+window locations (n)         $n
+proba known pattern          $p_known
+proba unknown pattern        $p_unknown
+
+proba known 1 column         $p_known_1col
+proba' known pattern         $p_known_prime
+proba' unknown pattern       $p_unknown_prime
+
+End_of_results
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+

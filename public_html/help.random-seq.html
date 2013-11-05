@@ -1,0 +1,114 @@
+<html>
+<head>
+   <title>RSA-tools: random-seq manual</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<blockquote>
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</a> - random-seq manual</h2>
+</center>
+
+<h3>Name</h3>
+<ul>
+random-seq<p>
+1997-2003 by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+
+</UL>
+
+<H3>Description</H3>
+
+<UL>
+Generate random DNA sequences according to various probabilistic
+models (Markov models or independently distributed nucleotides)
+</UL>
+
+<H3>Options</H3>
+
+<UL>
+
+<A NAME="length"></A>
+<h4>Sequence length</h4>
+<ul>
+The length of each sequence.
+</ul>
+
+<A NAME="repet"></A>
+<h4>Number of sequences</h4>
+<ul>
+Number of sequences. Most sequence format support multi-sequence files. 
+</ul>
+
+<A NAME="lw"></A>
+<h4>Line width</h4>
+<ul>
+Line width. To obtain a single line per sequence, fill this option with 0. 
+</ul>
+
+<A NAME="lw"></A>
+<h4>Sequence format</h4>
+<ul>
+Various sequence formats can be chosen through a pop-up menu. 
+</ul>
+
+<A NAME="proba"></A>
+<h4>Nucleotide frequencies</h4>
+<ul>
+
+Random sequences can be generated according to different probabilistic models. 
+
+<ul>
+
+<li><b>Equiprobable nucleotides</B><br> This is the simplest model :
+all nucleotides have the same prior probability.
+
+<li><b>Independent nucleotides with distinct probabilities</b><br> A
+specific prior probability can be attached to nucleotides (AT and CG
+are grouped). This probability is constant over the sequence, i.e. each
+nucleotide is generated independently of the preceding and succeeding
+nucleotides.
+
+<Li><b>Markov chains (calibrated on upstream non-coding
+frequencies)</b><br> The random sequence has the same oligonucleotide
+composition as observed in the non-coding regions located upstream of
+all genes of the selected organism.  This is obtained by a Markov
+chain process, where nucleotide probabilities vary at each position,
+depending on the preceding nucleotides.
+
+<ul>
+
+<li><b>Organism</b> The reference organism (oligonucleotide
+frequencies are pre-calculated for each supported organism, on the
+basis of the complete set of upstream sequences).
+
+<li><b>Oligonucleotide size</b> This determines which expected
+oligonucleotide calibraiton table has to be used. The markov chain
+order is this value minus one. For example, 
+
+<ul>
+<li>Calibrating with hexanucleoides (oligonucleotide length = 6) means
+that the nucleotide at each position depends on the 5 preceding
+nucleotides. This is this thus a Markov chain of order 5.
+
+<li>Calibrating on single nucleotides (oligo length = 1) means that
+each nucleotide is chosen independently off the preceding one. This is
+thus a Bernouille model (or Markov chain of order 0).
+
+</ul>
+
+</ul>
+
+</ul>
+
+
+</ul>
+
+<hr size=3>
+
+</blockquote>
+</body>
+</html>

@@ -1,0 +1,16 @@
+output=both
+organism='Escherichia_coli_K12'
+query=metA,metB
+all=0
+noorf=1
+from=0
+to=2
+feattype=CDS
+type=upstream
+format=fasta
+lw=0
+label='id,name'
+label_sep=
+nocom=0
+repeat= 0
+imp_pos=0

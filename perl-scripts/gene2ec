@@ -1,0 +1,375 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: gene2ec,v 1.18 2012/03/31 09:11:54 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+gene2ec
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Find EC numbers or reaction IDs associated with a list of query gene,
+or with a gene clustering file (several clusters, each comprizing one
+or more genes).
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item metabolism
+
+=back
+
+=head1 USAGE
+
+gene2ec [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+A list of query genes can be provided as a tab-delimited file, with one
+row per query. The first word of each line is considered as a query,
+the rest of the line is ignored for the query, but reported in the
+output.
+
+=head1 OUTPUT FORMAT
+
+The output file is a copy of the input file with one column added,
+indicating the EC number of the input genes.
+
+=head1 SEE ALSO
+
+=over
+
+=item B<convert-classes>
+
+The program convert-classes converts various formats into a
+tab-delimited cluster file, where the first column indicates the
+element (gene ID or name) and the second column the cluster
+(co-expression cluster, operon, ...).
+
+=head1 WISH LIST
+
+=over
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  our $id_col = 1;
+  our $after = 0;
+
+  our %matched = (); ## Index of matched queries
+  our $links  = 0; ## Number of gene - EC associations (including multiple links)
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  unless (defined($main::infile{ger})) {
+    &RSAT::error::FatalError("No GER file has be specified (option -ger).");
+  }
+
+  ################################################################
+  ## Read Gene-EC-reaction links
+  ($main::ger) = &OpenInputFile($main::infile{ger});
+  our $ger_nb = 0;
+  while (<$main::ger>) {
+    next if (/^;/); ## skip comment lines
+    next if (/^#/); ## Skip header line
+    next unless (/\S/) ; # Skyp empty lines
+    chomp();
+    $ger_nb++;
+    my ($gene, $ec_or_reaction)  = split("\t");
+    my $gene_key = lc($gene);
+    $gene2ec{$gene_key}{$ec_or_reaction} = 1;
+#     ## Previous operating mode - genes were loaded before GER
+#     if ($gene) {
+#       if (defined($query_index{lc($gene)})) {
+# 	$matched{$gene} = 1;
+# 	print $out join ("\t", $ec_or_reaction, $query_index{lc($gene)}), "\n";
+# #	print $out join ("\t", $ec_or_reaction, $gene), "\n";
+#       }
+#     }
+  }
+  close $main::ger;
+  &RSAT::message::TimeWarn("Loaded GER associations", $ger_nb) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Read query genes
+  ($main::in) = &OpenInputFile($main::infile{input});
+  our $header = "";
+  our @queries = ();
+  our %query_index = ();
+ 
+  while (<$main::in>) {
+    next if (/^;/); ## skip comment lines
+    next unless (/\S/) ; # Skyp empty lines
+    chomp();
+    ## Report header line
+    if (/^#/) {
+      $header = $_;
+      $header =~ s/^#//;
+    }
+    my @fields = split("\t");
+    my $query = $fields[$id_col-1];
+    my $key = lc(&RSAT::util::trim($query));
+
+    ## Identify the links from query genes to EC
+    if (defined($gene2ec{$key})) {
+      $matched{$query} = 1;
+      my @ecs_for_this_gene = sort(keys(%{$gene2ec{$key}}));
+      foreach my $ec_or_reaction (@ecs_for_this_gene) {
+	$links++;
+	if ($after) {
+	  print $out join ("\t", $_, $ec_or_reaction), "\n";
+	} else {
+	  print $out join ("\t", $ec_or_reaction, $_), "\n";
+	}
+      }
+    }
+
+
+    push @queries, $query;
+    $query_index{lc($query)} = $_; ## Queries are indexed for case-insenstive searches -> no lower cases
+#    $query_index{lc($query)} = $query; ## Queries are indexed for case-insenstive searches -> no lower cases
+  }
+  close $main::in if ($main::infile{input});
+  &RSAT::message::TimeWarn("Loaded queries", scalar(@queries)) if ($main::verbose >= 2);
+#  &RSAT::message::Debug("Keys", keys(%query_index)) if ($main::verbose >= 0);
+
+
+  ## Report header line
+  print $out "#EC\t", $header, "\n";
+
+  ## Print matching statistics
+  &RSAT::message::TimeWarn("Matched queries", scalar(keys(%matched))) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Gene-EC links", $links) if ($main::verbose >= 2);
+  printf $out "; Matching statistics\n";
+  printf $out  ";\t%-13s\t%s\n", "Loaded queries", scalar(@queries);
+  printf $out  ";\t%-13s\t%s\n", "Loaded GER associations", $ger_nb;
+  printf $out  ";\t%-13s\t%s\n", "Matched queries", scalar(keys(%matched));
+  printf $out  ";\t%-13s\t%s\n", "Gene-EC links", $links;
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+A list of queries, i.e. gene names or identifiers or cross-references.
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item B<-ger gene_ec_reaction_file>
+
+=cut
+    } elsif ($arg eq "-ger") {
+      $main::infile{ger} = shift(@arguments);
+
+=pod
+
+=item B<-id_col id_column>
+
+Column of the input file containing the gene ID (default: 1).
+
+=cut
+    } elsif ($arg eq "-id_col") {
+      $id_col = shift(@arguments);
+      &RSAT::error::FatalError($id_col, "Invalid value for ID column. Should be a strictly positive Natural number")
+	unless ((&IsNatural($id_col)) && ($id_col > 0));
+
+=pod
+
+=item B<-after>
+
+Print the EC number as last column rather than as the first column of the
+output.
+
+=cut
+
+    } elsif ($arg eq "-after") {
+      $after = 1;
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; gene2ec ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__

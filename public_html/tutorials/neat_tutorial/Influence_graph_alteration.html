@@ -1,0 +1,602 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Influence of graph alteration and randomization on clustering</TITLE>
+<META NAME="description" CONTENT="Influence of graph alteration and randomization on clustering">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Path_finding.html">
+<LINK REL="previous" HREF="Graph_clustering.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Path_finding.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html388"
+  HREF="Path_finding.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html384"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html378"
+  HREF="Graph_clustering.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html386"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html389"
+  HREF="Path_finding.html">Path finding</A>
+<B> Up:</B> <A NAME="tex2html385"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html379"
+  HREF="Graph_clustering.html">Graph clustering</A>
+ &nbsp; <B>  <A NAME="tex2html387"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html390"
+  HREF="Influence_graph_alteration.html#SECTION00810000000000000000">Introduction</A>
+<LI><A NAME="tex2html391"
+  HREF="Influence_graph_alteration.html#SECTION00820000000000000000">Quantitative assessment of a clustering algorithm</A>
+<UL>
+<LI><A NAME="tex2html392"
+  HREF="Influence_graph_alteration.html#SECTION00821000000000000000">Study case</A>
+<LI><A NAME="tex2html393"
+  HREF="Influence_graph_alteration.html#SECTION00822000000000000000">Protocol for the web server</A>
+<UL>
+<LI><A NAME="tex2html394"
+  HREF="Influence_graph_alteration.html#SECTION00822100000000000000">Dataset download</A>
+<LI><A NAME="tex2html395"
+  HREF="Influence_graph_alteration.html#SECTION00822200000000000000">Network alteration</A>
+<LI><A NAME="tex2html396"
+  HREF="Influence_graph_alteration.html#SECTION00822300000000000000">Network randomization</A>
+<LI><A NAME="tex2html397"
+  HREF="Influence_graph_alteration.html#SECTION00822400000000000000">Networks clustering and clustering assessment</A>
+</UL>
+<LI><A NAME="tex2html398"
+  HREF="Influence_graph_alteration.html#SECTION00823000000000000000">Protocol for the command-line tools</A>
+<UL>
+<LI><A NAME="tex2html399"
+  HREF="Influence_graph_alteration.html#SECTION00823100000000000000">Network alteration</A>
+<LI><A NAME="tex2html400"
+  HREF="Influence_graph_alteration.html#SECTION00823200000000000000">Network randomization</A>
+<LI><A NAME="tex2html401"
+  HREF="Influence_graph_alteration.html#SECTION00823300000000000000">Networks clustering and clustering assessment</A>
+</UL>
+<LI><A NAME="tex2html402"
+  HREF="Influence_graph_alteration.html#SECTION00824000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html403"
+  HREF="Influence_graph_alteration.html#SECTION00824100000000000000">Files description</A>
+<UL>
+<LI><A NAME="tex2html404"
+  HREF="Influence_graph_alteration.html#SECTION00824110000000000000">Randomized network</A>
+<LI><A NAME="tex2html405"
+  HREF="Influence_graph_alteration.html#SECTION00824120000000000000">Altered networks</A>
+<LI><A NAME="tex2html406"
+  HREF="Influence_graph_alteration.html#SECTION00824130000000000000">Contingency table</A>
+<LI><A NAME="tex2html407"
+  HREF="Influence_graph_alteration.html#SECTION00824140000000000000">Contingency table metrics</A>
+</UL>
+<LI><A NAME="tex2html408"
+  HREF="Influence_graph_alteration.html#SECTION00824200000000000000">Metrics description</A>
+<UL>
+<LI><A NAME="tex2html409"
+  HREF="Influence_graph_alteration.html#SECTION00824210000000000000">Sensitivity, Positive predictive value and geometric accuracy</A>
+</UL>
+<LI><A NAME="tex2html410"
+  HREF="Influence_graph_alteration.html#SECTION00824300000000000000">Score comparaison</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00800000000000000000">
+Influence of graph alteration and randomization on clustering</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00810000000000000000">
+Introduction</A>
+</H1>
+Although negative controls and method evaluation are crucial points to the experimental biologist, 
+this is far from being the same in bioinformatics where, too often, no negative control is associated to 
+the predictions, so that one cannot estimate the probability of these predictions to biogically valid.
+
+<P>
+For this reason, in NeAT we developped programs allowing to randomize and to add some specified levels of noise to networks. This allows the user to apply the techniques used to find relevant results on networks where there is less or no signal and thus were no interesting result should emerge.
+
+<P>
+NeAT programs are able to generate randomized networks according to three methods. 
+
+<OL>
+<LI><I>Node degree conservation</I> : this approach consists in shuffling the edges, each node keeping the same number of neighbors as in the original graph.
+</LI>
+<LI><I>Node degree distribution conservation</I> : in which the global distribution of the node degree is conserved but each node presents a different degree than in the original graph.
+</LI>
+<LI><I>Erdos-Renyi randomization</I> :  where edges are distributed between pairs of nodes with equal probability.
+</LI>
+</OL>
+
+<P>
+
+<H1><A NAME="SECTION00820000000000000000">
+Quantitative assessment of a clustering algorithm</A>
+</H1>
+
+<H2><A NAME="SECTION00821000000000000000">
+Study case</A>
+</H2>
+
+<P>
+In this demonstration, we will use the approach developped in [<A
+ HREF="Bibliography.html#Brohee2006">2</A>] where we evaluated the performances of different graph clustering algorithms. Graph clustering algorithms allow to retrieve in a graph the groups of nodes that contain more connections between them than with the rest of the nodes of the graph. Clustering algorithms are often used in biology in order to extract coherent groups of nodes from networks (complexes detection (e.g. see [<A
+ HREF="Bibliography.html#Sharan2007">29</A>,<A
+ HREF="Bibliography.html#Krogan2006">19</A>,<A
+ HREF="Bibliography.html#Brohee2006">2</A>,<A
+ HREF="Bibliography.html#Pereira-Leal2004">24</A>]), protein families detection [<A
+ HREF="Bibliography.html#Enright2002">7</A>], co-expressed genes detection in co-expression networks (e.g see [<A
+ HREF="Bibliography.html#Lattimore2005">20</A>]), ...). The NeAT web server proposes the <B><I>MCL</I></B> (<I>Markov Cluster algorithm</I>) clustering algorithm developped by Stijn van Dongen [<A
+ HREF="Bibliography.html#VanDongenPHD2000">33</A>,<A
+ HREF="Bibliography.html#Enright2002">7</A>]. To follow the command-line tools instructions, you should have  MCL installed on your computer (available at http://micans.org/mcl/).
+
+<P>
+MCL simulates a flow on the graph by
+calculating successive powers of the associated adjacency matrix. At
+each iteration, an <I>inflation step</I> is applied to enhance the
+contrast between regions of strong or weak flow in the graph. The
+process converges towards a partition of the graph, with a set of 
+high-flow regions (the clusters) separated by boundaries with no 
+flow. The value of the <I>inflation parameter</I> strongly 
+influences the number of clusters. According to [<A
+ HREF="Bibliography.html#Brohee2006">2</A>], the optimal inflation
+value for clustering protein interaction networks is 1.8.
+
+<P>
+We will use an artificial interaction network created from the complexes annotated in the MIPS database by creating an edge between all the nodes belonging to the same complex [<A
+ HREF="Bibliography.html#Mewes2007">23</A>]. This network contains 12262 edges between 1095 nodes. We will then use the MCL clustering algorithm on this network, on a little altered network, on a highly altered network and finally on a randomized network. 
+
+<P>
+We will then compare these clusters to the MIPS complexes and estimate how well MCL can retrieve protein complexes from a protein-protein interaction and the influence of the noise on the results.
+
+<P>
+In this example, we will only use random alteration, i.e., the edges that are removed are randomly chosen. This is done to mimick what happens really in biological experiments where some inter-relationships between the nodes (genes, proteins, metabolites, ...) may not be discovered (false negatives) or are erroneously discovered (false positives). However the <B><I>alter-graph</I></B> program also allows to alterate the network with targeted attack on user-selected nodes. In their study, Spirin and Mirny [<A
+ HREF="Bibliography.html#Spirin2003">31</A>] showed the affect of node targeted attacks on clustering results.
+
+<P>
+
+<H2><A NAME="SECTION00822000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00822100000000000000">
+Dataset download</A>
+</H3>
+Go on the demo dataset web page.http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/ and download the MIPS complex network file (<I>complexes_rm_00_ad_00.tab</I>) and the complexes (<I>mips_complexes.tab</I>).
+
+<P>
+
+<H3><A NAME="SECTION00822200000000000000">
+Network alteration</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>network alteration</I></B>. 
+</LI>
+<LI>In the <I>Upload graph from file</I> text area, load the file <I>complexes_rm_00_ad_00.tab</I> containing the MIPS complexes network that you just downloaded.
+</LI>
+<LI>In the <TT>edges to add</TT> text area, enter 10%.
+</LI>
+<LI>In the <TT>edges to remove</TT> text area, enter 10%.
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+</LI>
+<LI>Right click on the resulting file and save it with name <I>complexes_rm_10_ad_10.tab</I>.
+
+<P>
+Re-do the this alteration procedure using 50% of edges removal and 100% of edges addition. Save the resulting file with name <I>complexes_rm_50_ad_100.tab</I>.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H3><A NAME="SECTION00822300000000000000">
+Network randomization</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>network randomization</I></B>. 
+</LI>
+<LI>In the <I>Upload graph from file</I> text area, load the file <I>complexes_rm_00_ad_00.tab</I>.
+</LI>
+<LI>Select the <TT>Node degree conservation</TT> randomization type.
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+</LI>
+<LI>Right click on the resulting file and save with name <I>complexes_rm_00_ad_00_random.tab</I>.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H3><A NAME="SECTION00822400000000000000">
+Networks clustering and clustering assessment</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>graph-based clustering MCL</I></B>. 
+</LI>
+<LI>In the <I>Upload graph from file</I> text area, load the file <I>complexes_rm_00_ad_00.tab</I>.
+</LI>
+<LI>Click on the button <TT>GO</TT>. You should now obtain a link to the clustering results and the distribution of the sizes of the different clusters.
+</LI>
+<LI>In the <I>Next step</I> pannel, click on the button <I>Compare these clusters to other clusters</I>.
+</LI>
+<LI>In the <I>Upload reference classes from file </I> text area, load the <I>mips_complexes.tab</I> file.
+</LI>
+<LI>Choose the <I>matrix file</I> output format
+</LI>
+<LI>Click on the button <TT>GO</TT>. You now obtain a contingency table, i.e, a table with <IMG
+ WIDTH="19" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img1.png"
+ ALT="$N$"> rows and <IMG
+ WIDTH="22" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$M$"> columns (<IMG
+ WIDTH="19" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img1.png"
+ ALT="$N$"> being the number of MIPS complexes and <IMG
+ WIDTH="22" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$M$">, the number of clusters). Each cell contains the number of protein common to one complex and one cluster.
+</LI>
+<LI>To calculate some statistics on this contingency table, click on the <TT>contingency-table statistics</TT> button in the <TT>Next step</TT> pannel.
+</LI>
+<LI>The <B><I>contingency-stats</I></B> form appears. As the contingency table is already uploaded, just lick on the <TT>GO</TT> button. 
+</LI>
+<LI>Save the resulting file under name  <I>contigency_stats_rm_00_ad_00.tab</I> 
+
+<P>
+</LI>
+</OL>
+
+<P>
+Repeat these steps for <I>complexes_rm_10_ad_10.tab</I>, <I>complexes_rm_50_ad_100.tab</I> and <I>complexes_rm_00_ad_00_random.tab</I> and save the resulting files under the names <I>contigency_stats_ad_10_rm_10.tab</I>, <I>contigency_stats_ad_50_rm_100.tab</I>, <I>contigency_stats_ad_00_rm_00_random.tab</I>, respectively.
+
+<P>
+
+<H2><A NAME="SECTION00823000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the programs <B><I>random-graph</I></B> and <B><I>alter-graph</I></B> on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+<P>
+We will now describe the use of <B><I>random-graph</I></B>, <B><I>alter-graph</I></B>, <B><I>compare-classes</I></B>  and <B><I>contingency-stats</I></B> as command line tools. For this tutorial, you need to have the MCL program installed. 
+
+<P>
+Start by going on the demo dataset download web page.http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/ and downloading the MIPS complex network file (<I>complexes_rm_00_ad_00.tab</I>) and the complexes (<I>mips_complexes.tab</I>).
+
+<P>
+
+<H3><A NAME="SECTION00823100000000000000">
+Network alteration</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>Go in the directory where you downloaded the file.
+</LI>
+<LI>Use the following commands to alter the graph. Note that MCL is not an RSAT / NeAT program and thus cannot treat RSAT comments lines (starting with ``#'' or with ``;''). We thus have to suppress them in the command.
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+			alter-graph	-v 1 -i complexes_rm_00_ad_00.tab \
+					-rm_edges 10% -add_edges 10% \
+					| cut -f 1,2 | grep -v ';' &gt; complexes_rm_10_ad_10.tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+Re-use this command, but modify the percentage of removed (-rm_edges 50%) and added edges (-add_edges 100%). Save the resulting file with name <I>complexes_rm_50_ad_100.tab</I>.
+</LI>
+</OL>
+<H3><A NAME="SECTION00823200000000000000">
+Network randomization</A>
+</H3>
+
+<OL>
+<LI>Use the following commands to randomize the graph by shuffling the edges. The node degrees will be conserved.
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		random-graph 	-v 1 -i complexes_rm_00_ad_00.tab \
+				-random_type node_degree \
+				| cut -f 1,2 | grep -v ';' &gt; complexes_rm_00_ad_00_random.tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+</LI>
+</OL>
+<H3><A NAME="SECTION00823300000000000000">
+Networks clustering and clustering assessment</A>
+</H3>
+
+<OL>
+<LI>Use the following commands to apply MCL on the network
+  
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+  		mcl 	complexes_rm_00_ad_00.tab \
+  			--abc -I 1.8 -o complexes_rm_00_ad_00_clusters.mcl
+</PRE><FONT COLOR="#0000ff"></FONT>
+</LI>
+<LI>Convert the cluster file obtained with MCL with the program <B><I>convert-classes</I></B> into a file that is readable by NeAT / RSAT (two column cluster file).
+    
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+  		convert-classes	-i complexes_rm_00_ad_00_clusters.mcl 
+  				-from mcl -to tab -o complexes_rm_00_ad_00_clusters.tab
+</PRE><FONT COLOR="#0000ff"></FONT>
+</LI>
+<LI>Compare the obtained clusters to the MIPS complexes with the program <B><I>compare-classes</I></B>
+    
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+  		compare-classes	-q complexes_rm_00_ad_00_clusters.tab \
+  				-r mips_complexes.tab \
+  				-matrix QR \
+  				-o complexes_rm_00_ad_00_clusters_cc_complexes_matrix.tab
+</PRE><FONT COLOR="#0000ff"></FONT> 
+</LI>
+<LI>Study the obtained matrix with the <B><I>contingency-stats</I></B> program
+    
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+		contingency-stats -i complexes_rm_00_ad_00_clusters_cc_complexes_matrix.tab \
+				  -o contigency_stats_ad_00_rm_00.tab
+</PRE><FONT COLOR="#0000ff"></FONT>  
+</LI>
+</OL>
+
+<P>
+Repeat these steps for <I>complexes_rm_10_ad_10.tab</I>, <I>complexes_rm_50_ad_100.tab</I> and <I>complexes_rm_00_ad_00_random.tab</I> and save the resulting files under the names <I>contigency_stats_ad_10_rm_10.tab</I>, <I>contigency_stats_ad_50_rm_100.tab</I>, <I>contigency_stats_ad_00_rm_00_random.tab</I>, respectively.
+
+<P>
+
+<H2><A NAME="SECTION00824000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+We will now compare the performances of MCL when applied to networks containing an increasing proportion of noise or no signal at all.
+
+<P>
+
+<H3><A NAME="SECTION00824100000000000000">
+Files description</A>
+</H3>
+
+<P>
+
+<H4><A NAME="SECTION00824110000000000000">
+Randomized network</A>
+</H4>
+As the real MIPS complexes network, this randomized network contains 12262 edges between 1095 nodes. With our parameter choice, no edge should be duplicated. However, as in <B><I>random-graph</I></B> the iterative process designed to avoid duplicated edges may not be totally efficient, some duplicated edges may subsist in the randomized network. 
+
+<P>
+
+<H4><A NAME="SECTION00824120000000000000">
+Altered networks</A>
+</H4>
+  This file is a classical NeAT tab-delimited edge list. However, there is a fifth column that indicates
+  whether the edge comes from the original graph (<I>original</I>) or was added randomly (<I>random</I>).
+
+<UL>
+<LI>As the MIPS complex newtwork, the network with 10% of added and removed edges contains 12262 edges between 1095 nodes, which is logical as we removed and added the same number of edge (in this case 1226).
+</LI>
+<LI>The network with 100% of added edges (+ 12262 edges) and 50% of removed edges (-6131 edges) contains 18393 edges between 1095 nodes. This graph contains thus more noisy than relevant edges.
+</LI>
+</UL>
+
+<P>
+
+<H4><A NAME="SECTION00824130000000000000">
+Contingency table</A>
+</H4>
+
+<P>
+See the previous chapter (Graph clustering) for a complete description of a contigency table.
+
+<P>
+
+<H4><A NAME="SECTION00824140000000000000">
+Contingency table metrics</A>
+</H4>
+ A list of metrics and their value. These will be described in the next section.
+
+<P>
+
+<H3><A NAME="SECTION00824200000000000000">
+Metrics description</A>
+</H3>
+
+<P>
+
+<H4><A NAME="SECTION00824210000000000000">
+Sensitivity, Positive predictive value and geometric accuracy</A>
+</H4>
+See the previous chapter (Graph clustering) for a complete description of a contigency table.
+
+<P>
+
+<H3><A NAME="SECTION00824300000000000000">
+Score comparaison</A>
+</H3>
+
+<P>
+The table summarizes the kind of values that should be obtained for the metrics described in the previous section. As the alteration and the randomization procedure are random processes, you should not obtain exactly the same results.
+
+<P>
+<TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT">#</TD>
+<TH ALIGN="LEFT"><B>true </B></TH>
+<TH ALIGN="LEFT"><B>ad10 / rm10</B></TH>
+<TH ALIGN="LEFT"><B>ad100 / rm50</B></TH>
+<TH ALIGN="LEFT"><B>random</B></TH>
+</TR>
+<TR><TH ALIGN="LEFT"><I>ncol</I></TH>
+<TD ALIGN="LEFT">125</TD>
+<TD ALIGN="LEFT">114</TD>
+<TD ALIGN="LEFT">713</TD>
+<TD ALIGN="LEFT">361</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>nrow</I></TH>
+<TD ALIGN="LEFT">220</TD>
+<TD ALIGN="LEFT">220</TD>
+<TD ALIGN="LEFT">220</TD>
+<TD ALIGN="LEFT">220</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>mean</I></TH>
+<TD ALIGN="LEFT">0.0569</TD>
+<TD ALIGN="LEFT">0.0624</TD>
+<TD ALIGN="LEFT">0.00998</TD>
+<TD ALIGN="LEFT">0.0197</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>Sn</I></TH>
+<TD ALIGN="LEFT">0.998</TD>
+<TD ALIGN="LEFT">0.985</TD>
+<TD ALIGN="LEFT">0.418</TD>
+<TD ALIGN="LEFT">0.291</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>PPV</I></TH>
+<TD ALIGN="LEFT">0.884</TD>
+<TD ALIGN="LEFT">0.836</TD>
+<TD ALIGN="LEFT">0.867</TD>
+<TD ALIGN="LEFT">0.459</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>acc</I></TH>
+<TD ALIGN="LEFT">0.941</TD>
+<TD ALIGN="LEFT">0.91</TD>
+<TD ALIGN="LEFT">0.642</TD>
+<TD ALIGN="LEFT">0.375</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>acc_g</I></TH>
+<TD ALIGN="LEFT">0.939</TD>
+<TD ALIGN="LEFT">0.907</TD>
+<TD ALIGN="LEFT">0.602</TD>
+<TD ALIGN="LEFT">0.365</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>Sn_w</I></TH>
+<TD ALIGN="LEFT">0.997</TD>
+<TD ALIGN="LEFT">0.992</TD>
+<TD ALIGN="LEFT">0.502</TD>
+<TD ALIGN="LEFT">0.157</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>PPV_w</I></TH>
+<TD ALIGN="LEFT">0.621</TD>
+<TD ALIGN="LEFT">0.62</TD>
+<TD ALIGN="LEFT">0.688</TD>
+<TD ALIGN="LEFT">0.244</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>acc_g_w</I></TH>
+<TD ALIGN="LEFT">0.787</TD>
+<TD ALIGN="LEFT">0.785</TD>
+<TD ALIGN="LEFT">0.588</TD>
+<TD ALIGN="LEFT">0.196</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>sep_r</I></TH>
+<TD ALIGN="LEFT">0.567</TD>
+<TD ALIGN="LEFT">0.507</TD>
+<TD ALIGN="LEFT">0.676</TD>
+<TD ALIGN="LEFT">0.192</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>sep_c</I></TH>
+<TD ALIGN="LEFT">0.998</TD>
+<TD ALIGN="LEFT">0.979</TD>
+<TD ALIGN="LEFT">0.208</TD>
+<TD ALIGN="LEFT">0.117</TD>
+</TR>
+<TR><TH ALIGN="LEFT"><I>sep</I></TH>
+<TD ALIGN="LEFT">0.752</TD>
+<TD ALIGN="LEFT">0.704</TD>
+<TD ALIGN="LEFT">0.375</TD>
+<TD ALIGN="LEFT">0.15</TD>
+</TR>
+</TABLE>
+
+<P>
+As expected, the value of the global parameters, the geometric accuracy (row acc_g), the weighted geometric accuracy (row acc_g_w) and the separation (row sep) decrease drastically as the network contain less and less relevant information.
+
+<P>
+We can observe that the sensitivity is more affected than the <I>PPV</I> and that the complex wise separation (sep_r) is more affected than the cluster wise separation. This is due to the fact that by increasing the noise, MCL increases the number of small sized clusters (ncol) too and, as we saw in previous section, this has an impact on the sensitivity.
+
+<P>
+Note that with a random graph, we would have a separation of 0.15 but an unweighted geometric accuracy of 0.365 which is far from being 0. The relatively good performances of MCL on the highly altered graph must thus be taken with caution as the gain in performances is only of 23%. This illustrates the interest of using negative controls.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html388"
+  HREF="Path_finding.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html384"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html378"
+  HREF="Graph_clustering.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html386"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html389"
+  HREF="Path_finding.html">Path finding</A>
+<B> Up:</B> <A NAME="tex2html385"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html379"
+  HREF="Graph_clustering.html">Graph clustering</A>
+ &nbsp; <B>  <A NAME="tex2html387"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

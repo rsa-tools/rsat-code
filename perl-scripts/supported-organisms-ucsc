@@ -1,0 +1,206 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-organisms-ucsc,v 1.4 2012/12/27 16:04:43 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+suuported-organism-uscs
+
+=head1 AUTHORS
+
+=over
+
+=item Jeremy Delerce
+
+=item Jacques.van-Helden@univ-amu.fr
+
+=back
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Retrieve organisn disponible on UCSC Genome browser
+(http://genome.ucsc.edu/).
+
+=head1 USAGE
+
+supported-organims-uscs.pl [-o file] [-v #] [...]
+
+Examples
+
+Retrieve mammal genome disponible on UCSC.
+
+ supported-organims-uscs.pl -taxon mammal
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+use Bio::Das; ## Required to access UCSC Genome Browser
+
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+	our $taxon = "";
+	our $id_ok = "";
+  our %outfile = ();
+  our $verbose = 0;
+
+  ## Parameters for connecting the DAS server
+  our $das_server_url ="http://genome.cse.ucsc.edu/cgi-bin/das";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Define the URL fo the DAS server
+#  our $das_server_url = $das_server;
+  &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
+
+  ## Open DAS client
+  my $das = Bio::Das->new(10);  # timeout of 10 sec
+  unless ($das) {
+    &RSAT::error::FatalError("Cannot establish connection to UCSC DAS server", $das_server_url);
+  }
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  #&Verbose() if ($main::verbose >= 1);
+
+  ## Send request to DAS server to obtain the list of supported organisms
+  &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
+  my @response = $das->dsn('http://genome.cse.ucsc.edu/cgi-bin/das');
+
+  for my $url (@response) {
+    if ($url->is_success) {
+	    my @dsns = $url->results;
+      foreach (@dsns) {
+        print $out $_->id,"\t",$_->description,"\n";
+		  } 
+    } else {
+	    &RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
+    }
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item	B<-o outputfile>
+
+The output file is in fasta format.
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+}
+

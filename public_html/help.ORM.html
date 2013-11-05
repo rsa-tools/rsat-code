@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+	<head>
+		<title>
+			RSA-tools: ORM analysis manual
+		</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<link rel="stylesheet" type="text/css" href="main.css" media="screen">
+	</head>
+<body class="info">
+<center>
+<h2>
+<a href="RSAT_home.cgi">RSA-tools</a> - <a href="ORM_form.cgi">ORM</a> manual
+</h2>
+</center>
+<h4>Name</h4>
+<blockquote>
+<p>
+ORM
+</p>
+<p>
+2006-2008 by Matthieu Defrance
+</p>
+</blockquote>
+<h4>Description</h4>
+<blockquote>
+Calculates oligonucleotide occurrences in a set of sequences, and detects locally overrepresented or underrepresented oligonucleotides.
+</blockquote>
+<h4>Options</h4>
+<blockquote>
+<p>
+<a name="sequence" id="sequence"></a> <b>Input sequence:</b><br />
+The sequence that will be analyzed. Multiple sequences can be entered at once with several <a href="help.formats.html">sequence formats</a>.
+</p>
+<p>
+<a name="sequence_format" id="sequence_format"></a> <b>Format:</b><br />
+Input sequence format. <a href="help.formats.html">Various standards</a> are supported.
+</p>
+<p>
+<a name="sequence_type" id="sequence_type"></a> <b>Sequence type:</b><br />
+Only A, C, G, and T residues are accepted. oligomers that contain undefined (N) or partly defined (IUPAC code) nucleotides are discarded from the countings.
+</p>
+<p>
+<a name="purge" id="purge"></a> <b>Purge sequences (highly recommended)</b><br />
+When checked, large duplicated regions (&gt;= 40 bp alignment with less than 3 mismatches) are filtered out before analysis. Purging is essential for any motif discovery process, to avoid a bias due to non-independence of sequences. Purging is performed with the programs <tt>mkvtree</tt> and <tt>vmatch</tt> developed by <a href="http://www.zbh.uni-hamburg.de/kurtz">Stefan Kurtz</a> (<a href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
+</p>
+<p>
+<a name="oligo_length" id="oligo_length"></a> <b>Motif length:</b><br />
+The analysis can be performed with:
+<ul>
+	<li>oligonuleotides of any size between 1 and 8. For the detection of regulatory sites, we recommend starting with an analysis of hexanucleotides (size=6), and scanning sizes between 4 and 8. When a pattern is significantly overrepresented, it generally appears from the analyses with various sizes.
+	</li>
+	<li>spaced motifs (dyads) with 2 monads of any size between 1 and 3 separated by a spacing. The spacing is the number of bases between the end of the fisrt element (monad) and the start of the second one.
+	A single integer value means that the spacing is fixed (example from=10 to=10). Variable spacing can be introduced by entering the from and to values. For example from 8 to 12 means that all occurrences of the dyad with a spacing between 8 and 12 will be counted together and their significance estimated globally. Warning, this is different from scanning one by one the spacing values 8, 9, 10, 11 and 12.
+
+	 </li>
+</ul>
+</p>
+<p>
+<a name="count_strands" id="count_strands"></a> <b>Count on:</b> (single or both strands)<br />
+By selecting "both strands", the occurrences of each oligonucleotide are summed on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+</p>
+<p>
+<a name="align" id="align"></a> <b>Align:</b> (Right or Left)<br />
+By selecting "Right", the positions in all input sequences are computed relatively to the right bound of each sequence. Align "Right" should be used when dealing with a set of upstream sequences that have different lengths. By selection "Left", the positions in all input sequences are computed relatively to the left bound of each sequence. Align "Left" should be used when dealing with a set of downstream sequences that have different lengths.
+</p>
+<p>
+<a name="window_width" id="window_width"></a> <b>Window Width:</b><br />
+Different size of of window can be used to search for locally overrepresented motif:
+<ul>
+	<li>No window. In this case, the search is performed like oligo-analysis or dyad-analysis and do not use <b>locally</b> overrepresention.</li>
+	<li>Window of fixed size. When this option is selected, orm search for overrepresented motifs in each window of the given size. When the option group windows is checked, windows can be merged to form longer windows. </li>
+	<li>Variable window size. The window size is automatically adjusted to best fit the data. This option can heavily slow down the search.</li>
+</ul>
+</p>
+<p>
+<a name="bgwindow_width" id="bgwindow_width"></a> <b>Background Window Width:</b><br />
+The background model can be fragmented in several segments of fixed width.
+</p>
+<p>
+<a name="noov" id="noov"></a> <b>Prevent overlapping matches</b><br />
+Periodic oligonucleotides (e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each occurrence of such a pattern strongly favors additional occurrences in its immediate vicinity. This introduces a bias to most statistics (binomial, log-likelihood). A simple way to correct for this bias is to prevent counting twice mutually overlapping occurrences.<br />
+For example, <tt>TATATATATATA</tt> would represent
+</p>
+<ul>
+<li>2 occurrences of <tt>TATATA</tt> when self-overlap is prevented
+</li>
+<li>5 occurrences of <tt>TATATA</tt> when self-overlap is allowed
+</li>
+</ul
+
+<p>
+<a name="exp_freq" id="exp_freq"></a> <b>Expected frequency:</b><br />
+Various probabilistic models can be used to estimate the expected frequency of each oligonucleotide.<br />
+</p>
+<blockquote>
+<b>Warning !</b> The results will be dramatically affected by the
+choice of background model (expected frequency for each word), which
+is the main specificity of this program. It has been shown that for
+the detection of regulatory sites in yeast upstream sequences, the
+best choice is to estimate the expected oligonucleotide frequencies on
+basis of the frequencies observed in the set of all non-coding
+upstream sequences from the genome. For the same purpose, choosing
+"equiprobable residues" would be totally inefficient, and "Residue
+frequencies from input sequence" works poorly.
+</blockquote>
+<p>
+<a name="background" id="background"></a>
+</p>
+<ul>
+<li>
+<b>Predefined background frequencies :</b> Compare oligo frequencies observed in the query sequence to those of a reference sequence (the background model). Pre-calculted tables are used to estimate expected oligonucleotide frequencies (background frequencies). These tables were obtained by counting all oligonucleotide frequencies (from size 1 to 8) in different sequence types, and this for each organism.
+<ul>
+<li>
+<b>upstream</b>: all upstream regions, allowing overlap with upstream ORFs.
+</li>
+<li>
+<b>upstream-noorf</b>: all upstream regions, preventing overlap with upstream ORFs (sequences are clipped to discard upstream ORF sequences).
+</li>
+<!--
+<li>
+<b>intergenic</b>: all the intergenic regions, including upstream and downstream sequences.
+</li>
+-->
+</ul>
+</li>
+<li>
+<b>Markov models:</b> expected word (oligonucleotide) frequencies are
+calculated on the basis of the subword frequencies observed in the
+input sequence set. This calculation takes into account the higher
+order dependencies between neighboring residues. For example, with a
+markov chain of order 4 :
+<blockquote>
+<pre>
+P(GATAAC) = P(GATAA) * P(C|GATAA) = P(GATAA) * P(ATAAC) / P(ATAA)
+</pre>
+</blockquote>Thus
+<blockquote>
+<pre>
+Expected(GATAAC) = observed(GATAA) * observed(ATAAC) / observed(ATAA)
+</pre>
+</blockquote>For words of size k, the highest possible order is k-2. A Markov order of 0 amounts to use observed residue frequencies for calculating expected oligomer frequencies (no dependency between neighbor residues). The higher the Markov order, the most stringent is the analysis: specificity is increased, but there si a loss of sensitivity, i.e. some relevant motifs might be overlooked. The optimal Markov order depends on the size of the sequence set. For small gene families (e.g. 10 sequences of 800bp), taking an order &gt; 1 would result in a loss of sensitivity. For sequence sets of 1Mb, a Markov chain of 3 is optimal for hexanucleotides.
+</li>
+<li>
+<b> Equiprobable residues from input sequence :</b> (Note: this is equivalent to a Markov chain with order 0).
+</li>
+</ul>
+<p>
+<a name="thresholds" id="thresholds"></a> <b>Thresholds:</b><br />
+Thresholds can be imposed to select the most significantly overrepresented motifs. When acting on probabilities, upper thresholds are used (i.e. values smaller than the threshold are returned). For occurrence numbers, matching sequences and significance indices, lower thresholds are used (i.e. all values higher than the threshold are returned). A threshold of 0 on occurrence significance index is selected by default. This is the most efficient way we found to automatically select the biologically significant regulatory sites, irrespective of oligonucleotide size, number and size of the sequences in the input set.
+</p>
+</blockquote>
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>../perl-scripts/compare-features</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:feedback@suse.de" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<ul>
+
+		<li><a href="#feature_format">Feature format</a></li>
+	</ul>
+
+	<li><a href="#output_types">OUTPUT TYPES</a></li>
+	<ul>
+
+		<li><a href="#inter">inter</a></li>
+		<li><a href="#diff">diff</a></li>
+		<li><a href="#stats">stats</a></li>
+	</ul>
+
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<ul>
+
+		<li><a href="#inter_diff">inter,diff</a></li>
+		<li><a href="#stats">stats</a></li>
+	</ul>
+
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>compare-features</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Compare two or more sets of features.</p>
+<p>This program takes as input several feature files (two or more), and
+calculates the intersection, union and difference between features. It
+also computes contingency tables and comparison statistics.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="jean_valery_turatsinze_jturatsi_ulb_ac_be" class="item">Jean Valery Turatsinze &lt;<a href="mailto:jturatsi@ulb.ac.be">jturatsi@ulb.ac.be</a>&gt;</a></strong>
+
+<dt><strong><a name="jacques_van_helden_jvanheld_bigre_ulb_ac_be" class="item">Jacques van Helden &lt;<a href="mailto:jvanheld@bigre.ulb.ac.be">jvanheld@bigre.ulb.ac.be</a>&gt;</a></strong>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>util</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<pre>
+
+compare-features -i inputfile_1 -i inputfile_2 [-i inputfile_3 ... ...] 
+[-o outputfile] [-v]</pre>
+<p>
+</p>
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>The default input format is .ft (the same as for feature-map). Other
+formats are also supported ($supported_input_formats).</p>
+<p>
+</p>
+<h2><a name="feature_format">Feature format</a></h2>
+<p>Each feature is represented by a single line, which 
+should provide the following information:</p>
+<p>Input file columns:</p>
+<ol>
+<li><strong><a name="label" class="item">map label (eg gene name)</a></strong>
+
+<li><strong><a name="feature_type" class="item">feature type</a></strong>
+
+<li><strong><a name="identifier" class="item">feature identifier (ex: GATAbox, Abf1_site)</a></strong>
+
+<li><strong><a name="strand" class="item">strand (D for Direct, R for Reverse),</a></strong>
+
+<li><strong><a name="feature_start_position" class="item">feature start position</a></strong>
+
+<li><strong><a name="feature_end_position" class="item">feature end position</a></strong>
+
+<li><strong><a name="optional_description" class="item">(optional) description</a></strong>
+
+<li><strong><a name="optional_score" class="item">(optional) score</a></strong>
+
+<p>The standard input format assumes that these topics 
+are provided in this order, separated by tabs. 
+Start and end positions can be positive or negative.</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="output_types">OUTPUT TYPES</a></h1>
+<p>
+</p>
+<h2><a name="inter">inter</a></h2>
+<p>Intersections between features (pairwise comparisons). For each
+intersection between two features, a feature of type &quot;inter&quot; is
+created.</p>
+<p>The ID of an &quot;inter&quot; feature indicates the files to which the
+intersecting features belong. For example &quot;f1.and.f3&quot; means that the
+intersection feture was obtained from a feature of the first input
+file and a feature of the second input file.</p>
+<p>
+</p>
+<h2><a name="diff">diff</a></h2>
+<p>Pairwise differences between files. For each pair of file, a feature
+of type &quot;diff&quot; is created.</p>
+<p>The ID of the &quot;diff&quot; feature indicates the number of the files
+containing and not containing the feature, respezctively. For example,
+the ID &quot;f1.not.f3&quot; indictaes a feature found in file 1 and without any
+intersection with features oof file 3.</p>
+<p>
+</p>
+<h2><a name="stats">stats</a></h2>
+<p>Calculate statistics about the intersections between features of each
+pair of input file.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>The output depends on the return type(s), which can be specified with
+the option -return.</p>
+<p>
+</p>
+<h2><a name="inter_diff">inter,diff</a></h2>
+<p>The intersection and differences are reported as features. Different
+output formats can be specified with the option -oformat (supported: $supported_output_formats).</p>
+<p>
+</p>
+<h2><a name="stats">stats</a></h2>
+<p>Matching statistics are exported as tab-delimited tables. Each row is
+starting with a comment character ';', so that the statistics are
+ignored when the program is used as input by feature-map.</p>
+<p>These comment characters can easily be removed if the result has to be
+used by other programs. Try for example:</p>
+<p>perl -pe 's/^;//' outfile</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+</li>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+</li>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong>
+
+<dd>
+<p>display options</p>
+</dd>
+</li>
+<dt><strong><a name="i_inputfile" class="item"><strong>-i inputfile</strong></a></strong>
+
+<dd>
+<p>This option can be used iteratively to specify several input files.
+It must be used at least 2 times, since the comparison requires at
+least two feature files.</p>
+</dd>
+</li>
+<dt><strong><a name="files_inputfile_1_inputfile_2" class="item"><strong>-files inputfile_1 inputfile_2 ...</strong></a></strong>
+
+<dd>
+<p>Specify multiple input files. All the arguments following the option
+-files are considered as input files.</p>
+</dd>
+</li>
+<dt><strong><a name="ref_reference_file" class="item"><strong>-ref reference_file</strong></a></strong>
+
+<dd>
+<p>Specify a reference file. Only one reference file can be specified.</p>
+</dd>
+<dd>
+<p>All the other input files (specified with -i or -files) are then
+compared to the reference file. When the option '-return stats' is
+combined with a reference fiile, some additional statistics are
+calculated (PPV, sensitivity, accuracy).</p>
+</dd>
+</li>
+<dt><strong><a name="o_outputfile" class="item"><strong>-o outputfile</strong></a></strong>
+
+<dd>
+<p>If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.</p>
+</dd>
+</li>
+<dt><strong><a name="oft_outputfeaturefile" class="item"><strong>-oft outputfeaturefile</strong></a></strong>
+
+<dd>
+<p>In addition to the output, export a feature file containing
+the type of the feature, and chromosomal location of each features.
+This option is compatible with -return inter.</p>
+</dd>
+</li>
+<dt><strong><a name="iformat_input_format" class="item"><strong>-iformat input_format</strong></a></strong>
+
+<dd>
+<p>Input feature format (Supported: $supported_input_formats)</p>
+</dd>
+</li>
+<dt><strong><a name="oformat_output_format" class="item"><strong>-oformat output_format</strong></a></strong>
+
+<dd>
+<p>Output feature format (Supported: $supported_output_formats)</p>
+</dd>
+</li>
+<dt><strong><a name="self" class="item"><strong>-self</strong></a></strong>
+
+<dd>
+<p>Also perform comparison between features in the same file
+(self-comparison). This can be useful to detect redundancy between
+annotated features.</p>
+</dd>
+</li>
+<dt><strong><a name="return_output1_output2" class="item"><strong>-return output1[,output2,...]</strong></a></strong>
+
+<dd>
+<p>Specify the output type(s).</p>
+</dd>
+<dd>
+<p>Supported output types: stats,inter,diff</p>
+</dd>
+</li>
+<dt><strong><a name="lth_parameter_value" class="item"><strong>-lth parameter value</strong></a></strong>
+
+<dd>
+<p>Specify the value of the lower threshold on some parameter.</p>
+</dd>
+<dd>
+<p>Examples:</p>
+</dd>
+<dl>
+<dt><strong><a name="lth_inter_len_3" class="item">-lth inter_len 3</a></strong>
+
+<dt><strong><a name="lth_inter_cov_0_8" class="item">-lth inter_cov 0.8</a></strong>
+
+</dl>
+<p>Supported parameters :</p>
+<dl>
+<dt><strong><a name="inter_len" class="item">inter_len</a></strong>
+
+<dd>
+<p>Length (in residues) of the intersection between two features.</p>
+</dd>
+</li>
+<dt><strong><a name="inter_cov" class="item">inter_cov</a></strong>
+
+<dd>
+<p>Coverage of the intersection between two features. The coverage
+(inter_cov) is defined as</p>
+</dd>
+<dd>
+<p>inter_cov = inter_len / inter_pair</p>
+</dd>
+<dd>
+<p>where inter_len is the length of the intersection, pair_len is the
+total length covered by the pair of intersecting features.</p>
+</dd>
+</li>
+</dl>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="feature_map" class="item">feature-map</a></strong>
+
+<dt><strong><a name="convert_features" class="item">convert-features</a></strong>
+
+</dl>
+
+</body>
+
+</html>

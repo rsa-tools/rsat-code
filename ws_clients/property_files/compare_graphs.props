@@ -1,0 +1,5 @@
+Rinputgraph=test_1.tab
+Qinputgraph=test_2.tab
+return=intersection
+Qwcol=3
+Rwcol=3

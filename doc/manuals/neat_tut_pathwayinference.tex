@@ -1,0 +1,189 @@
+\chapter{Pathway inference}
+
+\section{Introduction}
+The idea of pathway inference is to connect a given set of seed nodes
+in the network and thereby extracting a sub-network that is optimal
+according to certain criteria (e.g. minimal weight or maximal relevance).\\
+In the context of biological networks, the goal is to obtain a valid pathway for a set
+of biological entities of interest, e.g. genes from microarray data or compounds from metabolomic data.
+For instance, genes whose products participate in the same metabolic pathway are often co-expressed or grouped
+together in operons or regulons. We may try to reconstruct this metabolic pathway by associating
+the gene products to relevant reactions and connecting these reactions in a metabolic network.
+The resulting sub-network may be a known metabolic pathway or an unknown pathway consisting of known
+pathways or known reactions and compounds. In the context of microarray data, pathway inference from a
+set of co-expressed genes may predict which pathways are up- or down-regulated.\\
+
+\section{Inferring a pathway for a set of co-expressed genes}
+
+As an example, we take the case study discussed in \cite{vanHelden01}.
+In this case study, a pathway is assembled from genes in the cell-cycle regulated MET cluster \cite{Spellman98}.
+Results described in this tutorial have been obtained with KEGG RPAIR version 49.0.
+
+\subsection{Protocol for the web server}
+
+\begin{enumerate}
+
+\item In the \neat  menu, select the entry \program{Pathwayinference}.
+
+\item Copy-paste the gene names below in the seed nodes text field:\\
+Met3\\
+Met14\\
+Met16\\
+Met5\\
+Met10\\
+Met17\\
+Met6
+
+\item Select "Genes/Enzymes" as identifier type.
+
+\item In the text field "Genes are from organism" type sce, the KEGG abbreviation for \textit{Saccharomyces cerevisiae}.
+
+\item Push the \option{GO} button.
+
+\end{enumerate}
+
+The result of the mapping of the given genes to KEGG RPAIRS (reactant pairs, \cite{Kotera2004}) is displayed.
+Since more than one reactant pair is associated to each gene, we end up with a group of reactant pair groups.
+Note that each gene (except for Met5) is associated to one or more EC numbers, each of which has been mapped
+to its corresponding reactions in KEGG, which have in turn be mapped to their corresponding reactant pairs.\\
+
+You can now select how to deal with the groups. This is a sensitive choice that strongly
+affects the inferred pathway and which depends on your data.
+In general, if you keep the original groups, you assume implicitely that only
+a subset of the reactions associated to the given gene will be active in the pathway.
+If you think that all reactions associated to a gene might be active,
+choose "Treat each group member as a separate group" (the default treatment).
+
+For the study case, we recommend you to keep the default.
+
+Push \option{GO}. In a few minutes, the result page will be displayed.
+
+
+\subsection{Protocol for the command-line tools}
+
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+Pathwayinference is a web application that calls the pathwayinference web service.
+You can use the Pathwayinference command line tool on the networks provided in the
+network repository (check the Pathwayinference Manual for this) to reproduce
+results obtained with the web application on command line.
+Note that the mapping of genes to reactions and group treatment can only be done via the web application.
+
+Type the following command in one line:
+{\color{Blue} \begin{footnotesize}
+		\begin{verbatim}
+java -Xmx800m graphtools.algorithms.Pathwayinference -g RPAIRGraph_allRPAIRs_undirected.txt
+	     -s 'RP00016#RP00182/RP00647/RP00561/RP00143#RP00960#RP04049/RP00096#RP00168#
+	     RP04532/RP00003/RP00446/RP00946#RP00857/RP04474/RP00050#RP04533'
+	     -f flat -b -y con -P -u -x 0.05
+	\end{verbatim} \end{footnotesize}
+	}
+
+\subsection{Interpretation of the results}
+
+The resulting sub-network contains a large part of the pathway given in \cite{vanHelden01}.
+Note that the chosen algorithm (kWalks in combination with Takahashi \& Matsuyama) may return one
+from a set of solutions, so your solution may deviate from the one described here.
+Despite of this disadvantage, Takahashi \& Matsuyama in combination with kWalks
+is the default algorithm, because it performed best in our evaluation.
+If your result deviates from the one described below,
+repeat the inference with the algorithm "repetitive REA".
+
+The pathway described in the study case unites the sulfur assimilation and methionine biosynthesis pathways. It consists of the following steps: \\
+Sulfate 2.7.7.4 Adenylyl sulfate 2.7.1.25 3'phosphoadenylylsulfate 1.8.99.4 sulfite 1.8.1.2 sulfide (alias hydrogen sulfide) 4.2.99.10 Homocysteine 2.1.1.14 L-Methionine\\
+
+The matching parts of the inferred pathway are:\\
+
+\textbf{RP00016} 3'-Phosphoadenylyl sulfate \textbf{RP00446} Adenylyl sulfate \textbf{RP00960}\\
+and\\
+\textbf{RP00960} Sulfite \textbf{RP00168} Hydrogen sulfide RP01406 L-Homocysteine \textbf{RP00096}\\
+Seeds are printed in bold.
+
+In addition, the inferred pathway contains a branch that leads
+from 3'-Phosphoadenylylselenate to Adenylylselenate.
+This branch mirrors sulfur incorporation, but instead of sulfur, selenium is incorporated.\\
+
+The presence of both the selenium and sulfur incorporation pathways in the inferred sub-network
+reflects the well-known fact that selenium might replace sulfur in metabolism.\\
+
+This example demonstrated that given a set of differentially expressed genes from
+micro-array data and a metabolic network, it is possible to infer a metabolic pathway
+that might be affected by altered expression of the query genes.
+
+\section{Summary}
+
+Pathwayinference allows extraction of sub-networks from larger networks given a set of seed nodes. The web application
+is tailored to metabolic networks, but non-metabolic networks can be processed as well.
+
+\section{Strengths and Weaknesses of the approach}
+
+\subsection{Strengths}
+
+\begin{enumerate}
+\item Sub-network extraction can be applied to any biological network.
+
+\item It can discover unknown pathways consisting of known components.
+
+\item It can be fine-tuned to favor certain nodes. For instance, in a global metabolic network,
+      reactions/compounds known to occur in certain species might receive a weight much lower than other nodes,
+      to favor extraction of species-specific sub-networks.
+
+\item Groups of seed nodes can be specified to reflect AND/OR relationships between seeds.
+
+\item The web application allows to infer metabolic pathways
+      in metabolic networks extracted from the two major metabolic
+      databases KEGG \cite{Kanehisa2008} and MetaCyc \cite{biocyc}.
+
+\item For metabolic networks from MetaCyc or KEGG, the web application supports compounds, reactions, reactant pairs, EC numbers or gene identifiers
+      as seed nodes and handles the required mapping of these seeds to reactions, reactant pairs and compounds.
+
+\item For metabolic networks from MetaCyc or KEGG, the web application performs a
+      mapping of the inferred sub-network to known pathways stored MetaCyc or KEGG respectively.
+
+\item Metabolic sub-network extraction has been validated on 71 metabolic pathways extracted from MetaCyc.
+\end{enumerate}
+
+\subsection{Weaknesses}
+
+\begin{enumerate}
+
+\item In general, the accuracy of pathway inference depends on the quality of the given network and the number of seeds available.
+
+\item Spiral-shaped metabolic pathways such as fatty acid biosynthesis can only be partly inferred.
+
+\item In the densely connected region of metabolic networks, metabolic pathway inference cannot well distinguish alternative pathways
+without a large number of seed nodes.
+
+\item The algorithms are too time-consuming to estimate p-values by computing a score distribution (where the score would be the sub-network weight)
+for randomly chosen seed nodes on the fly. We envisage to pre-compute these distributions for the pre-loaded networks.
+
+\item Only one sub-network is suggested. We envisage to compute a list of them ranked by their weight.
+
+\end{enumerate}
+
+\section{Troubleshooting}
+
+\begin{enumerate}
+
+\item Pathwayinference parameter error.
+
+	You provided insufficient or invalid parameters. Please check the pathwayinference manual page.
+
+\item You did not specify enough valid seed node groups! Pathwayinference needs at least two valid seed node groups.
+
+	For the pre-loaded metabolic networks from KEGG and MetaCyc, each seed
+	is mapped to data (e.g. compound/reaction identifiers, EC numbers) from these two databases.
+	If the seeds do not map anything, they are considered to be invalid.
+	At least two valid seed groups are needed to infer a network.
+
+\item The node with identifier ID is not part of the input graph.
+
+	Make sure that your input network contains the node with the given identifier.
+
+\item Pathwayinference failed to extract a subgraph.
+
+    None of the seed node groups could be connected to any other seed node group. Each might belong to a
+    separate component of the input network or mutual exclusion (in RPAIR networks) might prevent the connection of
+    the seed groups.
+
+\end{enumerate}

@@ -1,0 +1,412 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: permute-table,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+
+=pod
+
+=head1 NAME
+
+permute-table
+
+=head1 DESCRIPTION
+
+Permute the entries of a table. By default, the program permutes columns and
+rows, but the options -col and -rows allow to permute only columns or rows,
+respectively.
+
+This function is useful for checking random expectations of programs such as
+compare-profiles.
+
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+permute-table [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+A tab-delimited text file. 
+
+Lines starting with a semi-column ";" are considered as
+comment. Comment lines are printed in the output.
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited table with the same number of entries as in the input
+table.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::stats;
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+## Default values
+local $sep = "\t";
+local $row_names = 0;
+local $header = 0;
+local @header = ();
+local $permute_cols = 0;
+local $permute_rows = 0;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+local @values = ();
+my @row_len = ();
+my @row_names = ();
+($in) = &OpenInputFile($infile{input});
+
+## Read the header
+if ($header) {
+    $header = <$in>;
+    chomp($header);
+    $header =~ s/\r//g;
+    @header = split($sep, $header)
+}
+
+my $l = 0;
+my $row_index = -1; ## effective rowindex (skipping comments, header and empty rows)
+my $max_fields = 0;
+while (my $line = <$in>) {
+    $l++;
+    ## echo the comment lines
+    if ($line =~ /^;/) {
+	print $out $line;
+	next;
+    }
+    next unless ($line =~ /\S/);
+    chomp($line);
+    $line =~ s/\r//g; ## Suppress Windows-specific carriage return
+
+    $row_index++; ## update effective row index
+    my @fields =  split($sep, $line);
+
+#    &RSAT::message::Debug($line) if ($main::verbose >= 10);
+
+    ## extract row name
+    if ($row_names) {
+	push @row_names, shift @fields;
+    }
+
+    ## Number of elements in this row
+    push @row_len, scalar(@fields);
+
+    $max_fields = &RSAT::stats::max($max_fields, scalar(@fields));
+
+    ## Take the elements
+    if ($permute_rows) {
+      push @values,  &RSAT::stats::permute(@fields);
+    } elsif (($permute_cols) || ($permute_entire_cols)){
+      foreach my $c (0..$#fields) {
+	push @{$values->[$c]}, $fields[$c];
+      }
+    } else {
+	push @values,  @fields;
+    }
+
+#    &RSAT::message::Debug(join ("\t", "Reading table", "line: ".$l, "rows: ".scalar(@row_len), "cells: ".scalar(@fields), "total cells: ".scalar(@values))) if ($main::verbose >= 10);
+}
+close $in if ($infile{input});
+
+&RSAT::message::TimeWarn(join ("\t", "Finished reading the table", "rows: ".scalar(@row_len), "cells: ".scalar(@values))) if ($main::verbose >= 1);
+#die;
+
+
+if ($permute_rows) {
+    ## done above
+
+} elsif ($permute_cols) {
+  ## Permute elements inside each column of the input table
+    my $perm_col_values;
+    foreach my $c (0..($max_fields-1)) {
+      my @values = @{$values->[$c]};
+      my @perm_values = &RSAT::stats::permute(@values);
+      push @{$perm_col_values[$c]}, @perm_values;
+    }
+    foreach my $r (0..$row_index) {
+	foreach my $c (0..($max_fields-1)) {
+	    push @values, ${$perm_col_values[$c]}[$r];
+	}
+    }
+
+} elsif ($permute_entire_cols) {
+  ## Permute entire columns of the input table
+    my $perm_col_values;
+    my @cols = 0..($max_fields-1);
+    my @perm_col = &RSAT::stats::permute(@cols);
+    foreach my $c (@cols) {
+      my @perm_values = @{$values->[$perm_col[$c]]};
+      push @{$perm_col_values[$c]}, @perm_values;
+    }
+    foreach my $r (0..$row_index) {
+	foreach my $c (0..($max_fields-1)) {
+	    push @values, ${$perm_col_values[$c]}[$r];
+	}
+    }
+} else {
+    @values = &RSAT::stats::permute(@values);
+}
+
+################################################################
+## Print the output
+
+## Print the header
+if ($header) {
+    print $out join($sep, @header), "\n";
+}
+
+## Print the table
+for my $r (0..$#row_len) {
+    warn join ("\t", "Printing row", $r, $row_len[$r], $row_names[$r]),"\n" if ($main::verbose >= 10);
+    if ($row_names) {
+	print $out $row_names[$r], $sep;
+    }
+    my @next = splice(@values, 0, $row_len[$r]);
+    print $out (join $sep, @next), "\n";
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+display options
+
+=cut
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ## Permute columns only
+=pod
+
+=item B<-col>
+
+Permute columns only, i.e. permute the elements within each column separately.
+
+=cut
+	} elsif ($ARGV[$a] eq "-col") {
+	    $permute_cols = 1;
+	    &RSAT::error::FatalError("The options -col and -row are mutually exclusive") if ($permute_rows);
+	    
+	    ## Permute entire columns of the matrix
+=pod
+
+=item B<-entire_col>
+
+Permute entire columns of the matrix. 
+
+=cut
+	} elsif ($ARGV[$a] eq "-entire_col") {
+	    $permute_entire_cols = 1;
+	    
+	    ## Permute rows only
+=pod
+
+=item B<-row>
+
+Permute rows only, i.e. permute the elements within each row separately.
+
+=cut
+	} elsif ($ARGV[$a] eq "-row") {
+	    $permute_rows = 1;
+	    &RSAT::error::FatalError("The options -row and -col are mutually exclusive") if ($permute_cols);
+	    
+	    ## Column separator
+=pod
+
+=item	B<-sep separator>
+
+Column separator (by default, the tabulation character \t).
+
+=cut
+	} elsif ($ARGV[$a] eq "-sep") {
+	    $sep = $ARGV[$a+1];
+	    
+	    ## Header
+=pod
+
+=item	B<-header>
+
+Header. When this option is used, the first (non-comment) row of the
+input file is used as header. The header is not permuted. 
+
+=cut
+	} elsif ($ARGV[$a] eq "-header") {
+	    $header=1;
+
+	    ## Header
+=pod
+
+=item	B<-rownames>
+
+
+Row names. When this option is used, the first column of the input
+file is supposed to contain row names, and is not permuted.
+
+=cut
+	} elsif ($ARGV[$a] eq "-rownames") {
+	    $row_names=1;
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; permute-table ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut

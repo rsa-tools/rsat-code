@@ -1,0 +1,204 @@
+; compare-matrices  -v 1 -file1 DemoCompMat.txt -file2 $RSAT/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf -format transfac -lth Ncor2 0.7 -lth w 3 -mode profiles -return matrix_id,cor,Ncor,Ncor1,Ncor2,w,offset,strand -o benchmark_result_slow.tab
+; Program version       	1.117
+; Input files
+;	file2 	/no_backup/rsa-tools/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf
+;	file1 	DemoCompMat.txt
+; Output files
+;	match_table_txt	benchmark_result_slow.tab
+;	html_index   	benchmark_result_slow_index.html
+;	output_prefix	benchmark_result_slow
+;	match_table_html	benchmark_result_slow.html
+; Matrices
+;	file1	6 matrices	DemoCompMat.txt
+;	file2	130 matrices	/no_backup/rsa-tools/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf
+;	file1	1	12	392	tgCATrACAAwr
+;	file1	2	12	565	wtATGCAAATgw
+;	file1	3	11	246	wtATGyTAAtk
+;	file1	4	20	233	byCwTTGwyATGCAaATGdr
+;	file1	5	21	56	srTATGyGCATATGCAwATrw
+;	file1	6	11	663	AAAAAAAAAAA
+;	file2	1	9	185	GCCcbrrGs
+;	file2	2	6	20	CACGTG
+;	file2	3	6	24	yGCGTG
+;	file2	4	22	24	hwwrGmACryyvtGTwCchrms
+;	file2	5	11	40	CTAGGTGTGAA
+;	file2	6	20	12	drvkcasygrwGcRkrrCsr
+;	file2	7	14	13	TGAmCTTTGmmCyt
+;	file2	8	12	39	rrrTGCAATmcc
+;	file2	9	8	10	TTTsGCGC
+;	file2	10	11	23	TTAyGTAAyrt
+;	file2	11	11	10	waRTdRWkbyc
+;	file2	12	10	28	varcCGGAAr
+;	file2	13	14	27	aAGAyAAGATAAba
+;	file2	14	14	28	bmaasRTAAACAaw
+;	file2	15	8	20	GTAAACAw
+;	file2	16	8	16	vshvwGTA
+;	file2	17	8	23	wwdayATA
+;	file2	18	5	53	gGATr
+;	file2	19	6	63	wGATwg
+;	file2	20	10	53	ymAATCacwg
+;	file2	21	11	18	tAwTGTTTATw
+;	file2	22	12	47	gwwTRTTTdTTY
+;	file2	23	12	31	ksdTrTTTrTwT
+;	file2	24	12	18	krTTACryAAth
+;	file2	25	14	21	gGTTAATwwTTamc
+;	file2	26	12	54	gCGCAGCTGCKy
+;	file2	27	12	20	rAAAryGAAAsy
+;	file2	28	18	12	sGAAAGyGAAAsyrwwwm
+;	file2	29	10	58	CTATTTwTAG
+;	file2	30	12	16	mrrCArCwGswG
+;	file2	31	6	20	yGGGGA
+;	file2	32	10	16	bkAKGGGkrr
+;	file2	33	10	17	rrmCACGTGr
+;	file2	34	11	21	rAsCACGTGGt
+;	file2	35	16	116	myyrrCCAATsrgmrs
+;	file2	36	10	38	GGGrmTTyCC
+;	file2	37	7	17	wTAAktg
+;	file2	38	20	28	sTrGGTCAcsgTGACCyAcW
+;	file2	39	8	31	wgTCAykb
+;	file2	40	30	21	rAAwawwwkcmmmwacymcmcymmcmcymc
+;	file2	41	14	43	TTyACGCwTsAvTk
+;	file2	42	12	18	hcATCAATCAww
+;	file2	43	10	25	wwcwAGGTCA
+;	file2	44	14	36	wwwAwbTAGGTCAr
+;	file2	45	20	11	MCMCmAMmCAmCMmCmmmsm
+;	file2	46	15	10	RGGTCAwcGrGTTCA
+;	file2	47	5	59	AATTA
+;	file2	48	9	20	ACCGGAAGy
+;	file2	49	9	76	rAACAATrG
+;	file2	50	9	31	yhyATTGTs
+;	file2	51	7	49	wsmGGAA
+;	file2	52	12	46	GCCCWTATAwGG
+;	file2	53	9	28	kwwaACAAw
+;	file2	54	7	23	wAACAAT
+;	file2	55	20	10	bayyTCCCAkmaTkCmwyGm
+;	file2	56	6	34	sATGAC
+;	file2	57	12	12	yRCATTCCwsbg
+;	file2	58	12	44	mgAmCAKMTGkT
+;	file2	59	10	29	srTCTGGmwt
+;	file2	60	7	30	CACGTGr
+;	file2	61	6	17	rCCATc
+;	file2	62	6	40	ywTCCk
+;	file2	63	8	51	grCvGTTG
+;	file2	64	10	17	sGGrmwTTCC
+;	file2	65	6	41	CACCTk
+;	file2	66	11	18	GGGGrwyYCCC
+;	file2	67	20	17	msGRACATGyCCGGGCATGT
+;	file2	68	10	18	gGGraTTTCC
+;	file2	69	15	389	sTATAWAwrssssss
+;	file2	70	10	59	wwmCwTwkvt
+;	file2	71	11	12	RGGGTwwCAGc
+;	file2	72	18	9	rrrAacAtwmyGTyCtrw
+;	file2	73	13	67	rGgbCAAAGkyCa
+;	file2	74	17	25	AAAGGTCAAAGGTCAAc
+;	file2	75	15	33	gsmmCCyWrGGkkkm
+;	file2	76	8	15	GCTGAcks
+;	file2	77	14	16	TGGCAssrwGCCAA
+;	file2	78	9	24	ytrAGTRsm
+;	file2	79	7	20	aTACTTA
+;	file2	80	8	38	TAATTrsy
+;	file2	81	6	16	mTCCAC
+;	file2	82	10	20	bwACGTCCGc
+;	file2	83	6	31	cTAATk
+;	file2	84	7	43	mCAAcms
+;	file2	85	13	20	wAATTAATTAwyy
+;	file2	86	9	44	waywTCCkk
+;	file2	87	19	913	ygrCCAsyAGrkGGCrsyr
+;	file2	88	18	2949	ctgskgsggrswGATAAg
+;	file2	89	12	3656	rgsyCAAGGTCA
+;	file2	90	15	1369	ywTTswyATGCAaAt
+;	file2	91	15	669	cywTTGTyaTgcaaA
+;	file2	92	10	613	TTCCaGGAAr
+;	file2	93	14	4090	CCrGyyyrarCCrG
+;	file2	94	14	481	sssgsCbvGGCCTs
+;	file2	95	10	227	mgCACGTGGc
+;	file2	96	11	897	TGTTTrCwywg
+;	file2	97	18	105	GGAAGGAAGGAAGGAAGG
+;	file2	98	11	993	CCGGAAGygvc
+;	file2	99	11	4000	rsWGATAAgrr
+;	file2	100	10	4349	wGGGyGkGGc
+;	file2	101	21	1606	tTCAGcACCatGGACAGckcC
+;	file2	102	11	2000	ktyTGTGGttw
+;	file2	103	15	2085	cayTTCChrGAAryc
+;	file2	104	10	438	msCACGTGGc
+;	file2	105	12	811	TRTTTACwywgg
+;	file2	106	20	475	vkscmaGGtCAcccTGaCCy
+;	file2	107	15	864	strGGgcArAGGkcA
+;	file2	108	11	20	rTGACwmAGCA
+;	file2	109	6	27	ATyAAA
+;	file2	110	7	26	TTTTCCA
+;	file2	111	12	9	yyAATrwTTAAC
+;	file2	112	10	25	mCyCmaGGGA
+;	file2	113	12	24	TGymwGGGGkcr
+;	file2	114	8	13	CAGGAArT
+;	file2	115	8	13	kGTAAACA
+;	file2	116	8	16	CdbwAATk
+;	file2	117	17	23	rGkTCAysgrsAGKTCA
+;	file2	118	8	14	aAGGTCAc
+;	file2	119	6	6912	yTGGCa
+;	file2	120	11	15	yGCGTGGGcGk
+;	file2	121	14	18	GGGGCCcwmGGGGG
+;	file2	122	7	23	cAAGCTT
+;	file2	123	7	42	AGGAAGT
+;	file2	124	8	11	TGACGYcA
+;	file2	125	7	18	TGAmTCA
+;	file2	126	10	35	CCCCkCCCCC
+;	file2	127	9	18	TtkygCAAy
+;	file2	128	18	357	cwrGGTCAsgkTGmCCys
+;	file2	129	8	104	vbACGTGc
+;	file2	130	6	22	CwTTGT
+; Threshold values
+;	Parameter      	Lower	Upper
+;	w              	3	none
+;	ncor2          	0.7	none
+; Column content
+;	1	id1          	Identifier of the first matrix
+;	2	id2          	Identifier of the second matrix
+;	3	name1        	Name of the first matrix
+;	4	name2        	Name of the second matrix
+;	5	cor          	Pearson coefficient of correlation between frequency matrices
+;	6	Ncor         	Normalized correlation. Ncor = cor * Wr
+;	7	Ncor1        	Normalized correlation. Ncor1 = cor * w / w1
+;	8	Ncor2        	Normalized correlation. Ncor2 = cor * w / w2
+;	9	w1           	Width of the first matrix
+;	10	w2           	Width of the second matrix
+;	11	w            	Alignment length (number of overlapping columns between matrix 1 and matrix 2, as a function of the offset)
+;	12	W            	Total alignment length (overlapping + non-overlapping columns). W = w1 + w2 - w
+;	13	Wr           	Relative alignment length (overlap divided by the total alignemnt length). Wr = w/W
+;	14	wr1          	Alignment length relative to the width of the first matrix. wr1 = w/w1
+;	15	wr2          	Alignment length relative to the width of the second matrix. wr2 = w/w2
+;	16	strand       	"strand", i.e. orientation of matrix 2 relative to matrix 1 (D=direct;  R=reverse)
+;	17	offset       	shift of the second matrix relative to the first matrix (negative:left; positive: right)
+;	18	consensus1   	IUPAC consensus of matrix 1 (dots represent non-aligned columns)
+;	19	consensus2   	IUPAC consensus of matrix 2 (dots represent non-aligned columns)
+#id1	id2	name1	name2	cor	Ncor	Ncor1	Ncor2	w1	w2	w	W	Wr	wr1	wr2	strand	offset	consensus1	consensus2
+oligos_7nt_mkv5_m1	MA0067.1	oligos_7nt_mkv5_m1	Pax2	0.702	0.468	0.468	0.702	12	8	8	12	0.6667	0.6667	1.0000	R	1	.gCATrACA...	VMRTGACW              
+oligos_7nt_mkv5_m1	MA0077.1	oligos_7nt_mkv5_m1	SOX9	0.790	0.486	0.527	0.702	12	9	8	13	0.6154	0.6667	0.8889	D	4	....TrACAAwr	rAACAATr.                     
+oligos_7nt_mkv5_m1	MA0078.1	oligos_7nt_mkv5_m1	Sox17	0.914	0.457	0.533	0.711	12	9	7	14	0.5000	0.5833	0.7778	R	5	.....rACAAwr	SACAATR..                     
+oligos_7nt_mkv5_m1	MA0084.1	oligos_7nt_mkv5_m1	SRY	0.745	0.559	0.559	0.745	12	9	9	12	0.7500	0.7500	1.0000	D	2	..CATrACAAw.	kwwaACAAw                     
+oligos_7nt_mkv5_m1	MA0087.1	oligos_7nt_mkv5_m1	Sox5	0.828	0.483	0.483	0.828	12	7	7	12	0.5833	0.5833	1.0000	D	4	....TrACAAw.	wAACAAT                       
+oligos_7nt_mkv5_m1	MA0089.1	oligos_7nt_mkv5_m1	NFE2L1::MafG	0.842	0.421	0.421	0.842	12	6	6	12	0.5000	0.5000	1.0000	D	2	..CATrAC....	sATGAC                        
+oligos_7nt_mkv5_m1	MA0142.1	oligos_7nt_mkv5_m1	Pou5f1	0.944	0.755	0.944	0.755	12	15	12	15	0.8000	1.0000	0.8000	R	-3	tgCATrACAAwr	...TGCATRWSAAWR               
+oligos_7nt_mkv5_m1	MA0143.1	oligos_7nt_mkv5_m1	Sox2	0.962	0.769	0.962	0.769	12	15	12	15	0.8000	1.0000	0.8000	R	-2	tgCATrACAAwr	..TGCATRACAAWR.               
+oligos_7nt_mkv5_m1	MA0442.1	oligos_7nt_mkv5_m1	SOX10	0.945	0.472	0.472	0.945	12	6	6	12	0.5000	0.5000	1.0000	R	6	......ACAAwr	ACAAWG                        
+oligos_7nt_mkv5_m2	MA0075.1	oligos_7nt_mkv5_m2	Prrx2	0.751	0.313	0.313	0.751	12	5	5	12	0.4167	0.4167	1.0000	D	7	.......AATgw	AATTA                         
+oligos_7nt_mkv5_m2	MA0132.1	oligos_7nt_mkv5_m2	Pdx1	0.752	0.376	0.376	0.752	12	6	6	12	0.5000	0.5000	1.0000	D	5	.....CAAATg.	cTAATk                        
+oligos_7nt_mkv5_m3	MA0075.1	oligos_7nt_mkv5_m3	Prrx2	0.886	0.403	0.403	0.886	11	5	5	11	0.4545	0.4545	1.0000	R	6	 ......TAAtk	TAATT                         
+oligos_7nt_mkv5_m3	MA0132.1	oligos_7nt_mkv5_m3	Pdx1	0.928	0.506	0.506	0.928	11	6	6	11	0.5455	0.5455	1.0000	D	5	 .....yTAAtk	cTAATk                        
+positions_7nt_m1	MA0077.1	positions_7nt_m1	SOX9	0.766	0.345	0.345	0.766	20	9	9	20	0.4500	0.4500	1.0000	R	1	.yCwTTGwyA..........	CYATTGTTY                     
+positions_7nt_m1	MA0078.1	positions_7nt_m1	Sox17	0.845	0.380	0.380	0.845	20	9	9	20	0.4500	0.4500	1.0000	D	0	byCwTTGwy...........	yhyATTGTs                     
+positions_7nt_m1	MA0087.1	positions_7nt_m1	Sox5	0.807	0.282	0.282	0.807	20	7	7	20	0.3500	0.3500	1.0000	R	3	...wTTGwyA..........	ATTGTTW                       
+positions_7nt_m1	MA0089.1	positions_7nt_m1	NFE2L1::MafG	0.736	0.221	0.221	0.736	20	6	6	20	0.3000	0.3000	1.0000	R	6	......GwyATG........	GTCATS                        
+positions_7nt_m1	MA0095.1	positions_7nt_m1	YY1	0.756	0.227	0.227	0.756	20	6	6	20	0.3000	0.3000	1.0000	R	14	..............aATGdr	GATGGY                        
+positions_7nt_m1	MA0142.1	positions_7nt_m1	Pou5f1	0.989	0.742	0.742	0.989	20	15	15	20	0.7500	0.7500	1.0000	D	2	..CwTTGwyATGCAaAT...	ywTTswyATGCAaAt               
+positions_7nt_m1	MA0143.1	positions_7nt_m1	Sox2	0.948	0.711	0.711	0.948	20	15	15	20	0.7500	0.7500	1.0000	D	1	.yCwTTGwyATGCAaA....	cywTTGTyaTgcaaA               
+positions_7nt_m1	MA0442.1	positions_7nt_m1	SOX10	0.947	0.284	0.284	0.947	20	6	6	20	0.3000	0.3000	1.0000	D	2	..CwTTGw............	CwTTGT                        
+positions_7nt_m2	MA0033.1	positions_7nt_m2	FOXL1	0.757	0.288	0.288	0.757	21	8	8	21	0.3810	0.3810	1.0000	R	10	..........TATGCAwA...	TATRTHWW                      
+; Host name	caminante-6.local
+; Job started	2013-03-05.165441
+; Job done	2013-03-05.165444
+; Seconds	3.41
+;	user	3.41
+;	system	0.02
+;	cuser	0
+;	csystem	0

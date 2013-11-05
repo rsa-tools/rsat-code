@@ -1,0 +1,630 @@
+#!/usr/bin/perl
+############################################################
+#
+# get-leader
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+get-leader
+
+=head1 DESCRIPTION
+
+Given a gene or a list of genes from a query organism, this programs
+returns the leader gene of the query gene(s) for a predicted operons
+given a threshold on the intergenic distance.
+
+=head1 AUTHORS
+
+=item rekins@bigre.ulb.ac.be
+
+=item jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+comparative genomics
+
+=head1 USAGE
+
+get-leader -org query_organism -q GENE1 -q GENE2 ...
+    [other options]
+
+=head1 INPUT FORMAT
+
+Query genes can be directly entered on the command line (as shown on USAGE) or in an
+input file.
+
+The first word of each row of input file is considered as a query.
+The second word is considered as the organism name. Any
+additional information on the same row is ignored.
+
+=head1 OUTPUT FORMAT
+
+3 columns table (leader gene, the organism_name and the name of the
+query gene).
+
+=head1 CRITERIA
+
+intergenic distance
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+require "RSA.lib";
+require "RSA.disco.lib";
+require RSAT::Family;
+use Data::Dumper; # added for debugging (print contents of hashes)
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  #### initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::verbose = 0;
+  $main::in = STDIN;
+  $main::out = STDOUT;
+
+  $main::query_organism = "Escherichia_coli_K12";
+
+  @main::query_genes = ();
+  %main::is_query = ();
+  @main::query_gene_id = ();
+  $main::null = "<NULL>";
+
+  my $leader_genes=();
+  %missing_query_genes=();
+
+  ## lower and upper thresholds
+  %lth = ();
+  %uth = ();
+  @supported_threshold_fields = qw(
+				   interg_dist
+				  );
+  foreach my $field (@supported_threshold_fields) {
+    $supported_threshold_field{$field} = 1;
+  }
+  $supported_threshold_fields = join (",", @supported_threshold_fields);
+
+  $uth{interg_dist}=55;# default intergenic distance threshold
+
+
+  ## Output fields
+  @output_fields = ();
+  @supported_output_fields = qw(
+				query_name
+				leader_name
+			       );
+  #				previous_gene
+  #				interg_dist
+  #				strand
+  #				operon_name
+  #				operon_size
+  #				query_gene_position
+  #			       );
+  %supported_output_field = ();
+  foreach my $field (@supported_output_fields) {
+    $supported_output_field{$field}++;
+  }
+  $supported_output_fields = join ",", @supported_output_fields;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ### open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  #### Print output
+
+  #### print verbose
+  &Verbose() if ($main::verbose);
+
+  ## Header line
+  my $header =  join("\t",
+		     "leader_gene",
+		     "org",
+		     "query_gene",
+		    );
+
+  ## add fields to the header
+  if (scalar(@output_fields) > 0) {
+    foreach $field (@output_fields) {
+      $header .= "\t";
+      $header .= $field;
+    }
+  }
+  print $main::out "#", $header, "\n";
+
+
+  ################################################################
+  #### MAIN
+
+  if (scalar(@query_genes) > 0) {
+
+    ################################################################
+    ##### Read queries from command line
+    ($leader_genes,$missing_genes)=&getLeaderGeneFromIntergDistance($query_organism,\@query_genes,\%lth,\%uth);
+    push  @{$missing_query_genes{$query_organism}},@{$missing_genes} if (scalar @{$missing_genes} >0);
+
+  }else{
+
+    ################################################################
+    ##### Read queries from input file or STDIN
+    my $gene_col=1;
+    my $org_col=2;
+    %genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
+    foreach my $query_organism (sort(keys( %genes_per_org))) {
+      my $geneset = $genes_per_org{$query_organism};
+      my @query_genes = $geneset->get_members();
+      if (scalar(@query_genes) > 0) {
+	&RSAT::message::Info(join("\t", "org",$query_organism,"query genes", @query_genes)) if ($main::verbose >= 2);
+	my $missing_genes=();
+	($leader_genes,$missing_genes)=&getLeaderGeneFromIntergDistance($query_organism,\@query_genes,\%lth,\%uth);
+	push  @{$missing_query_genes{$query_organism}},@{$missing_genes} if (scalar @{$missing_genes} >0);
+      }
+    }
+  }
+
+
+
+	
+  ## print leader genes
+#  foreach my $query_gene (keys (%is_query)) {
+#    if ($leader_genes->{$query_gene}){
+#      my $org = $leader_genes->{$query_gene}->{org};
+#      my $leader = $leader_genes->{$query_gene}->{leader};
+#      my @gene_info = ($leader->get_attribute("id"),
+#		       $org,
+#		       $query_gene);
+#      if (scalar(@output_fields) > 0) {
+#	foreach $field (@output_fields) {
+#	  if ($field eq 'query_name'){
+#	    push @gene_info,$leader_genes->{$query_gene}->{query}->get_attribute("name");
+#	  }elsif($field eq 'leader_name'){
+#	    push @gene_info,$leader_genes->{$query_gene}->{leader}->get_attribute("name");
+#	  }else{
+#	    push @gene_info,$leader_genes->{$query_gene}->{$field};
+#	  }
+#	}
+#      }
+#      print $main::out join("\t",@gene_info),"\n";
+#    }else{
+#      next;
+#    }
+#  }
+
+  ## Report missing query genes
+  if (scalar(keys %missing_query_genes) > 0) {
+    print $main::out "; Missing query genes\n";
+    foreach my $org (keys %missing_query_genes) {
+      foreach my $gene (@{$missing_query_genes{$org}}){
+	print $main::out ";\t", $gene,"\t",$org, "\n";
+      }
+    }
+  }
+
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+}
+
+################################################################
+####
+####                SUBROUTINES
+####
+################################################################
+
+sub getLeaderGeneFromIntergDistance{
+  my ($query_organism,$query_genes,$lth,$uth)=@_;
+  my (@query_genes)=@{$query_genes};
+  my (%lth)=%{$lth};
+  my (%uth)=%{$uth};
+  my $leader_genes=(); # to store leader genes
+  my @missing_query_genes=();
+
+  ## load the query organism
+  my $organism = new RSAT::organism();
+  $organism->check_name($query_organism);
+  $organism->set_attribute("name", $query_organism);
+  $organism->OpenContigs($query_organism);
+  $organism->LoadFeatures();
+  $organism->LoadSynonyms();
+
+  ## Calculating neighbour ORF limits
+  $organism->CalcNeighbourLimits();
+
+  #### Get the index of GenomeFeatures by names and ID
+  $feature_index = $organism->get_attribute("name_index");
+
+  foreach my $query (@query_genes) {
+    if ($feature_index->contains(uc($query))) {
+
+      ## Identify the query
+      my $current_feature = $feature_index->get_first_value(uc($query));
+      my $feature_id = $current_feature->get_attribute("id");
+      $is_query{$feature_id} = $query;
+      $query_gene_id{$query} = $feature_id;
+      &RSAT::message::Info(join("\t", "query gene", $query, $feature_id)) if ($main::verbose >= 5);
+
+      ## Get upstream info
+      my $upstr_size = $current_feature->get_attribute("upstr_size");
+      my $upstr_neighbour = $current_feature->get_attribute("upstr_neighbour");
+
+      if (! $upstr_neighbour){
+	push @missing_query_genes, $query;
+	&RSAT::message::Warning(join("\t", "Missing query", $query)) if ($main::verbose >= 1);
+	$query_gene_id{$query} = $main::null;
+	next;
+      }
+
+      &RSAT::message::Info(join("\t", 
+				   "query gene", $query, 
+				   "strand", $current_feature->get_attribute("strand"), 
+				   "upstream_neighbour", 
+				   $current_feature->get_attribute("upstr_neighbour")->get_attribute("id"),
+				   $current_feature->get_attribute("upstr_neighbour")->get_attribute("name")
+				  )
+			     ) if ($main::verbose >= 3);
+
+      ## Identify the leader gene given an intergenic distance threshold
+      my $leader=$current_feature;
+      if ((defined $lth{interg_dist})||(defined $uth{interg_dist})){
+	if((defined $lth{interg_dist})&&(defined $uth{interg_dist})){
+	  while (($upstr_size <= $uth{interg_dist})&&($upstr_size >= $lth{interg_dist})){
+	    last if ($upstr_neighbour->get_attribute("strand") ne $current_feature->get_attribute("strand"));
+	    $leader = $upstr_neighbour;
+	    $upstr_neighbour = $leader->get_attribute("upstr_neighbour");
+	    $upstr_size = $leader->get_attribute("upstr_size");
+	    &RSAT::message::Info(join("\t",
+					 "gene", $leader->get_attribute("id"),
+					 "upstr_size",$upstr_size,
+					 "upstr_neighbour", $upstr_neighbour->get_attribute("id"),
+					 "strand",$upstr_neighbour->get_attribute("strand")
+					)) if ($main::verbose >= 5);	
+	  }
+	}elsif(defined $uth{interg_dist}){
+	  while ($upstr_size <= $uth{interg_dist}){
+	    last if ($upstr_neighbour->get_attribute("strand") ne $current_feature->get_attribute("strand"));
+	    $leader = $upstr_neighbour;
+	    $upstr_neighbour = $leader->get_attribute("upstr_neighbour");
+	    $upstr_size = $leader->get_attribute("upstr_size");
+	    &RSAT::message::Info(join("\t",
+					 "gene", $leader->get_attribute("id"),
+					 "upstr_size",$upstr_size,
+					 "upstr_neighbour", $upstr_neighbour->get_attribute("id"),
+					 "strand",$upstr_neighbour->get_attribute("strand")
+					)) if ($main::verbose >= 5);	
+	  }
+	}elsif(defined $lth{interg_dist}){
+	  while ($upstr_size >= $lth{interg_dist}){
+	    last if ($upstr_neighbour->get_attribute("strand") ne $current_feature->get_attribute("strand"));
+	    $leader = $upstr_neighbour;
+	    $upstr_neighbour = $leader->get_attribute("upstr_neighbour");
+	    $upstr_size = $leader->get_attribute("upstr_size");
+	    &RSAT::message::Info(join("\t",
+					 "gene", $leader->get_attribute("id"),
+					 "upstr_size",$upstr_size,
+					 "upstr_neighbour", $upstr_neighbour->get_attribute("id"),
+					 "strand",$upstr_neighbour->get_attribute("strand")
+					)) if ($main::verbose >= 5);	
+	  }
+	}
+      }
+      ## Store attributes
+      $leader_genes->{$feature_id}->{leader} = $leader;
+      $leader_genes->{$feature_id}->{query} = $current_feature;
+      $leader_genes->{$feature_id}->{org} = $query_organism;
+      &RSAT::message::Info(join("\t",
+				   "query gene", $feature_id, $query,
+				   "leader", $leader->get_attribute("id"),
+				   $leader->get_attribute("name"))) if ($main::verbose >= 1);
+ 
+      ## Print attributes
+      my @gene_info = ($leader->get_attribute("id"),
+		       $query_organism,
+		       $feature_id);
+      if (scalar(@output_fields) > 0) {
+	foreach $field (@output_fields) {
+	  if ($field eq 'query_name'){
+	    push @gene_info,$current_feature->get_attribute("name");
+	  }elsif($field eq 'leader_name'){
+	    push @gene_info,$leader->get_attribute("name");
+	  }else{
+	    push @gene_info,$leader->{$field};
+	  }
+	}
+      }
+      print $main::out join("\t",@gene_info),"\n";
+
+      ## Missing genes
+    } else {
+      push @missing_query_genes, $query;
+      &RSAT::message::Warning(join("\t", "Missing query", $query)) if ($main::verbose >= 1);
+      $query_gene_id{$query} = $main::null;
+    }
+  }
+  return($leader_genes,\@missing_query_genes);
+}
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+    while ($arg = shift (@arguments)) {
+	
+#	&RSAT::message::Debug("Parsing argument", $arg);
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    &RSAT::error::FatalError("option -i is incompatible with option -q")
+		if (scalar(@main::query_genes) > 0);
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+
+=pod
+
+=item B<-org query_organism>
+
+Organisms to whih the query gene(s) belong.
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	    $main::query_organism = shift (@arguments);
+	    unless (defined($supported_organism{$main::query_organism})) {
+		&RSAT::error::FatalError(join("\t", "Organism", 
+					      $main::query_organism, 
+					      "is not supported.",
+					      "Use the command supported-organisms to get a list of supported organisms. "));
+	    }
+
+=pod
+
+=item B<-q query_gene>
+
+Query gene. The query can be either the gene identifier, or any supported name
+(synonyms, cross-references). 
+
+This option can be used iteratively on the same command to specify multiple
+query genes.
+
+=cut
+        } elsif ($arg eq "-q") {
+           &RSAT::error::FatalError("The option -q is incompatible with the option -i")
+             if ($main::infile{input});
+           push @main::query_genes, shift(@arguments);
+
+
+=pod
+
+=item B<-lth field lower_threshold>
+
+Lower threshold value on the specified field.
+
+=item B<-uth field upper_threshold>
+
+Upper threshold value on the specified field.
+
+Supported threshold values: interg_dist
+
+default : -uth interg_dist 55
+
+=cut
+
+            #### threshold values
+        } elsif ($arg eq "-lth") {
+            my $field = shift(@arguments);
+            my $value = shift(@arguments);
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $lth{$field} = $value;
+
+        } elsif ($arg eq "-uth") {
+            my $field = shift(@arguments);
+            my $value = shift(@arguments);
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $uth{$field} = $value;
+
+              ## Return fields
+=pod
+
+=item B<-return output_fields>
+
+Output field(s).
+
+By default, the output is a two-column file indicating the ID of the gene
+identified as similar to the query gene, and the name of the reference
+organism.
+
+The option -return can be used to specify additional output fields.
+
+Supported fields:
+
+=over
+
+=over
+
+=item  query_name
+
+=item  leader_name
+
+=back
+
+=back
+
+The option -return can be used iteratively on the same command line to specify
+several output fields. Another way to specify multiple output fields is to
+enter them separated by commas.
+
+Examples:
+
+    -return query_name -return leader_name
+
+    -return query_name,leader_name
+
+=cut
+
+       } elsif ($arg eq "-return") {
+          my $output_fields = shift(@arguments);
+          push @output_fields, split(",", $output_fields);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; get-leader ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+
+    ## Query organism and genes
+    printf $main::out "; %-21s\t%s\n", "Query organism", $main::query_organism;
+    print $main::out ("; Query genes\t",scalar(@query_genes),"\n");
+    foreach my $query (@main::query_genes) {
+	print $main::out join("\t", 
+			      ";",
+			      $query,
+			      $query_gene_id{$query}
+			      ), "\n";
+    }
+
+    ## Threshold values
+    printf $out &PrintThresholdValues();
+
+}
+
+
+__END__
+
+=pod
+
+=head1 EXAMPLES
+    get-leader -q lexA -org Escherichia_coli_K12 -uth interg_dist 50
+
+=head1 SEE ALSO
+
+=cut

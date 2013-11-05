@@ -1,0 +1,585 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: display-phylogeny,v 1.8 2011/04/27 12:21:56 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+display-phylogeny
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Template for writing new perl scripts.
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+phylogeny tools
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+display-phylogeny -i inputfile [-phyloprofile value_file] -o radical [-out_format pdf|ps] [-v #] [-q] [...]
+
+=head1 INPUT FORMAT
+
+
+
+=head1 OUTPUT FORMAT
+
+From a newick representation of a tree returns phylogenetic tree in the postscript format.
+
+A value file can also be given as argument. Using it, labels of the tree will be displayed using a color scale.
+
+=head1 SEE ALSO
+supported-organisms
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require PostScript::Simple;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::groupdraw  = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    $main::newick = "";
+    $main::out_format = "pdf";
+    my $top_margin = 7;
+    my %taxon_prot = ();
+    our $count = 0;
+    our %xy = ();
+    our %group_names = ();
+    our %sons = ();
+    our $grandfather = "";
+    our $maxlevel = 0;
+    our %pos = ();
+    our %levels = ();
+    our %leaves = ();
+    our @level_pos = ();
+    our %min_max_pos = ();
+    our $level_height = 50;
+    $level_height = 115 if ($groupdraw);
+    our %children_number = ();
+    our @count = (-45, -30, -15, 0, 15, 30, 45);
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+
+    ################################################################
+    ## Check argument values
+    if ($infile{input} && $newick ne "") {
+      &FatalError("You must either submit a file (-i option) or a set of newick tree (-q option) not both)");
+    }
+    if ($infile{input} && (! -e $infile{input} || -z $infile{input})) {
+      &FatalError("File ".$infile{input}." does not exist or is not valid... Please check");
+    }
+    if (!$outfile{output}) {
+      &FatalError("Please, specify a valid output file name or prefix");
+    }
+
+    ################################################################
+    ## Read input
+    if ($main::infile{input}) {
+      ($main::in) = &OpenInputFile($main::infile{input});
+      while (my $ligne = <$main::in>) {
+	chomp $ligne;
+	# Check if it is a valid newick format (TO BE IMPLEMENTED)
+	$newick =  $ligne;
+
+      }
+      close $main::in if ($main::infile{input});
+    }
+    my $protnb = 0;
+    ## Read values
+    if ($main::infile{phyloprofile}) {
+      ($main::inphyloprofile) = &OpenInputFile($main::infile{phyloprofile});
+      my @header = ();
+      
+      while (my $ligne = <$main::inphyloprofile>) {
+        
+	chomp $ligne;
+	my @lignecp = split /\t/, $ligne; 
+	if ($ligne =~ /^#/) {
+	  # this is the header
+	  for (my $i = 1; $i < scalar @lignecp; $i++) {
+	    push @header, $lignecp[$i];
+	  }
+	} else {
+	  my $protein = $lignecp[0];
+	  for (my $i = 1; $i < scalar @lignecp; $i++) {
+	    ${$taxon_prot{$header[$i-1]}}{$protein} = $lignecp[$i];
+	  }	  
+	}
+	$protnb++;
+      }
+      close $main::in if ($main::infile{phyloprofile});
+    }
+#      = scalar keys %taxon_prot;
+    
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    my $maxheight = 0;
+      %sons = ();
+      $grandfather = "";
+      $maxlevel = 0;
+      %pos = ();
+      %levels = ();
+      %group_names = ();
+      %children_number = ();
+      my $string_val = $newick;
+      $string_val =~ s/\)/\,\)/g;
+      $string_val =~ s/\(/\(\,/g;
+            
+
+      my @string = split /\,/, $string_val;
+      &find_node_levels(\@string, 0, 0, $grandfather);
+      &count_children($grandfather);
+      ## Group draw values
+      
+      my $groupdraw_start = 0;
+      my $groupdraw_end = 0;
+      if  ($groupdraw eq "all") {
+        $groupdraw = $maxlevel;
+        $groupdraw_start = 0;
+        $groupdraw_end = $maxlevel;
+      } elsif ($groupdraw =~ /\:/) {
+        my @groupdraw_cp = split ":", $groupdraw;
+        $groupdraw_start = $groupdraw_cp[0];
+        $groupdraw_end = $groupdraw_cp[1];
+        $groupdraw = 1;
+      } elsif ($groupdraw != 0) {
+        $groupdraw_start = $maxlevel-$groupdraw;
+        $groupdraw_end = $maxlevel;
+      }
+
+      ## Compute the maximal coordinates of x and y
+      my $x_width = (scalar keys %sons) *20 +100;
+      
+      $x_width = $x_width + ($groupdraw_end+1-$groupdraw_start) * 80;
+      my $y_width = $maxlevel * ($level_height+30);
+      &dispose_nodes($grandfather, 0, 0, $x_width);
+      # create the picture
+      my $table_size = 10 * $protnb;
+      my $margin = 40;
+      $p = new PostScript::Simple(ysize=>$x_width + 2*$margin, xsize=>$y_width + $table_size + ($groupdraw_end+1-$groupdraw_start) * 80, colour => 1, eps => 0, units => "pt");
+      # create a new page
+      $p -> newpage;
+      # first draw the edges
+      foreach my $node (keys %sons) {
+	my @sons = @{$sons{$node}};
+	my $posxnode = $pos{$node}{'x'} || 0;
+	my $posynode = $pos{$node}{'y'} || 0;
+	my $source_xpos = $posxnode+$margin;
+	my $source_ypos = $posynode+$top_margin;
+	foreach my $son (@sons) {
+	  my $sonxnode = $pos{$son}{'x'}  || 0;
+	  my $sonynode = $pos{$son}{'y'}  || 0;
+	  my $target_xpos = $sonxnode+$margin;
+	  my $target_ypos = $sonynode+$top_margin;;
+	  &RSAT::message::Info(join "\t", $node, $son, $source_xpos, $source_ypos, $target_xpos, $target_xpos) if ($main::verbose >= 2);
+	  $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, 0, 0, 0);
+	}
+      }
+      # then draw the nodes
+      $p->setfont("Arial", 12);
+      foreach my $node (sort keys %pos) {
+        if ($leaves{$node}) {
+          my $length_name = length($node) * 6;
+          my $xpos_node = $pos{$node}{'x'} || 0;
+          my $ypos_node = $pos{$node}{'y'} || 0;
+	  my $xpos = $xpos_node + $margin;
+	  my $ypos = $ypos_node + $top_margin;
+          $p->setcolour("black");
+          $p->text($xpos, $ypos, $node);
+          my $height = length($node) * 8 + $pos{$node}{'x'} + 10;
+          $maxheight = $height if ($height > $maxheight);
+        } 
+      }
+
+      
+      # draw the phylogenetic profile (if any)
+      $p->setfont("Arial", 10);
+      if (scalar keys %taxon_prot > 0) {
+        my $firstcol = 1;
+	foreach my $node (sort keys %pos) {
+	 
+	  next if (!$leaves{$node});
+	  my $ypos = $pos{$node}{'y'} +  $top_margin;
+	  my $previous_height = $maxheight+$margin;
+	  my $j = 0;
+	  foreach my $protein (sort keys %{$taxon_prot{$node}}) {
+	    my $xpos = $previous_height;
+	    my $result = $taxon_prot{$node}{$protein};
+	    $p->setcolour("red");
+	    $p->setcolour("green") if ($result);
+	    $p->box( {filled => 1}, $xpos,$ypos, $xpos+8,$ypos+8);
+	    if ($firstcol) {
+	      $p->setcolour("black");
+	      $p->text({rotate => 270}, $xpos, $x_width+80, $protein);
+	    }
+	    $previous_height = $xpos+8;
+	    
+	  }
+	  $firstcol = 0;
+	}
+      }
+      
+      
+      # draw the group name
+      $maxheight = $maxheight + $protnb*8 + 40;
+#       $groupdraw = 3;
+      my $k = 0;
+      $p->setfont("Arial", 15);
+      for (my $i = $groupdraw_end; $i >= $groupdraw_start; $i --) {
+        my @groups = @{$level_pos[$i]};
+        my $height = $maxheight + $k++*70 + $margin;
+        foreach my $group (@groups) {
+          $p->setfont("Arial", 15);
+          my $min_pos_y = $min_max_pos{$group}{min}  + $top_margin;;
+          my $max_pos_y = $min_max_pos{$group}{max} + $top_margin;;
+          $p->line($height,$min_pos_y+15, $height,$max_pos_y-5,  0, 0, 0);
+          my $group_length = ($max_pos_y-$min_pos_y);
+          my $text_length = (length($group_names{$group}))*10;
+          my $start_text = $max_pos_y - (abs($group_length-$text_length)/2) ;
+          my $rotation = 270;
+
+          $xpos = $height+12;
+          if ($group_length <= 130) {
+           $p->setfont("Arial", 9);
+           $rotation = 0;
+           $start_text = ($max_pos_y + $min_pos_y)/2;
+           $xpos = $height+2;
+          }
+          $p->text({rotate=>$rotation}, $xpos, $start_text, $group_names{$group});
+        }
+      }      
+      
+      
+      my $outputfile = $main::outfile{output};
+      if ($out_format eq "pdf") {
+        $outputfile = `mktemp temp.XXXXX`;
+        chomp $outputfile;
+      }
+      $p->output($outputfile);
+      if ($out_format eq "pdf") {
+        system("pstoedit -q -f pdf $outputfile ".$outfile{output});
+        system("rm $outputfile");
+      }
+
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-out_format>
+
+pdf or ps
+
+=cut
+    } elsif ($arg eq "-out_format") {
+      $main::out_format = shift(@arguments);
+      
+      
+=pod
+
+=item B<-q>
+
+Taxonomy (or hierarchy) in the newick format (between quotes). 
+
+=cut
+    } elsif ($arg eq "-q") {
+      my $q = shift(@arguments);
+      $main::newick = $q;
+=pod
+
+=item B<-i inputfile>
+
+file containing a list of taxonomies in the newick format
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item B<-phyloprofile valuesfile>
+
+Tab-delimited File containing one value for every taxon. The first column contains the taxon name, the second column the score.
+
+=cut
+    } elsif ($arg eq "-phyloprofile") {
+      $main::infile{phyloprofile} = shift(@arguments);
+
+=pod
+
+=item B<-groupdraw>
+
+Select the highest taxonomical level that should be drawn. Default is O. For all taxonomical level, use -groupdraw all. For a subset, use -groupdraw 3:6 (for taxonomical level 3 to 6)
+
+=cut
+    } elsif ($arg eq "-groupdraw") {
+      $main::groupdraw = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+Name of the output file. If more than one tree is required, you have to give a prefix as argument.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+sub find_node_levels {
+  my ($string_ref, $start, $level, $group_name) = (shift, shift, shift, shift);
+  my @string = @{$string_ref};
+  my $group_real_name = $group_name;
+  $levels{$group_name} = $level;
+  $maxlevel = $level if ($level > $maxlevel);
+  my @groups = ();
+  for (my $i = $start; $i < scalar @string; $i++) {
+    my $current_char = $string[$i];
+    if ($current_char =~ /^\)(.*)$/) {
+      $group_real_name = $1;
+      $group_real_name = $group_name if ($group_real_name eq "");
+      $group_names{$group_name} = $group_real_name;
+      $grandfather = $group_name;
+      return $i;
+    } elsif ($current_char eq "(") {
+      my $son_group_name =  "group_".$count++;
+      push @{$sons{$group_name}}, $son_group_name;
+      my $newpos = &find_node_levels(\@string, $i+1, $level+1, $son_group_name);
+      $i = $newpos;
+    } else {
+      push @groups, $current_char;
+      $leaves{$current_char} ++;
+      $levels{$current_char} = $level if (!defined $levels{$current_char});
+      push @{$sons{$group_name}}, $current_char;
+    }
+  }
+}
+
+
+################################################################
+## Computes the position of the nodes
+sub dispose_nodes {
+  my ($node, $level, $xstart, $xend) = (shift, shift, shift, shift);
+  if (defined ($sons{$node})) {
+    my @children = @{$sons{$node}};
+    @children = sort @children;
+    my $children_nb = scalar @children;
+    my $length = ($xend - $xstart);
+    my $total_children_nb = $children_number{$node};
+    my $start_xpos = $xstart;
+    my $end_xpos = $xstart + $length * ((1 + $children_number{$children[0]}) / $total_children_nb);
+    for (my $i = 0; $i < $children_nb; $i ++) {
+      my $child = $children[$i];
+      &dispose_nodes($child, $level+1, $start_xpos, $end_xpos);
+      $start_xpos = $end_xpos;
+      
+      if (defined $children[$i+1]) {
+        $end_xpos = $end_xpos + $length * ((1 + $children_number{$children[$i+1]}) / $total_children_nb);
+      } else {
+        $end_xpos = $xend;
+      }
+
+    }
+  }
+  my $posx = ($xstart + $xend) / 2;
+  my $posy = $level*$level_height;
+  # check if this place has not already been taken
+  if (defined ($sons{$node}) && defined $xy{$posy}) {
+    my @x = @{$xy{$posy}};
+    for (my $i = 0; $i < scalar @x; $i++) {
+      if (abs($x[$i]-$posx) < 300) {
+        my $this_count = int(rand(scalar @count));
+        $posy += $count[$this_count];
+        last;
+      }
+    }
+  } 
+  $pos{$node}{'y'} = $posx;
+  $pos{$node}{'x'} = $posy;
+  $min_max_pos{$node}{'min'} = $xstart;
+  $min_max_pos{$node}{'max'} = $xend;
+  
+  push @{$level_pos[$level]}, $node;
+  push @{$xy{$posy}}, $posx;
+}
+
+################################################################
+## Computes the total number of children (and grand children) for a node
+sub count_children {
+  my $node = shift;
+  if (defined ($sons{$node})) {
+    my @children = @{$sons{$node}};
+    foreach my $child (@children) {
+      &count_children($child);
+      $children_number{$node} += $children_number{$child} + 1;
+    }
+  } else {
+    $children_number{$node} = 0;
+  }
+}
+
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; display-phylogeny ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__

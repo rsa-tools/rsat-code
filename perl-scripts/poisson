@@ -1,0 +1,324 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+$soe = 0;
+$series = 0;
+
+local $start_time = &RSAT::util::StartScript();
+local %outfile = ();
+local $verbose = 0;
+local $out = STDOUT;
+
+&ReadArguments();
+
+################################################################
+#### check argument values ####
+
+## Series is not compatible with sums
+if ($series) {
+  if (($boe) || ($soe) || ($to)) {
+    &RSAT::error::FatalError("The option -series is currently incompatible with -boe, -soe, -from and -to\n");
+  }
+}
+
+## Number of successes
+unless ($from_to) {
+  unless (defined($s)) {
+    &RSAT::error::FatalError("You should specify the number of successes s.\n");
+  }
+  unless (&IsInteger($s)) {
+    &RSAT::error::FatalError("The number of successes (s) should be an integer");
+  }
+  if ($s < 0) {
+    &RSAT::error::FatalError("The number of successes (s) should be an integer >= 0.\n");
+  }
+}
+
+### Mean
+unless (defined ($m)) {
+  if ((defined($r)) && (defined($p))) {
+    unless ((&IsInteger($r)) && ($r >= 1)) {
+      &RSAT::error::FatalError("The number of repetitions (r) should be an integer >= 1)");
+    }
+    unless ((&IsReal($p) && ($p >= 0) && ($p <= 1))) {
+      &RSAT::error::FatalError("The probability (p) should be a real number between 0 and 1");
+    }
+    warn "; Calculating m as p*r\n" if ($main::verbose >= 1);
+    $m = $p*$r;
+  } else {
+    &RSAT::error::FatalError( "You should either specify the mean, or the probability and number of repetitions.\n");
+  }
+}
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+### Verbosity
+&Verbose() if ($verbose >= 1);
+
+################################################################
+## Calculate and print the result
+if ($series) {
+  my ($dpois_ref, $ppois_ref, $vpois_ref) = &poisson($s, $m, 1);
+  my @dpois = @$dpois_ref; ## density
+  my @ppois = @$ppois_ref; ## CDF
+  my @vpois = @$vpois_ref; ## P-value
+  for my $i (0..$s) {
+    print $out join("\t", $i, $dpois[$i], $ppois[$i], $vpois[$i]), "\n";
+  }
+  exit(0);
+
+} elsif ($boe) {
+    if (defined($r)) {
+	$result = &sum_of_poisson($m,$s,$r);
+    } else {
+	$result = 1- &sum_of_poisson($m,0,$s-1);
+    }
+} elsif ($soe) {
+    $result = &sum_of_poisson($m,0,$s);
+} elsif($from_to) {
+    $result = &sum_of_poisson($m,$from,$to);
+} else {
+    $result = &poisson($s,$m);
+}
+
+$result = 0 if ($result < 0);
+$result = 1 if ($result > 1);
+### this can happen when usin boe or soe options,
+### due to the precision limit
+
+print $out $result, "\n";
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
+
+
+exit(0);
+
+
+################################################################
+##### subroutine definition
+################################################################
+
+
+################################################################
+#### read arguments ####
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+
+	### verbose
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	    ### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### Probability
+	} elsif ($ARGV[$a] eq "-p") {
+	    $p = $ARGV[$a+1];
+
+	    ### Repetitions
+	} elsif ($ARGV[$a] eq "-r") {
+	    $r = $ARGV[$a+1];
+
+	    ### Successes
+	} elsif ($ARGV[$a] eq "-s") {
+	    $s = $ARGV[$a+1];
+
+	    ### Mean
+	} elsif ($ARGV[$a] eq "-m") {
+	    $m = $ARGV[$a+1];
+
+	    ### Bigger or equal
+	} elsif ($ARGV[$a] eq "-boe") {
+	    $boe = 1;
+
+	    ### smaller or equal
+	} elsif ($ARGV[$a] eq "-soe") {
+	    $soe = 1;
+
+	    ### From value (for sum of binomials)
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from_to = 1;
+	    $from = $ARGV[$a+1];
+
+	    ### To value (for sum of binomials)
+	} elsif ($ARGV[$a] eq "-to") {
+	    $from_to = 1;
+	    $to = $ARGV[$a+1];
+
+	    ### Print the complete series from 0 to s
+	} elsif ($ARGV[$a] eq "-series") {
+	    $series = 1;
+
+	}
+    }
+}
+
+
+
+################################################################
+#### display full help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	poisson
+
+	v1.0 by Jacques van Helden, July 1997
+
+DESCRIPTION
+	Calculates Poisson probabilities.
+
+CATEGORY
+	statistics
+
+USAGE
+	poisson -m exp_nb_success -s nb_success [-v] [-boe]
+		or
+	poisson -p single_proba -r repetitions -s nb_success [-v] [-boe]
+
+	calculates the probability that an event with probability p
+	challenged r times successes s times, according to the Poisson
+	formulae:
+
+  	              -m s
+  	             e  m
+  	 P(X=s|m) = ---
+  	             s!
+
+  	 where	s is the number of successful trials,
+  	 	r is the total number fo trials
+  	 	p is the probability of success at each trial
+  	 	m = p*r is the expected number of successes
+
+    CUMULATIVE VALUES
+
+  	With the -boe option, calculates the probability of >= -s
+  	successes.
+
+
+  	            inf              s-1
+  	P(X>=s) =   SUM P(X=j) = 1 - SUM P(X=j)
+  	            j=s              j=0
+
+
+  	With the -soe option, calculates the probability of <= -s
+  	successes.
+
+  	           s
+  	P(X<=s) = SUM P(X=x)
+  	          j=0
+
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-p #p	probability of success of the event at each trial.
+		#p is a real such that 0 <= #p <= 1.
+	-r #r	number of repetitions of the trial. #r mmust be an integer
+	-s #s	number of succesful trials
+		#s must be an integer such that 0 <= s <= r.
+	-m #m	where #m is a real representing the expected number of
+		successes
+	-boe	bigger or equal.
+		Calculate the probability of >= -s successes.
+	-soe	smaller or equal.
+		Calculate the probability of <= -s successes.
+	-from # -to #
+		calculates the sum of Poisson between two values
+		(inclusive).
+	-series
+		return the complete series from 0 to s
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+poisson options
+---------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-p #p		probability of success of the event at each trial
+-r #r		number of repetitions of the trial. #r mmust be an integer
+-s #s		number of succesful trials
+-m #m		expected number of successes
+-boe		bigger or equal.
+-soe		smaller or equal.
+-from # -to #	sum of Poisson between two values (inclusive)
+-series		return the complete series from 0 to s
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+### Print verbosity
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; poissson ";
+    &PrintArguments($out);
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined($p)) {
+	printf $out "; %-13s\t%f\n", "Probability", $p;
+    }
+    if (defined($r)) {
+	printf $out "; %-13s\t%d\n", "Repetitions", $r;
+    }
+    printf $out "; %-13s\t%d\n", "Successes", $s;
+    printf $out "; %-13s\t%f\n", "Mean", $m;
+    if ($boe) {
+	print $out ";\tP(X>=s)\n";
+    } elsif ($soe) {
+	print $out ";\tP(X<=s)\n";
+    }else {
+	print $out ";\tP(X=s)\n";
+    }
+}
+

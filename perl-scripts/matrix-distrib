@@ -1,0 +1,634 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-distrib,v 1.23 2011/10/11 22:39:16 jvanheld Exp $
+#
+# Time-stamp: <2007-07-06 17:41:48 jturatsi>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+matrix-distrib
+
+=head1 DESCRIPTION
+
+Computes the theoretical distribution of score probabilities of a
+given PSSM.  Score probabilities can be computed according to
+bernoulli as well as markov-chain background models.
+
+=head1 AUTHORS
+
+=over
+
+=item Jacques van Helden jvanheld@bigre.ulb.ac.be
+
+=item Jean Valery Turatsinze jturatsi@bigre.ulb.ac.be
+
+=item Morgane Thomas-Chollier morgane@bigre.ulb.ac.be
+
+=item With the help of Matthieu de France defrance@bigre.ulb.ac.be
+
+=back
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=item PSSM
+
+=back
+
+=head1 USAGE
+
+matrix-distrib [-i matrixfile] [-bgfile bgfile][-o outputfile] [-v]
+
+=head1 INPUT FORMATS
+
+=head2 Matrix file
+
+The matrix format is specified with the option -matrix_format.  Supported :
+tab,cb,consensus,gibbs,meme,assembly. Default : tab.
+
+For a description of these format, see I<convert-matrix -h>
+
+=head2 Background model file
+
+The background model format is specified with the option -bg_format.Supported :
+oligo-analysis, MotifSampler, meme. Default is: oligo-analysis.
+
+For a description of available format, see I<convert-backgound-model -h>
+
+=head1 OUTPUT FORMAT
+
+The output is a tab-delimited file with the following columns:
+
+=over
+
+=item 1	weight:      	log-likelihood score: w=P(S|M)/P(S|B)
+
+=item 2	proba:       	probability density function: P(W=w)
+
+=item 3	cum:         	cumulative density function: P(W <= w)
+
+=item 4	Pval:        	P-value = inverse cumulative density function: Pval = P(W >= w)
+
+=item 5	ln_Pval:     	natural logarithm of the P-value
+
+=item 6	log_P:       	base 10 logarithm of the P-value
+
+=item 7	sig:        	significance: sig = -log10(Pval)
+
+=back
+
+=head1 THEORICAL DISTRIBUTION COMPUTATION
+
+=over
+
+The scoring scheme is the weight (see I<matrix-scan -h> for more details).
+We calculate in an exaustive way the probabilities that are associated to each score (weight) that can be obtained from a given PSSM.
+
+For Bernoulli (Markov order 0) background models, the distribution of scores is computed with the algorithm described by Bailey (Bioinformatics,
+1999). 
+
+For Markov background models with higher orders, we have extended this algorithm to take into account the dependencies between
+residues. For each iteration of the algorithm, weigths associated to all possible transitions are tagged with a prefix. Each residue weight 
+is calculated according to the prefix tag. The prefix corresponds to a word of Markov order size that preceeds the position of 
+the iteration.
+
+
+=back
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::MarkovModel;
+use RSAT::matrix;
+use RSAT::MatrixReader;
+
+use Data::Dumper;
+
+################################################################
+## Main package
+
+package main;
+{
+
+  ################################################################
+  #### initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+  local $bg_model = new RSAT::MarkovModel();
+  local $decimals = 1;
+  local $pseudo = 1;
+
+
+  local $max_profile = 24;
+  local $sep="\t";
+  local $null = "NA";
+  local $info_log_base = exp(1);
+
+  local $top_matrices = 0;
+
+  ## bg formats
+  $bg_format = "oligo-analysis";
+  %supported_bg_format = $bg_model->get_supported_input_formats();
+  #   $supported_bg_formats = join (",", keys %supported_bg_format);
+
+  ## matrix formats
+  $matrix_format = "tab";
+  %supported_matrix_format = %RSAT::MatrixReader::supported_input_format;
+  $supported_matrix_formats = join ",", sort keys %supported_matrix_format;
+
+  %main::infile = ();
+  %main::outfile = ();
+  local @matrix_files = ();
+  local @matrices =();
+
+  $main::verbose = 0;
+  #    $main::in = STDIN;
+  $main::out = STDOUT;
+
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Background format
+  unless ($bg_format) {
+    &RSAT::error::FatalError("You should define the background format (option -bg_format)");
+  }
+
+  ## Matrix format
+  unless ($matrix_format) {
+    &RSAT::error::FatalError("You should define the matrix format (option -matrix_format)");
+  }
+
+  ## Background file
+  unless ($main::infile{bgfile}) {
+    #&RSAT::error::FatalError("You should define the background file (option -bgfile)");
+     &RSAT::message::Warning("Option -bgfile not specified. Assume Bernouilli model with equiprobable residue probabilities.");
+  }
+  
+  ################################################################
+  ## Load the matrix list if specified
+  if ($infile{matrix_list}) {
+    my ($mlist, $input_dir) = &OpenInputFile($main::infile{matrix_list});
+    while (<$mlist>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+
+      my @fields = split /\s+/;
+      my $matrix_file = $fields[0];
+      push @matrix_files, $matrix_file;
+    }
+    close $mlist;
+    &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+  }
+
+  ################################################################
+  ## Check that there is at least one input matrix
+  unless (scalar(@matrix_files >= 1)) {
+    &RSAT::error::FatalError("You must specify at least one matrix file.(option -m or -mlist)");
+  }
+
+  ################################################################
+  ### open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ##### Read input
+    
+  ## bg markov model
+  if ($main::infile{bgfile}) {
+  	if (defined($bg_pseudo)) {
+  		$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+  	}
+  	$bg_model->load_from_file($main::infile{bgfile}, $bg_format);
+   } else {
+   		my @alphabet =  qw (a c g t);
+   		my %prior = ();
+   		foreach my $residue (@alphabet){
+   			$prior{$residue} = 0.25;
+   		}
+    	$bg_model->set_attribute('order', 0);
+    	$bg_model->set_hash_attribute("suffix_proba", %prior);
+    	$bg_model->set_attribute("strand","sensitive");
+   }
+
+  ## Read the input matrices
+  foreach my $matrix_file (@matrix_files) {	
+  	 my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+  	foreach my $m (0..$#new_matrices) { 
+  		my $matrix = $new_matrices[$m];
+    	$matrix->set_parameter("pseudo", $pseudo);
+    	$matrix->set_attribute("file", $matrix_file);
+    	local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+    	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+    	$matrix->force_attribute("name", $matrix_name);
+    	$matrix->force_attribute("decimals", $decimals);
+    	$matrix->force_attribute("max_profile", $max_profile);
+    	$matrix->force_attribute("sep", $sep);
+    	$matrix->setInfoLogBase($info_log_base);
+    	$matrix->setMarkovModel($bg_model);
+    	push @matrices, $matrix;
+  	}
+  }
+
+  if (($top_matrices > 0) && ($top_matrices < scalar(@matrices))) {
+    &RSAT::message::Warning("Selecting ".$top_matrices." top matrices among ".scalar(@matrices));
+    @matrices = @matrices[0..($top_matrices -1)];
+  }
+
+  ################################################################
+  #### print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Calculate theorical distribution of scores
+  foreach my $matrix (@matrices) {
+  	 &RSAT::message::Info("Calculating theorical distribution from matrix", $matrix) if ($main::verbose >= 2);
+
+  ## Return weight distribution
+  $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
+  my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+  my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
+  my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+
+	
+  ## Print the description of column contents
+  my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
+  if (($main::verbose >= 1)||($infile{matrix_list})) {
+  	print $out ";\n; Matrix: ".$matrix->get_attribute("name")."\n";
+    print $out ";\n; Theoretical distribution of weight probabilities\n";
+    my %descr = ();
+    $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
+    $descr{"proba"} = "probability density function: P(W=w)";
+    $descr{"cum"} = "cumulative density function: P(W <= w)";
+    $descr{"Pval"} = "P-value = inverse cumulative density function: Pval = P(W >= w)";
+    $descr{"ln_Pval"} = "natural logarithm of the P-value";
+    $descr{"log_P"} = "base 10 logarithm of the P-value";
+    $descr{"sig"} = "significance: sig = -log10(Pval)";
+    $c =0;
+    foreach my $col (@columns) {
+      $c++;
+      print $out sprintf(";\t%d\t%-12s\t%s", $c, $col, $descr{$col}), "\n";
+    }
+  }
+
+  ## Print header
+  print $out "#", join ("\t", @columns), "\n";
+
+  ## Print the score distribution
+  my $log10 = log(10);
+  foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
+    $weight = sprintf("%.${decimals}f", $weight);
+    my $weight_proba = $null;
+    my $weight_proba_cum = $null;
+    my $weight_proba_inv_cum = $null;
+    my $ln_pval = $null;
+    my $log_P = $null;
+    my $sig = $null;
+    if (defined($weight_proba{$weight})&&($weight_proba{$weight} ne $null)) {
+      $weight_proba = sprintf("%.1e", $weight_proba{$weight});
+    }
+    if (defined($weight_proba_cum{$weight})) {
+      $weight_proba_cum = sprintf("%.1e", $weight_proba_cum{$weight});
+    }
+    if (defined($weight_proba_inv_cum{$weight})) {
+      $weight_proba_inv_cum = sprintf("%.1e", $weight_proba_inv_cum{$weight});
+      if ($weight_proba_inv_cum{$weight} > 0) {
+	$ln_pval =  sprintf("%.3f",log($weight_proba_inv_cum{$weight}));
+	$sig =  sprintf("%.3f",-log($weight_proba_inv_cum{$weight})/$log10);
+	$sig =~ s/^-(0.0+)$/$1/;
+	$log_P = -$sig;
+      } else {
+	$ln_pval = "-Inf";
+	$log_P = "-Inf";
+	$sig = "Inf";
+      }
+    }
+    print $out join("\t", $weight, 
+		    $weight_proba,
+		    $weight_proba_cum,
+		    $weight_proba_inv_cum,
+		    $ln_pval,
+		    $log_P,
+		    $sig,
+		   ), "\n";
+  }
+  }
+
+  ################################################################
+  ###### close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $main::out if ($main::outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+
+=pod
+
+=item B<-m matrixfile>
+
+Matrix file. 
+
+This argument can be used iteratively to scan the sequence with
+multiple matrices.
+
+=cut
+	} elsif ($arg eq "-m") {
+	    push @matrix_files, shift(@arguments);
+
+=pod
+
+=item B<-top top_matrix_nb>
+
+Restrict the analysis to the N top matrices of the input file. This
+option is useful when the input file contains multiple matrices (for
+example fo the Web interface, where the program supports a single
+matrix).
+
+=cut
+	} elsif ($arg eq "-top") {
+	    $main::top_matrices = shift(@arguments);
+	    &RSAT::error::FatalError($top_matrices , "is not a valid value for option -top. Should be a strictly positive Integer.") 
+	      unless (&IsNatural($main::top_matrices) && ($main::top_matrices > 0));
+
+
+=pod
+
+=item B<-mlist matrix_list>
+
+Matrix list.
+
+Indicate a file containing a list of matrices to be used for scanning
+the region. This facilitates the scanning of a sequence with a library
+of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC). 
+
+Format: the matrix list file is a text file. The first word of each
+row is suppose to indicate a file name. Any further information on the
+same row is ignored.
+
+=cut
+	} elsif ($arg eq "-mlist") {
+	    $main::infile{matrix_list} = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Matrix format. Default is tab.
+
+=cut
+	} elsif ($arg eq "-matrix_format") {
+	    $main::matrix_format = lc(shift(@arguments));
+	    &RSAT::error::FatalError(join("\t", $main::matrix_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::supported_matrix_formats))
+		unless ($main::supported_matrix_format{$main::matrix_format});
+
+
+=pod
+
+=item B<-pseudo #>
+
+Pseudo-count for the matrix (default: 1). See matrix-scan for details.
+
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo,
+					  "Invalid value for pseudo count. Must be a real value."))
+		unless (&IsReal($main::pseudo));
+
+		##bg file
+
+=pod
+
+=item B<-bgfile background_file>
+
+ Background model file.
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+	    $main::infile{bgfile} = shift(@arguments);
+
+	    ## Background model format
+
+=pod
+
+=item B<-bg_format background_format>
+
+        Supported formats: all the input formats supported by
+        convert-background-model.
+
+=cut
+	} elsif ($arg eq "-bg_format") {
+	    $main::bg_format = lc(shift(@arguments));
+	    &RSAT::error::FatalError(join("\t", $main::bg_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::bg_format))
+		unless ($main::supported_bg_format{$main::bg_format});
+
+	    ## Pseudo-frequency for the background model
+
+=pod
+
+=item B<-bg_pseudo #>
+
+Pseudo frequency for the background models. Value must be a real
+between 0 and 1 (default: 0) If the training sequence length (L) is
+known, the value can be set to square-root of L divided by
+L+squareroot of L
+
+=cut
+	} elsif ($arg eq "-bg_pseudo") {
+	    $main::bg_pseudo = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+					  "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
+		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+
+
+	    ## Number of decimals
+
+=pod
+
+=item B<-decimals #>
+
+Number of decimals to print or the transition probabilities. 
+
+=cut
+	} elsif ($arg eq "-decimals") {
+	    $main::decimals = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::decimals,
+					  "Invalid format for decimals, should be a Natural number."))
+		unless (&IsNatural($main::decimals));
+
+	    ## Convert the bg model to 2 strands
+
+=pod
+
+=cut
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; matrix-distrib ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+      }
+
+    ## Pseudo counts
+
+    ## Background model
+    if (defined($bg_model)) {
+   	printf $main::out "; Background model\n";
+	my $order = $bg_model->get_attribute("order");
+    if ($order == 0) {
+	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
+    } else {
+	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
+    }
+    printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
+
+    my %bg_prior = $bg_model->get_attribute("suffix_proba");
+    print $main::out ";\tResidue probabilities\n";
+    foreach my $residue (sort keys %bg_prior) {
+	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
+    }
+    }
+}
+
+
+__END__
+
+=pod
+
+=cut

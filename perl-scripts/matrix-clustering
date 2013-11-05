@@ -1,0 +1,461 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-clustering,v 1.5 2013/02/19 05:35:16 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+cluster-matrices
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Taking as input a set of position-specific scoring matrices, identify
+clusters of similar matrices and build consensus motifs by merging the
+matrices that belong to the same cluster.
+
+=head1 DEPENDENCIES
+
+The clustering step relies on I<MCL>, the graph-based clustering
+algorithm developed by Stijn Van Dongen. MCL must be installed and its
+path indicated in the RSAT configuration file
+($RSAT/RSAT_config.props). The installation of MCL can be done with a
+RSAT makefile:
+
+  cd $RSAT
+  make -f makefiles/install_software.mk install_mcl
+
+=head1 AUTHORS
+
+Implementation : Jacques.van.Helden@ulb.ac.be
+
+Conception: Jacques van Helden, Carl Herrmann and Denis Thieffry.
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+cluster-matrices [-i inputfile] [-o outputfile] [-v #] [...]
+
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=over
+
+=item I<compare-matrices>
+
+The program I<compare-matrices> is used by I<cluster-matrices> to
+measure pairwise similarities and define the best alignment (offset,
+strand) between each pair of matrices.
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::util;
+use RSAT::matrix;
+use RSAT::MatrixReader;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    ## input formats: only accept formats supporting multiple matrices
+    local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
+    local %supported_matrix_format = ();
+    foreach my $format (@supported_matrix_formats) {
+     $supported_matrix_format{$format} = 1;
+    }
+    local $supported_matrix_formats = join ",", @supported_matrix_formats;
+
+    ## Matrices
+    local @matrices = ();
+
+
+    ################################################################
+    ## Options used for motif comparison
+    local %param = ();
+    $param{matrix_compa_min_w} = 5; ## min number of aligned columns
+    $param{matrix_compa_min_Wr} = 0.3; ## min relative width
+    $param{matrix_compa_min_cor} = 0.7; ## min correlation
+    $param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
+    $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
+    $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
+    $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ## Check that the  input file has been specified
+    unless ($infile{matrices}) {
+      &RSAT::error::FatalError("You must define the input file (option -i).");
+    }
+
+    ## Check that the  input format has been specified
+    unless ($matrix_format) {
+      &RSAT::error::FatalError("You must define the input matrix format (option -format).");
+    }
+
+
+    ## Check that the output prefix has been specified
+    unless ($outfile{prefix}) {
+      &RSAT::error::FatalError("You must define the output prefix (option -o).");
+    }
+
+
+
+    ################################################################
+    ## Specify output file names and open output stream
+    $main::outfile{log} = $main::outfile{prefix}."_log.txt";
+    $main::out = &OpenOutputFile($main::outfile{log});
+
+    $main::outfile{pairwise_compa} = $main::outfile{prefix}."_pairwise_compa.tab";
+    $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_pairwise_compa.html";
+    $main::outfile{pairwise_compa_gml} = $main::outfile{prefix}."_pairwise_compa.gml";
+    $main::outfile{pairwise_compa_png} = $main::outfile{prefix}."_pairwise_compa.png";
+
+    $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl";
+    $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab";
+    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab";
+    $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml";
+    $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png";
+    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab";
+    $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab";
+
+    ################################################################
+    ## Read input matrices
+    if ($infile{matrices}){
+      @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
+      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
+	if ($main::verbose >= 2);
+    }
+
+    ################################################################
+    ## Cluster the matrices
+    &ClusterMotifs();
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{prefix});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-i input matrix file>
+
+The input file contains a set of position-specific scoring
+matrices.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{matrices} = shift(@arguments);
+
+=pod
+
+=item B<-format matrix_format>
+
+Specify the input matrix format.
+
+
+B<Supported matrix formats>
+
+Since the program takes several matrices as input, it only accepts
+matrices in formats supporting several matrices per file (transfac,
+tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+
+For a description of these formats, see the help of I<convert-matrix>.
+
+=cut
+    } elsif ($arg eq "-format") {
+      $main::matrix_format = shift(@arguments);
+      unless ($supported_matrix_format{$matrix_format}) {
+	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      }
+
+
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix for the output files.
+
+Mandatory option: since the program I<cluster-matrices> returns a
+list of output files (pariwise matrix comparisons, matrix clusters).
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{prefix} = shift(@arguments);
+
+    } else {
+      &FatalError("Invalid option", $arg);
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; cluster-matrices ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-28s\t%s\n", $key, $value;
+	}
+    }
+    printf $main::out  "; %-28s\t%s\n", "Number of matrices", scalar(@matrices);
+
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-28s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+
+################################################################
+## Compare each discovered motifs to each other, and with the
+## reference motif, identify clusters of similar motifs, and build
+## consensus motifs.
+sub ClusterMotifs {
+
+  ## Pariwise comparisons between discovered matrices.  We don't
+  ## the option "distinct" in order to ensure that all the motifs are
+  ## in the output graph even if they are not related to any other
+  ## motif.
+  &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+  $cmd .= " -format ".$main::matrix_format;
+  $cmd .=  " -file ".$main::infile{matrices};
+  $cmd .= " -DR";
+#  $cmd .= " -distinct"; ## We disactivate the option "distinct" in order to ensure that all the motifs are in the output graph even if they are not related to any other motif
+  $cmd .= " -sort cor";
+  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
+  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
+  $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus";
+  $cmd .= " -o ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= " -o ".$main::outfile{pairwise_compa_html};
+  &RSAT::util::one_command($cmd, 1,"");
+
+  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
+
+  ## Use the mean_rank as score column
+  open COMPA, $main::outfile{pairwise_compa};
+  $main::param{score_column} = 0;
+  while (<COMPA>) {
+    if (/;\t(\d+)\t$param{matrix_compa_score}/) {
+      $main::param{score_column} = $1;
+      &RSAT::message::Info("Score", $param{matrix_compa_score}, "column", $main::param{score_column}, "file", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
+      last;
+    }
+  }
+  close COMPA;
+  if ($main::param{score_column} == 0) {
+    &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
+  }
+
+  ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
+  $cmd .= " -ewidth -ecolors fire";
+  $cmd .= " -layout spring_new";
+  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
+  $cmd .= " -o ".$main::outfile{pairwise_compa_gml};
+  &RSAT::util::one_command($cmd, 1);
+
+  ## Generate a figure of the motif comparison graph
+  $cmd = $SCRIPTS."/display-graph";
+  $cmd .= " -in_format gml -i ".$main::outfile{pairwise_compa_gml};
+  $cmd .= " -ewidth";
+  $cmd .= " -layout none";
+  $cmd .= " -out_format png -o ".$main::outfile{pairwise_compa_png};
+  &RSAT::util::one_command($cmd, 1);
+
+  ## Use MCL to partition the motif graph into clusters
+  &RSAT::message::TimeWarn("Matrix clustering.") if ($main::verbose >= 2);
+  my $mcl_dir = $ENV{mcl_dir};
+  unless ($mcl_dir) {
+    &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
+  }
+  my $mcl = $mcl_dir."/mcl";
+  $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
+  $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
+  $cmd .= " -I 1.8 --abc -V all ";
+  $cmd .= " -o ".$main::outfile{clusters_mcl};
+  $cmd .= " >& /dev/null";
+  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{clusters_mcl};
+  $cmd .= " -from mcl -to tab ";
+  $cmd .= " -o ".$main::outfile{clusters_tab};
+  &RSAT::util::one_command($cmd, 1);
+
+  ## Split the motif graph into clusters as defined by MCL, and
+  ## compute the intra-cluster degree (k) and weighted degree (wk) of
+  ## each node
+  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{pairwise_compa};
+  $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol ".$main::param{score_column};
+  $cmd .= " -return clusters ";
+  $cmd .= " -clusters ".$main::outfile{clusters_tab};
+  $cmd .= " -out_format tab -o ".$main::outfile{clusters_subgraph};
+  &RSAT::util::one_command($cmd, 1);
+
+
+  ## Identify graph components and count the intra-component degree of
+  ## each node. Most connected nodes will serve as seeds for motif
+  ## clustering.
+  $cmd = $SCRIPTS."/graph-connex-components -v 1";
+  $cmd .= " -i ".$main::outfile{clusters_subgraph};
+  $cmd .= " -wcol ".$main::param{score_column};
+  $cmd .= " -o ".$main::outfile{intra_cluster_degree};
+  &RSAT::util::one_command($cmd, 1);
+
+  ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{clusters_subgraph};
+  $cmd .= " -ewidth -ecolors fire";
+  $cmd .= " -layout spring_new";
+  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
+  $cmd .= " -o ".$main::outfile{clusters_subgraph_gml};
+  &RSAT::util::one_command($cmd, 1);
+
+  ## Generate a figure of the motif comparison graph
+  $cmd = $SCRIPTS."/display-graph";
+  $cmd .= " -in_format gml -i ".$main::outfile{clusters_subgraph_gml};
+  $cmd .= " -ewidth";
+  $cmd .= " -layout none";
+  $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
+  &RSAT::util::one_command($cmd, 1);
+
+  return();
+
+}
+
+
+__END__

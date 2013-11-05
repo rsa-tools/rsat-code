@@ -1,0 +1,352 @@
+<html>
+  <head>
+    <title>RSA-tools - tutorials - oligo-analysis</title>
+    <!--   <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+  </head>
+  <body class="info">
+
+    <center>
+      <h1><a href="../RSAT_home.cgi">RSA-tools</A> - 
+	<a href="tutorials.html">Tutorials</a> - 
+	<a href="../oligo-analysis_form.cgi">oligo-analysis</a> 
+      </h1>
+    </center>
+
+
+
+    <h2>Contents</h2>
+
+    <p>
+      <ol>
+	<li><a href=#intro>Introduction</a>
+	<li><a href=#example>Example of utilization</a>
+	<li><a href=#interpret>Interpreting the results</a>
+	<li><a href=#map>Drawing a feature-map with the discovered patterns</a>
+	<li><a href=#exercises>Additional exercises</a>
+      </ol>
+
+      <a name=intro></a><h2>Introduction</h2>
+
+      <p>Knowing that a set of genes are co-expressed (e.g. they show
+	similar expression profiles in an microarray experiment), we
+	can suppose that some elements are shared by their upstream
+	region, and one would like to detect such elements. </p>
+      
+    <p>We
+      implemented a simple and fast method to extract such elements,
+	based on a detection of over-represented
+      oligonucleotides. This method has been described in detail in
+      <A target=_blank  HREF="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9719638&dopt=Abstract">
+	  J.Mol. Biol. (1998) 281, 827-842</A>.
+    </p>
+    
+    <a name=example></a><h2>Example of utilization</h2>
+
+    <p>We will illustrate this approach with a set of genes for which
+      the regulatory sites is well known : the genes responding to a
+      stress in methionine. The motif discovery program will of course
+      not receive any indication about these known regulatory
+      motifs. We will only use them <I>a posteriori</I> to compare the
+      discovered motifs with those documented in the literature.</p>
+
+    <div class='protocol'>
+    <ol>
+      <li><p>
+	  Retrieve upstream sequences from -800 to -1 for the
+	  following yeast genes (as you have seen in
+	  the <a href="tut_retrieve-seq.html">tutorial on sequence
+	  retrieval</a>).</p>
+      
+      <p>Since we are working with an eukaryote, make sure that the option
+	<b>Prevent overlaps with neighbour genes</b> is <b>inactivated</b>
+	before retrieving the sequence.</p></li>
+
+      <pre>
+MET1
+MET2
+MET3
+MET6
+MET14
+MET19
+MET25
+MET30
+MUP3
+SAM1
+SAM2
+      </pre>
+      
+      
+      <li><p>Once you get the result, go to the bottom of the sequences. You
+	  should see a list of buttons, which allow you to send these sequences
+	  as input for another program. Click the button labelled
+	  <b>oligonucleotide analysis</b>.
+	  
+	  <li><p>A new form appears. 
+	      
+	      <li><p>Leave all parameters unchanged and click <b>GO</b>.
+		  
+		  <li><p> The results of the analysis are displayed in a table. Each row
+		      corresponds to one oligonucleotide, and each column to one statistical
+		      criterion. The header indicates the content of each column, which
+		      depends on the return parameters selected in the oligo-analysis form.
+		      
+    </ol>
+    </div>
+
+    <a name='interpret'></a><h2>Interpreting the results</h2>
+    
+    
+    <h3>Statistical parameters</h3>
+
+    <p>
+      Note the particularly high degree of over-representation for the
+      hexanucleotide <TT>CACGTG</TT>. Thirteen occurrencesare
+      observed, whereas only 1.22 would be expected by chance.  CACGTG
+      is the core of the binding site for Met4p, the main
+      transcription factor for the regulation of methionine
+      biosynthesis.</p>
+
+    <p>
+      The P-value (column occ_P) represents the probability to observe
+      at least 13 occurrences when expecting 1.22. For CACGTG, it is
+      of the order of 10<sup>-9</sup>. However, this P-value might be
+      misleading, because in this analysis we considered 2080 possible
+      patterns. Indeed, there are 4096 possible hexanucleotides, but
+      we regrouped each of them with its reverse complement, resulting
+      in 2080 distinct patterns. Thus, we performed a simultaneous
+      test of 2080 hypotheses.</p>
+
+    <p>
+      The E-value (column occ_E) provides a more reliable and
+      intuitive statistics than the P-value. The E-value is simply
+      obtained by multiplying the P-value by the number of distinct
+      patterns. It represents the number of patterns with the same
+      level of over-representation which would be expected by chance
+      alone. For CACGTG, the E-value is of the order of
+      10<sup>-6</sup>, indicating that, if we would submit random
+      sequences to the program, such a level of over-representation
+      would be expected every 1,000,000 trials.</p>
+
+    <p>
+      An even more intuitive statistics is provided by the
+      significance index (column occ_sig), which is the minus log
+      transform (in base 10) of the E-value. The higher values are
+      associated to the most significant patterns. On the average, a
+      significance higher than 0 would be expected by chance alone
+      once per trial (sequence set). A score higher than 1 every ten
+      trials, a score higher than 2 every 100 trials, and a score
+      higher than 6 every 10<sup>6</sup> trials.</p>
+
+    <p>
+      The default parameters were chosen to return no more than one
+      pattern per sequence set (threshold on significance is 0). With
+      these settings, the analysis of a small regulon typically
+      returns half a dozen of hexanucleotides, among the 2080
+      possibilities. In addition, these hexanucleotides are related
+      with each other, and can be assembled to provide a more refined
+      description of the predicted binding sites, as discussed below.</p>
+
+    <h3>Clusters of mutually overlapping patterns reveal larger motifs,
+      and/or motif degeneracy</h3>
+    
+    <p>Below the oligo-analysis result (the table with one row per
+      oligo and one column per statistics), you can see the result of
+      pattern-assembly. with the MET family, two clusters of patterns
+      can be formed. </p>
+
+    <p>
+      The first cluster contains the most significant hexanucleotide,
+      CACGTG, and the strongly overlapping ACGTGa. In addition, since
+      in our analysis we considered both strands as equivalentm, the
+      reverse complement of this hexanucleotide, tCACGT,is also
+      considered. The assembly of these three hexanucleotides results
+      in an octanucleotide, tCACGTGa, which perfectly corresponds to
+      the Met4p consensus.</p>
+
+    <h3>A single analysis can reveal binding sites for multiple
+      transcription factors</h3>
+    
+    <p>
+      The second cluster of hexanucleotides forms a completely
+	  different motif, whose consensus is aactgtgg. This
+	  corresponds to the binding site of the homolog transcription
+	  factors Met31p and Met32p, which cooperate with Met4p for
+	  the regulation of methionine biosynthesis and sulfur
+	  assimilation.</p>
+
+    <h3>Choice of the significance threshold</h3>
+
+    <p>
+      The pattern assembly left one isolated pattern, TAGTCA, which is
+      related to neither Met4p nor to Met31p binding sites. The significance
+      of this isolated pattern is very close to 0, and it is likely to be a
+      false poitive.</p>
+
+    <p>
+      One possibility would be to increase the threshold of
+      significance in order to reduce the rate of false
+      positive. however, this would also result in the loss of some
+      biologically relevant patterns, like ACTGTG and CTGTGG, which
+      contributed to the description of the Met31p binding site. Thus,
+      our strategy is to set the significance threshold to 0, and to
+      ignore isolated patterns which have a low significance index.</p>
+
+    <a name='map'></a><h2>Drawing a feature-map with the discovered patterns</h2>
+
+    <div class='protocol'>
+      <ol>
+	<li><p> In the bottom of the result page, click on the
+	    button <b>Pattern matching (dna-pattern)</b>.  The same form
+	    is displayed as in the
+	    previous <a href="tut_dna-pattern.html">tutorial on pattern
+	      matching</A>, but this time the <b>Query pattern(s)</b> box
+	    has been automatically filled with the result of
+	    oligonucleotide analysis. Do not change anything to the form
+	  and click <b>GO</b>.</p></li>
+	
+	<li><p> The list of matching positions of the
+	    over-represented oligonucleotides is displayed.  Notice
+	    that each match is associated to a score, which is the
+	    significance obtained for that hexanucleotide in
+	    oligo-analysis.</p></li>
+	
+	<li><p>On the bottom of the result page, click
+	    the <b>Feature map</b> bbutton.</p></li>
+	
+	<li><p> A form appears which will allow yo to generate a graphical
+	    representation of the matching positions.</p></li>
+
+	<li><p>Fill the <b>From</b> box with -800,</p></li>
+	
+	<li><p>Fill the <b>To</b> box with 0</p></li>
+	
+	  <li><p>For the <b>Feature handle</b> option, select "none".</p></li>
+	  
+	<li><p>Make sure that the option <b>Feature thickness
+	      proportional to score</b> is activated.</p></li>
+	
+	<li><p>Click <b>GO</b>.</p></li>
+	
+	<li><p> The feature map appears. The boxes have now different
+	      thicknesses, reflecting the respective matching score. </p></li>
+	
+      </ol>
+      </div>
+    
+    <p>
+      This proportional thickness strongly emphazises the CACGTG
+      pattern, which is the core of the main transcription factor for
+      the selected genes. Notice the overlap between these very high
+      boxes and smaller boxes. These clusters of mutually overlapping
+      boxes indicate that the consensus extends over 6 base pairs of
+      the core (most matches correspond to the octanucleotide
+      tCACGTGa). You can check this by positioning the cursor above a
+      feature box, and reading the matching sequence in the status bar
+      of your web browser.</p>
+
+    <p>
+      A problem with the automatic feature thickness, is that some
+      patterns with a lower significance are barely visible, including
+      the Met31p binding sites. we can now refine the representation
+      to increase the visibility of these low-scoring motifs.</p>
+	
+    <div class='protocol'>
+      <ol>
+	<li><p>Come <b>back</b> to the feature-map form. </p></li>
+
+	<li><p>Set the <b>min feature thickness</b> to 5. This will forc the
+	    boxes to have a thickness of at least 5 pixels.</p></li>
+
+	<li><p>Leave all other parameters as descriibed above, and
+	    click <b>GO</b>.</p></li>
+      </ol>
+    </div>
+
+    <p>
+      This modification allows you to better detect the Met31p binding
+      sites. Notice that these also appear as clusters of mutually
+      overlapping boxes, which emphazises the conserved octanucleotide
+      <tt>AAACTGTG</tt>.</p>
+
+    
+
+    <a name='exercises'></a><h2>Additional exercises</h2>
+    
+      <div class='exo'>
+	  <ol>
+	    <li><p>Use oligo-analysis to predict cis-acting elements with the
+		following family of phosphate-responding genes.</p></li>
+	    
+	    <pre>
+PHO5
+PHO8
+PHO11
+PHO81
+PHO84
+	    </pre>
+
+	    <li><p>Compare the discovered motifs with the known consensus
+		(CACGTGggg or CACGTTtt) for Pho4p, the transcription factor mediating
+		response to phosphate stress.</p></li>
+	    
+	    <li><p>Compare the results obtained with the same family when the
+		option <b>Prevent overlap with upstream matches</b> is activated and
+		inactivated respectively, during sequence retrieval. Explain the
+		difference.</p></li>
+	    
+	    <li><p>Select a family of 10 random genes with the program <b>random
+		  gene selection</b> (in the left frame), and analyze their upstream
+		region with oligo-analysis. Try this a few times, with different
+		numbers of genes (e.g. 5, 10, 20, 50). How many patterns are predicted
+		as significant ?</p></li>
+
+	    <li><p>Use oligo-analysis to predict cis-acting elements involved in
+		galactose utilization, on the basis of the following genes.</p></li>
+	    
+	    <pre>
+GAL1
+GAL2
+GAL3
+GAL5
+GAL6
+GAL7
+GAL10
+GAL80
+GCY1
+	    </pre>
+
+	    <p>How do you interpret the result ? o you obtain patterns with a high
+	      significance ? Come back to this exercise after the practivcal on
+	      <b>dyad-analysis</b>.
+	      
+	    <li><p>Use retrieve-seq and oligo-analysis to count the frequencies of
+		the different stop codons in the complete yeast genomes. <b>Tips</b>
+		<ol>
+		  <li>you will need to inactivate the threshold on significance, by
+		    replacing its default value (0) by "none".</li>
+		  <li>the count should be performed on a single strand. </li>
+		</ol>
+		</p></li>		    
+
+	    <li><p>Use the same procedure to check the start codons in all genes from
+		the yeast genome.</p></li>
+      </div>
+    
+<hr>  
+    <p>
+      You can now come back to the <a href=tutorials.html>tutorial main
+	page</a> and follow the next tutorials.</p>
+    
+</ul>
+<hr width="100%">
+<h4 class="footer">
+  <address>
+    For suggestions or information request, please contact 
+    <script type='text/javascript'><!--
+				       var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+				       //--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address></h4>
+
+</body>
+</html>

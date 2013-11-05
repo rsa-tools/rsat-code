@@ -1,0 +1,501 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: check-oligo-analysis,v 1.15 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-10-21 23:00:11 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::util;
+require POSIX;
+
+################################################################
+#### initialise parameters
+local $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+$verbose = 0;
+$dry_run = 0;
+$die_on_error = 1;
+
+$oligo_len = 6;
+$str = "-1str";
+@strand_modes = ("-1str", "-2str");
+$seq_len=800;
+$seq_nb=10;
+$ov="-noov";
+@overlap_modes=("-noov", "-ovlp");
+$thosig = -2;
+$repet = 1000;
+$start=1;
+
+@tasks = ();
+%supported_task = ();
+$supported_task{'oligos'}++;
+$supported_task{'synthesis'}++;
+$supported_task{'theory'}++;
+$supported_task{'all'}++;
+$supported_tasks = join",", sort(keys (%supported_task));
+
+&ReadArguments();
+
+################################################################
+#### task list
+if (scalar(@tasks) <= 0) {
+    &RSAT::error::FatalError("You should select at least one task. Supported: $supported_task.");
+}
+foreach my $t (@tasks) {
+    unless ($supported_task{$t}) {
+	&RSAT::error::FatalError("Task $t is invalid. Supported: $supported_tasks.");
+    }
+    $task{$t}++;
+}
+
+if ($task{all}) {
+    foreach my $t (keys %supported_task) {
+	$task{$t}++;
+    }
+}
+
+################################################################
+#### check argument values
+unless (defined($dir{output})) {
+    $dir{output} = "oligo_check_results";
+}
+&RSAT::util::CheckOutDir($dir{output});
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+#### print verbose
+&Verbose if ($verbose);
+
+
+################################################################
+#### run oligo-analysis
+if ($task{oligos}) {
+    for $job ($start..$repet) {
+	foreach $ov (@overlap_modes) {
+	    foreach $str (@strand_modes) {
+		
+		## use a verbosity of 1 for the first job only
+		if ($job == $start) {
+		    $job_verbose = 1;
+		} else {
+		    $job_verbose = 0;
+		}
+		
+		$result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${ov}";
+		&OneJob($job, $job_verbose);
+	    }
+	}
+    }
+}
+
+if ($task{synthesis}) {
+    foreach $ov (@overlap_modes) {
+	foreach $str (@strand_modes) {
+	    $result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${ov}";
+	    &SummarizeResults() ;
+	}
+    }
+}
+
+if ($task{theory}) {
+    foreach $ov (@overlap_modes) {
+	foreach $str (@strand_modes) {
+	    $result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${ov}";
+	    &CalcTheoreticalDistributions();
+	}
+    }
+}
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+## Calculate score distributions
+sub SummarizeResults {
+    warn join( "\t", "\n; Summarizing results", $str, $ov), "\n" if ($verbose >= 1);
+    $score_col=9;
+    $synthesis_dir=$dir{output}."/synthesis";
+    &RSAT::util::CheckOutDir($synthesis_dir);
+    $synthesis_file = $synthesis_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
+
+    
+    ### count the number of files in the output dir
+    @output_files = glob("${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab");
+    $jobs_done = scalar(@output_files);
+    $command =  "echo ';Jobs done' $jobs_done > ${synthesis_file}; ";
+
+    ## number of patterns
+    $command .= "echo ';' >> ${synthesis_file}; ";
+    $command .= "echo '; Number of patterns' >> ${synthesis_file}; ";
+    $command .= " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
+    $command .= " | grep -v ';'" ;
+    $command .= " | cut -f ${score_col}";
+    $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
+    $command .= " >> ${synthesis_file}; ";
+
+
+    ## number of families
+    if ($ov eq "-noov") {
+	$rank_col=11;
+    } else {
+	$rank_col=10;
+    }
+    $command .= "echo ';' >> ${synthesis_file}; ";
+    $command .= "echo '; Number of families' >> ${synthesis_file}; ";
+    $command .=  " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
+    $command .= " | grep -v ';'" ;
+    $command .= " | awk \'\$".$rank_col."==1\'" ;
+    $command .= " | cut -f ${score_col}";
+    $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
+    $command .= " >> ${synthesis_file}; ";
+
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    warn "; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
+}
+
+################################################################
+## perform a single comparison
+sub OneJob {
+    my ($job, $job_verbose) = @_;
+
+    ################################################################
+    ### compose the command
+    my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
+    &RSAT::util::CheckOutDir($result_dir);
+    $command = "random-seq -l ${seq_len} -r ${seq_nb} ";
+    $command .= " | oligo-analysis -v $job_verbose -return occ,freq,proba,rank -sort "; 
+    $command .= " -l $oligo_len";
+    $command .= " $str";
+    $command .= " $ov";
+    $command .= " -thosig ${thosig}";
+    $command .= " -o ${result_file}";
+
+    ################################################################
+    ###### execute the command
+    &doit($command, $dry_run, $die_on_error, $verbose);
+    warn "$result_file\n" if ($verbose >= 1);
+}
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	check-oligo-analysis
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Check the program oligo-analysis by generating random
+	sequences, and calculating oligo occurrences, P-value, E-value
+	and significance.
+
+CATEGORY
+	util
+
+USAGE
+        check-oligo-analysis [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-outdir outputdir
+	-r	repetitions
+	-sl	sequence length
+	-sn	sequence number
+	-ol	oligo length
+	-thosig occurrence significance
+	-task	task (supported: $supported_tasks)
+	-start #	starting iteration (to pursue an interrupted test)
+	-max_occ #
+		maximum number of occurrences for calculating 
+		the theoretical distributions
+OUTPUT FORMAT
+
+    Task oligos
+    -----------
+
+       Each simulation consists in generating a random sequence and
+       running oligo-analysis on this sequence. Each analysis consists
+       in a repetition of several simulations (1000 by default). 
+
+       The program returns one file per simulation, with the result of
+       oligo-analysis. The first output file contains the verbosity
+       (detail of the nalysis options), the subsequent files only
+       contain the pattern counts and associated statistics. This
+       avoid repeating the same verbosity 1000 times.
+
+       There is a separate directory for each analysis condition
+       (1str, 2str, noov, ovlp), and the successive repetitions are
+       sved in separate files in this directory..
+
+   Task synthesis
+   --------------
+       This task collects all results from the output directories, and
+       summarizes them in one file per condition.
+
+   Task theory
+   -----------
+       Calculate the theoretical expectation for all occurrences from
+       0 to a given maximum (option -max_occ). The results are saved
+       in the diretory 'theory', as one separate file per condition.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+check-oligo-analysis options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-o		output file
+-outdir		output dir
+-v		verbose
+-r		repetitions
+-sl		sequence length
+-sn		sequence number
+-ol		oligo length
+-thosig		occurrence significance
+-task		task (supported: $supported_tasks)
+-start #	starting iteration (to pursue an interrupted test)E
+-max_occ #	maximum occurrences for the theoretical distributions
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $dir{output} = $ARGV[$a+1];
+	    	
+	    ### repetitions
+	} elsif ($ARGV[$a] eq "-r") {
+	    $repet = $ARGV[$a+1];
+	    
+	    ### sequence length
+	} elsif ($ARGV[$a] eq "-sl") {
+	    $seq_len = $ARGV[$a+1];
+	    
+	    ### sequence number
+	} elsif ($ARGV[$a] eq "-sn") {
+	    $seq_nb = $ARGV[$a+1];
+	    
+	    ### oligo length
+	} elsif ($ARGV[$a] eq "-ol") {
+	    $oligo_len = $ARGV[$a+1];
+	    
+	    ### threshold on oligo significance
+	} elsif ($ARGV[$a] eq "-thosig") {
+	    $thosig = $ARGV[$a+1];
+
+	    ### tasks
+	} elsif ($ARGV[$a] eq "-task") {
+	    push @tasks, split( ",", $ARGV[$a+1]);
+
+	    ### starting iteration
+	} elsif ($ARGV[$a] eq "-start") {
+	    $start = $ARGV[$a+1];
+	    
+	    ### max occurrences for the theoretical distrib
+	} elsif ($ARGV[$a] eq "-max_occ") {
+	    $manual_max_occ = $ARGV[$a+1];
+	    
+
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; check-oligo-analysis ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+################################################################
+## calculate theoretical distributions as a function of the conditions
+sub CalcTheoreticalDistributions {
+
+    my @descriptions = ();
+
+    $theory_dir=$dir{output}."/theory";
+    &RSAT::util::CheckOutDir($theory_dir);
+    $theory_file = $theory_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
+
+    $thf = &OpenOutputFile($theory_file); ## open output file
+    
+    ## number of jobs
+#    $jobs = `ls ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab | wc --lines`;
+#    $desc{jobs} = "Repetitions";
+
+    $desc{repet}= "repetitions (number of families analyzed)"; push @descriptions, "repet";
+
+    $L = $seq_len; $desc{L} = "sequence length"; push @descriptions, "L";
+    $N = $seq_nb;$desc{N} = "number of sequences" ;push @descriptions, "N";
+    $w = $oligo_len; $desc{w} = "word lengths";push @descriptions, "w";
+    
+    $desc{str}= "strands"; push @descriptions, "str";
+    $desc{ov} = "overlap count mode"; push @descriptions, "ov";
+
+    ## number of positions
+    $T = $N*($L - $w + 1); $desc{T} = "number of possible positions"; push @descriptions, "T";
+    if ($str eq "-1str") {
+        $D = 4**$w; 
+    } elsif ($w%2 == 1) {
+	$D = (4**$w)/2;
+    } else {
+	$D = (4**$w + 4**($w/2))/2;	
+    }
+    $desc{D} = "number of possible patterns"; push @descriptions, "D";
+
+    ## average occurrence probabilities
+    ## this is an approximation, I should separate reverse palindroms from the other patterns 
+    $p = 1/$D; $desc{p} = "average probability of occurrence at each position"; push @descriptions, "p";
+    $m = $p*$T; $desc{m} = "mean number of occurrences"; push @descriptions, "m";
+    
+
+    ## print parameters
+    print $thf ";Theoretical distribution\n";
+    foreach my $var (@descriptions) {
+	if (&IsInteger($$var)) {
+	    printf $thf "; %s\t%13d\t%s\n",  $var, $$var, $desc{$var};
+	} elsif (&IsReal($$var)) {
+	    printf $thf "; %s\t%13f\t%s\n",  $var, $$var, $desc{$var};
+	} else {
+	    printf $thf "; %s\t%13s\t%s\n",  $var, $$var, $desc{$var};
+	}
+    }
+
+
+    ## calculate the P-value, E-value and sig for each occurrence
+    if ($manual_max_occ) {
+	$max_occ = manual_max_occ;
+    } else {
+	$max_occ = &min($T, POSIX::ceil($m*10));
+    }
+
+    print $thf ";", join( "\t",
+			  "occ",
+			  sprintf ("%-13s", "P_value"),
+			  sprintf ("%-13s", "E_value"),
+			  "sig",
+			  sprintf ("%-13s", "P(x>=1)"),
+			  sprintf ("%-13s", "P(x>=1) approx"),
+			  sprintf ("%-13s", "approx error"),
+			  sprintf ("%-13s", "relative error"),
+			  sprintf ("%-13s", "exp_patterns"),
+			  sprintf ("%-13s", "exp_first_sig"),
+			  ), "\n";
+    foreach my $occ (0..$max_occ) {
+	## P-value
+	$P_value = &sum_of_binomials($p, $T, $occ, $T);
+	$E_value = $P_value * $D;
+	$sig = -log($E_value)/log(10);
+	
+	## this is the simple application of the formula, but it is restricted to the e-15 limit of precision of  floating point calculation
+#	$P_first_sig = 1-(1-$P_value)**$D;
+#	$P_first_sig_approx = 1-exp(-$E_value);
+
+	## this is slower but it has a precision of ~e-300
+	$P_first_sig = &sum_of_binomials($P_value, $D, 1, $D);
+	$P_first_sig_approx = &sum_of_poisson($E_value, 1, $D);
+
+	$approx_error = $P_first_sig_approx - $P_first_sig;
+	if ($P_first_sig > 0) {
+	    $relative_error = sprintf("%-13.8g", $approx_error/$P_first_sig);
+	} else {
+	    $relative_error = sprintf("%-13s", "NA");
+	}
+	print $thf join ("\t", 
+			 $occ,
+			 sprintf("%-13.8g", $P_value),
+			 sprintf("%-13.8g", $E_value),
+			 sprintf("%.2f", $sig),
+			 sprintf("%-13.8g", $P_first_sig),
+			 sprintf("%-13.8g", $P_first_sig_approx),
+			 sprintf("%-13.8g", $approx_error),
+			 $relative_error,
+			 sprintf("%-13.8g", $E_value*$repet),
+			 sprintf("%-13.8g", $P_first_sig*$repet),
+			 "\n"
+			 );
+    }
+	 
+    print $thf ";\n";
+    close $thf if ($theory_file);
+
+} 

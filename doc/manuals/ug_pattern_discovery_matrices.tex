@@ -1,0 +1,136 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% PATTERN DISCOVERY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Matrix-based Pattern discovery}
+
+\RSAT does not (yet) contain programs for matrix-based pattern
+discovery. However, several excellent programs exist for matrix-based
+pattern discovery, and it is often useful to combine various
+approaches in order to compare the results and select the most
+consistent ones. We show hereafter some examples of utilization for
+some of these programs:
+
+\begin{itemize}
+
+\item \program{consensus}, a greedy approach of pattern discovery,
+  developed by Jerry Hertz.
+
+\end{itemize}
+
+\section{consensus (program developed by Jerry Hertz)}
+
+An alternative approach for matrix-based pattern discovery is
+\textit{consensus}, a program written by Jerry hertz, an based on a
+greedy algorithm. We will see how to extract a profile matrix from
+upstream regions of the PHO genes.
+
+\subsection{Getting help}
+
+As for RSAT programs, there are two ways to get help from Jerry Hertz'
+proigrams: a detailed manual can be obtained with the option
+\option{-h}, and a summary of options with \option{-help}. Try these
+options and read the manual.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+consensus -h
+consensus -help
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsection{Sequence conversion}
+
+
+\textit{consensus} uses a custom sequence format. Fortunately, the RSAT
+package contains a sequence conversion program (\textit{convert-seq})
+which supports Jerry Hertz' format. We will thus start by converting
+the fasta sequences in this format. 
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-seq -i PHO_up800-noorf.fasta -from fasta -to wc -o PHO_up800-noorf.wc
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsection{Running consensus}
+
+Using consensus requires to choose the appropriate value for a series
+of parameters. We found the following combination of parameters quite
+efficient for discovering patterns in yeast upstream sequences.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+consensus -L 10 -f PHO_up800-noorf.wc -A a:t c:g -c2 -N 10
+\end{verbatim} \end{footnotesize}
+}
+
+The main options used above are
+
+\begin{description}
+\item[-L 10] we guess that the pattern has a length of about 10 bp;
+
+\item[-N 10] we expect about 10 occurrences in the sequence set. Since
+  there are 5 genes in the family, this means that we expect on
+  average 2 regulatory sites per gene, which is generally a good guess
+  for yeast.
+
+\item[-c2] indicates \program{consensus} that the motif can be searched
+  on both strands.
+
+\item[-A a:t c:g] specifies the alphabet. Indeed, \program{consensus}
+  can be used to extract motif from DNA sequences, proteins, or a text
+  based on an arbitrary alphabet. In thus tutorial we are only
+  interested in DNA sequences, we wpecify thus \option{-A a:t c:g}
+  (the semicolons indicate the complementary residues).
+\end{description}
+
+By default, several matrices are returned. Each matrix is followed by
+the alignment of the sites on which it is based. Note that the 4
+matrices are highly similar, basically they are all made of several
+occurrences of the high afinity site \seq{CACGTG}, and matrices 1 and
+3 contain one occurrence of the medium affinity site
+\seq{CACGTT}. These matrices are thus redundant, and it is generally
+appropriate to select the first one of the list for further analysis,
+because it is the most significant matrix found by the program.
+
+Also notice that these matrices are not made of exactly 10 sites
+each. \textit{consensus} is able to adapt the number of sites in the
+alignment in order to get the highest information content. The option
+\option{-N 10} was an indication rather than a rigid requirement.
+
+We can use the options \option{-pt 1} and \option{-pf 1} to restrict the
+result to a single matrix (the most significant one). To save the
+result in a file, we can use the symbol ``greater than'' ($>$) which
+redirects the output of a program to a file.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+consensus -L 10 -f PHO_up800-noorf.wc -A a:t c:g -c2 -N 10 -pf 1 -pt 1 \
+    > PHO_consensus_L10_N10_c2.matrix
+\end{verbatim} \end{footnotesize}
+}
+
+(this may take a few minutes)
+
+Once the task is achieved, check the result.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+more PHO_consensus_L10_N10_c2.matrix
+\end{verbatim} \end{footnotesize}
+}
+
+\section{Random expectation}
+
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+random-seq -format wc -r 10 -l 800 -bg upstream-noorf \
+  -org Saccharomyces_cerevisiae -ol 6 -lw 0 -o rand_Sc_ol6_n10_l800.wc 
+
+consensus -L 10 -f rand_Sc_ol6_n10_l800.wc -A a:t c:g -c2 -N 10 -pf 1 -pt 1 \
+    > rand_Sc_ol6_n10_l800_L10_N10_c2.matrix
+\end{verbatim} \end{footnotesize}
+}

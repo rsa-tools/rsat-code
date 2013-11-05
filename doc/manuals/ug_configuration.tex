@@ -1,0 +1,123 @@
+\section{Configuring \RSAT}
+
+
+In order to use the command-line version of \RSAT, you first need an
+account on a Unix machine where \RSAT has been installed, and you
+should know the directory where the tools have been installed (if you
+don't know, ask assistance to your system administrator).
+
+In the following instruction, we will assume that \RSAT is installed
+in the directory 
+
+\texttt{/home/fred/rsa-tools}. 
+
+This path has to be
+replaced by the actual path where \RSAT has been installed on your
+computer.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Accessing the programs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Adding \RSAT  to your path}
+
+Before starting to use the tools, you need to define an environment
+variable (\texttt{RSAT}), and to add some directories to your path.
+
+For the following instructions, we will denote as \file{[RSAT\_PARENT\_PATH]}
+the path of the parent folder in which the \RSAT suite has been
+downloaded.
+
+For example, if the \file{rsa-tools} folder has been installed in your
+home directory (it is thus found at \file{/home/fred/rsa-tools}), you
+should replace \file{[RSAT\_PARENT\_PATH]} by \file{/home/fred} in all the
+following instructions. 
+
+
+\begin{enumerate}
+
+\item Identify your \texttt{SHELL}.
+
+  The way to execute the following instructions depends on your
+  ``shell'' environment. If you don't know which is your default
+  shell, type
+
+\lstset{language=csh}
+
+\begin{lstlisting}
+echo $SHELL
+\end{lstlisting}
+%$
+
+The answer should be something like \result{/sbin/bash} or
+\result{/bin/tcsh}
+
+\item Declare the \RSAT environment variables.
+
+  We will define configuration parameters necessary for \RSAT.  This
+  includes an environment variable named \texttt{RSAT}.  We will then
+  add the path of the \RSAT \ perl scripts, python scripts and
+  binaries to your path.
+
+\begin{itemize}
+
+\item \emph{If your default shell is \textbf{tcsh} or \textbf{csh}},
+  copy the following lines in a file named \file{.chsrc} that should
+  be found at root of your account.
+
+  \emph{Note}: replace [PARENT\_PATH] by the full path of the directory
+  in which the rsa-tools folder has been created.
+
+\begin{lstlisting}
+################################################################
+## Configuration for Regulatory Sequence Analysis Tools (RSAT)
+setenv RSAT [PARENT_PATH]/rsa-tools
+set path=($RSAT/bin $path)
+set path=($RSAT/perl-scripts $path)
+set path=($RSAT/python-scripts $path)
+\end{lstlisting}
+%% closing $
+
+\item \emph{If your shell is bash}, you should copy the following
+  lines in a file named \file{.bash\_profile} at the root of your
+  account (depending on the Unix distribution, the bash custom
+  parameters may be declered in a file named \file{.bash\_profile} or)
+  \file{.bashrc}, in case of doubt ask your system administrator).
+
+  \emph{Note}: replace [PARENT\_PATH] by the full path of the directory
+  in which the rsa-tools folder has been created.
+
+\begin{lstlisting}
+################################################################
+## Configuration for Regulatory Sequence Analysis Tools (RSAT)
+export RSAT=[PARENT_PATH]/rsa-tools
+export PATH=${RSAT}/bin:${PATH}
+export PATH=${RSAT}/perl-scripts:${PATH}
+export PATH=${RSAT}/python-scripts:${PATH}
+\end{lstlisting}
+%% closing $
+
+\item If you are using a different shell than bash, csh or tcsh, the
+specification of environment variables might differ from the syntax
+above.  In case of doubt, ask your system administrator how to
+configure your environment variables and your path.
+
+\end{itemize}
+
+\item In order for the variables to be taken in consideration, you
+  need to log out and open a new terminal session. To check that the
+  variables are correctly defined, type.
+
+\begin{lstlisting}
+  echo $RSAT
+\end{lstlisting}
+%%$
+
+In the example above, this command should return
+
+\begin{lstlisting}
+/home/fred/rsa-tools
+\end{lstlisting}
+
+
+\end{enumerate}
+

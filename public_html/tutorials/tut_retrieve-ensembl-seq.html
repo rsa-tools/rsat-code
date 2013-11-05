@@ -1,0 +1,166 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials - retrieve-ensembl-seq</title>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+<center>
+<h2><a href="../RSAT_home.cgi">RSA-tools</a> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../retrieve-ensembl-seq_form.cgi">retrieve-ensembl-seq</a>
+</h2>
+</center>
+
+<br/>
+In the left frame, under the title <B>Sequence retrieval</B>, click
+on the tool "<b>retrieve EnsEMBL sequence</b>". A form appears, allowing you
+to select the parameters of sequence retrieval.
+
+<h3>Retrieving upstream sequences for a selected set of genes</h3>
+<ul>
+We will first retrieve upstream sequences for a set of 4 human genes
+involved in breast cancer.
+<ol>
+<p><li> In the pop-up menu "<b>Query organism</b>", select <i>Homo sapiens</i>
+<p><li> In the text area under "<b>Gene, transcript or protein IDs</b>", type the following list
+of IDs</li>
+<PRE>
+ENSG00000139618
+ENSG00000100916
+ENSG00000110934
+ENSG00000131507
+</PRE>
+<p><li> In the "<b>From</b>" box, under "<b>Options for upstream or downstream
+      sequence</b>", replace -2000 by -5000
+<p><li>Leave all other options unchanged and click on the button
+"<b>GO</b>"
+</ol>
+
+<p>
+The result page will appear with a message stating that your request is being
+processed, and showing you the Job ID and time of submission. After a few
+seconds, the result itself is displayed. Since the fourth gene has two
+alternative transcripts, you get five sequences.
+
+<p> Note that by default, the output mode is set to <i><b>display</b></i>. But
+  if you do not need to view the sequences before submitting them to another
+  tool, you can use the <i><b>server</b></i> output mode. Even if the <i><b>server</b></i> mode has been used, you still have the possibility
+to check the sequences a posteriori. In the result page, click on the
+link, in order to see the upstream sequence of the selected
+genes.
+<br>The third output mode, <i><b>email</b></i>, is usefull for large requests
+(several tens of IDs). Just fill in your email address in the provided field,
+and the link to your sequences will be sent to you when ready.
+
+<p>Check the size of the sequences you obtained.
+
+<p>Below the sequences, you can see a series of buttons, which will
+allow you to send the retrieved sequences to the next task (as we will
+see in the next tutorials). For the time being, do not click these
+buttons.
+
+<p><b>Remarks</b>
+<ol>
+<p><li>Request IDs must be separated by carriage returns.
+</ol>
+</ul>
+
+<h3>Preventing overlap with neighbour gene</h3>
+<ul>
+<ol>
+<p><li>Come back to the <b>retrieve EnsEMBL sequence</b> form. 
+<p><li>Perform the same operations as above, but this time, select
+the option "<b>Prevent overlap with neighbouring gene</b>".
+<p><li>Compare the size of the sequences with the previous result.
+</ol>
+<p><b>Interpretation of the results</b>
+<p>
+The gene with ID ENSG00000110934 has a neighbour gene closer than 5000 bp. The
+retrieved sequence is thus only 4278 bp for that gene.
+<p>If you don't mind retrieving a sequence belonging to a neighbouring gene as
+  long as it is not coding, use the option "<b>Prevent overlap with
+  neighbouring ORF</b>" instead.
+</ul>
+
+<h3>Retrieving 5'UTR sequence of a gene</h3>
+<ul>
+<ol>
+<p><li> In the pop-up menu "<B>Query organism</b>", select <i>Homo sapiens</i>
+<p><li> In the text area under "<B>Gene, transcript or protein IDs</B>", type the following ID</li>
+<PRE>
+ENSG00000131507
+</PRE>
+<p><li> In the "<b>Type of sequence to retrieve</b>" section, in the "<b>Sequence
+      type</b>" pop-up menu, choose <i>5prime UTR</i>.
+<p><li>Leave all other options unchanged and click on the button
+"<b>GO</b>"
+</ol>
+<p> Since the query gene has two alternative transcripts, you get two
+  sequences. But since the 5'UTRs for the two alternative transcripts partly
+  overlap, a portion of the retrieved sequences is redundant, which is not
+  suitable for some analyses, like motif discovery. If you want to avoid
+  redundant sequences for a given query gene, use the same settings but make
+  sure to check "<b>Avoid redundant sequences due to alternative
+  transcripts</b>". With our example, you will then get just one sequence
+  spanning over both 5'UTRs.
+</ul>
+
+<h3>Retrieving the sequence of a gene</h3>
+<ul>
+We now want to retrieve the whole sequence of a gene. As it is defined in
+EnsEMBL, it begins at the TSS of the first transcript (transcripts ordered according to their 5' end) and ends at the
+termination of the last transcript (transcripts ordered according to their 3' end).
+<ol>
+<p><li> In the pop-up menu "<B>Query organism</b>", select <i>Homo sapiens</i>
+<p><li> In the text area under "<B>Gene, transcript or protein IDs</B>", type the following ID</li>
+<PRE>
+ENSG00000139618
+</PRE>
+<p><li> In the "<b>Type of sequence to retrieve</b>" section, in the "<b>Sequence
+      type</b>" pop-up menu, choose <i>gene</i>.
+<p><li>Leave all other options unchanged and click on the button
+"<b>GO</b>"
+</ol>
+<p>You get one long sequence of around 85 kb which corresponds to the whole
+  transcript for that gene.
+<p>Now do the same query with "<b>Mask coding sequences</b>" checked. You will
+  get a sequence the same length, but with all coding exons nucleotides
+  replaced by the 'N' character.
+</ul>
+
+<h3>Retrieving homologous sequences for a gene</h3>
+<ul>
+We will now retrieve all mamalian sequences orthologous to a human gene
+involved in breast cancer.
+<ol>
+<p><li> In the pop-up menu "<b>Query organism</b>", select <i>Homo sapiens</i>
+<p><li> Select the "<b>Multiple organisms</b>" option
+<p><li> In the pop-up menu "<b>Homology type</b>", select <i>orthologs</i>
+<p><li> In the text area "<b>Taxon</b>", type <i>Mammalia</i>
+<p><li> In the text area under "<b>Gene, transcript or protein IDs</b>", type the following ID</li>
+<PRE>
+ENSG00000139618
+</PRE>
+<p><li>Leave all other options unchanged and click on the button
+"<b>GO</b>"
+</ol>
+<p>This takes more time (~ 40 sec) than the above examples. You can, of course,
+  use all the options detailled in the previous examples in this "<b>Multiple organisms</b>" mode.
+</ul>
+
+<hr width="100%">
+<h4 class="footer">
+<address>
+For suggestions or information request, please contact 
+<script type='text/javascript'><!--
+var v2="FZ4BZ3EE5SS8KRHNM48";var v7=unescape("%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Olivier Sand<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Olivier Sand (using spam protection)</a></noscript>
+
+</address></h4>
+
+</blockquote>
+</body>
+</html>

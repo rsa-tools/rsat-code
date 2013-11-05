@@ -1,0 +1,806 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-seq-UCSC,v 1.2 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+retrieve-seq-UCSC
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Retrieve sequences from the UCSC genome browser database
+
+=head1 AUTHORS
+
+Jean-Valery Turastinze
+jturatsi@ulb.ac.be
+
+=head1 CATEGORY
+
+sequences
+
+=head1 USAGE
+
+retrive-seq-UCSC [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+use DBI();
+use Data::Dumper;
+use Getopt::Long;
+use File::Copy;
+
+################################################################
+## Main package
+package main;
+{
+    local $host = "genome-mysql.cse.ucsc.edu";
+    local $database = "dm3";
+    local $query = "";
+    local $upstream = "";
+    local $downstream ="";
+    local $firstintron = 0;
+    local $type = "upstream";
+    local $feattype = "mrna";
+    local $from ="";
+    local $to ="";
+    local $all = 0;
+    local %requests =(); # will contain all processed resquests
+    local %supported_return_fields = (
+				      features=>1,
+				      seq=>1,
+				     );
+    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+    local %return_fields = ();
+    local @genes_with_no_match = ();
+    local @one_exon_genes = ();
+    ################################################################
+    ## Genome paths
+    local $genomePath = "/home/rsat/ucsc_genomes/insects/DroMelanogaster3Genome/chromFaMaskedNib/";
+
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    #    $program_version = "0.00";
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if (($type eq "upstream") || ($type eq "downstream")) {
+	unless (($main::from) && ($main::to)) {
+	    &RSAT::error::FatalError("You must specify the postion to retrieve: options '-from #' and '-to #'"); 
+	}
+    }
+
+    my @queries = ();
+    if ($query) {
+	my @queries_init = split /,/,$main::query;
+	for my $one_id(@queries_init) {
+	    $one_id =~ s/\-R.{1,}//;
+	    push @queries, $one_id;
+	}
+    } elsif ($infile{input}) {
+	($main::in) = &OpenInputFile($main::infile{input});
+	while (<$main::in>) {
+	    next if (/'^;'/);		# skip comment lines
+	    next if (/'^#'/);		# skip header lines
+	    next if (/'^--'/);	# skip mysql-type comment lines
+	    next unless (/\S/);	# skip empty lines
+	    
+	    my @queries_genes = split /\s+/;
+	    my $one_query = $queries_genes[0];
+	    $one_query =~ s/\-R.{1,}//;
+	    push @queries, $one_query;
+	}
+	print $_,"\n" for (@queries);
+	close $main::in;
+	&RSAT::message::Info("Read gene list from file", $infile{input}, scalar(@queries), "genes") if ($main::verbose >= 1);
+
+    }elsif ($all) {
+	my $dbh = DBI->connect("dbi:mysql:database=".$database.";host=".$host,
+			       "genome","",
+			       { RaiseError => 1, AutoCommit => 1 });
+	if ($database eq "dm3") {
+	    my $request = "SELECT name FROM flyBaseGene;";
+	    my $sth1 = $dbh->prepare($request);
+	    $sth1->execute();
+
+	    while(my @line = $sth1->fetchrow_array){
+		for my $field (@line) {
+		    $field =~ s/\-R.{1,}//;
+		    push @queries, $field;
+		}
+	    }
+	}
+    } else {
+	&FatalError(join("\t", "You must at least specify one query (option -q)"));
+    }
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    #     ($main::in) = &OpenInputFile($main::infile{input});
+    #     while (<$main::in>) {
+
+    #     }
+
+
+    close $main::in if ($main::infile{input});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+
+    ################################################################
+    ## Connect to UCSC and get request info
+    my $request_ref = &get_requests_info(\@queries);
+    %requests = %$request_ref;
+#    print Dumper($request_ref);
+ #   print Dumper(\%requests);
+#die;
+ #   print Dumper \@genes_with_no_match;
+
+    ################################################################
+    ## processing data for retrieving upstream or downstream features
+
+     if ($return_fields{features}) {
+#	 if (($downstream) ||($upstream)) {
+	     print $out "#", join ("\t", 
+				   "gene",
+				   "ft_type",
+				   "ft_name",
+				   "chromosome",
+				   "start",
+				   "end",
+				   "strand",
+				   "\n",
+				  );
+#	 }
+     }
+    
+    if ($return_fields{features}) {
+	if (($type) && ($feattype)) {
+	    for my $gene_name (keys %requests) {
+		for my $transcript_ID (keys %{$requests{$gene_name}}) {
+		    my $start_pos;
+		    my $end_pos;
+		    my $strand;
+		    my $feature_name;
+		    $strand = "D" if ($requests{$gene_name}->{$transript_ID}->{strand} eq "+");
+		    $strand = "R" if ($requests{$gene_name}->{$transript_ID}->{strand} eq "-");
+		    
+		    ####reference feature type is mRNA (TSS)
+		    if (($feattype eq "mrna") && ($type eq "upstream")) {
+			$feature_name=$type;
+			$start_pos = $requests{$gene_name}->{$transript_ID}->{txStart}+$from;
+			$end_pos = $requests{$gene_name}->{$transript_ID}->{txStart}+$to;
+			
+			#print $type, $feattype,"\n"; die;
+		    } elsif (($feattype eq "mrna") && ($type eq "downstream")) {
+			$feature_name=$type;
+			$start_pos = $requests{$gene_name}->{$transript_ID}->{txEnd}+$from;
+			$end_pos = $requests{$gene_name}->{$transript_ID}->{txEnd}+$to;
+			
+			#### reference feature type is CDS
+		    } elsif (($feattype eq "cds") && ($type eq "upstream")) {
+			$feature_name=$type;
+			$start_pos = $requests{$gene_name}->{$transript_ID}->{cdsStart}+$from;
+			$end_pos = $requests{$gene_name}->{$transript_ID}->{cdsStart}+$to;
+			
+		    } elsif (($feattype eq "cds") && ($type eq "downstream")) {
+			$feature_name=$type;
+			$start_pos = $requests{$gene_name}->{$transript_ID}->{cdsEnd}+$from;
+			$end_pos = $requests{$gene_name}->{$transript_ID}->{cdsEnd}+$to;
+			
+		    } elsif (($feattype eq "introns") && ($type eq "feature") && ($firstintron)){
+			$feature_name = "firstintron";
+			if ($requests{$gene_name}->{exonCount} > 1) {
+			    $start_pos = $requests{$gene_name}->{$transript_ID}->{exon_ends}->[0]+1;
+			    $end_pos = $requests{$gene_name}->{$transript_ID}->{exon_starts}->[1]-1;
+			}
+			if ($requests{$gene_name}->{$transript_ID}->{exonCount} == 1) {
+			    push @one_exon_genes, $gene_name;
+			    &RSAT::message::Warning("The gene ",$gene_name," does not have any intron") if $main::verbose >= 1;
+			    next;
+			}
+
+			#		   &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.")
+			#		     if (scalar @{$requests{$gene_name}->{exonCount}} == 1);
+			
+		    } elsif (($feattype eq "introns") && ($type eq "feature") && (!$firstintron)){
+			#		    next unless  ($requests{$gene_name}->{exonCount} > 1);
+			my @exon_starts = @{$requests{$gene_name}->{$transript_ID}->{exon_starts}};
+			my @exon_ends = @{$requests{$gene_name}->{$transript_ID}->{exon_ends}};
+			for my $i (1..scalar(@exon_ends-1)) {
+			    my $feature_name = $gene_name."_intron_".$i;
+			    my $start_pos = $requests{$gene_name}->{$transript_ID}->{exon_ends}->[$i-1]+1;
+			    my $end_pos = $requests{$gene_name}->{$transript_ID}->{exon_starts}->[$i]-1;;
+			    $strand = "D" if ($requests{$gene_name}->{$transript_ID}->{strand} eq "+");
+			    $strand = "R" if ($requests{$gene_name}->{$transript_ID}->{strand} eq "-");
+			    print $out join("\t",
+					    $gene_name,
+					    $feature_name,
+					    $gene_name,
+					    $requests{$gene_name}->{chrom},
+					    $start_pos,
+					    $end_pos,
+					    $strand,
+					    "\n",
+					   );
+			}
+			
+			#		    &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.") if (scalar @{$requests{$gene_name}->{exonCount}} == 1);
+			
+		    } elsif (($feattype eq "gene") && ($type eq "feature")){
+			$feature_name = $feattype;
+			$start_pos = $requests{$gene_name}->{$transript_ID}->{txStart};
+			$end_pos = $requests{$gene_name}->{$transript_ID}->{txEnd};
+			my @exon_starts = @{$requests{$gene_name}->{$transript_ID}->{exon_starts}};
+			my @exon_ends = @{$requests{$gene_name}->{$transript_ID}->{exon_ends}};
+			
+		    } elsif (($feattype eq "extended_gene") && ($type eq "feature")) {
+			
+		    } else {
+			&FatalError(join("\t", "Check arguments validity for options -type and -feattype "));
+		    }
+		    
+		    
+		    print $out join("\t",
+				    $gene_name,
+				    $feature_name,
+				    $gene_name,
+				    $requests{$gene_name}->{$transript_ID}->{chrom},
+				    $start_pos,
+				    $end_pos,
+				    $strand,
+				    "\n",
+				   ) unless (($feattype eq "introns") && ($type eq "feature") && (!$firstintron));
+		    #	    &RSAT::message::Debug("gene name: ", $gene_name,"chromosome:",$requests{$gene_name}->{chrom},"Strand: ",$requests{$gene_name}->{strand},"TSS: ",$requests{$gene_name}->{txStart}) if ($main::verbose >= 1);
+		}
+	    }
+	    if ((@one_exon_genes) && ($main::verbose >= 1)) {
+		my $one_exon_gene_nb = scalar(@one_exon_genes);
+		print $out "; There are ",$one_exon_gene_nb," genes with only 1 exon:\n";
+		for my $gene (@one_exon_genes) {
+		    print $out ";\t",$gene,"\n";
+		}
+		#die;
+	    }
+	}
+    }
+
+    if ($return_fields{seq}) {
+	if (($type) && ($feattype)) {
+	    if (($downstream) ||($upstream)) {
+		my @tmpFiles =();
+		for my $gene_name (keys %requests) {
+		    my $start_pos;
+		    my $end_pos;
+		    my $size;
+		    if ($upstream) {
+			$type = "upstream";
+			$size = $upstream; 
+			$start_pos = $requests{$gene_name}->{txStart}-$upstream;
+			$end_pos = $requests{$gene_name}->{txStart};
+		    }
+		    if ($downstream){
+			$type = "downstream";
+			$size = $downstream;
+			$start_pos = $requests{$gene_name}->{txEnd}+1;
+			$end_pos = $requests{$gene_name}->{txEnd}+1+$downstream;
+		    }
+		    my $nibFile = $genomePath.$requests{$gene_name}->{chrom}.".fa.masked.nib";
+		    my $faHeader = $database."_".$gene_name." ".$type." from ".$start_pos." to ".$end_pos."; size: ".$size;#; location: "chromosome:BDGP5.4:2R:1:21146708:1 5866736 5866745 D"
+		    my $outTmpFile = $gene_name.".tmp.fa";
+		    &nibFrag($requests{$gene_name}->{chrom},$start_pos,$end_pos,$requests{$gene_name}->{strand},$faHeader,$nibFile,$outTmpFile);
+		    push @tmpFiles, $outTmpFile;
+		}
+		my $sequences =`cat @tmpFiles`;
+		for (@tmpFiles) {
+		    unlink $_;
+		}; ## removing all intermediate files
+		print $out $sequences;
+	    }
+
+	}
+    }
+    
+    ################################################################
+    ## Print output
+
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+	my $arg;
+	my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+	while (scalar(@arguments) >= 1) {
+		$arg = shift (@arguments);
+		## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+		if ($arg eq "-v") {
+			if (&IsNatural($arguments[0])) {
+				$main::verbose = shift(@arguments);
+			} else {
+				$main::verbose = 1;
+			}
+
+			## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+		} elsif ($arg eq "-h") {
+			&PrintHelp();
+
+			## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+		} elsif ($arg eq "-help") {
+			&PrintOptions();
+
+			## Input file
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+		} elsif ($arg eq "-i") {
+			$main::infile{input} = shift(@arguments);
+
+			## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+		} elsif ($arg eq "-o") {
+			$main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-q query>
+
+ The query is specified as CG id
+
+=cut
+
+		} elsif ($arg eq "-q") {
+			$main::query = shift(@arguments);
+
+=pod
+
+=item B<-all The query is all genes>
+
+Retrieve the specified type of sequences for all genes
+
+=cut
+
+		    } elsif ($arg eq "-all") {
+			$main::all = 1;
+
+
+=pod
+
+=item B<-return seq or features>
+
+ The programs returns either sequences (-return seq) or features (-return features)
+
+=cut
+
+		    } elsif ($arg eq "-return") {
+			$arg = shift (@arguments);
+			chomp($arg);
+			if ($supported_return_fields{$arg}) {
+			    $return_fields{$arg} = 1;
+			}
+
+=pod
+
+=item B<-type sequence type>
+
+Supported type: upstream, downstream, feature
+
+This option is used in combination with -feattpe option.
+
+When -type argument is either 'upstream' or 'downstream' the -feattype option argument
+will be the feature relative to which the sequences will be retrieved (e.g mrna, cds).
+
+When -type argument is 'feature', the feattype argument will be one of other sequence types
+that can be retreived (e.g introns, exons, gene)
+
+=cut
+		    } elsif ($arg eq "-type") {
+			$main::type = shift(@arguments);
+			$main::type = lc($main::type);
+
+=pod
+
+=item B<-feattype >
+
+Supported feattype: mRNA, cds (when combined with -type upstream or downstream); 
+introns, exons, gene, extended_gene (when combined with -type feature)
+
+For a correct use of this option see also -type.
+
+=cut
+			
+		    } elsif ($arg eq "-feattype") {
+			$main::feattype = shift(@arguments);
+			$main::feattype = lc($main::feattype);
+
+
+=pod
+
+=item B<-firstintron first intron>
+
+Retrieve the first introns if thety exists for all queries.
+This option must be combined with -type introns -feattype feature
+
+=cut
+
+		    } elsif ($arg eq "-firstintron") {
+			$main::firstintron = 1;
+
+=pod
+
+=item B<-from #>
+
+Left position to retrieve
+
+=cut
+
+		    } elsif ($arg eq "-from") {
+			$main::from = shift(@arguments);
+			&RSAT::error::FatalError($main::from, "Invalid value for the option -from, should  be an Integer number.") 
+			  unless (&IsInteger($main::from));
+
+=pod
+
+=item B<-to #>
+
+right position position to retrieve
+
+=cut
+
+		    } elsif ($arg eq "-to") {
+			$main::to = shift(@arguments);
+			&RSAT::error::FatalError($main::to, "Invalid value for the option -to, should  be an Integer number.") 
+			  unless (&IsInteger($main::to));
+
+
+# 			unless (&IsNatural($main::downstream)) {
+# 			    &FatalError(join("\t", "The size of the sequence to retrieve must be a natural number"))}
+
+		} else {
+			&FatalError(join("\t", "Invalid option", $arg));
+
+		}
+	}
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; retrive-seq-UCSC ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+sub get_requests_info{
+    my ($queries_ref) = @_;
+    my @queries = @$queries_ref;
+    ################################################################
+    ## Connect to the UCSC MySQL database
+    
+    
+    ## connect to the DB
+    
+    &RSAT::message::Info("; Connecting to the UCSC MySQL database at ",$host) if ($main::verbose >= 1);
+    
+    my $dbh = DBI->connect("dbi:mysql:database=".$database.";host=".$host,
+	                   "genome","",
+	                   { RaiseError => 1, AutoCommit => 1 });
+    &RSAT::message::Info("; Connected to the UCSC MySQL database!") if ($main::verbose >= 1);
+    &RSAT::message::Info("; Processing requests...") if ($main::verbose >= 1);
+    
+    ## querying for features from the database
+    for my $one_query (@queries) {
+	my $request1 = "SELECT *
+                    FROM flyBaseGene
+                    WHERE name like'".$one_query."-R%';";
+	
+	my $sth1 = $dbh->prepare($request1);
+	$sth1->execute();
+	
+	my @content = ();
+	shift @content;
+	my %gene_info =();
+	while(my @line = $sth1->fetchrow_array){
+	    push @content, \@line;
+	    my @exonStarts = split /,/, $line[9];
+	    my @exonEnds = split /,/, $line[10];
+	    my $transcript_id = $line[1];
+	    my %transcript_info = ();
+	    $transcript_info{CG_id} = $one_query;
+	    $transcript_info{transcript_Id} = $line[1];
+	    $transcript_info{chrom} = $line[2];
+	    $transcript_info{strand} = $line[3];
+	    $transcript_info{txStart} = $line[4]; ## transcription start
+	    $transcript_info{txEnd} = $line[5];
+	    $transcript_info{cdsStart} = $line[6];
+	    $transcript_info{cdsEnd} = $line[7];
+	    $transcript_info{exonCount} = $line[8];
+	    $transcript_info{exon_starts} = \@exonStarts;
+	    $transcript_info{exon_ends} = \@exonEnds;
+
+	    $gene_info{$transcript_id} = \%transcript_info;
+	    unless (%gene_info) {
+		&RSAT::message::Warning("The gene ",$one_query," did'nt retrun any match from UCSC database");
+		push @genes_with_no_match, $one_query;
+	    }
+	}
+	$requests{$one_query} = \%gene_info;
+    }
+    &RSAT::message::Info("; Requests processed...\n") if ($main::verbose >= 1);
+    return \%requests;
+ #   print Dumper \%requests;
+
+}
+
+
+sub get_neighbours_limits {
+    my ($request_ref) = @_;
+    my %requests = %$request_ref;
+    for my $CG_ID (keys %requests) {
+	print $CG_ID,"\n";
+	my @all_transcripts_tss =(); ### takes all transcripts tss
+	my @all_transcripts_ends = ();
+	my @all_transcripts_cds_starts =();
+	my @all_transcripts_cds_ends =();
+	my $upstream_neighbour_end;
+	my $downtream_neighbour_start;
+	my $chromosome;
+	for my $transcript_ID (keys %{$requests{$CG_ID}}) {
+	    #	    print "\n",$transcript_ID,"\n";
+	    print "TSS: ",$requests{$CG_ID}->{$transcript_ID}->{txStart},"\n";
+	    push @all_transcripts_tss, $requests{$CG_ID}->{$transcript_ID}->{txStart};
+	    push @all_transcripts_cds_starts, $requests{$CG_ID}->{$transcript_ID}->{cdsStart};;
+	    #	    print "Exon count: ",$requests{$CG_ID}->{$transcript_ID}->{exonCount},"\n";
+	    #	    print "TES: ",$requests{$CG_ID}->{$transcript_ID}->{txEnd},"\n";
+	    push  @all_transcripts_ends, $requests{$CG_ID}->{$transcript_ID}->{txEnd};
+	    push @all_transcripts_cds_ends, $requests{$CG_ID}->{$transcript_ID}->{cdsEnd};;
+	    $chromosome = $requests{$CG_ID}->{$transcript_ID}->{chrom};
+	}
+	#	print Dumper(\@all_transcripts_tss);
+	#	print Dumper(\@all_transcripts_ends);
+	my $five_primest_tss = &min(@all_transcripts_tss);
+	my $five_primest_cds_start = &min(@all_transcripts_cds_starts);
+	my $three_primest_tss = &max(@all_transcripts_tss);
+	my $three_primest_cds_start = &max(@all_transcripts_cds_starts);
+	my $three_primest_end = &max(@all_transcripts_ends);
+	my $three_primest_cds_end = &max(@all_transcripts_cds_ends);
+	my $five_primest_end = &min(@all_transcripts_ends);
+	my $five_primest_cds_end = &min(@all_transcripts_cds_ends);
+	
+	print "Le start le plus proche: ",$five_primest_tss,"\n Le end le plus eloigne: ", $three_primest_end,"\n";
+	
+	################################################################
+	#### search for the neighbours limits (upstream or downstream)
+	################################################################
+	my $dbh = DBI->connect("dbi:mysql:database=".$database.";host=".$host,
+			       "genome","",
+			       { RaiseError => 1, AutoCommit => 1 });
+	&RSAT::message::Info("; Connected to the UCSC MySQL database!") if ($main::verbose >= 1);
+	&RSAT::message::Info("; Processing requests...") if ($main::verbose >= 1);
+	
+	## querying for the neighbours limits from the database
+	## first the upstream' neighbour
+	my $request2 = "SELECT *
+                    FROM flyBaseGene
+                    WHERE chrom='".$chromosome."'
+                    AND txEnd < ".$five_primest_tss.
+		      " ORDER BY txEnd DESC limit 1;";
+	
+	my $sth2 = $dbh->prepare($request2);
+	$sth2->execute();
+	my @upstream_neighbour = $sth2->fetchrow_array;
+	$upstream_neighbour_end = $upstream_neighbour[5];
+	print "Upstream: ",$upstream_neighbour_end,"\n";
+	
+	
+	## second the downstream neighbour
+	my $request3 = "SELECT *
+                    FROM flyBaseGene
+                    WHERE chrom='".$chromosome."'
+                    AND txStart > ".$three_primest_end.
+		      " ORDER BY txStart ASC limit 1;";
+	my $sth3 = $dbh->prepare($request3);
+	$sth3->execute();
+	my @downstream_neighbour = $sth3->fetchrow_array;
+	$downtream_neighbour_start= $downstream_neighbour[4];
+	print "Downstream: ",$downtream_neighbour_start,"\n";
+	print $chromosome,"\n";
+	return $upstream_neighbour_end,$downtream_neighbour_start;
+    }
+}
+
+
+
+################################################################
+## call the UCSC util nibFrag to extractfragments
+sub nibFrag {
+    my ($contig,$start,$end,$strand,$name,$nibFile,$tempOutFile) = @_;
+    my $str = $strand;
+    $str = "m" if ($strand eq "-");
+    my $cmd = "nibFrag -name=".$name." ".$nibFile." ".$start." ".$end." ".$str." ".$tempOutFile;
+#    print $cmd,"\n"; die;
+    system "nibFrag -name="."\"".$name."\" ".$nibFile." ".$start." ".$end." ".$str." ".$tempOutFile;
+}
+
+#">Drosophila_melanogaster-FBgn0000606-eve-FBtr0088390	FBgn0000606-FBtr0088390; upstream from -10 to -1; size: 10; location: chromosome:BDGP5.4:2R:1:21146708:1 5866736 5866745 D"
+
+sub neighbours_limits {
+
+}
+
+sub mask_regions {
+
+}
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item retrive-seq
+
+=item retrieve-ensembl-seq
+
+=item retrieve-seq-quick
+
+=item retrieve-seq-multigenome
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+=item -retrieve promoters of selected genes
+
+=item -retrieve all non-coding regions
+
+=item -retrieve orthologs of every kind of region
+
+=back
+
+=cut
+
+__END__

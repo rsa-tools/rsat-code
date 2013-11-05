@@ -1,0 +1,255 @@
+#!/usr/bin/python
+
+#from Bio.AlignIO import MafIO
+
+import sys, getopt
+import math
+
+from manager.OptionManager import OptionManager
+from utils.exception.ConfigException import ConfigException
+from utils.exception.ParsingException import ParsingException
+from utils.exception.ExecutionException import ExecutionException
+from utils.log.Log import Log
+
+from manager.PipelineManagerFactory import PipelineManagerFactory
+
+# --------------------------------------------------------------------------------------
+def main( argv):
+    
+
+    # Directory where output fir will be created
+    working_dir = None
+    # Directory where RSAT is installed
+    rsat_path = None
+    # Path to the pipelines definition XML file
+    pipeline_filepath = None
+    # Verbosity level
+    verbosity = 1
+    # Resume option
+    resume = True
+    # Server mode
+    server = False
+    listening_path = None
+
+    try:
+        long_options = [ OptionManager.PIPELINE + "=",\
+                         OptionManager.PIPELINE_NAME + "=",\
+                         OptionManager.INPUT_PEAKS + "=",\
+                         OptionManager.REF_SPECIES + "=",\
+                         OptionManager.MAF_FILE_PATH + "=",\
+                         OptionManager.ALIGN_SPECIES + "=",\
+                         OptionManager.REF_MOTIF + "=",\
+                         OptionManager.PEAK_NUMBER + "=",\
+                         OptionManager.DB_ROOT_PATH + "=",\
+                         OptionManager.DB_FILE_LIST + "=",\
+                         OptionManager.DB_FORMAT_LIST + "=",\
+                         OptionManager.CUSTO_DB_FILE_PATH + "=",\
+                         OptionManager.WINDOW_SIZE + "=",\
+                         OptionManager.RESIDU_CONSERVATION_LIMIT + "=",\
+                         OptionManager.WINDOW_CONSERVATION_LIMIT + "=",\
+                         OptionManager.MAX_MOTIF_NUMBER + "=",\
+                         OptionManager.MAX_MOTIF_BY_FAMILY + "=",\
+                         OptionManager.MAX_HYP_EVALUE + "=",\
+                         OptionManager.MAX_CHI2_EVALUE + "=",\
+                         OptionManager.EXTENSION_5P + "=",\
+                         OptionManager.EXTENSION_3P + "=",\
+                         OptionManager.VERBOSITY + "=",\
+                         OptionManager.OUTPUT + "=",\
+                         OptionManager.RSAT + "=",\
+                         OptionManager.FORCE,\
+                         OptionManager.SERVER,\
+                         OptionManager.HELP ]
+        #opts, args = getopt.getopt( argv, "hi:o:v:fs", ["help", "input=", "output=", "verbosity=", "force",  "server"])
+        opts, args = getopt.getopt( argv, "", long_options)
+    except getopt.error, msg:
+        print msg
+        usage()
+        print "For help use --help option"
+        return 2
+        
+    if len( opts) == 0:
+        usage()
+        return 2       
+        
+    for opt, arg in opts:
+        # Help option
+        if opt in ("-h", "--"+OptionManager.HELP):
+            usage()
+            return 0
+        # Path to a pipeline definition XML file
+        elif opt in ("-p", "--"+OptionManager.PIPELINE):
+            pipeline_filepath = arg
+        # Path for the desired output directory
+        elif opt in ("-o", "--"+OptionManager.OUTPUT):
+            working_dir = arg
+        # Path to RSAT
+        elif opt in ( "-r", "--"+OptionManager.RSAT):
+            rsat_path = arg
+        # Verbosity level: 0=log, 1=log + trace, 2=log + trace + info    
+        elif opt in ("-v", "--"+OptionManager.VERBOSITY):
+            try:
+                verbosity = int( arg)
+            except (TypeError, ValueError), exce:
+                print exce
+                usage()
+                return 2
+        # Disable resume mode
+        elif opt in ("-f", "--"+OptionManager.FORCE):
+            resume = False
+        # activate server mode
+        elif opt in ("-s", "--"+OptionManager.SERVER):
+            server = True
+            if arg != None and len( arg) > 0:
+                listening_path = arg
+            else:
+                listening_path = None
+            print "Launching SERVER mode"     
+        
+        
+    try:
+        pipeline_manager = PipelineManagerFactory.getManager( working_dir, rsat_path)
+        if server == True:
+            # Launch manager in server mode
+            pipeline_manager.server( listening_path)
+        else:
+            # Launch manager for a direct execution
+            result = pipeline_manager.execute( pipeline_filepath, opts, verbosity, resume, working_dir)
+        if result == False:
+            if Log.isInitialized():
+                Log.log( "Error occured during pipelines execution. See logs for more details") 
+            print "Error occured during pipelines execution. See logs for more details"
+            return 2
+    except ConfigException, conf_exce:
+        print "Unable to initialize Pipeline Manager. From:\n\t---> " + str( conf_exce)
+        if Log.isInitialized():
+            Log.log( "Unable to initialize Pipeline Manager. From:\n\t---> " + str( conf_exce)) 
+        else:
+            print "Unable to initialize Pipeline Manager. From:\n\t---> " + str( conf_exce)
+        return 2
+    except ParsingException, par_exce:
+        if Log.isInitialized():
+            Log.log( "Error occured during Pipelines preparation. From:\n\t---> " + str( par_exce))
+        else:
+            print "Error occured during Pipelines preparation. From:\n\t---> " + str( par_exce)
+        return 2
+    except ExecutionException, exe_exce:
+        if Log.isInitialized():
+            Log.log( "Error occured during Pipelines execution. From:\n\t---> " + str( exe_exce))
+        else:
+            print "Error occured during Pipelines execution. From:\n\t---> " + str( exe_exce)
+        return 2
+    #except BaseException, exce:
+    #    if Log.isInitialized:
+    #        Log.log( "Error occured. From:\n\t---> " + str( exce))
+    #    else:
+    #        print "Error occured. From:\n\t---> " + str( exce) 
+    finally:
+        if Log.isInitialized():
+            Log.closeFiles()
+
+    return 0
+
+
+# --------------------------------------------------------------------------------------
+def usage():
+    
+    print "Command : peak-footprints"
+    print ""
+    print " Standard options : "
+    print " -------------------"
+    print ""
+    print " --pipeline \t: the path to the XML file describing the pipeline to execute."
+    print " --pipeline_name \t: the name of the pipeline."
+    print " --input_peaks \t: the path to the BED file containing the chIP-seq peaks."
+    print " --ref_species \t: the id of the reference species (e.g. mm8)."
+    print ' --align_species: the space separated list of species composing the desired multi-alignement (e.g. "hg18 rn4 BosTau3").'
+    print " --ref_motif \t: the ID of the TF motif used in the chIP-seq (e.g. MA0102.2)"
+    print ""
+    print ' example: peak-footprints --pipeline "/data/pipeline/default.xml" --input_peaks "/data/bed/experience_1.bed" --ref_species mm8 --align_species "hg18 rn4 BosTau3" --ref_motif MA0102.2'
+    print ""
+    print " Expert level options : "
+    print " -----------------------"
+    print ""
+    print " --maf_path \t\t: the path to the folder containing the MAF files."
+    print " --db_root_path \t\t: the path to the folder containing all the TF databases."
+    print " --db_file_list \t\t: the space separated list of TF database file name."
+    print " --db_format_list \t\t: the space separated list of TF database format. The order and the size of this list must be the same as the list provided throught the --db_file_list option."
+    print " --custo_db_file_path \t\t: the path to the customer TF database."
+    print " --peak_number \t\t\t: the number of peaks that will be randomly chosen in the initial peak list (from BED file)."
+    print " --window_size \t\t\t: the initial size of the sliding window used to detect conserved blocks."
+    print " --conservation_threshold \t: the ratio (between 0 and 1) indicating if a residue at a given position in the multi-alignment matrix is conserved or not."   
+    print " --window_conservation_threshold : the ratio (between 0 and 1) indicating if the sliding window in the multi-alignment matrix is conserved or not."
+    print " --max_motif_number \t\t: the maximal number of motif that will be presented in the final report."
+    print " --max_motif_by_family \t\t: the maximal number of motif that will be presented in each motif family in the final report."   
+    print " --max_hyp_pvalue \t\t: the maximal threshold on the hypergeometric p-value for a motif to be reported."   
+    print " --max_chi2_pvalue \t\t: the maximal threshold on the chi2 p-value for a motif to be reported."
+    print " --5pext \t\t: value of the 5' desired extension (applied to the initial peaks)."
+    print " --3pext \t\t: value of the 3' desired extension (applied to the initial peaks)."   
+    print " --output \t\t\t: the path to the desired output folder."
+    print " --rsat \t\t\t: the path to the RSAT install."
+    print " --force \t\t\t: this option force the tool to reexecute all the pipeline steps even if previous similar results are found."
+    print " --server \t\t\t: launch the tool in server mode."
+    print " --v \t\t\t\t: set the verbosity level (0 to 2)."
+
+
+# --------------------------------------------------------------------------------------
+if __name__ == "__main__":
+    sys.exit( main( sys.argv[1:]))
+
+
+
+
+# --------------------------------------------------------------------------------------
+def testInformationMatrix():
+    
+    probi = 0.325
+    correctionValue = 5
+    nbSequences = 5
+    fmin = (correctionValue * probi) / float( nbSequences + correctionValue)
+    print "min = " + str( fmin * math.log( fmin / probi))
+    fmax = (nbSequences + correctionValue * probi) / float( nbSequences + correctionValue)
+    print "max = " +str( fmax * math.log( fmax / probi))
+
+    for number in range( nbSequences+1):
+        fij = (number + correctionValue * probi) / float( nbSequences + correctionValue)
+        print " for " + str( number) + " = " + str( fij * math.log( fij / probi))
+
+
+
+# --------------------------------------------------------------------------------------
+def testRSAT():
+
+    import site
+    site.addsitedir( "/usr/share/python-support/python-soappy")
+    site.addsitedir( "/usr/share/python-support/python-fpconst")
+    import os, SOAPpy
+    
+    if os.environ.has_key("http_proxy"):
+        my_http_proxy=os.environ["http_proxy"].replace("http://","")
+    else:
+        my_http_proxy=None
+
+    url = "http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"
+    server = SOAPpy.SOAPProxy(url, http_proxy = my_http_proxy)
+
+    server.config.dumpSoapOutput = 0
+    server.config.dumpSoapInput = 0
+    server.config.debug = 1
+        
+    organism = "Escherichia_coli_K12"
+    query = ["metA"]
+
+    req = {'organism' : organism,
+           'query' : query,
+           'full' : 0,
+           'descr' : 0,
+           'noquery' : 0}
+
+    server.soapaction = 'urn:RSATWS#gene_info'
+    server.namespace =  'urn:RSATWS'
+    
+    res = server.gene_info(req)
+
+    print res.command
+    print res.client
+# eflag: FileType = Python2

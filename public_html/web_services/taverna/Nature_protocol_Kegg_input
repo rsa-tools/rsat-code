@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<b:dataThingMap xmlns:b="http://org.embl.ebi.escience/baclava/0.1alpha">
+  <b:dataThing key="Outputs">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:6c237fa7-8de7-437f-b56f-dc4ddccaa8f3">
+        <b:dataElementData>Ym90aA==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Sort">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:9ed5e610-b8f2-4625-9165-e9e98bbe9fbc">
+        <b:dataElementData>MQ==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Noov">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:c687c81c-722c-456d-890d-fd53f5bfe6e6">
+        <b:dataElementData>MQ==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="To">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:db3b7cea-dc76-437e-b7e5-bf1dbf896694">
+        <b:dataElementData>LTE=</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Th">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:563d0749-c396-4293-8249-1f932f7d7e9c">
+        <b:dataElementData>MQ==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Background">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:8870ff84-2cbd-4b41-b881-edf3d8b0dce9">
+        <b:dataElementData>dXBzdHJlYW0tbm9vcmY=</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="noorf">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:0b5f2f7d-ec5d-41e1-9d85-415bbbb72492">
+        <b:dataElementData>MQ==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="from">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:801434b4-6273-4335-bf5b-8bfc5123c552">
+        <b:dataElementData>LTgwMA==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Feattype">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:c32295b5-46f9-4a10-9bb6-f2c9770fb272">
+        <b:dataElementData>Q0RT</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Length">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:5797dee5-f4e1-4d5a-92fc-19be55c320c0">
+        <b:dataElementData>Ng==</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Lth">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:138a5eb2-6084-4a5d-9542-f9a56bc96f24">
+        <b:dataElementData>b2NjX3NpZyAw</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Pathway">
+    <b:myGridDataDocument lsid="" syntactictype="l('text/plain')">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:partialOrder lsid="urn:lsid:net.sf.taverna:dataCollection:774f5084-3b45-4988-bee1-d6f6e0bdf9f4" type="list">
+        <b:relationList>
+          <b:relation parent="0" child="1" />
+          <b:relation parent="1" child="2" />
+          <b:relation parent="2" child="3" />
+          <b:relation parent="3" child="4" />
+          <b:relation parent="4" child="5" />
+          <b:relation parent="5" child="6" />
+          <b:relation parent="6" child="7" />
+          <b:relation parent="7" child="8" />
+          <b:relation parent="8" child="9" />
+        </b:relationList>
+        <b:itemList>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:073d8c22-91b5-4204-b705-a546cba18504" index="0">
+            <b:dataElementData>cGF0aDpzY2UwMDI1Mg==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:056ba1b0-3fc6-49ed-a275-d38eec2f8b1e" index="1">
+            <b:dataElementData>cGF0aDpzY2UwMDI2MA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:6c3c8f68-f15c-422d-b2e3-4a6c5cd0aae5" index="2">
+            <b:dataElementData>cGF0aDpzY2UwMDI4MA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:e253fb7b-e2fb-4622-9174-65505c4f1ef2" index="3">
+            <b:dataElementData>cGF0aDpzY2UwMDI5MA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:d9d459b5-3e5d-42a6-badf-79ecb8979a8c" index="4">
+            <b:dataElementData>cGF0aDpzY2UwMDMwMA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:12a00e56-1edd-4fcd-814b-3f574e3770bd" index="5">
+            <b:dataElementData>cGF0aDpzY2UwMDMzMA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:97182182-70cf-4916-a2f9-cf119ac51795" index="6">
+            <b:dataElementData>cGF0aDpzY2UwMDM0MA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:e346d84f-0698-428c-a591-106c2a6e25a7" index="7">
+            <b:dataElementData>cGF0aDpzY2UwMDM4MA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:a5a602ff-b7e6-47ba-bfdc-da70381f95a7" index="8">
+            <b:dataElementData>cGF0aDpzY2UwMDQwMA==</b:dataElementData>
+          </b:dataElement>
+          <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:9822a392-1dca-47ae-b8dc-894fec437a2d" index="9">
+            <b:dataElementData>cGF0aDpzY2UwMDI3MQ==</b:dataElementData>
+          </b:dataElement>
+        </b:itemList>
+      </b:partialOrder>
+    </b:myGridDataDocument>
+  </b:dataThing>
+  <b:dataThing key="Organism">
+    <b:myGridDataDocument lsid="" syntactictype="'text/plain'">
+      <s:metadata xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha">
+        <s:mimeTypes>
+          <s:mimeType>text/plain</s:mimeType>
+        </s:mimeTypes>
+      </s:metadata>
+      <b:dataElement lsid="urn:lsid:net.sf.taverna:dataItem:bb833eff-20d8-4daf-bde6-446bf99b1964">
+        <b:dataElementData>U2FjY2hhcm9teWNlc19jZXJldmlzaWFl</b:dataElementData>
+      </b:dataElement>
+    </b:myGridDataDocument>
+  </b:dataThing>
+</b:dataThingMap>
+

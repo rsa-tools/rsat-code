@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+
+
+
+if (($ARGV[0] eq "-help") || ($ARGV[0] eq "-h")) {
+  open HELP, "| more";
+  print HELP <<End_of_Help;
+
+NAME
+	spaces-to-tab
+	
+	01 July 1997 by Jacques van Helden
+
+DESCRIPTION
+	replaces any series of contiguous spaces from input file 
+	by a tab character.
+	
+CATEGORY
+	util
+
+USAGE
+	spaces-ti-tab -i inputfile -o outpufile
+	
+End_of_Help
+  close HELP;
+  exit(0);
+}
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  if ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+  }
+}
+
+if ($outputfile ne "") {
+  open STDOUT, ">$outputfile"
+}
+
+unless (($inputfile eq "") || (open STDIN, "$inputfile")) {
+  print "Error: Cannot open input file.\n";
+  exit(1);
+}
+
+while (<STDIN>) {
+  s/ +/\t/g;
+  print $_;
+}
+
+exit;

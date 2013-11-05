@@ -1,0 +1,130 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	expand-seq
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        expand-seq [-i inputfile] [-o outputfile] [-v]
+
+
+DESCRIPTION
+	replaces the multipliers in a sequence by a repetitions of 
+	the preceding element. 
+	Example:
+		atgn{5}gta
+	is replaced by
+		atgnnnnngta
+
+CATEGORY
+	util
+	sequences
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+		
+	
+INPUT FORMAT
+	any text file	
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+expand-seq options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    }
+}
+
+
+#### check argument values ####
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+    print $out ";expand-seq result\n";
+    if ($inputfile ne "") {
+	print $out ";Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+}
+
+###### execute the command #########
+while (<$in>) {
+    $expanded = &ExpandSeq($_);
+    print $out $expanded;
+}
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $main::out if ($main::outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+

@@ -1,0 +1,193 @@
+#!/usr/bin/perl
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	exp-occ
+	
+	8 July 1997 by Jacques van Helden
+
+DESCRIPTION
+	Calculates the number of occurence for a pattern (word)
+	expected to be found in a DNA sequence.
+
+CATEGORY
+	util
+	sequences
+
+USAGE
+	exp-occ -w word -l sequence_length [-proba proba] 
+	        [-v] [-ov | -noov]
+	
+OPTIONS
+	-v	verbose.
+	-w	word ie pattern sequence (ex: 'GATAA', 'AATAA')
+	-l	sequence length.
+	-proba	estimation of the word probability. If omitted, word probability 
+		is calculated on basis of equiprobable mononucleotides.
+	-ov	overlapping matches are taken into account
+		This can make a significative difference in the case of self-
+		overlapping patterns like 'AAAAAA' or 'AATAA'.
+	-noov	overlapping matches are not taken into account.	
+	
+PROBABILITIES
+	Searching a word W of length w within a sequence of length L, the basic 
+	formula for calculation of the expected number of occurences is :
+		E(n(W)) = p*T = p*(L-w+1)
+		
+		where	W is the word
+			w is the word length
+			p is the word probability
+			L is the sequence length
+			T is the number of possible positions for a match
+			
+	This formula is valid only if the pattern cannot overlap with itself. 
+	In the contrary case, one has to consider whether the search algorithm
+	does or not allow to detect overlapping matches
+
+	If the search algorithm can not detect overlapping matches
+	----------------------------------------------------------
+	When overlapping matches are NOT detected (ex, if one uses grep or gais 
+	to search for the pattern), one has to introduce a correction for the 
+	fact that each time a match is found, the next (w-1) positions will not 
+	be considered. The number of possible match positions is thus :
+	
+		T\' = T - (w-1)*E(n(W))
+	
+	If the search algorithm can detect overlapping matches
+	------------------------------------------------------
+
+EXAMPLES
+	exp-occ -w 'AATAA' -l 1000
+	
+End_of_help
+  exit;
+}
+
+#### initialise parameters ####
+$count_overlap = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-w") {
+    $word = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-l") {
+    $seq_length = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-proba") {
+    $proba = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-ov") {
+    $count_overlap = 1;
+
+  } elsif ($ARGV[$a] eq "-noov") {
+    $count_overlap = 0;
+
+  }
+}
+
+
+#### check argument values ####
+if ($word eq "") {
+  print "	You should specify a word.\n";
+  print "	Type exp-occ -h for more info.\n";
+  exit;
+} else {
+  $word_length = length($word);
+}
+
+if ($seq_length eq "") {
+  print "	You should specify the sequence length.\n";
+  print "	Type exp-occ -h for more info.\n";
+  exit;
+}
+
+unless ($seq_length > 0) {
+  print "	Sequence length should be > 0.\n";
+  print "	Type exp-occ -h for more info.\n";
+  exit;
+}
+
+
+if ($proba eq "") {
+  $proba = 0.25**$word_length;
+}
+
+$T = $seq_length - $word_length + 1;
+$Tprime = $T / (1 + $word_length*$proba - $proba);
+
+if ($count_overlap) {
+  ### make a list with the composed words including self-overlaps of the word
+  @overlaps = ();
+  @overlap_pos = ();
+  for $i (1..$word_length-1) {
+    $comp_word = substr($word,0,$i).$word;
+    if ($comp_word =~ /^$word/i) {
+      @overlaps = (@overlaps, $comp_word);
+      @overlap_pos = (@overlap_pos, $i);
+    }
+  }
+  
+  if ($#overlaps > -1) {
+    ### first consider all the matches which will be detected without taking into 
+    ### consideration the overlapping positions
+    
+    $exp_occ = $proba*$Tprime; 
+    foreach $cw (@overlaps) {
+    ### correct the expectation according to the overlap possibilities
+      $proba_overlap = 0.25**length($cw);
+      $exp_overlap = $proba_overlap* $T;
+      $exp_occ += $exp_overlap;
+      @proba_overlaps = (@proba_overlaps, $proba_overlap);
+      @exp_overlaps = (@exp_overlaps, $exp_overlap);
+    }
+  } else {
+    $exp_occ = $proba*$T;
+  }
+} else {
+  $exp_occ = $proba*$Tprime; 
+}
+
+
+#### verbose ####
+if ($verbose) {
+  print "exp-occ
+
+word		$word
+word length	$word_length
+word proba	$proba
+seq length	$seq_length
+possible pos	$T
+";
+  if ($count_overlap) {
+    print "taking into account possible overlaps\n";
+    
+    if ($#overlaps > -1) {
+      print "self-overlapping word\n";
+      print "overlaps:\n";
+      print "	comp word	ol pos	comp word proba	exp # of comp word\n";
+      for $o (0..$#overlaps) {
+        print "	$overlaps[$o]	$overlap_pos[$o]	$proba_overlaps[$o]	$exp_overlaps[$o]\n";
+      }
+    }
+  } else {
+    print "NOT taking into account possible overlaps\n";
+    print "correction factor: ", 1 + $word_length*$proba - $proba, "\n"; 
+  }
+  print "\nexp-occ = ";
+}
+print $exp_occ. "\n";
+
+
+
+
+exit(0);
+
+
+

@@ -1,0 +1,403 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-seq-quick,v 1.9 2011/09/22 06:47:04 jvanheld Exp $
+#
+############################################################
+
+# use strict;
+
+
+=pod
+
+=head1 NAME
+
+retrieve-seq-quick
+
+=head1 DESCRIPTION
+
+The program takes as input a list of contigs and a list of features, and
+retrieves the sequences of these features from the contig sequences.
+
+This is an optimized version of retrieve-seq.
+
+We save time by
+
+ - skipping the time-consuming steps (loading the features, synonyms,
+   calculating neighbour limits)
+
+ - using simple data structures (hash tables) rather than objects.
+
+=head1 AUTHORS
+
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
+
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+sequences
+
+=head1 USAGE
+
+retrieve-seq-quick [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head2 Contig sequences
+
+Contig sequences are specified in filelist format, i.e.  a 2-column text file
+listing the names and IDs of the sequence file.
+
+Each sequence file B<must> be in raw format, i.e. a simple text file without
+any space or carriage return. This is essential because the program uses
+direct disk access to read the fragments of sequences corresponding to the
+query features.
+
+Fasta files can be converted into filelist format with the command
+I<convert-seq>.
+
+=head2 Features
+
+Features must be loaded in ft format. To obtain the description of this
+format, you can type the following command: I<convert-features -h>
+
+
+=head1 OUTPUT FORMAT
+
+Sequences are exported in any format supported by RSAT.
+
+To have the list of supported output sequence formats, type the following
+command: I<convert-seq -h>
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use File::Spec;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    $main::out_format = "fasta";
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    unless (-e $main::infile{contigs}) {
+      &RSAT::error::FatalError("Contig filelist $main::infile{contigs} does not exist.");
+    }
+    unless (-e $main::infile{features}) {
+      &RSAT::error::FatalError("Feature file $main::infile{features} does not exist.");
+    }
+
+    ## Check output format ####
+    &CheckOutputSeqFormat($out_format);
+
+    ## working directory
+    our $wd = `pwd`;
+    chomp $wd;
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Open Contigs
+
+    &RSAT::message::Info("Opening contigs") if ($main::verbose >= 5);
+
+    ## Define a hash table containing all contigs contained in the provided filelist
+    our %contig_seq = ();
+
+    ## get absolute path of contig filelist
+    $main::infile{contigs} = File::Spec->rel2abs($main::infile{contigs},$main::wd);
+
+    ## Separate the contig directory path and file name
+    our ($seq_dir, $seq_list) = &RSAT::util::SplitFileName($main::infile{contigs});
+
+    if ($main::verbose >= 4) {
+      &RSAT::message::Info(join ("\t", "Contig dir", $seq_dir));
+      &RSAT::message::Info(join ("\t", "Sequence list", $seq_list));
+    }
+
+    ## Open filelist and process each contig
+    ($main::in) = &OpenInputFile($main::infile{contigs});
+    while (my $line = <$in>) {
+      chomp($line);
+
+      my ($seq_file, $contig_id, $circular) = split (/\t/,$line);
+
+      ## Contig ID
+      $contig_id = $seq_file unless ($contig_id);
+
+      ## Circular
+      if ($circular eq "circular") {
+	$circular = 1;
+      } else {
+	$circular = 0;
+      }
+
+      &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular",$circular) )
+	if ($main::verbose >= 2);
+
+      ## Open the contig as a SequenceOnDisk object
+      $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(
+							 filename=>  $seq_dir.$seq_file,
+							 id=>        $contig_id,
+							 circular=>  $circular,
+							 organism=>  "");
+    }
+    close $main::in if ($main::infile{input});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Open the feature file and extract all sequences
+
+     &RSAT::message::Info("Retrieving features") if ($main::verbose >= 5);
+
+     our @warnings = ();
+
+    ## Open feature file
+    ($ft_handle) = &OpenInputFile($main::infile{features});
+    while (my $line = <$ft_handle>) {
+      chomp($line);
+      next if (($line =~/^[#|;]/)||($line eq ""));
+
+      ##feature file => contig	type	id	strand	left	right
+      my ($contig_id, $ft_type, $ft_id, $strand, $left, $right,@other_comments) = split (/\t/,$line);
+
+      ## check that contig_id correspond to one of the opened contigs
+      unless ($contig_seq{$contig_id}) {
+	&RSAT::message::Warning(join (" ", "Feature ID", $ft_id, ": Contig $contig_id not found"));
+	push (@warnings,join (" ", "; Feature ID", $ft_id, ": Contig $contig_id not found"));
+	next;
+      }
+
+      &RSAT::message::Info(join ("\t", "Contig", $contig_id,"Feature type", $ft_type,
+				 "Feature ID", $ft_id, "strand",$strand,
+				 "left", $left, "right", $right, "comments",join("\t",@other_comments)))
+	if ($main::verbose >= 2);
+
+      ## prepare comments, depending on output format
+      my @comments;
+      if ($out_format eq "ft") {
+	@comments = ($contig_id, $ft_type, $strand, $left, $right, join("\t",@other_comments));
+      } else {
+	push @comments, join ("; ",$ft_id,
+			      $ft_type,
+			      "size: ".($right - $left + 1),
+			      "location: ".$contig_id." ".$left." ".$right." ".$strand);
+      }
+
+      ## retrieve the sequence
+      my $current_seq = $contig_seq{$contig_id}->get_sequence($left,$right,$strand);
+
+      ### print result sequence
+      &PrintNextSequence($out,$out_format,60,$current_seq,$ft_id,@comments);
+    }
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Contig list file
+
+=pod
+
+=item B<-c contig_file>
+
+Contig file (this is the list of contig sequence files).
+
+=cut
+	} elsif ($arg eq "-c") {
+	    $main::infile{contigs} = shift(@arguments);
+
+	    ## Feature file
+
+=pod
+
+=item B<-f feature_file>
+
+Feature file (in .ft format).
+
+=cut
+	} elsif ($arg eq "-ft") {
+	    $main::infile{features} = shift(@arguments);
+
+	    ## output format
+
+=pod
+
+=item B<-oformat output_format>
+
+Sequence output format. Default is fasta
+To have the list of supported output sequence formats, type the following
+command: I<convert-seq -h>
+
+=cut
+	} elsif ($arg eq "-oformat") {
+	    $main::out_format = shift(@arguments);
+
+	    ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; retrieve-seq-quick ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item retrieve-seq
+
+=item convert-seq
+
+=item convert-features
+
+=item compare-features
+
+=cut

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:b8aa10eb-59fc-4af5-be35-784382210774" author="" title="Nature_protocol_Kegg" />
+  <s:processor name="get_list_genes_from_KEGGpathway">
+    <s:arbitrarywsdl>
+      <s:wsdl>http://soap.genome.jp/KEGG.wsdl</s:wsdl>
+      <s:operation>get_genes_by_pathway</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="Nested_Workflow">
+    <s:workflow>
+      <s:xscufllocation>file:/C:/Documents%20and%20Settings/Eric/Bureau/clean/RSAT_retrieve_purge_oligo_DNAPattern_conver_feature_pattern_assembly.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:processor name="Filter">
+    <s:defaults>
+      <s:default name="regex">[^(sce:)]+</s:default>
+      <s:default name="group">0</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.RegularExpressionStringList</s:local>
+  </s:processor>
+  <s:link source="Background" sink="Nested_Workflow:background" />
+  <s:link source="Feattype" sink="Nested_Workflow:feattype" />
+  <s:link source="Length" sink="Nested_Workflow:length" />
+  <s:link source="Lth" sink="Nested_Workflow:lth" />
+  <s:link source="Noov" sink="Nested_Workflow:noov" />
+  <s:link source="Organism" sink="Nested_Workflow:organism" />
+  <s:link source="Outputs" sink="Nested_Workflow:outputs" />
+  <s:link source="Pathway" sink="get_list_genes_from_KEGGpathway:pathway_id" />
+  <s:link source="Sort" sink="Nested_Workflow:sort" />
+  <s:link source="Th" sink="Nested_Workflow:th" />
+  <s:link source="To" sink="Nested_Workflow:to" />
+  <s:link source="from" sink="Nested_Workflow:from" />
+  <s:link source="noorf" sink="Nested_Workflow:noorf" />
+  <s:link source="Filter:filteredlist" sink="Nested_Workflow:query" />
+  <s:link source="Nested_Workflow:FeatureMapImage" sink="Featrure_map" />
+  <s:link source="Nested_Workflow:Pattern_assembly_result" sink="Pattern_assembly" />
+  <s:link source="Nested_Workflow:oligo" sink="Oligo_analysis" />
+  <s:link source="get_list_genes_from_KEGGpathway:return" sink="Filter:stringlist" />
+  <s:source name="Pathway" />
+  <s:source name="Outputs" />
+  <s:source name="Organism" />
+  <s:source name="noorf" />
+  <s:source name="from" />
+  <s:source name="To" />
+  <s:source name="Feattype" />
+  <s:source name="Length" />
+  <s:source name="Background" />
+  <s:source name="Noov" />
+  <s:source name="Sort" />
+  <s:source name="Lth" />
+  <s:source name="Th" />
+  <s:sink name="Pattern_assembly" />
+  <s:sink name="Featrure_map" />
+  <s:sink name="Oligo_analysis" />
+</s:scufl>
+

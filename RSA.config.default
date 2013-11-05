@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+
+################################################################
+########### main configuration parameters ######################
+################################################################
+
+
+################################################################
+## THIS FILE IS OBSOLETE, IT HAS BEEN REPLACED BY RSAT_config.props
+################################################################
+
+################################################################
+#
+# Site-specific configuration: the following variables need to be
+# adapted to your local configuration, in order to provide support
+# for the web server.
+#
+################################################################
+
+## URL of the web server
+$WWW_RSA = 	"http://localhost/rsa-tools/";
+
+## Prefix for the web server log file.
+$config_site =	`hostname`;
+
+$ENV{SERVER_ADMIN} = "your.login\@your.place";
+
+################################################################
+#
+# In principle, the next variables should not be edited, they are all
+# defined relative the environment variable ${RSAT}, and the web site
+# specified above
+#
+################################################################
+
+################################################################
+# Main path for RSAT
+unless ($ENV{RSAT}) {
+  ## PLEASE REPLACE THE LINE "die ..." by the following one, adapted to specify the RSAT path on your computer
+  ##  $ENV{RSAT} = "/your//path/to/rsa-tools/";
+  die "Error: the environment variable RSAT needs to be defined. Check the files RSAT_config.props and RSA.config\n";
+}
+$RSA = $ENV{RSAT};
+
+return 1;
+

@@ -1,0 +1,894 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-qualities,v 1.12 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+    
+=head1 NAME
+    
+compare-qualities
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+In order to estimate the capability of a PSSM to distinguish bona fide
+binding sites from genome background, we propose a method that relies
+on the combined analysis of theoretical and empirical score
+distributions in positive and negative control sets.
+
+B<matrix-quality>, consists of computing the theoretical distribution
+of scores for a PSSM, and comparing it to several empirical
+distributions obtained from various sequence sets.
+
+There might be several PSSMs capable to detect similar binding motifs,
+we can measure their quality independently, althougth we would like to
+detect the one with the best perfromance in orther to use only one.
+
+With the diferent score distributions obtained with B<matrix-quality>
+it should be possible to compare the detection capability of a set of
+matrices over the same set of sequences.
+
+This is done using the Weight Diference (WD), by default this value is
+defined as the difference between the observed Weigth Score (WS) in
+all promoters of an organismo (e.g. Escherichia coli K12) and the
+expected WS in the theoretical distribution of the PSSM for a given
+P-value (see B<matrix-distrib>).
+
+Information of compared matrices is returned together with the graphic comparison..
+
+=head1 AUTHORS
+
+Alejandra Medina-Rivera <amedina@lcg.unam.mx>
+
+=head1 CATEGORY
+
+=over 
+
+=item util
+
+=item PSSM
+
+=item evaluation
+
+=back
+
+=head1 USAGE
+
+compare-qualities [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Each line contains the output path and prefix for one run of matrix quality .
+
+Eg: /Users/matrix_eval/AgaR/AgaR_eval
+
+With this path and prefix the files for score distribitions comparison and info about the matrix are obtained. 
+
+
+=head1 OUTPUT FORMAT 
+
+Tow files will be created:
+
+=over
+
+=item Tab delimited file, containing information about all matrices.
+
+Matrix_name, sites, consensus, total_IC, column_IC, E-value, FPR_50% (LOO),  FPR_90% (LOO), FPR_100% (LOO), FPR_50% (matrix_sites),  FPR_90% (matrix_sites), FPR_100% (matrix_sites),FPR_50% (LOO)/FPR_50% (matrix_sites)
+
+=item Graph displaying FPR_50% (LOO)/FPR_50% (matrix_sites) ratio  for all matrices in the list.
+If some matrix doesn't have sites, this values will be empty and set to NA 
+
+=back 
+
+=head1 SEE ALSO
+
+=over
+
+=item B<matrix-quality>
+
+=item B<matrix-distrib>
+
+=item B<matrix-scan>
+
+=item B<convert-matrix>
+
+=back
+
+=head1 WISH LIST
+
+ALL
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::stats;
+
+
+################################################################
+## Main package
+package main;
+{
+    
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+    
+    %main::infile = ();
+    %main::outfile = ();
+    
+    $main::outfile{outdir}=`pwd`;
+    $main::verbose = 0;
+    #$main::in = STDIN;
+    $img_format="png";
+    
+    $main::out = STDOUT;
+
+    ################################
+    ## Info to be returned in the comparison table
+
+    ################
+    #Parameters reported from convert-matrix 
+    
+    @main::params = qw@program Columns Rows Prior sites consensus.IUPAC  Alphabet information.per.column max.possible.info.per.col total.information max.bits Wrange Wmax Wmin @;
+
+# consensus.adjusted.information cons.ln.Pval consensus.Pval consensus.Eval consensus.ln.Eval meme.E-value meme.llr consensus.unadjusted.information ;
+   # @main::params = qw@Matrix_name, sites, consensus, total_IC, column_IC, E-value, FPR_50% (LOO),  FPR_90% (LOO), FPR_100% (LOO), FPR_50% (matrix_sites),  FPR_90% (matrix_sites), FPR_100% (matrix_sites),FPR_50% (LOO)/FPR_50% (matrix_sites) @;
+    
+    @main::FPR_for_Sens	= (0.0001,0.01,0.05); ## posints of sensitivity
+    @main::Sens_for_FPR	= (0.50,0.90,1.0); ## false positive rate at x percetage of true positives
+    
+    $method  	= "geometric";
+    $ref_column =1;	## Columns count starts in cero in the matrix-quality file
+## Have to correct this cause if the file changes this does not work
+   # $main::cv_colname="matrix_sites_cv_loo";
+   # @main::distribs = ("theor", $cv_colname ,"matrix_sites");
+   # push (@main::distribs, qw(allup-noorf));
+    $main::flag_distribs=0;
+    $main::cv_colname="";
+    @main::distribs=();
+  
+    
+
+    
+
+    @main::image_formats = ();
+    %main::matrices=();
+    
+    
+    $main::image_format="jpg";
+   
+   
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    &RSAT::message::Info("Arguments have been read") if ($main::verbose >= 5);
+    
+    
+    ################################################################
+    ## Check argument values
+    
+    #&RSAT::error::FatalError(" You must specify the study case column name") unless ($main::case_dist);
+    #&RSAT::error::FatalError(" You must specify the base column name") unless ($main::base_dist);
+    
+    
+    ################################################################
+    ## Mandatory options
+    
+    
+    &RSAT::error::FatalError("You must specify an input file containing paths for  matrix-quality outputs")
+	unless ($main::infile{'quality_list'}) ;
+    # &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless (defined($matrix_format));
+
+
+    ################################################################
+    ## Read input 
+    ## Read list of matrices and their corresponding matrix-quality files if provided by the user
+
+    &RSAT::message::Info(join ("\t","Reading list of matrices and  matrix-quality output files from", $main::infile{'quality_list'}))
+			 if ($main::verbose >= 2);
+    ($quality_list) = &OpenInputFile($main::infile{'quality_list'});
+ 
+    while (<$quality_list>) {	
+
+	next if ($_ =~/^;/);		# skip comment lines
+	next if ($_ =~/^#/);		# skip header lines
+	next if ($_ =~ /^--/);	# skip mysql-type comment lines
+	next unless ($_ =~ /\S/);	# skip empty lines	
+	chomp;
+	my $line=$_;
+	#print "-----=".$line;
+	$line =~ s/\t+/\t/g;
+	$line =~ s/\s+/\t/g;
+	my @fields = split ('\t+',$line);
+	my $mq_prefix=shift (@fields);
+	
+	my $matrix_info_file_path=$mq_prefix."_matrix_info.txt";
+	my $matrix_score_comp_file_path=$mq_prefix."_score_distrib_compa.tab";
+	my $mq_file_path= $matrix_score_comp_file_path ;	
+#	print " $matrix_info_file_path  +++ $mq_file_path   "; die;
+	my $matrix_name=` basename $mq_prefix `;
+	chomp ($matrix_name);   
+	print $matrix_name ."\n";
+	unless (-s $matrix_info_file_path){
+	    &RSAT::message::Warning ("Missing matrix file ", $matrix_info_file_path);
+	    next;
+	}
+	
+	unless (-s $mq_file_path){
+	&RSAT::message::Warning ("Missing matrix-quality outfile ", $mq_file_path);
+	next;
+	}
+	&RSAT::message::Info (join ("\t","Files for matrix $matrix_name :",$matrix_info_file_path , $matrix_score_comp_file_path)) if ($main::verbose>=0);
+	$main::mq_files{$matrix_name}{"mtx"}=$matrix_info_file_path;
+	$main::mq_files{$matrix_name}{"mq"}= $mq_file_path;
+
+    } 
+    close $quality_list;
+
+
+    ################################################################
+    ## Open output stream
+    chomp($main::outfile{outdir});
+    
+ #   $main::outfile{matrix_info_dir}= join ("/",$main::outfile{outdir},"matrix_info");
+    $main::outfile{comparison_dir}= join ("/",$main::outfile{outdir},"comparison");
+   
+  #  &RSAT::util::CheckOutDir( $main::outfile{matrix_info_dir});
+  #  &RSAT::error::FatalError("Impossible to creat output directory $main::outfile{matrix_info_dir} ") unless (-d "$main::outfile{matrix_info_dir}") ;
+    
+    &RSAT::util::CheckOutDir( $main::outfile{comparison_dir});
+    &RSAT::error::FatalError("Impossible to creat output directory $main::outfile{comparison_dir} ")  unless (-d "$main::outfile{comparison_dir}") ;
+    
+    $comparison_table_name= $main::outfile{comparison_dir}."/matrix_quality_comparison.tab";
+    $print_headers=1;
+    
+    $comparison_graph_image= $main::outfile{comparison_dir}."/matrix_quality_comparison.".$img_format;
+    $comparison_graph_image_html= $main::outfile{comparison_dir}."/matrix_quality_comparison.html";
+
+
+    ###############################################################
+    ## Analysis for each matrix and its corresponding matrix-quality fiel
+    ## print info on output table
+      
+
+    foreach $mtx (keys (%main::mq_files)) {
+	&RSAT::message::Info ("Analysing files for matrix ", $mtx)     if ($main::verbose >=1);
+	my $mtx_file= $main::mq_files{$mtx}{"mtx"};
+	my $quality_file= $main::mq_files{$mtx}{"mq"};
+	my %all_params= &GetInfoForTable($mtx_file, $quality_file); 
+
+	###############
+	## Extra headers for report table
+	
+	if($print_headers){
+	    foreach my $d (@main::distribs) {
+		push @main::extra_headers, $d . "_auc";
+		foreach my $c (@main::FPR_for_Sens) {
+		    push @main::extra_headers, "${d}_sensitivity_$c";
+		}
+		foreach my $s (@main::Sens_for_FPR) {
+		    push @main::extra_headers, "${d}_fprs_$s";
+		}
+	    }
+	    push @main::extra_headers, "fpr_0.5(cv)/fpr_0.5";
+	    &OpenComparisonReport( $comparison_table_name);
+	    $print_headers=0;
+	}	
+	#####################
+	print  $main::out_file_comparison_table "$mtx";
+	foreach my $param (@main::params) {
+	    my $value = $all_params{$param} || "NA";
+	    
+	    $value =~ s/\;/ /g;  ## Remove the ';' from description, because they are the same as the comment char for R scripts
+	   ## printing parameters  from matrix_quality
+	  	    
+	    print  $main::out_file_comparison_table "\t$value";
+	}
+	
+	foreach my $distrib (@main::distribs) { ## print AUC for some distributions, not all of them
+	    my $auc = $all_params{$distrib}{"auc"} || "NA";
+	    
+	    my @sens;
+	    if (defined @{$all_params{$distrib}{"sensitivity"}}) {
+		@sens = @{$all_params{$distrib}{"sensitivity"}};
+	    } else {
+		foreach (@FPR_for_Sens) {
+		    push @sens, "NA";
+		}
+	    } ## get coverage values
+	    my @fpr_results;
+	    if ( defined @{$all_params{$distrib}{"fprs"}}) {
+		@fpr_results = @{$all_params{$distrib}{"fprs"}};
+	    } else {
+		foreach (@main::Sens_for_FPR) {
+		    push @fpr_results, "NA";## get fprs  values
+		}
+	    }
+	    my $sensitivity = join ("\t", @sens);
+	    my $fprs = join ("\t", @fpr_results);
+	    
+	    print $main::out_file_comparison_table join ("\t","\t".$auc,$sensitivity,$fprs,); # print AUC coverage and fprs values
+	}
+	my $fprs_comp= $all_params{"fprs_comp"};
+	#die  "$fprs_comp";
+	print $main::out_file_comparison_table "\t".$fprs_comp."\t".$mtx_file."\n";
+	#<STDIN>;
+    }
+    
+    close ( $main::out_file_comparison_table );
+    $ycol= scalar( @main::params) +scalar(@main::extra_headers) +1;
+    #die $ycol;
+    $xy_graph_command=" XYgraph -i ".$comparison_table_name." ";
+    $xy_graph_command.= " -format png -xcol 3 -ycol $ycol ";
+    $xy_graph_command.= " -o  ".$comparison_graph_image."  -legend ";
+    $xy_graph_command.= " -htmap -lc 1 > ".$comparison_graph_image_html. " ";
+
+     ## Execute the command
+    &doit($xy_graph_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    
+    
+
+
+
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    &RSAT::message::Info ("Out table with matrix info and comparison ",$comparison_table_name )     if ($main::verbose >=0);
+    &RSAT::message::Info ("Out graph with matrix-quality comparison comparison ", $comparison_graph_image )     if ($main::verbose >=0);
+    &RSAT::message::Info ("Out graph with matrix-quality comparison comparison ", $comparison_graph_image_html)  if ($main::verbose >=0);
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-quality_list file_list_matrix_and_quality_file>
+
+Scores comparison, inverse cumulative distribution 
+
+=cut
+
+       } elsif ($arg eq "-quality_list") { 
+	   $main::infile{'quality_list'} = shift (@arguments);
+
+
+# =pod
+
+# =item B<-case column_name>
+
+# Name of the column to be analyzed. The column contains the invesrse cumulative
+# distribution of scores obtained with matrix-quality over a set of sequences.
+
+#  -case 'allup-noorf'
+
+# =cut
+
+
+#        }elsif($arg eq "-case"){
+# 	   $main::case_dist= shift(@arguments);
+	   
+# =pod
+
+# =item B<-base column_name>
+
+# Name of the column containing the invesrse cumulative 
+# distribution of scores obtained with matrix-quality  considered as the
+# base distribution or negative control.
+
+#  -base 'theor'
+
+# =cut
+
+#        }elsif($arg eq "-base"){
+# 	   $main::base_dist= shift(@arguments);
+	   	   
+	   
+	   ## Image Format
+=pod
+
+=item	B<-img_format>
+
+Image format for the plot comparin CV_FPR_50% / Matrix_sites_FPR_50%.
+To display the supported formats, type the following command:
+
+XYgraph -h.
+
+Multiple image formats can be specified either by using iteratively
+the option, or by separating them by commas.
+
+Example:
+   -img_format png,pdf
+
+=cut
+	} elsif ($arg eq "-img_format") {
+	    $image_format = shift(@arguments);
+	    my @tmp_img_formats = split(',',$image_format);
+	    if (scalar(@tmp_img_formats)>0) {
+	    	foreach my $f (@tmp_img_formats) {
+        		push (@main::image_formats, $f);
+	    	}
+	    } else {
+	    	push (@main::image_formats, $image_format);
+	    }
+  
+
+	   #Output file
+=pod
+
+=item B<-o outputpath>
+
+Output directory for the outfiles and the outfigures. 
+
+=cut
+	} elsif ($arg eq "-o"){
+	    $main::outfile{outdir} = shift(@arguments);
+
+        } else {
+	    &FatalError(join("\t", "Invalid option", $arg))
+       }
+    
+    }      
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+################################################################
+##
+sub OpenComparisonReport {
+    my $report = shift;
+    $main::out_file_comparison_table = &OpenOutputFile($report);
+    #die "$report";
+    &PrintArguments($main::out_file_comparison_table);
+    my $col = 0;
+    foreach ("matrix.name", @main::params,  @extra_headers, "matrix.file") {
+	$col++;
+	#print $_."\t";
+	print  $main::out_file_comparison_table  "; $col\t$_\n"; # print parameters calculated one by one
+    }
+    print  $main::out_file_comparison_table join ("\t", "#matrix.name",@main::params, @extra_headers,"matrix.file"), "\n"; #print header of parameters table
+}
+	
+
+
+
+################################################################
+##
+
+sub  GetInfoForTable{
+    my ($mtx_file, $quality_file)=@_;
+    
+    my %matrix_params=();
+
+  #   my $out_file_params_name= $main::outfile{matrix_info_dir}."/".$mtx.".params";
+    
+#     my $out_file_params =  &OpenOutputFile($out_file_params_name)  ||
+# 	&RSAT::error::FatalError(" Can't open outputfile ",$out_file_params_name) ;
+    
+#     &RSAT::message::Info ("Analyzing matrix file ", $mtx_file, "\n\t output in ", $out_file_params_name)  if ($main::verbose >= 2);   
+#     my $convert_matrix_command="convert-matrix -i $mtx_file -from $matrix_format -to patser -return parameters,counts,info,margins";
+
+#     &RSAT::message::Debug("convert-matrix command:", $convert_matrix_command ) if ($main::verbose >= 0);
+
+#     my $params = `$convert_matrix_command`; #run convert matrix to know which are the matrix parameters
+
+#    &RSAT::message::Debug("convert-matrix command has been run ", "\n", $params ) if ($main::verbose >= 0);
+    
+    #print $out_file_params $params;
+    
+   # print $mtx_file."\n"; <STDIN>;
+    my ($params)=&OpenInputFile($mtx_file); # || &RSAT::error::FatalError(" Can't open inputfile ", $mtx_file) ;
+    
+    #print "++++".$params."+++\n"; <STDIN>;
+
+    my (%counts,%used,@infos,$alt_sites);
+   
+  #  foreach my $line (split /\n/,$params) { ## reads the convert-matrix output
+    while(<$params>){
+	chomp;
+	$line=$_;
+	if ($line !~ /^;/) { ## if line is not a comment
+	    next unless $line =~ /^[acgt]/i; ## select lines with counts of nucleotides
+	    my ($letter,$dummy,@pos) = (split /\s+/,$line); 
+	    #print $line."\n"; next;
+	    next if $used{$letter}; ## avoid taking the second matrix 
+	    $used{$letter} = 1;
+	    foreach (@pos) {
+		push @{$counts{$letter}},$_; ## save counts of nucleotide in a hash, key is the nucleotide letter
+	    }
+	    next;
+	} elsif ($line =~ /; i.sum/) {  ## informations per matrix columns
+	    $line =~ s/.+\|\s+//;
+	    @infos = (split /\s+/,$line);
+	    next;
+	} elsif ($line =~ /; c.sum/) {	# In case a matrix file without sites is given, I can still calculate the number of sites
+	    $line =~ s/.+\|\s+//; # c.sum contains the number of sites per column
+	    my ($first, @counts) = (split /\s+/,$line);
+	    pop @counts;	# Last element is sum so we discharge it 
+	    foreach my $next (@counts) {
+		unless ($first == $next) { ## check for gaps
+		    # If gaps were allowed, I could simply take the maximum of this array, not yet implemented, and I don't know if it'll be necessary 
+		    warn "Count total mismatch ($first != $next), does matrix allow gaps?!\n";
+		    exit;
+		}
+	    }
+	    $alt_sites = $first; ## keep the total number of sites
+	}
+	next if $line =~ /;$/;
+	$line =~ s/;\s*//;
+	my ($key,$value) = (split /\s+\t/,$line); ## take all the other paramters, Pvalue is not available in this file only the  E_value
+	next unless $value;
+	$matrix_params{$key} = $value;
+	
+    }
+    
+    &RSAT::message::Info( "Calculating ROC, AUC and FPR for matrix  quality file ", $quality_file);
+    
+    my ($ref_aucs,$ref_sens,$ref_fpr,$fpr_ratio) = &auc_calc($quality_file,$ref_column,\@main::FPR_for_Sens, \@main::Sens_for_FPR); # matrix_quality file, negative (X) column, sensitivity and FPRs
+    
+    ## returns pointers to the resutls 
+    foreach my $distrib (sort keys %{$ref_aucs->{$method}}) {  #store values in hashes  by type, matrix name and distribution  
+	$matrix_params{$distrib}{"auc"} = $ref_aucs->{$method}->{$distrib};
+	$matrix_params{$distrib}{"sensitivity"} = \@{$ref_sens->{$distrib}};
+	$matrix_params{$distrib}{"fprs"} = \@{$ref_fpr->{$distrib}};
+	$matrix_params{"fprs_comp"} =$fpr_ratio		
+     }
+    return (%matrix_params);
+}
+
+
+
+################################################################
+#Print output table with all the calculated score diferences
+
+sub PrintTable{
+    my @mtxs=sort(keys (%main::matrices));
+    print $main::out join("\t","#key",@mtxs)."\n";
+    my $kmin = $main::xmin;
+    foreach my $k (sort {$b<=>$a}( keys (%main::key_diferences_results) )){
+	#print("+++ $k +++ ");<STDIN>;
+	my $line = "$k";
+	next if ($k < $kmin);
+	    # foreach my $matrix_name ( keys (%{$main::key_diferences_results{$k} } )){
+# 	    print "-----$matrix_name--------"; <STDIN>;
+# 	}	    
+	    foreach my $mtx (@mtxs) {
+		#print $mtx;<STDIN>;
+		#print $main::key_diferences_results{$k}{$mtx}; <STDIN>;
+		if ($main::key_diferences_results{$k}{$mtx}){
+		    $line.="\t".$main::key_diferences_results{$k}{$mtx};
+		}else{
+		    $line.="\t".'<NULL>';
+		}		
+	    }
+	print $main::out $line."\n";
+    }        
+}
+
+################################################################
+## Subrutine to calculate AUC and points for FPR and sensitivity.
+
+sub auc_calc {
+
+
+	my ($input_file,$x_ref, $fprs_for_sensitivities, $sens_for_fprs,) = @_;# recives matrix_quality file,
+                                                       # (X) column, and pointers to sensitivities used to calcule FPRs  and FPRs used to calcule 
+	   # sensitivities						}
+	($input_q)= &OpenInputFile($input_file)  ; ### Open matrix_quality file  
+
+        ################################################################
+        ## Variable declaration 
+	
+	my %distributions=();
+	my @line=();
+	my @header=();
+	my $flag=1;
+
+      ################################################################
+      ## Read matrix-quality file 	
+	while (<$input_q>){
+	    	## Read header of the file
+		if($flag){ 
+			$flag=0;
+			chomp $_ ;
+			$_ =~ s/#//g;
+			@header= split (/\t/,$_);
+			next;
+		}
+		chomp; 
+ 
+		@line= split (/\t/,$_);
+		for my $i (0..$#header) {
+		        unshift (@{$distributions{$i}},$line[$i]); ## Store file in a Hash with the header of 
+			                                             ## matrix-quality file as keys  
+		}
+	}
+
+
+	my %headers; ## store in a hash with each distrib as key their culumn number in the file
+	foreach my $i (0..$#header) {
+		next if $headers{$header[$i]};
+		$headers{$header[$i]} = $i;
+		next if  ($i ==0);
+		 unless ( $main::flag_distribs ){
+		    # print $header[$i];<STDIN>;
+		    push (@main::distribs,$header[$i]  ) ;
+ 		    $main::cv_colname=$header[$i] if ($header[$i]=~/cv/) ;
+ 		}
+	}
+	# Remove the column with key	
+
+	
+	
+	my $x_lab= $x_ref; ## defien X reference, the key column is not counted, this number is difined when calling the module
+	&RSAT::message::Debug("X reference in ROC = " , $header[$x_lab]) if ($main::verbose >=3);
+	my @curve = ();
+	#print @{$distributions{$x_lab}};
+	my $X_col = \@{$distributions{$x_lab}}; ## pointer to the column containing de X reference 
+	
+	
+	
+	######################################################
+	####### Calcule of  AUCs ###############################
+        ####### FPR and sensitivity ########
+	
+	my (%AUCS,%sens,%used, %fpr_h); #### definition of used variables
+	my $key= shift(@header);
+	my $fpr_ms_cv=0;
+	my $fpr_ms=0;
+ 
+	foreach my $dist (@header) { ## for each distribution of scores  
+		next if $used{$dist}; ## jump distribution if it has already been used
+		my $i = $headers{$dist}; ## Number of the column of the analyzed distribution
+		$used{$dist} = 1; ## mark as used 
+
+		&RSAT::message::Debug("Analysing ditribution " , $dist) if ($main::verbose >=3);
+		my $curve = \@{$distributions{$i}} ; ## Pointer to the used distribution
+
+		$AUCS{"geometric"}{$dist} = &CALC_AUC_GEOMETRIC($dist, $curve, $X_col); ## calculate the AUC with 
+		&RSAT::message::Debug("AUC " , $dist, "=", $AUCS{"geometric"}{$dist}) if ($main::verbose >=4);
+             		
+		if (defined $fprs_for_sensitivities) {
+			foreach my $per (@{$fprs_for_sensitivities}) {
+				my $sensitivity =  calc_sensitivity($curve,$X_col,$per);
+				&RSAT::message::Debug("Sansitivity at FPR " , $per, "=", $sensitivity) if ($main::verbose >=4);
+				push @{$sens{$dist}}, $sensitivity;
+			}
+		}
+		if (defined $sens_for_fprs) {
+			foreach my $per (@{$sens_for_fprs}) {
+				my $fpr = calc_fpr($curve,$X_col,$per);
+				&RSAT::message::Debug("FPR at Sensititivity" , $per, "=", $fpr) if ($main::verbose >=3);
+				if (($dist eq  $main::cv_colname ) && $per == 0.5 ){
+				    $fpr_ms_cv=$fpr;
+				}
+				if (($dist eq  'matrix_sites' ) && $per == 0.5 ){
+				    #die "BOOM  $per  $fpr\n  ";
+				    $fpr_ms=$fpr;
+				}
+				push @{$fpr_h{$dist}}, $fpr;
+			}
+		}
+		
+	}
+	
+	my $fpr_ratio=$fpr_ms_cv/$fpr_ms ;
+	&RSAT::message::Debug("FPR matrix_sites_cv/matrix_sties" , "=",$fpr_ratio ) if ($main::verbose >=3);
+	
+
+	close $input_q;
+	$main::flag_distribs=1;
+	return (\%AUCS,\%sens, \%fpr_h,  $fpr_ratio); ## PACKAGE  resturns references to hashes containing the results of the resulted sensitivities and FPR
+}
+
+
+
+##############
+## Calculate the sensitivity at a given cut off
+## recieves pointer to the distribution of interest and the X reference in the ROC curve
+## and the percentage cutoff
+sub calc_sensitivity {
+    my ($curve, $X_col, $perc) = @_;
+    my $sensitivity = "NA";
+    foreach my $i (0..$#{$X_col}) {
+	next if (   (($X_col->[$i]) =~ /NULL/) ||  (($X_col->[$i]) =~ /NA/)  );
+	if (($X_col->[$i]) >= $perc) {
+	    next if (   ( ($curve->[$i]) =~ /NULL/ ) ||   ( ($curve->[$i]) =~ /NA/ )  );
+	    $sensitivity = ($curve->[$i]);
+	    
+	    #print "leo sensitivity $perc $sensitivity \n";
+	    return $sensitivity;
+	    last;
+	    
+	}
+	}
+    
+    return $sensitivity;
+}
+
+
+################################################################
+## Calculate the AUC based in a geometrical aproach calculating 
+## Trapezoids and their areas.
+
+sub CALC_AUC_GEOMETRIC {
+    my ($header ,$curve, $X_col  ) = @_;
+    
+    my ($base,$x1, $x2, $y1, $y2, $height_t, $areaR,$areaT, $AUC);
+    $AUC=0 ;
+    for my $i (0..$#{$X_col}-1) {
+	
+	$x1=$X_col->[$i];
+	$x2=$X_col->[$i+1];
+	next if ( ($x1 =~ /NULL/) || ($x2 =~ /NULL/) || ($x1 =~ /NA/) || ($x2 =~ /NA/)  );
+	$base= $x2 - $x1;
+	$y1=$curve->[$i];
+	$y2=$curve->[$i+1];
+	next if ( ($y1 =~ /NULL/) || ($y2 =~ /NULL/) || ($y1 =~ /NA/) || ($y2 =~ /NA/));
+	$height_t=$y2-$y1;
+	
+	if ($height_t==0){
+	    $height_t=$y1;
+	    $AUC = $AUC + ($base * $y1);
+	    
+	} elsif ($height_t<0){
+	    $height_t=$y1-$y2;
+	    $areaR= $base * $y2;
+	    $areaT= ($base * $height_t) / 2 ;
+	    $AUC = $AUC + ($areaR + $areaT);
+	    
+	} elsif ($height_t>0){
+	    $areaR= $base * $y1;
+	    $areaT= ($base * $height_t) / 2 ;
+	    $AUC = $AUC + ($areaR + $areaT);
+	}
+	
+    }
+    
+    return ($AUC);
+    
+}
+
+
+
+##############
+## Calculate the fpr  at a given cut off
+## recieves pointer to the distribution of interest and the X reference in the ROC curve
+## and the percentage cutoff
+
+sub calc_fpr {
+    my ($curve, $X_col, $cut_off  ) = @_;
+    my $fpr="NULL";
+    for my $i (0..$#{$curve}-1) {
+	next if ( ( ($curve->[$i]) =~ /NULL/ )||  ( ($curve->[$i]) =~ /NA/) );
+	if (($curve->[$i])>=$cut_off){
+	    next if ( (($X_col->[$i]) =~ /NULL/) || (($X_col->[$i]) =~ /NA/) );
+	    $fpr=$X_col->[$i];
+	    #print "leo fpr  $cut_off  $fpr\n";
+	    
+	    return ($fpr);
+	    last;
+	}
+    }
+    return($fpr);
+}
+
+
+
+
+
+
+
+
+
+
+__END__

@@ -1,0 +1,347 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters ####
+$soe = 0;
+$series = 0;
+$by_mean = 0;
+
+local $start_time = &RSAT::util::StartScript();
+local %outfile = ();
+local $verbose = 0;
+local $out = STDOUT;
+
+#### Read arguments
+&ReadArguments();
+
+################################################################
+#### check argument values ####
+
+## Series is not compatible with sums
+if ($series) {
+    if (($boe) || ($soe) || ($to)) {
+	&RSAT::error::FatalError("The option -series is currently incompatible with -boe, -soe, -from and -to\n");
+    }
+}
+
+### Number of successes
+if ($from_to) {
+    &RSAT::error::FatalError("-from should be smaller than -to") if ($from > $to);
+} else {
+    unless (defined($s)) {
+	&RSAT::error::FatalError("You should specify the number of successes s.\n");
+    } 
+}
+
+
+################################################################
+## Calculate and print the result
+
+if ($series) {
+    if ($by_mean) {
+	($p, $k, @nebgin) = &negbin2($s, $m, $var, 1);
+    } else {
+	@nebgin = &negbin($s, $p, $k, 1);
+    }
+
+} elsif ($boe) {
+    $result = 1-&sum_of_negbin($p, $k, 0, $s-1);
+} elsif ($soe) {
+    $result = &sum_of_negbin($p, $k, 0, $s);
+} elsif($from_to) {
+    $result = &sum_of_negbin($p, $k, $from, $to);
+} else {
+    if ($by_mean) {
+	($k, $p, $result) = &negbin2($s, $m, $var, 0);
+    } else {
+	$result = &negbin($s, $p, $k, 0);
+    }
+}
+
+$result = 0 if ($result < 0);
+$result = 1 if ($result > 1);
+### this can happen when usin boe or soe options,
+### due to the precision limit
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+
+### Verbosity
+&Verbose() if ($verbose >= 1);
+if ($series) {
+    for my $i (0..$s) {
+	print $out $i, "\t", $nebgin[$i], "\n";
+    }
+} else {
+    print $out $result, "\n";
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
+
+exit(0);
+
+
+################################################################
+##### subroutine definition
+################################################################
+
+
+################################################################
+#### read arguments ####
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### p
+	} elsif ($ARGV[$a] eq "-p") {
+	    $p = $ARGV[$a+1];
+	    &RSAT::error::FatalError("p must be a real number") unless (&IsReal($p));
+	    &RSAT::error::FatalError("p must be comprized between 0 and 1") unless (($p >= 0) && ($p <= 1));
+
+	    ### k
+	} elsif ($ARGV[$a] eq "-k") {
+	    $k = $ARGV[$a+1];
+	    &RSAT::error::FatalError("k must be a real number") unless (&IsReal($k));
+	    &RSAT::error::FatalError("k must be positive") unless ($k >= 0);
+
+	    ### Successes
+	} elsif ($ARGV[$a] eq "-s") {
+	    $s = $ARGV[$a+1];
+	    &RSAT::error::FatalError("s must be an integer number") unless (&IsInteger($s));
+	    &RSAT::error::FatalError("The number of successes (s) should be positive.\n") if ($s < 0);
+
+	    ### Mean
+	} elsif ($ARGV[$a] eq "-m") {
+	    $m = $ARGV[$a+1];
+	    $by_mean = 1;
+	    &RSAT::error::FatalError("m must be a real number") unless (&IsReal($m));
+	    &RSAT::error::FatalError("m must be strictly positive") unless ($m > 0);
+
+	    ### Variance
+	} elsif ($ARGV[$a] eq "-var") {
+	    $var = $ARGV[$a+1];
+	    &RSAT::error::FatalError("v must be a real number") unless (&IsReal($var));
+	    &RSAT::error::FatalError("v must be strictly positive") unless ($var > 0);
+
+	    ### Bigger or equal
+	} elsif ($ARGV[$a] eq "-boe") {
+	    $boe = 1;
+
+	    ### smaller or equal
+	} elsif ($ARGV[$a] eq "-soe") {
+	    $soe = 1;
+
+	    ### From value (for sum of binomials)
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from_to = 1;
+	    $from = $ARGV[$a+1];
+
+	    ### To value (for sum of binomials)
+	} elsif ($ARGV[$a] eq "-to") {
+	    $from_to = 1;
+	    $to = $ARGV[$a+1];
+	    
+	    ### Print the complete series
+	} elsif ($ARGV[$a] eq "-series") {
+	    $series = 1;
+
+	}
+    }
+}
+
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	negative-binomial
+	
+	v1.0 by Jacques van Helden, July 1997
+
+DESCRIPTION
+	Calculates negative binomial probabilities. 
+
+CATEGORY
+	statistics
+
+USAGE
+	negative-binomial -m exp_nb_success -var variance -s nb_success [-v] [-boe] [-soe]
+		
+		or
+
+	negative-binomial -p p -k k -s nb_success [-v] [-boe] [-sor]
+	
+PROBABILITIES
+	Calculate probability for aggregative events, with the
+	negative binomial distribution.
+
+		  s        s    k+s
+	P(X=s) = C      * p  / q
+  	          k+s-1
+  
+  	 where	s is the number of successful trials,
+		p is a real value comprized between 0 and 1
+		q = 1 + p
+  	
+	This distribution is aggregative, with a mean 
+	     m = kp
+	and a variance
+	     v = kpq
+
+	Instead of p and k, the mean (m) and variance (v) can be
+	provided; p and k are then calculated from these parameters as
+	follows.
+	
+		q = v/m
+		p = 1-q = 1-v/m
+		k = m/p = 1/(v = m)
+
+    CUMULATIVE VALUES
+
+  	With the -boe option, calculates the probability of >= -s 
+  	successes.
+  	           
+  	            inf              s-1
+  	P(X>=s) =   SUM P(X=j) = 1 - SUM P(X=j)
+  	            j=s              j=0
+
+  	         
+  	With the -soe option, calculates the probability of <= -s 
+  	successes.
+  	
+  	           s        
+  	P(X<=s) = SUM P(X=x) 
+  	          j=0        
+
+    COMPUTATION
+
+	The probability is calculated with the recursive formula.
+
+	                p(k+x)
+	    P(X=s+1) = --------*P(X=s)
+	                q(x+1)
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-s #	number of succesful trials
+		#s must be an integer such that 0 <= s <= r.
+	-p #	parameter p (see formula above)
+		0 <= p <= 1
+	-k #	parameter k (see formula above)
+	-m #	the mean
+	-var #	the variance
+	-boe	bigger or equal. 
+		Calculate the probability of >= -s successes.
+	-soe	smaller or equal. 
+		Calculate the probability of <= -s successes.
+	-from # -to #
+		calculates the sum of negative binomials between two
+		values (inclusive).
+	-series
+		return the complete series from 0 to s
+	
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+negative-binomial options
+-------------------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-s #		number of succesful trials
+-p #		the parameter p (see detailed help)
+-k #		the parameter k (see detailed help)
+-m #		mean
+-var #		variance
+-boe		bigger or equal. 
+-soe		smaller or equal. 
+-from # -to #	sum of negative binomials between two values (inclusive)   
+-series		return the complete series from 0 to s
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+### Print verbosity
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; negative-binomial ";
+    &PrintArguments($out);
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    printf $out "; %-13s\t%d\n", "Successes", $s;
+    printf $out "; %-13s\t%f\n", "p", $p;
+    printf $out "; %-13s\t%f\n", "k", $k;
+
+    unless ($by_mean) {
+	$m = $k*$p;
+	$var = $k*$p*(1+$p);
+    }
+    printf $out "; %-13s\t%g\n", "Mean", $m;
+    printf $out "; %-13s\t%g\n", "Variance", $var;
+    if ($boe) {
+	print $out ";\tP(X>=s)\n";
+    } elsif ($soe) {
+	print $out ";\tP(X<=s)\n";
+    }else {
+	print $out ";\tP(X=s)\n";
+    }
+}
+

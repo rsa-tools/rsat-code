@@ -1,0 +1,181 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	substract-origin
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        substract-origin [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Converts positions by introducting a gene-specific
+	correction. This program can for example be used to correct
+	matching positions (resulting from dna-pattern) to convert
+	positions calculated from the start codon into positions from
+	the transcription start site.
+	
+CATEGORY
+	util
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+		The first column must contain the sequence ID, which is 
+		also the first column of the origin file.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-orig origin_file
+		The file indicating the origin associated to each ID 
+		from the input file. Columns:
+		- ID (the same as the input file)
+		- mRNA start
+		- mRNA end (or >### if the end is not included in the sequence)
+	-poscol #
+		Column containing the positions, from which the origins
+		have to be substracted.
+	
+EXAMPLES
+       substract-origin -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+substract-origin options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    ### origin file ###
+    } elsif ($ARGV[$a] =~ /^-orig/) {
+	$origin_file = $ARGV[$a+1];
+
+    ### position column ###
+    } elsif ($ARGV[$a] eq "-poscol") {
+	$pos_col = $ARGV[$a+1];
+
+    }
+}
+
+
+#### check argument values ####
+unless ((&IsNatural($pos_col)) && ($pos_col >= 1)) {
+    print "Error: the position column should be specified >0\n";
+    exit;
+}
+
+unless (open ORIG, $origin_file) {
+    print "Error: could not open origin file\n";
+    exit;
+}
+while (<ORIG>){
+    if (/^\s*(\S+)\s+(\d+)/) {
+	$id = lc($1);
+	$origin = $2;
+	$orig{$id} = $origin;
+    }
+}
+close ORIG;
+
+### open input file ###
+($in) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+    print $out ";substract-origin result\n";
+    if ($inputfile ne "") {
+	print $out ";Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+    print $out ";Origin file\t$origin_file\n";
+    print $out ";Position column\t$pos_col\n";
+    foreach $id (sort keys %orig) {
+	print $out ";\t$id\t$orig{$id}\n";
+    }
+}
+
+###### execute the command #########
+
+while (<$in>) {
+    if (/^(\S+)/) {
+	$id = lc($1);
+	if (defined($orig{$id})) {
+	    chomp;
+	    @fields = ();
+	    @fields = split, "\t";
+	    $fields[$pos_col-1] -= $orig{$id};
+	    for $f (0..$#fields-1) {
+		print $out "$fields[$f]\t";
+	    }
+	    print $out "$fields[$#fields]\n";
+
+	} else {
+	    print ";$_";
+	}
+    }
+
+}
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+

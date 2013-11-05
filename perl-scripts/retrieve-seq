@@ -1,0 +1,1039 @@
+#!/usr/bin/perl
+
+############################################################
+#
+# $Id: retrieve-seq,v 1.95 2013/09/29 04:57:53 jvanheld Exp $
+#
+# Time-stamp: <2003-08-05 10:24:33 jvanheld>
+#
+############################################################
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+require RSAT::organism;
+use Storable qw(nstore retrieve);
+
+# temporary directory
+my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
+
+#### initialize parameters
+local $start_time = &RSAT::util::StartScript();
+my $organism = "";
+my %chomosome = ();
+$noorf = 0;
+$repeat_masked = 0;
+$return_all = 0;
+$ids_only = 0;
+$imp_pos = 0;
+$no_comments = 0;
+$label_sep = "|";
+$annotation_table = "";
+$sequence_type = "upstream";
+@queries = ();
+$out_format = "fasta";
+$line_width = 60;
+$default{from} = -800;
+$default{to} = -1;
+$input_sequence_format = "filelist";
+$prefix = "";
+@supported_label_fields = qw (id
+			      name
+			      query
+			      organism_name
+			      sequence_type
+			      current_from
+			      current_to
+			      ctg
+			      orf_strand
+			      reg_left
+			      reg_right);
+foreach my $field (@supported_label_fields) {
+  $supported_label_fields{$field}++;
+}
+$supported_label_fields = join ",", @supported_label_fields;
+@label_fields = ();
+
+&ReadArguments();
+
+
+################################################################################
+############################### check parameters ###############################
+################################################################################
+
+&RSAT::message::TimeWarn("Checking parameters") if ($main::verbose >= 2);
+
+## Label fields
+if (scalar(@label_fields) <= 0) {
+    @label_fields = "name";
+}
+
+################################################################
+## Instantiate organism
+$organism = new RSAT::organism();
+
+#### Check organism name
+if ($organism_name) {
+    $organism->check_name($organism_name);
+} elsif ($input_sequence_file) {
+    $organism_name = "input sequence";
+} else {
+    &RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
+}
+$organism->set_attribute("name", $organism_name);
+
+#### accepted feature types
+$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+
+#### Specify the file containing genome annotations
+if ($annotation_table) {
+  $organism->set_attribute("annotation_table", $annotation_table);
+}
+
+
+################################################################
+#### Specify the input sequence file
+if ($input_sequence_file) {
+  #### manually specified input sequence
+  $organism->set_attribute("input_sequence_file", $input_sequence_file);
+  $organism->set_attribute("input_sequence_format", $input_sequence_format);
+  $organism->OpenContigs($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format);
+} else {
+  if ($organism_name) {
+    #### automatic selection of genome file (and feature file)
+    $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
+  } else {
+    &RSAT::error::FatalError("You should specify an organism name.",
+			     "Run the command supported-organism to obtain the list of supported organisms.");
+  }
+}
+
+#### Default limits (from, to)
+if ($sequence_type eq "upstream") {
+    if (defined($supported_organism{$organism_name}->{'up_to'})) {
+	$default{to} = $supported_organism{$organism_name}->{'up_to'};
+    } else {
+	$default{to} = -1;
+    }
+    if (defined($supported_organism{$organism_name}->{'up_from'})) {
+	$default{from} = $supported_organism{$organism_name}->{'up_from'};
+    } else {
+	$default{from} = -500;
+    }
+} elsif ($sequence_type eq "downstream") {
+    $default{from} = 1;
+    $default{to} = 200;
+}
+
+
+#### check output format ####
+&CheckOutputSeqFormat($out_format);
+
+#### check limits ####
+$from = $default{from} unless (defined($from));
+$to = $default{to} unless (defined($to));
+if ($to < $from) {
+    $tmp = $to;
+    $to = $from;
+    $from = $tmp;
+}
+$seq_length = abs($to - $from + 1);
+
+################################################################
+## organism data
+
+my %contig = $organism->get_attribute("contigs");
+
+&RSAT::message::Info(join ("\t", "Contig IDs\t", join (";", sort keys %contig))) if ($main::verbose >= 10);
+
+## ##############################################################
+## Random fragments.
+##
+## This routine does not work anymore
+if ($sequence_type eq "random fragments") {
+    #### calculate contig lengths
+    @ctgs = sort keys %contig;
+    @ctg_start;
+    @ctg_len;
+    $ctg_start[0] = 0;
+    for my $c (0..$#ctgs) {
+      $ctg_len[$c] = $contig{$ctgs[$c]}->get_length();
+      $ctg_start[$c+1] = $ctg_start[$c] +  $ctg_len[$c];
+      &RSAT::message::Debug( "Contig", $c+1, $ctgs[$c], $ctg_len[$c], $ctg_start[$c], $ctg_start[$c+1])
+	if ($verbose >= 3);
+    }
+    $genome_len = $ctg_start[$#ctgs+1];
+    &RSAT::message::Info("genome length", $genome_len)
+      if ($verbose >= 2);
+
+} else {
+
+  ## Specify whether synonyms should be loaded or not
+  my $synonyms = 1;
+  if (($return_all) || ($ids_only)) {
+    $synonyms = 0;
+  }
+
+  ### Load organism from user-specified annotation table
+  if ($annotation_table) {
+    $organism->LoadFeatures($annotation_table, $imp_pos);
+    $organism->LoadSynonyms() if ($synonyms);
+
+  } else {
+    if ($organism->is_serialized($imp_pos, $synonyms)) {
+      ## Load organism from serialized file
+      my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
+      $organism = retrieve $serial_file;
+      &RSAT::message::TimeWarn("Retrieved organism", $organism_name, "from serialized file", $serial_file)
+	if ($main::verbose >= 3);
+
+    } else {
+
+      ### Load organism from flat files (slower)
+      $organism->load_and_serialize($imp_pos, $synonyms);
+
+    }
+  }
+}
+
+#### no overlapping with upstream orfs
+if ($noorf) {
+  &RSAT::message::TimeWarn("Calculating neighbour ORF limits") if ($verbose >= 1);
+  $organism->CalcNeighbourLimits();
+}
+
+################################################################
+# Query ORFs
+&RSAT::message::TimeWarn("Reading query genes") if ($main::verbose >= 2);
+
+#### retrieve all
+if ($return_all) {
+  @queries = $organism->get_attribute("features");
+  if (scalar(@queries < 1)) {
+    &RSAT::message::Warning(join("\t", "There is not a single feature of type",
+				 join(" or ", sort (keys(%accepted_feature_types))),
+				 "annotated in the genome of", $organism_name));
+    exit();
+  }
+}
+
+
+#### select random ORFs
+if ($random_orfs > 0) {
+  @queries = $organism->SelectRandomGenes($random_orfs);
+} elsif ($length_file) {
+    ($len_handle, $input_dir) = &OpenInputFile($length_file);
+#    open LEN, $length_file;
+    while (<$len_handle>) {
+	my @fields = split "\t";
+	push @queries, $fields[1];
+    }
+    close $len_handle;
+
+} elsif ($num_rand_sel) {
+    for $i (1..$num_rand_sel) {
+	push @queries, $seq_length;
+    }
+
+} elsif (@queries == ()) {
+    #### read queries
+    ($in, $input_dir) = &OpenInputFile($query_file);
+    &RSAT::message::Info("Reading query genes from file", $query_file) if ($main::verbose >= 2);
+    while (<$in>) {
+	next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
+	if (/(\S+)/) {
+	    push @queries, $1;
+	}
+    }
+    close $in;
+}
+&RSAT::message::Info(scalar(@queries), "query genes") if ($main::verbose >= 2);
+
+if ($#queries <0) {
+    &RSAT::error::FatalError("You should enter at least one valid query.");
+}
+
+#### output file ####
+$out = &OpenOutputFile($outputfile);
+if ($output_features) {
+    $out_ft_handle = &OpenOutputFile($output_features);
+    ## header of the output feature file
+    print $out_ft_handle "#", join ("\t",
+				    "contig",
+				    "type",
+				    "id",
+				    "strand",
+				    "left",
+				    "right",
+				    ), "\n";
+}
+
+#### verbose
+&Verbose() if ($verbose);
+
+## Get the index of genome features by names and ID
+$feature_index = $organism->get_attribute("name_index");
+
+#&RSAT::message::Debug("Feature keys", scalar(keys (%feature_index))) if ($main::verbose >= 10);
+
+################################################################
+#### retrieve the sequences ####
+my $q = 0;
+&RSAT::message::TimeWarn("Retrieving sequences") if ($verbose >= 2);
+foreach our $query (@queries) {
+  $q++;
+  if (($main::verbose >= 2) && ($q % 1000 == 1)) {
+    &RSAT::message::psWarn("Retrieved sequences", $q);
+  }
+
+  $query = &trim($query); ### make sure there are no leading or trailing spaces
+
+  &RSAT::message::Info("Searching query", $q, $query) if ($main::verbose >= 3);
+
+    #### check the validity of the query
+    my $current_feature;
+    if ($return_all) {
+	## In this case the query is provided as an object. I switch
+	## current feature and query for the sequence comments
+	$current_feature = $query;
+	$query = $current_feature->get_attribute("id");
+#   } elsif ($sequence_type eq "random fragments") {
+#       ## TO BE CHECKED
+   } elsif ($feature_index->contains(uc($query))) {
+       $current_feature = $feature_index->get_first_value(uc($query));
+   } else {
+	my $warn_message = ";WARNING\tinvalid query $query";
+	push @warnings, $warn_message;
+	next;
+    }
+
+  local $id = $current_feature->get_attribute("id");
+  local $name = $current_feature->get_attribute("name");
+  local $ctg = $current_feature->get_attribute("ctg"); ## Contig identifier
+  local $orf_left = $current_feature->get_attribute("left");
+  local $orf_right = $current_feature->get_attribute("right");
+  local $orf_strand = $current_feature->get_attribute("strand");
+  $current_from = $from;
+  $current_to = $to;
+  
+  ## Check the validity of the contig identifier ($ctg)
+  unless (defined($contig{$ctg})) {
+      &RSAT::message::Info("Supported contig IDs", join (" ", sort keys %contig)) if ($main::verbose >= 0);
+      &RSAT::error::FatalError($ctg, "does not correspond to the ID of any declared contig in contigs.txt");
+  }
+
+
+#      &RSAT::message::Debug($query,
+#  			  $id,
+#  			  $name,
+#  			  $ctg,
+#  			  $orf_left,
+#  			  $orf_right,
+#  			  $orf_strand,
+#  			 ) if ($main::verbose >= 10);
+
+    ### upstream region
+    if ($sequence_type eq "upstream") {
+	if ($noorf) {
+	  my $upstr_size = $current_feature->get_attribute("upstr_size");
+	  $current_from = &max(-$upstr_size, $from);
+	  &RSAT::message::Debug("upstream size",
+				"ft:".$current_feature,
+				"id:".$current_feature->get_attribute("id"),
+				"size:".$current_feature->get_attribute("upstr_size"),
+				"size:".$upstr_size,
+				"limit:".$current_feature->get_attribute("upstr_limit"),
+				"current_from", $current_from)
+	    if ($main::verbose >= 10);
+	}
+
+	if ($orf_strand eq "D") {
+	    $reg_left = $orf_left + $current_from;
+	    $reg_right = $orf_left + $current_to;
+	} else {
+	    $reg_right = $orf_right - $current_from;
+	    $reg_left = $orf_right - $current_to;
+	}
+
+	### downstream region
+    } elsif ($sequence_type eq "downstream") {
+	if ($noorf) {
+	    my $downstr_size = $current_feature->get_attribute("downstr_size");
+	    $current_to = &min($downstr_size, $to);
+	}
+
+	if ($orf_strand eq "D") {
+	    $reg_left = $orf_right + $current_from;
+	    $reg_right = $orf_right + $current_to;
+	} else {
+	    $reg_right = $orf_left - $current_from;
+	    $reg_left = $orf_left - $current_to;
+	}
+
+	### ORF (wargning: this does not splice out introns
+    } elsif ($sequence_type eq "unspliced ORF") {
+	$reg_left = $orf_left;
+	$reg_right = $orf_right;
+
+	#### select random genommic positions
+	## THIS IS NOT WORKING ANYMORE
+    } elsif ($sequence_type eq "random fragments") {
+#	foreach my $seq_length (@seq_lengths) {
+	my $seq_length = $query;
+	my $max_pos = $genome_len - ($#ctgs + 1) * ($seq_length  - 1); ### skip the last  L-1 positions of each contig because they would not allow a sequence of length $seq_length
+	my $position = int(rand($max_pos));
+	my $c = 0;
+	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($verbose >= 3);
+	while ($position > ($ctg_len[$c] - $seq_length + 1)) {
+	    $position -= $ctg_len[$c]  - $seq_length + 1;
+	    $c++;
+	}
+	$ctg = $ctgs[$c];
+	$ctg_length = $contig{$ctgs[$c]}->get_length();
+	$reg_left = $position;
+	$reg_right = $reg_left + $seq_length -1;
+	if (int(rand(2))) {
+	    $orf_strand = "D";
+	} else {
+	    $orf_strand = "R";
+	};
+
+	&RSAT::message::Debug($ctg, $reg_left, $reg_right, $orf_strand, $seq_length, $ctg_length, $position, $max_pos) if ($verbose >= 10);
+
+    }
+    $reg_size =  $reg_right - $reg_left + 1;
+
+    ###  sequence label
+    my @current_id = ();
+    if ($prefix) {
+	push @current_id, $prefix;
+    }
+    if ($sequence_type eq "random fragments") {
+	$query = "rand_".$q;
+	push @current_id, $query;
+    }
+
+    ## Generate the sequence IDs as a function of the selected labels
+    foreach my $field (@label_fields) {
+	push @current_id, $$field;
+#	&RSAT::message::Debug($query, "label", $field, $$field) if ($main::verbose >= 10);
+    }
+    my $current_id = join $label_sep, @current_id;
+
+    ## Comments to be added to the sequence
+    ## Specific treatment of comments for the ft format
+    my $location = join (":", $organism_name, $ctg, $reg_left.":".$reg_right, $orf_strand);
+    my $feature_types = join(",", $organism->get_attribute("feature_types"));
+    if ($out_format eq "ft") {
+      my $ortho_label = join ("|", $current_id, $organism_name, $name);
+	@comments = ($ctg, $sequence_type, $orf_strand, $reg_left, $reg_right, $organism_name, $location, $ortho_label);
+
+      } elsif (!$no_comments) {
+	if ($sequence_type eq "random fragments") {
+	  @comments = (join("; ","random fragment",
+			    "size: ".$reg_size,
+			    "location: ".$location)) unless ($no_comments);
+	} else {
+	  ## in fasta format, only the first comment line is printed
+	  $first_comment_line = join("; ", $query,
+				     $sequence_type." from ".$current_from." to ".$current_to,
+				     "size: ".$reg_size,
+				     "feature type:".$feature_types,
+				     "location: ".$location);
+	  if ($noorf) {
+	    if ($sequence_type eq "upstream") {
+	      my $upstr_neighbour = $current_feature->get_attribute("upstr_neighbour");
+	      $upstr_neighbour_id = "<NULL>";
+	      if (($upstr_neighbour) && ($upstr_neighbour ne "<NULL>")) {
+		$upstr_neighbour_id = $upstr_neighbour->get_attribute("id");
+	      }
+	      $first_comment_line .= "; upstream neighbour: ".$upstr_neighbour_id;
+	      $first_comment_line .= " (distance: ".$current_feature->get_attribute("upstr_size").")";
+	    } elsif ($sequence_type eq "downstream") {
+	      my $downstr_neighbour = $current_feature->get_attribute("downstr_neighbour");
+	      $downstr_neighbour_id = "<NULL>";
+	      if (($downstr_neighbour) && ($downstr_neighbour ne "<NULL>")) {
+		$downstr_neighbour_id = $downstr_neighbour->get_attribute("id");
+	      }
+	      $first_comment_line .= "; downstream neighbour: ".$downstr_neighbour_id;
+	      #		    $first_comment_line .= "; downstream neighbour: ".$current_feature->get_attribute("downstr_neighbour")->get_attribute("id");
+	      $first_comment_line .= " (distance: ".$current_feature->get_attribute("downstr_size").")";
+	    }
+	  }
+
+	  @comments = ($first_comment_line);
+	  push @comments, join ("; ","Gene: ".$name,
+				"ID".$id,
+				"gene location: ".$orf_left." ".$orf_right." ".$orf_strand);
+
+	}
+      }
+
+
+    ## Export the feature if requested
+    if ($output_features) {
+	if ($reg_left <= $reg_right) {
+	    print $out_ft_handle join ("\t",
+				       $ctg,
+				       $sequence_type,
+				       $id,
+				       $orf_strand,
+				       $reg_left,
+				       $reg_right,
+				       ), "\n";
+	} else {
+	    push @ft_warnings, join ("\t",
+				     ";".$ctg,
+				     $sequence_type,
+				     $id,
+				     $orf_strand,
+				     $reg_left,
+				     $reg_right,
+				     "left > right => skipped",
+				     );
+	}
+    }
+
+    ### substring retrieval
+    &RSAT::message::Debug(
+	  "query: ".$query,
+	  "id: ".$id,
+	  "ctg: ".$ctg,
+	  "contig: ".$contig{$ctg},
+	  "orf_left:".$orf_left,
+	  "orf_right: ".$orf_right,
+	  "orf_strand: ".$orf_strand,
+	  "current_from: ".$current_from,
+	  "current_to: ".$current_to,
+	  "reg_left: ".$reg_left,
+	  "reg_right: ".$reg_right,
+	  "reg_size: ".$reg_size,
+	 )
+	if ($main::verbose >= 4);
+    if ($reg_left <= $reg_right) {
+      $current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
+      #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+    } else {
+      &RSAT::message::Warning($query, $id, "left limit (".$reg_left.") cannot be larger than right limit (".$reg_right.")") if ($main::verbose >= 3);
+      $current_seq = "";
+    }
+    $current_seq = uc($current_seq);
+
+    ### print result sequence
+    &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
+}
+
+
+print $out (join "\n", @warnings), "\n"
+    unless $no_warn;
+
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $out;
+
+if ($output_features) {
+  print $out_ft_handle (join "\n", @ft_warnings), "\n"
+    unless $no_warn;
+  close $out_ft_handle;
+}
+
+
+exit(0);
+
+################################################################
+#### subroutine definitions
+################################################################
+
+################################################################
+#### detailed help message
+sub PrintHelp {
+
+    my $supported_organisms = &ListSupportedOrganisms("sizes");
+    open(HELP, "| more");
+    print HELP<<End_help;
+USAGE
+	retrieve-seq -type type -org organism
+			[-from] [-to] [-format seqformat] [-lw line_width]
+			[-o outpufile] -q query_orf | -i query file | -all
+
+DESCRIPTION
+	Returns upstream, downstream or coding DNA sequences for list of query
+	genes.
+
+CATEGORY
+	genomics
+	sequences
+
+OPTIONS
+	-org organism
+	     When an organism is specified, the program automatically
+	     loads the appropriate genome sequence and feature table.
+
+	     If this option is not used, the option -seq must be used
+	     instead.
+
+	     (type supported-organism to obtain the list of supported
+	     organisms)
+
+	-seq	input sequence file
+		(alternative to organism)
+
+		Specify the input sequence file. See INPUT FORMAT
+		below.
+	-informat	input sequence format
+	-prefix
+		prefix for sequence identifier
+	-feattype
+		Feature type.
+		Supported: $supported_feature_types
+	-type	sequence type
+		Currently supported sequence types
+			upstream (default)
+			downstream
+			orf (warning: introns are not spliced out)
+			random (random fragments)
+		To implement in the future
+			introns
+			coding
+
+		The sub-option
+		    -type random
+		requires to use the -n for specifying the number of sequences.
+	-n number of sequecnes (only with -type random)
+	-q query
+		The query should be an orf identifier (eg 'metR').
+		The query is case-insensitive.
+		Multiple queries can be entered by reiteratively using the -q
+		option.
+        -i     query file. The first word of each line is taken as a query.
+                This option is incompatible with -q.
+
+	-ids_only
+		Use this option if the queries are provided as a list
+		of IDs. This avoids to load the table of synonyms, in
+		order tos ave time.
+	-all	return all genomic upstream regions
+
+	-o	name of the output file
+
+	-oft	output features file
+		in addition to the sequences, export a feature file with the
+		chromosomal location of the retrieved sequences.
+
+        -from #1 -to #2
+                where #1 and #2 are numbers. #2 should be higher than #1.
+                limits of the region to extract, relative to orf start
+                (=position 0). Use negative values for upstream sequence.
+                        example: -from -800 -to -1
+                        will extract the 800 bp upstream the orf start.
+			 (this is the default)
+
+	-format	allows to select different output formats, with the following
+		options:
+		IG	IntelliGenetics (default format)
+		WC	wconsensus format
+		raw	only the sequence is returned, without spaces, newlines
+			nor comments.
+                FastA
+
+	-lw ##	Line width. A newline character will be inserted in the
+		sequence every ## bases. Default is 60.
+		-lw 0 will prevent newline insertion.
+
+        -label label_fields
+	       Field(s) to be used in the sequence label.
+	       Default: name.
+	       Supported: $supported_label_fields
+
+	       Multiple fields can be specified, separated by commas
+	       in the command line.
+
+	       Example:
+			-label org,name,id
+
+	       In this case, the sequence identifier will contain all
+	       of these fields, separated by the separator specified
+	       with the option -labelsep.
+
+	-labelsep
+		Separator between label fields. Default: $label_sep
+
+	-noorf	prevent overlap with neighbout genes.
+
+		When this option is active, the sequence size is
+		adapted to avoid including coding sequences of the
+		neighbour genes.
+
+		The reason for preventing overlap with upstream genes
+		is that (at least for microbial organisms, and in
+		large part for higher eukaryotes) most cis-acting
+		elements are located in the non-coding regions. Thus,
+		if the neighbour gene is closer than the selected
+		limit for collecting upstream sequences, the part of
+		coding sequences included it the result is likely to
+		add up to the noise, without bringing any additional
+		signal.
+
+		More importantly, coding and non-coding sequences
+		generally have very different background models. The
+		inclusion of coding sequences from neighbour genes may
+		thus lead to biases in motif discovery.
+
+		The weaknesses of using this option are that, in some
+		cases, predicted orf do not correspond to real genes,
+		This was particularly frequent in the early versions
+		of the yeast genome, but the annotations have been
+		improved since then.
+
+		For bacterial sequences, it is essential to prevent
+		overlap with upstream genes, because intergenic
+		distances are often very short, especially between
+		pairs of genes comprised in the same operon.
+
+
+	-rm     Use the repeat masked version of the genome.  Attention :
+		repeated regions are annotated for some genomes only.
+
+	-nocom	no comments. Only the identifier and the sequence are
+		returned. By default, the comment indicates the ORF and
+		upstream sequence coordinates.
+
+	-imp_pos
+		Admit imprecise positions.
+		In the annotation of some genomes, the limits of some genes
+	        are imprecisely specified (e.g. <555245, >898098). By default,
+	        these genes are not loaded. The option -imp_pos allows to
+	        retrieve sequence for these genes as well, using the imprecise
+	        coordinate as reference position.
+
+	-nowarn
+		Prevents warning when a gene cannot be identified.
+
+	-randsels #
+		Select a random set of # genes in the genome annotations.
+		This option ois obsolete, it has been replaced by a
+		separate command: random-genes. The option is
+		maintained for backward compatibility.
+
+	-lf	length file
+		(only with the option '-type random')
+		Allows to generate random sequences with the same
+		lengths as a set of reference sequences. The sequence
+		length file can be obtained with the command
+			sequence-lengths
+		The length file contains two columns :
+		    - sequence ID (ignored)
+		    - sequence length
+
+	-features
+		alternate feature table. This option allows to speify
+		an alternate file where the ORF locations are found.
+		See below for a description of the feature file format.
+
+INPUT FORMATS
+	Input sequence file
+		Sequence file is of type filelist, i.e. this file
+		contains a list of other file names, each of which
+		contains a raw contig sequence (usually a whole
+		chromosome). The raw sequence files cannot contain any
+		space or carriage return : the character position in
+		the file must correspond to the nucleotide position on
+		the contig.
+
+	Feature file
+		The feature file contains one line per feature, with
+		tab-delimited columns providing the following information:
+		column	field   description
+		1	id	feature identifier
+		2	type	feature type (Supported: ${supported_feature_types})
+		3	name	feature name
+		4	ctg	chomosome.or contig
+		5	left	left end position
+		6	right	right end position
+		7	strand	D (direct) or R (reverse)
+		8	descr	short description (optional)
+
+EXAMPLES
+	retrieve-seq -type upstream -org Escherichia_coli_K12 \\
+		     -q metJ -q meta -q metb		      \\
+		     -from +59 -to -200 -noorf
+
+	will return the sequence of 260 nucleotides, 200of which
+	extracted upstream the start codon, and the 60 following being
+	the beginning of the coding sequence.
+
+End_help
+    close HELP;
+    exit;
+}
+
+################################################################
+#### list of options
+sub PrintShortHelp {
+  open(HELP, "| more");
+  print HELP<<End_short_help;
+retrieve-seq options
+--------------------
+-org		organism
+-seq		sequence file (alternative to organism)
+-informat	input sequence format
+-prefix		prefix for sequence identifiers
+-feattype	accepted feature types. Supported: $supported_feature_types
+-type		upstream | downstream | orf | random
+-n		number of sequences (only with -type random)
+-randsels #	Select a random set of # genes in the genome annotations.
+-lf		length file
+-i		query file. This option is incompatible with -q.
+-q		query
+-ids_only	queries are provideed as IDs, do not load synonyms
+-all		returns all genomic upstream regions
+-o		followed by the name of the outputfile.
+-oft		output features file
+-from #1 -to #2	limits of the region to extract, relative to orf start
+-format		output sequence format. accepted: $accepted_output_seq
+-lw ##		Line width. -lw 0 will prevent newline insertion.
+-label 		label field(s) (Supported: $supported_label_fields)
+-labelsep	separator between label fields. Default: $label_sep
+-noorf		the upstream sequence can only contain non-coding sequence.
+-rm		Use the repeat masked version of the genome.
+-nowarn		prevents warning when a gene can not be identified
+-imp_pos	admit imprecise positions.
+-nocom		do not print comments  (start, end position, ...) besides each gene identifier
+-features	alternate feature table
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	### output file name
+	if ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	    ### output feature file
+	} elsif ($ARGV[$a] eq "-oft") {
+	    $output_features = $ARGV[$a+1];
+
+	    ### help request
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintShortHelp;
+
+	    ### output sequence format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $out_format = lc($ARGV[$a+1]);
+
+	    ### limits of the region to retrieve
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from = $ARGV[$a+1];
+	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Integer number.") unless (&IsInteger($from));
+
+	} elsif ($ARGV[$a] eq "-to") {
+	    $to = $ARGV[$a+1];
+	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Integer number.") unless (&IsInteger($to));
+
+	    ### verbose
+	} elsif ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	    #### new query
+	} elsif ($ARGV[$a] eq "-q") {
+	    @queries = (@queries, $ARGV[$a+1]);
+
+	    #### input file (one query per line)
+	} elsif ($ARGV[$a] eq "-i") {
+	    $query_file =$ARGV[$a+1];
+
+	    #### specific input file for random selections (one sequence length per line)
+	} elsif ($ARGV[$a] eq "-lf") {
+	    $length_file =$ARGV[$a+1];
+
+	    #### random selection of ORFs
+	} elsif ($ARGV[$a] =~ /-randsel/) {
+	    $random_orfs =$ARGV[$a+1];
+	    unless (&IsNatural($random_orfs)) {
+		&RSAT::error::FatalError("The number of sequences must be a natural number");
+	    }
+	    unless ($random_orfs > 0) {
+		&RSAT::error::FatalError("The number of ORFs must be > 0");
+	    }
+	    &RSAT::message::Warning("The option -randsel is obsolete. Please use the program random-genes instead");
+
+	    ### return all genomic  upstream regions
+	} elsif ($ARGV[$a] eq "-all") {
+	    $return_all = 1;
+
+	    ### Query is a list of IDs (no necessity to load gene names and synonyms)
+	} elsif ($ARGV[$a] eq "-ids_only") {
+	    $ids_only = 1;
+
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name =$ARGV[$a+1];
+
+	    #### input sequence file
+	} elsif ($ARGV[$a] eq "-seq") {
+	    $input_sequence_file =$ARGV[$a+1];
+
+	    #### input sequence format
+	} elsif ($ARGV[$a] eq "-informat") {
+	    $input_sequence_format =$ARGV[$a+1];
+
+	    #### prefix
+	} elsif ($ARGV[$a] eq "-prefix") {
+	    $prefix =$ARGV[$a+1];
+
+	    #### number of random segments tor eturn
+	} elsif ($ARGV[$a] eq "-n") {
+	    $num_rand_sel =$ARGV[$a+1];
+	    unless (&IsNatural($num_rand_sel)) {
+		&RSAT::error::FatalError("The number of sequences must be a natural number");
+	    }
+	    unless ($num_rand_sel > 0) {
+		&RSAT::error::FatalError("The number of sequences must be a strictly positive");
+	    }
+
+	    #### feature types
+	} elsif ($ARGV[$a] eq "-feattype") {
+	    my @feature_types = split ",", $ARGV[$a+1];
+	    foreach my $feature_type (@feature_types) {
+		if ($supported_feature_types{lc($feature_type)}) {
+		    $accepted_feature_types{lc($feature_type)}++;
+		} else {
+		    &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
+		}
+	    }
+
+	    #### sequence type
+	} elsif ($ARGV[$a] eq "-type") {
+	    if ($ARGV[$a+1] =~ /^up/i) {
+		$sequence_type = "upstream";
+
+	    } elsif ($ARGV[$a+1] =~ /^down/i) {
+		$sequence_type = "downstream";
+
+	    } elsif ($ARGV[$a+1] =~ /^orf/i) {
+		$sequence_type = "unspliced ORF";
+		$default{from} = "start";
+		$default{to} = "stop";
+
+	    } elsif ($ARGV[$a+1] =~ /^rand/i) {
+		$sequence_type = "random fragments";
+		&RSAT::error::FatalError("The option -type random is not supported anymore. ");
+
+#	    } elsif ($ARGV[$a+1] =~ /^exon/i) {
+#		$sequence_type = "exons";
+#
+#	    } elsif ($ARGV[$a+1] =~ /^intron/i) {
+#		$sequence_type = "introns";
+
+	    } else {
+		die ("Error: unsupported sequence type: '$ARGV[$a+1]'",
+		     "\n");
+	    }
+
+
+	    #### line width
+	} elsif (($ARGV[$a] eq "-lw") && ($ARGV[$a+1] >= 0)) {
+	    $line_width = $ARGV[$a+1];
+
+	    #### use identifiers rather than gene names
+	} elsif ($ARGV[$a] eq "-label") {
+	    my @fields = (split(",", lc($ARGV[$a+1])));
+	    foreach my $field (@fields) {
+	      if ($supported_label_fields{$field}) {
+		push @label_fields, $field;
+	      } elsif ($field eq "gene") {
+		&RSAT::message::Warning('label field "gene" is obsolete. Please use "-label name" instead.');
+		push @label_fields, "name";	
+	      } elsif ($field eq "orf") {
+		&RSAT::message::Warning('label field "orf" is obsolete. Please use "-label id" instead.');
+		push @label_fields, "id";
+	      } elsif ($field eq "orf_gene") {
+		&RSAT::message::Warning('label field "orf_gene" is obsolete. Please use "-label id,name" instead.');
+		push @label_fields, ("id","name");	
+	      } elsif ($field eq "full") {
+		#		    &RSAT::message::Warning('label field "full" is obsolete. Please select manually the desired fields. Supported: '.$supported_label_fields);
+		push @label_fields, @supported_label_fields;
+	      } else {
+		&RSAT::error::FatalError("$field is not a valid field for sequence label. Supported: $supported_label_fields.");
+	      }
+	    }
+
+	    #### Label field separator
+	} elsif ($ARGV[$a] eq "-labelsep") {
+	    $label_sep = $ARGV[$a+1];
+
+	    #### do not allow overlapping coding sequences
+	} elsif (($ARGV[$a] =~ /^-nocds/i) ||
+		 ($ARGV[$a] =~ /^-noorf/i)) {
+	    $noorf = 1;
+
+	    #### Use the repeat masked version of the genome
+	} elsif ($ARGV[$a] eq "-rm") {
+	    $repeat_masked = 1;
+
+	    #### do not print the comments field
+	} elsif ($ARGV[$a] =~ /^-nocom/i) {
+	    $no_comments = 1;
+
+	    #### admit imprecise positions
+	} elsif ($ARGV[$a] =~ /^-imp_pos/i) {
+	    $imp_pos = 1;
+
+	    #### do not warn
+	} elsif ($ARGV[$a] =~ /^-nowarn/i) {
+	    $no_warn = 1;
+
+	    #### alternative feature file
+	} elsif ($ARGV[$a] eq "-features") {
+	    $annotation_table = $ARGV[$a+1];
+
+	}
+    }
+}
+
+
+################################################################
+#### verbose ####
+sub Verbose {
+    print $out "; retrieve-seq";
+    &PrintArguments($out);
+    printf $out "; %-14s\t%s\n", "organism", $organism_name;
+    printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
+    printf $out "; %-14s\t%s\n", "feature type", join ",", $organism->get_attribute("feature_types");
+    if ($input_sequence_file) {
+	printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
+	printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
+    }
+    printf $out "; %-14s\t%s\n", "feature table file", $annotation_table if ($annotation_table);
+    printf $out "; %-14s\t%s\n", "Output format", $out_format;
+    printf $out "; %-14s\t%s\n", "Line width", $line_width;
+    printf $out "; %-14s\t%d\n", "Random selection", $random_orfs if ($random_orfs);
+    print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
+    print $out "; relative coordinates\n";
+    print $out ";        from    $from\n";
+    print $out ";        to      $to\n";
+    print $out ";        size    ", abs($to - $from + 1), "\n";
+    if (defined($query_file)) {
+	printf $out "; %-14s\t%s\n", "Query file", $query_file;
+    } else {
+	printf $out "; %-14s\t%d\n", "Queries", scalar(@queries);
+	unless ($return_all) {
+	    foreach $q (@queries) {
+		print $out ";	$q\n";
+	    }
+	}
+    }
+    print $out ";\n";
+}

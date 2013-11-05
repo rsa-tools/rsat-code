@@ -1,0 +1,438 @@
+#!/usr/bin/env python
+'''NAME
+        local-word-analysis
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+DESCRIPTION
+        compute oligomer frequencies in a set of sequences,
+        and detects locally overrepresented oligomers.
+
+CATEGORY
+        sequences
+        pattern discovery
+        
+ARGUMENTS
+    GENERAL OPTIONS
+        --version             show program's version number and exit
+        -h, --help            show this help message and exit
+        -v #, --verbosity=#   set verbosity to level #
+        
+
+        -i #, --input=#       read sequence from # (must be in FASTA format)
+                              if not specified, the standard input is used
+        -o #, --output=#      output results to #
+                              if not specified, the standard output is used
+    COUNTING OPTIONS
+        -l #, --length=#      set oligomer length to # (REQUIRED ARGUMENT)
+                              when the option dyad is used # represents the length of one monad
+                              EXAMPLE: --length=7    
+        --dyad                count dyads instead of oligomers                              
+        --spacing=A:B         when using dyads set the spacing between A to B
+                              EXAMPLE: --length=3 --dyad --spacing=1:20
+        --under               use under-represented words statistics
+        -s #, --strand=#      search in forward strand + or in both strands +- (default)
+                              EXAMPLE: --strand=+
+        -p, --overlap         allow overlapping oligomer occurrences
+                              EXAMPLE: --overlap
+        --window=#            count oligomers in fixed window of length #
+                              use --window=variable to use a variable size window (slower)
+                              use --window=none to search without window
+                              EXAMPLE: --window=20 (window of length 20)
+        --windowgroup=#       count oligomers in fixed window of length #, 2#, ...
+                              only valid when the --center option is used
+                              EXAMPLE: --center=0 --windowgroup=20 (use a window of length 20, 40, 60, ...)
+        --right=#             use right bound position as reference
+                              position #. This should be used when dealing with 
+                              upstream sequences.
+                              EXAMPLE: --right=-1 (use right bound of input
+                              sequence as position -1)
+        --left=#              use left bound position as reference
+                              position #. This should be used when dealing with
+                              downstream sequences.
+                              EXAMPLE: --left=0 (use left bound of input
+                              sequences as position 0)
+        --center=#            use center position as reference
+                              position #.
+                              EXAMPLE: --center=0 (use center of input
+                              sequences as position 0)
+                              
+    BACKGROUND MODEL OPTIONS                              
+        -m #, --markov=#      use a Markov model of order # calibrated from
+                              input sequences
+                              order 0 corresponds to single nucleotide frequencies
+                              EXAMPLE: --markov=2 (Markov chain of order 2)
+        --bgfile=#            use a predefined local-word-analysis background model.
+                              EXAMPLE --bgfile=mybgfile
+        --bgoligo=#           use a predefined oligo-analysis background model
+                              EXAMPLE: --bgolio=myfile.gz
+        --bgoligomarkov=#     use a Markovian background model loaded from a
+                              predefined oligo-analysis file
+                              EXAMPLE: --bgoligomarkov=myfile.gz
+        --bgwindow=#          use a widow size of length # in background model 
+                              EXAMPLE: --bgwindow=200 (use a background window of length 200)
+
+    FILTER OPTIONS                             
+        --max=PARAM VALUE     limit output to items that have PARAM <= VALUE
+                              EXAMPLE: --max rank 10
+                              Supported parameters: seq,identifier,obs_freq,exp_
+                              freq,occ,exp_occ,occ_P,occ_E,occ_sig,start,end,wid
+                              th,n_win,n_pos,w_rank,rank
+        --min=PARAM VALUE     limit output to items that have PARAM >= VALUE
+                              EXAMPLE: --min occ_sig 0
+                              Supported parameters:seq,identifier,obs_freq,exp_f
+                              req,occ,exp_occ,occ_P,occ_E,occ_sig,start,end,widt
+                              h,n_win,n_pos,w_rank,rank
+        --sort=[+][-]PARAM    sort ouput according to PARAM in growing
+                              order (+) or inverse (-)
+                              EXAMPLE: --sort=+label
+                              Supported parameters:seq,identifier,obs_freq,exp_f
+                              req,occ,exp_occ,occ_P,occ_E,occ_sig,start,end,width
+                              h,n_win,n_pos,w_rank,rank
+
+
+
+STATISTICS
+    P-VALUE
+        The probability to observe exactly k occurrences of a given oligomer
+        is computed using the binomial statistics
+
+        underrepresentation
+
+                   k           k       (N-k)
+        P(X<=k) = SUM C(k,N)  p   (1-p)
+                  i=0    
+
+        overreprensentation
+
+                   N            k       (N-k)
+        P(X>=k) = SUM  C(k,N)  p   (1-p)
+                  i=k    
+
+    E-VALUE
+        E-VALUE = number_of_tests * P-VALUE
+
+'''        
+
+VERSION = '20120626'
+USAGE = '''local-word-analysis -l OLIGOMER_LENGTH [-i inputfile]
+                [-o outputfile] 
+                [--max parameter #][--min parameter #]
+                [-h | --help]
+
+        Example : %prog -i seq.fasta -l 6 --markov=2 -v2 --max rank 10
+'''
+
+########################################
+#                                      #
+# OUTPUT HEADER
+#                                      #
+########################################
+
+HEADER = ''';
+; local-word-analysis
+; Detection of locally overrepresented motifs
+; %(command)s
+; version                          %(version)s
+; date                             %(date)s
+; running time                     %(runningTime)s
+; oligomer length                  %(l)d
+; strand                           %(strand)s
+; window width                     %(windowWidth)s
+; bg window width                  %(bgwindowWidth)s            
+; input file                       %(inputfilename)s
+; bg file                          %(bgfile)s   
+; nb of sequences                  %(numberOfSequences)d
+; scanned region                   [%(start)+05d:%(end)+05d]
+; scanned words                    %(scannedWords)d
+; lower thresholds                 %(lowerThreshold)s
+; upper thresholds                 %(upperThreshold)s
+; sorting criteria                 %(sort)s
+;
+; column headers
+;    1    seq                oligomer sequence
+;    2    identifier         oligomer identifier
+;    3    obs_freq           observed relative frequency
+;    4    exp_freq           expected relative frequency
+;    5    occ                observed occurrences
+;    6    exp_occ            expected occurrences
+;    7    occ_P              occurrence probability
+;    8    occ_E              E-value for occurrences
+;    9    occ_sig            occurrence significance
+;    10   start              occurrence start location
+;    11   end                occurrence end location
+;    12   width              window width          
+;    13   n_win              number of analysed windows (for a given word)
+;    14   n_pos              number of analysed positions (for a given window) 
+;    15   w_rank             window rank
+;    16   rank               occurrence rank (based on given criteria)'''
+
+COLUMN_HEADER_CHAR = ';'
+COLUMN_HEADER = ['seq', 'identifier', 'obs_freq', 'exp_freq', 'occ', 'exp_occ', 'occ_P', 'occ_E', 'occ_sig', 'start', 'end', 'width', 'n_win', 'n_pos', 'w_rank', 'rank']
+COLUMN_TYPE   = [str  ,  str        , float     , float     , int  , int      , float  , float  , float    , int    , int  , int   , int     , int,     int,      int]
+FORMAT_ROW = '%s\t%s\t%.2e\t%.2e\t%d\t%.2f\t%.1e\t%.1e\t%.2f\t%+05d\t%+05d\t%d\t%d\t%d\t%d\t%d'
+
+########################################
+#                                      #
+# IMPORTS
+#                                      #
+########################################
+import os
+import sys
+import pickle
+import optparse
+import time
+from pydoc import pager
+
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+# BGEGIN DEPENDENCIES
+import cli
+import tab
+import markov
+import ST
+import dist
+import dna
+import ormlib
+# END DEPENDENCIES
+
+
+########################################
+#                                      #
+# COMMAND LINE OPTIONS
+#                                      #
+########################################
+parser = optparse.OptionParser(usage=USAGE, add_help_option=0, version=VERSION)
+
+parser.add_option("-l", "--length",   action="store",      dest="l",     type="int", default=None)
+parser.add_option("-i", "--input",    action="store",      dest="input",             default=sys.stdin)
+parser.add_option("-o", "--output",   action="store",      dest="output",            default=sys.stdout)
+parser.add_option("-s", "--strand",   choices=['+', '+-'], dest="strand",            default='+-')
+parser.add_option("-p", "--overlap",  action="store_true", dest="overlap",           default=False)
+parser.add_option("--dyad",           action="store_true", dest="dyad",              default=False)
+parser.add_option("--under",          action="store_true", dest="under",              default=False)
+parser.add_option("--spacing",        action="store",      dest="spacing",       type="string", default='1:1')
+parser.add_option("-m", "--markov",   action="store",      dest="markov",        type="int", metavar="ORDER", default=None)
+parser.add_option("--bgfile",         action="store",      dest="bgfile",        type="string", default=None)
+parser.add_option("--bgoligo",        action="store",      dest="bgoligo",       type="string", default=None)
+parser.add_option("--bgoligomarkov",  action="store",      dest="bgoligomarkov", type="string", default=None)
+parser.add_option("--max",            action="append",     dest="max",           type="string", nargs=2, default=[])
+parser.add_option("--min",            action="append",     dest="min",           type="string", nargs=2, default=[])
+parser.add_option("--sort",           action="append",     dest="sort",          type="string", default=[])
+parser.add_option("--window",         action="store",      dest="window",        type='string', default='20')
+parser.add_option("--windowgroup",    action="store",      dest="window_group",  type='int', metavar="LENGTH", default=None)
+parser.add_option("--bgwindow",       action="store",      dest="bgwindow",      type='int', metavar="LENGTH", default=None)
+parser.add_option("--slices",         action="store",      dest="slices",        type="int", default=10)
+parser.add_option("--right",          action="store",      dest="right",         type="int", default=None)
+parser.add_option( "--left",          action="store",      dest="left",          type="int", default=None)
+parser.add_option( "--center",        action="store",      dest="center",        type="int", default=None)
+parser.add_option("--location",       action="store",      dest="location",      type="string", default=None)
+parser.add_option("-r", "--ratio",    action="store",      dest="ratio",         type="float", default=2.0)
+parser.add_option("--count",          action="store",      dest="count",         type="string", default='hash')
+parser.add_option("-e", "--error",     action="store",      dest="error",        type="int", default=0)
+parser.add_option("--debug",           action="store_true", dest="debug")
+parser.add_option("--profile",         action="store_true", dest="profile")
+parser.add_option("-v", "--verbosity", action="store",      dest="verbosity",    type="int", default=0)
+parser.add_option("-h", "--help",      action="store_true", dest="help")
+
+(options, args) = parser.parse_args()
+
+cli.UPDATE = 1
+cli.VERBOSITY = options.verbosity
+if options.debug:
+    cli.VERBOSITY = 10
+
+
+########################################
+#                                      #
+#   MAIN
+#                                      #
+########################################
+def main(args, options):
+    if options.help:
+        doc = globals()['__doc__'] % {'usage' : USAGE, 'version' : VERSION}
+        return pager(doc)
+
+    if options.l == None:
+        parser.error("option -l is required. You must provide at least an oligomer length")
+
+    if options.center == None and options.window_group != None:
+        parser.error("option --windowgroup requires --center")
+
+    timer = tab.Timer()
+    spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
+
+    ##
+    #
+    # input sequence
+    #
+    ##
+    if options.left == None and options.right == None and options.center == None:
+        options.right = -1
+
+    s = dna.fasta2sequences(options.input, rightPosition=options.right, leftPosition=options.left, centerPosition=options.center)
+
+    # location
+    if options.location:
+        location = ( int(options.location.split(':')[0]), int(options.location.split(':')[1]) ) 
+    else:
+        location = s.location
+        #location = bg.location
+
+    if not (location[0] >= s.location[0] and location[1] <= s.location[1]):
+        cli.warning('Sequences are shorter then the given location')
+        location = s.location
+
+    ##
+    #
+    # background
+    #
+    ##
+    bgfile = ''
+    options.bgwindow = options.bgwindow or sys.maxint
+    if options.bgwindow > s.location[1] - s.location[0] + 1:
+        options.bgwindow = s.location[1] - s.location[0] + 1
+
+    if options.bgfile:
+        bg = pickle.load(open(options.bgfile))
+        bgfile = options.bgfile
+    else:
+        bgparams = dict(spacing=spacing, count=options.count, error=options.error, dyad=options.dyad)
+        bg = ormlib.Bg(location=location, W=options.bgwindow, l=options.l, strand=options.strand, overlap=options.overlap, params=bgparams)
+        if options.markov != None and options.markov >= 0:
+            bg.build_markov(s, order=options.markov)
+            bgfile = 'Markov order %d from input' % options.markov
+        elif options.markov != None and options.markov < 0:
+            order = options.l + options.markov
+            if order < 0:
+                cli.error('invalid markov order')
+            bg.build_markov(s, order=order)
+            bgfile = 'Markov order %d from input' % order
+        elif options.bgoligo:
+            bg.build_from_oligo_file(options.bgoligo, location)
+            bgfile = options.bgoligo
+        elif options.bgoligomarkov:
+            bg.build_markov_from_oligo_file(options.bgoligomarkov, location)            
+            bgfile = options.bgoligomarkov
+        else:
+            bg.build(s)
+    
+    if options.window != 'variable' and options.window != 'none':
+        if int(options.window) > s.location[1] - s.location[0] + 1:
+            options.window = s.location[1] - s.location[0] + 1
+        if options.window_group > s.location[1] - s.location[0] + 1:
+            options.window_group = s.location[1] - s.location[0] + 1
+
+    if not (location[0] >= bg.location[0] and location[1] <= bg.location[1]):
+        cli.error('Given location do not match Background model location')
+        return
+
+    ##
+    #
+    # Thresholds
+    #
+    ##
+    defaults = {'width' : (2, sys.maxint),
+                'occ'   : (1, sys.maxint),
+                'occ_sig'   : (None, None),
+                'occ_E' : (None, None),
+                'occ_P' : (None, None),
+                'start' : (None, None),
+                'end'   : (None, None)
+                }
+    thresholds = ormlib.convert_thresholds(defaults, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
+    params = {
+              'ratio' : options.ratio,
+              'spacing' : spacing,
+              'binomial' : 1,
+              'error' : options.error,
+              'spacing' : spacing,
+              #'heuristic' : options.heuristic,
+              'count'     : options.count,
+              'slices'    : options.slices,
+              'window' : options.window,
+              'window_group' : options.window_group,
+              'dyad' : options.dyad,
+              'center' : options.center,
+              'under' : options.under
+              }
+    params.update(thresholds)
+
+    start_time = time.localtime()
+
+    ##
+    #
+    # Run
+    #
+    ##
+    R = ormlib.extract_windows(s, bg, location=location, params=params)
+    r = R['R']
+
+    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+    options.sort = options.sort or ['-occ_sig']
+    r = ormlib.sort(r, options.sort, COLUMN_HEADER)
+    r = ormlib.window_rank(r, COLUMN_HEADER)
+    thresholds = ormlib.convert_thresholds({'w_rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
+    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+    r = ormlib.rank(r, COLUMN_HEADER)
+    thresholds = ormlib.convert_thresholds({'rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
+    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+
+    ##
+    #
+    # output
+    #
+    ##
+    if type(options.output) is str:
+        output = open(options.output, mode='w')
+    else:
+        output = options.output
+
+    output.write(ormlib.format_header(HEADER, l=options.l, 
+                                          inputfilename=str(options.input), 
+                                          numberOfSequences=len(s), 
+                                          start=location[0], end=location[1],
+                                          command=' '.join(sys.argv),
+                                          windowWidth = options.window,
+                                          bgwindowWidth = bg.W,
+                                          strand=options.strand,
+                                          lowerThreshold = str(options.min),
+                                          upperThreshold = str(options.max),
+                                          sort = str(options.sort),
+                                          date = time.ctime(),
+                                          runningTime = str(timer),
+                                          scannedWords = R['scannedWords'],
+                                          version = VERSION,
+                                          bgfile = bgfile
+                                          ))
+    output.write('\n')
+    output.write(ormlib.format_output(r, COLUMN_HEADER, COLUMN_HEADER_CHAR, FORMAT_ROW))
+    output.write('\n')
+
+    end_time = time.localtime()
+    if options.verbosity >= 1:
+        output.write('; Job started %s\n' % time.strftime("%Y_%m_%d.%H%M%S", start_time))
+        output.write('; Job done    %s\n' % time.strftime("%Y_%m_%d.%H%M%S", end_time))
+
+if __name__ == '__main__':
+    try:
+        if options.profile:
+            import Core.devel as devel
+            devel.prof('main(args, options)')
+        else:
+            main(args, options)
+    except KeyboardInterrupt:
+        sys.stderr.write('\n')
+        sys.stderr.flush()
+        sys.exit()
+    except SystemExit:
+        pass
+    except:
+        cli.error('Fatal Error')
+        if options.debug:
+            raise
+            #import traceback
+            #traceback.print_exc(file=sys.stdout)

@@ -1,0 +1,4 @@
+#!/usr/bin/perl
+
+die "multiple-family-analysis has been renamed gene-cluster-motifs, please use the new program name from now on\n";
+

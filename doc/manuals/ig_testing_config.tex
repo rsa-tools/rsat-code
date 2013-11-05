@@ -1,0 +1,109 @@
+\chapter{Testing the command-line tools}
+
+\section{Testing the access to the programs}
+
+\subsection{Perl scripts}
+
+From now on, you should be able to use the perl scripts from the
+command line. To test this, run:
+
+\begin{lstlisting}
+random-seq -help
+\end{lstlisting}
+
+
+This should display the on-line help for the random sequence
+generator.
+
+\begin{lstlisting}
+random-seq -l 200 -n 4
+\end{lstlisting}
+
+Should generate a random sequence of 200 nucleotides.
+
+
+\subsection{Testing Perl graphical librairies}
+
+\RSAT includes some graphical tools (\program{feature-map} and
+\program{XYgraph}), which require a proper installation of Perl
+modules.
+
+\begin{description}
+\item[GD.pm] Interface to Gd Graphics Library.
+\item[PostScript::Simple]  Produce PostScript files from Perl.
+\end{description}
+
+To test if these modules are available on your machine, type.
+
+\begin{lstlisting}
+feature-map -help
+\end{lstlisting}
+
+If the modules are available, you should see the help message of the
+program feature-map. If not, you will see an error message complaining
+about the missing librairies. In such a case, ask your system
+administrator to install the missing modules.
+
+\subsection{Python scripts}
+
+The \RSAT distribution includes some Python scripts. To test if they
+are running correctly, you can try the proram \program{random-motif}.
+
+\begin{lstlisting}
+random-motif  -l 10 -c 0.85 -n 3
+\end{lstlisting}
+
+This command will generate 3 position-specific scoring matrix (PSSM)
+of 10-columns with 85\% conservation of one residue in each column.
+
+\subsection{C programs}
+
+You can test the correct installation of the C programs with the
+following command.
+
+\begin{lstlisting}
+random-seq -l 1000 -n 10 | count-words -l 2 -v 1 -2str -i /dev/stdin
+\end{lstlisting}
+
+The first program (\program{random-seq}) is a Perl script, which
+generates a random sequence. The output is directly piped to the C
+program \program{count-words}, which computes the frequencies and
+occurrences of each dinucleotide.
+
+\section{Testing genome installation}
+
+We will now test if the genomes are correctly installed. You can
+obtain the list of supported organisms with the command:
+
+\begin{lstlisting}
+supported-organisms
+\end{lstlisting}
+
+
+If this command returns no result, it means that genomes were either
+not installed, or not correctly configured. In such a case, check the
+directories in the \file{data/genomes} directory, and check that the
+file \file{data/supported\_organisms.pl}.
+
+Once you can obtain the list of installed organisms, try to retrieve
+some upstream sequences. You can first read the list of options for the
+\program{retrieve-seq} program.
+
+\begin{lstlisting}
+retrieve-seq -help
+\end{lstlisting}
+
+
+Select an organism (say \org{Saccharomyces cerevisiae}), and
+retrieve all the start codons with the following options :
+
+\begin{lstlisting}
+retrieve-seq -org Saccharomyces_cerevisiae \
+        -type upstream -from 0 -to +2 -all \
+        -format wc -nocomment
+\end{lstlisting}
+
+
+This should return a set of 3 bp sequences, mostly ATG (in the case of
+\org{Saccharomyces cerevisiae} at least)
+

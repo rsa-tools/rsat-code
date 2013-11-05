@@ -1,0 +1,95 @@
+<html>
+<head>
+<title>RSAT makefiles</title>
+</head>
+<body>
+<blockquote>
+
+<h1 align=center>RSAT makefiles</h1>
+
+This directory contains a series of makefiles, for the initialization,
+maintenance and testing of the Regulatory Sequence Analysis Tools
+(RSAT).
+
+<p>
+<table align=center cellpadding=10 cellspacing=1 border=1>
+
+<tr>
+<th colspan=2>Installation and maintenance</th>
+</tr>
+
+
+<tr valign=top>
+<td><a href=init_RSAT.mk>init_RSAT.mk</a></td>
+<td>Initialize of the tools for the first installation of RSAT, and import some genomes.</td>
+</tr>
+
+<tr valign=top>
+<td><a href=install_genomes.mk>install_genomes.mk</a></td>
+<td>Parse and install new genomes from the NCBI genome repository. These genomes must previously be downloaded with downloads.mk</td>
+</tr>
+
+<tr valign=top>
+<td><a href=download.mk>download.mk</a></td>
+<td>Download complete genomes and other data types (e.g. metabolic pathways) from NCBI and other databases (e.g. KEGG).</td>
+</tr>
+
+<tr valign=top>
+<td><a href=mirror.mk>mirror.mk</a></td>
+<td>Maintenance of a RSAT mirror. Synchronization of different directories, principaly the genome data. This require the password of the main server. </td>
+</tr>
+
+<tr valign=top>
+<td><a href=server.mk>server.mk</a></td>
+<td>Maintenance of the main RSAT server. </td>
+</tr>
+
+<tr>
+<th colspan=2>Program testing</th>
+</tr>
+
+<tr valign=top>
+<td><a href=check_disco_sig_distrib.mk>check_disco_sig_distrib.mk</a></td>
+<td>Check the distibution of significance returned by string-based
+pattern discovery programs, by analyzing random sequences or random
+selections of promoters.</td>
+</tr>
+
+<tr valign=top>
+<td><a href=dyads_vs_oligos.mk>dyads_vs_oligos.mk</a></td>
+<td>Check the program dyad-analysis by comparing the statistics on dyads with spacing 0 with those calculated by oligo-anallysis on hexanucleotides. </td>
+</tr>
+
+<tr>
+<th colspan=2>Genome analysis</th>
+</tr>
+
+<tr valign=top>
+<td><a href=ortho_disco.mk>ortho_disco.mk</a></td>
+<td>
+Discover over-represented patterns (dyads) in upstream sequences of sets of orthologous genes.
+<br>Infer networks of co-regulated genes. 
+</td>
+</tr>
+
+<tr valign=top>
+<td><a href=ortho_disco_validation.mk>ortho_disco_validation.mk</a></td>
+<td>Validate the otho_disco.mk approach by analyzing all the genes in RegulonDB.</td>
+</tr>
+
+<tr>
+<th colspan=2>Miscellaneous</th>
+</tr>
+
+<tr valign=top>
+<td><a href=util.mk>util.mk</a></td>
+<td>Utilities used by all the other makefile scripts.</td>
+</tr>
+
+
+</table>
+
+
+</blockquote>
+</body>
+</html>

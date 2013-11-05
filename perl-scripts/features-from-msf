@@ -1,0 +1,193 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	features-from-msf
+
+        v1.0, 1997 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        features-from-msf [-i inputfile] [-o outputfile] [-v]
+	[-strand R|D|DR] [-min #] [-minH #] [-minS #] [-minB #] 
+	[-minT #]
+
+DESCRIPTION
+	extracts features from a msf file.
+
+CATEGORY
+	util
+	conversion
+	drawing
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-strand [D | R | DR] for compatibility with feature-map
+
+INPUT FORMAT
+	Any multiple sequence file (msf). 
+	See GCG manual for description of the msf format.	
+	
+OUTPUT FORMAT
+	The output format is a file that can be used as input 
+	by the program feature-map.
+	
+EXAMPLES
+       features-from-fugue -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+features-from-fugue options
+--------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-strand [D | R | DR] for compatibility with feature-map
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+$strand = "DR";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+	
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-strand") {
+	$strand = $ARGV[$a+1];
+    }
+}
+
+
+### check argument values
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out ";features-from-fugue result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+}
+
+#### read the heading ####
+while (($line = <$in>) && !($line =~ /\/\//)) { ### end of msf file heading
+    if ($line =~ /Type:\s+(\S+)/) {
+	$sequence_type = $1;
+    }
+} 
+
+
+#### read sequence data ####
+$current_pos = 1;
+while (<$in>) {
+    if (/^\s*(\d+)\s+(\d+)\s+$/) {
+	$current_pos = $1;
+    } elsif (/(\S+)\s+(.+)/) {
+	$map = $1;
+	unless (defined $map_hash{$map}) {
+	    push @maplist, $map;
+	    $map_hash{$map} = 1;
+	}
+	$seq{$map} .= $2;
+    }
+}
+
+
+foreach $map (@maplist) {
+    $seq = $seq{$map};
+    $seq =~ s/\s//g;
+    for $residue (1..length($seq)) {
+	$letter = substr($seq,$residue-1,1);
+	if (($letter ne "~") && ($letter ne ".")) {
+	    if ($previous_letter eq "~") {
+		$type = "start";
+		$id = "";
+		$start = $residue;
+		$end = "";
+		&PrintFeature;
+	    } 
+	    $type = $sequence_type;
+	    $start = $residue;
+	    $end = $residue;
+	    $id = $letter;
+	    &PrintFeature;
+	} elsif (($residue > 1) && ($letter eq "~") && ($previous_letter ne "~") && ($previous_letter ne ".")) {
+	    $type = "end";
+	    $id = "";
+	    $start = $residue -1;
+	    $end = "";
+	    &PrintFeature;
+	}
+	$previous_letter = $letter;
+    }
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintFeature {
+    print $out $map;
+    print $out "\t$type";
+    print $out "\t$id";
+    print $out "\t$strand";
+    print $out "\t$start";
+    print $out "\t$end";
+    print $out "\t$descr";
+    print $out "\n";
+}

@@ -1,0 +1,306 @@
+#!/usr/bin/perl
+
+$date = `date`;
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help; 
+NAME
+	information-profile
+	
+	v1.0 by Jacques van Helden, 19 October 1997
+	
+DESCRIPTION
+	Draws the information profile, as described in Claverie &
+        Bougueleret (1986),Nucleic Acids Res. 14(1): 179-196.
+
+CATEGORY
+	statistics
+	sequences
+
+USAGE
+	information-profile -i inputfile -o outputfile -l length 
+		[-freq] [-v] [-format theformat]
+
+ARGUMENTS
+	-i file	inputfile. This file should contain the sequences.
+	-format	input file format. Must be followed by one of the 
+		following options:
+		   IG (default)
+		   filelist
+		   raw
+		See below for the description of these formats.
+	-l	oligonucleotide length.
+	-expfreq
+		file containing the estimations for expected oligonucleotide 
+		frequencies. This can be for instance the olignonucleotide 
+		frequency measured in the whole genome, or in all intergenic 
+		regions, or in all coding regions. 
+		This information is used for the calculation of probabilities.
+		If omitted, expected frequencies are calculated on basis of
+		an equiprobable nucleotide utilization.
+        -smooth #
+                where # is a positive integer indicating the width of the 
+                smoothing window.
+	
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+$format = "ig";
+$method = "information";
+$discriminant = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  if ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+  
+  } elsif ($ARGV[$a] eq "-smooth") {
+    $smooth_width = $ARGV[$a+1];
+  
+  } elsif ($ARGV[$a] eq "-expfreq") {
+    $freq_file = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-expfreq2") {
+    $freq_file2 = $ARGV[$a+1];
+    $method = "discrminant";
+    $discriminant = 1;
+    
+  } elsif ($ARGV[$a] eq "-l") {
+    $oligo_length = $ARGV[$a+1];
+  
+  } elsif ($ARGV[$a] eq "-format") {
+    $format = lc($ARGV[$a+1]);
+  
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+  
+  }
+}
+
+### check parameter values
+unless ($oligo_length > 0) {
+  print "     You should specify an oligonucleotide length > 0.\n";
+  print "     Type information-profile -h for more info..\n";
+  exit;
+}
+
+if ($freq_file eq "") {
+    print "     You should specify a frequency file\n";
+    print "     Type information-profile -h for more info..\n";
+    exit;
+
+} 
+
+unless (open EXPECTED, $freq_file) {
+    print "     cannot open frequency file $freq_file\n";
+    print "     Type information-profile -h for more info..\n";
+    exit;
+}
+while (<EXPECTED>) {
+  if (/(\S+)\t(\S+)/i) {
+    $oligo_seq = lc($1);
+    $expected_freq{$oligo_seq} = $2;
+  }
+}
+close EXPECTED;
+
+
+#### second frequency file for discriminant analysis #####
+if ($freq_file2 ne "") {
+  unless (open EXPECTED2, $freq_file2) {
+      print "     cannot open frequency file $freq_file\n";
+      print "     Type information-profile -h for more info..\n";
+      exit;
+  }
+  while (<EXPECTED2>) {
+    if (/(\S+)\t(\S+)/i) {
+      $oligo_seq = lc($1);
+      $expected_freq2{$oligo_seq} = $2;
+    }
+  } 
+}
+
+### open sequence file ###
+if ($inputfile ne "") {
+  unless (open(INPUT, $inputfile)) {
+    print "\tcannot open input file $inputfile\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $in = INPUT;
+} else {
+  $in = STDIN;
+}
+
+### calculate the profile ###
+$sequence_number = 0;
+$nb_possible_pos = 0;
+$sum_seq_length = 0;
+
+while (&NextSequence) {
+  $sequence_number++;  
+  ### remove tabs and blank spaces ###    
+  $current_seq =~ s/ //g;
+  $current_seq =~ s/\t//g;
+  $current_seq =~ s/\n//g;
+  $seq_length[$sequence_number] = length($current_seq);
+  $sum_seq_length += $seq_length[$sequence_number];
+  if ($seq_length[$sequence_number] >= $oligo_length) {
+      $nb_possible_pos += $seq_length[$sequence_number] + 1 - $oligo_length;
+  }
+  $last_pos = $seq_length[$sequence_number] - $oligo_length;
+  for $offset (0..$last_pos) {
+    $oligo_seq = lc(substr($current_seq,$offset,$oligo_length));
+    $oligo[$offset] = $oligo_seq;
+    if ($disriminant) {
+      $info[$offset] = - log($expected_freq{$oligo_seq});
+    } else {
+      $info[$offset] = $expected_freq{$oligo_seq}/($expected_freq{$oligo_seq} + $expected_freq2{$oligo_seq});
+    }
+  }
+
+  if ($smooth_width > 1) {
+      $offset = int(($smooth_width - 1)/2);
+      for $pos (0..$#info) {
+	  $start = $pos - $offset;
+          $end = $start + $smooth_width -1;
+	  for $s ($start..$end) {
+	      $smooth_info[$pos] += $info[$s];
+	  }
+	  $smooth_info[$pos]/=$smooth_width;
+      }
+  } else {
+      @smooth_info = @info;
+  }
+
+}
+
+close $in;
+
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+for $pos (0..$#info) {
+    print $out "$pos\t";
+    print $out "$info[$pos]\t";
+    print $out "$smooth_info[$pos]\t";
+    print $out "$oligo[$pos]\n";
+}
+
+### verbose ###
+if ($verbose) {
+  print $out ";$method\n";
+  print $out ";Input file	$inputfile\n" if ($inputfile ne "");
+  print $out ";Input format	$format\n";
+  print $out ";Expected frequency file	$freq_file\n" if ($freq_file ne "");
+  print $out ";Output file	$outputfile\n" if ($outputfile ne "");
+  print $out ";Oligonucleotide length	$oligo_length\n";
+  print $out ";Nb of sequences		$sequence_number\n";
+  print $out ";Sum of sequence lengthes\t$sum_seq_length\n";
+  print $out ";total oligo occurrences         $sum_occurrences\n";
+  print $out ";nb possible positions\t\t",$nb_possible_pos ,"\n";
+  print $out ";nb possible oligonucleotides\t$nb_possible_oligo\n";
+  print $out ";Sequences:\n";
+  foreach $s (1..$sequence_number) {
+    print $out ";\t$id_list[$s-1]\t$seq_length[$s]\n";
+  }
+  print $out ";\n";
+}
+
+
+
+if ($verbose) {
+  $done_date = `date`;
+  print $out "\n;Job started $date";
+  print $out ";Job done    $done_date";
+}
+
+
+close $out;
+
+
+
+######## subroutine definition #########
+sub NextSequence {
+
+  ### single raw file ###
+  if ($format eq "raw") {
+    @id_list = ($inputfile);
+    $current_seq = "";
+    while (<$in>) {
+      $current_seq .= $_;
+    }
+    if ($current_seq ne "") {
+      $current_seq =~ s/\s//g;
+      return 1;
+    } else {
+      return 0;
+    }
+    
+  ### multi ###
+  } elsif ($format eq "multi") {
+    $line_count++;
+    @id_list = (@id_list,"$inputfile.seq$line_count");
+    if ($current_seq = <$in>) {
+      $current_seq =~ s/\s//g;
+      return 1;
+    } else {
+      return 0;
+    }
+    
+  ### file list ###
+  } elsif (($format eq "filelist") && ($next_file = <$in>)) {
+    chomp($next_file);
+    if (open NEXT_SEQ, $next_file) {
+      @id_list = (@id_list,$next_file);
+      $current_seq = "";
+      while (<NEXT_SEQ>) {
+        $current_seq .= $_;
+      }
+      close NEXT_SEQ;
+    } else {
+      print "Error: cannot open sequence file $next_file\n";
+    }
+    
+  ### IG format ###
+  } elsif ($format eq "ig") {
+    $current_id = "";
+    $current_seq = "";
+    while (<$in>) {
+      if ($_ =~ /^;/) { ### comment line -> skip it
+        next;
+      } elsif (($current_id eq "") && ($_ =~ /(\S+)\s/)) { ### identifier for the next sequence
+        $current_id = $1;
+        @id_list = (@id_list,$current_id);
+      } elsif ($_ =~ /(.*)[12]/) { ### end of the current sequence
+        $current_seq .= $1;
+        $current_seq =~ s/[^atgcATGC]//g;
+        return 1;
+      } else {
+        $current_seq .= $_;
+      }
+    }
+    return 0; ### when input file has been totally read
+
+  ### end of sequence file ###
+  } else {
+    return 0;
+  }
+}
+

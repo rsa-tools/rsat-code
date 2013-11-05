@@ -1,0 +1,1111 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-from-patterns,v 1.65 2013/11/04 01:19:29 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+matrix-from-patterns
+
+=head1 DESCRIPTION
+
+Extract one or several position-specific scoring matrices (PSSM) from
+a set of sequences, using a seeds a set of patterns (the output of
+I<oligo-analysis> or I<dyad-analysis>) of an assembly made of such
+patterns (output of I<pattern-assembly>).
+
+The program proceeds in two steps:
+
+1) A B<significance matrix> is built by assembling the patterns (with
+   I<pattern assembly>), and converting each assembly to a
+   position-specific scoring matrix (the conversion is ensured by
+   I<convert-matrix>).  This significance matrix contains one row per
+   residue, one column per position of the pattern assembly, and each
+   cell indicates the maximal significance value observed for a given
+   residue at a given position in the assembly.
+
+2) The significance matrix is then used as seed for collecting a PSSSM
+   from the input sequences. The matrix is collected either with
+   I<info-gibbs> (since Nov 2009) or with I<matrix-scan> (slow and
+   obsolete).
+
+Advantage of this two-step process: classically, position-specific
+scoring matrices are build from an alignemnt of sites (e.g. binding
+sites for a transcription factor).  A significance matrix already
+gives a good indication of the motif, but it does not always reflect
+the real sites present in the sequence, because it is built by
+assembling overlapping oligonucleotides (or dyads), irrespective of
+the fact that these patterns are found together or not in the input
+sequence.
+
+The program I<matrix-from-pattern> solves this problem by using the
+assembled patterns as seeds to perform a matrix-based scanning of the
+input sequences, and collect the most likely instances of the motif
+(putative sites). These sites are then used to build an count matrix,
+reflecting the absolute residue frequencies at each position of the
+collected sites.
+
+Weakness of this approach: the scanning step can be time-consuming
+when the input sequences are large (e.g. for whole-genome motif
+detection).
+
+=head1 AUTHORS
+
+jvhelden@ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=item motif discovery
+
+=back
+
+=head1 USAGE
+
+matrix-from-patterns -seq sequence_filfe \
+   [-pl pattern_file|-asmb assembly_file] \
+   [-o output_basename] [-v #]
+
+=head1 INPUT FORMAT
+
+=over
+
+=item B<Sequence file>
+
+=item B<Pattern file>
+
+The pattern file must be in the output format of I<pattern-assembly>.
+
+=back
+
+=head1 OUTPUT FORMAT
+
+The output file contains one or several PSSM extracted from the
+sequences. The supported output formats are the same as for
+I<convert-matrix>.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::server;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+
+    ## Check if required programs are found in the path
+    local $matrix_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    local $gibbs_cmd = &RSAT::server::GetProgramPath("info-gibbs");
+
+    ## Generic parameters
+    local $start_time = &RSAT::util::StartScript();
+    local %infile = ();
+    local %outfile = ();
+    local $matrix_prefix = "";
+
+    local $verbose = 0;
+    local $strands = "-2str";
+
+    ## Parameters for pattern-assembly
+    local $score_column = 0;
+    local $cluster_column = 0;
+    local $asmb_maxfl = 1;
+    local $asmb_subst = 1;
+    local $max_asmb_size = 50;
+    local $max_asmb_nb = 5;
+    local $max_asmb_per_cluster = 2;
+    local $top_pattern_nb = 100;
+    local $top_seq = 0;
+
+    ## Collect method
+#    local $collect_method = "info-gibbs";
+    local $collect_method = "matrix-scan-quick";
+    local %supported_collect_method = ("info-gibbs"=>1,
+				       "matrix-scan"=>1,
+				       "matrix-scan-quick"=>1
+				      );
+    local $supported_collect_methods = join(",", keys(%supported_collect_method));
+
+    ## Parameters for info-gibbs
+    local $gibbs_iter = 1; ## Number of iterations
+    local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
+    local $gibbs_msps = 1; ## Mean number of sites per sequence
+
+    ## Extension of matrix size on both sides
+    local $flanks = 0;
+
+    ## Parameters for convert-matrix
+    local $seq_format = "fasta";
+    local $scan_parameters = "";
+
+    ## Parameters for matrix-scan
+    local %uth;
+    $uth{Pval} = 1e-4;
+
+    ## Parameters for matrix-scan-quick
+    local %lth;
+    $lth{weight} = 7;
+
+    ## Parameters for the &doit() command
+    $dry = 0;
+    $die_on_error = 1;
+    $job_prefix = "matrix-from-patterns";
+    $batch = 0;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+
+    ## The output prefix is mandatory
+    &RSAT::error::FatalError("You must specify the output prefix (option -o)")
+      unless (defined($outfile{output}));
+
+    ## The patterns should be provided, either as a pattern file or as an assembly file
+    &RSAT::error::FatalError("You must give as input either a pattern file (option -pl) or an assembly file (option -asmb)")
+      unless ((defined($infile{patterns})) || (defined($infile{assembly})));
+
+
+    ## The input sequence is mandatory
+    &RSAT::error::FatalError("You must specify the sequence file (option -seq)")
+      unless (defined($infile{sequence}));
+
+
+    ################################################################
+    ## Specify output files
+    $outfile{log} = $outfile{output}."_log.txt";
+    if ($infile{assembly}) {
+      $outfile{assembly} = $infile{assembly};
+    } else {
+      $outfile{assembly} = $outfile{output}.".asmb";
+    }
+    $outfile{sig_matrices} = $outfile{output}."_sig_matrices.tf";
+    $prefix{sig_matrices_split} = $outfile{output}."_sig_matrices_split";
+    $outfile{sig_matrices_split} = $outfile{output}."_sig_matrices_split_matrix_list.tab";
+    $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
+    $outfile{count_matrices_tf} = $outfile{output}."_count_matrices.tf"; ## Count matrices in transfac format
+    $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
+    $outfile{links} = $outfile{output}."_count_matrices_links.txt";
+    $outfile{logo_basename} = $outfile{output}."_count_matrices_logo";
+    $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
+
+    ################################################################
+    ## Open output stream
+    local $log = &OpenOutputFile($outfile{log});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ## Sequences to scan
+    our $seq_to_scan;
+    if ($top_seq) {
+      &RSAT::message::TimeWarn("Selecting top ".$top_seq."sequences", $seq_to_scan)
+	if ($main::verbose >= 2);
+      ## Create a temporary file with the top  sequences
+      $seq_to_scan = $outfile{output}."_top".$top_seq."_seq.".$seq_format;
+      my $top_seq_cmd = $SCRIPTS."/convert-seq";
+      $top_seq_cmd .= " -i ".$infile{sequence};
+      $top_seq_cmd .= " -from ".$seq_format." -to ".$seq_format;
+      $top_seq_cmd .= " -top ".$top_seq;
+      $top_seq_cmd .= " -o ".$seq_to_scan;
+      &doit($top_seq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    } else {
+      $seq_to_scan = $infile{sequence};
+    }
+
+    ################################################################
+    ## Assemble the patterns (unless the input is already an assembly
+    ## result)
+    my $pattern_nb = 0;
+    if ($infile{patterns}) {
+      ## Count the number of patterns and terminate if there is not a single one
+      my ($in) = &OpenInputFile($infile{patterns});
+      while (<$in>) {
+	next if /^;/;
+	next if /^#/;
+	next unless /\S/;
+	$pattern_nb++;
+      }
+      close $in;
+      print $log "; Number of patterns\t", $pattern_nb, "\n";
+      if ($pattern_nb == 0) {
+	&RSAT::message::Warning("Not a single pattern was found in file", $infile{patterns}) if ($main::verbose >= 1);
+	&terminate();
+      }
+      &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
+      my $assembly_cmd = $SCRIPTS."/pattern-assembly -v 1 -i ".$infile{patterns};
+      $assembly_cmd .= " ".$strands;
+      $assembly_cmd .= " -maxfl ".$asmb_maxfl;
+      $assembly_cmd .= " -subst ".$asmb_subst;
+      $assembly_cmd .= " -toppat ".$top_pattern_nb;
+      $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
+      $assembly_cmd .= " -sc ".$score_column if ($score_column > 0);
+      if ($cluster_column > 0) {
+	$assembly_cmd .= " -cc ".$cluster_column;
+	$assembly_cmd .= " -max_asmb_per_cluster ".$max_asmb_per_cluster;
+      } else {
+	$assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
+      }
+      $assembly_cmd .= " -o ".$outfile{assembly};
+      print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
+      &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+
+    ################################################################
+    ## Count the number of assemblies and terminate if there is not a
+    ## single one
+    &RSAT::message::TimeWarn("Counting the number of assemblies") if ($main::verbose >= 2);
+    ($in) = &OpenInputFile($outfile{assembly});
+    my $assembly_nb = 0;
+    my $assembled_pattern_nb = 0;
+    while (<$in>) {
+      next if /^;/;
+      next if /^#/;
+      next unless /\S/;
+      if (/best consensus/) {
+	$assembly_nb++;
+      } else {
+	$assembled_pattern_nb++;
+      }
+    }
+    close $in;
+    print $log "; Number of assemblies\t", $assembly_nb, "\n";
+    print $log "; Number of assembled patterns\t", $assembled_pattern_nb, "\n";
+    &RSAT::message::TimeWarn("Pattern assembly file contains", $assembled_pattern_nb." patterns,",  $assembly_nb." assemblies",) if ($main::verbose >= 2);
+    if ($assembled_pattern_nb == 0) {
+      &RSAT::message::Warning("Not a single assembly was found in file", $outfile{assembly}) if ($main::verbose >= 1);
+      &terminate();
+    }
+
+    ################################################################
+    ## Convert assembled patterns into significance matrices
+    &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
+    my $convert_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{assembly};
+    $convert_cmd .= " -from assembly -to tf";
+    $convert_cmd .= " -return counts";
+    $convert_cmd .= " -flanks ".$flanks;
+    $convert_cmd .= " -top ".$max_asmb_nb unless ($cluster_column);
+    $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
+    $convert_cmd .= " -o ".$outfile{sig_matrices};
+    print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
+    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+
+    ################################################################
+    ## Convert significance matrices into count matrices
+    &RSAT::message::TimeWarn("Converting sig matrices to count matrices") if ($main::verbose >= 2);
+    if ($collect_method eq "matrix-scan") {
+      &ScanForSites();
+    } elsif ($collect_method eq "matrix-scan-quick") {
+      &QuickScanForSites();
+    } else {
+      &InfoGibbs();
+    }
+
+    ################################################################
+    ## Generate motif logos
+    if (($return_fields{logo}) || ($return_fields{links})) {
+      &RSAT::message::TimeWarn("Generating logos and links") if ($main::verbose >= 2);
+
+#      &RSAT::message::Debug("current directory", `pwd`) if ($main::verbose >= 10);
+
+      my $logo_link_cmd = $SCRIPTS."/convert-matrix -v 1";
+      $logo_link_cmd .= " -i ". $outfile{count_matrices_tf};
+      $logo_link_cmd .= " -from tf -to tab";
+      $logo_link_cmd .= " -return counts";
+      $logo_link_cmd .= " -return sites" if ($return_fields{sites});
+      $logo_link_cmd .= " -return links" if ($return_fields{links});
+      if ($return_fields{logo}) {
+	$logo_link_cmd .= " -return logo -logo_format png,pdf";
+	$logo_link_cmd .= " -logo_file ".$outfile{logo_basename};
+      }
+      $logo_link_cmd .= " -o ".$outfile{links};
+      print $log "; sites -> count matrices\n", $logo_link_cmd, "\n";
+      &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+
+    }
+
+
+    &terminate();
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+
+	## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+
+=pod
+
+=item B<-seq sequence_file>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-seq") {
+	    $infile{sequence} = shift(@arguments);
+
+	    ## Sequence format
+
+=pod
+
+=item B<-format sequence_format>
+
+Sequence format.
+
+=cut
+	} elsif ($arg eq "-format") {
+	    $seq_format = shift(@arguments);
+
+	    ## Pattern file
+
+=pod
+
+=item B<-pl pattern_file>
+
+Pattern file. This file contains a list of patterns. typically, this
+file should be the output of the programes oligoanalysi or
+dyad-analysis.
+
+=cut
+	} elsif ($arg eq "-pl") {
+	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
+	    if (defined($infile{assembly}));
+	  $infile{patterns} = shift(@arguments);
+
+
+=pod
+
+=item B<-toppat #>
+
+Max number of patterns to assemble. This argument is pased to
+I<pattern-assembly>.
+
+=cut
+
+	} elsif ($arg eq "-toppat") {
+	  $main::top_pattern_nb = shift (@arguments);
+	  &RSAT::error::FatalError($top_pattern_nb, "is not a valid value for option -toppat (should be Natural number).")
+	    unless (&IsNatural($top_pattern_nb));
+
+
+=pod
+
+=item B<-max_asmb_nb>
+
+This parameter is passed to pattern-assembly, to indicate the maximal
+number of assemblies to return.
+
+Since each assembly is then converted into a PSSM by
+matrix-from-pattern, this option also indicates the maximal number of
+matrices to return.
+
+Note that when matrix-from-patterns is fed with pre-assembled patterns
+(option -asmb instead of -pl), the option -max_asmb_nb is not working.
+
+=cut
+	} elsif ($arg eq "-max_asmb_nb") {
+	  $max_asmb_nb = shift(@arguments);
+	  &RSAT::error::FatalError($max_asmb_nb, "is not a valid value for option -max_asmb_nb (should be Natural number).")
+	    unless (&IsNatural($max_asmb_nb));
+
+=pod
+
+=item B<-top_seq #>
+
+Max number of sequences to scan for building final matrices.
+
+=cut
+	} elsif ($arg eq "-top_seq") {
+	  $main::top_seq = shift (@arguments);
+	  &RSAT::error::FatalError($top_seq, "is not a valid value for option -top_seq (should be Natural number).")
+	    unless (&IsNatural($top_seq));
+
+
+=pod
+
+=item B<-sc #>
+
+Column containing the pattern scores in the input pattern file. This
+argument is pased to I<pattern-assembly>.
+
+=cut
+
+	} elsif ($arg eq "-sc") {
+	  $main::score_column = shift (@arguments);
+	  &RSAT::error::FatalError($score_column, "is not a valid value for option -sc (should be Natural number).")
+	    unless (&IsNatural($score_column));
+
+=pod
+
+=item B<-sc #>
+
+Column indicating the pattern clusters in the input pattern file. This
+argument is pased to I<pattern-assembly>.
+
+=cut
+
+	} elsif ($arg eq "-cc") {
+	  $main::cluster_column = shift (@arguments);
+	  &RSAT::error::FatalError($cluster_column, "is not a valid value for option -sc (should be Natural number).")
+	    unless (&IsNatural($cluster_column));
+
+=pod
+
+=item B<-max_asmb_per_cluster>
+
+This parameter is passed to pattern-assembly, to indicate the maximal
+number of assemblies to return per cluster. It makes only sense when
+the option -cc is used.
+
+=cut
+	} elsif ($arg eq "-max_asmb_per_cluster") {
+	  $max_asmb_per_cluster = shift(@arguments);
+	  &RSAT::error::FatalError($max_asmb_per_cluster, "is not a valid value for option -max_asmb_per_cluster (should be Natural number).")
+	    unless (&IsNatural($max_asmb_per_cluster));
+
+
+=pod
+
+=item B<-subst>
+
+Maximum number of allowed substitution for pattern assembly.  This
+parameter is passed to the program I<pattern-assembly>.
+
+
+=cut
+	} elsif ($arg eq "-subst") {
+	  $asmb_subst = shift(@arguments);
+	  &RSAT::error::FatalError($asmb_subst, "is not a valid value for option -subst (should be Natural number).")
+	    unless (&IsNatural($asmb_subst));
+
+
+	    ## Assembly file
+
+=pod
+
+=item B<-asmb assembly_file>
+
+Assembly file. As an alternative to the pattern file, the patterns can
+be provided in the form of the result of pattern-assembly.
+
+=cut
+	} elsif ($arg eq "-asmb") {
+	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
+	    if (defined($infile{patterns}));
+	  $infile{assembly} = shift(@arguments);
+
+
+	    ## Strands
+
+=pod
+
+=item B<-1str|-2str>
+
+Strands
+
+=over
+
+=item B<-1str> use a single strand to build the motifs
+
+=item B<-2str> use both strands to build the motifs
+
+=back
+
+=cut
+	} elsif ($arg eq "-1str") {
+	    $strands = "-1str";
+	} elsif ($arg eq "-2str") {
+	    $strands = "-2str";
+
+=pod
+
+=item	B<-o output_basename>
+
+The program exports several files, whose name is specified by the
+output basename, followed by an extension.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-prefix matrix_prefix>
+
+=cut
+	} elsif ($arg eq "-prefix") {
+	  $main::matrix_prefix = shift(@arguments);
+
+
+=pod
+
+=item	B<-sites>
+
+Export the sites used to build the count matrix. These sites can be
+used for example to draw a sequence logo.
+
+The sites are exported in various formats:
+
+=over
+
+=item a separate fasta file, after each count matrix;
+
+=item "BS" fields in the transfac-formatted output matrices.
+
+=back
+
+=cut
+	} elsif ($arg eq "-sites") {
+	    $return_fields{sites} = 1;
+
+	    ## Method for converting sig matrices into count matrices
+
+=pod
+
+=item B<-collect_method>
+
+Method for converting sig matrices into count matrices. 
+
+Supported methods:
+
+=over
+
+=item I<matrix-scan-quick> (Default)
+
+Same principle as I<matrix-scan>. The program I<matrix-scan-quick> is
+100 times faster, but does not compute the P-values. For the time
+being, an arbitrary threshold is imposed on the weight score (w >= 7).
+
+=item I<info-gibbs> (slow)
+
+The significance matrices (obtained from I<pattern-assembly> are used
+as seeds by I<info-gibbs>, which runs a few iterations of gibbs
+sampling (default: 3).
+
+=item I<matrix-scan> (slow, obsolete)
+
+The significance matrices are used to collect from the input sequences
+all the sites passing a given P-value threshold. Those sites are then
+aligned to buil count matrices. This was the original conversion
+method, but presents some drawbacks. Firstly, the original
+implementation of matrix-scan is quite low (2009 version). Secondly,
+some matrices may fail to return any site below the P-value
+threshold. We therefore recommend to use the info-gibbs option.
+=item I<matrix-scan> (slow, obsolete)
+
+
+=back
+
+=cut
+	} elsif ($arg eq "-collect_method") {
+	    $collect_method = shift(@arguments);
+	    &RSAT::error::FatalError($collect_method, "is not a valid collect method. Supported: $supported_collect_methods")
+	      unless ($supported_collect_method{$collect_method});
+
+
+	    ## Gibbs mean sites per sequence
+
+=pod
+
+=item B<-gibbs_msps>
+
+Mean number of sites per sequences passed to info-gibbs for converting
+significance matrices into count matrices. This parameter is
+particularly important and has to be adapted to the sequence sets. For
+example, for yeast promoters, one typically expects 2 sites per
+sequence on average. For sequence fragments obtained from ChIP-chip or
+ChIP-seq datasets (typically sveral hundreds fo fragments, ~200bp per
+fragment), it might be safer to test values lower than 1, since
+sequences are expected to generally contain 1 site, and sometimes
+contain none.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_msps") {
+	    $gibbs_msps = shift(@arguments);
+	    &RSAT::error::FatalError($gibbs_msps, "is not a valid msps value. Should be a strictly positive Real number.")
+	      unless ((&IsReal($gibbs_msps)) && ($gibbs_msps > 0));
+
+	    ## Gibbs mean sites per sequence
+
+=pod
+
+=item B<-gibbs_iter>
+
+Number of iterations for info-gibbs.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_iter") {
+	    $gibbs_iter = shift(@arguments);
+	    &RSAT::error::FatalError($gibbs_iter, "is not a valid value for iterations. Should be a Natural number.")
+	      unless (&IsNatural($gibbs_iter));
+
+
+=pod
+
+=item B<-flanks>
+
+Number of flanking residues to be added on each side of the
+significance matrix in order to extend the motif size.
+
+=cut
+
+	  } elsif ($arg eq "-flanks") {
+	    $flanks = shift(@arguments);
+	    &RSAT::error::FatalError($flanks, "is not a valid value for flanks. Should be a Natural number.")
+	      unless (&IsNatural($flanks));
+
+
+=pod
+
+=item B<-min_weight>
+
+Minimal weight
+
+=cut
+
+	  } elsif ($arg eq "-min_weight") {
+	    $main::lth{weight} = shift(@arguments);
+	    &RSAT::error::FatalError($main::lth{weight}, "is not a valid value for the option -min_weight. Should be a Real number.")
+	      unless (&IsReal($main::lth{weight}));
+
+=pod
+
+=item B<-gibbs_final>
+
+Run the final cycle with info-gibbs to collect the best sites.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_final") {
+	    $gibbs_final = 1;
+
+	    ## Return logos
+
+=pod
+
+=item	B<-logo>
+
+Export the sequence logos representing the count matrix. 
+
+=cut
+	} elsif ($arg eq "-logo") {
+	    $return_fields{logo} = 1;
+
+	    ## Return links in the convert-matrix result
+
+=pod
+
+=item	B<-links>
+
+Return HTML links in the convert-matrix result, to send the matrices
+to external tools (TOMTOM) for comparigon with motif collections.
+
+=cut
+	} elsif ($arg eq "-links") {
+	    $return_fields{links} = 1;
+
+
+=pod
+
+=item B<-scan_param>
+
+The next argument is passed to matrix-scan (this will raise an error
+if these arguments are not supported).
+
+Example:
+  -scan_param '-uth Pval 1e-3 -uth rank 40'
+will only return the 40 top ranking sites, with a maximal Pvalue of
+1e-3.
+
+Any other parameter supported by matrix-scan can be passed in the same
+way. The option can be used iteratively on a command line to add up
+various parameters. Example:
+  -scan_param '-uth Pval 1e-3' -scan_param '-uth rank 40' [...]
+
+If no parameters are specified, the Pval is set to 1e-4 by default,
+without limit on the number of sites.
+
+=cut
+	} else {
+	  $scan_parameters .= " ".$arg;
+
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $log "; matrix-from-patterns ";
+    &PrintArguments($log);
+    if (%main::infile) {
+	print $log "; Input files\n";
+	while (my ($key,$value) = each %infile) {
+	    print $log ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $log "; Output files\n";
+	while (my ($key,$value) = each %outfile) {
+	    print $log ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+################################################################
+## Scan sequences to collect sites
+sub QuickScanForSites {
+  &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
+
+  ## Split the sig matrix file into separated tab-delimited files (one per matrix, required for matrix-scan-quick)
+  my $cmd = $SCRIPTS."/convert-matrix ";
+  $cmd .= " -from tf -i ".$outfile{sig_matrices};
+  $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
+  $cmd .= "; rm -f ".$outfile{'count_matrices'};
+  &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ## Get the list of files containing the individual matrices
+  my @split_files = ();
+  my ($in) = &OpenInputFile($outfile{sig_matrices_split});
+  while (<$in>) {
+    next if (/^;/); ## Skip comment lines
+    next if (/^#/); ## Skip header lines
+    next unless (/\S/); ## Skip empty lines
+    chomp();
+    my ($nb, $id, $file) = split('\t');
+#    &RSAT::message::Debug("split recollection", $nb, $id, $file) if ($main::verbose >= 10);
+    push @split_files, $file;
+    push @split_ids, $id;
+  }
+  close $in;
+
+
+  ## Specific parameters for matrix-scan
+  my $quick_scan_parameters = " -t ".$lth{weight};
+  $quick_scan_parameters .= " -return sites";
+
+  ## Parse the parameters passed as arguments to define the background model
+  if ($scan_parameters =~ /-bgfile\s+(\S+)/) {
+    $quick_scan_parameters .= " -bgfile ".$1;
+  } elsif ($scan_parameters =~ /-markov\s+(\d+)/) {
+    my $markov_order = $1;
+    if ($markov_order != 0) {
+      &RSAT::error::FatalError("matrix-scan-quick does not accept the option -markov. Please provide a background file with the option -bgfile");
+    }
+  }
+
+  ## Delete previous versions of the sig_sites before apending
+  ## new scanning results for each matrix
+  unlink($outfile{sig_sites});
+
+  ## Append the sites for each matrix in a feature file
+  my $matrix_nb = scalar(@split_files);
+  for my $m (1..$matrix_nb) {
+    my $matrix_file = $split_files[$m-1];
+    my $matrix_id = $split_ids[$m-1];
+    $outfile{"sig_sites_m".$m} =  $outfile{output}."_sig_sites_m".$m.".ft";
+
+    my $matrix_name;
+    if ($main::matrix_prefix) {
+      $matrix_name = $main::matrix_prefix."_m".$m;
+    } else {
+      $matrix_name = $matrix_id;
+    }
+#    my $matrix_file = $outfile{sig_matrices_split}.$m.".tab";
+
+    &RSAT::message::TimeWarn("\n\tScanning sequences (quick) with sig matrix", $m."/".$matrix_nb, $matrix_file) if ($main::verbose >= 3);
+    if ((defined($matrix_file)) && (-e $matrix_file)) {
+#      $matrix_scan_cmd = $ENV{RSAT_BIN}."/matrix-scan-quick";
+      my $scan_cmd = $matrix_scan_cmd." -v 1";
+      $scan_cmd .= " -i ".$seq_to_scan;
+      $scan_cmd .= " -m ".$matrix_file;
+      $scan_cmd .= " -name ".$matrix_name;
+      $scan_cmd .= " ".$strands;
+      $scan_cmd .= $quick_scan_parameters;
+#      $scan_cmd .= " > ".$outfile{"sig_sites_m".$m};
+      $scan_cmd .= " >> ".$outfile{sig_sites};
+      print $log "\n; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+      &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+  }
+
+
+
+  ## Extract count matrices from the sites collected with the sig matrices
+  &sites_to_matrix($outfile{sig_sites});
+}
+
+
+################################################################
+## Scan sequences to collect sites
+sub ScanForSites {
+  &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan)") if ($main::verbose >= 2);
+  ## matrix-scan parameters
+  ## The upper threshold on Pval MUST be defined (if not, all
+  ## sites can be taken, resulting in a meaningless matrix)
+  unless ($scan_parameters =~ /-uth Pval/) {
+    $scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
+  }
+  $scan_parameters .= " -seq_format ".$seq_format;
+  $scan_parameters .= " -n skip";
+  $scan_parameters .= " -matrix_format tab";
+  $scan_parameters .= " -return sites,pval";
+
+  my $scan_cmd = $matrix_scan_cmd." -v 1";
+  $scan_cmd .= " -i ".$seq_to_scan;
+  $scan_cmd .= " -m ".$outfile{sig_matrices};
+  $scan_cmd .= " ".$strands;
+  $scan_cmd .= $scan_parameters;
+  $scan_cmd .= " -o ".$outfile{sig_sites};
+  print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+  &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &sites_to_matrix($outfile{sig_sites});
+}
+
+################################################################
+## Convert the collected sites to count matrices
+sub sites_to_matrix {
+  my ($site_file) = @_;
+  &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
+
+  ################################################################
+  ## The primary export format is TRANSFAC, because this allows to
+  ## store information (site sequences)
+  my $convert2_cmd = $SCRIPTS."/convert-matrix";
+  $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
+  $convert2_cmd .= " -i ".$site_file;
+  $convert2_cmd .= " -from feature -to transfac";
+  $convert2_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
+  $convert2_cmd .= " -return counts";
+  #    $convert2_cmd .= " -sort desc information.per.column";
+  $convert2_cmd .= " -return sites" if ($return_fields{sites});
+  if ($return_fields{logo}) {
+    $convert2_cmd .= " -return logo -logo_format png,pdf ";
+    $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
+  }
+#  $convert2_cmd .= " -return links" if ($return_fields{links});
+  $convert2_cmd .= " -o ".$outfile{count_matrices_tf};
+  print $log "; sites -> transfac matrices\n", $convert2_cmd, "\n";
+  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ################################################################
+  ## The TRANSFAC matrices are then converted to tab format
+  my $convert3_cmd = $SCRIPTS."/convert-matrix -v 1";
+  $convert3_cmd .= " -i ".$outfile{count_matrices_tf};
+  $convert3_cmd .= " -from transfac -to tab";
+  $convert3_cmd .= " -return counts";
+  $convert3_cmd .= " -return sites" if ($return_fields{sites});
+  $convert3_cmd .= " -o ".$outfile{count_matrices};
+  print $log "; transfac-formatted -> tab-formatted matrices\n", $convert3_cmd, "\n";
+  &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+}
+
+################################################################
+## Run infogibbs to convert the significance matrices into count matrices
+sub InfoGibbs {
+    &RSAT::message::TimeWarn("Running info-gibbs with significance matrices as seeds") if ($main::verbose >= 2);
+##    my $gibbs_cmd = $BIN."/info-gibbs";
+#    unless (-e $gibbs_cmd) {
+#      $gibbs_cmd = `which info-gibbs`;
+#      chomp($gibbs_cmd);
+#    }
+    &RSAT::error::FatalError("info-gibbs command is not in your path")
+      unless ($gibbs_cmd);
+
+    $gibbs_cmd .= " -v 1";
+    $gibbs_cmd .= " -i ".$seq_to_scan;
+    $gibbs_cmd .= " --seedmatrix=".$outfile{sig_matrices};
+    $gibbs_cmd .= " --mean_sps=".$gibbs_msps;
+    if ($strands eq "-2str") {
+      $gibbs_cmd .= " --strand=+-";
+    } else {
+      $gibbs_cmd .= " --strand=+";
+    }
+    $gibbs_cmd .= " --iter=".$gibbs_iter;
+    $gibbs_cmd .= " --flanks=".$flanks;
+    $gibbs_cmd .= " --nrun=".1;
+    $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
+    $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
+    print $log "; significance matrices + sequences -> count matrices\n", $gibbs_cmd, "\n";
+    &doit($gibbs_cmd, $dry, 0, $verbose, $batch, $job_prefix);
+
+    ################################################################
+    ## Convert matrix from info-gibbs and generate logos if required
+    &RSAT::message::TimeWarn("Converting matrices") if ($main::verbose >= 2);
+    my $convert2_cmd = $SCRIPTS."/convert-matrix -v 1";
+    $convert2_cmd .= " -i ".$outfile{gibbs_matrices};
+    $convert2_cmd .= " -from tab -to tab";
+#    $convert2_cmd .= " -from info-gibbs -to tab";
+    $convert2_cmd .= " -return counts";
+    $convert2_cmd .= " -return sites" if ($return_fields{sites});
+    if ($return_fields{logo}) {
+      $convert2_cmd .= " -return logo";
+      $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
+    }
+    $convert2_cmd .= " -return links" if ($return_fields{links});
+    $convert2_cmd .= " -o ".$outfile{count_matrices};
+    print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+    &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+}
+
+
+################################################################
+## Close output stream
+sub terminate {
+
+  ## Clean the sites (can be huge files for peak-motif results)
+  if (-e $outfile{sig_sites}) {
+    my $clean_cmd = "rm -f ".$outfile{sig_sites};
+    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  }
+
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $log if ($outfile{output});
+  &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
+    if ($main::verbose >= 2);
+
+
+  ## Suppress temporary sequences
+  if ($top_seq) {
+    &RSAT::message::TimeWarn("Deleting temporary top sequence file", $seq_to_scan)
+      if ($main::verbose >= 2);
+    system("rm -f ".$seq_to_scan);
+  }
+
+  exit(0);
+}
+
+__END__
+
+=pod
+
+=back
+
+=head1 SEE ALSO
+
+=head2 I<pattern-assembly>
+
+The program I<pattern-assembly> is used to assemble patterns according
+to their similarities.
+
+=head2 I<convert-matrix>
+
+The program I<convert-matrix> is used to convert the collected sites into
+PSSM.
+
+=head2 I<matrix-scan>
+
+The program I<matrix-scan> is used to build the count matrix from the
+significance matrix.
+
+=head1 WISH LIST
+
+=item B<-iter>
+
+Number of iterations for the expectation-maximization cycle (collect
+sites with matrix and update matrix from collected sites). Default: 1.
+
+
+=cut

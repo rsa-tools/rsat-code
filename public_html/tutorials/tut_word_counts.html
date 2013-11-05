@@ -1,0 +1,234 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - template</title>
+<!--   <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+   <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+</head>
+<body>
+
+
+<script language="JavaScript" type="text/javascript">
+<!--
+function sizeTbl(h) {
+  var tbl = document.getElementById('sol');
+  tbl.style.display = h;
+}
+// -->
+</script> 
+
+<center>
+  <h1><a href="../RSAT_home.cgi">RSA-tools</A> - 
+    <a href="tutorials.html">Tutorials</a> - 
+    <a href="../template_form.cgi">template</a> 
+  </h1>
+</center>
+
+
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href='#prerequisite'>Prerequisite</a>
+<li><a href='#intro'>Introduction</a>
+<li><a href='#questions'>Questions</a>
+<li><a href='#example'>Example of utilization</a>
+<li><a href='#interpret'>Interpreting the result</a>
+<li><a href='#exercises'>Additional exercises</a>
+<li><a href='#biblio'>Bibliography</a>
+</ol>
+
+<a name='prerequisite'></a><h2>Prerequisite</h2>
+
+
+<p>The theoretical background required for this tutorial can be found
+in the <a href='../course/'>RSAT course</a>.</p>
+
+<p>In particular, we recommend to read the following slides before starting this tutorial.
+<ul>
+  <li><a href='../course/pdf_files/01.3.sequence_models.pdf'>Sequence models</a></li>
+  <li><a href='../course/pdf_files/03.2.3.word_count_statistics.pdf'>Word count statistics</a></li>
+</ul>
+</p>
+
+<a name='intro'></a><h2>Introduction</h2>
+
+<p>In this tutorial, we will get familiar with the concepts of word
+occurrences (i.e. number of instances of a given oligonucleotide) in
+DNA sequences.
+
+<a name='exercise'></a><h2>Exercise</h2>
+
+<div class='exo'>  
+  <ol>
+    <li><p>Assuming a 5<sup>th</sup> order Markovian background model calibrated
+	on all upstream non-coding sequences of the
+	yeast <i>Saccharomyces cerevisiae</i>, how many occurrences of
+	the word <tt>GATACA</tt> would you expect by chance in a 5kb
+	sequence?</p></li>
+    <li><p>Using the same background model, generate 1,000 random
+	sequences of length L=5000bp and compute the frequency
+	distribution of the word <tt>GATACA</tt>. Does the observed
+	mean correspond to your expectation? </p></li>
+    <li><p>Which fraction of the sequences contain at least 3
+	occurrences of the word ? </li></p>
+  </ol>
+</div>
+
+<h3>Tips</h3>
+<div class='tips'>
+  <ol>
+    <p><li>By default, the program <i><b>dna-pattern</b></i> returns
+	the matching postions of the query patterns in the input
+	sequences, but the options can be changed to obtain a <i>count
+	  table</i>, indicating the number of occurrences of a given
+	pattern for each input sequence. </li></p>
+  </ol>
+</div>
+
+
+
+<h3>Solution</h3>
+<b>
+  <a href="javascript:sizeTbl('block')">View solution</a>| 
+  <a href="javascript:sizeTbl('none')">Hide solution</a>
+</b>
+
+<div id='sol'  style="overflow:hidden;display:none">
+
+    <div class='protocol'>
+      <ol>
+	<li><p>Open the toolset <i>Build control sets</i> of the RSAT
+	    toolbox, and click <i><b>random sequence</b></i>. Adapt
+	    the options to get 1000 sequences of 5,000bp each.
+	</p></li>
+
+	<li><p><b>Choice of the background model:</b> select the
+	    organism <i>Saccharomyces cerevisiae</i>, check the
+	    option <i>"DNA sequences calibrated on non-coding upstream
+	    sequences"</i> with an <i>oligonucleotide size</i>
+	    of <i>6</i> (this corresponds to a Markov model of
+	    order <i>m = k-1 = 5</i>), and click <i>GO</i>.
+	</p>
+	
+	<p>After a few seconds, the result page appears. The sequences
+	  are not displayed to avoid massive transfer (you don't
+	  specially need to transfer 5Mb before submitting the
+	  resulting sequences to the next analysis steps). If you
+	  want, you can check the sequences by clicking on the link
+	  under <i>Result files(s)</i>.</p>
+	</li>
+	
+	<li><p>In the result page, click the
+	    button <b><i>dna-pattern</i></b>. 
+	    <ul>
+	      <li>Enter <tt>GATACA</tt> in
+		the box <i>Query pattern(s)</i>.</li>
+	      <li>For the <i>Search strands</i> option,
+		  select <i>direct only</i>, and disactivate the
+		  option <i>prevent overlapping matches</i>. </li>
+	      <li><b>Disactivate</b> the default return
+		options <i>match positions</i> and <i>sequence
+		  limits</i>. </li>
+	      <li><b>Activate</b> the options <i>match count
+		  table</i>, <i>match rank</i> and <i>sort</i>.
+		</li>
+	      </ul>
+	    
+	    <div class='tips'>
+	      <h4>Justification for the chosen options</h4>
+	    <ul>
+	      <li>The option <i>match count table</i> will return a
+		table with one row per sequence, and one column per
+		pattern (in this case we submitted a single pattern,
+		but the tool would also allow you to analyze different
+		patterns in a single run),
+	      <li>The option <i>sort</i> will sort the sequences y
+		decreasing occurrences, you will thus immeiately see the
+		maximum number of occurrences in the random trial. </li>
+	      <li>The option <i>match rank</i> will indicate the rank
+		of each sequence accordnig to the number of pattern
+		occurrences, and thus allow us to check the number of
+		sequences haing 0, 1, 2, ... occurrences. </li>
+	    </ul>
+	    </div>
+
+	    <p>At this stage, you can already count the number of
+	      sequences having 6, 5, 4, ... 0 occurrences of the
+	      pattern by browing the result table from top to
+	      bottom. We will however use another program to compute
+	      it automatically, and display the result
+	      graphically.</p>
+	</p></li>
+
+	<li><p>At the bottom of the <i>dna-pattern</i> result page,
+	    click the button <i><b>Frequency distribution</b></i>. Set
+	    the <i>class interval</i> to 1, the <i>Data column</i> to
+	    3 (this column contains the counts of <tt>GATACA</tt>) and
+	    click <i>GO</i>. The result table shows you the number of
+	    sequences containing 0, 1, 2, ... occurrences,
+	    respectively. Read the header to understand the content of
+	    the columns. At the bottm of the frequency table, you have
+	    some statistics, including the mean number of occurrences
+	    per sequences (as I run this test, I obtain 1.331, but
+	    this number is supposed to fluctuate between
+	    trials). Compare this observed mean to the expected number
+	    of occurrences.
+	</p></li>
+
+	<li><p>We will now generate a graphical representation of the
+	    frequency distribution. For this,
+	    click <i><b>XYgraph</b></i> at the bottom of the frequency
+	    distribution result page. Set the <i>Data column for X
+	    axis</i> to 1, leave all other parameters unchanged and
+	    click <i>GO</i>.</p>
+
+	  <p>On the resulting graph, 
+	    <ul>
+	      <li>the <font color='#0000BB'>blue curve</font> indicates displays the
+		number <i>n</i> of sequences (ordinate) presenting X
+		occurrences (0, 1, 2, ...); of <tt>GATACA</tt>; </li>
+	      <li>the <font color='#008800'>green curve</font>
+		(<i>n_cum</i>) indicates the cumulative distribution,
+		i.e.  number of sequences containing <i>at most</i> X
+		occurrences;</li>
+	      <li>the <font color='#FF66AA'>pink</font> curve
+		(<i>n_dcum</i>) indicates the decrasing cumulative
+		distribution, i.e. the number of sequences
+		containing <i>at least</i> X occurrences.
+	    </ul>
+	</p></li>
+
+	<li><p>The distribution graph above indicating the absolute
+	    frequencies (i.e. number of sequences). In order to
+	    display the distributions of relative frequencies, come
+	    back to the XYgraph form, and type <i>7,8,9</i> in the
+	    box <i>Data columns for Y axis</i>. Optionally, you can
+	    also choose to speficy a <i>log base</i> of 10 for the Y
+	    axis. This will better highlight the lower frequencies
+	    associated to large occurrence numbers.
+	</p></li>
+
+      </ol>
+    </div>
+
+
+</div>
+
+
+
+<a name='next'></a><h2>Next steps</h2>
+
+<p>
+You can now come back to the <a href='tutorials.html'>tutorial main
+page</a> and follow the next tutorials.</p>
+
+</ul>
+<hr width="100%">
+
+<address>Last update 15 Jan 2012 - by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript></address>
+
+</body>
+</html>

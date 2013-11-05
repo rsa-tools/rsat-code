@@ -1,0 +1,368 @@
+#!/usr/bin/perl -w
+
+################################################################
+#
+# FILE : calc-taxfreq
+#
+# DESC : Calculate the oligo frequencies for each taxon as the average of
+# frequencies from all genomes which belong to a taxon.
+#
+# AUTH : Rekin's Janky <rekins@bigre.ulb.ac.be>
+#
+################################################################
+
+#### Librairies
+
+# use strict;
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use RSAT::Tree;
+use RSAT::TreeNode;
+use RSAT::message;
+
+use Getopt::Long qw(:config bundling);
+use Pod::Text;
+use File::Basename;
+
+################################################################
+## Initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+#### package variables
+$verbose = 0;
+
+#### lexical variables
+my $options ="";
+my $help ="";
+my $opts="";
+my $debug=0;
+#my $input_dir = $RSAT::util::dir{oligo_frequencies};
+my $genomes_dir = $ENV{RSAT}."/public_html/data/genomes/";
+my $export_dir =$ENV{RSAT}."/public_html/data/taxa/";
+my $root_name = "Organisms";
+my $selectaxons="";
+my $dry=0;
+my $batch=0;
+
+## bg parameters
+my $dyads=0;
+my $bg="upstream-noorf";
+my $noov=0;
+my $str=2;## Count dyads on single or boths strand
+my $oligo_length = 6;
+my $min_spacing = 0; # dyads parameter
+my $max_spacing = 20;# dyads parameter
+
+################################################################
+####                      OPTIONS
+################################################################
+
+my %opt = ('options'=>\$options,
+	   'h|help'=>\$help,
+	   'v|verbose=i'=> \$verbose,
+#	   'i|input_dir=s'=> \$input_dir,
+	   'e|export_dir=s'=>\$export_dir,
+	   'r|root=s'=>\$root_name,
+	   't|taxa=s'=>\$selectaxons,
+	   'dyads'=>\$dyads,
+	   'bg=s'=>\$bg,
+	   'noov'=>\$noov,
+	   'str=i'=>\$str,
+	   'oligo_length=i'=>\$oligo_length,
+	   'dry'=>\$dry,
+	   'batch'=>\$batch,
+	   );
+&GetOptions(%opt);
+
+###############################################################
+###                      HELP
+###############################################################
+
+### display options
+foreach my $key (keys %opt) {
+  &RSAT::message::TimeWarn("\t", $key, "\t", ${$opt{$key}}, "\n") if ($verbose >= 2);
+  $opts .= join("\t", $key, ${$opt{$key}}). "\n";
+}
+
+if ($options){
+  &RSAT::message::TimeWarn("Options \n$opts");
+  exit(0);
+}
+
+#### Select specific taxa to analyse
+my %selected_taxons=();
+my %found_taxons=();
+if ($selectaxons){
+  my @selectedtaxons = split /,/,$selectaxons;
+  foreach my $taxon (@selectedtaxons){
+    $selected_taxons{$taxon}=1;
+  }
+}
+
+#### background models
+my %supported_bg = ('upstream'=>1,
+		 'upstream-noorf'=>1,
+		 'intergenic'=>1,
+		 'monads'=>1,
+		 'input'=>1,
+		 'upstream-rm'=>1,
+		 'upstream-noorf-rm'=>1
+		);
+$supported_bg = join ",", sort keys %supported_bg;
+if (! $supported_bg{$bg}){
+    &RSAT::error::FatalError(join("\t",$bg,"This background is not supported. Supported background are : $supported_bg"));
+}
+my $noov_opt= "-ovlp";
+if ($noov){
+    $noov_opt="-noov";
+}
+my %bg_params = ('bg'=>$bg,
+		 'str'=>$str,
+		 'noov'=>$noov_opt,
+		 'str'=>'-'.$str.'str',
+		 'min_spacing'=>$min_spacing,
+		 'max_spacing'=>$max_spacing,
+		 );
+
+### display help menu
+&PrintHelp() if ($help);
+
+
+################################################################
+#                                                              #
+#                         MAIN                                 #
+#                                                              #
+################################################################
+
+################################################################
+#### Select a list of organism with their taxonomy
+
+
+## Create a tree with the taxonomy
+my $tree = new RSAT::Tree();
+$tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+#    print $tree->as_indented_text("--",$root_taxon,"text","all",undef);
+
+################################################################
+#### Get frequencies files for all organisms belonging to the same taxon
+#foreach my $taxon ($tree->RSAT::Tree::get_all_descendents("DFS","node",undef,undef)){
+foreach my $taxon ($tree->get_node_by_id($root_name),$tree->get_node_by_id($root_name)->get_all_descendents("DFS","node",undef,undef)){
+
+  # get organisms
+  my @organisms = $taxon->get_all_descendents("DFS","leaf",undef,undef);
+  &RSAT::message::TimeWarn(join("\t","Taxon :",
+				 $taxon->getid(),
+				 scalar(@organisms),"organisms"))  if ($verbose >= 3);
+
+  # work only on specified taxons
+  if ($selectaxons){
+    next if (!$selected_taxons{$taxon->getid()});
+    $found_taxons{$taxon->getid()}=1;
+  }
+
+  # collect all files from organisms in this taxon
+  my @expfreqfiles = ();
+  my @missed_expfreqfiles = ();
+  foreach my $org (@organisms){
+      &RSAT::message::TimeWarn("looking for expfreq_file for organism",$org->getid()) if ($verbose >= 4);
+
+      my $expfreqfile = "";
+      if ($genomes_dir){
+	  $expfreqfile = &getExpectedFreqFile($genomes_dir,$org->getid(), $dyads,$oligo_length, $bg, %bg_params) ;
+      }
+# else{
+# 	  $expfreqfile = $input_dir."/dyads_3nt_sp0-20_upstream-noorf_".$org->getid().$noov."-2str.freq.gz";
+#       }
+
+      if (-e $expfreqfile){
+	  &RSAT::message::TimeWarn("Found $expfreqfile") if ($verbose >= 2);
+	  push @expfreqfiles, $expfreqfile;
+      }else{
+	  push @missed_expfreqfiles, $expfreqfile;
+	  &RSAT::message::TimeWarn("Warn ! File $expfreqfile does not exist!");
+      }
+  }
+
+  # make the command
+  if (scalar(@expfreqfiles)!= 0){
+      my $taxon_file = &getTaxonExpectedFreqFile($export_dir,$taxon->get_id(), $dyads,$oligo_length, $bg, %bg_params) ;
+
+      my $command = "compare-scores -v 2 -sc 3 -files ".join(" ",@expfreqfiles)." | ";
+#      $command .= "awk -f \${HOME}/awk_scripts/calc_avg.awk > $taxon_file ";
+      $command .= "grep -v \"^;\" | grep -v \"^#\" | row-stats | awk \'{print \$1,\"\t\",\$5,\"\t\",\$2,\"\t\",\$3,\"\t\",\$4}\'> $taxon_file ";
+      if (scalar(@missed_expfreqfiles)>=1){
+	  my $warning_msg=join("\n;\t",join("","; Warn ! not found ",scalar(@missed_expfreqfiles)," expfreq files :"),@missed_expfreqfiles);
+	  $command .= "; echo \'$warning_msg\' >> $taxon_file";
+      }
+      $command .= "; gzip -f $taxon_file";
+      &RSAT::message::TimeWarn($command) if ($verbose >= 2);
+      &doit($command, $dry, 1, $verbose, $batch);
+      &RSAT::message::TimeWarn("$taxon_file"."\.gz");
+  }else{
+      &RSAT::message::TimeWarn("Warn ! Not a single expfreq file found for this taxon ".$taxon->getid()." !");
+  }
+
+  # exit the loop if all selected taxons have been processed
+  if ($selectaxons){
+    last if (scalar(keys %found_taxons) >= scalar(keys %selected_taxons));
+  }
+}
+
+# Identify taxon which are not found.
+if ($selectaxons){
+  if ( scalar(keys %found_taxons) < scalar(keys %selected_taxons)){
+    my @missed=();
+    foreach my $tax (keys %selected_taxons){
+      if (! $found_taxons{$tax}){
+	push @missed,$tax;
+      }
+    }
+    &RSAT::message::TimeWarn(join("\t","Warn ! taxon(s) not found :",@missed));
+  }
+}
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+exit(0);
+
+
+################################################################
+####   
+################################################################
+
+sub getExpectedFreqFile{
+    my ($input_dir,$organism,$dyads, $oligo_length, $bg, %bg_params)=@_;
+    my $expfreqfile = $input_dir."/";
+    $expfreqfile .= $organism."/";
+    $expfreqfile .= "oligo-frequencies/";
+    $expfreqfile .= "dyads_" if ($dyads);
+    $expfreqfile .= $oligo_length."nt_";
+    $expfreqfile .= "sp".$bg_params{min_spacing}."-".$bg_params{max_spacing}."_"  if ($dyads);
+    $expfreqfile .= $bg."_";
+    $expfreqfile .= $organism.$bg_params{noov};
+    $expfreqfile .= $bg_params{str}."\.freq.gz";	      
+    return($expfreqfile);
+}
+	
+################################################################
+####   HELP MENU
+################################################################
+
+sub getTaxonExpectedFreqFile{
+    my ($output_dir,$taxon,$dyads, $oligo_length, $bg, %bg_params)=@_;
+
+    my $taxon_outputdir =$output_dir."/".$taxon."/oligo-frequencies"; 
+    &RSAT::util::CheckOutDir($taxon_outputdir);
+
+    my $taxon_expfreqfile = $taxon_outputdir."/";
+    $taxon_expfreqfile .= "dyads_" if ($dyads);
+    $taxon_expfreqfile .= $oligo_length."nt_";
+    $taxon_expfreqfile .= "sp".$bg_params{min_spacing}."-".$bg_params{max_spacing}."_"  if ($dyads);
+    $taxon_expfreqfile .= $bg."_";
+    $taxon_expfreqfile .= $taxon.$bg_params{noov};
+    $taxon_expfreqfile .= $bg_params{str}."\.freq";	      
+    return($taxon_expfreqfile);
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+####   HELP MENU
+################################################################
+
+__END__
+
+
+=head1 NAME
+
+calc-taxfreq
+
+=head1 DESCRIPTION
+
+Calculate the oligo and dyads frequencies for each taxon as the average of
+frequencies from all genomes which belong to a taxon. 
+
+=head1 REQUIREMENTS
+
+This program uses other RSAT programs : compare-scores (in order to make one
+table combining all frequencies for all organisms) and row-stats (in order to
+calculate the average of the frequencies).
+
+=head1 PROTOCOL
+
+calc-taxfreq -v 1 -t Saccharomycetes -r Fungi 
+
+=over
+
+=head1 OPTIONS
+
+=over
+
+=item --opt
+
+Prints the options and their default value.
+
+=item -h|--help
+
+Prints this help message
+
+=item -v|--verbosity [integer]
+
+Level of verbosity (information displayed on the screen to indicate
+the processing)
+
+=item -t|--taxa [taxon_names] (ex: Bacteria,Gammaproteobacteria,Saccharomycetes)
+
+Specify here the taxa for which the frequencies will be calculated. If not
+specified, the average frequencies will be calculated for all sub-classes of the root.
+
+=item -r|--root [taxon_name] (default:Organisms)
+
+Specify the root of the tree.
+
+=item --bg [background] (default:upstream-noorf)
+
+Specify the background model (see oligo-analysis -h).
+
+=item --oligo_length [integer] (default:6)
+
+Length of oligonucleotides in nucleotides. This value may be shorter if used with
+dyads (3nt).
+
+=item --noov
+
+No overlapping (see oligo-analysis -h).
+
+=item --str [1 or 2] (default:2)
+
+oligonucleotide occurrences found on both strands (str=2) are summed or not (str=1).
+
+=item --dyads
+
+Use dyads (spaced motifs). The spacing is 0-20. If not selected, the program
+will analyze oligonucleotides.
+
+=item -e|--export_dir [path]
+
+Results will be exported as tab-delimited text files in the results
+directory. If not specified, files are exported in RSAT in the subdirectory oligo-frequencies/ of each taxon directory RSAT/taxa/. 
+
+=item --batch
+
+Run the tasks in batch. This option only works on our lab's cluster, but could
+be adapted for other configurations by adapting the method &doit() in the
+utilities ($RSAT/lib/RSA.lib).
+
+=back

@@ -1,0 +1,140 @@
+<html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about convert-classes
+</h2>
+<p> This manual page is provisionary. It is a simple copy / paste of the manual of the command line tool.</p>
+</center>
+
+<pre>
+NAME
+    convert-classes
+
+DESCRIPTION
+    Interconversions between different formats of class/cluster files.
+
+AUTHORS
+    Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+    Sylvain Brohée <sylvain@bigre.ulb.ac.be>
+
+CATEGORY
+    util
+
+USAGE
+    convert-classes [-i inputfile] [-o outputfile] [-v]
+
+INPUT/OUTPUT FORMATS
+  mcl
+    The output format of the MCL algorithm. MCL is a graph-based clustering
+    algorithm developed by Stijn Van Dongen (http://micans.org/mcl/).
+
+    The output format has one row per cluster, each row giving a list of
+    elements, separated by tabulations.
+
+  mcode
+    The output format of the MCODE algorithm. MCODE is a graph-based
+    clustering algorithm developed by Bader and Hogue (Bader and Hogue, BMC
+    Bioinformatics, 2003)
+
+    http://baderlab.org/Software/MCODE
+
+  tab
+    A tab-delimited text file with 2 columns (+1 optional). The first column
+    indicates the element, the second column the class (cluster). The third
+    column is optional, it can be used to indicate the score for the
+    assignation of the element to the class (e.g. a posterior probability).
+    Any real value is accepted as score.
+
+  profiles
+    A tab-delimited text file with a table containing one row per element,
+    and one column per class. The first row starting with a '#' (the header
+    row) indicates the class names. The first column contains the element
+    names. The cells of the table contain either boolean or real values.
+    Boolean values indicate the membership (1 if the element is member of
+    the class, 0 otherwise). Real values can specify a score for the
+    membership of the element to the class (e.g. posterior probability).
+
+  ermg
+    Erdros-Renyi Mixture of Graphs. format defined by Stephane Robin for his
+    ERMG algorithm (submitted).
+
+  rnsc
+    RNSC format. format defined by Andrew King for his RNSC clustering
+    algorithm. Each line of the file represents a clusters contains a list
+    of integer representing the member. The end of the classification is
+    indicated by '-1'.
+
+    To convert from RNSC to another format, two files must thus be given : a
+    cluster file (-i option) and a name file (-names option) which is a two
+    colum tab delimited file containing the name of each corresponding id
+    (See King et al, 2004).
+
+OPTIONS
+    -v #
+        Level of verbosity (detail in the warning messages during execution)
+
+    -h
+        Display full help message
+
+    -help
+        Same as -h
+
+    -i inputfile
+        If no input file is specified, the standard input is used. This
+        allows to use the command within a pipe.
+
+    -o outputfile
+        If no output file is specified, the standard output is used. This
+        allows to use the command within a pipe.
+
+    -names file_name
+        Two column file specifying the labels of the members of the
+        classification given in the classification file. First column
+        contains the identifier and second column the corresponding label.
+
+    -from input_format
+        Input format. Supported: tab, mcl, profiles, mcode, rnsc
+
+    -to output_format
+        Output format. Supported: tab, mcl,profiles
+
+    -mcol
+        Member column. Column containing the member names in the tab format
+        (default 1).
+
+    -ccol
+        Class column. Column containing the class names in the tab format
+        (default 1).
+
+    -scol
+        Score column. Column containing the scores in tab format. If not
+        specified, scores are not defined.
+
+    -null
+        Null string used as score in the profile output for the undefined
+        class memberships (default 0).
+
+    -all_scores
+        Assign each node to all the clusters with the ERMG format, with the
+        posterior probability as score.
+
+    -min_score
+        Minimal score value for member to class assignation.
+
+SEE ALSO
+
+</pre>
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+</h4>
+
+</blockquote>
+</body>
+</html>

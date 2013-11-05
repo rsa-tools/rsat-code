@@ -1,0 +1,186 @@
+<html>
+<head>
+   <title>KEGG network provider help</title>
+<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help on KEGG network provider
+</h2>
+</center>
+
+<h4>Content</h4>
+<ul>
+<li><a href='help.keggnetworkprovider.html#description'>Description</a></li>
+<li><a href='help.keggnetworkprovider.html#disclaimer'>Disclaimer</a></li>
+<li><a href='help.keggnetworkprovider.html#input'>Input</a></li>
+<li><a href='help.keggnetworkprovider.html#options'>Options</a></li>
+<li><a href='help.keggnetworkprovider.html#output'>Output</a></li>
+<li><a href='help.keggnetworkprovider.html#email'>Email</a></li>
+<li><a href='help.keggnetworkprovider.html#next'>Next steps panel</a></li>
+<li><a href='help.keggnetworkprovider.html#webservice'>Web service</a></li>
+<li><a href='help.keggnetworkprovider.html#standalone'>Standalone tool</a></li>
+<li><a href='help.keggnetworkprovider.html#tools'>Related tools</a></li>
+<li><a href='help.keggnetworkprovider.html#literature'>Literature</a></li>
+</ul>
+
+<h4><a name="description">Description</a></h4>
+<ul>
+    The KEGG network provider allows the construction of bipartite metabolic networks specific to a set of organisms. 
+    The networks are constructed from <a href="http://www.genome.jp/kegg/xml/" target="_blank">KEGG KGML</a> files. Compounds and reactions are represented
+    as separate node sets.<br> 
+    It is also possible to filter the network in order to exclude certain reactions, compounds or reactant pair classes.  
+    In addition, compounds and reactions in the constructed networks can be annotated with their label or EC number.<br>
+    <font color="red"><b>Note that KGML files do not list the side compounds of reactions. These will consequently be missing
+    from the constructed metabolic network as well.</b></font>
+    <br>
+</ul>
+
+<h4><a name="disclaimer">Disclaimer</a></h4>
+<ul>
+  For the use of KEGG PATHWAY data, see the <a href="http://www.genome.jp/kegg/legal.html" target="_blank">KEGG licence</a>   
+</ul>
+
+<h4><a name="input">Input</a></h4>
+<ul>
+	<li>KEGG organism identifiers<br>
+		Organisms present in KEGG can be specified by their KEGG abbreviation or full species name as given in KEGG. 
+		Note that the species name may also include the strain, e.g. Bacillus anthracis A2012.
+		If you want to specify more than one organism, you can separate organism identifiers by '/' (e.g. eco/Saccharomyces cerevisiae).
+		Note that the reference pathways can be requested with 'reference'. The reference pathways merge all organism-specific
+		pathways.
+		The list of KEGG organisms and their abbreviations in KEGG is available <a href="data/KEGG/Kegg_organisms_list.txt">here</a>.
+	</li>
+	<li>KEGG organism file<br>
+		Instead of or in addition to specifying organisms manually, a file with KEGG organisms can be up-loaded. The file contains
+		one organism (KEGG identifier or species name) on each line. Comment lines in the file should be preceded by '#'.
+	</li>
+	<li>KEGG reactions<br>
+		In addition to or instead of KEGG organisms, KEGG reactions can be specified. The graph will be constructed from the
+		specified reactions. The reactions should be separated by '/' (e.g. R00015/R00551).
+	</li>
+	<li>KEGG reaction file<br>
+		Instead of or in addition to manually specifying KEGG reactions, a file can be provided, which contains one KEGG reaction by line.
+		Comment lines in this file should be preceded by '#'.
+	</li>
+</ul>
+
+<h4><a name="options">Options</a></h4>
+<ul>
+	<li>Exclusion of KEGG compounds<br>
+	Optionally, a set of KEGG compounds can be excluded from the network to be constructed. KEGG compound identifiers should
+	be separated by '/' (e.g. C00001/C00002/C00010).
+	</li>
+	<li>Exclusion of KEGG reactions<br>
+	Optionally, a set of KEGG reactions can be excluded from the network to be constructed. KEGG compound identifiers should
+	be separated by '/' (e.g. R000259/R04453).
+	</li>
+	<li>Exclusion of KEGG RPAIR classes<br>
+	Optionally, certain RPAIR classes can be excluded from network construction. Reactant pairs (RPAIRS) in KEGG are divided
+	in five classes: main, trans, cofac, ligase and leave. 
+	Excluding ligase or leave reactant pairs may improve path finding accuracy.
+	If you want to exclude more than one RPAIR class, separate them by '/' (e.g. leave/ligase/cofac).
+	</li>
+	<li>Directed network<br>
+	By default, undirected metabolic networks are constructed. However, in metabolic pathfinding, it is useful to represent
+	reactions by separate nodes for the forward and reverse direction respectively. If "directed network" is selected, 
+	the constructed network is directed, but contains for each forward reaction direction its reverse.
+	</li>
+	<li>RPAIR network<br>
+	For the description of RPAIR networks see the metabolic Pathfinder help.
+	If "RPAIR network" is selected, a metabolic network containing reactant pairs instead of reactions is constructed.
+	</li>
+	<li>Reaction treatment<br>
+	By default, irreversible reactions are converted into reversible ones. If you would like
+	to keep the irreversible reactions, select this option. Note that it will only be effective
+	in directed networks and that a reaction might be carried out in different directions in 
+	different organisms (resulting in a reversible presentation of this reaction after merging of the metabolic
+	networks of these organisms).
+	</li>
+	<li><a name="attributes">Attributes</a><br>
+	<b>By default</b>, the following attributes are set:<br>
+		<ul>
+		<li>ObjectType: The ObjectType allows to differentiate between reaction and compound nodes.</li>
+		<li>ExclusionAttribute: Forward and reverse direction of the same reaction share a common value for the ExclusionAttribute,
+		which allows to treat them as mutually exclusive.</li>
+		<li>ENZYME (reaction network only): Enzymes catalysing the reaction as provided in the KGML file.
+		Note that because of the N:N relationship between reaction and reactant pair, it is not straightforward to 
+		set this attribute on reactant pairs. Note also that the reference pathways do not provide enzyme names, as they are
+		organism-independent.</li>
+		<li>Exclusion.Group (RPAIR network only): Its value is a set of all reactant pairs sharing a common reaction with the given reactant pair.</li>
+		<li>RPAIRS.Linkage.Type (RPAIR network only): It has as its value the set of RPAIR classes to which a given reactant pair - compound interaction belongs.</li>
+		</ul>
+		<b>Optionally</b>, the following attributes can be set in addition:
+		<ul><i>Compounds</i><br>
+		 <li>Name: The name of a KEGG compound.</li>
+		 <li>Formula: The formula of a KEGG compound.</li>
+		 <i>Reactions</i><br>
+		 <li>Equation (reaction network only): The equation of a KEGG reaction.</li>
+		 <li>EC numbers: The EC numbers associated to a KEGG reaction or reactant pair.</li>
+		 Note that the optional attributes are set with the help of a relational database storing KEGG data, 
+		 as the KGML files do not provide compound names, formulas or reaction equations. The reaction equation is especially useful
+		 to see the side compounds, which are omitted in the KGML files.
+		 EC numbers are also set with the help of this database rather than from the KGML files, since the relationship
+		 between reactant pairs and EC numbers is not contained in the KGML files.
+		</ul>
+	</li>
+</ul>
+
+<h4><A NAME="output">Output</a></h4>
+ <ul>Network format<br>
+ The network can be constructed in different formats. See the metabolic Pathfinder help for details.
+ Warning: The next step panel is only available for gml and tab-delimited graph formats. However, the next step panel allows to convert
+ the network in dot or VisML.
+ </ul>
+
+<h4><A NAME="email"></A><b>Email</b></h4>
+	<ul>You can optionally specify an email address, so KEGG network provider results can be sent to you by email.
+		This is recommended if you specify a large number of organisms.
+		If you leave the email field empty, results will be displayed in the browser.
+	</ul>
+
+<h4><A NAME="next">Next steps panel</a></h4>
+	<ul>The next steps panel allows you to input the result of KEGG network provider into one of the listed tools without copy-pasting
+	the result into that tool. The next steps panel will only appear if you choose gml or tab-delimited as network format.
+	</ul>
+
+
+<h4><A NAME="webservice">Web service</a></h4>
+	<ul>
+	<font color="red">KEGG network provider does not use the usual RSAT Web Service address!</font>
+	Check the <a href="neat_webservices.php">NeAT web services</a> page.
+	</ul>
+
+<h4><A NAME="standalone">Standalone tool</a></h4>
+	<ul>A stand alone version of KEGG network provider is available with the 
+	<a href="distrib/index.html">RSAT distribution</a>.
+	</ul>
+
+<h4><A NAME="tools"></A>Related tools</h4>
+<ul>
+	This list provides links to tools for the visualization/extraction/analysis of KEGG metabolic networks:
+	<ul> 
+	<li><a href="http://www.bioconductor.org/packages/2.4/bioc/html/KEGGgraph.html" target="_blank">KEGGgraph</a> parse KEGG PATHWAY in R and Bioconductor (R package)</li>
+	<li><a href="http://yana.bioapps.biozentrum.uni-wuerzburg.de/" target="_blank">Yanasquare</a> construct metabolic networks from  KEGG for elementary mode analysis (stand alone)</li>
+	<li><a href="http://pht.tu-bs.de/PHT/" target="_blank">Pathway Hunter Tool</a> analyze topology and obtain organism-specific KEGG networks (web tool)</li>
+	<li><a href="http://kgml-ed.ipk-gatersleben.de/Introduction.html" target="_blank">KGML-ED</a> navigate, visualize and edit pathways in KGML format (Java web start)</li>
+	<li><a href="http://bioinformatics.leeds.ac.uk:8080/shark/user" target="_blank">metaSHARK</a> navigate and visualize KEGG networks and map gene expression data on them (web tool)</li>
+	<li><a href="http://pathways.embl.de/index.html" target="_blank">iPATH</a> browse and export organism-specific KEGG pathway maps (web tool)</li>
+	</ul>
+</ul>
+
+
+<h4><A NAME="literature"></A>Literature</h4>
+<ol>
+	<li>Kanehisa, M. et al. (2008). KEGG for linking genomes to life and the environment. Nucleic Acids Research 36, D480-D484.</li>
+</ol>
+
+
+<h4 class="footer">
+For information, contact <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>
+</h4>
+
+
+</body>
+</html>

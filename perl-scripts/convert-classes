@@ -1,0 +1,441 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-classes,v 1.20 2012/06/17 11:12:43 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+convert-classes
+
+=head1 DESCRIPTION
+
+Interconversions between different formats of class/cluster files.
+
+=head1 AUTHORS
+
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+Sylvain Brohée  <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+convert-classes [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT/OUTPUT FORMATS
+
+
+=head2 mcl
+
+The output format of the MCL algorithm. MCL is a graph-based
+clustering algorithm developed by Stijn Van Dongen
+(http://micans.org/mcl/).
+
+The output format has one row per cluster, each row giving a list of
+elements, separated by tabulations.
+
+=head2 mcode
+
+The output format of the MCODE algorithm. MCODE is a graph-based
+clustering algorithm developed by Bader and Hogue (Bader and Hogue, BMC Bioinformatics, 2003)
+
+http://baderlab.org/Software/MCODE
+
+=head2 tab
+
+A tab-delimited text file with 2 columns (+1 optional).  The first
+column indicates the element, the second column the class
+(cluster). The third column is optional, it can be used to indicate
+the score for the assignation of the element to the class (e.g. a
+posterior probability). Any real value is accepted as score.
+
+=head2 profiles
+
+A tab-delimited text file with a table containing one row per element,
+and one column per class. The first row starting with a '#' (the
+header row) indicates the class names. The first column contains the
+element names. The cells of the table contain either boolean or real
+values. Boolean values indicate the membership (1 if the element is
+member of the class, 0 otherwise). Real values can specify a score for
+the membership of the element to the class (e.g. posterior
+probability).
+
+
+=head2 ermg
+
+Erdros-Renyi Mixture of Graphs. format defined by Stephane Robin for
+his ERMG algorithm (submitted).
+
+=head2 rnsc
+
+RNSC format. format defined by Andrew King for his RNSC clustering algorithm. 
+Each line of the file represents a clusters contains a list of integer representing the member. The end of the classification is indicated by '-1'.
+
+To convert from RNSC to another format, two files must thus be given : a cluster file (-i option) and a name file (-names option) which is a two colum tab delimited file containing the name of each corresponding id (See King et al, 2004).
+
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::Family;
+use RSAT::Classification;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+    $main::out = STDOUT;
+    
+    $input_format = "mcl";
+    $output_format = "tab";
+    my $classification = new RSAT::Classification;
+
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	ermg=>1,
+	mcl=>1,
+	mcode=>1,
+	tab=>1,
+	profiles=>1,
+	rnsc=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+
+    ## Output formats
+    local $output_format = "dot";
+    %supported_output_format =(
+	mcl=>1,
+	tab=>1,
+	profiles=>1,
+    );
+    $supported_output_formats = join (",", keys %supported_output_format);
+
+    %args = (); ## arguments for reading the classification
+    $args{null} = "NA";
+
+    %output_args = (); ## Arguments for printing the classification
+    $output_args{null} = "NA";
+
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if ($input_format eq 'rnsc' && !defined($main::infile{names})) { 
+	&RSAT::message::Warning("No name file given for RNSC format input format");
+    }
+    if ($input_format ne 'rnsc' && defined($main::infile{names})) { 
+	&RSAT::message::Warning("Using -names option with format $input_format is useless");
+    }
+
+    ################################################################
+    ## Read input classes
+    $classification->read_from_file($main::infile{input}, $input_format, $main::infile{names}, %args);
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ###### print output
+    print $out $classification->to_text($output_format, %output_args);
+
+    ################################################################
+    ###### close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+=pod
+
+=item	B<-names file_name>
+
+Two column file specifying the labels of the members of the classification given in the classification file. First column contains the identifier and second column the corresponding label.
+
+=cut
+	} elsif ($arg eq "-names") {
+	    $main::infile{names} = shift(@arguments);	    
+
+	    ### Input format  
+=pod
+
+=item B<-from input_format>
+
+Input format. Supported: tab, mcl, profiles, mcode, rnsc
+
+=cut
+	} elsif ($arg eq "-from") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+	    ### Output format  
+=cut
+
+=item B<-to output_format>
+
+Output format. Supported: tab, mcl,profiles
+
+=cut 
+	} elsif ($arg eq "-to") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
+	    ## Member column
+=pod
+
+=item B<-mcol>
+
+Member column. Column containing the member names in the tab format (default 1). 
+
+=cut
+	} elsif ($arg eq "-mcol") {
+	    $args{member_column} = shift (@arguments);
+	    unless (&IsNatural($args{member_column}) && ($args{member_column} > 0)) {
+		&RSAT::error::FatalError(join("\t", $args{member_column}, "Invalid value for the member column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Class column
+=pod
+
+=item B<-ccol>
+
+Class column. Column containing the class names in the tab format (default 1). 
+
+=cut
+	} elsif ($arg eq "-ccol") {
+	    $args{class_column} = shift (@arguments);
+	    unless (&IsNatural($args{class_column}) && ($args{class_column} > 0)) {
+		&RSAT::error::FatalError(join("\t", $args{class_column}, "Invalid value for the class column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Score column
+=pod
+
+=item B<-scol>
+
+Score column. Column containing the scores in tab format. If not
+specified, scores are not defined.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $args{score_column} = shift (@arguments);
+	    unless (&IsNatural($args{score_column}) && ($args{score_column} > 0)) {
+		&RSAT::error::FatalError(join("\t", $args{score_column}, "Invalid value for the score column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Assign each node to each cluster with the ERMG
+	    ## format, using the posterior probability as score
+	    ## Score column
+=pod
+
+=item B<-null>
+
+Null string used as score in the profile output for the undefined class
+memberships (default 0).
+
+=cut
+	} elsif ($arg eq "-null") {
+	    $args{null} = $output_args{null} = shift (@arguments);
+
+=pod
+
+=item B<-all_scores>
+
+Assign each node to all the clusters with the ERMG format, with the
+posterior probability as score.
+
+=cut
+	} elsif ($arg eq "-all_scores") {
+	    $args{all_scores} = 1;
+
+	    ## Minimal score value for the assignation
+=pod
+
+=item B<-min_score>
+
+Minimal score value for member to class assignation.
+
+=cut
+	} elsif ($arg eq "-min_score") {
+	    $args{min_score} = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $args{min_score}, "Invalid minimal score specification. ust be a real number")) 
+		unless (&IsReal($args{min_score}));
+
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; convert-classes ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut

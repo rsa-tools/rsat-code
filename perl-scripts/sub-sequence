@@ -1,0 +1,487 @@
+#!/usr/bin/perl
+
+### CVS: added the option -mask
+
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+package main;
+{
+
+  ## Initialise parameters
+  $origin = "start";
+  $start_time = &RSAT::util::StartScript();
+  $line_width = 0;
+  $in_format = "fasta";
+  $out_format = "fasta";
+  $null = "NA";
+  $from = $null;
+  $to =$null;
+  $strand = "D";
+
+  ## Read user-specified arguments
+  &ReadArguments();
+
+  ## Check argument values
+  &CheckInputSeqFormat($in_format);
+  &CheckInputSeqFormat($out_format);
+
+
+  ################################################################
+  ## Read sequence-wise limits of the sub-sequences (fragments)
+  my %fragments = ();
+  my %fragments_per_seq = ();
+  if ($fragment_file) {
+    ## Fragment file
+    if (($from ne $null) || ($to ne $null)) {
+      &RSAT::error::FatalError("The option -frag is incompatible with the options -from and -to");
+    }
+    my ($in, $input_dir) = &OpenInputFile($fragment_file);
+    my $l = 0;
+    while (<$in>) {
+      $l++;
+      chomp();
+      s/\r//;
+      next if (/^;/);
+      next if (/^#/);
+      next unless (/\S/);
+      my ($frag_id, $seq_id, $frag_from, $frag_to, $frag_strand) = split "\t";
+      push @{$fragments_per_seq{$seq_id}}, $frag_id;
+      $fragment{$frag_id}->{seq_id} = $seq_id;
+      $fragment{$frag_id}->{from} = $frag_from;
+      $fragment{$frag_id}->{to} = $frag_to;
+      $fragment{$frag_id}->{strand} = $frag_strand;
+      &RSAT::message::Debug("Fragment ID", $frag_id, "Seq ID","==".$seq_id."==", "fragmente coordinates",  $frag_from.":".$frag_to.":".$frag_strand) if ($main::verbose>=4);
+    }
+    close $in;
+
+  } else {
+    ## Same limits for all the sequences
+    &RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
+    &RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
+  }
+
+  ## Open input file
+  ($in, $input_dir) = &OpenInputFile($inputfile);
+
+  ## Open output file
+  $out = &OpenOutputFile($outputfile);
+
+  ## Verbose
+  if ($main::verbose >= 1) {
+    print $out "; sub-sequence result\n";
+    if ($inputfile ne "") {
+      print $out "; Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+      print $out "; Output file	$outputfile\n";
+    }
+    print $out "; Input format\t$in_format\n";
+    print $out "; Output format\t$out_format\n";
+    print $out "; From\t$from\n";
+    print $out "; To\t$to\n";
+    if ($strand eq "R") {
+      print $out "; Output is the reverse complement of input sequence\n";
+    }
+  }
+
+
+  ################################################################
+  ## Extract sequence fragments
+  while ((($current_seq, $seq_id) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
+	 (($current_seq ne "") || ($seq_id ne ""))) {
+    $current_seq =~ s/\s//g;
+    local $seq_len = length($current_seq);
+
+    &RSAT::message::TimeWarn(join("\t", "Read sequence", $seq_id, $seq_len)) if ($main::verbose >= 2);
+
+    ################################################################
+    ## Compute sequence-wise limits
+    if ($fragment_file) {
+      my $frag_list = $fragments_per_seq{$seq_id};
+      my @fragments = @$frag_list;
+      foreach my $frag_id (@fragments) {
+	my $fragment = $fragment{$frag_id};
+	my $frag_from = $fragment->{from};
+	my $frag_to = $fragment->{to};
+	my $frag_strand = $fragment->{strand};
+	&RSAT::message::Debug("fragment info",$seq_id, $frag_id, $frag_from, $frag_to, $frag_strand) if ($main::verbose >= 4);
+	&OneFragment($frag_from, $frag_to, $frag_strand, $frag_id);
+      }
+    } else {
+      &OneFragment($from, $to, $strand, $seq_id);
+    }
+  }
+
+  ## Close input stream
+  close $in unless ($inputfile eq "");
+
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out unless ($outputfile eq "");
+
+
+  exit(0);
+}
+
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
+
+################################################################
+## Extract the sub-sequence (fragment) from one sequence
+sub OneFragment {
+  my ($current_from, $current_to, $current_strand, $current_id) = @_;
+
+  ## Swap from and to if required
+  if ($current_from > $current_to) {
+    my $tmp = $current_from;
+    $current_from = $current_to;
+    $current_to = $tmp;
+  }
+
+  ## Compute the origin
+  my $ref_pos = 0;
+  if ($origin eq "center") {
+    $ref_pos = &round(($seq_len+1)/2);
+  } elsif ($origin eq "end") {
+    $ref_pos = $seq_len + 1;
+  }
+
+
+  ## Compute sub-sequence starting position for the current sequence
+  if ($current_from eq $null) {
+    $subseq_from eq 1;
+  } else {
+    $subseq_from = $ref_pos + $current_from;
+  }
+
+  ## Sub-sequence start cannot be negative
+  if ($subseq_from < 1) {
+    &RSAT::message::Warning($current_id, "negative sub-sequence start", $subseq_from, "clipped") if ($main::verbose >= 2);
+    $subseq_from = 1;
+  }
+
+  ## Compute sub-sequence ending position for the current sequence
+  if ($current_to eq $null) {
+    $subseq_to eq $seq_len;
+  } else {
+    $subseq_to = $ref_pos + $current_to;
+  }
+
+  ## Sub-sequence end cannot be larger than sequence length
+  if ($subseq_to > $seq_len) {
+    &RSAT::message::Warning($current_id, "sub-sequence end", $subseq_to,"cannot be larger than sequence length (".$seq_len.")",  "clipped") if ($main::verbose >= 2);
+    $subseq_to = $seq_len;
+  }
+
+  local $offset = $subseq_from -1;
+  local $subseq_len = $subseq_to - $subseq_from + 1;
+  local $subseq = substr($current_seq, $subseq_from -1, $subseq_len);
+
+
+################################################################
+##
+## THIS WAS THE OLD WAY TO TREAT NEGATIVE COORDINATES AS REFERENCES TO
+## THE END ORIGIN. WAS CAUSING BUG BY RETURNING LARGER SUB-SEQUNCES
+## THAN ACTUAL SEQUENCE WHEN LIMITS WERE NEGATIVE OR LARGER THAN
+## SEQUENCE SIZE. I THINK I COULD TRASH IT.
+##
+#   ## Negative coordinates indicate the end of the sequence
+#   ##
+#   ## NOTE: not perfect, i don't treat the case where the absolute
+#   ## value of the negative coordinates are larger than sequence length
+#   ## (I should adapt this by taking the mod).
+#   if ($current_from < 0) {
+#     $subseq_from = $seq_len + $current_from + 1;
+#     if ($current_to < 0) {
+#       ## Both from and to are negative -> get fragment
+#       $subseq_to = $seq_len + $current_to + 1;
+#       $current_length = $current_to - $current_from + 1;
+#       $subseq = substr($current_seq, $subseq_from -1, $current_length);
+#     } else {
+#       ## Concatenate a piece of end fragment + a piece of start
+#       ## fragment
+#
+#       ## Get the end fragment
+#       $subseq = substr($current_seq, $subseq_from -1, $seq_len - $current_from + 1);
+#
+#       ## Get the start fragment
+#       $subseq .= substr($current_seq, 0, $subseq_to);
+#
+#       $subseq_to = $current_to;
+#     }
+#   } else {
+#     if (($subseq_from <= $seq_len) && ($subseq_to >= 1)){
+#       ## Check that the limits fall within the sequence
+#       $subseq_from = &max($subseq_from, 1);
+#       $subseq_to = &min($subseq_to, $seq_len);
+#       $current_length = $current_to - $current_from + 1;
+#       $subseq = substr($current_seq, $subseq_from -1, $current_length);
+#       #    } else {
+#       #	$subseq_from = $null;
+#       #	$subseq_to = $null;
+#     } else {
+#       &RSAT::message::Warning($current_id, $subseq_from.":".$subseq_to, "NOT TREATED");
+#     }
+#   }
+
+
+
+  ## Store sub-sequence description as comment
+  ## Initialize the comments
+  my @comments = ();
+  push @comments, join(" ", "sub-seq", $current_from.":".$current_to, $subseq_from.":".$subseq_to, "seq_len=".$seq_len, "subseq_len=".$subseq_len);
+  if ($limits) {
+    $current_id .= "_".$current_from."_".$current_to;
+  }
+
+  ## Compute reverse complement if required
+  if ($current_strand eq "R") {
+    $subseq = &ReverseComplement($subseq);
+  }
+
+  ## Report result details or checking
+  if ($main::verbose >= 3) {
+
+    ## Compute actual sub-sequence  length
+    my $actual_len = length($subseq);
+    if ($actual_len != $subseq_len) {
+      &RSAT::message::Warning($current_id, "Actual sub-sequence length (".$actual_len.") differs from required length (".$subseq_len.")");
+    }
+
+    &RSAT::message::Debug($current_id,
+			  "current_from=".$current_from,
+			  "current_to=".$current_to,
+			  "seq_len=".$seq_len,
+			  "seq_from=".$subseq_from,
+			  "subseq_to=".$subseq_to,
+			  "subseq_len=".$subseq_len,
+			  "actual_len=".$actual_len,
+			 );
+  }
+
+  ## Print the sub-sequence
+  &PrintNextSequence($out, $out_format, $line_width, $subseq, $current_id, @comments);
+
+}
+
+################################################################
+#### display full help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	sub-sequence
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+        sub-sequence [-i inputfile] -from # -to # [-o outputfile] [-v]
+
+DESCRIPTION
+	Returns a segment from the input sequence, specified by its position.
+
+CATEGORY
+	sequences
+
+OPTIONS
+        -h      (must be first argument) display full help message
+
+        -help   (must be first argument) display options
+
+	-v	verbose
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-frag	fragment_file
+
+		This option allows to specify a list of fragments t be
+		retrieved from each sequence of the input file.
+
+		Each row contains the coordinates of a fragment in 4
+		or 5 columns:
+
+		     1) fragment ID
+		     2) sequence ID (must be the same as in the sequence file)
+		     3) fragment start
+		     4) fragment end
+		     5) strand (optional). If not specified, all
+                        fragments are taken on the direct strand.
+
+    		example:
+		frag1	chr2L	344641	348496	D
+		frag2	chr2L	346419	350309	R
+		frag3	chr2R	350781	354418	D
+
+	-origin start | center | end
+		Reference for calculating positions.
+
+		The value should be chosen according to the sequence
+		type. For instance:
+
+		-origin start for downstream sequences
+
+		-origin end for promoter sequences
+
+		-origin center can be useful for ChIP-seq peaks, which
+			can have variable lengths, but are supposed to
+			be more or less centred on the TF binding
+			qsites.
+
+	-from #	starting position
+		if not specified, the subsequence starts at 1st position.
+
+	-to #	end position
+		if not specified, the end of the sequence is used.
+
+	-iformat
+		input format. Default is fasta
+
+	-oformat
+		output format. Default is fasta
+
+	-format	input-output format. Default is fasta
+
+	-rc	return the reverse complement of the sub-sequences
+
+	-limits
+		add a suffix to sequence IDs to indicate the limits of
+		the sub-sequence.
+
+POSITION SPECIFICATION
+	Positive position are used to refer to the sequence start. +1 is
+	the first residue from the sequence.
+	Negative positions refer to the sequence end (-1 is the last residue
+	from the sequence).
+
+INPUT-OUTPUT FORMAT
+	Various sequence formats are supported:
+	- IG
+	- Fasta
+	- Wconsensus
+	- raw
+	- multi
+	When the input contains several sequences in the same file, the
+	programs extracts the fragment at the specified positions from
+	each of them.
+
+EXAMPLES
+	sub-sequence -v -i mydata -o myresult -from -353 -to -397
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+
+################################################################
+#### Display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+sub-sequence options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-mask upper|lower	mask upper- or lowercases, respectively
+-o		output file
+-v		verbose
+-frag		fragment_file
+-origin start | center | end	Reference for calculating positions.
+-from #		start position
+-to #		end position
+-iformat	input format. Default is fasta
+-oformat	output format. Default is fasta
+-format		input/output format (fasta|wc|ig|raw|multi)
+-rc		return the reverse complement of the sub-sequences
+-limits		add a suffix to sequence IDs to indicate the limits of the sub-sequence
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$main::verbose = $ARGV[$a+1];
+      } else {
+	$main::verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+
+      ### Input file
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+
+      ## Mask
+    } elsif ($ARGV[$a] eq "-mask") {
+      $mask = $ARGV[$a+1];
+      &CheckMask($mask);
+
+      ### Output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+
+
+      ## Fragment file
+    } elsif ($ARGV[$a] eq "-frag") {
+      $fragment_file = $ARGV[$a+1];
+
+      ### origin for positions
+    } elsif ($ARGV[$a] eq "-origin") {
+      $origin = $ARGV[$a+1];
+
+      ## starting position
+    } elsif ($ARGV[$a] eq "-from") {
+      $from = $ARGV[$a+1];
+
+      ## ending position
+    } elsif ($ARGV[$a] eq "-to") {
+      $to = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-format") {
+      $in_format = $ARGV[$a+1];
+      $out_format = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-iformat") {
+      $in_format = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-oformat") {
+      $out_format = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-rc") {
+      $strand = "R";
+
+    } elsif ($ARGV[$a] eq "-limits") {
+      $limits = 1;
+
+    }
+
+  }
+}

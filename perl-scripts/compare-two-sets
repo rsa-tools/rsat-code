@@ -1,0 +1,740 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-two-sets,v 1.8 2013/01/31 14:17:55 sylvain Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+compare-two-sets
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+compare-two-sets is compares two sets and compute their intersection and some related statistics.
+
+=head1 AUTHORS
+
+Sylvain Brohée <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+template
+
+compare-two-sets -q query_file -r reference_file [-o outputfile] [-n elementsnb] [-random nb_of_randomizations] [-stats] [-venn vennoutput] [-ref_name refname] [-query_name queryname] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+
+The query file and the reference file consist in a set of element names. The first word of each line is considered as being the element name.
+
+=head1 OUTPUT FORMAT
+
+The program returns some statistics and the intersection, the element present in the reference set and not in the query set as well as the elements present in the query set but not in the reference set.
+
+Using the -venn option, you can specify a file name which will contain a Venn diagramm representing the set comparaison test.
+
+=head1 SEE ALSO
+
+compare-classes is a program very comparable to compare-two-sets. The main difference is that it takes many lists as input.
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require "RSA.stat.lib";
+require PostScript::Simple;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    $n = -1;
+    $rdm = -1;
+    $statsonly = 0;
+    $venn = 0;
+    
+    my %vennargs = ();
+    our @qpropcols = ();
+    our @rpropcols = ();
+    our @qproperties = (); 
+    our @rproperties = ();
+    our $keepfirst = 0;
+
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    &FatalError("File ".$main::infile{query}." does not exist") if (!-e $main::infile{query});
+    &FatalError("File ".$main::infile{reference}." does not exist") if (!-e $main::infile{reference});
+    
+    if (scalar @qpropcols != scalar @qproperties) {
+       &FatalError("Not the same number of query properties as query property names")
+    }
+    
+    if (scalar @rpropcols != scalar @rproperties) {
+       &FatalError("Not the same number of query properties as reference property names")
+    }
+
+    
+    $query_name = $main::infile{query} if (!$query_name);
+    $reference_name = $main::infile{reference} if (!$reference_name);
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    my %query = readList($main::infile{query}, \@qpropcols, \@qproperties);
+    my %reference = readList($main::infile{reference}, \@rpropcols, \@rproperties);
+    my %query_duplicated = &get_duplicated_elements(\%query);
+    my %reference_duplicated = &get_duplicated_elements(\%reference);
+    my $query_size = scalar keys %query;
+    my $query_duplicated_size = scalar keys %query_duplicated;
+    my $reference_duplicated_size = scalar keys %reference_duplicated;
+    my $reference_size = scalar keys %reference;
+    my $query_dup_list = &print_duplicated_elements(\%query_duplicated);
+    my $ref_dup_list = &print_duplicated_elements(\%reference_duplicated);
+    
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the commands
+    my ($common_ref, $q_only_ref, $r_only_ref) = &compare_lists(\%query, \%reference);
+    my @common = @{$common_ref};
+    my @q_only = @{$q_only_ref};
+    my @r_only = @{$r_only_ref};
+    
+    my $inter_size = scalar @common;
+    my $ronly_size = scalar @r_only;
+    my $qonly_size = scalar @q_only;
+    my $union_size = $inter_size + $ronly_size + $qonly_size;
+    my $total_size = $union_size;
+    if ($n != -1) {
+      $total_size = $n;
+      if ($total_size < $union_size) {
+ 	&RSAT::error::FatalError( join("\t", $n, "Invalid total number of elements : must be greater than the size of the union"));
+      }
+    }
+    
+    # Jaccard computation
+    RSAT::message::Info("Computing Jaccard index") if ($main::verbose > 2);
+    my $jacindex = $inter_size / $union_size;
+    
+    # Hypergeometric proba
+    RSAT::message::Info("Computing hypergeometric probability") if ($main::verbose > 2);
+    my $hyper_pval =  &sum_of_hypergeometrics ($reference_size, $total_size, $query_size, $inter_size, &min($reference_size, $query_size));
+
+    # Random control
+    my %random_results = ();
+    
+    if ($rdm != -1) {
+      RSAT::message::Info("Computing $rdm random controls") if ($main::verbose > 2);
+      for ($i = 0; $i < $rdm; $i++) {
+        RSAT::message::Info("Random Control $i") if ($main::verbose > 4);
+        my $rdm_query_ref = &create_rdm_hash($total_size, $query_size);
+        my $rdm_reference_ref = &create_rdm_hash($total_size, $reference_size);
+#         %rdm_query = %{$rdm_query_ref};
+#         %rdm_reference = %{$rdm_reference_ref};
+        my ($rdm_common_ref, $rdm_q_only_ref, $rdm_r_only_ref) = &compare_lists($rdm_query_ref, $rdm_reference_ref);
+        
+        my @rdm_common = @{$rdm_common_ref};
+        my @rdm_q_only = @{$rdm_q_only_ref};
+        my @rdm_r_only = @{$rdm_r_only_ref};
+    
+        my $rdm_inter_size = scalar @rdm_common;
+        my $rdm_ronly_size = scalar @rdm_r_only;
+        my $rdm_qonly_size = scalar @rdm_q_only;
+        my $rdm_union_size = $rdm_inter_size + $rdm_ronly_size + $rdm_qonly_size;
+        my $rdm_total_size = $rdm_union_size;        
+        my $rdm_jacindex = $rdm_inter_size / $rdm_union_size;
+        push(@{$random_results{'jaccard'}}, $rdm_jacindex);
+      }
+    }
+
+    ################################################################
+    ## Insert here output printing
+    # stats
+    print $main::out join "\t", ";", "Query name", $query_name."\n";
+    print $main::out join "\t", ";", "Reference name", $reference_name."\n";
+    print $main::out join "\t", ";", "Query size", $query_size."\n";
+    print $main::out join "\t", ";", "Reference size", $reference_size."\n";
+    print $main::out join "\t", ";", "Number of duplicated elements in query", $query_duplicated_size."\n";
+    print $main::out join "\t", ";", "Number of duplicated elements in reference", $reference_duplicated_size."\n";
+    print $main::out join "\t", ";", "Query duplicated elements", $query_dup_list."\n" if ($query_duplicated_size);
+    print $main::out join "\t", ";", "Reference duplicated elements", $ref_dup_list."\n" if ($reference_duplicated_size);
+    print $main::out join "\t", ";", "Intersection size", $inter_size."\n";
+    print $main::out join "\t", ";", "Union size", $union_size."\n";
+    print $main::out join "\t", ";", "Query only size", $qonly_size."\n";
+    print $main::out join "\t", ";", "Reference only size", $ronly_size."\n";
+    print $main::out join "\t", ";", "Total number of elements", $total_size."\n";
+
+
+    
+    my $round_pval = sprintf "%.2g", ($hyper_pval);
+    print $main::out join "\t", ";", "Hypergeometric p-value", $round_pval."\n";
+    my $round_jaccard = sprintf "%.2f", ($jacindex*100);
+    
+    print $main::out join "\t", ";", "Jaccard index", $round_jaccard."%\n";
+    if ($rdm != -1) {
+      my $mean_rdm_jac = &RSAT::stats::mean(@{$random_results{'jaccard'}});
+      print $main::out join "\t", ";", "Nb of Random controls", $rdm."\n";
+      my $round_rdm_jac = sprintf "%.2f", ($mean_rdm_jac*100);
+      print $main::out join "\t", ";", "Random Jaccard index", $round_rdm_jac."%\n";
+      $vennargs{rdmjac} = $round_rdm_jac."%";
+    }
+    
+    # results
+    if (!$statsonly) {
+      print $main::out "#Intersection elements";
+      if (scalar @rproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @rproperties;
+      }
+      if (scalar @qproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @qproperties;
+      }
+      print $main::out "\n";
+      my $towrite = print_element_array(\@common, \%reference, \%query);
+      print $main::out ($towrite);
+      
+      
+      print $main::out "#Reference only elements";
+      if (scalar @rproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @rproperties;
+      }
+      print  $main::out  "\n";
+      $towrite = print_element_array(\@r_only, \%reference);
+      print $main::out ($towrite);
+      
+      
+      print $main::out "#Query only elements";
+      if (scalar @qproperties > 0) {
+        print $main::out "\t";
+        print $main::out join "\t", @qproperties;
+      }
+      print $main::out "\n";
+      $towrite = print_element_array(\@q_only, \%query);
+      print $main::out ($towrite);
+      
+    }
+    
+    if ($venn) {
+      $vennargs{ref_size} = $ronly_size;
+      $vennargs{query_size} = $qonly_size;
+      $vennargs{inter_size} = $inter_size;
+      $vennargs{query_name} = $query_name;
+      $vennargs{ref_name} = $reference_name;
+      $vennargs{pval} = $round_pval;
+      $vennargs{jaccard} = $round_jaccard."%";
+      $vennargs{output} = $main::outfile{venn};
+      
+      &create_venn_diagramm(\%vennargs);
+    }
+    
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+###############################################################
+## Function to read input files
+sub readList {
+  my $input_file = shift;
+  my $propcols_ref = shift;
+  my @propcols = @{$propcols_ref};
+  my %results = ();
+  ($main::in) = &OpenInputFile($input_file);
+  while (my $ligne = <$main::in>) {
+    next if ($ligne =~ /^$/);
+    next if ($ligne =~ /^#/);
+    next if ($ligne =~ /^;/);
+    chomp $ligne;
+    $ligne =~ s/ /\t/g;
+    my @lignecp = split /\t/, $ligne;
+    my $elem = $lignecp[0];
+    if (defined $results{$elem}) {
+          RSAT::message::Warning("Element $elem found several times in $input_file") if ($main::verbose >= 2);
+    }
+    if ($elem eq "") {
+          RSAT::message::Warning("Skipped empty element") if ($main::verbose >= 2);
+          next;
+    }
+    if (!($keepfirst && $results{$elem})) {
+      my @props = ();
+      for (my $i = 0; $i < scalar @propcols; $i++) {
+        $col = $propcols[$i];
+        $prop = $lignecp[$col];
+        $props[$i] = $prop;
+      }
+      
+      $results{$elem}{properties} = \@props;
+    }
+    $results{$elem}{number}++;
+  }
+  close $main::in if ($input_file);
+  return %results;
+}  
+
+# Function that calculates the intersection size
+# This function takes two sets as input (in the form of references to hashes) and returns three 
+# references to arrays : the intersection, the content of the reference only, the content of the the query only
+
+sub compare_lists {
+  my $query_ref = shift;
+  my $reference_ref = shift;
+  my %query = %{$query_ref};
+  my %reference = %{$reference_ref};
+  my @common = ();
+  my @r_only = ();
+  my @q_only = ();
+  foreach my $qelem (keys %query) {
+    if (defined $reference{$qelem}) {
+      push @common, $qelem;
+    } else {
+      push @q_only, $qelem;
+    }
+  }
+  foreach my $relem (keys %reference) {
+    if (!defined $query{$relem}) {
+      push @r_only, $relem;
+    }      
+  }
+
+  return (\@common, \@q_only, \@r_only);
+}
+
+
+
+sub print_element_array {
+  my $element_array_ref = shift;
+  my $element_properties_1_ref = shift;
+  my $element_properties_2_ref = shift || 0;
+  my @element_array = @{$element_array_ref};
+  my %element_properties_1 = %{$element_properties_1_ref};
+  my %element_properties_2 = ();
+  if ($element_properties_2_ref != 0) {
+    %element_properties_2 = %{$element_properties_2_ref};
+  }
+  my $result = "";
+  for (my $i = 0; $i < scalar @element_array; $i++) {
+    my $element = $element_array[$i];
+    my $props = "";
+    if (scalar @{$element_properties_1{$element}{properties}} > 0) {
+      $props = "\t".(join "\t", @{$element_properties_1{$element}{properties}});
+    }
+    if ($element_properties_2_ref && scalar @{$element_properties_2{$element}{properties}} > 0) {
+      $props .= "\t".(join "\t", @{$element_properties_2{$element}{properties}});
+    }
+    $result .= $element;
+    $result .= "$props" if ($props ne "");
+    $result .= "\n";
+  }
+  return $result;
+}
+
+sub print_duplicated_elements {
+  my $elem_array_ref = shift;
+  my %elem_array = %{$elem_array_ref};
+  my $result = "";
+  my @result_array = ();
+  
+  foreach my $elem (keys %elem_array) {
+    my $nb = $elem_array{$elem}{number};
+    if ($nb > 1) {
+      
+      $toadd = "$elem ($nb)";
+      push @result_array, $toadd;
+    }
+  }
+  $result = join ", ", @result_array;
+  return $result;
+}
+
+sub get_duplicated_elements {
+  my $elem_array_ref = shift;
+  my @result_array = ();
+  my %elem_array = %{$elem_array_ref};
+  foreach my $elem (keys %elem_array) {
+    my $nb = $elem_array{$elem}{number};
+    if ($nb > 1) {
+      $result{$elem} = $nb
+    }
+  }
+  return %result;
+}
+
+
+# this function returns a hash of size $n with elements going from n0 to ntotal
+sub create_rdm_hash {
+  my $total = shift;
+  my $n = shift;
+  my %results = ();
+  while (scalar keys %results < $n) {
+    my $random_value = int(rand($total));
+    my $random_elem = "random".$random_value;
+    $results{$random_elem}++;
+#     print join " ", (scalar keys ( %results)), $total, $n;
+#     print "\n";
+  }
+  return \%results;
+}
+
+
+# this function creates a ps file representing a Venn Diagramm
+sub create_venn_diagramm {
+  # get arguments
+  my $args_ref = shift;
+  my %args = %{$args_ref};
+  my $ref_size = $args{ref_size};
+  my $q_size = $args{query_size};
+  my $inter_size = $args{inter_size};
+  my $ref_name = $args{ref_name} || 'R';
+  my $query_name = $args{query_name} || 'Q';
+  my $jaccard = $args{jaccard};
+  my $pval = $args{pval};
+  my $rdm_jac = $args{rdmjac};
+  my $output_file = $args{output};
+  # draw the figures
+  my $p = new PostScript::Simple(xsize => 350, ysize => 300, colour => 1, eps => 0, units => "cm");  
+  # query circle
+  $p->setcolour("black");
+  $p->setfont("Arial", 12);
+  $p->circle(4.5, 5.5, 1.5);
+  $p->text(3.5, 5.5, $q_size);
+  $p->text(2,7.6, $query_name);
+
+  # reference circle
+  $p->circle(6.3, 5.5, 1.5);
+  $p->text(6.7, 5.5, $ref_size);
+  $p->text(5, 7.3, $ref_name);
+  
+  # inter size
+  $p->text(5.1, 5.5, $inter_size);
+  
+  # stats
+  $p->setfont("Arial", 10);
+  $p->text(4.7, 3.5, "pval : $pval");
+  $p->text(4.2, 3.1, "Jaccard index : $jaccard");
+  $p->text(3.3, 2.7, "Random Jaccard index : $rdm_jac") if ($rdm_jac);
+  
+  $p->output($output_file);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-r reference_file>
+
+List of items. Only the first word of each line is considered.
+
+=cut
+    } elsif ($arg eq "-r") {
+      $main::infile{reference} = shift(@arguments);
+
+=pod
+
+=item B<-query_name query_name>
+
+Name of the query set. If not used, the name of the file will be used on the venn diagramm
+
+=cut
+    } elsif ($arg eq "-query_name") {
+      $query_name = shift(@arguments);
+      
+=item B<-ref_name reference_name>
+
+Name of the reference set. If not used, the name of the file will be used on the venn diagramm
+
+=cut
+    } elsif ($arg eq "-ref_name") {
+      $reference_name = shift(@arguments);
+
+=pod
+
+=item B<-q query_file>
+
+List of items. Only the first word of each line is considered.
+
+=cut
+    } elsif ($arg eq "-q") {
+      $main::infile{query} = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+      
+      
+=pod
+
+=item	B<-venn vennoutput_file>
+
+Use this option to draw a postscript venn diagramm representing the comparaison. Specify the name of the outputfile
+
+
+=cut
+    } elsif ($arg eq "-venn") {
+      $main::outfile{venn} = shift(@arguments);
+      $venn = 1;
+      
+
+=pod
+
+=item	B<-qprop query_property>
+
+Name of the property of the query. This option can be used iteratively
+
+
+=cut
+    } elsif ($arg eq "-qprop") {
+      push @qproperties, shift(@arguments);
+      
+=pod
+
+=item	B<-qpropcol column_number>
+
+Number of the column corresponding to property of the reference
+
+
+=cut
+
+    } elsif ($arg eq "-qpropcol") {
+      my $col = shift(@arguments);
+      unless (&IsInteger($col)) {
+        &RSAT::error::FatalError(join("\t", $col, "Invalid value for the column number containing the query properties"));
+      }
+      $col--;
+      push @qpropcols, $col;
+=pod
+
+=item	B<-rprop reference_property>
+
+Name of the reference of the query. This option can be used iteratively
+
+
+=cut
+    } elsif ($arg eq "-rprop") {
+      push @rproperties, shift(@arguments);
+      
+=pod
+
+=item	B<-keepfirst>
+
+Keep only the property value of the first element found
+
+
+=cut
+    } elsif ($arg eq "-keepfirst") {
+      $keepfirst = 1;
+      
+      
+=pod
+
+=item	B<-qpropcol column_number>
+
+Number of the column corresponding to property of the query
+
+
+=cut
+
+    } elsif ($arg eq "-rpropcol") {
+      my $col = shift(@arguments);
+      unless (&IsInteger($col)) {
+        &RSAT::error::FatalError(join("\t", $col, "Invalid value for the column number containing the reference properties"));
+      } 
+       $col--;
+      push @rpropcols, $col;     
+=pod
+
+=item	B<-n total>
+
+Total number of elements. E.g., when considering two sets of genes, total number of genes. This argument is not mandatory but if it is not used, the size of the union will be considered as the total number of elements.
+
+=cut
+    } elsif ($arg eq "-n") {
+      $n = shift(@arguments);
+      if (!&IsNatural($n) && $n <= 0) {
+        &RSAT::error::FatalError( join("\t", $n, "Invalid value for the total number of elements. Must be an integer value greater than 0"));
+      }
+
+=pod
+
+=item	B<-random total>
+
+Number of random test that should be run.
+
+=cut
+    } elsif ($arg eq "-random") {
+      $rdm = shift(@arguments);
+      if (!&IsNatural($rdm) && $n <= 0) {
+        &RSAT::error::FatalError( join("\t", $rdm, "Invalid value for the total number of permutations. Must be an integer value greater than 0"));
+      }
+
+=item	B<-stats>
+
+Returns only the intersection statistics.
+
+=cut
+    } elsif ($arg eq "-stats") {
+      $statsonly = 1;
+      
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; compare-two-sets ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__

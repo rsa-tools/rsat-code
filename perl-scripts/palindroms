@@ -1,0 +1,157 @@
+#!/usr/bin/perl
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	palindroms
+	
+	8 July 1997 by Jacques van Helden
+
+DESCRIPTION
+	Detects complement-palindromic sequences (i.e. sequences which
+        are identical to their reverse-complement).
+
+CATEGORY
+	sequences
+
+OPTIONS
+	-v	verbose.
+	-i inputfile
+		this file is supposed to contain the sequences to test. 
+		if not specified, the standard input is used.
+		This allows to place the comand within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the comand within a pipe.
+        -wholeline
+	        return the whole input line when the first word is a palindrom
+		(by default, only the palindromic word is returned).
+	
+INPUT FORMAT
+	Each sequence must be the first word of a new line. Addtitional 
+	information is ignored.
+	
+OUTPUT FORMAT
+	Return all the sequence which are complement-palindromic, one per line.
+	
+End_of_help
+  exit;
+}
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-wholeline") {
+    $whole_line = 1;
+
+  }
+}
+
+
+### open input file ###
+if ($inputfile ne "") {
+  unless (open(INPUT, $inputfile)) {
+    print "\tcannot open input file\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $in = INPUT;
+} else {
+  $in = STDIN;
+}
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+#### verbose ####
+if ($verbose) {
+  if ($inputfile ne "") {
+    print "Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print "Output file	$outputfile\n";
+  }
+}
+
+
+###### execute the command #########
+
+while (<$in>) {
+    if (/(\S+)/) {
+	if (lc($1) eq lc(ReverseComplement($1))) {
+	    if ($whole_line) {
+		print "$1\n";
+	    } else {
+		print $_;
+	    }
+	}
+    }
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+
+sub ReverseComplement {
+  local($orig_seq) = $_[0];
+  $complement = reverse $orig_seq;
+  $complement =~ tr/a-z/A-Z/;
+  ### simple nucleotides
+  $complement =~ s/A/t/g;
+  $complement =~ s/T/a/g;
+  $complement =~ s/C/g/g;
+  $complement =~ s/G/c/g;
+  ### degenerate code
+  $complement =~ s/R/y/g;
+  $complement =~ s/Y/r/g;
+  $complement =~ s/M/k/g;
+  $complement =~ s/K/m/g;
+  $complement =~ s/B/v/g;
+  $complement =~ s/V/b/g;
+  $complement =~ s/H/d/g;
+  $complement =~ s/D/h/g;
+  #  $complement =~ s/S/s/g;
+  #  $complement =~ s/W/w/g;
+  #  $complement =~ s/N/n/g;
+  ###  brackets
+  $complement =~ s/\[/temp/g;
+  $complement =~ s/\]/\[/g;
+  $complement =~ s/temp/\]/g;
+  $complement =~ tr/a-z/A-Z/;
+  ### multiplier
+  while (($complement =~ /(\}\d+\{\w)/) 
+         || ($complement =~ /(\}\d+,\d+\{\w)/)) {
+    $rev_mul = reverse $1;
+    $complement =~ s/$1/$rev_mul/;
+  }
+  $complement;
+}# ReverseComplement
+

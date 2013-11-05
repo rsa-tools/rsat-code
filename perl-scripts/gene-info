@@ -1,0 +1,375 @@
+#!/usr/bin/perl
+
+############################################################
+#
+# $Id: gene-info,v 1.23 2013/09/28 13:05:05 jvanheld Exp $
+#
+# Time-stamp: <2003-07-06 20:30:09 jvanheld>
+#
+############################################################
+
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::util;
+require RSAT::OrganismManager;
+require RSAT::organism;
+require RSAT::GenomeFeature;
+use Storable qw(nstore retrieve);
+
+################################################################
+## Main package
+package main;
+{
+
+## Obsolete.
+#my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
+
+  local $start_time = &RSAT::util::StartScript();
+  local $date = $start_time;
+
+  #### initialise parameters ####
+  local $orf_col = 0;
+  local $locus_col = 2;
+  local $full = 0;
+  local $no_query = 0;
+  local $match_description = 0;
+
+  local %accepted_feature_types = ();
+
+  &ReadArguments();
+
+  ################################################################
+  ## Check parameter values
+
+  ## Default feature type is CDS
+  if (scalar(keys(%accepted_feature_types)) == 0) {
+    $accepted_feature_types{cds} = 1;
+  }
+
+  ## Organism
+  &RSAT::OrganismManager::check_name($organism_name);
+  my $organism = new RSAT::organism();
+  $organism->set_attribute("name", $organism_name);
+
+  ## Accepted feature types
+  $organism->DefineAcceptedFeatureTypes(sort(keys(%accepted_feature_types)));
+  &RSAT::message::Info("Accepted feature types", sort(keys(%accepted_feature_types))) if ($main::verbose >= 2);
+
+  ### open output file ###
+  $out = &RSAT::util::OpenOutputFile($outputfile);
+
+  &Verbose();
+
+  ### Read ORF information
+  #my $serial_file = $TMP."/serialized_genomes/".$organism_name."1syn.serial";
+  my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
+  if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
+    $organism = retrieve $serial_file;
+  } else {
+    ### Read feature attributes (position, description, ...)
+    $organism->LoadFeatures($annotation_table, $imp_pos);
+    $organism->LoadSynonyms();
+    nstore $organism, $serial_file;
+    system ("chmod 777 $serial_file");
+  }
+
+  ################################################################
+  #### Read query file
+  if (($inputfile) || ($#queries == -1)) {
+    &RSAT::message::TimeWarn("Reading query file") if ($main::verbose >= 2);
+    my ($in, $input_dir) = &OpenInputFile($inputfile);
+    while (<$in>) {
+      next if (/^;/);
+      next if (/^--/);
+      next if (/^\#/);
+      next unless (/\S/);
+      if (/^\s*(\S+)/) {
+	push(@queries, $1);
+      }
+    }
+    close $in if ($inputfile ne "");
+  }
+  &RSAT::message::Info("Number of queries", scalar(@queries)) if ($main::verbose >= 2);
+
+  unless (scalar(@queries)) {
+    &RSAT::error::FatalError("You must define at least one query, with the options -q or -i.");
+  }
+
+  ################################################################
+  #### search orf info for all queries ####
+  &Header();
+  # if ($match_description) {
+  #     %descr = $organism->index_attribute_by_feature("descr");
+  # }
+
+  foreach $query (@queries) {
+    my $found = 0;
+
+    foreach my $feature ($organism->get_attribute("features")) {
+      if ($feature->matches($query, $match_description, $full)) {
+	$found = 1;
+	&PrintInfo($query, $feature);
+      }
+    }
+
+    #### send a warning when the query did not match anything
+    unless ($found) {
+      &PrintWarning($query);
+    }
+  }
+
+
+  ###### close output file ######
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out unless ($outputfile eq "");
+
+
+  exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+#### print header
+sub Header {
+    print $out "#", join ("\t",
+			  "id",
+			  "name",
+			  "chr",
+			  "strand",
+			  "left",
+			  "right",
+			  "description [synonyms]"
+			  );
+    unless ($no_query) {
+	print $out "\tquery";
+    }
+    print $out "\n";
+}
+
+################################################################
+#### print information for one ORF
+sub PrintInfo {
+    my ($query, $feature) = @_;
+    print $out join ("\t",
+		     $feature->get_attribute("id"),
+		     $feature->get_attribute("name"),
+		     $feature->get_attribute("ctg"),
+		     $feature->get_attribute("strand"),
+		     $feature->get_attribute("left"),
+		     $feature->get_attribute("right"),
+		     $feature->get_attribute("descr"),
+		     );
+#     &RSAT::message::Debug ("Gene info",
+# 			   "id: ".$feature->get_attribute("id"),
+# 			   "name: ".$feature->get_attribute("name"),
+# 			   "ctg: ".$feature->get_attribute("ctg"),
+# 			   "strand: ".$feature->get_attribute("strand"),
+# 			   "left: ".$feature->get_attribute("left"),
+# 			   "right: ".$feature->get_attribute("right"),
+# 			   "descr: ".$feature->get_attribute("descr"),
+# 			   "query: ".$query,
+# 			  ) if ($main:verbose >= 5);
+
+    my @names = $feature->get_attribute("names");
+    if (scalar(@names) >= 1) {
+	print $out " [", join (";", @names), "]";
+    }
+    unless ($no_query) {
+	print $out "\t$query";
+    }
+    print $out "\n";
+}
+
+################################################################
+#### print warning
+sub PrintWarning {
+  my ($query) = @_;
+  print $out join ("\t",
+		   ";WARNING",
+		   $query,
+		   "no info"), "\n";
+}
+
+################################################################
+#### print full help message
+sub PrintHelp {
+  open HELP, "| more ";
+  print HELP <<EnfOfHelp;
+NAME
+	gene-info
+
+USAGE
+	gene-info -org organism -q query
+	gene-info -org organism -q query1 -q query2 -q query3 ...
+	gene-info -org organism i query_file
+
+DESCRIPTION
+	Returns the information about genes (CDS, mRNA, ...) specified
+	either by their identifier, name, or by any supported synonym.
+
+	Searches can also be done by specifying a sub-string of the
+	gene descriptions. Regular expressions are supported.
+
+CATEGORY
+	genomics
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-org	organism
+	-q	query. can be reiterated within the same command line
+	-i	query file
+	-o	output file
+	-full	full match only (no substring matching)
+	-noquery
+		do not print the query at the beginning of each line
+	-descr	match queries against the description
+		(in addition to gene ID and  names)
+	-feattype
+		Feature type.
+		Supported: $supported_feature_types
+QUERY
+	The simplest way to enter a query is with the -q option :
+	    the query can be a ORF identifier
+		gene-info -org yeast -q YML115C
+	    or a gene name
+		gene-info -org yeast -q arg81
+
+	Regular expressions can be used in the query. In this case, it is safer to
+	quote the query
+		gene-info -org yeast -q 'arg.*'
+		gene-info -org yeast -q '.*4'
+
+	The search is case insensitive.
+
+	Several queries can be combined on the command line by
+	iterative use of the -q command :
+		gene-info -org yeast -q pho5 -q pho81 -q pho11
+
+	Alternatively, a list of queries can be provided in a text
+	file. The first word of each line is considered as a new
+	query.
+		gene-info -org yeast -i query_file.txt
+
+SYNONYMS
+	It often happens that a gene bears several names.
+	gene-info will look for all synonyms of the query.
+		gene-info -org yeast -q nil1
+	will provide the information about its synonym GAT1.
+
+WEB VERSION
+	http://www.bigre.ulb.ac.be/bioinformatics/rsa-tools/
+EnfOfHelp
+  close HELP;
+  exit(0);
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+gene-info options
+----------------
+-h		display full help message
+-help		display options
+-v		verbose
+-org		organism
+-i		query file
+-o		output file
+-q		query (can be reiterated on the same command line)
+-full		full match only (no substring matching)
+-noquery	do not print the query at the beginning of each line
+-descr		match queries against the description
+-feattype	accepted feature types. Supported: $supported_feature_types
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### read arguments
+sub ReadArguments {
+  foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+
+      #### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $organism_name =$ARGV[$a+1];
+
+      #### full match only
+    } elsif ($ARGV[$a] eq "-full") {
+      $full = 1;
+
+      #### feature types
+    } elsif ($ARGV[$a] eq "-feattype") {
+      my @feature_types = split ",", $ARGV[$a+1];
+      foreach my $feature_type (@feature_types) {
+	if ($supported_feature_types{lc($feature_type)}) {
+	  $accepted_feature_types{lc($feature_type)}++;
+	} else {
+	  &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
+	}
+      }
+
+      #### match query against description
+    } elsif ($ARGV[$a] =~ /^-desc/) {
+      $match_description = 1;
+
+      #### don't print the query in output
+    } elsif ($ARGV[$a] eq "-noquery") {
+      $no_query = 1;
+
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+
+      ### query ###
+    } elsif ($ARGV[$a] eq "-q") {
+      push(@queries, $ARGV[$a+1]);
+
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+    }
+  }
+}
+
+################################################################
+#### verbose
+sub Verbose {
+    if ($verbose) {
+	print $out "; gene-info ";
+	&PrintArguments($out);
+
+	printf $out "; %-14s\t%s\n", "organism", $organism_name;
+	print $out "; Output file	$outputfile\n" if ($outputfile);
+	print $out "; Query file	$inputfile\n" if ($inputfile);
+	printf $out "; %-14s\t%s\n", "feature type", $feature_types;
+	print $out "; Queries\n;\t";
+	print $out join ("\n;\t",@queries), "\n";
+	print $out "; Match queries against description\n" if ($match_description);
+	print $out "; Full match\n" if ($full);
+    }
+}

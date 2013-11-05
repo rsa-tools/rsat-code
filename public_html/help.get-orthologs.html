@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>get-orthologs manual</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=get-orthologs_form.cgi>get-orthologs</a> manual</h2>
+</center>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Given a gene or a list of genes from a query organism, and a reference taxon,
+this programs returns the orthologs of the query gene(s) in all the organisms
+belonging to the reference taxon.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a href="mailto:rekins-at-bigre.ulb.ac.be">Rekin&rsquo;s Janky</a></strong><br />
+</dt>
+<dt><strong><a name="item_jvanheld_40bigre_2eulb_2eac_2ebe"><a href="mailto:jacques.van.helden@ulb.ac.be">jacques.van.helden@ulb.ac.be</a></a></strong><br />
+</dt>
+</dl>
+
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>Query genes can be directly entered on the query input or in an
+input file.</p>
+<p>The first word of each row of input file is considered as a query. Any
+additional information on the same row is ignored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>A tab-separated file with two (or more) columns. Each row of the output file
+describes one similarity between a query gene and another gene (ortholog or
+paralog, depending on the parameters).</p>
+
+<h2><a name="return">RETURN FIELDS</a></h2>
+
+<p>The program returns at least these three first columns :
+<ol>
+<li> <b>ref_id</b> the first column indicates the "hit" gene (the target one identified by BLAST as similar to the query)</li><br>
+<li> <b>ref_org</b> the second column gives the reference organism (the target organism in which the BLAST search was performed).</li><br>
+<li> <b>query</b> the third column indicates the ID of the query gene.</li>
+</ol>
+</p>
+
+<p>Additional columns can be specified :</p>
+<ul>
+<li><a name="ref_name"><b>ref_name</b></a><ul> Name of the reference gene.</ul><br>
+</li>
+<li><a name="query_name"><b>query_name</b></a><ul> Name of the query gene.</ul><br>
+</li>
+<li><a name="query_org"><b>query_organism</b></a><ul> Name of the query organism.</ul><br>
+</li>
+<li><a name="ident"><b>ident</b></a><ul> Percent of identity (a number between 0 and 100)</ul><br>
+</li>
+<li><a name="ali_len"><b>ali_len</b></a><ul>Alignment lengths (in residues).</ul><br>
+</li>
+<li><a name="mismat"><b>mismat</b></a><ul> Number of mismatches.</ul><br>
+</li>
+<li><a name="gap_open"><b>gap_open</b></a><ul> Number of gap openings.</ul><br>
+</li>
+<li><a name="e_value"><b>E-value</b></a><ul> E-value (expected number of false positives).</ul><br>
+</li>
+<li><a name="bit_sc"><b>bit_sc</b></a><ul> Bit score.</ul><br>
+</li>
+<li><a name="rank"><b>rank</b></a><ul> Rank of this query gene among all those matching the same reference
+(target) gene for this pair of organisms.</ul><br>
+</li>
+<li><a name="s_rank"><b>reciprocal rank</b></a><ul> Rank of the hit in the reciprocal BLAST.
+</ul>
+
+<p>
+</p>
+<hr />
+<h1><a name="orthology_criteria">ORTHOLOGY CRITERIA</a></h1>
+<p>Actually, this program allows to retrieve orthologs, but also paralogs.</p>
+<p>The detection of pairwise similarities is based on a bidirectional BLAST of
+each genome against each other. During the detection phase, multiple hits for
+a single gene are allowed, and the user can decide to filter them out or
+not.</p>
+<p>
+<hr />
+<h1><a name="ref">REFERENCES</a></h1>
+<p><a href="http://www.ncbi.nlm.nih.gov/pubmed/17993681" target=_blank>Janky R, van Helden J. Discovery of conserved motifs in promoters of orthologous genes in prokaryotes.
+Methods Mol Biol. 2007;395:293-308.</a></p>
+<p>
+
+</body>
+
+</html>

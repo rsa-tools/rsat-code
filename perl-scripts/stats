@@ -1,0 +1,230 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: stats,v 1.8 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+local @values = ();
+local @keys = qw(n sum mean median min max sd sd_est var var_est);
+$number_format = "%-7g";
+
+
+&ReadArguments();
+
+################################################################
+## Add field values
+push @keys, @add_fields;
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+($in) = &OpenInputFile($infile{input});
+while (<$in>) {
+    my @words = split /\s+/;
+    foreach my $word (@words) {
+	if (&IsReal($word)) {
+	    push @values, $word;
+	}
+    }
+}
+close $in if ($infile{input});
+
+my %stats = &summary(@values);
+
+## Add field values
+foreach my $f (0..$#add_fields) {
+    $stats{$add_fields[$f]} = $add_values[$f];
+}
+
+my @stats = ();
+if (scalar(@keys) < 1) {
+    @keys = sort keys %stats;
+}
+foreach my $key (@keys) {
+    my $stat = $stats{$key};
+    if (&IsInteger($stat)) {
+	push @stats, $stat;
+    } elsif (&IsReal($stat)) {
+	push @stats, sprintf($number_format, $stat);
+    } else {
+	push @stats, $stat;
+    }
+}
+
+## return the restul as a single-row table
+if ($table) {
+    ## print header
+    print $out ";", join("\t", @keys), "\n";
+    print $out join ("\t", @stats), "\n";
+} else {
+    for my $k (0..$#keys) {
+	print $out join ("\t", $keys[$k], $stats[$k]), "\n";
+    }
+}
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	stats
+
+        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Calculate descriptive statistics from a list of numeric
+	values.
+
+CATEGORY
+	util,stats
+
+USAGE
+        stats [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-table
+		return the result as a tab-delimited file (a single row + a header)
+	-format      
+		output format for real numbers (specified as in the C language). Default: $number_format
+	-add field value
+		add a field and its value
+		the first argument after "-add" is the field, the second the value
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+stats options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-table		return the result as a tab-delimited file (a single row + a header)
+-format		output format for real numbers (specified as in the C language). Default: $number_format
+-add 		add a field value
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### output format  
+	} elsif ($ARGV[$a] eq "-table") {
+	    $table = 1;
+
+	    ### number format  
+	} elsif ($ARGV[$a] eq "-format") {
+	    $number_format =  $ARGV[$a+1];
+
+	    ### add column
+	} elsif ($ARGV[$a] eq "-add") {
+	    push @add_fields, $ARGV[$a+1];
+	    push @add_values, $ARGV[$a+2];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; stats ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}

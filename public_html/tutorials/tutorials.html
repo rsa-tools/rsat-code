@@ -1,0 +1,216 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials</title>
+   <link rel="stylesheet" type="text/css" href = "../course.css" media="screen,print">
+<!--   <link rel="stylesheet" type="text/css" href = "../main.css" media="screen,print">-->
+</head>
+
+<body>
+
+  <center>
+    <h1><a target="_top" href="../index.html">RSA-tools</A> - <a href="tutorials.html">Tutorials</a></h1>
+  </center>
+
+
+
+<P>
+The aim of these tutorials is to give a theoretical and practical
+introduction to the <b>Regulatory Sequence Analysis Tools</b>
+(<b>RSAT</b>) software suite. The most convenient way to follow the
+tutorial is to display the current page in a separate window, and to
+use the tools with the current one.
+
+<p>
+<a target=_blank href=tutorials.html>(click here for opening a new
+window with the tutorial pages)</a>
+
+<P>
+The RSAT home page displays two frames. The frame on the left contains
+a menu, presenting the available tools. Each time you click on a tool
+name, the right frame displays the form for the corresponding tool.
+
+<p>
+The tools are organized in a modular way : rather than having a single
+form for the complete analysis, we found it more convenient to present
+separate forms for the successive steps of a given analysis. A typical
+analysis will thus consist in using successivbely different tools (for
+example <i>sequence retrieval</i> -> <i>motif discovery</i>
+-> <i>pattern matching</i> ->
+<i>feature-map</i>). For this purpose, the tools are interconnected,
+allowing you to send automatically the result of one request as input
+for the next request (piping). The links between tools are illustrated
+in the flow chart below.  An advantage of this modular organization is
+that you can either follow a full pipeline throught the tools, or
+directly enter at any step of an analysis with external data of your
+own.
+
+<p style="text-align:center">
+<a href="../images/RSAT_flowchart_2011.pdf"><img width="100%" border="1" src="../images/RSAT_flowchart_2011.png"></a></center>
+<!--<IMG border=1 SRC="RSAT_flowchart.jpg" ALT="RSAT_flowchart.jpg" HSPACE=20 VSPACE=20>-->
+</p>
+<p>
+
+<P>
+We will analyze some practical examples to get familiar with the
+different tools, and the way they are interconnected.</p>
+
+<p>The tutorial contains different parts, illustrating the typical
+situations that can be encountered when analysing regulatory sequences :
+
+<OL>
+
+<p><li><b>Pattern matching: </b> you know the regulatory motif
+(e.g. the consensus for a transcriptional factor), and you are
+interested by one or several particular sequences (e.g. promoters of a
+gene of interest, or binding fragments obtained from ChIP-on-chip
+experiments): you look for the matching positions within the
+sequences.</li></p>
+
+<p><li><b>Genome-scale pattern matching: </b> you know the regulatory
+motif, and you would like to scan the genome to detect genes having
+this motif in their regulatory regions, which may be considered as
+potential target genes for the transcription factor of interest. </li></p>
+
+<p><li><b>Motif discovery</b> (or <b>pattern discovery</b>). You know
+the sequences, you ignore the regulatory motif : you dispose of a set
+of functionally related regulatory sequences (e.g. promoters of
+co-expressed genes, or peaks collected from ChIP-seq experiments), and
+you suspect that they are enriched in binding site for one or seveal
+transcription factors. You thus want to detect a motif "<i>ab
+initio</i>" from the sequences.</li></p>
+
+</ol>
+
+<h2>Tutorials</h2>
+
+<ul>
+
+<h3>General information</h3>
+
+<li><a href="abbreviations.html"><b>Abbreviation table</b></a></li>
+
+</ul><ol>
+
+<h3>Representations of transcription factor binding motifs</h3>
+
+<li><a href="tut_strings.html"><b>String-based representations</b></a></li>
+<li><a href="tut_PSSM.html"><b>Position-specific scoring matrices (PSSM)</b></a></li>
+<!--<li><a href="tut_databases.html"><b>Databases of cis-regulatory elements</b></a></li>-->
+<li><a href='tut_seqlogos.html'><b>Sequence logos</b></a></li>
+
+
+<h3>Sequence retrieval</h3>
+
+<li><a href="tut_retrieve-seq.html">
+<b>from RSAT</b></a></li>
+<li><a href="tut_retrieve-ensembl-seq.html">
+<b>from EnsEMBL</b></a></li>
+
+
+<h3>Pattern matching</h3>
+
+
+<li><a href="tut_dna-pattern.html"><b><i>dna-pattern</i></b></a>: string-based pattern matching</li>
+<li><a href="tut_patser.html"><b><i>patser</i></b></a>: matrix-based pattern matching (obsolete)</li>
+<li><b>Detailed protocol for <i>matrix-scan</i></b>: 
+  <br>Turatsinze, J.V., Thomas-Chollier, M., Defrance, M. and van
+  Helden, J. (2008) Using RSAT to scan genome sequences for
+  transcription factor binding sites and cis-regulatory modules. Nat
+  Protoc, 3, 1578-1588.
+  <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed
+    18802439</a></li>
+
+<!--
+<li><b>Pattern matching against librairies of motifs</b>
+<ul>
+
+<li><a href="tut_transfac.html">
+<b>TRANSFAC</b>
+</a>
+-->
+
+</ul>
+
+<h3>Motif discovery</h3>
+
+<h4>String-based motif discovery</h4>
+
+<li><a href='tut_word_counts.html'>Counting word occurrences in DNA
+sequences. </a></li>
+
+<li><a
+href="tut_oligo-analysis.html"><b><i>oligo-analysis</i></b></a>:
+detection of over-represented oligonucleotides (words).</li>
+
+<li><a href="tut_dyad-analysis.html"><b><i>dyad-analysis</i></b></a>:
+detection of over-represented spaced pairs of oligonucleotides.</li>
+
+<li><a
+href="tut_position-analysis.html"><b><i>position-analysis</i></b></a>:
+detection of words having a positional bias in sequences aligned on
+some reference position.</li>
+
+
+<li><b>Detailed protocol for string-based motif discovery</b>:
+<br>Defrance, M., Janky, R., Sand, O. and van Helden, J. (2008) Using RSAT
+<i>oligo-analysis</i> and <i>dyad-analysis</i> tools to discover
+regulatory signals in nucleic sequences. Nature Protocols 3,
+1589-1603. <a target='_blank'
+href='http://www.ncbi.nlm.nih.gov/pubmed/18802440'>Pubmed 18802440</a>
+</li></p>
+
+
+</li>
+
+<h3>Matrix-based motif discovery</h3>
+
+<li><a href="tut_gibbs.html"><b>gibbs motif sampler</b></a> (program developed by A.Neuwald)</li>
+
+<li><a href="tut_consensus.html"><b>consensus</b></a> (program developed by Jerry Hertz)</li>
+
+
+
+<!--
+<h3>Genome-scale pattern matching</h3>
+
+<li><a href="tut_genome-scale-dna-pattern.html"><b>genome-scale dna-pattern</b></a> (string-based)</li>
+<li><a href="tut_genome-scale-patser.html"><b>genome-scale patser</b></a> (matrix-based)</li>
+-->
+
+<h3>Building control sets</h3>
+
+<li><a href="tut_random_models.html"><b>Random models</b></li>
+<li><a href="tut_random-genes.html"><b>Selecting random genes</b></li>
+<li><a href="tut_random-seq.html"><b>Generating random sequences</b></li>
+
+<h3>Applications</h3>
+
+<li><a href="tut_microarrays.html"><b>Microarray analysis</b></a>:
+  prediction of regulatory motifs from clusters of co-expressed
+  genes.</li>
+
+<li><a href="tut_galaxy.html"><b>Collecting peak sequences from the
+	Galaxy Web site</b></a>.</li>
+
+<li><a href="tut_peak-motifs.html"><b><i>peak-motifs</i></b></a>:
+  motif detection in full-size datasets of ChIP-seq peak sequences.</li>
+
+<li>Combining RSAT and NeAT
+    to <a href='tut_pathway_extraction.html'><b>predict metabolic
+    pathways and their regulation</b></a>.</li>
+
+</ul>
+
+</ol>
+
+
+
+<hr width="100%">
+
+<address>Last update 15 Jan 2012 - by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript></address>
+
+</body>
+</html>

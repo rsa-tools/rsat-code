@@ -1,0 +1,258 @@
+chapter{Study of the neighborhood of the nodes}
+
+\section{Introduction}
+
+In a graph, the neighbours of a node consist in the set of nodes that
+are connected to this node up to a certain distance, i.e., the number
+of steps between the source node and its neighbours. In weighted
+graphs, one can also consider the neighbours up to a certain maximal
+weight.
+
+In the following, we will refer to the node for which we search the
+neighbours the \textit{seed node}.
+
+According to the type of graph, it might be interesting to retrieve
+the neighbours of the nodes in a graph.
+
+For example, in protein-protein interaction network, the function of
+the neighbours of a protein whose biological role is unknown might
+give insights in the function of the protein.  Moreover, in
+interaction graphs, if a group of neighbours have similar biological
+functions, they are likely to form a structural complex.
+
+In co-regulation networks, where each node is a gene and an edge
+between two genes means that those genes are co-regulated
+(i.e. co-repressed and co-expressed), exploring the neighbours of the
+nodes may help in the discovery of new regulons.
+
+In the following, we will illustrate the study of nodes neighborhood
+by looking for neighbours of some orphan proteins (i.e. protein of
+unknown function) in a protein protein interaction network. We will
+then look if the neighbours of these proteins present similar
+functions.
+
+\section{Analysis of the neighbours of orphan nodes in an interaction protein network}
+\subsection{Study case}
+
+In this demonstration, we will analyze the neighbours of the orphan
+nodes of the Gavin \textit{et al} (2006) interaction data set. These
+interaction data were obtained by co-immunoprecipitation followed by a
+mass spectrometry experiment in order to discover structural protein
+complexes. \cite{Gavin2006}.  This network contains 6531 interactions
+between 1430 proteins.
+
+We will then compare these groups of neighbours with functionnal
+classes of proteins annotated in the MIPS \cite{Mewes2007} in order to
+detect if the groups of neighbours present a significatively high
+number of co-regulated proteins.
+
+\subsection{Protocol for the web server}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{get node
+    neighborhood}.  In the right panel, you should now see a form
+  entitled ``graph-neighbours''.
+
+\item Open a connection to the demo dataset download web page.
+
+  \url{http://rsat.ulb.ac.be/rsat/data/neat\_tuto\_data/} 
+
+\item  Download the files \file{gavin\_2006\_names.tab},
+  \file{orphan\_gavin.tab} and
+  \file{mips\_name\_class\_description.tab} on your computer.
+
+\item In the \textit{Upload graph from file} text area, load the file
+  \file{gavin\_2006\_names.tab} you just downloaded.
+
+\item Uncheck \option{Include each node in its neighborhood (with a
+    distance of zero)}
+
+\item Check the radio-button \textit{Node selection} in the seed node
+  part of the form
+
+\item In the \textit{Upload seed nodes from file} text area, load the
+  file \file{orphan\_gavin.tab.tab} you just downloaded.
+
+\item Click on the button \option{GO}. 
+
+  The computation should take less than one minute.
+  
+  The result page should display the results in the tab-delimited or
+  HTML format. These files will be described in the section
+  \textit{Interpretation of the results}
+
+\item We will now see if the different groups of neighbours contain a
+  significantly high number of proteins of similar function. To this,
+  we will compare the groups of neighbours we just obtained with
+  annotated groups of proteins, e.g., the genes annotated according to
+  the gene ontology \cite{GO2007} or, in this example, according to
+  the functionnal classes of the MIPS \cite{Mewes2007}. In the
+  \option{Next step} pannel, click on the button \option{Compare the
+    groups of neighbours}.
+
+  You are redirected to the form of another program
+  \program{compare-classes} that allows to compare two class files
+  (the query file and the reference file). Each class of a query file
+  is compared to each class of a reference file. The number of common
+  elements is reported, as well as the probability to observe at least
+  this number of common elements by chance alone. The query classes
+  are already loaded and consist in the different groups of neighbours
+  we discovered previously with \program{graph-neighbours}.
+
+\item In the \textit{Upload reference classes from file} text area,
+  load the file \file{mips\_name\_class\_description.tab} downloaded
+  in the first part of this tutorial. The classes files are two column
+  files, the first column contains the elements and the second column
+  the class to which the elements belong. Elements may belong to more
+  than one class.
+
+\item The default paramaters are sufficient. We will only keep the
+  comparison presenting a significance higher than 0.
+
+\item Click on the button \option{GO}.
+
+\item You obtain the links to the result file in the tab-delimited
+  format or in the HTML format. The obtained results will be described
+  in the next section.
+
+\end{enumerate}
+
+
+\subsection{Protocol for the command-line tools}
+
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the program \program{graph-neighbours} on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+We will now describe the use of \program{graph-neighbours} as a
+command line tool.  The Gavin \textit{et al} (2006) \cite{Gavin2006}
+co-immunoprecipitation dataset described in the previous section and
+the other files necessary for this tutorial may be downloaded at the
+following address
+
+\url{http://rsat.ulb.ac.be/rsat/data/neat\_tuto\_data/}
+
+(\file{gavin\_2006\_names.tab}, \file{orphan\_gavin.tab} and
+\file{mips\_name\_class\_description.tab}).
+
+\begin{enumerate}
+
+\item The first step consist in applying \program{graph-neighbours} on
+  the co-immunoprecipitation dataset. To this, go into the directory
+  where you downloaded the files \file{gavin\_2006\_names.tab},
+  \file{orphan\_gavin.tab} and use this command.
+	
+\begin{lstlisting}
+ graph-neighbours -v 1 -i gavin_2006_names.tab \ 
+   -seedf orphan_gavin.tab \
+   -o gavin_2006_orphan_neighbours_1.tab
+\end{lstlisting}
+
+The file \file{gavin\_2006\_orphan\_neighbours\_1.tab} is created and
+contains for each node of the seed file the list of its direct
+neighbours, i.e., for each protein, the list of proteins that
+co-precipitated with it.
+
+\item In the second step, we will compare these groups of neighbours
+  to different groups of annotated proteins in order to discover if
+  the groups of neighbours do contain a significatively high number of
+  proteins of similar functions. This will give insights into the
+  function of the orphans proteins used as seed nodes in the first
+  step. To this, we will use the RSAT \program{compare-classes}
+  program that allows to compare two class files (the query file and
+  the reference file) (see previous section or the RSAT tutorial for a
+  more complete description of \program{compare-classes}). Use the
+  following command to compare the two files.
+	
+\begin{nobreak}
+\begin{lstlisting}
+compare-classes -v 1 \
+  -q gavin_2006_orphan_neighbours_1.tab \
+  -r mips_name_class_description.tab \
+  -lth sig 0  -sort sig -return proba,occ,jac_sim \
+  -o gavin_2006_orphan_neighbours_1_cc_mips_functionnal_classes.tab
+\end{lstlisting}
+\end{nobreak}
+
+\end{enumerate}
+
+We obtain a file
+\file{gavin\_2006\_orphan\_neighbours\_1\_cc\_mips\_functionnal\_classes.tab}
+containing the significant comparaison results. We will discuss it in
+the following section (interpretation of the results).
+
+\subsection{Interpretation of the results}
+
+\subsubsection{graph-neighbours result file}
+
+According to the requested level of verbosity, the result file may
+first contain several lines (starting with ``\#'' or ``;''). These
+deliver some information about the analysed graph (number of nodes,
+edges, seed nodes, ...).  The results are then displayed in four
+columns.
+
+\begin{enumerate}
+ \item Name of the neighbour.
+ \item Name of the seed node (for which the neighbours are seeked in the graph).
+ \item Distance between the seed node and its neighbour (number of
+   steps).
+ \item The last column, only relevant for directed graph, indicate
+   whether the arc between the seed node and its neighbour is an out-
+   or an in-going arc.
+\end{enumerate}
+
+This file can be considered as a class file (see above for a more
+complete description) with the name of the neighbour being the member
+(first column) and the name of the seed node, the name of the class
+(second column).
+
+\subsubsection{compare-classes result file}
+
+The result of the comparaison between the groups of neighbours and the
+MIPS annotated classes are displayed in a multi-column file sorted by
+decreasing order of significance. When looking at the HTML version of
+the file, you may click on the header on the column to sort the table
+according to this field.
+
+Each line displays the comparaison between a MIPS annotated class
+(reference class) and a group of neighbours (query class). What we
+want to know is if there is a significatively high number of members
+of the same MIPS class in a given group of neighours.
+
+\begin{itemize}
+ \item [ref] Name of the MIPS functionnal class.
+ \item [query] Name of the group of neighbours (seed node).
+ \item [R] Size of the reference class (number of members in this MIPS class).
+ \item [Q] Size of the query class (number of neighbour for this seed node).
+ \item [QR] Intersection size between the group of neighbours and the functionnal class.
+ \item [QvR] Union size between the group of neighbours and the functionnal class.
+ \item [R!Q] Elements that are in the functionnal class but not in the groups of neighbours.
+ \item [Q!R] Elements that are not in the functionnal class but are in the groups of neighbours.
+ \item [!Q!R] Elements that are not in the functionnal class nor in the groups of neighbours.
+ \item [P-val] P-value of the comparaison, propability (according to
+   the hypergeometric law) to be wrong when claimin that there is a
+   significatively high number of proteins of the same class in the
+   group of neighbours.
+ \item [E-val] E-value of the comparaison. P-value multiplied by the
+   total number of comparaisons. This value corresponds to the
+   estimated number of false positives for a given P-value threshold.
+ \item [sig] Significance of the comparaison. This correpsonds to
+   $-log_{10}(E-val)$. This index gives an intuitive perception of the
+   exceptionality of the common elements : a negative significance
+   indicates that the common matches are likely to come by chance
+   alone, a positive value that they are significant.
+\end{itemize}
+
+Considering the file, we can observe that 7 seed nodes (on the 46)
+have a group of neighbours presenting a similar function.  For
+example, 9 out of the 10 neighbours of the Yil161w protein
+(interacting with this protein) have their function related to
+ribosome biogenesis and 8 out of 10 neigbours are located in the
+cytoplasm. This may indicate that this protein may also be implied in
+ribosome biogenesis
+
+
+

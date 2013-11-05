@@ -1,0 +1,184 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+### initialization
+$ec_file = "$ENV{RSAT}/public_html/data/enzymes/enzymes.tab";
+$col{'ec'} = 6;
+$col{'gene'} = 3;
+$col{'org'} = 4;
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	ec2gene
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        ec2gene -org organism [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Takes as input a list of EC numbers, and returns the list 
+	of genes whose products catalyze these reactions in the
+	selected organism.
+
+CATEGORY
+	genomics
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-org organism
+		supported organisms :
+$supported_organisms
+	
+INPUT FORMAT
+	Each query EC number must come as the first 
+	word of a new line. 
+
+	Lines starting with a semicolumn (;) are considered
+	as comments and skipped. 
+	
+EXAMPLES
+       ec2gene -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+ec2gene options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-org	organism
+
+Supported:
+$supported_organisms
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  ### verbose ###
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+    
+    ### output file ###
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+    
+    ### organism ###
+  } elsif ($ARGV[$a] eq "-org") {
+    $sel_org = $ARGV[$a+1];
+    if ($supported_organism{$sel_org}) {
+      $selected_organism = $supported_organism{$sel_org}->{'name'};
+    } else {
+      die "Error: organism $org is not supported\n$supported_organisms\n";
+    }
+    
+  }
+}
+
+#### check argument values ####
+unless (defined($selected_organism)) {
+  die "Error : you should select an organism\n";
+}
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+##### read input #####
+($in, $input_dir) = &OpenInputFile($inputfile);
+while (<$in>) {
+  next if (/^;/);
+  next unless (/\S/);
+  chomp;
+  @fields = split /\s+/;
+  $ec = $fields[0];
+  if ($ec =~ /^\d+\.\d+\.\d+\.\d+$/) {
+    push @ecs, $ec;
+    $query{$ec} = 1;
+  } else {
+    print $out ";Error: invalid EC number\t$ec\n";
+  }
+}
+close $in unless ($inputfile eq "");
+
+#### verbose ####
+if ($verbose) {
+  print $out "; ec2gene ";
+  &PrintArguments;
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  print $out ";Organism\t$sel_org\t$selected_organism\n";
+  print $out ";Query ECs\n";
+  foreach $ec (@ecs) {
+    print $out ";\t$ec\n";
+  }
+}
+
+
+###### execute the command #########
+open EC, $ec_file || die "Error: cannot read EC file $ec_file\n";
+while (<EC>) {
+  next if (/^;/);
+  next unless (/\S/);
+  chomp;
+  @fields = split "\t";
+  $ec = $fields[$col{'ec'}];
+  $gene = $fields[$col{'gene'}];
+  $org = $fields[$col{'org'}];
+  if (($query{$ec}) && ($org =~ /$selected_organism/i)) {
+    print $out "$gene";
+    print $out "\t$ec";
+    print $out "\t$selected_organism";
+    print $out "\n";
+  }
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+exit(0);
+
+
+########################## subroutine definition ############################
+

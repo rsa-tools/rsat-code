@@ -1,0 +1,341 @@
+#!/usr/bin/perl
+############################################################
+#
+# get-leader-multiplegenome
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+get-leader-multigenome
+
+=head1 DESCRIPTION
+
+Predict leader genes for genes from multiple genomes.
+
+=head1 AUTHORS
+
+=item rekins@bigre.ulb.ac.be
+
+=item jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+comparative genomics
+
+=head1 USAGE
+
+get-leader-multigenome  [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+The input file is a tab-delimited text files with (at least) the two
+following columns:
+
+=over
+
+=item 1. gene ID or name
+
+Identifier oor synonyms are supported.
+
+=item 2. Organism name
+
+For the organism name, spaces must be replaced by underscore character
+(exactly as for get-leader).
+
+=back
+
+If additional columns are included in the input file, they are
+ignored.
+
+=head1 OUTPUT FORMAT
+
+The output is a 3 columns table (leader gene, the organism name and the name of the
+query gene).
+
+=head1 CRITERIA
+
+intergenic distance
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA.disco.lib";
+require RSAT::Family;
+
+
+################################################################
+#### initialise parameters
+if (defined($SCRIPTS)) {
+  $get_leader_cmd = "$SCRIPTS/get-leader"; ## for the web browser, the full path is necessary
+} else {
+  $get_leader_cmd = "get-leader";
+}
+
+local $start_time = &RSAT::util::StartScript();
+
+local $label_specified = 0;	## indicates whether the label is specified in the option lines
+local $default_label = "id,organism_name,name";
+local @to_pass;			## parameters pased to get-leader
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+#local $in = STDIN;
+local $out = STDOUT;
+
+local $gene_col = 1;
+local $org_col = 2;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+%genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### execute the command
+###### print output
+foreach my $org (sort(keys( %genes_per_org))) {
+  my $geneset = $genes_per_org{$org};
+  my @genes = $geneset->get_members();
+  if (scalar(@genes) > 0) {
+    my $command = "$get_leader_cmd -org ".$org;
+    foreach my $arg (@to_pass) {
+      if ($arg =~ /\s/) {
+	$command .= " '".$arg."'";
+      } else {
+	$command .= " ".$arg;
+      }
+    }
+    $command .= " -q ";
+    $command .= join(" -q ", @genes);
+    warn "\n", $command, "\n",  if ($main::verbose >= 1);
+    $command .= " | grep -v \"^#\" ";
+    print $out `$command`;
+  }
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($main::outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  my $arg = 0;
+  while ($arg = shift (@ARGV)) {
+    
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+if ($arg eq "-v") {
+  if (&IsNatural($ARGV[0])) {
+    $verbose = shift(@ARGV);
+  } else {
+    $verbose = 1;
+  }
+	    
+  ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+} elsif ($arg eq "-h") {
+  &PrintHelp();
+	    
+  ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+} elsif ($arg eq "-help") {
+  &PrintOptions();
+	    
+
+  ## Input file
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+} elsif ($arg eq "-i") {
+  $infile{input} = shift(@ARGV);
+	    
+  ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+} elsif ($arg eq "-o") {
+  $outfile{output} = shift(@ARGV);
+	    
+  ## Gene column
+
+=pod
+
+=item	B<-gene_col gene_column>
+
+Number of the column containing the gene names/identifiers (default: 1).
+
+=cut
+} elsif ($arg eq "-gene_col") {
+  $gene_col = shift(@ARGV);
+	    
+  ## Organism column
+
+=pod
+
+=item	B<-org_col organism_column>
+
+Number of the column containing the organisms (default: 2)
+
+=cut
+} elsif ($arg eq "-org_col") {
+  $org_col = shift(@ARGV);
+	    
+
+  ## Other arguments are passed to retrieve-seq
+
+=pod
+
+=item B<other parameters>
+
+All other parameters are passed to the command get-leader.
+
+See the manual of get-leader for a description of supported parameters.
+
+=cut
+
+} else {
+  push @to_pass, $arg;
+  if ($arg eq "-label") {
+    $label_specified = 1;
+  }
+}
+}
+}
+=pod
+
+=back
+
+=cut
+
+
+################################################################
+#### verbose message
+  sub Verbose {
+    warn "; get-leader-multigenome ";
+    &PrintArguments($out);
+    if (%main::infile) {
+      warn "; Input files\n";
+      while (($key,$value) = each %infile) {
+	warn ";\t$key\t$value\n";
+      }
+    }
+    if (%main::outfile) {
+      warn "; Output files\n";
+      while (($key,$value) = each %outfile) {
+	warn ";\t$key\t$value\n";
+      }
+    }
+
+    ## report genes per organism
+    warn "; Gene sets\n";
+    foreach my $org (keys(%genes_per_org)) {
+      my $geneset = $genes_per_org{$org};
+      warn ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
+    }
+
+  }
+
+
+  __END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item get-leader
+
+=item supported-organisms
+
+=back
+
+=cut
+

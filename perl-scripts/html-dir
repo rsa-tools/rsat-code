@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+
+&ReadArguments();
+
+$ARGS = join " ", @ARGV;
+
+print "<HTML>\n";
+print "<BODY BGCOLOR=#FFFFFF>\n";
+
+print "<LI><A HREF=\"../\">.. parent directory</A>\n";
+
+$command =  "ls -1 $ARGS |  grep -v 'index.html' ";
+$command .= "| awk '{print \"<LI><A HREF=\\\"\"\$0\"\\\">\"\$0\"</A>\"}'";
+system $command;
+
+print "</BODY>\n";
+print "</HTML>\n";
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	html_dir.perl
+
+USAGE
+        html_dir.perl [files]
+
+DESCRIPTION
+	Creates an HTML file with the contents of the current
+	directory.
+
+CATEGORY
+	util
+	administration
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+html_dir.perl options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	}
+    }
+}

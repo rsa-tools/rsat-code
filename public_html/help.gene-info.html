@@ -1,0 +1,101 @@
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: gene-info manual</TITLE>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+<center>
+<H2><A HREF="RSAT_home.cgi">RSA-tools</A> - gene-info manual</H2>
+</center>
+<H3>Name</H3>
+<UL>
+gene-info<P>
+1997-98 by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+
+</UL>
+
+<H3>Description</H3>
+
+<UL>
+Returns genes whose names match a list of query strings. 
+<P>
+</UL>
+
+<H3>Options</H3>
+
+<UL>
+
+<P>
+<A NAME="organism"></A>
+<b>Organism</b>
+<ul>
+A pop-up menu shows the list of organisms supported on this web site. 
+</ul>
+
+
+<A NAME="feattype"></A>
+<h4>Feature type</h4>
+<ul>
+Currently supported: <b>CDS</b>, <b>mRNA</b>.
+
+<P>
+Some Genbank flat files contain only CDSs (e.g. bacteria), some also
+contain mRNAs (e.g. <i>A.thaliana</i>). When mRNAs are annotated in
+Genbank, their coordinates are stored and can be used.
+
+<P>
+The advantage of using mRNA is that, if the mRNA is complete (which is
+not always the case), the upstream regions aretrieved relative to the
+transcription initiation site, rather than the start codon.
+
+<P>
+<b>Remarks</b>
+<ol>
+<li>One gene can be associated to multiple CDSs and to multiple mRNAs.
+<li>Many annotated "mRNAs" seem to be actually CDS (e.g. in June 2003,
+12,000 out of 27,000 mRNAs from <i>A.thaliana</i> start with ATG).
+</ol>
+
+
+</ul>
+
+
+<P>
+<A NAME="names"></A>
+<b>Names</b>
+<ul>
+A list of strings or substrings to match with gene names.  <br>
+The matching is performed in case-insensitive way. <br>
+Regular expressions are supported.
+
+</ul>
+
+
+<P>
+<A NAME="full"></A>
+<b>Full string matching</b>
+<ul>
+
+When checked, the program only returns genes whose full name matches the
+query (no substring matching).
+</ul>
+<P>
+
+</ul>
+
+<H3>Availability</H3>
+<UL>
+The program can be used through its web interface at:
+<A HREF="http://bigre.ulb.ac.be/bioinformatics/rsa-tools/" target=_blank>
+http://bigre.ulb.ac.be/bioinformatics/rsa-tools/</A> <BR>
+
+gene-info is a perl script running on unix machines. 
+The web interface is a perl-cgi script.
+</UL>
+
+<HR SIZE=3>
+
+</BODY>
+</HTML>

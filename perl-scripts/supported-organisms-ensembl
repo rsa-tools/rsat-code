@@ -1,0 +1,167 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-organisms-ensembl,v 1.8 2013/08/18 10:00:33 jvanheld Exp $
+#
+# Time-stamp
+#
+############################################################
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+use strict;
+use DBI();
+
+package main;
+{
+  ## Initialize parameters
+  our $host_db = "ensembldb.ensembl.org";
+
+  our $verbose = 0;
+
+  ## Read arguments
+  &ReadArguments();
+
+  &RSAT::message::TimeWarn("Opening connection to DB", $host_db) if ($main::verbose >= 0);
+  our $dbh = DBI->connect("DBI:mysql:host=".$host_db.":port=5306", "anonymous", "", {'RaiseError' => 1});
+  our $sth = $dbh->prepare("SHOW DATABASES");
+  $sth->execute();
+  our $dbversion;
+  our $previous_org = "bogus";
+
+  my $org_counter = 0;
+  while (my $ref = $sth->fetchrow_hashref()) {
+    if ($ref->{'Database'} =~ /_core_\d+/) {
+      $dbversion = $ref->{'Database'};
+      $dbversion =~ s/.+_core_//;
+      $dbversion =~ s/_.+//;
+      $ref->{'Database'} =~s/_core_.+//;
+      if ($ref->{'Database'} ne $previous_org) {
+	$org_counter++;
+	print ucfirst($ref->{'Database'}), "\n";
+	$previous_org = $ref->{'Database'};
+      }
+    }
+  }
+
+  print "; EnsEMBL database version : ", $dbversion, "\n";
+  print "; Organisms: ", $org_counter, "\n";
+
+  $sth->finish();
+  $dbh->disconnect();
+
+  ################################################################
+  ##################### SUBROUTINE DEFINITION ####################
+  ################################################################
+
+  ################################################################
+  #### Display full help message
+  sub PrintHelp {
+    open HELP, "| less";
+    print HELP <<End_of_help;
+NAME
+	supported-organisms-ensembl
+
+        2008 by Olivier Sand (oly\@bigre.ulb.ac.be)
+
+USAGE
+        supported-organisms-ensembl
+
+AUTHOR
+	Olivier Sand <oly\@bigre.ulb.ac.be>
+
+DESCRIPTION
+	Returns the list of organisms supported on the Ensembl database.
+
+CATEGORY
+	genomics
+	administration
+
+OPTIONS
+	-h	(must be first argument) display full help message
+
+	-help	(must be first argument) display options
+
+End_of_help
+    close HELP;
+    exit;
+  }
+}
+
+  ################################################################
+  #### Display short help message #####
+  sub PrintOptions {
+    open HELP, "| less";
+    print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+
+End_short_help
+    close HELP;
+    exit;
+  }
+
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    #    if ($ARGV[$a] eq "-v") {
+    #      if (&IsNatural($ARGV[$a+1])) {
+    #	$verbose = $ARGV[$a+1];
+    #      } else {
+    #	$verbose = 1;
+    #      }
+
+    ### detailed help
+    #    } elsif ($ARGV[$a] eq "-h") {
+    if ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+
+      ### output format
+      #    } elsif ($ARGV[$a] eq "-format") {
+      #      $out_format = $ARGV[$a+1];
+      #      unless ($supported_format{$out_format}) {
+      #	&RSAT::error::FatalError("Format $out_format is not supported\n");
+      #      }
+
+      #### return fields
+      #    } elsif ($ARGV[$a] eq "-return") {
+      #	chomp($ARGV[$a+1]);
+      #	my @fields_to_return = split ",", $ARGV[$a+1];
+      #	foreach $field (@fields_to_return) {
+      #	    if ($supported_return_fields{$field}) {
+      #		push @return_fields, $field;
+      #	    } else {
+      #		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+      #	    }
+      #	}
+
+      ### root taxon
+      #    } elsif ($ARGV[$a] eq "-taxon") {
+      #      $root_taxon = $ARGV[$a+1];
+
+      ### Host database
+    } elsif ($ARGV[$a] eq "-host") {
+      $main::host_db = $ARGV[$a+1];
+
+      ### output file  
+      #    } elsif ($ARGV[$a] eq "-o") {
+      #      $outfile{output} = $ARGV[$a+1];
+
+    }
+  }
+}

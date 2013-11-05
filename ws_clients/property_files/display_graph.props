@@ -1,0 +1,4 @@
+informat=tab
+outformat=jpeg
+inputgraph=random.tab
+layout=1

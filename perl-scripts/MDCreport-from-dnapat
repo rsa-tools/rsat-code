@@ -1,0 +1,220 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: MDCreport-from-dnapat,v 1.11 2011/02/17 04:54:48 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+$in_format = "ft";
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+unless ($data_set) {
+    $data_set = $infile{input};
+}
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+### Print header
+
+print $out ">data set\n";
+print $out $data_set, "\n";
+print $out ">instances\n";
+
+################################################################
+##### read input
+($in) = &OpenInputFile($infile{input});
+
+while (<$in>) {
+    chomp();
+    s/\r//;
+    next if (/'^;'/);
+    next unless (/\S/);
+    my $seq_id;
+    my $type;
+    my $pattern_id;
+    my $strand;
+    my $from;
+    my $to;
+    my $match;
+    my $score;
+
+    if ($in_format eq "ft") {
+	($seq_id, $type, $pattern_id, $strand, $from, $to, $match, $score) = split "\t";
+    } else {
+	&RSAT::error::FatalError("$in_format is not a valid input format");
+    }
+    
+    $seq_id =~ s/^seq_//;
+    
+    ## extract matching sequences without flanks, and on the D strand
+    my $matching_seq = $match;
+     $matching_seq =~ s/[a-z]//g; ## suppress flaking bases, which are in lowercase
+    if ($strand eq "R") {
+	$matching_seq = &ReverseComplement($matching_seq);
+    }
+    print $out join( ",", $seq_id, $from, $matching_seq), "\n";
+}
+
+close $in if ($infile{input});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	MDCreport-from-dnapat
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Convert a pattern matching file (obtained with dna-pattern)
+	into the format specified for the motif discovery competition
+	2004.
+	
+	http://www.cs.washington.edu/homes/tompa/competition/
+	
+CATEGORY
+	util
+
+USAGE
+        MDCreport-from-dnapat [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-d data set
+OUTPUT FORMAT
+        >data set
+	dm01
+	>instances
+	0,-102,ATTCGGT
+	0,-57,GTTGGGTTT
+	2,-250,ACCGAAT
+	... 
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+MDCreport-from-dnapat options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### data set name
+	} elsif ($ARGV[$a] eq "-d") {
+	    $data_set = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; MDCreport-from-dnapat ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}

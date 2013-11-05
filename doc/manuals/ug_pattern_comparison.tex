@@ -1,0 +1,32 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% PATTERN COMPARISONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Pattern comparisons}
+
+\textbf{TO BE WRITTEN}
+
+\section{Comparing patterns with patterns}
+
+\begin{small}
+\begin{verbatim}
+compare-patterns
+
+\end{verbatim}
+\end{small}
+
+\section{Comparing discovered patterns wirth a library of TF-binding consensus}
+
+Let us suppose that we dispose of a collection of experimentally
+characterized binding consensus for the organism of interest, in a
+file called \file{known\_consensus.pat}. 
+
+\begin{small}
+\begin{verbatim}
+compare-patterns -v 1 \
+  -file1 dyads.tab \
+  -file2 RegulonDB_sites.tab \
+  -return weight,offset,strand,length,Pval,Eval_p,sig_p,Eval_f,sig_f,id,seq \
+  -2str -lth weight 6 \
+  -o dyads_vs_RegulonDB.tab
+\end{verbatim}
+\end{small}

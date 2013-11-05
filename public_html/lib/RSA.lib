@@ -1,0 +1,1176 @@
+#!/usr/bin/perl
+#use CGI;
+#require "cgi-lib.pl";
+
+$main::verbose = 0;
+require "RSA.seq.lib";
+require "RSA.stat.lib";
+require RSAT::organism;
+require RSAT::contig;
+require RSAT::error;
+require RSAT::util;
+require RSAT::Tree;
+require RSAT::OrganismManager;
+require RSAT::server;
+package main;
+
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+####                                                                    ####
+####                            RSA.lib                                 ####
+####                                                                    ####
+#### Regulatory Sequence Analysis Tools (RSA-tools)
+####  Project started in 1997 by Jacques van Helden (jvanheld@bigre.ulb.ac.be)
+####  a Perl library with diverse procedures
+####  used by rsa-tools perl scripts
+
+
+############################################################################
+####################### INITIALIZE THE RSAT SERVER  ########################
+############################################################################
+&InitRSAT();
+
+## Load the list of supported organisms
+&RSAT::OrganismManager::load_supported_organisms();
+
+############################################################################
+##################### PERL SUBROUTINE DEFINITION ###########################
+############################################################################
+
+
+################################################################
+## Name of the expected oligo frequency file, 
+## given the organism, oligo length and background model
+##
+## Usage:
+##
+## For an organism-specific background model
+##    my $background_file = &ExpectedFreqFile($organism_name, $oligo_length,
+##				$background,str=>$str,noov=>$overlap,type=>$type,
+##                              warn=>0|1,nowarn=>0|1,
+##                              taxon=>0);
+##
+## For a taxon-wide background model
+##    my $background_file = &ExpectedFreqFile($taxon_name, $oligo_length,
+##				$background,str=>$str,noov=>$overlap,type=>$type,
+##                              warn=>0|1,nowarn=>0|1,
+##                              taxon=>1);
+sub ExpectedFreqFile {
+  my ($org_or_taxon, $oligo_length, $background, %args) = @_;
+  my $exp_freq_file = "";
+
+  my $type = $args{type} || "oligo";
+  my $str = $args{str} || "-2str";
+  my $overlap = $args{noov} || "-noov";
+  my $overlap_suffix;
+  my $taxon = $args{taxon} || 0;
+  if ($overlap eq "-noov") {
+    $overlap_suffix = "-noov";
+  } else { 
+    $overlap_suffix = "-ovlp";
+  }
+  
+
+  #### Check organism or taxon
+  my $data_dir = "";
+  if ($taxon) {
+    &CheckTaxon($org_or_taxon, 1);
+    $data_dir = $ENV{RSAT}."/public_html/data";
+    $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
+    $data_dir =~ s/\s/_/g;
+  } else {
+#    &CheckOrganism($org_or_taxon);
+    &CheckOrganismName($org_or_taxon);
+    $data_dir = $supported_organism{$org_or_taxon}->{'data'};
+    $data_dir .= "/oligo-frequencies/";
+  }
+
+  #### check oligo length
+  unless ($oligo_length) {
+    &FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
+  }
+
+  unless (&IsNatural($oligo_length)) {
+    &RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
+  }
+
+  #### check background
+  my %supported_bg = ('upstream'=>1,
+		      'upstream-noorf'=>1,
+		      'upstream-rm'=>1,
+		      'upstream-noorf-rm'=>1,
+		      'protein'=>1,
+#		      'intergenic'=>1,
+		      'genomic'=>1
+		     );
+
+  my @sequence_types = ('upstream_mRNA','upstream_CDS','firstintron','intron','utr');
+  my @maskcoding = ('-maskcoding');
+#  my @noorf = ('-noorf','-nogene','');
+  my @maskrepeats = ('-rm','');
+
+  foreach my $sequence_type(@sequence_types) {
+      foreach my $maskcod(@maskcoding) {
+	  foreach my $maskrep(@maskrepeats) {
+	      my $bg_type = $sequence_type.$maskcod.$maskrep;
+		  $supported_bg{$bg_type} = 1; 
+	  }
+      }
+  }
+
+  $supported_bg = join ",", sort keys %supported_bg;
+  unless ($supported_bg{$background}) {
+    &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
+  }
+
+  ## Residue type
+  my $residue_type;
+  if ($background eq 'protein') {
+    $residue_type = "pept";
+  } else {
+    $residue_type = "nt";
+  }
+
+  ## Oligo length
+  if ($type eq 'oligo') {
+    if ($background eq "protein") {
+      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligopeptides, should be comprised between 1 and 3")
+	unless (($oligo_length >= 1) && ($oligo_length <= 3));
+    } else {
+      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8")
+	unless (($oligo_length >= 1) && ($oligo_length <= 8));
+    }
+  } elsif ($type eq 'dyad') {
+    &RSAT::error::FatalError($oligo_length, "is not a supported length for monads, should be comprised between 1 and 3")
+      unless (($oligo_length >= 1) && ($oligo_length <= 3));
+  }
+
+  $exp_freq_file = $data_dir;
+  if ($type eq "dyad") {
+    ## Dyad frequencies
+    $exp_freq_file = join("",
+			  $data_dir,
+			  "dyads_",$oligo_length,"nt_sp0-20_",
+			  $background,
+			  "_",
+			  $org_or_taxon,
+			  $overlap_suffix.$str,
+			  ".freq");
+
+  } elsif ($background eq "upstreamL") {
+    ## ???
+    $exp_freq_file .= "_".$org_or_taxon;
+    $exp_freq_file .= "_allup500";
+    $exp_freq_file .= $oligo_length.$residue_type;
+    $exp_freq_file .= $str unless ($background eq "protein");
+    $exp_freq_file .= $overlap_suffix;
+    $exp_freq_file .= "_freq.tab";
+
+  } else {
+    ## Oligonucleotide frequencies
+    $exp_freq_file .= $oligo_length.$residue_type;
+    $exp_freq_file .= "_".$background;
+    $exp_freq_file .= "_".$org_or_taxon;
+    $exp_freq_file .= $overlap_suffix;
+    $exp_freq_file .= $str unless ($background eq "protein");
+    $exp_freq_file .= ".freq";
+  }
+
+  ## Check the existence of the exp freq file
+  unless ((-e $exp_freq_file) ||
+	  (-e $exp_freq_file.".gz")) {
+    if ($args{warn}) {
+      &RSAT::message::Warning("Cannot find expected frequency file $exp_freq_file");
+    } elsif ($args{nowarn}) {
+      ## Do nothing
+    } else {
+      &RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
+    }
+  }
+  &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 4);
+  return($exp_freq_file);
+}
+
+
+################################################################
+# Read expected occurrences and variance from a calibration file
+sub ReadCalibration {
+    my ($calibration_file, $sum_rc) = @_;
+    
+    my ($cal) = &OpenInputFile($calibration_file);
+    my $l=0;
+    while (<$cal>) {
+	$l++;
+	chomp();
+	next if (/^--/);
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	my @fields =  split /\s+/;
+	my $pattern_seq = lc(shift(@fields));
+	my $pattern_id = $pattern_seq;
+
+	## Check if the 1st field contains a pair of reverse complements
+	if ($pattern_seq =~ /(\S+)\|/) {
+	    $pattern_seq = $1;
+	}
+	
+	## Check if the second field contains the ID
+	if ($fields[0] =~ /(\S+)\|/) {
+	    $pattern_id = shift(@fields);
+	}
+
+	## Expected occurrences
+	my $exp_occ = $fields[0];
+	&RSAT::error::FatalError("Invalid expected occurrences\t${exp_occ}") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
+	$patterns{$pattern_seq}->{exp_occ} = $exp_occ;
+
+	## Expected variance
+	my $exp_var = $fields[2];
+	&RSAT::error::FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
+	$patterns{$pattern_seq}->{exp_var} = $exp_var;
+
+	warn join("\t", "; calibration", $pattern_seq, 
+		  $patterns{$pattern_seq}->{exp_occ},
+		  $patterns{$pattern_seq}->{exp_var}), "\n" if ($main::verbose >= 5);
+
+    }
+    close $cal if ($calibration_file);
+
+    #### check if reverse complements were included in the expected freq file;
+    #### if not, infer them from the direct strand 
+    foreach my $pattern_seq (sort keys %patterns) {
+  	my $rc = lc(&SmartRC($pattern_seq));
+  	if (($patterns{$rc}->{exp_occ} <= 0) &&
+  	    ($patterns{$pattern_seq}->{exp_occ})) {
+  	    $patterns{$rc}->{exp_occ} = $patterns{$pattern_seq}->{exp_occ};
+  	    $patterns{$rc}->{exp_var} = $patterns{$pattern_seq}->{exp_var};
+	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
+  	}
+    }
+}
+
+
+
+################################################################
+## Read pattern frequencies
+##
+## Usage: 
+##   my ($file_type, %patterns) = &ReadPatternFrequencies($pattern_freq_file, $sum_rc, $rescale_freq);
+##
+sub ReadPatternFrequencies {
+  my ($pattern_freq_file, $sum_rc, $rescale_freq) = @_;
+  &RSAT::message::TimeWarn ("Reading pattern frequency file", $pattern_freq_file) if ($main::verbose >= 4);
+
+  my ($exp) = &OpenInputFile($pattern_freq_file);
+  my $l=0;
+  my %patterns = ();
+  my $file_type = "undef";
+
+  while (<$exp>) {
+      my $line = $_;
+    $l++;
+    chomp();
+    next if (/^--/); ## Skip comment line
+    next if (/^;/); ## Skip comment line
+    next if (/^\#/); ## Skip header line
+    next unless (/\S/); ## Skip comment line
+
+    my @fields =  split /\s+/;
+    my $pattern_seq = lc($fields[0]);
+    next unless $pattern_seq;
+
+#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 0);
+
+    #### check the format and extract expected frequency
+    if (&IsReal($fields[1])) {
+      ### second field contains the expected frequency (old format)
+      $patterns{$pattern_seq}->{exp_freq} = $fields[1];
+
+    } elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
+      #### second field contains the ID as a pair of reverse complements
+      $file_type = "2str";
+      my $fw = lc($1);
+      my $rc = lc($2);
+      $patterns{$rc}->{exp_freq} = $fields[2];
+      $patterns{$fw}->{exp_freq} = $fields[2];
+
+    } elsif	(($fields[1] eq $fields[0]) && (&IsReal($fields[2]))) {
+      #### second field contains the ID which is identical to the pattern (single strand pattern)
+      $file_type = "1str";
+      $patterns{$fields[0]}->{exp_freq} = $fields[2];
+
+    } else {
+      ### unrecognized format
+      &RSAT::error::FatalError("Invalid expected frequency in file $pattern_freq_file at line $l\n$line\n");
+    }
+
+    if ($patterns{$pattern_seq}->{exp_freq} < 0) {
+      &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
+    }
+  }
+  close $exp if ($pattern_freq_file);
+
+  &RSAT::message::Debug("&ReadPatternFrequencies()", scalar(keys(%patterns)), "patterns") if ($main::verbose >= 3);
+
+  ################################################################
+  #### Check if reverse complements were included in the fequency file;
+  #### if not, infer them from the direct strand 
+  if ($file_type eq "2str") {
+    foreach my $pattern_seq (sort keys %patterns) {
+      my $rc = lc(&SmartRC($pattern_seq));
+      if ((!defined($patterns{$rc}->{exp_freq})) &&
+	  ($patterns{$pattern_seq}->{exp_freq})) {
+	$patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+	#	    &RSAT::message::Debug("Checking reverse complement", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
+      }
+    }
+  }
+
+  ################################################################
+  ## sum expected frequencies by reverse complements
+  ## unless the input file already contained 2str counts
+  if (($sum_rc) && ($file_type eq "1str")) {
+    &SumExpectedFrequencies(%patterns);
+  }
+
+
+  #### make sure that the sum of frequencies is positive
+  my $freq_sum = 0;
+  foreach my $pattern_seq (keys %patterns) {
+    $freq_sum += $patterns{$pattern_seq}->{exp_freq};
+  }
+  if ($freq_sum <= 0) {
+    &RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+  }
+
+
+  #### rescale expected frequencies to have a sum of 1
+  if ($rescale_freq) {
+    &RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=2);
+    foreach my $pattern_seq (keys %patterns) {
+      $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
+    }
+  }
+
+  return ($file_type, %patterns);
+}
+
+################################################################
+# Read pattern expected frequencies from a file This does the same as
+# &ReadPatternFrequencies(), but it modifies a global variable
+# %patterns. This is not very elegant, I just maintain it temporarily,
+# until I find time to implement and test a more appropriate procedure.
+sub ReadExpectedFrequencies {
+    my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
+    &RSAT::message::TimeWarn ("Reading expected frequency file", $exp_freq_file) if ($main::verbose >= 4);
+    my ($exp) = &OpenInputFile($exp_freq_file);
+    my $l=0;
+
+    while (<$exp>) {
+	my $line = $_;
+	$l++;
+	chomp();
+	next if (/^;/);
+	next if (/^\#/); 
+	next unless (/\S/);
+
+	my @fields =  split /\s+/;
+	my $pattern_seq = lc($fields[0]);
+	next unless $pattern_seq;
+
+	&RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
+
+	#### check the format and extract expected frequency
+	if (&IsReal($fields[1])) {
+	    ### second field contains the expected frequency (old format)
+	    $patterns{$pattern_seq}->{exp_freq} = $fields[1];
+	    $file_type="undef";
+
+  	} elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
+	    #### second field contains the ID as a pair of reverse complements
+	    $file_type = "2str";
+	    $fw = lc($1);
+  	    $rc = lc($2);
+  	    $patterns{$rc}->{exp_freq} = $fields[2];
+  	    $patterns{$fw}->{exp_freq} = $fields[2];
+
+  	} elsif	(($fields[1] eq $fields[0]) &&(&IsReal($fields[2]))) {
+	    #### second field contains the ID which is identical to the pattern (single strand pattern)
+	    $file_type = "1str";
+  	    $patterns{$fields[0]}->{exp_freq} = $fields[2];
+
+	} else {
+	    ### unrecognized format
+	    &RSAT::error::FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n$line\n");
+	}
+
+	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
+	    &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
+	}
+
+#	&RSAT::message::Debug("&ReadExpectedFrequencies()", $file_type, $l, $pattern_seq, $patterns{$pattern_seq}->{exp_freq})
+#	  if ($main::verbose >= 10);
+    }
+    close $exp if ($exp_freq_file);
+
+
+    #### check if reverse complements were included in the expected freq file;
+    #### if not, infer them from the direct strand 
+    foreach my $pattern_seq (sort keys %patterns) {
+  	my $rc = lc(&SmartRC($pattern_seq));
+  	if ((!defined($patterns{$rc}->{exp_freq})) &&
+  	    ($patterns{$pattern_seq}->{exp_freq})) {
+  	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+#	    warn join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
+  	}
+    }
+
+    #### sum expected frequencies by reverse complements
+    if (($sum_rc) && ($file_type eq "1str")) {
+	&SumExpectedFrequencies(%patterns);
+    }
+
+    #### make sure that the sum of frequencies is positive
+    my $freq_sum = 0;
+    foreach my $pattern_seq (keys %patterns) {
+	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
+    }
+    if ($freq_sum <= 0) {
+	&RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+    }
+
+    #### rescale expected frequencies to have a sum of 1
+    if ($rescale_freq) {
+	&RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=2);
+	foreach my $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
+	}
+    }
+
+    &RSAT::message::TimeWarn("Expected frequencies loaded from file",$exp_freq_file,
+			     "file_type=".$file_type,
+			     "sum_rc=".$sum_rc,
+			     "rescale_freq=".$rescale_freq,
+			    ) if ($main::verbose >=2);
+
+
+
+
+
+
+    return %patterns;
+}
+
+
+################################################################
+## Sum expected frequencies
+##
+sub SumExpectedFrequencies {
+  my (%patterns) = @_;
+  my %freq_2str = ();
+  &RSAT::message::TimeWarn("Summing expected frequencies") if ($main::verbose >=2);
+  foreach my $pattern_seq (sort keys %patterns) {
+    my $rc = lc(&SmartRC($pattern_seq));
+    if ($rc eq $pattern_seq) {
+      #### palindromic sequence
+      $freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
+    } else {
+      #### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
+      $freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
+    }
+    &RSAT::message::Debug($pattern_seq, $patterns{$pattern_seq}->{exp_freq}, $freq_2str{$pattern_seq},
+			  $rc, $patterns{$rc}->{exp_freq}, $freq_2str{$rc}) if ($main::verbose >= 5);
+  }
+
+  foreach my $pattern_seq (sort keys %patterns) {
+    my $rc = &SmartRC($pattern_seq);
+    $patterns{$pattern_seq}->{exp_freq} = $freq_2str{$pattern_seq};
+    $patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
+  }
+
+}
+
+
+################################################################
+# Calculate conditional residue probabilities on the basis of specified
+# oligonucleotide frequencies
+sub CalcConditionalProbabilities {
+    my ($exp_freq_file) = @_;
+
+    &ReadExpectedFrequencies($exp_freq_file) ;
+
+    &RSAT::message::TimeWarn("Calculating Markov model from file $exp_freq_file") if ($main::verbose >= 4);
+
+    foreach my $pattern_seq (keys %patterns) {
+	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
+    }
+
+    #### calculate alphabet from expected frequency keys
+    foreach my $pattern_seq (keys %patterns) {
+	my @residues = split "|", $pattern_seq;
+	foreach my $r (@residues) {
+	    $letter{$r} = 1;
+	}
+    }
+    @letters = keys (%letter);
+
+    #### calculate subword frequencies
+    %subword_freq = ();
+    foreach my $oligo_seq (keys %expected_freq) {
+	my $subword = substr($oligo_seq,0,-1);
+	$subword_freq{$subword} += $expected_freq{$oligo_seq};
+    }
+
+    foreach $subword (keys %subword_freq) {
+	for $l (0..$#letters) {
+	    $word = lc($subword.$letters[$l]);
+	    if ($subword_freq{$subword} > 0) {
+		$conditional_proba{$subword}[$l] =  $expected_freq{$word}/$subword_freq{$subword};
+	    } else {
+		$conditional_proba{$subword}[$l] =  "NA";
+	    }
+	}
+    }
+
+    #### calculate cumulative conditional residue probabilities
+    foreach $subword (keys %subword_freq) {
+	$word = lc($subword.$letters[0]);
+	$cum_letter_freq{$subword}[0] = $expected_freq{$word};
+	$cum_letter_freq{$subword}[0]/=$subword_freq{$subword} if $expected_freq{$word};
+# 	warn (join ("\t", 
+# 		    $subword, 
+# 		    $subword_freq{$subword},
+# 		    $word, 
+# 		    $expected_freq{$word},
+# 		    $cum_letter_freq{$subword}[0]
+# 		    ), "\n");
+	for $l (1..$#letters) {
+	    $word = lc($subword.$letters[$l]);
+	    $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1];
+	    $cum_letter_freq{$subword}[$l] += $expected_freq{$word}/$subword_freq{$subword} if $expected_freq{$word};
+#	    warn (join ("\t", 
+#			$subword, 
+#			$subword_freq{$subword},
+#			$word, 
+#			$expected_freq{$word},
+#			$cum_letter_freq{$subword}[$l]
+#			), "\n");
+	}
+    }
+    @subword_keys = sort keys %subword_freq;
+}
+
+################################################################
+#### increment the counter file for monitoring web access
+sub UpdateCounterFile {
+  &RSAT::server::UpdateCounterFile(@_);
+}
+
+################################################################
+### store info into a log file in a conveninent way for 
+### subsequent login statistics
+### Usage:
+###     &UpdateLogFile();
+###     &UpdateLogFile($script_name);
+###     &UpdateLogFile($script_name, $message);
+sub UpdateLogFile {
+  my ($script_name, $message) = @_;
+  my $user_email = $query->param('user_email') || "";
+  &RSAT::message::Debug("Log file=", $log_file) if ($main::verbose >= 5);
+  &RSAT::server::UpdateLogFile($script_name, $message, $log_file, $user_email);
+}
+
+################################################################
+#### send a unix command to remove a file the next day
+#### Usage:
+#### &DelayedRemoval($file_to_remove, $delay);
+####
+sub DelayedRemoval {
+  &RSAT::server::DelayedRemoval(@_);
+}
+
+# ################################################################
+# ### prints a list of elements, one per line
+# sub PrintList {
+#     my $spacer = "\n";
+#     foreach $element (@_) {
+# 	print $element;
+# 	print $spacer;
+#     }
+# }
+
+
+
+############################################################
+###############  Genome data ###############################
+############################################################
+
+@supported_feature_types = qw (CDS mRNA tRNA rRNA scRNA misc_RNA gene);
+%supported_feature_types = ();
+foreach my $type (@supported_feature_types) {
+    $supported_feature_types{lc($type)} = 1;
+}
+$supported_feature_types = join ",", @supported_feature_types;
+
+
+################################################################
+## Check if the specified organism name is supported on this server
+sub CheckOrganismName {
+  return(&RSAT::OrganismManager::check_name(@_));
+}
+
+################################################################
+## Collect all organisms belonging to a given taxon
+sub GetOrganismsForTaxon {
+  return (&RSAT::OrganismManager::GetOrganismsForTaxon(@_));
+}
+
+################################################################
+## Check if there is at least one supported organism belonging to the
+## specified taxon on this RSAT server.
+sub CheckTaxon {
+  return(&RSAT::OrganismManager::CheckTaxon(@_));
+}
+
+################################################################
+#### Check if an organism is supported on the current installation,
+#### and open streams to read its genome sequence.
+####
+#### Usage
+#### -----
+#### Automatic selection of genome and feature file : 
+####    &CheckOrganism($organism_name);
+####
+#### Manual specification of input files :
+#### &CheckOrganism($organism_name, 
+####                $annotation_table, 
+####                $input_sequence_format);
+sub CheckOrganism {
+  &RSAT::OrganismManager::CheckOrganism(@_);
+}
+
+
+
+
+################################################################
+## Return a list of the supported organisms
+## various formats are supported
+sub ListSupportedOrganisms {
+  my ($out_format, $header, @fields) = @_;
+#  &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
+
+  $out_format = "text" unless ($main::out_format);
+  $header = 0 unless ($header);
+  my $taxon = "";
+  my $depth = 0;
+  return (&RSAT::OrganismManager::supported_organism_table($header, 0, $taxon, $depth, @fields));
+}
+
+sub ListSupportedOrganisms_old {
+  my $out_format = $_[0] || "text";
+
+  foreach my $key (keys %main::supported_organism) {
+      $names{$key} = $main::supported_organism{$key}->{'name'};
+  }
+  @sorted_names = sort values %names;
+  @sorted_keys = sort keys %supported_organism;
+
+  if ($out_format eq "html_list") {
+      my $result = "<UL>\n";
+      foreach my $name (@sorted_names) {
+	  $result .= "<LI>";
+	  $result .= $name;
+	  $result .= "\n";
+      }
+      $result .= "</UL>\n";
+      return $result;
+  } elsif ($out_format eq "html_table") {
+      my $result = "<TABLE>\n";
+      foreach my $key (@sorted_keys) {
+	  $result .= "<TR>\n";
+	  $result .= "<TD>$key</TD>\n";
+	  $result .= "<TD>";
+	  $result .= $names{$key};
+	  $result .= "</TD>\n";
+	  $result .= "</TR>\n";
+      }
+      $result .= "</TABLE>\n";
+      return $result;
+  } elsif (($out_format eq "names") ||
+	   ($out_format eq "array")) {
+      return @sorted_names;
+  } elsif ($out_format eq "keys") {
+      return @sorted_keys;
+  } elsif ($out_format eq "hash") {
+      my %result = ();
+      foreach my $ket (@sorted_keys) {
+	  $result{$key} = $main::supported_organism{$key}->{name};
+      }
+      return %result;
+  } elsif ($out_format eq "sizes") {
+      #### collect the default limits for each organism
+      my $result = sprintf ";\t%-35s\t%7s\t%7s\t%s\n", "Organism", "upstream from", "upstream to", "taxonomy";
+      foreach my $key (sort @sorted_keys) {
+	  $result .= sprintf ("\t%-35s\t%7s\t%7s\t%s\n", 
+			      $key, 
+			      $supported_organism{$key}->{'up_from'},
+			      $supported_organism{$key}->{'up_to'}
+			      );
+      }
+      return $result;
+  } elsif ($out_format eq "full") {
+      #### collect the default limits for each organism
+      my $result = join ("\t", 
+			 "; organism",
+# 			 "taxid", 
+			 "taxonomy", 
+			 "last update", 
+			 "upstream from", 
+			 "upstream to")."\n";
+      foreach my $key (sort @sorted_keys) {
+	  $result .= join ("\t", 
+			   $key,  
+# 			   $supported_organism{$key}->{'taxid'},
+			   $supported_organism{$key}->{'taxonomy'},
+			   $supported_organism{$key}->{'last_update'},
+			   $supported_organism{$key}->{'up_from'},
+			   $supported_organism{$key}->{'up_to'}
+			   )."\n";
+      }
+      return $result;
+  } else {
+      my $result = "";
+      foreach $key (@sorted_keys) {
+	  $result .= sprintf "\t\t%-30s", $key;
+	  $result .= "\t";
+	  $result .= $names{$key};
+	  $result .= "\n";
+      }
+      return $result;
+  }
+}
+
+$supported_organisms = &ListSupportedOrganisms("text", 0, "ID");
+
+################################################################
+## Return the list of supported taxa
+sub ListSupportedTaxa {
+  my ($root_name) = @_;
+#  &RSAT::message::Debug("&ListSupportedTaxa()", "root taxon", $root_name) if ($main::verbose >= 10);
+  $tree->LoadSupportedTaxonomy($root_name, \%supported_organism, 1) unless ($tree->loaded());
+  my @supported_taxa = $tree->node_names();
+  return @supported_taxa;
+}
+
+
+
+################################################################
+## Changed the name of this method
+sub ReadFamilies {
+    &ReadClasses(@_);
+}
+
+
+################################################################
+## Quick reading mode for classification (elements-clusters) files.
+sub ReadClasses_quick {
+  my ($class_file, %args) = @_;
+  my ($handle) = &OpenInputFile($class_file);
+  my %class_index = ();
+
+#   my $member_column = 1;
+#   my $class_column = 2;
+
+#   my $member_col_index = $member_column - 1;
+#   my $class_col_index = $class_column - 1;
+
+  my $l = 0;
+  while (<$handle>) {
+    $l++;
+    s/\r/\n/; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
+    next unless (/\S/); ## Skip header line
+    next if (/^--/); ## Skip comment lines
+    next if (/^;/); ## Skip comment lines
+    next if (/^#/); ## Skip header line
+    chomp(); ## Suppress carriage return
+
+    ## Check if the max number of lines has been reached
+    if ((defined($args{max_lines})) && ($l > $args{max_lines})) {
+      &RSAT::message::Warning("Stopping after $l line (reached specified number of top lines $args{max_lines}");
+      last;
+    }
+
+    ## Report number of lines read
+    if (($main::verbose >= 2) && ($l % 100000 ==0)) {
+	&RSAT::message::TimeWarn( "Read", $l, "lines from class file",$class_file);
+	if ($main::verbose >= 3) {
+	  &RSAT::message::psWarn( "Read", $l, "lines from class file",$class_file);
+	}
+      }
+
+    #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+    my ($member_name, $class_name) = split /\t/, $_;
+#    my (@fields) = split /\t/, $_;
+
+    ### Check member name
+#    $member_name = $fields[$member_col_index];
+#    $member_name = uc($member_name);
+#    $member_name = &trim($member_name) if ($args{trim});
+#    $member_name = &trim(uc($fields[$member_col_index]));
+#     unless ($member_name =~ /\S/) {
+#       &RSAT::message::Warning("Error class file", 
+# 			      $class_file,  "line", 
+# 			      $l, "member not specified") if ($main::verbose >= 1);
+#       next;
+#     }
+
+    ### Check class name
+#    $class_name = $fields[$class_col_index];
+#    $class_name = &trim($class_name) if ($args{trim});
+#     unless ($class_name) {
+#       &RSAT::message::Warning("Error class file", 
+# 			      $class_file,  "line", 
+# 			      $l, "class not specified") if ($main::verbose >= 1);
+#       next;
+#     }
+
+#       ## Substitute problematic characters
+#       unless ($no_subst) {
+# 	$subst_char = ".";
+# 	$class_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+# 	$class_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+# 	$class_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+# 	$class_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+# 	$class_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+#       }
+
+    $class_index{$class_name}{$member_name}++;
+
+  }
+
+  if ($main::verbose >= 2) {
+    &RSAT::message::psWarn( "Read", $l, "lines from class file",$class_file);
+  }
+
+  ## Cast the result in Class objects
+  my %class = ();
+  my @class_names = keys(%class_index);
+  &RSAT::message::TimeWarn("Creating", scalar(@class_names), "classes") if ($main::verbose >= 3);
+  foreach my $class_name (@class_names) {
+    $class{$class_name} = new RSAT::Family(name=>$class_name);
+
+    my @members = keys(%{$class_index{$class_name}});
+    &RSAT::message::Info("Class", $class_name,  scalar(@members), "members") if ($main::verbose >= 5);
+    $class{$class_name}->set_members(@members);
+  }
+
+  &RSAT::message::TimeWarn("Finished reading", scalar(@class_names), "classes") if ($main::verbose >= 3);
+
+  return(%class);
+
+}
+
+## ############################################################
+## Read a file with class composition (groups, classes, sets).
+##
+## The file is supposed to contain at least two columns 
+## - element (e.g. a gene ID)
+## - class (e.g. a functional class, or a regulon, or a clustering result)
+## additional columns are allowed, but they are ignored.
+##
+## By default, the first column contains the members, and the secon column the
+## class names. A member can belong to several classes, and each class can
+## contain one or several members.
+##
+## Arguments:
+##
+## 1) Class_file: file containing the class compositions. If not specified,
+##    the STDIN is used as input.
+##
+## 2) get_orf_id: when the first column contain gene names, this arguments
+## allow to get the corresponding IDs from the RSAT database. The next
+## argument (organism ) must be specified in this case.
+##
+## 3) organism: only necessary if the option get_orf_idd is active. 
+## 
+## 4) no_subst: by default, probematic characters (white spaces,
+##    semicolons, parentheses) are converted to a dot (for
+##    compatibility with the folder creation in
+##    gene-cluster-motifs). This conversion can be inactivated by
+##    entering a value (e.g.1) for the argument no_subst.
+##
+## 5) member_column: column containing the member names/IDs (default: 1)
+##
+## 6) class_column: column containing the class names/IDs (default: 2)
+##
+sub ReadClasses {
+  my ($class_file, $get_orf_id, $organism, $no_subst,$member_column, $class_column, $score_column, %args) = @_;
+
+  if ($args{quick}) {
+    return (&ReadClasses_quick($class_file, %args));
+  }
+
+  ## Check score column
+  if ($score_column) {
+    unless (&IsNatural($score_column)) {
+      &RSAT::error::FatalError(join("\t", $score_column, "Invalid specification of score column for the procedure ReadClasses()"));
+    }
+  }
+
+  ## Check member column
+  if ($member_column) {
+    unless (&IsNatural($member_column)) {
+      &RSAT::error::FatalError(join("\t", $member_column, "Invalid specification of member column for the procedure ReadClasses"));
+    }
+  } else {
+    $member_column=1;
+  }
+
+  ## Check class column
+  if ($class_column) {
+    unless (&IsNatural($class_column)) {
+      &RSAT::error::FatalError(join("\t", $class_column, "Invalid specification of class column for the procedure ReadClasses"));
+    }
+  } else {
+    $class_column=2;
+  }
+
+  &RSAT::message::TimeWarn(join ("\t", "Reading class file",$class_file))
+    if ($main::verbose >=2);
+  my %class = ();
+  my ($fam) = &OpenInputFile($class_file);
+
+  my $l = 0;
+  while (<$fam>) {
+    s/\r/\n/g; ## Suppress Windows-specific carriage return characters, which are toxic to Unix systems
+    my @lines = split (/\n/, $_);
+
+
+    ## Check if the max number of lines has been reached
+    if ((defined($args{max_lines})) && ($l > $args{max_lines})) {
+      &RSAT::message::Warning("Stopping after $l line (reached specified number of top lines $args{max_lines}");
+      last;
+    }
+
+    foreach my $line (@lines) {
+      $l++;
+      if (($main::verbose >= 2) && ($l % 2000 ==0)) {
+	&RSAT::message::TimeWarn( "Read", $l, "lines from class file",$class_file);
+	if ($l % 10000 == 0) {
+	  &RSAT::message::psWarn( "Read", $l, "lines from class file",$class_file);
+	}
+      }
+      next if ($line =~ /^--/);
+      next if ($line =~ /^;/);
+      next if ($line =~ /^\#/);
+      next unless ($line =~ /\S/);
+      chomp($line);
+      #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+      my @fields = split /\t/, $line;
+
+      ### class member
+      $member_name = &trim(uc($fields[$member_column -1]));
+      unless ($member_name =~ /\S/) {
+	&RSAT::message::Warning("Error class file", 
+				$class_file,  "line", 
+				$l, "member not specified") if ($main::verbose >= 1);
+	next;
+      }
+
+      ### class name
+      $class_name = &trim($fields[$class_column - 1]);
+      unless ($class_name) {
+	&RSAT::message::Warning("Error class file", 
+				$class_file,  "line", 
+				$l, "class not specified") if ($main::verbose >= 1);
+	next;
+      }
+
+      ## Substitute problematic characters
+      unless ($no_subst) {
+	$subst_char = ".";
+	$class_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+	$class_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+	$class_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+	$class_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+	$class_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+      }
+
+      #### create a new class if required
+      unless ($class{$class_name}) {
+	$class{$class_name} = new RSAT::Family(name=>$class_name);
+      }
+
+      ################################################################
+      ## Identify the gene on the basis of its name
+      my $member_key = "";
+      if (($get_orf_id) && ($organism)) {
+	### identify the gene on the basis of its name
+	my $feature = $organism->get_feature_for_name($member_name);
+	if ($feature) {
+	  $member_key = $feature->get_attribute("id");
+	} else {
+	  &RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
+					"has no feature with name", $member_name));
+	}
+	#	    $member_key = $orf_id{$member_name};
+      } else {
+	$member_key = $member_name;
+      }
+
+      if ($member_key) {
+	if ($score_column) {
+	  ### score
+	  local $score = &trim($fields[$score_column - 1]);
+	  unless (&IsReal($score)) {
+	    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+					  "class file", $class_file,  
+					  "line", $l,
+					  "member", $member_name,
+					  "class", $class_name,
+					 ));
+	  }
+	  $class{$class_name}->new_member($member_key, 0, score=>$score);
+	  #		&RSAT::message::Debug("member score", $class_name, $member_name, $score) if ($main::verbose >= 10);
+	} else {
+	  $class{$class_name}->new_member($member_key);
+	}
+	&RSAT::message::Warning( join ("\t",  ";", $class_name,
+				       $member_name,
+				       $member_key,
+				       $name{$id}) ) if ($main::verbose >= 5);
+	#	    &RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 10);
+      } else {
+	&RSAT::message::Warning ($member_name." unknown gene name");
+      }
+    }
+  }
+  close $fam if ($class_file);
+
+  return (%class);
+}
+
+
+# ################################################################
+# ## Methods below have been transferred to RSAT::util
+sub doit {
+  RSAT::util::doit(@_);
+}
+
+sub one_command {
+  &RSAT::util::one_command(@_);
+}
+
+sub PrintArguments {
+  &RSAT::util::PrintArguments(@_);
+}
+
+sub PrintThresholdValues {
+  &RSAT::util::PrintThresholdValues(@_);
+}
+
+sub ConvertStrand {
+    return &RSAT::util::ConvertStrand(@_);
+}
+
+sub OpenInputFile {
+    return &RSAT::util::OpenInputFile(@_);
+}
+
+sub OpenOutputFile {
+    return &RSAT::util::OpenOutputFile(@_);
+}
+
+sub IsNatural {
+    return &RSAT::util::IsNatural(@_);
+}
+
+sub IsInteger {
+    return &RSAT::util::IsInteger(@_);
+}
+
+sub IsReal {
+    return &RSAT::util::IsReal(@_);
+}
+
+sub round {
+    return &RSAT::util::round(@_);
+}
+
+sub trim {
+    return &RSAT::util::trim(@_);
+}
+
+sub AlphaDate {
+    return &RSAT::util::AlphaDate(@_);
+}
+
+sub SplitFileName {
+    return &RSAT::util::SplitFileName(@_);
+}
+
+sub ShortFileName {
+  return &RSAT::util::ShortFileName(@_);
+}
+
+sub ExtractPath {
+    return &RSAT::util::ExtractPath(@_);
+}
+
+################################################################
+#### Treatment of warnings and  errors
+################################################################
+
+
+################################################################
+### Messages and errors are now passed to RSAT::message and RSAT::error
+sub FatalError {
+    &RSAT::error::FatalError(@_);
+}
+
+sub cgiError {
+    &RSAT::error::cgiError(@_);
+}
+
+
+sub Warning {
+    &RSAT::message::Warning(@_);
+}
+
+sub cgiWarning {
+    &RSAT::message::cgiWarning(@_);
+}
+
+sub Info {
+    &RSAT::message::Info(@_);
+}
+
+sub cgiMessage {
+    &RSAT::message::cgiMessage(@_);
+}
+
+sub TimeWarn {
+    &RSAT::message::TimeWarn(@_);
+}
+
+sub MessageToAdmin {
+    &RSAT::message::MessageToAdmin(@_);
+}
+
+sub OutFileName {
+  &RSAT::util::OutFileName(@_);
+}
+
+sub CheckSubDir {
+  &RSAT::util::CheckSubDir(@_);
+}
+
+#### end of the library #####
+1; # return true
+
+
+

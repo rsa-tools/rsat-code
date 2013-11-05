@@ -1,0 +1,654 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>../perl-scripts/peak-motifs</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href='peak-motifs_form.cgi'>peak-motifs</a> manual</h2>
+</center>
+
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#references">REFERENCES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#wish_list">WISH LIST</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>peak-motifs</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>$program_version</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Pipeline for discovering motifs from ChIP-seq (or ChIP-chip, or
+ChIP-PET) peak sequences.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="jacques_van_helden_jacques_van_helden_ulb_ac_be" class="item">Jacques van Helden &lt;<a href="mailto:Jacques.van.Helden@ulb.ac.be">Jacques.van.Helden@ulb.ac.be</a>&gt;</a></strong></dt>
+
+<dd>
+<p>Conception and implementation of the work flow + testing.</p>
+</dd>
+<dt><strong><a name="morgane_thomas_chollier_thomas_c_molgen_mpg_de" class="item">Morgane Thomas-Chollier &lt;<a href="mailto:thomas-c@molgen.mpg.de">thomas-c@molgen.mpg.de</a>&gt;</a></strong></dt>
+
+<dd>
+<p>Conception of the work flow + implementation of Web interface +
+testing.</p>
+</dd>
+<dt><strong><a name="matthieu_defrance_defrance_ccg_unam_mx" class="item">Matthieu Defrance &lt;<a href="mailto:defrance@ccg.unam.mx">defrance@ccg.unam.mx</a>&gt;</a></strong></dt>
+
+<dd>
+<p>Implementation of the efficient algorithms used in the work flow
+(<em>count-words</em>, <em>matrix-scan-quick</em>, <em>local-word-analysis</em>).</p>
+</dd>
+<dt><strong><a name="olivier_sand_oly_bigre_ulb_ac_be_for_the_web_services" class="item">Olivier Sand &lt;<a href="mailto:oly@bigre.ulb.ac.be">oly@bigre.ulb.ac.be</a>&gt;</a></strong></dt>
+
+<dd>
+<p>Web services.</p>
+</dd>
+<dt><strong><a name="carl_herrmann_carl_herrmann_univmed_fr_and_denis_thieffry_thieffry_tagc_univ_mrs_fr" class="item">Carl Herrmann &lt;<a href="mailto:carl.herrmann@univmed.fr">carl.herrmann@univmed.fr</a>&gt; and Denis Thieffry
+&lt;<a href="mailto:thieffry@tagc.univ-mrs.fr">thieffry@tagc.univ-mrs.fr</a>&gt;</a></strong></dt>
+
+<dd>
+<p>Analysis of the case studies. Definition of optimal conditions of
+utilization. Motif comparisons and clustering.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>motif discovery</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>peak-motifs [-i inputfile] [-o outputfile] [-v #] [...]</p>
+<p>
+</p>
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>The program takes as input either one (test) or two sequence files
+(test versus control).</p>
+<p>All sequences formats supported in input by <i>convert-sequences</i> are
+supported.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>The pipeline runs a series of programs generating each one or several
+result file. An HTML index is generated in order to synthesize the
+results and give access to the individual result files.</p>
+<p>The index file is formed from the output directory (option -outdir)
+and the file prefix (option -prefix).</p>
+<pre>
+  [output_dir]/[prefix]_synthesis.html</pre>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong></dt>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong></dt>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong></dt>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+<dt><strong><a name="i_test_seq_file" class="item"><strong>-i test_seq_file</strong></a></strong></dt>
+
+<dd>
+<p>Test peak sequence file (mandatory).</p>
+<p>For single-set analysis, this file contains the peak sequences of the
+unique set.  For test versus control analysis, it contains the test
+sequences.</p>
+</dd>
+<dt><strong><a name="ctrl_control_seq_file" class="item"><strong>-ctrl control_seq_file</strong></a></strong></dt>
+
+<dd>
+<p>Control peak sequence file (optional).</p>
+<p>The control sequence file is used:
+- as control sequence for oligo-diff
+- to estimate the background models for oligo-analysis and
+  dyad-analysis.</p>
+<p>Control sequences are supposed to contain a large number of sequences
+without particular enrichment for any motif. The choice of appropriate
+background sequences is crucial to detect relevant motifs.</p>
+<p>The file should be sufficiently large (several Mb) to provide a robust
+estimate of prior probabilities (frequencies expected at random) for
+oligonucleotides and dyads.</p>
+<p>Typical examples of control sequences:</p>
+<p>- random fragments of the genome of interest
+  (e.g. obtained with <em>random-genome-fragments</em>)</p>
+<p>- sets of sequences pulled down in a mock experiment (without the
+  antibody) and characterized by ChIP-seq or ChIP-chip.</p>
+<p>- sets of peaks for a compendium of transcription factors different
+  from the factor of interest.</p>
+</dd>
+<dt><strong><a name="max_seq_len_msl" class="item"><strong>-max_seq_len msl</strong></a></strong></dt>
+
+<dd>
+<p>Maximal sequence length. larger sequences are truncated at the
+specified length around the sequence center (from -msl/2 to +msl/2).</p>
+</dd>
+<dt><strong><a name="top_peaks_n" class="item"><strong>-top_peaks N</strong></a></strong></dt>
+
+<dd>
+<p>Restrict the analysis to the N peaks at the top of the test sequence
+file. Some peak calling programs return the peaks sorted by score. In
+such case, the -top_peaks option allows to restrict the analysis to
+the highest scoring peaks. In some cases, the top-scoring peaks might
+contain a higher density of binding sites, allowing to detect motifs
+with a higher significance.</p>
+<p>This option can also be convenient for performing quick tests,
+parameter selection and debugging before running the full analysis of
+large sequence sets.</p>
+</dd>
+<dt><strong><a name="ref_motifs_reference_motif" class="item"><strong>-ref_motifs reference_motif</strong></a></strong></dt>
+
+<dd>
+<p>Reference motif (optional).</p>
+<p>In some cases, we already dispose of a reference motif, for example
+the motif annotated in some transcription factor database
+(e.g. RegulonDB, Jaspar, TRANSFAC)
+ for the transcription factor of
+interest. These annotations may come from low-throughput experiments,
+and rely on a poor number of sites, but the reference motif may
+nevertheless be informative, because it is based on several
+independent studies.</p>
+<p>Each discovered motif can be compared to the reference motif, in order
+to evaluate its correspondence with the binding motif of the factor of
+interest.</p>
+<p>Reference motifs should be provided in TRANSFAC format (see
+<em>convert-matrix</em> for interconversions between matrix formats).</p>
+</dd>
+<dt><strong><a name="motif_db_db_name_db_format_db_file" class="item"><strong>-motif_db db_name db_format db_file</strong></a></strong></dt>
+
+<dd>
+<p>File containinf a database of transcription factor binding motifs
+(e.g. JASPAR, TRANSFAC, RegulonDB, ...) which will be compared to the
+discovered motifs (task motifs_vs_db).</p>
+<p>The option requires three arguments:</p>
+<pre>
+ - DB name</pre>
+<pre>
+ - matrix format. same supported formats as convert-matrices, but we
+   recommend to use a format that includes an ID and a name for each
+   motif (e.g. TRANSFAC)</pre>
+<pre>
+ - file containing the DB motifs</pre>
+<p>The option can be called iteratively on the same command line in order
+to compare discovered motifs with several databases.</p>
+<p>Examples:</p>
+<pre>
+ -motif_db TRANSFAC transfac transfac_download_dir/cgi-bin/data/matrix.dat</pre>
+<pre>
+   will load a file containing all matrices from the TRANSFAC
+   database.</pre>
+<pre>
+ -motif_db JASPAR jaspar jaspar_file.tf</pre>
+<pre>
+   will load a file containing motifs from the JASPAR database that
+   have previously been converted to TRANSFAC format.</pre>
+</dd>
+<dt><strong><a name="outdir_output_directory" class="item"><strong>-outdir output_directory</strong></a></strong></dt>
+
+<dd>
+<p>Output directory (mandatory).</p>
+<p>The result files and index files produced by the different programs
+will be stored in this directory.</p>
+</dd>
+<dt><strong><a name="prefix_output_prefix" class="item"><strong>-prefix output_prefix</strong></a></strong></dt>
+
+<dd>
+<p>Prefix for the output files.</p>
+</dd>
+<dt><strong><a name="title_graph_title" class="item"><strong>-title graph_title</strong></a></strong></dt>
+
+<dd>
+<p>Title displayed on top of the graphs.</p>
+</dd>
+<dt><strong><a name="img_format_img_format" class="item"><strong>-img_format img_format</strong></a></strong></dt>
+
+<dd>
+<p>Image format.</p>
+<p>All the formats supported by XYgraph can be used.</p>
+</dd>
+<dt><strong><a name="task" class="item"><strong>-task</strong></a></strong></dt>
+
+<dd>
+<p>Specify a subset of tasks to be executed.</p>
+<p>By default, the program runs all necessary tasks. However, in some
+cases, it can be useful to select one or several tasks to be executed
+separately.</p>
+<p>Beware: task selection requires expertise, because most tasks depends
+on the prior execution of some other tasks in the workflow. Selecting
+tasks before their prerequisite tasks have been completed will provoke
+fatal errors.</p>
+<p><strong>Default tasks</strong></p>
+<dl>
+<dt><strong><a name="all" class="item"><em>all</em> (default)</a></strong></dt>
+
+<dd>
+<p>Run all the default tasks.</p>
+</dd>
+<dt><strong><a name="purge" class="item"><em>purge</em></a></strong></dt>
+
+<dd>
+<p>Purge test sequences (test set and, if specified, control set) to
+mask redundant fragments before applying pattern discovey
+algorithms. Sequence purging is necessary because redundant fragments
+would violate the hypothesis of independence underlying the binomial
+significance test, resulting in a large number of false positive
+patterns.</p>
+</dd>
+<dt><strong><a name="seqlen" class="item"><em>seqlen</em></a></strong></dt>
+
+<dd>
+<p>Compute sequence lengths and their distribution.</p>
+<p>Sequence lengths are useful for the negative control (selection of
+random genome fragments).</p>
+<p>Sequence length distribution is informative to get an idea about the
+variability of peak lengths.</p>
+</dd>
+<dt><strong><a name="composition" class="item"><em>composition</em></a></strong></dt>
+
+<dd>
+<p>Compute compositional profiles, i.e. distributions of residues and
+dinucleotide frequencies per position (using <em>position-analysis</em>).</p>
+<p>Residue profiles may reveal composition biases in the neighborhood of
+the peak sequences. Dinucleotide profiles can reveal (for example) an
+enrichment in CpG island.</p>
+<p>Note that <em>peak-motifs</em> also runs <em>position-analysis</em> with
+larger oligonucleotide length (see option -l) to detect motifs on the
+basis of positionally biased oligonucleotides (see task <strong>positions</strong>).</p>
+</dd>
+<dt><strong><a name="ref_motifs" class="item"><em>ref_motifs</em></a></strong></dt>
+
+<dd>
+<p>This task combines various operations.</p>
+<dl>
+<dt><strong><a name="formating_of_the_reference_motif" class="item">Formating of the reference motif</a></strong></dt>
+
+<dd>
+<p>Perform various format conversion for the reference motif (compute
+parameters, consensus, logo).</p>
+</dd>
+<dt><strong><a name="motif_enrichment" class="item">Motif enrichment</a></strong></dt>
+
+<dd>
+<p>Generate an enriched motif by scanning the peak sequence set with the
+reference motif.</p>
+</dd>
+<dt><strong><a name="motif_comparison" class="item">Motif comparison</a></strong></dt>
+
+<dd>
+<p>Compare all discovered motifs with the reference motif.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="oligos" class="item"><em>oligos</em></a></strong></dt>
+
+<dd>
+<p>Run <em>oligo-analysis</em> to detect over-represented oligonucleotides of a
+given length (k, specified with option -l) in the test set (van Helden
+et al., 1998). Prior frequencies of oligonucleotides are taken from
+Markov model of order m (see option -markov) estimated from the test
+set sequences themselves.</p>
+</dd>
+<dt><strong><a name="dyads" class="item"><em>dyads</em></a></strong></dt>
+
+<dd>
+<p>Run <em>dyad-analysis</em> to detect over-represented dyads, i.e. pairs of
+short oligonucleotides (monads) spaced by a region of fixed width but
+variable content (van Helden et al., 2000). Spaced motifs are typical
+of certain classes of transcription factors forming homo- or
+heterodimers.</p>
+<p>By default, peak-motifs analyzes pairs of trinucleotides with
+any spacing between 0 and 20.</p>
+<p>The expected frequency of each dyad is estimated as the product of its
+monad frequencies in the test sequences (option -bg monads of
+dyad-analysis).</p>
+</dd>
+<dt><strong><a name="positions" class="item"><em>positions</em></a></strong></dt>
+
+<dd>
+<p>Run <em>position-analysis</em> to detect oligonucleotides showing a
+positional bias, i.e. have a non-homogeneous distribution in the peak
+sequence set.</p>
+<p>This method was initially developed to analyze termination and
+poly-adenylation signals in downstream sequences (van Helden et al.,
+2001), and it turns out to be very efficient for detecting motifs
+centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
+position is the center of each sequence.</p>
+<p>Note that <em>peak-motifs</em> also uses <em>position-analysis</em> for the
+task <strong>composition</strong>, in order to detect compositional biases (residues,
+dinucleotides) in the test sequence set.</p>
+</dd>
+<dt><strong><a name="local_words" class="item"><em>local_words</em></a></strong></dt>
+
+<dd>
+<p>Run <em>local-word-analysis</em> to detect locally over-represented
+oligonucleotides and dyads.</p>
+<p>The program <em>local-word-analysis</em> (Matthieu Defrance,unpublished)
+tests the over-representation of each possible word (oligo, dyad)
+in positional windows in the test sequence set.</p>
+<p>Two types of background models are supported: (i) Markov model of
+order m estimated locally (within the window under consideration; (ii)
+the frequency observed for a word in the whole sequence set is used as
+estimator of the prior probability of this word in the window.</p>
+<p>After our first trials, this program gives excellent results in
+ChIP-seq datasets, because its senstivitity increases with large
+number of sequences (several hundreds/thousands), and its background
+model is more stringent than for programs computing the global
+over-representation (oligo-analysis, dyad-analysis).</p>
+</dd>
+<dt><strong><a name="merge_words" class="item"><em>merge_words</em></a></strong></dt>
+
+<dd>
+<p>Merge the words (oligos-dyads) discovered by the different
+algorithms. Those words will then be used as seeds for extracting
+over-represented position-specific scoring matrices from the sequences
+(using the program <em>matrix-from-patterns</em>).</p>
+<p>The table of merged words has one row per word (oligo or dyad) and one
+column per motif discovery program. This allows to analyze the
+consistency between the words detected by different approaches,
+e.g. show that a word is both over-represented (oligo-analysis,
+dyad-analysis) and positionally biased (position-analysis,
+local-words). A heatmap is also exported to provide a graphical
+representation of the significance of each word (row) for each
+algorthm (column).</p>
+</dd>
+<dt><strong><a name="motifs_vs_ref" class="item"><em>motifs_vs_ref</em></a></strong></dt>
+
+<dd>
+<p>Compare each discovered motif to the reference motifs.</p>
+</dd>
+<dt><strong><a name="motifs_vs_db" class="item"><em>motifs_vs_db</em></a></strong></dt>
+
+<dd>
+<p>Compare each discovered motif to a database of known motifs
+(e.g. Jaspar, TRANSFAC, RegulonDB, UniProbe, ...)</p>
+</dd>
+<dt><strong><a name="timelog" class="item"><em>timelog</em></a></strong></dt>
+
+<dd>
+<p>Generate a log file summarizing the time spent in the different tasks.</p>
+</dd>
+<dt><strong><a name="synthesis" class="item"><em>synthesis</em></a></strong></dt>
+
+<dd>
+<p>Generate the HTML file providing a synthesis of the results and
+pointing towards the individual result files.</p>
+</dd>
+</dl>
+<p><strong>Extra tasks</strong></p>
+<p>A few extra tasks are available, which are not executed by default. Those
+tasks are executed only when they are explicitly invoked with the option
+<em>-task</em>, they are not called with the option &quot;-task all&quot;.</p>
+<dl>
+<dt><strong><a name="clean_seq" class="item"><em>clean_seq</em></a></strong></dt>
+
+<dd>
+<p>Delete the purged sequence files after the analysis, in order to save
+space.</p>
+</dd>
+<dt><strong><a name="meme_bg" class="item"><em>meme_bg</em></a></strong></dt>
+
+<dd>
+<p>Compute meme background model from the test sequences.</p>
+</dd>
+<dt><strong><a name="meme" class="item"><em>meme</em></a></strong></dt>
+
+<dd>
+<p>Run the motif discovery program MEME on the test sequences.</p>
+<p><strong>Beware</strong>: the complexity of MEME is quadratic: the computing time
+increases as the square of sequence size. It is thus not recommended
+to use MEME for data sets exceeding 1Mb. If the test set contains
+many peaks, the option -task meme can be combined with a restriction
+on the number of top peaks to be considered (e.g. -top_peaks 500).</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="nmotifs_max_motif_number" class="item"><strong>-nmotifs max_motif_number</strong></a></strong></dt>
+
+<dd>
+<p>Maximal number of motifs (matrices) to return for motif discovery
+algorithms. Note the distinction between the maximal number of motifs
+(matrices) and the maximum number of patterns (words, dyads): a motif
+generally corresponds to mutually overlapping several patterns (dyads,
+words).</p>
+</dd>
+<dt><strong><a name="l_oligo_len" class="item"><strong>-l oligo_len</strong></a></strong></dt>
+
+<dd>
+<p>Oligonucleotide length for word-counting approaches (oligo-analysis,
+position-analysis, local-word-analysis, oligo-diff).</p>
+<p>In our experience, optimal results are obtained with hexanucleotides
+and heptanucleotides.</p>
+<p>Note: the monad length used for dyad-analysis is not affected by those
+options. Instead it is fixed to to 3. Indeed, dyad-analysis can detect
+larger motifs by sampling various spacings between the two
+trinucleotide monads.</p>
+</dd>
+<dt><strong><a name="minol_oligo_min_len" class="item"><strong>-minol oligo_min_len</strong></a></strong></dt>
+
+<dt><strong><a name="maxol_oligo_max_len" class="item"><strong>-maxol oligo_max_len</strong></a></strong></dt>
+
+<dd>
+<p>Minimal (-minol) and maximal (-maxol) oligonucleotide lengths. If
+those options are used, the program iterated over the specified range
+of oligonucleotide lengths.</p>
+</dd>
+<dt><strong><a name="markov" class="item"><strong>-markov</strong></a></strong></dt>
+
+<dd>
+<p>Order of the Markov model used to estimate expected oligonucleotide
+frequencies for <em>oligo-analysis</em> and <em>local-word-analysis</em>.</p>
+<p>Higher order Markov models are more stringent, lower order are more
+sensitive, but tend to return a large number of false positives.</p>
+<p>Markov models can be specified with either a positive or a negative
+value. Positive value indicate the length of the prefix in the
+transition matrix. Negative value indicate the order of the Markov
+model relative to the oligonucleotide length. For example, the option
+-markov -2 gives a model of order m=k-2 (thus, an order 5 for
+heptanucleotides, an order 4 for hexanucleotides).</p>
+<p>The optimal Markov order depends on the number of sequences in the
+test set. Since ChIP-seq data typically contain hundreds to thoursands
+of peaks, high Markov orders are generally good, because they are
+stringent and still sensitive enough.  In our experience, motifs are
+well detected with the most stringent Markov order (-markov -2).</p>
+</dd>
+<dt><strong><a name="min_markov_min_markov_order" class="item"><strong>-min_markov min_markov_order</strong></a></strong></dt>
+
+<dt><strong><a name="max_markov_max_markov_order" class="item"><strong>-max_markov max_markov_order</strong></a></strong></dt>
+
+<dd>
+<p>A miminal and a maximal value can be specified for the Markov
+order. The program then iterates over all markov values between
+min_markov_order and max_markov_order.</p>
+</dd>
+<dt><strong><a name="1str_2str" class="item"><strong>-1str | -2str</strong></a></strong></dt>
+
+<dd>
+<p>Single-strand (-1str) or double-strand (-2str) analysis.</p>
+<p>The default is double-strand analysis, since ChIP-seq results have no
+particular strand orientation.</p>
+</dd>
+<dt><strong><a name="noov_ovlp" class="item"><strong>-noov | -ovlp</strong></a></strong></dt>
+
+<dd>
+<p>Treatment of self-overlapping words for motif discovery: count (-ovlp)
+or do not count (-noov) overlapping occurrences. In -noov mode, only
+renewing occurrences are counted.</p>
+<p>It is recommended to use the -noov mode (default) to avoid the effect
+of self-overlap, which violates the hypothesis of independence of
+successive occurrences underlying the binomial significance test
+(oligo-analysis, dyad-analysis).</p>
+<p><strong>Beware</strong>: the options -noov and -ovlp only apply to motif discovery,
+and not to compositional profiles. Dinucleotide frequencies are always
+computed with the option -ovlp (count all occurrences), to avoid weird
+effect. Since those compositin profiles further serve to estimate the
+probability of larger words, which may include repeated residues, we
+need to count all dinucleotide occurrences. Indeed with the -noov mode
+(renewing occurrences only), the transition tables of the first order
+Markov model would be unbalanced: the expected frequency of all the
+repeated dinucleotides (AA, TT, CC, GG) would be under-estimated,
+leading to an under-estimation of the expected frequency of
+repeat-containing words (e.g. AAAAAA, AAAGGG, ...).</p>
+</dd>
+<dt><strong><a name="ci_class_interval" class="item"><strong>-ci class_interval</strong></a></strong></dt>
+
+<dd>
+<p>Class interval for <em>position-analysis</em>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="references">REFERENCES</a></h1>
+<p>The program <em>peak-motifs</em> combines a series of tried-and-tested
+programs which have been detailed in the following publications.</p>
+<dl>
+<dt><strong><a name="oligo_analysis" class="item"><em>oligo-analysis</em></a></strong></dt>
+
+<dd>
+<p>van Helden, J., Andre, B. and Collado-Vides, J. (1998). Extracting
+regulatory sites from the upstream region of yeast genes by
+computational analysis of oligonucleotide frequencies. J Mol Biol 281,
+827-42.</p>
+</dd>
+<dt><strong><a name="dyad_analysis" class="item"><em>dyad-analysis</em></a></strong></dt>
+
+<dd>
+<p>van Helden, J., Rios, A. F. and Collado-Vides, J. (2000). Discovering
+regulatory elements in non-coding sequences by analysis of spaced
+dyads. Nucleic Acids Res 28, 1808-18.</p>
+</dd>
+<dt><strong><a name="position_analysis" class="item"><em>position-analysis</em></a></strong></dt>
+
+<dd>
+<p>van Helden, J., del Olmo, M. and Perez-Ortin,
+J. E. (2000). Statistical analysis of yeast genomic downstream
+sequences reveals putative polyadenylation signals. Nucleic Acids Res
+28, 1000-10.</p>
+</dd>
+<dt><strong><a name="matrix_scan" class="item"><em>matrix-scan</em></a></strong></dt>
+
+<dd>
+<p>Turatsinze, J. V., Thomas-Chollier, M., Defrance, M. and van Helden,
+J. (2008). Using RSAT to scan genome sequences for transcription
+factor binding sites and cis-regulatory modules. Nat Protoc 3,
+1578-88.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="oligo_analysis2" class="item"><em>oligo-analysis</em></a></strong></dt>
+
+<dt><strong><a name="dyad_analysis2" class="item"><em>dyad-analysis</em></a></strong></dt>
+
+<dt><strong><a name="position_analysis2" class="item"><em>position-analysis</em></a></strong></dt>
+
+<dt><strong><a name="matrix_scan2" class="item"><em>matrix-scan</em></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="wish_list">WISH LIST</a></h1>
+<dl>
+<dt><strong><a name="background_models_from_ctrl_sequences" class="item"><strong>background models from ctrl sequences</strong></a></strong></dt>
+
+<dd>
+<p>Estimate background models from control sequences, for oligo-analysis,
+dyad-analysis, and local-word-analysis. This should in principle
+reduce the rate of false positive.</p>
+</dd>
+<dt><strong><a name="partial_synthesis" class="item"><strong>partial synthesis</strong></a></strong></dt>
+
+<dd>
+<p>For the Web server: generate temporary synthetic table showing the
+results already obtained so far, and finishing by a message &quot;Partial
+results, please don't forget to reload the file later&quot;.</p>
+</dd>
+<dt><strong><a name="motif_cluster" class="item"><strong>motif_cluster</strong></a></strong></dt>
+
+<dd>
+<p>Compare all discovered motifs (plus reference motif if specified) and
+cluster them in order to extract a consensus motif.</p>
+</dd>
+<dt><strong><a name="weeder" class="item"><strong>weeder</strong></a></strong></dt>
+
+<dd>
+<p>Add a task to run Weeder on the peak sequences.</p>
+<pre>
+ weederlauncher.out input organism large S M T5</pre>
+</dd>
+<dt><strong><a name="all_oligos" class="item"><strong>all_oligos</strong></a></strong></dt>
+
+<dd>
+<p>Run oligo-analysis without any threshold in order to produce a plot of
+observed versus expected occurrences for all the
+oligonucleotides. This analysis is performed with the option
+-two_tails, which detects both under- and over-represented patterns.</p>
+</dd>
+<dt><strong><a name="full_html_report" class="item"><strong>full HTML report</strong></a></strong></dt>
+
+<dd>
+<p>- link to the directories for each algorithm/task</p>
+<p>- link from the result page to the link table returned by
+  position-analysis (file *_graph_index.html).</p>
+</dd>
+</dl>
+
+</body>
+
+</html>

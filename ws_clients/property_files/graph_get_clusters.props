@@ -1,0 +1,8 @@
+informat=tab
+outformat=gml
+inputgraph=test_1.tab
+clusters=clusters.tab
+return=clusters
+distinct=1
+induced=
+distinct=1

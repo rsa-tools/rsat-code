@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>XY graph</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<CENTER><P><B><FONT SIZE=+1>
+<A HREF="RSAT_home.cgi">RSA-tools</A> - XY grapher
+</FONT></B><BR>
+Generates a XY graph from a series of numeric data
+</P></CENTER>
+
+<P><FORM METHOD="POST" ACTION="XYgraph.cgi"></P>
+
+<H4>Data</H4>
+
+<PRE><TEXTAREA NAME="data" ROWS=6 COLS=60>;seq	markov_order_2	markov_order_3	markov_order_4	markov_order_5	chi2
+tatata	54.09	21.00	15.44	4.06	889.136
+atatat	48.37	16.99	12.67	1.68	604.254
+tatgta	23.81	14.51	14.19	4.57	414.300
+tacata	23.68	13.58	13.66	4.31	324.961
+taaata	7.76	7.62	10.38	2.50	417.557
+tgtata	25.32	10.95	7.65	3.28	387.945
+tattta	5.25	6.39	6.92	2.93	242.951
+aaataa	11.31	11.16	10.32	2.21	190.985
+aataaa	7.96	7.82	8.81	2.87	206.891
+atgtat	15.67	7.70	5.31	-0.30	225.927
+taagta	5.51	5.29	8.99	3.73	194.527
+acatat	17.40	6.12	5.75	0.67	222.117
+catata	20.20	4.76	4.40	-0.46	261.653
+atacat	14.60	6.14	6.57	-0.28	140.709
+ttattt	6.33	7.62	8.01	0.26	145.632
+tacgta	12.36	7.80	10.86	4.02	112.762
+atatac	19.83	4.22	4.26	-0.02	228.029
+atatgt	14.81	4.27	5.43	1.72	165.831
+aaaaaa	24.86	13.92	7.47	2.19	137.726
+tagata	1.40	2.58	7.27	2.02	108.966
+ataaat	1.76	1.64	3.94	-1.60	163.664
+tttatt	7.36	8.67	8.39	0.32	88.791
+ttaaat	-6.29	2.60	5.93	2.78	116.107
+tataca	14.22	3.22	3.66	0.50	142.831
+tgtgta	9.48	4.64	4.78	2.77	173.857
+attatt	-0.45	7.22	4.99	0.54	110.796
+taatta	-5.36	7.80	3.89	0.82	156.250
+gtatgt	11.95	6.37	7.98	1.84	63.260
+atctat	3.65	3.78	6.65	1.21	86.762
+aattaa	-7.36	5.40	5.20	4.15	113.195
+ttaatt	-6.81	7.77	5.68	1.22	98.071
+tttctt	20.93	10.42	6.28	3.64	126.385
+tatcta	3.08	3.21	5.89	1.29	77.140
+ttttct	22.37	8.68	5.63	3.04	111.101
+acatac	8.82	3.39	4.76	0.54	63.318
+gtatac	10.97	3.00	3.74	2.72	106.534
+aaatag	2.62	3.67	5.18	1.53	83.667
+tcattt	4.87	4.86	3.76	1.39	93.809
+tagtta	-0.92	8.00	5.68	1.63	61.023
+ttcatt	6.13	6.86	6.50	1.63	51.757
+ttatta	-1.53	6.82	4.67	0.46	51.300
+tgtaca	9.47	5.24	3.61	2.13	74.210
+ttttgt	9.09	3.52	5.35	3.12	63.699
+tagttt	0.44	5.54	3.82	1.78	81.174
+ttattc	2.15	3.57	5.09	0.30	64.085
+atgtgt	6.76	3.13	4.08	1.01	61.967
+tattct	8.28	3.74	4.09	3.06	74.961
+atagat	-0.37	0.74	3.95	0.10	56.987
+gtaaat	-0.49	1.33	3.68	-0.50	64.505
+aataga	1.29	1.96	3.55	0.95	76.647
+tctatt	2.93	2.89	4.55	-1.04	53.530
+ttacgt	3.96	3.70	4.00	0.28	51.598
+taattg	-2.01	6.60	4.04	0.31	53.376
+agttaa	-3.97	3.19	3.61	1.03	56.641
+</TEXTAREA>
+</PRE>
+
+
+<!-- <B>Internal access only ! </B>
+You can indicate a TEXT file containing your data<BR>
+<INPUT SIZE=40 TYPE="file" NAME="data_file">
+-->
+
+<H4>Options</H4>
+
+<TABLE BORDER=3 CELLPADDING=5>
+<TR>
+<TD>
+<PRE>
+<B><I>First Title</I></B>	<INPUT TEXT NAME="title1" SIZE=44 VALUE="XYgraph demo">
+<B><I>Second Title</I></B>	<INPUT TEXT NAME="title2" SIZE=44 VALUE="score comparisons">
+<B><I>Point size</I></B>      <INPUT TEXT NAME="pointsize" SIZE=5 value="5">     <B><I>Background color</I></B>  <SELECT NAME="bg">
+<OPTION SELECTED>white
+<OPTION>gray
+<OPTION>blue
+<OPTION>black
+</SELECT>
+<INPUT TYPE="checkbox" NAME="lines" VALUE="yes"> <B><I>Lines between points</I></B>  <INPUT TYPE="checkbox" NAME="legend" VALUE="yes" CHECKED> <B><I>First data line contains legends</I></B>
+<INPUT TYPE="checkbox" NAME="symbols" VALUE="yes"> <B><I>Use symbols</I></B>
+<INPUT TYPE="checkbox" NAME="htmap" VALUE="yes" CHECKED> <B><I>Labels in the message bar (bottom of the browser window)</I><B>
+       <B><I>Label column (0 for all)</I><B> <INPUT TYPE="TEXT" NAME="label_col" VALUE="1" SIZE=3>
+</PRE>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER><B>X axis</B></CENTER>
+
+<PRE><I><B>Data column    <INPUT TEXT NAME="xcol" SIZE=5 VALUE="6">  
+First legend   <INPUT TEXT NAME="xleg1" SIZE=41 VALUE="positional bias">
+Second legend  <INPUT TEXT NAME="xleg2" SIZE=41 VALUE="(chi-square value)">
+Min value      <INPUT TEXT NAME="xmin" SIZE=5 VALUE="0">		   Max value   <INPUT TEXT NAME="xmax" SIZE=5 VALUE="auto">
+Axis size      <INPUT TEXT NAME="xsize" SIZE=5 VALUE=500> </B>(pixels)<B>   
+1st grid step  <INPUT TEXT NAME="xgstep1" SIZE=5 VALUE="auto"> </B>(X units)<B>   2nd grid step <INPUT TEXT NAME="xgstep2" SIZE=5 VALUE="none"> </B>(X units)<B></B></I></PRE>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER><B>Y axis</B></CENTER>
+
+<PRE><I><B>Data column(s) <INPUT TEXT NAME="ycol" SIZE=10 VALUE="2,3,4,5"></I></B> 
+<FONT SIZE=-1>Multiple columns can be entered, separated by commas wihout space (e.g.: <B>4,6,7</B>)</FONT>
+<I><B>First legend   <INPUT TEXT NAME="yleg1" SIZE=41 VALUE="Z-score values">
+Second legend  <INPUT TEXT NAME="yleg2" SIZE=41 VALUE="(Markov models, different orders)">
+Min value      <INPUT TEXT NAME="ymin" SIZE=5 VALUE="auto">		   Max value   <INPUT TEXT NAME="ymax" SIZE=5 VALUE="auto">
+Axis size      <INPUT TEXT NAME="ysize" SIZE=5 VALUE="400"> </B>(pixels)<B>   
+1st grid step  <INPUT TEXT NAME="ygstep1" SIZE=5 VALUE="auto"> </B>(X units)<B>   2nd grid step <INPUT TEXT NAME="ygstep2" SIZE=5 VALUE="none"> </B>(X units)<B></B></I></PRE>
+</TD>
+</TR>
+
+</TABLE>
+</UL>
+
+
+<CENTER><TABLE>
+<TR VALIGN=CENTER>
+<TD><INPUT type="submit" value="GO"></TD>
+<TD><INPUT type="reset" value="RESET"></TD>
+<TD WIDTH=40></TD>
+<TD VALIGN=CENTER><B>
+<script type='text/javascript'><!--
+var v2="MGM2C2YU85XKSUDWH6EDEGFQNNUE";var v7=unescape("%07%26.C6W*%7BNT6e%1B0%283-X%051%29%25h0-%607%20");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'email<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>email (using spam protection)</a></noscript>
+</B></TD>
+<TD VALIGN=CENTER><B><A HREF="demo.XYgraph.html">DEMO</A></B></TD>
+</TR>
+</TABLE></CENTER>
+</FORM>
+<HR SIZE=3>
+
+<H4>Credits</H4>
+<UL>
+<P>
+XYgraph has been written by 
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>.
+
+<p>This program can be used freely by academic users via its web
+interface. For commercial users, please read
+or <A HREF="disclaimer.html">disclaimer</A>.
+
+<P>
+XYgraph uses a graphical library developed by Thomas Boutell (<A HREF="mailto:boutell@boutell.com (Thomas Boutell)">boutell@boutell.com</A>). 
+
+<P>Copyright statement for the graphical library GD:
+	<PRE>
+	Portions copyright 1994, 1995, 1996, 1997, 1998, by 
+	Cold Spring Harbor Laboratory. Funded under Grant P41-RR02188 by the
+	National Institutes of Health. 
+
+	Portions copyright 1996, 1997, 1998, by Boutell.Com, Inc. 
+
+	GIF decompression code copyright 1990, 1991, 1993, by David Koblas 
+	(koblas@netcom.com). 
+
+	Non-LZW-based GIF compression code copyright 1998, by Hutchison Avenue
+	Software Corporation (http://www.hasc.com/, info@hasc.com). 
+
+	Permission has been granted to copy and distribute gd in any context, 
+	including a commercial application, provided that this notice is 
+	present in user-accessible supporting documentation. 
+
+	This does not affect your ownership of the derived work itself, and 
+	the intent is to assure proper credit for the authors of gd, not to 
+	interfere with your productive use of gd. If you have questions, ask. 
+	"Derived works" includes all programs that utilize the library. 
+	Credit must be given in user-accessible documentation. 
+
+	Permission to use, copy, modify, and distribute this software and its 
+	documentation for any purpose and without fee is hereby granted, 
+	provided that the above copyright notice appear in all copies and 
+	that both that copyright notice and this permission notice appear in 
+	supporting documentation. This software is provided "as is" without 
+	express or implied warranty. 
+	</PRE>
+</UL>
+
+
+</BODY>
+</HTML>

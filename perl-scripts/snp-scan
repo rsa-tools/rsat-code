@@ -1,0 +1,639 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: snp-scan,v 1.1 2013/03/28 13:20:30 jeremy Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+snp-scan
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Use matrix scan and compare the result for sequence with the same coordinate
+
+=head1 AUTHORS
+
+jeremy.delerce@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+snp-scan [-i #] [-bgfile #] [-matrixfile #] [-o #] [-v #] [...]
+
+=head1 INPUT FORMAT
+	-i : See output format of retrieve-snp-seq
+	-matrixfile : transfac format
+	-bgfile : See output format of oligo-analysis
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+ 		push (@INC, "$`lib/");
+  }
+  push (@INC, "/Users/jeremy/rsa-tools/perl-scripts/lib");
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+  ###############################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+  our %infile	= ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  our $bgfile = "";
+	our %lth = ();	     # lower threshold values for all matrices
+  our %uth = ();	
+  our @thr_param = ""; 
+  	our $repertory = "snp_scan_result/";
+	our $want_pval = 0;
+
+  @supported_thresholds = qw(score pval dscore);
+  $supported_thresholds = join ", ", @supported_thresholds;
+  %supported_threshold = ();
+  foreach my $thr (@supported_thresholds) {
+    $supported_threshold{$thr} = 1;
+  }
+  
+  our @list_variation = ();
+  our %matrix_list =();
+
+  $main::infile{input} = 'result.tab';
+  $bgfile = "Homo_all.freq";
+	$main::infile{matrixfile} = '../rsa-tools/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf';
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  $want_pval = 1 if ( grep($_ eq "pval", @thr_param ) );
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+    
+  ################################################################
+  ## Read input
+
+  #Read Bed file
+  &RSAT::message::TimeWarn("Reading Bed File") if ($main::verbose >= 2);
+  
+  ($main::in) = &OpenInputFile($main::infile{input});
+  while (<$main::in>) {
+		next if (/^#/); ## Skip comment lines
+		next if (/^;/); ## Skip RSAT-like comment lines
+		next unless (/\S/); ## Skip empty lines
+		next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+		chomp();
+		push @region_variation,$_;
+  }
+  close $main::in;
+
+  #Read Matrix File
+  &RSAT::message::TimeWarn("Reading Matrix File") if ($main::verbose >= 2);
+  
+  my $length = 0;
+  my $matrix_str='';
+  my $need_count = 0;
+
+  ($main::in) = &OpenInputFile($main::infile{matrixfile});
+  while (<$main::in>) {
+    next if (/^#/); ## Skip comment lines
+		next if (/^;/); ## Skip RSAT-like comment lines
+		next unless (/\S/); ## Skip empty lines
+    chomp();
+
+		$matrix_str .= $_."\n";
+
+		$need_count = 0 if ( substr($_,0,2) eq "XX");
+		$length += 1 if ($need_count);
+    $need_count = 1 if ( substr($_,0,2) eq "PO");
+
+		if ( substr($_,0,2) eq "//") {
+			push ( @{$matrix_list{$length}}, $matrix_str);
+			$matrix_str = '';
+			$length = 0;
+		}
+
+  }
+  close $main::in;
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+
+	##Make tf file depending of matrix length
+  &RSAT::message::TimeWarn("Make tf files") if ($main::verbose >= 2);
+	
+	foreach my $matrix_length (keys(%matrix_list)) {
+
+		my $file_name = $repertory.$matrix_length."_matrix.tf";
+		my $outM = &OpenOutputFile($file_name);
+
+    foreach my $matrix (@{$matrix_list{$matrix_length}}) {
+			print $outM $matrix;
+		}
+	}
+	
+	##Make fasta file depending of matrix length
+  &RSAT::message::TimeWarn("Make fasta files") if ($main::verbose >= 2);
+   	
+	foreach my $matrix_length (keys(%matrix_list)) {
+	
+		my $file_name = $repertory.$matrix_length."_sequence.fasta";
+    my $outF = &OpenOutputFile($file_name);
+
+		my %variation_alleles = ();
+
+		foreach my $allele (@region_variation) {
+		  my ($chrom, $left, $right,$strand,$variation,$covariations,$seq,$count) = split(/\t/,$allele);
+		  my ($name,$variant,$pos) = split(/\//,$variation);
+
+			my $variation_info = ">$variation|$chrom\_$left\_$right\_$strand|";
+
+			##Get co-variation in the new seq
+			my $delete_coma = 0;
+			foreach my $covariation ( split(/,/,$covariations) ) {
+
+				my ($co_name,$co_variant,$co_pos) = split(/\//,$covariation);
+
+				if ( abs($co_pos) <= $matrix_length-1 ) {
+					$delete_coma = 1;
+					$variation_info .= "$covariation,";
+				}
+			}
+
+			if ($delete_coma) {	  
+		 	 	$variation_info = substr(	$variation_info,0,length($variation_info)-1);
+			}
+
+			$variation_info .= "|";
+
+			if ($variation_alleles{$variation_info}) {
+					$variation_alleles{$variation_info}{'count'} += $count;
+			} else {
+					$variation_alleles{$variation_info}{'count'} = $count;
+					$variation_alleles{$variation_info}{'seq'} = substr($seq, ( length($seq)-length($variant))/2 -($matrix_length-1), ($matrix_length-1)*2+length($variant));
+			}
+			
+		}
+
+		foreach my $variation_info (keys(%variation_alleles)){
+			print $outF $variation_info.$variation_alleles{$variation_info}{'count'}."\n";
+			print $outF $variation_alleles{$variation_info}{'seq'}."\n";
+		}
+	}
+
+	##Use matrix scan 
+	foreach my $matrix_length (keys(%matrix_list)) {	
+	  &RSAT::message::TimeWarn("Scan matrix of length : $matrix_length") if ($main::verbose >= 2);
+
+		my $cmd = "matrix-scan -quick -pseudo 1 -decimals 1 -2str -origin center";
+		$cmd .= " -matrix_format transfac -m $repertory$matrix_length\_matrix.tf";
+		$cmd .= " -bgfile $bgfile -bg_pseudo 0.01";
+		$cmd .= " -i $repertory$matrix_length\_sequence.fasta -seq_format fasta";
+		$cmd .= " -o $repertory$matrix_length\_result.ft";
+
+		if ( $want_pval ) {
+		  $cmd .= " -return pval -uth pval 2";
+		} else {
+			$cmd .= " -return sites";
+		}
+
+		system($cmd);
+#		my $result = qx( $cmd);
+#		last;
+	}	
+
+	##Analyse result
+  &RSAT::message::TimeWarn("Analyse result") if ($main::verbose >= 2);
+#my %list_result = ();	
+	my %output_result = (); 	
+	foreach my $matrix_length (keys(%matrix_list)) {
+	  	my %list_result = ();	
+ 		&RSAT::message::TimeWarn("Analyse result : $matrix_length") if ($main::verbose >= 2);
+		($in) = &OpenInputFile($repertory.$matrix_length."_result.ft");
+		while (<$in>) {
+			next if (/^#/); ## Skip comment lines
+			next if (/^;/); ## Skip RSAT-like comment lines
+			next unless (/\S/); ## Skip empty lines
+			next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
+			chomp();
+
+			##Remove co-variation no present in the fragment of the seq
+			my ($info, $site, $motif_name, $strand, $left, $right,$seq,@rest) = split(/\t/,$_);
+			my ($variation,$coord,$co_variations,$count) = split(/\|/,$info);
+			my ($var_id,$variant,$pos) = split(/\//,$variation);
+
+
+			my @co_variation_list = split(/,/,$co_variations);
+			my $co_var = "";
+			my $co_var_id = "";	
+			
+			foreach $co_variation (@co_variation_list) {
+				my ($co_var_id,$co_variant,$co_pos) = split(/\//,$co_variation);
+
+				if ($co_pos >= $left && $co_pos <= $right ){
+					$co_var .= ",".$co_variation;
+					$co_var_id .= $co_var_id;
+				}
+			}
+			
+			$co_var = substr($co_var,1) if (length($co_var) != 0);
+
+
+			my $new_line = "$coord\t$var_id/$variant/0\t$co_var\t$motif_name\t$strand\t$left\t$right\t$seq\t".join("\t",@rest);
+
+			if ( $list_result{$var_id}{$co_var_id.$motif_name.$strand.$left}{$new_line} )	{
+				$list_result{$var_id}{$co_var_id.$motif_name.$strand.$left}{$new_line} += $count;
+			} else {
+				$list_result{$var_id}{$co_var_id.$motif_name.$strand.$left}{$new_line}	 = $count;
+			}		
+		}
+		
+		close $in;
+#		last;
+#	}
+
+		##Make outputline by regrouping scan of the same coordinate and same variation id
+		&RSAT::message::TimeWarn("Make output line") if ($main::verbose >= 2);
+
+		
+		foreach my $var_id (keys(%list_result)){
+			foreach my $info (keys(%{$list_result{$var_id}})){
+		
+				my $first_line = 1;
+				my $min = 120;
+				my $max = -120;	
+				my $min_w = 0;
+				my $max_w = 0;			
+				my $min_seq = "";
+				my $max_seq = "";			
+				my $output_line = "";
+				my $var_line = "";
+		
+				foreach my $line (keys(%{$list_result{$var_id}{$info}})){
+			
+					my ($coord,$var,$co_var,$motif_name,$strand,$left,$right,$seq,$weigth,@rest) = split(/\t/,$line);
+					my $pval = $rest[0] if ( $want_pval );
+
+					if ($first_line) {
+						$output_line .= "$var_id\t$coord\t$motif_name\t$strand\t$left\t$right\t";
+						$first_line = 0;
+					}
+
+					my $vars = "$var,$co_var";
+					$vars = substr($vars,0,length($vars)-1) unless ($co_var);
+
+					##Search min and max weight/pval for each fragment of seq with the same coordinate
+					if ($want_pval) {
+						if ($min > $pval) {
+							$min_seq = "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+							$min = $pval;
+							$max_w = $weigth;
+						} elsif ($min == $pval) {
+							$min_seq .= "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+						}
+
+						if ($max < $pval) {
+							$max_seq = "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+							$max = $pval;
+							$min_w = $weigth;
+						} elsif ($max == $pval) {
+							$max_seq .= "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+						}	
+					
+					} else {
+						if ($min > $weigth) {
+							$min_seq = "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+							$min = $weigth;
+							$min_w = $weigth;
+						} elsif ($min == $weigth) {
+							$min_seq .= "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+						}
+
+						if ($max < $weigth) {
+							$max_seq = "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+							$max = $weigth;
+							$max_w = $weigth;
+						} elsif ($max == $weigth) {
+							$max_seq .= "_$vars|$seq|".$list_result{$var_id}{$info}{$line};	
+						}				
+					}
+				
+					$var_line .= "_$vars|$seq|".$list_result{$var_id}{$info}{$line};
+	
+					if ($want_pval) {
+						$var_line .= "|$pval";
+					} else {
+						$var_line .= "|$weigth";	
+					}
+				}
+			
+				my $diff = $max-$min;
+				my $diff_w = $max_w-$min_w;
+
+				if ($lth{'dscore'}) { 
+					next if ($diff_w < $lth{'dscore'});
+				}
+			
+				my $diff_str = "$diff";
+				$diff_str .= "\t$diff_w" if ($want_pval);
+			
+				$min_seq = substr($min_seq,1);
+				$max_seq = substr($max_seq,1);
+
+				$output_line .= "$min\t$max\t$diff_str\t$min_seq\t$max_seq";
+	#			$output_line .= "\t".substr($var_line,1);
+				$output_result{$diff_w}{$output_line}{'min'} = $min;
+				$output_result{$diff_w}{$output_line}{'max'} = $max;
+			}
+		}
+	}
+
+  ################################################################
+  ## Insert here output printing
+	foreach my $diff ( sort {$b <=> $a} keys(%output_result)){
+	
+		if ($lth{'dscore'}) { 
+			next if ($diff < $lth{'dscore'});
+		}
+
+		foreach my $line (keys(%{$output_result{$diff}})){
+
+			if ($uth{'pval'}) { 
+				next if ($output_result{$diff}{$line}{'min'} > $uth{'pval'});
+			}
+
+			if ($lth{'score'}) { 
+				next if ($output_result{$diff}{$line}{'max'} < $lth{'score'});
+			}
+						
+			print $out $line,"\n";
+			
+		}
+	}
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+	$arg = shift (@arguments);
+## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+		if (&IsNatural($arguments[0])) {
+			$main::verbose = shift(@arguments);
+		} else {
+			$main::verbose = 1;
+		}
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+		&PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+		&PrintOptions();
+
+=pod
+
+=item B<-i inputfile>
+
+The input file should be in bed format (see section INPUT FORMATS
+above).
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+This option is mutually exclusive with option I<-u>.
+
+=cut
+	} elsif ($arg eq "-i") {
+		&RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input_url});
+		$main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-u input_file_URL> NOT WORKING
+
+Use as input a file available on a remote Web server (e.g. a bed file
+on your Galaxy account).
+
+This option is mutually exclusive with option I<-i>.
+
+=cut
+	} elsif ($arg eq "-u") {
+		&RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input});
+		$main::infile{input_url} = shift(@arguments);
+
+=pod
+
+=item B<-bgfile>
+
+Background file contening propability of words
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+		$main::bgfile = shift(@arguments);
+
+=pod
+
+=item B<-matrixfile>
+
+Matrix of transcription factor (Transfac format)
+
+=cut
+	} elsif ($arg eq "-matrixfile") {
+		$main::infile{matrixfile} = shift(@arguments);
+
+=pod
+
+=item	B<-lth param lower_threshold>
+
+=item	B<-uth param upper_threshold>
+
+Threshold on some parameter (-lth: lower, -uth: upper threshold).
+
+Supported threshold fields for the matches : score pval dscore dpval
+
+Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
+
+=cut
+
+	### Lower threshold
+	} elsif ($arg eq "-lth") {
+		my $thr_field = lc(shift(@arguments));
+		my $thr_value =  lc(shift(@arguments));
+		unless ($supported_threshold{$thr_field}) {
+			&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+    }
+
+    &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+    unless (&RSAT::util::IsReal($thr_value));
+
+    $lth{$thr_field} = $thr_value;
+    push (@thr_param, $thr_field);
+
+	### Upper threshold
+	} elsif ($arg eq "-uth") {
+		my $thr_field = lc(shift(@arguments));
+		my $thr_value = lc(shift(@arguments));
+		unless ($supported_threshold{$thr_field}) {
+			&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+		}
+		
+		&RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
+		unless (&RSAT::util::IsReal($thr_value));
+
+		$uth{$thr_field} = $thr_value;
+    push (@thr_param, $thr_field);
+    
+=pod
+
+=item B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+			$outfile{output} = shift(@arguments);
+
+	} else {
+			&FatalError(join("\t", "Invalid option", $arg));
+
+	}
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; snp-scan ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+		print $out "; Input files\n";
+		while (my ($key,$value) = each %main::infile) {
+	    printf $out ";\t%-13s\t%s\n", $key, $value;
+		}
+  }
+  
+  if (%main::outfile) {
+		print $out "; Output files\n";
+		while (my ($key,$value) = each %main::outfile) {
+	    printf $out ";\t%-13s\t%s\n", $key, $value;
+		}
+  }
+
+#  print $out ";  column headers\n";
+#  print $out ";  \t1\tchr\tChromosome id (ex 1, X, 12)\n";
+#  print $out ";  \t2\tstart\tStarting position of the sequence\n";
+#  print $out ";  \t3\tend\tEnding position of the sequence\n";
+#  print $out ";  \t4\tstrand\tStrand of the sequence\n";
+#  print $out ";  \t5\tvar\trsID, variant, position on the center of sequence. Information are separate by / \n";
+#  print $out ";  \t6\tco-var\trsID, variant, position of all variations present in sequence. Information are separate by '/', Co-variation are separate by ',' \n";
+#  print $out ";  \t7\tseq\tsequence\n";
+#  print $out ";  \t8\tcount\tNumber of time that this sequence is observed\n";
+}
+
+__END__   

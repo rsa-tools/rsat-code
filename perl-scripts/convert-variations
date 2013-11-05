@@ -1,0 +1,696 @@
+#!/usr/bin/perl -w
+
+############################################################
+#
+# $Id: convert-variations,v 1.1 2013/07/18 12:23:07 jeremy Exp $
+#
+############################################################
+
+use warnings;
+
+=pod
+
+=head1 NAME
+
+convert-variation
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Convert a variation file in different format
+
+/!\ To convert to VCF format, raw genomic sequence must be install
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ covert-variations -i filename -from format -to format [-species #] [-v #] [-o #]
+
+=head1 SUPPORTED FORMAT
+
+VCF, GVF, rsat-var
+
+=head1 OUTPUT FORMAT
+
+A tab delimited on wanted format
+
+
+=head1 SEE ALSO
+
+=head2 retrieve-snp-seq
+
+I<retrieve-snp-seq> uses files product by I<install-ensembl-variation>
+to make all the sequence of a variation.
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+  $ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
+  push (@INC, "$ENV{'RSAT'}/perl-scripts/lib");
+
+}
+
+require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
+
+################################################################
+## Main package
+package	main;
+{
+
+  ###############################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+  our %infile	= ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  our @supported_format = ("vcf","gvf","rsat-var");
+  our $data_dir = "$ENV{'RSAT'}/data/";
+
+  our @validate_patterns = (
+    "E_MO",
+    "E_Freq",
+    "E_HM",
+    "E_1000G",
+    "E_C",
+    "evidence_values",
+    'validation_status'
+    );
+
+  our %validate_pattern = ();
+
+
+  our $from = "";
+  our $to = "";
+  our $species = "";
+
+  our $assembly_version = "";
+  our $ensembl_version = "";
+  our $genome_dir = "";
+  our %chr_file = ();
+  our $last_chr = "";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  foreach (@validate_patterns) {
+    $validate_pattern{$_} = 1;
+  }
+
+
+  ################################################################
+  ## Check argument values
+  if ($to eq "vcf") {
+
+    if ($species eq "") {
+      &RSAT::error::FatalError("Species must be indicate if option -to equal vcf");
+    }
+
+    unless ( $assembly_version || $ensembl_version ) {
+      &RSAT::error::FatalError("Ensembl or assembly version must be indicate if option -to equal vcf");
+    }
+
+    $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
+    &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before covert-variation.") unless (-d $genome_dir);
+
+    # Check if sequence file are not missing
+    %chr_file = &Get_file_seq_name($genome_dir);
+      foreach my $file (keys(%chr_file)) {
+      unless (-f $genome_dir.$chr_file{$file}) {
+        &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
+      }
+    }
+  }
+
+  ################################################################
+  ## Print verbose
+  $out = &OpenOutputFile($outfile{output});
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Download input from remote URL
+  if ($main::infile{input_url}) {
+    &RSAT::message::TimeWarn("Transferring input file from URL", $main::infile{input_url}) if ($main::verbose >= 2);
+    use LWP::Simple;
+
+    if (defined($outfile{output})) {
+      $main::outfile{input} = $main::outfile{output};
+      $main::outfile{input} =~ s/\.tab$//;
+      $main::outfile{input} =~ s/\.vcf$//;
+      $main::outfile{input} =~ s/\.gvf$//;
+
+      ## Add extension to the input file, in order to recognize compressed files
+      if ($main::infile{input_url} =~ /\.(\w+)$/) {
+        my $extension = $1;
+        $main::outfile{input} .= ".".$extension;
+      } else {
+        $main::outfile{input} .= ".vcf" if ($from eq "vcf");
+        $main::outfile{input} .= ".tab" if ($from eq "rsat-var");
+        $main::outfile{input} .= ".gvf" if ($from eq "gvf");
+      }
+
+    } else {
+      $main::outfile{input} = &RSAT::util::make_temp_file("", "convert-variation");
+      &RSAT::message::Info("Storing downloaded input file as", $main::outfile{input}) if ($main::verbose >= 3);
+    }
+
+    getstore($main::infile{input_url}, $main::outfile{input});
+    &RSAT::message::TimeWarn("Variation file transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
+    $main::infile{input} = $main::outfile{input};
+  }
+
+
+  ################################################################
+  ## Read input
+  &RSAT::message::TimeWarn("Reading input file") if ($main::verbose >= 2);
+  my $legend = 1;
+
+  print $out "##gff-version 3\n##gvf-version 1.07\n" if ($to eq "gvf");
+  print $out "##fileformat=VCFv4.1\n" if ($to eq "vcf");
+
+  ($main::in) = &OpenInputFile($main::infile{input});
+
+
+  while (<$main::in>) {
+    next if (/^;/); ## Skip RSAT-like comment lines
+    next unless (/\S/); ## Skip empty lines
+
+
+    while (/^#/) {
+      print $out $_ unless (/^##fileformat/ || /^#[^#]/);
+      $_ = <$main::in>;
+    }
+
+    chomp();
+    if ($legend) {
+      print $out "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" if ($to eq 'vcf');
+      print $out "#seqid\tsource\ttype\tstart\tend\tscore\tstrand\tphase\tattribute\n" if ($to eq 'gvf');
+      print $out "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\n" if ($to eq 'rsat-var');
+      $legend = 0;
+    }
+
+    ### Input variation
+    my %variation =  ();
+
+    ## VCF file
+    if ($from eq "vcf") {
+      my @token = split("\t",$_);
+      
+      if (scalar( @token ) < 8 ) {
+        &RSAT::message::WARNING("$_ skip. VCF line must be cointain at least 8 columns");
+        next;
+      }
+
+      %variation = &Get_var_from_vcf(\@token);
+    }
+
+
+    ## RSAT file
+    if ($from eq 'rsat-var') {
+      my @token = split("\t",$_);
+
+      next if ($token[9] == 1);
+      if (scalar( @token ) != 11 ) {
+         &RSAT::message::WARNING("$_ skip. RSAT-var line must be cointain 11 columns");
+         next;
+      }
+
+      %variation = &Get_var_from_rsat(\@token);
+    }
+
+
+    ## GVF file
+    if ($from eq 'gvf') {
+      chomp();
+      my @token = split("\t",$_);
+
+      if (scalar( @token ) != 9) {
+        &RSAT::message::WARNING("$_ skip. gvf line must be cointain 9 columns");
+        next;
+      }
+
+      unless ( $token[8] =~ /ID\=/) {
+        &RSAT::error::FatalError("No ID found. Put key 'ID' in attribute colunm");
+        next;
+      }
+
+      unless ( $token[8] =~ /Reference_seq\=/) {
+        &RSAT::error::FatalError("No reference variant found. Put key 'Variant_ref' in attribute colunm");
+        next;
+      }
+
+      unless ( $token[8] =~ /Variant_seq\=/) {
+        &RSAT::error::FatalError("No alternate variant found. Put key 'Variant_alt' in attribute colunm");
+        next;
+      }
+
+      %variation = &Get_var_from_gvf(\@token);
+    }
+
+    ### Output variation
+    print $out &Convert_var_to_rsat(%variation),"\n" if ($to eq "rsat-var");
+    print $out &Convert_var_to_vcf(%variation),"\n" if ($to eq "vcf");
+    print $out &Convert_var_to_gvf(%variation),"\n" if ($to eq "gvf");
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $exec_time if ($main::verbose >= 2); ## only report exec time if verbosity is specified
+  close $out;
+
+  exit(0);
+}
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Get all variation information from a variation in vcf format
+sub Get_var_from_vcf {
+  my @token = @{$_[0]};
+  my %variation = ();
+
+  $variation{'chr'} = $token[0];
+  $variation{'start'} = $token[1];
+  $variation{'end'} = $variation{'start'} + length($token[3])-1;
+  $variation{'strand'} = "+";
+  $variation{'id'} = $token[2];
+  $variation{'ref'} = $token[3];
+  $variation{'alt'} = $token[4];
+  $variation{'SO'} = "sequence_alteration";
+  $variation{'validate'} = 0;
+  $variation{'attribute'} = ();
+
+  # Check validate value and attribute
+  foreach (split(";",$token[7])) {
+    my ($key,$value) = split("=",$_);
+    $value = 1 unless ($value);
+    push(@{$variation{'attribute'}},$key.'='.$value);
+    $variation{'validate'} = 1 if ($validate_pattern{$key});
+  }
+
+  # Check len and first nucleotide  of variant (ref and alt)
+  my $is_indel = 0;
+  my $same_length = 1;
+
+  foreach (split(",",$variation{'alt'})) {
+    $is_indel = 1 if ( substr($_,0,1) eq substr($variation{'ref'},0,1));
+    $same_length = 0 if ( length($_) !=  length($variation{'ref'}));
+  }
+
+
+  # Check variant and start/end coordinate
+  if ($is_indel) {
+
+    # Alternatif variant
+    my @alts = ();
+    foreach (split(",",$variation{'alt'})) {
+      my $alt = ",".substr($variation{'alt'},1);
+      $alt = "-" unless ($alt);
+      push (@alts, $alt);
+    }
+    $variation{'alt'} = join(",",@alts);
+
+    # Ref variant
+    $variation{'ref'} = substr($variation{'ref'},1);
+    $variation{'ref'} = "-" unless ($variation{'ref'});
+
+    # Coordinate
+    $variation{'start'} ++;
+    $variation{'end'} = $variation{'start'} + length($variation{'ref'})-1;
+  }
+
+
+  # Check SO Term
+  if ($same_length && length($token[3]) == 1) {
+    $variation{'SO'} = "SNV";
+  } elsif ($same_length) {
+    $variation{'SO'} = "substitution";
+  } elsif ($is_indel && $variation{'ref'} eq "-") {
+    $variation{'SO'} = "insertion";
+  } elsif ($is_indel) {
+    $variation{'SO'} = "deletion";
+  }
+
+  return %variation;
+}
+
+
+################################################################
+## Get all variation information from a variation in rsat format
+sub Get_var_from_rsat {
+  my @token = @{$_[0]};
+  my %variation = ();
+
+  $variation{'chr'} = $token[0];
+  $variation{'start'} = $token[1];
+  $variation{'end'} = $token[2];
+  $variation{'strand'} = $token[3];
+  $variation{'id'} = $token[4];
+  $variation{'ref'} = $token[5];
+  $variation{'alt'} = $token[6];
+  $variation{'SO'} = $token[7];
+  $variation{'validate'} = $token[8];
+  $variation{'attribute'} = ();
+  push (@{$variation{'attribute'}}, "validate=1") if ($variation{'validate'});
+
+  return %variation;
+}
+
+
+################################################################
+## Get all variation information from a variation in gvf format
+sub Get_var_from_gvf {
+  my @token = @{$_[0]};
+  my %variation = ();
+
+  $variation{'chr'} = $token[0];
+  $variation{'start'} = $token[3];
+  $variation{'end'} = $token[4];
+  $variation{'strand'} = $token[6];
+  $variation{'id'} = "";
+  $variation{'ref'} = "";
+  $variation{'alt'} = "";
+  $variation{'SO'} = $token[2];
+  $variation{'validate'} = 0;
+  $variation{'attribute'} = ();
+
+  foreach (split(";",$token[8])) {
+    my ($key,$value) = split("=",$_);
+
+
+    if ($key eq "ID") {
+      $variation{'id'} = $value;
+
+    } elsif ($key eq "Dbxref") {
+      my ($source,$id) = split (":",$value);
+      $variation{'id'} = $id;
+
+    } elsif ($key eq "Reference_seq") {
+      $variation{'ref'} = $value;
+
+    } elsif ($key eq "Variant_seq") {
+      $variation{'alt'} = $value;
+
+    } elsif ($validate_pattern{$key}) {
+      $variation{'validate'} = 1;
+      push(@{$variation{'attribute'}},$key.'='.$value);
+
+    } elsif ($key eq 'validation_states' && $value ne "-") {
+      $variation{'validate'} = 1;
+      push(@{$variation{'attribute'}},$key.'='.$value);
+
+    } else {
+      push(@{$variation{'attribute'}},$key.'='.$value);
+    }
+  }
+
+  return %variation;
+}
+
+################################################################
+## Get all variation information from a variation in gvf format
+sub Convert_var_to_rsat {
+  my %variation = @_;
+
+  my $line = $variation{'chr'}."\t";
+  $line .= $variation{'start'}."\t";
+  $line .= $variation{'end'}."\t";
+  $line .= $variation{'strand'}."\t";
+  $line .= $variation{'id'}."\t";
+  $line .= $variation{'ref'}."\t";
+  $line .= $variation{'alt'}."\t";
+  $line .= $variation{'SO'}."\t";
+  $line .= $variation{'validate'}."\t";
+  $line .= "0"."\t";
+  $line .= "0";
+
+  return  $line;
+}
+
+sub Convert_var_to_gvf {
+  my %variation = @_;
+
+  push (@{$variation{'attribute'}},"ID=".$variation{'id'});
+  push (@{$variation{'attribute'}},"Reference_seq=".$variation{'ref'});
+  push (@{$variation{'attribute'}},"Variant_seq=".$variation{'alt'});
+
+  my $line = $variation{'chr'}."\t";
+  $line .= '.'."\t";;
+  $line .= $variation{'SO'}."\t";
+  $line .= $variation{'start'}."\t";
+  $line .= $variation{'end'}."\t";
+  $line .= '.'."\t";
+  $line .= $variation{'strand'}."\t";
+  $line .= '.'."\t";
+  $line .= join(";",@{$variation{'attribute'}});
+
+  return  $line;
+}
+
+sub Convert_var_to_vcf {
+  my %variation = @_;
+
+  if ($variation{'ref'} eq "-" || $variation{'alt'} =~ /\-/) {
+
+    if ($variation{'chr'} ne $last_chr) {
+      my $raw_file = $genome_dir.$chr_file{$variation{'chr'}};
+      $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
+      $last_chr = $variation{'chr'};
+    }
+
+    $variation{'start'} --;
+    $prev_nucle = substr($ref_seq,$variation{'start'},1);
+
+    $variation{'ref'} = $prev_nucle.$variation{'ref'};
+    $variation{'ref'} =~ s/\-//m;
+
+    my @alts = ();
+    foreach my $alt (split(",",$variation{'alt'})) {
+      push (@alts,$prev_nucle.$alt);
+    }
+    $variation{'alt'} = join (",",@alts);
+    $variation{'alt'} =~ s/\-//m;
+  }
+
+  push (@{$variation{'attribute'}},"TSA=".$variation{'SO'});
+
+  my $line = $variation{'chr'}."\t";
+  $line .= $variation{'start'}."\t";
+  $line .= $variation{'id'}."\t";
+  $line .= $variation{'ref'}."\t";
+  $line .= $variation{'alt'}."\t";
+  $line .= '.'."\t";
+  $line .= '.'."\t";
+  $line .= join(";",@{$variation{'attribute'}});
+
+  return  $line;
+}
+
+
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+        $main::verbose = shift(@arguments);
+      } else {
+        $main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-i inputfile>
+
+Variation files in tab format
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+This option is mutually exclusive with option I<-u>.
+
+=cut
+    } elsif ($arg eq "-i") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input_url});
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-u input_file_URL>
+
+Use as input a file available on a remote Web server.
+
+This option is mutually exclusive with option I<-i>.
+
+=cut
+    } elsif ($arg eq "-u") {
+      &RSAT::error::FatalError("Options -i and -u are mutually exclusive") if ($main::infile{input});
+      $main::infile{input_url} = shift(@arguments);
+
+=pod
+
+=item B<-from #>
+
+Format of the input file
+
+=cut
+    } elsif ($arg eq "-from") {
+      $main::from = lc(shift(@arguments));
+      &RSAT::error::FatalError("Not supported input format : $from") unless ( grep($_ eq $from, @supported_format ));
+
+=pod
+
+=item B<-to #>
+
+Format of the output file
+
+=cut
+    } elsif ($arg eq "-to") {
+      $main::to = lc(shift(@arguments));
+      &RSAT::error::FatalError("Not supported output format : $to") unless ( grep($_ eq $to, @supported_format ));
+
+=pod
+
+=item B<-species species_name>
+
+Species where variation are coming from (Homo_sapiens, Mus_musculus).
+ 
+=cut
+    } elsif ($arg eq "-species") {
+      $main::species = lc(shift(@arguments));
+
+=pod
+
+=item B<-e_version #>
+
+The version of ensembl
+
+=cut
+    } elsif ($arg eq "-e_version") {
+      $main::ensembl_version = shift(@arguments);
+
+=pod
+
+=item B<-a_version #>
+
+The version of the assembly of the species
+
+=cut
+    } elsif ($arg eq "-a_version") {
+      $main::assembly_version = shift(@arguments);
+
+=pod
+
+=item B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print "; convert-variations ";
+  &PrintArguments($out);
+
+  if (%main::outfile) {
+    print "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}

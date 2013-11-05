@@ -1,0 +1,686 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-score-distrib,v 1.14 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+compare-score-distrib
+
+=head1 DESCRIPTION
+
+Compare score distributions between two or more input files.
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+stats
+
+=head1 USAGE
+    
+compare-score-distrib -i file_1 -i file_2 [... -i file_n] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Input files are tab-delimited text files. One column of each file
+contains the scores for which the distibution has to be computed By
+default, the first column is taken as score column.
+
+=head1 OUTPUT FORMAT
+
+A tab-delimted text file where 
+
+ - the first column give the sorted scores
+   (all scores found in any of the input files) 
+
+ - the following columns indicate the file-specific score
+   distributions (one column per input file).
+
+=head2 Output fields
+
+For each input file, the program computes the distribution of score
+occurrences and the
+
+=over
+
+=item B<N.i>
+
+absolute frequencies (occurrences) of scores in the I<ith> file.
+
+N(x) = N(X = x)
+
+=item B<Ncum.i>
+
+Cumulative occurrences of score i in the ith file
+
+Ncum(x) = N(X <= x)
+
+=item B<Nicum.i>
+
+Inverse cumulative occurrences of score i in the ith file
+
+Nicum(x) = N(X >= x)
+
+
+=back
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+
+  %outfile = ();
+
+  local $main::verbose = 0;
+  #    local $in = STDIN;
+  local $out = STDOUT;
+
+
+  local @input_files = (); ## List of input files
+
+  ## Score columns
+  local $default_sc = 1;   ## Default value for the score column
+  local @sc = (); ## File-specific score columns
+
+  ## Relativization factor
+  local $default_factor = 1; ## Default value for the factor per file
+  local @file_factor = (); ## File-specific factor
+
+  ## Column restrictions
+  %restrict = ();
+
+  ## Distributions
+  my %N_per_file = (); ## Distribution of occurrences
+  my %Ncum_per_file = (); ## Cumulative distribution of occurrences
+  my %Nicum_per_file = (); ## Inverse cumulative distribution of occurrences
+  local @N_cols = (); ## Columns of the output file containint occurrences
+  local @Ncum_cols = (); ## Columns of the output file containint cumulative occurrences
+  local @Nicum_cols = (); ## Columns of the output file containint inverse cumulative occurrences
+
+  ## Distribution graph
+  local $export_graph = 0;
+  local $img_format = "png";
+
+  ## Values considered as NULL for the score column
+  local %null_score = ();
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Check that at least one input file has been specified
+  if (scalar(@input_files) < 1) {
+    &RSAT::error::FatalError("You must specify at least one input file (option -i).");
+  }
+
+  ## Define score column for each file
+  foreach $f (1..scalar(@input_files)) {
+    unless (defined ($sc[$f])) {
+      $sc[$f] = $default_sc;
+    }
+  }
+
+  ## Define file-specific increment (for the option -file_factor)
+  foreach $f (1..scalar(@input_files)) {
+    unless (defined ($file_factor[$f])) {
+      $file_factor[$f] = $default_factor;
+    }
+    $increment[$f] = 1/$file_factor[$f];
+  }
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Read input files
+  foreach $f (1..scalar(@input_files)) {
+
+    #### select the input file
+    $inputfile = $input_files[$f-1];
+
+    ## Read current input file
+    my ($in) = &OpenInputFile($inputfile);
+    my $l = 0;
+    while (<$in>) {
+      $l++;
+      next unless (/\S/);	## Skip empty lines
+      next if (/^\#/);		## Skip header or comment lines
+      next if (/^;/);		## Skip comment lines
+      next if (/^--/);		## Skip comment lines
+      chomp();
+      @fields = split "\t";
+
+      ## Column restrictions
+      my $skip = 0;
+      foreach my $col (keys %restrict) {
+	my $keyword = $restrict{$col};
+	my $value = $fields[$col-1];
+	unless ($value eq $keyword) {
+	  &RSAT::message::Info($inputfile, "restrict", $col, $keyword, "skipping row", $l, $value) 
+	    if ($main::verbose >= 2);
+	  $skip = 1;
+	  last;
+	}
+      }
+
+      next if ($skip);
+
+      ## Score
+      my $col = $sc[$f] - 1;
+      my $score = $fields[$col];
+
+      ## Skip rows with empty cell for the score column
+      unless ($score) {
+	&RSAT::message::Warning("File", $f, $inputfile,
+				"skipping line", $l,
+				"column", $sc[$f],
+				"null score value") ;
+	next;
+      }
+
+      ## Skip rows with infinite or NA values
+      if ($null_score{lc($score)}) {
+	&RSAT::message::Warning("File", $f, $inputfile,
+				"skipping line", $l,
+				"column", $sc[$f],
+				$score, "null score value") ;
+	next;
+      }
+
+      ## Die if an invalid score value is found
+      &RSAT::error::FatalError("File", $f, $inputfile,
+				 "line", $l,
+				 "column", $sc[$f],
+				 $score, "Invalid score value, should be a Real number") 
+	unless (&IsReal($score));
+
+      ## Increment score count
+      $N_per_file{$score}[$f] += $increment[$f];
+    }
+    close $in;
+  }
+
+  ################################################################
+  ## Compute  cumulative distributions
+  my @sorted_scores_asc =  sort {$a <=> $b} keys %N_per_file;
+  foreach my $f (1..scalar(@input_files)) {
+    my $Ncum = 0;
+    foreach my $score  (@sorted_scores_asc) {
+      my $occ = $N_per_file{$score}[$f] || 0;
+      $Ncum += $occ;
+      $Ncum_per_file{$score}[$f] += $Ncum;
+    }
+  }
+
+  ################################################################
+  ## Compute inverse cumulative distributions
+  my @sorted_scores_desc =  sort {$b <=> $a} keys %N_per_file;
+  foreach my $f (1..scalar(@input_files)) {
+    my $Nicum = 0;
+    foreach my $score  (@sorted_scores_desc) {
+      my $occ = $N_per_file{$score}[$f] || 0;
+      $Nicum += $occ;
+      $Nicum_per_file{$score}[$f] += $Nicum;
+#      &RSAT::message::Debug("Computing Nicum", $f, $score, $occ, $Nicum, $Nicum_per_file{$score}[$f]);
+    }
+  }
+
+  ################################################################
+  ## Print output
+
+  ## Print column headers
+  @out_fields = ("score");
+  foreach my $f (1..scalar(@input_files)) {
+    push @out_fields, "N.".$f;
+    push @N_cols, scalar(@out_fields);
+  }
+  foreach my $f (1..scalar(@input_files)) {
+    push @out_fields, "Ncum.".$f;
+    push @Ncum_cols, scalar(@out_fields);
+  }
+  foreach my $f (1..scalar(@input_files)) {
+    push @out_fields, "Nicum.".$f;
+    push @Nicum_cols, scalar(@out_fields);
+  }
+
+  if ($main::verbose >= 1) {
+    print $out "; Column content\n";
+    foreach my $i (1..scalar(@out_fields)) {
+      print $out join ("\t", ";", $i, $out_fields[$i-1]), "\n";
+    }
+    print $out ";\n";
+  }
+  print $out "#", join ("\t", @out_fields), "\n";
+
+  ## Print score distributions
+  my @sorted_scores = sort {$a <=> $b} keys %N_per_file;
+  foreach my $score (@sorted_scores) {
+    print $out $score;
+
+    ## Occurrences
+    foreach my $f (1..scalar(@input_files)) {
+      my $occ = $N_per_file{$score}[$f] || 0;
+      print $out "\t", &FormatFreq($occ);
+    }
+
+    ## Cumulative distribution
+    foreach my $f (1..scalar(@input_files)) {
+      my $occ = $Ncum_per_file{$score}[$f];
+      print $out "\t", &FormatFreq($occ);
+    }
+
+    ## Inverse cumulative distribution
+    foreach my $f (1..scalar(@input_files)) {
+      my $occ = $Nicum_per_file{$score}[$f];
+      print $out "\t", &FormatFreq($occ);
+    }
+
+    print $out "\n";
+  }
+
+  ################################################################
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out if ($outfile{output});
+
+  ################################################################
+  ## Export distribution graph
+  &ExportGraph if ($export_graph);
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Format frequencies
+sub FormatFreq {
+  my ($freq) = @_;
+
+  if ((&IsNatural($freq)) && ($main::default_factor == 1)) {
+    return($freq);
+  } elsif (($freq < 0.001) && ($freq != 0)){
+    $freq = sprintf "%.1e", $freq;
+  } else {
+    $freq = sprintf "%.5f", $freq;
+  }
+  return ($freq);
+}
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    ## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+      if ($arg eq "-v") {
+	if (&IsNatural($arguments[0])) {
+	  $main::verbose = shift(@arguments);
+	} else {
+	  $main::verbose = 1;
+	}
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+
+       } elsif ($arg eq "-h") {
+          &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+Input file. This option can be used iteratively on the command line to
+specify multiple input files. 
+
+Example: -i file_1 -i file_2 [... -i file_n]
+
+=cut
+    } elsif ($arg eq "-i") {
+      push @main::input_files, shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@arguments);
+
+      ### Export distribution graph
+=pod
+
+=item B<-graphs>
+
+Export distribution graph.
+
+=cut
+    } elsif ($arg eq "-graph") {
+      $export_graph = 1;
+
+      ### score column
+=pod
+
+=item B<-sc score_column>
+
+Specify the score column (by a natural number). Default: 1.
+
+=cut
+    } elsif ($arg eq "-sc") {
+      $default_sc = shift(@arguments);
+      unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+
+      ### File-specific score column
+=pod
+
+=item B<-sc# score_column>
+
+Specify the score column (by a natural number) for a specific file
+(file number #).
+
+=cut
+    } elsif ($arg =~ /-sc(\d+)/) {
+      my $f = $1;
+      $sc[$f] = shift(@arguments);
+      unless ((&IsNatural($sc[$f])) && ($sc[$f] >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+      ## Null score values
+=pod
+
+=item B<-null>
+
+Null score value. Rows with a null score will be skipped. Null values
+are case-insensitive.
+
+This option can be used iteratively to specify several null values. 
+
+Example:
+  -null NA -null -Inf -null Inf
+
+=cut
+    } elsif ($arg eq "-null") {
+      my $value = shift (@arguments);
+      $main::null_score{lc($value)} = 1;
+
+
+      ### Relativization factor
+=pod
+
+=item B<-factor #>
+
+Specify a relativization factor. All occurrences are divided by this
+factor. Default: 1.
+
+=cut
+    } elsif ($arg eq "-factor") {
+      $default_factor = shift(@arguments);
+      unless ((&IsNatural($default_factor)) && ($default_factor >= 1)) {
+	&RSAT::error::FatalError("Relativization factor must be an integer >= 1");
+      }
+
+      ### File-specific factor
+=pod
+
+=item B<-file_factor filenb factor>
+
+Specify a file-specific relatibization factor (default 1). Occurrences
+will be divised by the file-specific factor, in order to compute
+relative occurrences.
+
+This option is convenient to obtain relative distributions when the
+input tables contain results from experiments performed with data sets
+of different sizes. 
+
+For example, if one wants to compare score distributions of the motifs
+obtained in regulons and in random gene selections, respectively,one
+might dispose of a set of 80 regulons and 1000 random selections. In
+this case one can apply file-specific relativization factors in order
+to compute the number of scores per sequence set in each data set.
+
+ -file_factor 1 80 -file_factor 2 1000
+
+=cut
+    } elsif ($arg eq "-file_factor") {
+      my $f = shift(@arguments);
+      unless ((&IsNatural($f)) && ($f >= 1)) {
+	&RSAT::error::FatalError("File number must be a Natural number >= 1 for the option -file_factor");
+      }
+
+      $file_factor[$f] = shift(@arguments);
+      unless ((&IsNatural($file_factor[$f])) && ($file_factor[$f] >= 1)) {
+	&RSAT::error::FatalError($f, $file_factor[$f], 
+				 "File-specific relativization factor must be a Natural number >= 1");
+      }
+
+      ### Filter column
+=pod
+
+=item B<-restrict colnb keyword>
+
+Restriction column.
+
+This options allows to specify a column containing a filter
+keyword. The score distributions are then restricted to the rows
+containing the specified keyword.
+
+For example, with the option I<-filter_col 4 dyad>, the program
+compute score distributions only for rows containint the word "dyad"
+in the 4th column.
+
+This option can be used iteratively to simultaneously impose several
+constraints on each row.
+
+=cut
+    } elsif ($arg eq "-restrict") {
+      my $restrict_col = shift(@arguments);
+      unless ((&IsNatural($restrict_col)) && ($restrict_col >= 1)) {
+	&RSAT::error::FatalError("Restriction column must be an integer >= 1");
+      }
+      my $restrict_value = shift(@arguments);
+      unless ($restrict_value) {
+	&RSAT::error::FatalError("Restriction keyword cannot be empty");
+      }
+      $restrict{$restrict_col} = $restrict_value;
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; compare-score-distrib ";
+  &PrintArguments($out);
+  printf $out "; %-13s\t%d\n", "Default score column", $default_sc;
+
+  print $out "; Input files\n";
+  print $out join ("\t", ";", "number", "sc.col", "factor", "incr","file name"), "\n";
+  foreach my $f (1..scalar(@input_files)) {
+    print $out join ("\t", ";", $f, $sc[$f],$file_factor[$f],$increment[$f],
+		     $input_files[$f-1]), "\n";
+  }
+
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+
+  if (scalar(keys(%restrict)) >= 1) {
+    print $out "; Restrictions on columns\n";
+    foreach my $col (sort {$a <=> $b} keys (%restrict)) {
+      printf $out ";\t%d\t%s\n", $col, $restrict{$col};
+    }
+  }
+}
+
+################################################################
+## Generate distribution graph
+sub ExportGraph {
+  my $graph_prefix = $outfile{output};
+  $graph_prefix =~ s/\.tab$//;
+  $graph_prefix =~ s/\.txt$//;
+
+  ## Graph comparing inverse cumulative distributions (Y) as a function of the sig score (X)
+  my $command = "XYgraph -i ".$outfile{output};
+  $command .= " -xcol 1 -ycol ";
+  $command .= join ",", @Nicum_cols;
+  $command .= " -lines ";
+  $command .= " -title1 'Inverse cumulative distributions' ";
+  $command .= " -xsize 800 -ysize 500 ";
+  $command .= " -xleg1 'score' -yleg1 'Frequency'";
+  $command .= " -legend ";
+#  $command .= " -xgstep1 5 -xgstep2 1 ";
+#  $command .= " -ygstep1 0.1 -ygstep2 0.05 ";
+  $command .= " -format ".$img_format;
+  $command .= " -o ".$graph_prefix."_Nicum_distrib.".$img_format;
+  &doit($command);
+
+#   ## Graph comparing inverse cumulative score distributions between regulons (Y) and random selections (X)
+#   $command = "XYgraph -i oligo_rank1_sig_distrib.tab ";
+#   $command .= " -xcol 7 -ycol 6 -lines ";
+#   $command .= " -xsize 500 -ysize 500 ";
+#   $command .= " -title1 'oligos rank 1' ";
+#   $command .= " -title2 'fraction of famililes with at least one motif' ";
+#   $command .= " -xleg1 'random selections' -yleg1 'regulons' ";
+#   $command .= " -legend ";
+#   $command .= " -xgstep1 0.1 -xgstep2 0.05 ";
+#   $command .= " -ygstep1 0.1 -ygstep2 0.05 ";
+#   $command .= " -o ".$outfile{output}."_Nicum_roc.png";
+
+}
+
+
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<classfreq>
+
+Computes the score distributions for a single input file, and with
+fixed-width class intervals.
+
+=item I<compare-scores>
+
+Compare scores assigned to specific objects (e.g. genes) in different
+input files. In I<compare-scores>, scores are assigned to objects
+(defined by an identifier), whereas in I<compare-score-distrib>, the
+comparison between files concerns the whole score distribution.
+
+=item I<roc-stats> and I<roc-stats2>
+
+These programs take as input a single file, where each row is labelled
+as I<positive> or I<negative>, and compare score distribution between the
+positive and negative objects.
+
+=back
+
+=cut
