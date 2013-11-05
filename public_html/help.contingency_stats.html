@@ -1,0 +1,164 @@
+<html>
+<head>
+   <title>compare-classes help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</a> - Help about contingency-stats
+</h2>
+</center>
+
+    This programs takes as input a contingency table, and calculates various
+    matching statistics between the rows and columns. The description of
+    these statistics can be found in Brohee and van Helden, 2006.
+<ul>
+<h4>AUTHORS</h4>
+<ul><a href = 'http://www.bigre.ulb.ac.be/~jvanheld/' target = '_blank'>Jacques van Helden</a></ul>
+</ul>
+
+<ul><h4>INPUT FORMAT</h4>
+    A contingency table is a N*M table used to compare the contents of two
+    classifications. Rows represent the clusters of the first classification
+    (considered as reference), and columns the clusters of the second
+    classification (query).<br>
+
+    Contingency tables can be generated with the program contingency-table,
+    or with compare-classes (option -matrix QR).</ul>
+
+<ul><h4>OUTPUT FORMAT</h4>
+    A tab-delimited text file with one row per statistics.</ul>
+
+<ul><h4>STATISTICS</h4>
+    <ul><b>Sn</b><br>
+        Sensitivity. This parameter indicates the fraction of each reference
+        cluster (row) covered by its best matching query cluster (column).<br>
+
+        Sensitivity is calculated at the level of each cell (cell-wise Sn),
+        of each row (row-wise Sn) and of the whole contingency table
+        (table-wise Sn).<br><br>
+
+        <ul><b>Cell-wise sensitivity</b><br>
+            Sn_{i,j} = X_{i,j}/SUM_j(X_{i,j})</ul><br>
+            
+        <ul><b>row-wise sensitivity</b><br>
+            Sn_{i.} = MAX_j(Sn_{i,j})<br>
+
+            The row-wise sensitivity of a row is the maximal value of
+            sensitivity for all the cells of this row.<br></ul><br>
+
+        <ul><b>table-wise sensitivity</b><br>
+            Sn = SUM_i(Sn_{i.})/M<br>
+            The table-wise sensitivity is the average of the row-wise
+            sensitivity over all the rows of the contingency table.</ul></ul>
+
+    <ul><b>PPV</b><br>
+        Positive Predictive Value. This parameter indicates the fraction of
+        each query cluster (column) covered by its best matching reference
+        cluster (row).<br>
+
+        PPV is calculated at the level of each cell (cell-wise PPV), of each
+        column (column-wise PPV) and of the whole contingency table
+        (table-wise PPV).<br><br>
+
+        <ul><b>Cell-wise PPV</b><br>
+            PPV_{i,j} = X_{i,j}/SUM_i(X_{i,j})</ul><br>
+
+        <ul><b>column-wise PPV</b><br>
+            PPV_{.j} = MAX_i(PPV_{i,j})<br>
+
+            The column-wise PPV of a column is the maximal value of PPV for
+            all the cells of this column.</ul><br>
+
+        <ul><b>table-wise PPV</b><br>
+            PPV = SUM_j(PPV_{j.})/N<br>
+
+            The table-wise PPV is the average of the column-wise PPV over
+            all the columns of the contingency table.</ul></ul><br>
+
+    <ul><b>Acc.geom</b><br><br>
+        Geometric accuracy. This reflects the tradeoff between sensitivity
+        and positive predictive value, by computing the geometric accuracy
+        between Sn and PPV.
+
+        Acc.geom = sqrt(Sn*PPV)</ul><br><Br>
+
+    <ul><b>Sep</b>
+        Separation.<br><br>
+
+        The separation is defined, at the level of each cell (cell-wise
+        separation) as the product between Sn and PPV.<br><br>
+
+        <ul><b>Cell-wise separation</b><br>
+            sep_{i,j}=Sn_{i,j}*PPV_{i,j}</ul><br>
+
+        <ul><b>Column-wise separation</b>
+            Column-wise separation is defined at the level of each column,
+            as the sum of separation value for all the cells of this column.<br>
+
+            sep_{.j} = SUM_i( sep_{i,j})</ul><br>
+
+        <ul><b>Row-wise separation</b>
+            Row-wise separation is defined at the level of each row, as the
+            sum of separation value for all the cells of this row.<br>
+
+            sep_{i.} = SUM_j(sep_{i,j})</ul><br>
+
+        <ul><b>Table-wise separation</b><br>
+            Three table-wise statistics are computed for separation.
+
+            <ul>average column-wise separation<br>
+                sep_c = AVG_j(sep_{.j})</ul><br>
+
+           <ul> average row-wise separation<br>
+                sep_r = AVG_i(sep_{i.})</ul><br>
+
+            <ul>table-wise separation<br>
+                sep = sqrt(sep_r*sep_c)</ul></ul></ul>
+
+
+<ul><h4>REFERENCES</h4>
+    <ul>Brohee, S. & van Helden, J. (2006). Evaluation of clustering algorithms
+    for protein-protein interaction networks. BMC Bioinformatics 7, 488.</ul></ul>
+
+<ul><h4>Return fields</h4><A NAME="return_fields"></A>
+
+        <ul><b>stats</b><br>
+            table-wise statistics</ul>
+
+       <ul> <b>rowstats</b><br>
+            row-wise statistics (one line per row of the contingency table)</ul>
+
+        <ul><b>colstats</b><br>
+            column-wise statistics (one line per column of the contingency
+            table)</ul>
+
+        <ul><b>tables</b><br>
+            full tables for each statistics (counts, Sn, PPV, separation).</ul>
+
+       <ul> <b>margins</b><br>
+            marginal statistics besides the tables (requires to return
+            tables).</ul>
+
+
+
+
+</ul>
+
+
+<hr size=3>
+
+
+<h4 class="footer">
+<address>
+For information, contact
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address>
+</b>
+
+</blockquote>
+</body>
+</html>

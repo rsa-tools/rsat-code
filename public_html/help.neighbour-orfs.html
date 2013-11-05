@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Yeats Tools - Neighbour ORFs manual</TITLE>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - Neighbour ORFs manual</H2>
+</center>
+
+<H4>Name</H4>
+<UL>
+neighbour-orfs<P>
+1997-98 by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+
+</UL>
+
+<H4>Description</H4>
+
+<UL>
+<P>Returns the closest ORFS on left and right side from a given chromosomal coordinate.</P>
+</UL>
+
+<H4>Options</H4>
+
+<UL>
+
+<A NAME="query"></a>
+<A NAME="query_format"></a>
+<P><B>Query:</B> each line is considered as a separate query. 
+The query list can take three alternative formats: <BR>
+<UL>
+<LI><B>ORF identifier: </B>
+the first word of each line contains an ORF identifier (e.g.: YFL021W).
+
+<LI><B>Chromosomal positions: </B>
+ <UL>
+  <LI>The first word of each line is the chromosome number (in latin or arab notation).
+  <LI>The second word is the start position
+  <LI>The 3d word is the end position (optional)
+  <LI> The 4th word is an identifier (optional)
+  </UL>
+
+  <B>Examples of chromosomal positions</B><BR>
+<UL>
+<TT>IX 20000</TT> (a single position in the chromosome IX)<BR>
+<TT>XIII 20000  40000</TT> (a pair of coordinates specifying a segment of chromosome XIII<BR>
+</UL>
+</TT>
+
+<LI><B>Genome search result:</B> the output of a <A HREF="genome-search.html">whole genome search</A>
+</UL>
+</P>
+
+
+<A NAME="output_format"></a>
+<P><B>Output format</B><BR>
+Each line of the output correspond to one line fro the query. 
+<UL>
+<P><B>upstream-downstream</B>
+<OL>
+<TT>
+<LI>Q_id    query identifier
+<LI>Q_gene  query gene name
+<LI>Q_chr   query chromosome
+<LI>Q_start query start position
+<LI>Q_end   query end position
+<LI>U_ORF   upstream neighbour ORF identifier
+<LI>U_gene  upetrsam neighbour gene name
+<LI>U_dist  distance between query position and upstream neighbour
+<LI>D_ORF   downstream neighbour ORF identifier
+<LI>D_gene  downstream neighbour gene name
+<LI>D_dist  distance between query position and downstream neighbour
+</TT>
+</UL>
+
+<P><B>left-right</B>
+<OL>
+<TT>
+<LI>Q_id    query identifier
+<LI>Q_gene  query gene name
+<LI>Q_chr   query chromosome
+<LI>Q_start query start position
+<LI>Q_end   query end position
+<LI>L_ORF   left neighbour ORF identifier
+<LI>L_gene  left neighbour gene name
+<LI>L_dist  distance between query position and left neighbour
+<LI>R_ORF   right neighbour ORF identifier
+<LI>R_gene  right neighbour gene name
+<LI>R_dist  distance between query position and right neighbour
+</TT>
+</UL>
+</UL>
+<P>
+
+<A NAME="database_link"></a>
+<B>Link to database</B><BR> When this option is active, ORF identifier
+are automatically linked to the correspondent entry in a yeast genome
+database (<A
+HREF="http://genome-www.stanford.edu/Saccharomyces/">Standford</A> or
+<A
+HREF="http://www.mips.biochem.mpg.de/mips/yeast/index.htmlx">MIPS</A>).
+<P>
+
+<hr size=3>
+
+</body>
+</html>

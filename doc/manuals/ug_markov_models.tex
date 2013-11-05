@@ -1,0 +1,111 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% MARKOV MODELS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Markov models}
+
+Markov models allow to represent local dependencies between successive
+residues. A Markov model of order $m$ assumes that the probability to
+find the residue $r$ at position $i$ of a sequence depends on the
+$m$ preceding residues.
+
+\subsection{Transition frequency tables}
+
+Markov models are described by transition frequencies $P(R|W_m)$,
+i.e. the probability to osberve residue $R$ at a certain position,
+depending on the preceding word $W_m$ of size $m$.
+
+\subsection{Oligonucleotide frequency tables}
+
+\RSAT allows to derive organism-specific Markov models from
+oligonucleotide frequency tables.
+
+Pre-calibrated oligonucleotide frequency tables are stored in the form
+of oligonucleotide frequency tables (see chapter on pattern
+discovery).
+
+The calibration tables for \org{Escherichia coli K12} can be found in
+the \RSAT directory \file{oligo-frequencies}.
+
+\begin{small}
+\begin{verbatim}
+cd $RSAT/data/genomes/Escherichia\_coli\_K12/oligo-frequencies
+ls -ltr
+\end{verbatim}
+\end{small}
+
+For example, the file
+\file{4nt\_upstream-noorf\_Escherichia\_coli\_K12-1str.freq.gz}
+indicates the tetranucleotide frequencies for all the upstream
+sequences of \org{E.coli}.
+
+\begin{small}
+\begin{verbatim}
+cd $RSAT/data/genomes/Escherichia_coli_K12/oligo-frequencies/
+
+## Have a look at the content of the 4nt frequency file
+gunzip -c 4nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz | more
+\end{verbatim}
+\end{small}
+
+\subsection{Converting oligonucleotide frequencies into transition frequencies}
+
+Transition frequencies are automatically derived from the table of
+oligonucleotide frequencies, but one should take care of the fact
+that, in order to estimate the transition frequencies for a Markov
+model of order $m$, we need to use the frequency tables for
+oligonucleotides of size $m+1$.
+
+We can illustrate this by converting the table of dinucleotide
+frequencies into a transition matrix of first order. For this, we can
+use the program \program{convert-background-model}.
+
+\begin{small}
+\begin{verbatim}
+convert-background-model \
+  -i 2nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -from oligo-analysis -to tab
+\end{verbatim}
+\end{small}
+
+The output displays the transition matrix of a Markov model of order
+1.  Each row of the transition matrix indicates the prefix $W_m$, and
+each column the suffix $r$. For a Markov model of order 1, the
+prefixes are single residues.
+
+We can now calculate a Markov model of 2nd order, from the table of
+trinucleotide frequencies.
+
+\begin{small}
+\begin{verbatim}
+convert-background-model \
+  -i 3nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -from oligo-analysis -to tab
+\end{verbatim}
+\end{small}
+
+The transition matrix contains 16 rows (prefixes, corresponding to
+dinucleotides) and 4 columns (the suffixes, corresponding to
+nucleotides).
+
+The same operation can be extended to higher order markov models.
+
+\subsection{Bernoulli models}
+
+In contrast with Markov model, Bernoulli models assume that the
+residue probabilities are independent from the position. By extension
+of the concept of Markov order, Bernoulli models can be conceived as a
+Markov model of order 0. We can thus derive a Bernoulli model ($m=0$)
+from the nucleotide frequencies ($m+1=1$).
+
+\begin{small}
+\begin{verbatim}
+convert-background-model \
+  -i 1nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -from oligo-analysis -to tab
+\end{verbatim}
+\end{small}
+
+The suffix column is now empty (there is no suffix, since the order is
+0), and the matrix simply displays 4 columns with the frequencies of
+\seq{A}, \seq{C}, \seq{G} and \seq{T}.

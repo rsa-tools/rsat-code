@@ -1,0 +1,378 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Study of the neighborhood of the nodes</TITLE>
+<META NAME="description" CONTENT="Study of the neighborhood of the nodes">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Graph_clustering.html">
+<LINK REL="previous" HREF="Node_degree_statistics.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Graph_clustering.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html336"
+  HREF="Graph_clustering.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html332"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html326"
+  HREF="Node_degree_statistics.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html334"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html337"
+  HREF="Graph_clustering.html">Graph clustering</A>
+<B> Up:</B> <A NAME="tex2html333"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html327"
+  HREF="Node_degree_statistics.html">Node degree statistics</A>
+ &nbsp; <B>  <A NAME="tex2html335"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html338"
+  HREF="Study_neighborhood_nodes.html#SECTION00610000000000000000">Introduction</A>
+<LI><A NAME="tex2html339"
+  HREF="Study_neighborhood_nodes.html#SECTION00620000000000000000">Analysis of the neighbours of orphan nodes in an interaction protein network</A>
+<UL>
+<LI><A NAME="tex2html340"
+  HREF="Study_neighborhood_nodes.html#SECTION00621000000000000000">Study case</A>
+<LI><A NAME="tex2html341"
+  HREF="Study_neighborhood_nodes.html#SECTION00622000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html342"
+  HREF="Study_neighborhood_nodes.html#SECTION00623000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html343"
+  HREF="Study_neighborhood_nodes.html#SECTION00624000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html344"
+  HREF="Study_neighborhood_nodes.html#SECTION00624100000000000000">graph-neighbours result file</A>
+<LI><A NAME="tex2html345"
+  HREF="Study_neighborhood_nodes.html#SECTION00624200000000000000">compare-classes result file</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00600000000000000000">
+Study of the neighborhood of the nodes</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00610000000000000000">
+Introduction</A>
+</H1>
+In a graph, the neighbours of a node consist in the set of nodes that are connected
+to this node up to a certain distance, i.e., the number of steps
+between the source node and its neighbours. In weighted graphs, one can also consider the neighbours up to 
+a certain maximal weight.
+
+<P>
+In the following, we will refer to the node for which we search the neighbours the <I>seed node</I>.
+
+<P>
+According to the type of graph, it might be 
+interesting to retrieve the neighbours of the nodes in a graph.
+
+<P>
+For example, in protein-protein interaction network, the function of the neighbours of a protein whose
+biological role is unknown might give insights in the function of the protein.
+Moreover, in interaction graphs, if a group of neighbours have similar biological functions, they are likely to
+form a structural complex.
+
+<P>
+In co-regulation networks, where each node is a gene and an edge between two genes means that those genes are
+co-regulated (i.e. co-repressed and co-expressed), exploring the neighbours of the nodes may help in the discovery of 
+new regulons.
+
+<P>
+In the following, we will illustrate the study of nodes neighborhood by looking for neighbours of some orphan proteins (i.e. protein of unknown function)  in a protein protein interaction network. We will then look if the neighbours of these proteins present similar functions.
+
+<P>
+
+<H1><A NAME="SECTION00620000000000000000">
+Analysis of the neighbours of orphan nodes in an interaction protein network</A>
+</H1>
+
+<H2><A NAME="SECTION00621000000000000000">
+Study case</A>
+</H2>
+
+<P>
+In this demonstration, we will analyze the neighbours of the orphan nodes of the 
+Gavin <I>et al</I> (2006) interaction data set. These interaction data were obtained
+by co-immunoprecipitation followed by a mass spectrometry experiment in order to
+discover structural protein complexes. [<A
+ HREF="Bibliography.html#Gavin2006">10</A>]. 
+This network contains 6531 interactions between 1430
+proteins.
+
+<P>
+We will then compare these groups of neighbours with functionnal classes of proteins annotated in the MIPS [<A
+ HREF="Bibliography.html#Mewes2007">23</A>] in order to detect if the groups of neighbours present a significatively high number of co-regulated proteins.
+
+<P>
+
+<H2><A NAME="SECTION00622000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>get node neighborhood</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``graph-neighbours''.
+
+<P>
+</LI>
+<LI>Go on the demo dataset download web page.http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/ and download the files <I>gavin_2006_names.tab</I>, <I>orphan_gavin.tab</I> and <I>mips_name_class_description.tab</I> on your computer.
+
+<P>
+</LI>
+<LI>In the <I>Upload graph from file</I> text area, load the file <I>gavin_2006_names.tab</I> you just downloaded.
+</LI>
+<LI>Uncheck <TT>Include each node in its neighborhood (with a distance of zero)</TT>
+</LI>
+<LI>Check the radio-button <I>Node selection</I> in the seed node part of the form
+</LI>
+<LI>In the <I>Upload seed nodes from file</I> text area, load the file <I>orphan_gavin.tab.tab</I> you just downloaded.
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+
+<P>
+The computation should take less than one minute.
+
+<P>
+The result page should display the results in the tab-delimited or HTML format. These files will be described in the section <I>Interpretation of the results</I>
+
+<P>
+</LI>
+<LI>We will now see if the different groups of neighbours contain a significantly high number of proteins of similar
+function. To this, we will compare the groups of neighbours we just obtained with annotated groups of proteins, e.g., the genes annotated according to the gene ontology [<A
+ HREF="Bibliography.html#GO2007">4</A>] or, in this example, according to the functionnal classes of the MIPS [<A
+ HREF="Bibliography.html#Mewes2007">23</A>]. In the <TT>Next step</TT> pannel, click on the button <TT>Compare the groups of neighbours</TT>. 
+
+<P>
+You are redirected to the form of another program <B><I>compare-classes</I></B> that allows to compare two class
+files (the query file and the reference file). Each class of a query file is compared to each class of a
+reference file. The number of common elements is reported, as well as the probability to observe at least this
+number of common elements by chance alone. The query classes are already loaded and consist in the different groups of neighbours we discovered previously with <B><I>graph-neighbours</I></B>.
+
+<P>
+</LI>
+<LI>In the <I>Upload reference classes from file</I> text area, load the file <I>mips_name_class_description.tab</I> downloaded in the first part of this tutorial. The classes files are two column files, the first column contains the elements and the second column the class to which the elements belong. Elements may belong to more than one class.
+
+<P>
+</LI>
+<LI>The default paramaters are sufficient. We will only keep the comparison presenting a significance higher than 0.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>.
+
+<P>
+</LI>
+<LI>You obtain the links to the result file in the tab-delimited format or in the HTML format. The obtained results will be described in the next section.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00623000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the program <B><I>graph-neighbours</I></B> on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+<P>
+We will now describe the use of <B><I>graph-neighbours</I></B> as a command line tool. 
+The Gavin <I>et al</I> (2006) [<A
+ HREF="Bibliography.html#Gavin2006">10</A>] co-immunoprecipitation dataset described
+in the previous section and the other files necessary for this tutorial 
+may be downloaded at the following address http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/ (<I>gavin_2006_names.tab</I>, <I>orphan_gavin.tab</I> and <I>mips_name_class_description.tab</I>).
+
+<P>
+
+<OL>
+<LI>The first step consist in applying <B><I>graph-neighbours</I></B> on the co-immunoprecipitation dataset. To this, go into the
+directory where you downloaded the files <I>gavin_2006_names.tab</I>, <I>orphan_gavin.tab</I> and use this command.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	graph-neighbours -v 1 -i gavin_2006_names.tab \ 
+			 -seedf orphan_gavin.tab \
+			 -o gavin_2006_orphan_neighbours_1.tab
+</PRE><FONT COLOR="#0000ff"></FONT>		
+The file <I>gavin_2006_orphan_neighbours_1.tab</I> is created and contains for each node of the seed file the list of its direct neighbours, i.e., for each protein, the list of proteins that co-precipitated with it.
+
+<P>
+</LI>
+<LI>In the second step, we will compare these groups of neighbours to different groups of annotated proteins in order to discover if the groups of neighbours do contain a significatively high number of proteins of similar functions. This will give insights into the function of the orphans proteins used as seed nodes in the first step. To this, we will use the RSAT <B><I>compare-classes</I></B> program that allows to compare two class
+files (the query file and the reference file) (see previous section or the RSAT tutorial for a more complete description of <B><I>compare-classes</I></B>). Use the following command to compare the two files.
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+			compare-classes -v 1 \
+			-q gavin_2006_orphan_neighbours_1.tab -r mips_name_class_description.tab \
+			-sort sig -return proba,occ,jac_sim \
+			-o gavin_2006_orphan_neighbours_1_cc_mips_functionnal_classes.tab -lth sig 0
+</PRE><FONT COLOR="#0000ff"></FONT>
+</LI>
+</OL>
+We obtain a file <I>gavin_2006_orphan_neighbours_1_cc_mips_functionnal_classes.tab</I> containing the significant comparaison results. We will discuss it in the following section (interpretation of the results).
+
+<P>
+
+<H2><A NAME="SECTION00624000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00624100000000000000">
+graph-neighbours result file</A>
+</H3>
+According to the requested level of verbosity, the result file may first contain several lines (starting with ``#'' or ``;''). These deliver some information about the analysed graph (number of nodes, edges, seed nodes, ...).
+The results are then displayed in four columns. 
+
+<P>
+
+<OL>
+<LI>Name of the neighbour.
+</LI>
+<LI>Name of the seed node (for which the neighbours are seeked in the graph).
+</LI>
+<LI>Distance between the seed node and its neighbour (number of steps).
+</LI>
+<LI>The last column, only relevant for directed graph, indicate whether the arc between the seed node and its neighbour is an out- or an in-going arc.
+</LI>
+</OL>
+
+<P>
+This file can be considered as a class file (see above for a more complete description) with the name of the neighbour being the member (first column) and the name of the seed node, the name of the class (second column).
+
+<P>
+
+<H3><A NAME="SECTION00624200000000000000">
+compare-classes result file</A>
+</H3>
+The result of the comparaison between the groups of neighbours and the MIPS annotated classes are displayed in a multi-column file sorted by decreasing order of significance. When looking at the HTML version of the file, you may click on the header on the column to sort the table according to this field.
+
+<P>
+Each line displays the comparaison between a MIPS annotated class (reference class) and a group of neighbours (query class). What we want to know is if there is a significatively high number of members of the same MIPS class in a given group of neighours. 
+
+<P>
+
+<UL>
+<LI>ref : Name of the MIPS functionnal class.
+</LI>
+<LI>query : Name of the group of neighbours (seed node).
+</LI>
+<LI>R : Size of the reference class (number of members in this MIPS class).
+</LI>
+<LI>Q : Size of the query class (number of neighbour for this seed node).
+</LI>
+<LI>QR : Intersection size between the group of neighbours and the functionnal class.
+</LI>
+<LI>QvR : Union size between the group of neighbours and the functionnal class.
+</LI>
+<LI>R!Q : Elements that are in the functionnal class but not in the groups of neighbours.
+</LI>
+<LI>Q!R : Elements that are not in the functionnal class but are in the groups of neighbours.
+</LI>
+<LI>!Q!R : Elements that are not in the functionnal class nor in the groups of neighbours.
+</LI>
+<LI>P-val : P-value of the comparaison, propability (according to the hypergeometric law) to be wrong when claimin that there is a significatively high number of proteins of the same class in the group of neighbours.
+</LI>
+<LI>E-val : E-value of the comparaison. P-value multiplied by the total number of comparaisons. This value corresponds to the estimated number of false positives for a given P-value threshold.
+</LI>
+<LI>sig : Significance of the comparaison. This correpsonds to <!-- MATH
+ $-log_{10}(E-val)$
+ -->
+<IMG
+ WIDTH="117" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img27.png"
+ ALT="$-log_{10}(E-val)$">. This index gives an intuitive perception of the exceptionality of the common elements : a negative significance indicates that the common matches are likely to come by chance alone, a positive value that they are significant.
+</LI>
+</UL>
+
+<P>
+Considering the file, we can observe that 7 seed nodes (on the 46) have a group of neighbours presenting a similar function. 
+For example, 9 out of the 10 neighbours of the Yil161w protein (interacting with this protein) have their function related to ribosome biogenesis and 8 out of 10 neigbours are located in the cytoplasm. This may indicate that this protein may also be implied in ribosome biogenesis 
+
+<P>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html336"
+  HREF="Graph_clustering.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html332"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html326"
+  HREF="Node_degree_statistics.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html334"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html337"
+  HREF="Graph_clustering.html">Graph clustering</A>
+<B> Up:</B> <A NAME="tex2html333"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html327"
+  HREF="Node_degree_statistics.html">Node degree statistics</A>
+ &nbsp; <B>  <A NAME="tex2html335"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

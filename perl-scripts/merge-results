@@ -1,0 +1,216 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: merge-results,v 1.11 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2002-06-06 13:15:10 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+local $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+local @commands = ();
+local @titles = ();
+
+local $start_style{title} = "<h3>";
+local $end_style{title} = "</h3>";
+local $start_style{command} = "<pre>";
+local $end_style{command} = "</pre>";
+
+&ReadArguments;
+
+
+#### check argument values ####
+
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+##### read input #####
+if ($infile{input}) {
+    ($in) = &OpenInputFile($infile{input});
+    while (<$in>) {
+	push @commands, $_;
+    }
+}
+
+close $in if ($infile{input});
+
+
+#### html header ####
+print $out ("<html>\n",
+	    "<body>\n",
+	    "<pre>\n");
+
+
+#### verbose ####
+&Verbose if ($verbose);
+
+
+###### print output ####
+print $out "<table>\n";
+for $c (0..$#commands) {
+    print $out ("<tr><td>\n", 
+		$start_style{title}, 
+		$titles[$c], 
+		$end_style{title}, 
+		"</td></tr>\n",
+		
+		"<tr><td>\n", 
+		$start_style{command}, 
+		`$commands[$c]`, 
+		$end_style{command}, 
+		"</td></tr>\n", 
+		"</tr>\n");
+}
+print $out "</table>\n";
+
+
+## html end
+print $out ("</pre>\n",
+	    "</html>\n",
+	    "</body>\n");
+
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	merge-results
+
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        merge-results [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Executes several commands and merges the result in a HTML
+	table.
+
+CATEGORY
+	util
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-c	command (can be used iteratively on the command line)
+	-t	command title (can be used iteratively on the command line)
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+merge-results options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-c	command (can be used iteratively on the command line)
+-t	command title (can be used iteratively on the command line)
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+      ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### command
+	} elsif ($ARGV[$a] eq "-c") {
+	    push @commands, $ARGV[$a+1];
+	    
+	    ### header
+	} elsif ($ARGV[$a] eq "-t") {
+	    push @titles, $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+sub Verbose {
+    print $out "; merge-results ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    print $out "; Commands\n";
+    for my $c (0..$#commands) {
+	print $out (";\t", $titles[$c], 
+		    "\t", $commands[$c], "\n");
+    }
+
+}

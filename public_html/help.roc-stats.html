@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>roc-stats</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<body style="background-color: white">
+
+<center>
+<h2><A HREF="NeAT_home.html">Network Analysis Tools</A> - <a href=roc-stats_form.cgi>roc-stats</a> manual</h2>
+</center>
+
+<h4><a name="description">DESCRIPTION</a></h4>
+<ul>
+<p>This program takes as input a set of scored results associated with
+validation labels (pos for positive, neg for negative) and computes,
+for each score value, the derived statistics (Sn, PPV, FPR), which can
+be used to draw a ROC curve.</p>
+</ul>
+
+<h4><a name="input_format">INPUT FORMAT</a></h4>
+<UL><p>The input file is a tab-delimited text file including at least
+two columns with the following information where each row represents
+one prediction :</p>
+	<ul>
+	  <h3> <a name="scores">Score</a></h3>
+	  The score column indicates the score assigned to this element.</BR> 
+	  <BR>The first column of the input is set by default and can be manually specified with<b><i>score column</i></b>.</BR>
+	  <br></br>
+
+	  <h3><a name="status">Status</a></h3>
+	  <i>Pos</i> or <i>neg</i> indicate the known (not predicted) status of the element (positive or negative).  The second column of the input is the default status column but this can be manually specified with <b><i>status column</i></b>.
+	  <p>More status can be manually specified with the fields <a name="pos"><b><i>Positive labels</i></b></a> (default: pos) and <a name="neg"><b><i>Negative labels</i></b></a> (default: neg) in the form (one status per line). For example, it your input file contains annotations of 'site' and 'non-site', you can use it directly as input with these options.</p>
+	  <p>It can be useful to rename these labels, for compatibility with other programs.</p>
+	</ul>
+
+	<h2><a name="compatibility_with_comparegraphs">Compatibility with compare-graphs</a></h2>
+	<p>For example, <em>roc-stats</em> is typically used as
+	  post-analysis program after <a href="compare_graphs_form.php"><em>Network comparison</em></a>. This program has 3
+	  labels for the arcs (see also <i>DEMO</i> of the <em><a href="roc-stats_form.cgi">roc-stats form</a></em> ):</p>
+	<dl>
+	    <dt><strong><a name="item_randq">R.and.Q -&gt; pos</a></strong>
+	    
+	    <dd>
+	      <p>Arcs found in both the reference (R) and query (Q) graphs. This label is considered as positive.</p>
+	    </dd>
+	  </li>
+	    <dt><strong><a name="item_rnotq">R.not.Q -&gt; pos</a></strong>
+	      
+		<dd>
+		<p>Arcs found in the reference (R) but not in the query (Q) graph. These
+		  arcs are considered as positive (since they are in the reference graph).</p>
+		</dd>
+	    </li>
+	      <dt><strong><a name="item_qnotr">Q.not.R -&gt; neg</a></strong>
+		
+		<dd>
+		  <p>Arcs found in the query (Q) but not in the reference (R) graph. These
+		    arcs are considered as negative (since they are not found in the
+		    reference graph).</p>
+		</dd>
+	      </li>
+	</dl>
+	
+	<h2><a name="compatibility_wih_fp_tp_fn_tn_notation">Compatibility wih FP,TP,FN,TN notation</a></h2>
+	<p>The TP, FP, TN, FN labels are frequently used to evaluate prediction
+	  results. In <em><a href="roc-stats_form.cgi">roc-stats</a></em>, these status are not really appropriate, since the
+	  TRUE or FALSE quality depends on the score threshold. Thus, these will
+	  be converted into pos/neg labels, according to the nature of the
+	  considered element.</p>
+	<dl>
+	  <dt><strong>TP -&gt; pos</strong>
+	    <dd>
+	      <p>True positive.</p>
+	    </dd>
+	  </li>
+	  <dt><strong>FP -&gt; neg</strong>
+	    <dd>
+	      <p>False positive (a FP is actually a negative, incorrectly predicted as positive).</p>
+	    </dd>
+	  </li>
+	  <dt><strong>FN -&gt; pos</strong>
+	    <dd>
+	      <p>False negative (a FN is actually a positive, incorrectly predicted as negative).</p>
+	    </dd>
+	  </li>
+	  <dt><strong>TN -&gt; neg</strong>
+	    <dd>
+	      <p>True negative.</p>
+	    </dd>
+	  </li>
+	</dl>
+      </UL>
+
+      <H4><A name="total">TOTAL NUMBER OF ELEMENTS</a></H4>
+	<UL>	
+	  <p>Total number of elements in the universe (neg + pos). This option
+	    allows to manually specify the total number of elements, in case the
+	    input file would not contain the complete data set.</p>
+	  
+	  <p>A typical example is when <em><a href="roc-stats_form.cgi">roc-stats</a></em> is used to
+	  analyze the output of <a href="compare_graphs_form.php"><em>Network
+	  comparison</em></a>: the graph comparison returns the
+	  intersection and the differences between reference and
+	  predictions, but does not return the arcs which are in
+	  neither graphs. However, those constitute the true negative,
+	  and can represent an important fraction of the elements.</p>
+	  
+	  <p>When the total number of elements is specified manually, the number of
+	    negative elements is corrected accordingly.</p>
+	  
+	  <pre>
+  neg = total - pos</pre>
+	</ul> 
+      
+      <h4><a name="output_format">OUTPUT FORMAT</a></h4>
+      <UL>
+      <p>The program returns a <a href="#table">table</a> with one row per score value, and one column per <b><i>statistics</i></b>. The column content is commented in the header of the output file.</p>
+      <p>When the option <b><i>graphs</i></b> is checked, the program returns a series of <a href="#graphs">graphs</a>.</p>
+      </UL>
+
+      <h4><a name="stats">TABLE WITH OUTPUT STATISTICS</a></h4>
+
+      <UL>
+	<p>The program calculates the number of true positives (TP) and false
+	  positives (FP) for each score provided in the input. The inverse
+	  cumulative distributions are then computed, in order to indicate, for
+	  each possible score, the number of TP above the score (TP_icum), or
+	  the number of FP above the score (FP_icum).</p>
+
+	<dl>
+	  <dt><strong><a name="item_score"><strong>Score</strong></a></strong>
+	    <dd>
+	      <p>Score (X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="occ"><strong>N_icum</strong></a></strong>
+	    <dd>
+	      <p>Inverse cumulated occurrences i.e. number of observations with score &gt;=
+		X</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="item_f_icum"><strong>F_icum</strong></a></strong>
+	    <dd>
+	      <p>Inverse cumulated frequencies, i.e. fraction of observations with
+		score &gt;= X</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="item_tp_icum"><strong>TP_icum</strong></a></strong>
+	    <dd>
+	      <p>True Positive, inverse cumulative (number of TP observations with
+		score &gt;= X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="item_fp_icum"><strong>FP_icum</strong></a></strong>
+	    <dd>
+	      <p>False Positive, inverse cumulative (number of FP observations with
+		score &gt;= X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="item_fn_icum"><strong>FN_icum</strong></a></strong>
+	    <dd>
+	      <p>False Negative, inverse cumulative (number of FN observations with
+		score &gt;= X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="item_tn_icum"><strong>TN_icum</strong></a></strong>
+	    <dd>
+	      <p>True Negative, inverse cumulative (number of TN observations with
+		score &gt;= X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="TP"><strong>TP</strong></a></strong>
+	    <dd>
+	      <p>True Positive (number of TP observations with score = X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="FP"><strong>FP</strong></a></strong>
+	    <dd>
+	      <p>False Positive (number of FP observations with score = X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="FN"><strong>FN</strong></a></strong>
+	    <dd>
+	      <p>False Negative (number of FN observations with score = X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="TN"><strong>TN</strong></a></strong>
+	    <dd>
+	      <p>True Negative (number of TN observations with score = X)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="Sn"><strong>Sn</strong></a></strong>
+	    <dd>
+	      <p>Sensitivity (also called TPR, or Recall). Sn = TP_icum/(Total
+		positives) =TP_icum/(TP_icum + FN_icum)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="PPV"><strong>PPV</strong></a></strong>
+	    <dd>
+	      <p>Positive Predictive Value (also called Precision). PPV =
+		TP_icum/(TP_icum + FP_icum)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="FPR"><strong>FPR</strong></a></strong>
+	    <dd>
+	      <p>False Positive Rate. FPR = FP_icum/(Total negatives) =
+		FP_icum/(FP_icum + TN_icum)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="Acc_g"><strong>Acc_g</strong></a></strong>
+	    <dd>
+	      <p>Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)</p>
+	    </dd>
+	  </dt>
+	  <dt><strong><a name="Acc_a"><strong>Acc_a</strong></a></strong>
+	    <dd>
+	      <p>Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2</p>
+	    </dd>
+	  </dt>
+	</dl>
+	<p>
+	</p>
+      
+      </ul>
+      <h4><a name="graphs">GRAPHS</a></h4>
+<UL>
+      <dl>
+	<dt><strong><a name="scores"><strong>Scores</strong></a></strong>
+	  <dd>
+	    <p>Distribution of various statistics (Sn, PPV, Acc, FPR, ...) as a
+	      function of the score.</p>
+	  </dd>
+	</dt>
+	<dt><strong><a name="scores_xlog"><strong>Scores (xlog)</strong></a></strong>
+	  <dd>
+	    <p>Distribution of various statistics (Sn, PPV, Acc, FPR, ...) as a
+	      function of the score, with a logarithmic scale on the X axis. This is
+	      convenient to highlight the differences between small scores.</p>
+	  </dd>
+	</dt>
+	<dt><strong><a name="tp_vs_fp"><strong>TP vs FP curve</strong></a></strong>
+	  <dd>
+	    <p>True versus False Positives curve.</p>
+	  </dd>
+	</dt>
+	<dt><strong><a name="roc"><strong>ROC curve</strong></a></strong>
+	  <dd>
+	    <p>Receiver Operating Characteristic (ROC) curve. TPR vs FPR.</p>
+	  </dd>
+	</dt>
+	<dt><strong><a name="PR"><strong>Precision Recall curve</strong></a></strong>
+	  <dd>
+	    <p>Precision-recall curve. PPV vs Sn.</p>
+	  </dd>
+	</dt>
+      </dl>
+      
+      </UL>
+
+      <h4><a name="references">REFERENCES</a></h4>
+      <UL>
+      <p>There are plenty of references about ROC curves. I found this article
+	quite clear.</p>
+      
+      <p>Jesse Davis and Mark Goadrich (2006). The Relationship Between
+	Precision-Recall and ROC Curves. In the Proceedings of the 23rd
+	International Conference on Machine Learning (ICML). 
+	<a href="http://pages.cs.wisc.edu/~jdavis/davisgoadrichcamera2.pdf">http://pages.cs.wisc.edu/~jdavis/davisgoadrichcamera2.pdf</a></p>
+      </UL>
+    </body>
+
+</html>

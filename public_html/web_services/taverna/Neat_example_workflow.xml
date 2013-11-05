@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:d055f3ce-97ae-4be0-9c8c-df1a85ec4dbb" author="Karoline Faust" title="Neat_example_workflow">A small example workflow for NeAT tools combining compare-graphs and Pathfinder.</s:workflowdescription>
+  <s:processor name="graph_format" boring="true">
+    <s:description>graph format</s:description>
+    <s:stringconstant>tab</s:stringconstant>
+  </s:processor>
+  <s:processor name="Concatenate_two_strings">
+    <s:description>necessary step to add header line needed for pathfinder to compare_graphs output</s:description>
+    <s:defaults>
+      <s:default name="string1">;ARCS	label	color</s:default>
+    </s:defaults>
+    <s:local>org.embl.ebi.escience.scuflworkers.java.StringConcat</s:local>
+  </s:processor>
+  <s:processor name="compare_graphsParams">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="compare_graphs" name="parameters" qname="{urn:RSATWS}compare_graphs">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CompareGraphsRequest" name="request" qname="&gt;compare_graphs&gt;request">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="string" name="Qinformat" qname="CompareGraphsRequest&gt;Qinformat" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="Rinformat" qname="CompareGraphsRequest&gt;Rinformat" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="outformat" qname="CompareGraphsRequest&gt;outformat" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="outweight" qname="CompareGraphsRequest&gt;outweight" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="Rinputgraph" qname="CompareGraphsRequest&gt;Rinputgraph" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="Qinputgraph" qname="CompareGraphsRequest&gt;Qinputgraph" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="Qwcol" qname="CompareGraphsRequest&gt;Qwcol" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="Qscol" qname="CompareGraphsRequest&gt;Qscol" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="Qtcol" qname="CompareGraphsRequest&gt;Qtcol" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="Rwcol" qname="CompareGraphsRequest&gt;Rwcol" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="Rscol" qname="CompareGraphsRequest&gt;Rscol" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="Rtcol" qname="CompareGraphsRequest&gt;Rtcol" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="return" qname="CompareGraphsRequest&gt;return" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="directed" qname="CompareGraphsRequest&gt;directed" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="self" qname="CompareGraphsRequest&gt;self" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="compare_graphsOutput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="compare_graphsResponse" name="output" qname="{urn:RSATWS}compare_graphsResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CompareGraphsResponse" name="response" qname="&gt;compare_graphsResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="CompareGraphsResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="CompareGraphsResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="CompareGraphsResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="compare_graphsResponse">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="CompareGraphsResponse" name="response" qname="&gt;compare_graphsResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="CompareGraphsResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="CompareGraphsResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="CompareGraphsResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="compare_graphsRequest">
+    <s:defaults>
+      <s:default name="outformat" />
+      <s:default name="outweight">mean</s:default>
+      <s:default name="Qscol">1</s:default>
+      <s:default name="Qtcol">2</s:default>
+      <s:default name="Rscol">1</s:default>
+      <s:default name="Rtcol">2</s:default>
+      <s:default name="return">intersection</s:default>
+      <s:default name="directed">false</s:default>
+      <s:default name="self">true</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="CompareGraphsRequest" name="request" qname="&gt;compare_graphs&gt;request">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="Qinformat" qname="CompareGraphsRequest&gt;Qinformat" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="Rinformat" qname="CompareGraphsRequest&gt;Rinformat" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="outformat" qname="CompareGraphsRequest&gt;outformat" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="outweight" qname="CompareGraphsRequest&gt;outweight" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="Rinputgraph" qname="CompareGraphsRequest&gt;Rinputgraph" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="Qinputgraph" qname="CompareGraphsRequest&gt;Qinputgraph" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="Qwcol" qname="CompareGraphsRequest&gt;Qwcol" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="Qscol" qname="CompareGraphsRequest&gt;Qscol" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="Qtcol" qname="CompareGraphsRequest&gt;Qtcol" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="Rwcol" qname="CompareGraphsRequest&gt;Rwcol" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="Rscol" qname="CompareGraphsRequest&gt;Rscol" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="Rtcol" qname="CompareGraphsRequest&gt;Rtcol" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="return" qname="CompareGraphsRequest&gt;return" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="directed" qname="CompareGraphsRequest&gt;directed" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="self" qname="CompareGraphsRequest&gt;self" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="compare_graphs">
+    <s:description>Computes the union / difference or intersection of two graphs</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>compare_graphs</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="pathfinding">
+    <s:description>Enumerate the k shortest paths between a set of source nodes and a set of target nodes in weighted graphs.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
+      <s:operation>pathfinding</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="pathfindingParameters">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="pathfinding" name="parameters" qname="{urn:graphtools}pathfinding">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PathfinderRequest" name="request" qname="&gt;pathfinding&gt;request">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="source" qname="PathfinderRequest&gt;source" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="target" qname="PathfinderRequest&gt;target" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="nodesPresent" qname="PathfinderRequest&gt;nodesPresent" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="nodesAbsent" qname="PathfinderRequest&gt;nodesAbsent" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="graphString" qname="PathfinderRequest&gt;graphString" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="tmpInGraphFile" qname="PathfinderRequest&gt;tmpInGraphFile" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="inFormat" qname="PathfinderRequest&gt;inFormat" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="outFormat" qname="PathfinderRequest&gt;outFormat" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="directed" qname="PathfinderRequest&gt;directed" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="metabolic" qname="PathfinderRequest&gt;metabolic" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="exclusionAttr" qname="PathfinderRequest&gt;exclusionAttr" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="weight" qname="PathfinderRequest&gt;weight" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="algorithm" qname="PathfinderRequest&gt;algorithm" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="rank" qname="PathfinderRequest&gt;rank" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="maxWeight" qname="PathfinderRequest&gt;maxWeight" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="maxLength" qname="PathfinderRequest&gt;maxLength" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="minLength" qname="PathfinderRequest&gt;minLength" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="attribs" qname="PathfinderRequest&gt;attribs" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="outputType" qname="PathfinderRequest&gt;outputType" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="storeInputGraph" qname="PathfinderRequest&gt;storeInputGraph" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="returnType" qname="PathfinderRequest&gt;returnType" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfindingRequest">
+    <s:defaults>
+      <s:default name="nodesPresent" />
+      <s:default name="nodesAbsent" />
+      <s:default name="tmpInGraphFile" />
+      <s:default name="outFormat">tab</s:default>
+      <s:default name="directed">false</s:default>
+      <s:default name="metabolic">false</s:default>
+      <s:default name="exclusionAttr" />
+      <s:default name="weight">con</s:default>
+      <s:default name="algorithm">rea</s:default>
+      <s:default name="rank">1</s:default>
+      <s:default name="maxWeight">100000</s:default>
+      <s:default name="maxLength">100000</s:default>
+      <s:default name="minLength">0</s:default>
+      <s:default name="attribs" />
+      <s:default name="outputType">pathsTable</s:default>
+      <s:default name="storeInputGraph">false</s:default>
+      <s:default name="returnType">client</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PathfinderRequest" name="request" qname="&gt;pathfinding&gt;request">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="source" qname="PathfinderRequest&gt;source" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="target" qname="PathfinderRequest&gt;target" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="nodesPresent" qname="PathfinderRequest&gt;nodesPresent" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="nodesAbsent" qname="PathfinderRequest&gt;nodesAbsent" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="graphString" qname="PathfinderRequest&gt;graphString" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="tmpInGraphFile" qname="PathfinderRequest&gt;tmpInGraphFile" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="inFormat" qname="PathfinderRequest&gt;inFormat" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outFormat" qname="PathfinderRequest&gt;outFormat" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="directed" qname="PathfinderRequest&gt;directed" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="metabolic" qname="PathfinderRequest&gt;metabolic" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="exclusionAttr" qname="PathfinderRequest&gt;exclusionAttr" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="weight" qname="PathfinderRequest&gt;weight" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="algorithm" qname="PathfinderRequest&gt;algorithm" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="rank" qname="PathfinderRequest&gt;rank" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="maxWeight" qname="PathfinderRequest&gt;maxWeight" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="maxLength" qname="PathfinderRequest&gt;maxLength" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="minLength" qname="PathfinderRequest&gt;minLength" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="attribs" qname="PathfinderRequest&gt;attribs" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outputType" qname="PathfinderRequest&gt;outputType" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="storeInputGraph" qname="PathfinderRequest&gt;storeInputGraph" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="returnType" qname="PathfinderRequest&gt;returnType" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfindingOutput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="pathfindingResponse" name="output" qname="{urn:graphtools}pathfindingResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PathfinderResponse" name="response" qname="&gt;pathfindingResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="PathfinderResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="PathfinderResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="PathfinderResponse&gt;client" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="graphid" qname="PathfinderResponse&gt;graphid" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfindingResponse">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PathfinderResponse" name="response" qname="&gt;pathfindingResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="PathfinderResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="PathfinderResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="PathfinderResponse&gt;client" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="graphid" qname="PathfinderResponse&gt;graphid" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="Concatenate_two_strings:output" sink="pathfindingRequest:graphString" />
+  <s:link source="compare_graphs:output" sink="compare_graphsOutput:input" />
+  <s:link source="input graph A" sink="compare_graphsRequest:Rinputgraph" />
+  <s:link source="input graph B" sink="compare_graphsRequest:Qinputgraph" />
+  <s:link source="compare_graphsOutput:response" sink="compare_graphsResponse:input" />
+  <s:link source="compare_graphsParams:output" sink="compare_graphs:parameters" />
+  <s:link source="compare_graphsRequest:output" sink="compare_graphsParams:request" />
+  <s:link source="compare_graphsResponse:client" sink="Concatenate_two_strings:string2" />
+  <s:link source="graph_format:value" sink="compare_graphsRequest:Qinformat" />
+  <s:link source="graph_format:value" sink="compare_graphsRequest:Rinformat" />
+  <s:link source="graph_format:value" sink="compare_graphsRequest:outformat" />
+  <s:link source="pathfinding:output" sink="pathfindingOutput:input" />
+  <s:link source="pathfindingOutput:response" sink="pathfindingResponse:input" />
+  <s:link source="pathfindingParameters:output" sink="pathfinding:parameters" />
+  <s:link source="pathfindingRequest:output" sink="pathfindingParameters:request" />
+  <s:link source="source node" sink="pathfindingRequest:source" />
+  <s:link source="target node" sink="pathfindingRequest:target" />
+  <s:link source="graph_format:value" sink="pathfindingRequest:inFormat" />
+  <s:link source="pathfindingResponse:client" sink="paths" />
+  <s:source name="input graph A">
+    <s:metadata>
+      <s:description>Yeast two-hybrid dataset A (Uetz et al, 2001)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="input graph B">
+    <s:metadata>
+      <s:description>Yeast two-hybrid dataset B (Ito et al, 2002)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="source node">
+    <s:metadata>
+      <s:description>source node (several source nodes separated by / can be given)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="target node">
+    <s:metadata>
+      <s:description>target node (several target nodes separated by / can be given)</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="paths">
+    <s:metadata>
+      <s:description>the paths found by pathfinder</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+

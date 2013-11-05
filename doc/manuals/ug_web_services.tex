@@ -1,0 +1,995 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Running Web Services with RSAT
+
+\chapter{Using RSAT Web Services}
+
+Note: in complement of the following instructions, we recommend to run
+the protocol for using \RSAT Web services \cite{Sand:2009}.
+
+\section{Introduction}
+
+\RSAT facilities can be used as Web Services (\concept{WS}),
+i.e. external developers (you) can integrate \RSAT methods in their
+own code. An important advantage of Web Services is that they are
+using a standard communication interface between client and server
+(e.g. WSDL/SOAP), for which libraries exist in various languages
+(Perl, Python, java).
+
+We explain below how to implement WS clients in Perl, Java and Python for \RSAT
+programs.
+
+\section{Examples of WS clients in Perl with SOAP::WSDL 2.00 (or above)}
+
+\subsection{Requirements}
+
+Before using such WS clients, You need to install the
+\program{Module::Build::Compat} and the \program{SOAP::WSDL} Perl
+modules. These Perl modules can be installed with the program
+\program{cpan}. When required, you will be prompted to install
+dependency modules for \program{SOAP::WSDL}. For all this you need
+root privileges. If this is not your case, please ask your system
+administrator to install them for you.
+
+The other thing you need is the RSATWS library that you can download
+from the following website:
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS.tar.gz}}
+
+Place it in the same directory as your clients, then uncompress if
+with the following command.
+
+\begin{footnotesize}
+\begin{verbatim}
+tar -xpzf RSATWS.tar.gz
+\end{verbatim}
+\end{footnotesize}
+
+
+\subsection{Retrieving sequences from RSATWS}
+
+The following example is a script to retrieve the start codons of
+three Escherichia coli genes. It uses \program{retrieve-seq} to do
+so. The various parameters are passed as a hash table to the
+method. If there is an error, it will be displayed, otherwise the
+result is displayed, toghether with the full command generated on the
+server and the name of the temporary file created on the server to
+hold the result localy. This file is useful when one wants to feed
+another program with that output, whithout paying the cost of a
+useless data transport back and forth between the server and the
+client.
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL
+#module
+
+################################################################
+##
+## This script runs a simple demo of the web service inerface to the
+## RSAT tool retrieve-seq. It sends a request to the server for
+## obtaining the start codons of 3 E.coli genes.
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+use lib 'RSATWS';
+use MyInterfaces::RSATWebServices::RSATWSPortType;
+
+warn ``\nThis demo script retrieves the start codons for a set of query
+genes\n\n'';
+
+## WSDL location
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+
+## Service call
+my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
+
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
+
+## Retrieve-seq parameters
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my @gene = (``metA'', ``metB'', ``metC'');  ## List of query genes
+my $all = 0;  ## the -all option (other accepted value = 1). This option is
+incompatible with the query list @gene (above)
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
+my $from = 0;  ## Start position of the sequence
+my $to = 2;  ## End position of the sequence
+my $feattype = '';  ## The -feattype option value is  not specified, the
+default is used
+my $type = '';  ## The -type option value; other example:'-type downstream'
+my $format = '';  ## The -format option value. We use the default (fasta), but
+other formats could be specified, for example 'multi'
+my $lw = 0;  ## Line width. 0 means all on one line
+my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
+my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved
+sequence(s)
+my $nocom = 0;  ## Other possible value = 1, to get sequence(s) whithout
+comments
+my $repeat =  0;  ## Other possible value = 1, to have annotated repeat
+regions masked
+my $imp_pos = 0;  ## Admit imprecise position (value = 1 to do so)
+
+my %args = (
+            'output' => $output_choice,
+            'organism' => $organism,
+            'query' => \@gene,  ## An array in a hash has to be referenced
+            (always?)
+            'noorf' => $noorf,
+            'from' => $from,
+            'to' => $to,
+            'feattype' => $feattype,
+            'type' => $type,
+            'format' => $format,
+            'lw' => $lw,
+            'label' => $label,
+            'label_sep' => $label_sep,
+            'nocom' => $nocom,
+            'repeat' => $repeat,
+            'imp_pos' => $imp_pos
+            );
+
+## Send the request to the server
+print ``Sending request to the server $server\n'';
+my $som = $soap->retrieve_seq({'request' => \%args});
+
+## Get the result
+unless ($som) {
+        printf ``A fault (%s) occured: %s\n'', $som->get_faultcode(),
+			  %$som->get_faultstring();
+} else {
+        my $results = $som->get_response();
+
+    ## Report the remote command
+    my $command = $results -> get_command();
+    print ``Command used on the server: ``.$command, ``\n'';
+
+    ## Report the result
+    if ($output_choice eq 'server') {
+                my $server_file = $results -> get_server();
+                print ``Result file on the server: ``.$server_file;
+   } elsif ($output_choice eq 'client') {
+                my $result = $results -> get_client();
+                print ``Retrieved sequence(s): \n''.$result;
+   } elsif ($output_choice eq 'both') {
+                my $server_file = $results -> get_server();
+                my $result = $results -> get_client();
+                print ``Result file on the server: ``.$server_file.''\n'';
+                print ``Retrieved sequence(s): \n''.$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+\section{Examples of WS clients in Perl with SOAP::WSDL 1.27 (or below)}
+
+Some of you are maybe already using perl WS clients with an older
+version of \program{SOAP::WSDL} and would like to stick to it. We show
+hereafter some simple examples of clients written in perl and using
+such version of the module. The presented code as well as other can be
+downloaded from
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services.html}}
+
+\subsection{Requirements}
+
+\begin{itemize}
+\item \program{SOAP::Lite}
+\item \program{SOAP::WSDL}, version 1.27 or below.
+\end{itemize}
+
+These Perl modules can be installed with the program \program{cpan},
+but for this you need root privileges. If this is not your case,
+please ask your system administrator to install them for you.
+
+\subsection{Getting gene-info from RSATWS}
+
+The following script allows to get information about three
+\org{Escherichia coli} genes from \RSAT. The client script passes
+through the web service to run the \program{gene-info} on the
+server. A list of genes is provided to the server, which returns the
+information about those genes.
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# gene-info_client_minimal_soap-wsdl.pl - Client gene-info using the SOAP::WSDL module.
+
+################################################################
+##
+## This script runs a simple demo of the web service interface to the
+## RSAT tool gene-info. It sends a list of 3 gene names to the server, 
+## in order to obtain the information about these genes. 
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+
+## Service location
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
+
+## Call the service
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+$soap->wsdlinit;
+
+## Gene-info parameters
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my @gene = ("metA", "metB", "metC");  ## List of query genes
+my $full = 1;  ## Looking for full match, not substring match.
+
+my %args = ('organism' => $organism,
+	    'query' => \@gene,
+	    'full' => $full);
+
+## Send the request to the server
+warn "Sending request to the server $server\n";
+my $call = $soap->call('gene_info' => 'request' => \%args);
+
+## Get the result
+if ($call->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+} else {
+    my $results_ref = $call->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
+
+    ## Report the remote command
+    my $command = $results{'command'};
+    print "Command used on the server: ".$command, "\n";
+
+    ## Report the result
+    my $result = $results{'client'};
+    print "Gene(s) info(s): \n".$result;
+}
+\end{verbatim}
+\end{footnotesize}
+
+We can now use additional parameters of the \program{gene-info}
+program. For example, we could use regular expressions to ask the
+server for all the yeast genes whose name starts with 'MET', followed
+by one or several numbers.
+
+\begin{footnotesize}
+\begin{verbatim}
+... (same as above)
+
+## Gene-info parameters
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my @queries = ('MET\d+');  ## This query is a regular expression
+my $full = 1;  ## Looking for full match, not substring match.
+
+my %args = ('organism' => $organism,
+	    'query' => \@queries,
+	    'full' => $full);
+
+... (same as above)
+
+\end{verbatim}
+\end{footnotesize}
+
+We can also extend the search to match the query strings against gene
+descriptions (by default, they are only matched against gene names).
+
+
+\begin{footnotesize}
+\begin{verbatim}
+... (same as above)
+
+## Gene-info parameters
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my @queries = ("methionine", "purine");  ## List of queries
+my $full = 0;
+my $descr = 1;  ## Search also in description field of genes
+
+my %args = ('organism' => $organism,
+	    'query' => \@queries,
+	    'full' => $full,
+	    'descr' => $descr);
+
+... (same as above)
+\end{verbatim}
+\end{footnotesize}
+
+
+\subsection{Documentation}
+
+We saw above that the command \command{gene-info} can be called with
+various options. The description of the available options can be found
+in the documentation of the RSATWS web services at the following URL.
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}}
+
+\subsection{Retrieving sequences from RSATWS}
+
+The following example is a script to retrieve the start codons of
+three Escherichia coli genes. It uses \program{retrieve-seq} to do
+so. The various parameters are passed as a hash table to the
+method. If there is an error, it will be displayed, otherwise the
+result is displayed, toghether with the full command generated on the
+server and the name of the temporary file created on the server to
+hold the result localy. This file is useful when one wants to feed
+another program with that output, whithout paying the cost of a
+useless data transport back and forth between the server and the
+client.
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL module
+
+################################################################
+##
+## This script runs a simple demo of the web service interface to the
+## RSAT tool retrieve-seq. It sends a request to the server for
+## obtaining the start codons of 3 E.coli genes.
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+
+warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
+
+## WSDL location
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
+
+## Service call
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+$soap->wsdlinit;
+
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
+
+## Retrieve-seq parameters
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my @gene = ("metA", "metB", "metC");  ## List of query genes
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
+my $from = 0;  ## Start position of the sequence
+my $to = 2;  ## End position of the sequence
+my $lw = 0;  ## Line width. 0 means all the sequence on one line
+my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
+
+my %args = (
+	    'output' => $output_choice,
+	    'organism' => $organism,
+	    'query' => \@gene,
+	    'noorf' => $noorf,
+	    'from' => $from,
+	    'to' => $to,
+	    'lw' => $lw,
+	    'label' => $label,
+	    );
+
+## Send the request to the server
+print "Sending request to the server $server\n";
+my $call = $soap->call('retrieve_seq' => 'request' => \%args);
+
+## Get the result
+if ($call->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+} else {
+    my $results_ref = $call->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
+
+    ## Report the remote command
+    my $command = $results{'command'};
+    print "Command used on the server: ".$command, "\n";
+
+    ## Report the result
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
+	print "Result file on the server: ".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Retrieved sequence(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: ".$server_file;
+	print "Retrieved sequence(s): \n".$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Work flow using RSATWS}
+
+The following example is the script of a typical workflow of RSA Tools
+programs. First, the upstream sequences of five Saccharomyces
+cerevisiae genes are retrieved with \program{retrieve-seq}. Then,
+\program{purge-sequence} is applyed to remove any redundancy in the
+set of sequences. Finally, \program{oligo-analysis} is applied to
+discover over-represented six letters words. The result of step 1 and
+2 are stored on the server, so that the file name can be sent to the
+following step as input and only the final result needs to be
+transported from the server to the client.
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# retrieve_purge_oligos_client_soap-wsdl.pl - Client retrieve-seq + oligo-analysis
+
+################################################################
+##
+## This script runs a simple demo of the web service interface to the
+## RSAT tools retrieve-seq, purge-sequence and oligo-analysis linked in a workflow.
+##  It sends a request to the server for discovering 6 letter words
+## in upstream sequences of 5 yeast genes. The sequences are first
+## retrieved and purged for repeated segments
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+
+warn "\nThis demo script illustrates a work flow combining three requests to the RSAT web services:\n\tretrieve-seq | purge-sequence | oligo-analysis\n\n";
+
+
+## Service location
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
+
+## Service call
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+$soap->wsdlinit;
+
+#################################################
+## Retrieve-seq part
+
+## Output option
+my $output_choice = 'server'; ## The result will stay in a file on the server
+
+## Parameters
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my @gene = ("PHO5", "PHO8", "PHO11", "PHO81", "PHO84");  ## List of query genes
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
+my $from;  ## Start position of the sequence. Default is used (-800).
+my $to;  ## End position of te sequence. Default is used (-1).
+my $feattype;  ## -feattype option value is not defined, default is used (CDS).
+my $type;  ## -type option value; other example:'-type downstream'
+my $format = 'fasta';  ## the format of the retrieved sequence(s)
+my $label;  ## Choice of label for the retrieved sequence(s). Default is used.
+my $label_sep;  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
+
+my %args = ('output' => $output_choice,
+    'organism' => $organism,
+    'query' => \@gene,  ## An array in a hash has to be referenced
+    'noorf' => $noorf,
+    'from' => $from,
+    'to' => $to,
+    'feattype' => $feattype,
+    'type' => $type,
+    'format' => $format,
+    'label' => $label,
+    'label_sep' => $label_sep
+    );
+
+## Send request to the server
+print "\nRetrieve-seq: sending request to the server\t", $server, "\n";
+my $call = $soap->call('retrieve_seq' => 'request' => \%args);
+
+## Get the result
+my $server_file;  ## That variable needs to be declared outside the if..else block to be useable in the next part
+if ($call->fault){  ## Report error if any
+  printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+} else {
+  my $results_ref = $call->result;  ## A reference to the result hash table
+  my %results = %$results_ref;  ## Dereference the result hash table
+
+  ## Report the remote command
+  my $command = $results{'command'};
+  print "Command used on the server:\n\t".$command, "\n";
+
+  ## Report the result file name on the server
+  $server_file = $results{'server'};
+  print "Result file on the server:\n\t".$server_file;
+}
+
+#################################################
+## Purge-sequence part
+
+## Define hash of parameters
+%args = ('output' => $output_choice,  ## Same 'server' output option
+ 'tmp_infile' => $server_file);  ## Output from retrieve-seq part is used as input here
+
+## Send the request to the server
+print "\nPurge-sequence: sending request to the server\t", $server, "\n";
+$call = $soap -> call('purge_seq' => 'request' => \%args);
+
+## Get the result
+if ($call->fault){  ## Report error if any
+  printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+} else {
+  my $results_ref = $call->result;  ## A reference to the result hash table
+  my %results = %$results_ref;  ## Dereference the result hash table
+
+  ## Report the remote command
+  my $command = $results{'command'};
+  print "Command used on the server: \n\t".$command, "\n";
+
+  ## Report the result file name on the server
+  $server_file = $results{'server'};
+  print "Result file on the server: \n\t".$server_file;
+}
+#################################################
+## Oligo-analysis part
+
+## Output option
+$output_choice = 'both'; ## We want to get the result on the client side, as well as the server file name
+
+## Parameters
+my $format = 'fasta';  ## The format of input sequences
+my $length = 6;  ## Length of patterns to be discovered
+my $background = 'upstream-noorf';  ## Type of background used
+my $stats = 'occ,proba,rank';  ## Returned statistics
+my $noov = 1;  ## Do not allow overlapping patterns
+my $str = 2;  ## Search on both strands
+my $sort = 1;  ## Sort the result according to score
+my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
+
+%args = ('output' => $output_choice, 
+	 'tmp_infile' => $server_file, 
+	 'format' => $format,
+	 'length' => $length,
+	 'organism' => $organism, 
+	 'background' => $background,
+	 'stats' => $stats,
+	 'noov' => $noov,
+	 'str' => $str,
+	 'sort' => $sort,
+	 'lth' => $lth);
+
+## Send request to the server
+print "\nOligo-analysis: sending request to the server\t", $server, "\n";
+$call = $soap->call('oligo_analysis' => 'request' => \%args);
+
+## Get the result
+if ($call->fault){  ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+} else {
+    my $results_ref = $call->result;
+    my %results = %$results_ref;
+    
+    ## Report remote commande
+    my $command = $results{'command'};
+    print "Command used on the server: ".$command, "\n";
+    
+    ## Report the result
+    if ($output_choice eq 'server') {
+	$server_file = $results{'server'};
+	print "Result file on the server: \n\t".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Discovered oligo(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	$server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: \n\t".$server_file;
+	print "Discovered oligo(s): \n".$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Discover patterns with RSATWS}
+
+You can, of course, use directly the program \program{oligo-analysis}, providing your own sequences. In the following script, the upstream sequences of five yeast genes are sent as input to oligo-analysis. Overrepresented hexanucleotides are returned.
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# oligos_client_soap-wsdl.pl - Client oligo-analysis using the SOAP::WSDL module
+
+################################################################
+##
+## This script runs a simple demo of the web service interface to the
+## RSAT tool oligo-analysis. It sends a request to the server for
+## discovering 6 letter words in the upstream sequences of 5 yeast genes.
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+
+warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
+
+## WSDL location
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
+
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+
+$soap->wsdlinit;
+
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
+
+## Oligo-analysis parameters
+my $sequence = '>NP_009651.1    PHO5; upstream from -800 to -1; size: 800; location: NC_001134.7 430946 431745 R; upstream neighbour: NP_009652.1 (distance: 1084)
+TTTTACACATCGGACTGATAAGTTACTACTGCACATTGGCATTAGCTAGGAGGGCATCCAAGTAATAATTGCGAGAAACGTGACCCAACTTTGTTGTAGGTCCGCTCCTTCTAATAATCGCTTGTATCTCTACATATGTTCTATTTACTGACCGAAAGTAGCTCGCTACAATAATAATGTTGACCTGATGTCAGTCCCCACGCTAATAGCGGCGTGTCGCACGCTCTCTTTACAGGACGCCGGAGACCGGCATTACAAGGATCCGAAAGTTGTATTCAACAAGAATGCGCAAATATGTCAACGTATTTGGAAGTCATCTTATGTGCGCTGCTTTAATGTTTTCTCATGTAAGCGGACGTCGTCTATAAACTTCAAACGAAGGTAAAAGGTTCATAGCGCTTTTTCTTTGTCTGCACAAAGAAATATATATTAAATTAGCACGTTTTCGCATAGAACGCAACTGCACAATGCCAAAAAAAGTAAAAGTGATTAAAAGAGTTAATTGAATAGGCAATCTCTAAATGAATCGATACAACCTTGGCACTCACACGTGGGACTAGCACAGACTAAATTTATGATTCTGGTCCCTGTTTTCGAAGAGATCGCACATGCCAAATTATCAAATTGGTCACCTTACTTGGCAAGGCATATACCCATTTGGGATAAGGGTAAACATCTTTGAATTGTCGAAATGAAACGTATATAAGCGCTGATGTTTTGCTAAGTCGAGGTTAGTATGGCTTCATCTCTCATGAGAATAAGAACAACAACAAATAGAGCAAGCAAATTCGAGATTACCA
+>NP_010769.1    PHO8; upstream from -180 to -1; size: 180; location: NC_001136.8 1420243 1420422 R; upstream neighbour: NP_010770.1 (distance: 180)
+CAGCATTGACGATAGCGATAAGCTTCGCGCGTAGAGGAAAAGTAAAGGGATTTTAGTATATAAAGAAAGAAGTGTATCTAAACGTTTATATTTTTTCGTGCTCCACATTTTGCCAGCAAGTGGCTACATAAACATTTACATATCAGCATACGGGACATTATTTGAACGCGCATTAGCAGC
+>NP_009434.1    PHO11; upstream from -800 to -1; size: 800; location: NC_001133.6 224651 225450 D; upstream neighbour: NP_009431.1 (distance: 2568)
+GCAGCCTCTACCATGTTGCAAGTGCGAACCATACTGTGGCCACATAGATTACAAAAAAAGTCCAGGATATCTTGCAAACCTAGCTTGTTTTGTAAACGACATTGAAAAAAGCGTATTAAGGTGAAACAATCAAGATTATCTATGCCGATGAAAAATGAAAGGTATGATTTCTGCCACAAATATATAGTAGTTATTTTATACATCAAGATGAGAAAATAAAGGGATTTTTTCGTTCTTTTATCATTTTCTCTTTCTCACTTCCGACTACTTCTTATATCTACTTTCATCGTTTCATTCATCGTGGGTGTCTAATAAAGTTTTAATGACAGAGATAACCTTGATAAGCTTTTTCTTATACGCTGTGTCACGTATTTATTAAATTACCACGTTTTCGCATAACATTCTGTAGTTCATGTGTACTAAAAAAAAAAAAAAAAAAGAAATAGGAAGGAAAGAGTAAAAAGTTAATAGAAAACAGAACACATCCCTAAACGAAGCCGCACAATCTTGGCGTTCACACGTGGGTTTAAAAAGGCAAATTACACAGAATTTCAGACCCTGTTTACCGGAGAGATTCCATATTCCGCACGTCACATTGCCAAATTGGTCATCTCACCAGATATGTTATACCCGTTTTGGAATGAGCATAAACAGCGTCGAATTGCCAAGTAAAACGTATATAAGCTCTTACATTTCGATAGATTCAAGCTCAGTTTCGCCTTGGTTGTAAAGTAGGAAGAAGAAGAAGAAGAAGAGGAACAACAACAGCAAAGAGAGCAAGAACATCATCAGAAATACCA
+>NP_011749.1    PHO81; upstream from -800 to -1; size: 800; location: NC_001139.7 958214 959013 R; upstream neighbour: NP_011750.1 (distance: 1694)
+AAACGAGCATGAGGGTTACAAAGAACTTCCGTTTCAAAAATGAATATAATCGTACGTTTACCTTGTGGCAGCACTAGCTAACGCTACGTGGAATGAACGTACCGTGCCCTATTATTCTTGCTTGTGCTATCTCAAGAATTGCATTTTGTAATAACAACTGCATGGGAAAAATTATATAGATTTTCTACTATTATGTCCGCCTAAGTCAGTTAACCATCTTTATCACAAAATATACAATTAACCAACTACTTAATCAATTCGGTTATATTGCTTAGTATATACGTCTTTGGCACGCGATTGAAACGCGCTAATTGCATCAGCCTATCTTTCTATGCAAGAATGCAAGAAAAATTGATGTGATGTGCCTTATCACAATTCATTACCTCCTATTTCCTCTGCAGCAACAAGTTTCCTTGATTATAAAGGTCTTTAGCGTGAGAGGTACAGGTGTTATGGCACGTGCGAATAAGGGCAGAAATTAATCAAATTTATCAACTATTTGGCGATGGCTCGAGACAGGTATAGAACCACTACTAGGTGATATTGAGGCTTTTGTACAATTTATAGCAAGTTTTTGAGAGTCCCTTCAAGTTTGTTACATAATCTTCTTTGTGCAACGTACAAGAGCAAAGTAGAAAAATTTGGTTTTTATTTTTTTAAGCAACATCAGCTGCACTAGTTGAGCTTTTGACAAGACATACTGCTCAAAAAATCTTCATAACATTATTTTTCGGTTCCACAGTGATTGAGCTTTTTGAGAGAATAACCCTTTGGAGGCAACATAGATAGATAAACGTGCA
+>NP_013583.1    PHO84; upstream from -800 to -1; size: 800; location: NC_001145.2 25802 26601 R; upstream neighbour: NP_013585.1 (distance: 1128)
+AAAAAAAAAGATTCAATAAAAAAAGAAATGAGATCAAAAAAAAAAAAAATTAAAAAAAAAAAGAAACTAATTTATCAGCCGCTCGTTTATCAACCGTTATTACCAAATTATGAATAAAAAAACCATATTATTATGAAAAGACACAACCGGAAGGGGAGATCACAGACCTTGACCAAGAAAACATGCCAAGAAATGACAGCAATCAGTATTACGCACGTTGGTGCTGTTATAGGCGCCCTATACGTGCAGCATTTGCTCGTAAGGGCCCTTTCAACTCATCTAGCGGCTATGAAGAAAATGTTGCCCGGCTGAAAAACACCCGTTCCTCTCACTGCCGCACCGCCCGATGCCAATTTAATAGTTCCACGTGGACGTGTTATTTCCAGCACGTGGGGCGGAAATTAGCGACGGCAATTGATTATGGTTCGCCGCAGTCCATCGAAATCAGTGAGATCGGTGCAGTTATGCACCAAATGTCGTGTGAAAGGCTTTCCTTATCCCTCTTCTCCCGTTTTGCCTGCTTATTAGCTAGATTAAAAACGTGCGTATTACTCATTAATTAACCGACCTCATCTATGAGCTAATTATTATTCCTTTTTGGCAGCATGATGCAACCACATTGCACACCGGTAATGCCAACTTAGATCCACTTACTATTGTGGCTCGTATACGTATATATATAAGCTCATCCTCATCTCTTGTATAAAGTAAAGTTCTAAGTTCACTTCTAAATTTTATCTTTCCTCATCTCGTAGATCACCAGGGCACACAACAAACAAAACTCCACGAATACAATCCAA';
+
+my $format = 'fasta';  ## The format of input sequences
+my $length = 6;  ## Length of patterns to be discovered
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my $background = 'upstream-noorf';  ## Type of background used
+my $stats = 'occ,proba,rank';  ## Returned statistics
+my $noov = 1;  ## Do not allow overlapping patterns
+my $str = 2;  ## Search on both strands
+my $sort = 1;  ## Sort the result according to score
+my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
+
+my %args = ('output' => $output_choice, 
+	    'sequence' => $sequence, 
+	    'format' => $format,
+	    'length' => $length,
+	    'organism' => $organism, 
+	    'background' => $background,
+	    'stats' => $stats,
+	    'noov' => $noov,
+	    'str' => $str,
+	    'sort' => $sort,
+	    'lth' => $lth);
+
+## Send request to the server
+print "Sending request to the server $server\n";
+my $call = $soap->call('oligo_analysis' => 'request' => \%args);
+
+## Get the result
+if ($call->fault){  ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+} else {
+    my $results_ref = $call->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
+
+    ##Report the remote command
+    my $command = $results{'command'};
+    print "Command used on the server: ".$command, "\n";
+
+    ## Report the result
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
+	print "Result file on the server: ".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Discovered oligo(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: ".$server_file;
+	print "Discovered oligo(s): \n".$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Example of clients using property files}
+We have also made clients using an alternative approach. Instead of writing
+the parameters values in the client code itself, these are read from a
+property file. Here is the client for retrieve-seq:
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# retrieve-seq_client.pl - Client retrieve-seq using the SOAP::WSDL module
+# and a property file
+
+################################################################
+##
+## This script runs a simple demo of the web service inerface to the
+## RSAT tool retrieve-seq. It sends a request to the server for
+## obtaining the start codons of 3 E.coli genes.
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+use Util::Properties;
+
+## WSDL location
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
+my $property_file = shift @ARGV;
+die "\tYou must specify the property file as first argument\n"
+  unless $property_file;
+
+## Service call
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+$soap->wsdlinit;
+
+my $prop =  Util::Properties->new();
+$prop->file_name($property_file);
+$prop->load();
+my %args = $prop->prop_list();
+
+## Convert the query string into a list
+my @queries = split(",", $args{query});
+$args{query} = \@queries;
+
+my $output_choice = $args{output_choice} || 'both';
+
+warn "\nThis demo script retrieves upstream sequences for a set of query genes\n\n";
+
+## Send the request to the server
+print "Sending request to the server $server\n";
+my $som = $soap->call('retrieve_seq' => 'request' => \%args);
+
+## Get the result
+if ($som->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+} else {
+    my $results_ref = $som->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
+
+    ## Report the remote command
+    my $command = $results{'command'};
+    print "Command used on the server: ".$command, "\n";
+
+    ## Report the result
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
+	print "Result file on the server: ".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Retrieved sequence(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: ".$server_file;
+	print "Retrieved sequence(s): \n".$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+The property file looks like this:
+\begin{footnotesize}
+\begin{verbatim}
+output=both
+organism=Escherichia_coli_K12
+query=metA,metB
+all=0
+noorf=1
+from=0
+to=2
+feattype=CDS
+type=upstream
+format=fasta
+lw=0
+label=id,name
+label_sep=
+nocom=0
+repeat= 0
+imp_pos=0
+\end{verbatim}
+\end{footnotesize}
+
+To run the client, give the path of the property file as argument.
+
+In the downloadable clients, the ones with a name like *\_client.pl use a
+property file. Examples of property files are in the sub-directory
+'property\_files'. When the property file contains the path to a file, make
+sure you edit it according to your system.
+
+\subsection{Other tools in RSATWS}
+
+Following the examples above or using the code that is available for
+download\urlref{http://rsat.ulb.ac.be/rsat/web\_services.html}, you
+can easily access the other RSA Tools for which Web Services have been
+implemented. You will find all you need to know about the tools
+(parameters, etc.) in the
+documentation\urlref{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}.
+
+\section{Examples of WS client in java}
+
+First, you need to generate the libraries. There are tools, like Axis,
+which do it from the WSDL document. These usually take the URL of that
+document as one of their parameters. In our case, it is there:
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS.wsdl}}
+
+Then you write a simple client like the one in the following example.
+
+\subsection{Same workflow as above with RSATWS}
+
+\begin{footnotesize}
+\begin{verbatim}
+import RSATWS.OligoAnalysisRequest;
+import RSATWS.OligoAnalysisResponse;
+import RSATWS.PurgeSequenceRequest;
+import RSATWS.PurgeSequenceResponse;
+import RSATWS.RSATWSPortType;
+import RSATWS.RSATWebServicesLocator;
+import RSATWS.RetrieveSequenceRequest;
+import RSATWS.RetrieveSequenceResponse;
+
+
+public class RSATRetrievePurgeOligoClient {
+
+	/**
+	 * This script runs a simple demo of the web service interface to the
+	 * RSAT tools retrieve-seq, purge-sequence and oligo-analysis linked in a workflow.
+	 * It sends a request to the server for discovering 6 letter words
+	 * in upstream sequences of 5 yeast genes. The sequences are first
+	 * retrieved and purged for repeated segments
+	 */
+	public static void main(String[] args) {
+		 try
+	        {
+			 
+		System.out.println("This demo script illustrates a work flow combining three requests to the RSAT web services:\n\tretrieve-seq | purge-sequence | oligo-analysis");
+			 
+		String organism = "Saccharomyces_cerevisiae";
+			 	
+		/* Get the location of the service */
+		RSATWebServicesLocator service = new RSATWebServicesLocator();
+		RSATWSPortType proxy = service.getRSATWSPortType();
+	
+			/** Retrieve-seq part **/
+			 	
+	            /* prepare the parameters */
+	            RetrieveSequenceRequest retrieveSeqParams = new RetrieveSequenceRequest();
+	            	            
+	            //Name of the query organism
+	            retrieveSeqParams.setOrganism(organism);
+	            //List of query genes
+	            String[] q=  { "PHO5", "PHO8", "PHO11", "PHO81", "PHO84" };	            
+	            retrieveSeqParams.setQuery(q);
+	            // Clip sequences to avoid upstream ORFs
+	            retrieveSeqParams.setNoorf(1);
+	            retrieveSeqParams.setNocom(0);
+	            // The result will stay in a file on the server
+	            retrieveSeqParams.setOutput("server");
+	            
+	        	/* Call the service */
+	            System.out.println("Retrieve-seq: sending request to the server...");
+	            RetrieveSequenceResponse res = proxy.retrieve_seq(retrieveSeqParams);
+	           
+	            /* Process results  */  
+	            //Report the remote command
+	            System.out.println("Command used on the server:"+ res.getCommand());
+	            //Report the server file location
+	            String retrieveSeqFileServer = res.getServer();
+	            System.out.println("Result file on the server::\n"+ res.getServer());
+	            
+	            /** Purge-sequence part **/
+	            
+	            /* prepare the parameters */
+	            PurgeSequenceRequest purgeSeqParams = new PurgeSequenceRequest();
+	            // The result will stay in a file on the server
+	            purgeSeqParams.setOutput("server");
+	            // Output from retrieve-seq part is used as input here
+	            purgeSeqParams.setTmp_infile(retrieveSeqFileServer);
+	            
+	            /* Call the service */
+	            System.out.println("Purge-sequence: sending request to the server...");
+	            PurgeSequenceResponse res2 = proxy.purge_seq(purgeSeqParams);
+	            
+	            /* Process results  */  
+	            //Report the remote command
+	            System.out.println("Command used on the server:"+ res2.getCommand());
+	            //Report the server file location
+	            String purgeSeqFileServer = res2.getServer();
+	            System.out.println("Result file on the server::\n"+ res2.getServer());
+	            
+	            /** Oligo-analysis part **/
+	            
+	            /* prepare the parameters */
+	            OligoAnalysisRequest oligoParams = new OligoAnalysisRequest();
+	            // Output from purge-seq part is used as input here
+	            oligoParams.setTmp_infile(purgeSeqFileServer);
+	            oligoParams.setOrganism(organism);
+	            // Length of patterns to be discovered
+	            oligoParams.setLength(6);
+	            // Type of background used
+	            oligoParams.setBackground("upstream-noorf");
+	            // Returned statistics
+	            oligoParams.setStats("occ,proba,rank");
+	            // Do not allow overlapping patterns
+	            oligoParams.setNoov(1);
+	            // Search on both strands
+	            oligoParams.setStr(2);
+	            // Sort the result according to score
+	            oligoParams.setSort(1);
+	            // Lower limit to score is 0, less significant patterns are not displayed
+	            oligoParams.setLth("occ_sig 0");
+	            
+	            /* Call the service */
+	            System.out.println("Oligo-analysis: sending request to the server...");
+	            OligoAnalysisResponse res3 = proxy.oligo_analysis(oligoParams);
+	            
+	            /* Process results  */  
+	            //Report the remote command
+	            System.out.println("Command used on the server:"+ res3.getCommand());
+	            //Report the result
+	            System.out.println("Discovered oligo(s):\n"+ res3.getClient());
+	            //Report the server file location
+	            System.out.println("Result file on the server::\n"+ res3.getServer());
+	            
+	        }
+	        catch(Exception e) { System.out.println(e.toString()); 
+	        }
+	}
+}
+\end{verbatim}
+\end{footnotesize}
+
+\section{Examples of WS client in python}
+
+\subsection{Get infos on genes having methionine or purine in their description, as above in perl}
+
+\begin{footnotesize}
+\begin{verbatim}
+#! /usr/bin/python
+
+class GeneInfoRequest:
+
+    def __init__(self):
+
+        self.organism = None
+        self.query = None
+        self.noquery = None
+        self.desrc = None
+        self.full = None
+        self.feattype = None
+
+
+if __name__ == '__main__':
+
+    import os, sys, SOAPpy
+
+    if os.environ.has_key("http_proxy"):
+        my_http_proxy=os.environ["http_proxy"].replace("http://","")
+    else:
+        my_http_proxy=None
+
+    organism = "Escherichia_coli_K12"
+    query = ["methionine", "purine"]
+    full = 0
+    noquery = 0
+    descr = 0
+    feattype = "CDS"
+
+    url = "http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl"
+    server = SOAPpy.WSDL.Proxy(url, http_proxy = my_http_proxy)
+    server.soapproxy.config.dumpSoapOutput = 1
+    server.soapproxy.config.dumpSoapInput = 1
+    server.soapproxy.config.debug = 0   
+
+    req = GeneInfoRequest()
+    req.organism = organism
+    req.query = query
+    req.full = 0
+    req.descr = 1
+
+    res = server.gene_info(req)
+
+    print res.command
+    print res.client
+\end{verbatim}
+\end{footnotesize}
+
+\section{Full documentation of the RSATWS interface}
+
+The full documentation can be found there:
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}}
+
+Please refer to the documentation of each RSAT application for further
+detail on each program.

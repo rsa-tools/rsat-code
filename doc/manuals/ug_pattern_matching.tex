@@ -1,0 +1,354 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% STRING-BASED PATTERN MATCHING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{String-based pattern matching}
+
+In a pattern matching problem, you start from one or several
+predefined patterns, and you match this pattern against a sequence,
+i.e. you locate all occurrences of this pattern in the sequences.
+
+Patterns can be represented as strings (with \textit{dna-pattern}) or
+position-weight matrices (with \textit{patser}). 
+
+\section{dna-pattern}
+
+\textit{dna-pattern} is a string-based pattern matching program,
+specialized for searching patterns in DNA sequences. 
+
+\begin{itemize}
+
+\item 
+This specialization mainly consists in the ability to search on both
+the direct and reverse complement strands.
+
+\item 
+A single run can either search for a single pattern, or for a list
+of patterns.
+
+\item 
+multi-sequence file formats (fasta, filelist, wc, ig) are supported,
+allowing to match patterns against a list of sequences with a single
+run of the program.
+
+\item 
+String descriptions can be refined by using the 15-letters IUPAC code
+for uncompletely specified nucleotides, or by using regular
+expressions.
+
+\item 
+The program can either return a list of matching positions (default
+behaviour), or the count of occurrences of each pattern.
+
+\item 
+Imperfect matches can be searched by allowing
+substitutions. Insertions and deletions are not supported.  The reason
+is that, when a regulatory site presents variations, it is generally
+in the form of a tolerance for substitution at a specific position,
+rather than insertions or deletions. It is thus essential to be able
+distinguishing between these types of imperfect matches.
+
+\end{itemize}
+
+
+\section{Matching a single pattern}
+
+We will start by searching all positions of a single pattern in a
+sequence set. The sequence is the set of upstream regions from the PHO
+genes, that was obtained in the tutorial on sequence retrieval. We
+will search all occurrences of the most conserved core of the Pho4p
+medium affinity binding site (\texttt{CACGTT}) in this sequence set.
+
+Try the following command:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -v 1 -i PHO_up800.fasta -format fasta \ 
+    -1str -p cacgtt -id 'Pho4p_site'
+\end{verbatim} \end{footnotesize}
+}
+
+You see a list of positions for all the occurrences of CACGTT in the sequence.
+
+Each row represents one match, and the columns provide the following
+information:
+\begin{enumerate}
+\item pattern identifier
+\item strand
+\item pattern searched
+\item sequence identifier
+\item start position of the match
+\item end position of the match
+\item matched sequence
+\item matching score
+\end{enumerate}
+
+\section{Matching on both strands}
+
+To perform the search on both strands, type:
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -v 1 -i PHO_up800.fasta -format fasta \ 
+    -2str -p cacgtt -id 'Pho4p_site'
+\end{verbatim} \end{footnotesize}
+}
+
+Notice that the strand column now contains two possible values: D for
+``direct'' and R for ``reverse complement''.
+
+\section{Allowing substitutions}
+
+To allow one substitutions, type:
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+    -2str -p cacgtt -id 'Pho4p_site' -subst 1
+\end{verbatim} \end{footnotesize}
+}
+
+Notice that the score column now contains 2 values: 1.00 for perfect
+matches, 0.83 (=5/6) for single substitutions. This si one possible
+use of the score column: when substitutions are allowed, the score
+indicates the percentage of matching nucleotides.
+
+Actually, for regulatory patterns, allowing substitutions usually
+returns many false positive, and this option is usually avoided. We
+will not use it further in the tutorial.
+
+\section{Extracting flanking sequences}
+
+The matching positions can be extracted along with their flanking nucleotides. Try:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+     -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4
+\end{verbatim} \end{footnotesize}
+}
+
+Notice the change in the matched sequence column: each matched
+sequence contains the pattern CACGTT in uppercase, and 4 lowercase
+letters on each side (the flanks).
+
+\section{Changing the origin}
+
+When working with upstream sequences, it is convenient to work with
+coordinates relative to the start codon (i.e. the right side of the
+sequence). Sequence matching programs (including dna-pattern) return
+the positions relative to the beginning (i.e. the left side) of the
+sequence. The reference (coordinate 0) can however be changed with
+the option \texttt{-origin}. In this case, we retrieved upstream
+sequences over 800bp. the start codon is thus located at position
+801. Try:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+    -2str -p cacgtt \
+    -id  'Pho4p_site' -N 4 -origin 801
+\end{verbatim} \end{footnotesize}
+}
+
+Notice the change in coordinates.
+
+In some cases, a sequence file will contain a mixture of sequences of
+different length (for example if one clipped the sequences to avoid
+upstream coding sequences). The origin should thus vary from sequence
+to sequence. A convenient way to circumvent the problem is to use a
+negative value with the option \texttt{origin}. for example,
+\texttt{-origin -100} would take as origin the 100th nucleotide
+starting from the right of each sequence in the sequence file. But in
+our case we want to take as origin the position immediately after the
+last nucleotide. For this, there is a special convention: \texttt{-origin
+-0}.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+    -2str -p cacgtt \
+    -id  'Pho4p_site' -N 4 -origin -0
+\end{verbatim} \end{footnotesize}
+}
+
+In the current example, since all sequences have exactly 800bp length,
+the result is identical to the one obtained with \texttt{-origin 801}.
+
+\section{Matching degenerate patterns}
+
+As we said before, there are two forms of Pho4p binding sites: the
+protein has high affinity for motifs containing the core CACGTG, but
+can also bind, with a medium affinity, CACGTT sites. The IUPAC code
+for partly specified nucleotides allows to represent any combination
+of nucleotides by a single letter.
+
+\begin{tabular}{lll}
+\textbf{A} &  & (Adenine) \\
+\textbf{C} &  & (Cytosine) \\
+\textbf{G} &  & (Guanine) \\
+\textbf{T} &  & (Thymine) \\
+\textbf{R} & = A or G & (puRines) \\
+\textbf{Y} & = C or T & (pYrimidines) \\
+\textbf{W} & = A or T & (Weak hydrogen bonding) \\
+\textbf{S} & = G or C & (Strong hydrogen bonding) \\
+\textbf{M} & = A or C & (aMino group at common position) \\
+\textbf{K} & = G or T & (Keto group at common position) \\
+\textbf{H} & = A, C or T & (not G) \\
+\textbf{B} & = G, C or T & (not A) \\
+\textbf{V} & = G, A, C & (not T) \\
+\textbf{D} & = G, A or T & (not C) \\
+\textbf{N} & = G, A, C or T & (aNy) \\
+\end{tabular}
+
+Thus, we could use the string CACGT\textbf{K} to represent the Pho4p
+consensus, and search both high and medium affinity sites in a single
+run of the program.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+    -2str -p cacgtk \
+    -id  'Pho4p_site' -N 4 -origin -0
+\end{verbatim} \end{footnotesize}
+}
+
+\section{Matching regular expressions}
+
+Another way to represent partly specified strings is by using regular
+expressions. This not only allows to represent combinations of letters
+as we did above, but also spacings of variable width. For example, we
+could search for tandem repeats of 2 Pho4p binding sites, separated by
+less than 100bp. This can be represented by the following regular expression: 
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+cacgt[gt].{0,100}cacgt[gt]
+\end{verbatim} \end{footnotesize}
+}
+
+which means
+\begin{itemize}
+\item cacgt 
+\item followed by either g or t [gt]
+\item followed by 0 to 100 unspecified letters .{0,100}
+\item followed by cacgt
+\item followed by either g or t [gt]
+\end{itemize}
+
+Let us try to use it with dna-pattern
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+    -2str -id 'Pho4p_pair' \
+    -N 4 -origin -0 \
+    -p 'cacgt[gt].{0,100}cacgt[gt]'
+\end{verbatim} \end{footnotesize}
+}
+
+
+Note that the pattern has to be quoted, to avoid possible conflicts
+between special characters used in the regular expression and the unix
+shell.
+
+
+\section{Matching several patterns}
+
+TO match a series of patterns, you first need to store these patterns
+in a file. Let create a pattern file:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+cat > test_patterns.txt
+cacgtg	high
+cacgtt	medium
+\end{verbatim} \end{footnotesize}
+}
+(then type Ctrl-d to close)
+
+check the content of your pattern file.
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+more test_patterns.txt
+\end{verbatim} \end{footnotesize}
+}
+
+There are two lines, each representing a pattern. The first word of
+each line contains the pattern, the second word the identifier for
+that pattern. This column can be left blank, in which case the pattern
+is used as identifier.
+
+We can now use this file to search all matching positions of both
+patterns in the PHO sequences.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \
+    -2str  -N 4 -origin -0 \
+    -pl test_patterns.txt
+\end{verbatim} \end{footnotesize}
+}
+
+\section{Counting pattern matches}
+
+In the previous examples, we were interested in matching positions. It
+is sometimes interesting to get a more synthetic information, in the
+form of a count of matching positions for each sequences. Try:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta \ 
+     -2str  -N 4 -origin -0 -c \
+     -pl test_patterns.txt
+\end{verbatim} \end{footnotesize}
+}
+
+With the option \texttt{-c}, the program returns the number of
+occurrences of each pattern in each sequence. The output format is
+different: there is one row for each combination pattern-sequence. The
+columns indicate respectively
+\begin{enumerate}
+\item sequence identifier
+\item pattern identifier
+\item pattern sequence
+\item match count
+\end{enumerate}
+
+An even more synthetic result can be obtained with the option
+\texttt{-ct} (count total).
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+    -pl test_patterns.txt -N 4 -origin -0 -ct
+\end{verbatim} \end{footnotesize}
+}
+
+This time, only two rows are returned, one per pattern. 
+
+\section{Getting a count table}
+
+Another way to display the count information is in the form of a
+table, where each row represents a gene and each column a pattern.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+    -pl test_patterns.txt -N 4 -origin -0 -table
+\end{verbatim} \end{footnotesize}
+}
+
+This representation is very convenient for applying multivariate
+statistics on the results (e.g. classifying genes according to the
+patterns found in their upstream sequences)
+
+Last detail: we can add one column and one row for the totals per
+gene and per pattern.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+    -pl test_patterns.txt -N 4 -origin -0 -table -total
+\end{verbatim} \end{footnotesize}
+}
+

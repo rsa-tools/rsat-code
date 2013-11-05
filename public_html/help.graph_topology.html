@@ -1,0 +1,88 @@
+<html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about graph-topology
+</h2>
+</center>
+
+<h4>Description</h4>
+<ul>
+Calculate the node degree, the closeness and the betweenness of each
+node and specifies if this node is a seed or a target node. Weighted graphs are
+supported for the calculation of the betweenness and of the closeness. 
+Self loops (edges having the same starting and ending points) are ignored in the calculation 
+of the betweenness and of the closeness.
+
+</ul>
+
+<h4>Authors</h4>
+<ul>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Brohe&eacute;e</a></li>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a></li>
+</ul>
+
+
+
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input formats</h4>
+  The accepted input formats are GML, tab-delimited and adjacency matrix. 
+  For more explanations about these, refer to the <a href = 'help.convert_graph.html'>manual of convert-graph</a>.
+</ul>
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+<ul><A NAME="wcol"></A><b>Weight or label column</b>. Column containing a label or a weight (real value) for the edge. This is useful for the calucation of the betweenness and of the closeness (see below).</ul>
+</ul>
+<h4>Return fields<ul><A NAME="return_fields"></A></h4>
+Statistics that the program must compute. (Following definitions are adapted from <a href = 'http://en.wikipedia.org/wiki/Centrality'>wikipedia</a>).
+<ul><b>Degree</b> : Node degree is defined as the number of links incident upon a node (i.e., the number of ties that a node has). Degree is often interpreted in terms of the immediate risk of node for catching whatever is flowing through the network. If the network is directed (meaning that ties have direction), then the program returns three separate measures for the node degree, namely in- and out-degree. In-degree is a count of the number of ties directed to the node, and outdegree is the number of ties that the node directs to others. In that case, the program also compute the global degree (sum of the in and out degree) and specifies whether the node is a source / target node only.</ul>
+<ul><b>Betweenness</b> : Betweenness is a centrality measure of a vertex within a graph. Vertices that occur on many shortest paths between other vertices have higher betweenness than those that do not.
+
+For a graph <i>G = (V,E)</i> with n vertices, the betweenness B(v) for vertex v is:<br>
+
+    <img src = 'images/betweenness_formula.png'><br>
+    
+where <i>s_st</i> is the number of shortest geodesic paths from <i>s</i> to <i>t</i>, and <i>s_st(v)</i> is the number of shortest geodesic paths from <i>s</i> to <i>t</i> that pass through a vertex <i>v</i>. 
+
+</ul>
+<ul><b>Closeness</b> : Closeness is  defined as the mean geodesic distance (i.e the shortest path) between a vertex v and all other vertices reachable from it.
+
+
+</ul>
+
+
+Calculating the betweenness and closeness centralities of all the vertices in a graph involves calculating the shortest paths between all pairs of vertices on a graph. To this, graph-topology uses the Floyd-Warschall algorithm (running in C).
+
+
+</ul>
+<h4>Directed graph<ul><A NAME="directed"></A></h4>
+Specifies whether the graph is directed or not (i.e. edge A-B
+corresponds to edge B-A). In this case, the betweenness and the
+closeness calculation will be rather different (as their are less possible paths in directed graphs). <br>
+
+Moreover, the out- and in-degree will be computed in directed graphs.
+
+</ul>
+
+</ul>
+<h4>Nodes<ul><A NAME="nodes"></A></h4>
+The list of nodes for which the degree is seeked.<br>
+The nodes can be submitted as a file containing one node name per line or directly in the input form. In the node file, the first word of each row must specify one node label and the rest of the row is ignored.<br>
+If no node is submitted, then degree of all nodes will be computed (even if the option 'List of nodes' is selected).
+
+Using this option, the degree distribution of the nodes will not be computed.
+
+</ul>
+
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+</h4>
+</blockquote>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<HTML>
+<HEAD>
+<TITLE>CONSENSUS manual</TITLE>
+</HEAD>
+<BODY>
+
+Warning: this documents contains the original documentation of the
+program consensus, developed by Jerry Hertz. Options are indicated as
+they are used in the unix shell. 
+
+<p>
+The web interface presents the same options with a different user
+interface.
+
+<PRE>
+################################################################
+
+Copyright 1990--1998 Gerald Z. Hertz
+May be copied for noncommercial purposes.
+
+Author:
+  Gerald Z. Hertz
+  Dept. of Molecular, Cellular, and Developmental Biology
+  University of Colorado
+  Campus Box 347
+  Boulder, CO  80309-0347
+
+  hertz@colorado.edu
+
+
+
+CONSENSUS (version 6a)
+
+This program determines consensus patterns in unaligned sequences.  The
+algorithm is based on a matrix representation of a consensus pattern.  Each
+row corresponds to one of the letters of the relevant alphabet---e.g., 4
+rows in the case of DNA.  Each column corresponds to one of the positions
+within the pattern.  The elements of the matrix are determined by the
+number of times that the indicated letter occurs at the indicated position.
+
+Matrices are constructed by sequentially adding additional L-mers
+(subsequences of length L, where L is the width of the pattern being
+sought) to previously saved matrices.  During each cycle, only the
+most significant matrices are saved.  The maximum number of matrices to
+save is determined by the "-q" option (see section 1 below).  In
+practice, less matrices are ultimately saved because many of the
+matrices initially saved are identical to each other.
+
+The program can use 3 different criteria for deciding to stop adding
+additional words to the saved matrices:
+1) Each sequence has contributed exactly one word to the saved
+   matrices (the default).
+2) The saved matrices contain a maximum allowable number of words (set
+   with the -n and -N options).
+3) The program has completed a designated number of cycles since finding
+   the current most significant alignment (set with the -t option).
+   This latter criteria is used in addition to criteria 1 and 2
+   to terminate the program sooner.
+
+The significance of a matrix is initially measured by its information
+content.  A higher information content indicates a rarer pattern and a
+more desirable matrix.  The program also estimates for each matrix a
+p-value, which is the probability of observing the particular
+information content or higher in an arbitrary alignment of random
+L-mers.  The ultimate statistical significance of a matrix is
+determined by multiplying the p-value by the approximate number of
+possible alignments, containing the designated number of sequences and
+having the observed width.  We refer to this product as the expected
+frequency of the matrix alignment.  The expected frequency allows the
+comparison of matrices summarizing differing numbers of sequences and
+having differing widths.
+
+The program can print two different lists of matrices.  The first list
+contains the matrices having the highest information content from each
+cycle, ordered by decreasing statistical significance (i.e.,
+increasing expected frequency).  In general, this first list will
+contain the most interesting alignment.  The second list contains the
+matrices saved after the final cycle of the program, also ordered by
+decreasing statistical significance.  In general, this latter list
+will be useful when the user wishes each sequence to contribute
+exactly one word to the final alignment (i.e., when the -n and -N
+options are not used).
+
+In the program's output, the words contained in each matrix are listed
+in the order of their occurrence in the input sequences.  The order is
+indicated by "integer|integer".  The first integer is simply a
+sequential count of the words, and the second integer indicates during
+which cycle the word was added to the matrix.  The location of a word
+is indicated by "integer/integer".  The first integer indicates which
+sequence contains the word, and the second integer indicates where in
+that sequence the word is located.  If the first integer is preceded
+by a minus sign, then the complementary word is the one included in
+the matrix.
+
+The output of the program is sent to the standard output.  The input
+files---those containing the actual sequences and those indicated by
+the "-f", "-a", and "-i" options---can contain comments according to
+the following convention.  The portion of a line following a ';', '%',
+or '#' is considered a comment and is ignored.  Comments can begin
+anywhere in a line and always end at the end of the line.  The one
+minor exception is that, to avoid ambiguity, comments in the list of
+sequences (see the "-f" option below) must be preceded by a blank
+space when not occurring at the beginning of a line.
+
+
+COMMAND LINE OPTIONS:
+
+ 0) -h: print these directions.
+
+ 1) General information
+    -f filename: this file (default: read from the standard input) contains
+       the names of the sequences.  The names of the sequences must be
+       less than 512 characters.  The corresponding sequence may follow
+       its name if the sequence is enclosed between backslashes (\).
+       Otherwise, the sequence is assumed to be in a separate file having
+       the indicated name.  The format of the actual sequences is described
+       at the end of these directions.  The following four modifiers can
+       appear in front of the name of the relevant sequence:
+       -c: the sequence is circular.
+       -s integer-integer integer-integer: the positions in the sequence
+          indicated by the integer pairs, inclusive, are seed sequences.
+          If the "-s" modifier is used anywhere in the input file, then the
+          initial set of matrices will only be constructed (i.e., seeded)
+          from the sequences within the marked regions.  If this modifier
+          is not used anywhere in the input file, then all the sequences
+          will be used to seed matrices.  One or more integer pair can be
+          indicated for a single sequence.  However, if no integer pairs
+          are given, the whole sequence will be used for seeding matrices.
+       -i integer-integer integer-integer: the positions in the sequence
+          indicated by the integer pairs, inclusive, are the only positions
+          to be analyzed.
+       -e integer-integer integer-integer: the positions in the sequence
+          indicated by the integer pairs, inclusive, are to be excluded
+          from the analysis.
+       When both the "-i" and "-e" modifiers are used, the intersection
+       of permissible positions is analyzed.  When a sequence name is
+       not marked by either the "-i" or "-e" modifier, then the whole
+       sequence is included in the analysis.
+
+    -L integer: width of the pattern being sought (required).
+
+    -q integer: the maximum number of matrices to save between cycles of the
+       program---i.e., the queue size (default: save 1000 matrices).
+
+ 2) Alphabet options
+
+    -d: use the designated prior probabilities of the letters to override the
+        observed frequencies.  By default, the program uses the frequencies
+        observed in your own sequence data for the prior probabilities of the
+        letters.  However, if the "-d" option is set, the prior probabilities
+        designated by one of the next 3 options are used.  If the "-d" option
+        is not set, the next 3 options are still used to determine the
+        sequence alphabet, but any prior probability information is ignored.
+
+    The next three options are mutually exclusive (default: "-a alphabet").
+    -a filename: file containing the alphabet and normalization information.
+       [Use "-af" when using the VMS operating system]
+
+       Each line contains a letter (a symbol in the alphabet) followed by an
+       optional normalization number (default: 1.0).  The normalization is
+       based on the relative prior probabilities of the letters.  For nucleic
+       acids, this might be be the genomic frequency of the bases; however,
+       if the "-d" option is not used, the frequencies observed in your own
+       sequence data are used.  In nucleic acid alphabets, a letter and its
+       complement appear on the same line, separated by a colon (a letter can
+       be its own complement, e.g. when using a dimer alphabet).
+       Complementary letters may use the same normalization number.  Only the
+       standard 26 letters are permissible; however, when the "-CS" option is
+       used, the alphabet is case sensitive so that a total of 52 different
+       characters are possible.
+
+       POSSIBLE LINE FORMATS WITHOUT COMPLEMENTARY LETTERS:
+       letter
+       letter normalization
+
+       POSSIBLE LINE FORMATS WITH COMPLEMENTARY LETTERS:
+       letter:complement
+       letter:complement normalization
+       letter:complement normalization:complement's_normalization
+
+    -i filename: same as the "-a" option, except that the symbols of
+       the alphabet are represented by integers rather than by letters.
+       Any integer permitted by the machine is a permissible symbol.
+       [Use "-if" when using the VMS operating system]
+
+    -A alphabet_and_normalization_information: same as "-a" option, except
+       information appears on the command line (e.g., -A a:t 3 c:g 2).
+       [Use "-ac" when using the VMS operating system]
+
+ 3) Alphabet modifier indicating whether ascii alphabets are case
+    sensitive---the following option is mutually exclusive with
+    the "-i" option (default: ascii alphabets are case insensitive).
+    -CS: ascii alphabets are case sensitive.
+         [Use "-as" when using the VMS operating system]
+
+ 4) Options for handling the complement of nucleic acid sequences---
+    the four options in this section are mutually exclusive
+    -c0: ignore the complement (the default option)
+    -c1: include both strands as separate sequences
+    -c2: include both strands as a single sequence (i.e., orientation unknown)
+    -c3: assume pattern is symmetrical
+
+ 5) Algorithm options
+       the "-pr1" and "-pr2" options are mutually exclusive;
+       the "-l", "-n", and "-N" options are mutually exclusive;
+       the "-m" option can only be used when the "-n" or "-N" option is used.
+
+    -pr1: save the top progeny matrices regardless of parentage.
+    -pr2: try to save the top progeny matrices for each parental matrix (the
+       default).  This option prevents a strong pattern found in only a subset
+       of the sequences from overwhelming the algorithm and eliminating other
+       potential patterns.  This undesirable situation can occur when a
+       subset of the sequences share an evolutionary relationship not
+       common to the majority of the sequences.  This option corresponds
+       to the original "consensus" algorithm (Stormo and Hartzell, 1989,
+       PNAS, 86:1183-1187; Hertz et al., 1990, CABIOS, 6:81-92).
+
+    -l: (lowercase L) seed with the first sequence and proceed linearly
+       through the list.  This option results in a significant speed
+       up in the program, but the algorithm becomes dependent on the
+       order of the sequence-file names.  This option corresponds to
+       the original "consensus" algorithm (Stormo and Hartzell, 1989,
+       PNAS, 86:1183-1187; Hertz et al., 1990, CABIOS, 6:81-92).
+
+    -n integer: repeat the matrix building cycle a maximum of "integer"
+       times and allow each sequence to contribute zero or more words
+       per matrix.  [Use "-n1" when using the VMS operating system]
+    -N integer: repeat the matrix building cycle a maximum of "integer"
+       times and allow each sequence to contribute one or more words
+       per matrix.  [Use "-n2" when using the VMS operating system]
+
+    -m integer: the minimum distance between the starting points of words
+       within the same matrix pattern; must be a positive integer; can only
+       be used when the "-n" or "-N" option is also used.  If the integer
+       is a 1, then there is no restriction on the overlap.  If the integer
+       is the same as the integer indicated by the "-L" option, then no
+       overlap is allowed (default: integer indicated by the "-L" option).
+       When the "-c2" option is used (see below), then the "-m" option also
+       indicates the minimum distance between the start of a word and the
+       end of a word on the complementary strand.
+
+    -t integer: terminate the program "integer" cycles after the current
+       most significant alignment is identified (default: terminate only
+       when the maximum number of matrix building cycles is completed).
+
+    The "-q", "-n", and "-t" options can be changed after the program
+    starts by placing the new options in a file called "changes." suffixed
+    with the process identification number---the PID number listed at the
+    beginning of the program's output.  For example a file called
+    "changes.10568" might contain "-q10 -n50 -t2".  The "-n" option
+    can change the maximum number of words in the alignments even if it
+    was not used at the beginning of the program, although it will not
+    permit a sequence to contribute more than one word to the alignment
+    unless the "-n" or "-N" option was used on the command line.  If
+    the "-t" option was not used when the program was started, this option
+    will only keep track of alignments beginning with the cycle during
+    which it is first initiated.
+
+ 6) Output options
+    -pt integer: the number of matrices to print of the top matrices from each
+       cycle (default: 4).  A negative value means print all the top matrices.
+    -pf integer: the number of matrices to print of the matrices saved from
+       the final cycle (default when NOT using "-n" or "-N" options: print 4
+       matrices; default when using "-n" option: print no matrices).
+
+
+
+FORMAT OF THE SEQUENCE FILES
+
+Do not explicitly give the complements of nucleic acid sequences.  If
+needed, the complementary sequence is determined by the program.
+Whitespace, periods, dashes (unless part of an integer when the "-i"
+option is used), and comments beginning with ';', '%', or '#' are
+ignored.  When using letter characters (i.e., with the "-a" and "-A"
+alphabet options), integers are also ignored so that the sequence file
+can contain positional information.  When using integer characters
+(i.e., with the "-i" alphabet option) the integers must be separated
+by whitespace.
+
+Sequences surrounded by slashes (/) do not contribute to the
+generation of the patterns; thus, a portion of a sequence can be
+ignored without disrupting the overall numbering of the sequence.
+A double slash (//) would indicate a discontinuity in the sequence.
+A '/' at the beginning or the end of a sequence will cause the sequence
+to be marked as non-circular even if the sequence's name is marked
+with a "-c" (see the "-f" option in section 1).  The effect of the
+single slashes can also be created with the "-i" and "-e" modifiers in
+the file containing the names of the sequences (see the "-f" option in
+section 1).  When slashes and the "-i" and "-e" modifiers are all
+used, the intersection of permissible positions is analyzed.
+
+Sequences that follow their name in the file indicated by the "-f"
+option must be enclosed between backslashes (\) (i.e., the actual
+sequence must be preceded and followed by a backslash).  However, if
+the sequence is contained in a separate file, do NOT use a '\'.
+</PRE>
+</BODY>
+</HTML>

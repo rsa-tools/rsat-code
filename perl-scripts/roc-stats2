@@ -1,0 +1,846 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: roc-stats2,v 1.17 2011/03/31 09:57:15 jvanheld Exp $
+#
+############################################################
+
+
+## TO DO: add a binomial test at each score value, to estimate the
+## significance of the positive versus negative occurrences: compute
+## P-value, E-value and significane.
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+roc-stats2
+
+=head1 DESCRIPTION
+
+This program takes as input a set of scored results associated with
+validation labels (pos for positive, neg for negative) and computes,
+for each score value, the derived statistics (Sn, PPV, FPR), which can
+be further used to draw a ROC curve.
+
+=head1 AUTHORS
+
+=item Rekin's Janky <rekins@bigre.ulb.ac.be>
+
+=item Jacques van Helden <jvhelden@ulb.ac.be>
+
+=head1 CATEGORY
+
+statistics
+
+=head1 USAGE
+
+roc-stats2 [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The input file is a tab-delimited text file including at least two
+columns with the following information.
+- score
+- status (pos or neg)
+
+Each row represents one prediction. Pos or neg indicate the status
+(positive or negative) of the element, and the score column indicates
+the score assigned to this element.
+
+
+=head1 OUTPUT STATISTICS
+
+The program calculates the number of true positives (TP) and false
+positives (FP) for each score provided in the input file. The inverse
+cumulative distributions are then computed, in order to indicate, for
+each possible score, the number of TP above the score (TP_icum), or
+the number of FP above the score (FP_icum).
+
+=over
+
+
+=item B<score>
+
+Score (X)
+
+=item B<N_icum>
+
+Inverse cumulated occurreces i.e. number of observations with score
+>=X.
+
+=item B<F_icum>
+
+Inverse cumulated frequencies, i.e. fraction of observations with
+score >= X
+
+=item B<TP_icum>
+
+True Positive, inverse cumulative (number of TP observations with
+score >= X)
+
+=item B<FP_icum>
+
+False Positive, inverse cumulative (number of FP observations with
+score >= X)
+
+=item B<FN_icum>
+
+False Negative, inverse cumulative (number of FN observations with
+score >= X)
+
+=item B<TN_icum>
+
+True Negative, inverse cumulative (number of TN observations with
+score >= X)
+
+=item B<TP>
+
+True Positive (number of TP observations with score = X)
+
+=item B<FP>
+
+False Positive (number of FP observations with score = X)
+
+=item B<FN>
+
+False Negative (number of FN observations with score = X)
+
+=item B<TN>
+
+True Negative (number of TN observations with score = X)
+
+=item B<Sn>
+
+Sensitivity (also called TPR, or Recall). Sn = TP_icum/(Total
+positives) =TP_icum/(TP_icum + FN_icum)
+
+=item B<PPV>
+
+Positive Predictive Value (also called Precision). PPV =
+TP_icum/(TP_icum + FP_icum)
+
+=item B<FPR>
+
+False Positive Rate. FPR = FP_icum/(Total negatives) =
+FP_icum/(FP_icum + TN_icum)
+
+=item B<Acc_g>
+
+Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)
+
+=item B<Acc_a>
+
+Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2";
+
+=back
+
+=head1 OUTPUT FORMAT
+
+The program returns a text-delimited tab file with one row per score
+value, and one column per statistics. The column content is commented
+in the header of the output file.
+
+When the option -graph is activated, the program returns a series of graphs :
+
+=over
+
+=item B<[output]_roc.[ift]>
+
+ROC curve.
+
+=item B<[output]_precision_recall.[ift]>
+
+Precision-recall curve.
+
+=item B<[output]_scores.[ift]>
+
+Distribution of various statistics (Sn, PPV, Acc, FPR, ...) as a
+function of the score.
+
+
+=item B<[output]_scores_xlog.[ift]>
+
+Distribution of various statistics (Sn, PPV, Acc, FPR, ...) as a
+function of the score, with a logarithmic scale on the X axis. This is
+convenient to highlight the differences between small scores. 
+
+=back
+
+where [output] is the prefix of the output file (specified with the
+option -o) and [ift] is the image format (secified with the option
+-img_format)
+
+=head1 REFERENCES
+
+There are plenty of references about ROC curves. I found this article
+quite clear.
+
+- Jesse Davis and Mark Goadrich (2006). The Relationship Between
+  Precision-Recall and ROC Curves. In the Proceedings of the 23rd
+  International Conference on Machine Learning (ICML). 
+  http://pages.cs.wisc.edu/~jdavis/davisgoadrichcamera2.pdf
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    %main::infile = ();
+    %main::outfile = ();
+
+    local $total_elements = 0;
+    local $null = "NA";
+    local $verbose = 0;
+    local $in = STDIN;
+    local $out = STDOUT;
+    local $graphs = 0;
+    local $img_format = "png";
+
+    local %col = (score=>1, status=>2);
+
+    ## Status labels
+    local %status_label = (neg=>'neg',
+			   pos=>'pos',
+			   negative=>'neg',
+			   positive=>'pos',
+			   fp=>'neg',
+			   tp=>'pos',
+			   fn=>'pos',
+			   tn=>'neg',
+			   'r.and.q'=>'pos',
+			   'q.not.r'=>'neg',
+			   'r.not.q'=>'pos',
+			  );
+
+    ## Counters
+    local %score_occ = ();
+    local %status_occ = ();
+    local %occ = ();
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    ($main::in) = &OpenInputFile($main::infile{input});
+    my $l = 0;
+    while (<$main::in>) {
+      $l++;
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header lines
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      my @fields = split('\t');
+
+
+      ## Check the status
+      my $label = lc($fields[$col{status}-1]);
+      my $status;
+      if (defined($status_label{$label})) {
+	$status = $status_label{$label};
+      } else {
+	&RSAT::message::Warning("Skipped line", $l, "invalid status label", $label);
+	next;
+      }
+
+      ## Check the score
+      my $score = &RSAT::util::trim($fields[$col{score}-1]);
+      unless ((&IsReal($score)) || ($score eq $null)){
+	&RSAT::message::Warning("Skipped line", $l, "score", $score, "is not a real nuber");
+	next;
+      }
+
+      ## Increase the score counters
+      $status_occ{$status}++; 
+      $score_occ{$score}++;
+      $occ{$score}{$status}++;
+    }
+    close $in if ($infile{input});
+
+    ## Compute the sum of occurrences
+    $status_occ{total} = 0;
+    for my $status qw(pos neg) {
+#      my $status = $status_label{$label};
+      unless (defined($status_occ{$status})) {
+	$status_occ{$status} = 0;
+      }
+      $status_occ{total} += $status_occ{$status};
+      &RSAT::message::Info("Added", $status, $status_occ{$status}, "to total occurrences ->", $status_occ{total}) if ($main::verbose >= 2);
+    }
+
+    if ($total_elements > 0) { 
+
+      ## Manual correction for the total number of elements
+      $status_occ{total_input} = $status_occ{total};
+      $status_occ{total} = $total_elements;
+
+      $status_occ{neg_input} = $status_occ{neg};
+      $status_occ{neg} = $total_elements - $status_occ{pos};
+    } else {
+      $status_occ{total} = $status_occ{pos} + $status_occ{neg};
+    }
+#    $total_pos = $status_occ{pos};
+#    $total_neg = $status_occ{neg};
+
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($verbose);
+
+    ################################################################
+    ## Print the header
+    my @out_fields = qw (score N_icum F_icum TP_icum FP_icum FN_icum Sn PPV FPR Acc_g Acc_a TP FP);
+
+    my %descr = ();
+    $descr{score} = "Score (X)";
+    $descr{N_icum} = "Inverse cumulated occurreces i.e. number of observations with score >= X";
+    $descr{F_icum} = "Inverse cumulated frequencies, i.e. fraction of observations with score >= X";
+    $descr{TP_icum} = "True Positive, inverse cumulative (number of TP observations with score >= X)";
+    $descr{FP_icum} = "False Positive, inverse cumulative (number of FP observations with score >= X)";
+    $descr{FN_icum} = "False Negative, inverse cumulative (number of FN observations with score >= X)";
+    $descr{TN_icum} = "True Negative, inverse cumulative (number of TN observations with score >= X)";
+    $descr{TP} = "True Positive (number of TP observations with score = X)";
+    $descr{FP} = "False Positive (number of FP observations with score = X)";
+    $descr{FN} = "False Negative (number of FN observations with score = X)";
+    $descr{TN} = "True Negative (number of TN observations with score = X)";
+    $descr{Sn} = "Sensitivity (also called TPR, or Recall). Sn = TP_icum/(Total positives) =TP_icum/(TP_icum + FN_icum)";
+    $descr{PPV} = "Positive Predictive Value (also called Precision). PPV = TP_icum/(TP_icum + FP_icum)";
+    $descr{FPR} = "False Positive Rate. FPR = FP_icum/(Total negatives) = FP_icum/(FP_icum + TN_icum)";
+    $descr{Acc_g} = "Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)";
+    $descr{Acc_a} = "Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2";
+
+    print $out "; Column contents\n";
+    for my $f (1..scalar(@out_fields)) {
+      my $field = $out_fields[$f-1];
+      print $out join("\t", ";", $f, $field, $descr{$field}), "\n";
+    }
+    print $out "#", join("\t", @out_fields), "\n";
+
+    ################################################################
+    ## Compute a sorted list of all the scores present in the data If
+    ## some labels have been attanched to the $null score, it has to
+    ## be treated first.
+    my %scores = %score_occ;
+    if (defined($score_occ{$null})) {
+      delete($scores{$null});
+    }
+    ## Scores sorted by descending values
+    my @sorted_scores_desc =  sort {$b <=> $a} keys %scores;
+    if (defined($score_occ{$null})) {
+      push @sorted_scores_desc, $null;
+    }
+    my @sorted_scores_asc =  sort {$b <=> $a} keys %scores;
+    if (defined($score_occ{$null})) {
+      push @sorted_scores_asc, $null;
+    }
+
+    ################################################################
+    ## Compute the derived statistics and print the output
+
+     ## Initialization
+    my $TP_icum = 0;
+    my $FP_icum = 0;
+    my $FN_icum = $status_occ{pos};
+
+    ## Compute cumulative distributions
+    foreach my $score (@sorted_scores_desc) {
+      ## True positives
+      local $TP =  $occ{$score}{pos} || 0;
+      $TP_icum += $TP;
+      $FN_icum -= $TP;
+
+      ## False positives
+      local $FP =  $occ{$score}{neg} || 0;
+      $FP_icum += $FP;
+
+      ## Sensitivity
+      local $Sn = 0;
+      if ($status_occ{pos} > 0) {
+	$Sn = $TP_icum/$status_occ{pos};
+      }
+
+      ## Positive Predictive Value
+      local $pred = $TP_icum + $FP_icum;
+      local $PPV = 0;
+      if ($pred > 0) {
+	$PPV = $TP_icum /($pred);
+      }
+
+
+      ## False positive rate
+      local $FPR = $FP_icum/$status_occ{neg};
+
+      ## Accuracy
+      local $Acc_g = sqrt($Sn*$PPV);
+      local $Acc_a = ($Sn+$PPV)/2;
+
+      ## Cumulative frequencies
+      local $N_icum = $TP_icum + $FP_icum;
+      local $F_icum = $N_icum/$status_occ{total};
+
+      ## Print one result line
+      foreach $stat qw(Sn PPV FPR Acc_g Acc_a F_icum) {
+	if ($$stat < 1e-2) {
+	  $$stat = sprintf("%5.2g", $$stat);
+	} else {
+	  $$stat = sprintf("%.3f", $$stat);
+	}
+      }
+      print $out join("\t",
+		      $score,
+		      $N_icum,
+		      $F_icum,
+		      $TP_icum,
+		      $FP_icum,
+		      $FN_icum,
+		      $Sn,
+		      $PPV,
+		      $FPR,
+		      $Acc_g,
+		      $Acc_a,
+		      $TP,
+		      $FP,
+		     ), "\n";
+    }
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $out if ($outfile{output});
+
+    ################################################################
+    ## Print graphs
+    if ($graphs) {
+      ## Use same name fo graph as for the output file
+      my $output_table = $main::outfile{output};
+
+      ## Suppress the .tab or .txt extension before adding the graph suffixes.
+      $output_table =~ s/\.tab$//;
+      $output_table =~ s/\.txt$//;
+
+      ## Draw stats as a function of score
+      my $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'Score distributions'";
+      $cmd .= " -xcol 1 -ycol 7,8,9,1�,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_scores.".$img_format;
+      &doit($cmd);
+
+      ## Draw stats as a function of score, with log scale on X axis
+      $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'Score distributions'";
+      $cmd .= " -xcol 1 -ycol 7,8,9,10,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -xlog 2 -o ".$output_table."_scores_xlog2.".$img_format;
+      &doit($cmd);
+
+      ## Draw a graph with TP=f(FP)
+      $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'True verus false positives'";
+      $cmd .= " -xcol 5 -ycol 4 -xleg1 FP -yleg1 TP -lines -pointsize 0";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_FP_TP.".$img_format;
+      &doit($cmd);
+
+      ## Draw a ROC curve
+      $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'ROC curve'";
+      $cmd .= " -xcol 9 -ycol 7 -xleg1 'FPR' -yleg1 'Sn (=TPR)' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_roc.".$img_format;
+      &doit($cmd);
+
+      ## Draw a Precision-recall curve
+      $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'Precision-recall curve'";
+      $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_precision_recall.".$img_format;
+      &doit($cmd);
+
+      ## Draw a Precision-recall curve with logarithmic axes
+      ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
+      $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'Precision-recall curve'";
+      $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog -ylog";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_precision_recall_log.".$img_format;
+      &doit($cmd);
+
+      ## Draw a Precision-recall curve with logarithmic axis X
+      ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
+      $cmd = "XYgraph -i ".$main::outfile{output};
+      $cmd .= " -title1 'Precision-recall curve'";
+      $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_precision_recall_xlog.".$img_format;
+      &doit($cmd);
+
+    }
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ## Export graph files
+=pod
+
+=item	B<-graphs>
+
+Export graph files.  This requires to specify a name for the output
+file (the STOUT dannot be used), because the same name will be used,
+with various suffixes, for the graph files.
+
+=cut
+	} elsif ($arg eq "-graphs") {
+	    $main::graphs = 1;
+
+
+=pod
+
+=item	B<-img_format>
+
+Image format fo the graph files.
+
+=cut
+	} elsif ($arg eq "-img_format") {
+	    $main::img_format = shift(@arguments);
+
+
+=pod
+
+=item	B<-scol>
+
+Column of the input ile containing the score value (default 1).
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $main::col{score} = shift(@arguments);
+	    &RSAT::error::FatalError($main::col{score}, "Invalid score column. Should be a strictly positive Natural number.") 
+	      unless ((&IsInteger($main::col{score})) && ($main::col{score} > 0));
+
+
+=pod
+
+=item	B<-lcol>
+
+Column of the input file containing the status label (default 2).
+
+=cut
+	} elsif ($arg eq "-lcol") {
+	    $main::col{status} = shift(@arguments);
+	    &RSAT::error::FatalError($main::col{score}, "Invalid score column. Should be a strictly positive Natural number.") 
+	      unless ((&IsInteger($main::col{score})) && ($main::col{score} > 0));
+
+
+=pod
+
+=item	B<-status>
+
+This option allows to use different labels as synonyms for the
+pre-defined status (neg and pos).
+
+By default, two labels are accepted in the status column.
+
+=over
+
+=item I<pos> (positive)
+
+=item I<neg> (negative)
+
+=back
+
+It can be useful to rename these labels, for compatibility with other
+programs. 
+
+For example, it your input file contains annotations of "site" and
+"non-site", you can use it directly as input with the options.
+
+  -status site pos -status non-site neg
+
+indicates that the label "site" has to be understood as positive, and
+"non-site" as negative.
+
+The option can be used several times to assign multiple labels to the
+same status. 
+
+
+Some automatic conversions are already supported.
+
+=head2 Compatibility with compare-graphs
+
+For example, I<roc-stats2> is typically used as
+post-analysis program after I<compare-graphs>. This program has 3
+labels for the arcs:
+
+=over
+
+=item R.and.Q
+
+Arcs found in both the reference (R) and query (Q) graphs.
+
+=item R.not.Q
+
+Arcs found in the reference (R) but not in the query (Q) graph. These
+arcs are considered as positive (since they are in the reference graph). 
+
+=item Q.not.R
+
+Arcs found in the query (Q) but not in the reference (R) graph. These
+arcs are considered as negative (since they are not found in the
+reference graph).
+
+=back
+
+The labels of compare-graphs are automatically renamed to pos and
+neg. This is equivalent to the following options:
+
+  -status  -status R.and.Q pos -status Q.not.R neg -status R.not.Q pos
+
+=head2 Compatibility wih FP,TP,FN,TN notation
+
+The TP, FP, TN, FN labels are frequently used to evaluate prediction
+results.
+
+ - TP for true positive
+ - FP for false positive 
+ - FN for false negatives
+ - TN for true negatives
+
+In roc-stats2, we these status are not really appropriate, since the
+TRUE or FALSE quality depends on the score threshold. Thus, these will
+be converted into pos/neg labels, according to the nature of the
+considered element.
+
+  - TP -> pos
+  - FN -> pos 
+    (a FN is actually a positive, incorrectly predicted as negative)
+  - FP -> neg
+    (a FP is actually a negative, incorrectly predicted as positive)
+  - TN -> neg
+
+=cut
+	} elsif ($arg eq "-status") {
+	  my $new_status = shift(@arguments);
+	  my $old_status = shift(@arguments);
+	  if (defined($status_label{lc($old_status)})) {
+	    $status_label{lc($new_status)} = $status_label{lc($old_status)};
+#	    delete($status_label{$old_status});
+	  } else {
+	    &RSAT::error::FatalError($old_status, "Invalid status label. Cannot be renamed.");
+	  }
+
+
+=pod
+
+=item	B<-total #>
+
+Total number of elements in the universe (neg + pos). This option
+allows to manually specify the total number of elements, in case the
+input file would not contain the complete data set.
+
+A typical example is when roc-stats2 is used to analyze the output of
+compare-graphs: the graph comparison returns the intersection and the
+differences between reference and predictions, but does not return the
+arcs which are in neither graphs. However, those constitute the true
+negative, and can represent an important fraction of the elements. 
+
+When the total number of elements is specified manually, the number of
+negative elements is corrected accordingly.
+
+  neg = total - pos
+
+=cut
+	} elsif ($arg eq "-total") {
+	  $total_elements = shift (@arguments);
+	  &RSAT::error::FatalError($total_elements, "Invalid value for the total number of elements. Should be a strictyl positive integer") 
+	    unless ((&IsNatural($total_elements)) && ($total_elements > 0));
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; roc-stats2 ";
+    &PrintArguments($main::out);
+    if ((%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if ((%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+
+    ## Occurrences per status
+    print $out "; Occurrences per status\n";
+    for my $type (sort keys (%status_occ)) {
+      printf $main::out ";\t%-15s%d\n", $type, $main::status_occ{$type};
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item B<roc-stats>>
+
+I<roc-stats> and I<roc-stats2> are doing more or less the same
+analysis, there are two versions for historical reasons, but these two
+programs will be merged soon, in order to combine their
+functionalities.
+
+=item B<compare-graphs>
+
+The output of compare-graphs (with the option -return union) can be
+used as input by roc-stats2.
+
+=item B<compare-features>
+
+The output of I<compare-features> can be used as input for roc-stats2
+(but the labels have to be adapted with the option -status).
+
+=item B<matrix-quality>
+
+I<matrixquality> uses I<roc-stats2> to compute matching statistics for
+position-specific scoring matrices (PSSM).
+
+=cut

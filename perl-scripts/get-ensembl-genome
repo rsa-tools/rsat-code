@@ -1,0 +1,327 @@
+#!/usr/bin/perl -w
+# get-all-ensembl-human-seqs
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: get-ensembl-genome,v 1.2 2011/04/10 13:30:53 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+template
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Template for writing new perl scripts.
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+template [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    local $dbversion = '61'; ## Version of Ensembl database
+    local @organisms = $ARGV[0] || ('homo_sapiens'); ## list of organisms to install
+    local $upstream_length = 2000; ## Upstream sequence length
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    ($main::in) = &OpenInputFile($main::infile{input});
+    while (<$main::in>) {
+
+    }
+    close $main::in if ($main::infile{input});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+################################################################
+## Get genomes from Esnembl
+foreach my $org (@organisms) {
+  my $organism = ucfirst($org);
+
+  ## TO FIX: OBTAIN CHROMOSOMES FROM THE ENSEMBL SERVER
+  my @chromosomes = ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','20','21','22','X','Y');
+
+  print ";INFO: retrieving sequences for organism $organism\n";
+
+  `mkdir $organism`;
+
+  ###
+  ### Retrieve-ensembl-seq parameters
+  ###
+
+  ### Feature types
+  foreach my $_feattype ('mRNA', 'CDS', 'intron', 'firstintron', 'utr') {
+
+    my $feattype;
+
+    ## Type
+    my $type;
+    my $from;
+    my $to;
+    if (($_feattype eq 'mRNA') || ($_feattype eq 'CDS')) {
+      $type = 'upstream'; ## The -type option value; other example:'-type downstream'
+      $from = - $upstream_length;		## Start position of the sequence
+      $to = -1;			## End position of the sequence
+    } else {
+      $type = '';
+      $from = '';
+      $to = '';
+    }
+
+    ## First intron
+    my $firstintron = '';
+    if ($_feattype eq 'firstintron') {
+      $firstintron = '-firstintron';
+      $feattype = 'intron';
+    } else {
+      $feattype = $_feattype;
+    }
+
+    #		my $noorf = '-noorf';
+    my $noorf = '';
+
+    my $maskcoding = '-maskcoding';
+    #		my $maskcoding = '';
+
+    ### Repeats masked or not
+    foreach my $rm ('', '-rm') {
+      ## retrieve sequences for each chromosome
+      foreach my $chrom (@chromosomes) {
+	print ";INFO: retrieving sequences from chromosome $chrom\n";
+
+	my $file_name = $organism."_chrom".$chrom."_".$type."_".$_feattype.$from.$to.$maskcoding.$rm.$noorf.".fasta";
+	$file_name =~ s/__/_/;
+
+	print ";INFO: Saving result to file $file_name\n";
+
+	my $command = "retrieve-ensembl-seq.pl -dbversion $dbversion -org $organism -all -chrom $chrom -from $from -to $to -feattype $feattype -type $type $firstintron $maskcoding $rm $noorf -alltranscripts -uniqseqs -o $organism/$file_name";
+	`$command`;
+      }
+
+      ## Concatenate all chromosome files
+      my $generic_file_name = $organism."_chrom*_".$type."_".$_feattype.$from.$to.$maskcoding.$rm.$noorf.".fasta";
+      $generic_file_name =~ s/__/_/;
+      my $concatenation_file_name = $organism."_".$type."_".$_feattype.$from.$to.$maskcoding.$rm.$noorf.".fasta";
+      $concatenation_file_name =~ s/__/_/;
+      my $cat_command = "cat $organism/$generic_file_name > $organism/$concatenation_file_name";
+      `$cat_command`;
+
+    }				## rm
+  }				## feattypes
+}				## organisms
+
+
+__END__
+

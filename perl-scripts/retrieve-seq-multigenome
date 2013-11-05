@@ -1,0 +1,439 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-seq-multigenome,v 1.25 2012/10/08 23:17:35 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;
+
+=pod
+
+=head1 NAME
+
+retrieve-seq-multigenome
+
+=head1 DESCRIPTION
+
+Retrieves sequences from multiple genomes.
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+retrieve-seq-multigenome [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+The input file is a tab-delimited text files with (at least) the two
+following columns:
+
+=over 2
+
+=item 1. gene ID or name
+
+Identifier oor synonyms are supported.
+
+=item 2. Organism name
+
+For the organism name, spaces must be replaced by underscore character
+(exactly as for retrieve-seq).
+
+=back
+
+If additional columns are included in the input file, they are
+ignored.
+
+
+=head1 OUTPUT FORMAT
+
+The output is a sequence file. The same formats are supported as for
+retrieve-seq.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Family;
+
+
+################################################################
+## Initialise parameters
+if (defined($SCRIPTS)) {
+    $retrieve_seq_cmd = "$SCRIPTS/retrieve-seq"; ## for the web browser, the full path is necessary
+} else {
+    $retrieve_seq_cmd = "retrieve-seq";
+}
+
+local $start_time = &RSAT::util::StartScript();
+
+local $label_specified = 0; ## indicates whether the label is specified in the option lines
+local $default_label = "id,organism_name,name";
+local @to_pass; ## parameters pased to retrieve-seq
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+#local $in = STDIN;
+local $out = STDOUT;
+
+local $gene_col = 1;
+local $org_col = 2;
+
+local $quick_mode = 0;
+
+
+
+## Parameters for the procedure &doit() used in quick mode.
+my $dry = 0;
+my $die_on_error = 1;
+my $batch = 0;
+my $job_prefix = "";
+
+&ReadArguments();
+
+################################################################
+## Check argument values
+
+
+## Output file is manatory in quick mode
+if ($quick_mode) {
+  &RSAT::error::FatalError("Output file (option -o) is mandatory in quick mode.") unless ($outfile{output});
+  &RSAT::message::TimeWarn ("Extracting sequences from pre-computed upstream sequences") if ($main::verbose >= 1);
+}
+
+################################################################
+## Open output stream
+$out = &OpenOutputFile($outfile{output});
+$log = STDOUT;
+
+################################################################
+## Read input
+($in) = &OpenInputFile($infile{input});
+while (<$in>) {
+   next if (/^;/); ## Skip comment lines
+   next if (/^#/);## Skip comment lines
+   next unless (/\S/);## Skip empty lines
+   my ($query, $org) = split "\t";
+   push @{$genes_per_org{$org}}, $query;
+}
+close $in if ($infile{input});
+
+################################################################
+## Print verbose
+&Verbose() if ($verbose);
+
+close $out if ($quick_mode);
+
+################################################################
+## Execute the command
+
+foreach my $org (sort(keys( %genes_per_org))) {
+#  my $geneset = $genes_per_org{$org};
+#  my @genes = $geneset->get_members();
+
+  my @genes = @{$genes_per_org{$org}};
+  if (scalar(@genes) > 0) {
+    my $quick_mode_done = 0;
+    if ($quick_mode) {
+      my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$org."/genome";
+      my $seq_file = $genome_dir."/".$org."_upstream-noorf.ft";
+      if (-e $seq_file) {
+	  &RSAT::message::TimeWarn ($org, "Extracting sequences from pre-computed upstream sequences", $seq_file) if ($main::verbose >= 2);
+	  foreach my $gene (@genes) {
+#	$command = "grep '$gene' ".$seq_file;
+	      $command = "awk -F'\\t' '\$3 == \"".$gene."\"";
+	      $command .= '{print ">"$10"\t"$9"\n"$7}\' ';
+	      $command .= " ".$seq_file;
+	      $command .= ">> ".$outfile{output};
+	      &RSAT::message::Debug($command)  if ($main::verbose >= 5);
+	      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  }
+	  $quick_mode_done = 1;
+      } else {
+	  &RSAT::message::Warning($org, "missing pre-computed upstream sequence file", $seq_file) if ($main::verbose >= 1);
+	  $quick_mode_done = 0;
+      }
+    }
+
+    ## Retrieve the sequence with retrieve-seq unless it has already been retrieve in quick mode
+    unless ($quick_mode_done) {
+
+      my $command = "$retrieve_seq_cmd -org ".$org;
+      unless ($label_specified) {
+	$command .= " -label ".$default_label;
+      }
+
+      foreach my $arg (@to_pass) {
+	if ($arg =~ /\s/) {
+	  $command .= " '".$arg."'";
+	} else {
+	  $command .= " ".$arg;
+	}
+      }
+      $command .= " -q ";
+      $command .= join(" -q ", @genes);
+      &RSAT::message::TimeWarn($command)  if ($main::verbose >= 1);
+      print $out `$command`;
+    }
+  }
+}
+
+################################################################
+## Close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $log $exec_time if ($main::verbose >= 1);
+
+## Close output file if required
+close $out if (($outfile{output}) && !($quick_mode));
+
+
+exit(0);
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments
+sub ReadArguments {
+  my $arg = 0;
+  while ($arg = shift (@ARGV)) {
+
+	## Verbosity
+
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($ARGV[0])) {
+		$verbose = shift(@ARGV);
+	    } else {
+		$verbose = 1;
+	    }
+
+	    ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+
+	    ## Input file
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $infile{input} = shift(@ARGV);
+
+	    ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@ARGV);
+
+	    ## Gene column
+
+=pod
+
+=item	B<-gene_col gene_column>
+
+Number of the column containing the gene names/identifiers in the
+query file (default: 1).
+
+=cut
+	} elsif ($arg eq "-gene_col") {
+	    $gene_col = shift(@ARGV);
+
+	    ## Organism column
+
+=pod
+
+=item	B<-org_col organism_column>
+
+Number of the column containing the organisms in the query file
+(default: 2)
+
+=cut
+	} elsif ($arg eq "-org_col") {
+	    $org_col = shift(@ARGV);
+
+
+=pod
+
+=item B<-quick>
+
+Quick mode. Instead of iteratively running the command I<retrieve-seq>
+for each organism, the quick mode uses pre-computed upstream sequence
+files in "features" format (.ft), stored in
+$RSAT/data/genomes/${ORG}/genome. Sequences are extracted from those
+tab-delimited files with the system command I<awk>, supported on Unix
+systems.
+
+Quick mode assumes that
+
+=over
+
+=item queries are formulated as I<IDs> (I<not gene names>). Note that this
+corresponds to the default output format of I<get-orthologs>, the program
+usually evoked to obtain the lists of orthologs used as input for
+I<retrieve-seq-multigenome>.
+
+=item Upstream I<sequences have been pre-installed> in features format the
+$RSAT genome folder. This is automatically done during genome installation
+with the command I<install-organism -task allup>.
+
+=item Sequences have the I<default length> and are truncated to avoid overlap
+with upstream orfs (option I<-noorf> is active). All additional parameters
+(e.g. -from, -to, ...) are ignored instead of being passed to I<retrieve-seq>
+as in slow mode.
+
+=back
+
+=cut
+
+	} elsif ($arg eq "-quick") {
+	    $main::quick_mode = 1;
+
+	    ## Other arguments are passed to retrieve-seq
+
+=pod
+
+=item B<other parameters>
+
+All other parameters are passed to the command retrieve-seq.
+
+See the manual of retrieve-seq for a description of supported parameters.
+
+=cut
+
+	} else {
+	    push @to_pass, $arg;
+	    if ($arg eq "-label") {
+		$label_specified = 1;
+	    }
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $log "; retrieve-seq-multigenome ";
+  &PrintArguments($log);
+  if (%main::infile) {
+    print $log "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $log ";\t$key\t$value\n";
+    }
+  }
+  if (%main::outfile) {
+    print $log "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $log ";\t$key\t$value\n";
+    }
+  }
+
+  ## report genes per organism
+  print $log "; Orthologs found per organism\n" if ($main::verbose >= 2);
+  my $ortho_found_orgs = 0;
+  foreach my $org (keys(%genes_per_org)) {
+    #    my $geneset = $genes_per_org{$org};
+    #    print $log ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
+    my @genes = @{$genes_per_org{$org}};
+    $ortho_found_orgs++ if scalar(@genes > 0);
+    print $log join ("\t", ";", sprintf("%-35s", $org), scalar(@genes)." genes", join ("; ", @genes)), "\n" if ($main::verbose >= 2);
+  }
+  print $log join ("\t", "; Orhologs found in ".$ortho_found_orgs." organisms\n");
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item retrieve-seq
+
+=item supported-organisms
+
+=back
+
+=cut

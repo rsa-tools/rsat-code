@@ -1,0 +1,556 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% COMPARATIVE GENOMICS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Comparative genomics}
+
+\section{Genome-wise comparison of protein sequences}
+\label{genome_blast}
+
+In this section, we explain how to use the program
+\program{genome-blast}, which runs the sequence similarity search
+program \program{BLAST} to detect significant similarities between all
+the proteins of a set of genomes. 
+
+This operation can take time, and the result tables occupy a
+considerable amount of space on the hard disk. For this reason, the
+\RSAT distribution does thus not include the complete comparison of
+all genomes against all other ones, but is restricted to some model
+genomes (\org{Escherchia coli K12} versus all bacteria,
+\org{Saccharomyces cerevisiae} against all Fungi, ...). 
+
+Depending on your organism of interest, you might wish to perform
+additional comparisons for your own purpose. In this section, we
+explain how to compute the similiraty tables between a query organism
+(e.g. \org{Mycoplasma pneumoniae}) and a reference taxon (e.g. all
+Bacteria).
+
+In order to install the tables of similarities between gene products
+in \RSAT, you need writing permissions in the directory
+$\$RSAT/data$. If this is not the case, ask your system administrator
+to do it for you.
+
+
+\subsection{Applying genome-blast between two genomes}
+
+As a first test, we will use \program{genome-blast} to compare all the
+gene products (proteins) of a query organism (e.g. \org{Mycoplasma
+  pneumoniae}) against all the gene products of a reference organism
+(e.g. \org{Bacillus subtilis}).
+
+This protocol assumes that the two organisms are already installed on
+your \RSAT site, as explained in the installation guide.
+
+We will perform in two steps:
+
+\begin{enumerate}
+\item Use the program \program{formatdb} (which is part of the
+  \program{BLAST} distribution) to create a BLAST-formatted structure
+  (the ``database'') with all proteins of the reference organism
+  (\org{Bacillus subtilis}).
+\item Use the program \program{blastall} (part of the \program{BLAST}
+  distribution) to detect similarities between each protein of the
+  query organism (\org{Mycoplasma pneumoniae}) and the reference
+  organism.
+\end{enumerate}
+
+\subsubsection{Formatting the BLAST DB}
+
+This DB formatting step is very efficient, it should be completed in a
+few seconds.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb \
+   -q Mycoplasma_pneumoniae \
+    -db Bacillus_subtilis 
+\end{verbatim}
+\end{footnotesize}
+
+The result is found in the data directory containing
+\org{Bacillus subtilis}. A new directory \file{blastdb} has been
+created, which contains the BLAST-formatted database with all the
+proteins of the reference organism.
+
+\begin{footnotesize}
+\begin{verbatim}
+ls -ltr $RSAT/data/genomes/Bacillus_subtilis/blastdb
+\end{verbatim}
+\end{footnotesize}
+
+These are binary files, that you should in principle not open as such.
+
+\subsubsection{Searching similarities}
+
+The program \program{blastall} compares all the sequences of an input
+set against all the sequences of a database (the one we just created
+above). The program \program{genome-blast} generates the appropriate
+\program{blastall} command to find the BLAST database directory, and
+query it with the proteins of the query organism.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task blastall \
+   -q Mycoplasma_pneumoniae \
+    -db Bacillus_subtilis 
+\end{verbatim}
+\end{footnotesize}
+
+This task takes a bit less that one minute for Pneumoniae (because we
+chose a very small genomes), and can take around 10 minutes for
+medium-sized bacterial genomes (~4,000 genes).
+
+Note that the \program{blastall} command is written in the verbosity
+message. If you have specific reasons to customize this command, you
+can adapt it to apply different parameters.
+
+\subsubsection{Searching reciprocal similarities}
+
+One classical orthology criterion (which is not perfect but has
+practical advantages) is to select the bidirectional best hits as
+candidate orthologs.
+
+For this, we need to run the reciprocal blast, i.e. using
+\org{Bacillus subtilis} as query organism, and \org{Mycoplasma
+  genitalium} as reference organism.
+
+Note that you can run the two BLAST commands (\program{formatdb} and
+\program{blastall}) in a single shot, by specifying multiple tasks for
+\program{genome-blast}.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb,blastall \
+    -q Bacillus_subtilis \
+    -db Mycoplasma_pneumoniae
+\end{verbatim}
+\end{footnotesize}
+
+We can now perform a quick test: select the bidirectional best hit
+(\option{-rank 1}) for the gene \gene{NP\_109706.1}.
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -q NP_109706.1 -uth rank 1 -return all \
+    -org Mycoplasma_pneumoniae -taxon Bacillus_subtilis
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Applying genome-blast between a genome and a  taxon}
+
+Generally, we want to compare a query organism to all the organisms of
+a given taxon (the \concept{reference taxon}). This can be done with
+the option \option{-dbtaxon}.
+
+As an example, we will BLAST all the proteins of \org{Mycoplasma
+  pneumoniae} against all the proteins of each species of
+\org{Mollicutes}.
+
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb,blastall \
+    -q Mycoplasma_pneumoniae \
+    -dbtaxon Mollicutes
+\end{verbatim}
+\end{footnotesize}
+
+And now the reciprocal search: BLAST all gene products of each
+bacteria of the taxon \org{Mollicutes} against those of
+\org{Mycoplasma pneumoniae}.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb,blastall \
+    -db Mycoplasma_pneumoniae \
+    -qtaxon Mollicutes
+\end{verbatim}
+\end{footnotesize}
+
+We can now retrieve the orthologs of a \org{Mycoplasma pneumoniae}
+gene (e.g. \gene{NP\_109706.1}) in all Mollicutes.
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -q NP_109706.1 -uth rank 1 -return all \
+    -org Mycoplasma_pneumoniae -taxon Mollicutes
+\end{verbatim}
+\end{footnotesize}
+
+
+\section{Getting putative homologs, orthologs and paralogs}
+
+In this section, I will explain how to use the program
+\program{get-orthologs}. This program takes as input one or several
+query genes belonging to a given organism (the \concept{reference
+  organism}), and return the genes whose product (peptidic sequence)
+show significant similarities with the products of the query
+genes. The primary usage of \program{get-orthologs} is thus to return
+lists of similar genes, not specialy orthologs. Additional criteria
+can be imposed to infer orthology.  In particular, one of the most
+common criterion is to select \concept{bidirectional best hits
+  (BBH)}. This can be achieved by imposing the rank 1 with the option
+\option{-uth rank 1}.
+
+We will illustrate the concept by retrieving the genes whose product
+is similar to the protein LexA of \org{Escherichia coli K12}, in
+all the Gammaproteobacteria. We will then refine the query to extract
+putative orthologs.
+
+\subsection{Getting genes by similarities}
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria.tab
+\end{verbatim}
+\end{footnotesize}
+
+The result file is a list of all the Gammaproteobacterial genes whose
+product shows some similarity with the LexA protein from E.coli K12.  
+
+\begin{scriptsize}
+\begin{verbatim}
+...
+#ref_id ref_org query
+Sde_1787        Saccharophagus_degradans_2-40   b4043
+CPS_0237        Colwellia_psychrerythraea_34H   b4043
+CPS_2683        Colwellia_psychrerythraea_34H   b4043
+CPS_1635        Colwellia_psychrerythraea_34H   b4043
+IL0262  Idiomarina_loihiensis_L2TR      b4043
+...
+c5014   Escherichia_coli_CFT073 b4043
+c3190   Escherichia_coli_CFT073 b4043
+b4043   Escherichia_coli_K12    b4043
+...
+\end{verbatim}
+\end{scriptsize}
+
+Each similarity is reported by the ID of the gene, the organism to
+which is belong, and the ID of the query gene. In this case, the third
+column contains the same ID on all lines: b4043, which is the ID of
+the gene lexA in \org{Escherichia coli K12}. It seems thus poorly
+informative, but this column becomes useful when several queries are
+submitted simultaneously.
+
+\subsection{Obtaining information on the BLAST hits}
+
+The program \program{get-orthologs} allows to return additional
+information on the hits. The list of supported return fields is
+obtained by calling the command with the option \option{-help}. For
+example, we can ask to return the percentage of identity, the
+alignment length, the E-value and the rank of each hit.
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria.tab \
+  -return ident,ali_len,e_value,rank 
+\end{verbatim}
+\end{footnotesize}
+
+Which gives the following result:
+
+\begin{scriptsize}
+\begin{verbatim}
+...
+#ref_id ref_org query   ident   ali_len e_value rank
+Sde_1787        Saccharophagus_degradans_2-40   b4043   65.33   199     1e-68   1
+CPS_0237        Colwellia_psychrerythraea_34H   b4043   65.69   204     6e-75   1
+CPS_2683        Colwellia_psychrerythraea_34H   b4043   33.94   109     1e-10   2
+CPS_1635        Colwellia_psychrerythraea_34H   b4043   34.12   85      1e-06   3
+IL0262  Idiomarina_loihiensis_L2TR      b4043   66.83   202     1e-75   1
+...
+c5014   Escherichia_coli_CFT073 b4043   100.00  202     2e-111  1
+c3190   Escherichia_coli_CFT073 b4043   43.33   90      2e-14   2
+b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
+...
+\end{verbatim}
+\end{scriptsize}
+
+Not surprisingly, the answer includes the self-match of lexA (ID
+b4043) in \org{Escherichia coli K12}, with 100\% of identify.
+
+\subsection{Selecting bidirectional best hits}
+
+We can see that the output contains several matches per genome. For
+instance, there are 3 matches in \org{Colwellia psychrerythraea
+  34H}. If we assume that these similarities reflect homologies, the
+result contains thus a combination of paralogs and orthologs. 
+
+The simplest criterion to select ortholog is that of
+\concept{bidirectional best hit (BBH)}. We can select BBH by imposing
+an upper threshold on the rank, with the option \option{-uth}.
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh.tab \
+  -return ident,ali_len,e_value,rank \
+  -uth rank 1 
+\end{verbatim}
+\end{footnotesize}
+
+The result has now been reduced to admit at most one hit per genome.
+
+\begin{scriptsize}
+\begin{verbatim}
+...
+#ref_id ref_org query   ident   ali_len e_value rank
+Sde_1787        Saccharophagus_degradans_2-40   b4043   65.33   199     1e-68   1
+CPS_0237        Colwellia_psychrerythraea_34H   b4043   65.69   204     6e-75   1
+IL0262  Idiomarina_loihiensis_L2TR      b4043   66.83   202     1e-75   1
+...
+c5014   Escherichia_coli_CFT073 b4043   100.00  202     2e-111  1
+b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
+...
+\end{verbatim}
+\end{scriptsize}
+
+\subsection{Selecting hits with more stringent criteria}
+
+It is well known that the sole criterion of BBH is not sufficient to
+infer orthology between two genes. In particular, there is a risk to
+obtain irrelevant matches, due to partial matches between a protein
+and some spurious domains. To avoid this, we can add a constraint on
+the percentage of identity (min 30\%), and on the alignment length
+(min 50 aa). These limits are somewhat arbitrary, we use them to
+illustrate the principe, and leave to each user the responsibility to
+choose the criteria that she/he considers as relevant. Finally, we
+will use a more stringent threshold on E-value than the default one,
+by imposing an upper threshold of 1e-10.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Note that or this test we suppress the BBH constraint (-uth rank 1)
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria_id30_len50_eval-10.tab \
+  -return ident,ali_len,e_value,rank \
+  -lth ident 30 -lth ali_len 50 -uth e_value 1e-10
+\end{verbatim}
+\end{footnotesize}
+
+We can now combine the constrains above with the criterion of BBH.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Note that or this test we include the BBH constraint (-uth rank 1)
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
+  -return ident,ali_len,e_value,rank \
+  -lth ident 30 -lth ali_len 50  -uth e_value 1e-10 \
+  -uth rank 1 
+\end{verbatim}
+\end{footnotesize}
+
+As expected, the number of selected hits is reduced by adding these
+constraints. In Sept 2006, we obtained the following number of hits
+for lexA in Gammaproteobacteria.
+
+\begin{itemize}
+\item 122 hits without any constraint;
+\item 107 hits with contrains on ident,ali\_len and e\_value;
+\item 69 hits with the constraint of BBH;
+\item 69 hits with the combined constraint of BBH, at least 30\%
+  identity and an alignment over more than 50 aminoacids, and an
+  E-value <= 1.e-10.
+\end{itemize}
+
+Actually, in the particular case of \gene{lexA}, the BBH constraint
+already filtered out the spurious matches, but inother cases they can
+be useful.
+
+\section{Retrieving sequences for multiple organisms}
+
+The program \program{retrieve-seq-multigenome} can be used to retrieve
+sequences for a group of genes belonging to different organisms.This
+program takes as input a file with two columns. Each row of this file
+specifies one query gene.
+
+\begin{enumerate}
+
+\item The first column contains the name or identifier of the gene
+  (exactly as for the single-genome program \program{retrieve-seq}).
+
+\item The second column indicates the organism to which the gne belongs.
+
+\end{enumerate}
+
+The output of \program{get-orthologs} can thus directly be used as
+input for \program{retrieve-seq-multigenome}.
+
+\begin{footnotesize}
+\begin{verbatim}
+retrieve-seq-multigenome -noorf \
+  -i lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
+  -o lexA_orthologs_Gammaproteobacteria_up-noorf.fasta
+\end{footnotesize}
+\end{verbatim}
+\end{footnotesize}
+
+\section{Detection of phylogenetic footprints}
+
+\textbf{TO BE WRITTEN}
+
+\begin{footnotesize}
+\begin{verbatim}
+dyad-analysis  -v 1 \
+  -i lexA_orthologs_Gammaproteobacteria_up-noorf.fasta \
+  -sort -2str -noov -lth occ 1 -lth occ_sig 0 \
+  -return occ,freq,proba,rank \
+  -l 3 -spacing 0-20 -bg monads \
+  -o lexA_orthologs_Gammaproteobacteria_up-noorf_dyads-2str-noov.tab
+\end{verbatim}
+\end{footnotesize}
+
+\section{Phylogenetic profiles}
+
+The notion of \concept{phylogenetic profile} was introduced by
+Pellegrini et al. (1999). They identified putative orthologs for all
+the genes of \org{Escherichia coli K12} in all the complete genomes
+available at that time, and built a table with one row per gene, one
+column per genome. Each cell of this table indicates if an ortholog of
+the considered gene (row) has been identified in the considered genome
+(column). Pellegrini et al. (1999) showed that genes having similar
+phylogenetic profiles are generally involved in common biological
+processes. The analysis of phylogenetic profiles is thus a powerful
+way to identify functional grouping in completely sequenced genomes.
+
+The program \program{get-orthologs} can be used to obtain the
+phylogenetic profiles. The principle is to submit the complete list of
+protein-coding genes of the query organism. We process in two steps : 
+
+\begin{enumerate}
+
+\item With \program{get-orthologs}, we can identify the putative
+  ortholgos for all the genes of the query organism, using the
+  criterion of \concept{bidirectional best hit (BBH)}. This generate a
+  large table with one row per pair of putative orthologs.
+
+\item We then use \program{convert-classes} to convert the ortholog
+  table into profiles (one row per gene, one column per genome).
+
+\end{enumerate}
+
+We will illustrate this by calculating the phylogenetic profiles of
+all the genes from \org{Saccharomyces cerevisiae} across all the
+Fungi. We use a level of verbosity of 2, in order to get information
+about the progress of the calculations.
+
+\begin{footnotesize}
+\begin{verbatim}
+
+## Identify all the putative orthologs (BBH)
+get-orthologs -v 2 \
+  -i $RSAT/data/genomes/Saccharomyces_cerevisiae/genome/cds.tab  \
+  -org Saccharomyces_cerevisiae \
+  -taxon Fungi \
+  -uth rank 1 -lth ali_len 50 -lth ident 30 -uth e_value 1e-10 \
+  -return e_value,bit_sc,ident,ali_len \
+  -o Saccharomyces_cerevisiae_vs_Fungi_bbh.tab
+
+## Convert ortholog table into a profile table
+## with the IDs of the putative orthologs
+convert-classes -v 2 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab  \
+  -from tab -to profiles \
+  -ccol 2 -mcol 3 -scol 1 -null "<NA>" \
+  -o Saccharomyces_cerevisiae_vs_Fungi_phyloprofiles_ids.tab
+
+\end{verbatim}
+\end{footnotesize}
+
+
+The resulting table indicates the identifier of the ortholog
+genes. The option \option{-null} was used to specify that the string
+\texttt{<NA>} should be used to indicate the absence of putative
+orhtolog.
+
+Another option would be to obtain a ``quantitative'' profile, where
+each cell indicates the E-value of the match between the two
+orthologs. This can be done by specifying a different score column
+with the option \option{-scol} of \program{convert-classes}.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Convert ortholog table into a profile table
+## with the E-value of the putative orthologs
+convert-classes -v 2 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab  \
+  -from tab -to profiles \
+  -ccol 2 -mcol 3 -scol 4 -null "<NA>" \
+  -o Saccharomyces_cerevisiae_vs_Fungi_phyloprofiles_evalue.tab
+\end{verbatim}
+\end{footnotesize}
+
+\section{Detecting pairs of genes with similar phylogenetic profiles}
+
+In the previous section, we generated tables indicating the
+phylogenetic profiles of each gene from \org{Saccharomyces
+  cerevisiae}. This table contains one row per gene, and one column
+per fungal genome. 
+
+We will now use the program \program{compare-profiles} to compare each
+gene profile to each other, to select the pairs of genes with
+significantly similar profiles. The problem is of course to choose our
+criterion of similarity between two gene profiles.
+
+\subsection{Comparing binary profiles with \program{compare-profiles}}
+
+For the binary profiles, the most relevant statistics is the
+\concept{hypergeometric significance}.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Compare the binary phylogenetic profiles 
+## using the hypergeometric significance
+compare-profiles -v 2 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_phyloprofiles_evalue.tab \
+  -lth AB 1 -lth sig 0 \
+  -return counts,jaccard,hyper,entropy \
+  -o Saccharomyces_cerevisiae_vs_Fungi_phyloprof_gene_pairs.tab
+\end{verbatim}
+\end{footnotesize}
+
+In the previous commands, we set the verbosity to 2, in order to keep
+track the progress of the task. Actually, the processing can take a
+few minuts, it is probably the good moment for a coffee break.
+
+\subsection{Comparing binary profiles with \program{compare-classes}}
+
+Another way to compare the phylogenetic profiles is to directly
+analyze with \program{compare-classes} the table of orthology
+(previously obtained from \program{get-orthologs}).
+
+This is just another way of considering the same problem: in order to
+compare genes $A$ and $B$, we will consider as a first class ($Q$) the
+set of genomes in which gene $A$ is present, and as a second class
+($R$) the set of genomes in which gene $B$ is present. We will then
+calculate the intersection between these two classes, and assess the
+significance of this intersection, given the total number of
+genomes.
+
+Thus, \program{compare-classes} will calculate the hypergeometric
+statistics, exactly in the same way as \program{compare-profiles}. 
+
+\begin{footnotesize}
+\begin{verbatim}
+## Convert the orthology into "classes", where each class (second column)
+## corresponds to a gene from Saccharomyces cerevisiae, and indicates 
+## the set of genomes (first column) in which this gene is present. 
+convert-classes -from tab -to tab -mcol 2 -ccol 3 -scol 5 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab \
+  -o Saccharomyces_cerevisiae_vs_Fungi_bbh_classes.tab
+
+## Compare the classes to detect significant overlaps
+compare-classes -v 3 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh_classes.tab \
+  -lth QR 1 -lth sig 0 -sort sig -sc 3 \
+  -return occ,proba,dotprod,jac_sim,rank \
+  -o phyloprof_gene_pairs.tab
+\end{verbatim}
+\end{footnotesize}

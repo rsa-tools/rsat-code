@@ -1,0 +1,167 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials - position-analysis</title>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+<center>
+<h2><a href="../RSAT_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../position-analysis_form.cgi">position-analysis</a> 
+</h2>
+</center>
+
+
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href=#intro>Introduction</a>
+<li><a href=#example>Example of utilization</a>
+<li><a href=#interpret>Interpreting the result</a>
+<li><a href=#exercises>Additional exercises</a>
+</ol>
+
+<a name=intro></a><h2>Introduction</h2>
+<ul>
+
+Position-analysis calculates the positional distribution of each
+oligonucleotide in a set of sequences. It also calculates the chi2
+statistics by comparing the observed and expected positional
+distribution. Expected positional distribution is calculated according
+to a homogeneous model, i.e. by considering that the probability for
+the oligonucleotide to be found at any position is constant.
+
+<P>
+Position-analysis is typically useful for detecting biological signals
+which occupy a specific position relative to some reference
+position. In the original paper, it was used to detect termination and
+poly-adenylylation signals in yeast downstream sequences. For details,
+see :
+<P>
+<ul>
+van Helden, J., Olmo, M. & Perez-Ortin, J. E. (2000). Statistical
+analysis of yeast genomic downstream sequences reveals putative
+polyadenylation signals. Nucleic Acids Res 28(4), 1000-1010.  <a
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10648794&dopt=Abstract">Pubmed
+10648794</a>
+</ul>
+
+
+</ul>
+<a name=example></a><h2>Examples of utilization</h2>
+<ul>
+
+<h3>Single nucleotide profiles nearby the start codon</h3>
+
+As a short test, we will calculate single nucleotide distributions in
+the immediate neighbourhood of the start codon, for all yeast genes. 
+
+<ol>
+<p><li>Retrieve upstream sequences from -20 to +11 for all the yeast
+genes (as you have seen in the <a
+href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>). This
+includes 20bp upstream and 12 bp coding sequences (i.e. the 4 first
+codons).
+
+<p><li>Once you get the result, go to the bottom of the sequences. You
+should see a list of buttons, which allow you to send these sequences
+as input for another program. Click the button labelled
+<b>position analysis</b>.
+
+<p><li>In the form, select the following options :
+
+<ul>
+<li><b>Oligonucleotide size:</b> 1
+<li><b>Count on:</b> single strand
+<li><b>Class grouping interval:</b> 1
+<li><b>Sort patterns:</b> inactivated
+<li><b>Origin:</b> -12 (this will place the origin at the first nucleotide of the start codon)
+<li><b>Output:</b> display (since sequences are small, the execution time should be reasonable)
+</ul>
+
+<p><li>Leave all other options unchanged and click <b>GO</b>. 
+
+</ol>
+
+
+<a name=interpret></a><h4>Interpreting the results</h4>
+
+The first columns indicate the pattern (in this case single
+nucleotides), the total number of occurrences, and the chi2
+value. These values are very high, indicating that each nucleotide is
+significantly biased in position in the region including the start
+codon.
+
+<P>You can now inspect the position distributions. The ATG codon
+appears very clearly, at positions 0 (A), 1 (T) and 2 (G). You cn
+notic that there are a very few exceptions, i.e. genes for which the
+annotated start codon is not ATG.
+
+<P>Interestingly, some nucleotides are also biased at pre-start
+positions, for example at position -3, which is enriched in A, whilst
+C and T seem to be avoided.
+
+
+
+</ul>
+<a name=exercises></a><h2>Additional exercises</h2>
+<ul>
+
+<h3>Trinucleotide frequencies around the start codon</h3>
+
+As an additional exercise, analyse the positional distributions of
+trinucleotides in the -30:+2 range around the start codon, with a
+class interval of 1. Adapt the origin to associate position 0 to the
+first nucleotide of the start codon.
+
+<P>
+When you have the result, analyze the trinucleotides which have a peak
+just before the start codon (position -1). What do they have in common
+? How do you interpret this ?
+
+<P>
+Perform the same analysis with upstream sequences without the start
+codon (-30:-1). Some trinucleotides are avoided or favoured in the
+immediate vicinity of the start codon. Analyze their sequence and
+relate this result to the analysis of single nucleotides you performed
+before.
+
+
+
+<h3>Downstream signal detection</h3>
+
+The following exercise is an example of realistic size, with a 1.2Mb
+sequence set. The analysis will take some time, and you should thus
+use the email output.
+
+<P>
+Retrieve all yeast downstream sequences over 200bp, and analyze the
+positional profiles of all hexanucleotides. Set the threshold for the
+chi2 statistics to 50, in order to select significantly biased
+hexanucleotides. Sort the results by their score (the chi2 value). 
+
+</ul>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<h4 class="footer">
+<address>
+For suggestions or information request, please contact 
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address></h4>
+
+</blockquote>
+</body>
+</html>

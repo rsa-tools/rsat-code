@@ -1,0 +1,866 @@
+% This file was created with JabRef 2.3.1.
+% Encoding: UTF-8
+
+@ARTICLE{Brohee2006,
+  author = {Sylvain Brohee and Jacques van Helden},
+  title = {Evaluation of clustering algorithms for protein-protein interaction
+	networks.},
+  journal = {BMC Bioinformatics},
+  year = {2006},
+  volume = {7},
+  pages = {488},
+  abstract = {BACKGROUND: Protein interactions are crucial components of all cellular
+	processes. Recently, high-throughput methods have been developed
+	to obtain a global description of the interactome (the whole network
+	of protein interactions for a given organism). In 2002, the yeast
+	interactome was estimated to contain up to 80,000 potential interactions.
+	This estimate is based on the integration of data sets obtained by
+	various methods (mass spectrometry, two-hybrid methods, genetic studies).
+	High-throughput methods are known, however, to yield a non-negligible
+	rate of false positives, and to miss a fraction of existing interactions.
+	The interactome can be represented as a graph where nodes correspond
+	with proteins and edges with pairwise interactions. In recent years
+	clustering methods have been developed and applied in order to extract
+	relevant modules from such graphs. These algorithms require the specification
+	of parameters that may drastically affect the results. In this paper
+	we present a comparative assessment of four algorithms: Markov Clustering
+	(MCL), Restricted Neighborhood Search Clustering (RNSC), Super Paramagnetic
+	Clustering (SPC), and Molecular Complex Detection (MCODE). RESULTS:
+	A test graph was built on the basis of 220 complexes annotated in
+	the MIPS database. To evaluate the robustness to false positives
+	and false negatives, we derived 41 altered graphs by randomly removing
+	edges from or adding edges to the test graph in various proportions.
+	Each clustering algorithm was applied to these graphs with various
+	parameter settings, and the clusters were compared with the annotated
+	complexes. We analyzed the sensitivity of the algorithms to the parameters
+	and determined their optimal parameter values. We also evaluated
+	their robustness to alterations of the test graph. We then applied
+	the four algorithms to six graphs obtained from high-throughput experiments
+	and compared the resulting clusters with the annotated complexes.
+	CONCLUSION: This analysis shows that MCL is remarkably robust to
+	graph alterations. In the tests of robustness, RNSC is more sensitive
+	to edge deletion but less sensitive to the use of suboptimal parameter
+	values. The other two algorithms are clearly weaker under most conditions.
+	The analysis of high-throughput data supports the superiority of
+	MCL for the extraction of complexes from interaction networks.},
+  doi = {10.1186/1471-2105-7-488},
+  institution = {Service de Conformation des Macromolécules Biologiques et de Bioinformatique,
+	Université Libre de Bruxelles, CP 263, Campus Plaine, Bd, du Triomphe,
+	B-1050 Bruxelles, Belgium. sylvain@bigre.ulb.ac.be},
+  keywords = {Algorithms; Cluster Analysis; Computational Biology; Computer Graphics;
+	Databases, Protein; Markov Chains; Mass Spectrometry; Protein Binding;
+	Protein Interaction Mapping; Saccharomyces cerevisiae Proteins; Software
+	Validation; Two-Hybrid System Techniques},
+  owner = {rsat},
+  pii = {1471-2105-7-488},
+  pmid = {17087821},
+  timestamp = {2008.01.16},
+  url = {http://dx.doi.org/10.1186/1471-2105-7-488}
+}
+
+@ARTICLE{GO2007,
+  author = {The Gene Ontology Consortium},
+  title = {The Gene Ontology project in 2008.},
+  journal = {Nucleic Acids Res},
+  year = {2007},
+  month = {Nov},
+  abstract = {The Gene Ontology (GO) project (http://www.geneontology.org/) provides
+	a set of structured, controlled vocabularies for community use in
+	annotating genes, gene products and sequences (also see http://www.sequenceontology.org/).
+	The ontologies have been extended and refined for several biological
+	areas, and improvements to the structure of the ontologies have been
+	implemented. To improve the quantity and quality of gene product
+	annotations available from its public repository, the GO Consortium
+	has launched a focused effort to provide comprehensive and detailed
+	annotation of orthologous genes across a number of 'reference' genomes,
+	including human and several key model organisms. Software developments
+	include two releases of the ontology-editing tool OBO-Edit, and improvements
+	to the AmiGO browser interface.},
+  owner = {rsat},
+  pmid = {17984083},
+  timestamp = {2008.01.09}
+}
+
+@ARTICLE{croes06,
+  author = {Croes, D. and Couche, F. and Wodak, S. and Helden, J. v.},
+  title = {Inferring Meaningful Pathways in Weighted Metabolic Networks},
+  journal = {J. Mol. Biol.},
+  year = {2006},
+  volume = {356},
+  pages = {222-236}
+}
+
+@ARTICLE{croes05,
+  author = {Croes, D. and Couche, F. and Wodak, S. and Helden, J. v.},
+  title = {Metabolic PathFinding: inferring relevant pathways in biochemical
+	networks},
+  journal = {Nucleic Acids Research},
+  year = {2005},
+  volume = {33},
+  pages = {W326-W330}
+}
+
+@ARTICLE{Enright2002,
+  author = {A J Enright and S Van Dongen and C A Ouzounis},
+  title = {An efficient algorithm for large-scale detection of protein families.},
+  journal = {Nucleic Acids Res},
+  year = {2002},
+  volume = {30},
+  pages = {1575-84},
+  number = {7},
+  owner = {sylvain},
+  timestamp = {2008.01.15}
+}
+
+@ARTICLE{Gagneur2003,
+  author = {Julien Gagneur and David B Jackson and Georg Casari},
+  title = {Hierarchical analysis of dependency in metabolic networks.},
+  journal = {Bioinformatics},
+  year = {2003},
+  volume = {19},
+  pages = {1027--1034},
+  number = {8},
+  month = {May},
+  abstract = {MOTIVATION: Elucidation of metabolic networks for an increasing number
+	of organisms reveals that even small networks can contain thousands
+	of reactions and chemical species. The intimate connectivity between
+	components complicates their decomposition into biologically meaningful
+	sub-networks. Moreover, traditional higher-order representations
+	of metabolic networks as metabolic pathways, suffers from the lack
+	of rigorous definition, yielding pathways of disparate content and
+	size. RESULTS: We introduce a hierarchical representation that emphasizes
+	the gross organization of metabolic networks in largely independent
+	pathways and sub-systems at several levels of independence. The approach
+	highlights the coupling of different pathways and the shared compounds
+	responsible for those couplings. By assessing our results on Escherichia
+	coli (E.coli metabolic reactions, Genetic Circuits Research Group,
+	University of California, San Diego, http://gcrg.ucsd.edu/organisms/ecoli.html,
+	'model v 1.01. reactions') against accepted biochemical annotations,
+	we provide the first systematic synopsis of an organism's metabolism.
+	Comparison with operons of E.coli shows that low-level clusters are
+	reflected in genome organization and gene regulation. AVAILABILITY:
+	Source code, data sets and supplementary information are available
+	at http://www.mas.ecp.fr/labo/equipe/gagneur/hierarchy/hierarchy.html},
+  institution = {Lion Bioscience AG, Waldhoferstr. 98, 69123 Heidelberg, Germany.
+	julien.gagneur@cellzome.com},
+  keywords = {Algorithms; Escherichia coli; Gene Expression Regulation, Bacterial;
+	Metabolism; Models, Biological; Models, Statistical; Multienzyme
+	Complexes; Reproducibility of Results; Sensitivity and Specificity;
+	Statistics as Topic; Stochastic Processes},
+  owner = {rsat},
+  pmid = {12761067},
+  timestamp = {2008.04.17}
+}
+
+@ARTICLE{Gavin2006,
+  author = {Anne-Claude Gavin and Patrick Aloy and Paola Grandi and Roland Krause
+	and Markus Boesche and Martina Marzioch and Christina Rau and Lars
+	Juhl Jensen and Sonja Bastuck and Birgit Dümpelfeld and Angela Edelmann
+	and Marie-Anne Heurtier and Verena Hoffman and Christian Hoefert
+	and Karin Klein and Manuela Hudak and Anne-Marie Michon and Malgorzata
+	Schelder and Markus Schirle and Marita Remor and Tatjana Rudi and
+	Sean Hooper and Andreas Bauer and Tewis Bouwmeester and Georg Casari
+	and Gerard Drewes and Gitte Neubauer and Jens M Rick and Bernhard
+	Kuster and Peer Bork and Robert B Russell and Giulio Superti-Furga},
+  title = {Proteome survey reveals modularity of the yeast cell machinery.},
+  journal = {Nature},
+  year = {2006},
+  volume = {440},
+  pages = {631--636},
+  number = {7084},
+  month = {Mar},
+  abstract = {Protein complexes are key molecular entities that integrate multiple
+	gene products to perform cellular functions. Here we report the first
+	genome-wide screen for complexes in an organism, budding yeast, using
+	affinity purification and mass spectrometry. Through systematic tagging
+	of open reading frames (ORFs), the majority of complexes were purified
+	several times, suggesting screen saturation. The richness of the
+	data set enabled a de novo characterization of the composition and
+	organization of the cellular machinery. The ensemble of cellular
+	proteins partitions into 491 complexes, of which 257 are novel, that
+	differentially combine with additional attachment proteins or protein
+	modules to enable a diversification of potential functions. Support
+	for this modular organization of the proteome comes from integration
+	with available data on expression, localization, function, evolutionary
+	conservation, protein structure and binary interactions. This study
+	provides the largest collection of physically determined eukaryotic
+	cellular machines so far and a platform for biological data integration
+	and modelling.},
+  doi = {10.1038/nature04532},
+  institution = {Cellzome AG, Meyerhofstrasse 1, 69117 Heidelberg, Germany.},
+  keywords = {Genome, Fungal; Multiprotein Complexes; Open Reading Frames; Phenotype;
+	Proteome; Proteomics; Saccharomyces cerevisiae; Saccharomyces cerevisiae
+	Proteins},
+  owner = {rsat},
+  pii = {nature04532},
+  pmid = {16429126},
+  timestamp = {2008.01.08},
+  url = {http://dx.doi.org/10.1038/nature04532}
+}
+
+@ARTICLE{Hu2007,
+  author = {Zhenjun Hu and David M Ng and Takuji Yamada and Chunnuan Chen and
+	Shuichi Kawashima and Joe Mellor and Bolan Linghu and Minoru Kanehisa
+	and Joshua M Stuart and Charles DeLisi},
+  title = {VisANT 3.0: new modules for pathway visualization, editing, prediction
+	and construction.},
+  journal = {Nucleic Acids Res},
+  year = {2007},
+  volume = {35},
+  pages = {W625--W632},
+  number = {Web Server issue},
+  month = {Jul},
+  abstract = {With the integration of the KEGG and Predictome databases as well
+	as two search engines for coexpressed genes/proteins using data sets
+	obtained from the Stanford Microarray Database (SMD) and Gene Expression
+	Omnibus (GEO) database, VisANT 3.0 supports exploratory pathway analysis,
+	which includes multi-scale visualization of multiple pathways, editing
+	and annotating pathways using a KEGG compatible visual notation and
+	visualization of expression data in the context of pathways. Expression
+	levels are represented either by color intensity or by nodes with
+	an embedded expression profile. Multiple experiments can be navigated
+	or animated. Known KEGG pathways can be enriched by querying either
+	coexpressed components of known pathway members or proteins with
+	known physical interactions. Predicted pathways for genes/proteins
+	with unknown functions can be inferred from coexpression or physical
+	interaction data. Pathways produced in VisANT can be saved as computer-readable
+	XML format (VisML), graphic images or high-resolution Scalable Vector
+	Graphics (SVG). Pathways in the format of VisML can be securely shared
+	within an interested group or published online using a simple Web
+	link. VisANT is freely available at http://visant.bu.edu.},
+  doi = {10.1093/nar/gkm295},
+  institution = {Center for Advanced Genomic Technology, Boston University, Boston,
+	MA 02215, USA.},
+  keywords = {Animals; Caenorhabditis elegans; Computational Biology; Computer Graphics;
+	Database Management Systems; Databases, Genetic; Drosophila; Gene
+	Expression Profiling; Humans; Mice; Protein Interaction Mapping;
+	Saccharomyces cerevisiae; Software; Transcription Factors; Transcription,
+	Genetic},
+  owner = {rsat},
+  pii = {gkm295},
+  pmid = {17586824},
+  timestamp = {2008.01.18},
+  url = {http://dx.doi.org/10.1093/nar/gkm295}
+}
+
+@ARTICLE{Ito:2001,
+  author = {Ito, T. and Chiba, T. and Ozawa, R. and Yoshida, M. and Hattori,
+	M. and Sakaki, Y.},
+  title = {A comprehensive two-hybrid analysis to explore the yeast protein
+	interactome},
+  journal = {Proc Natl Acad Sci U S A},
+  year = {2001},
+  volume = {98},
+  pages = {4569-74.},
+  number = {8}
+}
+
+@ARTICLE{Jeong2000,
+  author = {H. Jeong and B. Tombor and R. Albert and Z. N. Oltvai and A. L. Barabási},
+  title = {The large-scale organization of metabolic networks.},
+  journal = {Nature},
+  year = {2000},
+  volume = {407},
+  pages = {651--654},
+  number = {6804},
+  month = {Oct},
+  abstract = {In a cell or microorganism, the processes that generate mass, energy,
+	information transfer and cell-fate specification are seamlessly integrated
+	through a complex network of cellular constituents and reactions.
+	However, despite the key role of these networks in sustaining cellular
+	functions, their large-scale structure is essentially unknown. Here
+	we present a systematic comparative mathematical analysis of the
+	metabolic networks of 43 organisms representing all three domains
+	of life. We show that, despite significant variation in their individual
+	constituents and pathways, these metabolic networks have the same
+	topological scaling properties and show striking similarities to
+	the inherent organization of complex non-biological systems. This
+	may indicate that metabolic organization is not only identical for
+	all living organisms, but also complies with the design principles
+	of robust and error-tolerant scale-free networks, and may represent
+	a common blueprint for the large-scale organization of interactions
+	among all cellular constituents.},
+  doi = {10.1038/35036627},
+  institution = {Department of Physics, University of Notre Dame, Indiana 46556, USA.},
+  keywords = {Animals; Archaea; Bacteria; Databases, Factual; Ecosystem; Eukaryotic
+	Cells; Metabolism; Models, Biological},
+  owner = {rsat},
+  pmid = {11034217},
+  timestamp = {2008.01.08},
+  url = {http://dx.doi.org/10.1038/35036627}
+}
+
+@ARTICLE{King2004,
+  author = {A. D. King and N. Przulj and I. Jurisica},
+  title = {Protein complex prediction via cost-based clustering.},
+  journal = {Bioinformatics},
+  year = {2004},
+  volume = {20},
+  pages = {3013--3020},
+  number = {17},
+  month = {Nov},
+  abstract = {MOTIVATION: Understanding principles of cellular organization and
+	function can be enhanced if we detect known and predict still undiscovered
+	protein complexes within the cell's protein-protein interaction (PPI)
+	network. Such predictions may be used as an inexpensive tool to direct
+	biological experiments. The increasing amount of available PPI data
+	necessitates an accurate and scalable approach to protein complex
+	identification. RESULTS: We have developed the Restricted Neighborhood
+	Search Clustering Algorithm (RNSC) to efficiently partition networks
+	into clusters using a cost function. We applied this cost-based clustering
+	algorithm to PPI networks of Saccharomyces cerevisiae, Drosophila
+	melanogaster and Caenorhabditis elegans to identify and predict protein
+	complexes. We have determined functional and graph-theoretic properties
+	of true protein complexes from the MIPS database. Based on these
+	properties, we defined filters to distinguish between identified
+	network clusters and true protein complexes. Conclusions: Our application
+	of the cost-based clustering algorithm provides an accurate and scalable
+	method of detecting and predicting protein complexes within a PPI
+	network.},
+  doi = {10.1093/bioinformatics/bth351},
+  institution = {Department of Computer Science, University of Toronto, Toronto, M5S
+	3G4, Canada.},
+  keywords = {Algorithms; Animals; Caenorhabditis elegans Proteins; Cluster Analysis;
+	Computer Simulation; Drosophila Proteins; Models, Biological; Multienzyme
+	Complexes; Protein Interaction Mapping; Proteins; Saccharomyces cerevisiae
+	Proteins; Signal Transduction},
+  owner = {rsat},
+  pii = {bth351},
+  pmid = {15180928},
+  timestamp = {2008.04.17},
+  url = {http://dx.doi.org/10.1093/bioinformatics/bth351}
+}
+
+@ARTICLE{Krogan2006,
+  author = {Nevan J Krogan and Gerard Cagney and Haiyuan Yu and Gouqing Zhong
+	and Xinghua Guo and Alexandr Ignatchenko and Joyce Li and Shuye Pu
+	and Nira Datta and Aaron P Tikuisis and Thanuja Punna and Josï¿½
+	M Peregrï¿½n-Alvarez and Michael Shales and Xin Zhang and Michael
+	Davey and Mark D Robinson and Alberto Paccanaro and James E Bray
+	and Anthony Sheung and Bryan Beattie and Dawn P Richards and Veronica
+	Canadien and Atanas Lalev and Frank Mena and Peter Wong and Andrei
+	Starostine and Myra M Canete and James Vlasblom and Samuel Wu and
+	Chris Orsi and Sean R Collins and Shamanta Chandran and Robin Haw
+	and Jennifer J Rilstone and Kiran Gandi and Natalie J Thompson and
+	Gabe Musso and Peter St Onge and Shaun Ghanny and Mandy H Y Lam and
+	Gareth Butland and Amin M Altaf-Ul and Shigehiko Kanaya and Ali Shilatifard
+	and Erin O'Shea and Jonathan S Weissman and C. James Ingles and Timothy
+	R Hughes and John Parkinson and Mark Gerstein and Shoshana J Wodak
+	and Andrew Emili and Jack F Greenblatt},
+  title = {Global landscape of protein complexes in the yeast Saccharomyces
+	cerevisiae.},
+  journal = {Nature},
+  year = {2006},
+  volume = {440},
+  pages = {637--643},
+  number = {7084},
+  month = {Mar},
+  abstract = {Identification of protein-protein interactions often provides insight
+	into protein function, and many cellular processes are performed
+	by stable protein complexes. We used tandem affinity purification
+	to process 4,562 different tagged proteins of the yeast Saccharomyces
+	cerevisiae. Each preparation was analysed by both matrix-assisted
+	laser desorption/ionization-time of flight mass spectrometry and
+	liquid chromatography tandem mass spectrometry to increase coverage
+	and accuracy. Machine learning was used to integrate the mass spectrometry
+	scores and assign probabilities to the protein-protein interactions.
+	Among 4,087 different proteins identified with high confidence by
+	mass spectrometry from 2,357 successful purifications, our core data
+	set (median precision of 0.69) comprises 7,123 protein-protein interactions
+	involving 2,708 proteins. A Markov clustering algorithm organized
+	these interactions into 547 protein complexes averaging 4.9 subunits
+	per complex, about half of them absent from the MIPS database, as
+	well as 429 additional interactions between pairs of complexes. The
+	data (all of which are available online) will help future studies
+	on individual proteins as well as functional genomics and systems
+	biology.},
+  doi = {10.1038/nature04670},
+  institution = {Banting and Best Department of Medical Research, Terrence Donnelly
+	Centre for Cellular and Biomolecular Research, University of Toronto,
+	160 College St, Toronto, Ontario M5S 3E1, Canada.},
+  keywords = {Conserved Sequence; Evolution; Mass Spectrometry; Multiprotein Complexes;
+	Protein Binding; Proteome; Proteomics; Saccharomyces cerevisiae;
+	Saccharomyces cerevisiae Proteins},
+  owner = {sylvain},
+  pii = {nature04670},
+  pmid = {16554755},
+  timestamp = {2008.01.15},
+  url = {http://dx.doi.org/10.1038/nature04670}
+}
+
+@ARTICLE{Lattimore2005,
+  author = {B. Samuel Lattimore and Stijn van Dongen and M. James C Crabbe},
+  title = {GeneMCL in microarray analysis.},
+  journal = {Comput Biol Chem},
+  year = {2005},
+  volume = {29},
+  pages = {354--359},
+  number = {5},
+  month = {Oct},
+  abstract = {Accurately and reliably identifying the actual number of clusters
+	present with a dataset of gene expression profiles, when no additional
+	information on cluster structure is available, is a problem addressed
+	by few algorithms. GeneMCL transforms microarray analysis data into
+	a graph consisting of nodes connected by edges, where the nodes represent
+	genes, and the edges represent the similarity in expression of those
+	genes, as given by a proximity measurement. This measurement is taken
+	to be the Pearson correlation coefficient combined with a local non-linear
+	rescaling step. The resulting graph is input to the Markov Cluster
+	(MCL) algorithm, which is an elegant, deterministic, non-specific
+	and scalable method, which models stochastic flow through the graph.
+	The algorithm is inherently affected by any cluster structure present,
+	and rapidly decomposes a graph into cohesive clusters. The potential
+	of the GeneMCL algorithm is demonstrated with a 5,730 gene subset
+	(IGS) of the Van't Veer breast cancer database, for which the clusterings
+	are shown to reflect underlying biological mechanisms.},
+  doi = {10.1016/j.compbiolchem.2005.07.002},
+  institution = {School of Animal and Microbial Sciences, University of Reading, Whiteknights,
+	Reading RG6 6AJ, UK.},
+  keywords = {Algorithms; Breast Neoplasms; Cluster Analysis; Computational Biology;
+	Databases, Genetic; Female; Gene Expression Profiling; Humans; Markov
+	Chains; Microarray Analysis; Multigene Family},
+  owner = {sylvain},
+  pii = {S1476-9271(05)00075-7},
+  pmid = {16172020},
+  timestamp = {2008.01.15},
+  url = {http://dx.doi.org/10.1016/j.compbiolchem.2005.07.002}
+}
+
+@ARTICLE{Leplae2004,
+  author = {Raphaël Leplae and Aline Hebrant and Shoshana J Wodak and Ariane
+	Toussaint},
+  title = {ACLAME: a CLAssification of Mobile genetic Elements.},
+  journal = {Nucleic Acids Res},
+  year = {2004},
+  volume = {32},
+  pages = {D45--D49},
+  number = {Database issue},
+  month = {Jan},
+  abstract = {The ACLAME database (http://aclame.ulb.ac.be) is a collection and
+	classification of prokaryotic mobile genetic elements (MGEs) from
+	various sources, comprising all known phage genomes, plasmids and
+	transposons. In addition to providing information on the full genomes
+	and genetic entities, it aims to build a comprehensive classification
+	of the functional modules of MGEs at the protein, gene and higher
+	levels. This first version contains a comprehensive classification
+	of 5069 proteins from 119 DNA bacteriophages into over 400 functional
+	families. This classification was produced automatically using TRIBE-MCL,
+	a graph-theory-based Markov clustering algorithm that uses sequence
+	measures as input, and then manually curated. Manual curation was
+	aided by consulting annotations available in public databases retrieved
+	through additional sequence similarity searches using Psi-Blast and
+	Hidden Markov Models. The database is publicly accessible and open
+	to expert volunteers willing to participate in its curation. Its
+	web interface allows browsing as well as querying the classification.
+	The main objectives are to collect and organize in a rational way
+	the complexity inherent to MGEs, to extend and improve the inadequate
+	annotation currently associated with MGEs and to screen known genomes
+	for the validation and discovery of new MGEs.},
+  doi = {10.1093/nar/gkh084},
+  institution = {Service de Conformation de Macromolécules Biologiques et de Bioinformatique,
+	Université Libre de Bruxelles, Belgium. raphael@bigre.ulb.ac.be},
+  keywords = {Bacteriophages; Computational Biology; Databases, Nucleic Acid; Information
+	Storage and Retrieval; Internet; Interspersed Repetitive Sequences;
+	Prokaryotic Cells; Software; User-Computer Interface},
+  owner = {rsat},
+  pii = {32/suppl_1/D45},
+  pmid = {14681355},
+  timestamp = {2008.04.17},
+  url = {http://dx.doi.org/10.1093/nar/gkh084}
+}
+
+@ARTICLE{Mering2007,
+  author = {Christian von Mering and Lars J Jensen and Michael Kuhn and Samuel
+	Chaffron and Tobias Doerks and Beate Krüger and Berend Snel and Peer
+	Bork},
+  title = {STRING 7--recent developments in the integration and prediction of
+	protein interactions.},
+  journal = {Nucleic Acids Res},
+  year = {2007},
+  volume = {35},
+  pages = {D358--D362},
+  number = {Database issue},
+  month = {Jan},
+  abstract = {Information on protein-protein interactions is still mostly limited
+	to a small number of model organisms, and originates from a wide
+	variety of experimental and computational techniques. The database
+	and online resource STRING generalizes access to protein interaction
+	data, by integrating known and predicted interactions from a variety
+	of sources. The underlying infrastructure includes a consistent body
+	of completely sequenced genomes and exhaustive orthology classifications,
+	based on which interaction evidence is transferred between organisms.
+	Although primarily developed for protein interaction analysis, the
+	resource has also been successfully applied to comparative genomics,
+	phylogenetics and network studies, which are all facilitated by programmatic
+	access to the database backend and the availability of compact download
+	files. As of release 7, STRING has almost doubled to 373 distinct
+	organisms, and contains more than 1.5 million proteins for which
+	associations have been pre-computed. Novel features include AJAX-based
+	web-navigation, inclusion of additional resources such as BioGRID,
+	and detailed protein domain annotation. STRING is available at http://string.embl.de/},
+  doi = {10.1093/nar/gkl825},
+  institution = {European Molecular Biology Laboratory, Meyerhofstrasse 1, 69117 Heidelberg,
+	Germany. mering@molbio.unizh.ch},
+  keywords = {Databases, Protein; Internet; Protein Interaction Mapping; Sequence
+	Homology, Amino Acid; Systems Integration; User-Computer Interface},
+  owner = {rsat},
+  pii = {gkl825},
+  pmid = {17098935},
+  timestamp = {2008.01.18},
+  url = {http://dx.doi.org/10.1093/nar/gkl825}
+}
+
+@ARTICLE{Mewes2007,
+  author = {H. W. Mewes and S. Dietmann and D. Frishman and R. Gregory and G.
+	Mannhaupt and K. F X Mayer and M. Münsterkötter and A. Ruepp and
+	M. Spannagl and V. Stümpflen and T. Rattei},
+  title = {MIPS: analysis and annotation of genome information in 2007.},
+  journal = {Nucleic Acids Res},
+  year = {2007},
+  month = {Dec},
+  abstract = {The Munich Information Center for Protein Sequences (MIPS-GSF, Neuherberg,
+	Germany) combines automatic processing of large amounts of sequences
+	with manual annotation of selected model genomes. Due to the massive
+	growth of the available data, the depth of annotation varies widely
+	between independent databases. Also, the criteria for the transfer
+	of information from known to orthologous sequences are diverse. To
+	cope with the task of global in-depth genome annotation has become
+	unfeasible. Therefore, our efforts are dedicated to three levels
+	of annotation: (i) the curation of selected genomes, in particular
+	from fungal and plant taxa (e.g. CYGD, MNCDB, MatDB), (ii) the comprehensive,
+	consistent, automatic annotation employing exhaustive methods for
+	the computation of sequence similarities and sequence-related attributes
+	as well as the classification of individual sequences (SIMAP, PEDANT
+	and FunCat) and (iii) the compilation of manually curated databases
+	for protein interactions based on scrutinized information from the
+	literature to serve as an accepted set of reliable annotated interaction
+	data (MPACT, MPPI, CORUM). All databases and tools described as well
+	as the detailed descriptions of our projects can be accessed through
+	the MIPS web server (http://mips.gsf.de).},
+  doi = {10.1093/nar/gkm980},
+  institution = {Genome Oriented Bioinformatics, Center of Life and Food Science,
+	D-85350 Freising-Weihenstephan, Germany.},
+  owner = {rsat},
+  pii = {gkm980},
+  pmid = {18158298},
+  timestamp = {2008.01.09},
+  url = {http://dx.doi.org/10.1093/nar/gkm980}
+}
+
+@ARTICLE{Pereira-Leal2004,
+  author = {Jose B Pereira-Leal and Anton J Enright and Christos A Ouzounis},
+  title = {Detection of functional modules from protein interaction networks.},
+  journal = {Proteins},
+  year = {2004},
+  volume = {54},
+  pages = {49--57},
+  number = {1},
+  month = {Jan},
+  abstract = {Complex cellular processes are modular and are accomplished by the
+	concerted action of functional modules (Ravasz et al., Science 2002;297:1551-1555;
+	Hartwell et al., Nature 1999;402:C47-52). These modules encompass
+	groups of genes or proteins involved in common elementary biological
+	functions. One important and largely unsolved goal of functional
+	genomics is the identification of functional modules from genomewide
+	information, such as transcription profiles or protein interactions.
+	To cope with the ever-increasing volume and complexity of protein
+	interaction data (Bader et al., Nucleic Acids Res 2001;29:242-245;
+	Xenarios et al., Nucleic Acids Res 2002;30:303-305), new automated
+	approaches for pattern discovery in these densely connected interaction
+	networks are required (Ravasz et al., Science 2002;297:1551-1555;
+	Bader and Hogue, Nat Biotechnol 2002;20:991-997; Snel et al., Proc
+	Natl Acad Sci USA 2002;99:5890-5895). In this study, we successfully
+	isolate 1046 functional modules from the known protein interaction
+	network of Saccharomyces cerevisiae involving 8046 individual pair-wise
+	interactions by using an entirely automated and unsupervised graph
+	clustering algorithm. This systems biology approach is able to detect
+	many well-known protein complexes or biological processes, without
+	reference to any additional information. We use an extensive statistical
+	validation procedure to establish the biological significance of
+	the detected modules and explore this complex, hierarchical network
+	of modular interactions from which pathways can be inferred.},
+  doi = {10.1002/prot.10505},
+  institution = {Computational Genomics Group, The European Bioinformatics Institute,
+	Cambridge, United Kingdom.},
+  keywords = {Algorithms; Cluster Analysis; Computational Biology; Genomics; Macromolecular
+	Substances; Proteins; Saccharomyces cerevisiae Proteins},
+  owner = {sylvain},
+  pmid = {14705023},
+  timestamp = {2008.01.15},
+  url = {http://dx.doi.org/10.1002/prot.10505}
+}
+
+@ARTICLE{Shannon2003,
+  author = {Paul Shannon and Andrew Markiel and Owen Ozier and Nitin S Baliga
+	and Jonathan T Wang and Daniel Ramage and Nada Amin and Benno Schwikowski
+	and Trey Ideker},
+  title = {Cytoscape: a software environment for integrated models of biomolecular
+	interaction networks.},
+  journal = {Genome Res},
+  year = {2003},
+  volume = {13},
+  pages = {2498--2504},
+  number = {11},
+  month = {Nov},
+  abstract = {Cytoscape is an open source software project for integrating biomolecular
+	interaction networks with high-throughput expression data and other
+	molecular states into a unified conceptual framework. Although applicable
+	to any system of molecular components and interactions, Cytoscape
+	is most powerful when used in conjunction with large databases of
+	protein-protein, protein-DNA, and genetic interactions that are increasingly
+	available for humans and model organisms. Cytoscape's software Core
+	provides basic functionality to layout and query the network; to
+	visually integrate the network with expression profiles, phenotypes,
+	and other molecular states; and to link the network to databases
+	of functional annotations. The Core is extensible through a straightforward
+	plug-in architecture, allowing rapid development of additional computational
+	analyses and features. Several case studies of Cytoscape plug-ins
+	are surveyed, including a search for interaction pathways correlating
+	with changes in gene expression, a study of protein complexes involved
+	in cellular recovery to DNA damage, inference of a combined physical/functional
+	interaction network for Halobacterium, and an interface to detailed
+	stochastic/kinetic gene regulatory models.},
+  doi = {10.1101/gr.1239303},
+  institution = {Institute for Systems Biology, Seattle, Washington 98103, USA.},
+  keywords = {Algorithms; Archaeal Proteins; Bacteriophage lambda; Computational
+	Biology; Halobacterium; Internet; Models, Biological; Neural Networks
+	(Computer); Phenotype; Software; Software Design; Stochastic Processes},
+  owner = {rsat},
+  pii = {13/11/2498},
+  pmid = {14597658},
+  timestamp = {2008.01.18},
+  url = {http://dx.doi.org/10.1101/gr.1239303}
+}
+
+@ARTICLE{Sharan2007,
+  author = {Roded Sharan and Igor Ulitsky and Ron Shamir},
+  title = {Network-based prediction of protein function.},
+  journal = {Mol Syst Biol},
+  year = {2007},
+  volume = {3},
+  pages = {88},
+  abstract = {Functional annotation of proteins is a fundamental problem in the
+	post-genomic era. The recent availability of protein interaction
+	networks for many model species has spurred on the development of
+	computational methods for interpreting such data in order to elucidate
+	protein function. In this review, we describe the current computational
+	approaches for the task, including direct methods, which propagate
+	functional information through the network, and module-assisted methods,
+	which infer functional modules within the network and use those for
+	the annotation task. Although a broad variety of interesting approaches
+	has been developed, further progress in the field will depend on
+	systematic evaluation of the methods and their dissemination in the
+	biological community.},
+  doi = {10.1038/msb4100129},
+  institution = {School of Computer Science, Tel Aviv University, Tel Aviv, Israel.},
+  keywords = {Algorithms; Cluster Analysis; Information Services; Models, Theoretical;
+	Proteins},
+  owner = {sylvain},
+  pii = {msb4100129},
+  pmid = {17353930},
+  timestamp = {2008.01.15},
+  url = {http://dx.doi.org/10.1038/msb4100129}
+}
+
+@ARTICLE{Spirin2003,
+  author = {Victor Spirin and Leonid A Mirny},
+  title = {Protein complexes and functional modules in molecular networks.},
+  journal = {Proc Natl Acad Sci U S A},
+  year = {2003},
+  volume = {100},
+  pages = {12123--12128},
+  number = {21},
+  month = {Oct},
+  abstract = {Proteins, nucleic acids, and small molecules form a dense network
+	of molecular interactions in a cell. Molecules are nodes of this
+	network, and the interactions between them are edges. The architecture
+	of molecular networks can reveal important principles of cellular
+	organization and function, similarly to the way that protein structure
+	tells us about the function and organization of a protein. Computational
+	analysis of molecular networks has been primarily concerned with
+	node degree [Wagner, A. & Fell, D. A. (2001) Proc. R. Soc. London
+	Ser. B 268, 1803-1810; Jeong, H., Tombor, B., Albert, R., Oltvai,
+	Z. N. & Barabasi, A. L. (2000) Nature 407, 651-654] or degree correlation
+	[Maslov, S. & Sneppen, K. (2002) Science 296, 910-913], and hence
+	focused on single/two-body properties of these networks. Here, by
+	analyzing the multibody structure of the network of protein-protein
+	interactions, we discovered molecular modules that are densely connected
+	within themselves but sparsely connected with the rest of the network.
+	Comparison with experimental data and functional annotation of genes
+	showed two types of modules: (i) protein complexes (splicing machinery,
+	transcription factors, etc.) and (ii) dynamic functional units (signaling
+	cascades, cell-cycle regulation, etc.). Discovered modules are highly
+	statistically significant, as is evident from comparison with random
+	graphs, and are robust to noise in the data. Our results provide
+	strong support for the network modularity principle introduced by
+	Hartwell et al. [Hartwell, L. H., Hopfield, J. J., Leibler, S. &
+	Murray, A. W. (1999) Nature 402, C47-C52], suggesting that found
+	modules constitute the "building blocks" of molecular networks.},
+  doi = {10.1073/pnas.2032324100},
+  institution = {Harvard-MIT Division of Health Sciences and Technology, 16-343, Massachusetts
+	Institute of Technology, 77 Massachusetts Avenue, Cambridge, MA 02139,
+	USA.},
+  keywords = {Biophysics; Macromolecular Substances; Models, Biological; Proteins;
+	Proteomics},
+  owner = {rsat},
+  pii = {2032324100},
+  pmid = {14517352},
+  timestamp = {2008.01.16},
+  url = {http://dx.doi.org/10.1073/pnas.2032324100}
+}
+
+@ARTICLE{Uetz:2000,
+  author = {Uetz, P. and Giot, L. and Cagney, G. and Mansfield, T. A. and Judson,
+	R. S. and Knight, J. R. and Lockshon, D. and Narayan, V. and Srinivasan,
+	M. and Pochart, P. and Qureshi-Emili, A. and Li, Y. and Godwin, B.
+	and Conover, D. and Kalbfleisch, T. and Vijayadamodar, G. and Yang,
+	M. and Johnston, M. and Fields, S. and Rothberg, J. M.},
+  title = {A comprehensive analysis of protein-protein interactions in Saccharomyces
+	cerevisiae},
+  journal = {Nature},
+  year = {2000},
+  volume = {403},
+  pages = {623-7.},
+  number = {6770}
+}
+
+@PHDTHESIS{VanDongenPHD2000,
+  author = {Stijn {Van Dongen}},
+  title = {Graph clustering by flow simulation},
+  school = {Centers for mathematics and computer science (CWI), University of
+	Utrecht},
+  year = {2000},
+  owner = {sylvain},
+  timestamp = {2008.01.15}
+}
+
+@article{Arita2003,
+ author = {Masanori Arita},
+ title = {In Silico Atomic Tracing by Substrate-Product Relationships in Escherichia coli Intermediary Metabolism},
+ journal = {Genome Research},
+ year = {2003},
+ volume = {13},
+ pages = {2455-2466}
+}
+
+@article{Kotera2004,
+ author = {Kotera, M. and Hattori, M. and Oh, M. and Yamamoto, R. and Komeno, T. and Yabuzaki, J. and Tonomura, K. and Goto, S. and Kanehisa, M.},
+ title = {RPAIR: a reactant-pair database representing chemical changes in enzymatic reactions},
+ journal = {Genome Informatics},
+ year = {2004},
+ volume = {15},
+ pages = {P062}
+}
+
+@article{Foerster2003,
+ author = {Foerster, J. and Famili, I. and Fu, P. and Palsson, B.O. and Nielsen, J.},
+ title = {Genome-Scale Reconstruction of the Saccharomyces cerevisiae Metabolic Network},
+ journal = {Genome Research},
+ year = {2003},
+ volume = {13},
+ pages = {244-253}
+}
+
+@article{Poolman2006,
+ author = {Poolman, M.G. and Bonde, B.K. and Gevorgyan, A. and Patel, H.H. and Fell, D.A.},
+ title = {Challenges to be faced in the reconstruction of metabolic networks from public databases},
+ journal = {Systems Biology, IEE Proceedings},
+ year = {2006},
+ volume = {153},
+ pages = {379-384}
+}
+
+@article{Kanehisa2008,
+ author = {Kanehisa, M. and Araki, M. and Goto, S. and Masahiro, H. and Hirakawa, M. and Itoh, M. and Katayama, T. and Kawashima, S. and Okuda, S. and Tokimatsu, T. and Yamanishi, Y.},
+ title = {KEGG for linking genomes to life and the environment},
+ journal = {Nucleic Acids Research},
+ year = {2008},
+ volume = {36},
+ pages = {D480-D484}
+}
+
+@article{ipath,
+    author = {Letunic, I.  and Yamada, T.  and Kanehisa, M.  and Bork, P. },
+	journal = {Trends in biochemical sciences},
+	pages = {101--103},
+	title = {iPath: interactive exploration of biochemical pathways and networks.},
+	volume = {33},
+	year = {2008},
+    url = {http://pathways.embl.de/index.html}
+}
+
+@article{yana,
+	title = {Integrated network reconstruction, visualization and analysis using YANAsquare},
+	author = {Schwarz, Roland and Liang, Chunguang and Kaleta, Christoph and Kühnel, Mark and Hoffmann, Eik and Kuznetsov, Sergei and Hecker, Michael and Griffiths, Gareth and Schuster, Stefan and Dandekar, Thomas},
+	journal = {BMC Bioinformatics},
+	volume = {8},
+	year = {2007},
+	url = {http://yana.bioapps.biozentrum.uni-wuerzburg.de/}
+}
+
+@article{pht,
+	title = {Metabolic pathway analysis web service (Pathway Hunter Tool at CUBIC) },
+	author = {Rahman, S.A. and Advani, P. and Schunk, R. and Schrader, R. and Schomburg, D.},
+	journal = {Bioinformatics},
+	volume = {21},
+	year = {2005},
+	pages = {1189-1193},
+	url = {http://pht.tu-bs.de/PHT/}
+}
+
+@article{kgmled,
+	title = {Dynamic exploration and editing of KEGG pathway diagrams},
+	author = {Klukas, C. and Schreiber, F.},
+	journal = {Bioinformatics},
+	volume = {23},
+	year = {2007},
+	pages = {344-350},
+	url = {http://kgml-ed.ipk-gatersleben.de/Introduction.html}
+}
+
+@article{metashark,
+	title = {metaSHARK: a WWW platform for interactive exploration of metabolic networks},
+	author = {Hyland, C. and Pinney, J.W. and McConkey, G.A. and Westhead, D.R.},
+	journal = {Nucleic Acids Research},
+	volume = {34},
+	year = {2006},
+	pages = {W725-W728},
+	url = {http://bioinformatics.leeds.ac.uk:8080/shark/user}
+}
+
+@article{kegggrah,
+	title = {KEGGgraph: a graph approach to KEGG PATHWAY in R and Bioconductor},
+	author = {J.D. Zhang and S. Wiemann},
+	journal = {Bioinformatics},
+	volume = {25},
+	year = {2009},
+	pages = {1470-1471}
+}
+
+@article{biocyc,
+	title = {The MetaCyc dat abase of metabolic pathways and enzymes and the BioCyc collection of pathway/genome databases},
+	author = { Caspi, R. and Foerster, H. and Fulcher, C.A. and Kaipa, P. and Krummenacker, M. and Latendresse, M. and Paley, S. and Rhee, S.Y. and Shearer, A.G. and Tissier, C. and Walk, T.C. and Zhang, P. and Karp, P.D.},
+	journal = {Nucleic Acids Research},
+	volume = {36},
+	year = {2008},
+	pages = {D623-D631}
+}
+
+@article{vanHelden01,
+   title = {Application of Regulatory Sequence Analysis and Metabolic Network Analysis to the Interpretation of Gene Expression Data},
+	author = {Jacques van Helden and David Gilbert and Lorenz Wernisch and Michael Schroeder and Shoshana Wodak},
+	journal = {Lecture Notes in Computer Science},
+	volume = {2066},
+	pages = {147-165},
+	year = {2001}
+}
+
+@article{Spellman98,
+   title = {Comprehensive identification of cell cycle-regulated genes of the yeast Saccharomyces cerevisiae by microarray hybridization},
+	author = {Spellman, P. T. and G. Sherlock and M. Q. Zhang and V. R. Iyer and K. Anders and M. B. Eisen and P. O. Brown and D. Botstein and B. Futcher},
+	journal = {Mol Biol Cell},
+	volume = {9},
+	pages = {3273-3297},
+	year = {1998}
+}
+

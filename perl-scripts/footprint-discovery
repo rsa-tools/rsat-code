@@ -1,0 +1,1632 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: footprint-discovery,v 1.116 2013/11/01 07:44:06 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+footprint-discovery
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Detect phylogenetic footprints by applying dyad-analysis in promoters
+of a set of orthologous genes.
+
+Adapted from the procedure described in Janky & van Helden (2008).
+
+=head1 AUTHORS
+
+=over
+
+=item Rekin's Janky <rekins@bigre.ulb.ac.be>
+
+=item Jacques van Helden <jacques.van.helden@ulb.ac.be>
+
+=back
+
+=head1 CATEGORY
+
+Sequences
+
+Motif discovery
+
+=head1 USAGE
+
+footprint-discovery [-i inputfile] -o [output_prefix] \
+     -org query_organism
+     -taxon ref_taxon \
+     -q query_gene [-q query_gene2 ...] \
+     [-v #] [...]
+
+
+=head1 EXAMPLES
+
+=head2 Single-gene footprint discovery
+
+Discover conserved motifs in the promoters of the orthologs of lexA in
+Enterobacteriales.
+
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
+		-return occ,proba,rank -filter  \
+		-bg_model taxfreq -q lexA
+
+=head2 Analysis of a few genes
+
+Discover conserved motifs in the promoters of the orthologs of lexA in
+Enterobacteriales.
+
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
+		-return occ,proba,rank -filter  \
+		-bg_model taxfreq \
+                -sep_genes -q lexA -q recA -q uvrA
+
+Note the option -sep_genes indicating that the genes have to be
+analyzed separately rather than grouped.
+
+The genes can also be specified in a file with the option -genes.
+
+=head2 Footprint discovery applied iteratively to each gene of a genome
+
+Iterate footprint discovery for each gene separately.
+
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
+		-return occ,proba,rank -filter \
+		-bg_model taxfreq -all_genes -sep_genes
+
+
+=head1 INPUT FORMAT
+
+The program takes as input a taxon of interest + one or several query
+genes.
+
+=head1 OUTPUT FORMAT
+
+The output consists in a set of files, containing the results of the
+different steps of the analysis.
+
+=over
+
+=item [prefix]_log.txt
+
+Log file listing the analysis parameters + output file names;
+
+=item [prefix]_query_genes.tab
+
+List of query genes (one or several genes can be entered)
+
+=item [prefix]_ortho_bbh.tab
+
+List of orthologous genes
+
+=item [prefix]_ortho_seq.fasta
+
+Promoter sequences of the orthologous genes
+
+=item [prefix]_ortho_seq_purged.fasta
+
+Purged promoter sequences (for motif discovery)
+=item [prefix]_ortho_filter_dyads.tab
+
+Dyads found in the query genes (for dyad filtering)
+
+=item [prefix]_ortho_dyads.tab
+
+Significant dyads found in the promoters of orthologous genes
+(the footprints)
+
+=item [prefix]_ortho_dyads.asmb
+
+Assembled dyads
+
+=item [prefix]_ortho_dyads.png
+
+Feature-map
+
+=item NOTE : 'ortho' is replaced by 'leaders' in the filename prefix with option -infer_operons
+
+=back
+
+=head1 REFERENCES
+
+=head2 Description of the footprint-discovery method
+
+Janky, R. and van Helden, J. Evaluation of phylogenetic footprint
+discovery for the prediction of bacterial cis-regulatory elements
+(2008). BMC Bioinformatics 2008, 9:37 [Pubmed 18215291].
+
+=head2 Inference of co-regulation network from the footprints
+
+Brohee, S., Janky, R., Abdel-Sater, F., Vanderstocken, G., Andre,
+B. and van Helden, J. (2011). Unraveling networks of co-regulated
+genes on the sole basis of genome sequences. Nucleic Acids
+Res. [Pubmed 21572103] [Open access]
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item get-orthologs
+
+=item dyad-analysis
+
+=item footprint-scan
+
+=back
+
+=head1 WISH LIST
+
+
+The following options are not yet implemented, but this should be done
+soon.
+
+=over
+
+=item B<-taxa>
+
+Specify a file containing a list of taxa, each of which will be
+analyzed separately. The results are stored in a separate folder for
+each taxon. The folder name is defined automatically.
+
+=item B<-all_taxa>
+
+Automatically analyze all the taxa, and store each result in a
+separate folder (the folder name is defined automatically).
+
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "footprint.lib.pl";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialize parameters
+#  %supported_organism = ();
+  $program_version = do { my @r = (q$Revision: 1.116 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  local $skip = 0;
+  local $last = 0;
+
+  ## Dyad-analysis parameters
+  local $dyad_return_fields = "occ,proba,rank";	## Default return fields for dyad-analysis
+  local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
+
+  local %index_list = (); ## List of index files (there can be several indexes with the option -sep_genes)
+  local $verbose = 0;		## Verbosity
+  local $noov = "-noov";     ## Treatment of self-overlapping patterns
+  local $filter = 1; ## Only report dyads present in the query promoter
+  local $bg_model = "taxfreq"; ## Background model for motif discovery (Supported:taxfreq or monads)
+  local $bgfile = 0;
+#  local $to_matrix = #;		## Convert assembled dyads into PSSM
+  local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
+  local %uth = (rank=>50);	    ## Upper thresholds
+  local $strands = "-2str"; ## Strands for motif discovery and pattern matching
+  local $start_time = &RSAT::util::StartScript();
+  local $orthologs_list_file = 0;
+  our $status = "OK"; ## this has to be a global variable, because it is modified by procedures of the footprint-lib.pl library
+
+  ## Supported tasks
+  @supported_tasks = qw(
+			all
+			all_except_bg
+			bg_model
+			operons
+			query_seq
+			filter_dyads
+			orthologs
+			ortho_seq
+			purge
+			dyads
+			map
+			maps
+			map_dyads
+			map_pssm
+			gene_index
+			network
+			index
+			test
+		       );
+  $supported_tasks = join (",", @supported_tasks);
+  %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+  %task = ();
+
+  ## List of tasks that do not require iyerating over all genes
+  %global_task = (bg_model=>1);
+
+
+  ## Supported bg_models
+  @supported_bg_models = qw(
+			    monads
+			    taxfreq
+			    org_list
+			    file
+			   );
+  $supported_bg_models = join (",", @supported_bg_models);
+  %supported_bg_model = ();
+  foreach my $bg_model (@supported_bg_models) {
+    $supported_bg_model{$bg_model} = 1;
+  }
+
+
+  ## Parameters for promoter retrieval
+  local $taxon;			## Reference taxon
+  local $organism_name;		## Query organism
+  local $organism;              ## Object containing the organism
+  local @query_genes = ();	## list of query genes
+  local $infer_operons = 0;     ## Infer operon leader genes
+  local $dist_thr = 55;	        ## Distance threshold for operon inference
+  local $sep_genes = 0;	        ## Analyze each gene separately
+  local $promoter = "ortho";    ## Alternatively: leader when the option "infer operons" is active
+#  local $all_genes = 0;         ## Analyze all the genes of the query organism
+#  local $max_genes = undef;     ## Analyze a restricted number of genes
+#  local $supported_organism;
+
+  local $map_format = "png";	## Image format
+
+  ## Job management options
+  local $job_prefix = "fpdisco";
+  local $die_on_error = 1;
+  local $batch = 0;
+  local $dry = 0;
+  local $max_jobs = 5000; ## Max number of allowed jobs to send to batch queue
+
+  ## Network inference
+  local $max_dyad_degree = 20;
+  local $score = "DPbits";
+  local $score_column = 21;
+  local $max_gene_degree = 50;
+
+  ## File index
+  local %main_index = ();
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Check parameters for footprint analysis
+  &CheckFootprintParameters();
+
+  ## For backward compatibility
+  if ($task{maps}) {
+    $task{map_dyads} = 1;
+    $task{map_pssm} = 1;
+  }
+  if ($task{map}) {
+    &RSAT::message::Warning("Task 'map' has been changed to 'map_dyads'. Please adapt arguments on the command line." );
+    $task{map_dyads} = 1;
+  }
+
+  ## Check if some tasks require to perform gene-wise analysis
+  local $some_gene_wise_task = 0;
+  foreach my $task (keys %task) {
+    unless ($global_task{$task}) {
+      $some_gene_wise_task = 1;
+      last;
+    }
+  }
+
+  ## Check that output directory exists or create it
+  &RSAT::util::CheckOutDir($dir{output_root});
+
+
+  ## Define main output directory by concatenagint output root, taxon
+  ## and organism name
+  &SetMainOutputDir();
+
+  local ($main_index, $main_summary_table) = &OpenMainIndex() unless ($batch);
+  local  $main_prefix = &MainPrefix();
+
+  $outfile{main_log} = $dir{main_output}."/".$main_prefix."_log.txt";
+  local $main_log = &OpenOutputFile($outfile{main_log});
+  print $main_log &MainVerbose();
+
+  ################################################################
+  ## Parameters for dyad-analysis
+
+  ## Return fields for dyad-analysis
+  if (scalar(@dyad_return_fields) > 0) {
+    $dyad_return_fields = join ",", @dyad_return_fields;
+  }
+
+  ##Bg model for orthologs_list is monad
+  $bg_model = "monad" if ($main::orthologs_list_file);
+
+  ## Background model file for dyad-analysis
+  if ($bg_model eq "file") {
+    &RSAT::error::FatalError("The option '-bg_model file' requires to specify a file with the option '-bgfile'")
+      unless ($bgfile);
+    $infile{bg_model} = $bgfile;
+
+  } elsif ($bg_model eq "org_list") {
+    ## Check that the list of organisms has been specified
+    &RSAT::error::FatalError("The option '-bg_model org_list' requires to specify a list of organisms with the option '-org_list org_list_file'")
+      unless ($orglist_file);
+
+    ## If the option -org_list has been specified and the bg_model is
+    ## taxfreq, compute the list-specific frequencies with the program
+    ## taxon-frequencies -org_list org_list_file.
+    &RSAT::message::TimeWarn("Computing background model for organism list") if ($main::verbose >= 1);
+
+    ## Store the background model in the parent directory of the query
+    ## sub-directories. The background directory is different from the
+    ## main output dir, because it can be re-used for various query
+    ## organism, as far as the reference organism list is the same.
+    $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", "org_list");
+    &RSAT::util::CheckOutDir($dir{bg_model});
+
+    ## Background model file
+    $infile{bg_model} = $dir{bg_model}."/";
+    $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
+#    dyads_3nt_sp0-20_upstream-noorf_Actinobacteria-noov-1str.freq.gz
+    if ($task{bg_model}) {
+      my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+      $cmd .= " -org_list ".$orglist_file;
+      $cmd .= " > ".$infile{bg_model};
+      &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+    }
+
+  } elsif ($bg_model eq "taxfreq") {
+    ## Check that the taxon has been specified
+    &RSAT::error::FatalError("The option '-bg_model taxfreq' requires to specify a taxon with the option '-taxon'")
+      unless ($taxon);
+
+    ## Identify the server-installed taxon-specific background model file
+    $infile{bg_model} = &ExpectedFreqFile($taxon,
+					  3,
+					  # spacing ? 0-20
+					  "upstream-noorf",
+					  str=>$strands,
+					  noov=>$noov,
+					  type=>"dyad",
+					  warn=>1,
+					  taxon=>1);
+
+    ## If the required the taxon frequencies are not pre-installed,
+    ## compute them before porocessing and store them in the result
+    ## directory.
+    if ((!$task{bg_model}) && ((-e $infile{bg_model}) || (-e $infile{bg_model}.".gz"))) {
+      &RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
+
+    } else {
+
+      ## Store the background model in the parent directory of the
+      ## query sub-directories. The background directory is different from the
+      ## main output dir, because it can be re-used for various query
+      ## organisms, as far as the taxon is the same.
+      $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
+      &RSAT::util::CheckOutDir($dir{bg_model});
+
+      &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
+      my ($local_bg_file) = &ShortFileName($infile{bg_model});
+      $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
+      if ($task{bg_model}) {
+	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+	$cmd .= " -taxon ".$taxon;
+	$cmd .= " > ".$infile{bg_model};
+	&one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+     }
+      &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
+    }
+  } else {
+      &RSAT::error::FatalError($bg_model, "Invalid background model. Supported: ", $supported_bg_models) unless ($supported_bg_model{$bg_model});
+  }
+
+  ## Check if background model file exists
+  if ($infile{bg_model}) {
+    &RSAT::message::TimeWarn("Checking background model file", $infile{bg_model}) if ($main::verbose >= 2);
+    unless (-e $infile{bg_model}) {
+      &RSAT::message::Warning("Background model file does not exist", $infile{bg_model}) if ($main::verbose >= 2);
+    }
+  }
+
+  ################################################################
+  ## Analyze query genes separately or altogether
+  local $q = 0;
+  if ($main::sep_genes) {
+    ## Analyze each gene separately
+
+    ## Get the index of genome features by names and ID, which will be
+    ## used to indicate gene names in the indexes
+    $feature_index = $organism->get_attribute("name_index");
+
+    local $query_nb = scalar(@query_genes);
+
+    if ($some_gene_wise_task) {
+      foreach $query (@query_genes) {
+	$main::status = "OK";
+	local $status_color = "#CC0000";
+	$q++;
+	if ($feature_index->contains(uc($query))) {
+	  local $current_feature = $feature_index->get_first_value(uc($query));
+	  local $current_gene_name = $current_feature->get_attribute("name");
+	  local $current_gene = $query; ## needs to be declared globally for some methods of footprint.lib.pl (not very clean, I know)
+	  &RSAT::message::TimeWarn("Analyzing query", $q."/".$query_nb, $query, $current_gene_name) if ($main::verbose >= 1);
+	  &RunFootprintDisco($current_gene);
+	} else {
+	  &RSAT::message::Warning("Skipping query", $q."/".$query_nb, $query, "Unknown gene") if ($main::verbose >= 1);
+	  $status = "Unknown gene name";
+	}
+      }
+    }
+  } else {
+    ## Analyze all genes as a single query
+    $q = 1;
+    $query_nb = 1;
+    if (scalar(@main::query_genes) <= 5){
+      $current_gene_name = join("_" ,@main::query_genes) ;
+    } else {
+      $current_gene_name= "query_genes" ;
+    }
+    &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
+    &RunFootprintDisco(@query_genes);
+  }
+
+  ################################################################
+  ## Generate co-regulation network by comparing gene-wise footprints
+  &CoregulationNetwork() if ((scalar(@query_genes) > 1) && ($sep_genes));
+
+  &test() if ($task{test});
+
+  ################################################################
+  ## Give a warning to report the gene-specific and main index files
+  if ($main::verbose >= 2) {
+    print ("; Index files\n");
+    my $i = 0;
+    foreach my $key (sort keys %index_list) {
+      $i++;
+      print join ("\t", ";", $key, $index_list{$key}), "\n";
+      if ($i > 10) {
+	print join ("\t", "; ... skipping other gene-wise index files"), "\n";
+	last;
+      }
+    }
+    print join ("\t", ";", "Main Table", $outfile{main_index}), "\n";
+  }
+
+
+  ## Close the main index stream
+  unless ($batch) {
+      print $main_index "</table>\n";
+
+      if (scalar(@network_files) >= 1) {
+	print $main_index "<h2>Inferred co-regulation network</h2>\n";
+	print $main_index "<table class='resultlink'>\n";
+	#      print $main_index "<p><table>\n";
+	foreach my $key (@network_files) {
+	  print $main_index "<tr>\n";
+	  print $main_index "<td>".$key."</td>\n";
+	  my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
+	  print $main_index "<td>".$link."</td>\n";
+	  print $main_index "</tr>\n";
+	}
+	print $main_index "</table></p>\n";
+      }
+      my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+      print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
+      print $main_index "</body>\n";
+      print $main_index "</html>\n";
+      close ($main_index);
+      &RSAT::message::TimeWarn("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
+  }
+  &RSAT::message::TimeWarn("Main log file", $outfile{main_log}) if ($main::verbose >= 1);
+  close ($main_log);
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+sub DyadSuffix {
+  my $dyad_suffix = "_".$promoter."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
+  return($dyad_suffix);
+}
+
+################################################################
+## Run footprint discovery flow chart for one or several query genes
+sub RunFootprintDisco {
+  local (@current_query_genes) = @_;
+
+  local $query_start_time = &RSAT::util::AlphaDate();
+  local $batch_cmd = "";
+  local $out = "";
+  local $genes = "";
+  local $rand = $main::rand; ## anlyze promoters of randomly selected genes rather than groups of orthologs
+
+  ################################################################
+  ## Initialize output directory + output files
+
+  local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
+  if (scalar(@current_query_genes) > 1) {
+    $current_gene = $query_prefix;
+  } else {
+    $current_gene = $current_query_genes[0];
+  }
+
+  ## Index gene name for exporting file lists etc ...
+  $main_index{$query_prefix}{name} = $current_gene_name; 
+
+  if ($batch) {
+    $status = "batch mode";
+  }
+  local $refresh_time = 10;
+
+  ## Output files for dyad-analysis
+  $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
+
+  my $dyad_suffix = &DyadSuffix();
+  $outfile{dyad_prefix} = $outfile{prefix}.$dyad_suffix;
+  $outfile{dyads} = $outfile{dyad_prefix}.".tab";
+  $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
+  $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
+  $outfile{map_dyads} = $outfile{dyad_prefix}.".".${map_format};
+  $outfile{map_pssm} = $outfile{dyad_prefix}."_pssm.".${map_format};
+
+  ## Conversion to matrix
+  $prefix{pssm} = $outfile{dyad_prefix}."_pssm";
+  $outfile{sig_PSSM} = $prefix{pssm}."_sig_matrices.tf";
+  $outfile{count_PSSM_txt} = $prefix{pssm}."_count_matrices.txt";
+  $outfile{count_PSSM_tf} = $prefix{pssm}."_count_matrices.tf";
+
+  ## Index files for the main index
+  $main_index{$query_prefix}{dyads} = $outfile{dyads};
+
+  ## Report all outfile names
+  if ($main::verbose >= 5) {
+    foreach my $key (sort keys %outfile) {
+      &RSAT::message::Debug("outfile", $key, "'".$outfile{$key}."'");
+    }
+  }
+
+  ## Open the file to store the HTML index
+  &OpenQueryReport("footprint-discovery") if ($task{gene_index});
+
+  ################################################################
+  ## Print query genes in the gene file
+  if (scalar(@current_query_genes) <1) {
+    ## Skip the rest if the query contains not a single gene
+    $status = "No query genes";
+  }
+  foreach my $gene (@current_query_genes) {
+    print $genes $gene, "\t", $organism_name, "\n";
+  }
+  close $genes;
+  &IndexOneFile("Query genes", $outfile{genes}) if ($task{gene_index});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($verbose);
+
+  ################################################################
+  ## Predict operon leader genes of the query gene(s)
+  &InferQueryOperons() if ($infer_operons); # && ($task{operons}));
+
+  ################################################################
+  ## Dyad filter tasks
+  local $query_prom_len = "NA";
+  unless ($nofilter) {
+    ## Retrieve promoters of the query organism
+    $query_prom_len = &RetrieveQueryPromoters();
+    if (($status eq "OK") || ($batch)) {
+      ## Detect all dyads in promoters of query genes for dyad filtering
+      &ComputeFilterDyads();
+    }
+  }
+
+  ################################################################
+  ## Identify ortholog genes
+  local $ortholog_nb = "NA";
+  $ortholog_nb = &GetOrthologs() if (($status eq "OK") || ($batch));
+
+  ################################################################
+  ## Predict operon leader genes for the orthologous genes
+  &InferOrthoOperons() if ((($status eq "OK") || ($batch)) && ($infer_operons));
+
+  ################################################################
+  ## Retrieve sequences from orthologs
+  local $ortho_seq_len = "NA";
+  $ortho_seq_len = &RetrieveOrthoSeq() if (($status eq "OK") || ($batch));
+
+  ################################################################
+  ## Purge sequences
+  &PurgeOrthoSeq() if (($status eq "OK") || ($batch));
+
+  ################################################################
+  ## Discover over-represented dyads in promoters of orthologous genes
+  local $dyad_nb = 0;
+  local $matrix_nb = 0;
+  ($dyad_nb, $matrix_nb) = &DyadAnalysis() if (($status eq "OK") || ($batch));
+
+  if (($status eq "OK") || ($batch)) {
+
+    ## Check dependencies
+    &CheckDependency("map_dyads", "dyads");
+    &CheckDependency("map_dyads", "seq");
+
+
+    ################################################################
+    ## Generate a feature-map of the discovered dyads
+    my $map_title = join "; ", "dyad map", $taxon, $organism_name, $outfile_prefix;
+    &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
+    $cmd = $SCRIPTS."/dna-pattern -return limits,sites -origin -0 -N 4";
+    $cmd .= " -pl ".$outfile{dyads};
+    $cmd .= " -format fasta -i ".$outfile{seq};
+    $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
+    $cmd .= " | $SCRIPTS/feature-map";
+    $cmd .= " -title '".$map_title."'";
+    $cmd .= " -format ".$map_format;
+    $cmd .= " -scalebar -legend";
+    $cmd .= " -scorethick";
+    $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
+    $cmd .= " -o ".$outfile{map_dyads};
+    &one_command($cmd, 1, 0, task=>"map_dyads");
+
+    ################################################################
+    ## Generate a feature-map with the matrices
+    &CheckDependency("map_pssm", "dyads");
+    &CheckDependency("map_pssm", "seq");
+
+    $map_title = join "; ", "Site map", $taxon, $organism_name, $outfile_prefix;
+    &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
+    $cmd = $SCRIPTS."/matrix-scan -quick -return limits,sites,pval -decimals 1 -origin end -consensus_name";
+    $cmd .= " -matrix_format transfac -m ".$outfile{count_PSSM_tf};
+    $cmd .= " -pseudo 1 -decimals 1 -2str -bg_pseudo 0.01 -lth score 1 -uth pval 1e-4 -n score";
+    $cmd .= " -seq_format fasta -bginput -markov 1 -i ".$outfile{seq};
+    $cmd .= " | $SCRIPTS/feature-map";
+    $cmd .= " -title '".$map_title."'";
+    $cmd .= " -format ".$map_format;
+    $cmd .= " -scalebar -legend";
+    $cmd .= " -scorethick";
+    $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
+    $cmd .= " -o ".$outfile{map_pssm};
+    &one_command($cmd, 1, 0, task=>"map_pssm");
+  }
+#  &RSAT::message::Debug("Indexing dyad map", $outfile{map_dyads}) if ($main::verbose >= 10);
+  &IndexOneFile("Dyad map", $outfile{map_dyads}, image=>1) if (($status eq "OK") || ($batch));
+  &IndexOneFile("matrix-scan map", $outfile{map_pssm}, image=>1) if (($status eq "OK") || ($batch));
+
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    my $jobnb = 0;
+    my $delay = 30;
+    if (($q-1) % 100 == 0) {
+      $jobnb = &get_job_nb();
+    }
+    while ($jobnb > $max_jobs) {
+      &RSAT::message::TimeWarn("Already ", $jobnb, "jobs in queue ... waiting", $delay, "seconds before submitting new jobs") if ($main::verbose >= 0);
+      sleep($delay);
+      $jobnb = &get_job_nb();
+    }
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
+
+  ################################################################
+  ## Close query-specific output stream
+
+  if ($main::verbose >= 1) {
+      my $query_exec_time = &RSAT::util::ReportExecutionTime($query_start_time);
+      print $out $query_exec_time;
+  }
+  close $out if ($outfile{log});
+  close $genes if ($outfile{genes});
+
+  ## Choose the color according to status
+  $status_color = "#CC0000";
+  if ($batch) {
+      $status_color = "#BBBBBB";
+  } elsif ($status eq "OK") {
+      $status_color = "#00AA00";
+  }
+
+  ## Close query-specific index file
+  if ($task{gene_index}) {
+    print $index "</table>\n";
+    print $index "Query status: <font color='>", $status_color, "'>", $status, "</font>\n";
+    print $index "<hr size=2 color='#000088'>";
+    print $index "</body>";
+    print $index "</html>";
+    close $index;
+  }
+
+  ################################################################
+  ## Update the main index
+  unless ($batch) {
+      print $main_index "<tr>\n";
+      print $main_index "<td>", $q, "</td>\n";
+      ## Link to the query-specific index file
+#  print $main_index "<td><a href='", &RSAT::util::RelativePath($outfile{main_index}, $outfile{index}), "'>", $query_prefix, "</a></td>\n";
+      unless (defined($outfile{index})) { $outfile{index} = $outfile{prefix}."_index.html"; }
+      print $main_index "<td>", &LinkOneFile($outfile{main_index}, $outfile{index}, $query_prefix), "</td>\n";
+#      my $current_gene_name;
+#      if ($main::sep_genes){
+#	  $current_gene_name = $current_feature->get_attribute("name");
+#      } else {
+#	if (scalar(@main::query_genes) <= 3){
+#	  $current_gene_name = join("_" ,@main::query_genes) ;
+#	} else {
+#	  $current_gene_name= "all_query_genes" ;
+#	}
+#      }
+      print $main_index "<td>",$current_gene_name , "</td>\n" ;
+
+
+      ## Report the significant dyads
+      my $top_id = "NA";
+      my $top_sig = "NA";
+      my $sig_color = '#000000';
+      $dyad_nb = 0; ## Re-initialize the number of dyads
+
+      local %header_col = ();
+
+      if (-e $outfile{dyads}) {
+	  &RSAT::message::Info("Indexing dyads", $query_prefix, $outfile{dyads}) if ($main::verbose >= 4);
+	  my ($dyads) = &OpenInputFile($outfile{dyads});
+
+	  while (<$dyads>) {
+	      next if (/^;/); ## Skip comments
+	      next unless (/\S/); ## Skip empty lines
+	      chomp();
+
+
+	      ## Read the header to idenfify occ_sig column
+	      if (/^#/) {
+		  s/^#//;
+		  my @header_fields = split "\t";
+		  for my $h (0..$#header_fields) {
+		      $header_fields[$h] = &RSAT::util::trim($header_fields[$h]);
+		      $header_col{$header_fields[$h]} = $h;
+		      #	&RSAT::message::Debug("header", $h, "'".$header_fields[$h]."'", $header_col{$header_fields[$h]}) if ($main::verbose >= 10);
+		  }
+		  next;
+	      }
+
+	      $dyad_nb++;
+
+	      ## Report top significant dyad
+	      if ($dyad_nb == 1) {
+		  my @fields = split "\t";
+		  $top_id = $fields[$header_col{"identifier"}];
+		  $top_sig = $fields[$header_col{"occ_sig"}];
+		  #      &RSAT::message::Debug("top_id", $top_id, "top_sig", $top_sig, ) if ($main::verbose >= 10);
+	      }
+	  }
+	  close $dyads;
+      }
+
+      print $main_index "<td><font color='", $status_color,"'>", $status, "</font></td>\n";
+      print $main_index "<td>", $query_prom_len, "</td>\n" unless ($nofilter);
+      print $main_index "<td>", $ortholog_nb, "</td>\n";
+      print $main_index "<td>", $ortho_seq_len, "</td>\n";
+      if ($status eq "OK") {
+	if ($top_sig eq "NA") {
+	  $sig_color = '#BB0000';
+	} elsif ($top_sig <= 2) {
+	  $sig_color = '#888888';
+	} elsif ($top_sig >= 5) {
+	  $sig_color = '#0000CC';
+	} else {
+	  $sig_color = '#000000';
+	}
+      } else {
+	$sig_color = '#BBBBBB';
+      }
+#      print $main_index "<td><tt>", $top_id, "</tt></td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $top_id, "</font>",,"</td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $top_sig, "</font>",,"</td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $dyad_nb, "</font>",,"</td>\n";
+      print $main_index "<td>", "<font color='".$sig_color."'>", $matrix_nb, "</font>",,"</td>\n";
+      print $main_index "</tr>\n";
+
+      ## Update the summary table
+      print $main_summary_table join ("\t",$q,$query_prefix,$current_gene_name,$status,$query_prom_len,$ortholog_nb,$ortho_seq_len,$top_id,$top_sig,$dyad_nb, $matrix_nb );
+
+  }
+}
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+#    system "pod2text -c $0";
+    system "cat $0 $ENV{RSAT}/perl-scripts/lib/footprint.lib.pl | pod2text -c";
+    exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+
+=pod
+
+=head1 OPTIONS
+
+=cut
+  local $arg;
+  local @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    if (&ReadFootprintOptions()) {
+      next;
+
+      ### Lower threshold
+
+=pod
+
+=over 4
+
+=item B<-lth field value>
+
+Lower threshold for dyad-analysis.
+
+See the manual of dyad-analysis for a description of the fields on
+which a threshold can be imposed.
+
+=cut
+    } elsif ($arg eq "-lth") {
+      my $thr_field = shift (@arguments);
+      my $thr_value =  shift (@arguments);
+      $main::lth{$thr_field} = $thr_value;
+
+      ### Upper threshold
+
+=pod
+
+=item B<-uth field value>
+
+Upper threshold for dyad-analysis.
+
+See the manual of dyad-analysis for a description of the fields on
+which a threshold can be imposed.
+
+=cut
+    } elsif ($arg eq "-uth") {
+      my $thr_field = shift (@arguments);
+      my $thr_value =  shift (@arguments);
+      $main::uth{$thr_field} = $thr_value;
+
+=pod
+
+=item B<-return dyad_return_fields>
+
+Return fields for dyad-analysis.  This argument is passed to
+dyad-analysis for the discovery of dyads in promoters of orthologous
+genes.
+
+Multiple-fields can be entered either by calling this argument
+iterativelyk or by entering multiple fields separated by commas.
+
+Type I<dyad-analysis -help> to obtain the list of supported return
+fields.
+
+=cut
+    } elsif ($arg eq "-return") {
+      push @dyad_return_fields, shift (@arguments);
+
+# =pod
+#
+# =item B<-to_matrix>
+#
+# Convert assembled patterns into position-specific scoring matrices
+# (PSSM).  Caution ! This conversion can take time if the sequence set
+# is large and if there are many assemblies.
+#
+# =cut
+     } elsif ($arg eq "-to_matrix") {
+       &RSAT::message::Warning("The option -to_matrix is obsolete, dyads are now always converted to matrices");
+       #       $main::to_matrix = 1;
+
+
+	    ## Background model
+=pod
+
+=item B<-bg_model taxfreq|org_list|monads|file>
+
+Allow the user to choose among alternative background model (see Janky
+& van Helden, 2008).
+
+Supported background model types:
+
+=over
+
+
+=item I<monads>
+
+Expected dyad frequencies are estimated by taking the product of the
+monad frequencies observed in the input sequence set. Example:
+
+   F_exp(CAGn{10}GTA) = F_obs(CAG) * F_obs(GTA)
+
+=item I<taxfreq>
+
+Only valid in combination with the option -taxon.
+
+Expected dyad frequencies are computed by summing the frequencies of
+all dyads in the non-coding upstream sequences of all genes for all
+the organisms of the reference taxon.
+
+=item I<org_list>
+
+Only valid in combination with the option -org_list.
+
+Expected dyad frequencies are computed by summing the frequencies of
+all dyads in the non-coding upstream sequences of all genes for each
+organism of user-specified list.
+
+=item I<file>
+
+Only valid in combination with the option -bgfile.
+
+Precises that the background model that will be used for dyad-analysis will be a file given as argument (with the option -bgfile, see below)
+
+=back
+
+=cut
+    } elsif ($arg eq "-bg_model") {
+      $main::bg_model = shift(@arguments);
+
+	  ## Background model file
+
+=pod
+
+=item B<-bgfile>
+
+File containing the word frequencies to be used as the background model for dyad-analysis.
+This option must be used in combination with the option -bg_model file
+
+=cut
+    } elsif ($arg eq "-bgfile") {
+      $main::bgfile = shift(@arguments);
+
+=pod
+
+=item B<-filter>
+
+Only accept dyads found in the promoter of the query gene, in the
+query organism. (option selected by default)
+
+=cut
+    } elsif ($arg eq "-filter") {
+      $main::filter = 1;
+
+=pod
+
+=item B<-no_filter>
+
+Accept all dyads, even if they are not found in the promoter of the
+query gene, in the query organism. (will cancel -filter option if selected)
+
+=cut
+
+    } elsif ($arg eq "-no_filter") {
+      $main::nofilter = 1;
+
+
+=pod
+
+=item B<-max_dyad_degree #>
+
+Maximal dyad degree for network inference. Default: 20.
+
+Some dyads are found significant in a very large number of genes, for
+various reasons (binding motifs of global factors, low-complexity
+motifs). These "ubiquitous" dyads create many links in the network,
+which makes problem to extract clusters of putatively co-regulated
+genes. To circumvent this problem, we discard "hub" dyads, i.e. dyads
+found in the footprints of too many query genes.
+
+=cut
+    } elsif ($arg eq "-max_dyad_degree") {
+      $main::max_dyad_degree = shift(@arguments);
+      &RSAT::error::FatalError($main::max_dyad_degree, "Invalid value for max dyad degree. Must be a Natural number.") 
+	unless (&IsNatural($main::max_dyad_degree));
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+}
+
+################################################################
+## Return verbosity for the main parameters (common to all queries)
+sub MainVerbose {
+  my $main_header_verbose = "";
+  $main_header_verbose .=  "; footprint-discovery ";
+  $main_header_verbose .= &PrintArguments();
+  $main_header_verbose .= "\n";
+  $main_header_verbose .= sprintf "; %-22s\t%s\n", "Program version", $program_version;
+  $main_header_verbose .= sprintf "; %-22s\t%s", "Working directory", `pwd`;
+  $main_header_verbose .= sprintf "; %-22s\t%s", "Computer name", `hostname`;
+  $main_header_verbose .= sprintf "; %-22s\t%s\n", "Query organism", $organism_name;
+  if($main::orglist_file) {
+    $main_header_verbose .= sprintf "; %-22s\t%s\n", "Organism list", $orglist_file;
+  } else {
+    $main_header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
+  }
+  $main_header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes (dist $dist_thr)" if ($infer_operons);
+  return ($main_header_verbose);
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+
+  ## Parameters for the whole analysis
+  my $header_verbose = &MainVerbose();
+
+  ## Parameters for the current query
+  if (scalar(@current_query_genes) == 1) {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Query gene", $current_query_genes[0];
+  } elsif (scalar(@current_query_genes) <= 10) {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Query genes", join "; ", @current_query_genes;
+  } else {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Query genes", scalar(@current_query_genes);
+  }
+  $header_verbose .= sprintf "; %s\n", "Skipping $skip first genes (option -skip)" if ($skip > 0);
+  $header_verbose .= sprintf "; %s\n", "Stopping after $last genes (option -last)" if ($last > 0);
+
+  $header_verbose .= sprintf "; %-22s\t%s\n", "Background model", $bg_model;
+  if ($filter) {
+      $header_verbose .= sprintf "; %s\n", "Dyad filtering ON";
+  }  else {
+      $header_verbose .= sprintf "; %s\n", "No dyad filtering";
+  }
+
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  print $out $header_verbose;
+
+  if ($task{gene_index}) {
+    $header_verbose =~ s/^; //;
+    $header_verbose =~ s/\n; /\n/gm;
+    print $index "<pre>";
+    print $index $header_verbose;
+    print $index "</pre>";
+  }
+}
+
+
+################################################################
+## Run dyad-analysis
+sub DyadAnalysis {
+  my $dyad_nb = "NA"; ## The method returns the number of significant dyads and matrices
+  my $matrix_nb = "NA";
+
+  &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
+  &CheckDependency("dyads", "purged") if ($task{dyads});
+  $cmd = $SCRIPTS."/dyad-analysis -v 1 ";
+  $cmd .= " -return ".$dyad_return_fields;
+  ## Backgroun model
+  if ($bg_model eq "monads") {
+    $cmd .= " -bg monads" ;
+  } elsif ($bg_model eq "taxfreq" || $bg_model eq "file") {
+    $cmd .= " -expfreq ".$infile{bg_model} ;
+  }
+  ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
+  if (!$nofilter) {
+    $cmd .= " -accept ".$outfile{filter_dyads};
+  }
+  foreach my $field (sort keys %lth) {
+    $cmd .= " -lth ".$field." ".$lth{$field};
+  }
+  foreach my $field (sort keys %uth) {
+    $cmd .= " -uth ".$field." ".$uth{$field};
+  }
+  $cmd .= " -i ".$outfile{purged};
+  $cmd .= " -l 3 -sp 0-20";
+  $cmd .= " ".$strands;
+  $cmd .= " ".$noov;
+  $cmd .= " -sort";
+  $cmd .= " -o ".$outfile{dyads};
+#  &report_command ($cmd, "dyad-analysis");
+  &one_command($cmd, 1, 0, task=>'dyads');
+  &IndexOneFile("Dyads (tab format)", $outfile{dyads});
+
+  ## Generate a HTML table with the discovered dyads
+  &CheckDependency("dyads_html", "dyads") if ($task{dyads});
+  $cmd = $SCRIPTS."/text-to-html";
+  $cmd .= " -i ".$outfile{dyads};
+  $cmd .= " -font variable -chunk 1000";
+  $cmd .= " -o ".$outfile{dyads_html};
+#  &report_command ($cmd, "dyads_html");
+  &one_command($cmd, 1, 0, task=>'dyads');
+  &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
+
+
+  ################################################################
+  ## Make sure that there is at least one significant dyad before
+  ## doing the assembly and conversion to matrix
+  $dyad_nb = &CountDyads();
+  if (!($batch) && ($dyad_nb < 1)) {
+    $status = "No significant dyad" if (($status eq "OK") || ($batch));
+  } else {
+
+    ################################################################
+    ## Assemble significant dyads
+    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
+    &CheckDependency("asmb", "dyads");
+    $cmd = $SCRIPTS."/pattern-assembly -v 1";
+    $cmd .= " -i ".$outfile{dyads};
+    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+    $cmd .= " -max_asmb_nb 5";
+    $cmd .= " -o ".$outfile{asmb};
+#    &report_command ($cmd, "pattern-assembly");
+    &one_command($cmd, 1, 0, task=>'dyads');
+
+
+    ################################################################
+    ## Convert assembled dyads into a position-specific scoring matrix
+    #    if ($to_matrix) {
+    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $prefix{pssm}) if ($verbose >= 2);
+    &CheckDependency("pssm", "asmb");
+    &CheckDependency("pssm", "seq");
+
+    $cmd = $SCRIPTS."/matrix-from-patterns -v 1";
+    $cmd .= " -seq ".$outfile{seq};
+    $cmd .= " -asmb ".$outfile{asmb};
+    $cmd .= " -format fasta " ;
+    $cmd .= " -sites" ;
+    $cmd .= " -uth Pval 0.00025";
+    $cmd .= " -bginput -markov 0";
+    $cmd .= " -flanks 2";
+    $cmd .= " ".$strands;
+    $cmd .= " -logo";
+    $cmd .= " -o ".$prefix{pssm};
+#    &report_command ($cmd, "matrix-from-patterns");
+    &one_command($cmd, 1, 0, task=>'dyads');
+
+  }
+
+  ## Even if the task dyads has not been selected, we count the previous number of significant dyads for the index
+  if ($dyad_nb eq "NA") {
+    $dyad_nb = &CountDyads();
+  }
+  $matrix_nb = &CountMatrices();
+
+  ## Index result files from dyad-analysis
+  if ((&IsNatural($dyad_nb)) && ($dyad_nb >= 1)) {
+    if ($task{gene_index}) {
+      &IndexOneFile("Assembled dyads", $outfile{asmb});
+      &IndexOneFile("Significance matrices (intermediate result)", $outfile{sig_PSSM});
+      &IndexOneFile("Final matrices (tab format)", $outfile{count_PSSM_txt});
+      &IndexOneFile("<b>Final matrices</b> (transfac format)", $outfile{count_PSSM_tf});
+
+      ## Index logo files
+      if ($matrix_nb > 0) {
+	print $index "<tr>\n";
+	print $index "<td>",$matrix_nb," matrices</td>\n";
+	print $index "<td><table class='simple'>\n";
+	foreach my $m (1..$matrix_nb) {
+	  print $index "<tr>\n";
+	  print $index "<td>m",$m,"</td>\n";
+
+	  ## Link to matrix logo
+	  my $logo_file = $prefix{pssm}."_count_matrices_logo_m".$m.".png";
+	  my $logo_link = &RSAT::util::RelativePath($outfile{index}, $logo_file);
+	  print $index "<td>\n";
+	  print $index &LinkOneFile($outfile{index}, $logo_file, "<img src='".$logo_link."' height='80' align='right'>");
+	  print $index "<td>\n";
+
+	  ## Link to reverse complementary matrix logo
+	  my $logo_rc_file = $prefix{pssm}."_count_matrices_logo_m".$m."_rc.png";
+	  my $logo_rc_link = &RSAT::util::RelativePath($outfile{index}, $logo_rc_file);
+	  print $index "<td>\n";
+	  print $index &LinkOneFile($outfile{index}, $logo_rc_file, "<img src='".$logo_rc_link."' height='80' align='left'>");
+	  print $index "<td>\n";
+
+
+	  print $index "</tr>\n";
+	}
+	print $index "</table></td>\n";
+	print $index "</tr>\n";
+      }
+    }
+  }
+
+  return($dyad_nb, $matrix_nb);
+}
+
+
+################################################################
+## Count the number of significant dyads
+sub CountDyads {
+  my $dyad_nb = 0;
+  return ($dyad_nb) if ($batch);
+  if (-e $outfile{dyads}) {
+    $dyad_nb = `grep -v '^;' $outfile{dyads} | grep -v '^#' | wc -l`;
+    chomp($dyad_nb);
+    ## Detect if there is no significant dyad
+    if (($status eq "OK") && ($dyad_nb < 1)) {
+      $status = "No significant dyad";
+    }
+  } elsif ($status eq "OK") {
+    &RSAT::message::Warning("Missing dyad file", $outfile{dyads});
+    $status = "Missing dyad file:".$outfile{dyads};
+  }
+  return($dyad_nb);
+}
+
+################################################################
+## Count the number of final matrices
+sub CountMatrices {
+  my $matrix_nb = 0;
+  return ($matrix_nb) if ($batch);
+  if (-e $outfile{count_PSSM_tf}) {
+    $matrix_nb = `grep '^AC  ' $outfile{count_PSSM_tf} | wc -l`;
+    chomp($matrix_nb);
+    ## Detect if there is no significant dyad
+    if (($status eq "OK") && ($matrix_nb < 1)) {
+      $status = "No matrix";
+    }
+  } elsif ($status eq "OK") {
+    &RSAT::message::Warning("Missing matrix file", $outfile{count_PSSM_tf});
+    $status = "Missing matrix file:".$outfile{count_PSSM_tf};
+  }
+  return($matrix_nb);
+}
+
+################################################################
+## Generate co-regulation network by linking pairs of genes presenting
+## similar footprints.
+sub CoregulationNetwork {
+  my $main_prefix = &MainPrefix();
+  my $dyad_suffix = &DyadSuffix();
+
+  ## Create a directory for the inferred co-reglation network
+  $dir{network} = $dir{main_output}."/network";
+  &RSAT::util::CheckOutDir($dir{network});
+  &RSAT::message::TimeWarn("Network directory", $dir{network}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Write a list of dyad files
+  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; push @network_files, "dyad_file_list";
+  my $out= &OpenOutputFile($outfile{dyad_file_list});
+  foreach my $query_prefix (sort keys %main_index) {
+    &RSAT::message::Debug($query_prefix, $main_index{$query_prefix}{dyads}) if ($main::verbose >= 5);
+    print $out join ("\t", $main_index{$query_prefix}{dyads}, $query_prefix, $main_index{$query_prefix}{name}), "\n" if (-e $main_index{$query_prefix}{dyads});
+  }
+  &RSAT::message::TimeWarn("Dyad file list", $outfile{dyad_file_list}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Generate a dyad significance profiles.  Instead of a table with 1
+  ## row per gene and 1 column per dyad, we generate a file in format
+  ## "class": first column indicates the dyad, second column the gene,
+  ## third column the score. We add two columns with primary gene name
+  ## and ID, because the query gene list may contain synonyms.
+  $outfile{dyad_sig_classes} = $dir{network}."/".$main_prefix."_dyad_sig_classes.tab"; push @network_files, "dyad_sig_classes";
+  my $compare_scores_cmd = "compare-scores -v 0";
+  $compare_scores_cmd .= " -filelist ".$outfile{dyad_file_list};
+  $compare_scores_cmd .= " -sc 8 -null .";
+  $compare_scores_cmd .= " -basename";
+  $compare_scores_cmd .= " -suppress ".$main_prefix;
+  $compare_scores_cmd .= " -suppress ".$dyad_suffix.".tab";
+  $compare_scores_cmd .= " -suppress _".$organism_name."_".$taxon;
+  $compare_scores_cmd .= " -format classes";
+  $compare_scores_cmd .= " | perl -pe 's|_operons||g' ";
+  $compare_scores_cmd .= " | add-gene-info";
+  $compare_scores_cmd .= " -col 2";
+  $compare_scores_cmd .= " -org ".$organism_name;
+  $compare_scores_cmd .= " -info name,id";
+  $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
+  &one_command($compare_scores_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Analyse degree distribution of the dyads and genes
+  $outfile{dyad_gene_degrees} = $dir{network}."/".$main_prefix."_dyad_gene_degrees.tab";  push @network_files, "dyad_gene_degrees";
+  $outfile{dyad_degree_distrib} = $dir{network}."/".$main_prefix."_dyad_degree_distrib.tab";  push @network_files, "dyad_degree_distrib";
+  $outfile{dyad_degree_distrib_graph} = $dir{network}."/".$main_prefix."_dyad_degree_distrib_graph.pdf";  push @network_files, "dyad_degree_distrib_graph";
+  my $degree_cmd = $SCRIPTS."/graph-node-degree -v 1";
+  $degree_cmd .= " -i ".$outfile{dyad_sig_classes};
+  $degree_cmd .= " -in_format tab";
+  $degree_cmd .= " -scol 1";
+  $degree_cmd .= " -tcol 2";
+  $degree_cmd .= " -all";
+  $degree_cmd .= " -sort"; ## Sort dyads and genes by decreasing degree value
+  $degree_cmd .= " -o ". $outfile{dyad_gene_degrees};
+  $degree_cmd .= "; awk '\$3 > 0' ".$outfile{dyad_gene_degrees};
+  $degree_cmd .= " | classfreq -v -1 -col 3 -ci 1 -o ".$outfile{dyad_degree_distrib};
+  $degree_cmd .= " ; XYgraph -i ".$outfile{dyad_degree_distrib};
+  $degree_cmd .= " -xcol 1 -ycol 4,5,6 -legend -format pdf -lines -pointsize 0";
+  $degree_cmd .= " -ylog 2 ";
+  $degree_cmd .= " -vline red ".$max_dyad_degree;
+  $degree_cmd .= " -xsize 800 -ysize 400";
+  $degree_cmd .= " -title1 'Dyad degree distribution'";
+  $degree_cmd .= " -xleg1 'Dyad degree (number of footprints)'";
+  $degree_cmd .= " -yleg1 'Number of dyads'";
+  $degree_cmd .= " -o ". $outfile{dyad_degree_distrib_graph};
+  &one_command($degree_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Dyad and gene degrees", $outfile{dyad_gene_degrees}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Dyad degree distribution", $outfile{dyad_degree_distrib}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Dyad degree distribution graph", $outfile{dyad_degree_distrib_graph}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Filter out hub dyads, i.e. dyads appearing in too many genes
+  ## (likely to be generic or low-complexity motifs).
+  $outfile{dyad_hubs} = $dir{network}."/".$main_prefix."_dyad_hubs_deg_gt".$max_dyad_degree.".tab";  push @network_files, "dyad_hubs";
+  $outfile{dyads_filtered} = $dir{network}."/".$main_prefix."_dyads_filtered_max_deg".$max_dyad_degree.".tab"; push @network_files, "dyads_filtered";
+  my $dyad_hubs_cmd = "grep -v '^;' ".$outfile{dyad_gene_degrees};
+  $dyad_hubs_cmd .= " | grep -v '^#'";
+  $dyad_hubs_cmd .= ' |awk -F\'\t\' \'$3 > '.$max_dyad_degree.' {print $1} \'';
+  $dyad_hubs_cmd .= " > " .$outfile{dyad_hubs};
+  $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
+  $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};
+  $dyad_hubs_cmd .= " > ".$outfile{dyads_filtered};
+  &one_command($dyad_hubs_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Dyad hubs", $outfile{dyad_hubs}) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Filtered dyads", $outfile{dyads_filtered}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Build the gene-gene co-regulation network by comparing dyads
+  ## score profiles between each pair of genes
+  $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab"; push @network_files, "gene_pairs";
+  my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyads_filtered};
+  $compare_classes_cmd .=  " | ".$SCRIPTS."/compare-classes -v 1";
+  $compare_classes_cmd .= " -i /dev/stdin";
+  $compare_classes_cmd .= " -triangle -distinct";
+  $compare_classes_cmd .= " -return rank,occ,freq,proba,jac_sim,dotprod,entropy";
+  $compare_classes_cmd .= " -sort dotprod";
+  $compare_classes_cmd .= " -sc 3";
+  $compare_classes_cmd .= " -lth dotprod 2 -lth QR 2 -lth Q 2 -lth R 2";
+  $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
+  &one_command($compare_classes_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Add columns with gene names and IDs
+  $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab"; push @network_files, "gene_pairs_names";
+  my $cc_gene_info_cmd = $SCRIPTS."/add-gene-info";
+  $cc_gene_info_cmd .= " -i ".$outfile{gene_pairs};
+  $cc_gene_info_cmd .= " -col 1 -col 2";
+  $cc_gene_info_cmd .= " -org ".$organism_name;
+  $cc_gene_info_cmd .= " -info name,id";
+  $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
+  &one_command($cc_gene_info_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Convert the compare-classes result into a graph
+
+  ## Identify score column
+  if (-e $outfile{gene_pairs}) {
+    my ($in) = &OpenInputFile($outfile{gene_pairs});
+    while (<$in>) {
+      if (/^;\t(\d+)\t${score}\s+/) {
+	$score_column = $1;
+	last;
+      }
+    }
+    close $in;
+  }
+
+  ################################################################
+  ## Convert tab-delimited network into GML file (that can be open
+  ## with CytoScape or Yed).
+  $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml"; push @network_files, "gene_pairs_gml";
+  my $convert_graph_cmd = $SCRIPTS."/convert-graph";
+  $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
+  $convert_graph_cmd .= " -scol 1 -tcol 2 -wcol ".$score_column;
+  $convert_graph_cmd .= " -from tab -to gml";
+  $convert_graph_cmd .= " -ewidth -ecolors fire";
+  $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
+  &one_command($convert_graph_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Get the neighborhood of each gene in the co-regulation network
+  $outfile{gene_neighbours} .= $dir{network}."/".$main_prefix."_gene_neighbours.tab"; push @network_files, "gene_neighbours";
+  my $gn_cmd = $SCRIPTS."/graph-neighbours -v 1";
+  $gn_cmd .= " -self";
+#  $gn_cmd .= " -seed $gene";
+  $gn_cmd .= " -all";
+  $gn_cmd .= " -in_format gml";
+  $gn_cmd .= " -i ".$outfile{gene_pairs_gml};
+  $gn_cmd .= " -o ".$outfile{gene_neighbours};
+  &one_command($gn_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Compute the degree of each node in the gene-gene co-regulation
+  ## network. Beware, this is different from the gene degree in the
+  ## gene-dyad network.
+  &RSAT::message::TimeWarn("Computing node degree in co-regulation network") if ($main::verbose >= 2);
+  $outfile{gene_degree} .= $dir{network}."/".$main_prefix."_gene_degree.tab"; push @network_files, "gene_degree";
+  my $deg_cmd = $SCRIPTS."/graph-node-degree";
+  $deg_cmd .= " -in_format tab";
+  $deg_cmd .= " -i ".$outfile{gene_pairs};
+  $deg_cmd .= " -scol 1 -tcol 2 -wcol ".$score_column;
+  $deg_cmd .= " -all";
+  $deg_cmd .= " -sort"; ## Sort genes by decreasing degree value
+  $deg_cmd .= " -o ".$outfile{gene_degree};
+  &one_command($deg_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene degree", $outfile{gene_degree}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Detect "hub" genes, i.e. gene with a high degree
+  &RSAT::message::TimeWarn("Detecting 'hub' genes in co-regulation network") if ($main::verbose >= 2);
+  $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
+  my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
+  $hub_cmd .= " | grep -v '^#'";
+  $hub_cmd .= " | awk '\$4 >=".$max_gene_degree."' ";
+  $hub_cmd .= "> ".$outfile{gene_hubs};
+  &one_command($hub_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
+
+  $outfile{gene_nohubs} .= $dir{network}."/".$main_prefix."_gene_nohubs.tab"; push @network_files, "gene_nohubs";
+  my $nohub_cmd = "grep -v '^;' ".$outfile{gene_degree};
+  $nohub_cmd .= " | grep -v '^#'";
+  $nohub_cmd .= " | awk '\$4 <".$max_gene_degree."' ";
+  $nohub_cmd .= $outfile{gene_degree};
+  $nohub_cmd .= "> ".$outfile{gene_nohubs};
+  &one_command($nohub_cmd, 1, 0, task=>'network', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene nohubs", $outfile{gene_nohubs}) if ($main::verbose >= 2);
+
+
+}
+
+
+sub test {
+  &RSAT::message::TimeWarn("Quick test procedure") if ($main::verbose >= 0);
+
+  ################################################################
+  ## Filter out hubs from the gene-gene co-regulation network
+  &RSAT::message::TimeWarn("Detecting 'hub' genes in co-regulation network") if ($main::verbose >= 2);
+  $outfile{gene_hubs} .= $dir{network}."/".$main_prefix."_gene_hubs.tab"; push @network_files, "gene_hubs";
+  my $hub_cmd = "grep -v '^;' ".$outfile{gene_degree};
+  $hub_cmd .= " | grep -v '^#'";
+  $hub_cmd .=  "| awk '\$4 <".$max_gene_degree."' ";
+  $hub_cmd .= "> ".$outfile{gene_hubs};
+  &one_command($hub_cmd, 1, 0, task=>'test', out=>$main_log);
+  &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
+}
+
+################################################################
+## Main index. This is a HTML table with links to the query-specific
+## results: one row per query, one column per output type.
+sub OpenMainIndex {
+  my ($name_index,$name_table)=&MainIndexFileName();
+  $outfile{main_index} = $dir{main_output}."/".$name_index;
+  $outfile{main_index_table} = $dir{main_output}."/".$name_table;
+
+  &RSAT::message::Info("Main index file", $outfile{main_index}) if ($main::verbose >= 1);
+  &RSAT::message::Info("Main table file", $outfile{main_index_table}) if ($main::verbose >= 1);
+
+  my $main_index = &OpenOutputFile($outfile{main_index});
+  my $main_summary_table=&OpenOutputFile($outfile{main_index_table}) ;
+
+  $html_title = $taxon if ($taxon);
+  $html_title .= " ".$organism_name if ($organism_name);
+  $html_title .= " ".$bg_model if ($bg_model);
+  $html_title .= " "."_rand" if ($rand);
+  print $main_index &PrintHtmlResultHeader(program=>"footprint-discovery", title=>"$html_title", refresh_time=>$refresh_time);
+
+#  print $main_index "<h1>", $html_title, "</h1\n";
+  print $main_index "<p><b>Command:</b> footprint-discovery";
+  $arguments =  &RSAT::util::hide_RSAT_path(&PrintArguments());
+  print $main_index $arguments;
+  print $main_index "</p>\n";
+
+
+
+  ## Open the index table
+  print $main_index "<p><table class='sortable' border='0' cellpadding='3' cellspacing='0'>\n";
+#  print $main_index "<table cellspacing=0 cellpadding=3 border=0>\n";
+  print $main_index "<tr>\n";
+  print $main_index "<th>","Query nb","</th>\n";
+  print $main_index "<th>","Query","</th>\n";
+  print $main_index "<th>","Query name","</th>\n";
+  print $main_index "<th>","Status","</th>\n";
+  print $main_index "<th>","Query promoter length","</th>\n";
+  print $main_index "<th>","Orthologs","</th>\n";
+  print $main_index "<th>","Sum ortholog sequence sizes","</th>\n";
+  print $main_index "<th>","Top dyad","</th>\n";
+  print $main_index "<th>","Max sig","</th>\n";
+  print $main_index "<th>","Nb dyads","</th>\n";
+  print $main_index "<th>","Nb matrices","</th>\n";
+  print $main_index "</tr>\n";
+
+
+  print $main_summary_table "; Command: footprint-discovery ".$arguments. "\n ";
+  print $main_summary_table "<tr>\n";
+  print $main_summary_table join ("\t","#Query nb",
+				"Query",
+				"Query name",
+				"Status",
+				"Query promoter length",
+				"Orthologs",
+				"Sum ortholog sequence sizes",
+				"Top dyad",
+				"Max sig",
+				"Nb dyads",
+				"Nb matrices"
+			       )."\n";
+
+
+  return ($main_index, $main_summary_table);
+
+
+}
+
+
+################################################################
+## Report a command in the log file
+# sub report_command {
+#   my ($cmd, $task_name) = @_;
+#   print $out "\n; ", $task_name," command:\n";
+#   print $out $cmd, "\n\n";
+# }
+
+#######################################################################
+## Returns the number of jobs running currently for the current user
+sub get_job_nb {
+    my $batchuser = `whoami`;
+    chomp $batchuser;
+    my $jobnb = `qstat -u $batchuser | grep -v ' C ' | wc -l`;
+    chomp $jobnb;
+    $jobnb -= 2;
+    &RSAT::message::TimeWarn("$jobnb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
+    return $jobnb;
+}
+__END__
+
+

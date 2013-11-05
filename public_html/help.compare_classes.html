@@ -1,0 +1,231 @@
+<html>
+<head>
+   <title>compare-classes help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</a> - Help about compare-classes
+</h2>
+</center>
+
+<h2>Description</h2>
+<ul>
+
+        Compare two class files (the query file and the reference
+        file). Each class of the query file is compared to each
+        class of the reference file. The number of common elements is
+        reported, as well as the probability to observe at least this
+        number of common elements by chance alone.
+</ul>
+
+<h2>Authors</h2>
+<ul>
+<li><a target=_blank
+href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van
+Helden</a>, with a contribution of Joseph Tran for a first
+prototype.</li>
+</ul>
+
+
+<h2>Options</h2>
+
+<A NAME="formats"></A>
+<h3>Input formats</h3>
+
+<p>The class file specifies the relationships between a set of
+elements and a set of classes. 
+
+<p>Class memberships must be formatted as text containing at least 2
+columns separated by a tab character. The first column indicates the
+element names, the second the class names. </p>
+
+        <pre>
+          member1	class_1
+          member2	class_1
+          member3	class_2
+        </pre>
+
+<p>Optionally, the file may contain additional columns, which will be
+ignored. The option <i><a name='score_col'>score column</a></i></p>
+
+        <pre>
+          member1	class_1	score_1
+          member2	class_1	score_2
+          member3	class_2	score_3
+        </pre>
+
+
+<h3>Comparison schema</h3>
+
+<h4><A NAME="query_vs_ref"></a>Compare query classes to reference classes</h4>
+
+<p>Each query class is compared to each reference class, to compute
+the number of shared elements (intersection) and various statistical
+scores related to this number. </p>
+
+<h4><A NAME="query_vs_query"></a>Compare query classes to query classes</h4>
+
+Each query class is compared to each other class.
+
+<ul>
+<h4><a name="distinct"></a>Prevent self-comparison</h4>
+
+<p>Prevent to compare each class with itself.</p>
+
+<h4><A NAME="triangle"></a>Prevent reciprocal comparison</h4>
+
+(ony valid for comparisons between query classes and query classes)
+
+<p>Skip the reciprocal comparisons: if reference A has already been
+compared to query B, then reference B does not need to be compared to
+query A, since the comparison statistics are symmetrical.</p>
+
+<p>With matrix output, this returns only the lower triangle fo the
+matrix.</p>
+
+</ul>
+
+<h3>Output formats</h3>
+
+The result of the comparison can be reported in two formats: a
+pairwise class comparison table, and a matrix.
+
+<h4>Class pairs</h4>
+
+<p>The program returns a tab-delimited file with one row per pair of
+reference-query class, and one column per statistics.<p>
+
+<h4>Reference/query matrix</h4>
+
+<p>Return a reference/query matrix, where each row corresponds to a
+reference class, each column to a query class, and each cell contains
+a comparison between the two classes.</p>
+
+
+<a name='return_fields'></a>
+<h3>Return fields</h3>
+
+
+<p>Return fields are grouped by categories, so that each request will
+return several columns. For example, the group "proba" returns the
+P-value, the E-value and the significance. </p>
+
+<blockquote>
+<table border='1'>
+<tr><th>Group</th><th>Field</th><th>Description</th></tr>  
+<tr><td>occ</td><td>Q</td><td>Number of elements in class Q</td></tr>
+<tr><td>occ</td><td>QR</td><td>Number of elements found in the intersecion between classes R and Q</td></tr>
+<tr><td>occ</td><td>QvR</td><td>Number of elements found in the union of classes R and Q. This is R or Q.</td></tr>
+<tr><td>occ</td><td>R</td><td>Number of elements in class R</td></tr>
+<tr><td>freq</td><td>E(QR)</td><td>Expected number of elements in the intersection</td></tr>
+<tr><td>freq</td><td>F(!Q!R)</td><td>frequency of !Q!R elements relative to population size. F(!Q!R)=!Q!R/P</td></tr>
+<tr><td>freq</td><td>F(Q!R)</td><td>frequency of Q!R elements relative to population size. F(Q!R)=Q!R/P</td></tr>
+<tr><td>freq</td><td>F(Q)</td><td>frequency of Q elements relative to population size. F(Q)=Q/P</td></tr>
+<tr><td>freq</td><td>F(QR)</td><td>frequency of QR elements relative to population size. F(QR)=QR/P</td></tr>
+<tr><td>freq</td><td>F(R!Q)</td><td>frequency of R!Q elements relative to population size. F(R!Q)=R!Q/P</td></tr>
+<tr><td>freq</td><td>F(R)</td><td>frequency of R elements relative to population size. F(R)=R/P</td></tr>
+<tr><td>freq</td><td>P(QR)</td><td>probability of Q and R (Q^R), assuming independence. P(QR) = F(Q)*F(R)</td></tr>
+<tr><td>freq</td><td>P(Q|R)</td><td>probability of Q given R. P(Q|R) = F(QR)/F(R)</td></tr>
+<tr><td>freq</td><td>P(R|Q)</td><td>probability of R given Q. P(R|Q) = F(QR)/F(Q)</td></tr>
+<tr><td>proba</td><td>E_val</td><td>E-value of the intersection. E_val = P_val * nb_tests</td></tr>
+<tr><td>proba</td><td>P_val</td><td>P-value of the intersection, calculated witht he hypergeometric function. Pval = P(X >= QR).</td></tr>
+<tr><td>proba</td><td>sig</td><td>Significance of the intersection. sig = -log10(E_val)</td></tr>
+<tr><td>jac_sim</td><td>jac_sim</td><td>Jaccard' similarity. jac_sim = intersection/union = (Q and R)/(Q or R)</td></tr>
+<tr><td>dotprod</td><td>dotprod</td><td>Dot product (using the score column) </td></tr>
+<tr><td>dotprod</td><td>dp_bits</td><td>dp_bits = round(log2_dp). The log2 of the dot product is rounded to obtain an integer value</td></tr>
+<tr><td>dotprod</td><td>log2_dp</td><td>Log2 of the dot product</td></tr>
+<tr><td>dotprod</td><td>prodrts</td><td>Sum of the sqrt of products. This is a sort of dot product but the sqrt of each pairwise product is taken before summing.</td></tr>
+<tr><td>dotprod</td><td>sqrt_dp</td><td>Square root of the dot product</td></tr>
+<tr><td>entropy</td><td>H(Q)</td><td>Entropy of class Q. H(Q) = - F(Q)*log[F(Q)] - F(!Q)*log[F(!Q)]</td></tr>
+<tr><td>entropy</td><td>H(Q,R)</td><td>Join entropy for classes Q and R. H(Q,R) = - F(QR)*log[F(QR)] - F(Q!R)*log[F(Q!R)] - F(R!Q)*log[F(R!Q)] - F(!Q!R)*log[F(!Q!R)]</td></tr>
+<tr><td>entropy</td><td>H(Q|R)</td><td>Conditional entropy of Q given R. H(Q|R) = H(Q,R) - H(R)</td></tr>
+<tr><td>entropy</td><td>H(R)</td><td>Entropy of class R. H(R) = - F(R)*log[F(R)] - F(!R)*log[F(!R)]</td></tr>
+<tr><td>entropy</td><td>H(R|Q)</td><td>Conditional entropy of R given Q. H(R|Q) = H(Q,R) - H(Q)</td></tr>
+<tr><td>entropy</td><td>I(Q,R)</td><td>Mutual information of classs Q and R. I(Q,R) = H(Q) + H(R) - H(Q,R)</td></tr>
+<tr><td>entropy</td><td>IC</td><td>Information content (as defined by Schneider, 1986). IC = F(QR) log[F(QR)/F(Q)F(R)]</td></tr>
+<tr><td>entropy</td><td>U(Q|R)</td><td></td></tr>
+<tr><td>entropy</td><td>U(R|Q)</td><td></td></tr>
+<tr><td>entropy</td><td>dH(Q,R)</td><td>Entropy distance between classes Q and R. dH(Q,R) = H(Q,R) - H(Q)/2 - H(R)/2</td></tr>
+</table>
+</blockquote>
+
+<h3><A NAME="thresholds"></a>Thresholds</h3>
+
+<p>A lower and an upper threshold can be imposed on various fields in
+order to restrict the result. To avoid applying a threshold, leave the
+box empty or write <i>none</i>.</p>
+
+
+
+<h3>Comparison statistics</h3>
+
+<h4>P-value (P_val)</h4>
+
+<p>The P-value is the probability to observe at least <i>c</i> common
+elements between a given query class and a given reference class. It
+is computed using the hypergeometric distribution.<p>
+
+<p>Let us assume that we have :<ul>
+<li>q&nbsp;&nbsp;size of the query class</li>
+<li>r&nbsp;&nbsp;size of the reference class</li>
+<li>c&nbsp;&nbsp;number of common elements</li>
+<li>n&nbsp;&nbsp;population size</li></ul>
+
+
+<img src="images/hypergeometric.png"  width = 35%><br></ul>
+
+<p>The P-value can be interpreted as an estimation of the false
+prediction risk (FPR), i.e. the fact to consider the intersection
+between two given classes as significant whereas it is not. </p>
+
+<p>Note that the P-value only concerns one comparison between a
+precise query class and a precise reference class. This is called
+a <i>nominal P-value</i> because it is attached to one particular test
+among a series of multiple tests (since we compare each query class to
+each reference class). The multi-testing correction is done by
+computing the E-value, as explained in the next section.</p>
+
+<h4>E-value</h4>
+
+<p>Assuming that there are <i>x</i> query classes and <i>y</i>
+reference classes, each analysis consists in <i>x*y</i>
+comparisons. Thus, the P-value can be misleading, because even low
+P-values are expected to emerge by chance alone when the number of
+query and/or reference classes is very high. The E-value
+(<i>E_val</i>) reflects better the degree of exceptionality.</p>
+
+<ul><i>E_val = P_val * nb.comparisons</i></ul>
+
+<h4>Significance</h4>
+
+<p>The significance index is the minus log of the E-value. It is
+calculated in base 10. </p>
+
+<ul><i>sig = -log10(E_val)</i></ul>
+
+<p>This index gives an intuitive perception of the exceptionality of
+the common elements : a negative sig indicates that the common matches
+are likely to come by chance alone, a ositive value that they are
+significant. Higher sig values indicate a higher significance.</p>
+
+
+</ul>
+
+
+<hr size=3>
+
+
+<h4 class="footer">
+<address>
+For information, contact
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address>
+</h4>
+
+</blockquote>
+</body>
+</html>

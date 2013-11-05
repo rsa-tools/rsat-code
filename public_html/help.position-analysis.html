@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: position-analysis manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - position-analysis manual</h2>
+</center>
+
+<blockquote>
+
+<H4>Name</H4>
+<UL>
+position-analysis
+
+
+</ul>
+<H4>Author</H4>
+<UL>
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+
+</UL>
+<H4>Description</H4>
+<UL>
+Calculates the positional distribution of oligonucleotides in a set of
+sequences, and detects those which significantly discard from a
+homogeneous distribution.
+
+
+<P>
+This program is useful for detecting patterns with a positional bias,
+in large sets of sequences (e.g. a few hundreds or thousands of
+sequences) aligned on some referencce (e.g. the start
+codon). Significant patterns are not likely to be found in smaller
+sequence sets. This tools is thus typically designed for pattern
+discovery in full genomes rather than for small fmilies of
+co-expressed genes.
+
+</UL>
+<H4>Reference</H4>
+<UL>
+
+van Helden, J., Olmo, M. & Perez-Ortin, J. E. (2000). Statistical
+analysis of yeast genomic downstream sequences reveals putative
+polyadenylation signals. Nucleic Acids Res 28(4), 1000-1010.  <a
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10648794&dopt=Abstract">Pubmed
+10648794</a>
+
+
+</ul>
+<h4>Options</h4>
+<ul>
+
+
+
+
+<P>
+<A NAME="class_grouping"></A>
+<B>Class grouping:</B><BR>
+
+Positions are grouped by class interval. 
+<ul>
+
+
+<P>
+<A NAME="class_interval"></A>
+<B>Class interval:</B> number of bases to group together. To avoid
+class grouping, specify 1. The choice of the appropriate class
+interval depends on several considerations.
+<ul>
+
+<li>Increasing the class interval reduces the resolution of the
+analysis, but it smoothes the distributions.
+
+<li>When class intervals are too short, the number of occurrences per
+class may become too low, and the condition of applicability for the
+chi2 will not be fulfilled for some oligonucleotides.
+
+<li>For short oligonucleotides, smaller class intervals can be used,
+since there are less idstinct possible words, and the number of
+occurrences per word thus increases.
+
+</ul>
+<BR>
+
+<P>
+<A NAME="origin"></A>
+
+<B>Origin:</B> reference position for class grouping. Positive
+values specify a position relative to the sequence start, negative
+values a position relative to sequence end. The default is to consider
+sequence end, which is more relevant for upstream sequences. <b>Beware
+! the default value -0 has a specific meaning</b>. For example :
+
+<ul>
+<li><b>0</b> : sequence start is used as reference, i.e. the first
+letter of the sequence is the position 1.
+
+<li><b>100</b> : the 100th letter of the sequence is the reference
+(position 0) i.e. the 101th letter is the position 1, the 99th letter
+position -1, ...
+
+<li><b>-100</b> : the 100th letter of the sequence is the reference
+(position 0) i.e. the 101th letter is the position 1, the 99th letter
+position -1, ...
+
+
+<li><b>-0 (default)</b> : sequence end is used as reference, i.e. the last
+letter of the sequence is the position -1.
+
+</ul>
+<BR>
+
+
+<P>
+<A NAME="applicability"></A>
+<B>Condition of applicability for the chi2 test:</B></A><BR> A
+condition of applicability for the chi2 test is that the expected
+frequency shuld be >= 5 for each class. By default, this condition is
+tested for each oligonucleotide, and, for those which do not fulfil
+the test, the observed chi2 is displayed between curly brackets.
+
+<ul>
+<li>
+<a name='Check'></A>The test for the condition of applicability can be
+inactivated, in order to obtain real values in this column. It is not
+recommended to inactivate it, since this may lead to false positives.
+
+<li>
+<a name=Filter'></A>This option filters out the oligonucleotides which do
+not fulfil the condition of applicability for the chi2 test. The
+output is lighter and easier to read.
+
+</ul>
+
+</ul>
+
+<P>
+<A NAME="oligo_length"></A>
+<B>Oligonucleotide size:</B><BR> The analysis can be performed
+with oligonuleotides of any size between 1 and 8. Selecting size 1
+amounts to counting the alphabet utilization within the input
+sequeces. For the detection of regulatory sites, w recommend starting
+with an analysis of hexanucleotides (size=6), and scanning sizes
+between 4 and 8. When a pattern is significantly overrepresented, it
+generaly appears from the analyses with various sizes.
+
+<P>
+<A NAME="count_strands"></A>
+<B>Count on:</B> (single or both strands)<BR> 
+
+By selecting "both strands", the occurrences of each oligonucleotide
+are summed on both strands. This allows to detect elements which act
+in an orientation-insensitive way (as is generally the case for yeast
+upstream elements). 
+
+<P>
+<A NAME="grouprc"></A>
+<B>Group reverse complement together in the output</B><BR> (only
+valid for two strand analysis). This parameter does not affect the
+counting itself, but only the format of output. If this option is NOT
+checked, two separate lines are used to show a word and its reverse
+complement. This is redundant but might be useful for compatibility
+with other programs.
+
+<P>
+<A NAME="noov"></A>
+<B>Prevent overlapping matches</B><BR> Periodic pattern
+(e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each
+occurrence of such a pattern strongly favours additional occurrences
+in its immediate vicinity. This introduces a bias to most statistics
+(binomial, log-likelihood). A simple way to correct for this bias is
+to prevent counting twice mutually overlapping occurrences. <BR> For
+example, <TT>TATATATATATA</TT> would represent
+<UL>
+<LI>2 occurrences of <TT>TATATA</TT> when self-overlap is prevented
+<LI>5 occurrences of <TT>TATATA</TT> when self-overlap is allowed
+</UL>
+Note that Z-score introduce a correction for self-overlapping patterns
+(see van Helden et al., 1999), but Z-scores are only valid for very
+large sequences (for example a set of 6000 downstream sequences), and
+are not appropriate for small gene clusters such as those extracted
+from DNA chip experiment.
+
+
+
+</blockquote>
+</body>
+</html>

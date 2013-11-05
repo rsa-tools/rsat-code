@@ -1,0 +1,426 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Network visualization and format conversion</TITLE>
+<META NAME="description" CONTENT="Network visualization and format conversion">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Comparisons_between_network.html">
+<LINK REL="previous" HREF="Introduction.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Comparisons_between_network.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html265"
+  HREF="Comparisons_between_network.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html261"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html255"
+  HREF="Introduction.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html263"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html266"
+  HREF="Comparisons_between_network.html">Comparisons between networks</A>
+<B> Up:</B> <A NAME="tex2html262"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html256"
+  HREF="Introduction.html">Introduction</A>
+ &nbsp; <B>  <A NAME="tex2html264"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html267"
+  HREF="Network_visualization_forma.html#SECTION00310000000000000000">Introduction</A>
+<UL>
+<LI><A NAME="tex2html268"
+  HREF="Network_visualization_forma.html#SECTION00311000000000000000">Network visualization</A>
+<LI><A NAME="tex2html269"
+  HREF="Network_visualization_forma.html#SECTION00312000000000000000">Graph formats</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html270"
+  HREF="Network_visualization_forma.html#SECTION00320000000000000000">Visualisation of a co-expression network</A>
+<UL>
+<LI><A NAME="tex2html271"
+  HREF="Network_visualization_forma.html#SECTION00321000000000000000">Study case</A>
+<LI><A NAME="tex2html272"
+  HREF="Network_visualization_forma.html#SECTION00322000000000000000">Protocol for the web server</A>
+<UL>
+<LI><A NAME="tex2html273"
+  HREF="Network_visualization_forma.html#SECTION00322100000000000000">Format conversion and layout calculation</A>
+<LI><A NAME="tex2html274"
+  HREF="Network_visualization_forma.html#SECTION00322200000000000000">Visualization using NeAT</A>
+<LI><A NAME="tex2html275"
+  HREF="Network_visualization_forma.html#SECTION00322300000000000000">Visualization using VisANT</A>
+</UL>
+<LI><A NAME="tex2html276"
+  HREF="Network_visualization_forma.html#SECTION00323000000000000000">Protocol for the command-line tools</A>
+<UL>
+<LI><A NAME="tex2html277"
+  HREF="Network_visualization_forma.html#SECTION00323100000000000000">Format conversion and layout calculation</A>
+<LI><A NAME="tex2html278"
+  HREF="Network_visualization_forma.html#SECTION00323200000000000000">Visualization using NeAT</A>
+<LI><A NAME="tex2html279"
+  HREF="Network_visualization_forma.html#SECTION00323300000000000000">Visualization using Cytoscape (version 2.3)</A>
+<LI><A NAME="tex2html280"
+  HREF="Network_visualization_forma.html#SECTION00323400000000000000">Visualization using yED (version 3)</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00300000000000000000">
+Network visualization and format conversion</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00310000000000000000">
+Introduction</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00311000000000000000">
+Network visualization</A>
+</H2>
+To help the scientists apprehending their interest network, it is sometimes very useful to visualize them. Networks are generally represented by a set of dots (or of boxes) which represents its nodes that are linked via lines (the edges) or arows (arcs in the case of directed graphs). The nodes and the edges may present a label and / or a weight. The node label is generally indicated in the node box and the edge label is often placed on the line.
+
+<P>
+NeAT contains some facilities to represent networks. It contains its own visualization software (display-graph) that will be described in the following. Moreover, it allows the conversion of the graph into formats that may be used 
+by some visualisation tools like <B><I>Cytoscape</I></B> ([<A
+ HREF="Bibliography.html#Shannon2003">28</A>], http://www.cytoscape.org), <B><I>yED</I></B> (http://www.yworks.com/products/yed/)or <B><I>VisANT</I></B> ([<A
+ HREF="Bibliography.html#Hu2007">11</A>], http://visant.bu.edu/).
+
+<P>
+Hereafter, we describe briefly some of the major formats used for graph description.
+
+<P>
+
+<H2><A NAME="SECTION00312000000000000000">
+Graph formats</A>
+</H2>
+
+<P>
+Incompatibility between file formats is a constant problem in bioinformatics. In order to facilitate the use of the NeAT website, most of our tools support several among the most popular formats used to describe networks. 
+
+<P>
+
+<UL>
+<LI>The tab-delimited format is a convenient and intuitive way to encode a graph. Each row represents an arc, and each column an attribute of this arc. The two columns fields are the source and target nodes. If the graph is directed, the source node is the node from which the arc leaves and the target node is the node to which the arc arrives. Logically, in undirected graph, the columns containing the source and the target node may be inverted. Some additional arc attributes (weight, label, color) can be placed in pre-defined columns. Orphan nodes can be included by specifying a source node without target. The tool <B><I>Pathfinder</I></B> extends this format by supporting any number of attributes on nodes or edges as well as the color, the label and the width of nodes and edges. 
+</LI>
+<LI>A <I>GML</I> file is made up of nested key-value pairs. The most popular graph editors support GML as input format (like Cytoscape and yED). More information on this format can be found at http://www.infosun.fim.uni-passau.de/Graphlet/GML/.
+</LI>
+<LI>The <I>DOT</I> format is a plain text graph description language. DOT files can be loaded in the programs of the suite GraphViz (http://www.graphviz.org/). It is a simple way of describing graphs in a human- and computer-readable format. Similarly to GML, DOT supports various attributes on nodes (i.e. color, width, label). 
+</LI>
+<LI>VisML is the XML format required by VisANT, a very light but powerful visualisation tool.
+</LI>
+<LI>Several tools also accept adjacency matrices as input. An adjacency matrix is a <IMG
+ WIDTH="19" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img1.png"
+ ALT="$N$"> x <IMG
+ WIDTH="19" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img1.png"
+ ALT="$N$"> table (with <IMG
+ WIDTH="19" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img1.png"
+ ALT="$N$"> the number of nodes), where a cell <IMG
+ WIDTH="45" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$A[i,j]$"> indicates the weight of the edge between nodes <IMG
+ WIDTH="10" HEIGHT="17" ALIGN="BOTTOM" BORDER="0"
+ SRC="img3.png"
+ ALT="$i$"> and <IMG
+ WIDTH="12" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$j$"> (or 1 if the graph is unweighted).
+</LI>
+</UL>
+
+<P>
+
+<H1><A NAME="SECTION00320000000000000000">
+Visualisation of a co-expression network</A>
+</H1>
+
+<H2><A NAME="SECTION00321000000000000000">
+Study case</A>
+</H2>
+
+<P>
+In this demonstration, we will show you how to visualize a network using some popular network visualization tools.
+This network we will study consist in the top scoring edges of the yeast co-expression network included in the integrative database String [<A
+ HREF="Bibliography.html#Mering2007">35</A>]. This undirected weighted networks contains 537 nodes representing genes and 4801 edges. An edge between two nodes means that they are co-expressed. The weight expresses at which level both genes are co-expressed. We will explain how to display this network with NeAT, Cytoscape, yED and VisANT. As Cytoscape and yED are not online tools, we will only describe their utilization in the command-line section.
+
+<P>
+
+<H2><A NAME="SECTION00322000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00322100000000000000">
+Format conversion and layout calculation</A>
+</H3>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>format conversion / layout calculation</I></B>. 
+
+<P>
+In the right panel, you should now see a form entitled
+  ``convert-graph''.
+
+<P>
+</LI>
+<LI>Click on the link <TT>DEMO</TT>. 
+
+<P>
+The form is now filled with a graph in the tab-delimited format, and the parameters have been
+  set up to their appropriate value for the demonstration, i.e., the network will be converted 
+  from tab-delimited to GML format, the source node column is 1, the target column is 2 and the weight column is 3.
+
+<P>
+The option <TT>Calculate the layout of the nodes (only relevant for GML output</TT> may also be chosen, otherwise the nodes will all be in diagonal and the resulting graphic will not be very instructive.
+
+<P>
+If the edges present a weight, <B><I>convert-graph</I></B> is able to represent the weight of the edges by computing a color gradient proportional to edge weights and coloring the edges according to it. There are five different color gradients : blue, red, green, grey and yellow to red. The darker (or the more colored) it is, the higher the weight. Moreover <B><I>convert-graph</I></B> can also change the width of the edge proportionnally to its weight. To this, we must choose a color gradient for the <TT>Edge color intensity proportional to the weight</TT> and the option <TT>Edge width proportional to the weight of the edge</TT> must be checked (which is automatically the case with the demonstration). 
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>. 
+
+<P>
+The resulting graph in GML format is available as an HTML link. Right clink on the link and save it with name <I>string_coexpression.gml</I>.
+
+<P>
+</LI>
+</OL>
+<H3><A NAME="SECTION00322200000000000000">
+Visualization using NeAT</A>
+</H3>
+
+<OL>
+<LI>In the <TT>Next Step</TT> pannel, click on <TT>Display the graph</TT>.
+
+<P>
+The form of <B><I>display-graph</I></B> is displayed. By default, the figure output format is jpeg, change it to png which gives a better resolution. NeAT also allow the postscript format.
+</LI>
+<LI>Uncheck <TT>Calculate the layout of the nodes (mandatory for all input format except GML)</TT> as <B><I>convert-graph</I></B> already computed it.
+</LI>
+<LI>Check <TT>Edge width proportional to the weight of the edges</TT>
+</LI>
+<LI>Click on the <TT>GO</TT> button.
+
+<P>
+The figure is available by clicking on the HTML link. Clicking a the link leads to a static figure representing the
+ network.  
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H3><A NAME="SECTION00322300000000000000">
+Visualization using VisANT</A>
+</H3>
+
+<OL>
+<LI>After the step <I>Format conversion and layout calculation</I>, click on the <TT>Load in VisANT</TT>
+
+<P>
+A page is displayed. Three links are available
+
+<UL>
+<LI>A link to the graph in the format you obtained it from <B><I>convert-graph</I></B> (here GML).
+</LI>
+<LI>A link (VisANT logo) to the VisANT applet
+</LI>
+<LI>A link to the graph in VisML (the input format of VisANT)
+</LI>
+</UL>
+
+<P>
+</LI>
+<LI>Click on the logo of VisANT
+
+<P>
+The VisANT applet is loaded. 
+
+<P>
+</LI>
+<LI>Accept the authentification certifate. 
+
+<P>
+</LI>
+</OL>
+<H2><A NAME="SECTION00323000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<H3><A NAME="SECTION00323100000000000000">
+Format conversion and layout calculation</A>
+</H3>
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the programs <B><I>convert-graph</I></B> and <B><I>display-graph</I></B> on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results). To visualize the networks with yED, VisANT or Cytoscape, you
+must of course install them on your computer.
+
+<P>
+
+<OL>
+<LI>First let us download the network file <I>string_coex_simple.tab</I> from the NeAT tutorial download page : http://rsat.scmbb.ulb.ac.be/rsat/data/neat_tuto_data/ 
+</LI>
+<LI>In this first step, we will convert the tab delimited String network that we just downloaded into a GML file by using this command. We compute the layout of the nodes. Moreover, we compute an edge width and an color proportional to the weight on the edge.
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	convert-graph 	-from tab -to gml -wcol 3 -i string_coex_simple.tab 
+			-o string_coex_simple.gml -layout -ewidth -wcol 3 -ecolors fire
+</PRE><FONT COLOR="#0000ff"></FONT>	
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H3><A NAME="SECTION00323200000000000000">
+Visualization using NeAT</A>
+</H3>
+Use the following command to create a graph using the NeAT <B><I>display-graph</I></B> program.
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	display-graph 	-in_format gml -out_format png -i string_coex_simple.gml
+			-o string_coex_simple.png -ewidth
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+
+<H3><A NAME="SECTION00323300000000000000">
+Visualization using Cytoscape (version 2.3)</A>
+</H3>
+
+<OL>
+<LI>Open Cytoscape
+</LI>
+<LI>Click on <TT>File</TT> <IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> <TT>Import</TT>  <IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> <TT>Network...</TT> <IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> <TT>Select</TT> 
+</LI>
+<LI>Select the file <I>string_coex_simple.gml</I>
+If the graph contains more than 500 nodes, it will not be displayed immediately. Right click on the name of the graph file in the <I>Cytopanel 1</I> and select <TT>Create view...</TT>.
+</LI>
+</OL>
+
+<P>
+
+<H3><A NAME="SECTION00323400000000000000">
+Visualization using yED (version 3)</A>
+</H3>
+
+<OL>
+<LI>Open yED
+</LI>
+<LI>Click on <TT>File</TT> <IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> <TT>Import</TT>
+</LI>
+<LI>Select the file <I>string_coex_simple.gml</I>
+
+<P>
+As NeAT GML converter add edge labels of the type <I>nodeName1_nodeName2</I> for unweighted or unlabeled graph, you may need to remove the edge label for a better visibility.
+</LI>
+<LI>Click on one edge (random)
+
+<P>
+The edge you clicked on is now selected.
+</LI>
+<LI>Press <I>Ctrl+A</I>
+
+<P>
+All edges are now selected. 
+</LI>
+<LI>In the <I>Property view</I> (Right of the screen), in the <I>label</I> part, uncheck the <TT>visible</TT> option.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html265"
+  HREF="Comparisons_between_network.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html261"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html255"
+  HREF="Introduction.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html263"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html266"
+  HREF="Comparisons_between_network.html">Comparisons between networks</A>
+<B> Up:</B> <A NAME="tex2html262"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html256"
+  HREF="Introduction.html">Introduction</A>
+ &nbsp; <B>  <A NAME="tex2html264"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,237 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>oligo-diff manual</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_postfix@neige.apple.com" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#statistical_model">STATISTICAL MODEL</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<ul>
+
+		<li><a href="#oligo_analysis">oligo-analysis</a></li>
+		<li><a href="#count_words">count-words</a></li>
+	</ul>
+
+	<li><a href="#wish_list">WISH LIST</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>oligo-diff</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>$program_version</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Compare frequencies of oligonucleotides between two input sequence
+files, and return oligos that are significantly enriched in one of the
+files respective to the other one.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p><a href="mailto:Jacques.van.Helden@ulb.ac.be">Jacques.van.Helden@ulb.ac.be</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>util</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>oligo-diff [-i inputfile] [-o outputfile] [-v #] [...]</p>
+<p>
+</p>
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>The program takes as input a pair of sequence files in fasta format.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>The output is a tab-delimted file with one row per oligonucleotide,
+and one column per statistics. The column content is detailed in the
+header of the output (for this, the verbosity needs to be at least 1).</p>
+<p>
+</p>
+<hr />
+<h1><a name="statistical_model">STATISTICAL MODEL</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>
+</p>
+<h2><a name="oligo_analysis">oligo-analysis</a></h2>
+<p>The programs <em>oligo-diff</em>and <em>oligo-analysis</em> serve related
+purposes: discovering exceptional oligonucleotides. The difference is
+that <em>oligo-analysis</em> considers a single sequence file, and compares
+pobserved oligo-frequencies with those expected from a background
+model (Bernoulli or Markov). This background model is generally
+estimated from a set of background sequences.</p>
+<p>In the situation where one wants to compare a small sequence file
+(e.g. 50 promoters of co-expressed genes) to a large one (e.g. the
+6000 other promoters of the considered organism), <em>oligo-diff</em> should
+return more or less the same results as <em>oligo-analysis</em> with a
+background model based on the large file. Slight differences come from
+the use of the hypergeometric (<em>oligo-diff</em>) vesus binomial
+(<em>oligo-analysis</em>) statistics.</p>
+<p>
+</p>
+<h2><a name="count_words">count-words</a></h2>
+<p><em>oligo-diff</em> calls the program <em>count-words</em> to count
+oligonucleotide occurrences in the two input sequence files. The
+program <em>count-words</em> is part of the RSAT suite (it is written in C,
+and has to be compiled as explained in the RSAT installation guide).</p>
+<p>
+</p>
+<hr />
+<h1><a name="wish_list">WISH LIST</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+</li>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+</li>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+</li>
+<dt><strong><a name="file1_first_seq_file" class="item"><strong>-file1 first_seq_file</strong></a></strong>
+
+<dd>
+<p>First sequence file.</p>
+</dd>
+</li>
+<dt><strong><a name="file2_second_seq_file" class="item"><strong>-file2 second_seq_file</strong></a></strong>
+
+<dd>
+<p>Second sequence file.</p>
+</dd>
+</li>
+<dt><strong><a name="l_oligo_len" class="item"><strong>-l oligo_len</strong></a></strong>
+
+<dd>
+<p>Oligonucleotide length.</p>
+</dd>
+</li>
+<dt><strong><a name="1str" class="item"><strong>-1str</strong></a></strong>
+
+<dd>
+<p>Count oligonucleotides on a single strand only.</p>
+</dd>
+<dd>
+<p>Alternative option: -2str</p>
+</dd>
+</li>
+<dt><strong><a name="2str" class="item"><strong>-2str</strong></a></strong>
+
+<dd>
+<p>Sum oligonucleotides on both strands.</p>
+</dd>
+<dd>
+<p>More precisely, each pair of reverse complements is counted as a
+single motif (the count is performed on a single strand, but pairs of
+reverse complements are merged).</p>
+</dd>
+<dd>
+<p>Alternative option: -1str</p>
+</dd>
+</li>
+<dt><strong><a name="noov" class="item"><strong>-noov</strong></a></strong>
+
+<dd>
+<p>Do not accept overlap between successive occurrences of the same
+word. Only renewing occurrences are counted.</p>
+</dd>
+<dd>
+<p>E.g.: TATATATATATA is counted as 2 occurrences of TATATA</p>
+</dd>
+<dd>
+<p>Alternative option: -ovlp</p>
+</dd>
+</li>
+<dt><strong><a name="ovlp" class="item"><strong>-ovlp</strong></a></strong>
+
+<dd>
+<p>Count all occurrences of self-overlapping words.</p>
+</dd>
+<dd>
+<p>E.g.: TATATATATATA is counted as 4 occurrences of TATATA</p>
+</dd>
+<dd>
+<p>Alternative option: -noov</p>
+</dd>
+</li>
+<dt><strong><a name="o_outputfile" class="item"><strong>-o outputfile</strong></a></strong>
+
+<dd>
+<p>If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.</p>
+</dd>
+</li>
+<dt><strong><a name="lth_key_value" class="item"><strong>-lth key value</strong></a></strong>
+
+<dd>
+<p>Lower threshold on some output field.</p>
+</dd>
+<dd>
+<p>Supported fields for threshold: occ,sig</p>
+</dd>
+</li>
+<dt><strong><a name="uth_key_value" class="item"><strong>-uth key value</strong></a></strong>
+
+<dd>
+<p>Upper threshold on some output field.</p>
+</dd>
+</li>
+</dl>
+
+</body>
+
+</html>

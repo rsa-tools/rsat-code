@@ -1,0 +1,143 @@
+#!/usr/bin/env python
+'''NAME
+        %(progname)s
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+DESCRIPTION
+        random motif generator
+
+CATEGORY
+        motifs
+
+USAGE        
+        %(usage)s
+
+ARGUMENTS
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit
+    -v #, --verbosity=#   set verbosity to level #
+                              0 no verbosity
+                              1 max verbosity
+    -o #, --output=#      output results to #
+                          if not specified, the standard output is used
+    -l #, --length=#      motif length
+    -c #, --conserv=#     motif conservation (0.91 or low)
+    -m #, --mutiplier=#   mutliply each cell by #
+    -n #, --motifs=#      generate # motifs (one by default)
+    --round               use integer values
+SEE ALSO
+        random-sites
+        implant-sites
+        
+'''
+
+# ===========================================================================
+# =                            imports
+# ===========================================================================
+import sys
+import os
+import optparse
+import random
+from random import choice, randint, shuffle
+
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+import matrix
+
+# ===========================================================================
+# =                            functions
+# ===========================================================================
+def motif_generator(length, conservation, N, rounded):
+    high = [0.91, 0.03, 0.03, 0.03]
+    low =  [0.55, 0.15, 0.15, 0.15]
+    switch = 0.6
+    
+    m = []
+    for j in range(length):
+        if conservation == 'low':
+            if random.random() < switch:
+                shuffle(high)
+                probs = high
+            else:
+                shuffle(low)
+                probs = low
+        else:
+            conservation = float(conservation)
+            probs = [conservation] + [(1-conservation) / 3.0] * 3
+            shuffle(probs)
+
+        if (rounded):
+            m += [[int(round(i * N, 0)) for i in probs]]
+        else:
+            m += [[i * N for i in probs]]
+    return m    
+
+def main(options, args):
+    if options.verbosity >= 1:
+        options.output.write('; %s\n'   % (' '.join(sys.argv)))
+
+    for i in range(options.n):
+        mymatrix = motif_generator(options.length, options.conservation, options.m, options.rounded)
+        data = []
+        if options.verbosity >= 1:
+            data += ['; motif.id                      %d\t'   % (i + 1)]
+            data += ['; motif.length                  %d\t'   % options.length]
+            data += ['; motif.conservation            %s\t'   % options.conservation]
+            data += ['; option.mutiplier              %s\t'   % options.m]
+            data += ['; options.rounded               %s\t'   % options.rounded]
+
+        data += [ matrix.matrix2tab(mymatrix, count=options.rounded) ]
+        data += [ '' ]
+    
+        if type(options.output) is str:
+            options.output = open(options.output, 'w')
+        options.output.write('\n'.join(data))
+        
+        if i != options.n - 1:
+                options.output.write("//\n")
+
+# ===========================================================================
+# =                            main
+# ===========================================================================
+if __name__ == '__main__':
+    USAGE = '''%s -l motiflength [-c conservation] [-h]'''
+    VERSION = '2009.11'
+    PROG_NAME = os.path.basename(sys.argv[0])
+
+    parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
+    parser.add_option("-v", "--verbosity", action="store", dest="verbosity", default=0)
+    parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
+    parser.add_option("-l", "--length", action="store", dest="length", type="int", metavar="#", help="motif length")
+    parser.add_option("-c", "--conservation", action="store", dest="conservation", type="str", default="0.91", metavar="#", help="dominant base conservation")
+    parser.add_option("-h", "--help", action="store_true", dest="help")
+    parser.add_option("-m", "--mutiplier", type="float", dest="m", help="mutliply each cell of the matrix by #", default=1.0)
+    parser.add_option("-n", "--motifs", type="int", dest="n", help="generate # motifs", default=1)
+    parser.add_option("--round", dest="rounded", action="store_true", help="round each cell tp integer")
+    parser.add_option("--debug", action="store_true", dest="debug") 
+    (options, args) = parser.parse_args()
+
+    if options.help:
+        doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
+        sys.stdout.write(doc)
+        sys.exit(0)
+    if not options.length:
+        parser.print_usage()
+        sys.exit()
+    if options.conservation != 'low':
+        try:
+            c = float(options.conservation)
+            if c > 1.0 or c < 0.0:
+                raise
+        except:
+            parser.error('invalid conservation')
+    try:
+        main(options, args)
+    except:
+        if options.debug:
+            raise
+        else:
+            sys.stderr.write('Error while running\n')

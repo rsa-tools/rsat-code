@@ -1,0 +1,337 @@
+#!/usr/bin/perl -w
+
+### CVS: added the option -mask
+
+############################################################
+#
+# $Id: seq-select,v 1.7 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+seq-select
+
+=head1 DESCRIPTION
+
+Given a multi-sequence input file, return a selection of these
+sequences.
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+seq-select [-i inputfile] -ids seq_id_file [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+=head2 Sequence file
+
+The sequence file can be in any format supported by RSAT. 
+
+=head2 Sequence identifiers
+
+The identifier of selected sequences are specified in a text file. The
+first word of each row must correspond to an identifier of the sequence
+file. Any text after the first word of a line is ignored.
+
+=head1 OUTPUT FORMAT
+
+The output file is a sequence file. 
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use POSIX;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialize parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    $sequence_format = "fasta";
+    $seq_type = "";
+
+    local $line_width=0;
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+    unless ($infile{ids}) {
+      &RSAT::error::FatalError("You must specify a file containing selected IDs (option -ids)");
+    }
+
+    ################################################################
+    ## Read ID file
+    my ($in, $dir) = &OpenInputFile($infile{ids});
+    my $l = 0;
+    while (<$in>) {
+      $l++;
+      next if (/^;/);
+      next if (/^#/);
+      next if (/^--/);
+      next unless (/\S/);
+      my ($id) = split /\s/;
+      push @ids, $id;
+    }
+    close $in;
+    &RSAT::message::TimeWarn("Read",scalar(@ids), "IDs from file", $infile{ids}) if ($main::verbose >= 2);
+
+    ## ##############################################################
+    ## Read all sequences from the input file and index them in a hash
+    &RSAT::message::TimeWarn("Reading sequences", $infile{sequences}) if ($main::verbose >= 2);    
+    ($main::in, $input_dir) = &OpenInputFile($main::infile{sequences});
+    local %indexed_sequence = ();
+    local @sequence_ids = ();
+    my @comments = ();
+    my $seq_nb = 0;
+    my $seq_len = 0;
+    while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($main::in, $sequence_format, $input_dir, $seq_type, $mask)) &&
+	    (($current_seq) || ($current_id))) {
+      push @sequence_ids, $current_id;
+      $seq_nb++;
+      $seq_len += length($current_seq);
+      $indexed_sequence{$current_id} = $current_seq;
+    }
+    close $main::in if ($main::infile{sequences});
+    &RSAT::message::TimeWarn("Read",$seq_nb,"sequences", $infile{sequences}, "total size",$seq_len) if ($main::verbose >= 2);
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Select the groups of random sequences
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($outfile{output});
+
+    ################################################################
+    ## print output
+    foreach my $seq_id (@ids) {
+      &PrintNextSequence($out, $sequence_format, $line_width, $indexed_sequence{$seq_id}, $seq_id, @comments);
+    }
+
+    ################################################################
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{sequences} = shift(@arguments);
+
+	    ## Sequence format
+=pod
+
+=item B<-format sequence_format>
+
+Sequence format. 
+
+=cut
+	} elsif ($arg eq "-format") {
+	    $main::sequence_format = shift(@arguments);
+
+	    ## mask
+=pod
+
+=item B<-mask lower|upper>
+
+Mask lower or uppercases, respecively, i.e. replace selected case by N
+characters.
+
+=cut
+	} elsif ($arg eq "-mask") {
+	    $main::mask = shift(@arguments);
+	    &CheckMask($main::mask);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+
+	    ## File containing sequence identifiers
+=pod
+
+=item    B<-ids id_file>
+
+Specify a file containing sequence identifiers.
+
+The frist word of each row of this file must correspond to the
+identifier of one sequence of the input file. The rest of the line is
+ignored.
+
+=cut
+	} elsif ($arg eq "-ids") {
+	    $main::infile{ids} = shift(@arguments);
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print "; seq-select ";
+    &PrintArguments();
+    if (%main::infile) {
+	print "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print ";\t$key\t$value\n";
+	}
+    }
+    printf $out "; %-29s\t%s\n", "Nb of input sequences", scalar(@sequence_ids);
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+random-genes
+
+=cut

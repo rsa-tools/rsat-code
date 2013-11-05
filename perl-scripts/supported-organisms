@@ -1,0 +1,373 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+    push (@INC, "$`../ws_clients/perl_clients/RSATWS/");
+}
+require "RSA.lib";
+require RSAT::Tree;
+require RSAT::TreeNode;
+require RSAT::OrganismManager;
+
+## SOAP::WSDL modules are required for getting supported organisms on remote server
+#use SOAP::WSDL;
+#use XML::Compile::SOAP11;
+#use XML::Compile::WSDL11;
+#use XML::Compile::Transport::SOAPHTTP;
+#use strict;
+
+
+
+
+################################################################
+## Main package
+package main;
+{
+    ## Initialize parameters
+    local $start_time = &RSAT::util::StartScript();
+
+    ## Main RSAT server for the option -server
+    ## WSDL  Web services
+    $from_server = 0;
+    $server = 'http://rsat.ulb.ac.be/rsat';
+
+    ## Ouptut formats
+    $out_format = "tab";
+    @supported_formats = qw (tab tree html_tree newick);
+    foreach $f (@supported_formats) {
+	$supported_format{$f} = 1;
+    }
+    $supported_formats = join ",", @supported_formats;
+
+    ## Output fields
+    $return_fields = "";
+    @return_fields = ();
+    @supported_return_fields = @RSAT::OrganismManager::supported_org_fields;
+    %supported_return_fields = ();
+    foreach my $field (@supported_return_fields) {
+	$supported_return_fields{$field} = 1;
+    }
+    $supported_return_fields = join ",", @supported_return_fields;
+
+    ## Taxon
+    our $taxon = "";
+    our $depth = 0;
+
+    ## Read arguments
+    &ReadArguments();
+
+
+    ## Return fields
+    if ($out_format eq "full") {
+	@return_fields = @supported_return_fields;
+    }
+    if (scalar(@return_fields) == 0) {
+	@return_fields = ("ID");
+    }
+    
+    ## Open the output stream
+    $out = &OpenOutputFile($outfile{output});
+
+    ################################################################
+    ## Get the list supported organisms from a remote RSAT server
+    if ($from_server) {
+	&RSAT::message::Warning("option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
+
+	## Pass the query to supported-organisms-server
+	my $cmd = $SCRIPTS."/supported-organisms-server";
+	my $parameters = &PrintArguments();
+	&doit($cmd." ".$parameters);
+
+	exit(0);
+
+	# # import the modules we need for this test; XML::Compile is included on the server
+	# # by default.
+	
+	# ## Retrieve-seq parameters
+	# my %args = (
+	#     'taxon' => $taxon,
+	#     'format'=> $out_format,
+	#     'return'=> $return_fields,
+	#     );
+	
+	# # Retrieving and processing the WSDL
+	# my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
+	# &RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url) if ($main::verbose >= 2);
+	# my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
+	# my $proxy = XML::Compile::WSDL11->new($wsdl);
+	
+	# ## Compiling the client for supported-organisms
+	# &RSAT::message::TimeWarn("Compiling client") if ($main::verbose >= 2);
+	# my $client = $proxy->compileClient('supported_organisms');
+	
+	# # Calling the service and getting the response
+	# &RSAT::message::TimeWarn("Sending query to server", $server) if ($main::verbose >= 2);
+	# my $answer = $client->( request => {%args});
+	
+	# if ($main::verbose >= 1) {
+	#     print $out "; Server : ", $server, "\n";
+	#     print $out "; WSDL : ", $wsdl_url, "\n";
+	#     my $server_command = $answer->{output}->{response}->{command};
+	#     print $out "; Server command : ".$server_command."\n";
+	#     print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
+	# }
+	# print $out $answer->{output}->{response}->{client}."\n";
+	
+# } elsif ($from_server) {
+	
+#     ## Required for the option -server (obtaining the supported organisms from a remote server)
+#     require MyInterfaces::RSATWebServices::RSATWSPortType;
+#     require SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
+#
+#     ## Service call
+#     my $soap = MyInterfaces::RSATWebServices::RSATWSPortType->new();
+#
+#     ## Output option
+#     my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
+#
+#     ## Retrieve-seq parameters
+#     my %args = (
+# 	'taxon' => $taxon,
+# 	'format'=> $out_format,
+# 	'return'=> $return_fields,
+# 	);
+#
+#     ## Send the request to the server
+#     &RSAT::message::Info("Sending request to the remote server") if ($main::verbose >= 1);
+#     my $som = $soap->supported_organisms({'request' => \%args});
+#
+#     ## Get the result
+#     if ($som) {
+# 	my $results = $som->get_response();
+#
+# 	## Report the remote command
+# 	my $command = $results -> get_command();
+# 	&RSAT::message::Info("Command used on the server:\n;\t".$command) if ($main::verbose >= 1);
+#
+# 	## Report the result
+# 	my $result = $results -> get_client();
+# 	print $out $result;
+#     } else {
+# 	&RSAT::error::FatalError("Web services. A fault (%s) occured : %s\n", $som->get_faultcode(), $som->get_faultstring());
+#     }
+
+    } else {
+	if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
+	    ## Create a tree with the taxonomy
+	    my $tree = new RSAT::Tree();
+	    $tree->LoadSupportedTaxonomy_rj("Organisms", \%main::supported_organism);
+	    print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef) if (($out_format eq "tree")||($out_format eq "html_tree"));
+	    print $out $tree->as_newick($taxon) if ($out_format eq "newick");
+	} else {
+	    print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, $depth, @return_fields); ## Export the table with header and absolute paths
+	}
+    }
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+    
+    exit(0);
+}
+
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
+
+
+
+################################################################
+#### Display full help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	supported-organisms
+
+USAGE
+        supported-organisms [-i inputfile] [-o outputfile] [-v]
+
+AUTHORS
+	Jacques.van-Helden@univmed.fr
+
+	Management of taxonomic tree: 
+	   Rekin\'s Janky (rekins@bigre.ulb.ac.be).
+
+DESCRIPTION
+
+	Returns the list of organisms supported on the local
+	Regulatory Sequence Analysis Tools (default) or on a remote
+	server (option -server). The list can be restricted at a given
+	taxonomic level (option -taxon).
+
+CATEGORY
+	Genomes
+
+OPTIONS
+	-h	(must be first argument) display full help message
+
+	-help	(must be first argument) display options
+
+	-format	output format
+		supported: $supported_formats
+
+		tab: tab-delimited text format, with one row per
+		organism and one column per field (see option
+		-return).
+
+		tree: a textual representation of the tree, with
+		hyphen-based indentation to indicate taxon depth.
+
+		html_tree: same as tree, but wiht HTML tags (organism
+		names in italics, taxon names in bold).
+
+ 	-return output fields
+		supported: $supported_return_fields
+
+        -taxon selected_taxon 
+	       Only returns organisms belonging to a selected taxon.
+
+	-depth #
+	       Depth for exploring the taxonomic tree. When the value
+	       differs from 0, the program only returns one
+	       "representative" organism per taxon of the specified
+	       depth.
+
+	       This option is convenient to select a non-redundant set
+	       of species. Note that the biological relevance of the
+	       result strongly depends on the annotation of the
+	       taxonomy in the original database from whichb RSAT
+	       genomes were downloaded.
+
+	       Positive value indicate that the tree should be
+	       traversed from root to leaves.
+
+	       Negative values indicate that the tree should be
+	       traversed from leaves to root. Beware: level 0 is the
+	       species. Level -1 this corresponds to the lowest level
+	       of the taxonomy.
+
+	       Also note that the depth of the taxonomic annotations
+	       vary along branches, so that positive values will give
+	       different results from negative values.
+
+	-server Return the list of organisms supported on a remote
+		RSAT server, via the Web services interface
+		(http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl).
+
+		The option -server can be combined with the option
+		-taxon in order to obtain the list of organisms
+		supported on the main RSAT server, before downloading
+		them.
+
+		Ex: 
+		   supported-organisms -taxon Fungi -server
+
+		An alternative server RSAT server can be selected by
+		specifying the URL of the Web server.
+
+		supported-organisms -server http://embnet.ccg.unam.mx/rsa-tools
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### Display short help message #####
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-format	output format ($supported_formats)
+-return output fields ($supported_return_fields)
+-taxon  selected_taxon
+-depth	traversal depth for the taxonomic tree
+-server return organisms supported on the remote RSAT server.
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+
+      ### output format
+    } elsif ($ARGV[$a] eq "-format") {
+      $out_format = $ARGV[$a+1];
+      unless ($supported_format{$out_format}) {
+	&RSAT::error::FatalError("Invalid format", $out_format, "Supported:".$supported_formats);
+      }
+
+      ### output format
+    } elsif ($ARGV[$a] eq "-format") {
+      $out_format = $ARGV[$a+1];
+      unless ($supported_format{$out_format}) {
+	&RSAT::error::FatalError("Format $out_format is not supported\n");
+      }
+
+      ### server address
+    } elsif ($ARGV[$a] eq "-server") {
+      $from_server = 1;
+      if ($ARGV[$a+1] =~ /^http/) {
+#	  $from_ws = 1;
+	  $server = $ARGV[$a+1];
+      }
+
+      #### return fields
+    } elsif ($ARGV[$a] eq "-return") {
+	$return_fields = $ARGV[$a+1];
+	chomp($return_fields);
+	my @fields_to_return = split ",", $return_fields;
+	foreach $field (@fields_to_return) {
+	    if ($supported_return_fields{$field}) {
+		push @return_fields, $field;
+	    } else {
+		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	    }
+	}
+
+      ### root taxon
+    } elsif ($ARGV[$a] eq "-taxon") {
+      $taxon = $ARGV[$a+1];
+
+      ## Tree depth
+    } elsif ($ARGV[$a] eq "-depth") {
+      $depth = $ARGV[$a+1];
+      &RSAT::error::FatalError($depth, "Invalid value for depth, must be an Integer number") 
+	unless &IsInteger($depth);
+
+
+      ### output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+
+    }
+  }
+}
+

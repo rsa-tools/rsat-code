@@ -1,0 +1,95 @@
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools - Wish list</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<CENTER><H2><A HREF="RSAT_home.cgi">RSA-tools</A> - 
+Wish list
+</H2></CENTER>
+
+<P>
+This page contains a list of ideas to be implemented when I will find some time to do it &nbsp;&nbsp;&nbsp;:-(
+
+<p>
+
+<table border=1>
+
+<tr valign=top>
+<th>Date wish emitted</th>
+<th>Program</th>
+<th>Description</th>
+</tr>
+
+<tr valign=top>
+<td>2005/04/09</td>
+<td>compare-features</td>
+<td><ul>
+<li>A program to compare two lists of features. Useful for evaluating
+pattern matching results. 
+
+<li>The comparisons will be performed either at the nucleotide level or at
+the site level (with a threshold on the mathcing nucleotides per pair
+of sites).
+
+<li>This program will compare a query and a reference set of positions and
+return intersection, differences, calculate TP, FP, FN, TN, and
+derived statistics. 
+
+</ul></td>
+</tr>
+
+<tr valign=top>
+<td>2005/04/09</td>
+<td>convert-markov-model</td>
+<td><ul>
+<li>Read and write Markov models in different formats (oligo-analysis,
+meme, Motifsampler).
+</ul></td>
+</tr>
+
+<tr valign=top>
+<td>2005/04/09</td>
+<td>convert-matrix</td>
+<td><ul>
+<li>Export all matrices when the input file contains several of them
+(e.g. consensus, meme, gibbs).
+<li>Calculate the significance sig=-log10(P-value) of each letter at
+each position. The P-value would be calculated with a binomial model.
+<li>Improve the criterion to include a letter in the consensus (use
+significance rather than weight ?).
+</ul></td>
+
+
+<tr valign=top>
+<td>2005</td>
+<td>dyad-analysis</td>
+<td><ul>
+<li>The statistics for counts on 2 strands is still in the old mode
+(single pattern probability, double sequence length). I should adapt
+it in the same way as oligo-analysis.
+</ul></td>
+</tr>
+
+
+<!--
+<tr valign=top>
+<td>2005</td>
+<td></td>
+<td><ul>
+<li>
+</ul></td>
+</tr>
+-->
+
+
+</table>
+
+
+</BODY>
+</HTML>
+
+
+
+
+

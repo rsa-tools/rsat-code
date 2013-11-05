@@ -1,0 +1,477 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: fuzzy-clustering,v 1.8 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+=pod
+
+=head1 NAME
+
+fuzzy-clustering
+
+
+=head1 DESCRIPTION
+
+Generates a fuzzy clustering of a graph.
+
+A partition of the graph is mapped onto the original graph. The weight of the connections of a node to a given partition cluster, divided by the total weight of the connections established by that node, is the membership of the node to the given cluster. The clustering of the node is described with a membership vector and the whole clustering is described with the membership matrix.
+
+In assigning the membership of a node to a cluster, there are two possiblities:
+
+    -the node-membership to a given cluster is the sum over the weights of the edges to each individual node assigned to that cluster in the partition.  
+    -the weight of the connections of a node to a given cluster are normalized to the size of the cluster. This avoids membership bias towards larger clusters (see -norm option).
+
+=head1 AUTHORS
+
+=over
+
+=item Gipsi Lima Mendez <gipsi@bigre.ulb.ac.be>
+
+
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=back
+
+=head1 CATEGORY
+
+graph analysis and clustering
+
+=head1 USAGE
+
+fuzzy-clustering [-i graphfile] [-clusters partition_file] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head2 Graph format
+
+gml or tab-delimited file. default: tab
+
+=head2 Cluster format
+
+a two-column file with column corresponding respectively to the node name and to the cluster name.
+
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited table, each row represents a node, each column represents a cluster. Entries are the membership of the node given by the row to the cluster given by the column.
+
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    ################################################################
+    ## Initialize the input graph # this is Sylvain stuff
+     my $graph = new RSAT::Graph2();
+     $graph->set_attribute("label", "graph");
+# 
+#     ## Columns of the tab-delimited graph file
+#     local $n1 = 1;
+#     local $n2 = 2;
+#     local $weight = 0;
+# 
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 3;
+    
+    
+    
+    my $ori_graph = {};
+    my $clusters = {};
+    my $Membership = {};
+    my $WeightMat= {};
+    %main::infile = ();
+    %main::outfile = ();
+    $main::verbose = 0;
+    $main::out = STDOUT;
+    
+
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    
+    # to check that there are two input files!!!
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    
+    ## Read input graph # this is Sylvain stuff
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0,0,0,0);
+    
+    
+    ### read partition. nodes in the partition are named after their name
+    ($main::in) = &OpenInputFile($main::infile{partition});
+    while (my $line = <$main::in>) {
+    	chomp $line;	
+	next if ($line =~ /^#/ || $line =~ /^;/);
+	$line =~ s/cluster_//g;
+	my @line = split("\t",$line);
+	
+	$clusters->{'node_cluster'}->{$line[0]}=$line[1];
+	$clusters->{'cluster_node'}->{$line[1]}->{$line[0]} = 1;
+	
+    }
+    close $main::in;
+    # check if clusters names are stribg or numbers
+    $clusters->{'num'}=1;
+    foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
+    	if ($cluster !~ /^(\d+)$/) {
+		$clusters->{'num'}=0;
+		last;
+	}
+    }
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## get the graph. nodes in the graph object are encoded after an id.
+    
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @weights = $graph->get_attribute("out_label");
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name= $graph->get_attribute("nodes_id_name");
+    
+    # initialize the membership of node to clusters. Here the node is the node name.
+    foreach my $node (keys %{$clusters->{'node_cluster'}}) {
+    	foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
+	   $WeightMat->{$node}->{$cluster} = 0;
+	}
+    }
+    
+    
+    if (defined $main::norm{ClusterSizeNorm}) {
+    # with this option the weight of the edges to a node X is normalized to the size of the cluster to which node X is assigned in the partition
+	foreach my $n1 (keys %{$clusters->{'node_cluster'}}) { # here I get all nodes
+		# get partition cluster for node n1
+		my $clust1 = $clusters->{'node_cluster'}->{$n1};
+		my $sizeCluster1 = scalar(keys %{$clusters->{'cluster_node'}->{$clust1}});
+		# get n1 id
+		my $n1_id = $nodes_name_id{$n1};
+		next unless (defined @{$out_neighbours[$n1_id]});
+		my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
+		my @n1_out_weights = @{$weights[$n1_id]};
+		my $index = 0;
+    	    	foreach my $n2_id (@n1_out_neighbours) {
+			# get n2 name
+			my $n2 = $nodes_id_name{$n2_id};
+			# get cluster where n2 is
+			next unless (defined $clusters->{'node_cluster'}->{$n2});
+    	    	    	my $clust2 = $clusters->{'node_cluster'}->{$n2};
+		    	my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
+				
+		    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index]/$sizeCluster2;
+
+			$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index]/$sizeCluster1;
+			
+			$index++;
+		}
+	}
+    }
+    
+    else {
+    # this section adds to the Node-Cluster Weight from the Node-Node weight connection
+	foreach my $n1 (keys %{$clusters->{'node_cluster'}}) { # here I get all nodes
+		# get partition cluster for node n1
+		my $clust1 = $clusters->{'node_cluster'}->{$n1};
+		my $n1_id = $nodes_name_id{$n1};
+		next unless (defined @{$out_neighbours[$n1_id]});
+		my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
+		my @n1_out_weights = @{$weights[$n1_id]};
+		my $index = 0;
+    	    	foreach my $n2_id (@n1_out_neighbours) {
+			# get n2 name
+			my $n2 = $nodes_id_name{$n2_id};
+			# get cluster where n2 is
+			next unless (defined $clusters->{'node_cluster'}->{$n2});
+    	    	    	my $clust2 = $clusters->{'node_cluster'}->{$n2};
+		    	my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
+
+		    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index];
+
+			$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index];
+			
+			$index++;
+		}
+	}
+    }
+    foreach my $node (keys %{$WeightMat}) {
+    	my $totalWeight = 0;
+	my $normWeight = 0;
+    	foreach my $cluster (keys %{$WeightMat->{$node}}) {
+	    $totalWeight += $WeightMat->{$node}->{$cluster};
+	}
+    	foreach my $cluster (keys %{$WeightMat->{$node}}) {
+	    unless ($totalWeight == 0) {
+    	    	$Membership->{$node}->{$cluster} = ($WeightMat->{$node}->{$cluster})/$totalWeight;
+		&RSAT::message::Info("Node ", $node, "belongs to cluster ",$cluster, " with membership degree ",$Membership->{$node}->{$cluster}) if ($main::verbose >= 3);
+	    }
+	    else {
+	    	$Membership->{$node}->{$cluster} = "NA";
+	    }
+    	}
+    }
+
+    ################################################################
+    ## Print output
+    
+    # check if cluster ids are numeric, then sort after id. Otherwise sort alphabetically
+    
+    my @header;
+    if ($clusters->{'num'} == 1) {
+    	@header = sort({$a <=> $b} keys %{$clusters->{'cluster_node'}});
+	}
+	else {
+    	@header = sort({$a cmp $b} keys %{$clusters->{'cluster_node'}});
+	}
+    
+    
+    
+    foreach my $cluster (@header) {
+    	print $main::out "\t",$cluster;
+    }
+    print $main::out "\n";
+    
+    foreach my $node (keys %{$Membership}) {
+    	print $main::out $node;
+    	foreach my $cluster (@header) {
+	    unless (defined $Membership->{$node}->{$cluster}) {
+	    	$Membership->{$node}->{$cluster} = 0;
+	    }
+	    print $main::out "\t",$Membership->{$node}->{$cluster};
+	}
+	print $main::out "\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i graphfile>
+
+graph as a tab-delimited file
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{graph} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-clusters partition_file>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-clusters") {
+	    $main::infile{partition} = shift(@arguments);
+
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+
+=pod
+
+=item B<-o outfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+=pod
+
+=item B<-norm>
+
+This argument shitches on the normalization according to the size of the clusters. 
+That is, to calculate the membership of node X to cluster K, the sum of the weights of node X to the nodes of cluster K are divided by the size of K (number of nodes assigned to cluster K). This prevents bias towards large clusters.
+
+By default this option is off.
+
+=cut
+	    
+	    
+	} elsif ($arg eq '-norm') {
+	    $main::norm{ClusterSizeNorm} = 1;
+	    
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; fuzzy-clustering ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<graph-neighbours>
+
+=back
+
+=cut

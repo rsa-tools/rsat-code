@@ -1,0 +1,186 @@
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: retrieve-ensembl-seq manual</TITLE>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - retrieve-ensembl-seq manual</h2>
+</center>
+
+<H2>Name</H2>
+<UL>
+retrieve-ensembl-seq<P>
+2007-2008 by <script type='text/javascript'>var v2="FZ4BZ3EE5SS8KRHNM48";var v7=unescape("%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Olivier Sand<\/a>');//
+</script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Olivier
+	Sand (using spam protection)</a></noscript>
+
+</UL>
+
+<H2>Description</H2>
+
+<UL>
+Returns upstream, downstream, intronic, exonic, UTR or gene sequences for a
+list of genes from the EnsEMBL database.
+<P>Uses the EnsEMBL Core and Compara Perl APIs.
+</UL>
+
+<H2>Options</H2>
+
+<UL>
+
+<h3>Query organism</h3>
+<ul>
+<A NAME="single_org"></A>
+<h4>Single organism</h4>
+All the query genes belong to the same organism. 
+
+When this option is checked, the query organism has to be specified among the
+supported organisms, indicated by the pop-up menu <b>Query organism</b>.
+
+<A NAME="multi_org"></A>
+<h4>Multiple organisms</h4>
+Retrieves other species genes that are homologous to the query genes using the EnsEMBL Compara database.
+All the query genes belong to the same organism.
+
+When this option is checked, the query organism has to be specified among the
+supported organisms, indicated by the pop-up menu <b>Query organism</b>.
+
+<ul><p><b>Optional filters</b>
+<ul><A NAME="taxon"></A>
+<h4>Taxon</h4>
+Allows to filter on a given taxonomic level (example: Mammalia).
+</ul><ul><A NAME="homology"></A>
+<h4>Homology type</h4>
+Allows to filter on a Compara homology type, as
+ortholog_one2one, ortholog_one2many, etc. Use orthologs to get all types of
+orthologs but not paralogs.
+</ul>
+</ul>
+</ul>
+
+<A NAME="genes"></A>
+<h3>Query IDs</h3>
+
+Two options are proposed
+<p>
+<ul>
+<li>IDs list typed directly in the text area. Several queries can be entered simultaneously, separated by carriage returns.</li>
+<li>Click on the <B>Browse...</B> button to select a text file on your
+  computer that contains the list of EnsEMBL IDs.</li>
+</ul>
+<P>These IDs can be EnsEMBL gene (ex: ENSG00000139618), transcript (ENST00000380152)
+  or protein (ENSP00000369497) IDs, IDs from other databases (Uniprot,
+  RefSeq, Flybase, SGD...). EnsEMBL transcript and protein IDs are
+  automatically converted to gene IDs and then treated as a gene query.
+
+<A NAME="sequence_type"></A>
+<h3>Type of sequence</h3>
+Choose the type of sequence to retrieve, either a feature sequence (ex: gene,
+intron, utr...) or a sequence surrounding a feature (upstream/downstream). If
+you choose 'upstream/downstream', you can specify some options in the right
+column. Otherwise default values will be applied.
+
+<h4>Options for upstream or downstream sequences</h4>
+<ul>
+<A NAME="feattype"></A>
+<h3>Feature type</h3>
+<ul>
+<li><b>Gene</b></li>
+<li><b>CDS</b></li>
+<li><b>mRNA</b></li>
+</ul>
+<p>Refer to the below sequence position section for more detail.
+
+<A NAME="sequence_position"></A>
+<h3>Sequence position</h3>
+<ul>
+<li><B>Upstream</B> sequences located upstream the selected relative feature. The
+origin is at the most 3' TSS for mRNA, at the most 5' TSS for gene, and at the
+  start codon of each alternative transcript for CDS. Note that, with mRNA feature, if you wish to retrieve sequences relative to
+  each alternative transcript, you should check the box 'Retrieve sequence
+  relative to each alternative transcript (with mRNA feature)'
+
+<li><B>Downstream</B> sequences located downstream the selected relative
+  feature. The origin is at most 5' terminator for mRNA, at the most 3'
+  terminator for gene, and at the stop codon of each alternative transcript for CDS. Note that, with mRNA feature, if you wish to retrieve sequences relative to
+  each alternative transcript, you should check the box 'Retrieve sequence
+  relative to each alternative transcript (with mRNA feature)'
+</ul>
+
+<A NAME="from_to"></A>
+<h3>Sequence limits (from, to)</h3>
+
+Limits of the region to retrieve. Coordinates are calculated relative to the
+selected feature. Refer to the above sequence position section for more detail.
+
+<ul><h4>Sign</h4><ul>
+
+  <li><b><FONT COLOR="#DD0000">negative</FONT></b> 
+           values return sequence located <b><FONT COLOR="#DD0000">upstream</FONT></b> the origin</li>
+    <li><b><FONT COLOR="#00AA00">positive</FONT></b> 
+           values return
+           sequences <B><FONT COLOR="#00AA00">downstream</FONT></B> the
+           origin</li>
+</ul>
+      <br>
+	   The origin itself depends on the feature type, see above)
+
+</ul><ul><h4>Default values for upstream sequence retrieval</h4>
+
+The default is from -2000 to -1 from the most 3' TSS.
+
+</ul>
+
+<A NAME="prevent_overlap"></A>
+<ul><h3>Prevent overlap with neighbouring genes or ORFs:</h3>
+
+It is quite frequent to find a predicted gene in close proximity
+upstream from a query gene. If you want to discard these sequences from
+your analysis, you should make sure this option is active. 
+
+<P>
+When the option is selected, upstream sequences are automatically
+clipped when a predicted gene or ORF is located within the range defined by
+the option <I>from</I>. The actual size retained for the upstream
+sequence is indicated in the sequence header.
+
+<P> Note that in some cases a known regulatory element is located
+upstream or within a predicted gene. This means either that the
+predited gene is an artifact, or that the same sequence is bifunctional
+(coding and regulatory).
+</ul>
+<A NAME="alltranscripts"></A>
+<h3>Retrieve sequence relative to each alternative transcript:</h3>
+
+If this option is checked together with the mRNA feature, the upstream or
+downstream sequences relative to each alternative transcript (if any) are retrieved.
+
+</ul>
+
+<A NAME="rm"></A>
+<h3>Mask repeats</h3>
+
+This option allows to use the genome version where repeats are masked (i.e. replaced by 'N' characters). 
+The presence of repetitive elements hampers the detection of motifs, especially for vertebrate genomes, because these repetitive sequences have a very distinct composition than the rest of the genome. 
+This option is only valid for organisms with annotated repeats.
+
+<A NAME="maskcoding"></A>
+<h3>Mask coding sequences</h3>
+
+This option allows to mask all coding portions of the retrieved sequence (i.e. replaced by 'N' characters).
+
+<A NAME="header_org"></A>
+<h3>Organism name in sequence header</h3>
+The sequence format is fasta. To facilitate multiple organism studies, we
+included the organism name at the beginning of the sequence header. Moreover, we allow to choose between the scientific name and the
+common name of the organism.
+
+</ul>
+
+<HR SIZE=3>
+
+</BODY>
+</HTML>

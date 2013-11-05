@@ -1,0 +1,367 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert2metapath-seeds,v 1.3 2012/09/11 14:36:11 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 Name to metabolic graph node_id
+
+=head1 VERSION 1.0
+
+=head1 DESCRIPTION
+
+This tools maps input string to node id. 
+1. Gene to reaction mapping. Identify the set of reactions ("seed
+reactions") catalyzed by the set of input genes ("seed genes"). The
+mapping relies on a user-specified file describing the mapping of
+genes to reactions (GNN and NNN, Gene-Node Name and Network Node
+Name<>NodeID file).
+
+2. EC number mapping (Enzyme acivities) to node name
+
+2.Compound mapping. Match Compound name and ID to node_id (Network Node
+Name<>NodeID)
+
+
+
+=head1 AUTHORS
+
+Developed by Didier Croes. 
+The doc was written by Didier Croes and Jacques van Helden.
+
+=head1 REFERENCES
+
+
+=head1 CATEGORY
+
+Graph tool
+
+=head1 USAGE
+
+convert2metapathseeds -h [-i inputfile] [-o output_file] [-v verbosity] -a gene2ec -b ec/rxn/cpd2rxnid/cpdid
+
+=head1 INPUT FORMATS
+
+=head2 input File/std Input (-i)
+
+Flux containing a list of name (genes, compound, EC ...) or their id 
+
+
+Warning: the same gene identifiers should be used in all input files.
+
+=head2 Seed mapping file
+
+The seed mapping file makes the link between different types of seeds
+(genes, EC numbers, proteins, compound names) and nodes of the network
+(reactions or compounds depending on the seed type).
+
+=head3 Network Node Names (nnn) file (option I<-nnn>)
+
+Mandatory.
+
+The NNN files makes the link between EC numbers/rxn name/cpd name and node id in the network .
+
+These files are used for the reaction ids/compound ids to gene annotation (backward).
+
+
+=head3 Example of NNN file
+
+ #query  id      qualifier       name
+1.-.-.- RXN1G-1486      EC      3-oxo-C78-α-mycolate-reductase
+1.-.-.- RXN1G-1527      EC      3-oxo-C85-cis-methoxy-mycolate reductase
+1.-.-.- RXN1G-1528      EC      3-oxo-C86-trans-methoxy-mycolate-reductase
+10-deoxysarpagine       10-DEOXYSARPAGINE       compounds       10-deoxysarpagine
+10-DEOXYSARPAGINE       10-DEOXYSARPAGINE       compounds       10-deoxysarpagine
+ ...
+
+=head3 Gene to Node Names (gnn) file (option I<-gnn>)
+
+not mandatory, in this cas the query file or stdin must contains only Node Names.
+
+The GNN files makes the link between external identifier and node names (example: gene name, refseq, locuslink) . 
+
+
+=head3 Example of NNN file
+
+#query	id	qualifier	name	taxonomy_id	species
+aas	2.3.1.40	GENE_NAME	aas	83333	Escherichia coli (strain K12)
+aas	6.2.1.20	GENE_NAME	aas	83333	Escherichia coli (strain K12)pathway-extractor_seeds.php
+aat	2.3.2.6	GENE_NAME	aat	83333	Escherichia coli (strain K12)
+
+
+=head1 EXAMPLES
+
+=head2 With an input file
+
+=head3 Motivation
+
+Get methionine-related genes in Escherichia coli genome. This
+generates a file containing one line per gene and one column per
+attribute (ID, start, end, name, ...).
+
+
+=head3 Commands
+
+Extract all E.coli genes whose name starts with met
+ gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -full -q '^met.*' -o met_genes.tab
+
+Select the first column, containing gene Ids.
+ grep -v "^;" met_genes.tab | cut -f 1 > met_genes_IDs.txt
+
+Extract a pathway connecting at best the reactions catalyzed by these gene products
+  pathway-extractor -i met_genes_IDs.txt \
+     -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
+     -gnn ${RSAT}/data/metabolic_networks/GER_files/GPR_Uniprot_112011_Escherichia_coli_K12.tab \
+     -o result_dir \
+     -t temp_dir
+
+----------------------------------------------------------------
+
+=head2 Using standard input
+
+The script pathway-extractor can also use as input the STDIN. This
+allows to use it in aconcatenation of commands. For example, all the
+commands above could be combined in a single pipeline as follows.
+
+ gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q 'met.*' \
+   | grep -v "^;" met_genes.tab | cut -f 1 \
+   | convert2metabpath-seeds -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
+       -ger data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt \
+       -o result_dir -t temp_dir
+
+----------------------------------------------------------------
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+	push (@INC,"$ENV{RSAT}/perl-scripts/lib/");
+	push (@INC,"$ENV{RSAT}/perl-scripts/lib/RSAT");
+    }
+}
+require "RSA.lib";
+use Getopt::Long;
+use RSAT::util;
+use RSAT::PathwayExtraction;
+
+################################################################
+## pathwayinference package
+package main;
+{
+   ## Input/output files
+  our %infile = ();	     # input file names container
+  our %outfile = ();	     # output file names container
+
+  ## Directories
+  $dir{output} = "."; # output directory
+  $dir{temp}= "";     # temporary directory
+
+  our $verbose = "3";
+  our $in = STDIN;
+  our $out = STDOUT;
+  $infile{gnn} =""; # GPR Gene -> EC -> REACTION annotation file path. Default (METACYC_GPR_EC.tab)
+  $infile{nnn}=""; 
+  our $partial;
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  my $input;
+  my $isInputFile=0;
+  print STDERR "inputfile:" .$infile{input}."\n";
+  if ($infile{input}){
+    $isInputFile=1;
+    ($main::in) = &OpenInputFile($infile{input});
+  }
+  while (<$main::in>) {
+    $input .= $_;
+  }
+#   $input = do { local $/;  <($main::in) > };
+  
+  print STDERR "SEEDS:" .$input."\n";
+
+  &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
+  my ($rxnoutput,$cpdoutput) = &RSAT::PathwayExtraction::MapSeeds($input,$infile{gnn},$infile{nnn},$partial,$verbose);
+  my %rxnhash = %{$rxnoutput};
+  my %cpdhash = %{$cpdoutput};
+  print $out "#Query\tmapping";
+  
+  while (my ($key, $val) = each(%rxnhash)){
+   print $out "$key\t$val\n";
+  
+  }
+  while (my ($key, $val) = each(%cpdhash)){
+   print $out "$key\t$val\n";
+  
+  }
+  close ($out) if ($isInputFile eq 1);
+}
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v>
+
+Set verbosity level
+
+=cut
+    if ($arg eq "-v") {
+      if (&RSAT::util::IsNatural($arguments[0])) {
+	$verbose = shift(@arguments);
+      } else {
+	$verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+=pod
+
+=item B<-p>
+
+If present the match is partial (*input*). if absent match is absolute
+
+=cut
+    } elsif ($arg eq "-p") {
+      $partial = "true";
+
+=pod
+
+=item B<-i inputfile>
+list of genes, compounds, EC.....
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $infile{input} = shift(@arguments);
+
+=pod
+
+=item	B<-gnn GE Genes file>
+
+Gene -> EC (GE) annotation file. See File formats section
+
+=cut
+    } elsif ($arg eq "-gnn") {
+      $infile{gnn} = shift(@arguments);
+=pod
+
+=item	B<-nnn ECR file>
+
+EC -> REACTION and COUMPOUNDS (ECR) annotation file. See file formats section
+
+=cut
+    } elsif ($arg eq "-nnn") {
+      $infile{nnn} = shift(@arguments);      
+=pod
+
+=item	B<-o output Directory>
+
+If no output file is specified, the current directory is used.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $dir{output} = shift(@arguments);
+
+    } else {
+      
+       &FatalError(join("\t", "Invalid pathway_extractor option", $arg));
+
+    }
+  }
+#GetOptionsFromArray(\@arguments,\%otherPIoptions)
+#getopts("CnHf:b:q:O:E:a:y:p:F:Z:m:w:t:l:T:W:P:e:d:u:x:k:U:B:r:D:M:I:N:G:X:A:K:S:R:j:J:Q:L:Y:v:h:V:o:p:g:i:g:",\%otherPIoptions);
+#&FatalError(join("\t", "Invalid pathway_extractor option", $ARGV[0])) if $ARGV[0];
+      
+=pod
+
+=back
+
+=cut
+
+}
+################################################################
+## Verbose message
+sub Verbose {
+    print $out "; template ";
+    &RSAT::util::PrintArguments($out);
+    printf $out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%infile) {
+	print $out "; Input files\n";
+	while (my ($key,$value) = each %infile) {
+	  printf $out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%outfile) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %outfile) {
+	  printf $out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__

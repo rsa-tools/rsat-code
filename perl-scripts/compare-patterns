@@ -1,0 +1,983 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+require RSAT::pattern;
+require RSAT::match;
+
+## CVS: adapted the help to describe the hypergeometric proba
+## CVS: added the option -table
+
+################################################################
+#### initialise parameters
+
+&InitMatchScores();
+
+
+local $start_time = &RSAT::util::StartScript();
+
+local %infile = ();
+local %outfile = ();
+
+local %filtered_out = ();
+
+local $both_strands=0;
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+$slide = 0;
+local @pattern1 = ();
+
+local @pattern2 = ();
+local $NULL="NA";
+
+#local @table_fields = ();
+
+## lower and upper thresholds
+%lth = ();
+%uth = ();
+@supported_threshold_fields = qw(
+			      match
+			      Pval
+			      Eval_p
+			      sig_p
+			      Eval_f
+			      sig_f
+			      weight
+			      len1
+			      len2
+			      mlen
+			      tlen
+			      offset
+			      max_w1
+			      max_w2
+			      max_w
+			      diff_w1
+			      diff_w2
+			      diff_w
+			      rel_w1
+			      rel_w2
+			      rel_w
+			      );
+foreach my $field (@supported_threshold_fields) {
+    $supported_threshold_field{$field} = 1;
+}
+$supported_threshold_fields = join (",", @supported_threshold_fields);
+
+
+## Return fields
+@supported_return_fields = qw(
+			      match
+			      Pval
+			      Eval_p
+			      sig_p
+			      Eval_f
+			      sig_f
+			      noffs
+			      weight
+			      seq
+			      id
+			      length
+			      offset
+			      strand
+			      max_w
+			      diff_w
+			      rel_w
+			      top_s
+			      );
+foreach my $field (@supported_return_fields) {
+    $supported_return_field{$field} = 1;
+}
+$supported_return_fields = join (",", @supported_return_fields);
+
+my %field_format = (match=>"%d",
+		    weight=>"%.2f",
+		    Pval=>"%.2g",
+		    Eval_p=>"%.2g",
+		    Eval_f=>"%.2g",
+		    sig_p=>"%.2f",
+		    sig_f=>"%.2f",
+		    noffs=>"%d",
+		    seq1=>"%s",		
+		    seq2=>"%s",		
+		    id1=>"%s",
+		    id2=>"%s",		
+		    len1=>"%d",
+		    len2=>"%d",
+		    mlen=>"%d",
+		    tlen=>"%d",
+		    offset=>"%g",
+		    strand=>"%s",		
+		    max_w=>"%.2f",
+		    max_w1=>"%.2f",
+		    max_w2=>"%.2f",
+		    diff_w=>"%.2f",
+		    diff_w1=>"%.2f",
+		    diff_w2=>"%.2f",
+		    rel_w=>"%.4f",
+		    rel_w1=>"%.4f",
+		    rel_w2=>"%.4f",
+		    top_s1=>"%s",
+		    top_s2=>"%s",
+		    );
+
+## accepted fields for a table output
+@supported_table_fields = qw(
+			      match
+			      Pval
+			      Eval_p
+			      sig_p
+			      Eval_f
+			      sig_f
+			      weight
+			      offset
+			      strand
+			      max_w
+			      diff_w
+			      rel_w1
+			      rel_w2
+			      rel_w
+			      top_s
+			      );
+foreach my $field (@supported_table_fields) {
+    $supported_table_field{$field} = 1;
+}
+$supported_table_fields = join (",", @supported_table_fields);
+
+&ReadArguments();
+
+################################################################
+## Check arguments
+
+## return fields
+if ((scalar(@return_fields) < 1) && (scalar(@table_fields) < 1)){
+    @return_fields = ("seq", "match");
+}
+my @temp_return_fields = @return_fields;
+@return_fields = (); ## Ordered list of fields to return. 
+%return_field = ();  ## Index for the fields to return.
+foreach my $field (@temp_return_fields) {
+    &RSAT::error::FatalError("$field\tInvalid return field. Supported: $supported_return_fields\n") unless $supported_return_field{$field};
+
+    $return_field{$field}++;
+
+#    warn "; Adding field\t", $field, "\n" if ($verbose >= 5);
+    if ($field eq "seq") {
+	push @return_fields, "seq1", "seq2";
+    } elsif ($field eq "id") {
+	push @return_fields, "id1", "id2";
+    } elsif ($field eq "max_w") {
+	push @return_fields, "max_w", "max_w1", "max_w2";
+    } elsif ($field eq "diff_w") {
+	push @return_fields, "diff_w", "diff_w1", "diff_w2";
+    } elsif ($field eq "rel_w") {
+	push @return_fields, "rel_w", "rel_w1", "rel_w2";
+    } elsif ($field eq "top_s") {
+	push @return_fields, "top_s1", "top_s2";
+    } elsif ($field eq "length") {
+	push @return_fields, "len1", "len2", "mlen", "tlen";
+    } else {
+	push @return_fields, $field;
+    }
+}
+
+
+## table fields
+%table_field = ();  ## Index for the fields to table.
+foreach my $field (@table_fields) {
+    &RSAT::error::FatalError("$field\tInvalid table field. Supported: $supported_table_fields\n") unless $supported_table_field{$field};
+
+    $table_field{$field}++;
+
+}
+
+
+################################################################
+## Read input patterns from file
+if ($pattern_file1) {
+    push @pattern1, &ReadPatterns(pattern_file=>$pattern_file1);
+}
+if ($pattern_file2) {
+    push @pattern2, &ReadPatterns(pattern_file=>$pattern_file2);
+}
+
+
+## Check input patterns
+&RSAT::message::Warning("There is not a single sequence in the first set") unless (scalar(@pattern1) > 0);
+&RSAT::message::Warning("There is not a single sequence in the second set") unless (scalar(@pattern2) > 0);
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose >= 1);
+
+## Print header
+if ($verbose >= 1) {
+    print $out "#", join ("\t", @return_fields), "\n";
+}
+
+## Count matches for each pair of input sequences	
+my $pattern1_nb = scalar(@pattern1);
+my $p1 = 0;
+&RSAT::message::TimeWarn("Comparing patterns") if ($main::verbose >= 2);
+foreach $pattern1 (@pattern1) {
+  $p1++;
+  &RSAT::message::Info(join("\t", "pattern1", $p1."/".$pattern1_nb)) if ($main::verbose >= 3);
+  foreach $pattern2 (@pattern2) {
+    local $reverse_match;
+    local $best_match = &OneMatch($pattern1, $pattern2, 0);
+    if ($both_strands) {
+      $reverse_match = &OneMatch($pattern1, $pattern2, 1);
+      if ($reverse_match->{weight} > $best_match->{weight}) {
+	$best_match = $reverse_match;
+      }
+    }
+
+    ## Print the match and store the parameters in tables
+    &PrintOneMatch($best_match);
+  }
+}
+
+################################################################
+## Print contingency tables
+&RSAT::message::TimeWarn("Printing contingency table") if ($main::verbose >= 2);
+foreach my $field (@table_fields) {
+    my $table_name = $field."_table";
+    print $out join("\t", "; Contingency table", $field), "\n" if ($main::verbose >= 1);
+
+    ## Calculate width of first column
+    my $max_seq1_len = 0;
+    foreach my $pattern1 (@pattern1) {
+	my $seq1  = $pattern1->{sequence};
+	$max_seq1_len = &max(length($seq1), $max_seq1_len); 
+    }
+
+    ## Print the header
+    my @header = ();    
+    foreach my $pattern2 (@pattern2) {
+	my $seq2  = $pattern2->{sequence};
+	$max_seq2_len = &max(length($seq2), $max_seq2_len); 
+	push @header, $seq2;
+    }
+    print $out  join ("\t", 
+		      sprintf("; %-${max_seq1_len}s", "sequence"),
+		      @header), "\n";
+
+    foreach my $pattern1 (@pattern1) {
+	my @result = ();
+	my $seq1 = $pattern1->{sequence};
+	
+	foreach my $pattern2 (@pattern2) {
+	    my $seq2 = $pattern2->{sequence};
+	    my $result = $$table_name->{$seq1}->{$seq2};
+
+	    if ($filtered_out->{$seq1}->{$seq2}) {
+		push @result, $NULL;
+	    } else {
+		push @result, sprintf $field_format{$field}, $result;
+	    }
+	}
+	print $out join( "\t", 
+			 sprintf ("%-${max_seq1_len}s", $seq1), 
+			 @result), "\n";
+    }
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+
+}
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+## Match one pattern against another one
+sub OneMatch {
+    my ($pattern1, $pattern2, $reverse) = @_;
+    local $one_match = new RSAT::match();
+
+    $one_match->{pattern1} = $pattern1;
+    $one_match->{pattern2} = $pattern2;
+
+    $one_match->{id1} =  $pattern1->get_attribute("id");
+    $one_match->{seq1} = $pattern1->get_attribute("sequence");
+
+    ## Match direct or reverse complement
+    if ($reverse) {
+	$one_match->{seq1} = &ReverseComplement($one_match->{seq1});
+	$one_match->{strand} = "R";
+    } else {
+	$one_match->{strand} = "D";
+    }
+    $one_match->{id2} =  $pattern2->get_attribute("id");
+    $one_match->{seq2} = $pattern2->get_attribute("sequence");
+
+    ## Check input sequences
+    &RSAT::message::Warning("There is not a single sequence in the first set") unless ($one_match->{seq1});
+    &RSAT::message::Warning("There is not a single sequence in the second set") unless ($one_match->{seq2});
+
+#    &RSAT::message::Debug("Comparing",  $one_match->{id1}, $one_match->{seq1}, $one_match->{id2}, $one_match->{seq2}, $reverse), if ($main::verbose >= 10);
+
+    ################################################################
+    ## Count the matches
+    if ($slide) {
+	($match, $weight, $Pval, $mlen, $offset, $n_offsets) = &BestMatch(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	$one_match->{offset} = $offset;
+    } else {
+	($match, $weight, $Pval, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	$n_offsets = 1;
+    }
+
+    $one_match->{match} = $match; ## Number of matching residues
+    $one_match->{weight} = $weight; ## Weight
+    $one_match->{Pval} = $Pval; ## P-value
+    $one_match->{noffs} = $n_offsets; ## P-value
+    $one_match->{Eval_p} = $Pval*$n_offsets; ## E-value
+    if ($both_strands) { ## Taking into account the 2 strands
+	$one_match->{Eval_p} *= 2; 
+    }
+    $one_match->{sig_p} = -log($one_match->{Eval_p})/log(10); ## E-value for  single comparison between two sequences
+    $one_match->{Eval_f} = $one_match->{Eval_p}*scalar(@pattern1)*scalar(@pattern2); ## E-value for the whole analysis
+    $one_match->{sig_f} = -log($one_match->{Eval_f})/log(10); ## E-value
+    $one_match->{mlen} = $mlen; ## Matching length
+
+
+    ################################################################
+    ## Calculate sequence and match lengths
+#    if ($return_field{length}) {
+	$one_match->{len1} = length($one_match->{seq1});
+	$one_match->{len2} = length($one_match->{seq2});
+	$one_match->{tlen} = $one_match->{len1} + $one_match->{len2} - $one_match->{mlen}; ## total length of the alignment
+#    }
+
+    ################################################################
+    ## Correct offset for reverse matches
+    if ($reverse) {
+	$one_match->{offset} = $one_match->{len1} -$one_match->{len2} - $one_match->{offset};
+    }
+
+    ################################################################
+    ## Calculate maximum possible matching weights.  This takes into
+    ## account the sequence lengths and their level of degeneracy.
+    ($one_match->{max_w1}, $one_match->{top_s1}) = &MaxMatchingWeight($one_match->{seq1}); ## Maximal weight for a match against seq1
+    ($one_match->{max_w2}, $one_match->{top_s2}) = &MaxMatchingWeight($one_match->{seq2}); ## Maximal weight for a match against seq2
+    $one_match->{max_w} = &min($one_match->{max_w1}, $one_match->{max_w2}); ## Maximal weight for a match between seq1 and seq2
+
+    ################################################################
+    ## Calculate weight differences
+    $one_match->{diff_w1} = $one_match->{max_w1} - $weight;
+    $one_match->{diff_w2} = $one_match->{max_w2} - $weight;
+    $one_match->{diff_w} = $one_match->{max_w} - $weight;
+
+    ################################################################
+    ## Calculate relative weights
+    if ($one_match->{max_w1} > 0) {
+	$one_match->{rel_w1} = $weight/$one_match->{max_w1};
+    } else {
+	$one_match->{rel_w1} = "NA";
+    }
+
+    if ($one_match->{max_w2} > 0) {
+	$one_match->{rel_w2} = $weight/$one_match->{max_w2};
+    } else {
+	$one_match->{rel_w2} = "NA";
+    }
+
+    if ($one_match->{max_w} > 0) {
+	$one_match->{rel_w} = $weight/$one_match->{max_w};
+    } else {
+	$one_match->{rel_w} = "NA";
+    }
+
+    return($one_match);
+}
+
+################################################################
+## Print one match
+sub PrintOneMatch {
+    my ($one_match) = @_;
+
+    my @result = ();
+
+    my $seq1 = $one_match->{pattern1}->get_attribute("sequence");
+    my $seq2 = $one_match->{pattern2}->get_attribute("sequence");
+
+
+    ################################################################
+    ## Calculate the resulting row for this comparison and check thresholds
+    foreach my $field (@return_fields) {
+	my $value = $one_match->{$field};
+	## Format the field
+	push @result, sprintf $field_format{$field}, $value;
+#	&RSAT::message::Debug($seq1, $seq2, $field, $value) if ($main::verbose >= 0); 
+   }
+
+    ## Check thresholds on this field
+    foreach my $field (keys(%lth)) {
+	my $value = $one_match->{$field};
+	if ($value < $lth{$field}) {
+	    $filtered_out->{$seq1}->{$seq2} = 1;
+	}
+#	&RSAT::message::Debug($seq1, $seq2, $field, $value) if ($main::verbose >= 0); 
+    }
+    foreach my $field (keys(%uth)) {
+	my $value = $one_match->{$field};
+	if ($value > $uth{$field}) {
+	    $filtered_out->{$seq1}->{$seq2} = 1;
+	}
+    }
+
+    ## Print the result for this comparison
+    unless ((scalar(@return_fields) < 1) ||
+	    ($filtered_out->{$seq1}->{$seq2})) {
+	print $out join ("\t", @result), "\n";
+    }
+
+    ## Store the result for the contingency table
+    foreach my $field (@table_fields) {
+	my $table_name = $field."_table";
+	my $value = $one_match->{$field};
+	$$table_name->{$seq1}->{$seq2} = $value;
+    }
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	compare-patterns
+
+AUTHOR
+	Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+	compare-patterns seq1 seq2
+
+DESCRIPTION
+
+	Count matching residues between pairs of sequences/patterns
+	from two sets, and assess the statistical significance of the
+	matches. Patterns can be described using the IUPAC code for
+	ambiguous nucleotides. Spaced patterns (dyads) are also
+	supported.
+
+	This program is typically used to compare a set of discovered
+	patterns (e.g. oligo-analysis result) with a set of known
+	transcription factor binding sites (e.g. sites stored in the
+	TRANSFAC database).
+
+CATEGORY
+	util
+	sequences
+
+OPTIONS
+	-h	display full help message
+	-help   (must be first argument) display options
+	-v	verbose
+	-seq1	first sequence for the comparison
+		This argument can be repeated on the same command line
+		to enter multiple patterns.
+	-seq2	second sequence for the comparison
+
+		The options -seq1 and -seq2 can be used iteratively to
+		specify multiple sequence patterns. Each sequence of
+		group 1 is then compared to each sequence of group 2.
+		   ex: -seq1 gataag -seq1 gattag -seq1 gataah 
+		       -seq2 agataata -seq2 gtttag
+		 Note that when many patterns have to be entered, the
+		 options -file1 and -file2 are more convenient.
+	-file1 	file containing a list of patterns to be used as first
+         	sequences for the comparison (see format below). 
+	-file2 	file containing a list of patterns to be used as second
+         	sequences for the comparison (see format below). 
+	-return	return fields
+		Each selected field is returned in a separate column.
+		Supported: $supported_return_fields
+
+        -uth field #
+                upper threshold value for a given field
+                Supported_fields: $supported_threshold_fields
+
+        -lth field #
+                lower threshold value for a given field
+                (same fields as -uth)
+
+	-slide	find best match by sliding seq2 along seq1
+		When this option is used, the best offset is also
+		returned. The offset is the number of positions to
+		shift seq1 in order to obtain the best scoring
+		alignment. Negative values represent a shit of seq2 to
+		the left side, positive values ot the right side.
+
+	-2str 	Match on both strands 
+		In addition to the direct matching (strand = D), the
+		reverse complement of each pattern of group 1
+		(specified by -seq1 or -file1) is matched against each
+		pattern of group2.
+
+	-table field
+	       Return a contingency table, where each row corresponds
+	       to one sequence from file 1, each column to a sequence
+	       from file 2, and the cells contain the value of the
+	       specified field.
+	       Supported fields: $supported_table_fields
+
+	-null   null string (default $default_null) displayed in
+                contingency tables when the cell contains a value
+                which does not pass the thresholds.
+
+INPUT FORMAT
+    PATTERNS
+	seq1 and seq2 must be DNA sequences (not peptidic). 
+        IUPAC degenerate code is accepted in seq1 as well as seq2.
+
+    PATTERN FILE
+	A pattern file is a tab-delimited text file. Each row contains
+	the description of one pattern. Column content:
+	  1) Pattern sequence. This is the only mandatory column.
+	  2) Pattern ID (optional).
+	Additional columns can be used to specify other pattern
+	attributes (description, score, ...), but they are by default
+	ignored by the program. The option -sc allows to specify a
+	score column.
+
+OUTPUT FORMAT
+       The output consists in a tab-separated text table, with one row
+       per pair of sequences, and one column per return field.
+
+RETURN FIELDS
+       match	number of matching positions
+
+       Pval     P-value for a single comparison. 
+
+       	        This represents the probability, for the comparison
+       	        between two sequences, to return a match.
+
+       		When the simple nucleotide alphabet (A, C, G, T) is
+       		used, the probability of random match is estimated to
+       		1/4: given the letter in the first sequence, the
+       		probability that a random letter would match it is
+       		1/4.
+
+		Note that this assumes that nucleotides are considered
+		equiprobable.
+
+		The program also scores matches between the
+		degenerated nucleotides defined by the IUPAC
+		commission (http://www.iupac.org/).
+
+		code	nucleotides	mnemonics
+		---------------------------------------------------------
+		A			Adenine
+		C			Cytosine
+		G			Guanine
+		T			Thymine
+		R	= A or G	puRines
+		Y	= C or T	pYrimidines
+		W	= A or T	Weak hydrogen bonding
+		S	= G or C	Strong hydrogen bonding
+		M	= A or C	aMino group at common position
+		K	= G or T	Keto group at common position
+		H	= A, C or T	not G
+		B	= G, C or T	not A
+		V	= G, A, C	not T
+		D	= G, A or T	not C
+		N	= G, A, C or T	aNy)
+
+		The probability of a match between two degenerated
+                nucleotides is calculated with the hypergeometric
+                distribution.
+
+		The underlying probabilistic model is that the two
+		letters to be macthed represent each a subset of the
+		alphabet. The problem can be thought of as an urn with
+		4 balls, each ball representing one possible
+		nucleotide (A, C, G, T).
+
+		For the sake of illustration, let us assume that we
+		want to compare the two IUPAC codes Y (C or T) and M
+		(A or C). in the urn (alphabet), we will label in
+		black the balls (nucleotides) comprised in the first
+		set (C and T). We can now consider the second IUPAC
+		letter as a random selection of 2 balls in this urn,
+		which contains 2 black balls (A, C) and 2 white balls
+		(G, T). Our selection (C and T) contains one black
+		ball. It is thus a match.
+
+		The right tail of the hypergeometric distribution
+		allows us to calculate the probability to observe at
+		least one back ball in a selection of 2 balls,
+		selected at random in an urn with 2 black balls and 2
+		white balls.
+
+                                          c      i  n-i     n
+                   Pval = P(X >= c) = SUM  ( C  C     / C  )
+                                         i=1     m  4-m     4
+
+		Where
+
+		   m   is the number of black balls in the urn
+		       (nucleotides matching the first IUPAC letter)
+
+		   4-m is the number of white balls in the urn 
+		       (nucleotides not matching the first IUPAC
+		       letter)
+
+		   n   is the number of nucleotides matched by the
+		       second IUPAC letter.
+
+		   c = min(n,m) is the maximal number of common
+		       letters between the m nucleotides of the 1st
+		       IUPAC letter and the n nucleotides of the 2nd
+		       IUPAC letter.
+
+                In our example (Y against M), m=2, n=2, c=min(2,2)=2.
+		   Pval=0.83333
+
+		We can check the generality of the formula with some
+		examples : 
+
+		 - a trivial match (e.g. N against A) should have a
+                   P-value of 1. In this case, m=4, n=1, c=min(4,1)=1.
+
+                                           1  0    1
+                   Pval = P(X >= c) =  C  C  / C   = 4*1/4 = 1
+                                           4  0    4
+
+				   
+		 - a simple match between two non-degenerated letters
+                   should have a P-value of 1/4. Indeed, in this case
+                   n=1, m=1, c=min(1,1)=1.
+
+                                           1  0    1
+                   Pval = P(X >= c) =  C  C  / C  = 0.25
+                                           1  3    4
+
+	         - Interestingly, a match between a IUPAC letter
+                   matching 3 nucleotides (e.g. H = A, C or T) letter
+                   another matching 2 nucleotides (e.g. S = G or C)
+                   will have a probability to 1. Indeed, m=3, n=2 and
+                   c=min(3,2)=2, thus:
+
+                                          2      i  2-i    2
+                   Pval = P(X >= c) = SUM  ( C  C    / C  )
+                                         i=1     3  1      4
+
+		   This reflects the fact that it is impossible to
+		   have not a single white ball in the selection, when
+		   we select 2 balls among a set of 3 black and 1
+		   white balls.
+
+	Eval_p	   E-value for a single comparison between two sequences. 
+
+		   This is a correction for multiple testing, taking
+		   into account the fact that a comparison between two
+		   sequences (or patterns) can already result in some
+		   multi-testing effects, for two reasons :
+
+		    - with the option -slide, the two sequences are
+                      compared with different offsets.
+		      	       Eval_p = Pval * noffs
+
+		    - with the option -2str, two comparisons are
+                      performed per pair of sequences. In this case,
+		      		Eval_p = Pval*2*noffs
+
+		   It is useful to return the Eval together with the
+		   number of offsets analyzed (corresponding to the
+		   number of tests for a given pair of sequences).
+		   	  -return Pval,noffs,Eval,sig
+
+	sig_p      Significance for a single comparison between two
+		   sequences. 
+		   This is a simple logarithmic conversion of Eval_p.
+
+		   	      sig_p = -log10(Eval_p)
+
+	Eval_f	   E-value for the whole analysis. 
+
+		   This E-value includes a correction for the fact
+		   that, usually, multiple sequences (patterns) are
+		   compared to multiple sequences (patterns).
+
+		   For example, if the program is used to compare an
+		   oligo-analysis result file with a database of
+		   annotated sites, the oligo file can typically
+		   contain a dozen of words, and the database several
+		   hundreds of sites.
+
+	sig_f      Significance for the whole analysis. 
+		   This is a simple logarithmic conversion of Eval_f.
+
+		   	      sig_f = -log10(Eval_f)
+
+
+	weight 	the weight reflects the number of matching positions,
+                with a lower weight for matches between partially
+                specified nucleotides (IUPAC codes).
+
+		The weight is calculated as
+		    -log4(Pval)
+
+		For an alignment between non-ambigous nucleotides, the
+		weight is maximal, and its value is the number of
+		matching residues.
+
+	max weight
+		Maximal weight for the match with a given pattern.
+		max_w1	maximal weight for pattern 1
+		max_w2	maximal weight for pattern 2
+		max_w maximal weight between pattern 1 and pattern2
+		      max_w = min(max_w1, max_w1)
+
+	weight differences
+		Difference between match weight and maximal possible weight.
+		diff_w1 = max_w1 - weight
+		diff_w2 = max_w2 - weight
+		diff_w = max_w - weight
+
+
+	relative weight
+		The relative weight is the ratio between matching weight and
+		maximal weight.
+		   rel_w1 = weight/max_w1
+		   rel_w2 = weight/max_w2
+		   rel_w = weight/max_w
+
+	length	lengths 
+		This option returns 4 length values
+		     len1   length of sequence 1
+		     len2   length of sequence 2
+		     mlen   length of the match
+		     tlen   total length of the alignment
+		     	    tlen = len1 + len2 - mlen
+
+	seq	sequences to be compared
+
+EXAMPLES
+
+	Single pair of sequences
+	------------------------
+	compare-patterns -seq1 GATAAT -seq2 GATWAG -return match,weight
+
+	should return the value 5 matches (the degenerate code W
+        stands for "T or A") and a weight of 4.5
+
+	Multiple pairs of sequences
+	---------------------------
+
+	compare-patterns -seq1 GATAAG -seq2 GATWAG -seq2 GATAAG \\
+	    -seq2 GATAAT -seq2 gatha -seq2 gatnns -seq2 NNNNNN \\
+	    -v 1 -return match,weight,Pval,length,seq
+
+        Compares the firsts sequence with each sequence of group 2.
+        Notice the difference between the columns match and weight.
+
+	Sliding sequences
+	-----------------
+	compare-patterns -v 1 -seq1 gatasg -seq2 twagtt -slide \\
+	    -return match,weight,Pval,seq,length
+
+        Thresholds
+	----------
+	compare-patterns -v 1 -seq1 gatasg -seq2 twagtt -seq2 ccccga \\
+	    -slide -return offset,match,weight,Pval,seq,length -lth mlen 3
+
+	This options sets a lower threshold of 3 on matching length.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+compare-patterns options
+----------------
+-h		display full help message
+-help   	display options
+-seq1		first sequence for the comparison
+-seq2		second sequence for the comparison
+-file1		file containing a first list of sequences 
+-file2		file containing a second list of sequences 
+-return	field	return fields. Supported: $supported_return_fields
+-table field    return a contingency table. Supported: $supported_table_fields
+-null           null string (default $NULL)
+-lth            lower threshold on a given field
+-uth            upper threshold on a given field
+-slide	      	find best match by sliding seq2 along seq1
+-2str		match on both strands
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### first sequence  
+	} elsif ($ARGV[$a] eq "-seq1") {
+#	    push @pattern1, $ARGV[$a+1];
+	    push @pattern1, new RSAT::pattern(sequence=>$ARGV[$a+1],
+					     id=>$ARGV[$a+1]);
+
+	    ### second sequence  
+	} elsif ($ARGV[$a] eq "-seq2") {
+#	    push @pattern2, $ARGV[$a+1];
+	    push @pattern2, new RSAT::pattern(sequence=>$ARGV[$a+1],
+					     id=>$ARGV[$a+1]);
+
+	    ### first sequence   file
+	} elsif ($ARGV[$a] eq "-file1") {
+	    $pattern_file1 = $ARGV[$a+1];
+
+	    ### second sequence   file
+	} elsif ($ARGV[$a] eq "-file2") {
+	    $pattern_file2 = $ARGV[$a+1];
+
+	    ### return fields
+	} elsif ($ARGV[$a] eq "-return") {
+	    push @return_fields, split ",", $ARGV[$a+1];
+
+	    ### table fields
+	} elsif ($ARGV[$a] eq "-table") {
+	    push @table_fields, split ",", $ARGV[$a+1];
+
+	    ### null string
+	} elsif ($ARGV[$a] eq "-null") {
+	    $NULL = $ARGV[$a+1];
+
+            #### threshold values
+        } elsif ($ARGV[$a] eq "-lth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $lth{$field} = $value;
+        } elsif ($ARGV[$a] eq "-uth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $uth{$field} = $value;
+
+	    ### slide sequences 
+	} elsif ($ARGV[$a] eq "-slide") {
+	    $slide = 1;
+
+	    ### strands
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $both_strands = 1;
+	}
+    }
+}
+
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; compare-patterns ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    
+    printf $out "%-29s\t%d\n", "; Sequences in file1", scalar(@pattern1);
+    printf $out "%-29s\t%d\n", "; Sequences in file2", scalar(@pattern2);
+    &PrintFieldDescriptions();
+    
+}
+
+
+################################################################
+## Print field descriptions
+sub PrintFieldDescriptions {
+    ## Field descriptions
+    my %field_descriptions = ();
+    $field_description{id1} = "Identifier of a sequence of the first set";
+    $field_description{id2} = "Identifier of a sequence of the second set";
+    $field_description{seq1} = "First sequence";
+    $field_description{seq2} = "Second sequence";
+    $field_description{len1} = "length of the first sequence";
+    $field_description{len2} = "Length of the second sequence";
+    $field_description{tlen} = "Total length of the alignment (taking into account the offset)";
+    $field_description{mlen} = "Length of the match (intersecting segment between the two aligned sequences)";
+    $field_description{offset} = "Offset between the two aligned sequences (only with the option -slide)";
+    $field_description{match} = "number of matching residues";
+    $field_description{Pval} = "P-value";
+    $field_description{weight} = "match weight. weight=-log4(Pval)";
+    $field_description{noffs} = "number of offsets tested";
+    $field_description{Eval_p} = "E-value for a single comparison (one sequence against one sequence). Eval_p = Pval*noffs";
+    $field_description{sig_p} = "significance for a single comparison. sig_p = -log10(Eval_p)";
+    $field_description{Eval_f} = "E-value for the whole analysis (all sequences against all sequences). Eval_f = Eval_p*nb_seq1*nb_seq2";
+    $field_description{sig_f} = "significance for the whole analysis. sig_f = -log10(Eval_f)";
+    $field_description{strand} = "Strand (D: direct, R: reverse)";
+    $field_description{max_w1} = "Maximal weight for a match with seq1";
+    $field_description{max_w2} = "Maximal weight for a match with seq2";
+    $field_description{max_w} = "Maximal weight for a match between seq1 and seq2. max_w = min(max_w1, max_w2)";
+    $field_description{diff_w1} = "Weight difference relative to max_w1. diff_w1 = max_w1 - weight";
+    $field_description{diff_w2} = "Weight difference relative to max_w2. diff_w2 = max_w2 - weight";
+    $field_description{diff_w} = "Weight difference relative to max_w. diff_w = max_w - weight";
+    $field_description{rel_w1} = "Weight of the match, relative to max_w1. rel_w1 = weight/max_w1";
+    $field_description{rel_w2} = "Weight of the match, relative to max_w1. rel_w2 = weight/max_w2";
+    $field_description{rel_w} = "Weight of the match, relative to max_w1. rel_w = weight/max_w";
+    $field_description{top_s1} = "";
+    $field_description{top_s2} = "";
+    print $out ";\n";
+    print $out "; Field descriptions\n";
+    foreach my $f (1..scalar(@return_fields)) {
+	my $field = $return_fields[$f-1];
+	print $out join ("\t", ";", $f, $field, $field_description{$field}), "\n";
+    }
+    print $out ";\n";
+}

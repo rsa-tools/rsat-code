@@ -1,0 +1,218 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>random-genome-fragments</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=random-genome-fragments_form.cgi>random-genome-fragments</a> manual</h2>
+</center>
+
+<p><a name="__index__"></a></p>
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#output_formats">OUTPUT FORMATS</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>random-genome-fragments</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Select a set of fragments with random positions in a given genome, and
+    return their coordinates and/or sequences. The supported organisms are
+    etiher installed in RSAT or from Ensembl. Makes use of EnsEMBL API
+    (www.ensembl.org) for EnsEMBL genomes. </p>
+
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p><a href="mailto:morgane@bigre.ulb.ac.be">morgane@bigre.ulb.ac.be</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>sequences</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<pre>
+
+random-genome-fragments -org organism -l length -r repetitions [-o outputfile] [-v # -rm -lf length_file] [..]</pre>
+<p>
+</p>
+<hr />
+<h1><a name="output_formats">OUTPUT FORMATS</a></h1>
+<p> The program outputs a file containing the genomic coordinates or the
+    sequences.</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+</li>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+</li>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+</li>
+<h2><a name="output_format">Output formats</a></h2>
+<dt><strong><a name="o_outputfile" class="item"><strong>-o outputfile</strong></a></strong>
+
+<dd>
+<p>If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.</p>
+</dd>
+</li>
+<dt><strong><a name="oformat_output_format" class="item"><strong>-return returned_type</strong></a></strong>
+
+<dd>
+<p>Type of data to return. Supported values: seq | coord <br/>
+
+        By default, coordinates (coord) are returned. For RSAT organisms,
+        the return type can be 'seq' to retrieve sequences. The sequence
+        format is fasta. For Ensembl organisms, use the coordinate file (in
+        ft format) as input to retrieve-ensembl-seq.pl with the options
+        -ftfile YourCoordFile -ftfileformat ft. You can also use the tools
+        of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract
+        the sequences from the coordinates.
+</p>
+</dd>
+<dt><strong><a name="oformat_output_format" class="item"><strong>-coord_format coordinates_format</strong></a></strong>
+<dd>
+<p>Supported values: ft | bed <br/>
+
+        Default is ft. To convert to another supported feature format, type
+        the following command: convert-features -h
+
+        For very big files, you might consider using the output format BED,
+        which is adapted to UCSC database. You can thus use the tools of
+        sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the
+        sequences. The genomic intervals in this BED file are 0-based, as
+        specified in UCSC. Chromosome thus start at position 0 (not 1). This
+        BED file is compatible with UCSC, Galaxy and Ensembl (On the Ensembl
+        website, the bed file is automatically converted from 0-based into
+        1-based)
+</p>
+</dd>
+</li>
+<dt><strong><a name="rm" class="item"><strong>-rm</strong></a></strong>
+
+<dd>
+<p>Will use the version of genome with repeat masked</p>
+</dd>
+</li>
+
+<h2><a name="organism">Organisms options</a></h2>
+<dt><strong><a name="org_organism_name" class="item"><strong>-org organism_name</strong></a></strong>
+
+<dd>
+<p>Specifies an organism, installed in RSAT.
+To have the list of supported organism in RSAT, type the following
+command: <em>supported-organism</em></p>
+</dd>
+</li>
+<dt><strong><a name="org_ens_ensembl_organism_name" class="item"><strong>-org_ens ensembl_organism_name</strong></a></strong>
+
+<dd>
+<p>Specifies an organism, from EnsEMBL database.
+No caps, underscore between words (eg 'homo_sapiens')</p>
+</dd>
+</li>
+<dt><strong><a name="ensemblhost_mysql_server_name" class="item"><strong>-ensemblhost mysql_server_name</strong></a></strong>
+
+<dd>
+<p>Uses a local EnsEMBL server. (Advanced users)</p>
+</dd>
+</li>
+
+<h2><a name="fragments">Fragments options</a></h2>
+
+<dt><strong><a name="r_repetitions" class="item"><strong>-r repetitions</strong></a></strong>
+
+<dd>
+<p>Allows to generate a set r of sequences, each of length l.</p>
+</dd>
+</li>
+<dt><strong><a name="l_sequence_length" class="item"><strong>-l sequence_length</strong></a></strong>
+
+<dd>
+<p>Sequence length of random genomic fragments.</p>
+</dd>
+</li>
+
+<dt><strong><a name="lf_length_file" class="item"><strong>-iseq reference_sequences</strong></a></strong>
+<dd>
+<p>Allows to generate random sequences with the same lengths as a set
+        of reference sequences. The difference with the -lf option is that
+        the sequence lengths are automatically calculated.
+</p>
+</dd>
+
+<dt><strong><a name="lf_length_file" class="item"><strong>-lf length file</strong></a></strong>
+
+<dd>
+<p>Allows to generate random sequences with the same
+lengths as a set of reference sequences. The sequence
+length file can be obtained with the command <em>sequence-lengths</em></p>
+</dd>
+<dd>
+On the website, it is possible to directly use the reference (=template) sequence set.
+The website automatically uses the program <em>sequence-lengths</em> to genere a length file with two columns :
+<pre>
+</pre>
+</dd>
+<dl>
+sequence ID (ignored) <br/>
+sequence length
+
+</dl>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="random_genes" class="item">random-genes</a></strong>
+
+</dl>
+
+</body>
+
+</html>

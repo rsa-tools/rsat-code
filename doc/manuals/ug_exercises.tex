@@ -1,0 +1,61 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% EXERCISES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Exercises}
+
+As an exercise, we will now combine the different tools described
+above to analyse the full set of promoters from \org{Arabidopsis
+thaliana}. We define ourselves the following goals :
+\begin{enumerate}
+\item Discover motifs which are over-represented in the complete set
+of upstream sequences for the selected organism. 
+\item Try different parameters for this pattern discovery, and compare
+the results.
+\item Use these over-represented patterns to scan full chromosomes
+with a sliding window, in order to evaluate if we can predict promoter
+locations on the sole basis of pattern occurrences. Find optimal
+parameters for the prediction of promoter locations.
+\end{enumerate}
+
+\section{Some hints}
+
+\subsection{Sequence retrieval}
+
+The first step will be to retrieve the full complement of upstream
+sequences. Since we have no precise idea about the best sequence size,
+we will try several reasonable ranges, each roughly corresponding to a
+given functionality.
+
+\begin{description}
+\item[from -1 to -200] this regions is likey to contain mostly 5'UTR.
+\item[from -1 to -400] this region is likely to contain the 5' UTR and
+the proximal promoter.
+\item[from -1 to -1000] this region is likely to include the 5'UTR,
+as well as the proxima and distal promoters. 
+\item[from -1 to -2000] an even larger range, which probably contains
+most of the upstream cis-acting elements in \org{A. thaliana}.
+\end{description}
+
+In all cases, we will clip upstream ORFs, because they would bias the
+oligonucleotide composition.
+
+Write the commands which will retrieve all upstream sequences over the
+specified range. Beware, the sequence files may occupy a large space
+on the disk, it is probably wise to directly compress them by adding
+the extension \texttt{.gz} to the output file.
+
+\subsection{Detection of over-represented motifs}
+
+In a first step, we will restrict our analysis to
+hexanucleotides. Once all the subsequent steps (full chromosome
+scanning) will be accomplished, we will redo the complete analysis
+with different oligonucleotide lengths, and compare the efficiency of
+promoter prediction.
+
+Detect over-represented oligo-nucleotides with different estimators of
+expected frequencies: Markov chains of different orders, non-coding
+frequencies. 
+
+Do not forget to prevent counting self-overlapping matches.
+

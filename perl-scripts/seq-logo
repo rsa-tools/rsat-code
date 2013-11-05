@@ -1,0 +1,216 @@
+#!/usr/bin/perl -w
+
+use strict;
+use GD;
+
+# Params
+my $params = {};
+$params->{'fontPath'} = $ENV{RSAT}.'/perl-scripts/verdanab.ttf';
+$params->{'width'} = 200;
+$params->{'height'} = 200;
+$params->{'minVal'} = 0;
+$params->{'maxVal'} = 2;
+$params->{'valRange'} = $params->{'maxVal'} - $params->{'minVal'};
+
+
+$params->{'fontSize'} = 48;
+$params->{'out'} = 'test.png';
+$params->{'alphabet'} = [ qw(A T G C) ];
+$params->{'Ylabels'} = [ qw(0 1 2) ];
+$params->{'bgCol'} = [255,255,255]; # RGB color for background
+$params->{'fgCol'} = [0,0,0]; # RGB color for foreground
+$params->{'axisWidth'} = 2;
+$params->{'tickSize'} = 4;
+$params->{'labelsFntSize'} = 12;
+
+# Letters color
+$params->{'colors'}->{'A'} = [255,0,0];
+$params->{'colors'}->{'T'} = [0,255,0];
+$params->{'colors'}->{'G'} = [0,0,255];
+$params->{'colors'}->{'C'} = [255,0,255];
+
+my $mat = loadMatrix();
+my $graph = initGraph($mat);
+
+drawSeq($mat, $graph);
+
+my $fh = FileHandle->new('>' . $params->{'out'});
+print $fh $graph->{'gd'}->png();
+$fh->close();
+
+print "Done.\n";
+
+exit;
+
+sub drawSeq {
+  my $mat = shift;
+  my $graph = shift;
+
+  my $gdLetters = $graph->{'alphabet'};
+  my $seqLen = scalar @{$mat};
+
+  # Used to scale the characters
+  my $scaler = $graph->{'dh'} / $params->{'valRange'};
+  print "Scaler = $scaler = $graph->{'dh'} / $params->{'valRange'}\n";
+
+  my $x = $graph->{'dx'};
+  for (my $i = 0; $i < $seqLen; $i++) {
+    my $col = $mat->[$i];
+    my $y = $graph->{'dy'};
+
+    # Sort chars
+    my %sorter;
+    foreach my $char (@{$params->{'alphabet'}}) {
+      push(@{$sorter{$col->{$char}}}, $char);
+    }
+    my @sorted = sort {$a <=> $b} keys %sorter;
+    foreach my $val (@sorted) {
+      foreach my $char (@{$sorter{$val}}) {
+	# Scale the letter given the value
+	my $targetH = int($val * $scaler);
+	$y -= $targetH;
+
+	print "Drawing letter $char in col $i at $x,$y with $targetH from ", $col->{$char}, ' * ', $scaler, "\n";
+
+	# Copy its image to the canvas
+	$graph->{'gd'}->copyResized($gdLetters->{$char}->{'gd'}, $x, $y, 0, 0, 
+				    $gdLetters->{$char}->{'w'}, $targetH, 
+				    $gdLetters->{$char}->{'w'}, $gdLetters->{$char}->{'h'});
+      }
+    }
+    $x += $graph->{'maxW'};
+  }
+}
+
+sub initGraph {
+	my $mat = shift;
+	
+	my $graph = {};
+	
+	# Init the characters
+	my $gdChars = {};
+	my $maxW = 0;
+	my $maxH = 0;
+	my $graphH = 0;
+	foreach my $char (@{$params->{'alphabet'}}) {
+		my @area = GD::Image->stringFT(0,$params->{'fontPath'},$params->{'fontSize'},0,0,0,$char);
+		
+		# Letter width
+		my $lw = $area[2] - $area[0];
+		$maxW = $lw if ($lw > $maxW);
+		# Letter height
+		my $lh = $area[1] - $area[7];
+		$maxH = $lh if ($lh > $maxH);
+		$graphH += $lh;
+		
+		print "Letter $char = $lw - $lh\n";
+		
+		# Create the GD character
+		my $gdChar = GD::Image->new($lw, $lh);
+		my $bgCol = $gdChar->colorAllocate(@{$params->{'bgCol'}});
+		my $col = $gdChar->colorAllocate($params->{'colors'}->{$char}->[0], $params->{'colors'}->{$char}->[1], $params->{'colors'}->{$char}->[2]);
+		
+		# Draw the character
+		$gdChar->filledRectangle(0, 0, $lw, $lh, $bgCol);
+		$gdChar->stringFT($col, $params->{'fontPath'}, $params->{'fontSize'}, 0, 0, $lh, $char);
+		$gdChars->{$char}->{'gd'} = $gdChar;
+		$gdChars->{$char}->{'w'} = $lw;
+		$gdChars->{$char}->{'h'} = $lh;
+	}
+	
+	$graph->{'alphabet'} = $gdChars;
+	
+	# Create the canvas
+	
+	my $halfChar = int($maxW / 2);
+	my $halfLabelChar = $params->{'labelsFntSize'} / 2;
+	
+	# Set image width
+	my $seqLen = scalar @{$mat};
+	my $graphW = $maxW * $seqLen;
+	$graphW += $maxW + $params->{'axisWidth'} + $params->{'tickSize'} + $halfChar + 10;
+	
+	# Set image height
+	$graphH += $maxH + $params->{'axisWidth'} + $params->{'tickSize'} + $halfChar + 10;
+	
+	# Create GD object
+	my $gd = GD::Image->new($graphW, $graphH);
+	my $bgCol = $gd->colorAllocate(@{$params->{'bgCol'}});
+	my $fgCol = $gd->colorAllocate(@{$params->{'fgCol'}});
+	
+	$gd->filledRectangle(0, 0, $graphW, $graphH, $bgCol);
+	
+	# Draw X axis
+	my $x = $maxW + $params->{'tickSize'} + 5;
+	my $y = $graphH - $params->{'tickSize'} - $maxH - $params->{'axisWidth'} - 5;
+	
+	# Keep params for the seq rendering
+	$graph->{'dx'} = $x + $params->{'axisWidth'};	# Keep start x for drawing seq
+	$graph->{'dy'} = $y;	# Keep start y for drawing seq
+	$graph->{'maxW'} = $maxW;
+	$graph->{'maxH'} = $maxH;
+	
+	my $w = $maxW * $seqLen;
+	for (my $i = 0; $i < $params->{'axisWidth'}; $i++) {
+		$gd->line($x, $y + $i, $x + $w, $y + $i, $fgCol);
+	}
+	
+	$x += $halfChar;
+	# Draw ticks and labels
+	for (my $i = 0; $i < $seqLen; $i++) {
+		for (my $j = 0; $j < $params->{'axisWidth'}; $j++) {
+			$gd->line($x + $j, $y, $x + $j, $y + $params->{'tickSize'}, $fgCol);
+		}
+		
+		$gd->stringFT($fgCol, $params->{'fontPath'}, $params->{'labelsFntSize'}, 0, $x - $halfLabelChar + 2, $y + $params->{'labelsFntSize'} + $params->{'tickSize'} + 4, $i);
+		$x += $maxW;
+	}
+	
+	# Draw Y axis
+	$x = $maxW + $params->{'tickSize'} + 5;
+	$y = 5 + $halfChar;
+	my $nbChars = scalar @{$params->{'alphabet'}};
+	my $h = $maxH * $nbChars;
+	
+	$graph->{'dh'} = $h; # Keep height for drawing seq
+	
+	for (my $i = 0; $i < $params->{'axisWidth'}; $i++) {
+		$gd->line($x + $i, $y, $x + $i, $y + $h, $fgCol);
+	}
+	
+	# Draw ticks and labels
+	my $nbLabels = scalar @{$params->{'Ylabels'}};
+	my @revLabels = reverse @{$params->{'Ylabels'}};
+	my $increment = $h / $nbLabels;
+	$x = $maxW + 5;
+	for (my $i = 0; $i < $nbLabels; $i++) {
+		for (my $j = 0; $j < $params->{'axisWidth'}; $j++) {
+			$gd->line($x, $y + $j, $x + $params->{'tickSize'}, $y + $j, $fgCol);
+		}
+		
+		$gd->stringFT($fgCol, $params->{'fontPath'}, $params->{'labelsFntSize'}, 0, $x - $params->{'labelsFntSize'}, $y + $halfLabelChar, $revLabels[$i]);
+		$y += $increment;
+	}
+	
+	$graph->{'gd'} = $gd;
+	
+	return $graph;
+}
+
+sub loadMatrix {
+  my $mat = [];
+	
+  print "Loading matrix...\n";
+  
+  for (my $i = 0; $i < 8; $i++) {
+    my $max = $params->{'valRange'};
+    foreach my $char (@{$params->{'alphabet'}}) {
+      my $score = $params->{'minVal'} + rand($max);
+      print " - Pos $i - $char = $score\n";
+      $mat->[$i]->{$char} = $score;
+      $max -= $score;
+    }
+  }
+
+  return $mat;
+}

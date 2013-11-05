@@ -1,0 +1,453 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: fit-distribution,v 1.24 2012/01/18 17:33:46 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  #### initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+  local $null = "NA";
+  local %infile = ();
+  local %outfile = ();
+
+  local $verbose = 0;
+  local $in = STDIN;
+  local $out = STDOUT;
+  local $last_repet = 0;
+
+  local $distrib = "poisson";
+  local @out_fields = qw (
+			  avg
+			  std
+			  var
+			  repet
+			  fitted_distrib
+			  chi2
+			  df
+			  left_group
+			  right_group
+			  obs_grouped
+			  exp_grouped
+			 );
+
+  %supported_distrib = ("poisson"=>1,
+			"negbin"=>1,
+			#		      "binomial"=>1,
+		       );
+  $supported_distrib = join ", ", sort keys %supported_distrib;
+
+  &ReadArguments();
+
+  ################################################################
+  #### check argument values
+  if ($distrib eq "negbin") {
+    push @out_fields, qw (p k);
+  }
+
+
+  ################################################################
+  ### open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+
+  ################################################################
+  #### print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ## Open the file with count distributions
+  ($in) = &OpenInputFile($infile{input});
+  my $pattern_count = 0;
+  my $header_done = 0;
+  my $header_OK = 0;
+  my @values = ();
+  my $l = 0;
+  my $shift_pattern = 0;
+  my $shift_id = 0;
+  while (<$in>) {
+    $l++;
+    next unless (/\S/);
+    chomp();
+
+    ## Read the header to catch the values of the distribution
+    if (/^;/) {
+      ## In old format, the last comment line was the header
+      $header = $_;
+      #    &RSAT::message::Debug("Header", $header) if ($main::verbose >= #0);
+      next;
+    }
+    if (/^#/) {
+      ## New format: the header is marked by a leading #
+      $header = $_;
+    }
+    #  &RSAT::message::Debug("Header", $header) if ($main::verbose >= 10);
+    unless ($header_done) {
+      @values = split( "\t", $header);
+
+      ### pattern
+      $values[0] =~ s/^;\s+//;
+      if (($values[0] =~ /pattern/)  || ($values[0] =~ /seq/)) {
+	shift @values;
+	$shift_pattern = 1;
+      }
+
+      ### id
+      if ($values[0] =~ /^id$/i) {
+	shift @values;
+	$shift_id = 1;
+      }
+      $header_done = 1;
+
+      ## Check that all header fields are integer
+      $header_OK = 1; ## Initialize as OK, put at 0 when any problem is found
+      foreach my $value (@values) {
+	unless (&IsInteger($value)) {
+	  &Warning("Header contains non-integer values. Values are inferred from the number of columns");
+	  $header_OK=0;
+	  last;
+	}
+      }
+
+      ## Print the header
+      unshift @out_fields, "id" if ($shift_id);
+      unshift @out_fields, "pattern" if ($shift_pattern);
+      print $out ";", join ("\t", @out_fields), "\n";
+    }
+
+    $pattern_count++;
+
+    local $min_occ;
+    if ($header_OK) {
+      $min_occ = $values[0];
+      $max_occ = $values[$#values];
+    } else {
+      $min_occ = 0;
+      $max_occ = $#counts;
+      @values = $min_occ..$max_occ;
+    }
+
+    ## Read the distribution
+    local @counts = split "\t";
+    local $pattern = shift @counts if ($shift_pattern);
+    local $id = shift @counts if ($shift_id);
+    local $sum = 0;
+    local $ssq = 0;
+    local $repet = 0;
+
+    for my $i (0..$#counts) {
+      my $occ = $values[$i] || 0;
+      &RSAT::error::FatalError(join "\t", "Invalid number of occurrences (must be integer)",
+			       "pattern=".$pattern,
+			       "i=".$i,
+			       "occ=".$occ,
+			       "repet=".$repet) unless (&IsInteger($occ));
+      $repet += $counts[$i];
+      &RSAT::error::FatalError(join "\t", "Invalid number of repetitions (must be integer)",
+			       "pattern=".$pattern,
+			       "i=".$i,
+			       "occ=".$occ,
+			       "repet=".$repet) unless (&IsInteger($repet));
+      $sum += $occ*$counts[$i];
+      $ssq += $occ*$occ*$counts[$i];
+      warn join ("\t", "pattern=".$pattern, "i=".$i, "occ=".$occ, "repet=".$repet, "sum=".$sum, "ssq=".$ssq), "\n" if ($main::verbose >= 10);
+    }
+
+    ################################################################
+    ## Calculate the parameters of the distribution
+    local $avg = undef;
+    local $var = undef;
+    local $std = undef;
+    local $repet_is_zero = 0;
+    if ($repet > 0) {
+      $avg = $sum/$repet;
+      $var = $ssq/$repet - $avg*$avg;
+      $std = sqrt($var);
+    } else {
+      $repet_is_zero = 1;
+      warn "WARNING: Line $l\tpattern $pattern\tsum of values is 0\n";
+    }
+    local $last_repet = $repet;
+
+    ## Fit a poisson distribution and calculate the goodness of fit
+    local @expected;
+    local $p = "NA";
+    local $k = "NA";
+    local $fitted_distrib = $distrib;
+    local $exp_sum = 0;
+    local ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref);
+    local $obs_grouped;
+    local $exp_grouped;
+
+    unless (($repet_is_zero)
+	    || ($avg == 0)) {
+      if ($distrib eq "poisson") {
+	@expected = &poisson($max_occ, $avg, 1);
+      } elsif ($distrib eq "negbin") {
+	if ($avg >= $var) {
+	  @expected = &poisson($max_occ, $avg, 1);
+	  $fitted_distrib = "poisson";
+	} else {
+	  $fitted_distrib = "negbin";
+	  ($p, $k, @expected) = &negbin2($max_occ, $avg, $var, 1);
+	}
+      }
+      if ($min_occ > 0) {
+	@expected = @expected[$min_occ..$#expected];
+      }
+
+      foreach my $i (0..$#expected) {
+	$expected[$i] *= $repet;
+	$exp_sum += $expected[$i];
+      }
+
+      &RSAT::message::Debug("header ".$header_done,
+			    "OK ".$header_OK,
+			    "\n".$pattern,
+			    "repet ".$repet,
+			    "sum ".$sum,
+			    "ssq ".$ssq,
+			    "avg ".$avg,
+			    "var ".$var,
+			    "std ".$std,
+			    "values ".scalar(@values),
+			    "counts ".scalar(@counts),
+			    "expected ".scalar(@expected),
+			    join( ":", @values),
+			    join( ":", @counts),
+			    join( ":", @expected),
+			   ) if ($main::verbose >= 10);
+
+      ## Perform a chi-square test
+      ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), 1, @counts, @expected);
+
+      $obs_grouped = join ":", @{$obs_ref};
+      $exp_grouped = join ":", @{$exp_ref};
+
+      ## Discard cases where applicability conditions are not met
+      #    unless (&IsReal($chi2)) {
+      #	$chi2 = "NA";
+      #    }
+
+      warn join ("\t",
+		 $pattern,
+		 $id,
+		 $avg,
+		 $std,
+		 $var,
+		 $sum,
+		 $ssq,
+		 $exp_sum,
+		 $chi2,
+		 $df,
+		 $left_group,
+		 $right_group),
+		   "\n" if ($verbose >= 3);
+    }
+
+    my  @out_values = ();
+    foreach my $field (@out_fields) {
+      unless (defined($$field)) {
+	$$field = $null;
+      }
+      push @out_values, $$field;
+    }
+    print $out join("\t", @out_values), "\n";
+  }
+
+  ################################################################
+  ###### close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out if ($outfile{output});
+
+
+  exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	fit-distribution
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+	Fit a theoretical distribution on observed distributions, and
+	estimate the goodness of fit with a chi2 test.
+
+CATEGORY
+	util
+
+USAGE
+        fit-distribution [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-distrib distribution
+		Theoretical distribution to be fitted on the observed
+		distributions.
+		Supported distributions: $supported_distrib
+	-null	string for null (undefined) values. Default: $null
+
+INPUT FORMAT
+
+      Input file is a distribution file, such as those generated by
+      oligo-analysis with the option -distrib.
+
+      A distribution file contains a table with one row per
+      distribution, one column per value. The last comment row
+      (starting with a ';') contins the column headers, which
+      indicates the values associated to each column. Each following
+      row contains the description of a distribution (for example the
+      distribution of occurrences of a given pattern, as returned by
+      oligo-analysis). The program takes each row in turn, and fits a
+      theoretical distribution on the observed distribution.
+
+OUTPUT FORMAT
+
+      The output file is a table with one row per distribution (for
+      example pattern occurrences), and several columns providing the
+      following statistics.
+	id	row identifier (for example the pattern)
+	sum	weighted sum of occurrences
+	        = SUM (value*occ)
+	avg	weighted mean of occurrences
+		=SUM(value*occ)/SUM(occ)
+	var	variance
+	std	standard deviation
+	chi2	observed chi-squared statistics
+	df	degrees of freedom
+	Lgroup  left grouping (number of classes regrouped on the left
+	        tail of the distribution, in order to fill the
+	        applicability condition for the chi2 test: the
+	        expected frequency of each class should be >= 5.
+	Rgroup  right grouping (number of classes regrouped on the
+	        right tail of the distribution, in order to fill the
+	        applicability condition for the chi2 test: the
+	        expected frequency of each class should be >= 5.
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+fit-distribution options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-distrib	distribution. Supported: $supported_distrib
+-null		string for null (undefined) values. Default: $null
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+
+      ### input file
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+
+      ### output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+
+      ### string for null (undefined) values
+    } elsif ($ARGV[$a] eq "-null") {
+      $null = $ARGV[$a+1];
+
+      ### distribution
+    } elsif ($ARGV[$a] eq "-distrib") {
+      $distrib = lc($ARGV[$a+1]);
+      &RSAT::error::FatalError("Invalid distribution '$distrib'. Supported $supported_distrib")
+	unless ($supported_distrib{$distrib});
+
+    }
+  }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $out "; fit-distribution ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  printf $out "; %-29s\t%s\n", "Theor.distrib", $distrib;
+  printf $out "; %-29s\t%d\n", "Repetitions", $last_repet;
+  print $out "; Columns\n";
+  for my $i (0..$#out_fields) {
+    printf $out ";\t%d\t%s\n", $i+1, $out_fields[$i];
+  }
+
+
+}
+

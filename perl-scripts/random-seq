@@ -1,0 +1,712 @@
+#!/usr/bin/perl
+
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+## Main package
+package main;
+{
+    ## Start time
+    $start_time = &RSAT::util::StartScript();
+
+    ## Initialise parameters ####
+    $out_format = "fasta";
+    $seq_nb = 1;
+    $repetitions = 1;
+    $line_width = 70;
+    $sequence_type = "dna";
+    $seq_prefix = "rand";
+
+    local %infile;
+
+    ################################################################
+    ## Supported background models
+    %supported_bg = (
+	'equi'=>1,
+	'intergenic'=>1,
+	'upstream'=>1,
+	'upstream-noorf'=>1,
+	'protein'=>1,
+	);
+    $supported_bg = join(",", sort keys %supported_bg);
+
+    ## Template formats
+    our %supported_template_format = (
+				      bed=>1, ## bed coordinates
+				      fasta=>1,   ## fasta sequence
+				      len=>1,   ## sequence lengths
+				     );
+    $supported_template_formats = join (",", sort(keys(%supported_template_format)));
+    our $template_format = "fasta";
+
+    &ReadArguments();
+
+    ################################################################
+    ## Check alphabet
+    if ($sequence_type eq "dna") {
+	@letters = qw ( A C G T );
+    } elsif ($sequence_type =~ /^prot/) {
+	@letters = qw ( a c d e f g h i k l m n p q r s t v w y );
+#    @letters = qw ( A C D E F G H I K L M N P Q R S T V W Y );
+    } elsif ($sequence_type =~ /^other/) {
+	@letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
+		    "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", 
+		    " ", ".", ",", ":", ";");
+    } else {
+	&RSAT::error::FatalError($sequence_type, "is not a valid sequence type. Supported: dna,protein,other");
+    }
+
+    if (%alphabet) {
+	%freq = %alphabet;
+    } else {
+	foreach $letter (@letters) {
+	    $freq{$letter} = 1/($#letters + 1);
+	}
+    }
+
+
+    ################################################################
+    ## Check argument values
+
+    ## Output formaat
+    &CheckOutputSeqFormat($out_format);
+
+
+    ################################################################
+    ## File with template sequences
+    if ($main::infile{template_file}) {
+      if ($template_format eq "len") {
+	$main::infile{length_file} = $main::infile{template_file};
+      } else {
+	## Compute sequence lengths
+	my $job_prefix = "random-genome-fragments";
+	my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
+	$main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
+	my $seqlength_cmd = "sequence-lengths -v 1";
+	$seqlength_cmd .= " -i ".$main::infile{template_file};
+	$seqlength_cmd .= " -in_format ".$template_format;
+	$seqlength_cmd .= " -o ".$main::infile{length_file};
+	&doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+      }
+    }
+
+    ################################################################
+    ## File with the specification of sequence lengths
+    if ($main::infile{length_file}) {
+      ($len_handle, $input_dir) = &OpenInputFile($main::infile{length_file});
+      #    open LEN, $main::infile{length_file};
+      while (<$len_handle>) {
+	chomp;
+	next if (/^;/);
+	next if (/^--/);
+	next if (/^#/);
+	next unless (/\S/);
+	my @fields = split "\t";
+	$length = $fields[1];
+	if (&IsNatural($length)) {
+	  push @lengths, $length;
+	}
+      }
+      close $len_handle;
+
+      ## Repeat sequence length list if requested
+      if ($repetitions > 1) {
+	my @rep_lengths = @lengths;
+	for my $r (1..$repetitions) {
+	  push @rep_lengths, @lengths;
+	}
+	@lengths = @rep_lengths;
+      }
+      $seq_nb = $#lengths +1;
+    } else {
+      #### check sequence lengths and number of sequences
+      unless (&IsNatural($seq_length)) {
+	&RSAT::error::FatalError ("You should specify the sequence length");
+      }
+      unless ($seq_nb >=1) {
+	&RSAT::error::FatalError( "Number of sequences should be >=1 (option -n)");
+      }
+    }
+
+    ################################################################
+    ## Background model
+    if ($background_model eq "equi") {
+	$method = "equiprobable residues";
+
+    } elsif ($background_model) {
+
+	### Localize frequency file in the RSAT data directory for the specified organism
+	$method = "Frequency file";
+	$exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
+					   $noov=>"-ovlp", str=>"-1str");
+    }
+
+
+    ################################################################
+    ## Calculate residue probabilities (Markov or Bernoulli model)
+    if ($exp_freq_file) {
+
+	## Load Markov model from an oligonucleotide frequency file
+	&CalcConditionalProbabilities($exp_freq_file);
+
+    } else {
+
+	## Calculate cumulated frequencies for individual residues
+	$cum_letter_freq[0] = $freq{$letters[0]};
+	for $l (1..$#letters) {
+	    $cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
+	}
+	unless ($cum_letter_freq[$#letters] > 0) {
+	    &RSAT::error::FatalError( "Invalid alphabet specification.");
+	}
+	for $l (0..$#letters) {
+	    $freq{$letters[$l]} /= $cum_letter_freq[$#letters];
+	    $cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
+	}
+    }
+
+
+
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outputfile);
+
+    ################################################################
+    ## Verbose
+    &Verbose() if ($verbose);
+
+    ## Initialize the random seed
+    if (defined($seed)) {
+	srand($seed);
+    } else {
+	srand (time);
+    }
+
+
+    ################################################################
+    ## Generate the random sequence
+    for $r (1..$seq_nb) {
+	### initialization
+	my $current_seq_length = $lengths[$r-1] || $seq_length;
+	$sequence = "";
+	$seq_id = $seq_prefix."_".$r;
+	my @comments = ();
+	my $comment = join ("; ", "random sequence ".$r."/".$seq_nb,
+			    "type: ".$sequence_type,
+			    "length: ".$current_seq_length,
+	    );
+	if ($background_model) {
+	    $comment .= "; bg model: ".$background_model;
+	    $comment .= "; organism: ".$organism_name if ($organism_name);
+	    $comment .= "; markov: ".$markov;
+	}
+	push @comments, $comment;
+
+	if ($exp_freq_file) {
+	    $rand = int (rand $#subword_keys);
+
+
+	    ## Note: the selection of the first word of a sequence should
+	    ## be improved. Currently, the first prefix (corresponding to
+	    ## the markov order) is chosen in an equiprobable way. this
+	    ## does not really matter as far as the sequences are larger
+	    ## much larger than the markov order, which is usually the
+	    ## case
+	    $subword = $subword_keys[$rand]; ## Subword
+	    $sequence .= uc($subword); ## First subword is printed in uppercases
+
+	    for $i ((length($sequence)+1)..$current_seq_length) {
+		#	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
+		$rand = rand;
+		$l = 0;
+		#      do {
+		#	$l++;
+		#      } until (($l > $#letters) || ($cum_letter_freq{$subword}[$l] >= $rand));
+
+		while ($l <= $#letters) {
+		    if ($cum_letter_freq{$subword}[$l] >= $rand) {
+			last;
+		    } else {
+			$l++;
+		    }
+		}
+		$next_letter = $letters[$l];
+		$sequence .= $next_letter;
+		$subword = lc(substr($subword.$next_letter,1));
+	    }
+	    
+	} else {
+	    for $i (1..$current_seq_length) {
+		$rand = rand();
+		$l = -1;
+		do {
+		    $l++;
+		} until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
+		$next_letter = $letters[$l];
+		$sequence .= $next_letter;
+	    }
+	}
+	&PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
+    }
+
+    ## Close output file
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $out if ($outputfile);
+
+    exit(0);
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+#  foreach $a (0..$#ARGV) {
+#    my $arg = $ARGV[$a];
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+    } elsif ($arg eq "-l") {
+      $seq_length = shift @arguments;
+
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+    } elsif ($arg eq "-o") {
+      $outputfile = shift @arguments;
+
+    } elsif ($arg eq "-prefix") {
+      $seq_prefix = shift @arguments;
+
+    } elsif ($arg eq "-format") {
+      $out_format = lc(shift @arguments);
+
+      ## Sequence type (supported=dna,protein)
+    } elsif ($arg eq "-type") {
+      $sequence_type = lc(shift @arguments);
+
+      ## Number of sequences
+    } elsif ($arg eq "-n") {
+      $seq_nb = shift @arguments;
+
+    } elsif ($arg eq "-r") {
+      &RSAT::message::Warning("Option -r is obsolete to specify sequence number. Please use the option -n instead.");
+      $seq_nb = shift @arguments;
+
+    } elsif ($arg eq "-expfreq") {
+      $exp_freq_file = shift @arguments;
+
+    } elsif ($arg eq "-lw") {
+      $line_width = shift @arguments;
+
+    } elsif ($arg eq "-seed") {
+      $seed = shift @arguments;
+
+    } elsif ($arg eq "-a") {
+      if (shift @arguments eq "yeast") {
+	$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
+	$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
+      # if argument between quotes
+      } elsif (($arguments[0] =~ /a:t\s(\S+)\sc:g\s(\S+)/i) && ($1 <= 1) && ($1 >=0) && ($2 <= 1) && ($2 >= 0)) {
+        $alphabet{'A'} = $alphabet{'T'} = $1;
+        $alphabet{'C'} = $alphabet{'G'} = $2;
+      } elsif (("$arguments[0] $arguments[1]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)) {
+	$alphabet{'A'} = $alphabet{'T'} = $1;
+	if (("$arguments[2] $arguments[3]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)) {
+	  $alphabet{'C'} = $alphabet{'G'} = $1;
+	}
+      } else {
+	&RSAT::error::FatalError("Invalid alphabet specification");
+    }
+
+      ### use oligo intergenic frequencies as expected frequencies
+    } elsif ($arg =~ /^-ncf/i) {
+      &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
+      $background_model = "intergenic";
+
+      ### specify a background model for estimating expected frequencies
+    } elsif ($arg =~ /^-bg/i) {
+      $background_model = shift @arguments;
+      $background_model =~ s/ncf/intergenic/;
+      if ($background_model eq "protein") {
+	  $sequence_type = "protein";
+      } else {
+	  $sequence_type = "dna";
+      }
+
+      ### organism (for selecting the appropriate expected frequencies)
+    } elsif ($arg =~ /^-org/i) {
+      $organism_name = shift @arguments;
+
+      #### oligonucleotide length
+    } elsif ($arg eq "-ol") {
+      &RSAT::error::FatalError("Options -ol and -mkv are mutually exclusive") if ($markov_given);
+      $oligo_length = shift @arguments;
+      $markov = $oligo_len -1;
+      $length_given = 1;
+
+
+      #### markov order
+    } elsif ($arg eq "-markov") {
+      &RSAT::error::FatalError("Options -ol and -mkv are mutually exclusive") if ($oligo_given);
+      $markov = shift @arguments;
+      $oligo_length = $markov + 1;
+      $markov_given = 1;
+
+      ## Template file
+      } elsif ($arg eq "-i") {
+	&RSAT::error::FatalError("Option -i is incompatible with option -lf") if ($main::outfile{length_file});
+	$main::infile{template_file} = shift(@arguments);
+
+	## Template format
+      } elsif ($arg eq "-template_format") {
+	$main::template_format = shift(@arguments);
+	&RSAT::error::FatalError($main::template_format, "Invalid template format. Supported: ".$supported_template_formats)
+	  unless ($supported_template_format{$main::template_format});
+
+	## file containing a list of the desired lengths of random sequences
+      } elsif ($arg eq "-lf") {
+	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{template_file});
+	$main::infile{length_file} = shift(@arguments);
+	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -template_format len");
+
+#      ## file containing a list of the desired lengths of random sequences
+#    } elsif ($arg eq "-lf") {
+#      $main::infile{length_file} =shift @arguments;
+
+      ## Number of repetition for length file
+    } elsif ($arg eq "-rep") {
+      $repetitions = shift @arguments;
+
+
+    }
+  }
+}
+
+
+################################################################
+## Print detailed help message
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	random-seq
+
+USAGE
+	random-seq -l seqlength [-v] [-o outputfile]
+
+DESCRIPTION
+	Generates random sequences according to different
+	probabilistic models (Bernoulli, Markov chains).
+
+CATEGORY
+	sequences
+
+OPTIONS
+    OUTPUT OPTIONS
+	-l	sequence length
+
+	-n	Number of sequences.
+                Generate a set of n sequences, each of length l.
+
+	-v	verbose.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the comand within a pipe.
+
+	-prefix	prefix for sequence identifiers (default: rand).
+
+	-format	output format. 
+		Two options are available:
+		IG	IG suite from IntelliGenetics
+		raw	(default) 
+        -lw ##  Line width. A newline character will be inserted in the 
+                sequence every ## bases. Default is 70. 
+                -lw 0 will prevent newline insertion.
+
+	-type	protein|DNA|other
+
+	-seed #	seed for the random generator
+
+   TEMPLATE FILES
+
+   The following options allow to taylor the sequence number and the
+   size of each sequence on the basis of template files (sequence
+   file, bed file or sequence-length output file).
+
+    -i template_file
+
+        Generate random sequences with lengths specified in a template
+        file.
+
+        Various template types are supported (option -template_format):
+        sequences (in fasta), genomic coordinates (in bed), sequence
+        lengths.
+
+        This option is incompatible with options -l and -n.
+
+    -template_format template_format
+        Format for the template set (specified with the option -i).
+
+        Supported formats:
+
+        fasta (default)
+            Templates are provided as a fasta-formatted sequence file. The
+            program random-genome-fragments calls sequence-lengths to define
+            the template lengths.
+
+        bed
+            Templates are provided as a bed-formatted file of genomic
+            coordinates. The program random-genome-fragments calls
+            sequence-lengths -format bed to define the lengths of the bed
+            features.
+
+            Bed file must contain at least 3 columns, indicating, for each
+            feature:
+
+            1. id (ignored)
+            2. start coordinate
+            3. end coordinate
+
+        len
+            Templates are provided as a tab-delimited file indicating the
+            length of each template sequence (this file can be produced by
+            sequence-lengths).
+
+    -lf length file
+        Deprecated. Replaced by -i template_file -template_format len.
+        Maintained for backward compatibility.
+
+        Generate random sequences with the same lengths as a set of template
+        sequences. The sequence length file can be obtained with the command
+        sequence-lengths.
+
+        This option is incompatible with options -l and -n.
+
+        The length file contains two columns :
+
+        -sequence ID (ignored)
+        -sequence length
+
+
+
+    PROBABILITIES
+	-a	alphabet
+		must be followed by residue frequencies expressed precisely 
+		this way:
+		-a a:t # c:g #
+		ex: 
+		-a a:t 0.3 c:g 0.2
+
+		The option
+		-a yeast
+		will automatically use the residue frequencies from yeast 
+		genome.
+
+	-expfreq
+
+		Specifyt a file describing the background model. This
+		file must be in oligo format, i.e. a table with
+		expected oligomer frequencies. See
+		I<convert-background-model> for conversion of other
+		background model formats into oligomer frequency
+		tables.
+
+                When this option is used, the sequences are generated
+		according to a Markov chain. For instance if the
+		frequency file contains tetramers, each base will be
+		selected randomly with a probability depending on the
+		3 preceding bases:
+
+		           p(Wj-3,j)
+		p(Bj=B) = -----------
+		          p(Wj-3,j-1)
+
+		where	Bj	is the base at position j
+			B	is a residue, ie A, C, G or T
+			Wj-3,j-1
+				is a word found in the sequence between 
+				positions j-3 and j-1
+			Wj-3,j	is the same word with the character B 
+				concatenated at its end
+
+	-bg	background model
+
+		Automatically load a pre-calibrated exected frequency
+		file from the RSAT genome distribution. When this
+		option is used, the options -org and -ol are also
+		required, to indicate the organism and the
+		oligonucleotide length, respectively.
+
+		When the option -bg is used, it is necessary to
+		define the order of the markov chain, either with the
+		option -markov, or with the option -ol (oligo length).
+
+		This option is incompatible with the option -expfreq. 
+
+		Type of sequences used as background model for
+		estimating expected oligonucleotide frequencies.
+
+		Supported models:
+		-bg equi
+		    equiprobable residue frequencies (default)
+
+		-bg upstream-noorf
+		    all upstream sequences, preventing overlap with
+		    upstream open reading frames (ORFs). Requires to
+		    speciy a model organism.
+
+		-bg upstream
+		    all upstream sequences, allowing overlap with
+		    upstream ORFs. Requires to speciy a model
+		    organism.
+
+		-bg intergenic
+		    intergenic frequencies Whole set of intergenic
+		    regions, including upstream and downstream
+		    sequences. Requires to speciy a model organism.
+
+		-bg protein
+		    generate random peptidic sequences using a Markov
+		    chain calibrated on all peptidic sequences of the
+		    selected organism.
+
+	-org	organism
+		This is necessary with the option -bg, to determine
+		which frequency file has to be sued for expected
+		frequency calibration.
+
+	-markov	markov order for the background model
+
+		Note: options -markov and -ol are mutually exclusive. 
+
+	-ol	oligo-length
+
+		Oligonucleotide length used to train the Markov
+		background model. If the oligo length is k, the markov
+		order is m = k-1.
+
+	-lf	length file 
+
+		Generate random sequences with the same lengths as a
+		set of reference sequences. 
+
+		This option is incompatible with the options -l and -n.
+
+		The sequence length file can be obtained with the
+		command
+			sequence-lengths
+
+		The length file contains two columns : 
+		    - sequence ID (ignored)
+		    - sequence length
+
+	-rep	Number of repetitions
+
+		The list if sequence lengths is repeated rep times.
+
+		This option only serves when a length file is used to
+		specify sequence-sise lengths.
+
+		This option is incompatible with the options -l and
+		-n.
+
+WEB VERSION
+	http://bigre.ulb.ac.be/bioinformatics/rsa-tools/
+
+End_of_help
+    close HELP;
+    exit(0);
+}
+
+################################################################
+## Print a summary of available options
+sub PrintOptions {
+    open HELP, "| more";
+    print HELP <<End_short_help;
+random-seq options
+==================
+-l		 sequence length
+-n		 number of sequences
+-v		 verbose
+-o		 outputfile
+-prefix		 prefix for sequence identifiers (default: rand).
+-format		 output format
+-lw ##		 Line width
+-a		 alphabet. ex: -a a:t 0.3 c:g 0.2
+-expfreq	 file containing expected oligomer frequencies
+-type		 protein|DNA|other
+-seed #	         seed for the random generator
+-ncf		 (deprecated, use '-bg intergenic' instead)
+-bg		 background model (supported: $supported_bg)
+-org		 organism
+-markov		 markov order (incompatible with -ol)
+-ol		 Oligo length (incompatible with -markov)
+-i               Template file
+-template_format template_format
+-lf		 Length file (incompatible with options -l and -n)
+-rep		 Number of repetitions (incompatible with options -l and -n)
+End_short_help
+    close HELP;
+    exit(0);
+}
+
+################################################################
+## Verbosity
+sub Verbose {
+  print $out "; random-seq ";
+  &PrintArguments($out);
+  if ($main::infile{length_file}) {
+      print $out "; Sequence length file	        $main::infile{length_file}\n";
+      print $out "; Repetitions          	        $repetitions\n";
+  } else {
+      print $out "; sequence length                     $seq_length\n";
+  }
+  print $out "; Number of sequences     $seq_nb\n";
+  print $out "; Sequence format         $out_format\n";
+  if ($outputfile) {
+    print $out "; Output file	$outputfile\n";
+  }
+  print $out "; residue frequencies: $method\n";
+  if ($exp_freq_file) {
+    print $out "; Calibrated oligomer frequencies\n";
+    print $out "; 	oligomer length:         $oligo_length\n";
+    print $out "; 	Makov order:             $markov\n";
+    print $out "; 	expected frequency file: $exp_freq_file\n";
+
+    if ($main::verbose >= 3) {
+      print $out "; oligomer frequencies\n";
+      print $out "; subword frequencies\n";
+      foreach $subword (sort keys %subword_freq) {
+	printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
+	for $l (0..$#letters) {
+	  printf $out (" %s:%g",
+				 $letters[$l],
+				 $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
+				);
+		}
+		print $out "\n";
+	    }
+	}
+    } else {
+	for $l (0..$#letters) {
+	    print $out "; \t";
+	    print $out "; $letters[$l]\t";
+	    print $out "; $freq{$letters[$l]}\n";    
+	}
+    }
+}

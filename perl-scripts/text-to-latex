@@ -1,0 +1,359 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: text-to-latex,v 1.2 2012/06/17 11:16:02 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+text-to-latex
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Text-To-Latex for writing new perl scripts.
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+text-to-latex [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::verbose = 0;
+  $main::in = STDIN;
+  $main::out = STDOUT;
+  local $first_line_is_header = 0; ## flag inticating whether the first line of the table contains the header
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  my $latex_string = "";
+  my $in_table = 0; ## Flag indicating if we are apparently within a table
+  my $nb_fields = 0;
+  my @comment_lines = ();
+  my @empty_lines = ();
+  my @header_fields = ();
+  my @fields = ();
+  my $field_separator = "\t";
+  my $line_nb = 0;
+  my $in_header = 0; ## flag indicating whether the current line is the header
+
+  while (<$main::in>) {
+    s/\r/\n/;		  ## Suppress Windows-specific carriage return
+    chomp();			## Suppress newline character
+
+    ## Comment or empty lines are simply printed out, with a newline
+    if ((/^;/) || !(/\S/)) {
+      $line_nb = 0;
+      $in_table = 0;
+      print $out $_, ' \\\\', "\n";
+      next;
+    }
+
+    ## Replace % by \%
+    s/%/\\%/;
+
+    ## Split the fields
+    @fields = split($field_separator);
+    $nb_fields = scalar(@fields);
+    $in_table = 1;
+
+    ## Check if the first line contains the header
+    if ((($first_line_is_header) && ($line_nb == 0)) ||
+	($fields[0] =~ /^#/)) {
+
+      ## Parse the header
+      $fields[0] =~ s/^#//;
+      $in_header = 1;
+      &open_latex_table($nb_fields);
+      $table_opened = 1;
+    }
+
+    unless ($table_opened) {
+      &open_latex_table($nb_fields);
+      $table_opened = 1;
+    }
+
+    if ($in_header) {
+      ## Print header line to LaTex output
+      print $out '\hline', "\n";
+      foreach my $f (0..$#fields) {
+	print $out ' & ' if ($f > 0);
+	print $out ' \rotatebox{90}{', $fields[$f], '}';
+	print $out ' \\\\' if ($f == ($nb_fields-1));
+	print $out "\n";
+      }
+      print $out '\hline', "\n";
+    } else {
+      ## Print line to LaTex output
+      print $out join(' & ', @fields), ' \\\\', "\n";
+    }
+
+    ## Increment line counter
+    $in_header = 0;
+    $line_nb++;
+  }
+
+  ## Close the input file
+  close $main::in if ($main::infile{input});
+
+  ## Close the latex table
+  &close_latex_table();
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  close $main::out if ($main::outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item	B<-header>
+
+Indicate that the first line of the table is the header. 
+
+Note that this option should not be used if the header line is marked
+in the input file by a leading # character (e.g. output files from
+RSAT programs).
+
+=cut
+    } elsif ($arg eq "-header") {
+      $main::first_line_is_header = 1;
+
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; text-to-latex ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+################################################################
+## Open the latex table
+sub open_latex_table {
+  my ($nb_fields) = @_;
+  &RSAT::message::Info("Opening table with", $nb_fields, "fields") if ($main::verbose >= 3);
+  print $out '\begin{table}[bt]', "\n";
+  print $out '  \centering', "\n";
+  print $out '  % \tableparts', "\n";
+  print $out '  {', "\n";
+  print $out '    \caption{Table title}', "\n";
+  print $out '    \label{tab:table_label}', "\n";
+  print $out '  }', "\n";
+  print $out '  {', "\n";
+  print $out '    \begin{center}', "\n";
+  print $out '      \begin{tiny}', "\n";
+  print $out '        \begin{tabular}{';
+  print $out '|c' x $nb_fields, '|';
+  print $out '}', "\n";
+}
+
+################################################################
+## Close the latex table
+sub close_latex_table {
+  &RSAT::message::TimeWarn("Closing table") if ($main::verbose >= 2);
+  print $out '\hline', "\n";
+  print $out '        \end{tabular}', "\n";
+  print $out '      \end{tiny}', "\n";
+  print $out '    \end{center}', "\n";
+  print $out '  }', "\n";
+  print $out '\end{table}', "\n";
+}
+
+__END__

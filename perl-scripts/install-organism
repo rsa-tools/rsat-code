@@ -1,0 +1,1509 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: install-organism,v 1.129 2013/10/13 12:24:00 jvanheld Exp $
+#
+# Time-stamp: <2003-10-21 01:20:28 jvanheld>
+#
+############################################################
+
+
+# use strict;
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require RSAT::util;
+use RSAT::Tree;
+use RSAT::TreeNode;
+
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialize parameters
+  local $start_time = &RSAT::util::StartScript();
+  $config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
+  @masking_modes = ("");	## by default, use no masking
+  @oligo_lengths=(6,1,2,3,4,5,7,8);
+  $verbose = 0;
+  $batch = 0;
+  $die_on_error = 0;
+  $seq_format = "fasta"; ## default format for exporting sequences
+  $img_format = $ENV{rsat_img_format} || "png";
+  $noov="";
+  $strands="-1str";
+  $purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
+  $supported_for_installation{"fasta"} = 1;
+  $supported_for_installation{"raw"} = 1;
+  $supported_for_installation{"filelist"} = 1;
+  @supported_tasks = qw(
+			parse
+			config
+			phylogeny
+			start_stop
+			allup
+			seq_len_distrib
+			genome_segments
+			upstream_freq
+			oligos
+			dyads
+			distrib
+			ncf
+			protein_freq
+			genome_freq
+			intergenic_freq
+			ensembl_freq
+			clean
+			all
+		       );
+  %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+  $supported_tasks = join ",", @supported_tasks;
+  %task = ();
+  $parse_options = "";
+
+  $null = "<NULL>";		## NULL value
+  $source = "NCBI";
+  $taxonomy = $null;
+  @taxa = ();
+  our %infile = ();
+  $infile{organisms} = "";
+  @organisms = ();
+
+  our $backup_org_table = 0;
+
+
+  ## installation date
+  local $install_date = $force_date || &AlphaDate();
+  chomp $install_date;
+
+  ## Store the starting directory
+  $dir{main} = `pwd`;
+
+  ################################################################
+  ## Read arguments
+  &ReadArguments();
+
+
+  ################################################################
+  ## Check parameter values
+
+  @task = keys %task;
+  if ($#task == -1) {
+    &RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
+  }
+  if ($task{all}) {
+    %task = %supported_task;
+  }
+
+
+  ## Consistency between tasks
+  if ($task{oligos} || $task{dyads}) {
+    unless (($task{upstream_freq}) ||
+	    ($task{intergenic_freq}) ||
+	    ($task{protein_freq}) ||
+	    ($task{genome_freq}) ||
+	    ($task{ensembl_freq})) {
+      &RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ",
+			       "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
+    }
+  }
+  if (($task{protein_freq}) && !($task{oligos})) {
+    &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
+  }
+
+  ## If an organism file has been specified, read organism list
+  if ($infile{organisms}) {
+    my ($orgs) = &OpenInputFile($infile{organisms});
+    while (<$orgs>) {
+      next unless (/\S/); ## Skip empty rows
+      next if (/^;/); ## Skip comment rows
+      next if (/^#/); ## Skip header rows
+      chomp();
+      my ($org) = split /\s+/;
+      push @organisms, $org;
+    }
+  }
+
+
+  ## If a taxon has been specified, collect the list of organisms
+  if (scalar(@taxa) > 0) {
+    if ($task{parse}) {
+      &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
+    }
+
+    $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+
+    foreach my $taxon (@taxa) {
+      my $taxon_node = $tree->get_node_by_id($taxon);
+      my @taxon_organisms = $taxon_node->get_all_descendents("DFS","leaf",undef,undef);
+      &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 0);
+      foreach my $org_node (@taxon_organisms) {
+	my $short_organism_name = $org_node->getid();
+	push @organisms, $short_organism_name;
+      }
+    }
+
+    @organisms = sort (@organisms);
+  }
+
+  &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
+
+  ## Check that at least one organism has been specified
+  &RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) > 0);
+
+  ## Some options are incompatible with multiple organisms
+  if (scalar(@organisms) > 1) {
+    &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
+    &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
+    &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
+  }
+
+  ################################################################
+  ## Input directory
+  if ($task{parse}) {
+    unless ($dir{genbank}) {
+      if ($ENV{GENBANK_DIR}) {
+	$dir{genbank} = $ENV{GENBANK_DIR};
+      } elsif ($GENBANK_DIR) {
+	$dir{genbank} = $GENBANK_DIR;
+      } else {
+	&RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
+      }
+    }
+    unless (-d $dir{genbank}) {
+      &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
+    }
+  }
+
+  ################################################################
+  ## Iterate installation over selected organisms
+  $i = 0;
+  foreach our $organism_short_name (@organisms) {
+    $i++;
+    &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+
+    $backup_org_table = 0 if ($i > 1); ## When we treat multiple organisms, we don't want to store a backup for each one
+
+    ################################################################
+    ## Automatic full name specification
+    unless ($organism_full_name) {
+      if ($organism_short_name =~ /\_/) {
+	$organism_full_name = $organism_short_name;
+	$organism_full_name =~ s/\_/ /g;
+      }
+    }
+
+    ################################################################
+    ## Installation directories
+    umask 0002;
+    if ($install_dir) {
+      $dir{install} = $install_dir;
+      &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 1);
+    } elsif ($supported_organism{$organism_short_name}->{'data'}) {
+      $dir{install} = $supported_organism{$organism_short_name}->{'data'};
+      &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
+    } else {
+      $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
+      &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
+    }
+
+    &RSAT::util::CheckOutDir($dir{install});
+
+    $dir{genome} = $dir{install}."/genome";
+    &RSAT::util::CheckOutDir($dir{genome});
+
+    $dir{oligos} = $dir{install}."/oligo-frequencies";
+    &RSAT::util::CheckOutDir($dir{oligos});
+
+    $outfile{features} = $dir{genome}."/feature.tab";
+    $outfile{synonyms} = $dir{genome}."/feature_names.tab";
+    $outfile{genome} = $dir{genome}."/contigs.txt";
+
+
+    ################################################################
+    ###################### Installation tasks ######################
+    ################################################################
+
+    ## Open an output stream for messages
+    our $out = &OpenOutputFile($outputfile);
+    &Verbose() if ($verbose >= 1);
+
+    &ParseGenome() if ($task{parse});
+
+    &UpdateConfig() if ($task{config});
+
+
+    &CreatePhylogeny() if ($task{phylogeny});
+
+    &StartAndStopCodons() if ($task{start_stop});
+
+    &IntergenicSegments() if ($task{genome_segments});
+
+    &AllUpstream() if ($task{allup});
+
+    &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
+
+    &CleanUp if ($task{clean});
+
+    ## Touch the installation dir to indicate the last modification date
+    $dir{main};
+    chdir($dir{main});
+    &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
+    system "touch $dir{install}";
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+
+    close $out if ($outputfile);
+  }
+  exit(0);
+}
+
+
+################################################################
+##################  SUBROUTINE DEFINITIONS  ####################
+################################################################
+
+
+################################################################
+## Display verbosity message
+sub Verbose {
+    print $out "; install-organism ";
+    &PrintArguments($out);
+    print $out ";\n; Tasks:\n";
+    foreach my $task (keys %task) {
+	print $out ";\t$task\n";
+    }
+
+    print $out ";\n; Config files:", $rsa_config,"\n";
+    printf $out ";    %-25s\t%s\n", "RSAT config", $main::config_table;
+    printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+
+    print $out ";\n; Organism parameters:\n";
+    if ($infile{organisms}) {
+      printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
+    } else {
+      printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
+      printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
+      printf $out ";    %-25s\t%s\n", "Update date", $install_date;
+      printf $out ";    %-25s\t%s\n", "data source", $source;
+    }
+
+    print $out ";\n; Directories and files:\n";
+    if ($task{genome}) {
+	printf $out ";    %-25s\t%s\n", "genome sequence format", $seq_format;
+	printf $out ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
+    }
+    printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
+    printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
+    printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
+    printf $out ";    %-25s\t%s\n", "Genbank dir", $dir{genbank};
+    printf $out ";    %-25s\t%s\n", "Installation directory", $dir{install};
+    printf $out ";    %-25s\t%s\n", "Genome directory", $dir{genome};
+    printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
+    printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
+    printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
+#    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
+}
+
+
+################################################################
+## Update configuration file
+sub UpdateConfig {
+
+  ## read taxonomy from the parsing result
+  local $organism_table = $dir{install}."/genome/organism.tab";
+  ($org_handle) = &OpenInputFile($organism_table);
+  my $taxonomy_field = 2;
+  while (<$org_handle>) {
+    chomp;
+    next unless (/\S/);
+    if (/^-- field\s+(\d)	taxonomy/) {
+      $taxonomy_field = $1;
+    } elsif (/^--/) {
+      next;
+    } else {
+      if (defined($taxonomy_field)) {
+	@fields = split "\t";
+	$id = $fields[0];
+	$taxonomy = $fields[$taxonomy_field - 1];
+	&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy)) if ($main::verbose >= 2);
+      } else {
+	&Warning("Cannot read taxonomy in file $organism_table\n");
+# 	print "######\n###\nlala\n########\n############\n";z
+      }
+    }
+  }
+  close $org_handle;
+
+
+  ## Default limits of upstream region for retrieve-seq
+  unless (defined($up_from)) {
+    ## If already defined in the file supported-organism.tab, keep
+    ## previously defined value (might have been specifically tuned
+    ## for some reason).
+    if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
+      $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
+    } else {
+      ## Taxon-specific default values for sequence lengths
+      if (
+	  ($taxonomy =~ /^Bacteria;/) || ($taxonomy =~ /^Archaea;/) ||
+	  ($taxonomy =~ /;\s*Bacteria;/) || ($taxonomy =~ /;\s*Archaea;/)
+	 ) {
+	$up_from=-400;
+      } elsif (($taxonomy =~ /^Viruses;/) ||
+	       ($taxonomy =~ /;\s*Viruses;/)
+	      ) {
+	$up_from=-400;
+      } elsif ($taxonomy =~ /;\s*Fungi;/) {
+	$up_from=-800;
+      } elsif ($taxonomy =~ /;\s*Nematoda;/) {
+	$up_from=-3000;
+      } elsif ($taxonomy =~ /;\s*Insecta;/) {
+	$up_from=-3000;
+      } elsif ($taxonomy =~ /;\s*Metazoa/) {
+	$up_from=-3000;
+      } elsif ($taxonomy =~ /;\s*Viridiplantae/) {
+	$up_from=-2000;
+      } else {
+	$up_from=-1000;
+      }
+    }
+  }
+  unless (defined($up_to)) {
+    if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
+      $up_to = $supported_organism{$organism_short_name}->{'up_to'};
+    } else {
+      $up_to = -1;
+    }
+  }
+  &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to)) if ($main::verbose >= 2);
+
+  ## 2009/05/13: The old perl config file should not be used anymore,
+  ## but is still exported for the sake of backward compatibility
+  ##
+  ## 2013/08/11: I comment this line, in principle we don't need this
+  ## outdated perl config file
+#  &UpdateConfigPerl();
+
+  ## Since 2009/05/13
+  &UpdateConfigTab();
+}
+
+################################################################
+## Update the perl config file
+sub UpdateConfigPerl {
+  my $comment_previous_config = 0;
+  if ($local_config) {
+    $config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
+  } else {
+    $config_to_update = "$ENV{RSAT}/public_html/data/supported_organisms.pl";
+  }
+
+  ## Check if the organism was already installed before
+  if (defined($supported_organism{$organism_short_name}->{'genome'})) {
+      &RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file\n",
+				   $config_to_update,
+				   "\n\tprevious config will be commented")) if ($main::verbose >= 2);
+  }
+
+  ## read previous config
+  open CONFIG, $config_to_update;
+  while ($line = <CONFIG>) {
+    chomp $line;
+    last if ($line =~ /return/);
+    if (($line =~ /supported_organism\{\'$organism_short_name\'\}/) && ($line !~ /^\#/)) {
+      ## comment the previous config
+      if ($comment_previous_config) {
+	$previous_config .= "# ${line} # reinstalled on\t${date}\n";
+      }
+    } else {
+	$previous_config .= $line."\n";
+      }
+  }
+  close CONFIG;
+
+  ## write new config
+  &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 1);
+  open CONFIG, ">$config_to_update" 
+    || die "Error: cannot write config file $config_to_update\n";
+  print CONFIG $previous_config;
+  my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\t$install_date\n";
+  $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$dir{install}\";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
+  ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+  unless ($source eq 'ensembl') {
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+  }
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'taxonomy'} = \"$taxonomy\";\n";
+  if (defined($outfile{synonyms})) {
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
+  }
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_from.";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
+
+  ## Replace absolute paths by relative paths
+  ##   $new_org_config =~ s|$ENV{RSAT}\/|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|\/\/|/|g;
+
+  print CONFIG $new_org_config;
+  print CONFIG "\nreturn 1;\n";
+  close CONFIG;
+}
+
+################################################################
+## Update the tab-delimited file 
+sub UpdateConfigTab {
+  my (%args) = @_;
+  &RSAT::message::Info ("Updating supported organisms", $main::config_table) if ($verbose >= 2);
+
+  ## Update the hash variable for the new organism
+  $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
+  $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
+  $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $main::install_date;
+  $supported_organism{$organism_short_name}->{'source'} = $args{source} || $main::source;
+
+  ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+#  unless ($source eq 'ensembl') {
+    $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
+    $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $main::outfile{genome};
+    $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
+#  }
+  $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $main::taxonomy;
+  if (defined($main::outfile{synonyms})) {
+    $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
+  }
+  $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
+  $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
+
+  ## Export the updated table of supported organisms
+  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
+}
+
+################################################################
+## Create a directory for the taxonomic group of the organism
+sub CreatePhylogeny {
+    my $taxonomy = "";
+
+    ## read taxonomy from the parsing result
+    $organism_table = $dir{install}."/genome/organism.tab";
+
+    ($org_handle) = &OpenInputFile($organism_table);
+    while (<$org_handle>) {
+	chomp;
+	if (/^-- field (\d)	taxonomy/) {
+	    $taxonomy_field = $1;
+	} elsif (/^--/) {
+
+	    next;
+	} else {
+	    if (defined($taxonomy_field)) {
+		@fields = split "\t";
+		$taxonomy = $fields[$taxonomy_field - 1];
+		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 2);
+	    } else {
+		&Warning("Cannot read taxonomy in file $organism_table\n");
+	    }
+	}
+    }
+    close $org_handle;
+
+    if ($taxonomy) {
+	$taxonomy = &trim($taxonomy);
+	$taxonomy =~ s|\s*;\s*|/|g; ## Each taxonomic level becomes a subdirectorry
+	$taxonomy =~ s|\s+|_|g; ## I prefer to avoid spaces in directory names
+	$taxonomy =~ s|\(|_|g; ## this character cannot be used for a directory name
+	$taxonomy =~ s|\)|_|g; ## this character cannot be used for a directory name
+	$taxonomy =~ s|\,|.|g; ## Not fatal, but usually not found in folder names.
+	$taxonomy =~ s|\:|.|g; ## Not fatal, but usually not found in folder names.
+	$dir{taxonomy} = $ENV{RSAT}."/public_html/data/phylogeny/".$taxonomy;
+	$dir{taxonomy} =~ s|//|/|g;
+	my ($org_dir) = &ShortFileName($dir{install});
+	&RSAT::util::CheckOutDir($dir{taxonomy});
+	if ($main::verbose >= 2) {
+	    &RSAT::message::Info("Taxonomy directory", $dir{taxonomy});
+	    &RSAT::message::Info("Organism directory", $org_dir);
+	    &RSAT::message::Info("Link to directory", $dir{install});
+	}
+	&doit("cd $dir{taxonomy}; rm $org_dir; ln -s $dir{install} .",0,0,$verbose);
+    } else {
+	&RSAT::error::FatalError("Cannot identify taxonomy in table ".$organism_table);
+    }
+
+}
+
+################################################################
+### extract the non-redudant set of intergenic and gene sequences
+sub IntergenicSegments {
+  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 1);
+
+  chdir $dir{genome};
+
+  ## Retrieve sequences for different subtypes of genome regions
+  &RSAT::message::TimeWarn("coding-or-not: extracting sequences for different types of genomic regions") if ($main::verbose >= 2);
+  my $command = "coding-or-not ";
+  $command .= "-v 1 " if ($verbose >= 1);
+  $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
+  &doit($command, $dry_run, $die_on_error, $verbose);
+
+  my @types = ();
+  push @types, "gene";
+  push @types, "intergenic";
+
+  foreach my $seq_type (@types) {
+    my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.fasta";
+
+    #### draw sequence length distributions
+    &RSAT::message::TimeWarn("Computing sequence length for genomic regions", $seq_type) if ($main::verbose >= 2);
+    &SeqLengthDistribution($seq_file, "fasta", $seq_type, 50) if ($task{seq_len_distrib});
+
+    #### compress sequence file
+    if (-e $seq_file) {
+      &RSAT::message::TimeWarn("Compressing sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
+      $command = "gzip -f $seq_file";
+      &doit($command, $dry_run, $die_on_error, $verbose);
+    }
+
+    #### purge sequences
+    if ($purged_frequencies) {
+      &RSAT::message::TimeWarn("Purging sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
+      &PurgeSequences($seq_file);
+    }
+  }
+
+  chdir $dir{main};
+}
+
+
+################################################################
+### extract the complete set of upstream sequences
+sub AllUpstream {
+  &RSAT::message::TimeWarn("Retrieving all upstream sequences") if ($verbose >= 1);
+
+  foreach my $masking (@masking_modes) {
+    foreach my $noorf ("", "-noorf") {
+      my $seq_type = "upstream${noorf}${masking}";
+      my $seq_file = $dir{genome}."/".${organism_short_name}."_".${seq_type};
+      my @seq_formats = qw(fasta ft);
+      #      my @seq_formats = qw(ft);
+
+      ## Retrieve sequences in two formats: fasta is used for
+      ## computing oligo and dyad frequencies, whereas ft is convenient for
+      ## retrieve-seq-multigenome
+      foreach $format (@seq_formats) {
+	my $command = "retrieve-seq -all";
+	$command .= " -type upstream -org ".$organism_short_name;
+	$command .= " ".${noorf};
+	$command .= " ".${masking};
+	$command .= " -label ID";
+	$command .= " -format ".$format;
+	$command .= " -o ".$seq_file.".".$format;
+	&doit($command, $dry_run, $die_on_error, $verbose);
+	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 0);
+      }
+
+      ## Compute sequence length distributions and generate a frequency plot
+      &SeqLengthDistribution($seq_file.".fasta", "fasta", $seq_type, 50) if ($noorf);
+
+      ## compress sequence file
+      $command = "gzip -f ".$seq_file.".fasta";
+      &doit($command, $dry_run, $die_on_error, $verbose);
+
+      ## purge sequences
+      &PurgeSequences($seq_file.".fasta", "fasta") if ($purged_frequencies);
+    }
+  }
+  chdir $dir{main};
+}
+
+################################################################
+## draw an histogram of sequence lengths
+sub SeqLengthDistribution {
+    my ($seq_file, $format, $seq_type, $ci) = @_;
+    &RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $format, $seq_type, $ci) if ($main::verbose >= 2);
+    $ci = 50 unless $ci;
+    $format = "fasta" unless $format;
+    my $classfreq_from = 0;
+    chdir $dir{genome};
+
+    if ($main::verbose >= 3) {
+	my $pwd = `pwd`;
+	chomp $pwd;
+	&RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $seq_type, "Working dir", $pwd);
+    }
+
+    my $command = "sequence-lengths -i $seq_file -in_format ".$format;
+    $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.tab";
+    $command .= "; cut -f 2 ${organism_short_name}_${seq_type}_segments_lengths.tab ";
+    $command .= "| classfreq -ci $ci -v -from $classfreq_from";
+    $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.tab";
+    $command .= "; XYgraph -i ${organism_short_name}_${seq_type}_segments_lengths.tab";
+    $command .= " -xcol 3 -ycol 7,8,9 -lines -xmin $classfreq_from";
+    $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
+    $command .= " -xgtask1 100 -xgtask2 250 -ygtask1 0.1";
+    $command .= " -xlog 2" if( ($seq_type eq "intergenic") || ($seq_type eq "gene"));
+    $command .= " -xleg1 'sequence length (bp)'";
+    $command .= " -yleg1 'frequency'";
+    $command .= " -title1 '".$organism_full_name."'";
+    $command .= " -title2 'length distribution of ${seq_type} sequences'";
+    $command .= " -format ".$img_format;
+    $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.".$img_format;
+    &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+################################################################
+## purge sequences
+sub PurgeSequences {
+  my ($seq_file, $format) = @_;
+  &RSAT::message::Warning("Purging sequence", $seq_file, $format) if ($main::verbose >= 0);
+  $format = "fasta" unless ($format);
+  my $purged_seq_file = `basename $seq_file $format`;
+  $purged_seq_file .= "_purged.$format";
+  my $command = "purge-sequence -i $seq_file -format $format -ml 300 -mis 9 -2str -o $purged_seq_file";
+  &doit($command, $dry_run, $die_on_error, $verbose);
+  ## compress purged sequence file
+  $command = "gzip -f $purged_seq_file";
+  &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+################################################################
+### calculate oligo and dyad frequencies in different sequence types :
+### - intergenic
+### - upstream
+### - genomic
+### 
+sub CalcFrequencies { 
+  #    my ($seq_file, $seq_format, $seq_type) = ();
+  &RSAT::message::TimeWarn("&CalcFrequencies()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 0);
+  chdir $dir{oligos};
+
+  ################################################################
+  # calculate oligont frequencies in all upstream sequences
+  if ($task{upstream_freq}) {
+    foreach my $masking (@masking_modes) {
+      foreach my $noorf ("-noorf", "") {
+	$seq_type = "upstream${noorf}${masking}";
+	if ($purged_frequencies) {
+	  $seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
+	  $seq_format = "fasta";
+	} else {
+	  $seq_file = "${organism_short_name}_${seq_type}.fasta";
+	  $seq_format = "fasta";
+	}
+	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies") if ($main::verbose >= 1);
+	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
+	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+      }
+    }
+  }
+
+  if ($task{ensembl_freq}) {
+
+    unless (defined($up_from)) {
+      if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
+	$up_from = $supported_organism{$organism_short_name}->{'up_from'};;
+      }
+    }
+
+    unless (defined($up_to)) {
+      if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
+	$up_to = $supported_organism{$organism_short_name}->{'up_to'};
+      }
+    }
+
+    foreach my $masking (@masking_modes) {
+      #	foreach my $masking ("-rm") {
+      #	    foreach my $noorf ("-noorf", "") {
+      foreach my $maskcoding ("-maskcoding") {
+	#		    foreach my $type ("upstream_mrna") {
+	#		    foreach my $type ("intron") {
+	#		    foreach my $type ("firstintron") {
+	foreach my $type ("utr") {
+	  #			$seq_type = "${type}${up_from}${up_to}${maskcoding}${masking}";
+	  $seq_type = "${type}${maskcoding}${masking}";
+	  #		    if ($purged_frequencies) {
+	  #			$seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
+	  #			$seq_format = "fasta";
+	  #		    } else {
+	  $seq_file = "${organism_short_name}_${seq_type}.fasta";
+	  $seq_format = "fasta";
+	  #		    }
+	  &RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies") if ($main::verbose >= 1);
+	  &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	  #		    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
+	  #		    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+	}
+	#	    }
+      }
+    }
+  }
+
+
+  ################################################################
+  # calculate oligont frequencies in all intergenic sequences
+  if ($task{intergenic_freq}) {
+    $seq_type = "intergenic";
+    &RSAT::message::TimeWarn("Calculating ${seq_type} oligo and dyad frequencies") if ($main::verbose >= 1);
+    if ($purged_frequencies) {
+      $seq_file = "${organism_short_name}_intergenic_segments_purged.fasta";
+      $seq_format = "fasta";
+    } else {
+      $seq_file = "${organism_short_name}_intergenic_segments.fasta";
+      $seq_format = "fasta";
+    }
+    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+    #	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
+    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+  }
+    
+  ################################################################
+  # calculate oligo-frequencies in full genome
+  if ($task{genome_freq}) {
+    $seq_type = "genomic";
+    $seq_format = "filelist";
+    $seq_file = $outfile{'genome'};
+    &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+    #	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib});
+    &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
+  }
+
+  ################################################################
+  ## calculate oligont frequencies in all gene sequences 
+  ##
+  ## GENE FREQUENCIES ARE NOT WORKING ANYMORE, AND, BESIDES, THEY WERE NOT
+  ## USEFUL
+  if ($task{gene_freq}) {
+    $seq_type = "gene";
+    if ($purged_frequencies) {
+      $seq_file = "${organism_short_name}_gene_segments_purged.fasta";
+      $seq_format = "fasta";
+    } else {
+      $seq_file = "${organism_short_name}_gene_segments.fasta";
+      $seq_format = "fasta";
+    }
+    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+    #	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
+    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+  }
+
+  ################################################################
+  # Calculate oligopeptide frequencies in all protein sequences
+  if ($task{protein_freq}) {
+    $seq_type = "protein";
+    $seq_file = "${organism_short_name}_aa.fasta";
+    $seq_format = "fasta";
+    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+  }
+
+  chdir $dir{main};
+}
+
+################################################################
+## Calculate oligonucleotide frequencies for a specified sequence
+## file
+sub CalcOligoFreq {
+  my ($seq_file,$seq_format,$seq_type) = @_;
+  &RSAT::message::TimeWarn("&CalcOligoFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 0);
+
+  my @current_oligo_lengths = @oligo_lengths;
+#  my @current_oligo_lengths = (6);
+  my $oligo_seq_type = "dna";
+  my $residue_type = "nt";
+  my $quick = "";
+  unless ($seq_type eq "protein") {
+    $quick = "-quick";
+  }
+
+  my @strands = ("-1str", "-2str");
+  if ($seq_type eq "protein") {
+    @current_oligo_lengths = 1..3;
+    $oligo_seq_type = "prot";
+    $residue_type = "pept";
+    @strands = ("");
+  }
+
+  ## Uncompress sequence file if required because the option -quick
+  ## currently does not support compressed files
+  my $uncompressed = 0;
+  if (!(-e $seq_file) && (-e $seq_file.".gz")) {
+      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gunzip ".$seq_file.".gz";
+      my $job_prefix = ${organism_short_name}."_compress";
+      $uncompressed = 1;
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      $seq_file =~ s/\.gz$//;
+  }
+
+  foreach my $noov ("-noov", "-ovlp") {
+    foreach my $strands (@strands) {
+      foreach my $oligo_length (@current_oligo_lengths) {
+	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
+	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
+	my $out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
+	my $command = $SCRIPTS."/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
+	$command .= " ".$strands;
+	$command .= " -seqtype ".$oligo_seq_type;
+	$command .= " ".$noov;
+	$command .= " -l ".$oligo_length." -type dna ";
+	$command .= " -return freq,occ";
+	$command .= " -o ".$out_file;
+	$command .= "; gzip -f ".$out_file;
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      }
+    }
+  }
+
+  ## Recompress the sequence file if required
+  if ($uncompressed) {
+      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gzip ".$seq_file;
+      my $job_prefix = ${organism_short_name}."_uncompress";
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  }
+}
+
+################################################################
+## calculate oligonucleotide distribution for a specified sequence
+## file
+sub CalcOligoDistrib {
+  my ($seq_file,$seq_format,$seq_type) = @_;
+  &RSAT::message::TimeWarn("&CalcOligoDistrib()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 0);
+  @strands = ("-1str", "-2str");
+  foreach my $noov ("-noov", "-ovlp") {
+    foreach my $strands (@strands) {
+      foreach my $oligo_length (@oligo_lengths) {
+	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
+	#### Calculate occurrence distributions in the sequence file
+	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
+	my $command = $SCRIPTS."/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+	$command .= " ".$strands;
+	$command .= " ".$noov;
+	$command .= " -l ".$oligo_length." -type dna";
+	$command .= " -return occ -distrib";
+	$command .= " -o ".$distrib_file;
+	$command .= " ; gzip -f ".$distrib_file;
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+
+	#### Fit a Poisson and a negbin on occurrence distribution
+	foreach my $theor ("negbin", "poisson") {
+	  my $fitting_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_${theor}.tab";
+	  $command = "fit-distribution -v 1 -i ".$distrib_file;
+	  $command .= " -o ".$fitting_file;
+	  $command .= " -distrib ".$theor;
+	  $command .= " ; gzip -f ".$fitting_file;
+	  &doit($command, $dry_run, $die_on_error, $verbose);  
+	}
+      }
+    }
+  }
+}
+
+
+################################################################
+## calculate dyad frequencies for a specified sequence
+## file
+sub CalcDyadFreq {
+  my ($seq_file,$seq_format,$seq_type) = @_;
+  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 0);
+  $min_spacing = 0;
+  $max_spacing = 20;
+  @monad_lengths = (3,2,1);
+  @strands = ("-1str", "-2str");
+  my $quick = "";
+  unless ($seq_type eq "protein") {
+    $quick = "-quick";
+  }
+
+  ## uncompress sequence file if required because the option -quick
+  ## currently does not support compressed files
+  my $uncompressed = 0;
+  if (!(-e $seq_file) && (-e $seq_file.".gz")) {
+      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gunzip ".$seq_file.".gz";
+      my $job_prefix = ${organism_short_name}."_uncompress";
+      $uncompressed = 1;
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      $seq_file =~ s/\.gz$//;
+  }
+
+
+  foreach my $noov ("-noov", "-ovlp") {
+    foreach my $strands (@strands) {
+      foreach my $monad_length (@monad_lengths) {
+	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 1);
+	my $job_prefix = ${organism_short_name}."_dyad_".$monad_length;
+	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
+	$dyad_file .= ".freq";
+	my $command = $SCRIPTS."/dyad-analysis ".$quick." -v 1 -i $seq_file -format $seq_format";
+	$command .= " -timeout 240000 ";
+	$command .= " -type any -seqtype dna";
+	$command .= " ".$strands;
+	$command .= " ".$noov;
+	$command .= " -sp ".$min_spacing."-".$max_spacing;
+	$command .= " -l $monad_length";
+	$command .= " -return freq,occ";
+	$command .= " -o ".$dyad_file;
+	$command .= "; gzip -f ".$dyad_file;
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
+      }
+    }
+  }
+
+  ## Recompress the sequence file if required
+  if ($uncompressed) {
+      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
+      my $command = "gzip ".$seq_file;
+      my $job_prefix = ${organism_short_name}."_compress";
+      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  }
+}
+
+
+################################################################
+## display full help message
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	install-organism
+
+AUTHOR
+        Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+        install-organism -org organism_name
+
+DESCRIPTION
+	Add support for an organism in RSA-tools.
+
+	This script is a task manager, which (depending on the
+	selected tasks) manages different steps necessary for the
+	installation of an organism from the NCBI flat files :
+
+	- parse the .gbk files
+
+	- add the organism in the config file
+
+	- calculate trinucleotide frequencies in the start and stop
+          codons (a way to check consistency of the gene locations)
+
+	- calculates oligonucleotide and dyad frequencies
+
+CATEGORY
+	Data management.
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+
+    MANDATORY ARGUMENTS
+	-org	organism name without spaces 
+	        (e.g. Saccharomyces_cerevisiae)
+
+		The option -org can be used iteratively on the same
+		command line to iterate the installation over multiple
+		organisms.
+
+        -org_file organism_file_name
+		Text file containing a list of organisms to install.
+		The first word of each row is taken as a query
+		orgnanism. Further information of the same row is
+		ignored.
+
+      	-taxon  taxon name (mutually exclusive with -org)
+
+		The installation will iterate over all organisms of
+		the selected taxon. Note that the command will only
+		apply to the organisms previously declared with the
+		command install-organism -task config. The option
+		-taxon is thus convenient for re-running installation
+		tasks on previously installed organisms rather than
+		for installing new genomes downloaded e.g. from NCBI.
+
+		The option -taxon can be used iteratively on the same
+		command line to iterate the installation over multiple
+		taxa.
+
+
+    OPTIONAL ARGUMENTS
+	-organism
+		Full name of the organism 
+		(e.g. 'Saccharomyces cerevisiae').
+
+	-source	data source
+
+	-dir dir{install}
+		Absolute path of the installation directory. 
+		BEWARE : you should provide the absolute path of the
+		installation directory, not the relative path.
+
+	-batch  run some tasks (for example the calibration of oligos
+		and dyads) in batch mode.  This options works on our
+		lab cluster, but could be adapted for other
+		configurations by adapting the method &doit() in the
+		utilities ($RSAT/lib/RSA.lib).
+
+	-config
+		Specify an alternative organism configuration file for the
+		genome to be installed.
+
+		By default, the organism configuration file is 
+	      	\$RSAT/public_html/data/genomes/supported_organisms.pl
+
+        -backup_org_table
+                Store a backup copy of the organism table before
+                overwriting it.
+
+	-local
+		Absolute path of a RSA local config file.
+
+		By default, the newly installed organism is added to
+		the main RSA config file is changed (provided the user
+		has write access to the RSA config file).
+
+		In addition to the organisms installed by the RSAT
+		system administrator (found in
+		$ENV{RSAT}/public_html/data/supported_organisms.tab), users can
+		install some organisms locally.
+
+		For this, the user must first define an environment
+		variable called RSA_LOCAL_CONFIG, and indicating the
+		absolute path of the local config file.  
+		E.g.  
+		  export RSA_LOCAL_CONFIG=/home/fred/RSA.local.config
+
+		When install-organisms is called with the option
+		-local, the new organism is added to the file
+		indicated by the environment variable RSA_LOCAL_CONFIG
+		rather than the main RSA config file.
+
+	-syn	synonym table
+		A tab-delimited file containing two coloumns. The
+		forst column contains a gene ID, the second a gene
+		name.
+	-up_from distal limit of the upstream regions (e.g. -800 for yeast)
+	-up_to	proximal limit of the upstream regions (e.g. -1)
+	-genbank
+		genbank directory
+
+		A directory containing a mirror of the NCBI genbank
+		genome directory:
+		       http://ftp.ncbi.nih.gov/genomes
+		Normally, the genbank directory is specified by
+		defining a global variable GENBANK_DIR in the config
+		file. The option -genbank allows to overwrite this
+		value.
+
+	-prefid feattype idname
+	        passed to parse-genbank.pl
+
+	-date last_update
+
+	        Force the 'last_update' attribute to a given date. 
+
+		This option is used by download-organism to ensure
+		that the local genome has the same installation date
+		as the server, rather than using the date of download
+		as update date.
+
+	-ensembl
+		ENSEMBL directory. Directory containing the ENSEMBL
+		flat files in Genbank format (ext .dat)
+
+		Example: 
+		ftp.ensembl.org/pub/current_worm/data/flatfiles/genbank
+
+	-task	specification of a single installation task
+		    e.g.
+			install-organism -task dyads
+		supported tasks: $supported_tasks
+
+		Description of the tasks
+		------------------------
+		genome	     format genome sequence
+			     (obsolete)
+
+		features     prepare feature table
+			     (obsolete)
+
+		config	     update configuration file
+
+		start_stop   
+			     calculate start and stop codon
+			     frequencies
+
+		allup	     retrieve all upstream sequences
+
+		genome_segments
+			     retrieve sequences and limits of genome segments
+			     (intergenic, genic)
+
+		oligos	     calculate oligonucleotide frequencies
+
+			     This task requires to specify, in
+			     addition, the type(s) of sequences for
+			     which oligo frequencies have to be
+			     calculated (upstream_freq,
+			     intergenic_freq, genome_freq).
+
+		dyads	     calculate dyad frequencies
+
+			     This task requires to specify, in
+			     addition, the type(s) of sequences for
+			     which dyad frequencies have to be
+			     calculated (upstream_freq,
+			     intergenic_freq, genome_freq).
+
+		ncf	     calculate oligo and dyad frequencies in
+			     intergenic segments
+
+		upstream_freq
+			     calculate oligo and dyad frequencies for
+			     all upstream sequences
+
+		intergenic_freq
+			     calculate oligo and dyad frequencies for
+			     all intergenic sequences
+
+		genome_freq  
+			     calculate oligo and dyad frequencies for
+			     the whole genome sequence. This is not
+			     recommended for higher organisms, where
+			     the genome represents several Gigabases,
+			     and the computation of all oligo and dyad
+			     frequencies might take ages.
+
+		clean	     remove unnecessary sequence files
+
+	-rm	calibrate oligo and dyad frequncies on repeat masked
+		sequences, in addition to the non-masked sequences.
+
+	-img_format
+		image format for the graphs of sequence length distribution
+
+SEE ALSO
+
+    download-organisms
+
+        The program I<install-organism> performs all the formatting
+	and calibration tasks for importing genomes from the reference
+	databases (NCBI, EMBL) to RSAT.
+
+	The program I<download-organism> transfers the RSAT-formatted
+	genomes from a RSAT server. 
+
+ 	If a genome is available on the RSAT server, it is recommended
+	to use download-genomes in order to obtain it immediately in
+	the RSAT format, rather than install-genomes.
+
+
+End_of_help
+    close HELP;
+    exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+install_organism options
+------------------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-v		verbose
+-n		dry run (print commands without executing them)
+-org		organism name without spaces (e.g. Saccharomyces_cerevisiae);
+-org_file	organism_file_name
+-taxon		iterate installation tasks over all the previously installed organisms of a taxon
+-organism	full organism name (e.g. Saccharomyces cerevisiae)
+-source		data source (e.g. ncbi);
+-dir		absolute path of the installation directory
+-batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
+-config		alternative organism configuration file
+-backup_org_table  Store a backup copy of the organism table before overwriting it.
+-local		update local config file 
+		(specified by the environment variable RSA_LOCAL_CONFIG)
+-genbank	genbank directory
+-ensembl	ensembl directory
+-task		installation task ($supported_tasks)
+-rm		calibrate oligo and dyad frequncies on repeat masked sequences
+-syn		synonym table
+-up_from       	distal limit of the upstream regions (e.g. -800 for yeast)
+-up_to		proximal limit of the upstream regions (e.g. -1)
+-prefid feattype idname     passed to parse-genbank.pl
+-date 		 force last_update to a given date (for synchro between server and local installation)
+-img_format	 image format for the graphs of sequence length distribution
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    #    foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$verbose = shift(@arguments);
+      } else {
+	$verbose = 1;
+      }
+
+      ## dry run
+    } elsif ($arg eq "-n") {
+      $dry_run = 1;
+      $verbose = 1;
+
+      ## detailed help
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+      ## list of options
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+      ## output file
+    } elsif ($arg eq "-o") {
+      $outputfile = shift(@arguments);
+
+
+      ## Organism name in one word (spaces replaced  by underscores)
+    } elsif ($arg eq "-org") {
+      my $organism_short_name = shift(@arguments);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
+      push @organisms, $organism_short_name;
+
+      ## Input file with organism list
+    } elsif ($arg eq "-org_file") {
+      $infile{organisms} = shift(@arguments);
+
+      ## Taxon
+    } elsif ($arg eq "-taxon") {
+      push @taxa, shift(@arguments);
+
+      ## Full organism name (may include spaces)
+    } elsif ($arg eq "-organism") {
+      $organism_full_name = shift(@arguments);
+
+      ## synonyms
+    } elsif ($arg =~ /-syn/) {
+      $infile{synonyms} = shift(@arguments);
+
+      ## Specify the limits of upstream regions
+    } elsif ($arg eq "-up_from") {
+      $up_from = shift(@arguments);
+      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
+      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be negative)")) if ($up_from >= 0);
+
+    } elsif ($arg eq "-up_to") {
+      $up_to = shift(@arguments);
+      &FatalError(join ("\t", $up_to, "Invalid value for the to parameter (must be integer)")) unless (&IsInteger($up_to));
+
+    } elsif ($arg eq "-prefid") {
+      $parse_options .= join(" " , " -prefid", shift(@arguments), shift(@arguments));
+
+    } elsif ($arg eq "-date") {
+      $force_date = shift(@arguments);
+
+      ## installation dir
+    } elsif ($arg =~ /^-dir/) {
+      $install_dir = shift(@arguments);
+
+      ## Genbank dir
+    } elsif ($arg =~ /^-genbank/) {
+      $dir{genbank} = shift(@arguments);
+
+      ## ENSEMBL dir
+    } elsif ($arg =~ /^-ensembl/) {
+      $dir{ensembl} = shift(@arguments);
+
+      ## data source
+    } elsif ($arg eq "-source") {
+      $source = shift(@arguments);
+
+      ## Batch mode
+    } elsif ($arg eq "-batch") {
+      $batch = 1;
+
+      ## Masking modes
+    } elsif ($arg eq "-rm") {
+      push @masking_modes, "-rm";;
+
+      ## task selection
+    } elsif (($arg =~ /^-task/) 
+	     || ($arg =~ /^-step/)) {
+      my @requested_tasks = split ",", shift(@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+	}
+      }
+
+      ## image format
+    } elsif ($arg eq "-img_format") {
+      $img_format = lc(shift(@arguments));
+
+      ## local configuration file specified with an environment variable
+    } elsif ($arg =~ /^-local/) {
+      unless ($ENV{'RSA_LOCAL_CONFIG'}) {
+	die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
+      }
+      $local_config = 1;
+
+      ## alternative configuration file
+    } elsif ($arg eq "-config") {
+      $ENV{'RSA_LOCAL_CONFIG'}  = shift(@arguments);
+      unless ($ENV{'RSA_LOCAL_CONFIG'}) {
+	die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
+      }
+      $local_config = 1;
+
+      ## Store a backup copy of organism table before overwriting it
+    } elsif ($arg eq "-backup_org_table") {
+      $main::backup_org_table = 1;
+
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them.
+
+=cut
+    } elsif ($arg eq "-dry") {
+	$main::dry_run = 1;;
+
+=pod
+
+=item B<-nodie>
+
+Do not die in case a sub-program returns an error.
+
+The option -nodie allows you to circumvent problems with specific
+sub-tasks, but this is not recommended because the results may be
+incomplete.
+
+=cut
+
+      } elsif ($arg eq "-nodie") {
+	$main::die_on_error = 0;
+
+
+    }
+  }
+}
+
+################################################################
+## Retrieve start and stop codons and calculate word occurrences
+## (for checking)
+sub StartAndStopCodons {
+  &RSAT::message::TimeWarn("&StartAndStopCodons()", $organism_short_name) if ($main::verbose >= 1);
+  #    my $label =  "orf";
+  my $label =  "id,ctg,reg_left,reg_right,orf_strand";
+  my $prefix = $dir{genome}."/".${organism_short_name};
+  my $job_prefix = ${organism_short_name}."_start_codons";
+  my $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
+  $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
+  $command .= "-format wc -nocomment -label $label \ ";
+  $command .= " -o ".$prefix."_start_codons.wc";
+  $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " -i ".$prefix."_start_codons.wc";
+  $command .= " -o ".$prefix."_start_codon_frequencies";
+  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+#  &doit($command, $dry_run, $die_on_error, $verbose);
+
+  $job_prefix = ${organism_short_name}."_stop_codons";
+  $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
+  $command .= "-type downstream  -feattype CDS -from 0 -to -2  \ ";
+  $command .= "-format wc -nocomment -label $label \ ";
+  $command .= " -o ".$prefix."_stop_codons.wc";
+  $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " -i ".$prefix."_stop_codons.wc";
+  $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
+  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+#  &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+
+################################################################
+## Parse the genome from Genbank files
+sub ParseGenome {
+  &RSAT::message::TimeWarn("&ParseGenome()") if ($main::verbose >= 0);
+  if ($dir{ensembl}) {
+    $dir{source} = $dir{ensembl};
+  } elsif (-d "$dir{genbank}/$organism_short_name") {
+    $dir{source} = "$dir{genbank}/$organism_short_name";
+  } elsif (-d "$dir{genbank}/Bacteria/$organism_short_name") {
+    $dir{source} = "$dir{genbank}/Bacteria/$organism_short_name";
+  } else {
+    &RSAT::error::FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
+  }
+  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
+  $command .= " -i ".$dir{source};
+  $command .= $parse_options;
+  if ($dir{ensembl}) {
+    $command .= " -ext dat";
+    $command .= " -org ".$organism_short_name;
+  }
+  #    if ($source ne $null) {
+  $command .= " -source '$source'";
+  #    }
+  $command .= " -o ".$dir{genome};
+  &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+################################################################
+## Clean up unnecessary files to save disk space
+sub CleanUp {
+  &RSAT::message::TimeWarn("&CleanUp()") if ($main::verbose >= 0);
+  chdir $dir{genome};
+
+  ## delete files with intergenic and gene segment sequences
+  my @files = ();
+  foreach my $seq_type (qw(intergenic gene upstream upstream-noorf)) {
+    foreach my $format (qw(wc fasta)) {
+      foreach my $extension ("", ".gz") {
+	foreach my $segments ("", "_segments") {
+	  foreach my $purged ("", "_purged") {
+	    my $file = "${organism_short_name}_${seq_type}${segments}${purged}.${format}${extension}";
+	    if (-e $file) {
+	      push @files, $file;
+	    }
+	  }
+	}
+      }
+    }
+  }
+  foreach my $file (@files) {
+    my $command = "rm -f $file";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+  }
+}
+

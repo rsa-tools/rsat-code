@@ -1,0 +1,269 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+'''
+NAME
+	%(progname)s
+
+VERSION
+	%(version)s
+
+CATEGORY
+	genome   
+        
+DESCRIPTION
+
+	Parse the list of aligned species from a multi-genome alignent
+	file (maf format), such as those downloaded from UCSC genome
+	browser by the script download-ucsc-multiz.
+
+	The result is a 4-columns tab-delimited text, stored by
+	default in the file
+	$RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
+		
+	This file is used to display the list of locally supported
+	multi-genome alignemnts in the Web interface of the program
+	peak-footprints.
+
+WARNING
+
+	Does not work for camFam1, dm1, sacCer1, because their multiz
+	file is not organized in a consistent way with other UCSC
+	multiz files.
+        
+USAGE
+	%(progname)s -ref_species ref_species1[,ref_species2 ...] \\
+	  [-v #] [-h] [-print_result] [-rm]
+
+	Example 
+		%(progname)s -ref_species mm9,hg18 -v 2
+            
+OPTIONS
+	-h, --help
+		show this help and exit
+		
+	-v #
+		verbosity
+			
+	-ref_species # 
+		Reference species. Multiple species can be provided,
+		seperated by comma.
+
+	-rm
+		Remove ref_species from the list of supported
+		multi-genome alignemnts. This erases the
+		corresponding lines from the file
+
+		$RSAT/public-html/data/supported_organisms_ucsc_multiz_local.tab
+
+		However, the multiz alignements are not suppressed
+		from the data directory (this must be done manually).
+
+	-print_result
+		Print the species alignend on STDOUT instead of the
+		file.
+
+'''
+
+
+#############################################################################################################	
+##import
+import os
+import sys
+import re
+import argparse
+import subprocess
+import time
+import operator
+
+now = time.strftime('%d/%m/%y %H:%M:%S',time.localtime())  
+
+
+################################################################
+def main( argv):
+
+	##Read arguments
+	parser = argparse.ArgumentParser(add_help=0)
+	parser.add_argument('-ref_species', action="store",default=False, dest="ref_species")
+	parser.add_argument('-rm', action="store_true", default=False, dest="remove")
+	parser.add_argument('-print_result', action="store_true",default=False, dest="print_result")
+	parser.add_argument("-v", action="store", default=0, type=int, dest="verbosity")
+	parser.add_argument("-h", "--help", action="store_true", dest="help")
+	args = parser.parse_args()
+
+	##Check argument 
+	if args.help:
+		print  globals()['__doc__'] % {'version' : '1.00', 'progname' : parser.prog}
+		sys.exit(0)
+	
+	if not args.ref_species:
+		print 'You forgot to specify reference species. Use -ref_species'
+	 	sys.exit(1)
+	else:
+		args.ref_species = args.ref_species.split(",")
+
+	##Initalize variable
+	rsat_path = os.getenv('RSAT') # Main path for the RSAT suite
+	peak_footprints_path = rsat_path + "/contrib/peak-footprints/" # Path for the peak-footprint program
+	multiz_path = rsat_path + "/data/UCSC_multiz"
+	supported_organisms_ucsc_multiz_local = rsat_path+"/data/supported_organisms_ucsc_multiz_local.tab"
+
+	##Launch function
+	line_to_keep = read_supported_organisms_ucsc_multiz_local(args.ref_species, supported_organisms_ucsc_multiz_local)
+	
+	if args.remove:	#Not reading maf if user want remove
+		list_info = []
+		ref_nb_spec = []
+		
+	else: 
+		downloaded_maf = listing(multiz_path, multiz_path, {}, args.ref_species)
+
+		list_info, ref_nb_spec = read_maf(downloaded_maf, multiz_path, args.ref_species, args.verbosity)
+
+
+	if args.print_result:
+		priting_align_species(list_info)
+	else:
+		writing_align_species(line_to_keep, list_info, supported_organisms_ucsc_multiz_local )
+		
+	if ref_nb_spec != []:
+		for ref_species in ref_nb_spec:
+			print "Can't find "+multiz_path+"/"+ref_species+"/multizNway"
+
+	end = time.strftime('%d/%m/%y %H:%M:%S',time.localtime()) 
+	print now
+	print end
+#############################################################################################################
+##Reading supported_organisms_ucsc_multiz_local.tab if exsit
+def read_supported_organisms_ucsc_multiz_local(list_ref_species, supported_organisms_ucsc_multiz_local):
+
+	line_to_keep = ""
+	if os.path.isfile(supported_organisms_ucsc_multiz_local): 
+		file = open(supported_organisms_ucsc_multiz_local,'r')
+		line = file.readline()
+
+		while line != "":
+			ref_species, nb_species, species, path = line.split("\t")
+			if ref_species not in list_ref_species : ##Removing all multiz from the same ref_species in supported_organisms_ucsc_multiz_local.tab
+				line_to_keep += line
+
+			line = file.readline()
+	
+		file.close()
+	return line_to_keep
+
+#############################################################################################################
+##List recursivly all directory in multiz_path and return a dictionnay with all the .maf for ref_species paste in argument
+def listing (directory, multiz_path, downloaded_maf, ref_spec):
+	
+	for files in os.listdir(directory) :		
+		file_path = os.path.join(directory, files)
+
+		#if file_path is a directory, the fonction recall itself
+		if os.path.isdir(file_path):
+			downloaded_maf = listing(file_path, multiz_path, downloaded_maf, ref_spec)
+			
+		else : 
+			extension = file_path.split(".")[-1]
+			
+			if extension == "maf":	
+				local_file_path = file_path.replace(multiz_path,"").lstrip("/")
+				ref_species = local_file_path.split("/")[0]
+				multiz = local_file_path.split("/")[1]
+				
+				if ref_species in ref_spec:
+					if ref_species not in downloaded_maf:
+						downloaded_maf[ref_species] = {}
+
+					if multiz not in downloaded_maf[ref_species]:
+						downloaded_maf[ref_species][multiz] = []
+	
+					downloaded_maf[ref_species][multiz].append( ( os.stat(file_path).st_size, file_path))
+
+	return downloaded_maf
+
+#############################################################################################################
+##Reading maf file
+def read_maf(downloaded_maf, multiz_path, ref_spec, verbosity = 0): 
+	if verbosity > 0:
+		print "\n" + time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime()) + "\tReading MAF file"
+		
+	exp_reg = ('multiz(\d+)way')
+	exp_reg = re.compile(exp_reg)
+	list_info = []
+	
+	for ref_species in downloaded_maf:
+		multiz = downloaded_maf[ref_species].keys()[0]
+		downloaded_maf[ref_species][multiz].sort(key=operator.itemgetter(0))
+
+		list_species = []
+
+		
+		nb_species = exp_reg.findall(multiz)
+
+		if nb_species != []:
+			nb_species_int = int(nb_species[0])
+	
+			##Begin reading maf file with the smallest.
+			##If not all aligned species find, read the next smallest
+			i = 0
+			while len(list_species) != nb_species_int:
+				maf_file = downloaded_maf[ref_species][multiz][i][1]
+				
+				if verbosity > 1:
+					print "\tRead : "+maf_file
+					
+				maf = open(maf_file,'r')
+
+				line = maf.readline()
+
+				while line != "":
+					if line[0] in  ["s","e","i","q"]:
+						species = line.split(".")[0].split()[1]
+					
+						if species not in list_species:			
+							list_species.append(species)	
+								
+					line = maf.readline()
+				i += 1
+
+
+			maf_path = "/".join(maf_file.replace(multiz_path,"").lstrip("/").split("/")[:-1])		
+			list_info.append((ref_species, nb_species_int, list_species, maf_path))
+
+			##Removing treating maf directory
+			ref_spec.remove(ref_species)
+
+	return list_info, ref_spec
+
+##Writing align_species in supported_organisms_ucsc_multiz_local.tab
+def writing_align_species(line_to_keep, list_info, supported_organisms_ucsc_multiz_local ):
+
+	file = open(supported_organisms_ucsc_multiz_local,'w')
+	
+	if line_to_keep != "":
+		file.write(line_to_keep)
+
+	for ref_species, nb_species, list_species, maf_path in list_info:
+	
+		list_species.remove(ref_species)
+		list_species.sort()
+		
+		for specie in list_species:
+			file.write(ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+maf_path+"\n")		
+
+	file.close()
+
+##Priting align_species in supported_organisms_ucsc_multiz_local.tab
+def priting_align_species(list_info):
+	"""Print result."""
+	for ref_species, nb_species, list_species, maf_path in list_info:
+	
+		list_species.remove(ref_species)
+		list_species.sort()
+		
+		for specie in list_species:
+			print ref_species+"\t"+str(nb_species)+"\t"+specie+"\t"+maf_path	
+
+#############################################################################################################	
+if __name__ == "__main__":
+    sys.exit( main( sys.argv))

@@ -1,0 +1,235 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: binomial-series,v 1.16 2011/02/17 04:54:48 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:46:41 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+
+&ReadArguments();
+
+die "Error: you should define proba (option -p)\n"
+    unless (defined($proba));
+die "Error : invalid value for probability\t$proba\n",
+    "Proba should be >=0 and <=1.\n" 
+    if (($proba <= 0) || ($proba >= 1));
+
+die "Error: you should define the number of trials (option -r)\n"
+    unless (defined($trials));
+die "Error : invalid value for number of trials\t$trials\n",
+    "Should be a positive natural number\n"
+    unless (&IsNatural($trials) && ($trials > 0));
+
+$step = 1 unless ($step >= 1);
+$max_successes = $trials unless ($max_successes >= 1);
+$min_successes = 0 unless (defined($min_successes));
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+&Verbose if ($verbose);
+
+#### header
+print $out (join("\t", "#s", 
+		 "binomial    ",
+		 "binomial_soe",
+		 "binomial_boe",
+		 "poisson     ",
+		 "poisson_soe ",
+		 "poisson_boe ",
+		 "large_dev_est")
+	    ,"\n");
+
+#### result
+for ($s = $min_successes; $s <= $max_successes; $s += $step) {
+    $expected_successes = $proba*$trials;
+    $bin = &binomial($proba,$trials,$s);
+    $bin_soe = &sum_of_binomials($proba,$trials,0,$s);
+    $bin_boe = &binomial_boe($proba,$trials,$s);
+    $poisson = &poisson($s, $expected_successes);
+    $poisson_soe = &sum_of_poisson($expected_successes,0,$s,);
+    $poisson_boe = &sum_of_poisson($expected_successes,$s,$trials);
+    $bin_approx = &binomial_approx($proba,$trials,$s);
+
+    print $out "$s";
+    if (&IsReal($bin)) {
+	printf $out "\t%e",  $bin;
+    } else {
+	print $out "\t",  $bin;
+    }
+    if (&IsReal($bin_soe)) {
+	printf $out "\t%e",  $bin_soe;
+    } else {
+	print $out "\t",  $bin_soe;
+    }
+    if (&IsReal($bin_boe)) {
+	printf $out "\t%e",  $bin_boe;
+    } else {
+	print $out "\t",  $bin_boe;
+    }
+    if (&IsReal($poisson)) {
+	printf $out "\t%e",  $poisson;
+    } else {
+	print $out "\t",  $poisson;
+    }
+    if (&IsReal($poisson_soe)) {
+	printf $out "\t%e",  $poisson_soe;
+    } else {
+	print $out "\t",  $poisson_soe;
+    }
+    if (&IsReal($poisson_boe)) {
+	printf $out "\t%e",  $poisson_boe;
+    } else {
+	print $out "\t",  $poisson_boe;
+    }
+    if (&IsReal($bin_approx)) {
+	printf $out "\t%e",  $bin_approx;
+    } else {
+	print $out "\t",  $bin_approx;
+    }
+    print $out "\n";
+}
+
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+
+exit(0);
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	binomial-series
+
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        binomial-series [-o outputfile] [-v]
+
+DESCRIPTION
+        Comparison of different approximations for the binomial 
+	formula.
+
+CATEGORY
+	statistics
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-p	success probability
+	-r	trials
+	-step	step
+	-max	max number of successes
+	-min	min number of successes
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-o	output file
+-v	verbose
+-p	success probability
+-r	trials
+-step	step
+-max	max number of successes
+-min	min number of successes
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    #### probability
+	} elsif ($ARGV[$a] eq "-p") {
+	    $proba = $ARGV[$a+1];
+	    
+	    #### tials
+	} elsif ($ARGV[$a] eq "-r") {
+	    $trials = $ARGV[$a+1];
+	    
+	    #### step
+	} elsif ($ARGV[$a] eq "-step") {
+	    $step = $ARGV[$a+1];
+
+	    #### max
+	} elsif ($ARGV[$a] eq "-max") {
+	    $max_successes = $ARGV[$a+1];
+
+	    #### min
+	} elsif ($ARGV[$a] eq "-min") {
+	    $min_successes = $ARGV[$a+1];
+
+	}
+    }
+}
+
+sub Verbose {
+  print $out "; binomial-series ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  printf $out "; %-8s\t%f\n", "proba", $proba;
+  printf $out "; %-8s\t%d\n", "trials", $trials;
+  printf $out "; %-8s\t%d\n", "min", $min_successes;
+  printf $out "; %-8s\t%d\n", "max", $max_successes;
+  printf $out "; %-8s\t%d\n", "step", $step;
+
+}

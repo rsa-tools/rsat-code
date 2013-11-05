@@ -1,0 +1,741 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: go-hierarchy,v 1.22 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+go-hierarchy
+
+=head1 DESCRIPTION
+
+Given a description file for the Gene Ontology (GO), return subsets or
+the totality of the GO hierarchy.
+
+If one specifies one or several classes, and the program returns all
+the ancestral classes (super-classes) or children classes (sub-classes).
+
+Alternatively, one can specify a list of genes, and the parent or children classes
+will be returned.
+
+By pecifying an organism and query go classes, the program will return the list of genes of this organism 
+belonging to the query classes or to their children.
+
+=head2 Resources
+
+Official site for the distributio of the GO hierarchy :
+
+  http://www.geneontology.org/ontology/
+
+Description of GO classes in obo format
+
+  http://www.geneontology.org/ontology/gene_ontology.obo
+
+
+=head2 Input files
+
+=item GO file
+
+The GO hierarchy should be provided in "obo" format. This is the
+text-formatted description of the classes and their hierarchical
+relationships.
+
+=head1 AUTHORS
+
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+go-hierarchy [-i obo_inputfile] [-o outputfile] [-v #] [-qclass go_class1] [-qclass go_class2] [-classfile classfile] [-children || -annot]
+
+go-hierarchy [-i obo_inputfile] [-o outputfile] [-v #] [-genefile genefile] [-children || -annot]
+
+go-hierarchy [-i obo_inputfile] [-o outputfile] [-v #] [-org organism_name] [-classfile classfile] [-qclass go_class1] [-qclass go_class2] [-children || -annot]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::go;
+
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+     @class_names = ();
+     @known_classes = ();
+     @unknown_classes = ();
+     $children = 0;
+     $annot = 0;
+     $query_by_class = 0;
+     $query_by_gene = 0;
+     @required_output_fields = qw(result_goid name);
+     %supported_return_option = ("result_goid" => 1,
+     				"query_goid" => 1,
+				"name" => 1, 
+				"def" => 1,
+				"namespace" => 1);
+     %required_namespace =  ("molecular_function" => 1,
+     			     "biological_process" => 1,
+     		             "cellular_component" => 1);
+     %supported_namespace =  ("mf" => "molecular_function",
+     			      "bp" => "biological_process",
+     			      "cc" => "cellular_component");
+     %main::infile = ();
+     %main::outfile = ();
+#     $organism_name;
+     $main::verbose = 0;
+#    $main::in = STDIN;
+     $main::out = STDOUT;
+     $infile{inputfile} = $ENV{RSAT}."/public_html/data/go/go.obo";
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    
+    
+    ################################################################
+    ## Check argument values
+    if ($query_by_gene && $query_by_class) {
+      &FatalError(join("\t", "You cannot specify both a list of genes to annotate and a query go-class."));
+    }
+
+    my $goafile;
+    if (defined($organism_name)) {
+      my $organism = new RSAT::organism();
+      ##  Check whether organism is available in RSAT
+      $organism->check_name($organism_name);
+      my $rsa = $ENV{RSAT};
+      $goafile = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/go/".$organism_name."_go.tab";
+      ##  Check whether there is a go file available for this organism
+      if (!-e $goafile || -z $goafile) {
+        &FatalError(join("\t", "File $goafile does not exist"));
+      }
+    }
+    if ($children && $annot) {
+      &FatalError(join("\t", "You cannot use -children and -annot options."));
+    }
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    
+    ################################################################
+    ## Initialize gene ontology object
+    $go = new RSAT::go();
+    $go->read_from_obo($infile{inputfile}); 
+
+    ################################################################
+    ## If -org option is used. Create an index go_id->genes having this go_id
+    
+    if (defined($organism_name)) {
+      my $go_id_gene_index;
+      &RSAT::message::TimeWarn("Loading gene-goa file", $goafile) if ($main::verbose >= 2);
+      $go->read_gene_go_file($goafile);
+    }
+    
+    ################################################################
+    ## Determine the go classes for which the hierarchy is searched
+    if ($query_by_class) {
+      if ($infile{class_file}) {
+        my $l = 0;
+        &RSAT::message::TimeWarn("Reading classes from file", $infile{class_file}) if ($main::verbose >= 2);
+        my ($class_file_handle) = &OpenInputFile($infile{class_file});
+        while (my $line = <$class_file_handle>) {
+          $l++;
+          next if ($line =~ /^\#/); ## Skip header lines
+          next if ($line =~ /^--/); ## Skip comment lines
+          next if ($line =~ /^;/); ## Skip comment lines
+          next unless ($line =~ /\S/); ## Skip empty lines
+          chomp($line);
+          my @fields = split /\s+/, $line;
+          my $name =  $fields[0];
+          if ($name) {
+          
+            push @class_names, $name;
+          } else {
+	    &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
+          }
+        }
+        close $class_file_handle;
+      }
+      ## Identify class in the go object
+      &RSAT::message::TimeWarn("Identifying",scalar(@class_names), "GO class in the file \t$infile{inputfile}") if ($main::verbose >= 2);
+      foreach my $goid (@class_names) {
+	my $exists = $go->exists($goid);
+	my $namespace = $go->get_namespace($goid);
+	
+	if ($exists) {
+	  if (exists($required_namespace{$namespace})) {
+	    push @known_classes, $goid;
+	    &RSAT::message::Info("Identified class with id", $goid) if ($main::verbose >= 3);
+	  } else {
+	    &RSAT::message::Warning("The class with id", $goid, "is of namespace", $namespace) if ($main::verbose >= 2);
+	  }
+        } else {
+	  push @unknown_classes, $goid;
+	  &RSAT::message::Warning("The GO obo file you submitted does not contain any class with id", $goid);
+	}
+      }
+    }
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+    
+    
+    ################################################################
+    ## Retrieve the ancesters for the queried classes
+    if ($query_by_class && !defined($organism_name)) {
+      ## Header output
+      print $out "#query_class_name";
+      foreach my $field (@required_output_fields) {
+        if ($field eq "name") {
+          if ($children) {
+            print $out "\tchildren_class_name";
+          } elsif ($annot) {
+            print $out "\tquery_class_name";
+          } else {
+            print $out "ancester_class_name\t";
+          }
+        }
+        if ($field eq "namespace") {
+          print $out "\tnamespace";
+        }  
+        if ($field eq "result_goid") {
+          if ($children) {
+            print $out "\tchildren_goid";
+          } elsif ($annot) {
+            print $out "\tquery_goid";
+          } else {
+            print $out "\tancester_goid";
+          }
+        }
+        if ($field eq "query_goid") {
+          print $out "\tquery_goid";
+        }
+        if ($field eq "def") {
+          print $out "\tdefinition";
+        }
+     }
+     print $out "\n";
+     ## Ancesters search
+     foreach my $goid (@known_classes) {
+        #print @class_names."\n";
+        my $goclassesRef;
+        if ($children) {
+          $goclassesRef = $go->get_children($goid);
+        } elsif ($annot) {
+          my @goclasses = ($goid);
+          $goclassesRef = \@goclasses;
+        } else {
+          $goclassesRef = $go->get_parents($goid);
+        }
+        my @goclasses = @{$goclassesRef};
+        my $goid_name = $go->get_name($goid);
+        foreach my $goclass (@goclasses) {
+          print $out "$goid_name";
+          foreach my $field (@required_output_fields) {
+            if ($field eq "name") {
+              print $out "\t".$go->get_name($goclass);
+            }
+            if ($field eq "namespace") {
+              print $out "\t".$go->get_namespace($goclass);
+            }  
+            if ($field eq "result_goid") {
+              print $out "\t".$goclass;
+            }
+            if ($field eq "query_goid") {
+              print $out "\t"."$goid";
+            }   
+            if ($field eq "def") {
+              print $out "\t".$go->get_definition($goclass);
+            }
+          }
+          print $out "\n";
+        }
+      }
+    } 
+    
+    
+    ############################################################################
+    ## Retrieve the gene belonging to the children 
+    ## of the queried classes ($children == 1) or only to 
+    ## the queried class. 
+    
+    if ($query_by_class && defined($organism_name)) {
+      ## Header output
+      print $out "#gene_name\tquery_class_name";
+      foreach my $field (@required_output_fields) {
+        if ($field eq "name") {
+          if ($children) {
+            print $out "\tchildren_class_name";
+          } 
+        }
+        if ($field eq "namespace") {
+          print $out "\tnamespace";
+        }  
+        if ($field eq "result_goid") {
+          print $out "\tancester_go_id";
+        }
+        if ($field eq "query_goid") {
+          print $out "\tquery_goid";
+        }
+        if ($field eq "def") {
+          print $out "\tdefinition";
+        }
+     }
+     print $out "\n";
+     ## Ancesters search
+     foreach my $goid (@known_classes) {
+        #print $goid;
+        #print @class_names."\n";
+        my @goclasses = ($goid);
+        if ($children) {
+          my $goclassesRef = $go->get_children($goid);
+          @goclasses = @{$goclassesRef};
+        } 
+        my $goid_name = $go->get_name($goid);
+        foreach my $goclass (@goclasses) {
+          my @genes = $go->get_genes_with_goid($goclass);
+          foreach my $gene(@genes) {
+            print $out "$gene\t$goid_name";
+            foreach my $field (@required_output_fields) {
+              if ($field eq "name") {
+                print $out "\t".$go->get_name($goclass);
+              }
+              if ($field eq "namespace") {
+                print $out "\t".$go->get_namespace($goclass);
+              }  
+              if ($field eq "result_goid") {
+                print $out "\t".$goclass;
+              }
+              if ($field eq "query_goid") {
+                print $out "\t$goid";
+              }   
+              if ($field eq "def") {
+                print $out "\t".$go->get_definition($goclass);
+              }
+            }
+            print $out "\n";
+          }
+        }
+      }
+    } 
+    
+    
+    
+    ################################################################
+    ## Annotate the gene file by adding the ancesters. Output may be used
+    ## in the compare-classes program
+    
+    if ($query_by_gene) {
+      my %seen; #This hash is used to avoid redundancy (some genes may be present more than once in one class).
+      ## Header output
+      print $out "#gene_name";
+      foreach my $field (@required_output_fields) {
+        if ($field eq "name") {
+          print $out "\tquery_class_name";
+          if ($children) {
+            print $out "\tchildren_class_name";
+          } elsif ($annot) {
+            print $out "\tquery_class_name";
+          } else {
+            print $out "ancester_class_name\t";
+          }
+        }  
+        if ($field eq "namespace") {
+          print $out "\tnamespace";
+        }  
+        if ($field eq "result_goid") {
+          if ($children) {
+            print $out "\tchildren_goid";
+          } elsif ($annot) {
+            print $out "\tquery_goid";
+          } else {
+            print $out "ancester_goid\t";
+          }
+        }
+        if ($field eq "def") {
+          print $out "\tdefinition";
+        }
+        if ($field eq "query_goid") {
+          print $out "\tquery_goid";
+        }
+      }
+      print $out "\n";
+      ## Ancesters search
+      if ($infile{gene_file}) {
+	my $l = 0;
+	&RSAT::message::TimeWarn("Reading genes from file", $infile{gene_file}) if ($main::verbose >= 2);
+	my ($gene_file_handle) = &OpenInputFile($infile{gene_file});
+	while (my $line = <$gene_file_handle>) {
+	  $l++;
+	  next if ($line =~ /^\#/); ## Skip header lines
+	  next if ($line =~ /^--/); ## Skip comment lines
+	  next if ($line =~ /^;/); ## Skip comment lines
+	  next unless ($line =~ /\S/); ## Skip empty lines
+	  chomp($line);
+	  my @fields = split /\t/, $line;
+	  my $gene = $fields[0];
+	  my $goid = $fields[1];
+	  my $namespace = $go->get_namespace($goid);
+	  if ($gene && $goid) {
+	    my $namespace = $go->get_namespace($goid);
+	    if (exists($required_namespace{$namespace})) {
+  	      if ($go->exists($goid)) {
+	        my $goclassesRef;
+                if ($children) {
+                  $goclassesRef = $go->get_children($goid);
+                } elsif ($annot) {
+                  my @goclasses = ($goid);
+                  $goclassesRef = \@goclasses;
+                } else {
+                  $goclassesRef = $go->get_parents($goid);
+                }
+                @goclasses = @{$goclassesRef};
+                my $goid_name = $go->get_name($goid);
+                
+                foreach my $goclass (@goclasses) {
+                  if (!exists($seen{$goclass."_".$gene})) {
+                    $seen{$goclass."_".$gene}++;
+                    print $out "$gene";
+                    foreach my $field (@required_output_fields) {
+                      if ($field eq "name") {
+                        print $out "\t$goid_name";
+                        print $out "\t".$go->get_name($goclass);
+                      }
+                      if ($field eq "namespace") {
+                        print $out "\t".$go->get_namespace($goclass);
+                      }  
+                      if ($field eq "result_goid") {
+                        print $out "\t".$goclass;
+                      }
+                      if ($field eq "def") {
+                        print $out "\t".$go->get_definition($goclass);
+                      }
+                      if ($field eq "query_goid") {
+                        print $out "\t$goid";
+                      }
+                    }
+                    print $out "\n";
+                  }
+                }
+	      } else {
+	        &RSAT::message::Warning("Class $goid unknown at line", $l, ". Skipped.") if ($main::verbose >= 2);
+	      }
+	    } else {
+	      &RSAT::message::Warning("Class $goid is of namespace ", $namespace, "at line", $l,". Skipped.") if ($main::verbose >= 2);
+	    }
+	  } else {
+	    &RSAT::message::Warning("Format error at line", $l, ". Skipped.") if ($main::verbose >= 2);
+	  }
+	}
+	close $gene_file_handle;
+      }
+    }
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i obo inputfile>
+
+This file must be in the obo format. 
+If no obo input file is specified, the program will look for the default obo file, 
+which is located in <I>$RSAT/public_html/data/go/go.obo
+
+This file must be regularly updated from the gene ontology website <I>http://www.geneontology.org/
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{inputfile} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item	B<-qclass query_go_class>
+
+Specify one GO class for which you want to know the ancesters. This
+option can be used iteratively to specify several query classes.
+By specifying an organism (-org), this will lead to the specification of 
+all genes (parents or children) having these goid.
+
+=cut
+	} elsif ($arg eq "-qclass") {
+	       push @class_names, shift(@arguments);
+	       $query_by_class = 1;
+=pod
+
+=item	B<-classfile class_file>
+
+Query file. This file specifies a list of go classes.
+The first word of each row specifies one class. The
+rest of the row is ignored.
+By specifying an organism (-org), this will lead to the specification of 
+all genes (parents or children) having these goid.
+
+=cut
+	} elsif ($arg eq "-classfile") {
+	    $main::infile{class_file} = shift(@arguments);
+	    $query_by_class = 1;
+
+=pod	    
+
+=item	B<-genefile gene_file>
+
+Gene file. 
+This two-columns tab-delimited file specifies a list of
+genes and the GO class(es) to which each gene belongs.
+	First column  : gene name or identifier
+	Second column : gene ontology ID.
+
+=cut
+	} elsif ($arg eq "-genefile") {
+	    $main::infile{gene_file} = shift(@arguments);
+	    $query_by_gene = 1;	    
+=pod
+
+=item	B<-return fields>
+
+List of fields to return : query_goid,result_goid,name,def,namespace,all (default : result_goid,name)
+
+=cut
+	} elsif ($arg eq "-return") {
+	    my $fields = shift(@arguments);
+	    my @all_fields = split(/,/, $fields);
+	    @required_output_fields = ();
+	    foreach my $field (@all_fields) {
+	      if (defined($supported_return_option{$field})) {
+  	        push @required_output_fields, $field;
+  	      } elsif ($field eq 'all') {
+  	        @required_output_fields = qw(goid name def namespace);
+  	      } else {
+  	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
+  	      } 
+	    }
+	    
+=pod
+
+=item	B<-namespace fields>
+
+List of namespaces to take into consideration.
+
+cc : cellular component
+bp : biological process
+mf : molecular function
+
+=cut
+	} elsif ($arg eq "-namespace") {
+	    my $fields = shift(@arguments);
+	    my @all_fields = split(/,/, $fields);
+	    %required_namespace = ();
+	    foreach my $field (@all_fields) {
+	      if (defined($supported_namespace{$field})) {
+  	        $required_namespace{$supported_namespace{$field}} = 1;
+  	      } elsif ($field eq 'all') {
+  	        %required_namespace = ("molecular_function" => 1,
+     				       "biological_process" => 1,
+     				       "cellular_component" => 1);
+  	      } else {
+  	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
+  	      } 
+	    }	    
+	    
+	    
+	    ## get children classes instead of parents classes
+=pod
+
+=item B<-children>
+
+By default, the program looks for the ancestors (without -org option) of a GO class or for the genes
+of an organism (using -org option) annotated with a GO class. 
+
+Using -children option, the program will retrieve the children of a specified go class (without -org option)
+or the genes belonging to children of the query class (using -org option).
+
+=cut
+	} elsif ($arg eq "-annot") {
+	    $annot = 1;
+
+=item B<-annot>
+
+With this option, the program only looks for the queried class (and not the ancesters or children).
+This option is incompatible with -children option.
+
+=cut
+	} elsif ($arg eq "-children") {
+	    $children = 1;	    
+
+	    ## Organism name
+=pod
+
+=item	B<-org Organism_name>
+
+When an organism is specified, the program automatically
+loads the genes and their goid for an appropriate organim. 
+This option is used to find all genes of the specified organism 
+presenting the specified goid (and their children, if -children option
+is selected).
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	    $query_by_class = 1;
+	    $organism_name = shift(@arguments);	
+	
+	
+	
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; go-hierarchy ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut

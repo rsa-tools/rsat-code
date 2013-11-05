@@ -1,0 +1,149 @@
+\chapter{Network visualization and format conversion}
+
+\section{Introduction}
+
+\subsection{Network visualization}
+To help the scientists apprehending their interest network, it is sometimes very useful to visualize them. Networks are generally represented by a set of dots (or of boxes) which represents its nodes that are linked via lines (the edges) or arows (arcs in the case of directed graphs). The nodes and the edges may present a label and / or a weight. The node label is generally indicated in the node box and the edge label is often placed on the line.
+
+NeAT contains some facilities to represent networks. It contains its own visualization software (display-graph) that will be described in the following. Moreover, it allows the conversion of the graph into formats that may be used 
+by some visualisation tools like \program{Cytoscape} (\cite{Shannon2003}, \url{http://www.cytoscape.org}), \program{yED} (\url{http://www.yworks.com/products/yed/})or \program{VisANT} (\cite{Hu2007}, \url{http://visant.bu.edu/}).
+
+Hereafter, we describe briefly some of the major formats used for graph description.
+
+\subsection{Graph formats}
+
+Incompatibility between file formats is a constant problem in bioinformatics. In order to facilitate the use of the NeAT website, most of our tools support several among the most popular formats used to describe networks. 
+
+\begin{itemize}
+\item The tab-delimited format is a convenient and intuitive way to encode a graph. Each row represents an arc, and each column an attribute of this arc. The two columns fields are the source and target nodes. If the graph is directed, the source node is the node from which the arc leaves and the target node is the node to which the arc arrives. Logically, in undirected graph, the columns containing the source and the target node may be inverted. Some additional arc attributes (weight, label, color) can be placed in pre-defined columns. Orphan nodes can be included by specifying a source node without target. The tool \program{Pathfinder} extends this format by supporting any number of attributes on nodes or edges as well as the color, the label and the width of nodes and edges. 
+\item A \textit{GML} file is made up of nested key-value pairs. The most popular graph editors support GML as input format (like Cytoscape and yED). More information on this format can be found at \url{http://www.infosun.fim.uni-passau.de/Graphlet/GML/}.
+\item The \textit{DOT} format is a plain text graph description language. DOT files can be loaded in the programs of the suite GraphViz (\url{http://www.graphviz.org/}). It is a simple way of describing graphs in a human- and computer-readable format. Similarly to GML, DOT supports various attributes on nodes (i.e. color, width, label). 
+\item VisML is the XML format required by VisANT, a very light but powerful visualisation tool.
+\item Several tools also accept adjacency matrices as input. An adjacency matrix is a $N$ x $N$ table (with $N$ the number of nodes), where a cell $A[i,j]$ indicates the weight of the edge between nodes $i$ and $j$ (or 1 if the graph is unweighted).
+\end{itemize}
+
+
+\section{Visualisation of a co-expression network}
+\subsection{Study case}
+
+In this demonstration, we will show you how to visualize a network using some popular network visualization tools.
+This network we will study consist in the top scoring edges of the yeast co-expression network included in the integrative database String \cite{Mering2007}. This undirected weighted networks contains 537 nodes representing genes and 4801 edges. An edge between two nodes means that they are co-expressed. The weight expresses at which level both genes are co-expressed. We will explain how to display this network with NeAT, Cytoscape, yED and VisANT. As Cytoscape and yED are not online tools, we will only describe their utilization in the command-line section.
+
+
+\subsection{Protocol for the web server}
+
+\subsubsection{Format conversion and layout calculation}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{format conversion / layout calculation}. 
+
+  In the right panel, you should now see a form entitled
+  ``convert-graph''.
+
+\item Click on the link \option{DEMO}. 
+
+  The form is now filled with a graph in the tab-delimited format, and the parameters have been
+  set up to their appropriate value for the demonstration, i.e., the network will be converted 
+  from tab-delimited to GML format, the source node column is 1, the target column is 2 and the weight column is 3.
+  
+  The option \option{Calculate the layout of the nodes (only relevant for GML output} may also be chosen, otherwise the nodes will all be in diagonal and the resulting graphic will not be very instructive.
+  
+  If the edges present a weight, \program{convert-graph} is able to represent the weight of the edges by computing a color gradient proportional to edge weights and coloring the edges according to it. There are five different color gradients : blue, red, green, grey and yellow to red. The darker (or the more colored) it is, the higher the weight. Moreover \program{convert-graph} can also change the width of the edge proportionnally to its weight. To this, we must choose a color gradient for the \option{Edge color intensity proportional to the weight} and the option \option{Edge width proportional to the weight of the edge} must be checked (which is automatically the case with the demonstration). 
+ 
+\item Click on the button \option{GO}. 
+
+  The resulting graph in GML format is available as an HTML link. Right clink on the link and save it with name \file{string\_coexpression.gml}.
+  
+\end{enumerate}
+\subsubsection{Visualization using NeAT}
+\begin{enumerate}
+ \item In the \option{Next Step} pannel, click on \option{Display the graph}.
+ 
+ The form of \program{display-graph} is displayed. By default, the figure output format is jpeg, change it to png which gives a better resolution. NeAT also allow the postscript format.
+ \item Uncheck \option{Calculate the layout of the nodes (mandatory for all input format except GML)} as \program{convert-graph} already computed it.
+ \item Check \option{Edge width proportional to the weight of the edges}
+ \item Click on the \option{GO} button.
+ 
+ The figure is available by clicking on the HTML link. Clicking a the link leads to a static figure representing the
+ network.  
+ 
+\end{enumerate}
+
+\subsubsection{Visualization using VisANT}
+\begin{enumerate}
+\item After the step \textit{Format conversion and layout calculation}, click on the \option{Load in VisANT}
+
+A page is displayed. Three links are available
+\begin{itemize}
+        \item A link to the graph in the format you obtained it from \program{convert-graph} (here GML).
+        \item A link (VisANT logo) to the VisANT applet
+        \item A link to the graph in VisML (the input format of VisANT)
+\end{itemize}
+
+\item Click on the logo of VisANT
+
+The VisANT applet is loaded. 
+
+\item Accept the authentification certifate. 
+
+\end{enumerate}
+\subsection{Protocol for the command-line tools}
+\subsubsection{Format conversion and layout calculation}
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the programs \program{convert-graph} and \program{display-graph} on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results). To visualize the networks with yED, VisANT or Cytoscape, you
+must of course install them on your computer.
+
+
+\begin{enumerate}
+\item First let us download the network file \file{string\_coex\_simple.tab} from the NeAT tutorial download page : \url{http://rsat.ulb.ac.be/rsat/data/neat\_tuto\_data/} 
+\item In this first step, we will convert the tab delimited String network that we just downloaded into a GML file by using this command. We compute the layout of the nodes. Moreover, we compute an edge width and an color proportional to the weight on the edge.
+
+\end{enumerate}
+
+\lstset{language=csh}
+\begin{lstlisting}
+convert-graph 	-from tab -to gml -wcol 3 -i string_coex_simple.tab 
+		-o string_coex_simple.gml -layout -ewidth -wcol 3 -ecolors fire
+\end{lstlisting}
+
+\subsubsection{Visualization using NeAT}
+Use the following command to create a graph using the NeAT \program{display-graph} program.
+\begin{lstlisting}
+display-graph 	-in_format gml -out_format png -i string_coex_simple.gml
+	-o string_coex_simple.png -ewidth
+\end{lstlisting}
+
+
+\subsubsection{Visualization using Cytoscape (version 2.3)}
+\begin{enumerate}
+ \item Open Cytoscape
+ \item Click on \option{File} $>$ \option{Import}  $>$ \option{Network...} $>$ \option{Select} 
+ \item Select the file \file{string\_coex\_simple.gml}
+If the graph contains more than 500 nodes, it will not be displayed immediately. Right click on the name of the graph file in the \textit{Cytopanel 1} and select \option{Create view...}.
+\end{enumerate}
+
+\subsubsection{Visualization using yED (version 3)}
+\begin{enumerate}
+ \item Open yED
+ \item Click on \option{File} $>$ \option{Import}
+ \item Select the file \file{string\_coex\_simple.gml}
+
+As NeAT GML converter add edge labels of the type \textit{nodeName1\_nodeName2} for unweighted or unlabeled graph, you may need to remove the edge label for a better visibility.
+ \item Click on one edge (random)
+ 
+ The edge you clicked on is now selected.
+ \item Press \textit{Ctrl+A}
+
+All edges are now selected. 
+ \item In the \textit{Property view} (Right of the screen), in the \textit{label} part, uncheck the \option{visible} option.
+
+\end{enumerate}
+
+
+
+
+

@@ -1,0 +1,139 @@
+<html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about convert-graph
+</h2>
+</center>
+
+<h4>Description</h4>
+<ul>
+
+    Convert graphs between different formats.
+    <br>
+    In the current state, the only supported input format are tab-delimited, adjacency matrix and gml formats. Various output format are already supported (dot, gml, tab, adjacency table).
+
+</ul>
+
+<h4>Authors</h4>
+<ul>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a></li>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a></li>
+</ul>
+
+
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input and output formats</h4>
+<ul>
+    The <b>tab-delimited format</b> is the more intuitive way to encode a graph. It consists in
+    the list of edges between the nodes. The names of the nodes are
+    separated using the tabulation. Some attributes of the edges can be
+    placed in the following columns (weight, label, color). Orphan nodes can
+    be specified using this format simply by not specifying the target node.
+</ul><ul>
+    An <b>adjacency matrix</b> is a <i>n x n</i> table (with <i>n</i> the number of nodes). 
+    In cell <i>A[i,j]</i>, you find the weight (or 1 if the graph is unweighted) on the
+    edge between nodes i and j. An undirected adjacency matrix is
+    symmetrical : indeed, if an edge exists from node <i>A</i> to node <i>B</i>, it also
+    exists from node <i>B</i> to node <i>A</i>. A directed matrix is asymmetrical. By
+    default, convert-graph considers the graphs as undirected but if the
+    graph you use is undirected, you can use the undirected option.
+    For NeAT, 
+    <ul>
+	<li>all columns must be separated by a tab</li> 
+	<li>first row of the matrix must contain the names of the nodes and start by a tab character</li>
+	<li>all the other rows must start by the names of the node for this column</li>
+    </ul>
+    <pre>
+# some comments
+; some other comments
+	a	b	c	d
+a	1	0	0	0
+b	1	0	1	0
+c	1	0	0	1
+d	1	1	0	0
+     </pre>
+</ul><ul>
+    The <b>GML format</b> allows to specify the location, the color, the label and the
+    width of the nodes and of the edges. A GML file is made up of pairs of a
+    key and a value. Example for keys are graphs, node and edges. You can
+    then add any specific information for each key. GML format can be used
+    by most graph editors (like <i>Cytoscape</i> and <i>yED</i>). For more information on
+    the GML format, see <a href='http://www.infosun.fim.uni-passau.de/Graphlet/GML/' target = 'top'>http://www.infosun.fim.uni-passau.de/Graphlet/GML/</a>. GML graphs can be visualised using for example <a href = 'http://www.yworks.com/en/products_yed_about.html' target = 'top'>yED</A> or <a href = 'http://www.cytoscape.org' target = 'top'>Cytoscape</A>.
+</ul><ul>
+    The <b>Dot format</b> is a plain text graph description language. The DOT files are
+    generally used by the programs composing the <i><a href = 'http://www.graphviz.org/'>GraphViz</a></i> suite (dot, neato,
+    dotty, ...). It is a simple way of describing graphs that both humans
+    and computer programs can use. DOT graphs are typically files that end
+    with the .dot extension. Like GML, with DOT you can specify a lot of
+    feature for the nodes (color, width, label). For more information on
+    the DOT format, see <a href='http://www.graphviz.org/doc/info/lang.html' target = 'top'>http://www.graphviz.org/doc/info/lang.html</a>
+</ul>
+<ul>
+  The <b>Path format</b> consists in a list of nodes separated by arrows '->' on the
+    same line. Typically, these are the output of the NeAT PathFinder
+    algorithm. More than one pathway can be encoded in the pathway files.
+</ul>
+
+
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+<ul><A NAME="wcol"></A><b>Weight or label column</b> Column containing the weight or the label on the edge. </ul>
+<ul><A NAME="eccol"></A><b>Edge color column</b>. Column containing the color of the edges in the RGB color code.</ul>
+<ul><A NAME="sccol"></A><b>Source and target node color colum</b>. Column containing the color of the node (RGB). 
+A node can only have one color. If in the file, the color of the
+node changes, only the first defined color will be taken into
+account. The first character of the RGB color code value must be '#'.
+For example, 
+<pre>
+Red	#FF0000
+Blue	#0000A0
+Black	#000000
+</pre>
+
+</ul>
+<ul><A NAME="pathcol"></A><b>Path column</b>. Column containing the list of pathways.
+
+</ul>
+<h4><A NAME="undirected"></A>Undirected graph (only for adjacency table format)</h4>
+<ul>Specifies whether the edges must be considered as undirected, i.e.,
+an edge from node A to node B corresponds to an edge from B to A (by
+default, edges are directed). Useful for the output as an adjacency
+table.</ul>
+
+
+<h4><A NAME="layout"></A>Layout calculation (only for GML format)</h4>
+<ul>Calculates the layout according to the Fruchterman and Reingold algorithm. This
+option is only useful for the gml output as the other formats do not
+specify the node position.
+</ul>
+
+<h4><A NAME="distinct"></A>Distinct paths (only for path input format)</h4>
+<ul>With this option, each pathway of the pathway file will be
+  considered separately and nodes belonging to more than one pathway
+  will be duplicated.
+</ul>
+
+<h4><A NAME="ewidth"></A>Edge width computation</h4><ul>
+Calculate the edge width for the GML output. The width is proportional to the weight of the edge. This value can only be
+computed for the GML output. All weights in the column specified as containing the weights must thus be real values.
+</ul>
+
+<h4><A NAME="ecolors"></A>Edge color intensity computation</h4>
+<ul>Compute an edge color. The color intensity is proportional to the weight
+of the edge. All weights in the column indicated by the -wcol argument must thus be real values.
+Supported : green, blue, red, fire, grey.
+</ul>
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+</h4>
+
+</blockquote>
+</body>
+</html>

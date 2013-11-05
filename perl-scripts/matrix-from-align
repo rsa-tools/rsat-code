@@ -1,0 +1,177 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	matrix-from-align
+	  
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+USAGE
+        matrix-from-align [-i inputfile] [-o outputfile] [-v]
+	
+DESCRIPTION
+	Creates a nucleotide frequency matrix from a set of aligned 
+	sequences.
+	
+CATEGORY
+	util
+	conversion
+	sequences
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+		The input file must contain a set of aligned sequences.
+	-format	seq_format
+		Format of the input sequence file
+		Accepted formats:
+			 fasta
+			 IG	(IntelliGenetics)
+			 wc	wconsensus, patser
+			 multi	raw sequences, one new sequence on each 
+				new line
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+		
+EXAMPLES
+       matrix-from-align -v -i myseq.fasta -format fasta -o mymatrix
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+matrix-from-align options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-format input sequence format
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-format") {
+	$in_format = lc($ARGV[$a+1]);
+	
+    }
+}
+
+
+#### check argument values ####
+
+if ($in_format eq "") {
+    print "Error: you did not specify the sequence format.\n"; 
+    exit;
+}
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+
+###### execute the command #########
+$seq_nb = 0;
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+       (($current_seq ne "") || ($current_id ne ""))) {
+  $current_seq = &FoldSequence($current_seq,0);
+  chomp($current_seq);
+  $current_seq = uc($current_seq);
+  $seq_length = length($current_seq);
+  
+  $seq_nb++;
+  $length[$seq_nb] = $seq_length;
+  $id[$seq_nb] = $current_id;
+  
+  $pos = 0;
+  while ($pos <= $seq_length) {
+    $max_pos = &max($pos,$max_pos);
+    $base = substr($current_seq,$pos-1,1);
+    ${$matrix{$base}}[$pos]++;
+    $alphabet{$base} = 1;
+    $pos++;
+  }
+}
+
+#### verbose ####
+if ($verbose) {
+  print $out ";matrix-from-align result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  for $seq (1..$#id) {
+    print $out ";\t$id[$seq]\t$length[$seq]\n";
+  }
+  print $out ";N |";
+  for $pos (1..$max_pos) {
+    printf $out "%4s", $pos;
+  }
+  print $out "\n";
+}
+
+###### print matrix ######
+foreach $base (sort keys %alphabet) {
+  print $out $base;
+  print $out "  |";
+  foreach $pos (1..$max_pos) {
+    if (${$matrix{$base}}[$pos] eq "") {
+    ${$matrix{$base}}[$pos] =0;
+  }
+  printf $out "%4s", ${$matrix{$base}}[$pos];
+  }
+  print $out "\n";
+}
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+

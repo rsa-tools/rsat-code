@@ -1,0 +1,50 @@
+
+<!ELEMENT data  ( bedseq, statistics )>
+
+<!ELEMENT statistics  ( param, motifStats )>
+
+<!ELEMENT motifStats  ( param )>
+<!ATTLIST motif
+name CDATA #REQUIRED
+id CDATA #REQUIRED
+family CDATA #REQUIRED
+class CDATA #REQUIRED
+type CDATA #REQUIRED
+size CDATA #REQUIRED
+
+<!ELEMENT param  EMPTY>
+<!ATTLIST motif
+name CDATA #REQUIRED
+value CDATA #REQUIRED
+
+
+<!ELEMENT bedseq  ( alignment )>
+<!ATTLIST bedseq
+species CDATA #REQUIRED
+chr CDATA #REQUIRED
+start CDATA #REQUIRED
+end CDATA #REQUIRED
+>
+
+<!ELEMENT alignment  ( sequences, motifs  )>
+<!ATTLIST alignment
+name CDATA #REQUIRED
+>
+
+<!ELEMENT sequences  ( sequence )*>
+
+<!ELEMENT sequence  EMPTY>
+<!ATTLIST sequence
+species CDATA #REQUIRED
+text CDATA #REQUIRED
+>
+
+<!ELEMENT motifs  ( motif )*>
+<!ELEMENT motif  EMPTY>
+<!ATTLIST motif
+start CDATA #REQUIRED
+end CDATA #REQUIRED
+nbSpecies CDATA 
+name CDATA #REQUIRED
+text CDATA #REQUIRED
+>

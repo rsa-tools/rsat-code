@@ -1,0 +1,240 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: ensembl-org-info
+#
+# Time-stamp
+#
+############################################################
+#use strict;
+use DBI();
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+require RSAT::util;
+push (@INC, $ENV{bioperl});
+push (@INC, $ENV{ensembl});
+push (@INC, $ENV{compara});
+
+## EnsEMBL libraries
+require Bio::EnsEMBL::Registry;
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+local $verbose = 0;
+local $output_file;
+
+## Connection to the EnsEMBL MYSQL database
+local $ensembl_host = $ENV{ensembl_host};
+local $ensembl_user = "anonymous";
+local $dbname = '';
+local $org = '';
+local $dbversion = '';
+local $port = '5306';
+
+################################################################
+## Read arguments
+&ReadArguments();
+
+
+### verbose ###
+if ($verbose >= 1) {
+  print "; ensembl-org-info ";
+  #    &PrintArguments;
+  print "\n";
+}
+
+################################################################
+## Connect to ensembldb to get list of 
+## databases and pick the latest one corresponding to chosen organism
+if ($org) {
+  &RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
+				 "host=".$ensembl_host, 
+				 "user=".$ensembl_user )) if ($main::verbose >= 1);
+  my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host:port=$port", "$ensembl_user", "", {'RaiseError' => 1});
+  my $sth = $dbh->prepare("SHOW DATABASES");
+  $sth->execute();
+  while (my $ref = $sth->fetchrow_hashref()) {
+    if ($ref->{'Database'} =~ /($org)_core_\d+/) {
+      $dbname = $ref->{'Database'};
+    }
+  }
+  $sth->finish();
+  $dbh->disconnect();
+  unless ($dbname) {
+    die "Error: there is no organism named $org in the EnsEMBL database. Use the command supported-organisms-ensembl to obtain a full list of supported organisms.\n";
+  }
+} else { 
+  die "; You must provide an organism name (-org)\n";
+}
+
+&RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 1);
+
+################################################################
+## Get EnsEMBL db version from db name
+$dbversion = $dbname;
+$dbversion =~ s/($org)_core_//;
+$dbversion =~ s/_.+//;
+
+&RSAT::message::Info (join("\t", "dbversion", $dbversion)) if ($main::verbose >= 1);
+
+################################################################
+## Open a new connection to EnsEMBL database, but this time we specify the DB version
+&RSAT::message::TimeWarn("Connecting EnsEMBL to retrieve the organism", 
+			 "host=".$ensembl_host,
+			 "user=".$ensembl_user,
+			 "dbname=".$dbname,
+			) if ($main::verbose >= 1);
+
+my $registry = "Bio::EnsEMBL::Registry";
+
+$registry->load_registry_from_db(
+				 -host => $ensembl_host,
+				 -user => $ensembl_user,
+				 -db_version => $dbversion,
+				 -port => $port,
+				 -verbose => "0" );
+
+local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
+
+local $slice_adaptor = $db->get_sliceAdaptor();
+
+my @slices = @{$slice_adaptor->fetch_all("chromosome")};
+#my @slices = @{$slice_adaptor->fetch_all("toplevel")};
+
+if (@slices) {
+  my @slice_names;
+  #    my $slice_type;
+  my $build;
+  foreach my $slice (@slices) {
+    my $slice_name = $slice -> name();
+    #	print "Slice name : ".$slice_name."\n";
+    my @slice = split ':', $slice_name;
+    #	$slice_type = $slice[0];
+    $build = $slice[1];
+    push @slice_names, $slice[2];
+  }
+
+  #    print "Slice type : ".$slice_type."\n";
+  print "Build : ".$build."\n";
+  print "Chromosomes : ";
+  my @sorted_slice_names = sort @slice_names;
+  print join (",", @sorted_slice_names),"\n";
+} else {
+  print "Scaffold only, no chromosomes yet\n";
+}
+
+################################################################
+### Open output stream
+if ($output_file) {
+  $fh = 'OUT';
+  open $fh, ">".$output_file || die "cannot open file ".$output_file."\n";
+} else {
+  $fh = *STDOUT;
+}
+
+#### print verbose
+&Verbose() if ($verbose);
+
+
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+################################################################
+###### Close output stream
+close $fh if ($output_file);
+
+exit(0);
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+#### read arguments
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose  
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintShortHelp();
+
+      ### output file
+    } elsif ($ARGV[$a] eq "-o") {
+      $output_file = $ARGV[$a+1];
+
+      ### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $org = lc($ARGV[$a+1]);
+}
+  }
+}
+################################################################
+#### detailed help message
+sub PrintHelp {
+    open(HELP, "| less");
+    print HELP<<End_help;
+USAGE
+	ensembl-org-info -org organism [-o outpufile]
+
+AUTHORS
+        Olivier Sand <oly\@bigre.ulb.ac.be>
+        Jacques van Helden <Jacques.van-Helden\@univ-amu.fr>
+
+DESCRIPTION
+	Returns the list of chromosomes for a given organism.
+
+CATEGORY
+	genomics
+
+REMARK  Requires local instal of the EnsEMBL Perl Core API (see http://www.ensembl.org/info/using/api/api_installation.html)
+
+OPTIONS
+	-org organism
+	        underscore between words (eg 'homo_sapiens')
+
+	        (type 'supported-organisms-ensembl' to obtain the list of supported
+	         organisms)
+
+	-o	name of the output file
+
+End_help
+    close HELP;
+    exit;
+}
+
+################################################################
+#### list of options
+sub PrintShortHelp {
+  open(HELP, "| less");
+  print HELP<<End_short_help;
+ensembl-org-info options
+--------------------
+-org		organism
+-o		followed by the name of the outputfile.
+
+End_short_help
+  close HELP;
+  exit;
+}

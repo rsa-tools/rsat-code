@@ -1,0 +1,281 @@
+#!/usr/bin/perl
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+## Main package
+package main; 
+{
+    ## initialise parameters ####
+    $start_time = &RSAT::util::StartScript();
+    $in_format = "fasta";
+    $verbose = 0;
+    local $units = "bp";
+    local %supported_units=(bp=>1,
+			    kb=>1000,
+			    mb=>1e+6,
+			    gb=>1e+9);
+    local $supported_units = join(",", sort(keys(%supported_units)));
+    
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    &CheckInputSeqFormat($in_format) unless ($in_format eq "bed");
+
+    ## Open output stream
+    if (defined($outfile{output})) {
+	$out = &OpenOutputFile($outfile{output});
+    } else {
+	$out = STDOUT;
+    }
+
+    ## Open input stream
+    if (defined($infile{input})) {
+	($in, $input_dir) = &OpenInputFile($infile{input});
+    } else {
+	$in = STDIN;
+    }
+
+    ## Verbose
+    &Verbose if ($verbose);
+
+    print $out "#seq", "\t", "length", "\n" unless ($sum_only);
+    $sum = 0;
+
+    ## Compute sequence lengths from coordinates in bed format
+    if ($in_format eq "bed") {
+	while (<$in>) {
+	    next unless (/\S/);		## Skip empty rows
+	    next if (/^#/);		## Skip comment lines
+	    chomp();
+
+	    my ($chrom, $zero_left, $right) = split('\t');
+	    &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 2);
+	    unless ((&RSAT::util::IsNatural($zero_left)) &&
+		    (&RSAT::util::IsNatural($right))) {
+		&RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
+		next;
+	    }
+
+	    my $left = $zero_left + 1; ## BED files have zero-based coordinates for the left side but not the right side !
+
+	    &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right, "left=".$left, "right=".$right) if ($main::verbose >= 2);
+
+	    ## Check left and right coordinates
+	    if ($left > $right) {
+		&RSAT::message::Warning("Skipping line", $l, "start ($left) larger than end ($right).") if ($main::verbose >= 2);
+		next;
+	    }
+
+
+	    my ($length, $rounded_length) = &convert_units($right - $left + 1);
+	    my $current_id = $chrom.":".$left."..".$right.":1";
+	    $sum+= $length;
+	    print $out $current_id, "\t", $rounded_length , "\n"
+		unless ($sum_only);
+	}
+
+    } else {
+	## Compute sequence lengths by reading the sequences
+	while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+	       (($current_seq ne "") || ($current_id ne ""))) {
+	    my ($length, $rounded_length) = &convert_units(length(&FoldSequence($current_seq,0)));
+	    $sum+= $length;
+	    print $out $current_id, "\t", $rounded_length , "\n"
+		unless ($sum_only);
+	}
+    }
+
+
+    ################################################################
+    ## Print sum of sequence lengths if requested
+    if ($sum_only) {
+	my $rounded_length = $sum;
+	if ($units ne "bp") {
+	    $rounded_length = sprintf ("%.3f", $sum);
+	}
+	print $out $rounded_length, "\t", $units, "\n";
+    }
+    close $in if ($infile{input});
+
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+## Convert length into user-specified units
+sub convert_units {
+  my ($length) = @_;
+  if ($supported_units{$units}) {
+    $length /= $supported_units{$units};
+  } else {
+    &RSAT::error::FatalError($units, "is not a valid unit for sequence lengths. Supported units: ".$supported_units);
+  }
+
+#  if ($units eq "kb") {
+#    $length /= 1000;
+#  } elsif ($units eq "mb") {
+#    $length /= 1000000;
+#  }
+  my $rounded_length = $length;
+  unless ($units eq "bp") {
+    $rounded_length = sprintf("%.3f", $length);
+  }
+  return ($length, $rounded_length);
+}
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	sequence-lengths
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+	Return the lengths of each sequence from an input
+	file. Otionally, return the sum of lengths.
+
+CATEGORY
+	sequences
+
+USAGE
+        sequence-lengths [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+
+	-help	(must be first argument) display options
+
+	-v	verbose
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-unit bp|kb|mb|gb
+	      Units for sequence lengths.
+	      Supported units:
+	      bp	base pairs
+	      kb	kilobases
+	      mb	megabases
+	      gb	gigabases
+
+	-in_format   input format
+
+		The input file can contain either sequences or genomic
+		coordinates (-in_format bed).
+
+		For a list of supported input sequences, type
+		    convert-seq -help
+
+	-o outputfile
+		If not specified, the standard output is used.
+	        This allows to place the command within a pipe.
+
+	-sum	only return sum of sequene lengths
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+sequence-lengths options
+----------------
+-h		display full help message
+-help		display options
+-i		input file
+-in_format    	input format (sequence or bed)
+-o		output file
+-v		verbose
+-sum		only return sum of sequene lengths
+-unit		bp|kb|mb|gb
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+  #### read arguments ####
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+
+      ### sequence format ###
+    } elsif ($ARGV[$a] eq "-in_format") {
+      $in_format = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-format") {
+      $in_format = $ARGV[$a+1];
+      &RSAT::message::Warning("sequence-lengths: option -format has been replaced by -in_format");
+
+      ### only return sum of lengths
+    } elsif ($ARGV[$a] eq "-sum") {
+      $sum_only = 1;
+
+      ### Units
+    } elsif ($ARGV[$a] =~ /^\-unit/) {
+      $units = lc($ARGV[$a+1]);
+      &RSAT::error::FatalError($units, "is not a valid unit for sequence lengths. Supported units: ".$supported_units)
+	  unless ($supported_units{$units});
+    }
+  }
+}
+
+sub Verbose {
+  print $out "; sequence-lengths ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  print $out "; seq format\t$in_format\n";
+}

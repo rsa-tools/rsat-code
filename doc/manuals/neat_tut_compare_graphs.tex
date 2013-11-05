@@ -1,0 +1,354 @@
+\chapter{Comparisons between networks}
+
+\section{Introduction}
+
+Protein interaction networks have deserved a special attention for
+molecular biologists, and several high-throughput methods have been
+developed during the last years, to reveal either pairwise
+interactions between proteins (two-hybrid technology) or protein
+complexes (methods relying on mass-spectrometry). The term
+\concept{interactome} has been defined to denote the complete set of
+interactions between proteins of a given organism.
+
+Interactome data is typically represented by an un-directed graph,
+where each node represents a polypeptide, and each edge an interaction
+between two polypeptides.
+
+The yeast interactome was characterized by the two-hybrid method by
+two independent groups, Uetz and co-workers \cite{Uetz:2000}, and Ito
+and co-workers \cite{Ito:2001}, respectively. Surprisingly, the two
+graphs resulting from these experiments showed a very small
+intersection.
+
+In this tutorial, we will use the program \program{compare-graphs} to
+analyze the interactome graphs published by from Uetz and Ito,
+respectively.
+
+We will first perform a detailed comparison, by merging the two
+graphs, and labelling each node according to the fact that it was
+found in Ito's network, in Uetz' network, or in both. We will then
+compute some statistics to estimate the significance of the intersection
+between the two interactome graphs.
+
+\section{Computing the intersection, union and differences between two graphs}
+
+\subsection{Study case}
+
+In this demonstration, we will compare the networks resulting from the
+two first publications reporting a complete characterization of the
+yeast interactome, obtained using the two-hybrid method.The first
+network \cite{Uetz:2000} contains 865 interactions between 926
+proteins.The second network \cite{Ito:2001} contains 786 interactions
+between 779 proteins. We will merge the two networks (i.e. compute
+their union), and label each edge according to the fact that it is
+found in Ito's network, Uetz' network, or both. We will also compute
+the statistical significance of the intersection between the two
+networks.
+
+
+\subsection{Protocol for the web server}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{network
+    comparison}. 
+
+  In the right panel, you should now see a form entitled
+  ``compare-graphs''.
+
+\item Click on the button \option{DEMO}. 
+
+  The form is now filled with two graphs, and the parameters have been
+  set up to their appropriate value for the demonstration. At the top
+  of the form, you can read some information about the goal of the
+  demo, and the source of the data.
+
+\item Click on the button \option{GO}. 
+
+  The computation should take a few seconds only. The result page
+  shows you some statistics about the comparison (see interpretation
+  below), and a link pointing to the full result file. 
+
+\item Click on the link to see the full result file. 
+
+
+\end{enumerate}
+
+\subsection{Protocol for the command-line tools}
+
+If you have installed a stand-alone version of the NeAT distribution,
+you can use the program \program{compare-graphs} on the
+command-line. This requires to be familiar with the Unix shell
+interface. If you don't have the stand-alone tools, you can skip this
+section and read the next section (Interpretation of the results).
+
+We will now describe the use of \program{compare-graphs} as a command line tool. 
+The two two-hybrid datasets described
+in the previous section may be downloaded at the following address \url{http://rsat.ulb.ac.be/rsat/data/neat\_tuto\_data/}. 
+These are the files \file{uetz\_2001.tab} and \file{ito\_2002.tab}.
+
+\begin{enumerate}
+
+\item 
+	Go in the directory where the files containing the graphs to compare are 
+	located. 
+
+\item 
+	Type the following command
+	{\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+			compare-graphs -v 1 -Q ito_2002.tab -R uetz_2001.tab -return union \ 
+			-o uetz_2001_union_ito_2002.tab
+		\end{verbatim} \end{footnotesize}
+	}		
+\end{enumerate}
+Using these options, some comparaison statistics are displayed and the results are stored in the tab-delimited 
+file \file{uetz\_2001\_union\_ito\_2002.tab}.
+
+In order to compute the difference or the intersection, you must change the \option{-return} option. For example, to compute the intersection, you shoud type. 
+	{\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+			compare-graphs -v 1 -Q ito_2002.tab -R uetz_2001.tab -return intersection \ 
+			-o uetz_2001_inter_ito_2002.tab
+		\end{verbatim} \end{footnotesize}
+	}
+
+
+\subsection{Interpretation of the results}
+
+The program \program{compare-graphs} uses symbols $R$ and $Q$
+respectively, to denote the two graphs to be compared. Usually, $R$
+stands for reference, and $Q$ for query. 
+
+In our case, $R$ indicates Ito's network, whereas $Q$ indicates Uetz'
+network. The two input graphs are considered equivalent, there is no
+reason to consider one of them as reference, but this does not really
+matter, because the statistics used for the comparison are
+symmetrical,as we will see below.
+
+\subsubsection{Union, intersection and differences}
+
+The result file contains the union graph, in tab-delimited
+format. This format is very convenient for inspecting the result, and
+for importing it into statistical packages (R, Excel, \ldots).
+
+The rows starting with a semicolon (;) are comment lines. They provide
+you with some information (e.g. statistics about the intersection),
+but they will be ignored by graph-reading programs. The description of
+the result graph comes immediately after these comment lines.
+
+Each row corresponds to one arc, and each column specifies one
+attribute of the arc.
+
+\begin{enumerate}
+\item \textbf{source}: the ID of the source node
+  
+\item \textbf{target}: the ID of the target node
+  
+\item \textbf{label}: the label of the arc. As labels, we selected
+  the option ``Weights on the query and reference''. Since the
+  input graphs were un-weighted, edge labels will be used instead
+  of weights. The label \texttt{<NULL>} indicates that an edge is
+  absent from one input network.
+  
+\item \textbf{color} and \textbf{status}: the status of the arc
+  indicates whether it is found at the intersection, or in one graph
+  only.  A color code reflects this status, as indicated below.
+  \begin{itemize}
+  \item \concept{R.and.Q}: arcs found at the intersection between graphs $R$
+    and $Q$. Default color: green.
+  \item \concept{R.not.Q}: arcs found in graph $R$ but not in graph
+    $Q$. Default color: violet.
+  \item \concept{Q.not.R}: arcs found in graph $Q$ but not in graph
+    $R$. Default color: red.
+  \end{itemize}
+
+  The result file contains several thousands of arcs, and we will of
+  course not inspect them by reading each row of this file. Instead,
+  we can generate a drawing in order to obtain an intuitive perception
+  of the graph.
+
+\subsubsection{Sizes of the union, intersection and differences}
+
+The beginning of the result file gives us some information about the
+size of the two input files, their union, intersection, and
+differences.
+
+\begin{footnotesize}
+\begin{verbatim}
+; Counts of nodes and arcs
+;    Graph    Nodes    Arcs     Description
+;    R        779      786      Reference graph
+;    Q        926      865      Query graph
+;    QvR      1359     1529     Union
+;    Q^R      346      122      Intersection
+;    Q!R      580      743      Query not reference
+;    R!Q      433      664      Reference not query
+\end{verbatim}
+\end{footnotesize}
+
+\subsubsection{Statistical significance of the intersection between two graphs}
+
+The next lines of the result file give some statistics about the
+intersection between the two graphs. These statistics are computed in
+terms of arcs.
+
+\begin{footnotesize}
+\begin{verbatim}
+; Significance of the number of arcs at the intersection
+;  Symbol   Value     Description                        Formula
+;  N        1359      Nodes in the union                    
+;  M        922761    Max number of arcs in the union    M = N*(N-1)/2
+;  E(Q^R)   0.74      Expected arcs in the intersection  E(Q^R) = Q*R/M
+;  Q^R      122       Observed arcs in the intersection
+;  perc_Q   14.10     Percentage of query arcs           perc_Q = 100*Q^R/Q
+;  perc_R   15.52     Percentage of reference arcs       perc_R = 100*Q^R/R
+;  Jac_sim  0.0798    Jaccard coefficient of similarity  Jac_sim = Q^R/(QvR)
+;  Pval     2.5e-228  P-value of the intersection        Pval=P(X >= Q^R)
+\end{verbatim}
+\end{footnotesize}
+
+A first interesting point is the maximal number of arcs ($M$) that can
+be traced between any two nodes of the union graph. In our study case,
+the graph obtained by merging Ito's and Uetz' data contains $N=1359$
+nodes. This graph is un-directed, and there are no self-loops. The
+maximal number of arcs is thus $M=N*(N-1)/2=922,761$. This number
+seems huge, compared to the number of arcs observed in either Uetz'
+($A_Q=865$) or Ito's ($A_R=786$) graphs. This means that these two
+graphs are sparse: only a very small fraction of the node pairs are
+linked by an arc.
+
+The next question is to evaluate the statistical significance of the
+intersection between the two graphs. For this, we can already compute
+the size that would be expected if we select two random sets of arcs
+of the same sizes as above ($A_Q=865$, $A_R=4,038$). 
+
+If the same numbers of arcs were picked up at random in the union
+graph, we could estimate the probability for an arc to be found in the
+network $R$ as follows: $P(R) = A_R/M = 0.000852$. Similarly, the
+probability for an arc of the union graph to be part of the network
+$Q$ is $P(Q) = A_Q/M = 0.000937$.  The probability for an arc to be
+found independently in two random networks of the same sizes as $R$
+and $Q$ is the product of these probabilities.
+
+\[P(QR) = P(Q)*P(R) = A_R/M \cdot A_Q/M = 7.98e-07\]
+
+The number of arcs expected by chance in the intersection is the
+probability multiplied by the maximal number of arcs.
+
+\begin{eqnarray*}
+E(QR) & = & P(QR) \cdot M  \\
+ & = & (A_Q \cdot A_R)/M \\
+ & = &  7.98e-07 \cdot 922761 = 0.74
+\end{eqnarray*}
+
+Thus, at the intersection between two random sets of interaction, we
+would expect on the average a bit less than one interaction. It seems
+thus clear that the 122 interactions found at the intersection between
+he two published experiments is much higher than the random
+expectation.
+
+We can even go one step further, and compute the \concept{P-value}
+of this intersection, i.e. the probability to select at least that
+many interactions by chance. 
+
+The probability to observe \textit{exactly} $x$ arcs at the
+intersection is given by the hypergeometrical distribution.
+
+\begin{equation}
+\label{eq:hypergeometric_density}
+P(QR=x)=\frac{C^{x}_{R}C^{Q-x}_{M-R}}{C^Q_{M}}
+\end{equation}
+
+where 
+\begin{itemize}
+\item[$R$] is the number of arcs in the reference graph;
+\item[$Q$] i the number of arcs in the query graph;
+\item[$M$] is the maximal number of arcs;
+\item[$x$] is the number of arcs at the intersection between the two
+  graphs.
+\end{itemize}
+
+By summing this formula, we obtain the P-value of the intersection,
+i.e. the probability to observe \textit{at least} $x$ arcs at the
+intersection.
+
+\begin{eqnarray*}
+\label{eq:hypergeometric_density_cdf}
+Pval = P(QR>=x)=\sum_{i=x}^{min(Q,R)}P(X=i)=\sum_{i=x}^{min(Q,R)} \frac{C^i_{R}C^{Q-i}_{M-R}}{C^Q_{M}}
+\end{eqnarray*}
+
+We can replace the symbols by the numbers of our study case.
+
+\begin{eqnarray*}
+\label{eq:hypergeometric_density_cdf}
+Pval & = & P(QR>=122) \\
+ & = & \sum_{i=x}^{min(865,786)} \frac{C^i_{786}C^{865-i}_{922761-786}}{C^{865}_{922761}}  \\
+ & =  2.5e-228
+\end{eqnarray*}
+
+This probabilty is so small that it comes close to the limit of
+precision of our program ($\approx 10^{-321}$).
+
+\end{enumerate}
+
+\subsubsection{Summary}
+
+In summary, the comparison revealed that the number of arcs found in
+common between the two datasets (Ito and Uetz) is highly significant,
+despite the apparently small percentage of the respective graphs it
+represents (14.10\% of Ito, and 15.52\% of Uetz).
+
+\section{Strengths and weaknesses of the approach}
+
+
+
+\section{Exercises}
+
+\begin{enumerate}
+
+\item Using the tool the tool \program{network randomization},
+  generate two random graphs of 1000 nodes and 1000 arcs each (you
+  will need to store these random networks on your hard drive).  Use
+  the tool \program{network comparison} to compare the two random
+  graphs.
+  Discuss the result, including the following questions: 
+  \begin{enumerate}
+  \item What is the size of the intersection ? Does it correspond to
+    the expected value ? 
+  \item Which P-value do you obtain ? How do you interpret this P-value ? 
+  \end{enumerate}
+
+\item Randomize Ito's network with the tool \program{network
+    randomization}, and compare this randomized graph with Uetz'
+  network. Discuss the result in the same way as for the previous
+  exercise.
+
+\end{enumerate}
+
+\section{Troubleshooting}
+
+\begin{enumerate}
+
+\item The P-value of the intersection between two graphs is 0. Does it
+  mean that it is impossible to have such an intersection by chance
+  alone ?
+
+  No. Any intersection that you observe in practice might occur by
+  chance, but the limit of precision for the hypergeometric P-value is
+  $\approx 10^{-321}$. Thus, a value of 0 can be interpreted as $Pval <
+  10^{-321}.$
+
+\item The web server indicates that the result will appear, and after
+  a few minutes my browser displays a message ``No response the
+  server''.
+
+  How big are the two graphs that you are comparing ? In principle,
+  compare-graphs can treat large graphs in a short time, but if your
+  graphs are very large (e.g. several hundreds of thousands of arcs),
+  the processing time may exceed the patience of your browser. In such
+  case, you should consider either to install the stand-alone version
+  of \neat on your computer, or write a script that uses \neat via
+  their Web services interface.
+
+\end{enumerate}

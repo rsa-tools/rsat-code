@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>matrix-distrib</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=matrix-distrib_form.cgi>matrix-distrib</a> manual</h2>
+</center>
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_formats">INPUT FORMATS</a></li>
+	<ul>
+
+		<li><a href="#matrix_file">Matrix file</a></li>
+		<li><a href="#background_model_file">Background model file</a></li>
+	</ul>
+
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#theorical_distribution_computation">THEORICAL DISTRIBUTION COMPUTATION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>matrix-distrib</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Computes the theoretical distribtuion of score probabilities of a given PSSM.
+It is not limited to a Bernoulli assumption and takes into account background 
+models of any Markov order.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="item_jacques_van_helden_jvanheld_40bigre_2eulb_2eac_2eb">Jacques van Helden <a href="mailto:jacques.van.helden@ulb.ac.be">jacques.van.helden@ulb.ac.be</a></a></strong><br />
+</dt>
+<dt><strong><a name="item_jean_valery_turatsinze_jturatsi_40bigre_2eulb_2eac">Jean Valery Turatsinze <a href="mailto:jturatsi@bigre.ulb.ac.be">jturatsi@bigre.ulb.ac.be</a></a></strong><br />
+</dt>
+<dt><strong><a name="item_morgane_thomas_2dchollier_morgane_40bigre_2eulb_2e">Morgane Thomas-Chollier <a href="mailto:morgane@bigre.ulb.ac.be">morgane@bigre.ulb.ac.be</a></a></strong><br />
+</dt>
+<dt><strong><a name="item_with_the_help_of_matthieu_de_france_defrance_40scm">With the help of Matthieu de France <a href="mailto:defrance@bigre.ulb.ac.be">defrance@bigre.ulb.ac.be</a></a></strong><br />
+</dt>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<dl>
+<dt><strong><a name="item_util">util</a></strong><br />
+</dt>
+<dt><strong><a name="item_pssm">PSSM</a></strong><br />
+</dt>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>matrix-distrib [-i matrixfile] [-bgfile bgfile][-o outputfile] [-v]</p>
+<p>
+</p>
+<hr />
+<h1><a name="input_formats">INPUT FORMATS</a></h1>
+<p>
+</p>
+<h2><a name="matrix_file">Matrix file</a></h2>
+<p>The matrix format is specified with the option -matrix_format.  Supported :
+tab,cb,consensus,gibbs,meme,assembly. Default : tab.</p>
+<p>For a description of these format, see <em>convert-matrix -h</em></p>
+<p>
+</p>
+<h2><a name="background_model_file">Background model file</a></h2>
+<p>The background model format is specified with the option -bg_format.Supported :
+oligo-analysis, MotifSampler, meme. Default is: oligo-analysis.</p>
+<p>For a description of available format, see <em>convert-backgound-model -h</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>The output is a tab-delimited file with the following columns:</p>
+<ol>
+<li><strong><a name="item_p">weight:      	log-likelihood score: w=P(S|M)/P(S|B)</a></strong><br />
+</li>
+<li><strong>proba:       	probability density function: <code>P(W=w)</code></strong><br />
+</li>
+<li><strong>cum:         	cumulative density function: P(W &lt;= w)</strong><br />
+</li>
+<li><strong>Pval:        	P-value = inverse cumulative density function: Pval = P(W &gt;= w)</strong><br />
+</li>
+<li><strong><a name="item_ln_pval_3a_natural_logarithm_of_the_p_2dvalue">ln_Pval:     	natural logarithm of the P-value</a></strong><br />
+</li>
+<li><strong><a name="item_log_p_3a_base_10_logarithm_of_the_p_2dvalue">log_P:       	base 10 logarithm of the P-value</a></strong><br />
+</li>
+<li><strong><a name="item_log10">sig:        	significance: sig = -log10(Pval)</a></strong><br />
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="theorical_distribution_computation">THEORICAL DISTRIBUTION COMPUTATION</a></h1>
+<p>The scoring scheme is the weight (see <em>matrix-scan -h</em> for more details).
+We calculate in an exaustive way the probabilities that are associated to each score (weight) that can be obtained from a given PSSM.</p>
+<p>For Bernoulli (Markov order 0) background models, the distribution of scores is computed with the algorithm described by Bailey (Bioinformatics,
+1999).</p>
+<p>For Markov background models with higher orders, we have extended this algorithm to take into account the dependencies between
+residues. For each iteration of the algorithm, weigths associated to all possible transitions are tagged with a prefix. Each residue weight 
+is calculated according to the prefix tag. The prefix corresponds to a word of Markov order size that preceeds the position of 
+the iteration.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="item__2dv__23"><strong>-v #</strong></a></strong><br />
+</dt>
+<dd>
+Level of verbosity (detail in the warning messages during execution)
+</dd>
+<p></p>
+<dt><strong><a name="item__2dh"><strong>-h</strong></a></strong><br />
+</dt>
+<dd>
+Display full help message
+</dd>
+<p></p>
+<dt><strong><a name="item__2dhelp"><strong>-help</strong></a></strong><br />
+</dt>
+<dd>
+Same as -h
+</dd>
+<p></p>
+<dt><strong><a name="item__2dm_matrixfile"><strong>-m matrixfile</strong></a></strong><br />
+</dt>
+<dd>
+Matrix file.
+</dd>
+<dd>
+<p>This argument can be used iteratively to scan the sequence with
+multiple matrices.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dmlist_matrix_list"><strong>-mlist matrix_list</strong></a></strong><br />
+</dt>
+<dd>
+Matrix list.
+</dd>
+<dd>
+<p>Indicate a file containing a list of matrices to be used for scanning
+the region. This facilitates the scanning of a sequence with a library
+of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC).</p>
+</dd>
+<dd>
+<p>Format: the matrix list file is a text file. The first word of each
+row is suppose to indicate a file name. Any further information on the
+same row is ignored.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2do_outputfile"><strong>-o outputfile</strong></a></strong><br />
+</dt>
+<dd>
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dmatrix_format_matrix_format"><strong>-matrix_format matrix_format</strong></a></strong><br />
+</dt>
+<dd>
+Matrix format. Default is tab.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dpseudo__23"><strong>-pseudo #</strong></a></strong><br />
+</dt>
+<dd>
+Pseudo-count for the matrix (default: 1). See matrix-scan for details.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dbgfile_background_file"><strong>-bgfile background_file</strong></a></strong><br />
+</dt>
+<dd>
+<pre>
+ Background model file.</pre>
+</dd>
+<dt><strong><a name="item__2dbg_format_matrix_format"><strong>-bg_format matrix_format</strong></a></strong><br />
+</dt>
+<dd>
+<pre>
+        Supported formats: all the input formats supported by
+        convert-background-model.</pre>
+</dd>
+<dt><strong><a name="item__2dbg_pseudo__23"><strong>-bg_pseudo #</strong></a></strong><br />
+</dt>
+<dd>
+Pseudo frequency for the background models. Value must be a real
+between 0 and 1 (default: 0) If the training sequence length (L) is
+known, the value can be set to square-root of L divided by
+L+squareroot of L
+</dd>
+<p></p>
+<dt><strong><a name="item__2ddecimals__23"><strong>-decimals #</strong></a></strong><br />
+</dt>
+<dd>
+Number of decimals to print or the transition probabilities.
+</dd>
+<p></p></dl>
+
+</body>
+
+</html>

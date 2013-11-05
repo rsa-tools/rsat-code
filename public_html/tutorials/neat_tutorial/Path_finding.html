@@ -1,0 +1,366 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Path finding</TITLE>
+<META NAME="description" CONTENT="Path finding">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Metabolic_path_finding.html">
+<LINK REL="previous" HREF="Influence_graph_alteration.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Metabolic_path_finding.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html421"
+  HREF="Metabolic_path_finding.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html417"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html411"
+  HREF="Influence_graph_alteration.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html419"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html422"
+  HREF="Metabolic_path_finding.html">Metabolic path finding</A>
+<B> Up:</B> <A NAME="tex2html418"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html412"
+  HREF="Influence_graph_alteration.html">Influence of graph alteration</A>
+ &nbsp; <B>  <A NAME="tex2html420"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html423"
+  HREF="Path_finding.html#SECTION00910000000000000000">Introduction</A>
+<LI><A NAME="tex2html424"
+  HREF="Path_finding.html#SECTION00920000000000000000">Computing the k shortest paths in weighted networks</A>
+<UL>
+<LI><A NAME="tex2html425"
+  HREF="Path_finding.html#SECTION00921000000000000000">Study case</A>
+<LI><A NAME="tex2html426"
+  HREF="Path_finding.html#SECTION00922000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html427"
+  HREF="Path_finding.html#SECTION00923000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html428"
+  HREF="Path_finding.html#SECTION00924000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html429"
+  HREF="Path_finding.html#SECTION00924100000000000000">Degree weighting scheme</A>
+<LI><A NAME="tex2html430"
+  HREF="Path_finding.html#SECTION00924200000000000000">Unit weighting scheme</A>
+</UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html431"
+  HREF="Path_finding.html#SECTION00930000000000000000">Summary</A>
+<LI><A NAME="tex2html432"
+  HREF="Path_finding.html#SECTION00940000000000000000">Strengths and Weaknesses of the approach</A>
+<UL>
+<LI><A NAME="tex2html433"
+  HREF="Path_finding.html#SECTION00941000000000000000">Strengths</A>
+<LI><A NAME="tex2html434"
+  HREF="Path_finding.html#SECTION00942000000000000000">Weaknesses</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html435"
+  HREF="Path_finding.html#SECTION00950000000000000000">Troubleshooting</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION00900000000000000000">
+Path finding</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00910000000000000000">
+Introduction</A>
+</H1>
+Given a biological network and two nodes of interest, the aim of k shortest path finding is
+to enumerate the requested number of shortest paths connecting these nodes ordered according to their weight.
+For instance, we might look for all shortest paths between a receptor and a DNA binding protein to predict a signal
+transduction pathway from a protein protein interaction network. Another example is the prediction of a metabolic pathway
+given two reactions or compounds of interest and a metabolic network.
+<BR>
+A problem encountered in many biological networks is the presence of so-called hub nodes, that is nodes with
+a large number of connections. For example, in bacterial protein-protein interaction networks,
+CRP has the role of a hub node because it interacts with many targets. Likewise,
+in metabolic networks, compounds such as ADP or water are hubs, since they are generated and consumed by thousands of
+reactions.
+<BR>
+The shortest path very likely traverses the hub nodes of a network. It depends on the biological context, whether this
+behaviour is desired or not. In metabolic networks, we are less interested in paths going through water or ADP, since
+those paths are often not biological relevant. For instance, we can bypass the glycolysis pathway by connecting glucose
+via ADP to 3-Phosphoglycerate. To avoid finding irrelevant pathways like this one,
+we tested different strategies and concluded that using a weighted network gave the best results [<A
+ HREF="Bibliography.html#croes05">5</A>],[<A
+ HREF="Bibliography.html#croes06">6</A>].
+In a weighted network, not the shortest, but the lightest paths are searched. Hub nodes receive large weights, making them
+less likely to appear in a solution path.
+<BR>
+Whether weights are used and how they are set has to be decided depending on the biological network of interest.
+
+<P>
+In this chapter, we will demonstrate path finding on the example of metabolic networks. We will work on a network assembled
+from all metabolic pathways annotated for the yeast <I>S. cerevisiae</I> in BioCyc (Release 10.6) [<A
+ HREF="Bibliography.html#biocyc">3</A>]. We will also show
+the influence of the weighting scheme on path finding results.
+
+<P>
+
+<H1><A NAME="SECTION00920000000000000000">
+Computing the k shortest paths in weighted networks</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00921000000000000000">
+Study case</A>
+</H2>
+
+<P>
+The yeast network constructed from BioCyc data consists of 1,185 nodes and 2,656 edges.
+It has been obtained by unifying 171 metabolic pathways. Note that this network is bipartite, which means that it is made up of
+two different node types: reactions and compounds. An edge never connects two nodes of the same type. For the tutorial, we choose
+to represent the metabolic data as undirected network. Note that higher accuracies can be achieved by representing metabolic
+data by directed networks that contain for each reaction its direct and reverse direction, which are treated as mutually exclusive.
+See the advanced options of the Pathfinder tool for mutual exclusion of reactions in directed metabolic networks.
+
+<P>
+We will recover the heme biosynthesis II pathway given its start and end compound, namely glycine and protoheme. First, we will
+use the "degree" weighting scheme, which penalizes hub nodes. Second, we will infer the path using the "unit"
+weighting scheme and compare the results.
+
+<P>
+
+<H2><A NAME="SECTION00922000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the command <B><I>k shortest path finding</I></B>.
+
+<P>
+In the right panel, you should now see a form entitled
+  ``Pathfinder''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO1</TT>.
+
+<P>
+The form is now filled with the BioCyc demo network, and the parameters have been
+  set up to their appropriate value for the demonstration. At the top
+  of the form, you can read some information about the goal of the
+  demo, and the source of the data.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>.
+
+<P>
+The computation should take no more than two minutes. When it is finished, a link to the results should appear.
+
+<P>
+</LI>
+<LI>Click on the link to see the full result file.
+
+<P>
+It lists a table of all paths found for the requested rank number (5 by default). You can also specify another type of output, for instance a network made up of all paths found. Vary the parameter <TT>Output type</TT> for this.
+
+<P>
+</LI>
+</OL>
+
+<P>
+To see how results change with modified weight, you can repeat steps 1 and 2. Before clicking on <TT>GO</TT>, choose ``unit weight'' as <TT>Weighting scheme</TT> and set the <TT>Rank</TT> to 1. Continue as described above. You will obtain another paths table than before.
+
+<P>
+
+<H2><A NAME="SECTION00923000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+<P>
+You can find the demo network Scer_biocyc.tab in $RSAT/public_html/demo_files.
+
+<P>
+Type the following command to enumerate paths up to the 5th rank in the weighted network:
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g Scer_biocyc.tab -f tab -s gly -t protoheme -y con
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+To find paths in the unweighted network, type:
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g Scer_biocyc.tab -f tab -s gly -t protoheme -y unit -r 1
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+
+<H2><A NAME="SECTION00924000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00924100000000000000">
+Degree weighting scheme</A>
+</H3>
+
+<P>
+First, we run Pathfinder with degree weighting scheme, which is the default weighting scheme of the demo. This weighting scheme sets the weights of compound nodes to their degree and of reaction nodes to one. The first ranked path obtained should look like this:
+
+<P>
+<B>GLY</B> 5-AMINOLEVULINIC-ACID-SYNTHASE-RXN  5-AMINO-LEVULINATE  PORPHOBILSYNTH-RXN PORPHOBILINOGEN OHMETHYLBILANESYN-RXN HYDROXYMETHYLBILANE UROGENIIISYN-RXN UROPORPHYRINOGEN-III UROGENDECARBOX-RXN COPROPORPHYRINOGEN_III RXN0-1461 PROTOPORPHYRINOGEN PROTOPORGENOXI-RXN PROTOPORPHYRIN_IX PROTOHEMEFERROCHELAT-RXN <B>PROTOHEME</B>
+
+<P>
+This path recovers very well the annotated heme biosynthesis II pathway.
+
+<P>
+
+<H3><A NAME="SECTION00924200000000000000">
+Unit weighting scheme</A>
+</H3>
+We repeated path finding on the same network but used the unit weighting scheme, which sets all node weights to one. This is equivalent to path finding in an unweighted network. We obtain a large number of paths of first rank, among them this one:
+
+<P>
+<B>GLY</B> GLUTATHIONE-SYN-RXN ADP PEPDEPHOS-RXN PROTON PROTOHEMEFERROCHELAT-RXN <B>PROTOHEME</B>
+
+<P>
+This path deviates strongly from the heme biosynthesis II pathway annotated in BioCyc. It contains two hub nodes: ADP and PROTON.
+
+<P>
+
+<H1><A NAME="SECTION00930000000000000000">
+Summary</A>
+</H1>
+
+<P>
+To sum up: path finding can predict pathways with high accuracy if an appropriate weighting scheme is applied to the network of interest. Our metabolic example shows that the heme biosynthesis II pathway is accurately predicted when using a weighted network and not found at all when using an unweighted network. The take home message is that in order to use Pathfinder on biological networks, weights have to be carefully adjusted.
+
+<P>
+
+<H1><A NAME="SECTION00940000000000000000">
+Strengths and Weaknesses of the approach</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00941000000000000000">
+Strengths</A>
+</H2>
+The strength of the approach is that for a given network and appropriate weighting scheme, pathways can be discovered with high accuracy. These pathways may be known or novel pathways. Other methods such as pathway mapping
+are unable to recover entirely novel pathways or pathways which are combinations of known pathways.
+
+<P>
+
+<H2><A NAME="SECTION00942000000000000000">
+Weaknesses</A>
+</H2>
+The weakness is that the weighting scheme has to be optimized for the biological network of interest.
+
+<P>
+
+<H1><A NAME="SECTION00950000000000000000">
+Troubleshooting</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>No path could be found.
+
+<P>
+Make sure that your start and end nodes are present in your network of interest. If no path could be found, none
+ of the end nodes is reachable from the start nodes, thus no path exists. For big graphs and long waiting time, there is the possibility that
+ the pre-processing step of REA, namely to compute the shortest paths from the source to all nodes with Dijkstra, was not finished before
+ the server timeout. In this case, a path might exist but could not be detected due to the timeout.
+
+<P>
+</LI>
+<LI>An out of memory error occurred.
+
+<P>
+When searching for paths with the "unit" weighting scheme in large networks, there might be
+ a large number of possible paths for each requested rank.  Although REA has a memory-efficient
+ way to store paths with pointers, there is a limit for the number of paths that can be hold in memory.
+ Reduce the number of requested paths or the size of the graph or use another weighting scheme.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html421"
+  HREF="Metabolic_path_finding.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html417"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html411"
+  HREF="Influence_graph_alteration.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html419"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html422"
+  HREF="Metabolic_path_finding.html">Metabolic path finding</A>
+<B> Up:</B> <A NAME="tex2html418"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html412"
+  HREF="Influence_graph_alteration.html">Influence of graph alteration</A>
+ &nbsp; <B>  <A NAME="tex2html420"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

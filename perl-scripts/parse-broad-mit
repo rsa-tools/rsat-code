@@ -1,0 +1,522 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: parse-broad-mit,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+parse-broad-mit
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+This script parses genomes provided in the flat file format
+distributed by the BROAD institute of the MIT.  The program takes as
+input a supercontig file, a GTF file and an amino acid file. It
+creates the sequence and feature files (raw files, feature file, ...)
+that are necessary to install an organism in RSAT. After this step,
+the program I<install-organism> should be used to configure the server
+and perform the additional installation steps (oligo and dyad
+calibrations, ...). See RSAT user guide for detailed explanations.
+
+These genomes are available on the BROAD/MT web site:
+
+http://www.broad.mit.edu/tools/data/seq.html
+
+In particular, for the RSAT server, we use it to parse the fungal
+genomes available at:
+
+http://www.broad.mit.edu/annotation/fgi/
+
+=head1 AUTHORS
+
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+parser
+
+=head1 USAGE
+
+parse-broad-mit.pl [-v #] -org Organism_name -gtf gtf_file -nuc_seq
+contig_file -aa protein_file [-aa_remove text_to_remove] [-gtf_remove
+text_to_remove] [-nuc_remove text_to_remove]
+
+=head1 INPUT FORMAT
+
+=head2 GTF file 
+
+GTF (Gene Transfer Format) is a refinement to GFF that tightens the
+specification. The first eight GTF fields are the same as GFF. The
+group field has been expanded into a list of attributes. Each
+attribute consists of a type/value pair. Attributes must end in a
+semi-colon, and be separated from any following attribute by exactly
+one space.
+
+For more information, see http://genes.cse.wustl.edu/GTF2.html
+
+=head2 Fasta files
+
+A file containing protein sequences and a file containing nucleic
+sequences in FASTA format must be given.
+
+=head1 OUTPUT FORMAT
+
+The program delivers
+
+=over
+
+=item a RSAT feature file (cds.tab)
+
+=item a list of contig files in raw format 
+
+=item a protein sequence file in fasta format (organism_name_aa.fasta)
+
+=item a synonym file (cds_names.tab)
+
+=item a contig list file (contigs.txt)
+
+=back
+
+To install it in RSAT, the user must place all the files in the
+directory $RSAT/public_html/data/genomes/organism_name/genome/, then add the
+organism.tab file, and use the install-organism command.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    $dir = "./";
+    @gtf_remove = ();
+    @aa_remove = ();
+    @nuc_remove = ();
+    $contig_prefix = "";
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if (!defined($taxid)) {
+      &FatalError(join("\t", "You must specify the NCBI taxonomic id (-taxid option)"));
+    }
+    if (!defined($organism_name)) {
+      &FatalError(join("\t", "You must specify the name of the organism (-org option)"));
+    }
+    if (!defined($infile{nuc_seq})) {
+      &FatalError(join("\t", "You must specify the path to the file containing the genomic sequences in fasta format (supercontigs) (-gtf option)"));
+    }
+    if (!defined($infile{gtf})) {
+      &FatalError(join("\t", "You must specify the path to the file containing the genomic sequences description in GTF format (-nuq_seq option)"));
+    }
+    if (!defined($infile{aa})) {
+      &FatalError(join("\t", "You must specify the path to the file containing the protein sequences in fasta format (-aa option)"));
+    }
+    ################################################################
+    ## 1 step : Parsing of the GTF file
+    ($main::in) = &OpenInputFile($main::infile{gtf});
+    # if the output directory does not exist : create it
+    if (!-e $dir) {
+      system "mkdir -p $dir";
+    }
+    $main::out_features = &OpenOutputFile($dir."cds.tab"); # feature file
+    $main::out_names = &OpenOutputFile($dir."cds_names.tab"); # synonym file
+    
+    # print header
+    print $main::out_features "-- class\tGenbank::CDS\n-- table\tcds\n-- table\tmain\n-- field 1\tid\n-- field 2\tGeneID\n-- field 3\tchrom_position\n-- field 4\tchromosome\n-- field 5\tcodon_start\n-- field 6\tcontig\n-- field 7\tdescription\n-- field 8\tend_pos\n-- field 9\tgene\n-- field 10\tgene_id\n-- field 11\tname\n-- field 12\torganism\n-- field 13\tproduct\n-- field 14\tprotein_id\n-- field 15\tstart_pos\n-- field 16\tstrand\n-- field 17\ttaxid\n-- field 18\ttranslation\n-- field 19\ttype\n-- header\n";
+    print $main::out_features "--id\tGeneID\tchrom_position\tchromosome\tcodon_start\tcontig\tdescription\tend_pos\tgene\tgene_id\tname\torganism\tproduct\tprotein_id\tstart_pos\tstrand\ttaxid\ttranslation\ttype\n";
+
+    my $lignecpt = 0;
+    
+    # PARSING
+    while (my $ligne2 = <$main::in>) {
+      chomp($ligne2);
+      my @ligne2cp = split(/\t/,$ligne2);
+      my @ligne2cp8 = split(/\;/,$ligne2cp[8]);
+      if ($ligne2cp8[0] =~ /gene_id /) {
+        my $geneid = $ligne2cp8[0];
+        $geneid =~ s/gene_id //;
+        $geneid =~ s/\"//g;
+        if ($ligne2cp[2] eq "start_codon") {
+          $start{$geneid} = $ligne2cp[3];
+        } elsif ($ligne2cp[2] eq "stop_codon") {
+          $stop{$geneid} = $ligne2cp[4];
+          if ($ligne2cp[6] eq "-") {
+            $direction{$geneid} = "R";
+          } else {
+            $direction{$geneid} = "D";
+          }
+          my $contig = $ligne2cp[0];
+          foreach my $toremove (@gtf_remove) {
+            $contig =~ s/$toremove//;;
+          }
+          $contig = $contig_prefix.$contig;
+          $contig =~ s/\./_/;
+          $contigs{$geneid} = $contig;
+        }
+      }
+    }
+    my @genes = keys(%start);
+    foreach my $gene (@genes) {
+      my $startpos = $start{$gene};
+      my $endpos = $stop{$gene};
+      my $strand = $direction{$gene}; 
+      my $contig = $contigs{$gene};
+      my $chromposition; 
+      my $type = "CDS";
+      if ($direction{$gene} eq 'D') {
+        $chromposition = $startpos."..".$endpos;
+      } else {
+      my $c = $endpos;
+      $endpos = $startpos + 2;
+      $startpos = $c - 2;
+      $chromposition = $startpos."..".$endpos;
+      }
+      my $description = "NA";
+      my $product= "NA"; 
+      if (exists($annotations{$gene})) {
+        $product = $annotations{$gene};
+      }
+      print $main::out_features "$gene\t$gene\t$chromposition\t\t1\t$contig\t$description\t$endpos\t\t$gene\t\t$organism_name\t$product\t$gene\t$startpos\t$strand\t$taxid\t\t$type\n"; 
+      print $main::out_names "$gene\t$gene\tprimary\n";
+    }
+    close $main::out_features;
+    close $main::out_names;
+    close $main::in;
+    
+    ################################################################
+    ## 2d step : Parsing of the nucleic acid file
+    ## This part of the script will transform one file into a set of file (one per contig).
+    ($main::in) = &OpenInputFile($main::infile{nuc_seq});
+    ($main::contigs) = &OpenOutputFile($dir."contigs.txt");
+    while (my $ligne = <$main::in>) {
+      chomp($ligne);
+      if ($ligne =~ /\>/) {
+        close $main::contig_file if defined($main::contig_file);
+        my $filename = $ligne;
+        $filename =~ s/>//;
+        foreach my $toremove (@nuc_remove){
+          $filename =~ s/$toremove//;
+        }    
+        $filename =~ s/ //;
+        $filename =~ s/\./_/;
+        my $contigname = $filename;
+        $contigname =~ s/\./_/;
+        $filename = $contig_prefix.$filename;
+        $contigname = $filename;
+        $contigname =~ s/\.raw//;
+        $filename = $filename.".raw";
+        $absolute_path_filename = $dir.$filename;
+        ($main::contig_file) = &OpenOutputFile($absolute_path_filename);
+        print $main::contigs "$filename\t$contigname\tlinear\n";
+      }
+      $ligne = lc($ligne);
+      if ($ligne !~ /\>/) {
+        print $main::contig_file "$ligne";
+      }
+    }
+    close $main::contig_file;
+    close $main::in;
+    
+    ################################################################
+    ## 3d step : Parsing of the amino acid fasta file
+    ## This part of the script will read the fasta file and remove all unecessary information
+    ($main::in) = &OpenInputFile($main::infile{aa});
+    my $organism_fasta = $dir.$organism_name."_aa.fasta";
+    ($main::aa_fasta) = &OpenOutputFile($organism_fasta);
+    while (my $ligne = <$main::in>) {
+      chomp($ligne);
+      if ($ligne =~ /\>/) {
+        foreach my $toremove (@aa_remove) {
+          $ligne =~ s/$toremove//;;
+        }
+      }
+      print $main::aa_fasta "$ligne\n";
+    }
+    close $main::aa_fasta;
+    close $main::in;
+    
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	### GTF FILE 	    
+=pod
+
+=item	B<-gtf gtf_file>
+
+A GTF file (Gene transfer format). Contains the description of the nucleic acid sequences. 
+
+=cut
+	} elsif ($arg eq "-gtf") {
+	    $main::infile{gtf} = shift(@arguments);
+
+
+=item	B<-aa protein_seq_file>
+
+A protein fasta file. Contains the polypetide primary structure of the organism.
+
+=cut
+	} elsif ($arg eq "-aa") {
+	    $main::infile{aa} = shift(@arguments);
+
+=pod
+
+=item	B<-gtf_remove>
+
+Generally, the contig names of the gtf file from the Broad institute
+contains very long name.  For example, the following contig name
+conains %20 characters that should be replaced
+I<supercont1.1%20of%20Lodderomyces%20elongisporus>
+
+To remove it the non necessary string, use the option -gtf_remove iteratively 
+-gtf_remove supercont -gtf_remove %20of%20Lodderomyces%20elongisporus. 
+
+Regular expression are allowed.
+
+=cut
+	} elsif ($arg eq "-gtf_remove") {
+	    push @gtf_remove, shift(@arguments);
+
+=pod
+
+=item	B<-nuc_remove>
+
+Iterative argument. It is used to remove extra annotation on the
+contig raw files. Regular expression are allowed.
+
+=cut
+	} elsif ($arg eq "-nuc_remove") {
+	    push @nuc_remove, shift(@arguments);
+=pod
+
+=item	B<-aa_remove>
+
+Iterative argument. It is used to remove extra annotation on the polypeptide sequence file. Regular expression are allowed.
+
+=cut
+	} elsif ($arg eq "-aa_remove") {
+	    push @aa_remove, shift(@arguments);
+=pod
+
+=item	B<-contig_prefix>
+
+String to add the prefix name
+
+=cut
+	} elsif ($arg eq "-contig_prefix") {
+	    $contig_prefix = shift(@arguments);
+	    
+=item	B<-nuc_seq contig_file>
+
+A fasta file containing the raw nucleotidic sequences
+
+
+=cut
+	} elsif ($arg eq "-nuc_seq") {
+	    $main::infile{nuc_seq} = shift(@arguments);
+
+=item	B<-org Organism_name>
+
+Name of the organism
+
+
+=cut
+	} elsif ($arg eq "-org") {
+	    $organism_name = shift(@arguments);
+
+=item	B<-taxid taxid>
+
+NCBI taxonomic id of the organism specified by -org option
+
+
+=cut
+	} elsif ($arg eq "-taxid") {
+	    $taxid = shift(@arguments);
+
+=item	B<-dir>
+
+Directory where the resulting file will be placed. If this option is not used. The files will be placed in the current directory.
+
+
+=cut
+	} elsif ($arg eq "-dir") {
+	    $dir = shift(@arguments);
+	    $dir .= "/";
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; parse-broad-mit ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head2 install-organisms
+
+After ghaving parsed a genome, several additional steps are required
+before this genome is fully supported in RSAT. See RSAT installation
+guide and user guide for detailed explanations about how to install
+additional genomes.
+
+=head2 Parsers for other genome formats
+
+=over
+
+=item parse-genbank.pl
+
+=item parse-embl.pl
+
+=item get-ensembl-genome.pl
+
+=back
+
+=head1 WISH LIST
+
+We wish all the genome files distributed by genome centers would have
+decent names and their content would be 100% compatible with the
+supposed standard :-)
+
+=cut

@@ -1,0 +1,220 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Downloading organisms from RSAT data repository
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Downloading genomes}
+\label{downloading_genomes}
+
+\RSAT includes a series of tools to install and maintain the latest
+version of genomes.
+
+The most convenient way to add support for one or several organisms on
+your machine is to use the programs \program{supported-organisms} and
+\program{download-organism}.
+
+Beware, the complete data required for a single genome may occupy
+several hundreds of Mb, because \RSAT not only stores the genome
+sequence, but also the oligonucleotide frequency tables used to
+estimate background models, and the tables of BLAST hits used to get
+orthologs for comparative genomics. If you want to install many
+genomes on your computer, you should thus reserve a sufficient amount
+of space.
+
+\section{Original data sources}
+
+Genomes supported on \RSAT were obtained from various sources.
+
+Genomes can be installed either from the \RSAT web site, or from their
+original sources.  
+
+\begin{itemize}
+
+\item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/}) was the
+  primary source for installing genomes on \RSAT. Genomes are
+  downloaded from the ftp site and installed locally on the \RSAT
+  server by parsing the .gbk files.
+
+
+\item The EBI genome directory
+  (\url{ftp://ftp.ebi.ac.uk/pub/databases/genomes/Eukaryota/})
+  contains supplementary genomes, which can be downloaded and
+  installed on the \RSAT server by parsing files in embl format.
+
+\item UCSC (\url{http://genome.ucsc.edu/}) for the multi-genome
+  alingment files (multiz) used by \program{peak-footprints}.
+
+\item Since 2008, ENSEMBL (\url{http://www.ensembl.org/}) genomes are
+  supported by special tools (\program{retrieve-ensembl-seq},
+  \program{supported-organisms-ensembl}), that remotely address
+  queries to the Ensembl database.
+
+\item Since 2013, genomes can be downloaded and installed on \RSAT
+  servers, using the tool \program{install-ensembl-genome}. Once
+  installed, ensembl genomes can be queried with the same tools as the
+  other genomes installed on \RSAT servers (\program{retrieve-seq},
+  \program{gene-info}, \ldots).
+
+\end{itemize}
+
+Other genomes can also be found on the web site of a diversity of
+genome-sequencing centers.
+
+\section{Requirement : wget}
+
+The download of genomes relies on the application \program{wget},
+which is part of linux distribution\footnote{For Linux:
+  \url{http://www.gnu.org/software/wget/}; for Mac OSX
+  \url{http://download.cnet.com/Wget/3000-18506_4-128268.html}}.
+
+
+\program{wget} is a ``web aspirator'', which allows to download whole
+directories from ftp and http sites. You can check if the program is
+installed on your machine.
+
+\begin{lstlisting}
+wget --help
+\end{lstlisting}
+
+
+This command should return the help pages for \program{wget}.  If you
+obtain an error message (``command not found''), you need to ask your
+system administrator to install it.
+
+\section{Importing organisms from the \RSAT main server}
+
+The simplest way to install organisms on our \RSAT site is to download
+the RSAT-formatted files from the web server. For this, you can use a
+web aspirator (for example the program \program{wget}). 
+
+Beware, the full installation (including Mammals) requires a large
+disk space (several dozens of Gb). You should better start installting
+a small genome and test it before processing to the full
+installation. We illustrate the approach with the genome of our
+preferred model organism: the yeast \textit{Saccharomyces cerevisiae}.
+
+\subsection{Obtaining the list of organisms supported on the \RSAT server}
+
+By default, the program \program{supported-organisms} returns the list
+of organisms supported on your local \RSAT installation. You can
+however use the option \option{-server} to obtain the list of
+organisms supported on a remote server.
+
+
+\begin{lstlisting}
+supported-organisms -server
+\end{lstlisting}
+
+The command can be refined by restricting the list to a given taxon of
+interest.
+
+\begin{lstlisting}
+supported-organisms -server -taxon Fungi
+\end{lstlisting}
+
+You can also ask additional information, for example the date of the
+last update and the source of each genome.
+
+\begin{lstlisting}
+supported-organisms -server -taxon Fungi -return last_update,source,ID
+\end{lstlisting}
+
+
+\subsection{Importing a single organism}
+
+
+The command \command{download-organism} allows you to download one or
+several organisms. 
+
+Beware, the complete data for a single genome may occupy several tens
+of Megabytes (Bacterial genomes) or a few Gigabases
+(Mammalian). Downloading tenomes thus requires a fast Internet
+connection, and may take time. If possible, please download genomes
+during the night (European time).
+
+As a first step, we recommend to download the genome of the yeast
+\org{Saccharomyces cerevisiae}, since this is the model organism used
+in our tutorials.
+
+
+\begin{lstlisting}
+download-organism -v 1 -org Saccharomyces_cerevisiae
+\end{lstlisting}
+
+In principle, the download should start immediately. \emph{Beware},
+the data volume to be downloaded is important, because the genome
+comes together with extra files (blast hits with other genoems,
+oligonucleotide and dyad frequencies). Depending on the network
+bandwidth, the download of a genome may take several minutes or tens
+of minutes. 
+
+After the task is completed, you can check if the configuration file
+has been correctly updated by typing the command.
+
+\begin{lstlisting}
+supported-organisms
+\end{lstlisting}
+
+In principle, the following information should be displayed on your
+terminal.
+
+\result{Saccharomyces\_cerevisiae}
+
+You can also add parameters to get specific information on the
+supported organisms.
+
+\begin{lstlisting}
+supported-organisms -return ID,last_update
+\end{lstlisting}
+
+
+\subsection{Importing a few selected organisms}
+
+The program \program{download-organism} can be launched with a list of
+organisms by using iteratively the option \option{-org}.
+
+
+\begin{lstlisting}
+download-organism -v 1 -org Escherichia_coli_K12 -org Mycoplasma_genitalium_G37_uid57707
+\end{lstlisting}
+
+Note: genome names may change with time, since genome centers are
+occasionally adding new suffixes for genomes. The organism names
+indicated after the option \option{-org} should belong to the list of
+supported organisms collected with the command
+\program{supported-organisms -server}.
+
+
+\subsection{Importing all the organisms from a given taxon}
+
+For comparative genomics, it is convenient to install on your server
+all the organisms of a given taxon. For this, you can simply use the
+option \option{-taxon} of \program{download-organism}.
+
+Before doing this, it is wise to check the number of genomes that
+belong to this taxon on the server.
+
+\begin{lstlisting}
+## Get the list of organisms belonging to the order "Enterobacteriales" on the server
+supported-organisms -taxon Enterobacteriales -server
+
+## Count the number of organisms
+supported-organisms -taxon Enterobacteriales -server | wc -l
+\end{lstlisting}
+
+In Oct 2009, there are 94 Enterobacteriales supported on the \RSAT
+server. Before starting the download, you should check two things:
+\begin{enumerate}
+\item Has your network a sufficient bandwidth to ensure the transfer
+  in a reasonable time ?
+\item Do you have enough free space on your hard drive to store all those genomes ? 
+\end{enumerate}
+
+If the answer to both questions is ``yes'', you can start the
+download.
+
+\begin{lstlisting}
+download-organism -v 1 -taxon Enterobacteriales 
+\end{lstlisting}
+
+
+

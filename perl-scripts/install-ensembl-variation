@@ -1,0 +1,748 @@
+#!/usr/bin/perl -w
+
+############################################################
+#
+# $Id: install-ensembl-variation,v 1.1 2013/05/14 15:05:11 jeremy Exp $
+#
+############################################################
+
+use warnings;
+
+=pod
+
+=head1 NAME
+
+get-ensembl-variation
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Download gvf file of variation from ensembl. 
+Decompress the file, remove variation that don't pass quality check.
+Make "super-variation" from overlapping variation.
+Write new variation file with one file per chromosomes
+and on for remove variation.
+
+/!\ 
+Sequence in raw format need to be install for
+the species you want to download variation.
+
+=head1 AUTHORS
+
+Jeremy.Delerce@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+ get-ensembl-variation -species # [-genomesdir #] [-available_species] [-v #]
+
+=head2 Example
+
+	Get variation for a given species 
+		get-ensembl-variation -species Homo_sapiens
+
+=head1 OUTPUT FORMAT
+
+A tab delimited file with the following column content.
+
+=head 2 GOOD VARIATION
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. 1, X, 8...)
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome
+
+=item 4. chromStrand
+
+The strand of the feature in the chromosome
+
+=item 5. varId
+
+The id of the variation(s)
+
+=item 6. refSeq
+
+Reference sequence of the variation
+
+=item 7. varSeq
+
+Sequence of all the variant
+
+=item 8. type
+
+Type of the variation
+
+=item 9. validate
+
+If the variation is validate.
+Go to the following link to see all validation state :
+http://www.ncbi.nlm.nih.gov/projects/SNP/snp_legend.cgi?legend=validation 
+
+=item 10. isSpVar
+
+If the variation is a super-variation
+
+=item 11. inSpVar
+
+If the variation is in a super-variation
+
+=back
+
+=head 2 WRONG VARIATION
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. 1, X, 8...)
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome
+
+=item 4. chromStrand
+
+The strand of the feature in the chromosome
+
+=item 5. varId
+
+The id of the variation(s)
+
+=item 6. description
+
+Why the variation is remove
+
+=back
+
+=head1 SEE ALSO
+
+=head2 supported-variation-organisms-ensembl
+
+Returns the list of species with variation on Ensembl and all release avalaible.
+
+=head2 install-ensembl-genome
+
+I<get-ensembl-variation> uses the sequences downloaded
+from Ensembl using the tool I<install-ensembl-genome>.
+
+=head2 retrieve-snp-seq
+
+I<retrieve-snp-seq> uses files product by I<get-ensembl-variation>
+to make all the sequence of a variation.
+
+=head2 snp-scan
+
+Scan SNP sequences with one or several position-specific scoring
+matrices.
+
+=head1 WISH LIST
+
+=cut
+
+BEGIN {
+	if ($0 =~ /([^(\/)]+)$/) {
+		push (@INC, "$`lib/");
+	}
+#    push (@INC, "../DD300/Users/jeremy/rsa-tools/perl-scripts/lib");
+#    push (@INC, "/jolidisk/software/rsa-tools/perl-scripts/lib");
+	push (@INC, "../rsa-tools/perl-scripts/lib");
+	$ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
+}
+
+require "RSA.lib";
+use File::Path qw( mkpath );
+
+################################################################
+## Main package
+package	main;
+{
+
+	###############################################################
+	## Initialise parameters
+	our $start_time = &RSAT::util::StartScript();
+	our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+
+	our %infile	= ();
+	our %outfile = ();
+
+	our $verbose = 0;
+	our $out = STDOUT;	
+	
+	our $species = "homo_sapiens";
+	our $genomes_dir = "$ENV{'RSAT'}/data/genomes/";
+	our $available = 0;	
+	our $ref_seq = "";
+
+
+	################################################################
+	## Read argument values
+	&ReadArguments();	
+
+	################################################################
+	## Check argument values
+	if ($available) {
+		my @output = qx{rsync -navP "rsync://ftp.ensembl.org/ensembl/pub/current_variation/gvf/" "."};
+		foreach (@output) {
+			next if (/\./);
+			next unless (/\/\n/);
+			my ($species) = split("\/");
+			print ucfirst($species),"\n";
+		}
+		exit(0);	 
+	}
+
+	$latest_file = $genomes_dir."/latest_genome.tab";
+	$latest_genome = "";
+	
+	#Check if genomes install
+	if (-f $latest_file) {
+	
+		my ($file) = &OpenInputFile($latest_file);
+		while (<$file>) {
+			my ($species_l,$version) = split("\t");
+			$version =~ s/\n//g;
+			$latest_genome = $version if ($species_l eq $species);
+		}
+		close $file;
+
+	} else {
+		&RSAT::error::FatalError("No species install. Use install-ensembl-genome");
+	}
+	
+	#Check if $species install
+	if ($latest_genome eq "") {
+		&RSAT::error::FatalError("$species not install in $genomes_dir. Use install-ensembl-genome");		
+	}
+	
+	$genomes_dir .= ucfirst($species);
+	unless (-d $genomes_dir) {
+		&RSAT::error::FatalError("$species not install in $genomes_dir");
+	} 
+	
+	#Check if genome install for $species
+	$genomes_dir .= "/$latest_genome";
+	unless (-d $genomes_dir) {
+		&RSAT::error::FatalError("$genomes_dir not found. Please reinstall $species");
+	}	
+	
+	unless (-d $genomes_dir."/genome") {
+		&RSAT::error::FatalError("No genome install install in $genomes_dir");
+	}
+	
+	
+	#Check if no file is missing
+	my %chr_file = ();
+	my %file_info = ();
+	
+	my $contig = $genomes_dir."/genome/contig.tab";	
+	if (-f $contig) {	
+		my ($file) = &OpenInputFile($contig);
+		while (<$file>) {
+			next if (/--/);
+			my ($chr,$acc) = split("\t");
+			$acc =~ s/\n//g;
+			$file_info{$acc} = $chr;
+		}
+		close $file;
+	} else {
+		&RSAT::error::FatalError("$contig missing .Please reinstall $species using install-ensembl-genome");	
+	}
+	
+	my $contigs = $genomes_dir."/genome/contigs.txt";	
+	if (-f $contigs) {	
+		my ($file) = &OpenInputFile($contigs);
+		while (<$file>) {
+			my ($file_name,$acc) = split("\t");
+			$acc =~ s/\n//g;
+			$chr_file{$file_info{$acc}} = $file_name;
+		}
+		close $file;
+	} else {
+		&RSAT::error::FatalError("$contigs missing .Please reinstall $species using install-ensembl-genome");		
+	}	
+	
+	foreach my $file (keys(%chr_file)) {
+		unless (-f $genomes_dir."/genome/".$chr_file{$file}){
+			&RSAT::error::FatalError($genomes_dir."/genome/$chr_file{$file} missing .Please reinstall $species using install-ensembl-genome");
+		}
+	}
+
+	#Check if variation available on Ensembl 
+	my @output = qx{rsync -navP "rsync://ftp.ensembl.org/ensembl/pub/current_variation/gvf" "."};
+	
+	unless ( grep($_ = $species."\/\n", @output )) {
+#		 &RSAT::error::FatalError("No variation avalaible for $species on Ensembl"); 
+	}
+
+	################################################################
+	## Download gvf.gz file 
+	&RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
+	my $variation_dir = $genomes_dir."/variations";
+	my $ftp = "ftp.ensembl.org/ensembl/pub/current_variation/gvf/$species";
+
+	mkpath( $variation_dir, 0, 0777 ) unless (-d $variation_dir);
+#	system("rsync -avP rsync://$ftp/".ucfirst($species).".gvf.gz $variation_dir");
+	
+	##Check genome version
+	my $spe = $variation_dir."/".ucfirst($species).".gvf.gz";
+	@output = qx{gzip -cd "$spe" | head -n 20};
+	my $variation_version = "";
+	
+	foreach (@output) {
+		if (/\#\#genome-build ensembl/) {
+			$variation_version = substr($_,0,length($_)-1);
+			$variation_version =~ s/\#\#genome-build ensembl //g ;
+			last;
+		}
+	}
+	
+	if ($variation_version ne $latest_genome) {
+#		&RSAT::error::FatalError("The last version of $species not install. Find $latest_genome, require : $variation_version"); 
+	}
+
+	################################################################
+	## Decompress gvf file 
+	&RSAT::message::TimeWarn("Decompress gvf file") if ($main::verbose >= 2);	
+#	system ("gzip -dv $variation_dir/*.gz");
+	
+	################################################################
+	## Execute the command	
+	my $last_chr = "";
+	my $last_end = 0;
+	my @last_line = ();
+	my @super_variation = ();
+	my $out_rm = &OpenOutputFile($variation_dir."/Remove.tab");
+	my $out_var = "";
+	my $change_chr = 0;
+	
+	my ($file) = &OpenInputFile($variation_dir."/".ucfirst($species).".gvf");
+	while (<$file>) {
+		next if (/^#/);
+		chomp(); 
+  
+	  	##Get variation info
+		my ($chr,$db,$type,$start,$end,$score,$strand,$phase,$attributes) = split("\t");
+		my %info = ();
+		foreach my $token (split(";",$attributes)) {
+			my ($cle,$value) = split("=",$token);
+			$info{$cle} = $value;
+		}
+		
+		##Change validation_state format
+		if ($info{'validation_status'}) {
+			$info{'validation_status'} = 1;
+		} else {
+			$info{'validation_status'} = 0;
+		}
+
+
+		################################################################
+		##Remove bug line
+		
+		##Ensembl 71
+		unless ($info{'Dbxref'}) {
+			next;
+		}
+		
+		##Ensembl 70
+		my ($version,$rs) = split(":",$info{'Dbxref'});	
+		if ( scalar(@last_line) != 0 && $last_line[4] eq $rs) {
+			next;
+		}
+  	
+  	
+		################################################################
+		##Open output stream
+		
+		if ($change_chr) {
+			close $out_var unless ($out_var eq "");
+			#$out_var = &OpenOutputFile("$variation_dir/$chr.tab");
+			$out_var = &OpenOutputFile("../../../../../../Volumes/DD230/1KG/$chr.tab");
+			
+			&RSAT::message::TimeWarn("Analyse variation on chromosome : $chr") if ($main::verbose >= 2);
+			$change_chr = 0;
+			$last_chr = $chr;
+		}
+		
+		if ($last_chr ne $chr) {
+			my $raw_file = $genomes_dir."/genome/".$chr_file{$chr};
+			$ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
+			$change_chr = 1;
+			$last_end = 0;		
+		}
+
+		################################################################
+		##Remove non-analysable variation
+		if ( $info{'Reference_seq'} =~ /[^ACGT\-]/) {
+			print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs;
+			print $out_rm "\tReference variant $info{'Reference_seq'} does not only contain A,C,G,T,-\n";
+			next;
+		}
+		
+		if ( $info{'Variant_seq'} =~ /[^ACGT\-,]/) {
+			print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs;
+			print $out_rm "\tAlternative variant $info{'Variant_seq'} does not only contain A,C,G,T,-\n";
+			next;
+		} 
+
+		if ($strand eq "-") {
+			$info{'Reference_seq'} = reverse($info{'Reference_seq'}); 
+			$info{'Variant_seq'} = reverse($info{'Variant_seq'});
+			$info{'Reference_seq'} =~ s/A/W/g;
+			$info{'Reference_seq'} =~ s/C/X/g;
+			$info{'Reference_seq'} =~ s/T/A/g;
+			$info{'Reference_seq'} =~ s/G/C/g;
+			$info{'Reference_seq'} =~ s/W/T/g;
+			$info{'Reference_seq'} =~ s/X/G/g;
+			$info{'Variant_seq'} =~ s/A/W/g;
+			$info{'Variant_seq'} =~ s/C/X/g;
+			$info{'Variant_seq'} =~ s/T/A/g;
+			$info{'Variant_seq'} =~ s/G/C/g;
+			$info{'Variant_seq'} =~ s/W/T/g;
+			$info{'Variant_seq'} =~ s/X/G/g;
+		}
+
+		if ( $start < $end && $type eq "insertion" ) {
+			print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs;
+			print $out_rm "\tInsertion start/end sould be the same. Not $start-$end\n";
+			next;
+		} 
+	
+		if ( $end-$start+1 != length($info{'Reference_seq'}) ) {
+			print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs;
+			print $out_rm "\tLength of the variation ".($end-$start+1)."($start-$end) not identical to the length of reference seq ".(length($info{'Reference_seq'}))."($info{'Reference_seq'})\n";
+			next;
+		} 	
+	
+		if ( $info{'Reference_seq'} ne "-" && ($info{'Reference_seq'} ne substr($ref_seq,$start-1,$end-$start+1)))  {
+			print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$rs.substr($ref_seq,1,2);
+			print $out_rm "\tReference sequence $info{'Reference_seq'} do not match Sequence file ".substr($ref_seq,$start-1,$end-$start+1)."\n";
+			next;	
+		}
+
+		next unless (/1000Genome/);
+
+		################################################################
+		#Check if the variation is not a part of a super_variation
+		my $line = $chr."\t".$start."\t".$end."\t".$strand."\t".$rs."\t".$info{'Reference_seq'}."\t".$info{'Variant_seq'}."\t".$type."\t".$info{'validation_status'};
+
+		if ( $start <= $last_end ){
+			
+			push (@super_variation,join("\t",@last_line)) if ( scalar(@super_variation) == 0);
+			push (@super_variation,$line);
+			@last_line=();	
+			$last_end=$end if ($last_end < $end);	    
+			next;			
+		}
+
+		################################################################
+		##Remove insertion outside super_variation and make a list with only validate variation.
+		my @super_variation_validate = ();
+		my $last_validate = ();
+		my $super_validate_end = 0;
+ 		my @insert_to_print =();
+		my @insert_to_print_validate = ();
+
+		if ( scalar(@super_variation) !=0) {
+			for (my $i=0; $i<scalar(@super_variation) ; $i++) {
+				my @var_info = split("\t",$super_variation[$i]);
+			
+				##Remove insertion outside super_variation
+				if ( $var_info[5] eq "-" && $var_info[1]+1 > $last_end) {
+					push (@insert_to_print, $super_variation[$i]) unless (grep($_ eq $super_variation[$i], @insert_to_print ));
+					splice(@super_variation, $i, 1);
+					$i--
+
+				##Make a list with only validate variation
+				} elsif ($var_info[8] == 1 and $var_info[1] <= $super_validate_end) {			
+					push (@super_variation_validate, $last_validate) if (scalar(@super_variation_validate) == 0);
+					push (@super_variation_validate, $super_variation[$i]);
+				}
+				
+				$last_validate = $super_variation[$i] if ($var_info[8] == 1 );
+				$super_validate_end = $var_info[2] if ($super_validate_end < $var_info[1] && $var_info[8] == 1 );
+			}
+		}
+
+#		##Check if insertion not form a super variation.
+		if (scalar(@insert_to_print) > 1) {
+			foreach (@insert_to_print) {
+				my @var_info = split("\t");
+				push (@insert_to_print_validate, $_) if ($var_info[8]==1);
+			}
+		}
+
+
+		################################################################
+		## Insert here output printing
+		if ( scalar(@super_variation) > 1) {
+		
+			##Print variation in the super variation	
+			foreach my $line (@super_variation) {
+				my @info = split("\t",$line);	
+				$info[1]++ if ($info[5] eq '-' && $info[1] == $info[2]);
+				print $out_var join("\t",@info),"\t0\t1\n";
+				#print $out_var $line,"\t0\t1\n";
+			}			
+		
+			#Print super-variation
+			if ( scalar(@super_variation) == scalar(@super_variation_validate) ) {
+				print $out_var "$chr\t".&MakeSuperVar(@super_variation_validate),"\t1\t1\t0\n";
+			
+			} else {
+				if ( scalar(@super_variation_validate) > 1 ) {
+					print $out_var "$chr\t".&MakeSuperVar(@super_variation_validate),"\t1\t1\t1\n";
+				}			
+				print $out_var "$chr\t".&MakeSuperVar(@super_variation),"\t0\t1\t0\n";				
+			}
+					
+			@super_variation = ();
+		
+		} elsif ( scalar(@super_variation) == 1 ) {
+			print $out_var $super_variation[0]."\t0\t0\n";
+			@super_variation = ();
+		}
+	
+		##Print insertion remove from super_varation
+		
+		if (scalar(@insert_to_print) > 1) {
+			foreach (@insert_to_print) {
+				my @info = split("\t");
+				$info[1]++;
+				print $out_var join("\t",@info),"\t0\t1\n";
+			}		
+		}
+		
+		if (scalar(@insert_to_print) > scalar(@insert_to_print_validate)) {
+			print $out_var "$chr\t".&MakeSuperVar(@insert_to_print),"\t0\t1\t0\n";
+		} elsif (scalar(@insert_to_print_validate) > 1) {
+			print $out_var "$chr\t".&MakeSuperVar(@insert_to_print_validate),"\t1\t1\t0\n";
+		} elsif (scalar(@insert_to_print) >0) {
+			my @info = split("\t",$insert_to_print[0]);
+			$info[1]++;
+			print $out_var join("\t",@info),"\t0\t0\n";
+		}
+
+		$last_line[1]++ if (scalar(@last_line) != 0 && $last_line[5] eq "-");
+		print $out_var join("\t",@last_line)."\t0\t0\n" unless (scalar(@last_line) == 0);
+	
+		@last_line = split("\t",$line);
+		$last_end=$end;
+	
+	#	exit(0) if ($start > 3400000);
+	#	exit(0) if ($start > 2654398);
+	#	exit(0) if ($start > 450000);
+	}
+	
+	print $out_var join("\t",@last_line)."\t0\t0\n" unless (scalar(@last_line) == 0);
+
+	close $file;
+#	unlink($variation_dir."/".ucfirst($species).".gvf");
+
+	################################################################
+	## Report execution time and close output stream
+	my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+	print $exec_time if ($main::verbose >= 2); ## only report exec time if verbosity is specified
+	close $out;
+	
+	exit(0);
+}
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Display full help message
+sub PrintHelp {
+    system "pod2text -c $0";
+exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Display short help message
+##Create Super-variation
+sub MakeSuperVar {
+	my $super_start=0;
+	my $super_end=0;
+ 	my @super_strand = ();
+ 	my @super_rs = ();
+ 	my @super_types =();
+
+ 	foreach my $line (@_) {
+		my @var_info = split("\t",$line);
+    	$var_info[1] ++ if ($var_info[5] eq "-");
+    
+		##Get coord
+		$super_end = $var_info[2] if ($var_info[2] > $super_end);
+		$super_start = $var_info[1] if ($var_info[1] < $super_start || $super_start == 0);
+ 		
+		##Get strand
+		push (@super_strand,$var_info[3]) unless (grep ($_ eq $var_info[3], @super_strand));
+	
+		##Get rs
+		push (@super_rs,$var_info[4]);
+				
+		##Get type
+		push (@super_types,$var_info[7]) unless (grep ($_ eq $var_info[7], @super_types));
+	}
+			
+	##Get ref seq
+	my $super_ref = substr($ref_seq,$super_start-1,$super_end-$super_start+1);
+			
+	##Get variants
+	@list_variant = ();   
+
+	foreach my $line (@_) {
+		my @var_info = split("\t",$line);
+				
+		foreach my $variant (split(",", $var_info[6])) {
+			$var = substr($super_ref,0,$var_info[1]-$super_start).$variant.substr( $super_ref, length($super_ref) - ($super_end-$var_info[2]) );
+			$var =~ s/\-//g if (length($var)>1);
+			push (@list_variant, $var ) unless (grep ($_ eq $var, @list_variant));
+		}
+	}
+       
+	my $super_type = 'sequence_alteration';
+	$super_type = $super_types[0] if (scalar(@super_types) == 1);
+
+	return $super_start."\t".$super_end."\t".join('/',@super_strand)."\t".join(',',@super_rs)."\t".$super_ref."\t".join(',',@list_variant)."\t".$super_type;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+	my $arg;
+	my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+	while (scalar(@arguments) >= 1) {
+		$arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+		if ($arg eq "-v") {
+			if (&IsNatural($arguments[0])) {
+				$main::verbose = shift(@arguments);
+			} else {
+				$main::verbose = 1;
+			}
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+		} elsif ($arg eq "-h") {
+			&PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+		} elsif ($arg eq "-help") {
+			&PrintOptions();
+
+=pod
+
+=item B<-species species_name>
+
+Species that you want download variation (Homo_sapiens, Mus_musculus).
+ 
+Help : Use I<> to get avalaible species
+
+=cut
+    } elsif ($arg eq "-species") {
+      $main::species = lc(shift(@arguments));
+
+=pod
+
+=item B<-genomesdir #>
+
+The directory in wich genomes are install.
+
+Default : $RSAT/data/genomes/
+
+=cut
+		} elsif ($arg eq "-genomesdir") {
+			$main::genomes_dir = shift(@arguments);
+
+=pod
+
+=item B<-available_species>
+
+Get all available species on Ensembl
+
+=cut
+    } elsif ($arg eq "-available_species") {
+      $main::available = 1;
+    	
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+	print "; get-ensembl-variation ";
+	&PrintArguments($out);
+	
+	if (%main::outfile) {
+		print "; Output files\n";
+		while (my ($key,$value) = each %main::outfile) {
+			printf ";\t%-13s\t%s\n", $key, $value;
+		}
+	}
+
+}

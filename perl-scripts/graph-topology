@@ -1,0 +1,605 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-topology,v 1.18 2011/03/16 13:39:59 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+graph-topology
+
+=head1 DESCRIPTION
+
+Calculate the node degree, the closeness and the betweenness of each
+node and specifies if this node is a seed or a target node.
+
+=head1 AUTHORS
+
+=over
+
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+graph analysis
+
+=head1 USAGE
+
+graph-topology [-i graph_file] -node node1 [-node node2 ...] [-o outputfile] [-v #] [...]
+
+graph-topology [-i graph_file] -nodef node_file [-o outputfile] [-v #] [...]
+
+graph-topology [-i graph_file] -all [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+See convert-graph for a description of the supported input formats.
+
+=head1 OUTPUT FORMAT
+
+A multi-column tab delimited table. Each columns contains for each node the list of the different requested metrics. 
+If the graph is directed, the program makes the distinction between the in and the out-degree.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+    %unknown_nodes = (); ## Names of the unidentified nodes
+    $all_seeds = 0; ## Use all nodes as seeds 
+
+    ################################################################
+    ## Initialize the graph
+    $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "graph");
+
+    ## Columns of the tab-delimited graph file
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+    local $directed = 0;
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);    
+
+    ## Supported return options
+    local %return_fields = ();
+    local %supported_return_fields =(
+      'degree'=>1,
+      'betweenness'=>1,
+      'closeness'=>1,
+      'all'=>1
+    );
+    $supported_return_fields_list = join (",", keys %supported_return_fields);
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if (scalar(@seed_names) == 0 && ($all_seeds == 0) && !defined($infile{seeds})) {
+      $all_seeds = 1;
+      &RSAT::error::FatalError("You did not specify any seed nodes.");
+    }
+     if (scalar(keys %return_fields) == 0) {
+      &RSAT::error::FatalError("You did not specify the output format");
+    }
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input graph
+    &RSAT::message::TimeWarn("Reading input graph") if ($main::verbose >= 2);
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
+    my %betweenness_table = ();
+    my %closeness_table = ();
+
+
+    ################################################################
+    ## Compute closeness and betweenness
+    if ($return_fields{'closeness'} || $return_fields{'betweenness'}) {
+      &RSAT::message::TimeWarn("Computing graph topoogy") if ($main::verbose >= 2);
+      my ($betweennessRef, $closenessRef) = $graph->c_topology($directed);
+      %betweenness_table = %{$betweennessRef};
+      %closeness_table = %{$closenessRef};
+    }
+
+    ################################################################
+    ## Build the list of seed nodes
+
+    ## Use all nodes as seeds
+    if ($all_seeds) {
+      &RSAT::message::TimeWarn("Getting all nodes (to be used as seeds)") if ($main::verbose >= 2);
+      @seed_names = $graph->get_nodes();
+      &RSAT::message::TimeWarn("Using all",scalar(@seed_names), "nodes of the graph as seeds") if ($main::verbose >= 2);
+      ## Put the name of each node in the list
+    } else {
+      ## Read seed nodes from a file
+      if ($infile{seeds}) {
+	my $l = 0;
+	&RSAT::message::TimeWarn("Reading seed nodes from file", $infile{seeds}) if ($main::verbose >= 2);
+	my ($seed_handle) = &OpenInputFile($infile{seeds});
+	while (my $line = <$seed_handle>) {
+	  $l++;
+	  next if ($line =~ /^\#/); ## Skip header lines
+	  next if ($line =~ /^--/); ## Skip comment lines
+	  next if ($line =~ /^;/); ## Skip comment lines
+	  next unless ($line =~ /\S/); ## Skip empty lines
+	  chomp($line);
+	  my @fields = split /\s+/, $line;
+	  my $name =  $fields[0];
+	  if ($name) {
+	    push @seed_names, $name;
+	  } else {
+	    &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
+	  }
+	}
+	close $seed_handle;
+      }
+    }
+      
+    ## Identify seed nodes in the graph
+    if (!$all_seeds) {
+      %seed_names_list = ();
+      RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
+      foreach my $name (@seed_names) {
+        my $node_id = $graph->node_by_name($name);
+        if (defined($node_id)) {
+	  &RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
+	  $seed_names_list{$name}++;
+        } else {
+          $unknown_nodes{$name}++;
+	  &RSAT::message::Warning("The graph does not contain any node with name", $name);
+        }
+      }
+    } else {
+      %seed_names_list = $graph->get_attribute("nodes_name_id");
+    }
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ## Print the header
+    my @fields_to_export = ("id");
+    if ($return_fields{'degree'} && $directed) {
+      push @fields_to_export, "in_deg";
+      push @fields_to_export, "out_deg";
+      push @fields_to_export, "degree";
+      push @fields_to_export, "ktype";
+    } elsif ($return_fields{'degree'} && !$directed) {
+      push @fields_to_export, "degree";
+    }
+    if ($return_fields{'closeness'}) {
+      push @fields_to_export, "closnes";
+    } 
+    if ($return_fields{'betweenness'}) {
+      push @fields_to_export, "btwnes";
+    }
+    my %field_descr = ();
+    $field_descr{id} = "node identifier";
+    $field_descr{in_deg} = "incoming degree (number of incoming arcs)";
+    $field_descr{out_deg} = "outgoing degree (number of outgoing arcs)";
+    $field_descr{degree} = "total degree (number of incoming + outgoing arcs)";
+    $field_descr{ktype} = "connectivity type. Orphan (degree=0), source (in_deg=0), target (out_deg=0) or intermediate.";
+    $field_descr{closnes} = "Closeness (mean shortest distance of nodes to a given nodes)";
+    $field_descr{btwnes} = "Betweenness (proportion of shortest path that pass through a node)";
+
+
+    if ($main::verbose >= 1) {
+      print $out "; Field descriptions\n";
+      foreach my $field (@fields_to_export) {
+	printf $out ";\t%-15s\t%s\n", $field, $field_descr{$field};
+      }
+    }
+    print $out "#";
+    print $out join ("\t",@fields_to_export)."\n";
+
+    ################################################################
+    ## Export the results and calculate the degree
+    &RSAT::message::TimeWarn("Computing node degres") if ($main::verbose >= 2);
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @in_neighbours = $graph->get_attribute("in_neighbours");
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    foreach my $node (sort (keys %seed_names_list)) {
+      &RSAT::message::Info("Computing degree for node", $node) if ($main::verbose >= 3);
+      # calculate the degree
+
+      # parameter initialization
+      my $in_deg = 0;
+      my $degree = 0;
+      my $out_deg = 0;
+      my $ktype = "interm";
+      if ($return_fields{'degree'}) {
+        my $id = $nodes_name_id{$node}; # Numerical id of the node
+        # calculate in degree
+        if (defined $in_neighbours[$id]) {
+          $in_deg = scalar(@{$in_neighbours[$id]});
+        }
+        # calculate out degree
+        if (defined $out_neighbours[$id]) {
+          $out_deg = scalar(@{$out_neighbours[$id]});
+        }
+        # degree ( sum of in- and out-degree)
+        $degree = $in_deg + $out_deg;
+        ## Specify th connectivity type
+        if (($in_deg == 0) && ($out_deg == 0)) {
+	  $ktype = "orphan";
+        } elsif ($in_deg == 0) {
+	  $ktype = "source";
+        } elsif ($out_deg == 0) {
+  	  $ktype = "target";
+        }
+      }
+
+      # Exporting the results
+#      &RSAT::message::TimeWarn("Exporting the results") if ($main::verbose >= 2);
+      my @values = ($node);
+      if ($return_fields{'degree'} && $directed) {
+        push @values, $in_deg;
+        push @values, $out_deg;
+        push @values, $degree;
+        push @values, $ktype;
+      } elsif ($return_fields{'degree'} && !$directed) {
+        push @values, $degree;
+      }
+
+      if ($return_fields{'closeness'}) {
+	if ((defined($closeness_table{$node})) && (&IsReal($closeness_table{$node}))) {
+	  push @values, sprintf("%.3f", $closeness_table{$node});
+	} else {
+	  push @values, "NA";
+	}
+      }
+
+      if ($return_fields{'betweenness'}) {
+	if ((defined($betweenness_table{$node})) && (&IsReal($betweenness_table{$node}))) {
+	  push @values, sprintf("%.2g", $betweenness_table{$node});
+	} else {
+	  push @values, "NA";
+	}
+#        my $betweenness = $betweenness_table{$node} || "NA";
+#        push @values, sprintf("%.2f", $betweenness);
+      }
+      print $out (join "\t", @values);
+      print $out "\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Graph file
+=pod
+
+=item B<-i graphfile>
+
+If no graph file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{graph} = shift(@arguments);
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-directed>
+
+Specifies whether the graph is directed or not (i.e. edge A-B
+corresponds to edge B-A). In this case, the betweenness and the
+closeness calculation will be rather different. By default the graph
+is not directed.
+
+=cut
+	} elsif ($arg eq "-directed") {
+	    $directed = 1;
+
+	    ### return  
+=pod
+
+=item B<-return return_type>
+
+Fields to return as columns in the output table.
+
+Supported return fields : I<degree>, I<closeness>, I<betweenness>,
+I<all>.
+
+The option may be used multiple time. To return all implemented
+statistics, type -return all.
+
+=cut
+	} elsif ($arg eq "-return") {
+	    $return_list = shift(@arguments);
+	    my @returns = split /,/, $return_list;
+	    foreach my $return (@returns) {
+	      &RSAT::error::FatalError("$return\tInvalid return format. Supported: $supported_return_fields_list") if (!$supported_return_fields{$return});
+	      %return_fields = %supported_return_fields if ($return eq 'all');
+	      $return_fields{$return}++;
+	    } 
+	    
+
+
+=pod
+
+=item B<-nodef node_file>
+
+Node file. The node file specifies a list of nodes.
+
+Node file format: the first word of each row specifies one node. The rest of the row is ignored.
+
+=cut
+	} elsif ($arg eq "-nodef") {
+	    $main::infile{seeds} = shift(@arguments);
+
+=pod
+
+=item B<-all>
+
+Compute topological parameters for all nodes.
+
+=cut
+	} elsif ($arg eq "-all") {
+	    $all_seeds = 1;
+
+=pod
+
+=item B<-node node>
+
+Specify one node. This option can be used iteratively to specify
+several nodes.
+
+=cut
+	} elsif ($arg eq "-node") {
+	    push @seed_names, shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; graph-neighbnours ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+
+    ## Report graph size
+    my ($nodes, $arcs) = $graph->get_size();
+    print $out "; Graph size\n";
+    print $out ";\tnodes\t",$nodes,"\n";
+    print $out ";\tarcs\t",$arcs,"\n";
+
+    ## Report seed nodes
+    if ($all_seeds) {
+      print $out "; All nodes\t",scalar(@seed_names),"\n";
+    } else {
+      print $out "; Selected nodes\t",scalar(@seed_names),"\n";
+    }
+    if (scalar (keys %unknown_nodes) > 0) {
+      print $out ";\tidentified\t",scalar(keys %seed_names_list),"\n";
+      print $out ";\tunknown nodes\t",scalar (keys %unknown_nodes),"\n";
+      foreach my $name (@unknown_nodes) {
+	print $out join ("\t", ";\t", "unknown", $name), "\n";
+      }
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<convert-graph>
+
+=item I<graph-get-clusters>
+
+=item I<graph-neighbours>
+
+=item I<compare-graphs>
+
+=item I<random-graph>
+
+=back
+
+=cut

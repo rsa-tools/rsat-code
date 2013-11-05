@@ -1,0 +1,38 @@
+info-gibbs motif discovery tool
+
+INTRODUCTION
+
+    info-gibbs is a pattern discovery software based on a Gibbs 
+    sampling strategy. Given a set of DNA sequences, a motif length 
+    and a background model (Markovian or Bernoulli) it searches for
+    motifs (PSSMs) that have the best relative entropy (information content). 
+
+AUTHOR
+
+    Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+
+CITATION
+
+    Defrance, M. and van Helden, J. info-gibbs: a motif discovery algorithm
+    that directly optimizes information content during sampling,
+    Bioinformatics. 2009;25:2715-2722.
+
+
+INSTALL
+
+    Requirements: a C++ compiler + the C++ STL (Standard Template Library).
+    On UNIX friendly environments (Linux, Mac OS X, Windows with MinGW)
+    should compile simply using:
+    $ make
+
+
+USAGE
+
+    Simple usage:
+    $ info-gibbs -i seq.fa -w 8
+
+    For detailed options:
+    $ info-gibbs -h
+    
+

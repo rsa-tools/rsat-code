@@ -1,0 +1,1268 @@
+#!/usr/bin/perl
+
+
+
+use strict;
+
+use File::Basename;
+use LWP;
+use Getopt::Long;
+use XML::LibXML;
+use LWP::UserAgent;
+use Data::Dumper;
+
+## use strict;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+
+require "RSA.lib";
+
+=pod
+
+=head1 NAME
+
+parse-oreganno
+
+=head1 DESCRIPTION
+
+Parse ORegAnno (http://www.oreganno.org) database from a dump XML file. 
+Only entries having non-deprecated ORegAnno StableID are returned.
+The parser returns one output file for each of the four OReganno record type.
+(TRANSCRIPTION FACTOR BINDING SITE, REGULATORY REGION, REGULATORY POLYMORPHISM, REGULATORY HAPLOTYPE).
+The parser retrieves (optional) TFBS chromosomal positions from UCSC genome browser by using BLAT.
+This parser makes use of the XML::LibXML, LWP and LWP::UserAgent libraries.
+
+=head1 AUTHORS
+
+=over
+
+=item Jean Valery Turatsinze <jturatsi@bigre.ulb.ac.be>
+
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
+
+=back
+
+=head1 CATEGORY
+
+=over
+
+=item parsers
+
+=back
+
+=head1 USAGE
+
+Download the ORegAnno XML dump file at http://www.oreganno.org/oregano/Dump.jsp
+    
+parse-oreganno -i inputfile [-v # -get_pos]
+
+=head1 OPTIONS
+
+=over
+
+=item B<-help>: print this help message.
+
+=item B<-v #>: verbosity level.
+
+=item B<-i dump_xml_file>: Required option. The dump xml file from ORegAnno
+
+=item B<-task tasks>
+
+List of tasks to perform. If this option is not specified, default
+tasks are performed. 
+
+Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.
+
+Supported fields:
+
+=over
+
+=item - B<parse_xml>: parse XML file and returns the output files files (default task)
+
+=item - B<get_pos>: use BLAT to get the chromosomal positions of the TFBS
+
+=item - B<target_region>: for each organism, return for each target gene, 
+the chromosomal positions of the left most and right most TFBS.
+This helps in defining a region of interest for the further analysis of each target gene.
+Left and right positions may be modified by adding a given length at each end of the region.
+See -add_flank option.
+
+=item - B<tfbs_fasta>:  return the binding sequences of a given TF in fasta format.
+Can be subsequently used by meme to build a PSSM for this TF.
+
+=back
+
+=item B<-get_pos>: for backward compatibility. replaced by -tasks get_pos.
+Optional. Get genomic positions from UCSC genome browser 
+with BLAT (http://genome.ucsc.edu/cgi-bin/hgBlat). Requires internet connection.
+
+=item B<-wait #>:  Optional. To be used with get_pos task. The time between 2 BLAT requests must be greater than 15 seconds.
+Specify the waiting time in seconds  (e.g. 600 for 10 minutes). Default is  15 sec.
+
+=item B<-add_flanks #>:  Optional. To be used with target_region task. 
+Length of sequence to be added at the left and right side of the region defined with target_region task.
+eg. -add_length 200.
+
+
+=back
+
+=head1 OUTPUT FILES
+
+=over
+
+=item - B<parse_xml> task: 
+
+=item I<.tab> file: contains parsed data from the XML input file for each type of ORegAnno record
+
+=item - B<get_pos> task:
+
+=item I<.gft> file: genome feature format as described in convert-features (convert-features -h). Contains the chromosomal
+positions for the TFBS, calculated from a BLAT search at UCSC genome browser.
+
+=item - B<tfbs_fasta> task:  
+
+=item TFBS_sequence directory containing I<.fa> files
+
+=item - B<target_region> task: 
+
+=item One directory per organism, each containing : 
+
+=item I<.gft> file: genome feature format as described in convert-features (convert-features -h). Contains the chromosomal
+positions for the calculated target region.
+
+=item I<.ft> file: feature format as described in convert-features (convert-features -h). Contains the positions
+of TFBS located on the target region. These positions are relative to the target region fragment, starting at position 1.
+
+=item - B<all tasks>:
+
+=item I<.log>: WARNINGS during execution are logged in this file.
+
+=back
+
+=head1 OUTPUT FIELDS FOR .tab
+
+=over
+
+=item 1 -  ORegAnnoID
+
+=item 2 -  recordType
+
+=item 3 -  TFID
+
+=item 4 -  TFname
+
+=item 5 -  TFsource
+
+=item 6 -  TFversion
+
+=item 7 -  geneID
+
+=item 8 -  geneName
+
+=item 9 -  geneSource
+
+=item 10 - geneVersion
+
+=item 11 - lociName
+
+=item 12 - speciesName
+
+=item 13 - evidenceSubType
+
+=item 14 - outcome
+
+=item 15 - pubmedID
+
+=back
+
+=head3 TRANSCRIPTION FACTOR BINDING SITE and REGULATORY REGION
+
+=over
+
+=item 16 - sequence
+
+=item 17 - seqWithFlank
+
+=back
+
+=head3 REGULATORY POLYMORPHISM and REGULATORY HAPLOTYPE
+
+=over
+
+=item 16 - referenceSequence
+
+=item 17 - variantSequence
+
+
+=back
+
+=cut
+
+
+################################################################
+## Initialize parameters
+local $start_time = &RSAT::util::StartScript();
+
+my $help;
+my $xmlInputFile;
+my $get_pos;
+my $wait = 15;
+my $verbose = 0;
+my $add_length = 0;
+
+## tasks
+my $tasks;
+my %supported_tasks = (
+   			parse_xml => 1, ## parse XML file
+			get_pos=>1, ## use BLAT to get the chromosomal positions of the TFBS
+			target_region=>1, ## for each organism, return the target gene region between the 2 extreme TFBS
+			tfbs_fasta=>1, ## return the binding sequences of a given TF in fasta format
+		       );
+my $supported_tasks = join (",", sort(keys( %supported_tasks)));
+my %tasks2run = ();
+
+
+###############################################
+GetOptions(
+	"help"          => \$help,
+	"i=s"           => \$xmlInputFile,
+	"v:s"		=> \$verbose,
+	"get_pos"     	=> \$get_pos, # for backward compatibility
+	"wait:s"	=> \$wait,
+	"task:s" 	=> \$tasks,
+	"add_flanks:s"	=> \$add_length
+	);
+
+###############################################
+## Process arguments and options
+printHelp() if $help;
+
+## tasks
+if ($tasks) {
+	chomp($tasks);
+	my @tasks = split ",", $tasks;
+	foreach my $task (@tasks) {
+		$task = lc($task);
+	   	if ($supported_tasks{$task}) {
+	   	  $tasks2run{$task} = 1;
+	   	} else {
+	   	  &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	   	}
+	 }
+  }
+	## if no tasks is specified, run default tasks
+  	unless (scalar(keys(%tasks2run))>0) {
+      $tasks2run{parse_xml} = 1;
+    }
+
+if ($get_pos) {
+	$tasks2run{get_pos} = 1;
+}
+    
+## ORegAnno version
+
+## Here we get only the file name withou its full path
+## this name will be used for the output files nomenclature
+my $xmlfilename = basename $xmlInputFile;
+
+## Four types of tab-delimited output files are returned : one file for each record type:
+## TFBS
+## Regulatory polymorphism
+## Regulatory haplotype
+## Regulatory region
+
+my $oreg_version = $xmlfilename;
+$oreg_version =~ s/cron.saved.//;
+$oreg_version =~ s/.xml//;
+
+my $TFBS_file = "ORegAnno_TFBS_annotations_".$oreg_version.".tab";
+my $polymorphism_file = "ORegAnno_regulatory_polymorphism_annotations_".$oreg_version.".tab";
+my $haplotype_file = "ORegAnno_regulatory_haplotype_annotations_".$oreg_version.".tab";
+my $region_file = "ORegAnno_regulatory_region_annotations_".$oreg_version.".tab";
+my $logFile = "ORegAnno_".$oreg_version.".log";
+
+## Log file
+open LOG, ">$logFile"
+	or die "Can't write to $logFile : $!";
+
+## check task dependencies
+unless (-e $TFBS_file){
+	$tasks2run{parse_xml}=1 ;
+	&RSAT::message::Warning("Output of task xml_task (.tab file) not found. parse_xml task will be run first.");
+}
+
+###############################################
+## ORegAnno XML dump is several xml files concatenated
+## First need to extract each XML subfile
+if  ($tasks2run{parse_xml}) {
+
+&RSAT::message::TimeWarn("Task: parse_xml") if ($verbose >= 1);
+
+open XML, "<$xmlInputFile" or die "Cannot open XML file $xmlInputFile:$!"; 
+my $xmlCount = 1;
+
+while (my $line = <XML>){
+
+	#look for <?xml
+	 if ($line =~ /^<\?xml/) {
+	 	my $partFileName = $xmlfilename."_part_".$xmlCount;
+	 	open NEWXML, ">$partFileName" or die "Cannot write XML file $partFileName:$!";
+	 	print NEWXML $line;	
+	 # look for </oreganno>
+	 } elsif ($line =~ /^<\/oreganno>/) {
+	 	print NEWXML $line;	
+	 	close NEWXML;
+	 	$xmlCount++;
+	 } else {
+	 	print NEWXML $line;	
+	 }
+}
+close XML;
+
+###############################################
+## Each partial XML file is parsed individually
+
+## print headers
+&printHeader($TFBS_file);
+&printHeader($polymorphism_file);
+&printHeader($haplotype_file);
+&printHeader($region_file);
+
+## parse XML files
+print "Parsing XML file\n" if ($verbose >=2 );
+
+for (my $i=1; $i < $xmlCount; $i++){
+	my $parsedRecords = &XMLParse($xmlfilename."_part_".$i);
+	
+	## print records for current partial XML file
+	&print2tab($parsedRecords);
+	unlink($xmlfilename."_part_".$i);
+	}
+
+}
+
+###############################################
+## Get genomic positions with BLAT from UCSC
+## genome browser
+
+if  ($tasks2run{get_pos}) {
+	&RSAT::message::TimeWarn("Task: get_pos ") if ($verbose >= 1);
+	
+	## export the sequence with flank to a fasta file
+	&to_fasta($TFBS_file);
+		
+	
+	## IMPORTANT:This hash must be regularly updated!!!
+	## convert species names from ORegAnno to UCSC
+	## to get the list of species from the previously generate dfasta file :
+	## grep "^>"  ORegAnno_TFBS_annotations_8-Mar-2007.fa | cut -f 2 -d '[' | sort | uniq
+		
+	my %species_name_conversion = (
+				"Homo sapiens" 					=> "Human",
+				"Rattus norvegicus" 			=> "Rat",
+				"Mus musculus" 					=> "Mouse",
+				"Gallus gallus" 				=> "Chicken",
+				"Danio rerio" 					=> "Zebrafish",
+				"Takifugu rubripes rubripes"	=> "Fugu",
+				"Xenopus tropicalis"			=> "X. tropicalis",
+				"Xenopus laevis"				=> "",
+				"Oryctolagus cuniculus"			=> "", # rabbit
+				"Caenorhabditis elegans"		=> "C. elegans",
+				"Caenorhabditis briggsae"			=> "C. briggsae",
+				"Human immunodeficiency virus 1"	=> "",
+				"Ciona intestinalis"			=> "C .intestinalis",
+				"Ciona savignyi"				=> "",
+				"Drosophila melanogaster"		=> "D. melanogaster",
+				"Saccharomyces cerevisiae"		=> "S. cerevisiae",	
+	);
+	
+	## UCSC genome browser genome databases versions
+	my $UCSC_genome_versions = &get_UCSC_databases(\%species_name_conversion);
+	
+	## get the seqWithFlank positions from UCSC
+	my $fasta_file = $TFBS_file;
+	$fasta_file =~ s/\.tab/\.fa/;
+	my $UCSC_pos = &get_UCSC_positions($fasta_file,$UCSC_genome_versions,\%species_name_conversion);
+	unlink($fasta_file);
+	
+	## print in feature format
+	&print2feature($UCSC_pos,$UCSC_genome_versions);
+	
+}
+
+
+###############################################
+## Calculate for each target region in each organism
+## a region of interest for future analyses :
+## region between the left most and right most region
+
+if  (($tasks2run{target_region})||($tasks2run{tfbs_fasta})) {
+  my $gft_file = $TFBS_file;
+  $gft_file =~ s/.tab$/.gft/;
+  my $feat = ParseFeatures->new($gft_file,$TFBS_file);
+  my $entries = $feat->split_features;
+  $feat->TFBS_fasta($entries) if  ($tasks2run{tfbs_fasta});
+  my $target_regions = $feat->target_regions($entries) if  ($tasks2run{target_region});
+}
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print LOG if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close LOG;
+
+###############################################
+## SUBROUTINES
+###############################################
+
+sub printHelp{
+	system "pod2text -c $0";
+    exit()
+}
+
+sub XMLParse {
+	my $partialXMLFile = shift;
+
+	my %parsedRecords = ();
+		
+	## parse ORegAnno XML dump file
+	my $parser = XML::LibXML->new();
+	my $tree = $parser->parse_file($partialXMLFile);
+	$tree->indexElements();
+	my $root = $tree->getDocumentElement;
+	my @records = $root->getElementsByTagName('record');
+
+	foreach my $i (0..$#records) {
+		my @thisParsedRecord =();
+
+			# check wether the record id deprecated
+			my $deprecatedID  = $records[$i]->findvalue('deprecatedByStableId');
+			# if there is no deprecatedID => record is to be processed
+			if ($deprecatedID eq "") {
+					## get fields of interest
+					my $stableID = $records[$i]->findvalue('stableId');
+					my $type  = $records[$i]->findvalue('type');
+					my $TFID = $records[$i]->findvalue('tfId');
+					my $TFName = $records[$i]->findvalue('tfName');
+					my $TFSource = $records[$i]->findvalue('tfSource');
+					my $TFVersion = $records[$i]->findvalue('tfVersion');
+					my $geneID = $records[$i]->findvalue('geneId');
+					my $geneName = $records[$i]->findvalue('geneName');			
+					my $geneSource = $records[$i]->findvalue('geneSource');
+					my $geneVersion = $records[$i]->findvalue('geneVersion');
+					my $lociName = $records[$i]->findvalue('lociName');
+					my $speciesName  = $records[$i]->findvalue('speciesName');
+								
+					# evidence
+					my @evidenceSet = $records[$i]->getElementsByTagName('evidenceSet');
+					my $evidences;				
+					my $count = 1;					
+					while ($evidenceSet[0]->getElementsByTagName('evidenceSubtypeStableId')->get_node($count))  {
+						my $node = $evidenceSet[0]->getElementsByTagName('evidenceSubtypeStableId')->get_node($count);
+						$evidences .= $node->textContent().",";
+						$count++
+					}
+					chop($evidences);					
+									
+					my $outcome = $records[$i]->findvalue('outcome');
+					my $pubmedID = $records[$i]->findvalue('reference');
+					
+					# sequences
+					if (($type eq "TRANSCRIPTION FACTOR BINDING SITE")||($type eq "REGULATORY REGION")) {
+						my $sequence = $records[$i]->findvalue('sequence');
+						my $seqWithFlank  = $records[$i]->findvalue('sequenceWithFlank');	
+						
+						@thisParsedRecord = (&trim_string($stableID), trim_string($type), modif_name(trim_string($TFID)), modif_name(trim_string($TFName)), trim_string($TFSource), trim_string($TFVersion),
+									modif_name(trim_string($geneID)), modif_name(trim_string($geneName)), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
+									trim_string($evidences), trim_string($outcome), trim_string($pubmedID),   trim_string($sequence), trim_string($seqWithFlank));
+						
+						$parsedRecords{$stableID} = \@thisParsedRecord;
+						
+					} elsif (($type eq "REGULATORY POLYMORPHISM")||($type eq "REGULATORY HAPLOTYPE")) {	
+						
+						# variant sequences
+						my @variationSet = $records[$i]->getElementsByTagName('variationSet');
+						my $refsequences;
+						my $varsequences;
+						
+						my $count = 1;					
+						while ($variationSet[0]->getElementsByTagName('referenceSequence')->get_node($count))  {
+							my $node = $variationSet[0]->getElementsByTagName('referenceSequence')->get_node($count);
+							$refsequences .= $node->textContent().",";
+							$count++
+						}						
+						$count = 1;					
+						while ($variationSet[0]->getElementsByTagName('variantSequence')->get_node($count))  {
+							my $node = $variationSet[0]->getElementsByTagName('variantSequence')->get_node($count);
+							$varsequences .= $node->textContent().",";
+							$count++
+						}
+						chop($refsequences);
+						chop($varsequences);
+						
+						# trim_string whitespaces: strip blank space from the beginning/end of each string		
+						@thisParsedRecord = (trim_string($stableID), trim_string($type), modif_name(trim_string($TFID)), modif_name(trim_string($TFName)), trim_string($TFSource), trim_string($TFVersion),
+									modif_name(trim_string($geneID)), modif_name(trim_string($geneName)), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
+									trim_string($evidences), trim_string($outcome), trim_string($pubmedID),  trim_string($refsequences), trim_string($varsequences));
+						}	
+						$parsedRecords{$stableID} = \@thisParsedRecord;
+					}			
+			}
+	
+	return (\%parsedRecords);
+}
+
+sub printHeader{
+	
+	my $outFile = shift;
+	open OUT, ">$outFile" or die "Cannot write to output file $outFile:$!"; 
+	
+	if (($outFile eq $TFBS_file)||($outFile eq $region_file)){
+		# header line
+		my $header = "#ORegAnnoID\trecordType\tTFID\tTFname\tTFsource\tTFversion\t".
+				"geneID\tgeneName\tgeneSource\tgeneVersion\tlociName\tspeciesName\tevidenceSubType\toutcome\tpubmedID\t".
+				"sequence\tseqWithFlank\n";
+		#print
+		if ($outFile){
+			print OUT "; Column names:\n".
+				   ";\n".
+				   ";1 -  ORegAnnoID\n".
+				   ";2 -  recordType\n".
+				   ";3 -  TFID\n".
+				   ";4 -  TFname\n".
+				   ";5 -  TFsource\n".
+				   ";6 -  TFversion\n".
+				   ";7 -  geneID\n".
+				   ";8 -  geneName\n".
+				   ";9 -  geneSource\n".
+				   ";10 - geneVersion\n".
+				   ";11 - lociName\n".
+				   ";12 - speciesName\n".
+				   ";13 - evidenceSubType\n".
+				   ";14 - outcome\n".
+				   ";15 - pubmedID\n".
+				   ";16 - sequence\n".
+				   ";17 - seqWithFlank\n";
+			print OUT $header;
+		}		
+	}
+	
+	elsif (($outFile eq $polymorphism_file)||($outFile eq $haplotype_file)){
+		# header line
+		my $header = "#ORegAnnoID\trecordType\tTFID\tTFname\tTFsource\tTFversion\t".
+				"geneID\tgeneName\tgeneSource\tgeneVersion\tlociName\tspeciesName\tevidenceSubType\toutcome\tpubmedID\t".
+				"referenceSequence\tvariantSequence\n";
+		#print
+		if ($outFile){
+			print OUT "; Column names:\n".
+				   ";\n".
+				   ";1 -  ORegAnnoID\n".
+				   ";2 -  recordType\n".
+				   ";3 -  TFID\n".
+				   ";4 -  TFname\n".
+				   ";5 -  TFsource\n".
+				   ";6 -  TFversion\n".
+				   ";7 -  geneID\n".
+				   ";8 -  geneName\n".
+				   ";9 -  geneSource\n".
+				   ";10 - geneVersion\n".
+				   ";11 - lociName\n".
+				   ";12 - speciesName\n".
+				   ";13 - evidenceSubType\n".
+				   ";14 - outcome\n".
+				   ";15 - pubmedID\n".
+				   ";16 - referenceSequence\n".
+				   ";17 - variantSequence\n";
+			print OUT $header;
+		}		
+	}
+	
+	close OUT;
+}
+
+
+sub print2tab{
+	my $parsedRecords_ref = shift;
+	my %parsedRecords = %$parsedRecords_ref;
+	
+	# record lines
+	foreach my $recordToPrint (keys(%parsedRecords)){
+		my $type = $parsedRecords{$recordToPrint}->[1];
+	
+		# get records with type TRANSCRIPTION FACTOR BINDING SITE
+		if ($type eq "TRANSCRIPTION FACTOR BINDING SITE"){
+			open OUT, ">>$TFBS_file" or die "Cannot write to output file $TFBS_file:$!"; 
+			foreach my $field (@{$parsedRecords{$recordToPrint}}){
+				print OUT $field."\t";
+			}
+			print OUT "\n";
+			close (OUT);
+		}
+		# get records with type Regulatory region
+		if ($type eq "REGULATORY REGION"){
+			open OUT, ">>$region_file" or die "Cannot write to output file $region_file:$!"; 
+			foreach my $field (@{$parsedRecords{$recordToPrint}}){
+				print OUT $field."\t";
+			}
+			print OUT "\n";
+			close (OUT);
+		}
+		# get records with type Regulatory polymorphism
+		if ($type eq "REGULATORY POLYMORPHISM"){
+			open OUT, ">>$polymorphism_file" or die "Cannot write to output file $polymorphism_file:$!"; 
+			foreach my $field (@{$parsedRecords{$recordToPrint}}){
+				print OUT $field."\t";
+			}
+			print OUT "\n";
+			close (OUT);
+		}
+
+	
+		# get records with type Regulatory haplotype
+		if ($type eq "REGULATORY HAPLOTYPE"){
+			open OUT, ">>$haplotype_file" or die "Cannot write to output file $haplotype_file:$!"; 
+			foreach my $field (@{$parsedRecords{$recordToPrint}}){
+				print OUT $field."\t";
+			}
+			print OUT "\n";
+			close (OUT);
+		}
+		
+	}
+}
+
+## print result in feature format
+sub print2feature{
+	my $UCSC_pos = shift;
+	my $UCSC_genome_versions = shift;
+
+	my $out_pos_file = $TFBS_file;
+	$out_pos_file =~ s/.tab$/.gft/;
+	
+	## feat header
+	open OUT, ">$out_pos_file" or die "Cannot write to output file $out_pos_file:$!";
+	
+	print OUT "; Column names:\n".
+				   ";\n".
+				   ";1 -  ORegAnnoID\n".
+				   ";2 -  recordType\n".
+				   ";3 -  name\n".				   
+				   ";4 -  chrom_name\n".
+				   ";5 -  start\n".				   
+				   ";6 -  end\n".
+				   ";7 -  strand\n".
+				   ";8 -  description\n".
+				   ";9 -  genomeDBversion\n".
+				   ";10-  organism\n".
+				   ";11-  TFname\n";
+
+				  
+	print OUT "#ORegAnnoID\trecordType\tname\tchrom_name\tstart\tend\tstrand\tdescription\tgenomeDBversion\torganism\tTFname\n";
+	
+	
+	## calculate positions of the actual site, without flanks	
+	## get ORegAnno IDs, sequence and seqWithFlank and TF names from the XML parsed file
+	my $oregId =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 1`;
+	my $oregSeq =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 16`;
+	my $oregSeqWithFlank =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 17`;
+	my $TFname = `grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 4`;
+	
+	my @oregIds = split (/\n/,$oregId);
+	my @oregSeqs = split (/\n/,$oregSeq);
+	my @oregSeqWithFlanks = split (/\n/,$oregSeqWithFlank);
+	my @TFnames = split (/\n/,$TFname);
+	
+	# create an index to ease and accelerate access to sequences
+	my %invertedIDhash = ();
+	foreach my $i (0..$#oregIds) {
+		$invertedIDhash{$oregIds[$i]} = $i;
+	}
+		
+	## get the positions of sequence of the site, without flanks	 
+	foreach my $positionsToPrint (keys(%$UCSC_pos)){
+		## UCSC seqWithFlank positions	
+		my @position_data = split(/\t/,$UCSC_pos->{$positionsToPrint});
+		
+		my $queryID = $position_data[0];
+		my $index_of_ID = $invertedIDhash{$queryID};
+		my $querySize = $position_data[1];
+		my $strand =$position_data[2];
+		if ($strand =~ /\+/) {
+			$strand = "D";
+		}else {
+			$strand = "R";
+		}
+		my $chromName =$position_data[3];
+		my $flankstart = $position_data[4];
+		my $flankend =$position_data[5];
+		my $species = $position_data[6];
+		my $db_version = $UCSC_genome_versions->{$species};
+		my $TF = $TFnames[$index_of_ID];
+		
+		## get sequence position relative to flanking sequences	
+		my $seq = $oregSeqs[$index_of_ID];
+		my $seqWithFlank  = $oregSeqWithFlanks[$index_of_ID];
+		my $positionInFlank = index($seqWithFlank, $seq);
+		my $TFBS_found = substr($seqWithFlank,$positionInFlank,length($seq));
+		## check that the TFBS sequence is at this position (usually displayed as capital letters)
+		unless ($TFBS_found =~ /^[A-Z]+$/) {
+			print LOG "WARNING: ".$queryID. ": TFBS sequence found in flanking sequence is not in upper case\n"; 
+		}
+				
+		
+		my $seq_start;
+		my $seq_end;
+		
+		## calculate chromosomal positions
+		$seq_start = $flankstart + $positionInFlank;
+		$seq_end = $seq_start + length($seq)-1;
+		
+		## print results
+		print OUT $queryID."\tTFBS\t".$queryID."\t".$chromName."\t"
+		.$seq_start."\t".$seq_end."\t".$strand."\t".$seq."\t".$db_version."\t".$species."\t".$TF."\n";	
+	}
+	close OUT;
+}
+
+# Perl trim_string function to remove whitespace from the start and end of the string
+sub trim_string()
+{
+	my $string = shift;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}
+
+sub modif_name{
+  ### this routine removes from the TFname 
+  ### sapces and brackets
+
+  my $name = shift;
+  $name =~ s/\(//g;
+  $name =~ s/\)//g;
+  $name =~ s/\\/_/g;
+  $name =~ s/\//_/g;
+  $name =~ s/\,/_/g;
+  $name =~ s/\'/_/g;
+  $name =~ s/\s+/_/g if ($name =~ m/\w+\s+\w+/);
+  return $name; 
+}
+
+# retrive fasta sequences from the parsed oreganno file
+sub to_fasta{
+	my $parsed_file = shift @_;
+	my $fasta_file = $parsed_file;
+	$fasta_file =~ s/\.tab/\.fa/;
+	 `grep -v '^;' $parsed_file | grep -v '^#' | cut -f 1,17,12 | awk 'BEGIN { FS = "\\t" } ;{print ">"\$1" ["\$2"]\\n"\$3}' > $fasta_file`;
+}
+
+# get chromosomal positions from UCSC genome browser
+# using BLAT (http://genome.ucsc.edu/cgi-bin/hgBlat)
+sub get_UCSC_positions {
+	
+	my $fasta_file = shift @_;
+	my $UCSC_genome_versions = shift @_;
+	my $species_name_conversion = shift @_;
+	
+	my %UCSC_pos = ();
+	
+	## get Fasta sequences
+	open FASTA, "< $fasta_file"
+		or die "Can't read from $fasta_file : $!";
+	my @fasta_content = <FASTA>;
+	close FASTA;
+	
+	## prepare the query by organism
+	my %queryByOrganism = ();
+	foreach my $species (keys(%$UCSC_genome_versions)) {
+		$queryByOrganism{$species} = "";	
+	}
+	
+	print "Preparing queries for BLAT at UCSC\n" if ($verbose >=2 );
+	while (@fasta_content) {
+		my $header = shift @fasta_content;
+		my $seq = shift @fasta_content;
+		
+		## get ORegAnno species name
+		my $oregSpecies = $header;
+		$oregSpecies =~ s/^.*\[//;
+		$oregSpecies =~ s/].*$//;	
+		$oregSpecies = &trim_string($oregSpecies);
+		
+		## get corresponding UCSC species name
+		my $UCSC_species = $species_name_conversion->{$oregSpecies};
+		next if ($UCSC_species eq "") ;
+
+		## concatenate queries for each organism
+		$queryByOrganism{$UCSC_species} .= $header.$seq;	
+	}	
+
+	## Sending jobs to UCSC server : every 15 seconds, by pack of 
+	## maximum 25 sequences, no more than 5000 hits a day
+	## we will send 24 sequences at a time on the server
+	## each organism is treated independently
+	print "Sending BLAT jobs to UCSC\n" if ($verbose >=2 );
+	print "The waiting time is $wait seconds\n" if ($verbose >=2 );
+	my $pack = 24;
+	foreach my $species (keys(%queryByOrganism)) {
+		print "\t for organism $species\n" if ($verbose >=2 );
+			my $count = 0;
+			my $query;
+			my @queriesToSend = split (/\n/, $queryByOrganism{$species});
+			print "\t @queriesToSend\n" if ($verbose >=3 );
+			
+			while (@queriesToSend) {
+				my $header = shift @queriesToSend;
+				my $seq = shift @queriesToSend;
+				 
+				$query  .= $header."\n".$seq."\n";
+				$count++;
+				
+				## send jobs to UCSC
+				if (&RSAT::util::IsNatural($count/$pack)||(!@queriesToSend)){
+					print "\t\t$count analyzed sequences for $species\n" if ($verbose >=2 );
+	
+					my $ua = LWP::UserAgent->new;	
+					my $url = 'http://genome.ucsc.edu/cgi-bin/hgBlat';
+					
+					sleep $wait; #waiting time to prevent being banished from UCSC server
+					my $response = $ua->post( $url,
+ 	 			  [ 
+ 	 	   		 	'org' => $species, 
+ 	 	   		 	'db' => $UCSC_genome_versions->{$species}, 
+  		    		'type' => 'DNA',
+  	 	   			'sort' => 'query,score',
+  	 	   			'output' => 'hyperlink',
+  	 	   			'userSeq' => $query
+  		 		 ]
+ 				 );
+ 
+  			die "$url error: ", $response->status_line unless $response->is_success;
+  			die "Weird content type at $url -- ", $response->content_type unless $response->content_type eq 'text/html';
+
+
+ 			## get the result table
+ 			my @splitted_response = split (/TT>/,$response->content );
+ 			my $table_result = $splitted_response[1];
+		
+ 			## parse the result table
+ 			my @table_to_parse = split (/\n/,$table_result);
+ 			my %result_fields = ();
+
+ 			## each cell of the array contains 1 line of results
+ 			foreach my $i (0..$#table_to_parse) { 
+ 				next unless ($table_to_parse[$i] =~/^<A\s+HREF/);
+ 				chomp($table_to_parse[$i]);
+ 				my $hitLine = $table_to_parse[$i];
+ 				$hitLine =~ s/^<.*details<\/A>\s*//;
+ 				print "$hitLine\n" if ($verbose >=3 );	
+ 				my @lineContent = split (/\s+/,$hitLine);
+ 				
+				## get query name
+				my $queryName = $lineContent[0];
+		
+				## get query size
+				my $querySize = $lineContent[4];
+				
+				## get hit length (score field, equals hit length WARNING: span field looks weird)
+				my $hitLength = $lineContent[1];
+				$hitLength =~ s/,.*//g;
+				
+				## get hit percentage identity
+				my $identity = $lineContent[5];
+				$identity =~ s/\.\d{1}%//;
+				
+				## get strand
+				my $strand = $lineContent[7];
+				
+				## get chromosome name
+				my $chromName = "chr".$lineContent[6];
+				
+				## get chromosomal start position
+				my $start = $lineContent[8];
+				
+				## get chromosomal end position
+				my $end = $lineContent[9];
+
+				## save current hit
+				if (($querySize == $hitLength)&&($identity == 100)&&(!$UCSC_pos{$queryName})) {
+					$UCSC_pos{$queryName} = $queryName."\t".
+					$querySize."\t".$strand."\t".$chromName."\t".$start."\t".$end."\t".$species;
+					print "=> UCSC flanking positions: $UCSC_pos{$queryName}\n" if ($verbose >=3 );	
+				}
+				## discard current hit if already assigned
+				elsif ($UCSC_pos{$queryName}){next;}
+				## if several hits, and none is of the same size as the query
+				elsif ($table_to_parse[$i+1] !~ /$queryName/) { ## next line is a different TFBS
+					print  LOG "WARNING: ".$queryName." exact match was not found on the UCSC genome\n";
+				}				
+			}			
+			$query ="";
+			}
+		}
+	}
+	return (\%UCSC_pos);
+}
+
+## get the latest database version for each genome of interest
+## by calling the BLAT server and parsing the HTML query page
+sub get_UCSC_databases{
+	my $species_name_conversion = shift @_;
+	my %UCSC_genome_versions = ();
+	
+	my $ua = LWP::UserAgent->new;	
+	my $url = 'http://genome.ucsc.edu/cgi-bin/hgBlat';
+			
+	print "Getting latest genome assemblies name from UCSC\n" if ($verbose >=2 );
+	my @UCSC_species = values %$species_name_conversion;	 
+  	for my $species (@UCSC_species) {	
+  		next if ($species eq "") ;
+		
+		## get the query page that contains the available versions of genome assemblies for the desired organism
+		my $response = $ua->post( $url,
+  				  [ 
+  	   			 'org' => $species, 
+   		 		]
+ 		 		);
+ 
+  		die "$url error: ", $response->status_line unless $response->is_success;
+  		die "Weird content type at $url -- ", $response->content_type unless $response->content_type eq 'text/html';
+		
+		## get the db
+		if ( $response->content =~ /<SELECT NAME=\"db\">\s*<OPTION SELECTED VALUE=\"(\w+)\">/){
+			$UCSC_genome_versions{$species} = $1;
+		}
+			
+  	}
+  	
+  	return (\%UCSC_genome_versions);
+} 
+
+#########################################
+## CLASSES
+#########################################
+
+package ParseFeatures;
+{
+ 
+ sub new {
+  my $class = shift;
+  my $TFBS_gft = shift;
+  my $TFBS_tab = shift;
+  my $species = shift;
+  my $self = {
+	      gft => $TFBS_gft,
+	      oreg_file => $TFBS_tab,
+	     };
+  bless $self, $class;
+}
+
+sub get_gft {
+  my $self = shift;
+  $self->{gft};
+
+}
+
+sub get_oreg_file {
+  my $self = shift;
+  $self->{oreg_file};
+}
+
+
+sub split_features{
+  my $self = shift;
+  my $gft = $self->get_gft;
+  my $tab = $self->get_oreg_file;
+  
+  ###this hash will receive the splited entries from the .gft file
+  ### the keys are OREG_IDS and values an array ref  with the remaining fields.
+
+  my %gft_entries;
+  my @oreg_IDs;   ### OREGANNO IDs for which we have UCSC genome coordinates
+  open GFT, "< $gft"
+    or die "Cann't read from file $gft : $!";
+  while (my $gft_entry = <GFT>) {
+    chomp $gft_entry;
+	
+    ### skip comments (begin by ;) and header (#)
+    next if $gft_entry =~ /^;/;
+    next if $gft_entry =~ /^#/;
+    
+    ### get gft_entries 
+      my @one_line = split ("\t", $gft_entry);
+      my $oreg_ID = shift @one_line;
+      push @oreg_IDs, $oreg_ID;
+      $gft_entries{$oreg_ID} = \@one_line;
+      
+      &RSAT::message::Debug("GFT parsing ID:", $oreg_ID ,join (' ', @one_line)) if ($verbose >= 7);
+  }
+  close GFT;
+  
+  ###this hash will receive the splited entries from the .tab file
+  ### the keys are OREG_IDS and values an array ref with the remaining fields.
+
+  open TAB, "< $tab"
+    or die "Cann't read from file $tab : $!";
+  
+  my %whole_tab;
+  while (my $tab_entry = <TAB>) {
+    chomp $tab_entry;
+    next if $tab_entry =~ /^;/;
+    next if $tab_entry =~ /^#/;
+    my @whole_line = split ("\t", $tab_entry);
+    my $ID = shift @whole_line;
+    $whole_tab{$ID} = \@whole_line;
+    
+    &RSAT::message::Debug("TAB parsing ID:", $ID ,join (' ', @whole_line)) if ($verbose >= 7);
+  }
+  close TAB;
+
+ ## merge data from GFT and TAB files
+  while (my ($oreg_ID, $fields) = each %gft_entries) {
+    push (@{$fields},  ${$whole_tab{$oreg_ID}}[1],${$whole_tab{$oreg_ID}}[5],${$whole_tab{$oreg_ID}}[6]);
+    &RSAT::message::Debug("Merged INFO ID:", $oreg_ID,join (' ', @{$fields})  ) if ($verbose >= 5);
+  }
+  return \%gft_entries;
+}
+
+sub TFBS_fasta {
+  my $self = shift;
+  my $gft_entries = shift;
+  my %gft_extended = %$gft_entries;
+	
+	&RSAT::message::TimeWarn("Task: tfbs_fasta") if ($verbose >= 1);
+	
+	## output directory
+	my $seq_dir = "TFBS_sequences";
+  if ($seq_dir) {
+    unlink glob "$seq_dir/*";
+    rmdir $seq_dir;
+  }
+  mkdir $seq_dir;
+   
+	## get data for FASTA format
+  while (my ($ID,$fields) = each %gft_extended) {
+    my @gft_fields = @$fields;
+
+    my ($type, $oregID, $chromosome, $start, $end, $strand, $sequence, 
+	$genomeVersion, $species, $factor_name, $factor_id, $gene_id, $gene_name) = @gft_fields;
+	 
+    ### file for the target BS sequence in fasta these sequence will be used to build
+    ### matrices by the program MEME --> that's why we only keep sequences with size >= 6
+    my $modifiedTF = $gft_fields[9];
+    my $regulon_BS_file = $seq_dir."/".$modifiedTF."_factor_binding_sites.fa";
+    open BS_SEQ, ">> $regulon_BS_file"
+      or die "Can't write to file $regulon_BS_file : $!";
+    
+    my $fasta_seq;
+    if (length($sequence) >= 6) {
+      my $fasta_ID = ">".$oregID." ".$factor_name."_".$chromosome."_".
+	$start."_".$end."_".$strand."\n";
+      $fasta_seq = $fasta_ID.$sequence."\n";
+      &RSAT::message::Debug("Fasta ID:", $fasta_ID ,"SEQ:",$sequence) if ($verbose >= 5);
+      print BS_SEQ $fasta_seq;
+    }
+    close BS_SEQ;
+  }
+}
+
+ 
+sub target_regions {
+  my $self = shift;
+  my $gft_entries = shift;
+  my %gft_extended = %$gft_entries;
+	
+  &RSAT::message::TimeWarn("Task: target_region") if ($verbose >= 1);
+
+  ###################
+  ## directories
+  my $target_regions_dir = "target_regions";
+  if ($target_regions_dir) {
+    unlink glob "$target_regions_dir/*";
+    rmdir $target_regions_dir;
+  }
+  mkdir $target_regions_dir;
+  
+  ## one dir per organism
+  ## get the complete list of species
+  ## get a hash architecture to ease data manipulation
+   my %one_factor_one_gene = ();
+   
+   while (my ($ID,$fields) = each %gft_extended) {
+    my @gft_fields = @$fields;
+    my ($type, $oregID, $chromosome, $start, $end, $strand, $sequence, 
+	$genomeVersion, $species, $factor_name, $factor_id, $gene_id, $gene_name) = @gft_fields;
+	$one_factor_one_gene{$species}{$factor_name}{$gene_name}{$oregID}= \@gft_fields;
+   }
+   &RSAT::message::Debug("List of species:", join (' ', keys(%one_factor_one_gene))) if ($verbose >= 10);
+   
+   ## species directories
+   foreach my $species_name (keys(%one_factor_one_gene)){
+   	my $species_name_dir = $target_regions_dir."/".$species_name;
+  	if ($species_name_dir) {
+    	unlink glob "$species_name_dir/*";
+    	rmdir $species_name_dir;
+  	}
+  	mkdir $species_name_dir;
+   }
+   
+   ##########################################################################
+   ## get region of interest => for 1 organism, 1 target gene and one factor
+   ## (TO DO : extend to multiple factors)
+   
+   ## for each organism, get the target region of each factor
+   ## Export in gft format
+   foreach my $species_name (keys(%one_factor_one_gene)){
+   	my @species_gft_lines = ();
+   	my @species_ft_rel_pos_lines = ();
+   	
+   	## calculate target region position
+   	foreach my $factor_name (keys(%{$one_factor_one_gene{$species_name}})){
+   		foreach my $gene_name (keys(%{$one_factor_one_gene{$species_name}{$factor_name}})){
+   			my @oregIDs = keys(%{$one_factor_one_gene{$species_name}{$factor_name}{$gene_name}});
+   			&RSAT::message::Debug($species_name,$factor_name,$gene_name) if ($verbose >= 3);
+   			&RSAT::message::Debug("\t","TFBS", join(' ',@oregIDs)) if ($verbose >= 5);
+   			
+   			my @starts;
+ 			my @ends;
+ 			my $type;
+ 			my $chromosome;
+ 			for my $oregID (@oregIDs) {
+ 				my @gft_fields = @{$one_factor_one_gene{$species_name}{$factor_name}{$gene_name}{$oregID}};
+ 				$chromosome = $gft_fields[2];
+ 				my $feat_start = $gft_fields[3];
+ 				my $feat_end = $gft_fields[4];
+ 				
+ 				## reorder if necessary
+				if ($feat_start > $feat_end) {
+					my $tmp = $feat_start;
+					$feat_start = $feat_end;
+					$feat_end = $tmp;
+				}
+
+		    	push @starts, $feat_start;
+				push @ends, $feat_end ;
+    		}
+   			#&RSAT::message::Debug("starts",join(' ',@starts), "ends",join(' ',@ends)) if ($verbose >= 10);
+  
+		    ### retrieving min and maximum position in the region 
+			### covered by the binding sites
+			my $min_start = &minimum(@starts);
+			my $max_end = &maximum(@ends);
+			my $size = 1+($max_end - $min_start);
+			&RSAT::message::Debug("\t","target region: start",$min_start, "end",$max_end) if ($verbose >= 5);
+			
+			## Add sequence flank of both extremities if necessary
+			if ($add_length) {
+				$min_start -= $add_length;
+				$max_end += $add_length; 
+				$size = 1+($max_end - $min_start);
+				&RSAT::message::Debug("\t","+/- $add_length bp","\n\t\t", "target region: start",$min_start, "end",$max_end) if ($verbose >= 3);
+			}
+			
+			### generate the gft file with absolute chromosomal region
+			### the target region is considered by default on the Direct strand.
+		    my $gft_line = join ("\t",$gene_name,"seq_region",$factor_name,$chromosome,
+		    	$min_start,$max_end,"D",$size,$add_length)."\n";
+			push @species_gft_lines, $gft_line;
+		    
+		    
+		    ##########################################################################
+   			## Relative position of TFBS on the target region    
+		    for my $oregID (sort(@oregIDs)) {
+ 				my @gft_fields = @{$one_factor_one_gene{$species_name}{$factor_name}{$gene_name}{$oregID}};
+				
+				 my ($type, $oregID, $chromosome, $start, $end, $strand, $sequence, 
+						$genomeVersion, $species, $factor_name, $factor_id, $gene_id, $gene_name) = @gft_fields;
+				
+				## 1_ get old abs positions
+ 				my $feat_start_abs = $start;
+ 				my $feat_end_abs = $end;
+ 				
+ 				## reorder if necessary
+				if ($feat_start_abs > $feat_end_abs) {
+					my $tmp = $feat_start_abs;
+					$feat_start_abs = $feat_end_abs;
+					$feat_end_abs = $tmp;
+				}
+				
+				## 2- new relative postisions
+				my $feat_start_rel = ($feat_start_abs - $min_start) + 1 ;
+				my $feat_end_rel = ($feat_end_abs - $min_start) + 1; 
+							
+				&RSAT::message::Debug("Feature",$oregID,"start_abs",$feat_start_abs, "start_rel",$feat_start_rel) if ($verbose >= 5);
+				&RSAT::message::Debug("Feature",$oregID,"end_abs",$feat_end_abs, "end_rel",$feat_end_rel) if ($verbose >= 5);
+				
+				### generate the .ft file with TFBS relative positions on target region
+				my $ft_line = join ("\t",$gene_name,$factor_name,$oregID,$strand,
+		    	$feat_start_rel,$feat_end_rel,$sequence,$species)."\n";
+				push @species_ft_rel_pos_lines, $ft_line;
+		    }
+	
+	
+   		}
+   	}
+   	
+   	## output GFT file for target region
+   	my $target_region_file = $target_regions_dir."/".$species_name."/".$species_name."_target_regions_".$add_length."bp.gft";
+    open GFT_TARGET, ">> $target_region_file"
+      or die "Can't write to file $target_region_file : $!";
+    ## header
+    my $target_region_file_header = "#GeneName\tType\tTFname\tchrom_name\tstart\tend\tstrand\tregion_length\tflank_length\n";
+    print GFT_TARGET $target_region_file_header;
+    foreach my $gft_line (@species_gft_lines) {
+    	print GFT_TARGET $gft_line;
+    }
+  	close GFT_TARGET;
+  	
+  	## output FT file for relative position of TFBS on target region
+   	my $rel_pos_file = $target_regions_dir."/".$species_name."/".$species_name."_TFBS_relative_positions_".$add_length."bp.ft";
+    open FT_POS, ">> $rel_pos_file"
+      or die "Can't write to file $rel_pos_file : $!";
+    ## header #seq_name	TFname	ORegAnnoID	strand	start	end	description	speciesName
+    my $rel_pos_file_header = "#seq_name\tTFname\tID\tstrand\tstart\tend\tdescription\tspeciesName\n";
+    print FT_POS $rel_pos_file_header;
+    foreach my $ft_line (@species_ft_rel_pos_lines) {
+    	print FT_POS $ft_line;
+    }
+  	close FT_POS;
+   	
+   }
+   
+   		    
+   
+
+
+
+
+} 
+
+sub maximum {
+  my @array = @_;
+  my $max_so_far = shift @array;
+  for my $next_nb (@array) {
+    if ($next_nb > $max_so_far) {
+      $max_so_far = $next_nb;
+    }
+  }
+  return $max_so_far;
+}
+
+sub minimum {
+  my @array = @_;
+  my $min_so_far = shift @array;
+  for my $next_nb (@array) {
+    if ($next_nb < $min_so_far) {
+      $min_so_far = $next_nb;
+    }
+  }
+  return $min_so_far;
+}
+ 1;
+ }
+

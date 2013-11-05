@@ -1,0 +1,229 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	replace-string
+
+        v1.0, 1997 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        replace-string [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+        looks for all occurrences of a query string within the input 
+        file and replaces them by another string.
+
+CATEGORY
+	util
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		The asterisk (*) can be used to specify multiple files,
+		but in this case the argument MUST be quoted:
+			-i '*.data'
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+        -io iofile
+                The same file is used as input and output file.
+	-query query_string
+                The string which will be replaced
+	-queryf query_file
+		the query is the whole content of the file query_file.
+        -by replace_string
+	        The string by which the query string will be replaced.
+	-byf replace_file
+		The file containing the text by which the query will
+		be replaced (mutually exclusive with -by).
+	-ci	case insensitive search
+
+INPUT FORMAT
+	Any text file.
+	
+OUTPUT FORMAT
+	The output file is a copy of the input file, with all occurrences
+        of the query string replaced by the replace string. 
+	
+EXAMPLES
+       replace-string -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+replace-string options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-query  query string
+-queryf	query file
+-by     replace string
+-byf	replace file
+-ci	case insensitive search
+End_short_help
+	close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+
+    } elsif ($ARGV[$a] eq "-i") {
+	$input_query = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-o") {
+	$output_query = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-io") {
+	$input_query = $ARGV[$a+1];
+	$output_query = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-query") {
+	$query_string = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-queryf") {
+	$query_string = `cat $ARGV[$a+1]`;
+	chomp($query_string);
+
+    } elsif ($ARGV[$a] eq "-by") {
+	$replace_string = $ARGV[$a+1];
+	$replace_string_entered = 1;
+
+    } elsif ($ARGV[$a] eq "-byf") {
+	$replace_string = `cat $ARGV[$a+1]`;
+	$replace_string_entered = 1;
+
+    } elsif ($ARGV[$a] eq "-ci") {
+	$case_insensitive = 1;
+
+    }
+}
+
+
+#### check argument values ####
+if ($query_string eq "") {
+  print "Enter your query string followed by ^D (or type ^C to cancel)\n";
+  while (<STDIN>) {
+    $query_string .= $_;
+    $query_string =~ chomp($query_string);
+  }
+}
+
+unless ($replace_string_entered) {
+  print "Enter your replace string followed by ^D (or type ^C to cancel)\n";
+  while (<STDIN>) {
+    $replace_string .= $_;
+    $replace_string =~ chomp($replace_string);
+  }
+}
+
+if ($verbose) {
+  print STDERR ";input	$input_query\n" unless ($input_query eq "");
+  print STDERR ";ouput	$output_query\n" unless ($output_query eq "");  
+  print STDERR ";replace	$query_string\n";
+  print STDERR ";by	$replace_string\n";
+}
+
+###### execute the command #########
+if ($input_query eq "") {
+    @in = ("");
+} else {
+    @in = glob($input_query);
+}
+
+foreach $inputfile (@in) {
+  my $modif = 0;
+  
+  if (-d $inputfile) {
+    print STDERR "$inputfile is a directory\n" if ($verbose);
+    next;
+  }
+  next if (-d $outputfile);
+  
+  
+  ### read input file and replace
+  if (($inputfile eq "") || (-r $inputfile)) {
+    $input = `cat $inputfile`;
+    if (($case_insensitive) &&
+	($input =~ s/$query_string/$replace_string/gmi)) {
+      $modif = 1;
+    } elsif ($input =~ s/$query_string/$replace_string/gm) {
+      $modif = 1;
+    }
+    
+    unless ($modif) {
+      #print STDERR ";input file:\t$inputfile\tno matches\n" if (($verbose) && ($inputfile));
+      next;
+    }
+
+    print STDERR ";input file:\t$inputfile\tmatches found\n" if (($verbose) && ($inputfile));
+    
+    ### write output
+    if ($output_query eq $input_query) {
+      $outputfile = $inputfile;
+    } else {
+      $outputfile = $output_query;
+    }
+    if ($out = &OpenOutputFile($outputfile)) {
+      print  $out $input;
+      close $out unless $outputfile eq "";
+    } else {
+      print STDERR "Error: Cannot open file $outputfile for writing\n";
+    }
+  } else {
+    print STDERR "Error: Cannot open file $inputfile for reading\n";
+  }
+}
+
+
+#### verbose ####
+if ($verbose) {
+  print STDERR ";replace-string result\n";
+  if ($inputfile ne "") {
+    print STDERR ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print STDERR ";Output file	$outputfile\n";
+  }
+}
+
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+

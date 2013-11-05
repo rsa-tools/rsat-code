@@ -1,0 +1,463 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: parse-go,v 1.10 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+#use strict;
+
+
+=pod
+
+=head1 NAME
+
+parse-go
+
+=head1 DESCRIPTION
+
+Parse Gene Ontology (GO) files, in order to convert them into
+tab-delimited files.
+
+The Gene Ontology defines a controlled vocabulary to describe
+biological processes, molecular functions and cellular locations, as
+well as a hierarchical classification between these terms (in the form
+of a directed acyclici graph).
+
+Gene Ontology annotations can be obtained from the GO web site
+(I<http://www.geneontology.org/GO.downloads.shtml>). They cay be
+downloaded with a make script with the following commands.
+
+    cd ${RSAT}
+    make -f makefiles/downloads.mk go
+
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+parse-go [-i inputfile] [-o outputdir] [-v]
+
+=head1 INPUT FORMAT
+
+The "obo" format available on the the GO web site. 
+
+=head1 OUTPUT FORMAT
+
+A series of tab-delimited files. 
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+	push (@INC, "$`parsers/");
+    }
+}
+require "RSA.lib";
+use RSAT::util;
+use RSAT::Graph;
+push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
+
+
+
+
+################################################################
+#### GO term
+package GO::Term;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "go:";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     name=>"ARRAY",
+			     namespace=>"SCALAR",
+			     def=>"SCALAR",
+			     is_obsolete=>"SCALAR",
+			     name=>"SCALAR",
+
+			     is_a=>"ARRAY",
+			     is_a_expanded=>"ARRAY",
+			     part_of=>"ARRAY",
+			     relationship=>"ARRAY",
+			     subset=>"ARRAY",
+			     subsetdef=>"ARRAY",
+			     alt_id=>"ARRAY",
+			     comment=>"ARRAY",
+			     remark=>"ARRAY",
+			     exact_synonym=>"ARRAY",
+			     narrow_synonym=>"ARRAY",
+			     related_synonym=>"ARRAY",
+			     broad_synonym=>"ARRAY",
+			     );
+}
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+
+    ################################################################
+    ### Output directory
+    unless (defined($dir{output})) {
+      $dir{output} = 'parsed_go';
+    }
+    &RSAT::util::CheckOutDir($dir{output});
+
+    ### open error report file
+    $out_file{error} = "$dir{output}/go_parsing_errors.txt";    
+    open ERR, ">$out_file{error}" 
+	|| die "Error: cannot write error file $out_file{error}\n";
+
+    ### open log file
+    $out_file{log} = "$dir{output}/go_parsing_log.txt";   
+    open LOG, ">$out_file{log}" 
+	|| die "Error: cannot write log file $out_file{log}\n";
+
+    $go_terms = classes::ClassFactory->new_class(object_type=>"GO::Term", prefix=>"ft_");
+    $go_terms->set_attribute_header("xrefs", join("\t", "external_db", "external_id"));
+    $go_terms->set_attribute_header("is_a", join("\t", "parent_id", "parent_name"));
+
+    ################################################################
+    ## Read input
+    ($main::in) = &OpenInputFile($main::infile{input});
+    my $term;
+    my $l=0;
+    my $id;
+    while (<$main::in>) {
+      $l++;
+      chomp();
+      next unless (/\S/);
+      if (/^\[Term\]/) {
+	$term = $go_terms->new_object();
+	&RSAT::message::Info("Creating new GO term") if ($main::verbose >= 3);
+      } elsif (/^\[/) {
+	$term = "";
+      } elsif (!($term)) {
+	print LOG $_, "\n";
+	&RSAT::message::Warning("Skipping header line", $l, $_) if ($main::verbose >= 2);
+	next;
+      } elsif (/^id:\s+(\S+)/) {
+	$id = $1;
+	$term->force_attribute("id", $id);
+	&RSAT::message::Info("Current GO term ID", $id) if ($main::verbose >= 3);
+      } elsif (/^(\S+):\s+(\S.*)$/) {
+	my $key = $1;
+	my $value = $2;
+
+	## Clean the comment from the is_a field
+	if ($key eq "is_a") {
+	  if ($value =~ /(\S)+ ! (.*)/) {
+	    my ($parent_id, $parent_name) = split ' ! ', $value;
+	    $term->push_expanded_attribute('is_a', $parent_id, $parent_name);
+	    next;
+	  }
+	}
+
+	## Create a specific attribute for the relationship "part of"
+	if (($key eq 'relationship') && ($value =~ /part_of (\S+)/)) {
+	  $term->push_attribute("part_of", $1);
+	}
+
+	## Add the new attribute value to the object
+	$term->new_attribute_value($key, $value);
+	&RSAT::message::Info("New attribute value", $id, $key, $value) if ($main::verbose >= 4);
+      } else {
+	&RSAT::message::Warning("Skipping line", $l, $_) if ($main::verbose >= 0);
+      }
+    }
+    close $main::in if ($main::infile{input});
+
+    ################################################################
+    ## Post-processing of the raw parsing
+    &RSAT::message::TimeWarn("Extracting cross-references from the definitions") if ($main::verbose >= 1);
+    foreach my $term ($go_terms->get_objects()) {
+      my $id = $term->get_attribute("id");
+
+      ## Extract cross-references from the definition (!)
+      my $def = $term->get_attribute("def");
+      unless ($def) {
+	&RSAT::message::Warning("No definition for term", $id, $term->get_attribute("name")) if ($main::verbose >= 0);
+      }
+      if ($def =~ /\[(.*)\]/) {
+	my $cross_refs = $1;
+	my @cross_refs = split(/,\s*/, $cross_refs);
+	foreach my $xref (@cross_refs) {
+	  if ($xref =~/(.*):(.*)/) {
+	    my $xref_db = $1;
+	    my $xref_id = $2;
+
+	    ## Special treatment for web links
+	    if ((lc($xref_db) eq 'http')  || (lc($xref_db) eq "ftp")) {
+	      $xref_id = $xref;
+	    }
+	    $term->push_expanded_attribute("xrefs", $xref_db, $xref_id);
+	  }
+	}
+	&RSAT::message::Info("Cross-references", $id, scalar(@cross_refs), $cross_refs) if ($main::verbose >= 3);
+      }
+
+
+    }
+
+    ################################################################
+    ## Expand is_a relationship by indicating the relationhsip between
+    ## each node and all of its ancestors.
+
+    my $graph = new RSAT::Graph();
+
+    ## Instantiate one node for each term
+    foreach my $term ($go_terms->get_objects()) {
+      my $id = $term->get_attribute("id");
+      $node = $graph->create_node();
+      $node->force_attribute("id", $id);
+      $node->force_attribute("term", $term);
+      $node->set_attribute("label", $term->get_attribute("name"));
+    }
+
+    ## Instantiate arc for each  parent -> child relationship
+    foreach my $child_node ($graph->get_nodes()) {
+      my $child_id = $child_node->get_attribute("id");
+      my $child_term = $go_terms->get_object($child_id);
+      my $child_label = $child_node->get_attribute("label");
+      unless ($child_term) {
+	&RSAT::error::FatalError("Cannot identify term for node", $child_id, $child_label);
+      }
+
+      foreach my $parent_id ($child_term->get_attribute("is_a")) {
+	my $parent_term = $go_terms->get_object($parent_id);
+	unless ($parent_term) {
+	  &RSAT::error::FatalError("Cannot identify parent term", $parent_id, "for node", $child_id, $child_label);
+	}
+	my $parent_node = $graph->get_object($parent_id);
+	unless ($parent_node) {
+	  &RSAT::error::FatalError("Cannot identify node for term", $parent_id);
+	}
+	$graph->create_arc($parent_node, $child_node);
+      }
+    }
+
+    ## Identify the most ancestral nodes (those having no parents)
+    foreach my $term ($go_terms->get_objects()) {
+      my @children = $term->get_attribute();
+    }
+
+    ################################################################
+    #### Print verbose
+    &Verbose() if ($main::verbose);
+
+
+    ################################################################
+    ###### print output
+    $go_terms->dump_tables();
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+
+    ################################################################
+    ###### close output stream
+    close LOG;
+    close ERR;
+    &RSAT::message::Info("Output directory", $dir{output});
+    &RSAT::message::Info("Log file", $out_file{log});
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+The input file should be a .obo file, as those available on the GO web
+site.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o output directory>
+
+This directory will contain the parsed files.
+
+If no output directory is specified, the results are stored in a
+directory named "parsed_go".
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::dir{output} = shift(@arguments);
+	    ## Input file
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; parse-go ";
+    &PrintArguments($main::out);
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    print $main::out "; Output dir\t",$dir{output},"\n";
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+
+=head2 parse-genbank
+
+For some organisms (but unfortunately not all), the assignation of
+genes to GI classes is included in the genome annotations distributed
+by the NCBI (I<ftp://ftp.ncbi.nih.gov/genomes/>). The program
+B<parse-genbank> returns these assignations in a file cds_go.tab,
+where the second column gives the IDs of the GO classes. The program
+B<parse-go> provides the names of the GO classes, and their
+relationships (inclusion relationships).
+
+=head2 compare-classes
+
+This program can typically be used to compare clusters of genes
+(e.g. obtained from microarrays, or because they share common
+regulatory elements) with each GO class.
+
+
+=cut

@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+'''NAME
+        %(progname)s
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+DESCRIPTION
+        Generates random sites according to a given motif model (PSSM)
+
+CATEGORY
+        PSSM
+        motifs
+
+USAGE        
+        %(usage)s
+
+ARGUMENTS
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit
+    -v #, --verbosity=#   set verbosity to level #
+                              0 no verbosity
+                              1 max verbosity
+    -o #, --output=#      output results to #
+                          if not specified, the standard output is used
+    -m #, --motif=#       read motif(s) from #
+                          if not specified, the standard input is used
+    -n #                  number of sites to generate
+
+SEE ALSO
+        implant-sites
+        random-motif
+
+'''
+
+# ===========================================================================
+# =                            imports
+# ===========================================================================
+import sys
+import os
+import bisect
+import random
+import optparse
+from random import choice, randint, shuffle
+
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+import matrix
+
+# ===========================================================================
+# =                            constatns
+# ===========================================================================
+LETTER2J = {'A' : 0, 'C' : 1, 'G' : 2, 'T' : 3, 'N' : 4}
+BASES = ['A', 'C', 'G', 'T']
+
+# ===========================================================================
+# =                            functions
+# ===========================================================================
+def main(options, args):
+    if options.verbosity >= 1:
+        options.output.write('; %s\n'   % (' '.join(sys.argv)))
+
+    try:
+        if type(options.motif) is str:
+            f = open(options.motif)
+        else:
+            f = options.motif
+        motifs = matrix.tab2matrices(f)
+    except:
+        raise
+        sys.stderr.write('Error: Can not read motif(s)\n')
+        sys.exit(0)
+
+    if type(options.output) is str:
+        options.output = open(options.output, 'w')
+
+    for i in range(len(motifs)):
+        generator = matrix.random_site_generator(motifs[i])
+        data = []
+        if (options.verbosity >= 1):
+            data += ['; motif.file                   %s\t'   % options.motif]
+            data += ['; motif.id                     %d\t'   % (i+1)]
+            data += ['; motif.length                 %d\t'   % len(motifs[i])]
+            data += ['; number.of.sites              %d\t'   % options.sites]
+        for n in range(options.sites):
+            data += ["> motif%d_site%d" % (i + 1, n + 1)]
+            data += [ generator.next() ]
+        data += [ '' ]
+        options.output.write('\n'.join(data))
+
+# ===========================================================================
+# =                            main
+# ===========================================================================
+if __name__ == '__main__':
+    USAGE = '''%s -m motif -n numberofsites [-h]'''
+    VERSION = '2009.11'
+    PROG_NAME = os.path.basename(sys.argv[0])
+    parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
+    parser.add_option("-v", "--verbosity", action="store", dest="verbosity", default=0)
+    parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
+    parser.add_option("-m", "--motif", action="store", dest="motif", default=sys.stdin, metavar="#")
+    parser.add_option("-n", "--sites", action="store", dest="sites", type="int", metavar="#")
+    parser.add_option("-h", "--help", action="store_true", dest="help")
+    parser.add_option("--debug", action="store_true", dest="debug")      
+
+    (options, args) = parser.parse_args()
+
+    if options.help:
+        doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
+        sys.stdout.write(doc)
+        #pager(doc)
+        sys.exit(0)
+
+    if not options.sites:
+        parser.print_usage()
+        sys.exit()
+    try:
+        main(options, args)
+    except:
+        if options.debug:
+            raise
+        else:
+            sys.stderr.write('Error while running\n')
+

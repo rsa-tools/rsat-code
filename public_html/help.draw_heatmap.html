@@ -1,0 +1,122 @@
+<html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about draw-heatmap
+</h2>
+<p> This manual page is provisionary. It is a simple copy / paste of the manual of the command line tool.</p>
+</center>
+
+<pre>
+NAME
+    draw-heatmap
+
+VERSION
+    $program_version
+
+DESCRIPTION
+    Draw a heatmap from a table
+
+AUTHORS
+    Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+    With the help of Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be> for
+    Chaos representation
+
+CATEGORY
+    util
+
+USAGE
+    draw-heatmap [-i inputfile] -o outputfile [-v #] [-chaos] [...]
+    -out_format [png|jpeg]
+
+INPUT FORMAT
+    A tab delimited table.
+
+    It may contain a header (starting with a '#' symbol). The cells nlt
+    containing real values will not be taken into account.
+
+OUTPUT FORMAT
+    A heatmap in the specified format.
+
+OPTIONS
+    -v #
+        Level of verbosity (detail in the warning messages during execution)
+
+    -h
+        Display full help message
+
+    -help
+        Same as -h
+
+    -i inputfile
+        Input file name. This option is mandatory.
+
+    -o outputfile
+        Name of the output file. This option is mandatory.
+
+    -html html_map_file
+        If a HTML map file is defined, draw-heatmap then produces a HTML
+        file that loads the HEATMAP. Moreover, each of the cell is defined
+        so that when the mouse is over in a web browser, the user get the
+        name of row, of the column and the value of the cell. For CHAOS game
+        representation, the word corresponding to the cell and its
+        associated value are given.
+
+    -rownames
+        Use this option if the first column contain the row names.
+
+    -no_text
+        Using this option, the values are not written in the cells of the
+        heatmap.
+
+    -out_format output_format
+        Output format. Supported: png,jpeg
+
+    -gradient
+        Color of the intensity gradient of the heatmap. Default is grey.
+        Supported : green, blue, red, fire, grey.
+
+    -col_width #
+        Width of the columns (in pixel).
+
+        If the row height is to small, the label of the heatmap will not be
+        indicated. (Default : 50 px)
+
+    -row_height #
+        Height of the rows (in pixel).
+
+        If the row height is to small, the label of the heatmap will not be
+        indicated. (Default : 30 px)
+
+    -min #
+        Minimal value of the heatmap. By default, this value is the minimal
+        value of the input file. If the specified value is larger than the
+        minimal value of the heatmap, then the minimal value of the heatmap
+        will be used as minimal value.
+
+    -max #
+        Maximal value of the heatmap. By default, this value is the maximal
+        value of the input file. If the specified value is smaller than the
+        maximal value of the heatmap, then the maximal value of the heatmap
+        will be used as maximal value.
+
+    -lines
+        Add black vertical and horizontal separations lines between the
+        cells of the heatmap
+
+
+
+</pre>
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+</h4>
+
+</blockquote>
+</body>
+</html>

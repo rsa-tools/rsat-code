@@ -1,0 +1,486 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+## Initialise parameters
+local $start_time = &RSAT::util::StartScript();
+local $null = $default_null = "<NULL>"; 
+local $default_ic = 1;
+
+local %supported_export_format = (profiles=>1,
+				  classes=>1
+				 );
+local $supported_export_formats = join ",", sort keys %supported_export_format;
+local $export_format = "profiles";
+
+%subst_header = ();
+
+&ReadArguments();
+
+################################################################
+## read file list
+if ($filelist) {
+  my ($in) = &OpenInputFile($filelist);
+  while (<$in>) {
+    next if /^;/;		## Skip comment lines
+    next if /^\#/;		## Skip comment lines
+    next unless /\S/;		## Skip empty lines
+    chomp();			## remove carriage return
+    my ($file) = split (/\s/, $_);
+    push @input_files, $file;
+    &RSAT::message::Info(join("\t", "Added file", scalar(@input_files), $file)) if ($main::verbose >= 3); 
+  }
+  close $in if ($filelist);
+}
+
+&RSAT::message::Info(join ("\n\t", "Input files", @input_files)) if ($main::verbose >= 2);
+
+################################################################
+## Read input files
+$last_col;
+foreach $f (0..$#input_files) {
+  ## select the input file
+  $inputfile = $input_files[$f];
+
+  ## identifier column for the current file
+  unless (defined ($ic[$f])) {
+    $ic[$f] = $default_ic;
+  }
+  my $ii = $ic[$f] - 1;		### identifier column index
+
+  #### score column for the current file
+  if ((defined($default_sc)) && !(defined ($sc[$f]))) {
+    $sc[$f] = $default_sc;
+  }
+
+  ($in, $input_dir) = &OpenInputFile($inputfile);
+  $max_fields{$f} = 0;
+  while (<$in>) {
+    next unless (/\S/);		## Skip empty lines
+    next if (/^\#/);		## Skip header or comment lines
+    next if (/^;/);		## Skip comment lines
+    chomp;
+    @fields = split "\t";
+    if (defined($sc[$f])) {
+      $max_fields{$f}= 1;
+    } else {
+      $max_fields{$f} = &max($max_fields{$f},$#fields);
+    }
+
+    $id =  &trim($fields[$ii]);
+    ### By default, the comparison is case-insensitive, but the ID
+    ### case is maintained in the output. This can however b
+    ### modified with the options '-lc' (IDs converted to
+    ### lowercases) and '-uc' (IDs converted to uppercases).
+    if ($to_lower) {
+      $id = lc($id);
+    } elsif ($to_lower) {
+      $id = uc($id);
+    }
+
+    ## Reformat numeric IDs to avoid problems if they have different
+    ## numbers of digits in the different files
+    if ($numeric_IDs) {
+      $id = sprintf("%g", $id);
+    }
+
+    $key = lc($id);
+    $id{$key} = $id;
+    if (defined($sc[$f])) {
+      $col = $last_col + 1;
+      $score{$key}{$col} = $fields[$sc[$f]-1];
+    } else {
+      for $c (1..$#fields) {
+	$col = $last_col + $c;
+	$score{$key}{$col} = $fields[$c];
+	#	push @{$scores{$key}{$col}}, $fields[$c];
+      }
+    }
+  }
+  close $in;
+  $last_col += $max_fields{$f};
+}
+
+## Open output file
+$out = &OpenOutputFile($outputfile);
+
+
+## Verbose
+if ($main::verbose >= 1) {
+  print $out "; compare-scores";
+  &PrintArguments($out);
+
+  print $out ";Input files :\n";
+  print $out join( "\t", ";", "nb", "id_col", "sc_col", "file_name"), "\n";
+  for $f (0..$#input_files) {
+    print $out join( "\t", ";", $f+1, $ic[$f], $sc[$f], $input_files[$f]), "\n";
+  }
+  if ($outputfile) {
+    print $out ";Output file	$outputfile\n";
+  }
+}
+
+
+################################################################
+## Print result
+my @sorted_keys = ();
+if ($numeric_IDs) {
+  if ($decreasing) {
+    @sorted_keys = sort {$b <=> $a } keys %id;
+  } else {
+    @sorted_keys = sort {$a <=> $b } keys %id;
+  }
+} else {
+  @sorted_keys = sort keys %id;
+}
+
+## Calculate header names
+my @column_names = ();
+my $col_nb = 0;
+foreach $f (0..$#input_files) {
+  foreach $c (1..$max_fields{$f}) {
+    $col_nb++;
+    my $column_name = $input_files[$f];
+
+    ## Basename
+    if ($basename) {
+      $column_name = &ShortFileName($column_name);
+    }
+
+    ## Suppress substrings
+    for my $sub (@suppress) {
+      $column_name =~ s/$sub//g;
+    }
+
+    ## Substitute substrings
+    for my $old_string (keys(%subst_header)) {
+      my $new_string = $subst_header{$old_string};
+      $column_name =~ s/$old_string/$new_string/g;
+    }
+
+    ## Add column number
+    if ($max_fields[$f] > 1 ) {
+      $column_name .=  "_$c";
+    }
+
+    $column_names[$col_nb] = $column_name;
+    #	&RSAT::message::Debug($column_name) if ($main::verbose >= 10);
+  }
+}
+
+################################################################
+## Print result  as score profiles
+if ($export_format eq "profiles") {
+  #### print header line
+  print $out "#key";
+  $col_nb = 0;
+  foreach $f (0..$#input_files) {
+    foreach $c (1..$max_fields{$f}) {
+      $col_nb++;
+      my $column_name = $column_names[$col_nb];
+      print $out "\t", $column_name;
+    }
+  }
+  print $out "\n";
+
+  ## Print the score profiles
+  foreach $key (@sorted_keys) {
+    print $out $id{$key};
+    for $f (1..$last_col) {
+      $score = $score{$key}{$f};
+      if ($score eq "") {
+	print $out "\t$null";
+      } else {
+	print $out "\t$score";
+      }
+    }
+    print $out "\n";
+  }
+} elsif ($export_format eq "classes") {
+  ## Print the scores
+  foreach $key (@sorted_keys) {
+    for $f (1..$last_col) {
+      my $column_name = $column_names[$f]; ## TEMPORARY
+      if (defined($score{$key}{$f})) {
+	my $score = $score{$key}{$f};
+	print $out join("\t",
+			$id{$key},
+			$column_name,
+			$score
+		       ),  "\n";
+      }
+    }
+  }
+}
+
+
+## Close output file
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $out unless ($outputfile eq "");
+
+exit(0);
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	compare-scores
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+        compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] [-ic \#] -sc \#
+
+DESCRIPTION
+	compares the score associated to keys in different input files
+	(basically, this amounts to join different tables on the basis
+	of a unique identifier).
+
+CATEGORY
+	util
+
+OPTIONS
+        -h      (must be first argument) display full help message
+
+        -help   (must be first argument) display options
+
+	-v	verbose
+
+	-i input_file (use recursively to indicate several input files)
+		input file. 
+		At least 2 different input files must be specified.
+		The input files each contain a table with several columns,
+		separated by tabulations (\t). 
+		The first column of each input file contains the key.
+
+	-files	list of files specified on the command line. 
+		All following arguments are considered as input file
+
+	-filelist
+		Specify a file containing the list of files to be compared.
+		This is especially useful for long file lists of input files
+		(e.g. > 500 files).
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-format	export format (default: $export_format)
+		Supported formats: $supported_export_formats
+		
+		Profiles: tab-delimited file with one column per file, and one
+		row per object to which a score was assigned. 
+
+		Classes: 3-column tab-delimited files. The respective columns
+		indicate: 
+			  - object
+			  - input file
+			  - score
+
+	-sc	score column. 
+
+	-sc#	score column for the #th file
+
+	-ic	Identifier column (default 1) 
+
+	-ic#	identifier column for the #th file
+
+	-lc, -uc
+	        By default, the comparison is case-insensitive, but
+      	        the ID case is maintained in the output. This can
+      	        however b modified with the options '-lc' (IDs
+      	        converted to lowercases) and '-uc' (IDs converted to
+      	        uppercases).
+
+	-null   null string (default $default_null) displayed when one
+		file contains no value for a given key)
+
+	-numeric
+		sort IDs numerically rather than alphabetically
+
+	-decreasing
+		sort IDs numerically in a decreasing order
+
+	-basename
+		remove path (directory) from file names in the header
+
+	-suppress
+		Suppress a given substring from file names in the header
+		This option can be used iteratively to suppress different
+		substrings.
+
+		Example:
+			-suppress '.tab' -suppress 'oligos_'
+			
+		The substring may contain a regular expression.
+		
+		Example:
+			-suppress '\w+_'
+	-subst
+		Substitute a given substring from file names in the header
+		by a specified substring.
+		
+		Example:
+			-subst 'oligo_' 'ol'
+		
+
+INPUT FORMAT
+	each line of the input file provides the score for a single key. 
+	The first word of each line must be the key.
+	The score can be located in any column, which will be indicated with the parameter -sc.
+	Lines beginning with a semicolumn (;) are ignored.
+	
+OUTPUT FORMAT
+	One line per key. The first column is the key, followed by 1 column for 
+	the score associated to that key in each of the input files specified.
+	
+EXAMPLES
+       compare-scores -v -i data_file_1 -i data_file_2 -sc 4  -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+compare-scores options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file (use recursively to indicate several input files)
+-files		input files (all following arguments are used as input file)
+-filelist	specify a file containing the list of input files
+-o		output file
+-format		export format (default: $export_format). Supported: $supported_export_formats
+-v		verbose
+-sc		score column
+-sc#		score column for the #th file
+-ic		identifier column
+-ic#		identifier column for the #th file
+-lc		convert identifiers to lowercases
+-uc		convert identifiers to uppercases
+-null		null string (default $default_null)
+-numeric	sort IDs numerically rather than alphabetically
+-decreasing	sort IDs numerically in a decreasing order
+-basename	remove path (directory) from file names in the header
+-suppress	suppress a given substring from file names in the header
+-subst		substitute a given substring from file names in the header by a specified substring.
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      push @input_files, $ARGV[$a+1];
+
+      ### multiple input files
+    } elsif ($ARGV[$a] eq "-files") {
+      push @input_files, @ARGV[$a+1..$#ARGV];
+      last;
+
+      ### file containing the list of files
+    } elsif ($ARGV[$a] eq "-filelist") {
+      $filelist = $ARGV[$a+1];
+
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+
+      ### Export format
+    } elsif ($ARGV[$a] eq "-format") {
+      $export_format = $ARGV[$a+1];
+      &RSAT::error::FatalError($export_format." Invalid export format. Supported: ".$supported_export_formats)
+	unless $supported_export_format{$export_format};
+
+      ### null string ###
+    } elsif ($ARGV[$a] eq "-null") {
+      $null = $ARGV[$a+1];
+
+      ### null string ###
+    } elsif ($ARGV[$a] eq "-numeric") {
+      $numeric_IDs = 1;
+
+      ### null string ###
+    } elsif ($ARGV[$a] eq "-decreasing") {
+      $numeric_IDs = 1;
+      $decreasing = 1;
+
+      ### score column
+    } elsif ($ARGV[$a] eq "-sc") {
+      $default_sc = $ARGV[$a+1];
+      unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+    } elsif ($ARGV[$a] =~ /^-sc(\d+)/) {
+      $sc[$1-1] = $ARGV[$a+1];	### substract 1 from the index
+      unless ((&IsNatural($sc[$1-1])) && ($sc[$1-1] >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+      ### identifier column
+    } elsif ($ARGV[$a] eq "-ic") {
+      $default_ic = $ARGV[$a+1];
+      unless ((&IsNatural($default_ic)) && ($default_ic >= 1)) {
+	&RSAT::error::Fatalerror("Identifier column must be an integer >= 1");
+      }
+    } elsif ($ARGV[$a] =~ /^-ic(\d+)/) {
+      $ic[$1-1] = $ARGV[$a+1];	### substract 1 from the index
+      unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
+	&Fatalerror("Identifier column must be an integer >= 1");
+      }
+
+      ## convert identifiers to lower- or upper-cases
+    } elsif ($ARGV[$a] eq "-lc") {
+      $to_lower = 1;
+    } elsif ($ARGV[$a] eq "-uc") {
+      $to_upper = 1;
+
+      ## Specify that the scores are numbers
+    } elsif ($ARGV[$a] eq "-numbers") {
+      $scores_are_numbers = 1;
+
+    } elsif ($ARGV[$a] eq '-basename') {
+      $basename = 1;
+
+    } elsif ($ARGV[$a] eq '-suppress') {
+      push @suppress, $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq '-subst') {
+      $subst_header{$ARGV[$a+1]} = $ARGV[$a+2];
+
+    }
+  }
+}

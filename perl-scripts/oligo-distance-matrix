@@ -1,0 +1,302 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+local $start_time = &RSAT::util::StartScript();
+local $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+$seq_oligofreq_command = "$SCRIPTS/seq_oligofreq";
+
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help; 
+
+NAME
+	oligo_distances
+	
+	v1.0 by Jacques van Helden, 25 July 1997
+	
+DESCRIPTION
+	Elaborate a distance matrix between a series of non aligned
+	sequences.  Distances are calculated on bases of
+	oligonucleotide frequencies.
+
+CATEGORY
+	statistics
+	sequences
+	pattern matching
+
+USAGE
+	oligo_distances -i inputfile -o outputfile -l length 
+		[-freq] [-v] [-format input_format]
+
+PARAMETERS
+	-i file	inputfile. This file should contain the sequences.
+	-o file	outputfile. 
+		A distance matrix will be returned in this file.
+	-l	oligonucleotide length.
+	-v	verbose. 
+	-format	input file format. Must be followed by one of the options 
+		described below (see chapter INPUT FORMATS). Default is raw.
+	-direct	inactivates the summation of occurences on both strands. 
+		
+		By default, the occurences of each oligonucleotide on both 
+		strands are summed.
+
+INPUT FORMATS
+	filelist	
+		file list. Each line of the input file contains the 
+		name of a file containing a single sequence.
+
+	IG	IntelliGenetics format. A single file may contain 
+		several sequences. All lines beginning with ; are considered as c
+		omment. Each new sequence starts by a line containing an 
+		identifier (a single word). One sequence can be parsed on 
+		several lines. Blank spaces, tabs and newlines are accepted 
+		(they will be removed before analysis). Sequence termination 
+		is indicated by a number 1 (linear sequences) or a 2 (circular 
+		sequences). 
+		
+
+End_of_help
+  exit(0);
+}
+
+$format = "raw";
+$sum_strands = 1;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  if ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+  
+  } elsif ($ARGV[$a] eq "-l") {
+    $oligo_length = $ARGV[$a+1];
+  
+  } elsif ($ARGV[$a] eq "-format") {
+    $format = $ARGV[$a+1];
+  
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+  
+  } elsif ($ARGV[$a] eq "-direct") {
+    $sum_strands = 0;
+      
+  }
+}
+
+### check parameter values
+unless ($oligo_length > 0) {
+  print "You should specify an oligonucleotide length > 0.\n";
+  print "Type oligo_distances -h for more info..\n";
+  exit;
+}
+
+
+### open sequence file ###
+if ($inputfile ne "") {
+  unless (open(INPUT, $inputfile)) {
+    print "\tcannot open input file\n";
+    print "\ttype oligo_distances -h for help\n";
+    exit;
+  }
+  $in = INPUT;
+} else {
+  $in = STDIN;
+}
+
+### count oligonucleotide frequencies ###
+$sequence_number = 0;
+
+$parameters = "-freq -l $oligo_length -format raw ";
+
+while (&NextSequence) {
+  $sequence_number++;  
+  open NEXT_FREQ, "$seq_oligofreq_command $parameters -i $next_file |";
+  $count = 0;
+  while (<NEXT_FREQ>) {
+       $count++;
+   if (/([acgt]+)\t(\S+)/i) {
+      $oligo_seq = lc($1);
+      $oligo_freq[$sequence_number]{$oligo_seq} = $2;
+    }
+  }
+  close (NEXT_FREQ);
+  if (-e $tmp_file_name) {
+    system "rm $tmp_file_name";
+  }
+}
+
+close $in;
+
+#### expected frequencies ####
+$freq_file = "$ENV{RSAT}/public_html/data/yeast/oligo-frequencies//$oligo_length.freq";
+
+unless (open EXPECTED, $freq_file) {
+  print "	cannot open frequency file\n";
+  exit;
+}
+while (<EXPECTED>) {
+  if (/([acgt]+)\t(\S+)/i) {
+    $oligo_seq = lc($1);
+    $expected_freq{$oligo_seq} = $2;
+  }
+}
+close EXPECTED;
+
+#### make a complete list of oligonucleotides from all sequences #####
+for $s (1..$sequence_number) {
+  foreach $k (keys %{$oligo_freq[$s]}) {
+    $all_oligo_seq{$k} = 1;
+  }
+}
+
+#### calculate distances between each sequence pair ####
+for $seq1 (1..$sequence_number) {
+  for $seq2 ($seq1..$sequence_number) {
+    $absolute_distance[$seq1][$seq2] = 0;
+    $relative_distance[$seq1][$seq2] = 0;
+    foreach $k (sort keys %all_oligo_seq) {
+      $absolute_distance[$seq1][$seq2] += abs($oligo_freq[$seq1]{$k} - $oligo_freq[$seq2]{$k});
+      $relative_distance[$seq1][$seq2] += abs($oligo_freq[$seq1]{$k} - $oligo_freq[$seq2]{$k})/$expected_freq{$k};
+    }
+    $relative_distance[$seq1][$seq2] /= 4**$oligo_length;
+    $absolute_distance[$seq2][$seq1] = $absolute_distance[$seq1][$seq2];
+    $relative_distance[$seq2][$seq1] = $relative_distance[$seq1][$seq2];
+  }
+}
+
+### verbose ###
+if ($verbose) {
+  print "Input file	$inputfile\n";
+  print "Input format	$format\n";
+  print "Output file	$outputfile\n";
+  print "Oligonucleotide length	$oligo_length\n";
+  print "Nb of sequences		$sequence_number\n";
+  @keys = keys %all_oligo_seq;
+  print "number of distinct oligo-nt	",  $#keys+1, "\n";
+  print "Sequence IDs:\n";
+  foreach $s (1..$sequence_number) {
+    $theor_sum_occ += 2*($seq_length[$s] + 1 - $oligo_length);
+    print "\t$s\t$id_list[$s-1]\n";
+  }
+  print "\n\n";
+}
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype oligo_distances -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+### print absolute distance matrix ###
+print $out "\n\nABSOLUTE DISTANCES\n\n";
+print $out "\t";
+for $seq2 (1..$sequence_number-1) {
+  printf $out "%7d\t", $seq2;
+}
+printf $out "%7d\n", $sequence_number;
+for $seq1 (1..$sequence_number) {
+  printf $out "%7d\t", $seq1;
+  for $seq2 (1..$sequence_number-1) {
+    if (defined $absolute_distance[$seq1][$seq2]) {
+      printf $out "%7.4f\t", $absolute_distance[$seq1][$seq2];
+    } else {
+      print "\t";
+    }
+  }
+  printf $out "%7.4f\n", $absolute_distance[$seq1][$sequence_number];
+}
+
+### print relative distance matrix ###
+print $out "\n\nRELATIVE DISTANCES\n\n";
+print $out "\t";
+for $seq2 (1..$sequence_number-1) {
+  printf $out "%7d\t", $seq2;
+}
+printf $out "%7d\n", $sequence_number;
+for $seq1 (1..$sequence_number) {
+  printf $out "%7d\t", $seq1;
+  for $seq2 (1..$sequence_number-1) {
+    if (defined $relative_distance[$seq1][$seq2]) {
+      printf $out "%7.4f\t", $relative_distance[$seq1][$seq2];
+    } else {
+      print "\t";
+    }
+  }
+  printf $out "%7.4f\n", $relative_distance[$seq1][$sequence_number];
+}
+
+
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out;
+
+
+
+######## subroutine definition #########
+sub NextSequence {
+
+  ### file list ###
+  if (($format eq "filelist") && ($next_file = <$in>)) {
+    chomp($next_file);
+    return 1;
+        
+  ### IG format ###
+  } elsif ($format eq "IG") {
+    $current_id = "";
+    $current_seq = "";
+    while (<$in>) {
+      if ($_ =~ /^;/) { ### comment line -> skip it
+        next;
+      } elsif (($current_id eq "") && ($_ =~ /(\S+)\s/)) { ### identifier for the next sequence
+        $current_id = $1;
+        @id_list = (@id_list,$current_id);
+      } elsif ($_ =~ /(.*)[12]/) { ### end of the current sequence
+        $current_seq .= $1;
+        ($sec, $min, $hour,$day,$month,$year) = localtime(time);
+        $tmp_file_name = sprintf("oligo_distances.%02d%02d%02d.%02d%02d%02d.seq", $year,$month+1,$day,$hour, $min, $sec);
+        unless (open TEMP, ">$tmp_file_name") {
+          print "	Error: cannot open temporary file\n";
+          exit;
+        }
+        print TEMP $current_seq;
+        close TEMP;
+        $next_file = $tmp_file_name;
+        return 1;
+      } else {
+        $current_seq .= $_;
+      }
+    }
+    return 0; ### when input file has been totally read
+
+  ### end of sequence file ###
+  } else {
+    return 0;
+  }
+}
+
+sub ReverseComplement {
+  local($orig_seq) = $_[0];
+  $complement = reverse $orig_seq;
+  $complement =~ tr/a-z/A-Z/;
+  ### simple nucleotides
+  $complement =~ s/A/t/g;
+  $complement =~ s/T/a/g;
+  $complement =~ s/C/g/g;
+  $complement =~ s/G/c/g;
+  $complement;
+}# ReverseComplement

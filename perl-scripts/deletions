@@ -1,0 +1,179 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	deletions
+
+DESCRIPTION
+	returns a list of sequences matching a DNA pattern 
+        with a given number of deletions
+	
+USAGE
+        deletions -p pattern [-o outputfile] [-v] -del #
+
+CATEGORY
+	util
+	sequences
+	
+OPTIONS
+	-v	verbose.
+	-p pattern
+                the pattern must be a DNA sequence. 
+                if the -p option is not used, the standard input is
+                used
+        -del #    number of allowed deletions.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the comand within a pipe.
+        
+		
+PATTERN FORMAT
+        The standard degenerate nucleotide code of the IUPAC-IUB commission 
+        is supported (see http://www.chem.qmw.ac.uk/iupac/misc/naseq.html for 
+        complete information).
+        The pattern sequence should thus only contain the following characters:
+                A                       (Adenine)
+                C                       (Cytosine)
+                G                       (Guanine)
+                T                       (Thymine)
+                R       = A or G        (puRines)
+                Y       = C or T        (pYrimidines)
+                W       = A or T        (Weak hydrogen bonding)
+                S       = G or C        (Strong hydrogen bonding)
+                M       = A or C        (aMino group at common position)
+                K       = G or T        (Keto group at common position)
+                H       = A, C or T     (not G)
+                B       = G, C or T     (not A)
+                V       = G, A, C       (not T)
+                D       = G, A or T     (not C)
+                N       = G, A, C or T  (aNy)
+        Upper and lower case are considered equivalent.
+
+	
+OUTPUT FORMAT
+	
+	
+EXAMPLES
+	
+End_of_help
+    close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-p") {
+    $pattern = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-del") {
+    $allowed_del = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif (lc($ARGV[$a]) eq "-iupac") {
+    $IUPAC_output = 1;;
+
+  }
+}
+
+
+
+#### check argument values ####
+unless ($allowed_del =~ /\d+/) {
+      print "\tYou should enter a valid number of deletions.\n";
+      print "\ttype deletions -h for help\n";
+      exit;  
+}
+
+### get the pattern ###
+if ($pattern eq "") {
+  if (<STDIN> =~ /(\S+)/) {
+    $pattern = $1;
+  } else {
+      print "\tYou should enter a valid pattern.\n";
+      print "\ttype deletions -h for help\n";
+      exit;
+  }
+}
+if ($allowed_del >= length($pattern)) {
+      print "\tSubstitution number must be smaller than pattern length.\n";
+      print "\ttype deletions -h for help\n";
+      exit;
+}
+
+
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype deletions -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+###### execute the command #########
+
+%del = Delete($pattern, $allowed_del, $IUPAC_output);
+
+###### print output ######
+
+@keys = sort {($del{$a} > $del{$b}) or (($del{$a} == $del{$b}) and (lc($
+a) cmp lc($b)))} keys %del;
+
+foreach $p (@keys) {
+    print $out "$p\t$del{$p}\n";  
+}
+
+#### verbose ####
+if ($verbose) {
+  print ";deletions result\n";
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  if ($IUPAC_output) {
+      print ";IUPAC output\n";
+  }
+  print ";pattern\t$pattern\n";
+  print "; $allowed_del\tallowed deletions\n";
+  print "; ", $#keys +1,"\tmatching patterns\n";
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+

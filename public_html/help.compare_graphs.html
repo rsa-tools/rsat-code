@@ -1,0 +1,91 @@
+<html>
+<head>
+   <title>compare-graphs help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about compare-graphs
+</h2>
+</center>
+
+<h4>Description</h4>
+<ul>
+
+    Computes the intersection, the union or the difference of two graphs : a 
+    reference graph (R) and a query graph (Q). In case more than one arc exist 
+    between two nodes, the program removes one of those.
+
+</ul>
+
+<h4>Authors</h4>
+<ul>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Brohe&eacute;e</a></li>
+<li>Gilles Vanderstocken</li>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a></li>
+</ul>
+
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input and output formats</h4>
+  The accepted input formats are GML, tab-delimited and adjacency matrix. 
+  For more explanations about these, refer to the <a href = 'help.convert_graph.html'>manual of convert-graph</a>.
+</ul>
+
+
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+<ul><A NAME="wcol"></A><b>Weight or label column</b>. Column containing the weight or the label on the edge. </ul>
+</ul>
+<h4><A NAME="output"></A>Results</h4>
+<ul>  Requested output of the program : intersection, union, difference, intersection + reference graph or intersection + query graph. <br>
+The difference corresponds to the arcs of the reference graph that are not included in the query graph. <br>
+
+If either the union, the intersection + query or the intersection + reference is requested, each arc is labelled to indicate whether it belongs to the intersection (R.and.Q), to Q only (Q.not.R) or to R only (R.not.Q). Moreover, each arc is colored according to this label. <br>
+
+The R.and.Q arcs are colored in green, the Q.not.R arcs are colored in red and the R.not.Q arcs are colored in blue. </ul>
+
+
+</ul>
+<h4><A NAME="directed"></A>Directed graph</h4>
+<ul>Indicates whether the graphs must be considered as directed, i.e.,
+an arc from node A to node B is different from an arc from B to A.</ul>
+
+<h4><A NAME="outweights"></A>Weight on the edges of the output graph</h4>
+<ul>This option allows to specify the label of the edges of the output graph</ul> 
+  <ul>
+    <li>weights of the query graph</li>
+    <li>weights of the reference graph</li>
+    <li>sum of the weights of the two graphs</li>
+    <li>mean of the weights of the two graphs</li>
+    <li>geometrical mean of the weights of the two graphs</li>
+    <li>minimum weight</li>
+    <li>maximum weight</li>
+    <li>weight of the two graphs</li>
+  </ul>
+
+
+<h4><A NAME="self"></A>Self-loops</h4>
+<ul>Indicates whether the graphs can admit self-loops, i.e., an arc from
+a node to itself. Note that the graphs do not specially need to
+contain actual self-loops, the question is whether it would or not
+be acceptable for the considered input graphs to contain self-loops.
+This parameter affects the computation of the maximal number of arcs
+in the graph, and, thereby, the estimated probability of the
+intersection.
+</ul>
+</ul>
+
+
+
+
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+
+</h4>
+
+</blockquote>
+</body>
+</html>

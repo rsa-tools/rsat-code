@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+'''NAME
+        %(progname)s
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+
+DESCRIPTION
+        implants motifs occurrences (sites) in DNA sequences
+
+CATEGORY
+        motifs
+        sequences
+
+USAGE        
+        %(usage)s
+
+ARGUMENTS
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit
+    -v #, --verbosity=#   set verbosity to level #
+                              0 no verbosity
+                              1 max verbosity
+    -i #, --input=#       read sequence from # (must be in FASTA format)
+                          if not specified, the standard input is used
+    -o #, --output=#      output results to #
+                          if not specified, the standard output is used
+    -m #, --motif=#       read motif from # (must be in tab format)
+    --esps=#              set the expected number of sites per sequence to #
+    --espp=#              set the expected number of sites per position to #
+    
+SEE ALSO
+        random-motif
+        random-sites
+        implant-sites
+'''
+
+# ===========================================================================
+# =                            imports
+# ===========================================================================
+import sys
+import os
+from math import *
+import random
+import optparse
+import matrix
+from pydoc import pager
+from random import choice, randint, shuffle
+
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+from lib import dna
+
+# ===========================================================================
+# =                            functions
+# ===========================================================================
+def read_matrices(options):
+    try:
+        return matrix.tab2matrices(open(options.motif))
+    except:
+        sys.stderr.write('Error: Can not read motif\n')
+        sys.exit(2)
+
+def random_site_generator(matrices):
+    choose = []
+    mymatrix = random.choice(matrices)
+    length = len(mymatrix)
+    for i in range(length):
+        choose += [ matrix.wchoice(dna.BASES, mymatrix[i]) ]
+    name = 0
+    while True:
+        name += 1
+        site = ['N'] * length
+        for i in range(length):
+            site[i] = choose[i]()
+        yield (str(name), ''.join(site))
+
+def implant(sequences, matrices, esps, espp):
+    sitegenerator = random_site_generator(matrices)
+
+    # fixme: setup l
+    l = 1
+    labels = []
+    for i in range(len(sequences)):
+        sequence = list(sequences[i])
+        if esps:
+            sitep = esps / (len(sequence)-l+1) # fixme
+        else:
+            sitep = espp
+
+        label = ''
+        p = 0
+        while p < len(sequence):
+            if random.random() < sitep:
+                try:
+                    (name, word) = sitegenerator.next()
+                except StopIteration:
+                    break
+                if (p+len(word) < len(sequence)):
+                    label += '[%s:%d:%s]' % (name.strip(), p+1, word)
+                    sequence[p:p+len(word)] = word
+                    p = p + len(word) - 1
+            p = p + 1
+
+        labels += [ '%d %s' %(i+1, label) ]        
+        sequences[i] = ''.join(sequence)
+    return labels, sequences
+
+def main(options, args):
+    sequences = dna.read_fasta(options.input)
+    sequences = [s.lower() for s in sequences]
+    matrices = read_matrices(options)
+
+    (labels, sequences) = implant(sequences, matrices, options.esps, options.espp)
+    dna.write_fasta(options.output, sequences, labels)
+
+# ===========================================================================
+# =                            main
+# ===========================================================================
+if __name__ == '__main__':
+    USAGE = '''%s -i sequences -m motifs [-h]'''
+    VERSION = '2009.11'
+    PROG_NAME = os.path.basename(sys.argv[0])
+    
+    parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
+    parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
+    parser.add_option("-v", "--verbosity", action="store", dest="verbosity", default=0)
+    parser.add_option("-i", "--input", action="store", dest="input", metavar="#")
+    parser.add_option("-m", "--motif", action="store", dest="motif", metavar="#")
+    parser.add_option("--espp", action="store", dest="espp", metavar="#", type="float", default=None)
+    parser.add_option("--esps", action="store", dest="esps", metavar="#", type="float", default=1.0)
+    parser.add_option("-h", "--help", action="store_true", dest="help")
+    parser.add_option("--debug", action="store_true", dest="debug") 
+
+    (options, args) = parser.parse_args()
+
+    if options.help:
+        doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
+        print doc
+        sys.exit(0)
+    if not options.input:
+        parser.print_usage()
+        sys.exit()
+    if len(sys.argv) == 1:
+        print USAGE % PROG_NAME
+        sys.exit(0)    
+    try:
+        main(options, args)
+    except:
+        if options.debug:
+            raise
+        else:
+            sys.stderr.write('Error while running\n')
+

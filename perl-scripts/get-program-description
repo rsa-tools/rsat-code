@@ -1,0 +1,255 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: get-program-description,v 1.19 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-06-26 17:17:06 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+
+#### check argument values ####
+
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+#### get all program descriptions
+if ($all) {
+    $exclude{lib} = 1;
+    $exclude{obsolete} = 1;
+    $exclude{test_scripts} = 1;
+    $exclude{util} = 1;
+    $exclude{RCS} = 1;
+    $exclude{CVS} = 1;
+    $exclude{parsers} = 1;
+
+    if (defined($ENV{RSAT})) {
+	@listing = glob("$ENV{RSAT}/perl-scripts/*");
+
+	foreach $file (@listing) {
+	    $program = `basename $file`;
+	    chomp $program;
+	    
+	    next if ($exclude{$program});
+	    next if ($program =~ /\~/);
+	    push @program_names, $program; 
+	}
+    } 
+
+
+} elsif ($#program_names < 0) {
+##### read input #####
+    ($in) = &OpenInputFile($infile{input});
+    while (<$in>) {
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	$_ = &trim($_);
+	my @fields = split /\s/;
+	push @program_names, &trim($fields[0]);
+	
+    }
+}
+
+close $in if ($infile{input});
+
+#### verbose ####
+&Verbose if ($verbose);
+
+###### execute the command #########
+foreach my $program (@program_names) {
+    warn ("Getting description for\t$program\n") if ($verbose >=1);
+    my @categories = ();
+    my $description = "";
+    open HELP, "$program -h | ";
+    while ($line = <HELP>) {
+	next unless ($line =~ /\S/);
+	if (($line =~ /^([A-Z \t]+)\s*$/) ||
+	    ($line =~ /1m([A-Z \t]+).+0m/)) {
+	    $type = &trim($1);
+
+	} elsif ($type eq "DESCRIPTION") {
+	    $description .= $line;
+
+	} elsif ($type eq "CATEGORY") {
+	    push @categories, &trim($line);
+
+	}
+    }
+    close HELP;
+    $description =~ s/\s+/ /mg;
+    unless ($description) {
+	&Warning( "no description for program $program");
+    }
+    unless ($#categories >= 0) {
+	&Warning( "no category for program $program");
+    }
+    $description{$program} = $description;
+    @{$categories{$program}} = @categories;
+
+}
+
+###### print output ######
+print $out ";program\tcategory\tdescription\n";
+foreach my $program (@program_names) {
+    print $out join ("\t", $program, join ("; ", @{$categories{$program}}), $description{$program}), "\n";
+}
+
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	get-program-description
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        get-program-description [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Returns the description of one or several programs from the
+	rsa-tool package. 
+	
+CATEGORY
+	util
+
+OPTIONS 
+
+	-h	display full help message 
+	-help	display options 
+	-v	verbose 
+	-i	inputfile 
+		If not specified, the standard input is used.  This
+		allows to place the command within a pipe.  
+
+		The input file should contain a list of program
+		names. Each program name should come as the first word
+		of a new line (any text following the first owrd of a
+		line is ignored).
+
+	-p	program 
+		Name of the program for which the descrition is
+		requested. This argument can be used iteratively on
+		the same command line to get a description for several
+		programs.
+	-o	outputfile
+		If not specified, the standard output is used.  This
+		allows to place the command within a pipe.
+	-all	get description for all RSA-tools programs.
+
+EXAMPLE
+	get-program-description -p dna-pattern -p oligo-analysis
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+#### display short help message #####
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+get-program-description options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-p	program name
+-all	get description for all RSA-tools programs. 
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+#### read arguments ####
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### program name ###
+	} elsif ($ARGV[$a] eq "-p") {
+	    push @program_names, $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### get all descriptions
+	} elsif ($ARGV[$a] eq "-all") {
+	    $all = 1;
+	    
+	}
+    }
+}
+
+sub Verbose {
+    print $out "; get-program-description ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    print $out join ("\n;\t", ";Program names", @program_names), "\n" if ($verbose >= 2);
+
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}

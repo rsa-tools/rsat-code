@@ -1,0 +1,198 @@
+\chapter{KEGG network provider}
+
+\section{Introduction}
+
+% what can you do with the tool
+KEGG network provider allows you to extract metabolic networks from KEGG \cite{Kanehisa2008} that are specific to a set of organisms.
+In addition, you can exclude certain compounds or reactions from these networks.
+
+% competing tools
+A range of tools works with KGML files. Click on ``Manual -> Related tools'' to see a selection of them.
+KEGG network provider differs from these tools by allowing also the extraction of RPAIR networks and by supporting
+filtering of compounds, reactions and RPAIR classes.
+
+KEGG network provider itself has no network analysis or visualization functions,
+but you can use a NeAT tool (a choice of them will appear upon termination of network construction)
+or any other graph analysis tool that reads gml, VisML or dot format for these purposes.
+
+For visualization of KEGG networks, you can use iPATH \cite{ipath}, KGML-ED \cite{kgmled} or
+metaSHARK \cite{metashark}.
+Yanasquare \cite{yana} and Pathway Hunter Tool \cite{pht} offer
+organism-specific KEGG network construction in combination
+with analysis functions. With \cite{kegggrah}, you can construct KEGG metabolic networks in R.
+
+% side compounds
+It should be noted that KEGG annotators omitted side compounds in the KGML files. Thus, certain molecules
+(such as CO2, ATP or ADP) might be absent from the metabolic networks extracted from these files.
+
+% metabolic network reconstruction
+It is also worth noting that constructing metabolic networks from KGML
+files produces networks of much lower quality than those obtained by
+manual metabolic reconstruction. In manual reconstruction, several
+resources are taken into account, such as the biochemical literature,
+databases and genome annotations (e.g. \cite{Foerster2003}). This is
+why the metabolism of only a few organisms has been manually
+reconstructed so far.
+
+In automatically reconstructed networks, reactions might not be
+balanced and compounds might occur more than once with different
+identifiers (see e.g. \cite{Poolman2006} for annotation problems in
+KEGG).  For the purpose of path finding the automatically
+reconstructed metabolic networks may still be of interest.
+
+\section{Construction of yeast and E. coli metabolic networks}
+
+\subsection{Study case}
+
+Our study case consists in the construction of two metabolic networks:
+one for five yeast species and the other for \textit{Escherichia coli
+  K-12 MG1655}.  We will compare path finding results obtained for
+these two networks for a metabolic reference pathway (Lysine
+biosynthesis).
+
+\subsection{Protocol for the web server}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the entry \program{Download
+    organism-specific networks from KEGG}.
+
+  In the right panel, you should now see a form entitled
+  ``KEGG network provider''.
+
+\item Click on the button \option{DEMO} located at the bottom of the form.
+
+  The KEGG network provider form has now loaded the organism identifiers of five yeast species. As explained
+  in the form, the species concerned are: \textit{Saccharomyces bayanus}, \textit{Saccharomyces mikatae},
+  \textit{Saccharomyces paradoxus}, \textit{Schizosaccharomyces pombe} and \textit{Saccharomyces cerevisiae}.
+
+\item Click the checkbox \option{directed network} to construct a directed metabolic network.
+
+\item Click on the button \option{GO}.
+
+  The network extraction should take only a few seconds.
+  Then, a link to the extracted network is displayed.
+  In addition (for formats \textit{tab-delimited} and \textit{gml}), the Next step panel should appear.
+
+% step 5
+\item Click on the button ``Find metabolic paths in this graph'' in the Next step panel. This button opens the
+Metabolic pathfinder with the yeast network pre-loaded.
+
+\item Enter C00049 (L-Aspartate) as source node and C00047 (L-Lysine) as target node.
+
+\item In section \textbf{Path finding options}, set the rank to 1. We are only interested in the first rank.
+
+\item In section \textbf{Output}, select \option{Graph} as output with ``paths unified into one graph''
+
+\item Click \option{GO}.
+  The seed node selection form appears to confirm our seed node choice.
+
+% step 10
+\item Click \option{GO}.
+	After no more than one minute of computation, the graph unifying first rank paths between L-aspartate and L-lysine should appear.
+	You can store the graph image on your machine for later comparison.
+
+\end{enumerate}
+
+Repeat the previous steps, but instead of selecting \option{DEMO} in the KEGG network provider form, enter eco
+in the organisms text input field. Make sure to select \option{directed network} in the KEGG network provider form,
+then follow steps 4 to 10 as described above.
+
+\subsection{Protocol for the command-line tools}
+
+The command-line version of this tutorial is restricted to the \textit{E. coli} and \textit{S. cerevisiae}
+metabolic networks. It is assumed that you have installed the required command-line tools.
+
+\begin{enumerate}
+
+\item First we construct the directed metabolic network of \textit{E. coli}.
+
+\begin{lstlisting}
+java graphtools.util.MetabolicGraphProvider -i eco -d 
+   -o eco_metabolic_network_directed.txt
+\end{lstlisting}
+
+\item Then, we search for the lightest paths in this network as follows:
+
+
+\begin{lstlisting}
+java graphtools.algorithms.Pathfinder 
+   -g eco_metabolic_network_directed.txt 
+   -f tab -s C00049 -t C00047 
+   -r 1 -d -y con -b -T pathsUnion -O gml 
+   -o lysinebiosyn_eco.gml
+\end{lstlisting}
+
+
+\item To visualize the inferred pathway, you may open lysinebiosyn\_eco.gml in Cytoscape or in yED.
+
+
+\item We proceed by constructing the metabolic network of \textit{S. cerevisiae}:
+
+\begin{lstlisting}
+java graphtools.util.MetabolicGraphProvider
+  -i sce -d -o sce_metabolic_network_directed.txt
+\end{lstlisting}
+
+\item Then, we enumerate paths between L-aspartate and L-lysine in it:
+
+\begin{lstlisting}
+java graphtools.algorithms.Pathfinder
+  -g sce_metabolic_network_directed.txt
+  -f tab -s C00049
+  -t C00047 -d -r 1 -y con -b -T pathsUnion -O gml
+  -o lysinebiosyn_sce.gml
+\end{lstlisting}
+
+\item As before, we can visualize the lysinebiosyn\_sce.gml file in a graph editor capable of reading gml files
+     (such as yED or Cytoscape).
+
+\end{enumerate}
+
+\subsection{Interpretation of the results}
+
+After having executed the steps of this tutorial, you should have
+obtained two pathway images: one for the yeast network and one for the
+\textit{E. coli} network. Both pathways differ quite substantially.
+If we compare each of these pathways with the respective
+organism-specific pathway map in KEGG, we notice that the pathway
+inferred for the \textit{E. coli} network reproduces the reference
+pathway correctly.
+
+The yeast pathway deviates from the \textit{S. cerevisiae} KEGG
+pathway map from L-aspartate to but-1-ene-1,2,4-tricarboxylate, but
+recovers otherwise the reference pathway correctly (ignoring the
+intermediate steps 5-adenyl-2-aminoadipate and
+alpha-aminoadipoyl-S-acyl enzyme associated to EC number 1.2.1.31).
+
+For comparison purposes, we have chosen the same start and end
+compound for both metabolic networks, but it should be noted that the
+reference lysine biosynthesis pathway in \textit{S. cerevisiae} starts
+from 2-oxoglutarate.
+
+The lysine biosynthesis KEGG map for yeast is available at:
+
+\begin{footnotesize}\url{http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&mapno=00300}\end{footnotesize}
+
+The one for \textit{E. coli} is available at:
+
+\begin{footnotesize}\url{http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&mapno=00300}\end{footnotesize}
+
+
+\section{Summary}
+
+The study case demonstrated that different organisms may employ
+different metabolic pathways for the synthesis or degradation of a
+given compound. For this reason, it is useful to be able to construct
+metabolic networks that are specific to a selected set of organisms.
+
+\section{Troubleshooting}
+
+\begin{enumerate}
+
+\item An empty graph (with zero nodes and edges) is returned.  Make
+  sure that the entered organism identifiers are valid in KEGG.  They
+  should consist of three to four letters only. If in doubt, check in
+  the provided KEGG organism list.
+
+\end{enumerate}

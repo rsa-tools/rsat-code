@@ -1,0 +1,337 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>infer-operons</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_postfix@neige.apple.com" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#algorithm">ALGORITHM</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>infer-operon</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Given a list of input genes, infer the operon to which each of these
+genes belong.</p>
+<p>The inferrence is based on a <strong>very</strong> simplistic distance-based method,
+inspired from the Salgao-Moreno method (Proc Natl Acad Sci U S
+A. 2000;97:6652-7). The Salgado-Moreno method classifies intergenic
+distances as TUB (transcription unit border) or OP (inside operon),
+and infers operons by iteratively collecting genes until a TUB is
+found. In the original method, the TUB or OP assignation relies on a
+log-likelihood score calculated from a training set.</p>
+<p>The difference is that we do not use the log-likelihood (which
+presents risks of over-fitting), but a simple threshold on
+distance. Thus, we infer that the region upstream of a gene is TUB if
+its size is larger than a given distance threshold, and OP
+otherwise. Our validations (Rekins' Janky and Jacques van Helden,
+unpublished results) show that a simple threshold on distance raises a
+similar accuracy as the log-likelihood score (Acc ~ 78% for a
+threshold t=55).</p>
+<p>
+</p>
+<hr />
+<h1><a name="algorithm">ALGORITHM</a></h1>
+<p>The algorithm is based on three simple rules, depending on the
+relative orientation of the adjacent genes.</p>
+<dl>
+<dt><strong><a name="rule_1_divergently_transcribed_genes" class="item">Rule 1: divergently transcribed genes</a></strong>
+
+<dd>
+<p>If the gene found upstream of a query gene is transcribed in the
+opposite direction, then the intergenic region is considered as a TUB,
+and the two flanking genes are labelled as operon leaders. This
+prediction is reliable (as far as genome annotation is correct), since
+operons only contain genes on the same strand.</p>
+</dd>
+</li>
+<dt><strong><a name="rule_2_convergently_transcribed_genes" class="item">Rule 2: convergently transcribed genes</a></strong>
+
+<dd>
+<p>If the gene found downstream of a query gene is transcribed in the
+opposite direction, then the intergenic region is considered as a TUB,
+and the two flanking genes are labelled as operon trailers. This
+prediction is reliable (as far as genome annotation is correct), since
+operons only contain genes on the same strand.</p>
+</dd>
+</li>
+<dt><strong><a name="genes" class="item">Rule 3: tandem genes (adjacent genes on the same strand)</a></strong>
+
+<dd>
+<p>If two adjacent genes are on the same strand, then a distance
+threshold (option -dist) is applied to decide whether they belong to
+the same operon (dist &lt;= thredhold) or not (dist &gt; threshold). If they
+are predicted to be in distinct operon, the upstream gene is labelled
+as operon trailer, and the downstream gene as leader of the next
+operon.</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p><a href="mailto:jvanheld@bigre.ulb.ac.be">jvanheld@bigre.ulb.ac.be</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>genomics</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<pre>
+
+infer-operon [-i inputfile] [-o outputfile] [-v] [options]</pre>
+<dl>
+<dt><strong><a name="example_1" class="item"><strong>Example 1</strong></a></strong>
+
+<dd>
+<p>With the following command, we infer the operon for a set of input
+genes.</p>
+</dd>
+<dd>
+<p>infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD</p>
+</dd>
+</li>
+<dt><strong><a name="example_2" class="item"><strong>Example 2</strong></a></strong>
+
+<dd>
+<p>We now specify different return fields</p>
+</dd>
+<dd>
+<p>infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
+  -return leader,trailer,up_info,down_info,operon</p>
+</dd>
+</li>
+<dt><strong><a name="example_3" class="item"><strong>Example 3</strong></a></strong>
+
+<dd>
+<p>Infer operons for all the genes of an organism.</p>
+</dd>
+<dd>
+<p>infer-operon -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon</p>
+</dd>
+</li>
+<dt><strong><a name="example_4" class="item"><strong>Example 4</strong></a></strong>
+
+<dd>
+<p>Infer operon from a set of query genes, and retrieve the upstream
+sequence of the inferred leader gene. Note that two of the input genes
+(lacZ, lacY) belong to the same operon. to avoid including twice their
+leader, we use the unix command sort -u (unique).</p>
+</dd>
+<dd>
+<p>infer-operon -org Escherichia_coli_K12 -return leader,operon \
+  -q lacI -q lacZ -q lacY  | sort -u \
+  | retrieve-seq -org Escherichia_coli_K12 -noorf</p>
+</dd>
+</li>
+<dt><strong><a name="example_5" class="item"><strong>Example 5</strong></a></strong>
+
+<dd>
+<p>Note that operons can contain non-coding genes. For example, the metT
+operon contains a series of tRNA genes for methionine, leucine and
+glutamina, respectively.</p>
+</dd>
+<dd>
+<p>infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+  -return q_info,up_info,operon</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>Each row of the input file specifies one query gene. The first word of
+a gene is the query, the rest of the row is ignored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+</li>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+</li>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+</li>
+<dt><strong><a name="i_inputfile" class="item"><strong>-i inputfile</strong></a></strong>
+
+<dd>
+<p>If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.</p>
+</dd>
+</li>
+<dt><strong><a name="org_organism" class="item"><strong>-org organism</strong></a></strong>
+
+<dd>
+<p>Organism name.</p>
+</dd>
+</li>
+<dt><strong><a name="all" class="item"><strong>-all</strong></a></strong>
+
+<dd>
+<p>Infer operons for all the genes of the query organism.</p>
+</dd>
+</li>
+<dt><strong><a name="q_query_gene" class="item"><strong>-q query_gene</strong></a></strong>
+
+<dd>
+<p>Query gene. This option can be used iteratively on the same command
+line to specify several query genes. Example:</p>
+</dd>
+<dd>
+<p>infer-operon -org Escherischia_coli_K12 -q LACZ -q hisA</p>
+</dd>
+</li>
+<dt><strong><a name="o_outputfile" class="item"><strong>-o outputfile</strong></a></strong>
+
+<dd>
+<p>If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.</p>
+</dd>
+</li>
+<dt><strong><a name="dist" class="item"><strong>-dist #</strong></a></strong>
+
+<dd>
+<p>Distance threshold.</p>
+</dd>
+</li>
+<dt><strong><a name="sep" class="item"><strong>-sep </strong></a></strong>
+
+<dd>
+<p>Specify the separator for multi-value fields (e.g.: genes) in the
+output table. By default, multi-value fields are exported in a single
+column with a semicolon (&quot;;&quot;) as separator.</p>
+</dd>
+</li>
+<dt><strong><a name="min_gene_nb" class="item"><strong>-min_gene_nb #</strong></a></strong>
+
+<dd>
+<p>Specify a threshold on the number of genes in the operon. This option
+is generally used when predicting all operons (option -all), in order
+to only return predicted polycistronic transcription units
+(-min_gene_nb 2) or restrict the output to operons containingpredicted
+to contain at least a given number of genes (e.g. -min_gene_nb 4).</p>
+</dd>
+</li>
+<dt><strong><a name="return_return_fields" class="item"><strong>-return return_fields</strong></a></strong>
+
+<dd>
+<p>List of fields to return.</p>
+</dd>
+<dd>
+<p>Supported fields: leader,trailer,operon,query,q_info,up_info,down_info</p>
+</dd>
+<dl>
+<dt><strong><a name="leader" class="item"><strong>leader</strong></a></strong>
+
+<dd>
+<p>Predicted operon leader.</p>
+</dd>
+</li>
+<dt><strong><a name="trailer" class="item"><strong>trailer</strong></a></strong>
+
+<dd>
+<p>Predicted operon trailer.</p>
+</dd>
+</li>
+<dt><strong><a name="operon" class="item"><strong>operon</strong></a></strong>
+
+<dd>
+<p>Full composition of the operon. The names of member genes are
+separated by a semi-column &quot;;&quot; (note that the gene separator can be
+changed using the option -sep).</p>
+</dd>
+</li>
+<dt><strong><a name="q_info" class="item"><strong>q_info</strong></a></strong>
+
+<dd>
+<p>Detailed info on the query gene(s).</p>
+</dd>
+</li>
+<dt><strong><a name="up_info" class="item"><strong>up_info</strong></a></strong>
+
+<dd>
+<p>Detailed info on the upstream gene.</p>
+</dd>
+</li>
+<dt><strong><a name="down_info" class="item"><strong>down_info</strong></a></strong>
+
+<dd>
+<p>Detailed info on the downstream gene.</p>
+</dd>
+</li>
+<dt><strong><a name="gene_nb" class="item"><strong>gene_nb</strong></a></strong>
+
+<dd>
+<p>Number of genes in the predicted operon.</p>
+</dd>
+</li>
+</dl>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="retrieve_seq" class="item">retrieve-seq</a></strong>
+
+<dt><strong><a name="neighbour_genes" class="item">neighbour-genes</a></strong>
+
+<dt><strong><a name="add_gene_info" class="item">add-gene-info</a></strong>
+
+</dl>
+
+</body>
+
+</html>

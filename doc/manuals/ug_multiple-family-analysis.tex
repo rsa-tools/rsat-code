@@ -1,0 +1,266 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% MULTIPLE FAMILY ANALYSIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Automated analysis of multiple gene clusters}
+
+The main interest of using \RSAT from the shell is that it allows to
+automatize the analysis of multiple data sets. The different programs
+of the package can be combined in different ways to apply an extensive
+analysis of your data. A typical example is the analysis of clusters
+obtained from gene expression data.
+
+When a few tens or hundreds of gene clusters have to be analyzed, it
+becomes impossible to manage it manually. \RSAT includes a program,
+\program{multiple-family-analysis}, which takes as input a file with
+the composition of gene clusters (the \concept{cluster file}), and
+automatically performs the following analyses on each cluster :
+
+\begin{description}
+\item[directory management:] the results are stored in a separate
+  directory for each cluster. Directories are automatically created
+  during the execution, and bear the name of the cluster.
+
+\item[sequence retrieval:] upstream sequences are retrieved and stored
+  in fasta format
+
+\item[sequence purging:] upstream sequences are purged (with the
+  program \program{purge-sequences} to remove redundant
+  fragments. Purged sequences are then used for pattern discovery, and
+  non-purged sequences for pattern matching.
+
+\item[oligonucleotide analysis:] the program \program{oligo-analysis}
+  is used to detect over-represented
+  oligonucleotides. \program{dna-pattern} and \program{feature-map}
+  are used to draw a feature map of the significant patterns.
+
+\item[dyad analysis:] the program \program{dyad-analysis} is used to
+  detect over-represented oligonucleotides. \program{dna-pattern} and
+  \program{feature-map} are used to draw a feature map of the
+  significant patterns.
+
+\item[other pattern discovery programs:] several matrix-based pattern
+  discovery programs developed by other teams can be managed by
+  \program{multiple-family-analysis}. These programs have to be
+  installed separately they are not part of the \RSAT distribution).
+
+\item[feature map drawing:] The patterns discovered by the different
+  programs are matched against the upsteram sequences, and the result
+  is displayed as a feature map.
+
+\item[synthesis of the results:] A synthetic table is generated (in HTML
+  format) to facilitate the analysis of the results, and the
+  navigation between result files.
+
+\item[result export:] The results can be exported to tab-delimited
+  files, which can then automatically be loaded in a relational
+  database (mySQL, PostgreSQL or Oracle).
+
+\end{description}
+
+In addition to this cluster-per-cluster analysis, results are
+summarized in two format.
+
+\begin{description}
+\item[synthetic table] A HTML table is generated with one row per
+cluster, and a summary of the results (gene composition, significant
+oligonucleotides, significant dyads). This table contains links to the
+feature maps, making it easy to browse the results.
+
+\item[sql table] The list of significant patterns detected in all the
+cluster are compiled in a single result table (a tab-delimited text
+file), with one row per pattern and cluster, and one column per
+criterion (pattern type, occurrences, significance, ...). 
+
+The program also automatically exports SQL scripts which allow to
+create the appropriate table in a relational database management
+system (RDBMS) and load the data.
+\end{description}
+
+\section{Input format}
+
+The input format is a tab-delimited text file with two columns, providing respectively :
+\begin{enumerate}
+\item gene identifier or name
+\item cluster name
+\end{enumerate}
+
+An example of cluster file is displayed in Table
+\ref{table:cluster_file}. This file describes 3 yeast regulons, each
+responding to some specific environmental condition: the NIT family
+contains 7 genes expressed under nitrogen depletion, the PHO family 5
+genes expressed under phosphate stress, and the MET family 11 genes
+expressed when methionine is absent fom the culture medium.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ll}
+\hline
+; gene & cluster \\
+DAL5 & NIT \\
+GAP1 & NIT \\
+MEP1 & NIT \\
+MEP2 & NIT \\
+MEP3 & NIT \\
+PUT4 & NIT \\
+DAL80 & NIT \\
+PHO5 & PHO \\
+PHO11 & PHO \\
+PHO8 & PHO \\
+PHO84 & PHO \\
+PHO81 & PHO \\
+YDR502C & MET \\
+YER091C & MET \\
+YHL036W & MET \\
+YIL046W & MET \\
+YJR010W & MET \\
+YKL001C & MET \\
+YKR069W & MET \\
+YLR180W & MET \\
+YLR303W & MET \\
+YNL241C & MET \\
+YNL277W & MET \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{table:cluster_file} Example of family file.}
+\end{table}
+
+\textbf{Beware:} the columns must be separate by tabulations, spaces
+are not valid separators.
+
+Note that genes can be specified either by their name (as for the NIT
+and PHO families in Table \ref{table:cluster_file}), or by their
+systematic identifier (MET family in Table \ref{table:cluster_file}).
+
+
+\section{Example of utilization}
+
+Let us assume that the file displayed in Table
+\ref{table:cluster_file} has been saved under the name
+\file{test.fam}. The following command will automatically perform all
+the analyses.
+
+\begin{verbatim}
+multiple-family-analysis  -i test.fam -v 1 \
+    -org Saccharomyces_cerevisiae \
+    -2str -noorf -noov \
+    -task upstream,purge,oligos,oligo_maps,synthesis,sql,clean \
+    -outdir test_fam_results
+\end{verbatim}
+
+Once the analysis is finished, you can open the folder
+\file{synthetic\_tables} with aweb browser and follow the links.
+
+\section{Loading the results in a relational database}
+
+The results were exported in tab-delimited text files in the directory
+\file{test\_fam\_results/sql\_export/}. This directory contains 3 files
+and one subdirectory :
+
+\begin{verbatim}
+Family_genes.tab
+Family.tab
+Pattern.tab
+sql_scripts/
+\end{verbatim}
+
+The subdirectory \file{sql\_scripts} contains several SQL scripts for creating
+tables in a relational database management system (\concept{RDBMS}),
+loading data into these tables, and dropping these tables when you
+don't need them anymore.
+
+\begin{verbatim}
+family_genes_table_load.ctl
+family.mk
+family_table_create.sql
+family_table_drop.sql
+family_table_load.ctl
+makefile
+pattern.mk
+pattern_table_create.sql
+pattern_table_drop.sql
+pattern_table_load.ctl
+\end{verbatim}
+
+The file \file{makefile} allows you to automatically create the tables
+and load the data in two operations.
+
+\begin{verbatim}
+make create MYSQL='mysql -u [your login] -D multifam'
+make load MYSQL='mysql -u [your login] -D multifam'
+\end{verbatim}
+
+This requires the existence of a database space 'multifam' in your
+\concept{RDBMS}. If you are not familar with relational databases, you
+probably need to contact your system administrator to create this
+space for you.
+
+
+\section{Comparing programs}
+
+The program \program{multiple-family-analysis} allows you to compare
+the results obtained by different pattern discovery programs. Two of
+these programs are part of the \RSAT distribution :
+\program{oligo-analysis} and \program{dyad-analysis}. The other
+programs have been developed by other teams, and can be downloaded
+from their original site. The command below assumes that these
+programs were installed and included in your path.
+
+\begin{verbatim}
+multiple-family-analysis  -i test.fam -v 1 \
+    -org Saccharomyces_cerevisiae \
+    -2str -noorf -noov \
+    -task upstream,purge,oligos,oligo_maps \
+    -task dyads,dyad_maps,consensus,gibbs \
+    -task meme,synthesis,sql,clean \
+    -outdir test_fam_results
+\end{verbatim}
+
+Note that you can define multipe tasks either with a single call to
+the option \option{-task}, or by insering iteratively the option in
+the command line.
+
+\section{The negative control: analyzing random gene selections}
+
+An essential quality of pattern discovery programs is their ability to
+ return a negative answer when there are no specific patterns in a
+ sequence set.
+
+The program \program{random-genes} allows to select random sets of
+ genes, which can then be used by \program{multiple-family-analysis}
+ to check the rate of false positive of pattern discovery programs.
+
+The simplest way to use random-gene is to ask a set of $n$ genes:
+
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -n 10
+\end{verbatim}
+
+You can also use the option \option{-r} to select $r$ distinct sets of
+$n$ genes.
+
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -n 10 -r 5
+\end{verbatim}
+
+Another possibility is to specify a template family file with the
+ option \option{-fam}.
+
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -fam test.fam
+\end{verbatim}
+
+This will return a family file with the same number of gene family as
+in the input file (\file{test.fam}). Each output family will contain
+the same number of gene as the corresponding input family. This option
+provides thus a very convenient way to generate a negative control of
+exactly the same size as the real family file.
+
+\section{Analyzing a large set of regulons}
+
+To get a better feeling about the potentialities of the different
+pattern discovery programs, you can analyze the collection of regulons
+collected by Nicolas Simonis (2004), which is available at:
+
+\small{\url{http://rsat.ulb.ac.be/rsat/data/published\_data/Simonis\_Bioinformatics\_2004/}}
+

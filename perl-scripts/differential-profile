@@ -1,0 +1,578 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	differential-profile
+
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Given two matrix files (each containing a position frequency
+	matrix), perform an independence test to estimate whether the
+	matrices are similar or different.
+
+	Alternatively, the input can be provided as two pre-aligned
+	sequence sets. The program then calculates the two
+	corresponding profile matrices and compares them.
+
+CATEGORY
+	statistics
+	sequences
+
+USAGE
+        differential-profile [-i sequencefile] -cl1 first_cluster_file 
+		-cl2 second_cluster_file [-o outputfile] [-v] [-seq] [-mat] 
+		-stat [chi | like | proba]
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+
+	INPUT OPTIONS:
+	Three alternative ways to provide input are supported:
+
+	a) two matrix files
+	-mat1 mat1_file
+		name of the file containing the first matrix
+	-mat2 mat2_file
+		name of the file containing the second matrix
+
+	b) two files containing alligned sequences. 
+	   In this case the matrices are calculated on the fly.
+	-seq1 seq1_file
+		name of the file containing the first sequence alignment
+	-seq2 seq2_file
+		name of the file containing the 2d sequence alignment
+
+	c) a single aligned sequence file, and two independent files 
+	   indicating the identifiers of the sequences included in the 
+	   respective clusters
+	-i sequencefile
+		Contains a set of sequences resulting from a multiple
+		alignment, in MSF format.
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-cl1 clusterfile1	
+		name of the file containing the list of identificators 
+		for the first sequence cluster.
+	-cl2 clusterfile2
+		name of the file containing the list of identificators 
+		for the second sequence cluster.
+
+	CALCULATION OPTIONS:
+	-stat chi|like|proba	
+		statistics to utilize (default like). 
+		Three options are supported:
+		- chi	Pearson chi-square
+		- like	log likelihood
+		- proba	probability calculated by Fisher\'s exact test
+	-dna	input file contains a DNA sequence
+		(by default, the input sequence is considered proteic).
+
+	OUTPUT OPTIONS:
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-seqout	display the multiple alignment of the 2 clusters in output.
+	-matout	displays the matrices in output.
+
+	
+INPUT FORMAT
+    Matrix files:
+    ============
+	The matrices must be provided in the same format as patser and
+	consensus (Jerry Hertz).
+
+    Sequence file:
+    ==============
+	This file contains the sequences resulting from a multiple 
+	alignment (e.g. an output file from PILEUP or CLUSTALW).
+	The input sequence must be in MSF (multiple sequence file) 
+	format. This format comes from the program PILEUP from the GCG
+	package. Other multiple alignment programs such as CLUSTALW
+	also support the MSF format for output.
+
+    Cluster files:
+    ==============
+	Two cluster files must be specified. Each one contains a list
+	of identifiers corresponding to the sequences from the input
+	sequence file.
+	Each identifier must come as the first word of a new line. 
+	Other words are ignored.
+
+EXAMPLES
+	differential-profile -i HTH_motifs_aligned.msf -cl1 cluster.arac \
+		-cl2 cluster.lysr -stat chi
+
+	Will display the chi-square value at each position of the aligned 
+	sequence, and a histogram representation of these values.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+differential-profile options
+-------------------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-o      output file
+-v      verbose
+-i	sequence file
+-mat1	first matrix file
+-mat2	2d matrix file
+-seq1	first sequence file
+-seq2	second sequence file
+-cl1	first cluster file
+-cl2	second cluster file
+-seqout	displays the multiple alignment of the 2 clusters.
+-matout	displays the matrices in output.
+-stat chi|like|proba	statistics to utilize (default like)
+-dna	input file contains a DNA sequence
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = &RSAT::util::StartScript();
+$in_format = "msf";
+$matrix_format = "%3";
+$profile_nb = 2;
+$stat = "chi";
+$histo_scale = 0.5;
+$print_histo = 1;
+
+push(@aa_list, 'A');
+push(@aa_list, 'C');
+push(@aa_list, 'D');
+push(@aa_list, 'E');
+push(@aa_list, 'F');
+push(@aa_list, 'G');
+push(@aa_list, 'H');
+push(@aa_list, 'I');
+push(@aa_list, 'K');
+push(@aa_list, 'L');
+push(@aa_list, 'M');
+push(@aa_list, 'N');
+push(@aa_list, 'P');
+push(@aa_list, 'Q');
+push(@aa_list, 'R');
+push(@aa_list, 'S');
+push(@aa_list, 'T');
+push(@aa_list, 'V');
+push(@aa_list, 'W');
+push(@aa_list, 'Y');
+
+push(@nt_list, 'A');
+push(@nt_list, 'C');
+push(@nt_list, 'G');
+push(@nt_list, 'T');
+
+@residue_list = @aa_list;
+$sequence_type = "proteic";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    ### input clusters ###
+    } elsif ($ARGV[$a] eq "-cl1") {
+        $input_type = "clusters";
+	$cl_file[1] = $ARGV[$a+1];
+        $data_file[1] =  $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-cl2") {
+        $input_type = "clusters";
+	$cl_file[2] = $ARGV[$a+1];
+        $data_file[2] =  $ARGV[$a+1];
+
+    #### input matrices ####
+    } elsif ($ARGV[$a] eq "-mat1") {
+        $input_type = "matrices";
+        $mat_file[1] = $ARGV[$a+1];
+        $data_file[1] =  $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-mat2") {
+        $input_type = "matrices";
+        $mat_file[2] = $ARGV[$a+1];
+        $data_file[2] =  $ARGV[$a+1];
+
+
+    #### input sequences ####
+    } elsif ($ARGV[$a] eq "-seq1") {
+        $input_type = "sequences";
+        $seq_file[1] = $ARGV[$a+1];
+        $data_file[1] =  $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-seq2") {
+        $input_type = "sequences";
+        $seq_file[2] = $ARGV[$a+1];
+        $data_file[2] =  $ARGV[$a+1];
+
+
+    #### output fields ####
+    } elsif ($ARGV[$a] =~ /^-seqout/) {
+        $print_seq = 1;
+    } elsif ($ARGV[$a] =~ /^-matout/) {
+        $print_matrix = 1;
+
+    #### choice of the statistics ####
+    } elsif ($ARGV[$a] =~ /^-stat/) {
+        if ($ARGV[$a+1] =~ /^chi/) {
+            $stat = "chi";
+            $histo_scale = 0.5;
+        } elsif ($ARGV[$a+1] =~ /^lik/) {
+            $stat = "likelihood";
+            $histo_scale = 0.5;
+        } elsif ($ARGV[$a+1] =~ /^proba/) {
+            $stat = "proba";
+            $histo_scale = 2;
+        }
+
+    #### sequence type ####
+    } elsif ($ARGV[$a] =~ /^-dna/i) {
+        @residue_list = @nt_list;
+        $sequence_type = "nucleic acids";
+
+    }
+}
+
+#### check argument values ####
+
+if ($count_gaps) {
+  push(@aa_list, '.');
+  push(@nt_list, '.');
+
+}
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+
+### Read input data ###
+
+##### matrices as input
+if ($input_type eq "matrices") { 
+   for $i (1..$profile_nb) {
+      unless ($mat_file[$i] eq "") {
+         unless (open MAT, $mat_file[$i] ) {
+            print "\tError: cannot open file $mat_file[$i] for reading\n";                  exit;
+         }
+      }
+      while (<MAT>) {
+        next unless (/\s*\S\s*|[\s\d]+/);
+        @fields = split, /\s+/;
+        $max_length = &max($max_length, $#fields -1);
+        $residue = uc($fields[0]);
+        for $pos (2..$#fields) {
+          $matrix[$i][$pos -1]{$residue} = $fields[$pos];
+        }
+      }
+      close MAT;
+   }
+
+#### All sequences provided in a file, and the clusters provided separately
+} elsif ($input_type eq "clusters") { 
+   unless (($cl_file[1] =~ /\S/) && ($cl_file[2] =~ /\S/)) {
+       print "\tError: you should specify two cluster files\n";
+       print "\tType differential-profile -h for info\n";
+      exit;
+   }
+   ($in, $input_dir) = &OpenInputFile($inputfile);
+   %seq_hash = ReadMSF($in);
+   @all_ids = sort keys %seq_hash;
+   $seq_nb = $#all_ids + 1;
+   close $in unless ($inputfile eq "");
+   $max_length = 0;
+   for $i (1..$profile_nb) {
+       @{$query_id_list[$i]} = ();
+       unless (open CLUSTER, $cl_file[$i]) {
+          print "\tError: cannot open the cluster file $i $cl_file[$i]\n";
+   	  print "\tType differential-profile -h for info\n";
+   	  exit;
+       }
+       while (<CLUSTER>) {
+           if (/^\s*(\S+)/) {
+               push @{$query_id_list[$i]}, $1;
+           }
+       }
+       close CLUSTER;
+   }
+
+#### two input sequence files ###
+} elsif ($input_type eq "sequences") { 
+   for $i (1..$profile_nb) {
+      unless ($seq_file[$i] eq "") {
+         unless (open SEQ, $seq_file[$i] ) {
+            print "\tError: cannot open file $seq_file[$i] for reading\n";
+            exit;
+         }
+         %temp_seq_hash = ReadMSF(SEQ);
+      }
+      foreach $id (sort keys %temp_seq_hash) {
+         push @{$query_id_list[$i]}, $id;
+         push @all_ids, $id; 
+         $seq_hash{$id} = $temp_seq_hash{$id};
+      }
+      undef %temp_seq_hash;
+      close SEQ;
+   }
+}
+
+
+#### calculate sequence lengthes
+if (($input_type eq "sequences") || ($input_type eq "clusters")) {
+  for $i (1..$profile_nb) {
+    foreach $id (@{$query_id_list[$i]}) {
+           $length = length($seq_hash{$id});
+           if ($length > 0) {
+               $max_length = &max($max_length, $length);
+               push(@{$id_list[$i]}, $id);
+               $length{$id} = $length;
+           } else {
+               print "Error: sequence file does not contain\n";
+               print "any sequence identified by $id\n";
+           }
+       }
+    $seq_nb[$i] = $#{$id_list[$i]} + 1;
+  }
+}
+
+###### data report ######
+if ($verbose) {
+    print $out ";differential-profile ";
+    &PrintArguments($out);
+    print $out "\n";
+    print $out ";Input type\t$input_type\n";
+    if (($input_type eq "clusters") || ($input_type eq "sequences")) {
+      print $out ";Max sequence length\t$max_length\n";
+      for $i (1..$profile_nb) {
+  	print $out ";\n";
+	print $out ";Data file $i:	$data_file[$i]\n";
+ 	  print $out ";\t$seq_nb[$i] sequences\n";
+ 	  print $out ";\tidentifier\tlength\n";
+ 	  foreach $id (@{$id_list[$i]}) {
+ 	      print $out ";\t$id\t$length{$id}\n";
+ 	  }
+       }
+    }
+    print $out ";\n";
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+    print $out ";Statistics\t$stat\n";
+    print $out ";Histogram requested\n" if ($print_histo);
+}
+
+
+###### print column header #######
+print $out ";pos";
+if ($print_seq) {
+    for $i (1..$profile_nb) {
+        $title = substr(&ShortFileName($cl_file[$i]),0,$seq_nb[$i]);
+        for $j ((length($title)+1)..$seq_nb[$i]) {
+	    $title .= " ";
+        }
+        printf $out "\t%s", $title; 
+    }
+}
+
+for $profile (1..$profile_nb) {
+    if ($print_matrix) {
+        print $out "\t";
+	foreach $residue (@residue_list) {
+            printf $out "${matrix_format}s", $residue;
+	}
+    }
+    if ($stat eq "likelihood") {
+#        printf $out "\t%7s", "-2L_$profile";
+    } elsif  ($stat eq "chi")  {
+        printf $out "\t%7s", "chi_$profile";
+    }
+}
+if ($stat eq "likelihood") {
+    print $out "\tdif_-2L";
+} elsif ($stat eq "proba") {
+    print $out "\tdif_pro";
+    print $out "\tdif_info";
+} else {
+    print $out "\tdif_chi";
+}
+print $out "\t${stat}_histo" if ($print_histo);
+print $out "\n";
+
+#### intialize output lines
+for $pos (1..$max_length) {
+    $line[$pos] = "$pos";
+}
+
+### build profile matrices from the sequences ####
+if (($input_type eq "sequences") || ($input_type eq "clusters")) {
+  for $pos (1..$max_length) {
+    $line[$pos] = "$pos";
+    ### build profile matrices from the sequences ####
+    for $cluster (1..$profile_nb) {
+        $line[$pos] .= "\t" if ($print_seq);
+        ### reset the table to 0
+	foreach $residue (@residue_list) {
+	    $matrix[$cluster][$pos]{$residue} = 0;
+	}
+        ### count the residue at this position
+	foreach $id (@{$id_list[$cluster]}) {
+	    if ($pos <= $length{$id}) {
+		$offset = $pos -1;
+		$residue = uc(substr($seq_hash{$id},$offset,1));
+		$matrix[$cluster][$pos]{$residue}++;
+		$line[$pos] .= $residue if ($print_seq);
+	    }
+	}
+    } 
+  }
+}
+
+
+#### calculate residue frequencies within each matrix ####
+for $matrix (1..$profile_nb) {
+    foreach $residue (@residue_list) {
+        for $pos (1..$max_length) {
+            $residue_occ[$matrix]{$residue} += $matrix[$matrix][$pos]{$residue};
+        }
+            $sum_occ[$matrix] += $residue_occ[$matrix]{$residue};
+    }
+    $sum_freq[$matrix] = 0;
+    foreach $residue (@residue_list) {
+        $residue_freq[$matrix]{$residue} =  $residue_occ[$matrix]{$residue}/$sum_occ[$matrix] unless ($sum_occ[$matrix] == 0);
+        $sum_freq[$matrix] += $residue_freq[$matrix]{$residue};
+    }
+}
+
+#### calculate profile statistics ####
+for $pos (1..$max_length) {
+    @diff_values = ();
+
+    ###### internal profile statistics 
+    for $matrix (1..$profile_nb) {
+        $line[$pos] .= "\t" if ($print_matrix);
+        @int_values = ();
+	foreach $residue (@residue_list) {
+            $line[$pos] .= sprintf "${matrix_format}d",   $matrix[$matrix][$pos]{$residue} if ($print_matrix);
+	    push @int_values,  $matrix[$matrix][$pos]{$residue};
+        }
+        $total_residue_nb = 0;
+	foreach $residue (@residue_list) {
+          $total_residue_nb += $matrix[$matrix][$pos]{$residue};
+        }
+	foreach $residue (@residue_list) {
+            $expected_occ = ($residue_freq[$matrix]{$residue} * $total_residue_nb);
+	    push @int_values, $expected_occ;
+        }
+        if ($stat eq "chi") {
+            ($chi_square, $df) = &ChiSquare("goodness", 2, $#residue_list + 1, 1, @int_values);
+            $line[$pos] .= sprintf "\t%7.2f", $chi_square;
+#        } elsif ($stat eq "likelihood") {
+#            $log_likelihood = &LogLikelihood("good fit",2,$#residue_list + 1, @int_values);
+#            $line[$pos] .= sprintf "\t%7.2f", $log_likelihood;
+        }
+    }
+
+
+    ###### differential profile ######
+    for $matrix (1..$profile_nb) {
+	foreach $residue (@residue_list) {
+	    push @diff_values, $matrix[$matrix][$pos]{$residue};
+	}
+    }
+
+    if ($stat eq "likelihood") {
+        $log_likelihood = &LogLikelihood($profile_nb, $#residue_list + 1, @diff_values);
+        $line[$pos] .= sprintf "\t%7.2f", -2*$log_likelihood                       ;
+	$histo_value = -2*$histo_scale*$log_likelihood;
+    } elsif ($stat eq "proba") {
+        $proba = &FisherExactTest($profile_nb, $#residue_list + 1, @diff_values);
+        $info = -log($proba)/log(10);
+        $line[$pos] .= sprintf "\t%7.5f", $proba;
+        $line[$pos] .= sprintf "\t%7.1f", $info;
+        $histo_value = $histo_scale*$info;
+    } else {
+        ($chi_square, $df) = &ChiSquare("homogeneity",$profile_nb,$#residue_list + 1, 0, @diff_values);
+        $line[$pos] .= sprintf "\t%7.2f", $chi_square;
+        $histo_value = $histo_scale*$chi_square;
+    }
+
+    if ($print_histo) {
+        $line[$pos] .=  "\t|";
+        for $inf (1..round($histo_value)) {
+            $line[$pos] .= "=";
+        }
+    }
+
+    $line[$pos] .= "\n";
+    print $out $line[$pos];
+}
+
+###### verbose ######
+if ($verbose) {
+    ### print residue frequencies
+    print $out ";\n";
+    print $out ";Residue frequencies\n";
+    print $out ";===================\n";
+    print $out "; res";
+    for $matrix (1..$profile_nb) {
+        print $out "\tocc_$matrix";
+        print $out "\tfreq_$matrix";
+#        print $out "\texp_$matrix";
+    }
+    print $out "\n";
+    foreach $residue (@residue_list) {
+        print $out "; $residue";
+        for $matrix (1..$profile_nb) {
+            printf $out "\t%d", $residue_occ[$matrix]{$residue};
+            printf $out "\t%7.5f", $residue_freq[$matrix]{$residue};
+#            printf $out "\t%7.3f", $residue_freq[$matrix]{$residue}*$seq_nb[$matrix];
+        }
+        print $out "\n";
+    }
+    print $out "; sum";
+    for $matrix (1..$profile_nb) {
+        printf $out "\t%d", $sum_occ[$matrix]; 
+        printf $out "\t%7.5f", $sum_freq[$matrix];
+#        printf $out "\t%7.3f", $seq_nb[$matrix]
+    }
+    print $out "\n";
+    print $out ";\n";
+
+}
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subroutine definition ############################

@@ -1,0 +1,718 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: display-graph,v 1.28 2011/01/18 11:29:50 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+
+=pod
+
+=head1 NAME
+
+display-graph
+
+=head1 DESCRIPTION
+
+Produces the figure of a graph 
+
+=head1 AUTHORS
+
+Sylvain Brohée <sylvain@bigre.ulb.ac.be>
+
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+Graph utils
+
+=head1 USAGE
+
+display-graph -i graph_input_file -o picture_output_file [-v #] [-layout] [-in_format tab/gml/adj_matrix] -out_format [jpeg|jpg|png|ps]
+
+=head1 INPUT FORMAT
+
+See convert-graph for a description of the allowed input graph
+formats.
+
+=head1 OUTPUT FORMAT
+
+A graphical representation of the graph in the required output format.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+require PostScript::Simple;
+use GD;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+
+    ## Input formats
+    local $input_format = "";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1,
+	adj_matrix=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+    local $source_color_col = 0;
+    local $target_color_col = 0;
+    local $color_col = 0;
+    local $edge_width = 0;
+    local $letter_width = 10;
+
+    ## Output formats
+    local $output_format = "png";
+    %supported_output_format =(
+			       ps=>1,
+			       png=>1,
+			       jpg=>1,
+			       jpeg=>1
+    			      );
+    $supported_output_formats = join (",", keys %supported_output_format);
+
+    ## layout
+    $layout = "";
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    unless ($input_format) {
+      &RSAT::error::FatalError("You must speecify the input  format (option -in_format)");
+    }
+
+    if (!$layout && $input_format ne 'gml') {
+      &RSAT::error::FatalError("You must use the  option -layout with format", $input_format);
+    }
+    if (!$main::outfile{output}) {
+      &RSAT::error::FatalError("You must specify an output file with the -o option");
+    }
+    if (!$main::infile{input}) {
+      &RSAT::error::FatalError("You must specify an input file with the -i option");
+    }
+
+
+    ################################################################
+    ## Initialize the graph
+    my $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "graph");
+
+    ################################################################
+    ##### read input
+#     $graph->graph_from_text($input_format,
+# 			    $main::infile{input},
+# 			    $source_col,
+# 			    $target_col,
+# 			    $weight_col,
+# 			    $source_color_col,
+# 			    $target_color_col,
+# 			    $color_col,
+# 			    $source_xpos_col,
+# 			    $source_ypos_col,
+# 			    $target_xpos_col,
+# 			    $target_ypos_col,
+# 			    $distinct_path,
+# 			    $directed,
+# 			    $path_col);
+    $graph->graph_from_text($input_format,
+			    $main::infile{input},
+			    $source_col,
+			    $target_col,
+			    $weight_col,
+			    $source_color_col,
+			    $target_color_col,
+			    $color_col);
+
+    ################################################################
+    ## If the graph has no node and no edge, quit.
+    ##
+    ## Only issue the warning for high verbosity (>= 2), to avoid
+    ## warning messages on the Web interface).
+    my $number_of_nodes = scalar($graph->get_nodes());
+    my $number_of_arcs = scalar($graph->get_attribute("arcs"));
+    &RSAT::message::Debug("Graph read", $number_of_nodes." nodes",
+			  $number_of_arcs." arcs") if ($main::verbose >= 2);
+    if ($number_of_nodes == 0) {
+      &RSAT::message::Warning("Empty graph, no nodes") if ($main::verbose >= 1);
+    } elsif ($number_of_arcs == 0) {
+      &RSAT::message::Warning("Graph contains ".$number_of_nodes." nodes but no edges/arcs") if ($main::verbose >= 1);
+    }
+
+    ## Calculate the layout
+    $graph->layout($layout) if ($layout);
+
+    ## Calculate the minimum and maximum values of the weight on the edges
+    my $edge_mean = 0;
+    my $edge_sd = 0;
+    my $edge_min = 0;
+    my $edge_max = 1;
+    if ($number_of_arcs > 0) {
+      if ($edge_width) {
+	my $real = $graph->get_attribute("real");
+	($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
+	if ($real eq "null") {
+	  $real = $graph->get_attribute("real");
+	}
+
+	## If there is is not at least one real number, the weights cannot be computed
+	unless ($real) {
+	  (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
+	  $edge_width = 0;
+	}
+
+	## If all weights are equal, the min is arbitrarily set to 0
+	if ($edge_min == $edge_max) {
+	  if ($edge_max > 0) {
+	    $edge_min = 0;
+	  } elsif ($edge_min < 0) {
+	    $edge_max = 0;
+	  } else {
+	    $edge_min = -0.5;
+	    $edge_max = 0.5;
+	  }
+	}
+      }
+
+    }
+
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    ## get nodes id
+    my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+
+    ## get nodes color
+    my %nodes_color = $graph->get_attribute("nodes_color");
+
+    ## get edges color
+    my @out_colors = $graph->get_attribute("out_color");
+
+    ## get nodes neighbours
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+
+    ## get the nodes position
+    my %nodes_id_xpos = $graph->get_attribute("nodes_id_xpos");
+    my %nodes_id_ypos = $graph->get_attribute("nodes_id_ypos");
+
+    ## get the labels
+    my @out_labels = $graph->get_attribute("out_label");
+
+
+    ## Compute the total size of the picture
+    my $margin_x = 50;
+    my $margin_y = 50;
+    my $max_x = 2*$margin_x;
+    my $max_y = 2*$margin_y;
+    if ($number_of_nodes > 0) {
+      $max_x += &RSAT::stats::max(values(%nodes_id_xpos));
+      $max_y += &RSAT::stats::max(values(%nodes_id_ypos));
+    }
+    &RSAT::message::Info("Graph size", "X: ".$max_x, "Y: ".$max_y) if ($main::verbose >= 2);
+
+    ################################################################
+    ## For postscript figures : use library Postscript::Simple
+    if ($output_format eq "ps" || $output_format eq "eps") {
+      # computes the maximal coordinates of x and y
+      # create the picture
+      $p = new PostScript::Simple(xsize=>$max_x, ysize=>$max_y, colour => 1, eps => 0, units => "pt");
+      # create a new page
+      $p->newpage;
+      # display the edges
+      for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
+        if (defined $out_neighbours[$i]) {
+          my @neighbours = @{$out_neighbours[$i]};
+          my @colors = @{$out_colors[$i]};
+          my @weights = @{$out_labels[$i]};
+          my $source_xpos = $nodes_id_xpos{$i}+$margin_x;
+          my $source_ypos = $nodes_id_ypos{$i}+$margin_y;
+          for (my $j = 0; $j < scalar(@neighbours); $j++) {
+            if (defined $neighbours[$j]) {
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+$margin_x;
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+$margin_y;
+              my $edge_color = $colors[$j];
+              my $weight = $weights[$j];
+              # get the color of the edge
+              my $r = hex(substr($edge_color, 1,2));
+              my $g = hex(substr($edge_color, 3,2));
+              my $b = hex(substr($edge_color, 5,2));
+              $p->setlinewidth(2);
+              if ($edge_width) {
+                $width = ((($weight-$edge_min)/($edge_max-$edge_min))*6.5)+0.5;
+                $p->setlinewidth($width);
+              }
+              $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, $r, $g, $b);
+            }
+          }
+        }
+      }
+
+      ## Display nodes
+      $p->setfont("Arial", 12);
+      my $not_connected_nodes = 30;
+      while (my ($id, $name) = each (%nodes_id_name)) {
+        my $length_name = length($name)*$letter_width;
+        my $xpos = $nodes_id_xpos{$id};
+        my $ypos = $nodes_id_ypos{$id} || $margin_y + 5;
+        if (!defined($xpos)) {
+          ## In case there is no location found for this node (orphan)
+          ## For orphan nodes, fr_layout does not return the location!
+          ## We place the orphan nodes side by side at the extremity of 
+          ## the graphic.
+
+	  ## From JvH to Sylvain: I don't understand why you do this
+	  ## control AFTER having defined the diagram size. Would it
+	  ## not be more logical to do it before ?
+	  ##
+	  ## besides, would it not be more logical to place them below
+	  ## each other rather than side by site ? If you have 100
+	  ## nodes, you would get a more compact picture by aligning
+	  ## them vertically than horizontally.
+
+          $xpos = ($not_connected_nodes+$length_name*$letter_width) + $margin_x;
+          $not_connected_nodes += $length_name + $letter_width;
+        } else {
+          $xpos = $nodes_id_xpos{$id} + $margin_x;
+          $ypos = $nodes_id_ypos{$id} + $margin_y;
+        }
+
+        # get the color of the node
+        my $node_color = $nodes_color{$id};
+        my $r = hex(substr($node_color, 1, 2));
+        my $g = hex(substr($node_color, 3, 2));
+        my $b = hex(substr($node_color, 5, 2));
+        $p->setcolour($r,$g,$b);
+        $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos+ $length_name/2, $ypos+12);
+        $p->setcolour("white");
+        $p->box({filled=>1},$xpos - $length_name/2+1, $ypos-4, $xpos+$length_name/2-1, $ypos+11);
+        $p->setcolour("black");
+        $p->text($xpos-($length_name/2)+6,$ypos-1, $name);
+      }
+      $p->output($main::outfile{output});
+
+      ################################################################
+      ## For jpg / png output : use GD library
+    } elsif ($output_format eq "jpg" || $output_format eq "jpeg" || $output_format eq "png") {
+      # create the picture
+      my $p  = new GD::Image ( $max_x , $max_y ) ;
+      my $white = $p->colorAllocate(255,255,255);
+      my $black = $p->colorAllocate(0,0,0);
+      my %colors = ();
+      $colors{"255255255"} = $white;
+      $colors{"000000000"} = $black;
+
+      # make the background transparent and interlaced
+      $p->transparent($white);
+      $p->interlaced('false');
+      # display the edges
+      for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
+        if (defined $out_neighbours[$i]) {
+          my @neighbours = @{$out_neighbours[$i]};
+          my @colors = @{$out_colors[$i]};
+          my $source_xpos = $nodes_id_xpos{$i}+$margin_x;
+          my $source_ypos = $nodes_id_ypos{$i}+$margin_y;
+          my @weights = @{$out_labels[$i]};
+
+          for (my $j = 0; $j < scalar(@neighbours); $j++) {
+            if (defined $neighbours[$j]) {
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+$margin_x;
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+$margin_y;
+              my $edge_color = $colors[$j];
+              my $weight = $weights[$j];
+              # get the color of the edge
+              my $r = hex(substr($edge_color, 1,2));
+              my $g = hex(substr($edge_color, 3,2));
+              my $b = hex(substr($edge_color, 5,2));
+              my $idcol = join("","$r","$g","$b");
+              my $current_col = $colors{$idcol};
+              if (!defined($current_col)) {
+                $current_col = $p->colorAllocate($r, $g, $b);
+                $colors{"$idcol"} = $current_col;
+              }
+
+	      #               print "$r, $g, $b\n";
+              $p->setThickness(1);
+              if ($edge_width) {
+                $width = ((($weight-$edge_min)/($edge_max-$edge_min))*6.5)+0.5;
+                $p->setThickness($width);
+              }
+	      #               print "$current_col\n";
+              $p->line($source_xpos, $source_ypos, $target_xpos, $target_ypos, $current_col);
+            }
+          }
+        }
+      }
+      $p->setThickness(1);
+      my $small_font = gdSmallFont;
+      my $not_connected_nodes = 30;
+      while (my ($id, $name) = each (%nodes_id_name)) {
+        my $length_name = length($name)*$letter_width;
+        my $xpos = $nodes_id_xpos{$id};
+        my $ypos = $nodes_id_ypos{$id} || $margin_y + 5;
+        if (!defined($xpos)) {
+          ## In case there is no location found for this node (orphan)
+          $xpos = $not_connected_nodes+length($name)*10+$margin_x;
+          $not_connected_nodes+=(length($name)*10)+10;
+        } else {
+          $xpos = $nodes_id_xpos{$id}+$margin_x;
+          $ypos = $nodes_id_ypos{$id}+$margin_y;
+        }
+
+        # get the color of the node
+        my $node_color = $nodes_color{$id};
+        my $r = hex(substr($node_color, 1, 2));
+        my $g = hex(substr($node_color, 3, 2));
+        my $b = hex(substr($node_color, 5, 2));
+        my $current_col = $p->colorAllocate($r, $g, $b);
+        $p->filledRectangle($xpos-$length_name/2, $ypos-5, $xpos+$length_name/2, $ypos+12, $white);
+        $p->rectangle($xpos-$length_name/2, $ypos-5, $xpos+$length_name/2, $ypos+12, $current_col);
+        $p->string(gdSmallFont, $xpos-$length_name/2+6,$ypos-4, $name, $black);
+#        $p->setcolour($r,$g,$b);
+#        $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos+ $length_name/2, $ypos+12);
+#        $p->setcolour("white");
+#        $p->box({filled=>1},$xpos - $length_name/2+1, $ypos-4, $xpos+$length_name/2-1, $ypos+11);
+#        $p->setcolour("black");
+#        $p->text($xpos-($length_name/2)+6,$ypos-1, $name);
+      }
+
+      binmode STDOUT;
+      my $output_fhandle = &OpenOutputFile($main::outfile{output});
+      if ($output_format eq "jpg" || $output_format eq "jpeg") {
+        print $output_fhandle $p->jpeg();
+      } elsif ($output_format eq "png") {
+        print $output_fhandle $p->png();
+      } 
+      close $output_fhandle;
+    }
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-i inputfile>
+
+Specification of the input graph file
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml, adj_matrix
+
+=cut
+    } elsif ($arg eq "-in_format") {
+      $input_format = shift(@arguments);
+      &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+	unless ($supported_input_format{$input_format});
+
+
+=pod
+
+=item B<-layout layout_algorithm>
+
+Calculate the layout, i.e. assign positions to each node of the
+graph.
+
+This option requires GML as input format.
+
+Supported layout algorithms:
+
+=over
+
+=item I<-layout none>
+
+Do not apply any layout
+
+=item I<-layout spring>
+
+Apply spring embedding algorithm to compute node positions.
+
+=item I<-layout random>
+
+Assign random positions to all nodes.
+
+=item I<-layout fr>
+
+Calculate the layout (provided you have the fr_layout program in
+$RSAT/bin) according to the Fruchterman-Reingold (FR) algorithm.
+
+=back
+
+=cut
+    } elsif ($arg eq "-layout") {
+      $layout = shift(@arguments);
+#       unless ($RSAT::Graph2::supported_layout{$layout}) {
+# 	&RSAT::error::FatalError($layout, "Invalid value for option -layout. Supported: ".$RSAT::Graph2::supported_layouts);
+#       }
+
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes for the
+tab-delimited format. (default 1)
+
+=cut
+    } elsif ($arg eq "-scol") {
+      $source_col = shift (@arguments);
+      unless (&IsNatural($source_col) && ($source_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+      }
+
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes for the
+tab-delimited format.(default 2)
+
+=cut
+    } elsif ($arg eq "-tcol") {
+      $target_col = shift (@arguments);
+      unless (&IsNatural($target_col) && ($target_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+      }
+
+
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes. (no default)
+
+=cut
+    } elsif ($arg eq "-wcol") {
+      $weight_col = shift (@arguments);
+      unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+      }
+
+=pod
+
+=item B<-eccol>
+
+Edge color column. Column containing the color of the edges (RGB) for
+the tab-delimited format. (no default)
+
+=cut
+    } elsif ($arg eq "-eccol") {
+      $color_col = shift (@arguments);
+      unless (&IsNatural($color_col) && ($color_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+      }
+
+=pod
+
+=item B<-sccol>
+
+Source node color colum. Column containing the color of the node (RGB)
+for the tab-delimited format. (no default)
+
+A node can only have one color. If in the file, the color of the node
+changes, only the first defined color will be taken into account.
+
+=cut
+    } elsif ($arg eq "-sccol") {
+      $source_color_col = shift (@arguments);
+      unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+      }
+
+=pod
+
+=item B<-ewidth>
+
+Calculate the edge width for the GML output. The width is proportional
+to the weight of the edge.  All weights in the column indicated by the
+-wcol argument (or in the label field of the GML file) must thus be
+real values.
+
+=cut
+    } elsif ($arg eq "-ewidth") {
+      $edge_width = 1;
+
+=item B<-out_format output_format>
+
+Output format. Supported: ps, png, jpeg
+
+=cut 
+    } elsif ($arg eq "-out_format") {
+      $output_format = shift(@arguments);
+      &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+	unless ($supported_output_format{$output_format});
+      ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+Name of the output file.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print STDOUT "; display-graph ";
+    &PrintArguments(STDOUT);
+    if ((%main::infile)) {
+	print STDOUT "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+    if ((%main::outfile)) {
+	print STDOUT "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<convert-graph>
+
+=item I<graph-get-clusters>
+
+=item I<graph-node-degree>
+
+=item I<graph-neighbours>
+
+=item I<random-graph>
+
+=back
+
+=cut

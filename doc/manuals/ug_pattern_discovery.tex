@@ -1,0 +1,101 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% PATTERN DISCOVERY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Pattern discovery}
+
+In a pattern discovery problem, you start from a set of functionally
+related sequences (e.g.  upstream sequences for a set of co-regulated
+genes) and you try to extract motifs (e.g. regulatory elements) that
+are characteristic of these sequences.
+
+Several approaches exist, either string-based or
+matrix-based. \concept{String-based pattern discovery} is based on an
+analysis of the number of occurrences of all possibles words
+(\program{oligo-analysis}), or spaced pairs
+(\program{dyad-analysis}). The methods for \concept{matrix-based
+  pattern discovery} rely on the utlisation of some machine-learning
+method (e.g. greedy algorithm, expectation-maxiisation, gibbs
+sampling, ...) in order to optimise of some scoring function
+(log-likelihood, information,...) which is likely to return
+significant motifs.
+
+In this chapter we will mainly focus on string-based approaches, and
+illustrate some of their advantages. A further chapter will be
+dedicated to matrix-based pattern discovery.
+
+For microbial cis-acting elements, string-based approaches give
+excellent results. The main advantages of these methods:
+
+\begin{itemize}
+\item[+] Simple to use
+\item[+] Deterministic (if you run it repeatedly, you always get the
+  same result), in contrast with stochastic optimization methods.
+\item[+] Exhaustive : each word or space pair is tested
+  independently. Consequently, if a set of sequences contains several
+  exceptional motifs, all of them can be detected in a single run. 
+\item[+] The tests of significances can be performed on both tails of
+  the theoretical distribution, in order to detect either
+  over-represented, or under-represented patterns.
+\item[+] Fast. 
+\item[+] Able to return a negative answer: if no motif is significant,
+  the programs return no motif at all. This is particularly important
+  to reduce the rate of false positive.
+\end{itemize}
+
+
+An obvious advantage of matrix-based approach is that they provide a
+more refined description of motifs presenting a high degree of
+degeneracy. However, a general problem of matrix-based approaches is
+that it is impossible to analyze all possible position-weight
+matrices, and thus one has to use heuristics. There is thus a risk to
+miss the global optimum because the program is attracted to local
+maxima. Another problem is that there are more parameters to select
+(typically, matrix width and expected number of occurrences of the
+motif), and their choice drastically affects the quality of the
+result.
+
+Basically, I would tend to prefer string-based approaches for any
+problem of pattern discovery. On the contrary, matrix-based approaches
+are much more sensitive for pattern matching problems (see below). My
+preference is thus to combine string-based pattern discovery and
+matrix-based pattern matching.
+
+But I am obviously biased because I developed string-based
+approaches. An important factor in the success obtained with a program
+is to understand precisely its functioning. I thus think that each
+user should test different programs, compare them and select the one
+that best suits his/her needs.
+
+\section{Requirements}
+
+This part of the tutorial assumes that you already performed the
+tutorial about sequence retrieval (above), and that you have the
+result files in the current directory. Check with the command:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+cd ${HOME}/practical_rsat
+ls -1
+\end{verbatim} \end{footnotesize}
+}
+
+
+You should see the following file list:
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+Escherichia_coli_K12_start_codons.wc
+Escherichia_coli_K12_stop_codons.wc
+MET_genes.txt
+MET_up800-noorf.fasta
+PHO_genes.txt
+PHO_up800-noorf.fasta
+PHO_up800.fasta
+RAND_genes.txt
+RAND_up800-noorf.fasta
+his.genes.txt
+his.up200.noorf.fasta
+\end{verbatim} \end{footnotesize}
+}
+
+

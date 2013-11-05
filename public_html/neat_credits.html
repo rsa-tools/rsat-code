@@ -1,0 +1,138 @@
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>Network Analysis Tools - Credits</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<blockquote>
+
+<center>
+<h2><a href=NeAT_home.html>Network Analysis Tools (NeAT)</A> - Credits</h2>
+</center>
+
+<p>The Network Analysis Tools integrate a set of programs implemented
+at the <a target=_blank href=http://www.bigre.ulb.ac.be>Laboratoire de
+Bioinformatique des G&eacute;nomes et des R&eacute;seaux (BiGRe)</a>,
+plus a few programs developed by third parties (with the authorization
+of their authors).</p>
+
+<hr>
+
+<h3>Developers</h3>
+
+<ul>
+<li><p>The programs for handling graphs and clusters (conversion,
+comparisons, display) were mainly developed by
+<a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a>
+and
+<a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+</p></li>
+
+<li><p>The backtrack algorithm for metabolic path finding was
+principally developed by Fabian Couche and Didier Croes and is
+available <a
+href="http://www.bigre.ulb.ac.be/Users/didier/pathfinding/"
+target='_blank'>here</a>. The path finding web service implemented by
+<a target=_blank
+href=http://www.bigre.ulb.ac.be/Users/karoline/>Karoline Faust</a> for
+NeAT relies on REA (Jimenez & Marzal, 1999) and can be applied to any
+network. Both path finding tools were developed under the supervision
+of Jacques van Helden.</p></li>
+
+<li><p>The MCL algorithm for graph-based clustering was developed by
+<a target=_blank href=http://micans.org/stijn/contact.html>Stijn van
+Dongen</a> (Sanger Institute, UK). We are thankful to Stijn for making
+the MCL code publicly available, for allowing us to integrate it in
+our Web server, and for his extensive feed-back on the NeAT web
+interface.</p></li>
+
+<li><p>The RNSC algorithm for graph-based clustering was developed by
+<a target=_blank href='http://cgm.cs.mcgill.ca/~aking6/'>Andrew King</a> (McGill Institute, Canada). We are thankful to Andrew for making
+the RNSC code publicly available, for allowing us to integrate it in
+our Web server and our web services.</p></li>
+
+</ul>
+
+<p>The respective contributions are indicated in more detail in the
+manual pages of each tool.</p>
+
+<hr>
+
+<h3>Acknowledgements</h3>
+
+We acknowledge the following colleagues for their constructive
+comments and suggestions about the NeAT interface:
+
+<ul>
+<li>Stijn Van Dongen (Sanger Institute, UK)</li>
+<li>Bruno Contreras Moreira (Univ. Saragosa, Spain)</li>
+<li>Alexandre Irrthum (ULg, Belgium) and his students</li>
+<li>Cei Abreu (Sanger Institue, UK)</li>
+<li>Philippe Gautier (MRC Edimburg, UK)</li>
+<li>Nicolas Simonis (Harvard medical school, Boston, USA)</li>
+<li>Shuye Pu (Hospital for Sick Children, Toronto, Canada) </li>
+</ul>
+
+<hr>
+
+<h3>Sample data sets</h3>
+The sample data sets have been taken from:<br>
+<ul>
+<li><a href='http://mips.gsf.de/' target='_blank'>MIPS</a></li>
+<li><a href='http://string.embl.de/' target='_blank'>STRING</a></li>
+<li><a href='http://www.thebiogrid.org/index.php' target='_blank'>BioGRID</a></li>
+<li><a href='http://www.genome.jp/kegg/' target='_blank'>KEGG</a></li>
+</ul>
+<hr>
+
+<h3>Funding</h3>
+
+<ul>
+
+<p><li>Sylvain Broh&eacute;e is the recipient of a PhD grant from the Fonds
+pour la Formation &agrave; la Recherche dans l'Industrie et dans
+l'Agriculture (FRIA).</li></p>
+
+<p><li>The PhD grant of Karoline Faust is supported by The Actions de
+Recherches Concert&eacute;es de la Communaut&eacute; Fran&ccedil;aise
+de Belgique (ARC grant number 04/09-307).</li></p>
+
+</ul>
+
+<hr>
+<h3>Libraries</h3>
+
+<ul>
+<p><li>display-graph uses the <a href
+='http://search.cpan.org/~mcnewton/PostScript-Simple-0.07/' target =
+'_blank'>PostScript-Simple</a> an <a href
+='http://search.cpan.org/dist/GD/' target = '_blank'>GD</a> perl
+libraries.</li></p>
+
+<p><li>convert-graph and display-graph uses the Fruchterman and
+Reingold layout algorithm available in the <a target=_blank
+href='http://www.boost.org/libs/graph/doc/index.html'>boost graph
+library</a>.</li></p>
+
+<p><li>Pathfinder calls REA (Jimenez & Marzal, 1999) as k shortest
+paths algorithm (modified by Jean-No&euml;l Monette and Pierre Schaus) and uses a graph library developed by the
+former <a href='http://www.bigre.ulb.ac.be/amaze/'
+target='_blank'>aMAZE team</a>.</li></p>
+
+<p><li>Metabolic pathfinder makes use of <a href="http://www.hibernate.org/" target="_blank">Hibernate</a> and a
+database implemented in <a href="http://www.postgresql.org/" target="_blank">postgres</a> storing
+<a href="http://www.genome.jp/kegg/" target="_blank">KEGG</a> data in order
+to label compounds and reactions. In addition, it makes use of <a href="http://www.graphviz.org/" target="_blank">graphviz</a>
+to display graphs.
+</li></p>
+
+<p><li>KEGG network provider uses <a href="http://www.genome.jp/kegg/pathway.html" target="_blank">KEGG PATHWAY</a> data.
+</li></p>
+
+</ul>
+<hr size=6>
+
+</body>
+</html>

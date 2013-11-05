@@ -1,0 +1,300 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: microcyc-get-gpr,v 1.4 2013/04/24 12:37:18 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+microcyc-get-gpr
+
+=head1 VERSION
+
+$program_version
+
+
+=head1 DESCRIPTION
+
+Get the gene-protein-reaction (GPR) relationships from the MicroCyc
+database (https://www.genoscope.cns.fr/agc/microscope/), using the Web
+services (http://www.genoscope.cns.fr/microme/microcyc-wsc/).
+
+=head1 AUTHOR
+
+Jacques van Helden
+
+Adapted from a prototype Python script implemented by Quentin DA COSTA
+and Jonathan VERNEAU, Master students at Aix-Marseille Unviersité,
+March 2012.
+
+
+=head1 CATEGORY
+
+=over
+
+=item metabolism
+
+=item genomes
+
+=back
+
+=head1 USAGE
+
+microcyc-get-gpr [-o outputfile] [-v #] [...]
+
+=head2 Example
+
+ microcyc-get-gpr -v 2 -org MYCPN19-150 -o GER_Mycoplasma_pneumoniae_M129.tab
+
+=head2 DOCUMENTATION
+
+The Genoscope Web services are documented in the WSDL file.
+
+http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited file with one row gene-reaction association, and one
+column per attribute.
+
+=head1 SEE ALSO
+
+=item I<supported-organisms-microcyc>
+
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+use SOAP::Lite;
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $null = "";
+
+  our $organism_microcyc_id = "";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  unless ($organism_microcyc_id) {
+    &RSAT::error::FatalError("You must specify the frame-version ID of the query organism (option -org).");
+  }
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+
+  ## Open a connection to the Genoscope Web services
+  my $microcyc_ws_url = 'http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl';
+  &RSAT::message::TimeWarn("Opening connection to Web services", $microcyc_ws_url) if ($main::verbose >= 2);
+  my $service = SOAP::Lite->service($microcyc_ws_url);
+  &RSAT::message::TimeWarn("Connection established", $service) if ($main::verbose >= 3);
+
+  ## Check that the organism exists in MicroCyc
+  &RSAT::message::TimeWarn("Getting GPR for organism", $organism_microcyc_id) if ($main::verbose >= 2);
+  my $result_pointer = $service->getGPR($organism_microcyc_id); my %result_hash = %{$result_pointer};
+
+  ## IN DEVELOPMENT
+  warn "STILL IN DEVELOPMENT. THE REST HAS TO BE WRITTEN";
+  foreach my $key (sort keys %result_hash) {
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  &RSAT::message::TimeWarn("Ouput file", $outfile{output}) if ($main::verbose >= 2);
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-org organism_microcyc_id>
+
+Identifier (type "frame-version") of an organism supported by the
+MicroCyc database.
+
+The list of supported organisms at MicroScope can be obtained with the
+command I<supported-organisms-microcyc>.
+
+=cut
+    } elsif ($arg eq "-org") {
+      $main::organism_microcyc_id = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; microcyc-get-gpr ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+################################################################
+## Get the list of supported organism IDs at Genoscope
+sub GetOrganismIDList {
+  my ($service) = @_;
+
+  ## Retrieve the list of supported organisms.  SOAP returns a Perl
+  ## reference pointing to the result structure, which is a hash
+  ## table.
+  my $result_pointer = $service->getListingPgdbFrameVersion(); my %result_hash = %{$result_pointer};
+
+  ## For this service, the result hash table contains a single
+  ## key-value pair, the key is "string", and the value is an array of
+  ## organism IDs. We simply return this array
+  return(@{$result_hash{"string"}});
+}
+
+
+
+__END__
+

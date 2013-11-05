@@ -1,0 +1,33 @@
+
+<!ELEMENT data  ( bedseq )>
+
+<!ELEMENT bedseq  ( alignment )>
+<!ATTLIST bedseq
+species CDATA #REQUIRED
+chr CDATA #REQUIRED
+start CDATA #REQUIRED
+end CDATA #REQUIRED
+>
+
+<!ELEMENT alignment  ( sequences, motifs  )>
+<!ATTLIST alignment
+name CDATA #REQUIRED
+>
+
+<!ELEMENT sequences  ( sequence )*>
+
+<!ELEMENT sequence  EMPTY>
+<!ATTLIST sequence
+species CDATA #REQUIRED
+text CDATA #REQUIRED
+>
+
+<!ELEMENT motifs  ( motif )*>
+<!ELEMENT motif  EMPTY>
+<!ATTLIST motif
+start CDATA #REQUIRED
+end CDATA #REQUIRED
+nbSpecies CDATA 
+name CDATA #REQUIRED
+text CDATA #REQUIRED
+>

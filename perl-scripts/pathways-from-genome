@@ -1,0 +1,1739 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: pathways-from-genome,v 1.36 2013/09/29 05:00:36 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+pathways-from-genome
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Taks manager developed in the context of the MICROME project,
+implemening a workflow to infer metabolic pathways from Bacterial
+genomes.
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item metabolism
+
+=item genome analysis
+
+=back
+
+=head1 USAGE
+
+pathways-from-genome -org Organism_name [-v #] [-o output_directory]  [...]
+
+=head2 Example
+
+ pathways-from-genome -v 1 \
+     -org_table organisms_table.tab \
+     -org Rhodobacter_sphaeroides_2_4_1_uid57653 \
+     -task operons,synthesis \
+     -ec2pathway metacyc_ec_pathway.tab \
+     -o pathways_from_genome
+
+=head1 OUTPUT FORMAT
+
+The user-specified output directory is subdivided into organism- and
+task-specific subdirectories. Results are presented in the form of
+tab-delimited text files, associated with HTML formatted reports.
+
+=head1 SEE ALSO
+
+=over
+
+=item I<infer-operon>
+
+used to infer operons and directons.
+
+=item I<compare-classes>
+
+used for pathway projections (comparing sets of genes/EC numbers with
+annotated pathways) and for pathway-to-pathway comparisons.
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA.disco.lib";
+require "footprint.lib.pl";
+require RSAT::organism;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $syn = "";
+
+  our @organism_names = ();
+  our %organism_info = ();
+  our $organism_name = "";
+
+  our $refresh_time = 0;
+
+
+  ## Image formats
+  our @image_formats = ("png", "pdf");
+  our $icon_height = "200"; ## Height for the previsualization icons in the HTML reports
+
+  our $null = "__NULL__";
+
+  ## Supported tasks
+  our @supported_tasks = qw(all
+			    metanet
+			    ger
+			    operons
+			    directons
+			    footprints
+			    genesets2ecs
+			    pathways_vs_genome
+			    pathway_proj
+			    pathway_disco
+			    synthesis
+			  );
+  our $supported_tasks = join(",", @supported_tasks);
+  our %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+
+  ## Organism must be supported in RSAT
+  my $organism = new RSAT::organism();
+
+  ## Input files
+  our %infile = ();
+
+  ## Default parameters
+  our %param = ();
+  $param{operon_dist} = 55; push @param_list, "operon_dist";  ## optimal value for E.coli and B.subtilis, after an evaluation by Rekin's Janky (PhD thesis)
+  $param{operon_min_genes} = 1; push @param_list, "operon_min_genes"; ## We also want singletons because they may contain a separate enzyme-coding gene
+  $param{skip_org} = 0; ## Skip the first entries in the list of organisms
+  $param{last_org} = 0; ## Stop after a user-specified number of organisms
+
+  ## Default column order for organism cross-table
+#   our @org_table_columns_old = qw(tax_id
+# 			      microscope_genome_id
+# 			      metacyc_frame_version
+# 			      organism_name
+# 			      uniprot_proteome
+# 			      rsat_organism_id
+# 			      obiw_genome_id
+# 			      family_name
+# 			      family_taxid
+# 			      order_name
+# 			      order_taxid);
+
+  our @org_table_columns = qw (ulb_ncbi_name_id
+			       tax_id
+			       microscope_genome_id
+			       microscope_metacyc_id
+			       organism_name
+			       uniprot_proteome
+			       obiw_genome_id
+			       ncbi_family_name
+			       ncbi_family_taxid
+			       ncbi_order_name
+			       ncbi_order_taxid
+			       );
+
+  our @mandatory_info = qw (ulb_ncbi_name_id
+			    tax_id
+			    microscope_metacyc_id
+			   );
+  our %org_table_column = ();
+  &IndexOrgTableColumns();
+
+
+  ## Job management options
+  our $job_prefix; $job_prefix = "pathways-from-genomes";
+  our $die_on_error; $die_on_error = 1;
+  our $batch; $batch = 0;
+  our $batch_cmd; $batch_cmd = "";
+  our $dry; $dry = 0;
+  our $max_jobs; $max_jobs = 100000; ## Max number of allowed jobs to send to batch queue
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  &RSAT::message::TimeWarn("Checking parameters") if ($main::verbose >= 1);
+
+  ## If no task is specified, run all of them
+  unless (scalar(keys(%task))) {
+    %task = %supported_task;
+  }
+
+  ## If option -task all was called, activate all tasks
+  if ($task{all}) {
+    %task = %supported_task;
+  }
+
+  ## Check necessary files
+  if (($task{pathways_vs_genome}) ||
+      ($task{pathway_proj}) ||
+      ($task{pathway_disco})) {
+    &RSAT::error::FatalError("Pathway analysis tasks require to define the EC <-> pathway file (option -ec2pathway)") unless ($infile{ec2pathway});
+  }
+
+  ## Check conditions for which the organism cross-reference table is
+  ## required.
+  if ($all_organisms) {
+    &RSAT::error::FatalError("Option -all_organisms requires to specify an organism table with the option -org_table.") 
+      unless ($infile{organism_table});
+  }
+
+  if ($task{ger}) {
+    &RSAT::error::FatalError("Task 'ger' requires to specify an organism cross-reference table with the option -org_table.")
+      unless ($infile{organism_table});
+  }
+
+  ################################################################
+  ## Read organism names + cross references from organism table if
+  ## specified.
+  &ReadOrganismCrossTable() if ($infile{organism_table});
+
+  ## Check organism names
+  our $org_nb = scalar(@organism_names);
+  if ($org_nb <= 0) {
+    &RSAT::error::FatalError("You must specify at least one organism (option -org)");
+  } else {
+    ## Check that all organisms are supported before starting any analysis
+    &RSAT::message::TimeWarn("Checking $org_nb organism names") if ($main::verbose >= 1);
+    my $org_counter = 0;
+    foreach my $organism_name (@organism_names) {
+      $org_counter++;
+      &RSAT::message::TimeWarn("", $org_counter, $organism_name) if ($main::verbose >= 2);
+
+      ## Check that organism is supported in RSAT
+      $organism->check_name($organism_name, 1);
+    }
+  }
+
+  ## Check that there is a Microscope frame associated to each organism
+  foreach my $organism_name (@organism_names) {
+    foreach my $field (@mandatory_info) {
+      unless ($organism_info{$organism_name}->{$field} =~ /\S/) {
+	$organism_info{$organism_name}->{$field} = "<NA>";
+	&RSAT::message::Warning("Missing information", $field, "for organism", $organism_name) if ($main::verbose >= 0);
+      }
+    }
+  }
+
+
+  ## Output directory
+  if ($output_dir) {
+    &RSAT::util::CheckOutDir($output_dir, "", 755);
+  } else {
+    &RSAT::error::FatalError("You must define the output directory (option -o)");
+  }
+
+  ## Open a text file for the main (multi-organisms) logs
+  $main_log_file = $output_dir."/log.txt";
+  our $main_log = &OpenOutputFile($main_log_file);
+  print $main_log "; pathways-from-genome ";
+  &PrintArguments($main_log);
+
+  ## Open the HTML file for the main (multi-organisms) synthesis
+  $main_synthesis_file = $output_dir."/synthesis.html";
+  if ($task{synthesis}) {
+    our $main_syn = &OpenOutputFile($main_synthesis_file);
+    print $main_syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>"Access by organism", "result_toc"=>0, refresh_time=>$refresh_time);
+    print $main_syn "<table class='sortable'>\n";
+
+    ## Print header line of the main synthesis table
+    my @main_syn_fields = ("nb",
+			   "organism name",
+			   "MicroCyc frame",
+			   "NCBI TAXID",
+			   "dir",
+			   "log",
+			   "CDS",
+			   "genes > EC",
+			   "ECs > gene",
+			   "genes",
+			   "operons",
+			   "directons"
+			  );
+    print $main_syn "<tr>\n";
+    foreach my $field (@main_syn_fields) {
+      print $main_syn "<th>", $field, "</th>\n";
+    }
+    print $main_syn "</tr>\n";
+  }
+
+  ################################################################
+  ## Collect metabolic network
+  if ($task{metanet}) {
+    &RSAT::error::FatalError("Task metanet is not implemented yet. Contact Jacques van Helden to tell him it is time to implement this !");
+  }
+
+  ################################################################
+  ## Iterate over selected organisms
+
+  our $org_counter = 0;
+  foreach $organism_name (@organism_names) {
+    $org_counter++;
+
+    ## Check skip organism option
+    if ($org_counter <= $param{skip_org}) {
+      &RSAT::message::Info("Skipping organism", $org_counter."/".$org_nb, $organism_name, "(option -skip_org ".$param{skip_org}.")") if ($main::verbose >= 1);
+      next;
+    }
+
+    ## Check last organism option
+    if (($param{last_org} > 0) && ($org_counter > $param{last_org})) {
+      &RSAT::message::Info("Stop reading organism table, due to option -last_org ".$param{last_org}) if ($main::verbose >= 1);
+      last;
+    }
+
+
+    ## Clean the %outfile and %dir hash tables
+    our %outfile = ();
+    our %dir = ();
+
+    ## Define organism-specific subdirectory
+    $dir{output} = $output_dir."/".$organism_name;
+    &RSAT::util::CheckOutDir($dir{output}, "", 755);
+
+    ## Prefix
+    $param{prefix} = $organism_name;
+
+    ################################################################
+    ## Open log file
+    $outfile{log} = &OutFileName("", ".txt", "log");
+    $out = &OpenOutputFile($outfile{log});
+
+
+    ################################################################
+    ## Open the organism-specific HTML report
+    &OpenOrganismHTML();
+
+    ## Check that organism is supported in RSAT
+    unless ($organism->check_name($organism_name, 1)) {
+      ## Close line of HTML report table
+      print $main_syn "</tr>" if ($task{synthesis});
+      ## Issue a warning
+      my $warning = join("\t", "Skipping non-supported organism", $org_counter."/".$org_nb, $organism_name);
+      push @warnings, $warning;
+      &RSAT::message::TimeWarn($warning) if ($main::verbose >= 2);
+      next;
+    }
+
+    ## Report organism to be analyzed
+    &RSAT::message::TimeWarn("Organism", $org_counter."/".$org_nb, $organism_name) if ($main::verbose >= 1);
+
+    ################################################################
+    ## Collect Gene-EC-reaction table from the MicroCyc database at Genoscope
+    ## (CEA, France).
+    &GetGER(get_reactions=>0);
+    ##    &GetGER(get_reactions=>1);
+
+    ################################################################
+    ## Project all ECs found in the genome onto annotated pathways 
+    &pathways_vs_genome();
+
+    ################################################################
+    ## Infer operons and directons
+    &InferOperonsOrDirectons("operons");
+    &InferOperonsOrDirectons("directons");
+
+    ################################################################
+    ## Discover phylogenetic footprints (conserved cis-regulatory
+    ## elements) and infer a co-regulation network by linking pairs of
+    ## genes having similar footprints.
+#    &FootprintsAndCoregulation();
+
+    ## Link gene sets to EC numbers
+#    foreach my $geneset ("gene_operons", "gene_directons") {
+#      &GeneSets2ECs($geneset);
+#      &genesets_vs_pathways($geneset);
+#    }
+
+    ## Submit the batch command to the cluster manager.
+    if ($batch) { &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix); $batch_cmd = ""; }
+
+    ################################################################
+    ## Print verbosity
+    &Verbose() if ($main::verbose >= 1);
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
+
+
+    ## End of the HTML file
+    &CloseSynthesis($syn) if ($task{synthesis});
+
+    ## Report organism-specific output dir and synthesis file
+    &RSAT::message::TimeWarn("\tOrganism directory", $dir{output}) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\tOrganism synthesis", $outfile{synthesis}) if ($main::verbose >= 1);
+  }
+
+  if ($task{synthesis}) {
+    print $main_syn "</table>\n";
+
+    &CloseSynthesis($main_syn);
+  }
+
+  if (scalar(@warnings) > 0) {
+      print $main_log join("\n; ",  "; Warning messages",@warnings), "\n";
+  }
+  close $main_log;
+
+
+  ## Report main output dir and synthesis file
+  &RSAT::message::TimeWarn("Output directory", $output_dir) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Log file", $main_log_file) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Synthesis", $main_synthesis_file) if ($main::verbose >= 1);
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display one image on a HTML page with a link (href) to the original
+## (or other) file.
+sub HtmlDisplayOneImage {
+  my ($img_file, %args) = @_;
+  my $href = $args{href} || $img_file;
+  my $href_param = $args{href_param} || "";
+  my $base  = $args{base} || ".";
+  my $img_param = $args{img_param} || "";
+  my $img_path = &RSAT::util::RelativePath($base, $img_file);
+  my $href_path = &RSAT::util::RelativePath($base, $href);
+  my $html = "<a href='".$href_path."' ".$href_param.">";
+  $html .= "<img src='".$img_path."' ".$img_param.">";
+  $html .= "</a>";
+#   &RSAT::message::Debug("\nimg_file=".$img_file,
+# 		       "\nhref=".$href,
+# 		       ) if ($main::verbose >= 10);
+  return $html;
+}
+
+################################################################
+## Generate a table with links to a set of output files
+##
+## Usage:
+##  &LinkTable($title, @output_file_keys);
+sub LinkTable {
+  my ($title, @output_file_keys) = @_;
+  $html = "";
+  $html .= "<h3>".$title."</h3>\n";
+  $html .= "<table class='whitebg'>\n";
+#  $html .= "<table>\n";
+  for my $key (@output_file_keys) {
+    $html .= "<tr>";
+    $html .= "<td>".$key."</td>\n";
+    $html .= "<td>";
+    $html .= &LinkOneFile($outfile{synthesis}, $outfile{$key}, &ShortFileName($outfile{$key}));
+    $html .= "</tr>\n";
+  }
+  $html .= "</table>\n";
+  return ($html);
+}
+
+################################################################
+## Index columns of the organism cross-table
+sub IndexOrgTableColumns {
+  for my $col (1..scalar(@org_table_columns)) {
+    $field = lc($org_table_columns[$col-1]);
+    $org_table_column{$field} = $col;
+  }
+}
+
+################################################################
+## Read organism cross-table
+sub ReadOrganismCrossTable {
+  &RSAT::message::TimeWarn("Reading organism cross-table", $infile{organism_table}) if ($main::verbose >= 1);
+  my ($orgs) = &OpenInputFile($infile{organism_table});
+  my $l = 0;
+  my $org_counter = 0;
+  while (<$orgs>) {
+    $l++;
+    next if /^;/;		## Skip comment lines
+    next unless /\S/;		## Skip empty lines
+    chomp();
+
+#    &RSAT::message::Debug($l, $_) if ($main::verbose >= 10);
+
+    ## Parse header line
+    if (/^#/) {
+      s/^#//;
+      @org_table_columns = split /\t/;
+      &IndexOrgTableColumns(); ## Update the column index of organism cross-table
+      next;
+    }
+
+    ## Parse one line
+    my @fields = split /\t/;
+    my $organism_name = $fields[$org_table_column{ulb_ncbi_name_id}-1];
+    $organism_name =~ s|/$||; ## Check that there is no / at the end of the name (bug in the data file 2012-08-19)
+    $organism_name =~ s| |_|g; ## Suppress spaces from organism name
+
+    if ($organism_name) {
+      $org_counter++;
+      &RSAT::message::Info("Adding organism", $org_counter, $organism_name,  "line ".$l) if ($main::verbose >= 3);
+      push @organism_names, $organism_name if ($all_organisms);
+
+      ## Store all organism information (cross-references) in a hash table indexed by organism names
+      foreach my $field (keys %org_table_column) {
+	my $column = $org_table_column{$field}-1;
+	my $value = $fields[$column];
+	$organism_info{$organism_name}->{$field} = $value;
+#	&RSAT::message::Debug("organism_info", $organism_name, $field, $value) if ($main::verbose >= 10);
+      }
+
+    } else {
+      &RSAT::message::Warning($infile{organism_table}, "Organism", $org_counter, $fields[0], "line ".$l, "missing field", "ulb_ncbi_name_id", "expected in column ".$org_table_column{ulb_ncbi_name_id}, );
+    }
+
+  }
+  close $orgs;
+
+  &RSAT::message::Info("Number of organisms in organism cross-table", $org_counter) if ($main::verbose >= 1);
+
+}
+
+
+################################################################
+## Clos the synthetic table
+sub CloseSynthesis {
+  my ($handle) = @_;
+  print $handle "<hr>\n";
+  print $handle "</body>\n";
+  print $handle "</html>\n";
+  close $handle;
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-org_table organism_table>
+
+Mandatory option.
+
+Tab-delimited text file indicating organism cross-references to a series of
+external databases.
+
+The first columns of the organism table must contain the following
+fields.
+
+=over
+
+=item RSAT organism identifier
+
+All RSAT organism IDs must be an organism supported in this RSAT
+server.
+
+=item MicroCyc genome identifier
+
+=item NCBI TAXID
+
+=back
+
+Additional columns are currently ignored.
+
+=cut
+    } elsif ($arg eq "-org_table") {
+      $infile{organism_table} = shift(@arguments);
+
+=pod
+
+=item B<-org Organism_name>
+
+Select one or several organisms from the organism table, on which the
+analysis will be performed.
+
+Must be an organism supported in this RSAT server. The list of
+supported organisms can be obtained with I<supported-organisms>.
+
+Multiple organisms can be specified by calling repeatedly the option
+-org.
+
+Example:
+
+ pathways-from-genome -v 1 \
+    -org Bacillus_subtilis_168_uid57675 \
+    -org Mycoplasma_pneumoniae_M129_uid57709 \
+    -o results/pathways_from_genome
+
+Alternative option: I<-all_organisms>.
+
+
+=cut
+    } elsif ($arg eq "-org") {
+      my $organism_name = shift(@arguments);
+      push @organism_names, $organism_name;
+
+=pod
+
+=item B<-all_organisms>
+
+Analyze all the organisms of the organism table.
+
+Alternative option: I<-org>.
+
+=cut
+    } elsif ($arg eq "-all_organisms") {
+      $all_organisms = 1;
+
+=pod
+
+=item B<-last_org last_organism_number>
+
+Stop after having analyzed the specified number of organisms. This
+option is useful for debugging or for analyzing subsets of the
+organism table.
+
+=cut
+    } elsif ($arg eq "-last_org") {
+      $param{last_org} = shift(@arguments);
+      &RSAT::error::FatalError($param{last_org}, "Invalid value for option -last_org. Should be a Natural number.")
+	unless (&RSAT::util::IsNatural($param{last_org}));
+
+=pod
+
+=item B<-skip_org skip_organism_number>
+
+Skip the specified number of organisms in the specified list of
+organisms. This option is useful for debugging, or for resuming an
+interrupted analysis.
+
+=cut
+    } elsif ($arg eq "-skip_org") {
+      $param{skip_org} = shift(@arguments);
+      &RSAT::error::FatalError($param{skip_org}, "Invalid value for option -skip_org. Should be a Natural number.")
+	unless (&RSAT::util::IsNatural($param{skip_org}));
+
+=pod
+
+=item B<-ec2pathway>
+
+Tab-delimited text file indicating the relationships between EC
+numbers (first column) and annotated pathways second column).
+
+=cut
+
+    } elsif ($arg eq "-ec2pathway") {
+      $infile{ec2pathway} = shift(@arguments);
+
+=pod
+
+=item B<-o output_base>
+
+Base for the output directories. Subdirectories will be created for
+each organism, and with organism-specific directories, for each result
+type.
+
+Mandatory argument.
+
+=cut
+
+    } elsif ($arg eq "-o") {
+      $output_dir = shift(@arguments); ## We reserve the hash table %outfile to organism-specific directories
+
+=pod
+
+=item B<-task task1,task2,...>
+
+Specify a subset of tasks to be executed.
+
+By default, the program runs all necessary tasks. However, in some
+cases, it can be useful to select one or several tasks to be executed
+separately.
+
+Beware: task selection requires expertise, because some tasks depends
+on the prior execution of other tasks in the workflow. Selecting tasks
+before their prerequisite tasks have been completed will provoke fatal
+errors.
+
+B<Default tasks>
+
+=over
+
+=item I<all> (default)
+
+Run all supported tasks.
+
+=item I<metanet>
+
+Get metabolic network from Genoscope/MicroCyc database, via de
+MicroCyc interface.
+
+=item I<ger>
+
+Get gene-EC-reaction table from the Genoscope/MicroCyc database, via
+the MicroCyc Web services.
+
+=item I<operons>
+
+Infer operons from intergenic distances (tool I<infer-operon>), using
+a simple distance-based method (I<infer-operon>). This method assigns
+each intergenic region with a status, either intra-operon or
+inter-operons. The accuracy is estimated to ~80% (Rekin's Janky, PhD
+thesis), with a balanced rate between false positives (intra-operons
+considered as inter-operons) and false negatives (the opposite).
+
+=item I<directons>
+
+Compute directons from gene orientations. Directons are defined as
+maximal (non-extendable) sets of contiguous genes transcribed in the
+same direction. A directon can contain one or several successive
+operons.
+
+Note: in practice, we detect by running I<infer-operon> with a
+virtually infinite threshold on intergenic distance. Since all genes
+of an operon are (by definition) transcribed in the same direction,
+directons contain all the full operons (they can be considered as a
+maximization of the sensitivity for operon prediction, but with an
+important cost in specificity).
+
+
+=item I<footprints>
+
+Run footprint discovery on each gene separately (Janky and van Helden,
+2008), and infer a co-regulation network (Brohee et al., 2011) in
+order to predict putative regulons.
+
+=item I<genesets2ecs>
+
+Generate a table with the associations between genes and EC numbers.
+
+=item I<pathway_proj>
+
+Compare operons to annotated pathways by computing, for each
+operon/pathway comparison, the number of shared EC numbers and their
+significance.
+
+=item I<pathway_disco>
+
+Run pathway extraction to predict (discover) a metabolic pathway from
+the ec numbers associated to each operon or directon.
+
+TO BE IMPLEMENTED
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	}
+      }
+
+
+=pod
+
+=item B<-batch>
+
+Run tasks in batch on a PC cluster (requires proper configuration of
+the qsub parameters in RSAT_config.props).
+
+In order to ensure a good treatment of the dependencies between the
+tasks of the workflow, the granularity of batch processing is quite
+coarse: all the tasks related to a given organism are rassembled and
+sent to a single cluster node. The option I<-batch> is this only
+useful when treating multiple organisms.
+
+=cut
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
+
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them.
+
+=cut
+  } elsif ($arg eq "-dry") {
+    $main::dry = 1;;
+
+
+=pod
+
+=item B<-nodie>
+
+Do not die in case a sub-program returns an error.
+
+The option -nodie allows you to circumvent problems with specific
+sub-tasks, but this is not recommended because the results may be
+incomplete.
+
+=cut
+
+} elsif ($arg eq "-nodie") {
+  $main::die_on_error = 0;
+
+
+    } else {
+      &RSAT::error::FatalError("Invalid option", $arg);
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; pathways-from-genomes ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+
+  ## Print organism-specific information
+  printf $out "; %-22s\t%s\n", "Organism name", $organism_name;
+  my %org_info = %{$organism_info{$organism_name}};
+  foreach my $key (sort keys %org_info) {
+    my $value = $org_info{$key} || "NA";
+    printf $out ";\t%-22s\t%s\n", $key, $value;
+  }
+
+
+  ## List tasks
+  printf $out "; %-22s\t%s\n", "Requested tasks", join(",", sort keys %task);
+
+  ## List parameter values
+  print $out "; Parameter values\n";
+  foreach my $param_name (@param_list) {
+    print $out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+  }
+
+  ## List directories
+  if (%dir) {
+    print $out "; Directories\n";
+    foreach my $key (sort keys (%dir)) {
+      my $value = $dir{$key};
+#    while (my ($key,$value) = each %dir) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List input files
+  if (%infile) {
+    print $out "; Input files\n";
+    foreach my $key (sort keys (%infile)) {
+      my $value = $infile{$key};
+#    while (my ($key,$value) = each %infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  ## List output files
+  if (%outfile) {
+    print $out "; Output files\n";
+    foreach my $key (sort keys (%outfile)) {
+      my $value = $outfile{$key};
+#    while (my ($key,$value) = each %outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+}
+
+
+################################################################
+## Infer operons from gene coordinates
+sub InferOperonsOrDirectons {
+  my ($operons_or_directons) = @_;
+  unless ($operons_or_directons) {
+    $operons_or_directons = "operon";
+  }
+  my $dist = $param{operon_dist};
+
+  @files_to_index = ();
+
+  ## For directons, set distance to a very very large value
+  if ($operons_or_directons eq "directons") {
+    $dist = 10000000;
+  }
+
+  ## Define suffix for operon and directon files
+  my $operon_suffix = "ming".$param{operon_min_genes};
+  unless ($operons_or_directons eq "directons") {
+    $operon_suffix .= "_dist".$dist;
+  }
+
+  ## Define output directory and files
+  $dir{$operons_or_directons} = $dir{output}."/".$operons_or_directons;
+  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
+
+  $outfile{"gene_".$operons_or_directons} = &OutFileName($operons_or_directons, ".tab", "gene_".$operons_or_directons."_".$operon_suffix); push @files_to_index, "gene_".$operons_or_directons;
+  $outfile{"gene_".$operons_or_directons."_html"} = $outfile{"gene_".$operons_or_directons}; $outfile{"gene_".$operons_or_directons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_directons."_html";
+
+  ## Infer operon for each gene
+  #  if ($task{$operons_or_directons}) {
+  &RSAT::message::TimeWarn("\tInferring ".$operons_or_directons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
+  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
+  my $cmd = $SCRIPTS."/infer-operon -v 1 ";
+  $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -all ";
+  $cmd .= " -min_gene_nb ".$param{operon_min_genes};
+  $cmd .= " -dist ".$dist;
+  $cmd .= " | ".$SCRIPTS."/add-gene-info";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -col 2 -info descr";
+  $cmd .= " -o ".$outfile{"gene_".$operons_or_directons};
+  $cmd .= "; ".$SCRIPTS."/text-to-html ";
+  $cmd .= " -i ".$outfile{"gene_".$operons_or_directons};
+  $cmd .= " -o ".$outfile{"gene_".$operons_or_directons."_html"};
+  $cmd .= " -chunk 10000";
+  &one_command($cmd, 1, 0, task=>$operons_or_directons) ;
+  &RSAT::message::Info("Gene-".$operons_or_directons." (tab)", $outfile{"gene_".$operons_or_directons}) if ($main::verbose >= 3);
+  &RSAT::message::Info("Gene-".$operons_or_directons." (html)", $outfile{"gene_".$operons_or_directons."_html"}) if ($main::verbose >= 3);
+  #  }
+
+
+  ## Generate a table with a single line per operon
+  $outfile{$operons_or_directons} = &OutFileName($operons_or_directons, ".tab", $operons_or_directons."_".$operon_suffix); push @files_to_index, $operons_or_directons;
+  $outfile{$operons_or_directons."_html"} = $outfile{$operons_or_directons}; $outfile{$operons_or_directons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, $operons_or_directons."_html";
+  #  if ($task{$operons_or_directons}) {
+  $cmd = "";
+  $cmd .= "echo '; ".$operons_or_directons." ' > ".$outfile{$operons_or_directons};
+  $cmd .= "; echo '; Organism               \t".$organism_name."' >> ".$outfile{$operons_or_directons};
+  $cmd .= "; echo '; Max intergenic distance\t".$dist."' >> ".$outfile{$operons_or_directons};
+  $cmd .= "; echo '#".$operons_or_directons."\tleader\tnb_genes' >> ".$outfile{$operons_or_directons};
+  $cmd .= "; grep -v '^;' ".$outfile{"gene_".$operons_or_directons};
+  $cmd .= " | grep -v '^#'";
+  $cmd .= " | cut -f 7,8,9";
+  $cmd .= " | sort -u ";
+  $cmd .= ">> ".$outfile{$operons_or_directons};
+  $cmd .= "; ".$SCRIPTS."/text-to-html ";
+  $cmd .= " -i ".$outfile{$operons_or_directons};
+  $cmd .= " -o ".$outfile{$operons_or_directons."_html"};
+  $cmd .= " -chunk 10000";
+  &one_command($cmd, 1, 0, task=>$operons_or_directons) ;
+  &RSAT::message::Info($operons_or_directons." (tab)", $outfile{$operons_or_directons}) if ($main::verbose >= 3);
+  &RSAT::message::Info($operons_or_directons." (html)", $outfile{$operons_or_directons."_html"}) if ($main::verbose >= 3);
+  #  }
+
+  ## Compute statistics on operon sizes
+  $outfile{$operons_or_directons."_stats"} = &OutFileName($operons_or_directons, ".tab", $operons_or_directons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_directons."_stats";
+  for my $img_format (@image_formats) {
+    $outfile{$operons_or_directons."_stats_".$img_format} = &OutFileName($operons_or_directons, ".".$img_format, $operons_or_directons."_".$operon_suffix."_stats"); push @files_to_index, $operons_or_directons."_stats_".$img_format;
+  }
+  #  if ($task{$operons_or_directons}) {
+  &RSAT::message::TimeWarn("\tComputing size distribution", $operons_or_directons) if ($main::verbose >= 1);
+  $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 3";
+  $cmd .= " -i ".$outfile{$operons_or_directons};
+  $cmd .= " -o ".$outfile{$operons_or_directons."_stats"};
+
+  ## Generate graphs of operon/directon size distribution
+  for my $img_format (@image_formats) {
+    $cmd .= "; ".$SCRIPTS."/XYgraph";
+    $cmd .= " -i ".$outfile{$operons_or_directons."_stats"};
+    $cmd .= " -xcol 1 -ycol 4,5,6";
+    $cmd .= " -format ".$img_format;
+    $cmd .= " -xgstep1 5" unless ($img_format eq "pdf");
+    $cmd .= " -xmin 0 -ymin 0";
+    $cmd .= " -lines -legend  -xsize 800 -ysize 400";
+    $cmd .= " -xleg1 'Number of genes per ".$operons_or_directons."' -yleg1 'Number of predicted ".$operons_or_directons."'";
+    $cmd .= " -title1 \"Size distribution of predicted ".$operons_or_directons." in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{$operons_or_directons."_stats_".$img_format};
+  }
+  &one_command($cmd, 1, 0, task=>$operons_or_directons) ;
+  &RSAT::message::Info($operons_or_directons." stats (tab)", $outfile{$operons_or_directons."_stats"}) if ($main::verbose >= 3);
+  for my $img_format (@image_formats) {
+    &RSAT::message::Info($operons_or_directons." size distrib (".$img_format.")", $outfile{$operons_or_directons."_stats_".$img_format}) if ($main::verbose >= 3);
+    #    }
+
+  }
+
+  if ((defined($outfile{"gene-ec"})) &&
+      (-e $outfile{"gene-ec"})) {
+    ## Link ECs to operons / directons
+    &GeneSets2ECs("gene_".$operons_or_directons);
+    ## Project operons / directons onto annotated pathways
+    &genesets_vs_pathways("gene_".$operons_or_directons);
+  }
+
+  ################################################################
+  ## Summarize the operon results
+  if ($task{synthesis}) {
+    print $syn "<hr><h2>", ucfirst($operons_or_directons), "</h2>";
+
+    print $syn "<br>Min nb of genes per ".$operons_or_directons.": ".$param{operon_min_genes}."\n";
+    if ($operons_or_directons eq "operons") {
+      print $syn "<br>Max intergenic distance : ".$param{operon_dist}."\n";
+    } else {
+    }
+
+    print $syn "<h3>Size distribution</h3>";
+    print $syn "<table class='whitebg'>";
+    print $syn "<tr>";
+    print $syn "<td>";
+
+    ## Initialize statistics
+    $organism_info{$organism_name}->{nb_genes} = "NA";
+    $organism_info{$organism_name}->{$operons_or_directons} = "NA";
+    $organism_info{$organism_name}->{$operons_or_directons."_mean_size"} = "NA";
+    $organism_info{$organism_name}->{$operons_or_directons."_max_size"} = "NA";
+
+    ## Read statistics about operon/directon sizes
+    if (-e $outfile{$operons_or_directons."_stats"}) {
+      my ($stats) = &OpenInputFile($outfile{$operons_or_directons."_stats"});
+      my $in_stats = 0;
+      my %stats = ();
+      while (<$stats>) {
+	chomp();
+	$in_stats = 1 if (/; Statistics/);
+	next unless ($in_stats);
+	$in_stats = 0 if (/; Seconds/);
+	s/^; //;
+	my ($key, $value) = split /\t/;
+	$stats{$key} = $value;
+      }
+
+      $organism_info{$organism_name}->{nb_genes} = $stats{sum};
+      $organism_info{$organism_name}->{$operons_or_directons} = $stats{count};
+      $organism_info{$organism_name}->{$operons_or_directons."_mean_size"} = $stats{mean};
+      $organism_info{$organism_name}->{$operons_or_directons."_max_size"} = $stats{max};
+
+      ## Add information in the organism-specific synthesis
+      print $syn "<br>Nb genes: ", $organism_info{$organism_name}->{nb_genes} || "NA";
+      print $syn "<br>Nb ".$operons_or_directons.": ", $organism_info{$organism_name}->{$operons_or_directons} || "NA";
+      my $mean_size = "NA";
+      if ($organism_info{$organism_name}->{$operons_or_directons."_mean_size"}) {
+	$mean_size = sprintf("%.1f", $mean_size = $organism_info{$organism_name}->{$operons_or_directons."_mean_size"});
+      }
+      print $syn "<br>Mean size: ", $mean_size;
+      print $syn "<br>Max size: ", $organism_info{$organism_name}->{$operons_or_directons."_max_size"} || "NA";
+
+      ## Add info in the main synthesis
+      print $main_syn "<td>", $organism_info{$organism_name}->{nb_genes},  "</td>\n" if ($operons_or_directons eq 'operons');
+#      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_directons}, $organism_info{$organism_name}->{$operons_or_directons}),  "</td>\n";
+      print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{$operons_or_directons}, "[".$operons_or_directons."]"),  "</td>\n";
+
+    } else {
+      print $syn "<p><font color='red'>Missing stats file: ", $outfile{$operons_or_directons."_stats"}, "</font></p>\n";
+    }
+
+    ## Display size distribution
+    print $syn "<td>";
+    if (-e $outfile{$operons_or_directons."_stats_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{$operons_or_directons."_stats_png"},
+					     base=>$outfile{synthesis},
+					     href=>$outfile{$operons_or_directons."_stats_pdf"},
+					     img_param=>"height='".$icon_height."' border=1",
+					    ), "</p>\n";
+    } else {
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{$operons_or_directons."_stats_png"}, "</font></p>\n";
+    }
+    print $syn "</td>";
+    print $syn "<tr>";
+    print $syn "</table>\n";
+
+
+    ## Append table of links to the HTML report
+    print $syn &LinkTable("Files: ".$operons_or_directons, @files_to_index);
+    @files_to_index = ();
+  }
+}
+
+
+################################################################
+## Discover phylogenetic footprints (conserved cis-regulatory
+## elements) and infer a co-regulation network by linking pairs of
+## genes having similar footprints.
+sub FootprintsAndCoregulation {
+  my $fp_skip = 0; ## For testing only
+  my $fp_last = 0; ## For testing only
+
+  ## Choose the taxon
+  $param{taxon} = $organism_info{$organism_name}->{ncbi_family_name};
+
+  ## Output directory for footprints
+  $dir{footprints} = $dir{output}."/footprints";
+  &RSAT::util::CheckOutDir($dir{footprints}, "", 755);
+
+  ## Build the command
+  my $cmd = $SCRIPTS."/footprint-discovery -v 1";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -taxon ".$param{taxon};
+  $cmd .= " -filter -sep_genes -task all -infer_operons -all_genes -nodie";
+  $cmd .= " -skip ".$fp_skip if ($fp_skip > 0);
+  $cmd .= " -last ".$fp_last if ($fp_last > 0);
+  $cmd .= " -o ".$dir{footprints};
+  &one_command($cmd, 1, 0, task=>"footprints");
+}
+
+################################################################
+## Collect Gene-EC-Reaction (GER) table from the MicroCyc database
+## at Genoscope (CEA, France).
+sub GetGER() {
+  my (%args) = @_;
+  my $GER_suffix;
+
+  ## Output directory for GER
+  $dir{GER} = $dir{output}."/GER";
+  &RSAT::util::CheckOutDir($dir{GER}, "", 755);
+
+  ## Determine suffix
+  if ($args{get_reactions}) {
+    $GER_suffix = "gene-reaction";
+  } else {
+    $GER_suffix = "gene-ec";
+  }
+
+  ## Define output files
+  $outfile{$GER_suffix} = &OutFileName("GER", ".tab", $GER_suffix); push @files_to_index, $GER_suffix;
+  if ($GER_suffix eq "gene-ec") {
+
+    ## Gene-EC association with MicroCyc ID as unique gene identifier
+    $outfile{$GER_suffix."_by_name"} = &OutFileName("GER", ".tab", $GER_suffix."_by_name"); push @files_to_index, $GER_suffix."_by_name";
+    $outfile{$GER_suffix."_by_name_html"} = $outfile{$GER_suffix."_by_name"}; $outfile{$GER_suffix."_by_name_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GER_suffix."_by_name_html";
+
+    ## Gene-EC association with refseqId as unique gene identifier
+    $outfile{$GER_suffix."_refseqid"} = &OutFileName("GER", ".tab", $GER_suffix."_refseqid"); push @files_to_index, $GER_suffix."_refseqid";
+    $outfile{$GER_suffix."_refseqid_html"} = $outfile{$GER_suffix."_refseqid"}; $outfile{$GER_suffix."_refseqid_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GER_suffix."_refseqid_html";
+
+
+    ## Gene-EC association using RSAT identifiers (actually NCBI protein_ids)
+    $outfile{$GER_suffix."_rsat_id"} = &OutFileName("GER", ".tab", $GER_suffix."_rsat_id"); push @files_to_index, $GER_suffix."_rsat_id";
+    $outfile{$GER_suffix."_rsat_id_html"} = $outfile{$GER_suffix."_rsat_id"}; $outfile{$GER_suffix."_rsat_id_html"} =~ s/\.tab$/\.html/; push @files_to_index, $GER_suffix."_rsat_id_html";
+  }
+
+  &RSAT::message::Info("GER file", $GER_suffix, $outfile{$GER_suffix}) if ($main::verbose >= 3);
+
+  ## Collect Gene-EC-Reactions from MICROSCOPE database Note that the
+  ## current version of the script collects a highly redundant table,
+  ## because all synonyms and cross-references are represented by line
+  ## duplications. This is convenient for the path building tool, but
+  ## inconvenient for computing statistics.
+
+  ## Check that organism table contains a cross-reference to the MICROSCOPE database for the organism
+  if (($organism_info{$organism_name}->{microscope_metacyc_id}) &&
+      ($organism_info{$organism_name}->{microscope_metacyc_id} ne "<NA>")) {
+    ## Run the MICROME/MICROSCOPE Web client
+    &RSAT::message::TimeWarn("\tCollecting GER from MicroCyc via Web services") if ($main::verbose >= 1);
+    my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
+#    if {
+#      &RSAT::message::Warning("Skipping", $organism_name, $organism_info{$organism_name}->{microscope_metacyc_id});
+#      next;
+#    }
+
+    my $ger_cmd = &RSAT::server::GetProgramPath("gene-ec-genoscope.py");
+    $cmd = "python2.7 ".$ger_cmd;
+    $cmd .= " --ms_org_id ".$ms_org_id;
+    $cmd .= " --reactions" if ($args{get_reactions});
+    $cmd .= " -o ".$outfile{$GER_suffix};
+    &one_command($cmd, 1, 0, task=>"ger");
+
+    if ($GER_suffix eq "gene-ec") {
+      &RSAT::message::TimeWarn("\tSelecting unique gene identifiers") if ($main::verbose >= 1);
+      ## Select non-redundant subset of the GER table, using the column ID
+      ## to identify genes
+      $cmd = "grep '^#' ".$outfile{$GER_suffix};
+      $cmd .= " | perl -pe 's/^\#//'";
+      $cmd .= " | awk -F'\\t' '{print \"#\"\$4\"\\t\"\$2\"\\t\"\$1}'";
+      $cmd .= " > ".$outfile{$GER_suffix."_by_name"};
+      $cmd .= "; grep -v '^; ' ".$outfile{$GER_suffix};
+      $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"id\"'";
+      $cmd .= " | awk -F '\\t' '{print \$4\"\\t\"\$2\"\\t\"\$1}'";
+      $cmd .= " >> ".$outfile{$GER_suffix."_by_name"};
+
+      ## Convert gene-ec table to HTML format
+      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+      $cmd .= " -i ".$outfile{$GER_suffix."_by_name"};
+      $cmd .= " -o ".$outfile{$GER_suffix."_by_name_html"};
+      &one_command($cmd, 1, 0, task=>"ger");
+
+      ## Select non-redundant subset of the GER table, using refseqId
+      ## to identify genes
+      $cmd = "grep '^#' ".$outfile{$GER_suffix};
+      $cmd .= " | perl -pe 's/^\#//'";
+      $cmd .= " | awk -F'\\t' '{print \"#\"\$1\"\\t\"\$2\"\\t\"\$4}'";
+      $cmd .= " > ".$outfile{$GER_suffix."_refseqid"};
+      $cmd .= "; grep -v '^; ' ".$outfile{$GER_suffix};
+      $cmd .= "| grep -v '^#' | awk -F'\\t' '\$3 == \"refseqId\"'";
+      $cmd .= " | awk -F '\\t' '{print \$1\"\\t\"\$2\"\\t\"\$4}'";
+      $cmd .= " | perl -pe 's|\\t\\t|\\t".$null."\\t|g' "; ## Required for the join command
+      $cmd .= " | sort -b -k 1"; ## Sorting with option -b is required for the unix "join" command, used below to link genes to ECs!
+      $cmd .= " >> ".$outfile{$GER_suffix."_refseqid"};
+
+      ## Convert gene-ec table to HTML format
+      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+      $cmd .= " -i ".$outfile{$GER_suffix."_refseqid"};
+      $cmd .= " -o ".$outfile{$GER_suffix."_refseqid_html"};
+      &one_command($cmd, 1, 0, task=>"ger");
+
+      ## Identify gene-EC relationships using RSAT identifiers (actually NCBI protein_id)
+      $dir{rsat_genome} = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
+      $infile{rsat_cds_names} = $dir{rsat_genome}."/cds_names.tab";
+      &RSAT::message::TimeWarn("\tIdentifying gene-EC relationships with RSAT identifiers") if ($main::verbose >= 1);
+
+      ## Join the files using the join command
+      $cmd = "sort -b -k 2 ".$infile{rsat_cds_names}." > tmp_cds_names_sorted.tab";
+      $cmd .= "; join";       ## BEWARE: join assumes that the files are sorted according to the join field.
+      $cmd .= " -11";
+      $cmd .= " -22";
+      $cmd .= " -e '".$null."'";
+#      $cmd .= " -o 1.1,1.3,1.2,2.1,1.1,2.2";
+      $cmd .= " -t '	'";
+      $cmd .= " ".$outfile{$GER_suffix."_refseqid"};
+      $cmd .= " tmp_cds_names_sorted.tab";
+      $cmd .= " | add-gene-info -info name -org ".$organism_name;
+      $cmd .= " | awk '\$2 !=\"".$null."\" {print \$6\"\t\"\$2\"\t\"\$4\"\t\"\$1\"\t\"\$3}'";
+      $cmd .= " > ".$outfile{$GER_suffix."_rsat_id"};
+      $cmd .= " ; rm tmp_cds_names_sorted.tab";
+
+      ## Convert gene-ec table to HTML format
+      $cmd .= " ; ".$SCRIPTS."/text-to-html ";
+      $cmd .= " -i ".$outfile{$GER_suffix."_rsat_id"};
+      $cmd .= " -o ".$outfile{$GER_suffix."_rsat_id_html"};
+
+      &one_command($cmd, 1, 0, task=>"ger");
+    }
+  } else {
+    my $warning = join ("\t", "Cannot collect GER for organism", $organism_name, "because missing cross-reference to Genoscope/MicroCyc.", $organism_name);
+    push @warnings, $warning;
+    &RSAT::message::Warning($warning) if ($main::verbose >= 1);
+  }
+  #  }
+
+  ################################################################
+  ## Compute statistics on gene-EC assiciations
+  &RSAT::message::TimeWarn("\tComputing statistics on gene-EC associations") if ($main::verbose >= 1);
+
+  $outfile{ecs_per_gene} = &OutFileName("GER", ".tab", "ecs_per_gene"); push @files_to_index, "ecs_per_gene";
+  $outfile{genes_per_ec} = &OutFileName("GER", ".tab", "genes_per_ec"); push @files_to_index, "genes_per_ec";
+
+  ## Count gene-EC associations
+  if ($task{ger}) {
+    if (-e $outfile{$GER_suffix."_by_name"}) {
+      my ($gene_ec) = &OpenInputFile($outfile{$GER_suffix."_by_name"});
+      while (<$gene_ec>) {
+	chomp();
+	next unless (/\S/);	## Skip empty lines
+	next if (/; ^/);	## Skip comment lines
+	next if (/^#/);		## Skip header line
+	my ($gene, $ec) = split /\t/;
+	unless (defined($ecs_per_gene{$gene})) {
+	  $ecs_per_gene{$gene} = 0;
+	}
+	unless (defined($genes_per_ec{$ec})) {
+	  $genes_per_ec{$ec} = 0;
+	}
+	if ($ec) {
+	  $ecs_per_gene{$gene}++;
+	  $genes_per_ec{$ec}++;
+	}
+      }
+
+      ## Print number of ECs per gene
+      my $ecs_per_gene_handler = &OpenOutputFile($main::outfile{ecs_per_gene});
+      foreach my $gene (sort  {$ecs_per_gene{$b} <=> $ecs_per_gene{$a}}  keys %ecs_per_gene) {
+	print $ecs_per_gene_handler $gene, "\t", $ecs_per_gene{$gene},"\n";
+      }
+      close $ecs_per_gene_handler;
+
+      ## Print number of genes per EC
+      my $genes_per_ec_handler = &OpenOutputFile($main::outfile{genes_per_ec});
+      foreach my $ec (sort {$genes_per_ec{$b} <=> $genes_per_ec{$a}} keys %genes_per_ec) {
+	print $genes_per_ec_handler $ec, "\t", $genes_per_ec{$ec},"\n";
+      }
+      close $genes_per_ec_handler;
+    }
+  }
+
+  ## Distribution of number of ECs per gene
+  $outfile{ecs_per_gene_distrib} = &OutFileName("GER", ".tab", "ecs_per_gene_distrib"); push @files_to_index, "ecs_per_gene_distrib";
+  $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 2";
+  $cmd .= " -i ".$outfile{ecs_per_gene};
+  $cmd .= " -o ".$outfile{ecs_per_gene_distrib};
+
+  ## Generate graphs of ECs per gene distribution
+  for my $img_format (@image_formats) {
+    $outfile{"ecs_per_gene_distrib_".$img_format} = &OutFileName("GER", ".".$img_format, "ecs_per_gene_distrib"); push @files_to_index, "ecs_per_gene_distrib_".$img_format;
+    $cmd .= "; ".$SCRIPTS."/XYgraph";
+    $cmd .= " -i ".$outfile{ecs_per_gene_distrib};
+    $cmd .= " -xcol 1 -ycol 4,5,6";
+    $cmd .= " -format ".$img_format;
+    #      $cmd .= " -xgstep1 1" unless ($img_format eq "pdf");
+    $cmd .= " -xmin 0 -ymin 0";
+    $cmd .= " -lines -legend  -xsize 800 -ysize 400";
+    $cmd .= " -xleg1 'Number of ECs'";
+    $cmd .= " -yleg1 'Number of genes'";
+    $cmd .= " -title1 \"Distribution of number of ECs per gene in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{"ecs_per_gene_distrib_".$img_format};
+  }
+  if (-e $outfile{ecs_per_gene}) {
+    &one_command($cmd, 1, 0, task=>"ger");
+  }
+
+
+  ## Distribution of number of genes per EC
+  $outfile{genes_per_ec_distrib} = &OutFileName("GER", ".tab", "genes_per_ec_distrib"); push @files_to_index, "genes_per_ec_distrib";
+  $cmd = $SCRIPTS."/classfreq -v 1 -ci 1 -col 2";
+  $cmd .= " -i ".$outfile{genes_per_ec};
+  $cmd .= " -o ".$outfile{genes_per_ec_distrib};
+  for my $img_format (@image_formats) {
+    $outfile{"genes_per_ec_distrib_".$img_format} = &OutFileName("GER", ".".$img_format, "genes_per_ec_distrib"); push @files_to_index, "genes_per_ec_distrib_".$img_format;
+    $cmd .= "; grep -v NIL ".$outfile{genes_per_ec_distrib};
+    $cmd .= "| ".$SCRIPTS."/XYgraph";
+    $cmd .= " -xcol 1 -ycol 4,5,6";
+    $cmd .= " -format ".$img_format;
+#    $cmd .= " -xgstep1 1" unless ($img_format eq "pdf");
+    $cmd .= " -xmax 50";
+    $cmd .= " -xmin 1 -ymin 0 -xlog 2";
+    $cmd .= " -lines -legend  -xsize 800 -ysize 400";
+    $cmd .= " -xleg1 'Number of genes'";
+    $cmd .= " -yleg1 'Number of ECs'";
+    $cmd .= " -title1 \"Distribution of number of genes per EC in ".$organism_name."\"";
+    $cmd .= " -o ".$outfile{"genes_per_ec_distrib_".$img_format};
+  }
+  if (-e $outfile{genes_per_ec}) {
+    &one_command($cmd, 1, 0, task=>"ger") ;
+    &one_command($cmd, 1, 0, task=>"synthesis") ;
+  }
+
+
+  ## Append table of links to the HTML report
+  if ($task{synthesis}) {
+    print $syn "<h2>Metabolic annotations from Genoscope/MicroCyc</h2>\n";
+    my $microscope_url = "https://www.genoscope.cns.fr/agc/microscope/";
+    print $syn "<p>Source: MicroCyc database (<a target='_blank' href='".$microscope_url."'>".$microscope_url."</a>)\n";
+    my $microcyc_ws_url = "http://www.genoscope.cns.fr/microme/microcyc-wsc/";
+    print $syn "<br>Downloaded using Web services: <a target='_blank' href='".$microcyc_ws_url."'>".$microcyc_ws_url."</a></p>\n";
+    print $syn "<h3>Size distribution</h3>";
+    print $syn "<table class='whitebg'>";
+    print $syn "<tr>";
+    print $syn "<td>";
+
+    ## Add summary stats on gene-EC associatios
+    if (-e $outfile{genes_per_ec}) {
+      $organism_info{$organism_name}->{genes_with_ec} = `grep -v '^#' $outfile{genes_per_ec} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
+      chomp($organism_info{$organism_name}->{genes_with_ec});
+      $organism_info{$organism_name}->{genes_with_ec} = &RSAT::util::trim($organism_info{$organism_name}->{genes_with_ec});
+      print $syn "<br>Nb genes with at least one EC: ", $organism_info{$organism_name}->{genes_with_ec};
+    } else {
+      $organism_info{$organism_name}->{genes_with_ec} = "NA";
+    }
+
+    if (-e $outfile{ecs_per_gene}) {
+      $organism_info{$organism_name}->{ecs_with_gene} = `grep -v '^#' $outfile{ecs_per_gene} | grep -v '^;' | awk '\$2 > 0' | wc -l`;
+      chomp($organism_info{$organism_name}->{ecs_with_gene});
+      print $syn "<br>Nb ECs with at least one gene: ", $organism_info{$organism_name}->{ecs_with_gene};
+    } else {
+      $organism_info{$organism_name}->{ecs_with_gene} = "NA";
+    }
+    print $syn "</td>";
+
+
+    ## Display distribution of ECs per gene
+    print $syn "<td>";
+    if (-e $outfile{"ecs_per_gene_distrib_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{"ecs_per_gene_distrib_png"},
+					     base=>$outfile{synthesis},
+					     href=>$outfile{"ecs_per_gene_distrib_pdf"},
+					     img_param=>"height='".$icon_height."' border=1",
+					    ), "</p>\n";
+    } else {
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{"ecs_per_gene_distrib_png"}, "</font></p>\n";
+    }
+    print $syn "</td>";
+
+    ## Display distribution of genes per EC
+    print $syn "<td>";
+    if (-e $outfile{"genes_per_ec_distrib_png"}) {
+      print $syn "<p>", &HtmlDisplayOneImage($outfile{"genes_per_ec_distrib_png"},
+					     base=>$outfile{synthesis},
+					     href=>$outfile{"genes_per_ec_distrib_pdf"},
+					     img_param=>"height='".$icon_height."' border=1",
+					    ), "</p>\n";
+    } else {
+      print $syn "<p><font color='red'>Missing size distribution file: ", $outfile{"genes_per_ec_distrib_png"}, "</font></p>\n";
+    }
+    print $syn "</td>";
+
+    print $syn "<tr>";
+    print $syn "</table>\n";
+
+################################################################
+################################################################
+################################################################
+#### DEBUGGING ####
+#### A warning occurs before HERE ...
+## return();
+
+    if (scalar(@files_to_index) > 0) {
+      print $syn &LinkTable("Files: metabolic annotations", @files_to_index);
+    }
+  }
+#### ... and HERE
+################################################################
+################################################################
+################################################################
+
+
+  ## Add info in the main synthesis
+  if ($task{synthesis}) {
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $organism_info{$organism_name}->{genes_with_ec}),  "</td>\n";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{GER}, $organism_info{$organism_name}->{ecs_with_gene}),  "</td>\n";
+  }
+
+}
+
+
+################################################################
+## Open the organism-specific HTML report
+sub OpenOrganismHTML {
+  $outfile{synthesis} = &OutFileName("html", ".html", $organism_name."_synthesis");
+  if ($task{synthesis}) {
+    $syn = &OpenOutputFile($main::outfile{synthesis});
+    print $syn &PrintHtmlResultHeader(program=>"pathways-from-genome", "title"=>$organism_name, "result_toc"=>0, refresh_time=>$refresh_time);
+
+    print $syn &LinkTable("Files: log and synthesis",
+			  "synthesis",
+			  "log");
+
+    ## open a new row in the organism table
+    print $main_syn "<tr>";
+    print $main_syn "<td>", $org_counter, "</td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{synthesis}, $organism_name), "</td>";
+    my $microscope_link = "";
+    if ($organism_info{$organism_name}->{microscope_metacyc_id} =~ /(\S+)\-/) {
+      $microscope_link = "http://microcyc.genoscope.cns.fr/".$1."/";
+    }
+    print $main_syn "<td><a target='_blank' href='".$microscope_link."'>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</a></td>";
+    #      print $main_syn "<td>", $organism_info{$organism_name}->{microscope_metacyc_id}, "</td>";
+    my $taxid_link = "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=".$organism_info{$organism_name}->{tax_id}."";
+    print $main_syn "<td><a target='_blank' href='".$taxid_link."'>", $organism_info{$organism_name}->{tax_id}, "</a></td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $dir{output}, " [dir]"), "</td>";
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $outfile{log}, " [log]"), "</td>";
+
+    ## Count number of CDS in the RSAT annotations
+    my $cds_file = $ENV{RSAT}."/data/genomes/".$organism_name."/genome/cds.tab";
+    if (-e $cds_file) {
+      $organism_info{$organism_name}->{CDS} = `grep -v '^;' $cds_file | grep -v '^#' | wc -l | awk '{print \$1}'`;
+      chomp($organism_info{$organism_name}->{CDS});
+      $organism_info{$organism_name}->{CDS} = &RSAT::util::trim($organism_info{$organism_name}->{CDS});
+    } else {
+      $organism_info{$organism_name}->{CDS} = "NA";
+    }
+    print $main_syn "<td>", &LinkOneFile($main_synthesis_file, $cds_file, $organism_info{$organism_name}->{CDS}), "</td>";
+  }
+}
+
+################################################################
+## Link a set of genes (e.g. operons, directons, co-regulated genes) to
+## EC numbers.  This function takes as arguments a gene set file,
+## i.e. a tab-delimited file with two columns. The first column
+## indicates the gene, the second the gene set (e.g. operon, directon,
+## co-regulation set).
+##
+## The GER file can either be taken from the RSAT server (needs to be
+## pre-installed) or the file downloaded from MicroCyc. To use local
+## RSAT file, specify the argument
+##   args{GER_from_RSAT}=>1
+##
+sub GeneSets2ECs {
+  my ($geneset_key, %args) = @_;
+
+  &RSAT::message::TimeWarn( "\tLinking gene sets to EC numbers", $geneset_key) if ($main::verbose >= 1);
+
+  ################################################################
+  ## Check gene set file
+  unless (defined($outfile{$geneset_key})) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Invalid key for gene set file", $geneset_key);
+    }
+    &RSAT::message::Warning("Invalid key for gene set file", $geneset_key);
+    return();
+  }
+  unless (-r $outfile{$geneset_key}) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Cannot read gene set file", $outfile{$geneset_key});
+    }
+    &RSAT::message::Warning("Cannot read gene set file", $outfile{$geneset_key});
+    return();
+  }
+
+  ## Check ger file depending on the arguments
+  my $ger_file = &CheckGERFile(%args);
+
+  ################################################################
+  ## Define gene set <-> EC link file
+  $prefix{$geneset_key."_ec"} = $outfile{$geneset_key};
+  $prefix{$geneset_key."_ec"} =~ s/\.tab$//;
+  $outfile{$geneset_key."_ec"} = $prefix{$geneset_key."_ec"}."_gene-ecs.tab"; push @files_to_index, $geneset_key."_ec";
+  $outfile{$geneset_key."_ec_html"} = $prefix{$geneset_key."_ec"}."_gene-ecs.html"; push @files_to_index, $geneset_key."_ec_html";
+  $outfile{$geneset_key."_ec_set"} = $prefix{$geneset_key."_ec"}."_ec-set.tab"; push @files_to_index, $geneset_key."_ec_set";
+  $outfile{$geneset_key."_ecs_per_set"} = $prefix{$geneset_key."_ec"}."_ecs-per-set.tab"; push @files_to_index, $geneset_key."_ecs_per_set";
+
+  my $cmd = $SCRIPTS."/gene2ec -v 1";
+  $cmd .= " -id_col 3";
+  $cmd .= " -ger ".$ger_file;
+  $cmd .= " -i ".$outfile{$geneset_key};
+  $cmd .= " -o ".$outfile{$geneset_key."_ec"};
+  $cmd .= " ; grep -v '^;' ".$outfile{$geneset_key."_ec"};
+  $cmd .= " | awk -F'\t'  '\$1!=\"\" {print \$1\"\t\"\$8}'";
+  $cmd .= " | sort -k 2 ";
+  $cmd .= " > ".$outfile{$geneset_key."_ec_set"};
+  $cmd .= " ; grep -v \"^#\" ".$outfile{$geneset_key."_ec_set"};
+  $cmd .= " | cut -f 2 | uniq -c ";
+  $cmd .= " | sort -nr -k 1";
+  $cmd .= " > ".$outfile{$geneset_key."_ecs_per_set"};
+  $cmd .= " ; text-to-html -i ".$outfile{$geneset_key."_ec"};
+  $cmd .= " -o ".$outfile{$geneset_key."_ec_html"};
+  &one_command($cmd, 1, 0, task=>genesets2ecs);
+}
+
+################################################################
+## Check GER file
+sub CheckGERFile {
+  my (%args) = @_;
+  my $ger_file = "";
+  if ($args{GER_from_RSAT}) {
+    ## Take GER file from RSAT installation
+    my $microcyc_name = $organism_info{$organism_name}->{organism_name}; ## Get the MicroCyc name, which differs from RSAT organism name
+    $microcyc_name =~s/\s/_/g;
+    &RSAT::error::FatalError("MicroCyc name is not specified in column ".$org_table_column{organism_name}." for $organism_name in the organism cross-table", $infile{organism_table}) unless ($microcyc_name);
+    my $tax_id = $organism_info{$organism_name}->{tax_id};
+    &RSAT::error::FatalError("Taxonomic ID (tax_id) is not specified in column ".$org_table_column{tax_id}." for $organism_name in the organism cross-table", $infile{organism_table}) unless ($tax_id);
+    $ger_file = $ENV{RSAT}."/public_html/data/metabolic_networks/GER_files/".$microcyc_name."-".$tax_id."-microcyc/";
+    $ger_file .= $microcyc_name."-".$tax_id."-microcyc-gene_ec.tab";
+    &RSAT::message::Info("RSAT-installed GER file", $infile{RSAT_GER}) if ($main::verbose >= 3);
+  } else {
+    ## Use the GER file downloaded from MicroCyc
+    $ger_file = $outfile{"gene-ec_rsat_id"};
+  }
+  &RSAT::message::Info("GER file", $ger_file) if ($main::verbose >= 3);
+
+  ## Check that GER file exists and is readable
+  unless (-r $ger_file) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Cannot read GER file", $ger_file);
+    } else {
+      &RSAT::message::Warning("Cannot read GER file", $ger_file);
+    }
+  }
+  return($ger_file);
+}
+
+################################################################
+## Project annotated pathways onto the whole genome, i.e. compare the
+## EC composition of each pathway
+sub pathways_vs_genome {
+  my (%args) = @_;
+  &RSAT::message::TimeWarn("\tprojecting all pathways onto genome ECs") if ($main::verbose >= 1);
+  @files_to_index = ();
+
+  ## Check ger file depending on the arguments
+  my $ger_file = &CheckGERFile(%args);
+
+  ## Build a two-column file with EC numbers in the first column, and
+  ## the organism name in the second one.
+  $dir{pathways_vs_genome} = $dir{output}."/pathways_vs_genome";
+  &RSAT::util::CheckOutDir($dir{"pathways_vs_genome"}, "", 755);
+
+  $outfile{"genome_ecs"} = $dir{pathways_vs_genome}."/genome_ecs_".$organism_name.".tab"; push @files_to_index, "genome_ecs";
+  $outfile{"pathways_vs_genome"} = $dir{pathways_vs_genome}."/pathways_vs_genome_".$organism_name.".tab"; push @files_to_index, "pathways_vs_genome";
+  $outfile{"pathways_vs_genome_html"} = $dir{pathways_vs_genome}."/pathways_vs_genome_".$organism_name.".html"; push @files_to_index, "pathways_vs_genome_html";
+
+  ## Build the command to project gene sets onto annotated pathways
+  my $cmd = "awk '{print \$2\"\\t".$organism_name."\"}' ".$ger_file." >".$outfile{"genome_ecs"};
+  $cmd .= " ; ".$SCRIPTS."/compare-classes -v 1";
+  $cmd .= " -r ".$infile{ec2pathway};
+  $cmd .= " -q  ".$outfile{"genome_ecs"};
+  $cmd .= " -return occ,proba,rank,common,R_only";
+  $cmd .= " -lth QR 1 -sort sig";
+  $cmd .= " -o ".$outfile{"pathways_vs_genome"};
+  $cmd .= " ; text-to-html -i ".$outfile{"pathways_vs_genome"};
+  $cmd .= " -o ".$outfile{"pathways_vs_genome_html"};
+  &one_command($cmd, 1, 0, task=>"pathways_vs_genome");
+
+  ## Append table of links to the HTML report
+  print $syn &LinkTable("Files: pathway projections onto genome", @files_to_index) if ($syn); ## $syn is not instantiated in dry mode -> test before printing
+  @files_to_index = ();
+}
+
+################################################################
+## Pathway projection: project the EC numbers of a set of genes
+## (e.g. operon, directon, phyogenetic profile group, putative
+## co-regulation group) onto annotated metabolic pathways, and compute
+## the significance of the intersection.
+##
+sub genesets_vs_pathways {
+  my ($geneset_key, %args) = @_;
+
+  &RSAT::message::TimeWarn( "\tPathway projection", $geneset_key) if ($main::verbose >= 1);
+
+  ################################################################
+  ## Check gene set file
+  unless (defined($outfile{$geneset_key})) {
+    &RSAT::error::FatalError("Invalid key for gene set file", $geneset_key);
+  }
+  unless (-r $outfile{$geneset_key}) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("Cannot read gene set file", $outfile{$geneset_key});
+    }
+    &RSAT::message::Warning("Cannot read gene set file", $outfile{$geneset_key});
+    return();
+  }
+
+
+  ################################################################
+  ## Check existence of EC<-> pathway link file
+  unless (defined($infile{ec2pathway})) {
+    &RSAT::error::FatalError("Pathway projection requires to specify an EC <-> pathway link file (option -ec2pathway)");
+  }
+  unless (-r $infile{ec2pathway}) {
+    &RSAT::error::FatalError("Cannot read EC <-> pathway file", $infile{ec2pathway});
+  }
+
+  ################################################################
+  ## Define pathway projection file names
+  $prefix{$geneset_key."_pathway_proj"} = $outfile{$geneset_key};
+  $prefix{$geneset_key."_pathway_proj"} =~ s/\.tab$//;
+  $outfile{$geneset_key."_pathway_proj"} = $prefix{$geneset_key."_pathway_proj"}."_pathway_proj.tab"; push @files_to_index, $geneset_key."_pathway_proj";
+  $outfile{$geneset_key."_pathway_proj_html"} = $prefix{$geneset_key."_pathway_proj"}."_pathway_proj.html"; push @files_to_index, $geneset_key."_pathway_proj_html";
+  $outfile{$geneset_key."_pathway_proj_dot"} = $prefix{$geneset_key."_pathway_proj"}."_pathway_proj.dot"; push @files_to_index, $geneset_key."_pathway_proj_dot";
+  $outfile{$geneset_key."_pathway_proj_gml"} = $prefix{$geneset_key."_pathway_proj"}."_pathway_proj.gml"; push @files_to_index, $geneset_key."_pathway_proj_gml";
+
+  ## Build the command to project gene sets onto annotated pathways
+  my $cmd = "compare-classes -v 1";
+  $cmd .= " -r ".$infile{ec2pathway};
+  $cmd .= " -q  ".$outfile{$geneset_key."_ec_set"};
+  $cmd .= " -return occ,proba,rank,common,R_only,Q_only";
+  $cmd .= " -lth QR 1 -sort sig";
+  $cmd .= " -dot ".$outfile{$geneset_key."_pathway_proj_dot"};
+  $cmd .= " -gml ".$outfile{$geneset_key."_pathway_proj_gml"};
+  $cmd .= " -o ".$outfile{$geneset_key."_pathway_proj"};
+  $cmd .= " ; text-to-html -i ".$outfile{$geneset_key."_pathway_proj"};
+  $cmd .= " -o ".$outfile{$geneset_key."_pathway_proj_html"};
+  &one_command($cmd, 1, 0, task=>"pathway_proj");
+}
+
+__END__

@@ -1,0 +1,320 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: permute-matrix,v 1.1 2011/02/22 16:27:38 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+permute-matrix
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Randomize a set of input matrices by permuting their columns. The
+resulting motifs have the same nucleotide composition and information
+content as the original ones.
+
+This program is just a wrapper that selects the appropriate options of
+I<convert-matrix> and checks the consistency of parameters.
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=item matrix
+
+=back
+
+=head1 USAGE
+
+permute-matrix [-i inputfile] [-o outputfile] [-v #] [...]
+
+
+=head1 OUTPUT FORMAT
+
+Any output format supported by I<convert-matrix>.
+
+=head1 SEE ALSO
+
+=over
+
+=item convert-matrix
+
+=back
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    $main::perm = 1; ## Number of permutations per input matrix
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ## Input format is mandatory
+    unless ($main::in_format) {
+      &RSAT::error::FatalError("You must define the format of input matrices (option -in_format).");
+    }
+
+    ## Output format is mandatory
+    unless ($main::out_format) {
+      &RSAT::error::FatalError("You must define the format of output matrices (option -out_format).");
+    }
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    ($main::in) = &OpenInputFile($main::infile{input});
+    while (<$main::in>) {
+
+    }
+    close $main::in if ($main::infile{input});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
+    my $command = $SCRIPTS."/convert-matrix";
+    $command .= " -v ".$main::verbose;
+    $command .= " -i ".$main::infile{input} if ($main::infile{input});
+    $command .= " -from ".$main::in_format;
+    $command .= " -to ".$main::out_format;
+    $command .= " -return counts";
+    $command .= " -perm ".$main::perm;
+    $command .= " -o ".$main::outfile{output} if ($main::outfile{output});
+    &doit($command);
+
+    ################################################################
+    ## Insert here output printing
+
+    ################################################################
+    ## Report execution time and close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message.
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h.
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-in_format matrix_format>
+
+Format of the input matrices. Any input format supported by
+I<convert-matrix> is also supported by i<permute-matrix>.
+
+=cut
+    } elsif ($arg eq "-in_format") {
+      $in_format = shift(@arguments);
+      ## Format is convtrolled by convert-matrix
+      #	  unless ($supported_in_format{$in_format}) {
+      #	    &RSAT::error::FatalError("$in_format\tInvalid output format for matrix\tSupported: $supported_in_formats");
+      #	  }
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-out_format matrix_format>
+
+Format of the output matrices. Any output format supported by
+I<convert-matrix> is also supported by i<permute-matrix>.
+
+=cut
+    } elsif ($arg eq "-out_format") {
+      $out_format = shift(@arguments);
+      ## Format is convtrolled by convert-matrix
+      #	  unless ($supported_out_format{$out_format}) {
+      #	    &RSAT::error::FatalError("$out_format\tOutvalid output format for matrix\tSupported: $supported_out_formats");
+      #	  }
+
+=pod
+
+=item B<-perm #>
+
+Number of permutations to apply to each input matrix (default 1).
+
+=cut
+  } elsif ($arg eq "-perm") {
+    $main::perm = shift(@arguments);
+    unless (&IsNatural($main::perm)) {
+      &RSAT::error::FatalError("Invalid permutation number $main::perm. Must be a Natural number.");
+    }
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+
+  }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; permute-matrix ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__

@@ -1,0 +1,143 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% raph analysis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Graph analysis}
+
+
+\section{Introduction}
+\subsection{Definition}
+Informally speaking, a \textit{graph} is a set of objects called points, nodes, or vertices connected by links called lines or edges. 
+
+More formally, a graph or undirected graph $G$ is an ordered pair $G = (V,E)$ that is subject to the following conditions :
+
+\begin{itemize}
+\item $V$ is a set, whose elements are called vertices or nodes
+\item $E$ is a set of pairs (unordered) of distinct vertices, called edges or lines.
+\end{itemize}
+
+
+The vertices belonging to an edge are called the ends, endpoints, or end \textit{vertices} of the \textit{edge}. $V$ (and hence $E$) are taken to be finite sets.
+
+The \textit{degree} of a vertex is the number of other vertices it is connected to by edges.
+As graphs are used to model all kinds of problems and situation (networks, maps, pathways, ...), nodes and vertex may present attributes (color, weight, label, ...).
+
+\subsection{Some types of graphs}
+\subsubsection{Undirected graph}
+An edge between vertex $A$ and vertex $B$ corresponds to an edge between $B$ and $A$.
+\subsubsection{Directed graph (digraph)}
+An edge between vertex $A$ and vertex $B$ does not correspond to a vertex between $B$ and $A$. In that case, edges are said to be arcs.
+\subsubsection{Weighted graph}
+A weight can be placed either on the nodes or on the edges of the graph. A weight on the edge may for example represent a distance between two nodes or the strength an interaction.
+\subsubsection{Bipartite graphs}
+A bipartite graph is a special graph where there are two types of nodes : $A$ and $B$ and where each node of type $A$ is only connected to nodes of type $B$ and vice-versa.
+
+\subsection{Graph files formats}
+\subsubsection{List of edges}
+This format is the more intuitive way to encode a graph. It consists in a list of edges between the nodes. The names of the nodes are separated using some field separator, in RSAT, a tabulation. Some attributes of the edges can be placed in the following columns (weight, label, color).
+
+\begin{tabular}{ccc}
+n1 & n2 & 3.2 \\
+n1 & n2 & 1.4 \\
+n2 & n3 & 4 \\
+n3 & n4 & 6 \\
+\end{tabular}
+
+\subsubsection{GML format}
+Among other, GML format allows to specify the location, the color, the label and the width of the nodes and of the edges. A GML file is made up of pairs of a key and a value. Example for keys are graphs, node and edges. You can then add any specific information for each key.
+GML format can be used by most graph editors (like cytoscape and yEd).
+
+For more information on the GML format, see \url{http://www.infosun.fim.uni-passau.de/Graphlet/GML/}.
+
+\subsubsection{DOT format}
+DOT is a plain text graph description language. The DOT files are generally used by the programs composing the GraphViz suite (dot, neato, dotty, ...). It is a simple way of describing graphs that both humans and computer programs can use. DOT graphs are typically files that end with the \textit{.dot} extension. Like GML, with DOT you can specify a lot of feature for the nodes (color, width, label). 
+
+\section{RSAT Graph tools}
+\subsection{\program{convert-graph}}
+This program converts a graph encoded in some format (gml, tab) to some other (gml, tab, dot). The source node
+are in the first column of this file, target nodes in the second column and the edge weights are in the third one.
+By default, column 1 contains the source node, column 2 the target nodes and there is no weight.
+
+{\begin{footnotesize}\begin{verbatim}
+  convert-graph -i demo_graph.tab -o demo_graph.gml -from tab -to gml -scol 1 -tcol 2 -wcol 3
+\end{verbatim} \end{footnotesize}
+}
+
+\program{convert-graph} also allows to randomize a graph using \textit{-random} option, each node keeping the same number of neighbours (degree).
+You can specify the number of required random graphs.
+
+
+{\begin{footnotesize}\begin{verbatim}
+    convert-graph -i demo_graph.tab -o random_graph -random 100 -from tab -to tab
+\end{verbatim} \end{footnotesize} 
+}
+
+This command will create 100 different random graph from the file demo\_graph.tab.
+
+\subsection{\program{graph-node-degree}}
+
+Calculate the node degree of each node (or of a selection of nodes) and specifies if this node is a seed or a target node.
+
+{\begin{footnotesize}\begin{verbatim}
+    graph-node-degree -all -i demo_graph.tab
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{\program{graph-neighbours}}
+
+Extracts the neighbourhood from a graph (the number of steps may be specified) of all or of a set of seed nodes.
+
+{\begin{footnotesize}\begin{verbatim}
+    graph-neighbours -i demo_graph.tab -steps 1 -seed n2 -self
+\end{verbatim} \end{footnotesize}
+}
+
+With this command, \program{graph-neighbours} will retrieve all the first neighbours of node $n2$ , $n2$ being included.
+To also get the neighbours of the neighbours of $n2$, we should use the option \textit{-steps 2}.
+The output file may then be used with \program{compare-classes} program to compare groups of neighbours to annotated groups of nodes. A file containing a list of seed nodes can
+be given to \program{graph-neighbours} using \textit{-seedf} option.
+
+Using the -stats option with a weighted graph will return one line for each seed node (-steps must then be equal to 1).
+
+\subsection{\program{compare-graphs}}
+
+Computes the intersection, union or difference of two graphs (a reference graph and a query graph).
+The format of each input graph may be specified so that you can compare a gml encoded graph to a edge-list format graph.
+
+{\begin{footnotesize}\begin{verbatim}
+    compare-graphs -Q query_graph.tab -R reference_graph2.gml \
+                   -return union -out_format tab -outweight Q::R \
+                   -in_format_R gml -wcol_Q 3
+
+\end{verbatim} \end{footnotesize}
+}
+
+With this command, you will compare query\_graph.tab and reference\_graph2.gml. The output will be an edge list format file. 
+For each edge, it will specify if the edge belongs to the reference graph, to the query graph or to both of them and colour the edges accordingly.
+
+\subsection{\program{graph-get-clusters}}
+Extract from a graph a subgraph specified by a set of \textit{clusters} of nodes. 
+It returns the nodes belonging to the clusters and the intra-cluster arcs, and ignore the inter-cluster arcs.
+
+{\begin{footnotesize}\begin{verbatim}
+    graph-get-clusters -i demo_graph_cl.tab -clusters demo_graph_clusters.tab \
+                       -out_format gml -o demo_graph_clusters_ex.gml
+\end{verbatim} \end{footnotesize}
+}
+
+Using the \textit{-distinct} option, nodes belonging to more than one cluster are duplicated. This option should be used for visualisation purpose only.
+
+Using the \textit{-inducted} option, you can extract a subgraph containing all the nodes specified in the cluster file. In that case, you don't specially need a
+two-column file.
+
+\subsection{\program{compare-graph-clusters}}
+
+With the \textit{-return table} option, this program counts the number (or the sum of the weights) of intra cluster (or class) edges in a graph according to some clustering (classification) file and the number of edges in each cluster.
+
+{\begin{footnotesize}\begin{verbatim}
+    compare-graph-clusters -i demo_graph_cl.tab \
+                           -clusters demo_graph_clusters.tab -v 1 -return table
+\end{verbatim} \end{footnotesize}
+}
+
+With the \textit{-return graph} option, this program returns some cluster characteristics for each edge, i.e., the number of time the source node and the target node were found within the same cluster, the number of time the source node was found without the target node, ...
+

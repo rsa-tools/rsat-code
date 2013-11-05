@@ -1,0 +1,3327 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-matrices,v 1.118 2013/06/20 00:30:30 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+compare-matrices
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Compare two collections of position-specific scoring matrices (PSSM),
+and return various similarity statistics + matrix alignments
+(pairwise, one-to-n).
+
+=head1 AUTHORS
+
+=over
+
+=item Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
+
+=back
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=item pattern matching
+
+=item PSSM
+
+=back
+
+=head1 USAGE
+
+compare-matrices -file1 inputfile1 -file2 inputfile2 [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMATS
+
+The user has to specify exactly input files (options I<-file1> and
+I<-file2>), each containing one or several PSSMs. Each matrix of file
+one is compared with each matrix of file2.
+
+Any PSSM format supported in RSAT (type I<convert-matrix -h> for a
+description).
+
+=head1 OUTPUT FORMATS
+
+By default, the output format is a tab-delimited file with one row per
+matrix comparison, and one column per statistics. Depending on the
+requested output fields (option I<-return>), I<compare-matrices> can
+also export a series of additional files.
+
+=over
+
+=item [output_prefix].tab
+
+Tab-delimited text file containing the primary result (comparison
+score table): one column per comparison (match or profile position),
+one row per field (score, matrix descriptor, ...).
+
+=item [output_prefix].html
+
+HTML file presenting the comparison table in a user-friendly way. The
+clickable headers allow to re-order the table according to any column.
+
+=item [output_prefix].gml
+
+Matrix comparison graph in GML format, which can be open with
+CitoScape or Yed.
+
+=item [output_prefix].dot
+
+Matrix comparison graph in dot format, which can be open with
+graphviz.
+
+=item [output_prefix_alignments_pairwise.tab]
+
+Tab-delimited text file containing the shifted matrices resulting from
+pairwise alignments.
+
+=item [output_prefix_alignments_pairwise.html]
+
+HTML file presentig the pairwise alignments in a user-friendly way:
+motifs are presented as sequence logos.
+
+=item [output_prefix_alignments_1ton.tab]
+
+Tab-delimited text file containing the shifted matrices resulting from
+1-to-n alignments.
+
+=item [output_prefix_alignments_1ton.html]
+
+HTML file presentig the 1-to-n alignments in a user-friendly way:
+motifs are presented as sequence logos.
+
+
+=back
+
+
+=head1 ALGORITHM
+
+The program successively computes one or several (dis)similiraty
+metrics between each matrix of the first input file and each matrix of
+the secnd input file.
+
+Since the matrices are not supposed to be in phase, for each pair of
+matrix, the program tests all possible I<offset> (shift) values
+between the two matrices.
+
+=head1 MATCHING SCORES
+
+=head2 Symbols used for the metrics
+
+In the formula below, symbols are defined as follows
+
+=over
+
+=item I<m1, m2>
+
+Two position-specific scoring matrices.
+
+=item I<w1,w2>
+
+Number of columns of matrices m1 and m2, respectively.
+
+=item Row number I<r>
+
+Number of rows in each matrix, which correspond to the number of
+residues in the alphabet (A,C,G,T for DNA motifs).
+
+=item Aligned length I<w>
+
+Number of aligned columns between matrices m1 and m2 (depends on the
+offset between the two matrices).
+
+ w <= w1
+ w <= w2
+
+=item Total length I<W>
+
+Total length of the alignent between matrices m1 and m2.
+
+ W = w1 + w2 - w
+
+=item Relative lengths I<Wr, wr1, wr2>
+
+A measure of the mutual overlap between the aligned matrices.
+
+  Wr = w / W
+
+This actually corresponds to the Jaccard coefficient (intersection /
+union), applied to the alignment lengths.
+
+The program also computes the width relative to each of the aligned
+matrices.
+
+  wr1 = w / w1
+  wr2 = w / w2
+
+=item I<s1, s2>
+
+Number of sites in matrices m1 and m2, respectively.
+
+=item I<n>
+
+Number of cells in the aligned portion of the matrices.
+
+ n = w * r
+
+=item I<i>
+
+Index of a row of the aligned PSSM (corresponds to a residue).
+
+=item I<j>
+
+Index of a column of the aligned PSSM (corresponds to an aligned
+position).
+
+=item I<f1{i,j}>
+
+Frequency of I<ith> residue in the I<jth> column of the aligned subset of the
+first matrix (taking the offset into account).
+
+=item I<f2{i,j}>
+
+Frequency of I<ith> residue in the I<jth> column of the aligned subset of the
+second matrix (taking the offset into account).
+
+=item I<f1m, f2m>
+
+Mean frequency computed over all cells of matrices m1 and m2, respectively.
+
+=back
+
+=head2 Sum of Squared Distances (SSD)
+
+BEWARE: this metrics is the real SSD, i.e. the simple sum of squared
+distance. It is a distance metric, in contrast with the "SSD" defined
+in STAMP, which is converted to a similarity metrics (see
+Sandelin-Wasserman below).
+
+ SSD = SUM{i=1->r} SUM{j=1->w} [(f1{i,j} - f2{i,j})^2)]
+
+=head2 Sandelin-Wasserman similarity (SW)
+
+Also implemented in STAMP (under the name SSD) and TOMTOM (under the
+name Sandelin-Wasserman). This is a distance to similarity conversion
+of the SSD. The conversion is ensured by substracting each squared
+distance to a constant 2 (the max distance between two columns
+containing relative frequencies, i.e. one residue has frequency 1 in
+one column, and another residue has ffrequency 1 in the other column).
+
+ SW = SUM{i=1->r} SUM{j=1->w} [2 - (f1{i,j} - f2{i,j})^2) ]
+
+Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215.
+
+=head2 Normalized Sandelin-Wasserman similarity (NSW)
+
+Sandelin-Wasserman (SW) similarity normalized by the number of aligned
+columns (I<w>).
+
+ NSW = SW / (2*w)
+
+NSW takes a value comprized between 0 (not a single corresponding
+residue) and 1 (matrices are identical for all the aligned columns).
+
+=head2 Euclidian distance (dEucl)
+
+ dEucl = sqrt( SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f2{i,j})^2)
+
+Since relative frequencies can take values from 0 to 1, the Euclidian
+distance can take values from 0 to sqrt(2)*w.
+
+=head2 Normalized Euclidian distance (NdEucl)
+
+Euclidian distance normalized by the number of aligned columns
+(I<w>).
+
+ NdEucl = dEucl / w
+
+NdEucl can take values from 0 to sqrt(2).
+
+Note that this differs from the definition provided in Pape et
+al. (2008).
+
+=head2 Normalized Euclidian similarity (NsEucl)
+
+A similarity metrics derived from the normalized Euclidian distance.
+
+ NsEucl = (Max(NdEucl) - NdEucl) / Max(NdEucl)
+        = (sqrt(2) - NdEucl) / sqrt(2)
+
+where I<Max(NdEucl)>=sqrt(2) is the maximal possible Euclidian
+distance for the current pair of matrices. The Normalized Euclidian
+similarity can vary from 0 (idential matrices) to 1 (matrices with a
+single residue per column, and those residues systematically differ
+between the two matrices).
+
+=head2 Kullback-Leibler distance (dKL)
+
+As defined in Aerts et al. (2003). Also called B<Mutual Information>.
+
+ dKL = 1/(2w) * SUM{i=1->r} SUM{j=1->w} (
+                   f1{i,j}*log(f1{i,j}/f2{i,j})
+                   + f2{i,j}*log(f2{i,j}/f1{i,j}))
+
+Note that the KL distance is problematic for matrices containing zero
+values: for example, if f1(i,k)=0 and f2(i,j)=1, we have :
+  KL(i,j) = (0*log(0) + 1*log(1/0)) = 0 + log(Inf) = Inf
+
+One can circumvent this problem by using pseudo-count corrected
+matrices (f'(i,j)), but then the KL distance is strongly dependent on
+the somewhat arbitrary choice of the pseudo-count value.
+
+=head2 Covariance (cov)
+
+ cov = 1/(r*w) * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m) * (f2{i,j} - f2m)
+
+Beware : this is the classical covariance defined in statistical
+textbooks. It has nothing to do with the "natural covariance" of Pape
+(which still needs to be implemented here).  What we compute here is
+simply the covariance between the counts in the aligned cells of the
+respective matrices.
+
+=head2 Coefficient of correlation (cor)
+
+ v1 = 1/n * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m)^2
+ v2 = 1/n * SUM{i=1->r} SUM{j=1->w} (f2{i,j} - f2m)^2
+ cor = cov/ sqrt(v1*v2)
+
+=head2 Normalized correlation (Ncor, Ncor1, Ncor2)
+
+The normalized correlation prevents matches covering only a small
+fraction of the matrix (e.g. matches between the last column of the
+query matrix and the first column of the reference matrix, or matches
+of a very small motif against a large one).
+
+The normalization factor is the relative length (Wr), i.e. the number
+of aligned columns divided by the total columns of the alignment.
+
+Ncor = cor * Wr
+
+This correction is particularly important to avoid selecting spurious
+alignments between short fragments of the flanks of the matrices
+(e.g. single-column alignments). For this reasons, I<Ncor> generally
+gives a better estimation of motif similarity than I<cor>, and we
+recommend it as similarity score.
+
+Imposing a too stringent lower threshold on Ncor may however reduce
+the sensitivity, and in particular prevent from detecting matches
+between half-motifs (e.g. in the case of dimeric transcription factor
+recognizing composite motifs).
+
+=head3 Note
+
+An alternative would be to use as normalizing factor the length of the
+alignment (w) relative to the length of the shorter motif.
+
+ Ncor = cor * w / min(w1,w2)
+
+This however tends to favour matches between very short motifs (4-5
+residues) which cover only a fraction of the query motif.
+
+=head3 Ncor1, Ncor2
+
+In addition to Ncor, we define separate normalized correlations relative
+to w1 and w2 resp. 
+
+Ncor1 = cor * w / w1
+
+Ncor2 = cor * w / w2
+
+=head2 Correlation of the information content (Icor)
+
+Pearson's correlation computed on the information content matrices
+(I1, I2) rather than on the frequencies.
+
+ Icov = 1/n * SUM{i=1->r} SUM{j=1->w} (I1{i,j} - f1m) * (I2{i,j} - f2m)
+ Iv1 = 1/n * SUM{i=1->r} SUM{j=1->w} (I1{i,j} - f1m)^2
+ Iv2 = 1/n * SUM{i=1->r} SUM{j=1->w} (I2{i,j} - f2m)^2
+ cor = Icov/ sqrt(Iv1*Iv2)
+
+The I<Icor> score fixes a weakness of the I<cor> score and all
+other other metrics above, which only take into account the residue
+frequencies whilst ignoring the background frequencies.
+
+A typical manifestation of this problem is that the I<cor> score
+occasionally returns alignements between non-informative pieces of the
+matrices , which appear flat on the aligned logos. The reason why
+uninformative columns may have a good correlation is that, if both
+matrices have the same compositional bias (for example 30%A, 20%C,
+20%G and 30%T), they will be correlated. Consequently, the columns
+reflecting the background will contribute to increase the correlation
+coefficient.
+
+The information content corrects this bias by relativizing the matrix
+frequencies with respect to the background residue probaiblities.
+
+ I{i,j} = f{i,j} log (f{i,j}/p{j})
+
+where I<p{j}> is the prior probability of residue I<j>.
+
+=head1 REFERENCES
+
+Distances between PSSMs have been treated in many ways. The most
+recent and relevant articles are cited hereafter.
+
+=over
+
+=item Aerts, S., Van Loo, P., Thijs, G., Moreau, Y. and De Moor,
+B. (2003). Computational detection of cis -regulatory
+modules. Bioinformatics 19 Suppl 2, II5-II14.
+
+=item Gupta, S., Stamatoyannopoulos, J. A., Bailey, T. L. and Noble,
+W. S. (2007). Quantifying similarity between motifs. Genome Biol 8,
+R24.
+
+=item Pape, U.J., Rahman, S., and Vingron, M. (2008). Natural
+similarity measures between position frequency matrices with an
+application to clustering. Bioinformatics 24 (3) pp. 350-7.
+
+=item Mahony, S. and Benos, P. V. (2007). STAMP: a web tool for
+exploring DNA-binding motif similarities. Nucleic Acids Res 35,
+W253-8.
+
+=item Sandelin, A. and Wasserman, W. W. (2004). Constrained binding site
+diversity within families of transcription factors enhances pattern
+discovery bioinformatics. J Mol Biol 338, 207-15.
+
+
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA2.cgi.lib";
+require "RSA.disco.lib";
+use RSAT::matrix;
+use RSAT::MatrixReader;
+use RSAT::stats;
+use Data::Dumper;
+use RSAT::MatrixAlignment;
+
+use RSAT::Graph;
+use RSAT::GraphNode;
+use RSAT::GraphArc;
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.118 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  %main::infile = ();
+  %main::outfile = ();
+
+  ## Use arrays for ordered listing of files in the HMTL index
+  @main::outfiles = ();
+  @main::infiles = ();
+  @main::dirs = ();
+
+  $main::no_buffering = 0;
+
+  $main::verbose = 0;
+  $main::out = STDOUT;
+
+  ## Supported metrics for comparing matrices
+  local @supported_metrics = (
+			      "cor", ## Coefficient of correlation
+			      "Ncor", "Ncor1", "Ncor2", ## Normalized coefficients of correlation
+			      "logoDP", ##  Dot product between sequence logo values (column info * frequency)
+			      "logocor", ## Correlation between sequence logo values (column info * frequency)
+			      "Nlogocor", ## Normalized correlation between sequence logo values (column info * frequency)
+#			      "Wcor", ## Correlation between weight matrices
+#			      "NWcor", ## Normalized correlation between weight matrices
+			      "Icor", ## Correlation between information content matrices
+			      "NIcor", ## Normalized correlation between information content matrices
+			      "cov", ## Covariance
+			      "dEucl", ## Euclidian distance
+			      "NdEucl", ## Normalized Euclidian distance
+			      "NsEucl", ## Euclidian similarity
+			      "SSD", ## Sum of squared distances
+			      "SW", ## Sandelin-Wasserman similarity
+			      "NSW", ## Normalized Sandelin-Wasserman similarity
+			      #			      "dKL", ## Kullback-Leibler distance
+			      "all_metrics", ## all supported metrics
+			      "match_rank", ## Matching ranks for all the selected metrics
+			     );
+#  local @rank_metrics = ("SW", "dEucl"); ## Metrics on which a rank can be computed
+#  local @rank_metrics = @supported_metrics; ## Metrics on which a rank can be computed
+  local @rank_metrics = (); ## Metrics on which the rank has to be computed (will be filled according to selected metrics)
+
+  ## Return fields
+  local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
+				    "matrix_number", ## Number of the matrices in the input files
+				    "matrix_id", ## Identifiers of the matrices
+				    "matrix_name", ## Names of the matrices
+				    "matrix_ac", ## Accession number of the matrices
+				    "w", ## Width of the alignment (included in width, but useful for the Web page parameters)
+				    "width", ## Width of the matrices and the alignment
+				    "strand", ## Direct (D) or Reverse complementary (R) comparison
+				    "direction", ## for backward compatibility only, replaced by "strand".
+				    "offset", ## offset between the positions of the first and second matrix
+				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
+				    "consensus",
+				    "offset_rank", ## Rank of the match according to the sorting criterion
+				    "graph", ## Export a matrix comparison graph
+				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
+				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
+				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+				    "all", ## All supported output fields, including all metrics
+				);
+  local %supported_return_field = ();
+  foreach my $field (@supported_return_fields) {
+    $supported_return_field{$field} = 1;
+  }
+  local $supported_return_fields = (join ",", @supported_return_fields);
+  local %return_field = ();
+
+
+  ## Supported fields for sorting the matches
+  local %supported_sort_field = ("offset"=>"asc",
+				 "cor"=>"desc",
+				 "Ncor"=>"desc",
+				 "Ncor1"=>"desc",
+				 "Ncor2"=>"desc",
+				 "logoDP"=>"desc",
+				 "logocor"=>"desc",
+				 "Nlogocor"=>"desc",
+#				 "Wcor"=>"desc",
+#				 "NWcor"=>"desc",
+				 "Icor"=>"desc",
+				 "NIcor"=>"desc",
+				 "cov"=>"desc",
+				 "dEucl"=>"asc",
+				 "NdEucl"=>"asc",
+				 "NsEucl"=>"desc",
+				 "SSD"=>"asc",
+				 "SW"=>"desc",
+				 "NSW"=>"desc",
+				 "dKL"=>"asc",
+				);
+  local $supported_sort_fields = join (",", keys (%supported_sort_field));
+  local @sorted_match_id = (); ## list of sorted matches for the final output
+  ## Default sort field
+#  local $sort_field = "offset";
+#  $sort_field = "Icor";
+#  local $sort_field = "SW";
+  local $sort_field;
+
+  ## Matches
+  local %match_score = (); ## key = match ID, value = match score (sorting score)
+  local %match_out_line = (); ## key = match ID, value = output row
+
+  ## Threshold parameters
+  local %lth = ();		# lower threshold values
+  local %uth = ();		# upper threshold values
+  local @supported_thresholds = @supported_metrics;
+  push @supported_thresholds, qw(
+				 offset
+				 w
+				 Wr
+				 wr1
+				 wr2
+				 offset_rank
+				);
+  local $supported_thresholds = join ",", @supported_thresholds;
+  local %supported_threshold = ();
+  foreach my $thr (@supported_thresholds) {
+    $supported_threshold{lc($thr)} = 1;
+  }
+
+  ## Comparison mode
+  local $comparison_mode = "matches";
+  local @supported_comparison_modes = qw(matches profiles scan);
+  local %supported_comparison_mode = ();
+  foreach my $format (@supported_comparison_modes) {
+    $supported_comparison_mode{$format} = 1;
+  }
+  local $supported_comparison_modes = join (",", @supported_comparison_modes);
+
+  ## Matrices
+  local @matrices1 = ();
+  local @matrices2 = ();
+
+  ## Matches
+  local @match_ids = (); ## Identifiers of the matches
+  local %sort_score = (); ## Hash table with the association between match IDs and matching scores used for sorting them
+
+  ## Input formats
+  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  $supported_input_formats = join ",", sort keys %supported_input_format;
+  local $input_format1 = "";
+  local $input_format2 = "";
+
+  local $top1 = 0;
+  local $top2 = 0;
+  local $skip1 = 0;
+  local $skip2 = 0;
+
+  local $strand = "DR";
+  local $distinct = 0;
+#  local $triangle = 0;
+  local $merging_stat = "mean";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ## IMPORTANT: prevent output to be buffered becase this creates
+  ## problems for peak-footprint: the program sometimes leaves before the task is completed;
+  if ($main::no_buffering) {
+    $| = 1;
+  }
+
+
+  ################################################################
+  ## Check argument values
+
+  ## Compute all metrics
+  if ($return_field{all_metrics}) {
+    foreach my $metric (@supported_metrics) {
+      $return_field{$metric} = 1;
+    }
+    delete($return_field{all_metrics});
+  }
+
+
+  ## Return all fields
+  if ($return_field{all}) {
+    foreach my $field (@supported_return_fields) {
+      $return_field{$field} = 1;
+    }
+    delete($return_field{all});
+    delete($return_field{direction});
+  }
+
+  ## Field w is converted to width, for the Web interface
+  if ($return_field{w}) {
+    $return_field{width} = 1;
+  }
+
+  ## The sorting field must be returned
+  if ($sort_field) {
+    $return_field{$sort_field} = 1;
+  }
+
+  ## Update the list of metrics to take into account for ranks and rank mean
+  if ($return_field{match_rank}) {
+    foreach my $metric (@supported_metrics) {
+      next if ($metric eq "all_metrics");
+      next if ($metric eq "match_rank");
+      push @rank_metrics, $metric if ($return_field{$metric});
+    }
+  }
+
+  ## Specify the output format for the different metrics
+  local %metric_format = ();
+  $metric_format{"match_rank"} = "%d";
+  $metric_format{"rank_mean"} = "%.3f";
+  foreach my $metric (@rank_metrics) {
+    $metric_format{"r".$metric} = "%d";
+  }
+  foreach my $metric (@supported_metrics) {
+    unless (defined($metric_format{$metric})) {
+      $metric_format{$metric} = "%.3f";
+    }
+  }
+
+
+  ## Alignments
+  if ($return_field{alignments}) {
+    $return_field{alignments_pairwise} = 1;
+    $return_field{alignments_1ton} = 1;
+    delete($return_field{alignments});
+  }
+
+  ## Alignments require to specify an output prefix
+  if (($return_field{alignments_pairwise}) ||
+       ($return_field{alignments_1ton})) {
+    &RSAT::error::FatalError("You must specify an output file to obtain alignments.") 
+      unless $main::outfile{output_prefix};
+  }
+
+  ## Incompatibilities between output modes
+  if ((($return_field{alignments_pairwise}) ||
+      ($return_field{alignments_1ton})) && ($comparison_mode eq "profiles")) {
+    &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
+  }
+
+
+  ## Check that the two input files have been specified
+  unless ((($infile{file1}) || ($infile{mlist1})) &&
+	  (($infile{file2}) || ($infile{mlist2}))) {
+    &RSAT::error::FatalError("You must define two input files, using the options (-file1 or -mfile1) and (-file2 or -mlist2)");
+  }
+
+  ## Single input file (each matrix of the file will be compared to
+  ## each other one).
+  local $single_input_file = 0;
+  if ($infile{file1} eq $infile{file2}) {
+    $single_input_file = 1;
+  }
+
+  ## Check that the two input formats have been specified
+  unless (($input_format1) && ($input_format2)) {
+    &RSAT::error::FatalError("You must define two input format(s) (option -format, or options -format1 and -format2)");
+  }
+
+  ## Strand(s)
+  local @strands = ();
+  if ($strand eq "R") {
+    @strands = ("R");
+  } elsif ($strand eq "D") {
+    @strands = ("D");
+  } elsif ($strand eq "DR") {
+    @strands = ("D", "R");
+  }
+
+#   ## Obsolete return field
+#   if ($return_field{direction}) {
+#     $return_field{strand} = 1;
+#     $return_field{direction} = 0;
+#     &RSAT::message::Warning("The option '-return direction' is obsolete, should be replaced by '-return strand'");
+#   }
+
+  ## Check return fields
+  if (($comparison_mode eq "profiles") || ($comparison_mode eq "scan")) {
+    $sort_field = "offset" unless ($sort_field);
+    $return_field{matrix_name} = 1;
+    $return_field{strand} = 1;
+    $return_field{offset} = 1;
+    $return_field{consensus} = 1;
+    $return_field{Ncor} = 1;
+
+    ## For the scanning mode, we impose some thresholds to return all
+    ## the hits of a small matrix (example: JASPAR motif) in a larger
+    ## matrix (e.g. a matrix representing a region conserve between
+    ## species).
+    if ($comparison_mode eq "scan") {
+      &RSAT::error::FatalError("The mode scan still needs to be implemented");
+    }
+
+  } if ($comparison_mode eq "matches") {
+    $sort_field = "Ncor" unless ($sort_field);
+    $return_field{matrix_name} = 1;
+    $return_field{strand} = 1;
+    $return_field{Ncor} = 1;
+#    $return_field{Icor} = 1;
+#    $return_field{NIcor} = 1;
+#    $return_field{NWcor} = 1;
+#    $return_field{consensus} = 1;
+
+    $uth{offset_rank}=1 unless(defined($uth{offset_rank})); ## Only return the best match for each alignment
+
+    ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
+    $lth{w}=5 unless (defined($lth{w}));
+#    $lth{Icor}=0.75 unless (defined($lth{Icor}));
+    $lth{cor}=0.7 unless (defined($lth{cor}));
+    $lth{Ncor}=0.4 unless (defined($lth{Ncor}));
+  }
+
+  ## Sort order
+  local $sort_order = $supported_sort_field{$sort_field};
+
+  ################################################################
+  ## Treat dependencies between fields to compute
+
+  ## All return fields should be computed
+  my %calc_field = %return_field;
+
+  ## All fields having thresholds must be computed
+  foreach my $field (keys %lth) {
+    $calc_field{$field} = 1;
+  }
+  foreach my $field (keys %uth) {
+    $calc_field{$field} = 1;
+  }
+
+
+  ## Some fields must be computed as intermediate results for other fields
+  $calc_field{logocor} = 1 if ($calc_field{Nlogocor});
+  $calc_field{logoDP} = 1 if ($calc_field{logocor});
+  $calc_field{Icor} = 1 if ($calc_field{NIcor});
+#  $calc_field{Wcor} = 1 if ($calc_field{NWcor});
+  $calc_field{cor} = 1 if ($calc_field{Ncor});
+  $calc_field{cor} = 1 if ($calc_field{Ncor1});
+  $calc_field{cor} = 1 if ($calc_field{Ncor2});
+  $calc_field{cov} = 1 if ($calc_field{cor});
+  $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
+  $calc_field{dEucl} = 1 if ($calc_field{NdEucl});
+  $calc_field{SSD} = 1 if ($calc_field{dEucl});
+  $calc_field{SW} = 1 if ($calc_field{NSW});
+  $calc_field{SSD} = 1 if ($calc_field{SW});
+
+  &RSAT::message::Debug("Fields to compute", join (",", sort(keys(%calc_field)))) if ($main::verbose >= 4);
+
+  ################################################################
+  ## Open output stream(s)
+
+  ## Check that output file is specified if required (for the alignments)
+  if (defined($main::outfile{output_prefix})) {
+
+    ## Create output dir if required
+    my $basename;
+    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
+    $dir{output} = "." if ($dir{output} eq "");
+    &RSAT::util::CheckOutDir($dir{output});
+    push @dirs, "output";
+
+    ## tab-delimited output file
+    $main::outfile{match_table_txt} = $main::outfile{output_prefix}.".tab";
+    push @outfiles, "match_table_txt";
+
+    ## HTML-formatted table of matches
+    $main::outfile{match_table_html} = $main::outfile{output_prefix}.".html";
+    push @outfiles, "match_table_html";
+
+
+    ## Open the HTML index file
+    $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
+    push @outfiles, "html_index";
+    $main::html_index = &OpenOutputFile($main::outfile{html_index});
+    my $header = &PrintHtmlResultHeader(program=>"compare-matrices", refresh_time=>120);
+    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+    print $main::html_index $header;
+
+    ## Report command
+    print $html_index "<p><tt><b>Command:</b> compare-matrices ";
+    &PrintArguments($main::html_index, 1);
+    print $html_index "</tt></p>\n";
+
+    if ($return_field{graph}) {
+      $main::outfile{gml} = $main::outfile{output_prefix}.".gml";
+      push @outfiles, "gml";
+    }
+
+    ## Matrix alignments
+    if (($return_field{alignments_pairwise}) ||
+	($return_field{alignments_1ton})) {
+      &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
+	unless ($main::outfile{output_prefix});
+
+      ## Pariwise alignments
+      if ($return_field{alignments_pairwise}) {
+
+	## Text output stream for pairwise alignments
+	$main::outfile{alignments_pairwise} = $main::outfile{output_prefix}."_alignments_pairwise.tab";
+	push @outfiles, "alignments_pairwise";
+	$main::alignments_pairwise = &OpenOutputFile($main::outfile{alignments_pairwise});
+
+	## Pairwise alignments in HTML format
+	$main::outfile{alignments_pairwise_html} = $main::outfile{output_prefix}."_alignments_pairwise.html";
+	#      ## Open the stream for the HTML index of aligned matrices
+	#      $main::outfile{alignments_pairwise_html} = $main::outfile{alignments_pairwise};
+	#      $main::outfile{alignments_pairwise_html} =~ s/\.tab$//;
+	#      $main::outfile{alignments_pairwise_html} .= ".html";
+	push @outfiles, "alignments_pairwise_html";
+	$main::alignments_pairwise_html = &OpenOutputFile($main::outfile{alignments_pairwise_html});
+	print $main::alignments_pairwise_html "<html>\n";
+	my $title = "Pairwise alignments";
+	#      $title .= " ".&RSAT::util::ShortFileName($main::outfile{alignments_pairwise});
+	#      $title =~ s/\.tab//;
+	print $main::alignments_pairwise_html "<head><title>".$title."</title></head>\n";
+	#      print $main::alignments_pairwise_html &sorttable_script();
+	print $main::alignments_pairwise_html "<body>\n";
+	print $main::alignments_pairwise_html "<h1>".$title."</h1>\n";
+      }
+
+      ## 1-to-N alignments
+      if ($return_field{alignments_1ton}) {
+
+	## Text output stream for 1ton alignments
+	$main::outfile{alignments_1ton} = $main::outfile{output_prefix}."_alignments_1ton.tab";
+	push @outfiles, "alignments_1ton";
+	$main::alignments_1ton = &OpenOutputFile($main::outfile{alignments_1ton});
+
+	## Open the file for the HTML index of aligned matrices
+	#      $main::outfile{alignments_1ton_html} = $main::outfile{alignments_1ton};
+	#      $main::outfile{alignments_1ton_html} =~ s/\.tab$//;
+	#      $main::outfile{alignments_1ton_html} .= ".html";
+	$main::outfile{alignments_1ton_html} = $main::outfile{output_prefix}."_alignments_1ton.html";
+	push @outfiles, "alignments_1ton_html";
+	$main::alignments_1ton_html = &OpenOutputFile($main::outfile{alignments_1ton_html});
+	print $main::alignments_1ton_html "<html>\n";
+	my $title = "One-to-n alignments";
+	#      $title .= &RSAT::util::ShortFileName($main::outfile{alignments_1ton});
+	#      $title =~ s/\.tab//;
+	print $main::alignments_1ton_html "<head>";
+	print $main::alignments_1ton_html "<title>".$title."</title>";
+	print $main::alignments_1ton_html  "<style type='text/css'>\n";
+  	print $main::alignments_1ton_html `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+ 	print $main::alignments_1ton_html  "</style>\n";
+	print $main::alignments_1ton_html "</head>\n";
+	print $main::alignments_1ton_html &sorttable_script();
+	print $main::alignments_1ton_html "<body>\n";
+	print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
+      }
+
+      ## Define directory for the logos
+      $main::dir{logos} = $main::outfile{match_table_txt};
+      $main::dir{logos} =~ s/\.tab$//;
+      $main::dir{logos} .= "_aligned_logos";
+      push @dirs, "logos";
+    }
+  }
+
+  ################################################################
+  ## Output stream must be open in all cases, even if there is no
+  ## output prefix (in which case results are printed on STDOUT).
+  $main::out = &OpenOutputFile($main::outfile{match_table_txt});
+
+  ################################################################
+  ## Read input matrices
+
+  ## First motif set
+  if ($infile{file1}){
+    @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
+    &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
+      if ($main::verbose >= 2);
+    push @infiles, "file1";
+  } elsif ($infile{mlist1}){
+    @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
+    push @infiles, "mlist1";
+  }
+
+  ## Select top motifs for the first input file
+  if (($main::top1 > 0) && ($main::top1 < scalar(@matrices1))){
+    &RSAT::message::Warning("Selecting ".$main::top1." top motifs among ".scalar(@matrices1)." in file 1");
+    @matrices1 = @matrices1[0..($main::top1-1)];
+  }
+
+  ## Skip initial matrices of the first input file if requested
+  if ($main::skip1 > 0) {
+    if ($main::skip1 >= scalar(@matrices1)) {
+      &RSAT::message::Warning("No matrix left in file1 after skipping ".$skip1." matrices");
+      exit(0);
+    } else {
+      &RSAT::message::Warning("Skipping ".$main::skip1." top motifs from file 1");
+      @matrices1 = @matrices1[$skip1..$#matrices1];
+    }
+  }
+
+  ## Second matrix set
+  if ($infile{file2}){
+    if ($single_input_file) {
+      @matrices2 = @matrices1;
+      &RSAT::message::Info("Single input file")
+	if ($main::verbose >= 2);
+    } else {
+      @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
+      &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
+	if ($main::verbose >= 2);
+    }
+    push @infiles, "file2";
+  } elsif($infile{mlist2}){
+    @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
+    push @infiles, "mlist2";
+  }
+
+  ## Select top motifs for the second file
+  if (($main::top2 > 0) && ($main::top2 < scalar(@matrices2))){
+    &RSAT::message::Warning("Selecting ".$main::top2." top motifs among ".scalar(@matrices2)." in file 2");
+    @matrices2 = @matrices2[0..($main::top2-1)];
+  }
+  my @matrices = @matrices1;
+  push @matrices, @matrices2  unless ($single_input_file);
+
+
+  ## Skip initial matrices of the second input file if requested
+  if ($main::skip2 > 0) {
+    if ($main::skip2 >= scalar(@matrices2)) {
+      &RSAT::message::Warning("No matrix left in file2 after skipping ".$skip2." matrices");
+      exit(0);
+    } else {
+      &RSAT::message::Warning("Skipping ".$main::skip2." top motifs from file 2");
+      @matrices2 = @matrices2[$skip2..$#matrices2];
+    }
+  }
+
+  local $matrix_nb1 = scalar(@matrices1);
+  local $matrix_nb2 = scalar(@matrices2);
+  &RSAT::message::Info("Comparing ".$matrix_nb1." against ".$matrix_nb2." motifs.") if ($main::verbose >= 2);
+
+
+
+  ################################################################
+  ## Load background model file
+  local $bg_model;
+  if ($main::infile{bg}) {
+    push @infiles, "bg";
+    $bg_model = new RSAT::MarkovModel();
+    &RSAT::message::TimeWarn("Loading background model from ".$bg_format." file", $main::infile{bg}) if ($main::verbose >= 2);
+    $bg_model->load_from_file($main::infile{bg}, $bg_format);
+    $bg_model->check_missing_transitions();
+    my %prior = $bg_model->get_attribute("suffix_proba");
+
+    foreach my $matrix (@matrices) {
+      $matrix->setMarkovModel($bg_model);
+    }
+  }
+
+  ################################################################
+  ## Compute maximal lengths of string attributes (id, ac, name) for
+  ## nice display in tab-delimited columns
+
+  ## Treat the first matrix set
+  local $max_name_len1 = 0;
+  local $max_id_len1 = 0;
+  local $max_ac_len1 = 0;
+  local %matrix_by_id1 = (); ## index matrices by ID
+  local $m = 0;
+  foreach my $matrix (@matrices1) {
+    $m++;
+
+    ## Ensure that the matrix has ID and name attributes;
+    my $id = $matrix->get_attribute("id")
+      || $matrix->get_attribute("identifier")
+	|| $matrix->get_attribute("name")
+	  || $matrix->get_attribute("accession")
+	    || "matrix_".$m;
+    $matrix_by_id1{$id} = $matrix;
+
+    ## Compute max size for identifiers
+    my $id_len = length($id);
+    $max_id_len1 = $id_len if ($id_len > $max_id_len1);
+
+    ## Compute max size for accession numbers
+    ## Accession number
+    unless ($matrix->get_attribute("accession")) {
+      $matrix->force_attribute("accession", $id)
+    }
+    my $ac = $matrix->get_attribute("accession");
+    my $ac_len = length($ac);
+    $max_ac_len1 = $ac_len if ($ac_len > $max_ac_len1);
+
+    ## Compute max size for matrix names
+    unless ($matrix->get_attribute("name")) {
+      $matrix->force_attribute("name", $id)
+    }
+    my $name = $matrix ->get_attribute("name");
+    my $name_len = length($name);
+    $max_name_len1 = $name_len if ($name_len > $max_name_len1);
+
+#    &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
+  }
+  &RSAT::message::Debug("max string lengths for matrices 1",
+			"id:".$max_id_len1,
+			"ac:".$max_ac_len1,
+			"name:".$max_name_len1,
+		       ) if ($main::verbose >= 5);
+
+  ## treat the second matrix set
+  local $max_name_len2 = 0;
+  local $max_id_len2 = 0;
+  local $max_ac_len2 = 0;
+  local %matrix_by_id2 = ();
+  if ($single_input_file) {
+    $max_name_len2 = $max_name_len1;
+    $max_id_len2 = $max_id_len1;
+    $max_ac_len2 = $max_ac_len1;
+    %matrix_by_id2 = %matrix_by_id1;
+  } else {
+    foreach my $matrix (@matrices2) {
+      my $id = $matrix->get_attribute("id")
+	|| $matrix->get_attribute("identifier")
+	  || $matrix->get_attribute("name")
+	    || $matrix->get_attribute("accession")
+	      || "matrix_".$m;
+      #      my $id = $matrix->get_attribute("id") || "<NA>";
+      $matrix_by_id2{$id} = $matrix;
+
+    ## Compute max size for identifiers
+    my $id_len = length($id);
+    $max_id_len2 = $id_len if ($id_len > $max_id_len2);
+
+    ## Compute max size for accession numbers
+    ## Accession number
+    unless ($matrix->get_attribute("accession")) {
+      $matrix->force_attribute("accession", $id)
+    }
+    my $ac = $matrix->get_attribute("accession");
+    my $ac_len = length($ac);
+    $max_ac_len2 = $ac_len if ($ac_len > $max_ac_len2);
+
+    ## Compute max size for matrix names
+    unless ($matrix->get_attribute("name")) {
+      $matrix->force_attribute("name", $id)
+    }
+    my $name = $matrix ->get_attribute("name");
+    my $name_len = length($name);
+    $max_name_len2 = $name_len if ($name_len > $max_name_len2);
+#      &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
+    }
+  }
+#  &RSAT::message::Debug("max name length for matrices 2", $max_name_len2) if ($main::verbose >= 10);
+
+
+  ################################################################
+  ## Compute the required parameters for each matrix
+  my $count_m=0;
+  foreach my $matrix (@matrices) {
+      $count_m ++;
+      ## Calculate the consensus for each matrix
+      $matrix->calcConsensus() if ($return_field{consensus});
+
+      ################################################################
+      ## Compute the number of sites as the maximal sum of counts
+      ## per column. Note that some matrices might have been built
+      ## from sites of varying lengths, so that the col sum is not
+      ## always the same for all the columns
+      my @counts = $matrix->getMatrix();
+      my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
+      my $nsites = &RSAT::stats::max(@counts_per_col);
+      $matrix->set_attribute("nsites", $nsites);
+      my $matrix_name = $matrix->get_attribute("name");
+      unless (defined($matrix_name)){
+	  $matrix->set_attribute("name","matrix1.".$count_m);
+	  $matrix_name=$matrix->get_attribute("name");
+      }
+  }
+  &RSAT::message::TimeWarn("Starting comparison between",
+			   scalar(@matrices1) , "matrices from file 1 and ",
+			   scalar(@matrices2) , "matrices from file 2.",
+			  ) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Print the header
+  my @header = ();
+  push (@header, "m1", "m2") if ($return_field{matrix_number});
+#  push (@header, "id1", "id2") if ($return_field{matrix_id});
+  if ($return_field{matrix_id}) {
+    my $width  = ${max_id_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "id1"));
+    push (@header, sprintf("%-${max_id_len2}s", "id2"));
+  }
+  if ($return_field{matrix_ac}) {
+    my $width  = ${max_ac_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "ac1"));
+    push (@header, sprintf("%-${max_ac_len2}s", "ac2"));
+  }
+#  push (@header, "ac1", "ac2") if ($return_field{matrix_ac});
+  if ($return_field{matrix_name}) {
+    my $width  = ${max_name_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "name1"));
+    push (@header, sprintf("%-${max_name_len2}s", "name2"));
+  }
+  push (@header, "cor") if ($return_field{cor});
+  push (@header, "Ncor") if ($return_field{Ncor});
+  push (@header, "Ncor1") if ($return_field{Ncor1});
+  push (@header, "Ncor2") if ($return_field{Ncor2});
+  push (@header, "logoDP") if ($return_field{logoDP});
+  push (@header, "logocor") if ($return_field{logocor});
+  push (@header, "Nlogocor") if ($return_field{Nlogocor});
+#  push (@header, "Wcor") if ($return_field{Wcor});
+#  push (@header, "NWcor") if ($return_field{NWcor});
+  push (@header, "Icor") if ($return_field{Icor});
+  push (@header, "NIcor") if ($return_field{NIcor});
+  push (@header, "NSW") if ($return_field{NSW});
+  push (@header, "SW") if ($return_field{SW});
+  push (@header, "SSD") if ($return_field{SSD});
+  push (@header, "NdEucl") if ($return_field{NdEucl});
+  push (@header, "dEucl") if ($return_field{dEucl});
+  push (@header, "NsEucl") if ($return_field{NsEucl});
+  push (@header, "dKL") if ($return_field{dKL});
+  push (@header, "cov") if ($return_field{cov});
+  push (@header, "w1", "w2", "w", "W", "Wr", "wr1", "wr2") if ($return_field{width});
+  push (@header, "strand") if ($return_field{strand});
+  if ($return_field{pos}) {
+    push (@header, "offset", "compa", "start1", "end1", "start2", "end2");
+  } elsif ($return_field{offset}) {
+    push (@header, "offset");
+  }
+  push (@header, "consensus1", "consensus2") if ($return_field{consensus});
+
+  ################################################################
+  ## Matching ranks must coms as last columns, because it is computed only after all the rows have been formed
+
+  ## Matching ranks on various metrics + rank mean
+  if ($return_field{match_rank}) {
+    foreach my $metric (@rank_metrics) {
+      push (@header, "r".$metric);
+    }
+    push (@header, "rank_mean");
+    push (@header, "match_rank");
+  }
+
+  ## Rank on the sorting criterion
+  push (@header, "offset_rank") if ($return_field{offset_rank});
+
+  ################################################################
+  ## Print a description of the output fields
+  if ($main::verbose >= 1) {
+    #	  my $norm_factor_descr =  "w/min(w1, w2)";
+    my $norm_factor_descr =  "Wr";
+
+    my %description = ();
+    $description{compa} = "number of comparison";
+    $description{m1} = "matrix number in file 1";
+    $description{m2} = "matrix number in file 2";
+    $description{id1} = "Identifier of the first matrix";
+    $description{id2} = "Identifier of the second matrix";
+    $description{ac1} = "Accession number of the first matrix (can differ from ID e.g. in TRANSFAC)";
+    $description{ac2} = "Accession number of the second matrix";
+    $description{name1} = "Name of the first matrix";
+    $description{name2} = "Name of the second matrix";
+    $description{offset} = "shift of the second matrix relative to the first matrix (negative:left; positive: right)";
+    $description{strand} = "\"strand\", i.e. orientation of matrix 2 relative to matrix 1 (D=direct;  R=reverse)";
+    $description{w1} = "Width of the first matrix";
+    $description{w2} = "Width of the second matrix";
+    $description{w} = "Alignment length (number of overlapping columns between matrix 1 and matrix 2, as a function of the offset)";
+    $description{W} = "Total alignment length (overlapping + non-overlapping columns). W = w1 + w2 - w";
+    $description{Wr} = "Relative alignment length (overlap divided by the total alignemnt length). Wr = w/W";
+    $description{wr1} = "Alignment length relative to the width of the first matrix. wr1 = w/w1";
+    $description{wr2} = "Alignment length relative to the width of the second matrix. wr2 = w/w2";
+    $description{start1} = "Start position of the alignment in matrix 1";
+    $description{end1} = "End position of the alignment in matrix 1";
+    $description{start2} = "Start position of the alignment in matrix 2";
+    $description{end2} = "End position of the alignment in matrix 2";
+    $description{SW} = "Sandelin-Wasserman similarity.";
+    $description{NSW} = "Normalized Sandelin-Wasserman similarity. NSW = SW/w";
+    $description{SSD} = "sum of squared distance.";
+    $description{NdEucl} = "Normalized Euclidian distance (NdEucl = dEucl/w) ";
+    $description{dEucl} = "Euclidian distance";
+    $description{NsEucl} = "relative Euclidian similarity. NsEucl = (max(dEucl) - dEucl)/max(dEucl)";
+    $description{dKL} = "Kullback-Leibler distance";
+    $description{cov} = "Covariance";
+    $description{cor} = "Pearson coefficient of correlation between frequency matrices";
+    $description{Ncor} = "Normalized correlation. Ncor = cor * ".$norm_factor_descr;
+    $description{Ncor1} = "Normalized correlation. Ncor1 = cor * w / w1";
+    $description{Ncor2} = "Normalized correlation. Ncor2 = cor * w / w2";
+    $description{Icor} = "Pearson correlation between the information content matrices. ";
+    $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * ".$norm_factor_descr;
+    $description{logoDP} = "Dot product between the logo matrices.";
+    $description{logocor} = "Pearson correlation between the logo matrices.";
+    $description{Nlogocor} = "Normalized Pearson correlation between the logo matrices. Nlogocor = logocor * ".$norm_factor_descr;
+#    $description{Wcor} = "Pearson correlation between the information content matrices. ";
+#    $description{NWcor} = "Normalized Pearson correlation between the information content matrices. NWcor = Wcor * ".$norm_factor_descr;
+    $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
+    $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
+
+    foreach my $metric (@rank_metrics) {
+      $description{"r".$metric} = "Matching rank for ".$metric;
+    }
+    $description{rank_mean} = "Mean of the matching ranks on all selected metrics";
+    $description{match_rank} = "Rank of the match (sorting by rank_mean)";
+
+    $description{offset_rank} = "Rank according to the field used for selecting the \"best\" offset (".$sort_field.")";
+
+    ## Print out the column content description
+    print $out "; Column content\n";
+    my $c = 0;
+    foreach my $field (@header) {
+      $c++;
+      $field = &RSAT::util::trim($field);
+      printf $out ";\t%d\t%-13s\t%s\n", $c, $field, $description{$field};
+    }
+  }
+  print $out "#", join("\t", @header), "\n";
+
+
+  ################################################################
+  ## Compare the matrices and print the result
+  my $m1 = 0;
+  my $compa = 0;
+  my $max_aligned_consensus_len1 = 0;
+  my $max_aligned_consensus_len2 = 0;
+
+  ## Iterate over matrices of the first list
+  foreach my $matrix1 (@matrices1) {
+    $m1++;
+    &RSAT::message::TimeWarn("File 1", "Comparing matrix", $m1."/".scalar(@matrices1), " with ".scalar(@matrices2)." matrices")  if ($main::verbose >= 2);
+
+    ## Get the required information about the first matrix
+    my $w1 = $matrix1->get_attribute("ncol");
+    my $nrow1 = $matrix1->get_attribute("nrow");
+    my @crude_freq1 = $matrix1->getCrudeFrequencies();
+
+    my $id1 = $matrix1->get_attribute("id") || "<NA>";
+    my $name1 = $matrix1 ->get_attribute("name");
+    my $m2 = 0;
+
+    ## Get the information content matrix if required
+    my @info1;
+    if ($calc_field{Icor}) {
+      @info1 = $matrix1->getInformation();
+    }
+
+    ## Get the logo matrix if required
+    my @logo1;
+    if (($calc_field{logocor}) || ($calc_field{logoDP})) {
+      @logo1 = $matrix1->getLogoMatrix();
+    }
+
+    ## Get the weight matrix if required
+#    my @weight1;
+#    if ($calc_field{Wcor}) {
+#      @weight1 = $matrix1->getWeights();
+#    }
+
+    ## Iterate over matrices of the second list
+    foreach my $matrix2 (@matrices2) {
+      $m2++;
+      &RSAT::message::TimeWarn("Comparing matrices",
+			       "file1", $m1."/".scalar(@matrices1),
+			       "file2", $m2."/".scalar(@matrices2),
+			      )
+	if ($main::verbose >= 3);
+
+      ## Get identifier of the second matrix
+      my $id2 = $matrix2->get_attribute("id") || "<NA>";
+
+      ## Skip identical matrices if the option -distinct is active
+      next if (($main::distinct) && ($id1 eq $id2));
+#      next if (($main::triangle) && ($id1 gt $id2));
+      next if (($single_input_file) && ($id1 gt $id2)); ## Skip reciprocal comparison for single-input file analysis
+
+      ## Get description of the second matrix
+      my $name2 = $matrix2-> get_attribute("name");
+      my $w2 = $matrix2->get_attribute("ncol");
+      my $nrow2 = $matrix2->get_attribute("nrow");
+
+      ## Check that both matrices have the same number of rows
+      unless ($nrow2 == $nrow1) {
+	&RSAT::error::FatalError("Input matrices must have the same number of residues (rows).", $id1, $nrow1." rows", $id2, $nrow2." rows");
+      }
+
+      ## Compute offsets for sliding one matrix along the other one
+      my $offset_min = 1 - $w2;
+      my $offset_max = $w1 - 1;
+      #      &RSAT::message::Debug("offset range", $offset_min, $offset_max) if ($main::verbose >= 10);
+
+      ## Prepare output variables
+      my %cov = ();	    ## Covariances as a function of the offset
+      my %cor = ();		## Correlations
+      my %Ncor = ();		## Normalized correlations
+      my %Ncor1 = ();		## Normalized correlations relative to w1
+      my %Ncor2 = ();		## Normalized correlations relative to w2
+      my %Icor = (); ## Correlations between information content
+      my %NIcor = (); ## Normalized correlations between information content
+      my %logoDP = (); ## Dot product between logo matrices
+      my %logocor = (); ## Correlations between logo matrices
+      my %Nlogocor = (); ## Normalized correlations between logo matrices
+#      my %Wcor = (); ## Correlations between weights
+#      my %NWcor = (); ## Normalized correlations between weights
+      my %SW = ();		## Sandelin-Wasserman similarity
+      my %NSW = ();		## Normalized Sandelin-Wasserman similarity
+      my %SSD = ();		## Euclidian distances
+      my %NdEucl = ();	## Euclidian distances
+      my %dEucl = ();		## Euclidian distances
+      my %NsEucl = ();	## Euclidian distances
+      my %dKL = ();		## Kullback-Leibler distances
+      my %out_line = ();	## Output line for each offset value
+      my @output_offset_strand = ();	## Offset/strand pairs passing the thresholds
+      #	my $strand = $matrix2->get_attribute("strand") || "D";
+
+
+      ## Test one or both strands
+      foreach my $strand (@strands) {
+	## Get the crude frequencies (the metrics rely on crude
+	## frequencies, i.e. relative frequencies, NOT corrected by
+	## the pseudo-weight)
+	my @crude_freq2;
+	if ($strand eq "D") {
+	  @crude_freq2 = $matrix2->getCrudeFrequencies();
+	} else {
+	  @crude_freq2 = $matrix2->getCrudeFreqRC();
+	}
+
+	## Get the information content matrix if required
+	my @info2;
+	if ($calc_field{Icor}) {
+	  @info2 = $matrix2->getInformation();
+	}
+
+	## Get the logo matrix if required
+	my @logo2;
+	if (($calc_field{logocor}) || ($calc_field{logoDP})) {
+	  @logo2 = $matrix2->getLogoMatrix();
+	}
+
+	## Get the weight matrix if required
+#	my @weight2;
+#	if ($calc_field{Wcor}) {
+#	  @weight2 = $matrix2->getWeights();
+#	}
+
+	## Slide matrix2 along matrix1
+	foreach my $offset ($offset_min..$offset_max) {
+	  $compa++;
+	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
+#	  &RSAT::message::Debug("Offset - strand", $id1, $id2, $compa_id) if ($main::verbose >= 10);
+
+	  next unless (&CheckThresholdValue("offset", $offset));
+
+	  ## Compute aligned matrix positions
+	  my $end1 = &RSAT::stats::min($w1, $w2+$offset);
+	  my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$w2+1);
+	  my $w = $end1-$start1+1;
+	  next unless (&CheckThresholdValue("w", $w));
+	  my $total_len = $w1 + $w2 - $w;
+	  my $Wr = $w / $total_len;
+	  next unless (&CheckThresholdValue("Wr", $Wr));
+	  my $wr1 = $w / $w1;
+	  next unless (&CheckThresholdValue("wr1", $wr1));
+	  my $wr2 = $w / $w2;
+	  next unless (&CheckThresholdValue("wr2", $wr2));
+
+	  my $start2 = &RSAT::stats::max(1, 1- $offset);
+	  my $end2 = &RSAT::stats::min($start2+$w-1, $w2);
+#	  my $norm_factor = $w/&RSAT::stats::min($w1, $w2)
+	  my $norm_factor = $Wr;
+
+	  ## Highlight alignment in consensus
+	  if ($calc_field{consensus}) {
+	    $consensus1 = join ("",
+				"."x($start1-1),
+				substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $w),
+				"."x($w1-$end1)
+			       );
+	    my $consensus_len1 = length($consensus1);
+	    $max_aligned_consensus_len1 = $consensus_len1 if ($consensus_len1 > $max_aligned_consensus_len1);
+
+	    # 	  &RSAT::message::Debug("start1=".$start1,
+	    # 				"consensus.IUPAC=".$matrix1->get_attribute("consensus.IUPAC"),
+	    # 				"w=".$w,
+	    # 				"ncol1=".$w1,
+	    # 				"end1=".$end1
+	    # 			       ) if (main::verbose >= 10);
+	    my $consensus2_strand = "";
+	    if ($strand eq "D") {
+	      $consensus2_strand = $matrix2->get_attribute("consensus.IUPAC");
+	    } else {
+	      $consensus2_strand = $matrix2->get_attribute("consensus.IUPAC.rc");
+	    }
+	    $consensus2 = join ("",
+				"."x($start2-1),
+				substr($consensus2_strand, $start2-1, $w),
+				"."x($w2-$end2)
+			       );
+	    my $consensus_len2 = length($consensus2);
+	    $max_aligned_consensus_len2 = $consensus_len2 if ($consensus_len2 > $max_aligned_consensus_len2);
+	  }
+
+	  ################################################################
+	  ## Compute the (dis)similarity scores between matrices
+	  my $SSD = 0;
+	  my $SW = 0;
+	  my $NSW = 0;
+	  my $NdEucl = 0;
+	  my $dEucl = 0;
+	  my $NsEucl = 0;
+	  my $dKL = 0;
+	  my $cov = 0;
+
+	  ## Correlation
+	  my $cor = 0;
+	  my $Ncor = 0;
+	  my $Ncor1 = 0;
+	  my $Ncor2 = 0;
+	  my $sum_f1 = 0;
+	  my $sum_f2 = 0;
+	  my $sum_f1f2 = 0;
+	  my $sum_sq_f1 = 0;
+	  my $sum_sq_f2 = 0;
+
+	  ## Information correlation
+	  my $Icor = 0;
+	  my $NIcor = 0;
+	  my $sum_i1 = 0;
+	  my $sum_i2 = 0;
+	  my $sum_i1i2 = 0;
+	  my $sum_sq_i1 = 0;
+	  my $sum_sq_i2 = 0;
+
+	  ## Logo correlation and dot product
+	  my $logoDP = 0;
+	  my $logocor = 0;
+	  my $Nlogocor = 0;
+	  my $sum_l1 = 0;
+	  my $sum_l2 = 0;
+	  my $sum_l1l2 = 0;
+	  my $sum_sq_l1 = 0;
+	  my $sum_sq_l2 = 0;
+
+	  ## Weight correlation
+#	  my $Wcor = 0;
+#	  my $NWcor = 0;
+	  my $sum_wght1 = 0;
+	  my $sum_wght2 = 0;
+	  my $sum_wght1wght2 = 0;
+	  my $sum_sq_wght1 = 0;
+	  my $sum_sq_wght2 = 0;
+
+
+	  ## Compute correlations
+	  foreach my $pos (1..$w) {
+	    my $col1 = $start1+$pos-1;
+	    my $col2 = $start2+$pos-1;
+	    for my $r (0..($nrow1-1)) {
+	      my $f1 = $crude_freq1[$col1-1][$r];
+	      my $f2 = $crude_freq2[$col2-1][$r];
+
+	      ## Update sums for correlations
+	      if (($calc_field{cov}) || ($calc_field{cor})) {
+		$sum_f1 += $f1;
+		$sum_f2 += $f2;
+		$sum_sq_f1 += $f1**2;
+		$sum_sq_f2 += $f2**2;
+		$sum_f1f2 += $f1*$f2;
+	      }
+
+	      ## Update sums for Icor
+	      if ($calc_field{Icor}) {
+		my $i1 = $info1[$col1-1][$r];
+		my $i2 = $info2[$col2-1][$r];
+		$sum_i1 += $i1;
+		$sum_i2 += $i2;
+		$sum_sq_i1 += $i1**2;
+		$sum_sq_i2 += $i2**2;
+		$sum_i1i2 += $i1*$i2;
+	      }
+
+
+	      ## Update sums for logocor
+	      if (($calc_field{logocor}) || ($calc_field{logoDP})) {
+		my $l1 = $logo1[$col1-1][$r];
+		my $l2 = $logo2[$col2-1][$r];
+		$sum_l1 += $l1;
+		$sum_l2 += $l2;
+		$sum_sq_l1 += $l1**2;
+		$sum_sq_l2 += $l2**2;
+		$sum_l1l2 += $l1*$l2;
+	      }
+
+
+# 	      ## Update sums for Wcor
+# 	      if ($calc_field{Wcor}) {
+# 		my $wght1 = $weight1[$col1-1][$r];
+# 		my $wght2 = $weight2[$col2-1][$r];
+# 		$sum_wght1 += $wght1;
+# 		$sum_wght2 += $wght2;
+# 		$sum_sq_wght1 += $wght1**2;
+# 		$sum_sq_wght2 += $wght2**2;
+# 		$sum_wght1wght2 += $wght1*$wght2;
+# 	      }
+
+	      ## Update sum for Euclidian distance
+	      if ($calc_field{SSD}) {
+		$SSD += ($f1 - $f2)**2; $score{SSD}{$compa_id} = $SSD;
+	      }
+
+	      ## Update sum for Kullback-Leibler distance
+	      if ($calc_field{dKL}) {
+		next if ($dKL eq "Inf");
+
+		if ($f1*$f2 > 0) {
+		  $dKL += $f1*log($f1/$f2) + $f2*log($f2/$f1);
+
+		} elsif (($f1 > 0) || ($f2 > 0)) {
+		  ## The KL distance is infinite if one of the values is 0 and the other not !!!
+		  $dKL = "Inf";
+		  &RSAT::message::Warning("The Kullback-Leibler distance is infinite ") if ($main::verbose >= 4);
+		}
+	      }
+	    }
+	  }
+
+
+	  ## Check thresholds and index logoDP
+	  if ($calc_field{logoDP}) {
+	    $logoDP = $sum_l1l2;
+	    next unless (&CheckThresholdValue("logoDP", $logoDP));
+	    $score{logoDP}{$compa_id} = $logoDP;
+	  }
+
+	  ## Compute Euclidian distance
+	  if ($calc_field{dEucl}) {
+	    $dEucl = sqrt($SSD);
+	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $score{dEucl}{$compa_id} = $dEucl;
+	    $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
+	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $score{NdEucl}{$compa_id} = $NdEucl;
+	  }
+
+	  ## Compute Sandelin-Wasserman similarity
+	  $SW = 2*$w - $SSD;
+	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$compa_id} = $SW;
+	  $NSW = $SW / (2*$w);
+	  next unless (&CheckThresholdValue("NSW", $NSW)); $score{NSW}{$compa_id} = $NSW;
+
+	  ## Compute Euclidian similarity
+	  if ($calc_field{NsEucl}) {
+	    my $maxEucl = sqrt(2);
+	    $NsEucl = ($maxEucl - $NdEucl) / $maxEucl; $score{NsEucl}{$compa_id} = $NsEucl;
+	  }
+
+	  ## Compute Kullback-Leibler distance
+	  if ($calc_field{dKL}) {
+	    unless ($dKL eq "Inf") {
+	      $dKL /= 2;
+	      $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
+	      next unless (&CheckThresholdValue("dKL", $dKL)); $score{dKL}{$compa_id} = $dKL;
+	      $dKL = sprintf("%.5f", $dKL);
+	    }
+	  }
+
+	  ## Compute covariance and coefficient of correlation
+	  my $n = $nrow1*$w;	    ## Number of matrix cells in the alignment
+	  if (($calc_field{cov}) || ($calc_field{cor})) {
+	    my $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2; ## Variance of the first matrix
+	    my $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2; ## Variance of the second matrix
+	    $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
+	    if (($cov == 0) || ($v1*$v2==0)) {
+	      $cor = 0;
+	    } else {
+	      $cor = $cov/sqrt($v1*$v2);
+	    }
+	    $Ncor = $cor * $norm_factor;
+	    $Ncor1 = $cor * $w / $w1 if($calc_field{Ncor1});
+	    $Ncor2 = $cor * $w / $w2 if($calc_field{Ncor2});
+	  }
+
+	  ## Check thresholds on covariance, correlation and normalized correlation
+	  next unless (&CheckThresholdValue("cov", $cov));
+	  next unless (&CheckThresholdValue("cor", $cor));
+	  next unless (&CheckThresholdValue("Ncor", $Ncor));
+	  next unless (&CheckThresholdValue("Ncor1", $Ncor1));
+	  next unless (&CheckThresholdValue("Ncor2", $Ncor2));
+
+	  ## Index values for sorting
+	  $score{cov}{$compa_id} = $cov;
+	  $score{cor}{$compa_id} = $cor;
+	  $score{Ncor}{$compa_id} = $Ncor;
+	  $score{Ncor1}{$compa_id} = $Ncor1;
+	  $score{Ncor2}{$compa_id} = $Ncor2;
+
+
+	  ## Compute information correlation
+	  if ($calc_field{Icor}) {
+	    $iv1 = $sum_sq_i1/$n - ($sum_i1/$n)**2;
+	    $iv2 = $sum_sq_i2/$n - ($sum_i2/$n)**2;
+	    $icov = $sum_i1i2/$n - $sum_i1*$sum_i2/($n**2);
+	    if ($icov == 0) {
+	      $Icor = 0;
+	    } else {
+	      $Icor = $icov/sqrt($iv1*$iv2);
+	    }
+	    $NIcor = $Icor *$norm_factor;
+	  }
+
+	  ## Check thresholds on information correlation
+	  next unless (&CheckThresholdValue("Icor", $Icor));
+	  next unless (&CheckThresholdValue("NIcor", $NIcor));
+
+	  ## Index values for sorting
+	  $score{Icor}{$compa_id} = $Icor;
+	  $score{NIcor}{$compa_id} = $NIcor;
+
+	  ## Compute logo matrix correlation
+	  if ($calc_field{logocor}) {
+	    $lv1 = $sum_sq_l1/$n - ($sum_l1/$n)**2;
+	    $lv2 = $sum_sq_l2/$n - ($sum_l2/$n)**2;
+	    $lcov = $sum_l1l2/$n - $sum_l1*$sum_l2/($n**2);
+	    if (($lcov == 0) || ($lv1*$lv2<=0)) {
+	      $logocor = 0;
+	    } else {
+	      $logocor = $lcov/sqrt($lv1*$lv2);
+	    }
+# 	    &RSAT::message::Debug(
+# 				  "sum_sq_l1=".$sum_sq_l1,
+# 				  "sum_sq_l2=".$sum_sq_l2,
+# 				  "sum_l1=".$sum_l1,
+# 				  "sum_l2=".$sum_l2,
+# 				  "lv1=".$lv1,
+# 				  "lv2=".$lv2,
+# 				 "lcov=".$lcov,
+# 				 "logocor=".$logocor,
+# 				 ) if ($main::verbose >= 10);
+	    $Nlogocor = $logocor *$norm_factor;
+	  }
+
+	  ## Check thresholds on logo matrix correlation
+	  next unless (&CheckThresholdValue("logocor", $logocor));
+	  next unless (&CheckThresholdValue("Nlogocor", $Nlogocor));
+
+	  ## Index values for sorting
+	  $score{logocor}{$compa_id} = $logocor;
+	  $score{Nlogocor}{$compa_id} = $Nlogocor;
+
+	  ## Compute weight correlation
+# 	  if ($calc_field{Wcor}) {
+# 	    $wghtv1 = $sum_sq_wght1/$n - ($sum_wght1/$n)**2;
+# 	    $wghtv2 = $sum_sq_wght2/$n - ($sum_wght2/$n)**2;
+# 	    $wcov = $sum_wght1wght2/$n - $sum_wght1*$sum_wght2/($n**2);
+# 	    if ($wcov == 0) {
+# 	      $Wcor = 0;
+# 	    } else {
+# 	      $Wcor = $wcov/sqrt($wghtv1*$wghtv2);
+# 	    }
+# 	    $NWcor = $Wcor *$norm_factor;
+# 	  }
+
+	  ## Check thresholds on weight correlation
+	  next unless (&CheckThresholdValue("Wcor", $Wcor));
+	  next unless (&CheckThresholdValue("NWcor", $NWcor));
+
+	  ## Index values for sorting
+	  $score{Wcor}{$compa_id} = $Wcor;
+	  $score{NWcor}{$compa_id} = $NWcor;
+
+
+	  ## Generate the output line
+	  my @out_fields = ();
+	  push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
+	  if ($return_field{matrix_id}) {
+	    push (@out_fields, $id1,$id2);
+#	    push (@out_fields, sprintf("%-${max_id_len1}s", $id1),sprintf("%-${max_id_len2}s", $id2));
+	  }
+	  if ($return_field{matrix_ac}) {
+	    my $ac1 = $matrix1->get_attribute("accession") || "<NA>";
+#	    $ac1 = sprintf("%-${max_ac_len1}s", $ac1);
+	    my $ac2 = $matrix2->get_attribute("accession") || "<NA>";
+#	    $ac2 = sprintf("%-${max_ac_len2}s", $ac2);
+	    push (@out_fields, $ac1, $ac2);
+	  }
+	  if ($return_field{matrix_name}) {
+	    my $name1 = $matrix1->get_attribute("name") || "<NA>";
+#	    $name1 = sprintf("%-${max_name_len1}s", $name1);
+	    my $name2 = $matrix2->get_attribute("name") || "<NA>";
+#	    $name2 = sprintf("%-${max_name_len2}s", $name2);
+	    push (@out_fields, $name1, $name2);
+	  }
+	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
+	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
+	  push (@out_fields, sprintf("%.3f", $Ncor1)) if ($return_field{Ncor1});
+	  push (@out_fields, sprintf("%.3f", $Ncor2)) if ($return_field{Ncor2});
+	  push (@out_fields, sprintf("%.3f", $logoDP)) if ($return_field{logoDP});
+	  push (@out_fields, sprintf("%.3f", $logocor)) if ($return_field{logocor});
+	  push (@out_fields, sprintf("%.3f", $Nlogocor)) if ($return_field{Nlogocor});
+#	  push (@out_fields, sprintf("%.3f", $Wcor)) if ($return_field{Wcor});
+#	  push (@out_fields, sprintf("%.3f", $NWcor)) if ($return_field{NWcor});
+	  push (@out_fields, sprintf("%.3f", $Icor)) if ($return_field{Icor});
+	  push (@out_fields, sprintf("%.3f", $NIcor)) if ($return_field{NIcor});
+	  push (@out_fields, sprintf("%.3f", $NSW)) if ($return_field{NSW});
+	  push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
+	  push (@out_fields, sprintf("%.4f", $SSD)) if ($return_field{SSD});
+	  push (@out_fields, sprintf("%.5f", $NdEucl)) if ($return_field{NdEucl});
+	  push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
+	  push (@out_fields, sprintf("%.5f", $NsEucl)) if ($return_field{NsEucl});
+	  push (@out_fields, $dKL) if ($return_field{dKL});
+	  push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
+	  push (@out_fields, $matrix1->ncol(), $matrix2->ncol(), $w, $total_len, 
+		sprintf("%.4f", $Wr),
+		sprintf("%.4f", $wr1),
+		sprintf("%.4f", $wr2)
+	       )if ($return_field{width});
+	  push (@out_fields, $strand) if ($return_field{strand});
+	  if ($return_field{pos}) {
+	    push (@out_fields, $offset, $compa, $start1, $end1, $start2, $end2);
+	  } elsif ($return_field{offset}) {
+	    push (@out_fields, $offset);
+	  }
+	  push (@out_fields,
+		sprintf("%${max_aligned_consensus_len1}s", $consensus1),
+		sprintf("%-${max_aligned_consensus_len2}s", $consensus2),
+	       ) if ($return_field{consensus});
+
+	  push (@output_offset_strand, $compa_id);
+	  $out_line{$compa_id} =  join("\t", @out_fields);
+	}
+      }
+
+#      &RSAT::message::Debug("\@output_offset_strand", join(", ", @output_offset_strand)) if ($main::verbose >= 10);
+
+      ## Before sorting the scores for the matrix pair, check that
+      ## at least one offset/strand has passed the thresholds
+      next if (scalar(@output_offset_strand) == 0);
+
+      ## Sort the results
+      my @sorted_offset_strand;
+
+      if ($sort_field eq "offset") {
+	@sorted_offset_strand = @output_offset_strand; ## No need to sort
+      } elsif ($sort_order eq "asc") {
+	## Sort results in ascending order
+	@sorted_offset_strand = sort {$score{$sort_field}{$a} <=> $score{$sort_field}{$b}} @output_offset_strand;
+      } else {
+	## Sort results in descending order
+	@sorted_offset_strand = sort {$score{$sort_field}{$b} <=> $score{$sort_field}{$a}} @output_offset_strand;
+      }
+
+#      &RSAT::message::Debug("\@sorted_offset_strand", join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
+
+
+      ################################################################
+      ## Specific treatment for the offset rank of the pairwise
+      ## comparison.  In mode -return match, this rank is the way to
+      ## select the best matching offset and strand for a give pair of
+      ## matrices.
+      my %offset_rank = ();
+      my $max_offset_rank = "NA";
+      if ($calc_field{offset_rank}) {
+	my $offset_rank = 0;
+	foreach my $compa_id (@sorted_offset_strand) {
+	  $offset_rank++;
+	  $offset_rank{$compa_id} = $offset_rank;
+	}
+
+	## Max offset_rank
+	if (defined($uth{offset_rank})) {
+	  $max_offset_rank = &RSAT::stats::min($uth{offset_rank}, scalar(@sorted_offset_strand));
+	  @sorted_offset_strand = @sorted_offset_strand[0..($max_offset_rank-1)];
+	}
+
+	## Min offset_rank
+	if (defined($lth{offset_rank})) {
+	  if ($lth{offset_rank} >= scalar(@sorted_offset_strand)) {
+	    @sorted_offset_strand = @sorted_offset_strand[($lth{offset_rank}-1)..$#sorted_offset_strand];
+	  } else {
+	    @sorted_offset_strand = ();
+	  }
+	}
+      }
+#      &RSAT::message::Debug("\@sorted_offset_strand after offset_rank threshold", $max_offset_rank, join(", ", @sorted_offset_strand)) if ($main::verbose >= 10);
+
+      ################################################################
+      ## Print the output row(s) + the aligned matrices
+      foreach my $compa_id (@sorted_offset_strand) {
+#	&RSAT::message::Debug("Treating output for offset/strand", $compa_id) if ($main::verbose >= 10);
+	my ($id1, $id2, $offset, $strand) = split(":", $compa_id);
+	my $rc_matrix = 0;
+	if ($strand eq "R") {
+	  $rc_matrix = 1;
+	}
+
+#	&RSAT::message::Debug("Treating output for offset/strand", $compa_id, $offset, $strand) if ($main::verbose >= 10);
+
+	if ($comparison_mode eq "matches") {
+	  ################################################################
+	  ## In matching mode, index the matrix pair for further sorting
+	  ## after all matrices have been compared (sorting all matrix
+	  ## pairs). Note that the results are indexed not only by
+	  ## matrix pair but also by offset + strand. This allows to
+	  ## return multiple matches for a single matrix pair (by
+	  ## forcing the upper threshold on offset_rank to be > 1).
+#	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
+	  $sort_score{$compa_id} = $score{$sort_field}{$compa_id};
+
+	  ## Store all scores of the match in a separate hash table
+	  ## with a wider scope for furtehr printing in the alignments
+	  if (($return_field{alignments_pairwise}) ||
+	      ($return_field{alignments_1ton})) {
+	    foreach my $metric (@supported_metrics) {
+	      if ($return_field{$metric}) {
+		$match_score{$compa_id}{$metric} = $score{$metric}{$compa_id};
+	      }
+	    }
+	  }
+
+	  ## (%match_out_line) because the hash table %out_line must
+	  ## be cleaned for each pairwise comparison.
+	  $match_out_line{$compa_id} = $out_line{$compa_id};
+	} else {
+	  ## In profile mode, print the output row for each comparison
+	  ## (motif pair/offset/strand).
+	  print $out  $out_line{$compa_id};
+	  print $out "\t", $offset_rank{$compa_id} if ($return_field{offset_rank});
+	  print $out "\n";
+	}
+
+      }				## offset/strand pair
+      #      } ## strands
+    }				## matrix 2
+  }				## matrix 1
+  &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
+
+  @match_ids = keys(%sort_score);
+
+  ################################################################
+  ## Compute matching rank for various metrics
+  my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
+  if ($return_field{match_rank}) {
+    &RSAT::message::TimeWarn("Computing match ranks") if ($main::verbose >= 2);
+
+    foreach my $metric (@rank_metrics) {
+      &RSAT::message::TimeWarn("Computing ranks for metric", $metric) if ($main::verbose >= 3);
+      my @sorted_match_ids = ();
+      next unless ($return_field{$metric});
+#      next if ($metric eq "match_rank");
+      $selected_rank_metrics++;
+
+      ## Sort the matches
+      my $metric_order = $supported_sort_field{$metric};
+      &RSAT::message::Debug("Computing matching rank on", $metric, $metric_order) if ($main::verbose >= 5);
+      if ($metric_order eq "asc") {
+	## Sort results in ascending order
+	@sorted_match_ids = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
+      } else {
+	## Sort results in descending order
+	@sorted_match_ids = sort {$score{$metric}{$b} <=> $score{$metric}{$a}} @match_ids;
+      }
+#      &RSAT::message::Debug("Ranked", join(',', @sorted_match_ids)) if ($main::verbose >= 10);
+
+      ## Compute ranks.
+      my $rank = 1;
+      my $compa_id;
+      my $previous_compa_id;
+      my $epsilon = 1e-13;
+
+
+      for my $i (0..$#sorted_match_ids) {
+	#	$rank++;
+	$compa_id = $sorted_match_ids[$i];
+
+	## When several matrix pairs have the same score (ties), we
+	## assign the first rank to all of them.
+	if ($i > 0) {
+	  $previous_compa_id = $sorted_match_ids[$i-1];
+	  if (abs($score{$metric}{$compa_id} - $score{$metric}{$previous_compa_id}) > $epsilon) {
+	    $rank = $i + 1;
+	  }
+	}
+
+# 	if (($metric eq "cor") && ($main::verbose >= 10)) {
+# 	  &RSAT::message::Debug($metric, $i, $rank, $compa_id, $previous_compa_id, 
+# 				$score{$metric}{$compa_id} - $score{$metric}{$previous_compa_id},
+# 				$epsilon);
+# 	}
+
+	## Adapt the scores and the output line
+	$rank_sum{$compa_id} += $rank;
+	$match_score{$compa_id}{"r".$metric} = $rank;
+	$match_out_line{$compa_id} .= "\t".$rank;
+      }
+#      $previous_compa_id = $compa_id;
+    }
+
+    ## Compute mean rank
+    foreach my $compa_id (@match_ids) {
+      my $rank_mean = "NA";
+      if ($selected_rank_metrics > 0) {
+	$rank_mean = sprintf("%.4f", $rank_sum{$compa_id} / $selected_rank_metrics);
+      }
+#      &RSAT::message::Debug("rank_mean", $rank_mean, $compa_id) if ($main::verbose >= 10);
+#      $rank_mean{$compa_id} = $rank_mean;
+      $sort_score{$compa_id} = $rank_mean;
+      $match_score{$compa_id}{rank_mean} = $rank_mean;
+      $match_out_line{$compa_id} .= "\t".$rank_mean;
+    }
+
+    ## Redefine sort field and sort order (the criterion for sorting matches will be the rank_mean, whereas the criterion to sort offsets was defined differently)
+    $sort_field = "rank_mean";
+    $sort_order = "asc";
+
+  }
+
+
+  ################################################################
+  ## Sort all matches and print them out
+  if ($comparison_mode eq "matches") {
+    &RSAT::message::TimeWarn("Sorting matches by", $sort_order, $sort_field) if ($main::verbose >= 2);
+
+    ## Sort the matches
+    if ($sort_order eq "asc") {
+      ## Sort results in ascending order
+      @sorted_match_id = sort {$sort_score{$a} <=> $sort_score{$b}} keys(%sort_score);
+    } else {
+      ## Sort results in descending order
+      @sorted_match_id = sort {$sort_score{$b} <=> $sort_score{$a}} keys(%sort_score);
+    }
+
+    ## Print the output rows
+    my $match_rank = 0;
+    foreach my $compa_id (@sorted_match_id) {
+      $match_rank++;
+      $match_rank{$compa_id} = $match_rank;
+      $match_score{$compa_id}{match_rank} = $match_rank; ## Index for further use in other output formats
+
+      ## Add macth rank to the output line
+      $match_out_line{$compa_id} .= "\t".$match_rank if ($return_field{match_rank});
+
+      ## apply thresholds on matching rank
+      if ((defined($lth{match_rank})) && ($match_rank < $lth{match_rank})) {
+	next;
+      }
+      if ((defined($uth{match_rank})) && ($match_rank > $uth{match_rank})) {
+	last;
+      }
+
+      ## Print out the matches
+      print $out  $match_out_line{$compa_id};
+      print $out "\n";
+    }
+  }
+
+
+
+  ################################################################
+  ## Generate the comparison graph
+  if ($return_field{graph}) {
+    &GenerateGraph();
+  }
+
+
+  ################################################################
+  ## Pairwise matrix alignments
+  if ($return_field{alignments_pairwise}) {
+    &PairwiseAlignments();
+  }
+
+  ################################################################
+  ## One-to-n matrix alignments
+  if ($return_field{alignments_1ton}) {
+    &OneToNAlignments();
+  }
+
+  &RSAT::message::TimeWarn("Closing") if ($main::verbose >= 5);
+
+  ################################################################
+  ## Generate the HMTL index of input/output files
+  &IndexFiles() if ($main::outfile{html_index});
+
+  ################################################################
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $main::out;
+
+  if ($main::outfile{match_table_html}) {
+    $SCRIPTS = $SCRIPTS || $ENV{RSAT}."/perl-scripts";
+    my $html_cmd =  $SCRIPTS."/text-to-html -i ".$main::outfile{match_table_txt};
+    $html_cmd .= " -o ".$main::outfile{match_table_html};
+    &doit($html_cmd);
+  }
+
+
+  if ($main::outfile{alignments_pairwise}) {
+    close $main::alignments_pairwise;
+    print $main::alignments_pairwise_html "</body>";
+    print $main::alignments_pairwise_html "</html>";
+    close $main::alignments_pairwise_html;
+  }
+
+  if ($main::outfile{alignments_1ton}) {
+    close $main::alignments_1ton;
+    print $main::alignments_1ton_html "</body>";
+    print $main::alignments_1ton_html "</html>";
+    close $main::alignments_1ton_html;
+  }
+
+
+  if ($main::outfile{html_index}) {
+    print $main::html_index "<hr>";
+    print $main::html_index "</body>";
+    print $main::html_index "</html>";
+    close $main::html_index;
+  }
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Generate matrix comparison graph
+sub GenerateGraph {
+  &RSAT::message::TimeWarn("Generating matrix comparison graph") if ($main::verbose >= 2);
+  my $graph = new RSAT::Graph();
+  $graph->set_attribute("label", "compare-matrices result");
+
+  ## Parameters for graph drawing
+  my %node_color = (file1=>"darkgreen", file2=>"blue");
+  my %shape =  (file1=>"box", file2=>"ellipse");
+  my $node_label = "name"; ## can be changed to id or consensus for example
+
+  ## Node indexes
+  my %nodes1 = ();
+  my %nodes2 = ();
+
+  ## Instantiate nodes for first matrix set
+  foreach my $m (0..$#matrices1) {
+    my $matrix = $matrices1[$m];
+    my $node_id = $matrix->get_attribute("id");
+    my $node_label = $matrix->get_attribute($node_label);
+    my $node = $graph->create_node(id=>$node_id,
+				   label=>$node_label,
+				   color=>$node_color{file1},
+				   fontcolor=>$color{file1},
+				   shape=>$shape{file1},
+				   fontsize=>12,
+				  );
+    $nodes1{$node_id} = $node;
+#    &RSAT::message::Debug($m+1, $node_id, $node_label, $matrix, $node) if ($main::verbose >= 10);
+  }
+
+  ## Instantiate nodes for the second matrix file (only if distinct
+  ## from first matrix file)
+  if ($single_input_file) {
+    %nodes2 = %nodes1;
+  } else {
+    foreach my $matrix (@matrices2) {
+      my $node_id = $matrix->get_attribute("id");
+      my $node_label = $matrix->get_attribute($node_label);
+      my $node = $graph->create_node(id=>$node_id,
+				     label=>$node_label,
+				     color=>$node_color{file2},
+				     fontcolor=>$color{file2},
+				   shape=>$shape{file2},
+				     fontsize=>12,
+				  );
+      $nodes2{$node_id} = $node;
+    }
+  }
+
+  ## Add edges to the graph
+  foreach my $compa_id (@match_ids) {
+    my ($id1, $id2, $offset, $strand) = split (":", $compa_id);
+    my $arc_label = $sort_score{$compa_id};
+    my $source_node = $nodes1{$id1};
+    my $target_node = $nodes2{$id2};
+    $graph->create_arc($source_node, $target_node, label=>$arc_label);
+  }
+
+  ## Export graph in GML format
+  &RSAT::message::TimeWarn("Exporting matri comparison graph to GML file", $outfile{gml}) if ($main::verbose >= 2);
+  $gml_handle = &OpenOutputFile($outfile{gml});
+  $gml = $graph->to_gml();
+  print $gml_handle $gml;
+}
+
+################################################################
+## Print pairwise matrix alignments
+sub PairwiseAlignments {
+  &RSAT::message::TimeWarn("Computing pairwise matrix alignments") if ($main::verbose >= 2);
+  print $alignments_pairwise_html "<p><pre><b>Command:</b> compare-matrices ";
+  &PrintArguments($alignments_pairwise_html, 1);
+  print $alignments_pairwise_html "</pre></p>\n";
+
+  foreach my $compa_id (@sorted_match_id) {
+    local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
+
+    my $matrix1 = $matrix_by_id1{$id1};
+    my $name1 = $matrix1 ->get_attribute("name");
+    my $desc1 = $id1;
+    if (($name1) && ($name1 ne $id1)) {
+      $desc1 .= " ".$name1;
+    }
+
+    my $matrix2 = $matrix_by_id2{$id2};
+    my $name2 = $matrix2 ->get_attribute("name");
+    my $desc2 = $id2;
+    if (($name2) && ($name2 ne $id2)) {
+      $desc2 .= " ".$name2;
+    }
+
+    my $type = "count";
+    if ($return_field{Icor}) {
+      $type = "info";
+    }
+    my ($merged_matrix, $matrix1_shifted, $matrix2_shifted) = 
+      &RSAT::MatrixAlignment::AlignMatrixPair($matrix1, $matrix2, $offset, $strand, 
+					      stat=>$merging_stat,
+					      type=>$type);
+    my $id_align = $merged_matrix->get_attribute("id") || "alignment";
+
+    ## Print a header for the alignment in the tab-delimited file
+    my $header_row = join ("\t", "Pairwise matrix alignment", "match_rank=".$match_rank{$compa_id}, $id1, "versus", $id2);
+    $header_row .= sprintf("; %s=%d", "offset", $offset);
+    $header_row .= sprintf("; %s=%s", "strand", $strand);
+    foreach my $metric (@supported_metrics) {
+      next if ($metric eq "all_metrics");
+      if ($return_field{$metric}) {
+	my $value = $match_score{$compa_id}{$metric};
+	$header_row .= sprintf("; %s=%7g", $metric, $value);
+#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
+      }
+    }
+    print $alignments_pairwise "\n; ", $header_row."\n";
+    print $alignments_pairwise join ("\t", ";pos", "|", 1..$merged_matrix->ncol()), "\n";
+
+    ## Open a table in the HTML file
+    print $alignments_pairwise_html "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+    print $alignments_pairwise_html "<tr><th colspan='3'>", $header_row, "</th></tr>\n";
+
+    ## Generate a string to display the first matrix in text output file
+    my $matrix1_string = join("\t", "; ".$desc1,
+			      "col=".$matrix1->ncol(),
+			      "strand1=D",
+			      "shift1=".$matrix1_shifted->get_attribute("shift"),
+			      $matrix1_shifted->get_attribute("consensus.IUPAC"));
+    $matrix1_string .= "\n";
+    $matrix1_string .= $matrix1_shifted->toString(format=>'tab', type=>"counts");
+    print $alignments_pairwise $matrix1_string;
+
+    ## Generate a string to display the second matrix in text output file
+    my $consensus2 = $matrix2_shifted->get_attribute("consensus.IUPAC");
+    my $matrix2_string = join("\t", "; ".$desc2,
+			      "col=".$matrix2->ncol(),
+			      "strand2=".$strand,
+			      "shift2=".$matrix2_shifted->get_attribute("shift"),
+			      $consensus2);
+    $matrix2_string .= "\n";
+    $matrix2_string .= $matrix2_shifted->toString(format=>'tab', type=>"counts");
+    print $alignments_pairwise $matrix2_string;
+
+    ## Generate a sequence logo for the HTML output file
+    my $logo1_file = $main::dir{logos}."/".$matrix1_shifted->get_attribute("id");
+#    $matrix1_shifted->makeLogo($logo1_file, "", $main::dir{logos}, " -h 3", 0);
+    $matrix1_shifted->makeLogo($logo1_file, "", " -h 3", 0);
+    my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo1_file.".png");
+    $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+    print $alignments_pairwise_html "<tr>\n";
+    print $alignments_pairwise_html "<td>".$desc1."</td>\n";
+    print $alignments_pairwise_html "<td><a href='".$logo1_link."'><img border=0 src='".$logo1_link."'></a></td>\n";
+    print $alignments_pairwise_html "<td><pre>".$matrix1_string."</pre></td>\n";
+    print $alignments_pairwise_html "</tr>\n";
+
+    ## Generate a sequence logo for the HTML output file
+    my $logo2_file = $main::dir{logos}."/".$matrix2_shifted->get_attribute("id");
+#    $matrix2_shifted->makeLogo($logo2_file, "", $main::dir{logos}, " -h 3", $rc);
+    $matrix2_shifted->makeLogo($logo2_file, "", " -h 3", $rc);
+    my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo2_file.".png");
+    $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+    print $alignments_pairwise_html "<tr>\n";
+    print $alignments_pairwise_html "<td>".$desc2."</td>\n";
+    print $alignments_pairwise_html "<td><a href='".$logo2_link."'><img border=0 src='".$logo2_link."'></a></td>\n";
+    print $alignments_pairwise_html "<td><pre>".$matrix2_string."</pre></td>\n";
+    print $alignments_pairwise_html "</tr>\n";
+
+
+    if ($return_field{merged_matrices}) {
+
+      ## Generate a string for the alignment file
+      my $merged_matrix_string = join("\t", "; ".$id_align,
+				      "offset=$offset",
+				      "col=".$merged_matrix->ncol(),
+				      $merged_matrix->get_attribute("consensus.IUPAC"));
+      $merged_matrix_string .= "\n";
+      $merged_matrix_string .= $merged_matrix->toString(format=>'tab', type=>"counts");
+      print $alignments_pairwise $merged_matrix_string;
+
+      ## Generate a sequence logo for the merged matrix
+      my $logo_file = $main::dir{logos}."/".$id_align;
+#      $merged_matrix->makeLogo($logo_file, "", $main::dir{logos}, " -h 3", 0);
+      $merged_matrix->makeLogo($logo_file, "", " -h 3", 0);
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo_file.".png");
+      $merged_matrix_string =~ s|//\n||mg;
+      print $alignments_pairwise_html "<tr>";
+      print $alignments_pairwise_html "<td>Alignment</td>";
+      print $alignments_pairwise_html "<td><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+      print $alignments_pairwise_html "<td><pre>".$merged_matrix_string."</pre></td>";
+      print $alignments_pairwise_html "</tr>\n";
+    }
+
+    ## Close the alignment table
+    print $alignments_pairwise_html "</table>\n";
+
+  }				## if
+}
+
+################################################################
+## Align matrices by groups, using each matched matrix of the first
+## set as group seed.
+sub OneToNAlignments {
+  &RSAT::message::TimeWarn("Computing one-to-n alignments") if ($main::verbose >= 2);
+
+  ## Index matches per matrix
+  foreach my $compa_id (@sorted_match_id) {
+    local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
+    push @{$matches_by_matrix1{$id1}}, $compa_id;
+  }
+
+  ## Report the command
+  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
+  &PrintArguments($alignments_1ton_html, 1);
+  print $alignments_1ton_html "</pre></p>\n";
+
+  ## Compute the best matching score per matrix
+  my %best_score1 = ();
+  foreach $id1 (keys(%matches_by_matrix1)) {
+#    &RSAT::message::Debug("Sorting matches per matrix 1", $id1, scalar(@{$matches_by_matrix1{$id1}}), join(", ", @{$matches_by_matrix1{$id1}})) if ($main::verbose >= 10);
+    ## Sort matrix-specific matches
+    if ($sort_order eq "asc") {
+      ## Sort results in ascending order
+      @{$matches_by_matrix1{$id1}} = sort {$sort_score{$a} <=> $sort_score{$b}} @{$matches_by_matrix1{$id1}};
+    } else {
+      ## Sort results in descending order
+      @{$matches_by_matrix1{$id1}} = sort {$sort_score{$b} <=> $sort_score{$a}} @{$matches_by_matrix1{$id1}};
+    }
+
+    $best_score1{$id1} = $sort_score{@{$matches_by_matrix1{$id1}}[0]};
+  }
+
+  ## Sort matrices by best matching score
+  my @sorted_matrix_ids1 = ();
+
+  ## Sort matrix-specific matches
+  if ($sort_order eq "asc") {
+    ## Sort results in ascending order
+    @sorted_matrix_ids1 = sort {$best_score1{$a} <=> $best_score1{$b}} keys (%best_score1);
+  } else {
+    ## Sort results in descending order
+    @sorted_matrix_ids1 = sort {$best_score1{$b} <=> $best_score1{$a}} keys (%best_score1);
+  }
+
+
+#  &RSAT::message::Debug("Matrix IDs from set 1, sorted by best matching score", join (", ", @sorted_matrix_ids1)) if ($main::verbose >= 10);
+  my $m1 = 0;
+  my $n1 = scalar(@sorted_matrix_ids1);
+  foreach my $id1 (@sorted_matrix_ids1) {
+    $m1++;
+#    &RSAT::message::Info ("One-to-n alignment for matrix1", $id1,
+#			  "n=".scalar(@{$matches_by_matrix1{$id1}}),
+#			  "best=".@{$matches_by_matrix1{$id1}}[0],
+#			  "score=".$best_score1{$id1}), "\n"
+#			    if ($main::verbose >= 10);
+
+    my $matrix1 = $matrix_by_id1{$id1};
+
+    ## Prepare the list of offsets and strands
+    my @matching_compa_ids = ();
+    my @matching_matrices = ();
+    my @matching_offsets = ();
+    my @matching_strands = ();
+    my @matching_scores = ();
+    foreach my $compa_id (@{$matches_by_matrix1{$id1}}) {
+      my ($id1, $id2, $offset, $strand) = split(":", $compa_id);
+      push @matching_compa_ids, $compa_id;
+      push @matching_matrices, $matrix_by_id2{$id2};
+      push @matching_offsets, $offset;
+      push @matching_strands, $strand;
+      push @matching_scores, $sort_score{$compa_id};
+    }
+
+    &RSAT::message::TimeWarn("\tOne-to-n alignment ", $m1."/".$n1, $id1." versus ".scalar(@matching_matrices)." matrices") if ($main::verbose >= 2);
+    my $type = "count";
+    if ($return_field{Icor}) {
+      $type = "info";
+    }
+
+
+    my ($merged_matrix, @shifted_matrices) = 
+      &RSAT::MatrixAlignment::AlignMatricesOneToN($matrix1, 
+						  \@matching_compa_ids,
+						  \@matching_matrices,
+						  \@matching_offsets,
+						  \@matching_strands,
+						  \@matching_scores,
+						  stat=>$merging_stat,
+						  type=>$type,
+						 );
+    &PrintAlignedMatrices(@shifted_matrices);
+  }
+  &RSAT::message::TimeWarn("Finished one-to-n alignments") if ($main::verbose >= 5);
+
+}
+
+################################################################
+## Print a set of aligned matrices returned by &RSAT::MatrixAlignment
+sub PrintAlignedMatrices {
+  my (@shifted_matrices) = @_;
+  &RSAT::message::TimeWarn("Printing aligned matrices") if ($main::verbose >= 4);
+
+  my $first_matrix = $shifted_matrices[0];
+  my $id1 = $first_matrix->get_attribute("id");
+  my $header_row = join ("\t", "One-to-n matrix alignment; reference matrix: ".$id1, "; ".scalar(@shifted_matrices)." matrices", "; sort_field=".$sort_field);
+  print $alignments_1ton "; ", $header_row, "\n";
+  print $alignments_1ton_html "<h2>", $header_row, "</h2>\n";
+
+#  print $alignments_1ton_html "<p><pre><b>Command:</b> compare-matrices ";
+#  &PrintArguments($alignments_1ton_html, 1);
+#  print $alignments_1ton_html "</pre></p>\n";
+
+  ## Open a table in the HTML file and print column headers
+  print $alignments_1ton_html "<p><table class='sortable'>\n";
+  my $html_header = "<th>Matrix name</th>";
+  $html_header .= "<th>Aligned logos</th>";
+
+  ## Define the list of scores to print
+  my @scores_to_print = ();
+  foreach my $metric (@supported_metrics) {
+    next if ($metric eq "all_metrics");
+    next if ($metric eq "match_rank");
+    if ($return_field{$metric}) {
+      push @scores_to_print, $metric;
+      $html_header .= "<th>".$metric."</th>\n";
+    }
+  }
+
+  ## Add the list of score ranks if requested
+  if ($return_field{match_rank}) {
+    my @rank_scores_to_print = ();
+    foreach my $metric (@scores_to_print) {
+      push @rank_scores_to_print, "r".$metric;
+      $html_header .= "<th>"."r".$metric."</th>\n";
+    }
+    push @scores_to_print, @rank_scores_to_print, "rank_mean", "match_rank";
+    $html_header .= "<th>rank_mean</th>\n";
+    $html_header .= "<th>match_rank</th>\n";
+  }
+  &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+
+  ## Aligned matrices
+  $html_header .= "<th>Aligned matrices</th>\n";
+  print $alignments_1ton_html "<tr>".$html_header."</tr>";
+
+
+  ## Print the result
+  my $m=0;
+  foreach my $shifted_matrix (@shifted_matrices) {
+    $m++;
+    my $compa_id = $shifted_matrix->get_attribute("compa_id");
+    my $id_name = my $id = $shifted_matrix->get_attribute("id");
+    my $name = $shifted_matrix->get_attribute("name");
+    if ($name ne $id) {
+      $id_name .= " (".$name.")";
+    }
+
+    ## Text format
+    my $desc = $shifted_matrix->get_attribute("description");
+    my $matrix_string = "; ".$desc."\n";
+    my $match_scores = "";
+    my $match_scores_html = "";
+#    $match_scores .= sprintf("; %s=%d", "offset", $offset);
+#    $match_scores .= sprintf("; %s=%s", "strand", $strand);
+#    &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+    #  die;
+    if ($m > 1) {
+      foreach my $metric (@scores_to_print) {
+	#      foreach my $metric (@supported_metrics) {
+	#	next if ($metric eq "all_metrics");
+	#	if ($return_field{$metric}) {
+	my $value = $match_score{$compa_id}{$metric};
+	$value = sprintf($metric_format{$metric}, $value);
+#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
+	$match_scores .= "; ".$metric."=".$value;
+	$match_scores_html .= "<td style='background-color: #FFFFFF;'>".$value."</td>\n";
+	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
+      }
+      #      }
+    } else {
+      $match_scores = "; Alignment reference";
+      $match_scores_html = "<td style='background-color: #FFFFFF;border-right:none'>&nbsp</td>\n" x scalar(@scores_to_print);
+    }
+    $matrix_string .= $match_scores."\n";
+
+    if ($calc_field{Icor}) {
+      $shifted_matrix->calcInformation();
+    }
+
+    if ($calc_field{Icor}) {
+      $matrix_string .= $shifted_matrix->toString(col_width=>6,
+						  decimals=>2,
+						  type=>"information",
+						  format=>"tab");
+    } else {
+      $matrix_string .= $shifted_matrix->toString(format=>'tab', type=>"counts", colwidth=>6, decimals=>0);
+    }
+    print $alignments_1ton $matrix_string;
+
+    ## Generate a sequence logo for the HTML output file
+    my $logo_file = $main::dir{logos}."/".$shifted_matrix->get_attribute("id");
+#    $shifted_matrix->makeLogo($logo_file, "", $main::dir{logos}, " -h 3", $rc);
+    $shifted_matrix->makeLogo($logo_file, "", " -h 3", $rc);
+    my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_1ton_html}, $logo_file.".png");
+    $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
+    print $alignments_1ton_html "<tr>\n";
+    print $alignments_1ton_html "<td style='background-color: #FFFFFF;'>".$id_name."</td>\n";
+    print $alignments_1ton_html "<td style='background-color: #FFFFFF;'><a href='".$logo_link."'><img border=0 src='".$logo_link."'></a></td>\n";
+    print $alignments_1ton_html $match_scores_html;
+    print $alignments_1ton_html "<td style='background-color: #FFFFFF;'><pre>".$matrix_string."</pre></td>\n";
+    print $alignments_1ton_html "</tr>\n";
+  }
+  print $alignments_1ton ";\n";
+  print $alignments_1ton_html "</table></p>\n";
+}
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-file1 matrix_file1>
+
+The first input file containing one or several matrices.
+
+=cut
+    } elsif ($arg eq "-file1") {
+      $main::infile{file1} = shift(@arguments);
+
+=pod
+
+=item B<-file2 matrix_file2>
+
+The second input file containing one or several matrices.
+
+=cut
+    } elsif ($arg eq "-file2") {
+      $main::infile{file2} = shift(@arguments);
+
+=pod
+
+=item B<-file single_matrix_file>
+
+Use a single matrix file as input. Each matrix of this file is
+compared to each other. This is equivalent to:
+ -file1 single_matrix_file -file2 single_matrix_file
+
+=cut
+    } elsif ($arg eq "-file") {
+      $main::infile{file1} = shift(@arguments);
+      $main::infile{file2} = $main::infile{file1};
+
+=pod
+
+=item B<-mlist1 matrix list>
+
+The fisrt input file contaning a list of matrix files (given as paths)
+
+=cut
+    } elsif ($arg eq "-mlist1") {
+      $main::infile{mlist1} = shift(@arguments);
+
+
+=pod
+
+=item B<-mlist2 matrix list>
+
+The second input file contaning a list of matrix files (given as paths)
+The reverse complement is computed for this set of matrices.
+
+=cut
+    } elsif ($arg eq "-mlist2") {
+      $main::infile{mlist2} = shift(@arguments);
+
+
+=pod
+
+=item B<-format1 matrix_format1>
+
+Specify the matrix format for the first input file only (requires
+-format2).
+
+=cut
+    } elsif ($arg eq "-format1") {
+      $input_format1 = shift(@arguments);
+      unless ($supported_input_format{$input_format1}) {
+	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
+
+
+=pod
+
+=item B<-format2 matrix_format2>
+
+Specify the matrix format for the second input file only (requires
+-format1).
+
+=cut
+    } elsif ($arg eq "-format2") {
+      $input_format2 = shift(@arguments);
+      unless ($supported_input_format{$input_format2}) {
+	&RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
+
+
+
+=pod
+
+=item B<-format matrix_format>
+
+Specify the matrix format for both input files (alternatively, see
+options -format1 and -format2).
+
+=cut
+    } elsif ($arg eq "-format") {
+      $input_format1 = shift(@arguments);
+      $input_format2 = $input_format1;
+      unless ($supported_input_format{$input_format1}) {
+	&RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+      }
+
+=pod
+
+=item B<-bgfile background_file>
+
+Background model file.
+
+=cut
+    } elsif ($arg eq "-bgfile") {
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
+      $main::bg_method = "file";
+      $main::infile{bg} = shift(@arguments);
+
+      ## Background model format
+
+=pod
+
+=item B<-bg_format format>
+
+Format for the background model file.
+
+Supported formats: all the input formats supported by
+convert-background-model.
+
+=cut
+    } elsif ($arg eq "-bg_format") {
+      $main::bg_format = lc(shift(@arguments));
+
+      ## Check background input format
+      &RSAT::error::FatalError($main::bg_format,
+			       "Invalid input format.",
+			       "Supported: ", $RSAT::MarkovModel::supported_input_formats)
+	unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_format});
+
+
+=pod
+
+=item B<-top1 X>
+
+Only analyze the first X motifs of the first file. This options is
+convenient for quick testing before starting the full analysis.
+
+It can also be combined with the option I<-skip1> to restrict the
+analysis to a subset of a large matrix library.
+
+=cut
+    } elsif ($arg eq "-top1") {
+      $main::top1 = shift(@arguments);
+      &RSAT::error::FatalError($main::top1, "invalid value for the option -top1. Must be a positive Natural number.") unless ((&IsNatural($main::top1)) && ($top1 >= 0));
+
+=pod
+
+=item B<-top2 X>
+
+Only analyze the first X motifs of the second file. This options is
+convenient for quick testing before starting the full analysis.
+
+It can also be combined with the option I<-skip2> to restrict the
+analysis to a subset of a large matrix library.
+
+=cut
+    } elsif ($arg eq "-top2") {
+      $main::top2 = shift(@arguments);
+      &RSAT::error::FatalError($main::top2, "invalid value for the option -top2. Must be a positive Natural number.") unless ((&IsNatural($main::top2)) && ($top2 >= 0));
+
+=pod
+
+=item B<-skip1 X>
+
+Skip the first X motifs of the first input matrix file. This options
+can be combined with the option I<-top1> in order to restrict the
+analysis to a given subset of a large library.
+
+=cut
+    } elsif ($arg eq "-skip1") {
+      $main::skip1 = shift(@arguments);
+      &RSAT::error::FatalError($main::skip1, "invalid value for the option -skip1. Must be a positive Natural number.") unless ((&IsNatural($main::skip1)) && ($skip1 >= 0));
+
+=pod
+
+=item B<-skip2 X>
+
+Skip the first X motifs of the second input matrix file. This options
+can be combined with the option I<-top2> in order to restrict the
+analysis to a given subset of a large library.
+
+=cut
+    } elsif ($arg eq "-skip2") {
+      $main::skip2 = shift(@arguments);
+      &RSAT::error::FatalError($main::skip2, "invalid value for the option -skip2. Must be a positive Natural number.") unless ((&IsNatural($main::skip2)) && ($skip2 >= 0));
+
+
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix for the output files. The output prefix is mandatory for some
+return fields (alignments, graphs, ...).
+
+This prefix will be appended with a series of suffixes for the
+different output types (see section OUTPUT FORMATS above for the
+detail).
+
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output_prefix} = shift(@arguments);
+      $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
+
+
+=pod
+
+=item B<-nobuf>
+
+No buffering.
+
+By default, the Perl language holds the output in memory (buffering)
+and writes output files piece by piece rather than line by line.
+
+This creates a particlar problem when I<compare-matrices> is
+encapsulated in another program (e.g. I<peak-footprints>), beacause
+the script occasionally exits while the bufer is still being printed
+out, and the output file is thus not yet ready for further analysis.
+
+The option -nobuf turns off buffering. The printing out is probably
+slower (the output stream is printed at each match), so we maintain
+buffering by default.
+
+=cut
+
+    } elsif ($arg eq "-nobuf") {
+      $main::no_buffering = 1;
+
+
+=pod
+
+=item B<-mode matches | profiles>
+
+=over
+
+=item I<-mode matches> (default)
+
+Return matches between any matrix of the file1 and any matrix of
+file2.
+
+This is the typical use of I<compare-matrices>: comparing one or
+several query motifs (e.g. obtained from motif discovery) with a
+collection of reference motifs (e.f. a database of experimentally
+characterized transcription factor binding motifs, such as JASPAR,
+TRANSFAC, RegulonDB, ...).
+
+For a given pair of matrices (one from file1 and one from file2), the
+program tests all possible offsets, and measures one or several
+matching scores (see section "(Dis)similarity metrics" above). The
+program only returns the score of the best alignemnt between the two
+matrices. The "best" alignement is the combination of offset and
+strand (with the option -strand DR) that maximizes the default score
+(Ncor). Alternative scores can be used as optimality criteria with the
+option -sort.
+
+=item I<-mode profiles>
+
+Return a table with one row for each possible alignment offset between
+two matrices, and various columns indicating the matching parameters
+(offset, strand, aligned width,...), the matching scores, and the
+consensus of the aligned columns of the matrices.
+
+Matching profiles are convenient for drawing the similarity profiles,
+or for analyzing the correlations between various similarity metrics,
+but they are too verbosy for the typical use of I<compare-matrices>
+(detect matches between a query matrix and a database of reference
+matrices). The formats "matches" and "table" are more convenient for
+basic use.
+
+=back
+
+=cut
+    } elsif ($arg eq "-mode") {
+      $main::comparison_mode = shift(@arguments);
+      &RSAT::error::FatalError($main::comparison_mode, "is not a valid comparison mode. Supported: ".$supported_comparison_modes) 
+	unless ($supported_comparison_mode{$main::comparison_mode});
+
+
+=pod
+
+=item	B<-distinct>
+
+Skip comparison between a matrix and itself.
+
+This option is useful when the program is sused to compare all
+matrices of a given file to all matrices of the same file, to avoid
+comparing each matrix to itself.
+
+Beware: the criterion for considering two matrices identical is that
+they have the same identifier. If two matrices have exactly the same
+content (in terms of occurrences per position) but different
+identifiers, they will be compared.
+
+=cut
+    } elsif ($arg eq "-distinct") {
+      $main::distinct = 1;
+
+
+=pod
+
+=item B<-strand D | R | DR>
+
+Perform matrix comparisons in direct (D) reverse complementary (R) or
+both orientations (DR, default option).
+
+When the R or DR options are activated, all matrices of the second
+matrix file are converted to the reverse complementary matrix.
+
+This option is useful to answer very particular questions, for example
+
+=over
+
+=item Comparing motifs in a strand-insensitive way (-strand DR)
+
+DNA-binding motifs are usually strand-insensitive. A motif may be
+detected in one given orientation by a motif-discovery algorithm, but
+annotated in the reverse complementary orientation in a motif
+database. For DNA binding motifs, we thus recomment the DR option.
+
+On the contrary, RNA-related signals (termination, poly-adenylation,
+miRNA) are strand-sensitive, and should be compared in a single
+orientation (-strand D).
+
+=item Detecting reverse complementary palindromic motifs
+
+An example of reverse complementary palindromic motif is
+tCAGswwsGTGa. When a motif is reverse complementary palindromic, the
+matrix is correlated to its own reverse complement.
+
+I<Remark about a frequent misconception of biological palindromes>
+
+Reverse complementary palindroms are frequent in DNA signals
+(e.g. transcription factor binding sites, restriction sites, ...)
+because they correspond to a rotational symmetry in the 3D
+structure. Such symmetrical motifs are often characteristic of sites
+recognized by homodimeric complexes.
+
+By contrast, simple string-based palindromes (e.g. CAGTTGAC) do
+absolutely not correspond to any symmetry on the biochemical point of
+view, because the 3D structure of the corresponding double helix is
+not symmetrical. The apparent symmetry is an artifact of the
+string-based representation, but the corresponding molecule has
+neither rotational nor translational symmetry.
+
+DNA signals can either be symmetrical (reverse complementary
+palindromes, tandem repeats) or asymmetrical.
+
+=back
+
+=cut
+    } elsif ($arg eq "-strand") {
+      $main::strand = shift(@arguments);
+      if (($main::strand eq "R")
+	  || ($main::strand eq "D")
+	  || ($main::strand eq "DR")) {
+      } else {
+	&RSAT::error::FatalError("Invalid strand option. Should be R, D or DR.");
+      }
+    } elsif ($arg eq "-DR") {
+      $main::strand = "DR";
+    } elsif ($arg eq "-D") {
+      $main::strand = "D";
+    } elsif ($arg eq "-R") {
+      $main::strand = "R";
+
+=pod
+
+=item B<-matrix_id #>
+
+Obsolete option for returning matrix names, Replaced by -return
+matrix_name. Maintained for backward compatibility.
+
+=cut
+    } elsif ($arg eq "-matrix_id") {
+      &RSAT::message::Warning("Option -matrix_id is obsolete. Please use the new option: -return matrix_name");
+      my $value = shift(@arguments);
+      $return_field{matrix_name} = shift(@arguments);
+
+
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return (only valid for the formats "profiles" and
+"matches").
+
+Supported return fields:
+
+=over
+
+=item I<offset>
+
+Offset (shift) between the two compared matrices.
+
+=item I<cor>
+
+Pearsons coefficient of correlatiojn. 
+
+=item I<Ncor>
+
+Normalized correlation (default sorting criterion for the matching
+mode).
+
+=item I<Ncor1>
+
+Normalized correlation relative to w1.
+
+=item I<Ncor2>
+
+Normalized correlation relative to w2.
+
+=item I<cov>
+
+Covariance.
+
+=item I<SSD>
+
+Sum of squared distances. 
+
+=item I<NSW>
+
+Normalized Sandelin-Wasserman similarity.
+
+=item I<SW>
+
+Sandelin-Wasserman similarity.
+
+=item I<dEucl>
+
+Euclidian distance
+
+=item I<NdEucl>
+
+Normalized Euclidian distance.
+
+=item I<NsEucl>
+
+Normalized Euclidian similarity.
+
+=item I<dKL>
+
+Kullback-Leibler distance
+
+=item I<matrix_number>
+
+Number of the matrices in the input files
+
+=item I<matrix_id>
+
+Identifiers of the matrices
+
+=item I<matrix_name>
+
+Names of the matrices
+
+=item I<matrix_ac>
+
+Accession number of the matrices (TRANSFAC format makes a distinction
+between IDs and accession numbers).
+
+=item I<width>
+
+Width of the matrices and the alignment
+
+=item I<strand>
+
+Direct (D) or Reverse complementary (R) comparison
+
+=item I<offset>
+
+Offset between the positions of the first and second matrix
+
+=item I<pos>
+
+Relative positions the aligned matrices (start, end, strand, width)
+
+=item I<consensus>
+
+Aligned consensus. The residues of the consensus corresponding to
+aligned columns are displaye, non-aligned columns are replaced by
+dots.
+
+=item I<offset_rank>
+
+During pairwise alignment, scores are computed for each offset and
+offsets are sorted according to the sorting criterion. The offset_rank
+indicates the rank of an offset in this sorted list. This is a
+"within-alignment" rank, which is useful in profile mode.
+
+=item I<match_rank>
+
+In matching mode, ranks can be computed for all the selected metrics,
+and a mean rank is computed.
+
+=item I<graph>
+
+Return a matrix comparison graph where nodes correspond to matrices,
+and edges represent similarities between pairs of matrices.
+
+The graph is exported in GML (open with CytoScape or yet) and dot
+(graphiviz) format.
+
+An advantage if the GML and dot formats is that they include
+disconnected nodes, in contrast with the tab-delimited matrix
+comparison table.
+
+=item I<alignments_pairwise>
+
+Shifted matrices resulting from the pairwise alignments.
+
+=item I<alignments_1ton>
+
+Shifted matrices resulting from the 1-to-N alignments.
+
+=item I<alignments>
+
+Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+
+=item I<all>
+
+All supported output fields, including all metrics.
+
+=back
+
+=cut
+    } elsif ($arg eq "-return") {
+      my $fields_to_return = shift(@arguments);
+      my @fields_to_return = split (",", $fields_to_return);
+      foreach $field (@fields_to_return) {
+	if ($supported_return_field{$field}) {
+	  $return_field{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	}
+      }
+
+=pod
+
+=item	B<-sort sort_field>
+
+Field to sort the results. The sorting direction depends on the
+metric: ascending for dissimilarity metrics, decreasing for similarity
+metrics.
+
+Supported sort fields:
+
+=over
+
+=item I<offset>, ascending (default sorting criterion for the profile mode)
+
+=item I<Ncor>, decreasing (default sorting criterion for the matching mode)
+
+=item I<Ncor1>, decreasing
+
+=item I<Ncor2>, decreasing
+
+=item I<cor>, decreasing
+
+=item I<cov>, decreasing
+
+=item I<SSD>, ascending
+
+=item I<SW>, decreasing
+
+=item I<NSW>, decreasing
+
+=item I<dEucl>, ascending
+
+=item I<NdEucl>, ascending
+
+=item I<NsEucl>, decreasing
+
+=item I<dKL>, ascending
+
+=back
+
+=cut
+    } elsif ($arg eq "-sort") {
+      $main::sort_field = shift(@arguments);
+      &RSAT::error::FatalError($main::sort_field, "Invalid sorting field. Supported: ".$supported_sort_fields) 
+	unless ($supported_sort_field{$main::sort_field});
+
+=pod
+
+=item	B<-lth param lower_threshold>
+
+=item	B<-uth param upper_threshold>
+
+Threshold on some parameter (-lth: lower, -uth: upper threshold).
+
+Supported threshold fields : rank, dEucl, cor, cov, ali_len, offset
+
+=cut
+
+      ### Lower threshold
+    } elsif ($arg eq "-lth") {
+      my $thr_field = lc(shift(@arguments));
+      my $thr_value =  shift(@arguments);
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
+	unless (&RSAT::util::IsReal($thr_value));
+      $lth{$thr_field} = $thr_value;
+
+      ### Upper threshold
+    } elsif ($arg eq "-uth") {
+      my $thr_field = lc(shift(@arguments));
+      my $thr_value = shift(@arguments);
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
+	unless (&RSAT::util::IsReal($thr_value));
+      $uth{$thr_field} = $thr_value;
+
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $main::out "; compare-matrices ";
+  &PrintArguments($main::out, 1);
+  printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $main::out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $main::out ";\t%-6s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $main::out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  print $main::out "; Matrices\n";
+  print $main::out join ("\t", ";", "file1", $matrix_nb1." matrices", $main::infile{file1}),"\n";
+  print $main::out join ("\t", ";", "file2", $matrix_nb2." matrices", $main::infile{file2}),"\n";
+  #    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
+
+  ## Matrices in the first file
+  my $m1 = 0;
+  foreach my $matrix (@matrices1) {
+    $m1++;
+    print $main::out join ("\t", ";", "file1", $m1,
+			   $matrix->get_attribute("ncol"),
+			   $matrix->get_attribute("nsites"),
+			   $matrix->get_attribute("consensus.IUPAC")), "\n";
+  }
+
+  ## Matrices in the second file
+  my $m2 = 0;
+  foreach my $matrix (@matrices2) {
+    $m2++;
+    print $main::out join ("\t", ";", "file2", $m2,
+			   $matrix->get_attribute("ncol"),
+			   $matrix->get_attribute("nsites"),
+			   $matrix->get_attribute("consensus.IUPAC")),  "\n";
+  }
+  printf $out &PrintThresholdValues();
+}
+
+
+################################################################
+#### check threshold on some parameter
+sub CheckThresholdValue {
+  my ($key, $value) = @_;
+  $key = lc($key); ## Ensure case-insensitivity
+
+  &RSAT::message::Debug("Checking threshold", $key, $value) if ($main::verbose >= 5);
+
+  ## Lower threshold
+  if (defined($lth{$key})) {
+    if ($value < $lth{$key}) {
+      return (0);
+    }
+    &RSAT::message::Debug("Passed lower threshold", $key, $value, "lth=".$lth{$key}) if ($main::verbose >= 6);
+  }
+
+  ## Upper threshold
+  if (defined($uth{$key})) {
+    if ($value > $uth{$key}) {
+      return (0);
+    }
+    &RSAT::message::Debug("Passed upper threshold", $key, $value, "uth=".$uth{$key}) if ($main::verbose >= 4);
+  }
+
+  return(1);
+}
+
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item B<convert-matrix>
+
+=item B<matrix-scan>
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+=item B<logoDP>
+
+Dot product between the "sequence logo statisitcs", i.e. the
+column-wise information content multiplied by the residue frequency.
+
+=item B<Additional metrics>
+
+=over
+
+=item Mutual information
+
+We should check if this fixes the problems of 0 values that we have
+with the KL distance.
+
+=item The "natural covariance"
+
+Pape, U. J., Rahmann, S. and Vingron, M. (2008). Natural similarity
+measures between position frequency matrices with an application to
+clustering. Bioinformatics 24, 350-7.
+
+This metrics measures the covariance between hits of two matrices
+above a given threshold for each of them.
+
+=item chi2 P-value (for the sake of comparison).
+
+Note that a condition of applicability of the chi2 P-value is that the
+expected value should be >= 5 for each cell of the matrix. This
+condition is usually not fulfilled for the PSSM we use for motif
+scanning.
+
+=item Average Log Likelihood Ratio (ALLR)
+
+ Source: Wang T & Stormo GD (2003) Bioinformatics 19:2369-2380
+ Also implemented in STAMP.
+
+=back
+
+=item B<-pseudo>
+
+Pseudo-counts to be added to all matrices.
+
+
+=item B<-comparison_mode table | consensus>
+
+=over
+
+=item I<-return clusters>
+
+Cluster motifs (only valid with a single input file).
+
+=item I<-return crosstable field>
+
+Export a table with one row per matrix of the file 1, one column per
+matrix of file 2, where each cell indicates the value of the selected
+field for the corresponding pair of matrices.
+
+=item I<-return graph>
+
+Export a graph where nodes correspond to input matrices, and edges
+indicate similarities between them.
+
+=back
+
+=back
+
+=cut

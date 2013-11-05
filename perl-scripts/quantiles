@@ -1,0 +1,513 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: quantiles,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2007-10-27 01:06:25 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+quantiles
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Take as input cumulative frequency distribution of scores, and classify
+the scores into quantiles. These sorted scores can be further used
+to draw a Q-Q plot.
+
+=head1 AUTHORS
+
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+quantiles [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use Data::Dumper;
+
+################################################################
+## Main package
+package main;
+{
+
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = k
+&RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+    %main::infile = ();
+    %main::outfile = ();
+    
+    $main::score_col = 1;
+    $main::ref_col = 2;
+    $main::q_nb = 100;
+    $main::img_format = "png";
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    
+    ## Return fields
+  	local %supported_return_fields = (
+			      quantiles=>1,	## quantiles
+			      plot=>1	## q-q plot
+			     );
+	local %return_fields = ();		## Fields to return
+  	$supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+
+  	################################################################
+    ## Check argument values
+    
+    ## Return fields
+  	if (scalar(keys(%return_fields)) < 1) {
+    	$return_fields{quantiles} = 1;
+  	}
+  	
+  	if ($return_fields{plot}) {
+  			$return_fields{quantiles} = 1;
+    	  &RSAT::error::FatalError("-o option is required to export graph.") 
+	      unless (defined($main::outfile{output}));
+  	}
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+	################################################################
+	##### read input
+	
+	my %distribs = ();
+
+	($main::in) = &OpenInputFile($main::infile{input});
+	while (<$main::in>) {
+		my $line = $_;
+		next if ($line =~ /^;/); ## Skip comment lines
+		chomp($line);
+	
+		my @fields = split('\t', $line);
+		
+		foreach my $i (0..$#fields) {
+			if ($i == ($main::score_col-1)){
+				push @{$distribs{score}}, $fields[$i];
+			} else {
+				push @{$distribs{$i}} , $fields[$i];
+			}		
+		}
+	}
+
+	close $in if ($infile{input});
+	
+	################################################################
+	#### print verbose
+		&Verbose if ($verbose);
+
+	################################################################
+	###### execute the command
+	
+	my @quantiles = ();
+
+	if ($main::inv){
+		for (my $r = $main::q_nb ; $r >=1 ; $r--) {
+			push @quantiles, ($r / $main::q_nb);
+		}
+	}else {
+		for my $r (1..$main::q_nb) {
+			push @quantiles, ($r / $main::q_nb);
+		}
+	}
+	
+	## treat each distribution separately
+	my @scores = @{$distribs{score}};
+	my %quantiles_distrib =();
+	
+	foreach my $key (keys(%distribs)){
+		next if ($key eq "score");
+		my @curr_distrib = @{$distribs{$key}};
+		
+		my $quantile_nb = 0;
+		my $quantile = $quantiles[$quantile_nb];
+		
+		## Extract the X values corresponding to the quantile
+		foreach my $j (0..$#curr_distrib){
+			my $cum_freq= $curr_distrib[$j];
+			next if($cum_freq !~ /^\s*\d/);
+			next if($cum_freq eq '<NULL>');
+			&RSAT::message::Debug(join (" ",$distribs{$key}[0], "quantile",sprintf("%.3e",$quantile),"freq",sprintf("%.3e",$cum_freq), "score", $scores[$j]))
+    		if ($main::verbose >= 5);
+    			
+    		
+    		if ($main::inv){
+    			while ($quantile >= $cum_freq ) {
+				push @{$quantiles_distrib{$key}} , $scores[$j];
+				&RSAT::message::Debug(join (" ","\t" ,"FOUND","quantile",sprintf("%.3e",$quantile),"freq",sprintf("%.3e",$cum_freq),$scores[$j]))
+    			if ($main::verbose >= 3);
+				$quantile_nb++;
+				last if($quantile_nb > $#quantiles);
+				$quantile = $quantiles[$quantile_nb];			
+			}
+			last if($quantile_nb > $#quantiles);
+    		
+    		
+    		}else {
+	
+			while ($quantile <= $cum_freq ) {
+				push @{$quantiles_distrib{$key}} , $scores[$j];
+				&RSAT::message::Debug(join (" ","\t" ,"FOUND","quantile",sprintf("%.3e",$quantile),"freq",sprintf("%.3e",$cum_freq),$scores[$j]))
+    			if ($main::verbose >= 3);
+				$quantile_nb++;
+				last if($quantile_nb > $#quantiles);
+				$quantile = $quantiles[$quantile_nb];			
+			}
+			last if($quantile_nb > $#quantiles);
+    		}
+		}
+	}
+	
+
+	################################################################
+	###### print output
+	
+	if ($return_fields{quantiles}) {
+	
+	if ($scores[0] !~ /^\s*[-]*\d/){
+		print $out "#quantile\t";
+		foreach my $i (sort keys(%quantiles_distrib)){
+			print $out $distribs{$i}[0]."\t";
+		}
+		print $out "\n";
+	}
+
+	foreach my $k (0..$#quantiles){
+		print $out $quantiles[$k],"\t";
+		foreach my $key (sort keys(%quantiles_distrib)){
+			print $out $quantiles_distrib{$key}[$k],"\t";
+		}
+		print $out "\n";
+	}
+	}
+
+	## draw the graph
+	if ($return_fields{plot}) {
+
+		## min and max scores
+		my $score_min;
+		if ($scores[0] =~ /^\s*[-]*\d/){
+			$score_min = $scores[0];
+		} elsif ($scores[1] =~ /^\s*[-]*\d/) {
+			$score_min = $scores[1];
+		} 
+		my $score_max = $scores[$#scores]; 	
+		$score_min = sprintf('%.f',$score_min);
+		$score_max = sprintf('%.f',$score_max);
+		&RSAT::message::Debug( "min: $score_min, max $score_max\n") if ($main::verbose >= 5);
+		
+		## ref column
+		my $xlegend="";
+		if ($scores[0] !~ /^\s*[-]*\d/){
+			$xlegend =  $distribs{($main::ref_col-1)}[0];
+		} 
+		my @cols = sort keys(%distribs);
+		$y_cols ="";
+		foreach my $col (@cols) {
+			next if ($col =~ /score/);
+			next if ($col == ($main::ref_col-1));
+			$y_cols .= ($col+1).",";
+		}
+		chop($y_cols);
+		
+		
+		## Use same name fo graph as for the output file
+      	my $output_table = $main::outfile{output};
+
+      	## Suppress the .tab or .txt extension before adding the graph suffixes.
+      	$output_table =~ s/\.tab$//;
+      	$output_table =~ s/\.txt$//;
+
+      	## Draw stats as a function of score
+      	my $cmd = "XYgraph -i ".$main::outfile{output};
+      	$cmd .= " -title1 'Q-Q plot'";
+      	$cmd .= " -xcol ".$main::ref_col;
+      	$cmd .= " -ycol ".$y_cols;
+      	$cmd .= " -xleg1 'score - $xlegend ' -yleg1 'score - other distributions' -legend ";
+      	$cmd .= " -min $score_min -max $score_max";
+      	$cmd .= " -format ".$img_format;
+      	$cmd .= " -o ".$output_table."_qqplot.".$img_format;
+      	&doit($cmd);
+	}
+
+    ################################################################
+    ###### close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $out if ($outfile{output});
+
+
+    exit(0);
+    
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-q_nb #>
+
+Number of quantiles to calculate. Default = 100 (percentiles).
+
+=cut
+	} elsif ($arg eq "-q_nb") {
+	    $main::q_nb = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::q_nb, 
+					  "Invalid value for the quantiles to calculate. Must be a positive integer number."))
+		unless (&RSAT::util::IsNatural($main::q_nb)) ;
+	    
+	    ## score  column
+=pod
+
+=item	B<-return return_fields>
+
+List of fields to return. 
+
+Supported fields:
+quantiles,plot
+
+=item plot
+
+Export graph files.  This requires to specify a name for the output
+file (the STOUT dannot be used), because the same name will be used,
+with various suffixes, for the graph files.
+
+
+=cut
+	} elsif ($arg eq "-return") {
+	      $arg = shift (@arguments);
+	  chomp($arg);
+	  my @fields_to_return = split ",", $arg;
+	  foreach my $field (@fields_to_return) {
+	    $field = lc($field);
+	    if ($supported_return_fields{$field}) {
+	      $return_fields{$field} = 1;
+	    } else {
+	      &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	    }
+	  }
+
+	    ## Image format
+=pod
+
+=item	B<-img_format>
+
+Image format fo the graph files.
+
+=cut
+	} elsif ($arg eq "-img_format") {
+	    $main::img_format = shift(@arguments);
+
+	    ## score  column
+=pod
+
+=item	B<-sc #>
+
+score column. default is 1.
+
+=cut
+	} elsif ($arg eq "-sc") {
+	    $main::score_col = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::score_col, 
+					  "Invalid value for the score column. Must be a positive integer number."))
+		unless ((&RSAT::util::IsInteger($main::score_col) )
+			&& ($main::score_col >= 1));
+
+=pod
+
+=item	B<-ref #>
+
+Column taken as reference. Will appear on X axis. (default = 2)
+
+=cut
+	} elsif ($arg eq "-ref") {
+	    $main::ref_col = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::ref_col, 
+					  "Invalid value for the reference column. Must be a positive integer number."))
+		unless (&RSAT::util::IsNatural($main::ref_col) );
+
+	    ## score  column
+=pod
+
+=item	B<-inv_cum>
+
+By default, the distributions are assumed to be cumulative.
+This option specifies that the distributions are
+the inverse cumulative.
+
+=cut
+	} elsif ($arg eq "-inv_cum") {
+		$main::inv= 1;
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; quantiles ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+}
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
+

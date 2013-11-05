@@ -1,0 +1,742 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% PATTERN DISCOVERY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{String-based pattern discovery}
+
+In a pattern discovery problem, you start from a set of functionally
+related sequences (e.g.  upstream sequences for a set of co-regulated
+genes) and you try to extract motifs (e.g. regulatory elements) that
+are characteristic of these sequences.
+
+Several approaches exist, either string-based or
+matrix-based. \concept{String-based pattern discovery} is based on an
+analysis of the number of occurrences of all possibles words
+(\program{oligo-analysis}), or spaced pairs
+(\program{dyad-analysis}). The methods for \concept{matrix-based
+  pattern discovery} rely on the utlisation of some machine-learning
+method (e.g. greedy algorithm, expectation-maxiisation, gibbs
+sampling, ...) in order to optimise of some scoring function
+(log-likelihood, information,...) which is likely to return
+significant motifs.
+
+In this chapter we will mainly focus on string-based approaches, and
+illustrate some of their advantages. A further chapter will be
+dedicated to matrix-based pattern discovery.
+
+For microbial cis-acting elements, string-based approaches give
+excellent results. The main advantages of these methods:
+
+\begin{itemize}
+\item[+] Simple to use
+\item[+] Deterministic (if you run it repeatedly, you always get the
+  same result), in contrast with stochastic optimization methods.
+\item[+] Exhaustive : each word or space pair is tested
+  independently. Consequently, if a set of sequences contains several
+  exceptional motifs, all of them can be detected in a single run. 
+\item[+] The tests of significances can be performed on both tails of
+  the theoretical distribution, in order to detect either
+  over-represented, or under-represented patterns.
+\item[+] Fast. 
+\item[+] Able to return a negative answer: if no motif is significant,
+  the programs return no motif at all. This is particularly important
+  to reduce the rate of false positive.
+\end{itemize}
+
+
+An obvious advantage of matrix-based approach is that they provide a
+more refined description of motifs presenting a high degree of
+degeneracy. However, a general problem of matrix-based approaches is
+that it is impossible to analyze all possible position-weight
+matrices, and thus one has to use heuristics. There is thus a risk to
+miss the global optimum because the program is attracted to local
+maxima. Another problem is that there are more parameters to select
+(typically, matrix width and expected number of occurrences of the
+motif), and their choice drastically affects the quality of the
+result.
+
+Basically, I would tend to prefer string-based approaches for any
+problem of pattern discovery. On the contrary, matrix-based approaches
+are much more sensitive for pattern matching problems (see below). My
+preference is thus to combine string-based pattern discovery and
+matrix-based pattern matching.
+
+But I am obviously biased because I developed string-based
+approaches. An important factor in the success obtained with a program
+is to understand precisely its functioning. I thus think that each
+user should test different programs, compare them and select the one
+that best suits his/her needs.
+
+\section{Requirements}
+
+This part of the tutorial assumes that you already performed the
+tutorial about sequence retrieval (above), and that you have the
+result files in the current directory. Check with the command:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+cd ${HOME}/practical_rsat
+ls -1
+\end{verbatim} \end{footnotesize}
+}
+
+
+You should see the following file list:
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+Escherichia_coli_K12_start_codons.wc
+Escherichia_coli_K12_stop_codons.wc
+MET_genes.txt
+MET_up800-noorf.fasta
+PHO_genes.txt
+PHO_up800-noorf.fasta
+PHO_up800.fasta
+RAND_genes.txt
+RAND_up800-noorf.fasta
+his.genes.txt
+his.up200.noorf.fasta
+\end{verbatim} \end{footnotesize}
+}
+
+\section{oligo-analysis}
+
+The program \program{oligo-analysis} is the simplest pattern discovery
+program. It counts the number of occurrences of all oligonucleotides
+(words) of a given length (typically 6), and calculates the
+statistical significance of each word by comparing its observed and
+expected occurrences. The program returns words with a significant
+level of over-representation.
+
+Despite its simplicity, this program generally returns good results
+for groups of co-regulated genes in microbes.
+
+For a first trial, we will simply use the program to count word
+occurrences. The application will be to check the start and stop
+codons retrieved above. We will then use \program{oligo-analysis} in a
+pattern discovery process, to detect over-represented words from the
+set of upstream sequences retrieved above (the PHO family).  In a
+first time, we will use the appropriate parameters, which have been
+optimized for pattern discovery in yeast upstream sequences (van
+Helden et al., 1998). We will then use the sub-optimal settings to
+illustrate the fact that the success of word-based pattern-discovery
+crucially depends on a rigorous statistical approach (choice of the
+background model and of the scoring function).
+
+\subsection{Counting word occurrences and frequencies}
+
+Try the following command:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -v 1 -i Escherichia_coli_K12_start_codons.wc \
+    -format wc -l 3 -1str
+\end{verbatim} \end{footnotesize}
+}
+
+Call the on-line option description to understand the meaning of the
+options you used:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -help
+\end{verbatim} \end{footnotesize}
+}
+
+
+Or, to obtain more details:
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -h
+\end{verbatim} \end{footnotesize}
+}
+
+You can also ask some more information by speifying a verbosity of 1
+(option \option{-v 1}), and store the result in a file:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -v 1 -i Escherichia_coli_K12_start_codons.wc \
+    -format wc -l 3 -1str -return occ,freq \
+    -o Escherichia_coli_K12_start_codon_frequencies.tab
+\end{verbatim} \end{footnotesize}
+}
+
+Read the result file:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+more Escherichia_coli_K12_start_codon_frequencies.tab
+\end{verbatim} \end{footnotesize}
+}
+
+
+Note the effect of the verbose option (\option{-v 1}). You receive
+information about sequence length, number of possible
+oligonucleotides, the content of the output columns, ...
+
+
+\begin{exercise}
+  Follow the same procedure as above to check the frequencies of stop
+  codons in the genomes of \org{Escherichia coli K12}, and
+  \org{Saccharomyces cerevisia}, respectively.
+\end{exercise}
+
+\subsection{Pattern discovery in yeast upstream regions}
+
+Try the following command:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim} 
+oligo-analysis -i PHO_up800-noorf.fasta -format fasta    \
+    -v 1 -l 6 -2str -lth occ_sig 0 -noov \
+    -return occ,proba,rank -sort \
+    -bg upstream-noorf -org Saccharomyces_cerevisiae \
+    -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0 
+\end{verbatim} \end{footnotesize}
+}
+
+
+Note that the return fields (``occ'', ``proba'', and ``rank'') are
+separated by a comma \textit{without} space. Call the on-line help to
+understand the meaning of the parameters.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim} 
+oligo-analysis -h
+\end{verbatim} \end{footnotesize}
+}
+
+
+For this analysis, the expected frequency of each word was estimate on
+the basis of pre-calibrated frequency tables.  These tables have been
+previously calculated (with oligo-analysis) by counting hexanucleotide
+frequencies in the whole set of yeast upstream regions (\option{-bg
+  upstream}). Our experience is that these frequencies are the optimal
+estimator for discovering regulatory elements in upstream sequences of
+co-regulated genes.
+
+Analyze the result file:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+more PHO_up800-noorf_6nt-2str-noov_ncf_sig0
+\end{verbatim} \end{footnotesize}
+}
+
+
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+; Counted on both strands
+; 	grouped by pairs of reverse complements
+; Background model             	upstream
+; Organism                     	Saccharomyces_cerevisiae
+; Method                       	Frequency file
+...
+; Nb of sequences              	19
+; Sum of sequence lengths      	11352
+; discarded residues           	0	 (other letters than ACGT)
+; discarded occurrences        	0	 (contain discarded residues)
+; nb possible positions        	11257
+; total oligo occurrences      	11257
+[...]
+; nb possible oligomers        	2080
+; oligomers tested for significance	2080
+[...]
+; column headers
+;	1	seq            	oligomer sequence
+;	2	identifier     	oligomer identifier
+;	3	exp_freq       	expected relative frequency
+;	4	occ            	observed occurrences
+;	5	exp_occ        	expected occurrences
+;	6	occ_P          	occurrence probability (binomial)
+;	7	occ_E          	E-value for occurrences (binomial)
+;	8	occ_sig        	occurrence significance (binomial)
+;	9	rank           	rank
+;	10	ovl_occ        	number of overlapping occurrences (discarded from the count)
+;	11	forbocc        	forbidden positions (to avoid self-overlap)
+;	12	test           	
+;seq	identifier	exp_freq	occ	exp_occ	occ_P	occ_E	occ_sig	rank	ovl_occ	forbocc
+acgtgc	acgtgc|gcacgt	0.0002182431087	16	2.46	8.4e-09	1.7e-05	4.76	1	2	76
+cccacg	cccacg|cgtggg	0.0001528559297	11	1.72	2e-06	4.2e-03	2.37	2	0	55
+acgtgg	acgtgg|ccacgt	0.0002257465554	13	2.54	2.8e-06	5.9e-03	2.23	3	1	65
+cacgtg	cacgtg|cacgtg	0.0001299168211	10	1.46	3.3e-06	6.8e-03	2.17	4	0	100
+cgcacg	cgcacg|cgtgcg	0.0001322750472	10	1.49	3.8e-06	8.0e-03	2.10	5	0	50
+cgtata	cgtata|tatacg	0.0005113063008	17	5.76	0.00011	2.2e-01	0.65	6	1	85
+agagat	agagat|atctct	0.0006913890231	19	7.78	0.00047	9.8e-01	0.01	7	0	95
+\end{verbatim} \end{footnotesize}
+}
+
+
+A few questions:
+\begin{enumerate}
+\item How many hexanucleotides can be formed with the 4-letter alphabet A,T,G,C ?
+\item How many possible oligonucleotides were analysed here ? Is it the
+  number you would expect ? Why ?
+\item How many patterns have been selected as significant ?
+\item By simple visual inspection, can you identify some sequence
+  similarities between the selected patterns?
+\end{enumerate}
+
+\subsection{Answers}
+
+\begin{enumerate}
+\item The number of possible hexanucleotides is $4^6=4,096$.
+\item The result file however reports $2,080$ possible
+  oligonucleotides. This is due to the fact that the analysis was
+  performed on both strands. Each oligonucleotide is thus regrouped
+  with its reverse complement. The number of pairs is hovever larger
+  than 4096/2, because there are $4^3=64$ motifs (e.g. CACGTG) which
+  are identical to their reverse complements. The number of motifs
+  distinct from their reverse complement is thus $4,069-64=4,032$, and
+  they are regrouped into $4,032/2=2,016$ pairs. The total number of
+  motifs is thus $T=64+2016=2080$.
+\item Among the 2080 tested oligonucleotides (+reverse complement), no
+  more than $7$ were selected as significantly over-represented.
+\item Some pairs of words are mutually overlapping
+  (e.g. \seq{ACGTGc} and \seq{cACGTG}).
+\end{enumerate}
+
+
+We can now interpret these results in terms of statistics. 
+
+\begin{description}
+
+\item[$exp\_freq$] The expected frequency of an oligonucleotide is the
+  probability to find it by chance at any position of the sequences
+  analyzed. The expected frequencies are estimated on the basis of the
+  background model. 
+
+\item The program \program{oligo-analysis} uses the binomial
+  statistics to compare the observed and expected number of
+  occurrences, an to calculate the over-representation statistics.
+
+\item[$Pval$] P-value: probability for a given oligonucleotide to be a false
+  positive, i.e. to be considered as over-represented whereas it is
+  not.
+
+\item[$Eval=T \cdot Pval$] number of false positive patterns expected
+  by chance given the P-value of the considered pattern. 
+
+\item[$occ_sig =-log_{10}(Eval)$] significance of the oligonucleotide
+  occurrences. This is a simple minus-log conversion of th E-value.
+\item
+\end{description}
+
+
+\subsection{Assembling the patterns}
+
+A separate program, \program{pattern-assembly}, allows to assemble a
+list of patterns, in order to group those that overlap mutually. Try:
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+pattern-assembly -i PHO_up800-noorf_6nt-2str-noov_ncf_sig0 \
+    -v  1 -subst 1 -2str -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+\end{verbatim} \end{footnotesize}
+}
+
+Read the on-line help to have a look at the assembly parameters. 
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+pattern-assembly -h
+\end{verbatim} \end{footnotesize}
+}
+
+
+Let us have a look at the assembled motifs.
+ 
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+more PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+\end{verbatim} \end{footnotesize}
+}
+
+
+Should give something llike this (the precise result might be slightly
+different depending on the version of the genome).
+
+{\color{OliveGreen} \begin{tiny} 
+\begin{verbatim}
+; pattern-assembly  -i PHO_up800-noorf_6nt-2str-noov_ncf_sig0 -v 1 -subst 1 -2str -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+; Input file    PHO_up800-noorf_6nt-2str-noov_ncf_sig0
+; Output file   PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+; Input score column            8
+; Output score column           0
+; two strand assembly
+; max flanking bases            1
+; max substitutions             1
+; max assembly size             50
+; max number of patterns        100
+; number of input patterns      7
+;
+
+;assembly # 1   seed: acgtgc    9 words length 
+;   alignt         rev_cpl      score
+cccacg....      ....cgtggg      2.37
+cgcacg....      ....cgtgcg      2.10
+.gcacgt...      ...acgtgc.      4.76
+.ccacgt...      ...acgtgg.      2.23
+..cacgtg..      ..cacgtg..      2.17
+...acgtgc.      .gcacgt...      4.76
+...acgtgg.      .ccacgt...      2.23
+....cgtggg      cccacg....      2.37
+....cgtgcg      cgcacg....      2.10
+cgcacgtgcg      cgcacgtgcg      4.76    best consensus
+
+; Isolated patterns: 2
+;alignt rev_cpl score
+cgtata  tatacg  0.65    isol
+agagat  atctct  0.01    isol
+;Job started 26/10/06 09:58:21 CDT
+;Job done    26/10/06 09:58:21 CDT
+\end{verbatim} \end{tiny}
+}
+
+The result of the assembly shows us that several of the significant
+hexanucleotides actually reflect various fragments of a same motif.  We
+also see that, despite the fact that \program{oligo-analysis} only
+analyzed the 4-letters DNA alphabet, the assembly indicates some
+degeneracy in the motif, revealed by the presence of alternative
+letters at the same position. For instance, in the penultimate
+position of the assembly, we can observe either \seq{C} or \seq{G}. In
+addition, the scores besides each oligonucleotide indicate us that
+these alternative letters can be more or less significantly
+over-represented in our sequence set. In summary, the result of
+\concept{pattern-assembly} is the real key to the interpretation of
+\concept{oligo-analysis}: the discovered motifs are not each separate
+oligo-analysis, but the assemblies that can be formed out of them.
+
+The \concept{best consensus} indicates, for each position of the
+alignment, the letter corresponding to the oligonucleotide with the
+highest significance. This consensus should be considered with
+caution, because its complete sequence is built from the collection of
+various oligonucleotides, and might not correspond to any real site in
+the input sequences. Also, this ``best consensus'' is generally too
+stringent to perform pattern matching (see next chapters), and we
+usually prefer to search all the oligonucleotides separately, and
+analyze their feature map to identify the putative cis-acting
+elements.
+
+\begin{exercise}
+  Use the same procedure as above to discover over-represented
+  hexanucleotides in the upstream sequences of the MET genes obtained
+  in the chapter on sequence retrieval. Analyze the results of
+  \program{oligo-analysis} and \program{pattern-assembly}.
+\end{exercise}
+
+
+\begin{exercise}
+  Use the same procedure as above to discover over-represented
+  hexanucleotides in the upstream sequences of the RAND genes (randoms
+  election of genes) obtained in the chapter on sequence
+  retrieval. Analyze the results of \program{oligo-analysis} and
+  \program{pattern-assembly}.
+\end{exercise}
+
+
+\subsection{Alternative background models}
+
+One of the most important parameters for the detectin of significant
+motifs is the choice of an appropriate background model. 
+
+
+This chapter aims at emphasizing how crucial is the choice of
+appropriate statistical parameters. We saw above that a background
+model calibrated on all the yeast upstream sequences gives good
+results with the PHO family: despite the simplicity of the algorithm
+(counting non-degenerate hexanucleotide occurrences), we were able to
+extract a description of the regulatory motif over a larger width than
+6 (by pattern assembly), and we got some description of the degeneracy
+(the high and low affinity sites).
+
+We will now intentionally try other parameter settings and see how
+they affect the quality of the results.
+
+\subsubsection{Equiprobable oligonucleotides}
+
+Let us try the simplest approach, where each word is considered
+equiprobable. For this, we simply suppress the options \option{-bg
+  upstream -org Saccharomyces\_cerevisiae} fom the above commands. We
+also omit to specify the output file, so results will immediately
+appear on the screen.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -v 1 -i PHO_up800-noorf.fasta -format fasta \
+  -l 6 -2str  -return occ,proba,rank -lth occ_sig 0 -sort -bg equi
+\end{verbatim} \end{footnotesize}
+}
+
+You can combine \program{oligo-analysis} and
+\program{pattern-assembly} in a single command, by using the pipe
+character as below.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -i PHO_up800-noorf.fasta -format fasta -v 1 \
+    -l 6 -2str  -return occ,proba -lth occ_sig 0 -sort \
+    | pattern-assembly -2str -subst 1 -v 1 
+\end{verbatim} \end{footnotesize}
+}
+
+On unix systems, the ``pipe'' character is used to concatenate
+commands, i.e. the output of the first command (in this case
+\program{oligo-analysis}) is not printed to the screen, but is sent as
+input for the second command (in this case \program{pattern-assembly}).
+
+Note that
+\begin{itemize} 
+\item The number of selected motifs is higher than in the previous
+  trial. with the 2006 version of the sequences, I obtain 92 patterns,
+  instead of the 7 obtained with the background model calibrated on
+  yeast upstream sequences.
+\item The most significant motifs are not related to the Pho4p binding
+  sites. All these false positives are AT-rich motifs.
+\item Two of the selected patterns (\seq{acgttt} and \seq{acgtgc}) are
+  related to Pho4p binding site. However, they come at the $56^{th}$ and
+  $65^{th}$ positions only. 
+\item With this background model, we would thus not be able to detect
+  the Pho4p binding sites.
+\end{itemize}
+
+\subsubsection{Markov chains}
+
+Another possibility is to use Markov chain models to estimate expected
+word frequencies. Try the following commands and compare the
+results. None is as good as the option \option{-bg upstream-noorf},
+but in case one would not have the pre-calibrated non-coding
+frequencies (for instance if the organism has not been completely
+sequenced), Markov chains can provide an interesting approach. 
+
+in a Markov chain model, the probability of each oligonucleotide is
+estimated on the basis of the probabilities smaller oligonucleotides
+that enter in its composition.
+
+We will first apply a Markov model of order 1. 
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Markov chain of order 1
+oligo-analysis -v 1 -markov 1 \
+    -i PHO_up800-noorf.fasta -format fasta \
+    -l 6 -lth occ_sig 0 -sort \
+    -2str -return occ,proba,rank \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv1
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv1
+
+\end{verbatim} \end{footnotesize}
+}
+
+The number of patterns is strongly reduced, compared to the
+equiprobable model. A few AT-rich patterns are still rpesent, but the
+Pho4p motif now appears at the 3rd position. We can assemble these
+oligos in order to highligh the different motifs.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+pattern-assembly -i PHO_up800-noorf_6nt-2str-noov_sig0_mkv1 \
+    -2str -sc 7 -subst 1 -v 1 \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv1.asmb
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv1.asmb
+\end{verbatim} \end{footnotesize}
+}
+
+We can now increase the stringency, by using a Markov model of order 2.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Markov chain of order 2
+oligo-analysis -v 1 -markov 2 \
+    -i PHO_up800-noorf.fasta -format fasta \
+    -l 6 -lth occ_sig 0 -sort \
+    -2str -return occ,proba,rank \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv2
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv2
+\end{verbatim} \end{footnotesize}
+}
+
+We now have a very restricted number of patterns, with onnly 2
+remaining AT-rich motifs. Besides these, most of the selected oligos
+can be assembled to form a moti corresponding to the Pho4p binding
+site.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+pattern-assembly -i PHO_up800-noorf_6nt-2str-noov_sig0_mkv2 \
+    -2str -sc 7 -subst 1 -v 1 \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv2.asmb
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv2.asmb
+\end{verbatim} \end{footnotesize}
+}
+
+We can still increase the stringency with a Markov model of order 3.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+## Markov chain of order 3
+oligo-analysis -v 1 -markov 3 \
+    -i PHO_up800-noorf.fasta -format fasta \
+    -l 6 -lth occ_sig 0 -sort \
+    -2str -return occ,proba,rank \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv3
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv3
+\end{verbatim} \end{footnotesize}
+}
+
+If we further increase the order of the Markov chain, there is not a
+single significant oligonucleotide. 
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+## Markov chain of order 4
+oligo-analysis -v 1 -markov 4 \
+    -i PHO_up800-noorf.fasta -format fasta \
+    -l 6 -lth occ_sig 0 -sort \
+    -2str -return occ,proba,rank,rank \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv4
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv4
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsubsection{Bernoulli model}
+
+Note that the Markov order 0 means that there is no dependency between
+successive residues. The probability of a word is thus simply the
+prodct of its residue probabilities. This is a \concept{Bernoulli
+  model}, but, by extension of the concepts of Markov chain, it is
+accepted to call it markov chain of order 0.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Markov chain of order 0 = Bernoulli model
+oligo-analysis -v 1 -markov 0 \
+    -i PHO_up800-noorf.fasta -format fasta \
+    -l 6 -lth occ_sig 0 -sort \
+    -2str -return occ,proba,rank \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv0
+pattern-assembly -i PHO_up800-noorf_6nt-2str-noov_sig0_mkv0 \
+    -2str -sc 7 -subst 1 -v 1 \
+    -o PHO_up800-noorf_6nt-2str-noov_sig0_mkv0.asmb
+
+more PHO_up800-noorf_6nt-2str-noov_sig0_mkv0.asmb
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsubsection{Summary about the Markov chain background models}
+
+\begin{itemize}
+\item The Markov model of order 1 returns AT-rich patterns with the
+  highest significance, but the Pho4p high affinity site is described
+  with a good accuracy. The medium affinity site appears as a single
+  word (acgttt) in the isolated patterns.
+\item Markov order 1 returns less AT-rich motifs. The poly-A (aaaaaa)
+  is however still associated with the highest significance, but comes
+  as isolated pattern.
+\item The higher the order of the markov chain, the most stringent are
+  the conditions. For small sequence sets, selecting a too high order
+  prevents from selecting any pattern. Most of the patterns are missed
+  with a Markov chain of order 2, and higher orders don't return any
+  single significant word.
+\end{itemize}
+
+
+\section{Genome-scale pattern discovery}
+
+The detection of exceptional words can also be used to detect signals
+in large sequence sets, such as th whole set of upstream sequences for
+a given organism, or even its complete genome. We will illustrate this
+with two examples.
+
+\subsection{Detection of over-represented words in all the yeast
+  upstream   sequences}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+retrieve-seq -org Saccharomyces_cerevisiae -type upstream -all \
+    -from -1 -to -800 -noorf -o Saccharomyces_cerevisiae_allup_800-noorf.fasta.gz
+\end{verbatim} \end{footnotesize}
+}
+
+Note that we added the extension \texttt{.gz} to the name of the
+output file. This suffix is interpreted by all the \RSAT programs as
+an indication to compress the result using the command
+\command{gzip}. The result file occupies a much smaller space on your
+hard drive.
+
+We will now analyze the frequency of all the heptanucleotides, and
+analyze their level of over- or under-representation (for this, we use
+the option \option{-two\_tails}). To estimate expected frequencies, we
+will use a Markov model of order 4 (the other models are left as
+exercise).
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -v 1 -i Saccharomyces_cerevisiae_allup_800-noorf.fasta.gz \
+    -l 7 -2str -noov -return occ,freq,proba,zscore,rank -sort -markov 4 \
+    -two_tails \
+    -o   Saccharomyces_cerevisiae_allup_800-noorf_7nt-2str-noov_mkv4.tab
+\end{verbatim} \end{footnotesize}
+}
+
+you can now compare the most significant oligonucleotides with the
+transcription factor binding sites annotated in SCPD, the Sacharomyces
+cerevisiae Promoter Database
+(\url{http://rulai.cshl.edu/cgi-bin/SCPD/searchmotif}).
+
+\subsection{Detection of under-represented words in bacterial genomes}
+
+\begin{exercise}
+
+  Analyze the frequencies of al the hexanucleotides in
+  \org{Escherichia coli K12}. One of them shows a very high degree of
+  under-representation. Try to understand the reason why this
+  hexanucleotide is avoided in this genome.
+
+  \textbf{Info:} the full genome of \org{Escherichia coli K12} can be
+  found in the \RSAT genome directory.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+ls $RSAT/data/genomes/Escherichia_coli_K12/genome/contigs.txt
+\end{verbatim} \end{footnotesize}
+}
+
+This file contains the list of chromosomes of the bacteria (in this
+cxase there is a single one, but for \org{S.cerevisiae} there are 16 nuclear
+and one mitochondrial chromosomes). It can be idrectly used as input
+by specifying the format \option{-format filelist}.
+\end{exercise}
+
+% {\color{Blue} \begin{footnotesize} 
+% \begin{verbatim}
+% oligo-analysis -v 1 -format filelist -i $RSAT/data/genomes/Escherichia_coli_K12/genome/contigs.txt -return occ,proba,zscore,rank -under -l 6 -sort -o Escherichia_coli_K12_genome_6nt-2str-noov_mkv0_under -2str -noov -markov 0
+% \end{verbatim} \end{footnotesize}
+% }
+
+\section{dyad-analysis}
+
+In the previous chapter, we saw that \program{oligo-analysis} allows
+to detect over- and under-represented motifs in biological sequences,
+according to a user-specified background model. Since 1997, this
+program has been routinely used to predict cis-acting elements from
+groups of co-expressed genes.
+
+However, some motifs escape to \program{oligo-analysis}, because they
+do not correspond to an oligonucleotide, but to a spaced pair of very
+short oligonucleotides (\concept{dyads}). To address this problem, we
+developed another program called \program{dyad-analysis}.
+
+\tbw
+
+%% \section{gibbs motif sampler (program developed by Andrew Neuwald)}
+
+
+

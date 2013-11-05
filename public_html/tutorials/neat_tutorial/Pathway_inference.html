@@ -1,0 +1,441 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Pathway inference</TITLE>
+<META NAME="description" CONTENT="Pathway inference">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="Bibliography.html">
+<LINK REL="previous" HREF="KEGG_network_provider.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="Bibliography.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html491"
+  HREF="Bibliography.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html487"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html481"
+  HREF="KEGG_network_provider.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html489"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html492"
+  HREF="Bibliography.html">Bibliography</A>
+<B> Up:</B> <A NAME="tex2html488"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html482"
+  HREF="KEGG_network_provider.html">KEGG network provider</A>
+ &nbsp; <B>  <A NAME="tex2html490"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html493"
+  HREF="Pathway_inference.html#SECTION001210000000000000000">Introduction</A>
+<LI><A NAME="tex2html494"
+  HREF="Pathway_inference.html#SECTION001220000000000000000">Inferring a pathway for a set of co-expressed genes</A>
+<UL>
+<LI><A NAME="tex2html495"
+  HREF="Pathway_inference.html#SECTION001221000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html496"
+  HREF="Pathway_inference.html#SECTION001222000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html497"
+  HREF="Pathway_inference.html#SECTION001223000000000000000">Interpretation of the results</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html498"
+  HREF="Pathway_inference.html#SECTION001230000000000000000">Summary</A>
+<LI><A NAME="tex2html499"
+  HREF="Pathway_inference.html#SECTION001240000000000000000">Strengths and Weaknesses of the approach</A>
+<UL>
+<LI><A NAME="tex2html500"
+  HREF="Pathway_inference.html#SECTION001241000000000000000">Strengths</A>
+<LI><A NAME="tex2html501"
+  HREF="Pathway_inference.html#SECTION001242000000000000000">Weaknesses</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html502"
+  HREF="Pathway_inference.html#SECTION001250000000000000000">Troubleshooting</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION001200000000000000000">
+Pathway inference</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION001210000000000000000">
+Introduction</A>
+</H1>
+The idea of pathway inference is to connect a given set of seed nodes
+in the network and thereby extracting a sub-network that is optimal
+according to certain criteria (e.g. minimal weight or maximal relevance).
+<BR>
+In the context of biological networks, the goal is to obtain a valid pathway for a set
+of biological entities of interest, e.g. genes from microarray data or compounds from metabolomic data.
+For instance, genes whose products participate in the same metabolic pathway are often co-expressed or grouped
+together in operons or regulons. We may try to reconstruct this metabolic pathway by associating
+the gene products to relevant reactions and connecting these reactions in a metabolic network.
+The resulting sub-network may be a known metabolic pathway or an unknown pathway consisting of known
+pathways or known reactions and compounds. In the context of microarray data, pathway inference from a
+set of co-expressed genes may predict which pathways are up- or down-regulated.
+<BR>
+<P>
+
+<H1><A NAME="SECTION001220000000000000000">
+Inferring a pathway for a set of co-expressed genes</A>
+</H1>
+
+<P>
+As an example, we take the case study discussed in [<A
+ HREF="Bibliography.html#vanHelden01">34</A>].
+In this case study, a pathway is assembled from genes in the cell-cycle regulated MET cluster [<A
+ HREF="Bibliography.html#Spellman98">30</A>].
+Results described in this tutorial have been obtained with KEGG RPAIR version 49.0.
+
+<P>
+
+<H2><A NAME="SECTION001221000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the entry <B><I>Pathwayinference</I></B>.
+
+<P>
+</LI>
+<LI>Copy-paste the gene names below in the seed nodes text field:
+<BR>
+Met3
+<BR>
+Met14
+<BR>
+Met16
+<BR>
+Met5
+<BR>
+Met10
+<BR>
+Met17
+<BR>
+Met6
+
+<P>
+</LI>
+<LI>Select "Genes/Enzymes" as identifier type.
+
+<P>
+</LI>
+<LI>In the text field "Genes are from organism" type sce, the KEGG abbreviation for <I>Saccharomyces cerevisiae</I>.
+
+<P>
+</LI>
+<LI>Push the <TT>GO</TT> button.
+
+<P>
+</LI>
+</OL>
+
+<P>
+The result of the mapping of the given genes to KEGG RPAIRS (reactant pairs, [<A
+ HREF="Bibliography.html#Kotera2004">18</A>]) is displayed.
+Since more than one reactant pair is associated to each gene, we end up with a group of reactant pair groups.
+Note that each gene (except for Met5) is associated to one or more EC numbers, each of which has been mapped
+to its corresponding reactions in KEGG, which have in turn be mapped to their corresponding reactant pairs.
+<BR>
+<P>
+You can now select how to deal with the groups. This is a sensitive choice that strongly
+affects the inferred pathway and which depends on your data.
+In general, if you keep the original groups, you assume implicitely that only
+a subset of the reactions associated to the given gene will be active in the pathway.
+If you think that all reactions associated to a gene might be active,
+choose "Treat each group member as a separate group" (the default treatment).
+
+<P>
+For the study case, we recommend you to keep the default.
+
+<P>
+Push <TT>GO</TT>. In a few minutes, the result page will be displayed.
+
+<P>
+
+<H2><A NAME="SECTION001222000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+<P>
+Pathwayinference is a web application that calls the pathwayinference web service.
+You can use the Pathwayinference command line tool on the networks provided in the
+network repository (check the Pathwayinference Manual for this) to reproduce
+results obtained with the web application on command line.
+Note that the mapping of genes to reactions and group treatment can only be done via the web application.
+
+<P>
+Type the following command in one line:
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+java -Xmx800m graphtools.algorithms.Pathwayinference -g RPAIRGraph_allRPAIRs_undirected.txt
+	     -s 'RP00016#RP00182/RP00647/RP00561/RP00143#RP00960#RP04049/RP00096#RP00168#
+	     RP04532/RP00003/RP00446/RP00946#RP00857/RP04474/RP00050#RP04533'
+	     -f flat -b -y con -P -u -x 0.05
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+
+<H2><A NAME="SECTION001223000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+The resulting sub-network contains a large part of the pathway given in [<A
+ HREF="Bibliography.html#vanHelden01">34</A>].
+Note that the chosen algorithm (kWalks in combination with Takahashi &amp; Matsuyama) may return one
+from a set of solutions, so your solution may deviate from the one described here.
+Despite of this disadvantage, Takahashi &amp; Matsuyama in combination with kWalks
+is the default algorithm, because it performed best in our evaluation.
+If your result deviates from the one described below,
+repeat the inference with the algorithm "repetitive REA".
+
+<P>
+The pathway described in the study case unites the sulfur assimilation and methionine biosynthesis pathways. It consists of the following steps: 
+<BR>
+Sulfate 2.7.7.4 Adenylyl sulfate 2.7.1.25 3'phosphoadenylylsulfate 1.8.99.4 sulfite 1.8.1.2 sulfide (alias hydrogen sulfide) 4.2.99.10 Homocysteine 2.1.1.14 L-Methionine
+<BR>
+<P>
+The matching parts of the inferred pathway are:
+<BR>
+<P>
+<B>RP00016</B> 3'-Phosphoadenylyl sulfate <B>RP00446</B> Adenylyl sulfate <B>RP00960</B>
+<BR>
+and
+<BR><B>RP00960</B> Sulfite <B>RP00168</B> Hydrogen sulfide RP01406 L-Homocysteine <B>RP00096</B>
+<BR>
+Seeds are printed in bold.
+
+<P>
+In addition, the inferred pathway contains a branch that leads
+from 3'-Phosphoadenylylselenate to Adenylylselenate.
+This branch mirrors sulfur incorporation, but instead of sulfur, selenium is incorporated.
+<BR>
+<P>
+The presence of both the selenium and sulfur incorporation pathways in the inferred sub-network
+reflects the well-known fact that selenium might replace sulfur in metabolism.
+<BR>
+<P>
+This example demonstrated that given a set of differentially expressed genes from
+micro-array data and a metabolic network, it is possible to infer a metabolic pathway
+that might be affected by altered expression of the query genes.
+
+<P>
+
+<H1><A NAME="SECTION001230000000000000000">
+Summary</A>
+</H1>
+
+<P>
+Pathwayinference allows extraction of sub-networks from larger networks given a set of seed nodes. The web application
+is tailored to metabolic networks, but non-metabolic networks can be processed as well.
+
+<P>
+
+<H1><A NAME="SECTION001240000000000000000">
+Strengths and Weaknesses of the approach</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION001241000000000000000">
+Strengths</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>Sub-network extraction can be applied to any biological network.
+
+<P>
+</LI>
+<LI>It can discover unknown pathways consisting of known components.
+
+<P>
+</LI>
+<LI>It can be fine-tuned to favor certain nodes. For instance, in a global metabolic network,
+      reactions/compounds known to occur in certain species might receive a weight much lower than other nodes,
+      to favor extraction of species-specific sub-networks.
+
+<P>
+</LI>
+<LI>Groups of seed nodes can be specified to reflect AND/OR relationships between seeds.
+
+<P>
+</LI>
+<LI>The web application allows to infer metabolic pathways
+      in metabolic networks extracted from the two major metabolic
+      databases KEGG [<A
+ HREF="Bibliography.html#Kanehisa2008">15</A>] and MetaCyc [<A
+ HREF="Bibliography.html#biocyc">3</A>].
+
+<P>
+</LI>
+<LI>For metabolic networks from MetaCyc or KEGG, the web application supports compounds, reactions, reactant pairs, EC numbers or gene identifiers
+      as seed nodes and handles the required mapping of these seeds to reactions, reactant pairs and compounds.
+
+<P>
+</LI>
+<LI>For metabolic networks from MetaCyc or KEGG, the web application performs a
+      mapping of the inferred sub-network to known pathways stored MetaCyc or KEGG respectively.
+
+<P>
+</LI>
+<LI>Metabolic sub-network extraction has been validated on 71 metabolic pathways extracted from MetaCyc.
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION001242000000000000000">
+Weaknesses</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In general, the accuracy of pathway inference depends on the quality of the given network and the number of seeds available.
+
+<P>
+</LI>
+<LI>Spiral-shaped metabolic pathways such as fatty acid biosynthesis can only be partly inferred.
+
+<P>
+</LI>
+<LI>In the densely connected region of metabolic networks, metabolic pathway inference cannot well distinguish alternative pathways
+without a large number of seed nodes.
+
+<P>
+</LI>
+<LI>The algorithms are too time-consuming to estimate p-values by computing a score distribution (where the score would be the sub-network weight)
+for randomly chosen seed nodes on the fly. We envisage to pre-compute these distributions for the pre-loaded networks.
+
+<P>
+</LI>
+<LI>Only one sub-network is suggested. We envisage to compute a list of them ranked by their weight.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H1><A NAME="SECTION001250000000000000000">
+Troubleshooting</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>Pathwayinference parameter error.
+
+<P>
+You provided insufficient or invalid parameters. Please check the pathwayinference manual page.
+
+<P>
+</LI>
+<LI>You did not specify enough valid seed node groups! Pathwayinference needs at least two valid seed node groups.
+
+<P>
+For the pre-loaded metabolic networks from KEGG and MetaCyc, each seed
+	is mapped to data (e.g. compound/reaction identifiers, EC numbers) from these two databases.
+	If the seeds do not map anything, they are considered to be invalid.
+	At least two valid seed groups are needed to infer a network.
+
+<P>
+</LI>
+<LI>The node with identifier ID is not part of the input graph.
+
+<P>
+Make sure that your input network contains the node with the given identifier.
+
+<P>
+</LI>
+<LI>Pathwayinference failed to extract a subgraph.
+
+<P>
+None of the seed node groups could be connected to any other seed node group. Each might belong to a
+    separate component of the input network or mutual exclusion (in RPAIR networks) might prevent the connection of
+    the seed groups.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html491"
+  HREF="Bibliography.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html487"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html481"
+  HREF="KEGG_network_provider.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html489"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html492"
+  HREF="Bibliography.html">Bibliography</A>
+<B> Up:</B> <A NAME="tex2html488"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html482"
+  HREF="KEGG_network_provider.html">KEGG network provider</A>
+ &nbsp; <B>  <A NAME="tex2html490"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

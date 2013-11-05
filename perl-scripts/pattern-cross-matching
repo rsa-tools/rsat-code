@@ -1,0 +1,234 @@
+#!/usr/bin/perl
+
+## CVS: I wonder if this script is still useful, since count-matches provides the same functionality
+
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::pattern;
+
+package main;;
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+
+
+local $inputfile = ""; 
+local $outputfile = "";
+
+local $verbose = 0;
+local $out = STDOUT;
+local $double_strand = 1;
+
+&ReadArguments();
+
+#### check argument values ####
+unless (($infile{patterns1}) && ($infile{patterns2})) {
+  die "Error, you should specify two pattern files\n";
+}
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+### read patterns from pattern file 1
+for $file (1..2) {
+  my $infile = $infile{"patterns".$file};
+  if ($infile) {
+    open PATTERNS, $infile || 
+      die "Error: cannot read pattern file $$infile{patterns}\n";
+    
+    while (<PATTERNS>) {
+      my %pattern = ();
+      next unless (/\S/);
+      next if (/^;/);
+      my @fields = split;
+      if ($fields[0] =~ /\S/) {
+	my $sequence = $fields[0];
+	$sequence =~ s/^\s+//; ### trim leading spaces
+	$sequence =~ s/\s+$//; ### trim trailing spaces
+	my $id = $fields[1] || $sequence;
+ 	my $source = $fields[2] || ($infile{"patterns".$file});
+	my $pattern = new RSAT::pattern(sequence=>$sequence, 
+					id=>$id, 
+					source=>$source);
+	push @{"patterns".$file}, $pattern;
+      }
+    }
+    close PATTERNS;
+  }
+}
+
+#### verbose ####
+if ($verbose) {
+  print $out "; pattern-matching.pl ";
+  &PrintArguments;
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+
+  for $file (1..2) {
+    print $out ";Pattern file $file:\n";
+    print $out ";\tID\tSeq\n";
+    foreach $pattern (@{"patterns".$file}) {
+      print $out ";";
+      print $out "\t", $pattern->get_id();
+      print $out "\t", $pattern->get_sequence();
+      print $out "\t", $pattern->get_source();
+      print $out "\n";
+    }
+  }
+}
+
+###### execute the command #########
+my %args = ();
+$args{single_strand} = 1 unless ($double_strand);
+$args{min_score} = 5;
+foreach $pattern1 (@patterns1) {
+  foreach $pattern2 (@patterns2) {
+    if ($score = $pattern1->contains($pattern2,%args)) {
+      print $out $pattern1->get_id();
+      print $out "\t", $pattern1->get_sequence();
+      print $out "\tcontains\t";
+      print $out $pattern2->get_id();
+      print $out "\t", $pattern2->get_sequence();
+      print $out "\tscore:", $score;
+      print $out "\n";
+    }
+    if ($score = $pattern2->contains($pattern1,%args)) {
+      print $out $pattern2->get_id();
+      print $out "\t", $pattern2->get_sequence();
+      print $out "\tcontains\t";
+      print $out $pattern1->get_id();
+      print $out "\t", $pattern1->get_sequence();
+      print $out "\tscore:", $score;
+      print $out "\n";
+    }
+  }
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	pattern-matching.pl
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Matches two pattern files against each other. This
+	program can be used for comparing the results of a pattern
+	discovery program with the experimentally characterized
+	patterns.
+
+      Note: this version is probably obsolete, the program
+      count-matches is more indicated.
+
+CATEGORY
+	sequences
+	pattern matching
+
+USAGE
+        pattern-matching.pl -p1 first_pattern_file 
+		-p2 second_pattern_file	[-o outputfile] [-v]
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-format seq_format
+		Input sequence format
+	-p1	first pattern file
+	-p2	second pattern file
+		Two text file must be specified, each containing 
+		a list of pattern
+		Each pattern comes as the first work of a new line.
+		The second word (if present) is considered s pattern 
+		identifier.
+		Lines starting with a ';' are ignored
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+pattern-matching.pl options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-format input sequence format
+-p1	first pattern file
+-p2	second pattern file
+-o	output file
+-v	verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      $verbose = 1;
+    
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+      
+      ### pattern files
+    } elsif ($ARGV[$a] eq "-p1") {
+      $infile{patterns1} = $ARGV[$a+1];
+      
+    } elsif ($ARGV[$a] eq "-p2") {
+      $infile{patterns2} = $ARGV[$a+1];
+      
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+      
+      ### double strand search
+    } elsif ($ARGV[$a] eq "-2str") {
+      $double_strand = 1;
+      
+      ### single strand search
+    } elsif ($ARGV[$a] eq "-1str") {
+      $double_strand = 0;
+      
+    }
+  }
+}
+

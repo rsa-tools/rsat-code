@@ -1,0 +1,70 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Introduction}
+
+This tutorial aims at introducing how to use Regulatory Sequence
+Analysis Tools (\RSAT) directly from the Unix shell.
+
+\RSAT is a package combining a series of specialized programs for the
+detection of regulatory signals in non-coding sequences. A variety of
+tasks can be performed: retrieval of upstream or downstream sequences,
+pattern discovery, pattern matching, graphical representation of
+regulatory regions, sequence conversions, \ldots.
+
+A web interface has been developed for the most common tools, and is
+freely available for academic users.
+
+\url{http://rsat.ulb.ac.be/rsat/}
+
+All the programs in \RSAT can also be used directly from the Unix
+shell. The shell access is less intuitive than the web interface, but
+it allows to perform more complex analyses, and it is very convenient
+for automatizing repetitive tasks.
+
+This tutorial was written by Jacques van Helden
+(\email{Jacques.van.Helden@ulb.ac.be}).  Unless otherwise specified,
+the programs presented here were written by Jacques van Helden.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Prerequisites
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Prerequisites}
+
+This program requires a basic knowledge of the Unix
+environment. Before starting you should be familiar with the concepts
+of Unix shell, directory, file, path.
+
+\section{Creating a directory for this tutorial}
+
+During this tutorial, we wll frequently save data and result files. I
+propose to create a dedicated directory for these files. In the
+following chapters, we will assume that this directory is named
+\file{practical\_rsat} and is located at the root of your personnal
+account (everyone is of course allowed to change the name and location
+of this directory).
+
+To create the directory for the tutorials, you can simply type the
+following commands.
+
+\begin{lstlisting}
+cd $HOME ## Go to your home directory
+mkdir -p practical_rsat ## Create the directory for the tutorial
+cd  practical_rsat ## Go to this directory
+pwd ## Check the path of your directory
+\end{lstlisting}
+%$
+
+From now on, we will assume that all the exercises are executed
+from this directory.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Wargning
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Warning}
+
+This tutorial is under construction. Some sections are still to be
+written, and only appear as a title without any further text. The
+tutorial will be progressively completed. We provided it as it is.

@@ -1,0 +1,492 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Evaluating matrix quality
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Evaluating the quality of position-specific scoring matrices}
+
+\section{Prerequisite}
+
+This tutorial assumes that you alredy followed the tutorial on
+\textit{Matrix based pattern matching}.
+
+\section{Why is important to estimate the quality of a matrix?}
+
+Position-specific scoring matrices are frequently used to predict
+transcription factor binding sites in genome sequences.  At this
+point, following the tutorial, you have been able to built a matrix
+from a set of known binding sites for a transcription factor, and use
+it to detect new putative binding sites on different promoters, so the
+result is already there. But! What if there was a problem with the
+original set of biding sites? Where did they came from? Is the
+original experiment 100\% reliable?
+
+Matrices are generally built from a collection of experimentally
+characterized binding sites, databases as RegulonDB or TRANSFAC gather
+all the information reported in the literature about the interaction
+between Transcription Factors and their respective binding sites, on
+those databases you can get the sequences to built a matrix or
+download one or several available matrices for your favourite TF.
+
+However, even if you built your own matrix or if you got it from a
+database, their reliability to predict novel binding sites is highly
+variable, due to the small number of training sites or the
+inappropriate choice of parameters when building the matrix.
+
+There are some classical theoretical measures to describe some
+properties of matrices, but this measures may fail to predict the
+behaviour in real situations, cause they don't tell if the new
+detected putative sites might have a biological relevance.
+
+So at the end in order to know if we can trust the sites we detected
+with pattern matching methodologies we need to:
+
+\begin{itemize}
+\item Know the composition of the matrix.
+\item Analyse the sites used to build the matrix.
+\item Analyze the behaviour of the matrix in a real situation.
+\item Analyze a negative control of the matrix and it's behavior in a
+real situation.
+\end{itemize}
+
+All this procedure can be done with the program
+\textit{matrix-quality} and a correct tune of it's parameters.  This
+is done combining theoretical and empirical score distributions to
+assess the predictive capability of matrices.
+
+As a example we are going to use the matrix for the \textit{E. coli}
+K12 transcriptional factor LexA, which is available at RegulonDB.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+AC  ECK12_ECK120012770_LexA.20.cons
+XX
+ID  ECK12_ECK120012770_LexA.20.cons
+XX
+P0       A     T     C     G
+1       12     3     3     5
+2        0     1    22     0
+3        0    23     0     0
+4        0     0     0    23
+5        1    14     2     6
+6       12     5     3     3
+7        1    15     5     2
+8       12     5     2     4
+9        6    15     2     0
+10      10     6     5     2
+11       7    11     5     0
+12      13     5     2     3
+13       4    12     4     3
+14      12     2     7     2
+15       0     0    23     0
+16      23     0     0     0
+17       0     0     0    23
+18       1    13     8     1
+19      12     6     2     3
+20       6    13     2     2
+21      11     8     3     1
+XX
+//
+\end{verbatim} \end{footnotesize}
+}
+
+Please copy this matrix and paste it on a file.  For the propose of
+the chapter the file will be named \textbf{LexA\_matrix.transfac}.
+
+
+\section{How to estimate the theoretical distribution of a matrix? }
+
+As has been explained in the previous chapter \textit{matrix-scan}
+gives a Weight Score (WS) to each site, and we usually take this
+weigth or statistics based on it to decide if the site is good or if
+it's not.
+
+However, this WS can be misleading, because its range depends on the
+matrix width and information content. For example: The relevance of a
+site with a WS of 15 detected with a matrix having a WS range of -5 to
+40 is not the same as if the range was -5 to 16.
+
+So depending on the WS range you can decide whether a WS for a given
+site is relevant. One way to calculate all the possible Weight Scores
+that a matrix can give, is to generate an endless random sequence ,
+and search for sites with \textit{matrix-scan} but without any
+threshold, so it will return ALL the evaluated sites, which means a
+lot of sites with negative WS and few ones with positives
+WS. This way you'll see not only the highestt and lowest WS, but also
+you'll be able to see the frequency of each score.
+
+As a little test we generate a long random sequence based on
+\textit{E. coli} K12 genome composition.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+random-seq -l 1000 -bg upstream -org Escherichia_coli_K12 -ol 2 \
+ -o random_seq_E.coliK12.fas
+\end{verbatim} \end{footnotesize}
+}
+
+And now we run search sites with our matrix using \textit{matrix-scan}
+without any thresholds.
+
+{\color{Blue} 
+\begin{footnotesize}
+\begin{verbatim}
+matrix-scan -m LexA_matrix.transfac -i random_seq_E.coliK12.fas \
+ -bgfile 2nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz \
+ -matrix_format transfac \
+ -o LexA_bs_search_random_seq.tab
+\end{verbatim} 
+\end{footnotesize} 
+}
+    
+So now we can count how many times does a WS appers in a random
+enviroment just by chance, remeber the count will change a bit for
+each generated random sequence and the variation in the count will
+decreas as we increase sequence length.
+
+But instead of doing this manually trying to simulate an infinite
+randome sequence and scan it, which will take a lot of time, we will
+use \textit{matrix-distrib} and this program will calculate the number
+of times a score should appear in an endless random sequence, and
+oviusly this result contains as well the range for possible Weight
+Scores (WS).
+
+First of all we will need to convert the matrix in to tab format.
+
+{\color{Blue} 
+\begin{footnotesize} 
+\begin{verbatim}
+convert-matrix  -i LexA_matrix.transfac \
+  -from transfac -to tab \
+  -return counts,parameters,consensus 
+  -o LexA_matrix.tab
+\end{verbatim} 
+\end{footnotesize}
+}
+
+
+{\color{Blue} 
+\begin{footnotesize}
+\begin{verbatim}
+matrix-distrib -m LexA_matrix.tab \
+  -bgfile  2nt_upstream-noorf_Escherichia_coli_K12-noov-2str.freq.gz \
+  -o LexA_matrix_distrib.tab
+\end{verbatim} 
+\end{footnotesize} 
+}
+
+So this simulates a search for sites in an endless random sequence
+based on the genome of \textit{E. coli} K12.
+
+In this file you can see the frequency (probability) of finding each
+value of WSs, or in other words we have the \textit{ probaility
+  distribution of weight scores }.
+
+{\color{Blue} 
+\begin{footnotesize}
+\begin{verbatim}
+XYgraph -i LexA_matrix_distrib.tab -format png \
+ -xcol 1 -ycol 2 \
+ -o LexA_matrix_probability_distrib.png
+\end{verbatim} 
+\end{footnotesize} }
+
+Now we know the range of WS goes from -40 to 17.7, and in the graph
+showing the probability distribution of scores you can se the
+probability of having a positive score is low, and since the range
+goes up to 17 a WS of 15 for a site in the genome, seams to be a good
+score, at least in theory.
+
+But this graph is only for one matrix, and is a matrix for one of the
+transcriptional factors with the most conserved binding sites, other
+matrices based in fewer and/or less conserved sites will have a
+different shape, e.g. a widder distribution.
+
+In the output file from \textit{matrix-distrib} we also have the
+inverse cumulative distribution of WS at column num. 4 so we can know
+how frequent (probable) is to find a WS of a given X value or higher,
+which is the definition of the \textbf{P-value}.
+
+{\color{Blue} 
+\begin{footnotesize}
+\begin{verbatim}
+XYgraph -i LexA_matrix_distrib.tab -format png \
+ -xcol 1 -ycol 2,4 \
+ -o LexA_matrix_probability_distrib_invcum.png
+\end{verbatim} 
+\end{footnotesize} }
+
+But we want to be able to se the probabilities for the higher WSs, for
+this we will apply log to the y-axis.
+
+{\color{Blue} 
+  \begin{footnotesize}
+\begin{verbatim}
+XYgraph -i LexA_matrix_distrib.tab -format png \
+ -xcol 1 -ycol 2,4 -ylog \
+ -o LexA_matrix_probability_distrib_invcum_ylog.png
+\end{verbatim} 
+  \end{footnotesize} 
+}
+
+
+e.g. As you see in the graph to find a WS of 10 or higher than 10 has
+a P-value of aprox. $1e^{5}$, which seems excellent at first
+sight. However, with this cutoff, we would still expect about 42 false
+positives if we scan the whole genome of E. coli (4.2Mb) on both
+strands.
+
+Remember each matrix has a specific theoretical distribution,
+depending on the particular frequency of each residue in each column.
+
+\section{How to compare the theoretical distribution with the scores
+  of the known binding sites?}
+
+
+In order to estimate the capability of a matrix to distinguish bona
+fide binding sites from genome background, \textit{matrix-quality}
+implements a method that relies on the combined analysis of
+theoretical and empirical score distributions in positive and negative
+control sets.
+
+The sensitivity of a matrix is the fraction of correct sites detected
+above a score threshold.  Sensitivity is defined as
+
+\begin{equation}
+Sn = TP /(TP + FN)
+\end{equation}	 
+
+where TP is the number true positives (i.e. annotated sites with WS
+above a threshold), and FN is the number of false negatives
+(i.e. annotated sites scoring below that threshold).
+
+The logic positive control should be the set of sequences that have
+been used to build the matri, if we scan this set with the matrix
+using \textit{matrix-scan} and calculate the invers cumulative
+frequency of scores they should show a high scores distribution.
+
+\textit{matrix-quality} calculates the theoretical score distribution
+and also the distribution of scores on diferent set of sequences.
+
+From RegulonDB we download the set of sites used in the aligment form
+which the matrix was generated.
+
+{\color{Blue} 
+  \begin{footnotesize}
+\begin{verbatim}
+matrix-quality -v 1 -m LexA_matrix.transfac \
+ -seq matrix_sites LexA.fna  \
+ -bgfile 2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.freq.gz \
+ -o matrix-quality_tutorial \
+ -matrix_format transfac  
+
+\end{verbatim} 
+  \end{footnotesize} 
+}
+
+\textit{matrix-quality} generates various files, we are going to
+describe them step by step in order to show how they should be
+interpretate.
+
+Take a view on the graph file
+matrix-quality\_tutorial\textbf{\_score\_distrib\_compa.png}.  The
+blue line in the graphs is the same theoretical distribution we saw in
+the previous chapter, now we can look the distribution of scores for
+the set of known binding sites, and we can see this distribution has
+an important number of positive scores.
+
+However, this matrix is probably over-fitted to these particular
+sites, since each of them is in the alignment from which the matrix is
+derived. For an unbiased estimate of sensitivity, we would ideally
+need two separate collections of sites: one for build-ing the PSSM,
+another for testing it. Unfortunately, for most tran-scription
+factors, very few binding sites are known. In order to ensure an
+independent assessment whilst minimizing the loss of information, the
+program matrix-quality performs a Leave-One-Out (LOO) validation,
+iteratively discarding one annotated site, re-building the matrix, and
+scoring the left-out site with the new matrix. The program also
+discards multiple copies of identical sites, which would otherwise
+induce the same kind of bias.
+
+The LOO curve (green) provides an unbiased estimate of the sensitivity
+of a matrix, and the difference with the matrix sites curve indicates
+the level of over-fitting to the training sites.
+
+\section{Distribution in full collections of promoters}
+
+Matrices are frequently used to predict transcription factor binding
+sites in genome sequences, for this what we want to know is the
+behaviour of the matrix in a real situation.
+
+As a example we will take the complete set of upstream regions of the
+\textit{E.coli} K12 genome.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+retrieve-seq -org Escherichia_coli_K12 -tipe upstream \
+ -all -feattype CDS -noorf  \
+ -o Escherichia_coli_K12_upstream-noorf.fas
+\end{verbatim} 
+\end{footnotesize} 
+}
+
+With \textit{matrix-quality} we can have the distriution of WSs of the
+matrix in a given sequence set, and we will give thsi set to the
+program with the same command we used for the \textbf{matrix\_sites}
+set.
+
+{\color{Blue} 
+\begin{footnotesize}
+\begin{verbatim}
+matrix-quality -v 1 -m LexA_matrix.transfac \
+ -matrix_format transfac \
+ -seq matrix_sites LexA.fna  \
+ -bgfile 2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.freq.gz \
+ -o matrix-quality_tutorial \
+ -seq allup Escherichia_coli_K12_upstream-noorf.fas
+\end{verbatim} 
+\end{footnotesize} 
+}
+
+From the previous section we know now the range of WS we should expect
+from real sites we know the expected scores are the ones with less
+frequency, since this might be difficult to analyze on a normal scale
+the program gives the same graph with a y-log axis
+matrix-quality\_tutorial\textbf{\_score\_distrib\_compa\_logy.png}
+
+In this graph we can see the light blue line corresponding to the
+inverse distribution of scores from the \textit{matrix-scan} search
+over the complete set of upstream regions from \textit{E. coli} K12
+genome. At higher weights the curves separate, revealing a small
+number of sites with a much higher score than expected by chance (WS>=
+9), supposedly corresponding to \textit{bona fide} binding sites (see
+previous section). The abrupt separation between the two curves
+results in a plateau-like shape in the high score range, suggesting
+that the matrix efficiently distinguishes binding sites from the
+background. Now we need a negative control to probe our statment.
+
+\section{Negative control with random sequences}
+
+An ideal negative control would be a set of sequences where the TF of
+interest does not bind. Unfortunately, experimental results of this
+type are generally not available. An alternative is to select a random
+set of promoters, but this could accidentally include some real
+binding sites. Another possibility is to generate random sequences
+using some background model (e.g. Markov chain).
+
+For this we are going to simulate a set of \textit{E. coli} K12
+upstream regions using 3000 random sequences of length 2000.
+
+
+{\color{Blue} `
+\begin{footnotesize} 
+\begin{verbatim}
+random-seq -l 200 -n 3000 -bg upstream -org Escherichia_coli_K12 -ol 2 \
+ -o random_seq_upstream_E.coliK12.fas
+\end{verbatim} 
+\end{footnotesize}
+}
+
+and we will add this new set to the \textit{matrix-quality} command.
+
+{\color{Blue} 
+\begin{footnotesize}
+\begin{verbatim}
+matrix-quality -v 1 -m LexA_matrix.transfac \
+ -matrix_format transfac \
+ -seq matrix_sites LexA.fna  \
+ -bgfile 2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.freq.gz \
+ -o matrix-quality_tutorial \
+ -seq allup Escherichia_coli_K12_upstream-noorf.fas \
+ -seq random random_seq_upstream_E.coliK12.fas
+\end{verbatim} 
+\end{footnotesize} }
+
+However, nothing guarantees that Markov chains provide realistic
+models of biological sequences.
+
+\section{Negative controls with permuted matrices}
+
+To circumvent the common problems to obtain a negative
+control,\textit{ matrix-quality} supports an original type of negative
+controls by scanning input sequences with randomized matrices,
+obtained by permuting the columns of the original matrix. This
+presents the advantage of preserving important characteristics of the
+PSSM such as residue composition (sum of each row), number of sites
+(sum of any column), total information content, and even the complete
+theoretical score distribution (for Bernoulli models).
+
+Now we are going to add a permutation instruction for each of our
+sequence sets, we will make 3 permutations of the matrix and scan with
+this 3 matrices the matrix\_sites set, and we will make 5 permutatios
+for the other two sets.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+matrix-quality -v 1 -m LexA_matrix.transfac \
+ -matrix_format transfac \
+ -seq matrix_sites LexA.fna  \
+ -bgfile 2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.freq.gz \
+ -o matrix-quality_tutorial \
+ -seq allup Escherichia_coli_K12_upstream-noorf.fas \
+ -seq random random_seq_upstream_E.coliK12.fas \
+ -perm 3 matrix_sites
+ -perm 5 allup
+ -perm 5 random
+\end{verbatim} \end{footnotesize} }
+
+We scanned all the promoters of \textit{E. coli} using 5 randomized
+versions of the matrix (in total, 5Mb of sequences were scanned on
+both strands). The cyan curve closely follows the blue curve for low
+scores (weight <= 7), without showing any separation at high
+scores. This confirms that the plateau observed for the original
+non-permuted matrix corresponds to sites specifically found in the
+genome by this matrix.
+
+The column-permuted distribution can be considered an empirical
+estimate of the FPR. This distribution is however estimated from
+scanning a few Mb of sequences, and its precision is thereby
+limited. To combine the advantages of theoretical and empirical FPR
+curves, we propose the following strategy: (1) scan a representative
+set of biological sequences with column-permuted matrices; (2) if the
+results fit the theoretical distribution, use the latter to estimate
+the P-value of predicted sites.
+
+\section{ROC curves indicate the trade-off between sensitivity and false positive rate}
+
+We still have tow output figures we have not described yet.
+
+The Receiver Operating Characteristic (ROC) curve is a standard
+representation of the tradeoff between False Positive Rate (FPR) and
+sensitivity.  You can see the ROC curve displayed for each
+distribution of scores in the figure
+matrix-quality\_tutorial\textbf{\_score\_distrib\_compa\_roc.png}
+
+However, the risk of false positive applies to every position of the
+scanned sequences. Even with an apparently low FPR, the actual number
+of FP can be very high when scanning a genome. For example, the
+E. coli promoters scanned on both strands represent more than 1
+million scored positions, so that an FPR of 0.001 would return 1,159
+FP on all E. coli promoters. Consequently, regular ROC curves are of
+no use for estimating the discriminatory power of a matrix. For the
+same reason, the Area Under the Curve (AUC), classically used to
+assess the quality of ROC curves, is ineffective. Indeed, this area is
+obtained by integrating the sensitiv-ity over the full range of FPR
+from 0 to 1, yet genome-wide predictions performed with an FPR of
+90\%, 50\%, 10\% or even 1\% are not useful.
+
+To emphasize the lower, more relevant, range of FPR, we draw ROC
+curves with a logarithmic abscissa (
+matrix-quality\_tutorial\textbf{\_score\_distrib\_compa\_roc\_xylog.png}),
+emphasizing the smaller FPR values. For example, for TrpR, we estimate
+that 70\% sensitivity can be reached at a cost of 1 FP per Mb. Note
+that given the LOO procedure, our estimate of sensi-tivity is
+unbiased, but it is based only on five non-redundant sites, thus being
+of questionable robustness (it could change if new binding sites
+become available).
+
+For the LexA matrix, built from 23 binding sites, the ROC curves shows
+a gradual increase: for a sensitivity of 50\%, the expected FPR
+remains reasonably low (\(FPR_{0.5} =1.3x10^-5\)), whereas collect-ing
+90\% of the sites would include almost 1FP per 100bp (\(FPR_{0.9}
+=8.3x10^-3\)).
+

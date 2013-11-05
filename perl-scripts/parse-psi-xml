@@ -1,0 +1,376 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: parse-psi-xml,v 1.11 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+parse-psi-xml
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Parse a psi-xml file and export it into a tab-delimited graph file.
+
+For specifications of the psi-xml format, see http://www.psidev.info
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+parser
+
+=head1 USAGE
+
+parse-psi-xml -i inputfile [-o outputfile] [-evidence evidence1] [-evidence evidence 2] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use XML::LibXML;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    %channels = (); # list of evidence channels to filter 
+    %allowed_interactor_types = (); # list of interactor type to filter (basically : 'small molecule' or 'protein')
+    my %experiments = (); # Correspondance between the experiments type and their id in the XML file
+    my %experiments_colors = (); # Correspondance between the experiment id and their color
+    my @color_choice = ('#FF0000', ## Red
+			    '#00FF00', ## Green
+			    '#FF3300', ## Scarlet
+			    '#0000FF', ## Dark blue
+			    '#800000', ## Light red
+			    '#008000', ## Light green
+			    '#000080', ## Light blue
+			    '#FF6600', ## Vermillon
+			    '#FFCC00', ## Tangerine
+			    '#00FF00', ## Green
+			    '#FF8040', ## Orange
+			    '#804000', ## Brown
+			    '#808000', ## Forest Green
+			    '#408080', ## Grass green
+			    '#7E587E', ## Plum 4
+			    '#C9BE62', ## Khaki3
+			    '#827839', ## Khaki4
+			    '#0066FF', ## Peacock
+			    '#00FF66'  ## Emerald
+			    );
+    my %proteins = (); # Correspondance between the polypeptide  and their id in the XML file
+    my @interactions = (); # interaction list
+    my %interactor_types = ();
+    $uth = undef; # maximal value threshold
+    $lth = undef; # minimal value threshold
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if ($main::infile{input} eq "") {
+      &RSAT::error::FatalError("\t","You must supply an input file in XML format");
+    }
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Script execution
+    my $parser = XML::LibXML->new();
+    my $tree = $parser->parse_file($main::infile{input});
+    $tree->indexElements();
+    my $root = $tree->getDocumentElement;
+    # Reading experiments
+    my @experimentDescriptions = $root->getElementsByTagName('experimentDescription');
+    for (my $i = 0; $i < scalar @experimentDescriptions; $i++) {
+      my $experimentDescription = $experimentDescriptions[$i];
+      my $id = $experimentDescription->getAttribute("id");
+      my @names = $experimentDescription->getChildrenByTagName("names");
+      my $label = "not specified";
+      $label = $names[0]->getChildrenByTagName("shortLabel") if (defined $names[0]);
+      $experiments{$id} = $label;
+      $experiments_colors{$id}=$color_choice[$i];
+    }
+    # Reading interactors
+    my @interactors = $root->getElementsByTagName('interactor');
+    for (my $i = 0; $i < scalar @interactors; $i++) {
+      my $interactor = $interactors[$i];
+      my $id = $interactor->getAttribute("id");
+      my @names = $interactor->getChildrenByTagName("names");
+      my $label = "not specified";
+      $label = $names[0]->getChildrenByTagName("shortLabel") if (defined $names[0]);
+      my @interactorTypes = $interactor->getChildrenByTagName("interactorType");
+      $interactorType_name = "not specified";
+      $interactorType_name = $interactorTypes[0]->getChildrenByTagName("names");
+      $interactorType_shortlabel = $interactorType_name->shift()->getChildrenByTagName("shortLabel")->string_value;
+      $proteins{$id} = $label->string_value;
+      $interactor_type{$id} =  $interactorType_shortlabel;
+    }
+    # Reading interactions
+    my @interactionsList = $root->getElementsByTagName('interaction');
+    for (my $i = 0; $i < scalar @interactionsList; $i++) {
+      my $interaction = $interactionsList[$i];
+      my @participants = $interaction->getElementsByTagName("participant");
+      my $id_A = $participants[0]->getChildrenByTagName("interactorRef");
+      my $id_B = $participants[1]->getChildrenByTagName("interactorRef");
+      my @confidence = $interaction->getElementsByTagName("confidence");
+      my $value = $confidence[0]->getChildrenByTagName("value");
+      my $experiment = $interaction->getElementsByTagName("experimentRef");
+      $interactions[$i][0] = $id_A;
+      $interactions[$i][1] = $id_B;
+      $interactions[$i][2] = $value->string_value;
+      $interactions[$i][3] = $experiment;
+    }
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Print output
+    for (my $i = 0; $i < scalar @interactions; $i++) {
+      if (scalar (keys %channels) == 0 || defined ($channels{$experiments{$interactions[$i][3]}})) {
+        if (defined $uth) {
+          next if ($interactions[$i][2] > $uth);
+        }
+        if (defined $lth) {
+          next if ($interactions[$i][2] < $lth);
+        }
+        next if ((scalar (keys %allowed_interactor_types) > 0) && (!defined ($allowed_interactor_types{$interactor_type{$interactions[$i][0]}}) || !defined ($allowed_interactor_types{$interactor_type{$interactions[$i][1]}})));
+        print $main::out $proteins{$interactions[$i][0]};
+        print $main::out "\t";
+        print $main::out $proteins{$interactions[$i][1]};
+        print $main::out "\t";
+        print $main::out $interactions[$i][2];
+        print $main::out "\t";
+        print $main::out $experiments_colors{$interactions[$i][3]};
+        print $main::out "\t";
+        print $main::out $experiments{$interactions[$i][3]};
+        print $main::out "\n";
+      }
+    }
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ## Channel
+=pod
+
+=item	B<-channel>
+
+List of evidence channels to filter. For example, in case of parsing an output coming from the String / Stitch database, you may select 
+'automated_textmining', 'combined_confidence', 'experimental_interaction_data', 'gene_cooccurence', ...
+If this option is not used, all evidence channels will be taken into account.
+
+=cut
+	} elsif ($arg eq "-channel") {
+	    $channel = shift(@arguments);
+	    $channels{$channel}++;
+	    
+	    ## Channel
+=pod
+
+=item	B<-interactor_type>
+
+List of interactor type to filter. For example, in case of parsing the String / Stitch database, you may select 'small molecule' or 'protein'. By default, no interactor type filtering is applied.
+
+=cut
+	} elsif ($arg eq "-interactor_type") {
+	    $interactor_type = shift(@arguments);
+	    $allowed_interactor_types{$interactor_type}++;
+
+=pod
+
+=item	B<-uth #>
+
+Upper threshold on the value
+
+=cut
+	} elsif ($arg eq "-uth") {
+	    $uth = shift(@arguments);
+=pod
+
+=item	B<-lth #>
+
+Lower threshold on the value
+
+=cut
+	} elsif ($arg eq "-lth") {
+	    $lth = shift(@arguments);
+	
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; parse-psi-xml ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut

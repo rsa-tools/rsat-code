@@ -1,0 +1,190 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: transpose-table,v 1.16 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2002-06-06 13:59:01 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+
+local $infile{input} = "";
+local $outfile{output} = "";
+
+local $verbose = 0;
+local $sep="\t";
+local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+
+#### check argument values ####
+
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+##### read input #####
+($in) = &OpenInputFile($infile{input});
+$row_nb = 0;
+$max_col = 0;
+while (my $line = <$in>) {
+  if ($line =~ /^;/) {
+    print $out $line;
+    next;
+  }
+#    warn $line if ($main::verbose >= 3);
+    chomp($line);
+    $row_nb++;
+    @{$fields[$row_nb]} = split /$sep/, $line;
+    my $columns = scalar(@{$fields[$row_nb]});
+    $max_col = &max($max_col, $columns);
+    &RSAT::message::Info(join ("\t", "rows:".$row_nb, "columns:".$columns, "max columns:".$max_col)) if ($main::verbose >= 3);
+}
+
+&RSAT::message::Info(join ("\t", "rows:".$row_nb,  "max columns:".$max_col)) if ($main::verbose >= 2);
+
+close $in if ($infile{input});
+
+#### verbose ####
+&Verbose if ($verbose);
+
+###### print output ######
+for $j (0..($max_col-1)) {
+    if (defined($fields[1][$j])) {
+	print $out $fields[1][$j];
+    }
+    for $i (2..$row_nb) {
+	if (defined($fields[$i][$j])) {
+	    print $out "\t", $fields[$i][$j];
+	} else {
+	    print $out "\t";
+	}
+    }
+    print $out "\n";
+}
+
+###### close output file ######
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	transpose-table
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        transpose-table [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	transposes a table provided in a tab-delimited file
+	(transposing means converting columns into rows and vice versa)
+	
+CATEGORY
+	util
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-sep	field separator (default: tabulation)
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+transpose-table options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-sep		field separator (default: tabulation)
+-v		verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+      
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+      
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+      
+      ### field separator
+    } elsif ($ARGV[$a] eq "-sep") {
+	$sep = $ARGV[$a+1];
+      
+    }
+  }
+}
+
+sub Verbose {
+  print $out "; transpose-table ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+}

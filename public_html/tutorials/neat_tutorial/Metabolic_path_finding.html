@@ -1,0 +1,509 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Metabolic path finding</TITLE>
+<META NAME="description" CONTENT="Metabolic path finding">
+<META NAME="keywords" CONTENT="neat_tutorial">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="neat_tutorial.css">
+
+<LINK REL="next" HREF="KEGG_network_provider.html">
+<LINK REL="previous" HREF="Path_finding.html">
+<LINK REL="up" HREF="neat_tutorial.html">
+<LINK REL="next" HREF="KEGG_network_provider.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html446"
+  HREF="KEGG_network_provider.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html442"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html436"
+  HREF="Path_finding.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html444"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html447"
+  HREF="KEGG_network_provider.html">KEGG network provider</A>
+<B> Up:</B> <A NAME="tex2html443"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html437"
+  HREF="Path_finding.html">Path finding</A>
+ &nbsp; <B>  <A NAME="tex2html445"
+  HREF="Contents.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html448"
+  HREF="Metabolic_path_finding.html#SECTION001010000000000000000">Introduction</A>
+<LI><A NAME="tex2html449"
+  HREF="Metabolic_path_finding.html#SECTION001020000000000000000">Enumerating metabolic pathways between compounds, reactions or enzymes</A>
+<UL>
+<LI><A NAME="tex2html450"
+  HREF="Metabolic_path_finding.html#SECTION001021000000000000000">Study case</A>
+<LI><A NAME="tex2html451"
+  HREF="Metabolic_path_finding.html#SECTION001022000000000000000">Protocol for the web server</A>
+<LI><A NAME="tex2html452"
+  HREF="Metabolic_path_finding.html#SECTION001023000000000000000">Protocol for the command-line tools</A>
+<LI><A NAME="tex2html453"
+  HREF="Metabolic_path_finding.html#SECTION001024000000000000000">Interpretation of the results</A>
+<UL>
+<LI><A NAME="tex2html454"
+  HREF="Metabolic_path_finding.html#SECTION001024100000000000000">Metabolic path finding in the RPAIR network</A>
+<LI><A NAME="tex2html455"
+  HREF="Metabolic_path_finding.html#SECTION001024200000000000000">Metabolic path finding in the reaction network</A>
+</UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html456"
+  HREF="Metabolic_path_finding.html#SECTION001030000000000000000">Summary</A>
+<LI><A NAME="tex2html457"
+  HREF="Metabolic_path_finding.html#SECTION001040000000000000000">Strengths and Weaknesses of the approach</A>
+<UL>
+<LI><A NAME="tex2html458"
+  HREF="Metabolic_path_finding.html#SECTION001041000000000000000">Strengths</A>
+<LI><A NAME="tex2html459"
+  HREF="Metabolic_path_finding.html#SECTION001042000000000000000">Weaknesses</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html460"
+  HREF="Metabolic_path_finding.html#SECTION001050000000000000000">Troubleshooting</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H1><A NAME="SECTION001000000000000000000">
+Metabolic path finding</A>
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION001010000000000000000">
+Introduction</A>
+</H1>
+
+<P>
+The metabolic pathfinder enumerates metabolic pathways between a set of start nodes
+and a set of end nodes, where start and end nodes may be compounds, reactions or enzymes (which are mapped to the reactions
+they catalyze). When choosing the right parameters (which are set by default), the metabolic pathways found are with high
+probability biochemically relevant.
+<BR>
+<P>
+The accuracy of path finding in metabolic networks (as in other biological networks) is diminished by the presence of
+hub nodes (highly connected compounds such as ATP, NADPH or CO2) in the network.
+Path finding algorithms will traverse the network preferentially via the hub nodes,
+thereby inferring biochemically irrelevant pathways.
+Different strategies have been devised to overcome this problem. Arita introduced the mapping and tracing of atoms
+from substrates to products [<A
+ HREF="Bibliography.html#Arita2003">1</A>]. This strategy is also applied in the Pathway Hunter Tool available at http://pht.tu-bs.de/PHT/.
+Other tools rely on rules to avoid hub nodes, e.g. the pathway prediction system at UMBBD (http://umbbd.msi.umn.edu/predict/).
+Didier Croes et al. used weighted graphs to avoid highly connected nodes [<A
+ HREF="Bibliography.html#croes05">5</A>],[<A
+ HREF="Bibliography.html#croes06">6</A>].
+The functionality of Didier Croes' tool is covered by the metabolic pathfinder (with the weighted reaction network).
+<BR>
+<P>
+Metabolic pathfinder relies on a mixed strategy: On the one hand, it makes use of weighted graphs to avoid irrelevant
+hub nodes and on the other hand, it integrates KEGG RPAIR annotation [<A
+ HREF="Bibliography.html#Kotera2004">18</A>] to favor for each traversed
+reaction main over side compounds.
+KEGG RPAIR is a database that divides reactions into reactant pairs (substrate-product pairs) and classifies the reactant
+pairs according to their role in the reaction. For instance, the cofac reactant pair A00001 couples NADP+ with NADPH.
+Main reactant pairs connect main compounds and should be traversed preferentially by path finding algorithms.
+<BR>
+<P>
+The KEGG RPAIR annotation is integrated by construction of the undirected RPAIR network, which consists of 7,058 reactant pairs,
+4,297 compounds and 14,116 edges for KEGG version 41.0. Alternatively, two other networks are available: the directed reaction network evaluated in
+[<A
+ HREF="Bibliography.html#croes06">6</A>] and an undirected reaction-specific RPAIR network, in which each reaction is divided in its reactant pairs.
+<BR>
+<P>
+Note that in more recent KEGG versions, identifiers of reactant pairs start with RP instead of A.
+<BR>
+<P>
+In this chapter, we will recover the aldosterone pathway using the RPAIR and the reaction network respectively.
+Note that the study case was carried out with data from KEGG LIGAND version 41.0. Results might differ for more recent KEGG versions.
+
+<P>
+
+<H1><A NAME="SECTION001020000000000000000">
+Enumerating metabolic pathways between compounds, reactions or enzymes</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION001021000000000000000">
+Study case</A>
+</H2>
+
+<P>
+Aldosterone is a human steroid hormone involved in the regulation of ion uptake in the kidney and of blood pressure.
+It is synthesized from progesterone. We aim to recover the aldosterone biosynthesis pathway by providing
+its start and end reaction.
+
+<P>
+
+<H2><A NAME="SECTION001022000000000000000">
+Protocol for the web server</A>
+</H2>
+
+<P>
+
+<OL>
+<LI>In the <B><I>NeAT</I></B>menu, select the entry <B><I>Metabolic path finding</I></B>.
+
+<P>
+In the right panel, you should now see a form entitled
+  ``Metabolic pathfinder''.
+
+<P>
+</LI>
+<LI>Click on the button <TT>DEMO2</TT> located at the bottom of the form.
+
+<P>
+The metabolic pathfinder form is now filled with the start and end reaction of the aldosterone biosynthesis pathway.
+  In addition, information on this pathway is displayed.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>.
+
+<P>
+</LI>
+<LI>The seed node selection table appears.
+
+<P>
+This table lists for each reaction the reactant pair identifier(s) associated to it. Note that reaction
+		R02724 is associated to two reactant pairs.
+<BR>
+<P>
+The seed node selection form allows you to select the correct among all compounds matching your query string in case
+		you provided a partial compound name.
+		If you give KEGG compound identifiers, it displays the name of each compound. For EC numbers, it lists associated
+		reactions or reactant pairs.
+		The seed node selection form also warns you in case you provide problematic identifiers.
+
+<P>
+</LI>
+<LI>Click on the button <TT>GO</TT>.
+
+<P>
+The computation should take no more than one minute.
+
+<P>
+Then, a table is displayed, which lists the found paths in the order of their weight.
+  The table may be sorted according to other criteria by clicking the respective column header.
+  Each path node is linked to its corresponding KEGG entry for easy inspection of results.
+<BR>
+<P>
+If you set <TT>Output format</TT> in the metabolic pathfinder form to ``Graph'', you obtain an image of the inferred
+  pathway generated by the program <B>dot</B> of the graphviz tool suite and a link to the pathway in the selected graph format.
+
+<P>
+</LI>
+</OL>
+
+<P>
+To see how results change with the choice of the graph, you can repeat steps 1 and 2.
+In the metabolic path finding form, select Reaction graph instead of RPAIR graph (which is selected by default) and
+follow step 3 to 5. You will notice in the seed node selection form that the reaction identifiers are no longer mapped to
+reactant pairs.
+
+<P>
+
+<H2><A NAME="SECTION001023000000000000000">
+Protocol for the command-line tools</A>
+</H2>
+
+<P>
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+<P>
+The metabolic pathfinder is a web application on top of Pathfinder.
+You may run metabolic path finding on command line by launching the Pathfinder command line tool on
+the RPAIR and reaction networks, which are provided in the KEGG graph repository reachable from the metabolic
+pathfinder manual page.
+
+<P>
+Type the following command in one line to find paths in the RPAIR network:
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g RPAIRGraph_allRPAIRs_undirected.txt -f flat
+	     -s 'A02437' -t 'A02894' -b -y rpairs
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+To repeat path finding in the reaction network, type in one line:
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g ReactionGraph_directed.txt -d -f flat
+	     -s 'R02724&gt;/R02724&lt;' -t 'R03263&gt;/R03263&lt;' -b -y con
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+
+<H2><A NAME="SECTION001024000000000000000">
+Interpretation of the results</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION001024100000000000000">
+Metabolic path finding in the RPAIR network</A>
+</H3>
+
+<P>
+The path of first rank does not reproduce exactly the annotated pathway. Instead, it suggests a deviation via 21-hydroxypregnelonone,
+bypassing progesterone. This path might be a valid alternative, as it appears on the KEGG map for
+C21-Steroid hormone metabolism in human. One of the two second-ranked paths corresponds to the annotated pathway.
+
+<P>
+First ranked path:
+<BR><B>A02437 (1.14.15.6)</B> Pregnenolone A03407 (1.14.99.10) 21-Hydroxypregnenolone A00731 (1.1.1.145, 5.3.3.1) 11-Deoxycorticosterone A03469 (1.14.15.4) Corticosterone A02893 (1.14.15.5) 18-Hydroxycorticosterone <B>A02894</B>
+
+<P>
+Second ranked paths:
+<BR><B>A02437 (1.14.15.6)</B> Pregnenolone A00386 (1.1.1.145, 5.3.3.1) Progesterone A02045 (1.14.99.10) 11-Deoxycorticosterone A03469 (1.14.15.4) Corticosterone A02893 (1.14.15.5) 18-Hydroxycorticosterone <B>A02894</B>
+<BR>
+<P>
+<B>A02437 (1.14.15.6)</B> Pregnenolone A00386 (1.1.1.145, 5.3.3.1) Progesterone A02047 (1.14.15.4) 11beta-Hydroxyprogesterone A03467 (1.14.99.10) Corticosterone A02893 (1.14.15.5) 18-Hydroxycorticosterone <B>A02894</B>
+
+<P>
+
+<H3><A NAME="SECTION001024200000000000000">
+Metabolic path finding in the reaction network</A>
+</H3>
+
+<P>
+The paths of first and second rank traverse a side compound, namely adrenal ferredoxin. None of these paths is therefore biochemically valid.
+In the weighted reaction graph all highly connected side compounds such as ATP and water are avoided. However, adrenal ferredoxin
+is a rare side compound, thus weighting is not sufficient to bypass it.
+
+<P>
+First ranked path:
+<BR><B>R02724<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img56.png"
+ ALT="$&lt;$"></B> Reduced adrenal ferredoxin R03262<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> 18-Hydroxycorticosterone <B>R03263<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"></B>
+
+<P>
+Second ranked paths:
+<BR>
+<P>
+<B>R02724<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"></B> Oxidized adrenal ferredoxin R02726<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img56.png"
+ ALT="$&lt;$"> Reduced adrenal ferredoxin R03262<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> 18-Hydroxycorticosterone <B>R03263<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"></B>
+<BR>
+<P>
+<B>R02724<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"></B> Oxidized adrenal ferredoxin R02725<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img56.png"
+ ALT="$&lt;$"> Reduced adrenal ferredoxin R03262<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"> 18-Hydroxycorticosterone <B>R03263<IMG
+ WIDTH="17" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&gt;$"></B>
+
+<P>
+
+<H1><A NAME="SECTION001030000000000000000">
+Summary</A>
+</H1>
+
+<P>
+Metabolic path finder provides k shortest path finding in metabolic networks constructed from KEGG LIGAND and KEGG RPAIR.
+The metabolic path finder is coupled with a mirror of the KEGG database to allow quick identification of partial compound
+names and to annotate results.
+
+<P>
+
+<H1><A NAME="SECTION001040000000000000000">
+Strengths and Weaknesses of the approach</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION001041000000000000000">
+Strengths</A>
+</H2>
+The metabolic path finder has the following benefits compared to other metabolic path finding tools:
+
+<OL>
+<LI>It has been extensively evaluated on 55 reference pathways from three organisms.
+
+<P>
+</LI>
+<LI>It supports compounds, reactions, reactant pairs and EC numbers as seed nodes.
+
+<P>
+</LI>
+<LI>It can handle sets of start and end nodes.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION001042000000000000000">
+Weaknesses</A>
+</H2>
+The metabolic path finding tool has the following weaknesses:
+
+<P>
+
+<OL>
+<LI>RPAIR does not cover all compounds in KEGG. Thus, the RPAIR network is less comprehensive than the reaction network.
+
+<P>
+</LI>
+<LI>By default, the metabolic path finder cannot infer directions of reactions in pathways because of
+the way the networks were constructed (being undirected or treating all reactions as reversible).
+However, custom metabolic networks may contain irreversible reactions and
+it is therefore possible to infer directed pathways from custom networks.
+
+<P>
+</LI>
+<LI>The metabolic path finder can only partly infer cyclic pathways or pathways in which the same enzymes act repeatedly on a growing chain.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<H1><A NAME="SECTION001050000000000000000">
+Troubleshooting</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>A <B>Parameter error</B> occurred.
+
+<P>
+By default, the optimal parameter values are set. However, if you set your own values, they might not
+	be in the supported value range. Check the Metabolic path finder manual.
+
+<P>
+</LI>
+<LI>The seed node selection form displays the message: "You provided invalid identifier(s)!"
+
+<P>
+This occurs when you provide identifiers that do not match any KEGG identifier, EC number or KEGG
+     compound name. Check your identifiers or in case you provided a compound name, check whether the
+     compound is present in KEGG.
+
+<P>
+</LI>
+<LI>The seed node selection form displays the message: "The given compound is not part of the sub-reaction graph."
+
+<P>
+As stated in the Weaknesses section, the RPAIR network does not contain all KEGG compounds due to incomplete
+     coverage of the RPAIR database. Try to search paths for this compound in the reaction network.
+
+<P>
+</LI>
+<LI>No path could be found.
+
+<P>
+This may happen in the RPAIR network because in this network reactant pairs belonging to the same reaction
+	exclude each other. Try the reaction-specific RPAIR network or the reaction network instead.
+
+<P>
+</LI>
+<LI>An out of memory error occurred.
+
+<P>
+This may occur when requesting a large number of paths with the reactant subreaction and compound weighting schemes
+ 	set to unweighted. In general, when setting the weighting schemes to unweighted, biochemically irrelevant paths
+ 	will be returned. Use another weighting scheme or reduce the number of requested paths to avoid this error.
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html446"
+  HREF="KEGG_network_provider.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html442"
+  HREF="neat_tutorial.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html436"
+  HREF="Path_finding.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html444"
+  HREF="Contents.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html447"
+  HREF="KEGG_network_provider.html">KEGG network provider</A>
+<B> Up:</B> <A NAME="tex2html443"
+  HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
+<B> Previous:</B> <A NAME="tex2html437"
+  HREF="Path_finding.html">Path finding</A>
+ &nbsp; <B>  <A NAME="tex2html445"
+  HREF="Contents.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+RSAT
+2009-09-04
+</ADDRESS>
+</BODY>
+</HTML>

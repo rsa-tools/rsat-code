@@ -1,0 +1,88 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - local-word-analysis</title>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="../RSAT_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../local-word-analysis.cgi">local-word-analysis</a> 
+</h2>
+</center>
+
+
+<h4>Contents</h4>
+
+<p>
+<ol>
+<li><a href="#intro">Introduction</a>
+<li><a href="#example">Running the example</a>
+<!-- <li><a href="#interpret">Interpreting the results</a> -->
+<!--<li><a href=#map>Drawing a feature-map with the discovered patterns</a> -->
+</ol>
+
+<a name="intro"></a><h4>Introduction</h4></a>
+<blockquote>
+
+
+	<h5>Discovering overrepresented motifs</h5>
+<p>
+Starting from the observation that a set of genes are co-regulated, one can suppose that some elements are shared by their upstream region, and one would like to detect such elements. A simple and fast method to do so is to extract such elements, based on a detection of over-represented oligonucleotides. This method is implemented in <a href="../local-word-analysis_form.cgi">local-word-analysis</a> and <a href="../oligo-analysis_form.cgi">oligo-analysis</a> and has been described in detail in J.Mol. Biol. (1998) 281, 827-842.
+</p>
+
+	<h5>Discovering position-specific motifs</h5>
+<p>
+	Yet another criterion for detecting exceptional motifs is to detect oligonucleotides that are over-represented at specific positions relative to some reference position (position 0). Typically, the analysis should be performed with a large number of sequences (e.g. all promoters, or all 3' UTRs of a given organism) aligned with respect to some reference position (e.g. the start codon, or the transcription start site, the stop codon, ...). The goal is to detect motifs that are significantly 'concentrated' in some specific regions relative to the reference position. 
+	The detection of position-specific motifs can be achieved with the program local-word-analysis, which applies the same statistics as oligo-analysis to a series of windows of variable widths in the input sequence set. The reference position can be either the start or the end of the sequences. The program returns a list of significant oligonucleotides, with the boundaries of the window where they are over-represented. 
+	As a study case, we will detect position-specific oligonucleotides in all the promoters of the bacteria <em>Bacillus subtilis</em>. 
+</p>
+
+</blockquote>
+
+
+<a name="example"></a><h4>Running the example</h4></a>
+<blockquote>
+	<ol>
+<li>In the left menu, click on retrieve sequence (section Sequence retrieval). This should open the retrieve sequence form. </li>
+<li>In the retrieve sequence form, check the option Single organism and select the species of your choice in the Organism pop-up menu (for the study case, select <em>Bacillus subtilis</em>). </li>
+<li>For the Genes radio button, select the option all in order to retrieve all the annotated gene promoters. </li>
+<li>Choose the appropriate Feature type according to the selected organism (for the study case, select CDS) and specify the region to retrieve by selecting the Sequence type and entering the From and To location (for the study case select upstream and set From to  400 and To to  1). </li>
+<li>Make sure that the option Prevent overlap with neighbour genes (noorf) is checked.
+<blockquote>
+	WARNING!. For detecting position-specific motifs, it is particularly important to restrict the retrieval to non-coding sequences, because oligonucleotide frequencies strongly differ between non-coding and coding sequences. 
+</blockquote>	
+	</li>
+<li>Leave all other options unchanged and click the GO button to retrieve the sequences. After a few seconds, a result page with a link to the sequence file should appear (you can optionally check them by following this link). </li>
+<li>Below the link to the sequence file, the Next step box shows a list of programs. Click the local-word-analysis button in order to transmit your promoter sequences to the local-word-analysis form. </li>
+<li>The local-word-analysis form contains a large number of options, whose detailed description is available in the manual. We will just check below some of the most important options and explain why they are critical. </li>
+<li>Make sure that the option Purge sequences is checked.
+<blockquote>
+WARNING! Sequence purging is essential to discard redundancy in the sequence set.
+</blockquote>
+</li>
+<li>In the next section of the form, select fixed window width and specify the width plus the Align options (for the study case set fixed Window width to 20 and Align to right since we are using upstream sequences) </li>
+<li>In the section Background model, the option upstream-noorf (Genome subset) should be checked and the organism selected according to your input sequences. 
+<blockquote>
+WARNING! The choice of the background model is one of the most crucial parameters for motif discovery. An inappropriate background model provokes noisy results that can lead to erroneous interpretations.
+</blockquote>
+</li>
+<li> In the table Thresholds, set the upper threshold on rank to 100. This will restrict the output to the 100 most significant oligonucleotide windows. </li>
+<li>Check that the lower threshold on significance is set to 0, in order to return motifs with positive significance. You can optionally increase this threshold to perform a more stringent selection. </li>
+<li>Check that the upper threshold on window rank is set to 1, in order to return only the most significant window for each oligonucleotide. Alternatively, you can increase this value if you suspect that some motifs will be concentrated at several positions. However, the result may then contain mutually embedded windows for the same oligonucleotide. </li>
+<li>In the last part of the form, select the email Output, enter a valid email address and click the GO button. After a couple of minutes, you should receive an email containing a link to the result page.
+	<blockquote>
+WARNING! Depending on parameters chosen, the length and the number of sequences, this step will take from few minutes to several hours. For this reasons, the email output is strongly recommended. 
+	</blockquote>
+</li>
+	</ol>
+</blockquote>
+
+<!--
+<a name="interpret"></a><h4>Interpreting the results</h4></a>
+-->
+
+
+</body>
+</html>

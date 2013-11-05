@@ -1,0 +1,349 @@
+<html>
+  <head>
+    <title>RSA-tools - tutorials - peak-motifs</title>
+    <!--   <link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+  </head>
+  <body>
+    
+    <center>
+      <h1><a href="../RSAT_home.cgi">RSA-tools</A> - 
+	<a href="tutorials.html">Tutorials</a> - 
+	<a href="../peak-motifs_form.cgi">peak-motifs</a> 
+      </h1>
+    </center>
+    
+    <a name='toc'></a><h2>Contents</h2>
+    
+    <p>
+      <ol>
+	<li><a href='#prerequisite'>Prerequisite</a>
+	<li><a href='#intro'>Introduction</a></li>
+	<li><a href='#study_case'>Study case</a></li>
+	<li><a href='#test_sets'>Test sets</a></li>
+	<li><a href='#parameters'>Tuning <i>peak-motifs</i> parameters</a></li>
+	<li><a href='#interpret'>Interpreting the result</a></li>
+	<li><a href='#exercises'>Additional exercises</a></li>
+	<li><a href='#references'>References</a></li>
+      </ol>
+    </p>
+      
+    <hr><a name='prerequisite'></a><h2>Prerequisite</h2>
+    
+    <p>This tutorial assumes that you are familiar with the concepts
+      developed in the following parts of the theoretical course.
+      <ol>
+	<li><a href='../course/pdf_files/01.4.PSSM_theory.pdf'>PSSM theory</a></li>
+	<li><a href='../course/pdf_files/03.2.1.pattern_discovery_strings.pdf'>String-based motif discovery</a></li>
+      </ol>
+    </p>
+
+    <p>It is better to follow the corresponding tutorials before this one.
+      <ol>
+	<li><a href='tut_PSSM.html'>Position-specific scoring matrices</a>.</li>
+	<li><a href="tut_oligo-analysis.html"><i>oligo-analysis</i></a>: detection of over-represented words.</li>
+	<li><a href="tut_position-analysis.html"><i>position-analysis</i></a>: detection of words having a positional bias in sequences aligned on some reference position.</li>
+      </ol>
+      
+    <p>A companion tutorial explains how to <a href='tut_galaxy.html'>retrieve peak
+	sequences from Galaxy</a>.</p>
+
+    <hr><a name='intro'></a><h2>Introduction</h2>
+
+    <p>The
+      program <a href='../peak-motifs_form.cgi'><i>peak-motifs</i></a>
+      combines various programs of the RSAT suite to discover
+      cis-regulatory motifs and predict putative transcription factor
+      binding sites from a set of peak sequences identified by
+      high-throughput methods such as ChIP-seq, ChIP-on-chip or
+      related methods.</p>
+
+    <p>In this tutorial, we expain how to tune the parameters and
+      interpret of results for the different steps of the
+      <i>peak-motifs</i> workflow:
+      <ol>
+	<li><b>Composition</b> of the peak sequences (peak length distribution,
+	  mono- and di-nucleotides composition).</li>
+	
+	<li><b>Motif discovery</b> with a series of complementary algorithms
+	  (<i>oligo-analysis</i>, <i>position-analysis</i>, <i>dyad-analysis</i>,
+	  <i>local-words</i>) relying on distinct criteria (global or
+	  local over-representation, positional heterogeneity) for
+	  selecting exceptional motifs. </li>
+
+	<li><b>Comparison</b> of discovered motifs with collections of
+	  known motifs, to identify transcription factors that may 
+	  be associated with the discovered motifs.</li>
+
+	<li><b>Scanning</b> of input sequence with discovered motifs
+	  to predict putative binding sites, analyze their positional
+	  profiles and enrichment.</li>
+
+	<li><b>Vizualisation</b> of binding sites in the 
+	  <a target='_blank' href='http://genome.ucsc.edu/'>UCSC Genome Browser</a>.</li>
+	
+      </ol>
+
+    </p>
+
+    <hr><a name='study_case'></a><h2>Study case</h2>
+      
+    <p>To illustrate the features of <i>peak-motifs</i>, we will
+      analyze a set of peak sequences that were obtained by pulling
+      down genomic regions bound by the transcription factor Oct4 in
+      the mouse. The experiment was performed in the context of a
+      wider study, where X.&nbsp;Chen and colleagues characterized the
+      binding location of 12 transcription factors involved in mouse
+      embryonic stem cell differentiation
+      (<a href='#ref_chen_2010'>Chen et al., 2008</a>).</p>
+
+    <hr><a name='test_sets'></a><h2>Test sets</h2>
+
+    <p>A set of test sequences are available on the supplementary material
+      Web site
+      <br><a target='_blank' href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/'>http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/</a>
+    </p>
+
+    <p>The peak sequences from Chen's article are in the
+      subdirectory 
+      <br><a
+	     target='_blank' href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/data/sequences/Chen_2008/peaks_from_galaxy/'>data/sequences/Chen_2008/peaks_from_galaxy/</a></p>
+
+    <p><b>Note:</b> these peak sequences differ from those available
+      in the GEO database. Indeed, Chen and colleagues filtered their
+      peaks on the basis of discovered motifs in order to submit a
+      "cleaned" collection of peaks to GEO. Since the goal of this
+      tutorial is to show how peak-motifs performs on a raw collection
+      of peak sequences, we have re-generated a complete peak
+      collection from the original reads submitted by Chen in the GEO
+      database. The mapping of the reads was performed with Bowtie
+      against the mm9 assembly, then we used the program MACS to call
+      the peak regions, and PeakSplitter to split the large regions
+      into effective peaks. The peak sequences were then collected
+      from Galaxy.</p>
+
+    <hr><a name='parameters'></a><h2>Tuning <i>peak-motifs</i> parameters</h2>
+
+      
+    <div class='protocol'>
+      <ol>
+	<li><p>Open a connection to the <a href="http://rsat.ulb.ac.be/rsat/"
+					   target="_blank">RSAT Web server</a>.<p></li>
+	
+	<li><p>In the menu on the left side, expand the title <i><b>NGS -
+		ChIP-seq</b></i> and select the tool <i><b>peak-motifs</b></i>.
+	</p></li>
+	
+      </ol>
+    </div>
+
+
+    <h3>Peak sequences panel</h3>
+	
+    <div class='protocol'>
+      <ol>
+	<li><p>Unless you dispose of a custom set of peak sequences, you can
+	    download the test set provided on the supplementary material Web site
+	    (file <a target='_blank'
+		     href='http://rsat.bigre.ulb.ac.be/rsat/data/published_data/peak-motifs_2011/data/sequences/Chen_2008/peaks_from_peaksplitter/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted.fa'>
+	      Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted.fa</a>). </p>
+	  <p><b>Note:</b> the sequences should be saved as unformatted
+	    text file.</p>
+	</li>
+	
+	<li><p>Enter a <b><i>Title</i></b> for this analysis (e.g. <i>Oct4
+	      dataset Chen 2008</i>)
+	  <p></li>
+	
+	<li><p>Under <b><i>Peak sequences</i></b>, click on the <b><i>Browse</i></b>
+	    button to select your peak sequence file. 
+	    <ul><li><b>Note:</b> Alternatively, you may directly copy-paste the
+		sequences in the box, but this will impose restrictions on the
+		size of the data set.
+	      <li><b><font color='darkorange'>Caution:</font></b> make sure you
+		upload a file containing <i><u>peak sequences</u></i> (usually
+	less than 100 000 sequences of a few hundreds base pairs each)
+		and <i><u>not the raw reads</u></i> (usually several millions of
+		sequences of a few tens bp).
+	      </li>
+	    </ul> 
+	  <p></li>
+      </ol>
+    </div>
+
+    <h3>Reduce input peak sequences panel</h3>
+    
+    <p>This panel can be expanded by double-clicking on the triangle on
+      the right.</p>
+
+    <p>It allows you to limit the analysis to a given number of top peaks
+      from the input file, or to clip sequences around the centers in
+      order to restrict them to a maximal size.  With the peak sequences
+      used in this tutorial, there is no specific need to apply those
+      restrictions. The two steps hereafter just indicate the reasons why
+      you generally don't need to activate the restrictions on peak number
+      and peak size. 
+
+      <div class='protocol'>
+	<ol>
+	  <li>Make sure that the option <i><b>Number of top sequences to retain</b></i>
+	    is left blank.
+	
+	    <ul>
+	      <li><b>Note:</b> most existing tools for motif discovery in
+		ChIP-seq peaks systematically restrict the number of top sequences
+		because the underlying algorithms to not scale up with large
+		sequence sets. In contrast, the algorithms used
+		in <i>peak-motifs</i>are linear in time and can analyze several
+		megabases in a few minutes. There is thus no need to restrict the
+		number of peaks.</li>
+	    </ul>
+	  </li>
+
+	  <li>
+	    Make sure that the option <i><b>Cut peak sequences</b></i> is left black. 
+	    <ul>
+	      <li><b>Note:</b> this option permits to restrict the width of
+		the peaks by clipping the left and right extremities of each
+		peak sequence over a given distance. As a result, the analysis
+		is restricted to the central region of each peak, which is
+		supposed to contain the highest density in transcription
+		factor binding sites. However, the benefit strongly depends on
+		the precision of the previous procedure used for peak
+		calling. In practice, it is generally safe to let the program
+		anlyze the whole dataset, but in some cases it might be useful
+		to also restrict the analysis to peak centers and compare the
+		results.
+	      </li>
+	      
+	      <li><b>Note:</b> this option should not be used for collection
+		of large regions such as those obtained from chromatin
+		accessiblity or histone methylation studies. </li>
+	    </ul>
+	  </li>
+	</ol>
+      </div>
+
+      <h3>Change motif discovery parameters panel</h3>
+      
+    <p>This panel contain the parameters for the motif discovery
+      step. For the case study, we will keep the default settings, using
+      the programs <i>oligo-analysis</i> and <i>position-analysis</i> to
+      discover over-represented motifs and motifs with positional
+  biais.</p>
+    
+    <p>We explain hereafter the way to tune the parameters for depending
+      on the properties of the peak collection and the expected structure
+      of the trnascription factor binding motif.</p>
+    
+    
+    <h3>Compare motifs panel</h3>
+    
+    <p>Discovered motifs can be compared to databases of known motifs. We
+      directly support various public databases like JASPAR, Uniprobe. Users
+      may also upload here private collection of matrices e.g. TRANSFAC.</p>
+    
+    <div class='protocol'>
+      <ol>
+	<li><p>Keep <i>JASPAR core Vertebrates</i> checked, and <u>also
+	      check</u> <i>JASPAR PBM (UNIPROBE) Mouse</i>, since our dataset was
+	    obtained from mouse.</li>
+      </ol>
+    </div>
+
+    <h3>Locate motifs and export as UCSC custom track</h3>
+    
+    <p>If the sequences are provided in appropriate format, the positions
+      of the predicted sites can automatically be converted from
+      peak-relative to genomic coordinates.</p>
+    
+    
+    <div class='protocol'>
+      <ol>
+	<li><p>Keep the <b><i>Search putative binding sites</i></b> option
+	    checked.</p></li>
+	
+	<li><p>Assuming that you followed the steps above,
+	    select <b><i>Sequences were fetched from Galaxy</i></b>. This will
+	    recalculate the genomic coordinates of the predicted binding sites,
+	    and generate a custom UCSC track to vizualise the results in this
+	    popular genome browser.</p></li>
+	
+	<li><p>Enter your <b>email adress</b> and click <b>GO</b>.
+	    <ul>
+	      <li><b>Note:</b> <i>peak-motifs</i> runs a complete workflow
+		involving several tasks. Even though the motif discovery
+		algorihtms are time-efficient (the computing time increases
+		linearly with sequence size), the complete treatment can take
+		several minutes. For this reason, this tools requires an email
+		address in order to notify users when the results are
+		ready.</li>
+	      
+	      <li><b>Note:</b> as soon as <i>peak-motif</i> starts, an
+		information message appears, indicating the URL where the
+		results will become available. Optionally, you can click on
+		this URL and periodically reload the page to follow the
+		progress of the analysis. The report page will be
+		progressively updated until the whole analysis is
+		finished.</lI>
+	    </ul>
+	</p></li>
+      </ol>
+    </div>
+
+<hr><a name='interpret'></a><h2>Interpreting the result</h2>
+
+<p>A link to the result should appear on the new page. The results
+  appear progressively, to enable the users to analyse their results
+  more quickly.
+</p>
+<ol>
+  <li>Click on this link to see the results.</li>
+  <li>TO BE CONTINUED...</li>
+
+</ol>
+
+
+<hr><a name='exercises'></a><h2>Additional exercises</h2>
+<ul>
+  <li><a href='#seq'>Retrieving peak sequences with Galaxy</a></li>
+
+  <!--
+      <li>Upload your own collection of motifs</li>
+<li>Upload a reference motif</li>
+<li>Change motif-discovery parameters by clicking "dyad-analysis"</li>
+-->
+</ul>
+
+
+<hr><a name='references'></a><h2>References</h2>
+
+<ol>
+<li><a name='ref_chen_2010'>Chen</a>, X., Xu, H., Yuan, P., Fang, F.,
+Huss, M., Vega, V. B., Wong, E., Orlov, Y. L., Zhang, W., Jiang, J.,
+Loh, Y. H., Yeo, H. C., Yeo, Z. X., Narang, V., Govindarajan, K. R.,
+Leong, B., Shahab, A., Ruan, Y., Bourque, G., Sung, W. K., Clarke,
+N. D., Wei, C. L. and Ng, H. H. (2008). Integration of external
+signaling pathways with the core transcriptional network in embryonic
+stem cells. Cell 133, 1106-17. [Pubmed <a target='_blank'
+href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a>].
+</li>
+
+<li>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry,
+  D. and van Helden, J. (2011). RSAT peak-motifs: motif analysis in
+  full-size ChIP-seq datasets Nucleic Acids Research
+  doi:10.1093/nar/gkr1104, 9.
+  [<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open access</a>]
+</li>
+</ol>
+
+<hr width="100%">
+
+<address>
+For suggestions or information request, please contact 
+<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a> or 
+<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a>
+</address>
+
+</body>
+</html>

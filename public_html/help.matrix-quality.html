@@ -1,0 +1,695 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>perl-scripts/matrix-quality</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href='matrix-quality.cgi'>matrix-quality</a> manual</h2>
+
+</center>
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#positive_set___annotated_binding_sites">Positive set : annotated binding sites</a></li>
+		<li><a href="#matrix_sites">Matrix sites</a></li>
+		<li><a href="#cross_validation">Cross-validation</a></li>
+		<ul>
+
+			<li><a href="#k_fold_cross_validation">k-fold cross-validation</a></li>
+			<li><a href="#leave_one_out__loo__test">Leave-One-Out (LOO) test</a></li>
+			<li><a href="#loo_or_k_fold_">LOO or k-fold ?</a></li>
+		</ul>
+
+		<li><a href="#negative_set">Negative set</a></li>
+		<ul>
+
+			<li><a href="#random_selection_of_biological_sequences">Random selection of biological sequences</a></li>
+			<li><a href="#artificial_sequences">Artificial sequences</a></li>
+			<li><a href="#biological_sequences_scanned_with_column_permuted_matrices">Biological sequences scanned with column-permuted matrices</a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#how_to_use_this_program_">HOW TO USE THIS PROGRAM ?</a></li>
+	<ul>
+
+		<li><a href="#comparing_the_scores_of_the_matrix_sites_to_the_theoretical">Comparing the scores of the matrix sites to the theoretical</a></li>
+		<li><a href="#assessing_matrix_sites_with_a_leave_one_out__loo__procedure">Assessing matrix sites with a Leave-One-Out (LOO) procedure</a></li>
+	</ul>
+
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#wish_list"><strong>WISH LIST</strong></a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>matrix-quality</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
+comparing score distributions obtained with this matrix in various
+sequence sets.</p>
+<p>The most classical use of the program is to compare score
+distributions between &quot;positive&quot; sequences (e.g. true binding sites
+for the considered transcription factor) and &quot;negative&quot; sequences
+(e.g. intergenic sequences between convergently transcribed genes).</p>
+<p>
+</p>
+<h2><a name="positive_set___annotated_binding_sites">Positive set : annotated binding sites</a></h2>
+<p>The typical positive set is a collection of sites that have been shown
+(with experimental methods) to bind the transcription factor of
+interest.</p>
+<p>
+</p>
+<h2><a name="matrix_sites">Matrix sites</a></h2>
+<p>A particular case of postive control is to estimate the distribution
+of scores of the sites that served to build the matrix. This however
+provkes some bias (over-estimation of the scores), since the matrix is
+used to score the sites on which it was &quot;trained&quot;. This bias can be
+circumvented by applying a cross-validation.</p>
+<p>
+</p>
+<h2><a name="cross_validation">Cross-validation</a></h2>
+<p>An important bias of evaluation (and a frequent trap in published
+articles) can result from an over-fitting of the matrix to the
+positive set, in case one would use the same sites for building the
+PSSM and for evaluating it. To avoid this bias, <em>matrix-quality</em>
+supports two modes of cross-validation (CV):</p>
+<pre>
+ 1. Leave-one-out (LOO)
+ 2. k-fold cross-validation (kfold)</pre>
+<p>The cross-validation can only be performed when the matrix is
+specified in a format that includes both the matrix and the sites
+(sequences) that were used to build this matrix. This is the case for
+matrices in MEME, consensus, transfac and MotifSampler formats.</p>
+<p>
+</p>
+<h3><a name="k_fold_cross_validation">k-fold cross-validation</a></h3>
+<p>The set of input sequence (matrix site sequences) is partitionned into
+k randomly selected subets of approx. equal size (the number of sites
+is not always an exact multiple of k).</p>
+<p>The program then iterates over the testing set in the following
+way. All the sites that are not part of the testing sets are used as
+trianing sites to build a partial matrix. The testing sites are then
+scored with this partial matrix.</p>
+<p>
+</p>
+<h3><a name="leave_one_out__loo__test">Leave-One-Out (LOO) test</a></h3>
+<p>In LOO cross-validation mode, one sequence (the &quot;left-out sequence&quot;)
+is temporarily discarded from the positive set, and the remaining
+sequences are used to build a matrix, which is then used to score the
+left out sequence. The process iterates over all the sequences of the
+positive set.</p>
+<p>If the left-out sequence has one or more &quot;twin&quot; (identical site) in
+the positive set, they are also temporarily excluded from the positive
+set and not included in the matrix used to score the left out
+sequence.</p>
+<p>
+</p>
+<h3><a name="loo_or_k_fold_">LOO or k-fold ?</a></h3>
+<p>The LOO is actually a particular case of k-fold cross-validation,
+where k equals the total number of sites used to build the original
+matrix. The LOO is particularly adapted for matrices built from a very
+small number of sites (e.g. matrices built from a handful of
+well-documented sites as usually found in transcription factor
+databases).</p>
+<p>On the contrary, the k-fold cross-validation is useful to save
+computing time for matrices built from large collection of sites
+(e.g. thousands of sites resulting from ChIP-seq experiments).</p>
+<p>
+</p>
+<h2><a name="negative_set">Negative set</a></h2>
+<p>It is sometimes difficult to find a good negative set, i.e. a
+collection of sequences which supposedly do not contain any binding
+site for the transcription factor of interest.</p>
+<p>
+</p>
+<h3><a name="random_selection_of_biological_sequences">Random selection of biological sequences</a></h3>
+<p>One possibility is to select a random set of genome fragments
+(e.g. use <em>random-genes</em> to select promoters of 100 randomly selected
+genes). However, some of these randomly selected sequences might
+contain effective binding sites for the transcripton factor.</p>
+<p>
+</p>
+<h3><a name="artificial_sequences">Artificial sequences</a></h3>
+<p>Another possiblity is to generate artificial sequences according to
+some background model (uing <em>random-seq</em>), but there is always a risk
+that for model to be an over-simplification of the real sequences.</p>
+<p>
+</p>
+<h3><a name="biological_sequences_scanned_with_column_permuted_matrices">Biological sequences scanned with column-permuted matrices</a></h3>
+<p>Yet another approach to perform the negative test os to scan
+biological sequences (e.g. upstream regions of 100 randomly picked
+genes) with column-permuted matrices. The advantage of this approach
+is that the sequences are realistic, but the permuted matrices
+hopefully do not correspond to any actual motif, and their empirical
+distribution observed in the test sequences is thus supposed to fit
+the theoretcial distribution.</p>
+<p>This approach may however pose problem in the specific case of
+weak-complexity motifs (e.g. CCGCCC, AATTTT), since many permutations
+will give motifs that are similar, if not equal, to the original
+motif.</p>
+<p>
+</p>
+<hr />
+<h1><a name="how_to_use_this_program_">HOW TO USE THIS PROGRAM ?</a></h1>
+<p>Let us be frank, this program can do many things, but requires a bit
+of expertise. A good strategy to get familiar with its multiple
+results is to start runing the simplest possible analysis, and
+progressively adding the more advanced tasks.</p>
+<p>We propose hereafter a step-by-step schedule of utilization, where
+subsequent tasks are progressively added.</p>
+<p>We assume here that the user disposes of a PSSM in a format that
+includes both the matrix and the aligned sites used to compute the
+matrix (e.g. MEME format). Beware, the sites actually incorporated in
+the matrix may differ frfom the collection of sites used as input for
+the matrix-building program. For instance, if you use MEME (with the
+option -zoops) to build a matrix from a collection of annotated TFBS,
+some sites may be incorporated in the matrix, and some other
+skipped. We use hereafter the expression <strong>&quot;matrix sites&quot;</strong> to refer to
+the sites used in the alignment from which the residues frequencies of
+the matrix were computed.</p>
+<p>
+</p>
+<h2><a name="comparing_the_scores_of_the_matrix_sites_to_the_theoretical_distribution">Comparing the scores of the matrix sites to the theoretical
+distribution</a></h2>
+<pre>
+ matrix-quality -v 1 -ms my_matrix.meme -matrix_format meme \
+   -no_cv -perm matrix_sites 0 -bgfile my_background.txt \
+   -o my_matrix_quality</pre>
+<p>This will produce the simplest possible analysis: computing the score
+distribution of the matrix sites, and comparing it to the theoretical
+distribution.</p>
+<p>Beware: the score distribution of matrix sites is fake. Indeed, those
+are the very stes that were used to build the matrix. Each site partly
+contributed to the matrix scores (weights) that will serve to score
+it. There is thus a problem of over-fitting: we train a matrix with
+some data, and we evaluate the matrix with the same data.</p>
+<p>
+</p>
+<h2><a name="assessing_matrix_sites_with_a_leave_one_out__loo__procedure">Assessing matrix sites with a Leave-One-Out (LOO) procedure</a></h2>
+<p>To circumvent the problem of over-fitting mentioned above, we have
+need to perform the Leave-One-Out (LOO) procedure. Actually,
+<em>matrix-scan</em> automatically runs the leave-one-out test by
+default. The reason why it was not done in the previous section is
+because we used the option -no_cv, for the only purpose of
+illustrating the problem of overfitting. We will now run
+<em>matrix-scan</em> in the normal way, without inactivating the LOO
+procedure.</p>
+<pre>
+ matrix-quality -v 1 -ms my_matrix.meme -matrix_format meme \
+   -perm matrix_sites 0 -bgfile my_background.txt \
+   -o my_matrix_quality</pre>
+<p>The result distributions now contain 3 curves:</p>
+<dl>
+<dt><strong><a name="theory" class="item">theory</a></strong></dt>
+
+<dd>
+<p>The theoretical
+distribution of scores, computing according to the background model;</p>
+</dd>
+<dt><strong><a name="matrix_sites" class="item">matrix_sites</a></strong></dt>
+
+<dd>
+<p>The score distribution of the matrix sites (which is biased by the
+fact that these sites were used to build the matrix).</p>
+</dd>
+<dt><strong><a name="matrix_sites_cv" class="item">matrix_sites_cv</a></strong></dt>
+
+<dd>
+<p>This is the distribution of scores for the matrix sites, evaluated
+with the LOO procedure.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="jacques_van_helden_jvanheld_bigre_ulb_ac_be" class="item">Jacques van Helden &lt;<a href="mailto:jvanheld@bigre.ulb.ac.be">jvanheld@bigre.ulb.ac.be</a>&gt;</a></strong></dt>
+
+<dt><strong><a name="alejandra_medina_rivera_amedina_lcg_unam_mx_ccg_unam_mexico" class="item">Alejandra Medina-Rivera  &lt;<a href="mailto:amedina@lcg.unam.mx">amedina@lcg.unam.mx</a>&gt; (CCG, UNAM, Mexico)</a></strong></dt>
+
+<dt><strong><a name="morgane_thomas_chollier_morgane_bigre_ulb_ac_be" class="item">Morgane Thomas-Chollier &lt;<a href="mailto:morgane@bigre.ulb.ac.be">morgane@bigre.ulb.ac.be</a>&gt;</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<dl>
+<dt><strong><a name="sequences" class="item">sequences</a></strong></dt>
+
+<dt><strong><a name="pattern_matching" class="item">pattern matching</a></strong></dt>
+
+<dt><strong><a name="pssm" class="item">PSSM</a></strong></dt>
+
+<dt><strong><a name="evaluation" class="item">evaluation</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>matrix-quality [-i inputfile] [-o outputfile] [-v]</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="v" class="item"><strong>-v #</strong></a></strong></dt>
+
+<dd>
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+</dd>
+<dt><strong><a name="h" class="item"><strong>-h</strong></a></strong></dt>
+
+<dd>
+<p>Display full help message</p>
+</dd>
+<dt><strong><a name="dry" class="item"><strong>-dry</strong></a></strong></dt>
+
+<dd>
+<p>Dry run: print the commands but do not execute them.</p>
+</dd>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong></dt>
+
+<dd>
+<p>Same as -h</p>
+</dd>
+<dt><strong><a name="m_matrix_file" class="item"><strong>-m matrix_file</strong></a></strong></dt>
+
+<dd>
+<p>Matrix file.
+If the file includes several matrices, it will only take the first one.</p>
+</dd>
+<dt><strong><a name="ms_matrix_sites" class="item"><strong>-ms matrix_sites</strong></a></strong></dt>
+
+<dd>
+<p>File containing both a matrix and its sites. The sites are then used
+as positive sequence set, and labelled as &quot;matrix_sites&quot; in the
+distribution tables and graphs.</p>
+<p>The option -ms is only valid with the file formats which contain both
+the matrix and its sites (e.g. consensus, MotifSampler, meme, infogibbs and transfac). The
+format of the matrix+site file can be specified with the option
+'-matrix_format'.</p>
+<p>If the matrix and its sites are only available in separate files, an
+equivalent effect can be obtained by combining the options &quot;-m
+my_matrix.tab&quot; and &quot;-seq matrix_sites site_sequences.fasta&quot;. Althougth
+when this option is used the LOO test is not performed.</p>
+<p>If <em>matrix-scan-quick</em> is available in the machine this programe will
+be used instead of matrix-scan.  For <em>matrix-scan-quick</em> the matrix
+most be in infogibbs or tab format.</p>
+<p>If the file includes several matrices, it will only take the first one.</p>
+</dd>
+<dt><strong><a name="matrix_format_matrix_format" class="item"><strong>-matrix_format matrix_format</strong></a></strong></dt>
+
+<dd>
+<p>Format of the matrix file.</p>
+</dd>
+<dt><strong><a name="seq_seq_type_seq_file" class="item"><strong>-seq seq_type seq_file</strong></a></strong></dt>
+
+<dd>
+<p>File containing a sequence set of a given type.  The first next
+argument indicates the type of the sequence (which will appear in the
+leend of the plots), and the second next argument the file name.</p>
+</dd>
+<dt><strong><a name="scanopt_seq_type_option1_option2" class="item"><strong>-scanopt seq_type &quot;option1 option2 ...&quot;</strong></a></strong></dt>
+
+<dd>
+<p>Sequence set-specific options for matrix-scan.  These options are added at the
+end of the matrix-scan command for scanning the specified sequence set.</p>
+</dd>
+<dt><strong><a name="no_cv" class="item"><strong>-no_cv</strong></a></strong></dt>
+
+<dd>
+<p>Do not apply the leave-one-out (LOO) test on the matrix site sequences.</p>
+</dd>
+<dt><strong><a name="kfold_k" class="item"><strong>-kfold k</strong></a></strong></dt>
+
+<dd>
+<p>k-fold cross-validation.</p>
+<p>Divide the matrix sites in k chunks for cross-validation. The chunks
+are sampled in a random way.</p>
+</dd>
+<dt><strong><a name="noperm" class="item"><strong>-noperm</strong></a></strong></dt>
+
+<dd>
+<p>Skip the matrix permutation step.  This option is mainly used for
+debugging, or to run the last steps (comparison + graph generation)
+without re-running the time-consuming scanning steps.</p>
+</dd>
+<dt><strong><a name="noscan" class="item"><strong>-noscan</strong></a></strong></dt>
+
+<dd>
+<p>Skip the matrix-scan step. This option is mainly used for debugging,
+or to run the last steps (comparison + graph generation) without
+re-running the time-consuming scanning steps.</p>
+</dd>
+<dt><strong><a name="nocompa" class="item"><strong>-nocompa</strong></a></strong></dt>
+
+<dd>
+<p>Skip the step of comparisons between distributions. This option is
+mainly used for debugging, or to run the last steps (comparison +
+graph generation) without re-running the time-consuming scanning
+steps.</p>
+</dd>
+<dt><strong><a name="nograph" class="item"><strong>-nograph</strong></a></strong></dt>
+
+<dd>
+<p>Skip the step of drawing comparison graphs.</p>
+</dd>
+<dt><strong><a name="noicon" class="item"><strong>-noicon</strong></a></strong></dt>
+
+<dd>
+<p>Do not generate the small graphs (icons) used for the galleries in the
+indexes.</p>
+</dd>
+<dt><strong><a name="export_hits" class="item"><strong>-export_hits</strong></a></strong></dt>
+
+<dd>
+<p>Return matrix-scan scores in addition to the distribution of scores.
+Beware ! This option can produce very large files and use lots of
+disk space.</p>
+</dd>
+<dt><strong><a name="perm_seq_type" class="item"><strong>-perm seq_type #</strong></a></strong></dt>
+
+<dd>
+<p>Number of permutations for a specific set (default 0).</p>
+</dd>
+<dt><strong><a name="perm_sep" class="item"><strong>-perm_sep</strong></a></strong></dt>
+
+<dd>
+<p>Calculate the distributions for each permuted matrix separately. This
+provides an estimate of the variability between permutations, but the
+resulting graph is less readable, because of the multiplicity of
+curves.</p>
+<p><strong>Note:</strong> the option to merge permutations (<em>-perm_merged</em>) has been
+disactivated since we swapped from matrix-scan to
+matrix-scan-quick. The option <em>-perm_sep</em> is thus currently the only
+mode of presentation. We still need to implement the merging of the
+distributions, in order to re-activate the option -perm_merged (see
+with list).</p>
+</dd>
+<dt><strong><a name="seq_format_sequence_format" class="item"><strong>-seq_format sequence_format</strong></a></strong></dt>
+
+<dd>
+<p>Sequence format.</p>
+</dd>
+<dt><strong><a name="pseudo_pseudo_counts" class="item"><strong>-pseudo pseudo_counts</strong></a></strong></dt>
+
+<dd>
+<p>Pseudo-counts.
+The pseudo-count reflects the possibility that residues that were
+not (yet) observed in the model might however be valid for future
+observations. The pseudo-count is used to compute the corrected
+residue frequencies.</p>
+</dd>
+<dt><strong><a name="th_prior_background_file" class="item"><strong>-th_prior background_file</strong></a></strong></dt>
+
+<dd>
+<p>Background model to be used to calculate the matrix theorical
+distribution.  The matrix theorical distribution is calculated with
+<em>matrix-distrib</em>.</p>
+</dd>
+<dt><strong><a name="bg_format_background_file" class="item"><strong>-bg_format background_file</strong></a></strong></dt>
+
+<dd>
+<p>Format for the background model file.</p>
+<pre>
+        Supported formats: all the input formats supported by
+        convert-background-model.</pre>
+</dd>
+<dt><strong><a name="decimals" class="item"><strong>-decimals #</strong></a></strong></dt>
+
+<dd>
+<p>Number of decimals for computing weight scores (default 2).  This
+arguments is passed to <em>matrix-scan</em> and <em>matrix-distrib</em>.</p>
+</dd>
+<dt><strong><a name="o_output_prefix" class="item"><strong>-o output_prefix</strong></a></strong></dt>
+
+<dd>
+<p>Prefix of the output files. The program generates various files, and
+automatically adds a specific suffix to each output file.</p>
+<dl>
+<dt><strong><a name="pos_scores" class="item"><em>pos_scores</em></a></strong></dt>
+
+<dd>
+<p>Scores of the positive sequence set.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="graph_option_option1_options2" class="item"><strong>-graph_option 'option1 options2 ...'</strong></a></strong></dt>
+
+<dd>
+<p>Specify options that will be passed to the program <em>XYgraph</em> for
+generating the distributions and the ROC curves.</p>
+<p>Beware: if an option requires to be followed by a value (ex -xsize
+1000), you have to embrace the option and its value in quotes.</p>
+<pre>
+  Example
+   -graph_option '-size 800 -title &quot;LexA matrix&quot; -bg blue'</pre>
+<p>This option can be used iteratively on a command line.</p>
+<pre>
+  Example
+   -graph_option '-xsize 1000' -graph_option '-title &quot;LexA matrix&quot;'</pre>
+</dd>
+<dt><strong><a name="roc_ref" class="item"><strong>-roc_ref</strong></a></strong></dt>
+
+<dd>
+<p>Reference distribution for the ROC curve.</p>
+</dd>
+<dt><strong><a name="roc_option_option1_options2" class="item"><strong>-roc_option 'option1 options2 ...'</strong></a></strong></dt>
+
+<dd>
+<p>Specify options that will be passed to the program <em>XYgraph</em> for
+generating the ROC curves (ot the distribution curves).</p>
+<p>Beware: if an option requires to be followed by a value (ex -xsize
+1000), you have to embrace the option and its value in quotes.</p>
+<pre>
+  Example
+   -roc_option '-ygstep1 0.1 -ygstep2 0.02'</pre>
+<p>This option can be used iteratively on a command line.</p>
+<pre>
+  Example
+   -roc_option '-ygstep1 0.1' -roc_option '-ygstep2 0.02'</pre>
+</dd>
+<dt><strong><a name="distrib_option_option1_options2" class="item"><strong>-distrib_option 'option1 options2 ...'</strong></a></strong></dt>
+
+<dd>
+<p>Specify options that will be passed to the program <em>XYgraph</em> for
+generating the distribution curves (not the ROC curves).</p>
+<p>Beware: if an option requires to be followed by a value (ex -xsize
+1000), you have to embrace the option and its value in quotes.</p>
+<pre>
+  Example
+   -distrib_option '-xmin -35 -xmax 20'</pre>
+</dd>
+<dt><strong><a name="img_format" class="item"><strong>-img_format</strong></a></strong></dt>
+
+<dd>
+<p>Image format for the plots (ROC curve, score profiles, ...).
+To display the supported formats, type the following command:
+XYgraph -h.</p>
+<p>Multiple image formats can be specified either by using iteratively
+the option, or by separating them by commas.</p>
+<p>Example:
+   -img_format png,pdf</p>
+</dd>
+<dt><strong><a name="logo_format" class="item"><strong>-logo_format</strong></a></strong></dt>
+
+<dd>
+<p>Image format for the sequence logos.</p>
+<p>Multiple image formats can be specified either by using iteratively
+the option, or by separating them by commas.</p>
+<p>Example:
+   -logo_format png,pdf</p>
+</dd>
+<dt><strong><a name="nwd" class="item"><strong>-nwd</strong></a></strong></dt>
+
+<dd>
+<p>The option will calculate the NWD data for the score distribution of
+the specified sequence set (Medina-Rivera, et al. 2010).  At each
+frequency value (y-axis) we calculate the weigh difference (WD),
+defined as the difference between the observed Ws in all upstream
+non-codingsequence set and the expected Ws in the theoretical
+distribution of the PSSM for a given P-value.</p>
+<p>The WD can be visualized as the horizontal distance between the
+distribution curves. As larger matrices allow higher scores, we
+divided the difference bye the matrix width to obtain the normalized
+weight difference.</p>
+<p>Usage:
+   -nwd seq_type</p>
+</dd>
+<dt><strong><a name="archive" class="item"><strong>-archive</strong></a></strong></dt>
+
+<dd>
+<p>Compress the result directory into a zip archive of the same name
+(with suffix .zip).</p>
+<pre>
+ ## Title for html</pre>
+</dd>
+<dt><strong><a name="html_title" class="item"><strong>-html_title</strong></a></strong></dt>
+
+<dd>
+<p>Get a title for the html page.</p>
+</dd>
+<dt><strong><a name="task_tasks" class="item"><strong>-task tasks</strong></a></strong></dt>
+
+<dd>
+<p>Specify one or several tasks to be run. If this option is not
+specified, all the tasks are run.</p>
+<p>Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.</p>
+<p>Supported tasks:</p>
+<dl>
+<dt><strong><a name="scan" class="item"><strong>scan</strong></a></strong></dt>
+
+<dd>
+<p>Scan sequences with matrix-scan</p>
+</dd>
+<dt><strong><a name="theor" class="item"><strong>theor</strong></a></strong></dt>
+
+<dd>
+<p>Calculate the theoretical distribution</p>
+</dd>
+<dt><strong><a name="loo" class="item"><strong>loo</strong></a></strong></dt>
+
+<dd>
+<p>Leave-one-out test on the matrix sites</p>
+</dd>
+<dt><strong><a name="theor_cv" class="item"><strong>theor_cv</strong></a></strong></dt>
+
+<dd>
+<p>Calculate the theoretical distribution of loo partial matrices</p>
+</dd>
+<dt><strong><a name="permute" class="item"><strong>permute</strong></a></strong></dt>
+
+<dd>
+<p>Scan sequences with permuted matrices</p>
+</dd>
+<dt><strong><a name="compare" class="item"><strong>compare</strong></a></strong></dt>
+
+<dd>
+<p>Compare distributions between the various input files</p>
+</dd>
+<dt><strong><a name="graphs" class="item"><strong>graphs</strong></a></strong></dt>
+
+<dd>
+<p>Draw the graphs with distrib comparisons</p>
+</dd>
+<dt><strong><a name="synthesis" class="item"><strong>synthesis</strong></a></strong></dt>
+
+<dd>
+<p>Generate a HTML file with a synthetic report, which displays the main
+graphs (distribution curves and ROC curve) and provides links to the
+result files.</p>
+<p>In order to be correctly indexed, the graphs have to be generated in
+png format.</p>
+</dd>
+<dt><strong><strong>nwd</strong></strong></dt>
+
+<dd>
+<p>Calculate the Normalized Weight Distance between the theoretical
+distribution and a score distribution in a specified sequence_type</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="background_model" class="item"><strong>Background model</strong></a></strong></dt>
+
+<dd>
+<p><em>matrix-distrib</em> requires to specify a background model, which will
+be passed to <em>matrix-distrib</em> and <em>matrix-scan</em>. This background model
+can be specified with the same options as for <em>matrix-scan</em>.</p>
+</dd>
+<dt><strong><a name="other_options" class="item"><strong>Other options</strong></a></strong></dt>
+
+<dd>
+<p>All the other options are automatically passed to <em>matrix-scan</em>, in
+order to specify the scanning parameters (strands, background model,
+...).</p>
+<p>Note that the option '-return' of matrix-scan cannot be used here,
+because matrix-quality specifies the return fields required for its
+statistics.</p>
+<p>If the option '-bgfile' is specified, the specified background model
+will be used to calculate the matrix theorical distribution. If
+another type of background model is specified for matrix-scan
+('-bginput' or '-window'), use '-th_prior' option to specify the
+background model to be used for the calculation of the matrix
+theorical distribution.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="matrix_scan" class="item"><strong>matrix-scan</strong></a></strong></dt>
+
+<dd>
+<p>Called by <em>matrix-quality</em> for scanning the different sets (positive,
+negative) with the input matrix.</p>
+</dd>
+<dt><strong><a name="matrix_distrib" class="item"><strong>matrix-distrib</strong></a></strong></dt>
+
+<dd>
+<p>Called by <em>matrix-quality</em> for computing the theoretical
+distribution of scores.</p>
+</dd>
+<dt><strong><a name="convert_matrix" class="item"><strong>convert-matrix</strong></a></strong></dt>
+
+<dd>
+<p>Called by <em>matrix-quality</em> to generate column-permuted matrices.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="wish_list"><strong>WISH LIST</strong></a></h1>
+<dl>
+<dt><strong><a name="perm_merged" class="item"><strong>-perm_merged</strong></a></strong></dt>
+
+<dd>
+<p>Merge the permutations in order to obtain a more robust distribution
+of the permuted matrices. The figure is more readable than with the
+option -perm_sep (default), but does not reflect the variability
+between the different permutations.</p>
+</dd>
+<dt><strong><a name="th_prior" class="item"><strong>-th_prior</strong></a></strong></dt>
+
+<dd>
+<p>File in oligo-analysis format.</p>
+<p>This option should better be removed, so the user has to specify the
+bg file with the option -bgfile. To check.</p>
+</dd>
+</dl>
+
+</body>
+
+</html>

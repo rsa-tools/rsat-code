@@ -1,0 +1,65 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP "
+NAME
+	IUPAC-to-regular
+	by Jacques van Helden, 26 June 1997
+
+
+DESCRIPTION
+	Transforms a sequence conform to IUPAC degenerate code into an
+	equivalent regular expression. this expression canbe used to
+	search for complex patterns with general string search program
+	like grep or gais.
+
+CATEGORY
+	util
+	sequence
+
+USAGE
+	IUPAC-to-regular 'input_sequence'
+	
+INPUT
+	Any sequence conform to the standard degenerate nucleotide code of the 
+	IUPAC-IUB commission. The pattern sequence should thus only contain the 
+	following characters:
+		A, T, G, C	single nucleotide codes
+		R	= A or G
+		Y	= C or T
+		M	= A or C
+		K	= G or T
+		S	= G or C
+		W	= A or T
+		B	= all except A
+		D	= all except C
+		H	= all except G
+		V	= all except T
+		N	= any nucleotide
+		
+	Upper and lower case are considered equivalent.
+		
+EXAMPLES
+	IUPAC-to-regular CANNTG
+		returns CA[ACGT][ACGT]TG
+		
+	IUPAC-to-regular GATWA
+		returns GAT[AT]A
+		
+	IUPAC-to-regular SSSSSSSSS
+		returns [GC][GC][GC][GC][GC][GC][GC][GC][GC]
+";
+  close HELP;
+  exit(0);
+}
+
+
+print &IUPAC_to_regular($ARGV[$#ARGV]), "\n";
+

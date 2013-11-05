@@ -1,0 +1,195 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	features-from-swissprot
+
+        v1.0, 1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        features-from-swissprot [-i inputfile] [-o outputfile] [-v]
+	[-strand D|R|DR]
+
+DESCRIPTION
+	extracts features from a Swissprot file and exports them in a 
+	format readable by the script feature-map. 
+	
+CATEGORY
+	util
+	conversion
+	drawing
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-strand D|R|DR	for compatibility with feature-map
+		defines the strand (D or R or DR) on which the feature
+		is drawn.
+	
+INPUT FORMAT
+	Any Swissprot file or concatenation of swissprot files.
+	
+OUTPUT FORMAT
+	The output format corresponds to the input format of the 
+	program feature-map.
+	
+EXAMPLES
+       features-from-swissprot -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+features-from-swissprot options
+---------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-strand D|R|DR	strand on which the feature has to be drawn
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+$strand = "DR";
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-strand") {
+    $strand = $ARGV[$a+1];
+
+  }
+}
+
+
+#### check argument values ####
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out ";features-from-swissprot result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+
+  print $out ";map";
+  print $out "\ttype";
+  print $out "\tid";
+  print $out "\tstrand";
+  print $out "\tstart";
+  print $out "\tend";
+  print $out "\tdescr";
+  print $out "\n";
+}
+
+###### execute the command #########
+
+while (<$in>) {
+  chomp;
+  s/^ *//;
+  if (/^(\S{2})\s{3}(.*)/) {
+    $field_name = $1;
+    $field_content = $2;
+    if ($field_name eq "ID") {
+      &NewRecord;
+      @f2 = split(/ +/, $field_content);
+      $map_name = $f2[0];
+      $length = $f2[3];
+      print $out "$map_name	end	-	-	$length	-	\n";
+    } elsif ($field_name eq "FT") {
+      undef %feature;
+      if ($field_content =~ /^(\S+)\s+(\d+)\s+(\d+)\s*(.*)/) {
+        $feature{TYPE} = $1;
+        $feature{START} = $2;
+        $feature{END} = $3;
+        $feature{DESCR} = $4;
+        if (($feature{TYPE} eq "DNA_BIND") && ($4 =~ /^(\S+)/)) {
+          $feature{ID} = "$1";  
+        } elsif (($feature{TYPE} eq "DOMAIN") && ($4 =~ /^(\S+)/)) {
+          $feature{ID} = "$1";  
+        }else {
+          $feature{ID} = $feature{TYPE};  
+        }
+        $feature{ID} =~ s/\.$//;
+        &PrintFeature;
+      } 
+    }
+  }
+}
+
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+sub PrintFeature {
+    print $out "$map_name";
+    print $out "\t$feature{TYPE}";
+    print $out "\t$feature{ID}";
+    print $out "\t$strand";
+    print $out "\t$feature{START}";
+    print $out "\t$feature{END}";
+    print $out "\t$feature{DESCR}";
+    print $out "\n";
+}
+
+sub NewRecord {
+    undef %record;
+}
+

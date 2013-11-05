@@ -1,0 +1,923 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: random-genome-fragments,v 1.35 2013/04/03 01:09:13 jvanheld Exp $
+#
+############################################################
+
+#use strict;
+
+
+=pod
+
+=head1 NAME
+
+random-genome-fragments
+
+=head1 DESCRIPTION
+
+Select a set of fragments with random positions in a given genome, and
+return their coordinates and/or sequences.
+
+The supported organisms are etiher installed in RSAT or from Ensembl.
+Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
+
+=head1 AUTHORS
+
+morgane@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+sequences
+
+genomes
+
+random controls
+
+=head1 USAGE
+
+Fixed fragment length:
+
+I<random-genome-fragments -org organism -l fragment_length -n nb_fragments [-o outputfile] [-v # -rm] [...]>
+
+Fragment lengths fit a sequence length file.
+
+I<random-genome-fragments -org organism -lf length_file [-rep repetitions] [-o outputfile] [-v # -rm] [...]>
+
+=head1 OUTPUT FORMATS
+
+The program returns a file containing the genomic coordinates or the
+sequences.
+
+=head1 DISTRIBUTION OF RANDOM FRAGMENTS
+
+Chromosomes (more generally, contigs for the selected genome) are
+selected randomly with a probability proportional to their lengths.
+
+Very small contigs may be discarded if they are too small to obtain
+fragments of the desired sizes.
+
+=head1 WISH LIST
+
+=head2 Chromosomal distribution  of fragments based on template
+
+For some purposes, one would like to obtain random fragments with the
+same chromosomal distribution as in the template file.
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+push (@INC, $ENV{bioperl});
+push (@INC, $ENV{ensembl});
+
+
+## EnsEMBL libraries
+use DBI();
+require Bio::EnsEMBL::Registry;
+
+require RSAT::organism;
+require RSAT::feature;
+use RSAT::server;
+use Data::Dumper;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+
+  our %outfile = ();
+  our %infile = ();
+
+  our $verbose = 0;
+  #$main::out = STDOUT;
+
+  our $dry = 0;
+  our $die_on_error = 1;
+  our $batchmode = 0;
+
+  our $out_format = "ft";
+  our $rm = 0;
+  our @lengths =();
+  our @contig_names = ();
+  our @files2remove =();
+  our $repetitions = 1;
+  our $null = "";
+  our $assembly_version = "";
+
+
+  ## Return fields
+  our %supported_return_fields = (
+				  coord=>1, ## coordinates
+				  seq=>1,   ## sequence
+				 );
+  $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+  our %return_fields = ();	## Fields to return
+
+  ## Template formats
+  our %supported_template_format = (
+			       bed=>1, ## bed coordinates
+			       fasta=>1,   ## fasta sequence
+			       len=>1,   ## sequence lengths
+			      );
+  $supported_template_formats = join (",", sort(keys(%supported_template_format)));
+  our $template_format = "fasta";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check parameter values
+#  if ($main::out_format eq "bed") {
+#    ## Verbosity is not compatible with bed format
+#    $main::verbose = 0;
+#  }
+
+  ################################################################
+  ## File with template sequences
+  if ($main::infile{template_file}) {
+    if ($template_format eq "len") {
+      $main::outfile{length_file} = $main::infile{template_file};
+
+    } else {
+      ## Compute sequence lengths
+      my $job_prefix = "random-genome-fragments";
+      #      my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
+      #      $main::outfile{length_file} = "$TMP/$tmp_file_name".".lengths";
+      my $tmp_file_path = &RSAT::util::make_temp_file("","random-genome-fragments", 1); # ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+      $main::outfile{length_file} = $tmp_file_path."_lengths.tab";
+      my $seqlength_cmd = "sequence-lengths -v 1";
+      $seqlength_cmd .= " -i ".$main::infile{template_file};
+      $seqlength_cmd .= " -in_format ".$template_format;
+      $seqlength_cmd .= " -o ".$main::outfile{length_file};
+      &doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+#      die "HELLO\n", $seqlength_cmd, "\n";
+    }
+  }
+
+
+  ################################################################
+  ## File with the specification of sequence lengths
+  if ($main::outfile{length_file}) {
+    my ($len_handle, $input_dir) = &OpenInputFile($main::outfile{length_file});
+
+    while (my $line = <$len_handle>) {
+      chomp($line);
+      next if ($line =~ /^;/);
+      next if ($line =~ /^--/);
+      next if ($line =~ /^#/);
+      next unless ($line =~ /\S/);
+      my @fields = split ("\t",$line);
+      my $length = $fields[1];
+      if (&IsNatural($length)) {
+	push @lengths, $length;
+      }
+    }
+    close $len_handle;
+
+    ## Repeat length list if requested
+    if ($repetitions > 1) {
+      my @rep_lengths = @lengths;
+      for my $r (1..$repetitions) {
+	push @rep_lengths, @lengths;
+      }
+      @lengths = @rep_lengths;
+    }
+
+    $main::nb_fragments = scalar(@lengths);
+  } else {
+
+    ## Check sequence lengths and repetitions
+    unless (&IsNatural($main::fragment_len)) {
+      &RSAT::error::FatalError ("You should specify the sequence length");
+    }
+
+    unless ($main::nb_fragments >=1) {
+      &RSAT::error::FatalError( "Number of repetitions should be >=1");
+    }
+  }
+
+  ################################################################
+  ## Check argument values
+
+  ## fasta output is not compatible with an Ensembl organism
+  if ($main::organism_ens) {
+    if ($return_fields{seq}) {
+      &RSAT::error::FatalError( "Returning sequences is not compatible with Ensembl genomes. Change the option -return");
+    }
+  }
+
+  #################################################################
+  ## RSAT organism
+  if ($main::organism_name) {
+    our $organism = new RSAT::organism();
+    $organism->check_name($main::organism_name);
+    $organism->set_attribute("name", $main::organism_name);
+
+    ## Repeat masked version
+    if ($main::rm) {
+      my %args = ('rm' => 1);
+      $organism->OpenContigs($main::organism_name,"","","",%args);
+
+    } else {
+      $organism->OpenContigs($main::organism_name);
+    }
+
+    ## get all contigs name
+    %main::contigs= $organism->get_contigs();
+
+    foreach my $contig_name (keys(%main::contigs)) {
+      unless ($contig_name =~ /:MT:/) {	#Do not take into account mitochondrial genome.
+	## store contig name
+	push (@main::contig_names, $contig_name);
+      }
+    }
+  }
+
+  #################################################################
+  ## Ensembl organism
+  elsif ($main::organism_ens) {
+
+    my $ensembl = Ensembl_genome->new($main::organism_ens);
+    $ensembl->get_connect_param;
+    $ensembl->get_db_name;
+    my $db =$ensembl->ens_connect;
+    %main::ens_chroms =();
+
+    my $slice_adaptor = $db->get_sliceAdaptor();
+    $main::slices_ref = $slice_adaptor->fetch_all('chromosome');
+    foreach my $slice (@{$main::slices_ref}) {
+      my $slice_name = $slice->name();
+      if ($slice_name =~ /chromosome:([\w\.]*?):/) {
+	$main::assembly_version = $1;
+      }
+      unless ($slice_name =~ /:MT:/) { #Do not take into account mitochondrial genome.
+	&RSAT::message::Info(join ("\t", "Chromosome name", $slice_name) )
+	  if ($main::verbose >= 4);
+	push (@main::contig_names, $slice_name);
+	$main::ens_chroms{$slice_name} = $slice;
+      }
+    }
+  } else {
+    &RSAT::error::FatalError("You should select an organism.");
+  }
+
+  ################################################################
+  ## Get contig lengths, for two purposes
+  ##
+  ## - distribute random fragments across chromosomes (contigs) with a
+  ## probability proportional to their lengths
+  ##
+  ## - calculate last possible position to have a fragment of the
+  ##   desired length
+  &RSAT::message::TimeWarn("Computing contig lengths") if ($main::verbose >= 2);
+  my $cum_len = 0;
+  foreach my $contig (0..$#contig_names) {
+    my $contig_name = $main::contig_names[$contig];
+    my $contig_len = 0;
+    if ($main::organism_name) {
+      $contig_len = $main::contigs{$contig_name}->get_length();
+    } elsif ($main::organism_ens) {
+      $contig_len = $main::ens_chroms{$contig_name}->length();
+    }
+
+    ## Index contig lengths
+    $contig_len{$contig_name} = $contig_len;
+
+    ## Index contig cumulative lengths
+    $cum_len += $contig_len;
+    $contig_cum_len{$contig_name} = $cum_len;
+
+#    &RSAT::message::Debug("contig length", $contig_name, $contig_len, $cum_len) if ($main::verbose >= 5);
+  }
+  &RSAT::error::FatalError("Chdomosome lengths are not defined") if ($cum_len <= 0);
+
+  ## Compute proportions of random fragments per chromosomes
+  my @rand_contig_names = ();
+  my $allocated = 0;
+  foreach my $contig (0..$#contig_names) {
+    my $contig_name = $contig_names[$contig];
+    $contig_proba{$contig_name} = $contig_len{$contig_name} / $cum_len;
+    $contig_cdf{$contig_name} = $contig_cum_len{$contig_name} / $cum_len;
+    $contig_fragments{$contig_name} = sprintf("%d", $contig_proba{$contig_name} * $nb_fragments);
+    $contig_fragments_cum{$contig_name} = sprintf("%d", $contig_cdf{$contig_name} * $nb_fragments);
+
+    while ($allocated < $contig_fragments_cum{$contig_name}) {
+      push @rand_contigs, $contig;
+      $allocated++;
+    }
+
+    &RSAT::message::Info("contig", $contig,
+			 $contig_name,
+			 "L=".$contig_len{$contig_name},
+			 "cum_L=".$contig_cum_len{$contig_name},
+			 "P=".sprintf("%.2f", $contig_proba{$contig_name}),
+			 "CDF=".sprintf("%.2f", $contig_cdf{$contig_name}),
+			 "fragments=".$contig_fragments{$contig_name},
+			 "fragments_cum=".$contig_fragments_cum{$contig_name},
+			 )
+      if ($main::verbose >= 2);
+  }
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Print verbose
+  unless ($main::out_format eq "bed") {
+    &Verbose() if ($main::verbose >= 1);
+  }
+
+  ## file header
+  unless ($return_fields{seq}) {
+    my $header = &RSAT::feature::header($main::out_format);
+    print $main::out $header if ($header);
+  }
+
+
+  ################################################################
+  ## Get random positions
+  for (my $i=1; $i<= $main::nb_fragments; $i++) {
+
+    ## 1- get a random contig
+#    my $rand_contig = int(rand ($#main::contig_names+1));
+    my $rand_contig = $rand_contigs[$i-1];
+    my $rand_contig_name = $main::contig_names[$rand_contig];
+
+    ## 2 - get contig length, and calculate last possible position to have
+    ## a fragment of the desired length
+    my $contig_length = $contig_len{$rand_contig_name};
+#    if ($main::organism_name) {
+#      $contig_length = $main::contigs{$rand_contig_name}->get_length();
+#    } elsif ($main::organism_ens) {
+#      $contig_length = $main::ens_chroms{$rand_contig_name}->length();
+#    }
+    &RSAT::message::Info("Random chrom", $rand_contig, $rand_contig_name, "length",$contig_length)
+      if ($main::verbose >= 4);
+
+
+    my $rand_fragment_size;
+    if ($main::fragment_len) {
+      $rand_fragment_size = $main::fragment_len;
+    } else {
+      $rand_fragment_size = $lengths[$i-1];
+    }
+    my $contig_last_rand_pos = $contig_length - $rand_fragment_size;
+
+    ## 3 - get a random start position
+    my $rand_start = int(rand ($contig_last_rand_pos));
+    ## check that the fragment is not in negative coord
+    my $count = 0;
+    while ($rand_start < 1) {
+      $rand_start = int(rand ($contig_last_rand_pos));
+      last if ($rand_start > 0);
+      $count ++;
+      last if ($count == 5);	##
+      &RSAT::message::Info(join ("\t", "Negative start value for contig", $rand_contig_name, "value",$rand_start) )
+	if ($main::verbose >= 3);
+    }
+
+    ## Exclude the contig from the analysis, if it is too difficult to
+    ## get a fragment of the correct size.
+    if ($rand_start < 1) {
+      &RSAT::message::Info("Excluding", $rand_contig_name,
+			   "from contigs due to repetitive negative starts.",
+			   "Contig length: ".$contig_length,
+			   "Fragment size: ".$main::fragment_len)
+	if ($main::verbose >= 2);
+      splice(@main::contig_names, $rand_contig, 1);
+      $i--;
+      next;
+    }
+
+    ## Calculate end position
+    my $rand_end = $rand_start + $rand_fragment_size -1;
+
+    ## 4- rand strand
+    my @strands = ("D","R");
+    my $rand_strand = $strands[rand @strands];
+
+    my $seq_id = "rand_".$i;
+
+    &RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
+      if ($main::verbose >= 4);
+
+    ################################################################
+    ## Print sequences
+    if (($main::organism_name)&&($return_fields{seq})) {
+      my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
+      my @comments = join("; ",
+			  "random sequence $i of $main::nb_fragments",
+			  "length: $rand_fragment_size",
+			  "$rand_contig_name",
+			  "$rand_start:$rand_end:$rand_strand"
+			 );
+      &PrintNextSequence($main::out, "fasta",0, $current_seq, $seq_id, @comments);
+    } else {
+      ################################################################
+      ## print the coordinates
+      my $feature = new RSAT::feature();
+      $feature->set_attribute("ft_id", $seq_id);
+      $feature->set_attribute("ft_type","random_fragment");
+      $feature->set_attribute("feature_name",$seq_id);
+      if ($main::out_format eq "bed") {
+				# adapt the chromosome name for UCSC ChrXXX
+	$rand_contig_name =~ s/chromosome:[\w\.]*?://;
+	$rand_contig_name =~ s/:.*//;
+	$rand_contig_name = "chr".$rand_contig_name ;
+      }
+      $feature->set_attribute("start",$rand_start);
+      $feature->set_attribute("end",$rand_end);
+      $feature->set_attribute("seq_name",$rand_contig_name);
+      $feature->set_attribute("strand",$rand_strand);
+
+      print $main::out $feature->to_text($main::out_format, $main::null);
+    }
+  }
+
+
+  ################################################################
+  ## Finish verbose
+  unless ($main::out_format eq "bed") {
+    if ($main::verbose >= 1) {
+      if ($main::organism_ens) {
+	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
+      }
+    }
+  }
+
+  ################################################################
+  ## clean
+  if (scalar(@main::files2remove)>0) {
+    foreach my $file (@main::files2remove) {
+      system("rm -f $file");
+    }
+  }
+
+  ################################################################
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  unless ($main::out_format eq "bed") {
+    print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  }
+  close $main::out if ($main::outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+      if ($arg eq "-v") {
+	if (&IsNatural($arguments[0])) {
+	  $main::verbose = shift(@arguments);
+	} else {
+	  $main::verbose = 1;
+	}
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+      } elsif ($arg eq "-h") {
+	&PrintHelp();
+
+	## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+      } elsif ($arg eq "-help") {
+	&PrintOptions();
+
+	## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+      } elsif ($arg eq "-o") {
+	$main::outfile{output} = shift(@arguments);
+
+	## return types
+
+=pod
+
+=item B<-return returned_type>
+
+Type of data to return. Supported values: seq | coord
+
+By default, coordinates (coord) are returned.  For RSAT organisms, the
+return type can be 'seq' to retrieve sequences. The sequence format is
+fasta.  For Ensembl organisms, use the coordinate file (in ft format)
+as input to I<retrieve-ensembl-seq.pl> with the options -ftfile
+YourCoordFile -ftfileformat ft.  You can also use the tools of
+sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the
+sequences from the coordinates.
+
+The option -return can be iterated to obtain both coordinates and
+sequences.
+
+ -return seq -return coord
+
+=cut
+      } elsif ($arg eq "-return") {
+	$arg = shift(@arguments);
+	chomp($arg);
+      	my @fields_to_return = split ",", $arg;
+      	foreach my $field (@fields_to_return) {
+	  $field = lc($field);
+	  if ($supported_return_fields{$field}) {
+	    $return_fields{$field} = 1;
+	  } else {
+	    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	  }
+	}
+
+
+=pod
+
+=item B<-coord_format coordinates_format>
+
+Supported values: ft | bed
+
+Default is ft. To convert to another supported feature
+format, type the following command: I<convert-features -h>
+
+For very big files, you might consider using the output format BED, which is adapted to UCSC database.
+You can thus use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences.
+The genomic intervals in this BED file are 0-based, as specified in UCSC. Chromosome thus start at position 0 (not 1).
+This BED file is compatible with UCSC, Galaxy and Ensembl (On the Ensembl website, the bed file is automatically converted
+from 0-based into 1-based)
+
+=cut
+      } elsif ($arg eq "-coord_format") {
+	$main::out_format = shift(@arguments);
+
+	### repeat_masked
+
+=pod
+
+=item	B<-rm>
+
+Will use the version of genome with repeat masked
+
+
+=cut
+      } elsif ($arg eq "-rm") {
+	$main::rm = 1;
+
+
+	### organism
+
+=pod
+
+=item B<-org organism_name>
+
+Specifies an organism, installed in RSAT.
+To have the list of supported organism in RSAT, type the following
+command: I<supported-organism>
+
+=cut
+      } elsif ($arg eq "-org") {
+	$main::organism_name = shift(@arguments);
+
+	### organism_ensembl
+
+=pod
+
+=item B<-org_ens ensembl_organism_name>
+
+Specifies an organism, from EnsEMBL database.
+No caps, underscore between words (eg 'homo_sapiens')
+
+=cut
+      } elsif ($arg eq "-org_ens") {
+	$main::organism_ens = shift(@arguments);
+
+	### ensembl server
+
+=pod
+
+=item B<-ensemblhost mysql_server_name>
+
+Uses a local EnsEMBL server. (Advanced users)
+
+=cut
+      } elsif ($arg eq "-ensemblhost") {
+	$main::local_server = shift(@arguments);
+
+
+
+	### nb of fragments
+
+=pod
+
+=item	B<-n Number of fragments>
+
+Generate a set of I<n> random fragments, each of length I<l>.
+
+This option is incompatible with options -lw and -rep.
+
+=cut
+      } elsif ($arg eq "-n") {
+	$main::nb_fragments = shift(@arguments);
+      } elsif ($arg eq "-r") {
+	$main::nb_fragments = shift(@arguments);
+	&RSAT::message::Warning("Option -r is obsolete, please use -n instead");
+
+	### length of fragments
+
+=pod
+
+=item	B<-l sequence_length>
+
+Sequence length of random genomic fragments.
+
+This option is incompatible with options -lw and -rep.
+
+=cut
+      } elsif ($arg eq "-l") {
+	$main::fragment_len = shift(@arguments);
+
+
+
+=pod
+
+=item	B<-i template_file>
+
+Generate random sequences with lengths specified in a template
+file.
+
+Various template types are supported (option I<-template_format>):
+sequences (in fasta), genomic coordinates (in bed), sequence lengths.
+
+This option is incompatible with options -l and -n.
+
+=cut
+      } elsif ($arg eq "-i") {
+	&RSAT::error::FatalError("Option -i is incompatible with option -lf") if ($main::outfile{length_file});
+	$main::infile{template_file} = shift(@arguments);
+
+=pod
+
+=item	B<-template_format template_format>
+
+Format for the template set (specified with the option I<-i>).
+
+Supported formats:
+
+=over
+
+=item I<fasta (default)>
+
+Templates are provided as a fasta-formatted sequence file. The
+program I<random-genome-fragments> calls I<sequence-lengths> to define
+the template lengths.
+
+
+=item I<bed>
+
+Templates are provided as a bed-formatted file of genomic
+coordinates. The program I<random-genome-fragments> calls
+I<sequence-lengths -format bed> to define the lengths of the bed
+features.
+
+Bed file must contain at least 3 columns, indicating, for each feature:
+
+=over
+
+=item 1. id (ignored)
+
+=item 2. start coordinate
+
+=item 3. end coordinate
+
+=back
+
+
+=item I<len>
+
+Templates are provided as a tab-delimited file indicating the length
+of each template sequence (this file can be produced by
+I<sequence-lengths>).
+
+=back
+
+=cut
+      } elsif ($arg eq "-template_format") {
+	$main::template_format = shift(@arguments);
+	&RSAT::error::FatalError($main::template_format, "Invalid template format. Supported: ".$supported_template_formats)
+	  unless ($supported_template_format{$main::template_format});
+
+=pod
+
+=item	B<-lf length file>
+
+Deprecated. Replaced by I<-i template_file -template_format len>.
+Maintained for backward compatibility.
+
+Generate random sequences with the same lengths as a set of template
+sequences. The sequence length file can be obtained with the command
+I<sequence-lengths>.
+
+This option is incompatible with options -l and -n.
+
+The length file contains two columns :
+
+=over
+
+=item -sequence ID (ignored)
+
+=item -sequence length
+
+=back
+
+=cut
+      } elsif ($arg eq "-lf") {
+	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{template_file});
+	$main::outfile{length_file} = shift(@arguments);
+	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -template_format len");
+
+=pod
+
+=item	B<-rep repetitions>
+
+The list of sequence lengths is repeated I<r> times.
+
+This option supposed that the option -lf or -i has been used. It is
+is incompatible with options -l and -n.
+
+=cut
+      } elsif ($arg eq "-rep") {
+	$main::repetitions = shift(@arguments);
+
+      } else {
+	&FatalError(join("\t", "Invalid option", $arg));
+      }
+  }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $main::out "; random-genome-fragments ";
+  &PrintArguments($main::out);
+  print $main::out "; Number of random fragments $main::nb_fragments\n";
+  if ($main::out_format eq "bed") {
+    print $main::out "; Warning: the genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). Chromosome thus start at position 0 (not 1).\n";
+  }
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      print $main::out ";\t$key\t$value\n";
+    }
+  }
+}
+
+################################################################
+## CLASS DEFINITIONS
+################################################################
+
+package Ensembl_genome;
+{
+
+  sub new {
+    my $class = shift;
+    my $species = shift;
+    my $self = {
+		org => $species,
+	       };
+    bless $self, $class;
+  }
+
+  sub get_connect_param {
+    my $self = shift;
+    ## Connection to the EnsEMBL MYSQL database
+    if ($main::local_server) {
+      $self->{ensembl_host} = $main::local_server; # ie 'xserve2.bigre.ulb.ac.be'  # Local db (use inside BIGRE)
+    } else {
+      $self->{ensembl_host} = $ENV{ensembl_host};
+    }
+    $self->{ensembl_user} = "anonymous";
+  }
+
+  sub get_db_name {
+    my $self = shift;
+    my $dbname;
+    my $dbh = DBI->connect("DBI:mysql:host=".$self->{ensembl_host}.":port=5306", "$self->{ensembl_user}", "", {'RaiseError' => 1});
+
+    my $sth = $dbh->prepare("SHOW DATABASES");
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+      if ($ref->{'Database'} =~ /($self->{org})_core_\d+/) {
+	$dbname = $ref->{'Database'};
+      }
+    }
+    &RSAT::message::Info ("dbname = ", $dbname) if ($main::verbose >= 2);
+    $sth->finish();
+    $dbh->disconnect();
+    if ($dbname) {
+      $self->{dbname} = $dbname;
+    } else {
+      &RSAT::error::FatalError( "there is no organism named $self->{org} in the EnsEMBL database. Use the command supported-organisms-ensembl to obtain a full list of supported organisms.");
+    }
+  }
+
+  sub ens_connect {
+    my $self = shift;
+
+    my $registry = "Bio::EnsEMBL::Registry";
+
+    $registry->load_registry_from_db(
+				     -host => $self->{ensembl_host},
+				     -user => $self->{ensembl_user},
+				     -port => "5306",
+				     -verbose => "0" );
+
+    my $org = $self->{dbname};
+    $org =~s/_core_.+//;
+    my $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
+
+    return $db;
+  }
+
+  1;
+}
+
+
+__END__
+
+=pod
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item random-genes
+
+
+=cut
+
+

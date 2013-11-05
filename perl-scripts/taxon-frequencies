@@ -1,0 +1,1060 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: taxon-frequencies,v 1.48 2012/02/05 14:53:29 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+taxon-frequencies
+
+=head1 DESCRIPTION
+
+Calculate taxon-wide oligo and dyad frequencies.
+
+=head1 USAGE
+
+I<taxon-frequencies> has many options, we just describe here the usual
+way to apply it.
+
+=head2 compute all models (oligos, dyads) for a given taxon, and install them in the RSAT directory
+
+This requires to have write access on the RSAT directory. It is
+important to use the option -install, because otherwise all the models
+are simply displayed on the terminal (STOUT).
+
+taxon-frequencies -v 1 -taxon Mollicutes -all_models -install
+
+=head2 compute a single model and store it in a local file
+
+taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 > Mollicutes_dyads_3nt_sp0-20_freq.tab
+
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+taxon-frequencies -taxon my_taxon [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Oligo and dyad frequency files are loaded from $RSAT genome
+directories.
+
+=head1 OUTPUT FORMAT
+
+The output format is a tab-delimited file with one row per pattern
+(oligo or dyad).
+
+By default, the output file contains 4 columns:
+
+=head2 pattern sequence
+
+Pattern sequence is always a single-strand pattern description, even
+though it can be used to scan sequences on both strands.
+
+=head2 pattern ID
+
+For single-strand frequencies, the ID is simply the pattern
+sequence. For two-strand frequencies, the pattern ID includes the
+direct sequence + its reverse complement, separated by a pipe
+character.
+
+=head2 frequency
+
+Taxon-wide frequency of the pattern.
+
+=head2 occurrences
+
+Taxon-wide occurrences of the pattern in the considered sequence type
+(upstream, upstream-noorf, intergenic).
+
+=head2 organism-specific occurrences (optional)
+
+When the option -occ_per_org is active, the program exports one
+additional column per organism, indicating the organism-specific
+number of occurrences of each pattern.
+
+=head2 organism-specific frequencies (optional)
+
+When the option -freq_per_org is active, the program exports one
+additional column per organism, indicating the organism-specific
+frequency of each pattern.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Tree;
+require "footprint.lib.pl";
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialize parameters
+  local $start_time = &RSAT::util::StartScript();
+
+  local $taxon;
+  local @taxa = ();
+  local @organisms = ();
+
+  local %dir = ();
+  local %outfile = ();
+  local %infile = ();
+
+  local $verbose = 0;
+  local $out = STDOUT;
+
+  local $all_taxa = 0;
+  local $all_models = 0;
+  local $pattern_type = "";	## Supported= oligo, dyad
+  local $oligo_length = 0;
+  local $monad_length = 0;
+  local $background_model = "upstream-noorf";
+  local $str = "-1str";
+  local $noov ="-noov";		## Supported= -noov, -ovlp
+  local $occ_col = 4; ## Column containing pattern occurrences in the frequency files
+
+  local $decimals = 13;		## Decimals for printing frequencies
+  
+
+
+  
+  #### background models
+  %supported_bg = ('upstream'=>1,
+		   'upstream-noorf'=>1,
+		   'intergenic'=>1,
+		   'upstream-rm'=>1,
+		   'upstream-noorf-rm'=>1
+		  );
+
+
+  ## Lists for iterating on parameters
+  my @pattern_types = ();
+  my @oligo_lengths = ();
+  my @monad_lengths = ();
+  my @strands = ();
+  my @noov = ();
+  my @background_models = ();
+
+  ## Check pattern type
+  @supported_pattern_types = qw (dyad oligo);
+  %supported_pattern_types = ();
+  foreach my $type (@supported_pattern_types) {
+      $supported_pattern_type{$type} = 1;
+  }
+  $supported_pattern_types = join(",", @supported_pattern_types);
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Options -org_list and -install are not compatible
+  if ($orglist_file && $install) {
+    &RSAT::error::FatalError("Options -org_list and -install are mutually incompatible.");
+  }
+
+  ## Background model parameters
+  if ($all_models) {
+    @pattern_types = qw(oligo dyad);
+    @oligo_lengths = 1..8;
+    @monad_lengths = 1..3;
+    @strands = qw (-1str -2str);
+    @noov = qw (-noov -ovlp);
+    @background_models = qw (upstream-noorf upstream);
+  } else {
+    @pattern_types = $pattern_type;
+    @oligo_lengths = $oligo_length;
+    @monad_lengths = $monad_length;
+    @strands = $str;
+    @noov = $noov;
+    @background_models = $background_model;
+  }
+  
+
+  ################################################################
+  ## Load the taxonomical tree of organisms supported in RSAT
+  local $tree = new RSAT::Tree();
+  my @supported_organisms = sort keys (%supported_organism);
+  $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
+
+
+  ################################################################
+  ## Taxa
+
+  ## Select the taxa to be analyzed
+  if ($all_taxa) {
+    @taxa = $tree->node_names();
+
+  } elsif ($main::orglist_file) {
+    @taxa = ("org_list");
+
+  } else {
+    &RSAT::error::FatalError("You must specify at lest one taxon (option -taxon) or select all taxa (option -all_taxa)") 
+      if (scalar(@taxa) == 0);
+    ## check taxon names
+    foreach my $taxon (@taxa) {
+      &RSAT::message::Debug("Checking taxon", $taxon) if ($main::verbose >= 3);
+      &CheckTaxon($taxon);
+    }
+    if ($sub_taxa) {
+      my @sub_taxa = ();
+      foreach my $taxon (@taxa) {
+	push @sub_taxa, $tree->get_node_descendents_names($taxon, "DFS", "node");
+      }
+      @taxa = @sub_taxa;
+    }
+  }
+
+  &RSAT::message::TimeWarn("Computing taxon-frequencies for", scalar(@taxa),"taxa") if ($main::verbose >= 1);
+  if ($main::verbose >= 3) {
+    my $t = 0;
+    foreach my $taxon (@taxa) {
+      $t++;
+      &RSAT::message::Info(join "\t", $t, $taxon);
+    }
+  }
+
+  ################################################################
+  ## For each query taxon (or organism list), collect the organisms
+  ## and compute background models(s).
+
+  my $t = 0;
+  my $nb_taxa = scalar(@taxa);
+  foreach  $taxon (@taxa) {
+    $t++;
+
+    ## Check taxon and collect organisms
+    if ($main::orglist_file) {
+      @organisms = &ReadOrganismsFromFile($main::orglist_file);
+    } else {
+      @organisms = $tree->get_node_descendents_names($taxon, "DFS", "leaf");
+    }
+
+    ## TEMPORARY FIX: the current implementation of
+    ## &RSAT::Tree::get_node_descendents() includes the nodes in the
+    ## returned list. I suppress it with a shift
+    if ($organisms[0] eq $taxon) {
+      shift @organisms;
+    }
+
+#    &RSAT::message::Info("Taxon", $taxon, scalar(@organisms), "organisms") if ($main::verbose >= 0);
+#    &RSAT::message::Info("Taxon", $taxon, "organisms", join(";", @organisms)) if ($main::verbose >= 0);
+
+    ## Iterate background models
+    my $m = 0;
+    foreach $background_model (@background_models) {
+
+      ## Iterate pattern types
+      foreach $pattern_type (@pattern_types) {
+	my @lengths = ();
+
+	## Check pattern type and type-specific lengths
+	if ($pattern_type eq "oligo") {
+	  @lengths = @oligo_lengths;
+	  &RSAT::error::FatalError("You must define the oligo length (option -ol)")
+	    unless (scalar(@lengths));
+	} elsif ($pattern_type eq "dyad") {
+	  @lengths = @monad_lengths;
+	  &RSAT::error::FatalError("You must define the monad length (option -ml)")
+	    unless (scalar(@lengths));
+	} else {
+	  &RSAT::error::FatalError("You must define pattern type (option -type dyad|oligo)")
+	    unless ($pattern_type);
+	}
+
+	## Iterate oligo/monad lengths
+	foreach my $length (@lengths) {
+
+	  ## Iterate strands
+	  foreach my $str (@strands) {
+
+	    ## Check strands
+	    my $sum_rc = 0;
+	    if ($str eq "-1str") {
+	      $sum_rc = 0;
+	    } elsif ($str eq "-2str") {
+	      $sum_rc = 1;
+	    } else {
+	      &RSAT::error::FatalError($str, "Invalid value for the strands. Supported= -1str, -2str.");
+	    }
+	    ## Iterate overlap types
+	    foreach my $noov (@noov) {
+	      $m++;
+
+	      &RSAT::message::TimeWarn("Taxon ".$t."/".$nb_taxa, $taxon, scalar(@organisms)." organisms", "background model ".$m,   $background_model, $pattern_type, $length."nt", $str, $noov)
+		if ($main::verbose >= 1);
+
+	      ## Initialize variables for one background model
+	      local %occ_sum_per_pattern = ();
+	      local %occ_sum_per_organism = ();
+	      local %occ_sum_per_spacing = ();
+	      local %freq_sum_per_organism = ();
+	      local %pattern_freq;
+	      local %pattern_id;
+	      local $pattern_freq_sum = 0;
+	      local $total_occ = 0;
+	      local %patterns_per_organism = ();
+	      local %invalid_patterns_per_organism = ();
+	      local $occ_per_org = 0;
+	      local $freq_per_org = 0;
+
+	      ## Automatic specification of the output file for the installatin
+	      ## in the RSAT data folder
+	      if ($install) {
+		## Output file name
+		my $taxfreq_file = "";
+		if ($pattern_type eq "oligo") {
+		  $taxfreq_file = &ExpectedFreqFile($taxon, $length, $background_model,
+						    type=>'oligo',
+						    noov=>$noov,
+						    str=>$str,
+						    nowarn=>1,
+						    taxon=>1);
+		} elsif ($pattern_type eq "dyad") {
+		  $taxfreq_file = &ExpectedFreqFile($taxon, $length, $background_model,
+						    type=>'dyad',
+						    noov=>$noov, 
+						    str=>$str,
+						    nowarn=>1,
+						    taxon=>1);
+		} else {
+		  &RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
+		}
+		$taxfreq_file .= ".gz";	## Automatic compression of the background model files
+		&RSAT::message::Info("Auto install file", $taxfreq_file) if ($main::verbose >= 3);
+
+		## Output directory
+		my $current_out_dir  ="";
+		if ($dir{taxfreq}) {
+		  ## Replace automatic by user-specified taxfreq directory
+		  my $short_file = &ShortFileName($taxfreq_file);
+		  $outfile{taxfreq} = join ("/", $dir{taxfreq}, $short_file);
+		  $current_out_dir = $dir{taxfreq};
+		} else {
+		  $outfile{taxfreq} = $taxfreq_file;
+		  ($current_out_dir) = &SplitFileName($taxfreq_file);
+		}
+		$outfile{taxfreq} =~ s|//|/|g;
+		&RSAT::util::CheckOutDir($current_out_dir);
+		&RSAT::message::Info("Install dir", $current_out_dir) if ($main::verbose >= 3);
+		&RSAT::message::Info("Install file", $outfile{taxfreq}) if ($main::verbose >= 2);
+	      }
+
+	      ################################################################
+	      ## Open output stream
+	      $out = &OpenOutputFile($outfile{taxfreq});
+
+	      ################################################################
+	      ## Read background pattern frequencies
+	      my $org_nb = scalar(@organisms);
+	      my $o = 0;
+	      foreach my $org (@organisms) {
+		  $o++;
+		my $exp_freq_file;
+
+		## Initialize pattern counters
+		$invalid_patterns_per_organism{$org} = 0;
+		$patterns_per_organism{$org} = 0;
+		$occ_sum_per_organism{$org} = 0;
+
+		if (($pattern_type eq "oligo") ||
+		    ($pattern_type eq "dyad")) {
+		  $exp_freq_file = &ExpectedFreqFile($org, $length, $background_model,
+						     type=>$pattern_type,
+						     noov=>$noov, str=>$str,
+						     warn=>1);
+		  #	  } elsif  ($pattern_type eq "dyad") {
+		  #	    $exp_freq_file = &ExpectedFreqFile($org, $length, $background_model,
+		  #					       type=>'dyad',
+		  #					       noov=>$noov, str=>$str,
+		  #					       warn=>1);
+		} else {
+		  &RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
+		}
+
+		## Include a warning for missing files in the output file
+		unless ((-e $exp_freq_file) ||
+			(-e $exp_freq_file.".gz")) {
+		  print $out join ("\t", "; WARNING", "Skipped missing file for org", $org, $exp_freq_file), "\n";
+		  next;
+		}
+		$infile{$org} = $exp_freq_file;
+
+		## Count occurrences for each frequency file
+		&RSAT::message::TimeWarn("Loading pattern occurrences for organism", $o."/".$org_nb, $org) if ($main::verbose >= 2);
+		&RSAT::message::TimeWarn("\tFrequency file", $infile{$org}) if ($main::verbose >= 3);
+		my ($in) = &OpenInputFile($infile{$org});
+		my $l = 0;
+		while (<$in>) {
+		  $l++;
+		  next if (/^--/); ## Skip comment lines
+		  next if (/^;/);  ## Skip comment lines
+		  next if (/^#/);  ## Skip header line
+		  next unless (/\S/); ## Skip empty lines
+		  my @fields = split /\s+/;
+		  my $pattern_seq = $fields[0];
+		  my $pattern_id = $fields[1];
+		  my $occ = $fields[$occ_col -1];
+		  unless (&IsNatural($occ)) {
+		    ## Temporary fix for dyad, because the frequency files contain occurrences in the 5th column
+		    if ($pattern_type eq "dyad") {
+		      $occ = $fields[$occ_col];
+		    }
+		    unless (&IsNatural($occ)) {
+		      &RSAT::error::FatalError($occ, "Invalid value for occurrences. Should be a Natural number", $infile{$org}, "line", $l);
+		    }
+		  }
+
+		  ################################################################
+		  ## Check validity of the pattern
+
+		  ## Check oligonucleotide length
+		  if ($pattern_type eq "oligo") {
+		    unless (length($pattern_seq) == $length) {
+		      &RSAT::message::Warning($org, "Skipped", $pattern_seq, "Invalid pattern for ".$length."nucleotide(s)");
+		      $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
+		      next;
+		    }
+		  }
+
+		  ## For strand-insensitive frequencies, the frequency files
+		  ## should in principle contain only one pattern for each
+		  ## pair of reverse complementary patterns.
+		  if ($sum_rc) {
+		    my $rc =  lc(&SmartRC($pattern_seq));
+		    if (lc($pattern_seq) gt $rc) {
+		      &RSAT::message::Warning($org, "Skipped", $pattern_seq, "Invalid pattern for 2str file");
+		      $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
+		      next;
+		    }
+		  }
+
+		  ## Statistics per organism
+		  $patterns_per_organism{$org}++; ## Increment pattern counter
+		  $occ_sum_per_organism{$org} += $occ;
+
+		  ## store the organism-specific occurrences for the full table (can be memory costly)
+		  if (($occ_per_org) || ($freq_per_org)) {
+		    $pattern_occ{$pattern_seq}{$org} = $occ;
+		  }
+
+		  $occ_sum_per_pattern{$pattern_seq} += $occ;
+		  if (defined($pattern_id{$pattern_seq})) {
+		    if ($pattern_id{$pattern_seq} ne $pattern_id) {
+		      &RSAT::error::FatalError("Inconsistency betwen pattern identifiers", $infile{$org}, $pattern_seq, 
+					       $pattern_id, $pattern_id{$pattern_seq});
+		    }
+		  } else {
+		    $pattern_id{$pattern_seq} = $pattern_id;
+		  }
+		}
+		close $in if ($infile{input});
+		if ($invalid_patterns_per_organism{$org} > 0) {
+		  print $out join ("\t", "; WARNING","skipped", 
+				   $invalid_patterns_per_organism{$org}, 
+				   "invalid patterns for organism", $org, $exp_freq_file), "\n";
+		}
+	      }
+
+	      ################################################################
+	      ## Compute total pattern occurrences
+	      foreach my $pattern_seq (keys %occ_sum_per_pattern) {
+		$total_occ += $occ_sum_per_pattern{$pattern_seq};
+
+		## Specific treatment for dyads: there is a specific total for
+		## each spacing value, and th sum of frequencies is 1 for each
+		## spacing value
+		if ($pattern_type eq "dyad") {
+		  if ($pattern_seq =~ /n{(\d+)}/i) {
+		    my $spacing = $1;
+		    $occ_sum_per_spacing{$spacing} += $occ_sum_per_pattern{$pattern_seq};
+		  } else {
+		    &RSAT::error::FatalError($pattern_seq, "Invalid sequence for a dyad");
+		  }
+		}
+	      }
+	      foreach my $pattern_seq (sort keys %pattern_id) {
+		if ($pattern_type eq "dyad") {
+		  if ($pattern_seq =~ /n{(\d+)}/i) {
+		    my $spacing = $1;
+		    $pattern_freq{$pattern_seq} = $occ_sum_per_pattern{$pattern_seq}/$occ_sum_per_spacing{$spacing};
+		  }
+		} else {
+		  $pattern_freq{$pattern_seq} = $occ_sum_per_pattern{$pattern_seq}/$total_occ;
+		}
+		$pattern_freq_sum += $pattern_freq{$pattern_seq};
+	      }
+
+	      ################################################################
+	      ## Suppress RC patterns if option -2str has been activated
+	      if ($sum_rc) {
+		&RSAT::message::TimeWarn("Suppressing redundant patterns (reverse complements)\n") if ($main::verbose >= 2);
+		foreach $pattern_seq (sort keys %pattern_id) {
+		  $rc_pattern_seq = &SmartRC($pattern_seq);
+		  #	&RSAT::message::Debug("Grouping reverse complements", $pattern_seq, $rc_pattern_seq) if ($main::verbose >= 4);
+		  if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+		    delete $pattern_id{$rc_pattern_seq};
+		  }
+		}
+	      }
+
+
+	      ################################################################
+	      ## Print verbose
+	      &Verbose() if ($main::verbose);
+
+	      ################################################################
+	      ## Print output
+
+	      ## Define output fields
+	      my @out_fields =  ("seq", "pattern_id", "frequency", "occ");
+	      $field_descr{seq} = "pattern sequence";
+	      $field_descr{pattern_id} = "pattern identifier";
+	      $field_descr{frequency} = "taxon-wide patter, frequency";
+	      $field_descr{occ} = "taxon-wide occurrences";
+
+	      if ($main::occ_per_org) {
+		foreach my $org (@organisms) {
+		  my $field = "N.".$org;
+		  push @out_fields, $field;
+		  $field_descr{$field} = "occurrences\t".$org;
+		}
+	      }
+	      if ($main::freq_per_org) {
+		foreach my $org (@organisms) {
+		  my $field = "F.".$org;
+		  push @out_fields, $field;
+		  $field_descr{$field} = "pattern frequencies in ".$org;
+		}
+	      }
+
+	      ## Print column content
+	      if ($main::verbose >= 1) {
+		print $out "; Column content\n";
+		my $c = 0;
+		foreach my $field (@out_fields) {
+		  $c++;
+		  print $out join ("\t", ";", $c, sprintf("%-29s", $field), $field_descr{$field}), "\n";
+		}
+	      }
+
+	      ## Print header
+	      print $out "#", join( "\t", @out_fields), "\n";
+
+	      ## Print pattern occurrences
+	      foreach my $pattern_seq (sort keys %pattern_id) {
+		print $out join( "\t", 
+				 $pattern_seq,
+				 $pattern_id{$pattern_seq},
+				 sprintf("%.${decimals}f", $pattern_freq{$pattern_seq}),
+				 $occ_sum_per_pattern{$pattern_seq},
+			       );
+
+		## Print organism-specific occurrences
+		if ($occ_per_org) {
+		  foreach my $org (@organisms) {
+		    print $out "\t", $pattern_occ{$pattern_seq}{$org} || 0;
+		  }
+		}
+
+		## Print organism-specific frequencies
+		if ($freq_per_org) {
+		  foreach my $org (@organisms) {
+		    my $freq = 0;
+		    if ((defined($pattern_occ{$pattern_seq}{$org})) 
+			&& (defined($occ_sum_per_organism{$org}))
+			&& ($occ_sum_per_organism{$org} > 0)
+		       ) {
+		      $freq = $pattern_occ{$pattern_seq}{$org}/$occ_sum_per_organism{$org}
+		    } else {
+		      $freq = 0;
+		    }
+		    $freq_sum_per_organism{$org} += $freq;
+		    printf $out "\t%.${decimals}f", $freq;
+		  }
+		}
+		print $out "\n";
+	      }
+
+	      ################################################################
+	      ## print totals per column
+	      if ($main::verbose >= 1) {
+		my @totals = ("total","total",sprintf("%.${decimals}f", $pattern_freq_sum),$total_occ);
+		if ($occ_per_org) {
+		  foreach my $org (@organisms) {
+		    push @totals, $occ_sum_per_organism{$org} || 0;
+		  }
+		}
+		if ($freq_per_org) {
+		  foreach my $org (@organisms) {
+		    push @totals, sprintf("%.${decimals}f", $freq_sum_per_organism{$org});
+		  }
+		}
+		print $out ";", join( "\t", @totals), "\n";
+	      }
+
+	      ################################################################
+	      ## Close output stream
+	      my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+	      print $main::out $exec_time if ($main::verbose >= 1);
+	      close $main::out if ($main::outfile{taxfreq});
+	      &RSAT::message::TimeWarn("Saved taxon frequency file", $outfile{taxfreq}) if (($main::verbose >= 1) && ($outfile{taxfreq}));
+	    }
+	  }
+	}
+      }
+    }
+  }
+  exit(0);
+}
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Taxon
+=pod
+
+=item B<-taxon taxon>
+
+Specify the taxon for which frequencies have to be computed.
+
+This option can be used iteratively to compute background models for
+multiple taxa.
+
+Example:
+
+taxon-frequencies -v 1 -taxon Bacteria -taxon Fungi -sub_taxa [...]
+
+
+Alternatively, reference organisms can be specified with the option
+-org_list.
+
+
+=cut
+	} elsif ($arg eq "-taxon") {
+	  if ($main::all_taxa) {
+	    &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
+	  }
+	  push @main::taxa, shift(@arguments);
+    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::orglist_file);
+
+
+=head2 -org_list
+
+Build background models from a user-specified file containing a list
+of organisms.
+
+File format: the first word of each line is used as organism ID. Any
+subsequent text is ignored. The comment char is ";".
+
+This option is incompatible with the option "-taxon".
+
+=cut
+  } elsif ($arg eq "-org_list") {
+    $main::orglist_file = shift(@arguments);
+    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if (scalar(@main::taxa) >= 1);
+
+
+
+	    ## Output directory
+=pod
+
+=item	B<-dir output_directory>
+
+This option lets the program determine the name of the output file
+(respecting the same nomenclature as with the option -install), but
+you can specify the output directory.
+
+This is the most convenient way to use taxon-frequencies when you do
+not have write permissions in the RSAT directory.
+
+Incompatible with the option -o and -install.
+
+=cut
+	} elsif ($arg eq "-dir") {
+	    $main::dir{taxfreq} = shift(@arguments);
+	    if ($install) {
+	      &RSAT::error::FatalError("Options -dir and -install are mutually exclusive");
+	    }
+	  if ($main::outfile{taxfreq}) {
+	    &RSAT::error::FatalError("Options -o and -dir are mutually exclusive");
+	  }
+
+	    ## Automatic installation 
+=pod
+
+=item	B<-install>
+
+Automatically specify the name of the output file and save the result
+in the $RSAT directory. This requires to have write permissions on the
+$RSAT/public_html/data directory.
+
+Incompatible with the option -o and -dir.
+
+=cut
+	} elsif ($arg eq "-install") {
+	  $install = 1;
+	  if ($main::outfile{taxfreq}) {
+	    &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
+	  }
+	  if ($main::dir{taxfreq}) {
+	    &RSAT::error::FatalError("Options -install and -dir are mutually exclusive");
+	  }
+
+	    ### Background model
+=pod
+
+=item B<-bg background_model>
+
+Specify a background model for expected frequencies.
+
+  Supported: upstream-noorf, upstream, intergenic
+  Default: upstream-noorf
+
+=cut
+	} elsif ($arg eq "-bg") {
+	    $background_model = shift (@arguments);
+	    $background_model =~ s/ncf/intergenic/;
+	    $background_model =~ s/input/bernoulli/;
+	    unless ($supported_bg{$background_model}) {
+		&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
+	    }
+
+	    #### strands
+=pod
+
+=item B<-2str>
+
+Collect frequencies computed on both strands.
+
+=item B<-1str>
+
+Collect frequencies computed on a single strand.
+
+=cut
+	} elsif ($arg eq "-1str") {
+	  $str = "-1str";
+	} elsif ($arg eq "-2str") {
+	  $str = "-2str";
+
+	  ## Overlap
+=pod
+
+=item B<-noov>
+
+Do not allow mutual overlap between successive occurrences of
+self-overlaping patterns (e.g. TATATATATA contains a signel occurrence
+of TATATA).
+
+=item B<-ovlp>
+
+Allow mutual overlap between successive occurrences of
+self-overlapping patterns (e.g. TATATATATA contains three occurrences
+of TATATA).
+
+=cut
+	} elsif ($arg eq "-ovlp") {
+	  $noov = "-ovlp";
+	} elsif ($arg eq "-noov") {
+	  $noov = "-noov";
+
+
+	  ## Pattern type
+=pod
+
+=item B<-type oligo|dyad>
+
+Pattern type. Supported: oligo, dyad. 
+
+=cut
+	} elsif ($arg eq "-type") {
+	  $pattern_type = shift @arguments;
+          &RSAT::error::FatalError($pattern_type, "Invalid pattern type. Supported: ".$supported_pattern_types) unless ($supported_pattern_type{$pattern_type});
+
+	  ## Oligonucleotide length
+=pod
+
+=item B<-ol #>
+
+Oligonucleotide length.
+
+This option is only valid when pattern type is set to 'oligo'.
+
+=cut
+	} elsif ($arg eq "-ol") {
+	  $oligo_length = shift @arguments;
+	  &RSAT::error::FatalError($oligo_length, 
+				   "Invalid oligo length. Must be a strictly positive Natural number") 
+	    unless ((&IsNatural($oligo_length)) && ($oligo_length > 0));
+
+	  ## Monad length
+=pod
+
+=item B<-ml #>
+
+Monad length for the dyads.
+
+This option is only valid when pattern type is set to 'dyad'.
+
+=cut
+	} elsif ($arg eq "-ml") {
+	  $monad_length = shift @arguments;
+	  &RSAT::error::FatalError($monad_length, 
+				   "Invalid monad length. Must be a strictly positive Natural number") 
+	    unless ((&IsNatural($monad_length)) && ($monad_length > 0));
+
+	  ## Calculate all background models
+=pod
+
+=item B<-all_models>
+
+Compute all the background models for the specified taxon
+
+=cut
+        } elsif ($arg eq "-all_models") {
+	  $main::all_models = 1;
+
+	  ## Calculate background model(s) for all taxa below the specified taxon
+=pod
+
+=item B<-sub_taxa>
+
+Compute the background model(s) for all taxa below the taxon specified
+with the option -taxon.
+
+=cut
+        } elsif ($arg eq "-sub_taxa") {
+	  $main::sub_taxa = 1;
+
+
+	  ## Calculate background model(s) for all taxa
+=pod
+
+=item B<-all_taxa>
+
+Compute the background model(s) for all taxa supported in RSAT.
+Beware ! This can take some time. In principle, this hould be done
+only when many genomes are updated.
+
+=cut
+        } elsif ($arg eq "-all_taxa") {
+	  $main::all_taxa = 1;
+	  if (scalar(@main::taxa) > 0) {
+	    &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
+	  }
+
+
+	  ## Return occurrences per organism
+=pod
+
+=item B<-occ_per_org>
+
+Return additional columns with the organism-specific pattern
+occurrences (one column per organism).
+
+=cut
+        } elsif ($arg eq "-occ_per_org") {
+	  $main::occ_per_org = 1;
+
+	  ## Return frequencies per organism
+=pod
+
+=item B<-freq_per_org>
+
+Return additional columns with the organism-specific pattern
+frequencies (one column per organism).
+
+=cut
+        } elsif ($arg eq "-freq_per_org") {
+	  $main::freq_per_org = 1;
+
+
+
+	  ## Decimals for printing frequencies
+=pod
+
+=item B<-decimals #>
+
+Number of decimal for printing frequencies (default 13)
+
+=cut
+        } elsif ($arg eq "-decimals") {
+	  $main::decimals = shift(@arguments);
+	  &RSAT::error::FatalError($main::decimals, "Invalid value for decimals. Must be a Natural number") 
+	    unless (&IsNatural($main::decimals));
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; taxon-frequencies ";
+    &PrintArguments($main::out);
+
+    ## Compute the length of the largest organism name
+    my $org_len = 20; ## Length of the string or printing organism names
+    foreach my $org (@organisms) {
+      if (length($org) > $org_len) {
+	$org_len = length($org);
+      }
+    }
+
+    ## Print the list of input files
+    print $out "; Organisms\n";
+    my $i = 0;
+    print $out join ("\t", ";", "org_nb",
+		     sprintf("%-${org_len}s", "organism name"), 
+		     "nb_patt", "occ_sum", "invalid", "Input file"), "\n";
+    foreach my $org (@organisms) {
+      if ($infile{$org}) {
+	$i++;
+	print $out join ("\t", ";",
+			 $i,
+			 sprintf("%-${org_len}s", $org),
+			 $patterns_per_organism{$org} || 0,
+			 $occ_sum_per_organism{$org} || 0,
+			 $invalid_patterns_per_organism{$org} || 0,
+			 $infile{$org},
+			), "\n";
+      }
+    }
+
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head2 supported-organisms
+
+To get a list of supported organisms + their respective taxa, type
+I<supported-organisms -format full>.
+
+=head2 oligo-analysis
+
+Taxon-wide oligo frequency files can be used as expected frequencies
+for motif discovery with I<oligo-analysis>.
+
+=head2 dyad-analysis
+
+Taxon-wide dyad frequency files can be used as expected frequencies
+for motif discovery with I<dyad-analysis>.
+
+=head2 convert-background-model
+
+Oligo and dyad frequencies can be converted into background model for
+third parties pattern detection programs (MEME, MotifSampler).
+
+=head1 WISH LIST
+
+
+=cut

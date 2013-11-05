@@ -1,0 +1,81 @@
+#!/usr/bin/perl
+
+
+
+if (($ARGV[0] eq "-help") || ($ARGV[0] eq "-h")) {
+  print <<End_of_help;
+NAME
+	one_var_pos.pl
+
+DESCRIPTION
+	Returns all variants of a given pattern with one degenerated
+	position. By default, all degenerated letters from the
+	15-letter IUPAC alphabet are used, but a subset cn be
+	specified.
+
+CATEGORY
+	util
+	sequences
+
+USAGE
+	one_var_pos.pl -pat patternfile [-v] 
+			[-o outputfile] [-deg deg_code_list]
+End_of_help
+  exit(0);  
+}
+
+@degenerate_code = ("a", "c", "g", "t", "R", "Y", "M", "K", "S", "W", "B", "D", "H", "V", "N");
+
+#### read options ####
+foreach $a (0..$#ARGV) {
+  if ($ARGV[$a] eq "-pat") {
+    $patternfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-deg") {
+    @degenerate_code = split(/,/,$ARGV[$a+1]);
+  }
+}
+
+if ($verbose) {
+  print "Degenerate code:\n";
+  foreach $d (@degenerate_code) {
+    print "$d ";
+  }
+  print "\n";
+}
+
+unless (open PATTERNS, $patternfile) {
+  print "Error: cannot open pattern file\n";
+  exit;
+}
+
+if ($outputfile ne "") {
+  unless (open STDOUT, ">$outputfile") {
+    print "Error: cannot open output file\n";
+    exit;
+  }
+}
+
+
+while (<PATTERNS>) {
+  if (/^([acgt]+)\s/i) {
+    $pattern = $1;
+    foreach $d (@degenerate_code) {      
+      for $l (1..length($pattern)) {
+        $deg_pattern = substr($pattern,0,$l-1);
+        $deg_pattern .= $d;
+        $deg_pattern .= substr($pattern,$l);
+        print "$deg_pattern\n";
+      }
+    }
+  }
+}
+
+
+exit(0);

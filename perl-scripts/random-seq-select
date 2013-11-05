@@ -1,0 +1,414 @@
+#!/usr/bin/perl -w
+
+### CVS: added the option -mask
+
+############################################################
+#
+# $Id: random-seq-select,v 1.10 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+random-seq-select
+
+=head1 DESCRIPTION
+
+Given a multi-sequence input file (e.g. in fasta format), return a random
+selection of these sequences.
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+random-seq-select [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use POSIX;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialize parameters
+    local $start_time = &RSAT::util::StartScript();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    $sequence_format = "fasta";
+    $seq_type = "";
+
+    local $line_width=0;
+    local $replace = 0; ## Selection with/without replacement
+    local $n = 0; #### number of genes to return
+#    local $repeat = 1; #### number of repetitions of the input families (with option -fam)
+    local $groups = 1; #### number of gene families to return
+#    local @families = ();
+    
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+
+    ## Group size file
+    if ($group_size_file) {
+      my ($in, $dir) = &OpenInputFile($group_size_file);
+      my $l = 0;
+      while (<$in>) {
+	$l++;
+	next if (/^;/);
+	next if (/^#/);
+	next if (/^--/);
+	next unless (/\S/);
+	my ($size) = split /\s/;
+	unless (&IsNatural($size)) {
+	  &RSAT::error::FatalError($group_size_file, "line",$l, $size, "is not a valid value for group size. Should be Natural number.");
+	}
+	push @group_sizes, $size;
+      }
+      close $in;
+      $groups = scalar(@group_sizes);
+      &RSAT::message::Info("Selecting", $groups, "groups", "Sizes", join( ",", @group_sizes)) 
+	if ($main::verbose >= 1);
+    } else {
+      ## Chek that a group size has been entered
+      unless ((&IsNatural($n)) && ($n > 0)) {
+	&RSAT::error::FatalError("The number of sequences must be a strictly positive natural number.");
+      }
+      for my $g (1..$groups) {
+	push @group_sizes, $n;
+      }
+    }
+
+
+    ## ##############################################################
+    ## Read all sequences from the input file and index them in a hash
+    ($main::in, $input_dir) = &OpenInputFile($main::infile{input});
+    local %indexed_sequence = ();
+    local @sequence_ids = ();
+    my @comments = ();
+    while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($main::in, $sequence_format, $input_dir, $seq_type, $mask)) &&
+	    (($current_seq) || ($current_id))) {
+	push @sequence_ids, $current_id;
+	$indexed_sequence{$current_id} = $current_seq;
+    }
+    close $main::in if ($main::infile{input});
+    
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+    
+    
+    ################################################################
+    ## Initialize the random seed
+    if ($seed) { 
+	## User-defined seed
+	srand($seed);
+    } else {
+	## Use current time as random seed
+	srand (time); 
+    }
+
+
+    ## number of digits for group suffix
+    my $digits = POSIX::ceil(log($groups+1)/log(10));
+
+    ################################################################
+    ## Select the groups of random sequences
+    foreach my $g (1..$groups) {
+      $n = $group_sizes[$g-1];
+      my $outputfile = $main::outfile{output};
+      ## Add a suffix for the group number
+	my $group_suffix = sprintf "%${digits}d", $g;
+	$group_suffix =~s/ /0/g;
+	if (($main::outfile{output})
+	    && ($groups > 1)) {
+	    $outputfile .= "_rep_".$group_suffix;
+	    $outputfile .= ".".$sequence_format;
+	}
+
+	################################################################
+	### open output stream
+	$main::out = &OpenOutputFile($outputfile);
+	&RSAT::message::TimeWarn(join("\t", "Random sequence selection",$g."/".$groups, "n=".$n, $outputfile)) 
+	  if ($main::verbose >= 1);
+
+	################################################################
+	###### Select random set of sequences
+	my @remaining_ids = @sequence_ids;
+	my @random_ids = ();
+	for my $i (1..$n) {
+	    my $nb_remaining_ids = scalar(@remaining_ids);
+	    my $selected = int(rand($nb_remaining_ids));
+	    my $selected_id = $remaining_ids[$selected];
+	    &RSAT::message::Info(join ("\t", "Selected sequence", $selected, $selected_id))
+	      if ($main::verbose >= 2);
+	    if ($replace) {
+		push @random_ids, $remaining_ids[$selected];
+	    } else {
+		push @random_ids, splice(@remaining_ids, $selected, 1);
+	    }
+	}
+
+	################################################################
+	###### print output
+	foreach my $seq_id (@random_ids) {
+	    &PrintNextSequence($out, $sequence_format, $line_width, $indexed_sequence{$seq_id}, $seq_id, @comments);
+	}
+    }
+
+    ################################################################
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Sequence format
+=pod
+
+=item B<-format sequence_format>
+
+Sequence format. 
+
+=cut
+	} elsif ($arg eq "-format") {
+	    $main::sequence_format = shift(@arguments);
+	    
+	    ## mask
+=pod
+
+=item B<-mask lower|upper>
+
+Mask lower or uppercases, respecively, i.e. replace selected case by N
+characters.
+
+=cut
+	} elsif ($arg eq "-mask") {
+	    $main::mask = shift(@arguments);
+	    &CheckMask($main::mask);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+
+	    ## Number of sequences
+	    ## (or number of sequences per group, if option -g is used)
+=pod
+
+=item    B<-n seq_number>
+
+Number of sequences to return in the random selection.
+
+=cut
+	} elsif ($arg eq "-n") {
+	    $n = shift(@arguments);
+	    unless (&IsNatural($n)) {
+		&RSAT::error::FatalError("$n\tInvalid number of genes. Should be a natural number.");
+	    }
+	    
+
+	    ## Number of groups
+=pod
+
+=item    B<-g groups>
+
+Number of repetitions (groups of sequences) of the random sampling.
+
+=cut
+	} elsif ($arg eq "-g") {
+	    $groups = shift(@arguments);
+	    unless (&IsNatural($groups)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of genes. Should be a natural number.");
+	    }
+
+
+	    ## File containing group sizes
+=pod
+
+=item    B<-sizes group_size_file>
+
+Specify a file containing group sizes.
+
+The frist word of each row of this file must be a Natural number. The
+rest of the line is ignored.
+
+This option is incompatible with the option -n and -g. 
+
+=cut
+	} elsif ($arg eq "-sizes") {
+	    $group_size_file = shift(@arguments);
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print "; random-seq-select ";
+    &PrintArguments();
+    if (%main::infile) {
+	print "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print ";\t$key\t$value\n";
+	}
+    }
+    printf $out "; %-29s\t%s\n", "Nb of input sequences", scalar(@sequence_ids);
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+random-genes
+
+=cut

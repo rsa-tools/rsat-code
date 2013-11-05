@@ -1,0 +1,404 @@
+<html>
+<head>
+   <title>Pathfinder help</title>
+<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help on Pathfinder
+</h2>
+</center>
+
+<h4>Content</h4>
+<ul>
+<li><a href='help.pathfinder.html#description'>Description</a></li>
+<li><a href='help.pathfinder.html#credits'>Credits</a></li>
+<li><a href='help.pathfinder.html#graph'>Input graph</a></li>
+<li><a href='help.pathfinder.html#terminals'>Input nodes</a></li>
+<li><a href='help.pathfinder.html#formats'>Graph formats</a></li>
+<li><a href='help.pathfinder.html#options'>Options</a></li>
+<li><a href='help.pathfinder.html#advanced'>Advanced options</a></li>
+<li><a href='help.pathfinder.html#output'>Output</a></li>
+<li><a href='help.pathfinder.html#email'>Email</a></li>
+<li><a href='help.pathfinder.html#next'>Next steps panel</a></li>
+<li><a href='help.pathfinder.html#limit'>Limitations</a></li>
+<li><a href='help.pathfinder.html#webservice'>Web service</a></li>
+<li><a href='help.pathfinder.html#standalone'>Standalone tool</a></li>
+<li><a href='help.pathfinder.html#literature'>Literature</a></li>
+</ul>
+
+<h4><a name="description">Description</a></h4>
+
+<ul>
+    Given a number of source and a number of target nodes, enumerate the k lightest paths connecting any of the
+    source nodes with any of the target nodes in the order of their weight.
+    Paths are simple, that is no node can occur more than once in the path.
+    <br>
+</ul>
+
+<h4><A NAME="credits"></A>Credits</h4>
+<ul>
+   Pathfinder is a Java wrapper around REA written by Jimenez and Marzal in C [1]. It has been
+   inspired by a Python wrapper written by Pierre Schaus and Jean-No&euml;l Monette at <a href='http://www.uclouvain.be/ingi.html' target='_blank'>UCL (INGI)</a>.
+   See the <a href="https://gforge.info.ucl.ac.be/projects/bioedge/" target='_blank'>Cytoscape plugins</a> by Pierre Schaus and Jean-No&euml;l Monette for their k shortest paths tool.
+   Note that Pierre Schaus and Jean-No&euml;l Monette also modified the REA code.
+   The multiple-to-multiple end path finding relies on a graph transformation suggested
+   by Olivier Hubaut (former aMAZE team member) and also described in [2]. Pathfinder makes use of a graph library
+   developed by the former <a href="http://www.bigre.ulb.ac.be/amaze/" target='_blank'> aMAZE team</a>.
+</ul>
+
+<h4><A NAME="graph"></A>Input graph</h4>
+	<ul>
+	<b>graph</b><br>
+		The input graph can be either in tab-delimited or gml format.
+	</ul>
+	<ul>
+	<b>graph file</b><br>
+		A file containing a graph in either tab-delimited or gml format.
+	</ul>
+	<ul>
+	<b>graph id</b><br>
+		The identifier of a graph that has been submitted and stored on
+		the server. This allows to avoid re-submitting large graphs.
+		The identifier is assigned by Pathfinder. For storage of graphs
+		on the server side, see <A HREF='help.pathfinder.html#server'>below</a>.
+		<font color = "red">Warning: The weight of already submitted graphs cannot be changed!</font><br>
+	</ul>
+	<ul><A NAME="directed"></A><b>Directed</b><br>
+	Check the "directed" option to signal that the input graph is directed.
+	This option is important for tab-delimited format, because this format,
+	in contrast to gml, does not specifiy whether a graph is directed or undirected.
+	Results may greatly vary between path finding done on the same input graph treated as
+	undirected or as directed!
+	</ul>
+	<ul><A NAME="server"></A><b>Storage of input graphs on server</b><br>
+	To submit large input graphs can take time. In addition, Pathfinder generates
+	temp files each time it is called. Re-using a graph and its associated
+	temp files saves time. This is why input graphs can be stored on the server.
+	Select this option and save the graph identifier that Pathfinder returns.
+	The next time you want to work on the same graph, enter its
+	identifier in the graph id field.
+	Although the input graphs themselves are stored an infinite time when this option has been set,
+	result files generated from them are only available during three days.
+	</ul>
+
+<h4><A NAME="terminals"></A>Input nodes</h4>
+
+	<ul><b>Sources and targets</b><br>
+	If several source and/or target node identifiers are given, they are separated by '/'.
+	Example:<br>
+	Source nodes: a/b/c<br>
+	Target nodes: d
+	</ul>
+	<ul><A NAME="batchfile"></A><b>Batchfile</b>
+		A batchfile allows to do several path finding tasks in a row. It is a collection
+		of sources and targets, which are specified in a tab-delimited file. Source nodes
+		are assigned to a group containing START in its name and target nodes are assigned to a group
+		containing END. The START and END groups are assigned to experiment groups, whose names can be chosen
+		freely. Thus, each experiment is defined by a start group and an end group, which in turn consist of
+		start nodes and end nodes.
+		Comments in the batchfile are preceded by #.
+		<pre>
+		# example for batchfile describing two path finding experiments
+		# the first experiment has source R04511 and target C00191
+		# the second experiment has source R04198 and targets C00080 and C00681
+		R04511	START1
+		C00191	END1
+		R04198	START2
+		C00080	END2
+		C00681	END2
+		START1	EXP1
+		END1	EXP1
+		START2	EXP2
+		END2	EXP2
+		</pre>
+	</ul>
+
+<h4><A NAME="formats"></A>Graph formats</h4>
+
+	<ul>
+	<b>Preface</b><br>
+	The tab-delimited format is simpler and therefore faster to transfer than
+	the gml format. <font color="red">Warning: For tab-delimited format, the user needs
+	to specify whether or not the graph is directed.</font>
+	See the option described <a href="help.pathfinder.html#directed">above</a> to do this.<br>
+	<font color="red">Warning: The tab-delimited format with a node part is restricted to Pathfinder
+	and cannot be read in by other NeAT tools.</font>
+	</ul><ul>
+	<b><A NAME="tab"></A>Tab-delimited</b><br>
+	<ol>
+	<li>The tab-delimited format in its most simple form is a list of arcs.
+	Optionally, weights can be set as third column. Example:<br>
+	<pre>
+	; example tab-delimited graph as arc list with weights on arcs
+	a	b	1.1
+	b	c	2.4
+	c	a	3
+	</pre>
+	</li>
+	<li>If one wants to give nodes (i.e. to include orphan nodes or to set node attributes),
+	the node identifiers can be set as one column, along with their weights. Arcs
+	are separated from nodes by a line starting with ;ARCS. Example:<br>
+	<pre>
+	; example tab-delimited graph with nodes
+	a
+	b
+	c
+	d
+	;ARCS
+	a	b	1.1
+	b	c	2.4
+	c	a	3
+	</pre>
+	</li>
+	<li>Additional node or arc attribute values along with the attribute name can be set
+	by setting tab-delimited node or arc attribute headers. Example:<br>
+	<pre>
+	; example tab-delimited graph with nodes having values for a color attribute
+	;NODES	color
+	a	yellow
+	b	blue
+	c	blue
+	d	yellow
+	;ARCS
+	a	b	1.1
+	b	c	2.4
+	c	a	3
+	</pre>
+	Attributes can also be set on the arcs. Example:
+	<pre>
+	; example tab-delimited graph with nodes having values for a color attribute
+	; and arcs having values for a probability attribute
+	;NODES	color
+	a	yellow
+	b	blue
+	c	blue
+	d	yellow
+	;ARCS	probability
+	a	b	0.9	1.1
+	b	c	0.5	2.4
+	c	a	0.1	3
+	</pre>
+	# is an alternative comment symbol. If not specified otherwise, the last node or
+	arc column is always treated as weight column.
+	<font color="red">Warning: The symbol -- is NOT treated as comment symbol!</font>
+	</li>
+	</ol>
+	</ul>
+	<ul>
+	<b><A NAME="gml"></A>GML</b><br>
+	The gml format is a generic format allowing to store data as a tree of objects
+	consisting of attribute and value pairs. It is widely used for describing graphs.
+	It allows to set attributes on nodes, arcs and the graph itself. See <a href="http://www.infosun.fim.uni-passau.de/Graphlet/GML/gml-tr.html" target='_blank'>here</a>
+	for more information on this format.
+	</ul>
+
+<h4><a name="options"></a>Options</h4>
+
+	<ul><A NAME="rank"></A><b>Rank</b><br>
+	This option specifies how many paths should be found in terms of weight levels. If for example rank is set to three,
+	Pathfinder attempts to find three increasing weight levels, where each weight level may contain several paths.
+	</ul>
+	<ul><A NAME="weight"></A><b>Weight</b><br>
+	Three options are available.<br>
+	<ol>
+	<li>unit: This option sets a weight of one on each node.</li>
+	<li> degree: This option sets a weight equal to its degree on each node.</li>
+	<li>as given in input graph: This option should be set to use weights given in the graph.
+	<font color="red">Warning: Weights should be set on the arcs/edges as values of the attribute "Weight".</font><br>
+	Example for edge in tab-delimited format:<br>
+	1	2	3.22<br>
+	or<br>
+	;ARCS	Weight<br>
+	1	2	3.22<br>
+	Example for edge in gml format:<br>
+	edge[ source 1 target 2 Weight 3.22]<br>
+	</li>
+	</ol><br>
+	Node weights are transformed into edge/arc weights by taking the mean of
+	the head and tail node weights. The k shortest paths algorithm (see <a href="help.pathfinder.html#credits">Credits</a>)
+	expects arc weights as input.
+	</ul>
+	<ul><A NAME="constraints"></A><b>Identifiers of nodes to exclude</b><br>
+	This option allows to post-filter paths in order to keep only those that do not contain the given
+	node identifiers.
+	</ul>
+	<ul><b>Identifiers of nodes to include</b><br>
+	This option allows to post-filter paths in oder to keep only those that contain the given
+	node identifiers.
+	</ul>
+	<ul><b>Maximal Weight</b><br>
+	This option sets the maximal weight a path can have. The weight of a path is the sum of its edges.
+	</ul>
+	<ul><b>Maximal Length</b><br>
+	This option sets the maximal length a path can have. The length of a path is defined as its number of nodes.
+	</ul>
+	<ul><b>Minimal Length</b><br>
+	This option sets the minimal length a path should have.
+	</ul>
+
+<h4><A NAME="advanced">Advanced options</a></h4>
+	<ul><b><A NAME="exclusion"></A>Exclusion attribute</b><br>
+	This option allows to specify the name of the exclusion attribute.
+	The exclusion attribute is set if certain nodes should not appear together in one path.
+	Nodes sharing the same value for the exclusion attribute are treated as mutually exclusive.
+	</ul>
+	<ul><b><A NAME="metabolic"></A>Metabolic</b><br>
+	A metabolic graph is defined as follows: It has values on its nodes for two attributes, namely "ObjectType"
+	and the given exclusion attribute. The "ObjectType" attribute has two values: one for compound nodes ("Compound") and one for reaction nodes ("Reaction").
+	In addition, the graph is directed.<br>
+	This definition follows from our experience that metabolic graphs should be represented as directed, bipartite graphs, where
+	forward and reverse direction of a reaction are mutually exclusive (see <a href='neat_publications.html'>publications</a>).<br>
+	<ul>
+	<li><b>Tab-delimited metabolic graphs</b><br>
+	In a tab-delimited file, you should set the "ObjectType" column as second column after the node identifiers and the exclusion attribute column as third column.
+	Don't set column headers and leave the "Exclusion attribute" option blank.</li>
+	<li><b>GML metabolic graphs</b><br>
+	In GML format, you should use the "ObjectType" attribute and an exclusion attribute, whose name should be
+	specified with the "Exclusion attribute" option.</li>
+	<li><b>Purpose of the attributes</b><br>
+	The "ObjectType" attribute changes the behaviour of the "degree" weight policy: Nodes with "Reaction" as value of "ObjectType" receive
+	a weight of one, whereas nodes with "Compound" as value receive a weight according to their degree.<br>
+	The exclusion attribute causes forward and reverse direction of a reaction to be treated as mutually exclusive.<li>
+	<li><b>Exclusion attribute values for REA algorithm</b><br>
+	For REA, the exclusion attribute values should be given as follows:<br>
+	<ol>
+	<li>A compound should have the same string as identifier and exclusion attribute value.</li>
+	<li>Reaction identifiers and exclusion attribute of reactions match except for the last character in the reaction identifier string<br>
+      - direct reactions have an identifier composed of exclusion attribute and the direct reaction symbol (i.e. ">")<br>
+      - reverse reactions have an identifier composed of exclusion attribute and the reverse reaction symbol (i.e. "<") <br></li>
+	</ol>
+	</li>
+	<li><b>Example of a metabolic graph</b><br>
+	Here is a small example for a metabolic graph in tab-delimited format:
+	<pre>
+	; small example for a metabolic graph
+	R02283>	Reaction	R02283
+	R02283<	Reaction	R02283
+	C00437	Compound	C00437
+	C00631	Compound	C00631
+	R01518>	Reaction	R01518
+	R01518<	Reaction	R01518
+	;ARCS
+	R02283<	C00437
+	C00437	R02283>
+	C00631	R01518>
+	R01518<	C00631
+	</pre>
+	</li>
+	<li><b><A NAME="rpairs"></A>Metabolic RPAIR graph</b><br>
+	This is a special case of a metabolic graph that has been constructed from reactant pairs (sub-reactions) taken from KEGG RPAIR
+	and from compounds listed in KEGG LIGAND. You can find paths in pre-loaded graphs by using the
+	metabolic path finder, which also allows you to submit custom metabolic RPAIR graphs.</li>
+	</ul>
+	<br>
+	<b><A NAME="algorithm"></A>Algorithm</b><br>
+	You can choose between REA (the default, see <a href='help.pathfinder.html#literature'>[1]</a>) or backtracking
+	developed by Fabian Couche and Didier Croes (see <a href='neat_publications.html'>publications</a>).
+	<font color='red'>You can use backtracking only on metabolic graphs and only with a pre-defined weighting scheme.
+	Backtracking treats the input graph as directed and sets weights as follows: compound nodes receive their degree
+	as weight and reaction nodes receive a weight of one. Only one start and one end node can be given.</font>
+	</ul>
+
+<h4><A NAME="output"></A><b>Output</b></h4>
+	<ul>
+	<b>Preface</b><br>
+	In general, result files are stored no longer than three days on the server,
+	so make sure you download them on time, if you need them.<br>
+	Pathfinder unifies all paths of equal weight into one pathway. Thus, a pathway
+	does not need to be linear.
+	<br>
+	Because Pathfinder treats paths of equal weight as one pathway, the option "rank"
+	is interpreted as the requested maximal weight level. Pathfinder attempts to find as many
+	weight levels (with any number of paths belonging to a given weight level)
+	as ranks have been specified.
+	<br>
+	Of course, if less than the requested number of paths
+	is present in the graph, Pathfinder cannot return these paths.<br>
+	If a graph is requested as Output type, the nodes have values for the
+	"Path_Rank" attribute, to distinguish different paths in the graph.
+	Nodes and edges/arcs belonging to a path are colored in gold (that is they
+	have a value "gold" for attribute color and value "#FFD700" for attribute rgb_color).
+	<br><br>
+	The following output types are available:<br>
+	<ol>
+	<li>
+	<b>table of paths</b><br>
+	Pathfinder returns the requested number of lightest paths ranked according to their weight in a table.
+	The table can be converted into a graph.
+	</li>
+	<li>
+	<b>input graph with paths highlighted</b><br>
+	Pathfinder returns the input graph with paths highlighted in another color.<br>
+	The modified input graph can be input of further analysis steps. Its format can be
+	specified by setting output format either to "tab-delimited" or to "gml".
+	</li>
+	<li>
+	<b>each path as a separated component of a single graph</b><br>
+	Pathfinder returns the requested number of weight levels (see <a href="help.pathfinder.html#rank">rank</a>) as separated
+	components of one graph in the desired output format (gml or tab-delimited). The graph can be
+	input of further analsysis steps. Each component merges all paths of equal weight.
+	</li>
+	<li>
+	<b>paths unified into one graph</b><br>
+	Pathfinder returns the paths unified into one graph, which is returned in the desired
+	output format ("gml" or "tab-delimited"). The graph can be input of further analsysis steps.</li>
+	</ol>
+	</ul>
+
+<h4><A NAME="email"></A><b>Email</b></h4>
+	<ul>You can optionally specify an email address, so Pathfinder results can be sent to you by email.
+		This is recommended for very large graphs or batch files, which might require a computation
+		time above the server timeout.
+		If you leave the email field empty, results will be displayed in the browser.
+	</ul>
+
+<h4><A NAME="next">Next steps panel</a></h4>
+	<ul>The next steps panel allows you to input the result of Pathfinder into one of the listed tools without copy-pasting
+	the result into that tool. The next steps panel will only appear if you request a graph output.
+	</ul>
+
+<h4><A NAME="limit">Limitations</a></h4>
+	<ul>Format limitations:
+	<ol>
+	<li>Pathfinder cannot deal with multi-edges (several edges between two nodes) or hyper-edges (edges between more than two nodes).</li>
+	<li>Pathfinder does not process correctly mixed graphs (mixtures of undirected and directed graphs).</li>
+	</ol>Algorithmic limitations:
+	<ol>
+	<li>REA does not allow a graph with negative-length cycles reachable from the start nodes. Therefore, negative weights on arcs should be used carefully, if at all.</li>
+	</ol>Runtime:
+	<ol>
+	<li>Runtime depends strongly on the size of the graph and the number of paths asked. A timeout of 10 minutes has been set.<br>
+	We tested REA on metabolic graphs up to 44,000 arcs. With degree weighting scheme and paths requested up to second rank, the algorithm usually completed within one minute.
+	Be aware that for unit weighting scheme, runtime can be much longer, because many more paths of equal weight may exist.
+	In this case, the runtime may exceed the server timeout.
+	Whenever a timeout occurs, you might try to repeat the search with your email address set. This will circumvent the server timeout.
+	</li>
+	</ol>
+	</ul>
+
+<h4><A NAME="webservice">Web service</a></h4>
+	<ul>
+	<font color="red">Pathfinder does not use the usual RSAT Web Service address!</font>
+	Check the <a href="neat_webservices.php">NeAT web services</a> page.
+	</ul>
+
+<h4><A NAME="standalone">Standalone tool</a></h4>
+	<ul>A stand alone version of Pathfinder is available with the
+	<a href="distrib/index.html">RSAT distribution</a>.
+	</ul>
+
+<h4><A NAME="literature"></A>Literature</h4>
+<ol>
+	<li>Jimenez, V.M., and Marzal, A. (1999). "Computing the K Shortest Paths: a New Algorithm and an Experimental Comparison", Proc. 3rd Int. Worksh. Algorithm Engineering (WAE 1999)</li>
+	<li>Duin, C.W., Volgenant, A., and Vo&szlig;, S. (2004). "Solving group Steiner problems as Steiner problems." European Journal of Operational Research 154, 323-329.</li>
+</ol>
+
+<h4 class="footer">
+For information, contact <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>
+</h4>
+
+</blockquote>
+</body>
+</html>

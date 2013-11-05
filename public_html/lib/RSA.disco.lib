@@ -1,0 +1,679 @@
+#!/usr/bin/perl
+################################################################
+## Libraries for shared tasks between pattern discovery programs
+## (oligo-analysis and dyad-analysis)
+
+package main;
+
+## Supported thresholds
+%lth = (); # lower threshold values
+%uth = (); # upper threshold values
+@supported_thresholds = qw(
+			   occ
+			   occ_P
+			   occ_E
+			   occ_sig
+			   observed_freq
+			   exp_freq
+			   zscore
+			   mseq
+			   ms_P
+			   ms_E
+			   ms_sig
+			   ratio
+			   rank
+			 );
+#			   likelihood
+
+## Arbitraty value for the maximal significance. The actual limit for
+## computing P-values is ~e-300 -> we cannot compute significances
+## above ~300.
+$MAX_SIG = 350;
+
+$supported_thresholds = join ",", @supported_thresholds;
+%supported_threshold = ();
+foreach my $thr (@supported_thresholds) {
+    $supported_threshold{$thr} = 1;
+}
+
+## Return field not supported by the quick counting mode
+%quick_forbidden_field = ('mseq'=>1,
+			  'overlap'=>1,
+			  'pos'=>1,
+			  'distrib'=>1,
+			  'table'=>1,
+    );
+$quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
+
+################################################################
+## Check if the options are compatible with quick count mode
+##
+## Usage:
+##  my $quick_count = &CheckQuickCount();
+##
+sub CheckQuickCount {
+
+  ## Quick mode requires input file (cannot be done with STDIN as
+  ## input).
+  unless ($infile{input}) {
+    &RSAT::message::Warning("Quick count mode requires to specify an input file")
+      if (($main::verbose >= 1) || ($quick_count));
+    return(0);
+  }
+
+  ## Check that the output fields requested with the option -return are supported by count-words
+  foreach my $field (@output_fields) {
+    if ($quick_forbidden_field{$field}) {
+      &RSAT::message::Warning("Quick count mode is incompatible with the output field", $field)
+	if (($main::verbose >= 2) || ($quick_count));
+      return(0);
+    }
+  }
+
+  ## Occurrence table
+  if ($return{table}) {
+    &RSAT::message::Warning("Quick count mode is incompatible with the occurrence table format.")
+      if (($main::verbose >= 2) || ($quick_count));
+    return(0);
+  }
+
+  ## Sequence type
+  unless (lc($seq_type) eq "dna") {
+    &RSAT::message::Warning("Quick count mode is only compatible with DNA sequences.")
+      if (($main::verbose >= 2) || ($quick_count));
+    return(0);
+  }
+
+  ## Occurrence table
+  if ($return{distrib}) {
+    &RSAT::message::Warning("Quick count mode is incompatible with the pattern count distribution output.")
+      if (($main::verbose >= 2) || ($quick_count));
+    return(0);
+  }
+
+  ## Dyad-specific options
+  if ($pattern_type eq "dyads") {
+    ## dyad-analysis options incompatible with quick mode
+    if (($dyad_type eq "dr") ||
+	($dyad_type eq "ir") ||
+	($dyad_type eq "rep")
+       ) {
+      &RSAT::message::Warning("Quick count mode is incompatible with the selection of specific dyad types.")
+            if (($main::verbose >= 1) || ($quick_count));
+    }
+  }
+
+  ## If all checks are OK, return 1
+  return(1);
+}
+
+################################################################
+## Use count-words (developed by Matthieu Defrance) to count oligos
+## 100 times faster than with the Perl script
+sub CountWords {
+  my (%args) = @_;
+  local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
+
+  my $strands = $args{strands} || $main::strands;
+  my $pattern_type = $args{pattern_type} || $main::pattern_type;
+  my $noov = $args{noov} || $main::noov;
+
+  my %patterns = ();
+  unless (&CheckQuickCount) {
+    &RSAT::error::FatalError("Selected options are incompatible with quick count mode");
+  }
+
+  my $cw_verbose = &RSAT::stats::min($main::verbose, 1);
+  my $cmd = "";
+  if ($infile{input} =~ /.gz/) {
+    &RSAT::message::Warning("Input file must be decompressed for anlayzing it with count-words");
+    $cmd = "gunzip ".$infile{input};
+  }
+#  $cmd = "gunzip -c ".$infile{input};
+#  $cmd .= "| ".$count_words_cmd." -v ".$cw_verbose;
+#  } else {
+  $cmd = $count_words_cmd." -v ".$cw_verbose;
+  $cmd .= " -i ".$infile{input}; ## Input file
+#  }
+
+  ################################################################
+  ## Generate the count-words command
+  $cmd .= " -l ".$oligo_length;	 ## Oligonucleotide length
+  $cmd .= " ".$noov if ($noov eq '-noov'); ## overlapping mode
+
+  $cmd .= " ".$strands;		## Strands
+  $quick_sums_counted = 1;
+  if ($strands eq "-2str") {
+    $quick_rc_counted = 1;
+  }
+
+  ################################################################
+  ## Avoid grouping RC in this counting mode, because this will be
+  ## done afterwards by oligo-analysis and dyad-analysis. Grouping
+  ## them here would make problems for the computation of frequencies,
+  ## proba, etc.
+  if ($strands eq "-2str") {
+    $cmd .= " -nogrouprc";
+  }
+
+#   ################################################################
+#   ## In double strand mode, ensure that RC are grouped in order to avoid counting twice the
+#   ## same pair of reverse complement.
+#   if ($strands eq "-2str") {
+#     $cmd .= " -grouprc";
+#   }
+
+  ## Dyad spacing
+  if ($pattern_type eq "dyads") {
+    $cmd .= " -sp ".$min_spacing."-".$max_spacing;
+  }
+
+  ## Run count-words and parse the result
+  &RSAT::message::TimeWarn("Quick count", $cmd) if ($main::verbose >= 2);
+  open QUICK, "$cmd |";
+  my $l=0;
+  while (<QUICK>) {
+    $l++;
+    next if (/^;/);		## Skip comment lines
+    next if (/^#/);		## Skip header line
+    next unless (/\S/);		## Skip empty lines
+    chomp();
+    my ($pattern_seq,$id,$freq,$occ,$overlaps) = split ("\t");
+#     &RSAT::message::Debug($l, $pattern_seq, $id,
+# 			  "freq=".$freq, 
+# 			  "occ=".$occ,
+# 			  "ovlp=".$overlaps,
+# 			 ) if ($main::verbose >= 5);
+#    &RSAT::message::Debug("&CountWords()", "line=".$l, $pattern_seq, $id, $occ, $freq,$overlaps) if ($main::verbose >= 5);
+
+    my $pattern_len;
+    my $monad1 = "";
+    my $monad2 = "";
+    my $spacing = 0;
+    if ($pattern_type eq "dyads") {
+      ################################################################
+      ## Decompose dyads into monads (required by dyad-analysis for various computations)
+      if ($pattern_seq =~ /(\w+)n\{(\d+)\}(\w+)/) {
+	$monad1 = $1;
+	$spacing = $2;
+	$monad2 = $3;
+
+	## Compute dyad length( (required for estimating forbidden occurrences + for spacing-specific countersXS
+	$pattern_len = 2*$oligo_length + $spacing;
+	&RSAT::message::Debug("Dyad decomposition", $pattern_seq, $monad1, $spacing, $monad2, $occ) if ($main::verbose >= 5);
+
+      } else {
+	&RSAT::error::FatalError("Invalid dyad", $pattern_seq);
+      }
+    } else {
+      $pattern_len = $oligo_length;
+      ## Derive residue occurrences from pattern occurrences (approx)
+      for my $i (1..$oligo_length) {
+	my $letter =lc(substr($pattern_seq,$i-1,1));
+	$residue_occ{$letter} += $occ/$oligo_length;
+      }
+    }
+
+    ## Approximative estimation of the forbidden occurrences.  An
+    ## accurate number can only be provided during the scanning, but
+    ## count-words does not report forbidden positions.  The
+    ## approximate estimation is better than nothing, because we
+    ## need the number of accepted pattern positions to compute the
+    ## binomial proba.
+    my $forbocc;
+    if ($noov eq "-noov") {
+      $forbocc = ($pattern_len -1)*$occ;
+    }
+
+    ## Store the statistics in the pattern-indexed hash table
+    my $to_sum = 1;
+    my $rev_compl = 0;
+    $patterns{$pattern_seq}->{obs_freq} = $freq;
+    $patterns{$pattern_seq}->{occ} = $occ;
+    $patterns{$pattern_seq}->{overlaps} = $overlaps;
+    $patterns{$pattern_seq}->{forbocc} = $forbocc;
+    if ($strands eq "-2str") {
+      my $rc = &SmartRC($pattern_seq);
+      $patterns{$rc}->{obs_freq} = $freq;
+      $patterns{$rc}->{occ} = $occ;
+      $patterns{$rc}->{overlaps} = $overlaps;
+      $patterns{$rc}->{forbocc} = $forbocc;
+      if ($rc lt $pattern_seq) {
+	$to_sum = 0;
+      }
+    }
+#    &RSAT::message::Debug($pattern_seq,
+#			  "occ=".$patterns{$pattern_seq}->{occ},
+#			  "obs_freq=".$patterns{$pattern_seq}->{obs_freq},
+#			 ) if ($main::verbose >= 10);
+
+    next unless ($to_sum);
+
+    ## update the sum of occurrences
+    $sum_noov += $occ;
+    $sum_overlaps += $overlaps;
+    $sum_occurrences += $occ + $overlaps;
+
+    ## Specific counters for dyads and monads (one counter for each spacing value)
+    if ($pattern_type eq "dyads") {
+      $dyad_occ_sum{$spacing} += $occ;
+      $dyad_ovl_sum{$spacing} += $overlaps;
+      $dyad_total_sum{$spacing} += $overlaps + $occ;
+#      my $monad1_rc = &SmartRC($monad1); $oligo{$monad1_rc}->{occ} += $occ;
+#      my $monad2_rc = &SmartRC($monad1); $oligo{$monad2_rc}->{occ} += $occ;
+#      $oligo{$monad1}->{occ} += $occ;
+#      $oligo{$monad2}->{occ} += $occ;
+#      $sum_oligo_count += $occ;
+    }
+  }
+
+  if ($pattern_type eq "dyads") {
+    ################################################################
+    ## Estimate the number of valid dyad positions This is a bit tricky
+    ## since we don't have the sequence lengths and other required
+    ## information -> we simplify by using the sum of occurrences as
+    ## estimate of the valid dyad positions, and we set the number of
+    ## discarded positions to NA.
+    &RSAT::message::TimeWarn("Estimating number of valid dyad positions") if ($main::verbose >= 2);
+    foreach my $spacing (keys (%dyad_occ_sum)) {
+      $valid_dyad_positions{$spacing} = $dyad_occ_sum{$spacing};
+      $discarded_dyad_positions{$spacing} = "NA";
+#      &RSAT::message::Debug("CountWords",
+#			    "sp=".$spacing,
+#			    "occ_sum=".$dyad_occ_sum{$spacing},
+#			    "valid=".$valid_dyad_positions{$spacing},
+#			    "ovl_sum=".$dyad_ovl_sum{$spacing},
+#			   ) if ($main::verbose >= 5);
+    }
+  }
+
+  #  &RSAT::message::TimeWarn("count-words reported", scalar(keys(%patterns))." patterns") if ($main::verbose >= 2);
+  close QUICK;
+
+  return(%patterns);
+}
+
+
+
+################################################################
+#### calculate number of possible oligomers
+sub NbPossibleOligos {
+  my ($alphabet_size, $oligo_length, $seq_type, $strand, $one_var_position) = @_;
+#  @alphabet = &alphabet($seq_type, $zeroocc);
+#  my $alphabet_size = scalar(@alphabet);
+  my $nb_possible_oligos = $alphabet_size**$oligo_length;
+
+  if (lc($seq_type) eq "dna") {
+    if ($one_var_position) {
+      $nb_possible_oligos = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);
+    }
+    if ($strand eq "-2str") {
+      if ($oligo_length%2 == 0) {
+	### take into account the fact that palindromes have not to be grouped by pairs
+	$nb_possible_palindroms = $alphabet_size**($oligo_length/2);
+      } else {
+	$nb_possible_palindroms = 0;
+      }
+      $nb_possible_oligos -= ($nb_possible_oligos - $nb_possible_palindroms)/2;
+    }
+  }
+  &RSAT::message::Info("nb_possible_oligos=".$nb_possible_oligos,
+		       "alphabet:".$alphabet_size,
+		       "oligo_length:".$oligo_length,
+		       "seq_type:".$seq_type,
+		       "strands:".$strand,
+		       "one_var_pos:".$one_var_position,
+		      ) if ($main::verbose >= 2);
+  return($nb_possible_oligos);
+}
+
+
+## Specify threshold options for oligo-analysis and dyad-analysis
+sub ThresholdOptions {
+    my $threshold_options = "";
+    foreach my $key (keys %lth) {
+	$threshold_options .= join(" ", " -lth", $key, $lth{$key});
+	&RSAT::message::Debug("Lower threshold", $key, $lth{$key}) if ($main::verbose >= 3);
+    }
+    foreach my $key (keys %uth) {
+	$threshold_options .= join(" ", " -uth", $key, $uth{$key});
+	&RSAT::message::Debug("Upper threshold", $key, $uth{$key}) if ($main::verbose >= 3);
+    }
+    return ($threshold_options);
+}
+
+################################################################
+## Indicate threshold options in the suffix
+sub ThresholdSuffix {
+    my $threshold_suffix = "";
+    foreach my $key (sort keys %lth) {
+	$threshold_suffix .= "_lth_".$key.$lth{$key};
+    }
+    foreach my $key (sort keys %uth) {
+	$threshold_suffix .= "_uth_".$key.$uth{$key};
+    }
+    return ($threshold_suffix);
+}
+
+################################################################
+## Check thresholds on all parameters for a given parameter
+sub CheckThresholds {
+  my ($key) = @_;
+  my $stats = "";
+  my $lth = "NA";
+  if (defined($main::lth{$key})) {
+    $lth = $main::lth{$key};
+  }
+
+  my $uth = "NA";
+  if (defined($main::uth{$key})) {
+    $uth = $main::uth{$key};
+  }
+
+  $stats .= &CheckLowerThresholds($key);
+  $stats .= &CheckUpperThresholds($key);
+
+  ## Update the pattern list
+  @patterns = sort(keys(%patterns));
+  &RSAT::message::TimeWarn("Checked thresholds on ".$key,
+			   "lth=".$lth,
+			   "uth=".$uth,
+			   "remaining patterns", scalar(@patterns),
+			  ) if ($main::verbose >= 2);
+
+  return($stats);
+}
+
+################################################################
+## Check lower thresholds on all patterns for a given parameter
+sub CheckLowerThresholds {
+  my ($key) = @_;
+  my $stats = "";;
+  if (defined($main::lth{$key})) {
+    &RSAT::message::TimeWarn("Lower threshold on $key\t$main::lth{$key}") if ($main::verbose >= 3);
+    foreach $pattern_seq (keys %main::patterns) {
+      ## NA values are deleted
+      if ($main::patterns{$pattern_seq}->{$key} eq "NA") {
+	delete $main::patterns{$pattern_seq};
+      }
+      ## Check threshold
+      elsif ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
+	#&RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 10);
+	delete $main::patterns{$pattern_seq};
+      }
+    }
+
+    ## Report number of remaining patterns
+    $stats .= sprintf(";\t%d\t%s\t%s\t%s\n", scalar(keys(%main::patterns)), "passed lower threshold", $key, $lth{$key});
+  }
+
+  return($stats);
+}
+
+################################################################
+## Check upper thresholds on all patterns for a given parameter
+sub CheckUpperThresholds {
+  my ($key) = @_;
+  my $stats = "";
+  if (defined($main::uth{$key})) {
+    &RSAT::message::TimeWarn("Upper threshold on $key\t$main::uth{$key}") if ($main::verbose >= 3);
+    foreach $pattern_seq (keys %main::patterns) {
+      ## NA values are deleted
+      if ($main::patterns{$pattern_seq}->{$key} eq "NA") {
+	delete $main::patterns{$pattern_seq};
+      }
+      ## Check threshold
+      elsif ($main::patterns{$pattern_seq}->{$key} > $main::uth{$key}) {
+	#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 10);
+	delete $main::patterns{$pattern_seq};
+      }
+    }
+
+    ## Report number of remaining patterns
+    $stats .= sprintf(";\t%d\t%s\t%s\t%s\n", scalar(keys(%main::patterns)), "passed upper threshold", $key, $uth{$key});
+  }
+
+  return($stats);
+}
+
+
+################################################################
+#### Check threshold on some parameter for one pattern
+sub CheckPatternThresholds {
+  my ($key, $pattern_seq) = @_;
+
+  ## NA values are deleted
+  if ($main::patterns{$pattern_seq}->{$key} eq "NA") {
+      delete $main::patterns{$pattern_seq};
+      return(0);
+  }
+
+  ## Lower threshold
+  if (defined($main::lth{$key})) {
+    &RSAT::message::TimeWarn("Lower threshold on $key\t$main::lth{$key}") if ($main::verbose >= 4);
+    if ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
+      delete $main::patterns{$pattern_seq};
+      return(0);
+    }
+  }
+
+  ## Upper threshold
+  if (defined($main::uth{$key})) {
+    &RSAT::message::TimeWarn("Upper threshold on $key\t$main::uth{$key}") if ($main::verbose >= 4);
+    if ($main::patterns{$pattern_seq}->{$key} > $main::uth{$key}) {
+      delete $main::patterns{$pattern_seq};
+      return(0)
+    }
+  }
+  return(1);
+}
+
+
+################################################################
+## Corrections for multi-testing
+sub MultiTestCorrections {
+  my ($nb_tested_patterns, %patterns) = @_;
+  &RSAT::message::TimeWarn(join ("\t", "Correcting for multiple testing", $nb_tested_patterns)) if ($main::verbose >= 2);
+  foreach my $pattern_seq (keys %patterns) {
+    if (&IsReal ($patterns{$pattern_seq}->{occ_P})) {
+
+      ## Compute the E-value and significance
+      $patterns{$pattern_seq}->{occ_E} =  $patterns{$pattern_seq}->{occ_P}*$nb_tested_patterns;
+      if ($patterns{$pattern_seq}->{occ_E} > 0) {
+	$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
+      } else {
+	$patterns{$pattern_seq}->{occ_sig} =  $MAX_SIG;
+      }
+
+      ## Compute family-wise error rate (FWER), i.e. the probability
+      ## to observe at least one false positive within a series of
+      ## test.
+#      $patterns{$pattern_seq}->{occ_FWER} = my $p_val = &RSAT::stats::binomial_boe($patterns{$pattern_seq}->{occ_P},
+#										   $nb_tested_patterns, 1);
+
+    } else {
+      $patterns{$pattern_seq}->{occ_E} = "NA";
+      $patterns{$pattern_seq}->{occ_sig} = "NA";
+#      $patterns{$pattern_seq}->{occ_FWER} = "NA";
+    }
+    # 	&RSAT::message::Debug("Calculating E-value",  
+    # 			      $pattern_seq,
+    # 			      $patterns{$pattern_seq}->{occ},
+    # 			      $patterns{$pattern_seq}->{occ_P},
+    # 			      $nb_tested_patterns,
+    # 			      $patterns{$pattern_seq}->{occ_E},
+    # 			      $patterns{$pattern_seq}->{occ_sig},
+    # 			      $patterns{$pattern_seq}->{occ_FWER},
+    # 			     ) if ($main::verbose >= 10);
+  }
+}
+
+################################################################
+#### when grouping occurrences with their reverse complement, 
+#### only retain one of each pair. 
+sub GroupRC {
+  &RSAT::message::TimeWarn("Grouping pairs of reverse complements\n") if ($main::verbose >= 2);
+  foreach $pattern_seq (keys %patterns) {
+    $rc_pattern_seq = &SmartRC($pattern_seq);
+    #	&RSAT::message::Debug("Grouping reverse complements", $pattern_seq, $rc_pattern_seq) if ($main::verbose >= 4);
+    if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+      delete $patterns{$rc_pattern_seq};
+    }
+  }
+}
+
+
+################################################################
+## Do the opposite as GroupRC: starting from the grouped RC, re-create
+## one pattern for the RC of each pattern
+sub UngroupRC {
+    &RSAT::message::TimeWarn("; Reporting both elements of reverse complements pairs\n") if ($main::verbose >= 2);
+    foreach $pattern_seq (keys %patterns) {
+	$rc_pattern_seq = &SmartRC($pattern_seq);
+	warn ("; Ungrouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($main::verbose >= 4);
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+	    $patterns{$rc_pattern_seq} = $patterns{$pattern_seq} ;
+	}
+    }
+}
+
+################################################################
+#### Calculate observed/expected ratio
+sub CalcRatio {
+  foreach $pattern_seq (keys %patterns) {
+    if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+      $patterns{$pattern_seq}->{ratio} = 0;
+    } else {
+      $patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
+    }
+  }
+  &CheckThresholds("ratio");
+} ### CalcRatio
+
+
+# ################################################################
+# #### Calculate observed/expected ratio
+# sub CalcRatio {
+#   if ($return{'freq'}) {
+#     foreach $pattern_seq (keys %patterns) {
+#       if ($patterns{$pattern_seq}->{exp_freq} == 0) {
+# 	$patterns{$pattern_seq}->{ratio} = 0;
+#       } else {
+# 	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
+#       }
+#       #### check threshold on occurrence probability ####
+#       if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+# 	delete $patterns{$pattern_seq};
+#       }
+#     }
+#   } elsif ($return{'occ'}) {
+#     foreach $pattern_seq (keys %patterns) {
+#       if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+# 	$patterns{$pattern_seq}->{ratio} = 0;
+#       } else {
+# 	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
+#       }
+#       #### check threshold on occurrence probability ####
+#       if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+# 	delete $patterns{$pattern_seq};
+#       }
+#     }
+#   }
+#   &CheckThresholds("ratio");
+# } ### CalcRatio
+
+
+################################################################
+## Concatenate return and threshold options from the CGI form
+sub CGI_return_fields {
+  my %field_group = (occ=>"occ",
+		     freq=>"freq",
+		     zscore=>"zscore",
+		     rank=>"rank",
+		     mseq=>"mseq",
+		     ratio=>"ratio",
+		     occ_P=>"proba",
+		     occ_E=>"proba",
+		     occ_sig=>"proba",
+#		     occ_FWER=>"proba",
+		     pos=>"pos"
+		    );
+  my %return_fields = ();
+  foreach my $field (sort keys %field_group) {
+    my $field_group = $field_group{$field};
+    if ($query->param($field_group)) {
+      $return_fields{$field_group} = 1;
+    }
+
+    ## Lower threshold value
+    if (&IsReal($query->param('lth_'.$field))) {
+      $parameters .= " -lth ".$field." ".$query->param('lth_'.$field);
+    }
+
+    ## Upper threshold value
+    if (&IsReal($query->param('uth_'.$field))) {
+      $parameters .= " -uth ".$field." ".$query->param('uth_'.$field);
+    }
+  }
+  my $return_fields = join ",", sort(keys(%return_fields));
+
+  unless ($return_fields) {
+    &cgiError("You should select at least one option in the \"Return\" box.");
+  } else {
+    $parameters .= " -return ".$return_fields;
+  }
+}
+
+
+################################################################
+## Specify a selection of accepted patterns
+sub ReadAcceptedPatterns {
+  my ($accepted_pattern_file, $pattern_type) = @_;
+  ($acc) = &OpenInputFile($accepted_pattern_file);
+
+  &RSAT::message::TimeWarn("Reading accepted patterns from file", $accepted_pattern_file) if ($main::verbose >= 2);
+
+  ## Read a file containing a selection of accepted patterns
+  my $l = 0;
+  while (<$acc>) {
+    $l++;
+    next if (/^;/);
+    next if (/^--/);
+    next if (/^#/);
+    next unless (/\S/);
+    chomp;
+    my @fields = split /\s+/;
+    my $accepted_pattern = lc($fields[0]);
+
+    ## Check dyad syntax
+    if ($pattern_type eq "dyads") {
+      unless ($accepted_pattern =~ /[a-z]+n\{\d+}[a-z]/) {
+	&RSAT::message::Warning($accepted_pattern, "Invalid pattern specitifcation in the accepted pattern files line", $l);
+	next;
+      }
+    }
+    $accepted_patterns{$accepted_pattern} = 1;
+
+  }
+  close $acc;
+
+  ## Also accept reverse complementary patterns if patterns are counted on both strands
+  if ($sum_rc) {
+    foreach my $pattern (keys %accepted_patterns) {
+      my $pattern_rc = lc(&SmartRC($pattern));
+      $accepted_patterns{$pattern_rc} = 1;
+    }
+  }
+
+  ## Report the number of accepted patterns
+  if ($main::verbose >= 2) {
+    &RSAT::message::TimeWarn(scalar(keys %accepted_patterns), "accepted patterns specified in file", $accepted_pattern_file);
+    ## Report the list of accepted patterns
+    &RSAT::message::Info("Accepted patterns", join(" ", "", sort keys %accepted_patterns))
+      if ($main::verbose >= 5);
+  }
+}
+
+
+
+return 1;

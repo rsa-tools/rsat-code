@@ -1,0 +1,205 @@
+#!/usr/bin/perl 
+############################################################
+#
+# $Id: split-chromosomes,v 1.11 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2002-06-06 13:56:24 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+local $start_time = &AlphaDate;
+
+local $infile{input} = "";
+
+local $verbose = 0;
+local $prefix = "";
+local $suffix = ".raw";
+local $in = STDIN;
+
+&ReadArguments;
+$outfile{output} = "chromosome_list.txt"
+    unless defined $outfile{output};
+
+
+### open output file ###
+#$list = &OpenOutputFile($outfile{output});
+open LIST, ">$outfile{output}" ||
+    die "cannot write file $outfile{output}\n";;
+
+#### verbose ####
+&Verbose if ($verbose);
+
+##### read input #####
+($in, $input_dir) = &OpenInputFile($infile{input});
+while (<$in>) {
+    if (/^>(\S+)/) {
+	#### new chromosome
+	if (defined($chrom)) {
+	    print $chrom "\n";
+	    close $chrom;
+	}
+	my $id = $1;
+	$id =~ s/:/_/g;
+	my $chromosome_file = $prefix.$id.$suffix;
+	print LIST "$chromosome_file\n";
+	warn (join ("\t", 
+		    "new chromosome",
+		    "id: $id",
+		    "file: $chromosome_file",
+		    "\n"),
+	      $_) if ($verbose);
+	$chrom = &OpenOutputFile($chromosome_file);
+    } elsif (/\S/) {
+	s/\s//g;
+	print $chrom $_;
+    }
+}
+if (defined($chrom)) {
+    print $chrom "\n";
+    close $chrom;
+}
+close $in if ($infile{input});
+
+################################################################
+## Report execution time
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+###### close output file ######
+#close $list if ($outfile{output});
+close LIST;
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	split-chromosomes
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        split-chromosomes [-i inputfile] [-prefix prefix] 
+	    [-suffix suffix] [-v] [-o outputfile]
+
+DESCRIPTION
+
+	Converts fasta file containing a whole genome (several
+	chromosomes into a set of files with raw sequences (one file
+	per chromosome).
+
+	This is partly overlapping with convert-seq, but this script
+	is optimized for very large sequenc files. Thus, sequences are
+	written progressively in the output files instead of loading
+	the wole sequence in memory.
+	
+CATEGORY
+	sequences
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-i outputfile
+		file with the list of chromosome files
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-prefix
+		a prefix for all the output files
+	-suffix (default ".raw")
+		a suffix  for all the output files 
+		
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+split-chromosomes options
+-------------------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-prefix		prefix for output files
+-sufffix	suffix for output files
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+      
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+      
+      ### prefix
+    } elsif ($ARGV[$a] eq "-prefix") {
+      $prefix = $ARGV[$a+1];
+      
+      ### suffix
+    } elsif ($ARGV[$a] eq "-suffix") {
+      $suffix = $ARGV[$a+1];
+      
+    }
+  }
+}
+
+sub Verbose {
+  warn "; split-chromosomes ";
+  &PrintArguments(STDERR);
+  if (%main::infile) {
+    warn "; Input files\n";
+    while (($key,$value) = each %infile) {
+      warn ";\t$key\t$value\n";
+    }
+  }
+  if (%main::outfile) {
+    warn "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      warn ";\t$key\t$value\n";
+    }
+  }
+}

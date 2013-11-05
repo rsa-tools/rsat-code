@@ -1,0 +1,26 @@
+output=server
+organism='Saccharomyces_cerevisiae'
+query=MET8,MET32,MET18,MET30,MET28,MET6,MET10,MET13,MET3,ECM17,MET14,MET1,MET17,VPS33,MET2,ZWF1,MET4,MET22,MET7,MET31,MET12,MET16
+all=0
+noorf=1
+from=
+to=
+feattype=CDS
+type=upstream
+format=fasta
+lw=0
+label='id,name'
+label_sep=
+nocom=0
+repeat=0
+imp_pos=0
+
+format = fasta
+length = 6
+organism = Saccharomyces_cerevisiae
+background = upstream-noorf
+stats = 'occ,proba,rank'
+noov = 1
+str = 2
+sort = 1
+lth = occ_sig 0

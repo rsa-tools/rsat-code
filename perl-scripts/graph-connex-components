@@ -1,0 +1,418 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: graph-connex-components,v 1.8 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+graph-connex-components
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Graph-Connex-Components for writing new perl scripts.
+
+=head1 AUTHORS
+
+Carl Herrmann <carl.herrmann@univmed.fr>
+
+=head1 CATEGORY
+
+graph
+
+=head1 USAGE
+
+graph-connex-components [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+################################################################
+## Main package
+package main;
+{
+
+
+  ################################################################
+  ## Initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $main::verbose = 0;
+
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::in = STDIN;
+  $main::out = STDOUT;
+
+#   if ($#ARGV != 0) {
+#     print << "FIN";
+# ========================================================
+# AllCoCo
+# ----------
+# finds all connected component from a file of
+# (tab delimited) links, and writes the links of the CC
+# in LargestCC.out.
+# Use: ./AllCoCo <file of links>   
+# Out: <size of largest component> + file LargestCC.out
+
+# Author: Carl Herrmann
+# Last modified: 14/04/2010
+# ========================================================
+# FIN
+#     exit;
+#   }
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Print column header
+  $descr{element} = "node identifier";
+  $descr{component} = "component";
+  $descr{element} = "k = node degree";
+  $descr{element} = "wk = weighted degree (sum of th weights of all edges)";
+  print $out join("\t", "#element", "component", "k", "wk"), "\n" if ($main::verbose >= 1);
+
+  ################################################################
+    ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+
+  @vertices=();
+  while ($line=<$in>) {
+    next if ($line =~ /^#/);	## Skip header lines
+    next if ($line =~ /^;/);	## Skip comment lines
+    next unless ($line =~ /\S/); ## Skip empty lines
+    chomp($line);
+    @line=split(/\t/,$line);
+    push(@{$neighbors{$line[0]}},$line[1]);
+    push(@{$neighbors{$line[1]}},$line[0]);
+
+    $k{$line[0]}++;
+    $k{$line[1]}++;
+
+    if ($main::wcol) {	
+	$weighted_k{$line[0]}+=$line[$main::wcol-1];
+	$weighted_k{$line[1]}+=$line[$main::wcol-1];
+    }
+    else {
+	$weighted_k{$line[0]}++;
+	$weighted_k{$line[1]}++;
+    }
+
+
+    if (!$already{$line[0]}) {
+      push(@vertices,$line[0]);
+    }
+    ;
+    if (!$already{$line[1]}) {
+      push(@vertices,$line[1]);
+    }
+    ;
+    $already{$line[0]}=1;
+    $already{$line[1]}=1;
+  }
+
+  close($in);
+  %already=();
+  #print "all read\n";
+  #print "vertices : @vertices\n";
+
+  #loop over all initial points
+
+  ################################################################
+  ## Open output stream
+  my $component_nb = 0;
+  do
+    {
+      $N=$#vertices+1;
+      $init_vertex=$vertices[int(rand($N))];
+
+      #    print "init = $init_vertex\n";
+
+      @adjacent=();
+      @component=($init_vertex);
+      $already{$init_vertex}=1;
+      @adjacent=@{$neighbors{$init_vertex}};
+      delete $neighbors{$init_vertex};
+
+      # loop over all adjacent vertices
+
+      do
+	{
+	  #	print "adjacent = @adjacent\n";
+	  @newadjacent=();
+	  foreach $node (@adjacent) {
+	    push(@component,$node) if (!$already{$node});
+	    $already{$node}=1;
+	    push(@newadjacent,@{$neighbors{$node}}) if (exists $neighbors{$node});
+	    delete $neighbors{$node};
+	  }
+	  #	print "n=$#newadjacent\n";
+	  @adjacent=@newadjacent;
+	}
+	  while ($#newadjacent >= 0);
+
+      $sizeCC=$#component+1;
+      $max_edges=$sizeCC*($sizeCC-1)/2;
+
+      %inCoCo=();
+
+      ## Print the component
+      $component_nb++;
+      $size[$component_nb] = scalar(@component);
+      foreach $node (@component) {
+	$inCoCo{$node}=1;
+	print $out join ("\t", $node, "comp_".$component_nb,$k{$node},$weighted_k{$node}), "\n";
+      }
+#      print $out "-----------\n";
+
+      $nlinks=0;
+      $meanWeightCC=0;
+      #      open($in,$file);
+      #       do
+      # 	{
+      # 	  $line=<$in>;
+      # 	}
+      # 	  until ($line !~ /^\#/);
+      #       do
+      # 	{
+      # 	  @line=split(/\t/,$line);
+      # 	  if ($inCoCo{$line[0]} and $inCoCo{$line[1]}) {
+      # #	    print $line;
+      # 	    #	    $nlinks++;
+      # 	    #	    $meanWeightCC+=$line[2];
+      # 	  }
+      # 	}
+      # 	  while ($line=<$in>);
+      #       print "\n";
+      #      close $in if ($file);
+
+      @aux=substract(\@vertices,\@component);
+      @vertices=@aux;
+    }
+      while ($#vertices > 0);
+
+
+  ## Report component sizes
+  if ($main::verbose >= 1) {
+    print $out "; Component sizes\n";
+    for my $c (1..$#size) {
+      print $out ";\tcomp_".$c, "\t", $size[$c]." nodes", "\n";
+    }
+  }
+
+  ################################################################
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $main::out if ($main::outfile{output});
+
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Compute the difference between two arrays
+sub substract {
+
+  my $array1=shift(@_);
+  my $array2=shift(@_);
+  my @array1=@{$array1};
+  my @array2=@{$array2};
+  my @aux=();
+  my %in2=();
+
+  foreach $el (@array2) {
+    $in2{$el}=1;
+  }
+  foreach $el (@array1) {
+    if (!$in2{$el}) {
+      push(@aux,$el);
+    }
+  }
+  return @aux;
+
+}
+
+
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+
+
+=pod
+
+=item B<-wcol column number containing weights>
+
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $main::wcol = shift(@arguments);
+	}
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; graph-connex-components ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__

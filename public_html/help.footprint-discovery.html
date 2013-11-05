@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>footprint-discovery</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+<link rev="made" href="mailto:root@b19.apple.com" />
+</head>
+
+<body class="info">
+
+<body style="background-color: white">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=footprint-discovery_form.cgi>footprint-discovery</a> manual</h2>
+</center>
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+<!--	<li><a href="#version">VERSION</a></li>
+-->	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+<!--	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+-->	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#references">REFERENCES</a></li>
+<!--	<li><a href="#wish_list">WISH LIST</a></li>
+-->
+</ul>
+<!-- INDEX END -->
+
+
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>footprint-discovery</p>
+<p>
+</p>
+<!--hr />
+<h1><a name="version">VERSION</a></h1>
+<p>$program_version</p>
+<p>
+</p-->
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Detect phylogenetic footprints by applying <a href=dyad-analysis_form.cgi>dyad-analysis</a> in promoters
+of a set of orthologous genes.</p>
+<p>Adapted from the procedure described in <a href="#references">Janky &amp; van Helden (2008)</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p>rekins@\bigre.ulb.ac.be<p>
+<p>jacques.van.helden@\ulb.ac.be</p>
+<p>
+</p>
+<hr />
+<!--h1><a name="category">CATEGORY</a></h1>
+<p>Sequences</p>
+<p>motif discovery</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>footprint-discovery [-i inputfile] -o [output_prefix] \
+     -taxon \
+     -q query_gene [-q query_gene2 ...] \
+     [-v #] [...]</p>
+<p>
+</p>
+<hr /-->
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>The program takes as input a taxon of interest + one or several query
+genes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>The output consists in a set of files, containing the results of the
+different steps of the analysis.</p>
+<dl>
+<dt><strong><a name="item__5bprefix_5d_log_2etxt">[prefix]_log.txt</a></strong><br />
+</dt>
+<dd>
+Log file listing the analysis parameters + output file names;
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_query_genes_2etab">[prefix]_query_genes.tab</a></strong><br />
+</dt>
+<dd>
+List of query genes (one or several genes can be entered)
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_ortho_bbh_2etab">[prefix]_ortho_bbh.tab</a></strong><br />
+</dt>
+<dd>
+List of orthologous genes
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_ortho_seq_2efasta">[prefix]_ortho_seq.fasta</a></strong><br />
+</dt>
+<dd>
+Promotoer sequences of the orthologous genes
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_ortho_seq_purged_2efasta">[prefix]_ortho_seq_purged.fasta</a></strong><br />
+</dt>
+<dd>
+Purged promoter sequences (for motif discovery)
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_filter_dyads_2etab">[prefix]_filter_dyads.tab</a></strong><br />
+</dt>
+<dd>
+Dyads found in the query genes (for dyad filtering)
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_dyads_2etab">[prefix]_ortho_dyads.tab</a></strong><br />
+</dt>
+<dd>
+Significant dyads found in the promoters of orthologous genes
+(the footprints)
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_dyads_2easmb">[prefix]_ortho_dyads.asmb</a></strong><br />
+</dt>
+<dd>
+Assembled dyads
+</dd>
+<p></p>
+<dt><strong><a name="item__5bprefix_5d_dyads_2epng">[prefix]_ortho_dyads.png</a></strong><br />
+</dt>
+<dd>
+Feature-map
+</dd>
+<p></p></dl>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<!--dl>
+<dt><strong><a name="item__2dv__23"><strong>-v #</strong></a></strong><br />
+</dt>
+<dd>
+Level of verbosity (detail in the warning messages during execution)
+</dd>
+<p></p>
+<dt><strong><a name="item__2dh"><strong>-h</strong></a></strong><br />
+</dt>
+<dd>
+Display full help message
+</dd>
+<p></p>
+<dt><strong><a name="item__2dhelp"><strong>-help</strong></a></strong><br />
+</dt>
+<dd>
+Same as -h
+</dd>
+<p></p>
+<dt><strong><a name="item__2ddry"><strong>-dry</strong></a></strong><br />
+</dt>
+<dd>
+Dry run: print the commands but do not execute them.
+</dd>
+<p></p>
+<dt><strong><a name="item__2di_inputfile"><strong>-i inputfile</strong></a></strong><br />
+</dt>
+<dd>
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+</dd>
+<p></p>
+<dt><strong><a name="item__2do_output_prefix"><strong>-o output_prefix</strong></a></strong><br />
+</dt>
+<dd>
+Prefix for the output files.
+</dd>
+<dd>
+<p>If the prefix is not specified, the program can guess a default
+prefix, but this is working only if there is a single query gene or
+query file.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dq_query"><strong>-q query</strong></a></strong><br />
+</dt>
+<dd>
+Query gene.
+</dd>
+<dd>
+<p>This option can be used iteratively on the command line to specify
+multiple genes.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dorg_query_organism"><strong>-org query_organism</strong></a></strong><br />
+</dt>
+<dd>
+Query organism, to which the query genes belong.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dtaxon_reference_taxon"><strong>-taxon reference_taxon</strong></a></strong><br />
+</dt>
+<dd>
+Reference taxon, in which orthologous genes have to be collected.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dindex"><strong>-index</strong></a></strong><br />
+</dt>
+<dd>
+Generate an HTML index with links to the result files. This option is
+used for the web interface, but can also be convenient to index
+results, epecially when several genes or taxa are analyzed (options
+-genes, -all_genes, -all_taxa).
+</dd>
+<p></p>
+<dt><strong><a name="item__2dlth_field_value"><strong>-lth field value</strong></a></strong><br />
+</dt>
+<dd>
+Lower threshold for dyad-analysis.
+</dd>
+<dd>
+<p>See the manual of dyad-analysis for a description of the fields on
+which a threshold can be imposed.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2duth_field_value"><strong>-uth field value</strong></a></strong><br />
+</dt>
+<dd>
+Upper threshold for dyad-analysis.
+</dd>
+<dd>
+<p>See the manual of dyad-analysis for a description of the fields on
+which a threshold can be imposed.</p-->
+<dt><strong><a name="leader"><strong>Use promoters of predicted operon leader genes</strong></a></strong><br />
+</dt>
+<dd>
+Infer operons in order to retrieve the promoters of the predicted
+operon leader genes rather than those located immediately upstream of
+the orthologs.
+</dd>
+<dl>
+<dt><strong><a name="bg_model"><strong>Background model</strong></a></strong><br />
+</dt>
+<dd>
+Allow the user to choose among alternative background model (see <a href="#references">Janky
+&amp; van Helden, 2008</a>).
+</dd>
+<dl>
+<dt><strong><a name="item_taxfreq"><em>taxfreq</em></a></strong><br />
+</dt>
+<dd>
+Taxon-wide background model, computed by counting dyad frequencies in
+all the promoters of all the genes of the reference taxon.
+</dd>
+<dt><strong><a name="item_monad"><em>monad</em></a></strong><br />
+</dt>
+<dd>
+Expected dyad frequencies are the product of monad frequencies
+observed in the input sequences.
+</dd>
+<p></p></dl>
+<dt><strong><a name="filtering"><strong>Dyads filtering</strong></a></strong><br />
+</dt>
+<dd>
+Only accept dyads found in the promoter of the query gene, in the
+query organism.
+</dd>
+<p></p>
+<!--dt><strong><a name="item__2dno_filter"><strong>-no_filter</strong></a></strong><br />
+</dt>
+<dd>
+Accept all dyads, even if they are not found in the promoter of the
+query gene, in the query organism.
+</dd>
+<p></p-->
+<p></p></dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a href="retrieve-seq_form.cgi">retrieve-seq</a></strong><br />
+</dt>
+<dt><strong><a href="get-orthologs_form.cgi">get-orthologs</a></strong><br />
+</dt>
+<dt><strong><a href="dyad-analysis_form.cgi">dyad-analysis</a></strong><br />
+</dt>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="references">REFERENCES</a></h1>
+<p>Janky R, van Helden J (2008). Evaluation of phylogenetic footprint
+discovery for the prediction of bacterial cis-regulatory elements. BMC
+Bioinformatics, in press.</p>
+<p>
+</p>
+<hr /><p></p></dl>
+
+</body>
+
+</html>

@@ -1,0 +1,234 @@
+#!/usr/bin/perl
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	overlaps
+	
+	8 July 1997 by Jacques van Helden
+
+DESCRIPTION
+	Detects self-overlapping sequences.
+
+CATEGORY
+	sequences
+
+OPTIONS
+	-v	verbose.
+	-i inputfile
+		this file is supposed to contain the sequences to test. 
+		if not specified, the standard input is used.
+		This allows to place the comand within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the comand within a pipe.
+        -rconly only detects overlaps of the pattern with its own 
+                reverse complement.
+	-rc     detects overlaps of the pattern with its own reverse 
+                complement as well as direct overlaps.
+        -coeff  return the overlap coefficient for each input pattern.
+                overlap coefficient is calculated as follows 
+                (after Pevzner et al.(1989). J. Biomol. Struct & Dynamics 
+                5:1013-1026):
+
+                         j=1
+                    oc = SUM kj (1/4)^j
+		          l    
+                where l  is the pattern length. 
+                      j  is the overlap position, comprised between 0 and l.
+                      kj takes the value 1 if there is an overlap at pos j,
+                         0 otherwise.
+	
+INPUT FORMAT
+	Each sequence must be the first word of a new line. Addtitional 
+	information is ignored.
+	
+OUTPUT FORMAT
+	Return all the sequence which are able to overlap themselve, and for
+	 each of them a list of composite words (Kleffe & Borodovsky, 1992).
+	
+REFERENCES
+	Kleffe, J., and Borodovski, M. (1992). 
+	First and second moment of counts of words in random texts generated 
+	by Markov chains. Comp. Appl. Biosci. 8(5):433-441.
+	
+EXAMPLES
+
+End_of_help
+  exit;
+}
+
+$coeff_request = 0;
+$rc = 0;
+$rc_only = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-coeff") {
+    $coeff_request = 1;
+
+  } elsif ($ARGV[$a] eq "-rc") {
+    $rc = 1;
+
+  } elsif ($ARGV[$a] eq "-rconly") {
+    $rc_only = 1;
+    $rc = 1;
+
+  }
+}
+
+
+### open input file ###
+if ($inputfile ne "") {
+  unless (open(INPUT, $inputfile)) {
+    print "\tcannot open input file\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $in = INPUT;
+} else {
+  $in = STDIN;
+}
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+#### verbose ####
+if ($verbose) {
+  if ($inputfile ne "") {
+    print "Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print "Output file	$outputfile\n";
+  }
+}
+
+
+###### execute the command #########
+
+while (<$in>) {
+  if (/(\S+)/) {
+    $word = $1;
+    $word_length = length($word);
+    @overlaps = ();
+    @overlap_pos = ();
+
+    $coeff = 1;
+    ### generate a list of direct overlaps
+    unless ($rc_only) {
+      for $i (1..$word_length-1) {
+        $comp_word = substr($word,0,$i).$word;
+        if ($comp_word =~ /^$word/i) {
+          @overlaps = (@overlaps, $comp_word);
+          @overlap_pos = (@overlap_pos, $i);
+          $coeff += 0.25**$i;
+        }
+      }
+    }
+
+    ### generate a list of reverse complement overlaps
+    if ($rc) {
+	$rc_word = ReverseComplement($word);
+      for $i (0..$word_length-1) {
+        $comp_word = substr($word,0,$i).$rc_word;
+        if ($comp_word =~ /^$word/i) {
+          @overlaps = (@overlaps, $comp_word);
+          @overlap_pos = (@overlap_pos, $i);
+          $coeff += 0.25**$i;
+        }
+      }
+    }
+
+
+    if (($coeff_request) || ($#overlaps > -1)) {
+      print $out "$word\t";
+      if ($coeff_request) {
+        print $out "$coeff\t";
+      }      
+
+      for $o (0..$#overlaps-1) {
+        print $out "@overlaps[$o],";
+      }
+      print $out "@overlaps[$#overlaps]";
+      print $out "\t";
+      
+      for $o (0..$#overlaps-1) {
+        print $out "@overlap_pos[$o],";
+      }
+      print $out "@overlap_pos[$#overlaps]";
+      print $out "\n";
+    }
+  }
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+###### close output file ######
+if ($outputfile ne "") {
+  close $out;
+}
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+
+sub ReverseComplement {
+  local($orig_seq) = $_[0];
+  $complement = reverse $orig_seq;
+  $complement =~ tr/a-z/A-Z/;
+  ### simple nucleotides
+  $complement =~ s/A/t/g;
+  $complement =~ s/T/a/g;
+  $complement =~ s/C/g/g;
+  $complement =~ s/G/c/g;
+  ### degenerate code
+  $complement =~ s/R/y/g;
+  $complement =~ s/Y/r/g;
+  $complement =~ s/M/k/g;
+  $complement =~ s/K/m/g;
+  $complement =~ s/B/v/g;
+  $complement =~ s/V/b/g;
+  $complement =~ s/H/d/g;
+  $complement =~ s/D/h/g;
+  #  $complement =~ s/S/s/g;
+  #  $complement =~ s/W/w/g;
+  #  $complement =~ s/N/n/g;
+  ###  brackets
+  $complement =~ s/\[/temp/g;
+  $complement =~ s/\]/\[/g;
+  $complement =~ s/temp/\]/g;
+  $complement =~ tr/a-z/A-Z/;
+  ### multiplier
+  while (($complement =~ /(\}\d+\{\w)/) 
+         || ($complement =~ /(\}\d+,\d+\{\w)/)) {
+    $rev_mul = reverse $1;
+    $complement =~ s/$1/$rev_mul/;
+  }
+  $complement;
+}# ReverseComplement

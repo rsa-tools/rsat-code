@@ -1,0 +1,460 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+die "This program is obsolete.\nPlease use parse-transfac.pl instead\n";
+
+
+################################################################
+## Help message
+if ($ARGV[0] eq "-h") {
+  open HELP, "| more ";
+  print HELP<<End_of_Help;
+NAME  
+	parse-transfac
+	
+	by Jacques van Helden, June 1997
+	
+DESCRIPTION
+	Parse transfac database
+
+CATEGORY
+	parser
+
+USAGE
+	parse-transfac -XX -XY -XZ [-i inputfile] [-o outputfile] 
+		[-site | -factor | -gene | -matrix | -class | -cell] 
+		[-filter field_ID filterstring]
+
+	where XX XY XZ are the names of fields from transfac, 
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i	input file. Use this option only if you want to 
+		extract data from your own data files rather than from a 
+		TRANSFAC table. The input file should have the same structure as 
+		Transfac flat files 
+		- // is used as as record separator, 
+		- each line must begin with a field identifier (2 uppercase 
+		  letters), followed by a tan or a series of spaces, followed 
+		  by the content of the field.
+	-o	output file
+		If no output file is specified, the result is displayed on the 
+		screen.
+	-filter field_ID filterstring
+		Where filterfield is an identifier from a Transfac field (2 
+		uppercase letters, see below), and filterstring is a string.
+		returns only the records where the field 'filterfield' 
+		contains the string 'filterstring'. 
+	-acfact	factor accession table file
+		This file contains the name of each factor associated to 
+		its accession number
+		One factor per line, with 2 columns: 
+		- the factor accession number
+		- the factor name
+	-acgene	gene accession table file. 
+		Same format as factor accession table file.
+
+	DATA TABLE SELECTION
+		-site	extracts data from site file (default).
+		-factor extracts data from factor instead of site file.
+		-gene   extracts data from gene   instead of site file.
+		-matrix extracts data from matrix instead of site file.
+		-cell   extracts data from cell   instead of site file.
+		-class  extracts data from class  instead of site file.
+
+	FIELD SELECTION
+	
+	Use the codes from transfac for field selection:
+	FIELDS FROM SITE TABLE
+	   AC   Accession no.
+	   ID   Identifier
+	   DT   Date; author
+	   TY   Sequence type
+	   DE   Description (gene or gene product); GENE accession no.
+	   RE   Gene region (e. g. promoter, enhancer)
+	   SQ   Sequence of the regulatory element
+	   EL   Denomination of the element
+	   SF   First position of factor binding site
+	   ST   Last position of factor binding site
+	   S1   Definition of first position (if not transcription start site)
+	   BF   Binding factor (FACTOR accession no.; name; quality)
+	   OS   Organism species
+	   OC   Organism classification
+	   SO   Factor source (TRANSFAC CELL accession no.; name)
+	   ME   Method
+	   CC   Comments
+	   DR   External databases [EMBL/GenBank accession no.; 
+	   DR   EMBL identifier (1st:last position of the TRANSFAC 
+	        sequence element)]
+	   DR   Flybase (Accession number; short description)
+	   DR   EPD(Accession number; EPD_ID)
+	   RN   Reference no.
+	   RA   Reference authors
+	   RT   Reference title
+	   RL   Reference data      
+	FIELDS FROM FACTOR TABLE  
+	   AC   Accession no.
+	   ID   Identifier
+	   DT   Date; author
+	   FA   Factor name
+	   SY   Synonyms
+	   OS   Species
+	   OC   Classification
+	   HO   Homologs (suggested)
+	   CL   Class
+	   SZ   Size
+	   SQ   Sequence
+	   SC   Sequence comment
+	   FT   Feature table (1st position last position feature)
+	   SF   Structural features
+	   CP   Cell specificity (positive)
+	   CN   Cell specificity (negative)
+	   FF   Functional features
+	   IN   Interacting factors
+	   MX   Matrix (matrix accession no.; matrix identifier)
+	   BS   Bound sites
+	   RN   Reference no.
+	   RA   Reference authors
+	   RT   Reference title
+	   RL   Reference data
+	   DR   External databases (EMBL/GenBank accession no.; EMBL identifier
+	   DR   (gene/rna); SwissProt accession no.; identifier; PIR number;
+	   DR   code; FlyBase accession;gene name)
+	FIELDS FROM CELL TABLE
+	   AC   Accession no.
+	   DT   Date; author
+	   SO   Factor source
+	   OS   Species
+	   OC   Classification
+	   CD   Cell description	
+	FIELDS FROM CLASS TABLE
+	   AC   Accession no.
+	   DT   Date; author
+	   CL   Class
+	   SD   Structure description
+	   CC   Comments
+	   DR   PROSITE accession numbers
+	   RN   Reference no.
+	   RA   Reference authors
+	   RT   Reference title
+	   RL   Reference data 
+	FIELDS FROM MATRIX TABLE
+	   AC   Accession no.
+	   ID   Identifier
+	   DT   Date; author
+	   BF   Binding factor
+	   SD   Short factor description
+	   PO        A    C    G    T         
+	   	Position within the aligned sequences,
+	   	frequency of A, C, G, T residues, resp.
+	   BA   Statistical basis
+	   CC   Comments
+	   RN   Reference no.
+	   RA   Reference authors
+	   RT   Reference title
+	   RL   Reference data	   
+	FIELDS FROM GENE TABLE
+	   AC   Accession no.
+	   ID   Identifier
+	   DT   Date; author
+	   SD   Short description/name of the gene
+	   DE   Description: long name of the gene
+	   OS   Biological species
+	   OC   Taxanonomic classification of the species
+	   BC   Bucher promoter classification
+	   BS   TRANSFAC SITE accession numbers
+	   CO   COMPEL accession number
+	   TR   TRRD accession number	   
+	
+EXAMPLES
+		parse-transfac -ID -AC -filter BF sp1 -o sp1.sites
+	selects all the binding sites for SP1 factor, and print for each the 
+	identifier and accession number. Result is stored 
+	in the file sp1.sites.
+	
+		parse-transfac -factor -AC -FA -OS -filter OS cerevisiae 
+				 -o yeast.factors
+	selects all the transcriptional factors from Saccharomyces cerevisiae, 
+	and print for each the identifier and accession number. Result is 
+	stored in the file yeast.factors.
+	
+End_of_Help
+  close HELP;
+  exit(0);
+}
+
+if ($ARGV[0] eq "-help") {
+  open HELP, "| more ";
+  print HELP<<End_short_Help;
+parse-transfac options
+------------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-filter field_ID filterstring
+-site | -factor | -gene | -matrix | -class | -cell
+	transfac table from which to extract the data
+-XX	print field XX
+-acfact	factor accession table file
+-acgene	gene accession table file. 
+End_short_Help
+  close HELP;
+  exit(0);
+}
+
+
+##### default parameters #####
+if ($config_site eq "bigre") {
+    $TF_folder = "/metsys/dsk2/jacques/Transfac/Transfac_3.4";
+} elsif ($config_site eq "cifn") {
+    $TF_folder = "/theory/Transfac_3.2";
+}  else {
+    $TF_folder = "/home/jvanheld/Databases/Transfac/Transfac_3.4";
+}
+$inputfile = "$TF_folder/site.dat";
+
+##### variable initialisation #####
+$start_time = &RSAT::util::StartScript();
+
+$LastField = -1;
+$RecordNb = 0;
+$ExportNb = 0;
+$ToExport = 1;
+$RecordSeparator = "//";
+$outputfile = "";
+$filtering_field = "";
+$filtering_string = "";
+
+##### read parameters from the list of fields to extract #####
+for ($counter = 0; $counter <= $#ARGV; $counter++) {
+
+  ### choice ot the transfac table ###
+  if ($ARGV[$counter] eq "-site") {
+      $inputfile = "$TF_folder/site.dat";
+  } elsif ($ARGV[$counter] eq "-factor") {
+      $inputfile = "$TF_folder/factor.dat";
+  } elsif ($ARGV[$counter] eq "-matrix") {
+      $inputfile = "$TF_folder/matrix.dat";
+  } elsif ($ARGV[$counter] eq "-cell") {
+      $inputfile = "$TF_folder/cell.dat";
+  } elsif ($ARGV[$counter] eq "-class") {
+      $inputfile = "$TF_folder/class.dat";
+  } elsif ($ARGV[$counter] eq "-gene") {
+      $inputfile = "$TF_folder/gene.dat";
+  } elsif ($ARGV[$counter] eq "-o") {
+    $outputfile = $ARGV[$counter+1];
+  
+  } elsif ($ARGV[$counter] eq "-v") {
+      $verbose = 1;
+  
+  } elsif ($ARGV[$counter] eq "-i") {
+    $intputfile = $ARGV[$counter+1];
+
+  } elsif ($ARGV[$counter] =~ /^-acgen/i) {
+    $gene_ac_file = $ARGV[$counter+1];
+
+  } elsif ($ARGV[$counter] =~ /^-acfac/i) {
+    $factor_ac_file = $ARGV[$counter+1];
+
+  } elsif ($ARGV[$counter] eq "-filter") {
+    $filtering_field = $ARGV[$counter+1];
+    $filtering_string = $ARGV[$counter+2];
+  
+  } elsif ($ARGV[$counter]  eq -spacer) {
+      $LastField++;
+      $FieldName[$LastField] = "spacer";
+      $FieldContent[$LastField] = $ARGV[$counter+1];
+      $counter++;  
+
+  } elsif ($ARGV[$counter] =~ /^-(\w\w)$/) { #field to extract
+    $LastField++;
+    $FieldName[$LastField] = $1;
+
+  }
+}
+
+if (@FieldName == ()) {
+  print "
+  	you should specify the fields you want to extract.
+	For more info, type:
+		parse-transfac -h		
+";
+  exit;
+}
+
+
+### open gene name file ###
+if ($gene_ac_file ne "") {
+    if (open AC_GENE, $gene_ac_file) {
+	while (<AC_GENE>) {
+	    if (/^;/) {
+		next;
+	    } elsif (/^\s*(\S+)\s+(\S+)/) {
+		$gene_name{$1} = $2;
+	    }
+	}
+	close AC_GENE;
+    } else {
+	print ";WARNING: could not open gene accession-name file\n";
+    } 
+}
+
+### open factor name file ###
+if ($factor_ac_file ne "") {
+    if (open AC_FACT, $factor_ac_file) {
+	while (<AC_FACT>) {
+	    if (/^;/) {
+		next;
+	    } elsif (/^\s*(\S+)\s+(\S+)/) {
+		$factor_name{$1} = $2;
+	    }
+	}
+	close AC_FACT;
+    } else {
+	print ";WARNING: could not open factor accession-name file\n";
+    } 
+}
+
+
+### open input file ###
+unless (open DATA, $inputfile) {
+  print "Cannot open data file $inputfile\n";
+  exit;
+}
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype oligo-analysis -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+if ($verbose) {
+    print $out ";parse-transfac";
+    foreach $a (@ARGV) {
+	if ($a =~ /\s+/) {
+	    print $out " 'a'";
+	} else {
+	    print $out " $a";
+	}
+    }
+    print $out "\n";
+    print $out ";Input file:\t$inputfile\n";
+    print $out ";Output file:\t$outputfile\n";
+    if ($filtering_field ne "") {
+	print $out ";Filtering on string $filtering_string in field $filtering_field\n";
+    }
+    print $out ";Fields to extract\n;";
+    print $out "$FieldName[0]";
+    for $f (1..$LastField) {
+	print $out "\t$FieldName[$f]";
+    }
+    print $out "\n";
+}
+
+while (<DATA>) {
+  if (/^$RecordSeparator/) { # new record
+    $RecordNb++;
+    if (($RecordNb > 1) && ($ToExport)) { #save 
+	$ExportNb++;
+	foreach $f (0..$LastField) {
+	    if (($FieldName[$f] eq "SD") && ($FieldContent[$f] eq "")) {
+		$FieldContent[$f] = $DE;
+	    }
+	    if (($FieldName[$f] eq "DE") && ($gene_name{$FieldContent[$f]} =~ /\S+/)) {
+		$FieldContent[$f] = $gene_name{$FieldContent[$f]};
+	    }
+	    print $out $FieldContent[$f];
+	    if ($f < $LastField) {
+		print $out "\t";
+	    } else {
+		print $out "\n";
+	    }
+	}         
+    }
+    #initialise next record
+    if ($filtering_field ne "") {
+      $ToExport = 0;
+    } else {
+      $ToExport = 1;
+    }
+    for ($f = 0; $f <= $LastField; $f++) {
+        $FieldContent[$f] = "" unless $FieldName[$f] eq "spacer";;
+    }
+
+  } else {
+    if (($filtering_field ne "") && (/^$filtering_field/) && (/$filtering_string/i)) {
+      $ToExport = 1;
+    }
+    if (/^DE\s+(\S+)/) {
+      $DE = $1;
+    }
+    for ($f = 0; $f <= $LastField; $f++) {
+      if (/^$FieldName[$f]\s+(.*)[\n\r]$/) {
+        if (	($FieldName[$f] eq "BF") && (/(T\d+)/)	||
+		($FieldName[$f] eq "MX") && (/(M\d+)/)	||
+		($FieldName[$f] eq "CL") && (/(C\d+)/)	) { # make a list with the elements of this field
+	    $NewInfo = $1;
+	    if (($FieldName[$f] eq "BF") && ($factor_name{$NewInfo} =~ /\S+/)) {
+		$NewInfo = $factor_name{$NewInfo};
+	    }
+	    if ($FieldContent[$f] eq "") {	# first binding factor for this record
+		$FieldContent[$f] = $NewInfo;
+	    } else {				# add new factor to the list 
+		$FieldContent[$f] .= ";$NewInfo";
+	    }
+	} elsif ($FieldName[$f] eq "BS") {
+            $BSline = $_;
+            while ($BSline =~ /(R\d+)(.*)/) { # there can be several site AC on the same line
+		$NewInfo = $1;
+		$BSline = $2;
+		if ($FieldContent[$f] eq "") {	# first binding factor for this record
+		    $FieldContent[$f] = $NewInfo;
+		} else {				# add new factor to the list 
+		    $FieldContent[$f] .= ";$NewInfo";
+		}
+            }
+        } elsif ($FieldName[$f] eq "DE") {
+	    if (/[;\s](G\d+)[\.\s]/) {	# extract only the AC of the gene
+		$FieldContent[$f] = $1;
+	    } else {				# extract the whole description
+		$NewDescription = $1;
+		if ($FieldContent[$f] eq "") {				# first line of description for this record
+		    $FieldContent[$f] = "\"$NewDescription\"";
+		} else { # next lines of description are added
+		    $FieldContent[$f] =~ s/\"$/ $NewDescription\"/;
+		}
+          }
+        } else {
+          $FieldContent[$f] .= $1;
+          if ($FieldName[$f] eq "SQ") { #remove dot at the end of the sequence
+            $FieldContent[$f] =~ s/\.//g;
+          } elsif (($FieldName[$f] eq "SF") || ($FieldName[$f] eq "ST")){ #remove space at the end of the position
+            $FieldContent[$f] =~ s/ //g;
+          }
+        }
+      }
+    }
+  }
+}
+
+close(DATA);
+close(RES);
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+warn $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified

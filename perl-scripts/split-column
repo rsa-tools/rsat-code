@@ -1,0 +1,211 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: split-column,v 1.9 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+$field_separator = '\|';
+$split_col = 2;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+($in) = &OpenInputFile($infile{input});
+my $l=0;
+while ($line = <$in>) {
+    $l++;
+
+    ## Print comments as such
+    if ($line =~ /^;/) {
+	print $line;
+	next;
+    }
+    
+    ## Split fields
+    chomp($line);
+    my @fields = split "\t", $line;
+    my $field_nb = scalar(@fields);
+    if ($field_nb < $split_col) {
+	warn $line;
+	&RSAT::error::FatalError("Line $l contains only $field_nb fields (< split-column: $split_col");
+    }
+
+    ## fields before the column to split
+    my @pre_fields = (); 
+    for my $c (1..($split_col-1)) {
+	push @pre_fields, shift(@fields);
+    }
+
+    ## Column to split
+    $to_split = shift @fields;
+    warn join("\t", "To split", $to_split), "\n" if ($main::verbose >= 10);
+
+
+    my @split = split $field_separator, $to_split;
+    foreach my $value (@split) {
+	print $out join ("\t", @pre_fields, $value, @fields), "\n";
+    }
+}
+
+close $in if ($infile{input});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	template
+
+        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Split one column of 2-column file (relation table) containing
+	multiple values separated by a specified field separator.
+
+CATEGORY
+	util
+
+USAGE
+        template [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-sep	field separator (default $field_separator)
+	-col	column to split (default $split_col)
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+template options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-sep		field separator (default $field_separator)
+-col		column to split (default $split_col)
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### field separator
+	} elsif ($ARGV[$a] eq "-sep") {
+	    $field_separator = $ARGV[$a+1];
+
+	    ### field separator
+	} elsif ($ARGV[$a] eq "-col") {
+	    $split_col = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; template ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}

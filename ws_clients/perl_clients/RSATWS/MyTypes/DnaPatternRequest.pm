@@ -1,0 +1,237 @@
+package MyTypes::DnaPatternRequest;
+use strict;
+use warnings;
+
+
+__PACKAGE__->_set_element_form_qualified(0);
+
+sub get_xmlns { 'urn:RSATWS' };
+
+our $XML_ATTRIBUTE_CLASS;
+undef $XML_ATTRIBUTE_CLASS;
+
+sub __get_attr_class {
+    return $XML_ATTRIBUTE_CLASS;
+}
+
+use Class::Std::Fast::Storable constructor => 'none';
+use base qw(SOAP::WSDL::XSD::Typelib::ComplexType);
+
+Class::Std::initialize();
+
+{ # BLOCK to scope variables
+
+my %output_of :ATTR(:get<output>);
+my %sequence_of :ATTR(:get<sequence>);
+my %tmp_infile_of :ATTR(:get<tmp_infile>);
+my %format_of :ATTR(:get<format>);
+my %subst_of :ATTR(:get<subst>);
+my %pattern_of :ATTR(:get<pattern>);
+my %pattern_file_of :ATTR(:get<pattern_file>);
+my %tmp_pattern_file_of :ATTR(:get<tmp_pattern_file>);
+my %id_of :ATTR(:get<id>);
+my %origin_of :ATTR(:get<origin>);
+my %noov_of :ATTR(:get<noov>);
+my %score_of :ATTR(:get<score>);
+my %str_of :ATTR(:get<str>);
+my %sort_of :ATTR(:get<sort>);
+my %th_of :ATTR(:get<th>);
+my %return_of :ATTR(:get<return>);
+
+__PACKAGE__->_factory(
+    [ qw(        output
+        sequence
+        tmp_infile
+        format
+        subst
+        pattern
+        pattern_file
+        tmp_pattern_file
+        id
+        origin
+        noov
+        score
+        str
+        sort
+        th
+        return
+
+    ) ],
+    {
+        'output' => \%output_of,
+        'sequence' => \%sequence_of,
+        'tmp_infile' => \%tmp_infile_of,
+        'format' => \%format_of,
+        'subst' => \%subst_of,
+        'pattern' => \%pattern_of,
+        'pattern_file' => \%pattern_file_of,
+        'tmp_pattern_file' => \%tmp_pattern_file_of,
+        'id' => \%id_of,
+        'origin' => \%origin_of,
+        'noov' => \%noov_of,
+        'score' => \%score_of,
+        'str' => \%str_of,
+        'sort' => \%sort_of,
+        'th' => \%th_of,
+        'return' => \%return_of,
+    },
+    {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'sequence' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'tmp_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'subst' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'pattern' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'pattern_file' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'tmp_pattern_file' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'id' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'origin' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'noov' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'score' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'sort' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'th' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'sequence' => 'sequence',
+        'tmp_infile' => 'tmp_infile',
+        'format' => 'format',
+        'subst' => 'subst',
+        'pattern' => 'pattern',
+        'pattern_file' => 'pattern_file',
+        'tmp_pattern_file' => 'tmp_pattern_file',
+        'id' => 'id',
+        'origin' => 'origin',
+        'noov' => 'noov',
+        'score' => 'score',
+        'str' => 'str',
+        'sort' => 'sort',
+        'th' => 'th',
+        'return' => 'return',
+    }
+);
+
+} # end BLOCK
+
+
+
+
+
+
+
+1;
+
+
+=pod
+
+=head1 NAME
+
+MyTypes::DnaPatternRequest
+
+=head1 DESCRIPTION
+
+Perl data type class for the XML Schema defined complexType
+DnaPatternRequest from the namespace urn:RSATWS.
+
+Parameters for the operation dna_pattern.
+
+
+
+
+=head2 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * output
+
+
+=item * sequence
+
+
+=item * tmp_infile
+
+
+=item * format
+
+
+=item * subst
+
+
+=item * pattern
+
+
+=item * pattern_file
+
+
+=item * tmp_pattern_file
+
+
+=item * id
+
+
+=item * origin
+
+
+=item * noov
+
+
+=item * score
+
+
+=item * str
+
+
+=item * sort
+
+
+=item * th
+
+
+=item * return
+
+
+
+
+=back
+
+
+=head1 METHODS
+
+=head2 new
+
+Constructor. The following data structure may be passed to new():
+
+ { # MyTypes::DnaPatternRequest
+   output =>  $some_value, # string
+   sequence =>  $some_value, # string
+   tmp_infile =>  $some_value, # string
+   format =>  $some_value, # string
+   subst =>  $some_value, # int
+   pattern =>  $some_value, # string
+   pattern_file =>  $some_value, # string
+   tmp_pattern_file =>  $some_value, # string
+   id =>  $some_value, # string
+   origin =>  $some_value, # string
+   noov =>  $some_value, # int
+   score =>  $some_value, # int
+   str =>  $some_value, # int
+   sort =>  $some_value, # int
+   th =>  $some_value, # int
+   return =>  $some_value, # string
+ },
+
+
+
+
+=head1 AUTHOR
+
+Generated by SOAP::WSDL
+
+=cut
+

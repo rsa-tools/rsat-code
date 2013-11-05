@@ -1,0 +1,348 @@
+#!/usr/bin/perl
+
+################################################################
+###
+### Statistics
+###
+################################################################
+require RSAT::stats;
+
+package main;
+
+################################################################
+## Calculate basic statistics on a list of values
+sub summary {
+  return &RSAT::stats::summary(@_);
+}
+
+
+#### returns the sumi of a list of numeric values
+#### usage:
+#### $sum = &sum(@value_list);
+sub sum {
+  return &RSAT::stats::sum(@_);
+}
+
+
+#### returns the maximum of a list of numeric values
+#### usage:
+#### $max_value = &max(@value_list);
+sub max {
+  my @sorted_values = sort {$a <=> $b} @_;
+  return $sorted_values[$#sorted_values];
+}
+
+
+#### returns the minimum of a list of numeric values
+#### usage:
+#### $min_value = &min(@value_list);
+sub min {
+  return &RSAT::stats::min(@_);
+}
+
+#### returns the minimum of a list of numeric values
+#### usage:
+#### $min_value = &min(@value_list);
+sub checked_min {
+  return &RSAT::stats::checked_min(@_);
+}
+
+#### returns the minimum of a list of numeric values
+#### usage:
+#### $min_value = &min(@value_list);
+sub checked_max {
+  return &RSAT::stats::checked_max(@_);
+}
+
+#### returns the sum of a list of numbers
+#### ignore non-numeric values
+sub checked_sum {
+  return &RSAT::stats::checked_sum(@_);
+}
+
+#### returns the sum of a list of numbers
+#### ignore non-numeric values
+sub checked_avg {
+  return &RSAT::stats::checked_avg(@_);
+}
+
+################################################################
+### usage:
+###     &binomial($proba,$trials,$successes)
+### this routine uses the recursive formula for the calculation of binomial:
+###
+###           P(x) * p(r-x)
+###  P(x+1) = -------------
+###              q(x+1)
+###
+### We calculate everything in logarithms, and make a custom exp conversion
+### to overcome the limitation of the Perl exp(x) function
+###
+sub binomial {
+  return &RSAT::stats::binomial(@_);
+}
+
+
+################################################################
+#### converts a natural logarithm (x) into e^x.
+#### This is performed by generating the output string, in order to
+#### cirumvent a problem with very low values (<< e-70).
+sub LogToEng {
+  return &RSAT::stats::LogToEng(@_);
+}
+
+################################################################
+### usage:
+###     &sum_of_binomials($proba,$trials,$from,$to)
+### Calculates the sum of binomial probabilities between two values.
+###
+### This routine uses the recursive formula for the calculation of
+### binomial:
+###           P(x) * p(r-x)
+###  P(x+1) = -------------
+###              q(x+1)
+###
+sub sum_of_binomials {
+  return &RSAT::stats::sum_of_binomials(@_);
+}
+
+### usage:
+###     &binomial_boe($proba,$trials,$successes)
+### Calculates the probability of observing >=s successes with a
+### probability $p and $r repeats, with the sum of binomials for j
+### varying from s to r.
+sub binomial_boe {
+  return &RSAT::stats::binomial_boe(@_);
+}
+
+
+################################################################
+### usage: &binomial_approx($proba,$trials,$successes)
+### this is the entropy approximation for the sum of binomials
+### note that the approximation is only valid for s/r > p 
+sub binomial_approx {
+  return &RSAT::stats::binomial_approx(@_);
+}
+
+
+################################################################
+#### Negative binomial distribution
+##
+## usage:
+##    negbin($successes,$p, $k)
+##    negbin2($successes,$mean, $variance)
+##		  s        s    k+s
+##	P(X=s) = C      * p  / q
+##  	          k+s-1
+##  
+##  	 where	s is the number of successful trials,
+##		p is a real value comprized between 0 and 1
+##		q = 1 + p
+##  	
+##	This distribution is aggregative, with a mean 
+##	     m = kp
+##	and a variance
+##	     v = kpq
+##
+##	Instead of p and k, the mean (m) and variance (v) can be
+##	provided; p and k are then calculated from these parameters as
+##	follows.
+##	
+##		q = v/m
+##		p = 1-q = 1-v/m
+##		k = m/p = 1/(v = m)
+##
+##  COMPUTATION
+##
+##	The probability is calculated with the recursive formula.
+##
+##	                p(k+x)
+##	    P(X=s+1) = --------*P(X=s)
+##	                q(x+1)
+
+################################################################
+## Calculate negbin with mean and variance as parameters
+sub negbin2 {
+  return &RSAT::stats::negbin2(@_);
+}
+
+################################################################
+## Calculate negbin with p and k as parameters
+sub negbin {
+  return &RSAT::stats::negbin(@_);
+}
+
+################################################################
+## Calculate negbin with mean and variance as parameters
+sub sum_of_negbin2 {
+  return &RSAT::stats::sum_of_negbin2(@_);
+}
+
+################################################################
+## sum_of_negbin($lambda, $from, $to)
+## Calculates the Negbin probability for a given interval of values
+sub sum_of_negbin {
+  return &RSAT::stats::sum_of_negbin(@_);
+}
+
+
+################################################################
+#### Poisson distribution
+##
+## usage poisson($successes,$expected)
+## note: on our sun station, this algorithm works only for m < 746
+## direct calculation would be                  
+##    p(x) = lambda^x exp(-lambda)/x!
+## We use a recursive formula 
+##    p(x) = p(x-1) * lambda / x
+sub poisson {
+  return &RSAT::stats::poisson(@_);
+}
+
+################################################################
+## sum_of_poisson($lambda, $from, $to)
+## Calculates the Poisson probability for a given interval of values
+sub sum_of_poisson {
+  return &RSAT::stats::sum_of_poisson(@_);
+}
+
+
+################################################################
+### Hypergeometric formula. 
+###
+### Usage:
+###     $proba = &hypergeometric($m, $n, $k, $x)
+### where
+###   $m = number of black balls in the urn
+###   $n = total number of balls in the urn
+###   $k = number of balls in the sample
+###   $x = number of black balls in the sample
+###
+### The hypergeometric probability is
+###
+###             x  k-x
+###            Cm Cn-m
+###  P(X=x) = ---------
+###               k
+###              Cn
+###
+### For efficiency reasons, the hypergeometric is calculated with the
+### recursive formula.
+###
+###                       (m - x + 1) (k - x + 1)
+###  P(X = x) = P(X=x-1) ------------------------
+###                         x ( n - m - k + x)
+###
+###
+### Instead of a product, calculations are performmed with sums of
+### logarithms. Then, we make a custom exp conversion to overcome the
+### limitation of the Perl exp(x) function.
+###
+### This gives a precision of the order of e-300.
+###
+### This routine also calculates the sum of hypergeometrics, when an
+### argument 'to' is added.
+###   $p = &hypergeometric($m, $n, $k, $from, to=>$to);
+###
+sub hypergeometric {
+  return &RSAT::stats::hypergeometric(@_);
+}
+
+
+################################################################
+#### sum_of_hypergeometrics($m, $n, $k, $from, $to)
+####
+#### REMARK: I checked this routine by comparing results with R, and
+#### there is a difference with some test cases, e.g. : 
+#### $m = number of black balls in the urn
+#### $n = total number of balls in the urn (beware: this differs from R)
+#### $k = number of balls in the sample
+#### $from, $to :  number of selected black balls
+####
+#### sum_of_hypergeometrics(44,60,44,43,44) = 4.71230301093258e-12
+#### in R:
+####     > sum(dhyper(43:44,44,16,44))
+####     [1] 4.712303e-12 (this is OK)
+#### but 
+####     > phyper(42,44,16,44,lower.tail=F)
+####     [1] 4.738072e-12 (this seems not OK)
+sub sum_of_hypergeometrics {
+  return &RSAT::stats::sum_of_hypergeometrics(@_);
+}
+
+
+################################################################
+### usage: &factorial($n)
+sub factorial {
+  return &RSAT::stats::factorial(@_);
+}
+
+################################################################
+#### calculates the probability according to Fisher's exact test
+#### Usage
+#### =====
+#### $proba = &FisherExactTest($row_nb, $col_nb, @values);
+####
+#### where
+####	$row_nb is the number of rows
+####	$col_nb is th number of columns
+####	@values is the list of values
+#### all values must be natural numbers (0,1,2, ...)
+#### the number of values must equal the product of col_nb by row_nb
+####
+#### the first step is to calculate the marginal sums:
+#### ni+ = sum of all values from the ith row
+#### n+j = sum of all values from the jth column
+#### N = sum of all values from the table
+####
+#### The probability is then calculated by:
+####
+####         PROD(ni+!)PROD(n+j!)
+#### proba = --------------------
+####          N!PROD(PROD(nij!))
+####
+#### the input data are reported together with all marginal sums
+#### by setting a global variable called $report_data to 1 
+sub FisherExactTest {
+  return &RSAT::stats::FisherExactTest(@_);
+} ### end FisherExactTest
+
+
+sub ChiSquare {
+  &RSAT::stats::ChiSquare(@_);
+}
+
+################################################################
+#### calculates log-likelihood statistics for a table of numbers
+#### Usage
+#### =====
+#### $log_likelihood = &LogLikelihood($row_nb, $col_nb, @values);
+####
+#### where
+####	$row_nb is the number of rows
+####	$col_nb is th number of columns
+####	@values is the list of values
+#### all values must be real numbers
+#### the number of values must equal the product of col_nb by row_nb
+####
+#### the first step is to calculate the marginal sums:
+#### ni+ = sum of all values from the ith row
+#### n+j = sum of all values from the jth column
+#### N = sum of all values from the table
+#### 
+#### The log-likelihood value is calculated by:
+####
+#### LogLikelihood = N*log(N) + SUM SUM n_ij*log(n_ij)
+####                             i   j
+####
+####                          - SUM n_i+*log(n_i+) - SUM n_+j*log(n_+j)
+####                             i                    j
+####
+#### The input data are reported together with all marginal sums
+#### by setting a global variable called $report_data to 1.
+sub LogLikelihood {
+  return &RSAT::stats::LogLikelihood(@_);
+} ### end LogLikelihood
+
+
+1;

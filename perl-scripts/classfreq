@@ -1,0 +1,509 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+our $start_time = &RSAT::util::StartScript();
+our $threshold = 0;
+
+
+##### read arguments #####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+  } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+
+=pod
+
+=item B<-ci>
+
+Class interval.
+
+=cut
+
+
+  } elsif ($ARGV[$a] eq "-ci") {
+    $class_interval = $ARGV[$a+1];
+
+=pod
+
+=item B<-min>
+
+Min value to be taken into account (smaller values are ignored).
+
+=cut
+
+  } elsif (($ARGV[$a] eq "-min") && (&IsReal($ARGV[$a+1]))) {
+    $usermin = $ARGV[$a+1];
+
+=pod
+
+=item B<-max>
+
+Max value to be taken into account (higher values are ignored).
+
+=cut
+
+  } elsif (($ARGV[$a] eq "-max") && (&IsReal($ARGV[$a+1]))) {
+    $usermax = $ARGV[$a+1];
+
+=pod
+
+=item B<-from>
+
+Min value to be reported (lower values are taken into account in the
+computation, but not exported in the result table).
+
+=cut
+
+  } elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))) {
+    $display_from = $ARGV[$a+1];
+
+
+=pod
+
+=item B<-to>
+
+Max value to be reported (higher values are taken into account in the
+computation, but not exported in the result table).
+
+=cut
+  } elsif (($ARGV[$a] eq "-to") && (&IsReal($ARGV[$a+1]))) {
+    $display_to = $ARGV[$a+1];
+
+=pod
+
+=item B<-col>
+
+Column containing the numbers to analyze.
+
+=cut
+  } elsif (($ARGV[$a] eq "-col") && (&IsNatural($ARGV[$a+1]))) {
+    push @cols, $ARGV[$a+1];
+  }
+}
+
+##### open input file #####
+($in, $input_dir) = &OpenInputFile($inputfile);
+$out = &OpenOutputFile($outputfile);
+$count = 0;
+$sum = 0;
+$sumofsquares = 0;
+## @ListOfNumbers = ();
+while($current_line = <$in>) {
+  next if ($current_line =~ /^;/); ### skip comment lines
+  chomp $current_line;
+  if (scalar(@cols) >= 1) {
+    @current_linecp = split("\t", $current_line);
+    $current_line = $current_linecp[($cols[0])-1];
+    for ($i = 1; $i < scalar(@cols); $i++) {
+      $current_line .= "\t".$current_linecp[($cols[$i])-1];
+    }
+  }
+  while($current_line =~ /(\S+)(.*)/) {
+    $word = $1;
+    $current_line = $2;
+    if ((IsReal($word))
+	&& (($usermin eq "") || ($word >= $usermin))
+	&& (($usermax eq "") || ($word <= $usermax))
+       ) {
+      $freq{$word}++;
+      ##	    push(@ListOfNumbers, $word); ## I suppress this because it is unefficient to store all values for large lists of numbers
+      $count++;
+      $sum += $word;
+      $sumofsquares += $word*$word;
+    }
+  }
+}
+close($in);
+
+
+##### calculate min and max of the list of numbers ######
+@values = sort {$a <=> $b} keys %freq;
+$min = $values[0];
+$max = $values[$#values];
+#$min = &min(@ListOfNumbers);
+#$max = &max(@ListOfNumbers);
+$range = $max - $min;
+
+## Check value of class interval
+if ($class_interval eq "") {
+  if ($range > 0) {
+    $class_interval = $range/20;
+  } else {
+    $class_interval = 1;
+    &RSAT::message::Warning("All data have the same value");
+  }
+}
+if ($class_interval <= 0) {
+  print "\tclass interval = $class_interval\n";
+  print "\tError: class interval should be > 0\n";
+  print "\tFor more info: classfreq -help\n";
+  exit;
+}
+
+if ($usermin ne "") {
+    $classmin = $usermin;
+} else {
+    $classmin = $class_interval * int($min/$class_interval);
+    if ($classmin > $min) {
+	$classmin -= $class_interval;
+    }
+}
+if ($usermax ne "") {
+    $classmax = $usermax;
+} else {
+    $classmax = $max;
+}
+
+if ($display_from eq "") {
+    $display_from= $classmin;
+
+}
+if ($display_to eq "") {
+    $display_to= $classmax;
+}
+
+## If no value is provided, instantiate a single frequency class
+if (scalar(@values) == 0) {
+  $classmax = $classmin + $class_interval;
+}
+
+#&RSAT::message::Debug("classmin=".$classmin, "classmax=".$classmax, scalar(@values)." values", join (";", @values));
+
+##### make a list with the limits of classes #####
+@ListOfClasses = ();
+do {
+  @ListOfClasses = (@ListOfClasses, $classmin);
+  $classmin += $class_interval;
+} until ($classmin > $classmax);
+
+
+##### calculate the frequency of each class #####
+foreach $c (0.. $#ListOfClasses) {
+  $ListOfFrequencies[$c] = 0;
+}
+
+foreach $n (@values) {
+#foreach $n (0..$#ListOfNumbers) {
+    $c = 0;
+    $found = 0;
+    do {
+	if ( ($n >= $ListOfClasses[$c]) &&
+	     ($n <  $ListOfClasses[$c] + $class_interval)  )  {
+	    $ListOfFrequencies[$c]+= $freq{$n};
+#	if ( ($ListOfNumbers[$n] >= $ListOfClasses[$c]) &&
+#	     ($ListOfNumbers[$n] <  $ListOfClasses[$c] + $class_interval)  )  {
+#	    $ListOfFrequencies[$c]++;
+	    $found++;
+	}
+	$c++;
+    } until (($found == 1) || ($c > $#ListOfClasses));
+}
+
+
+##### print class frequencies #####
+if ($verbose) {
+  &Verbose();
+  print $out "#[min\t";
+  print $out "max[\t";
+  print $out "center\t";
+  print $out "n\t";
+  print $out "n_cum\t";
+  print $out "n_dcum\t";
+  print $out "f\t";
+  print $out "f_cum\t";
+  print $out "f_dcum\n";
+}
+$cum = 0;
+$rel_cum = 0;
+$next_dcum = $count;
+$dcum = $count;
+
+$inv_rel_cum = 1;
+$next_inv_rel_cum = 1;
+$median_class = "NA";
+foreach $c (0.. $#ListOfClasses) {
+
+    ### calculate relative and cumulated frequencies
+    $cum += $ListOfFrequencies[$c];
+    $dcum = $next_dcum;
+    $next_dcum -= $ListOfFrequencies[$c];
+    if ($count > 0) {
+	$rel = $ListOfFrequencies[$c]/$count;
+	$rel_cum += $rel;
+	if (($median_class == "NA") && ($rel_cum > 0.5)) {
+	  $median_class = &max(0,$c-1);
+	}
+	$inv_rel_cum = $next_inv_rel_cum;
+	$next_inv_rel_cum -= $rel;
+    }
+
+    ## Print frequencies for current class
+    if (($ListOfClasses[$c] >= $display_from) && ($ListOfClasses[$c] <= $display_to))  {
+	if (($ListOfClasses[$c] <= 1.0e-12) &&
+	    ($ListOfClasses[$c] >= -1.0e-12)) {
+	    $ListOfClasses[$c] =0;
+	}
+	if (($ListOfClasses[$c] + $class_interval <= 1.0e-13) &&
+	    ($ListOfClasses[$c] + $class_interval >= -1.0e-13)) {
+	    $ListOfClasses[$c] = - $class_interval;
+	}
+	$out_line = "";
+	$out_line .= sprintf "%g", $ListOfClasses[$c];
+	$out_line .= sprintf "\t%g",  $ListOfClasses[$c] + $class_interval;
+	$out_line .= sprintf "\t%g",  $ListOfClasses[$c] + $class_interval/2;
+	$out_line .= sprintf "\t$ListOfFrequencies[$c]";
+	$out_line .= sprintf "\t$cum";
+	$out_line .= sprintf "\t$dcum";
+	if ($count > 0) {
+	  if ($count > 1e+5) {
+	    $format = "\t%.2g";
+	  } else {
+	    $format = "\t%6.5f";
+	  }
+	  $out_line .= sprintf $format, $rel;
+	  $out_line .= sprintf $format, $rel_cum;
+	  $out_line .= sprintf $format, $inv_rel_cum;
+	}
+	$out_line .= sprintf "\n";
+	$out_line =~ s/ //g;
+	if ($ListOfFrequencies[$c] >= $threshold) {
+	    print $out $out_line;
+	}
+    }
+}
+
+## print statistics
+if ($verbose) {
+  print $out "; Statistics:\n";
+  print $out "; -----------\n";
+  print $out "; input file\t$inputfile\n" unless ($inputfile eq "");
+  printf $out "; %-19s\t%g\n", "class interval", $class_interval;
+  printf $out "; %-19s\t%g\n", "classes",  $#ListOfClasses + 1;
+  printf $out "; %-19s\t%g\n", "count", $count;
+  if ($count > 0) {
+    $mean = $sum/$count;
+    if ($max > $min) {
+      $var = $sumofsquares/$count - $mean*$mean;
+      ## This is required to avoid errors due to numerical imprecision
+      $var = &max($var, 0);
+      $std = sqrt($var);
+    } else {
+      $std  = 0;
+    }
+    printf $out "; %-19s\t%g\n", "sum", $sum;
+    printf $out "; %-19s\t%g\n", "mean", $mean;
+    printf $out "; %-19s\t[%g..%g[\n", "median class", $ListOfClasses[$median_class], $ListOfClasses[$median_class]+$class_interval;
+##    printf $out "; median\t%.3g\n", &RSAT::stats::median(@ListOfNumbers); ## The median requires to store and sort all values -> I don't return it for the sake of efficiency
+    printf $out "; %-19s\t%.3g\n", "var", $var;
+    printf $out "; %-19s\t%g\n", "std", $std;
+  }
+  printf $out "; %-19s\t%g\n", "min", $min;
+  printf $out "; %-19s\t%g\n", "max", $max;
+  printf $out "; %-19s\t%g\n", "range", $max - $min;
+
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+}
+
+
+
+
+
+###### close input file ######
+close $in unless ($inputfile eq "");
+
+###### close output file ######
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
+
+################################################################
+## Print detailed help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP "
+NAME
+	classfreq
+
+AUTHORS
+
+	First version dates from July 1997 by Jacques van Helden
+	(jvhelden\@ulb.ac.be).
+
+	Upgrades in 2007 by Sylvain Brohee (sylvain\@bigre.ulb.ac.be).
+
+DESCRIPTION
+
+	Computes frequency distribution of numerical values found in a
+	column of a tab-delimited text file.
+
+	Class intervals can be specified as a fixed value (-ci #) or
+	automatically derived from the data.
+
+CATEGORY
+	statistics
+
+USAGE
+
+	classfreq [-i inputfile] [-o outputfile] [-ci class_interval]
+	[-min #][-max #][-s][-p] [-col #]
+
+INPUT
+
+	Any text file containing numbers. Will be read as a number any
+	word containing only digits, plus optionnally a dot (decimal
+	separator), and a sign (- or +). Scientific notation (ex:
+	3.5E-7) is also supported.  Words that do not correspond to
+	numbers are ignored.
+
+	Lines starting with a semicolon (;) or with # are ignored (this
+	allows to include comments in the input file).
+
+OUTPUT
+	Results are printed as one line per class, with the following information:
+	- limits of the class (in the form [lower, upper[).
+        - class center
+	- absolute frequency
+        - cumulated frequency (inclusive)
+        - inverted cumulated frequency (inclusive)
+        - relative frequency
+        - cumulated relative frequency (inclusive)
+        - inverted cumulated relative frequency (inclusive)
+
+	With the option -v, the list of class frequencies is followed by a
+	short statistical report on the data.
+
+	Within each class are counted all numbers that are
+	- greater or equal to the lower limit, and
+	- strictly smaller than the upper limit of the class
+	(lowerlimit <= x < upperlimit).
+
+	Cumulative frequencies are inclusive, i.e. :
+	cum	   is the count of (x <= upperlimit)
+	dcum	   is the count of (x >= lowerlimit)
+
+OPTIONS
+
+        -h      (must be first argument) display full help message
+
+        -help   (must be first argument) display options
+
+	-v	verbose
+
+	-i inputfile
+		Only the numbers will be read, other words are ignored.
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-ci	class interval. If not specified, takes the value
+			(max - min)/20
+		so that 21 classes are specified.
+
+	-col	column to which apply the program. This option can
+		be used iteratively.
+
+	-min #	nusmbers strictly smaller than # are not taken into account.
+		# also determines the lower limit of the first class.
+
+	-max #	numbers strictly greater than # are not taken into account.
+
+	-from #	inferior limit for the classes to display
+		values lower than this limit are however taken into account
+		in the calculation of statistics (mean, variance, ...) and of
+		class frequencies (In contrast with the -min option).
+
+	-to #	superior limit for the classes to display
+		values higher than this limit are however taken into account
+		in the calculation of statistics (mean, variance, ...) and of
+		class frequencies (In contrast with the -max option).
+
+	-v	verbose.
+		Return some statistics over the data :
+		- total # of elements,
+		- mean value
+		- standard deviation (std)
+		- mininum
+		- maximum
+		If -min or -max options are used, the statistics only take
+		into account the numbers falling into this range.
+
+	-thr # threshold
+	        Only display classes with absolute frequency higher
+	        than or equal to the threshold. This option is useful
+	        for sparse data, where many classes do not contain any
+	        observation (-thr 1).
+
+EXAMPLES
+	To get the distribution of all numbers x such that 0 <= x <= 1000,
+	grouped within classes of interval 100 :
+		classfreq -i myfile -ci 100 -min 0 -max 1000
+	Note that the limits of the last class will be [1000, 1100[, though
+	this class will only contain the occurences of 1000 (since numbers
+	greater than 1000 are discarded).
+
+";
+  close HELP;
+  exit(0);
+}
+
+################################################################
+## Print list of options
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP "classfreq options
+-----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-ci	class interval.
+-col	column
+-min #	minimum value
+-max #	maximum value
+-from	inferior limit of classes to display
+-to	superior limit of classes to display
+-v	verbose.
+-thr # threshold
+";
+  close HELP;
+  exit(0);
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $out "; classfreq ";
+  &PrintArguments($out);
+  printf $out ";\t%-20s\t%s\n", "min", "minimum of class interval (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "max", "maximum of class interval (exclusive)";
+  printf $out ";\t%-20s\t%s\n", "center", "center of class interval";
+  printf $out ";\t%-20s\t%s\n", "n", "occurrences";
+  printf $out ";\t%-20s\t%s\n", "n_cum", "cumulative occurrences (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "n_dcum", "decreasing cumulative occurrences (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "f", "frequencies";
+  printf $out ";\t%-20s\t%s\n", "f_cum", "cumulative frequencies (inclusive)";
+  printf $out ";\t%-20s\t%s\n", "f_dcum", "decreasing cumulative frequencies (inclusive)";
+}

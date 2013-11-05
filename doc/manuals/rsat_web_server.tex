@@ -1,0 +1,328 @@
+
+%\documentclass{book}
+\documentclass[12pt,a4paper, twoside]{scrreprt} % KOMA-class Neukam and Kohm, scrbook alternatively
+%\documentstyle[makeidx]{book}
+\makeindex
+\include{rsat_latex_commands}
+
+\begin{document}
+
+\RSATtitlePage{Web server configuration for \RSAT}
+
+% \title{Regulatory Sequence Analysis Tools \\
+% Web server installation}
+% \author{
+% 	Jacques van Helden \\
+% 	\email{jvhelden@ulb.ac.be} \\
+% 	\bigre 
+% }
+% \maketitle
+
+\newpage
+\tableofcontents
+\newpage
+
+\chapter{Web server configuration for \RSAT}
+
+\section{Description}
+
+This documents describes the installation procedure for the web server
+of the \textbf{Regulatory Sequence Analysis Tools} (\RSAT).
+
+It assumes that you already installed the perl scripts and the
+genomes, as described in the \RSAT installation guide.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Web server installation
+
+\section{Installing a local web server}
+
+The Regulatory Sequence Analysis Tools include a web server, which
+offers a user-friendly interface for biologists. The main server is
+available for academic users at \\
+\url{http://rsat.ulb.ac.be/rsat/}
+
+A few additional mirrors have been installed in different countries.
+
+\subsection{Web server pages}
+
+The web pages are located in the directory
+\file{rsa-tools/public\_html}. This directory contains both the HTML
+pages, and the CGI scripts.
+
+\subsection{Apache modules}
+
+The RSAT interface relies on CGI (for the earlier tools) and PHP (for
+the most recent tools). These modules should be installed on the web
+server, and activated in the Apache configuration files. 
+
+\subsubsection{PHP module for Mac OSX}
+
+If your server is running under Mac OSX, you need to install a recent
+version (at least v5) of the php module, which can be found at the following site. 
+
+\url{http://www.entropy.ch/software/macosx/php/}
+
+\subsection{Configuration of the Apache server}
+
+In order to provide web access to the rsa-tools, you need to adapt the
+configuration of your web server. This requires root privileges
+(system administrator). 
+
+
+The detailed settings depend on your web server program. We provide
+here an example of typical settings for the Apache server (the most
+widely used web server).
+
+In summary, the configuration includes the following steps.
+
+\begin{enumerate}
+\item Open the apache configuration file (if your Web server is
+  Apache2, the config is defined in \file{/etc/apache2/httpd.conf}).
+
+\item Specify an alias for rsa-tools in the appropriate section. You
+  can find the appropriate section by searching similar elements (for
+  example Alias, ScriptAlias).
+
+\begin{lstlisting}
+Alias /rsat [RSAT_PARENT_PATH]/rsa-tools/public_html/
+\end{lstlisting}
+
+<b>Beware:</b> you need of course to adapt [RSAT\_PARENT\_PATH] to
+indicate the parent directory of your \RSAT installation.
+
+\item Associate .cgi extension to CGI scripts
+
+Make sure the following line is present in the config file. If the
+server has not yet been configured, the line is commented, and you
+need to remove the \texttt{\#} character before it.
+
+\begin{lstlisting}
+AddHandler cgi-script .cgi
+\end{lstlisting}
+
+\item Give authorization to execute CGI scripts in the rsa-tools directory
+
+\begin{lstlisting}
+ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsa-tools/public_html/
+\end{lstlisting}
+
+\item Specify the access options for the rsa-tools directory.
+
+\begin{lstlisting}
+<Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/">
+   AllowOverride None
+   AddHandler cgi-script .cgi
+   Options ExecCGI
+   Order allow,deny
+   Allow from all
+</Directory>
+\end{lstlisting}
+
+\item We will now add the possibility for web browsers to access the file
+  content of sub-folders of the data directory. 
+
+
+\begin{lstlisting}
+<Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/data/">
+   AllowOverride None
+   Options Indexes
+   Order allow,deny
+   Allow from all
+</Directory>
+\end{lstlisting}
+
+  Note that ``Options Indexes'' should never be authorized at the level of the
+  parent folder \file{public\_html}, because this would make the content of the tmp
+  directory visible to anyone!
+
+\end{enumerate}
+
+These are the basic steps to configure the web access to
+\RSAT. Depending on your operating system, you probably need to
+specify some additional settings. For example, on the Max OSX version
+of Apache server allows to define a user-specific configuration in the
+directory \file{/etc/httpd/users}.
+
+Note that you need to restart the web server for these changes to take
+effect. The command to restart the Apache server depends on the
+version installed on your computer. 
+
+Note that you need system administration privileges to restart the
+Apache server.
+
+You can try the following commands, and if they don'r work check the
+documentation of your web server.
+
+\begin{lstlisting}
+sudo apache2ctl restart
+\end{lstlisting}
+
+\subsection{Editing the configuration file for the \RSAT server}
+
+If you want to install a web server, you need to edit two variables on
+the file \file{RSA.config}. Open this file with a text editor, and
+specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
+according to your local configuration.
+
+\subsection{Configuring the RSAT options for the web server}
+
+You need to adapt the RSAT configuration file to indicate the
+configuration of your server. For this, edit the \RSAT property file
+\texttt{\$RSAT/RSAT\_config.props}.
+
+The simplest way to update the config file is to run the interactive
+configuration script.
+
+\begin{lstlisting}
+perl perl-scripts/update_rsat_config.pl
+\end{lstlisting}
+
+Alternatively, you can edit this file with a text edito of your
+choice.
+
+You also need to edit \texttt{\$RSAT/RSAT\_config.mk}. 
+
+\subsubsection{IP address of your machine}
+
+By default, the RSAT web server is configured to be used from the
+machine on which it is installed. 
+
+\begin{lstlisting}
+$WWW_RSA = 	"http://localhost/rsat/";
+\end{lstlisting}
+
+If you want to give access from external machines, you need to adapt
+the following line and replace ``localhost'' by the IP address of your
+machine. Let us assume that your mahine has the address
+www.myserver. You should then edit the row as follows.
+
+\begin{lstlisting}
+$WWW_RSA = 	"http://www.myserver/rsat/";
+\end{lstlisting}
+
+\subsubsection{Setting the environment variable RSAT}
+
+For the basic RSAT configuration, you had to define an environment
+variable RSAT. This is necessary for the perl program to know the
+location of your programs. If this variable is not specified, the
+scripts are stopped with an error message.
+
+\begin{lstlisting}
+unless ($ENV{RSAT}) {
+    die "Error: the environment variable RSAT needs to be defined\n";
+}
+\end{lstlisting}
+
+Since the web server is ran by another user, you need to define this
+environment variable for this user as well. For this, edit the
+above line in the following way.
+
+\begin{lstlisting}
+unless ($ENV{RSAT}) {
+    $ENV{RSAT} = "[RSAT_PARENT_PATH]/rsat";
+}
+\end{lstlisting}
+
+
+\subsection{Testing the web server}
+
+To test the werb server, open a web browser and connect your \RSAT server
+
+\url{http://www.myserver/rsat/} 
+
+Of course you  need to adapt the URL according to your IP address.
+
+If the connection works, try to execute the demonstration of the
+following pages.
+
+\begin{description}
+\item[\program{retrieve-seq}] to test the correct installation of genomes. 
+
+\item[\program{oligo-analysis}] to test the correct installation of
+background oligonucleotide frequencies.
+
+\item[\program{feature-map}] to test the correct installation of the
+graphical librairies.
+
+\end{description}
+
+\section{Managing a local web server}
+
+\subsection{Access logs}
+
+Each time a script is executed via the \RSAT server, some basic
+information is stored in a log file. This information is minimal: it
+is restricted to the time, name of the script executed, and the IP
+address of the client machine. We do not want to store any additional
+information (e.g. selected organism, lists of genes), for obvious
+confidentiality reasons.
+
+The log files are saved in the directory \file{\$RSAT/logs}. There
+is one file per month.
+
+
+\subsection{Cleaning the temporary directory}
+
+The web server stores result files in a temporary directory
+\file{\$RSAT/public\_html/tmp/}. These files should remain 3 days on
+the server, in order to allow users to consult their results.
+
+\subsubsection{Manual cleaning}
+
+The \RSAT package includes a make script to clean old files in the
+temporary directory.
+
+\begin{lstlisting}
+cd $RSAT
+make -f makefiles/server.mk clean_tmp
+\end{lstlisting}
+
+This command cleans all the files older than 3 days. You can clean
+more recent files by modifying the variable CLEAN\_DATE.
+
+\begin{lstlisting}
+make -f makefiles/server.mk clean_tmp  CLEAN_DATE=1
+\end{lstlisting}
+
+This will clean all files older than 1 day.
+
+\subsubsection{Automatic cleaning}
+
+The automatic management of the temporary directory can be greatly
+facilitated the \program{crontab} command. For this, you need to add a
+command to your personal \texttt{crontab} configuration file.
+
+\begin{enumerate}
+\item Start to edit the crontab command file
+
+\begin{lstlisting}
+crontab -e
+\end{lstlisting}
+
+This will open your \file{crontab} file with your default text editor
+(this default editor can be specified with the environment variable
+EDITOR or VISUAL).
+
+\item Add the following line to the \file{crontab} file. 
+
+\begin{lstlisting}
+02 04 * * * make -f [RSAT_PARENT_PATH]/rsa-tools/makefiles/server.mk clean_tmp
+\end{lstlisting}
+
+This will execute the make script \file{server.mk}, with the target
+\texttt{clean\_tmp}, every day, at 04:02 AM. 
+
+\item Save the modified crontab file and close your text editor.
+
+\end{enumerate}
+
+In principle, you will receive an email from \program{crontab} each
+time the command is executed.
+
+Note that the command \program{crontab} takes effect only if the
+system administrator has activated the command \command{cron}. If you
+notice that the temporary files are not properly cleaned, please
+contact your system administrator to check the cron command.
+
+\end{document}

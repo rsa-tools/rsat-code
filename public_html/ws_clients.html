@@ -1,0 +1,119 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - Web Services - Clients</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</A> - 
+<a href="ws_clients.html">Web Services Clients</a>
+</H2>
+</center>
+
+<h3>DOWNLOADS</h3>
+<h3> PERL </h3>
+<p>Examples clients working with <b>SOAP::WSDL 2.00</b> (or above), and
+with <b>SOAP::WDL 1.27</b> (or below) are provided in the compressed
+archive. For <b>SOAP::WSDL 2.00</b> (or above) users, we provide the client
+stub (RSATWS directory).
+<p>
+
+<h3> JAVA </h3>
+
+The example clients are provided along with the client stub (RSATWS.jar).
+
+<h3> Python </h3>
+
+The example clients make use of the SOAPpy library.
+
+
+<p>
+<a
+href=http://rsat.ulb.ac.be/rsat/web_services/RSATWS_clients.tar.gz><b>>>DOWNLOAD ARCHIVE </b>containing examples of Web Services clients written in perl, java and pythons
+</a>
+</p>
+
+
+<HR WIDTH="100%">
+
+<h3>NEWS</h3>
+
+<table class="list">
+<tr>
+<td valign="top">
+<b>2009/03/18</b>
+</td>
+<td>
+To avoid <b>time out</b> problems, two new Web Services were added: <i>monitor</i> and <i>get_result</i>. If you use the value
+"ticket" as "output" parameter for most Web Services, you will receive a job
+ID. This job ID can then be used to monitor the status of the running
+job. When it is "Done", use <i>get_result</i> to... well... get the results. Please update your libraries to benefit from these improvements.
+</td>
+</tr>
+<tr>
+<td valign="top">
+<b>2008/07/08</b>
+</td>
+<td>
+More options were added to the matrix-scan (RSAT) Web
+Services. Please update your libraries to benefit from these improvements.
+</td>
+</tr>
+<tr>
+<td valign="top">
+<b>2008/07/04</b>
+</td>
+<td>
+Infer_operon (RSAT) and draw_heatmap (NeAT) were added to the Web
+Services. Please update your libraries to use these tools.
+</td>
+</tr>
+<tr>
+<td valign="top">
+<b>2008/06/03</b>
+</td>
+<td>
+The perl RSATWS library required to work with <b>SOAP::WSDL 2.00</b> (or above) is now part of the downloadable RSATWS_clients.tar.gz archive.
+</td>
+</tr>
+<tr>
+<td valign="top">
+<b>2008/05/22</b>
+</td>
+<td>
+New example Perl client using SOAP::WSDL 2.0 (and above) available. For that
+client to work, you also need to download and unzip the provided RSATWS.zip library.
+</td>
+</tr>
+
+<tr>
+<td valign="top">
+<b>2008/05/19</b>
+</td>
+<td>
+If you are using a recent version of SOAP::WSDL (2.0 and above) for your perl
+clients, you can not work with the currently provided clients (archive). These clients are still
+compatible with the older versions of SOAP::WSDL. Example clients for the new versions will be
+available to download soon.
+</td>
+</tr>
+<tr>
+<td valign="top">
+<b>2008/02/22</b>
+</td>
+<td>
+Programs with <b>lth</b> and <b>uth</b> parameters (e.g. oligo_analysis, matrix_scan...) now support multiple thresholds.
+<p/><i>Example</i>: 'lth' in oligo_analysis can take values 'occ_sig 1' and 'occ 1'.
+<p/>Use an array instead of a string for lth and uth in your
+clients. Example clients to download have been updated accordingly.
+</td>
+</tr>
+</table>
+
+</blockquote>
+</BODY>
+</HTML>

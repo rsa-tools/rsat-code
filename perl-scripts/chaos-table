@@ -1,0 +1,402 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: chaos-table,v 1.6 2011/02/17 04:54:49 rsat Exp $
+#
+# Time-stamp: <2008-10-17 17:41:48 morgane>
+#
+############################################################
+
+## use strict;
+use Data::Dumper;
+
+=pod
+
+=head1 NAME
+
+chaos-table
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Generates the frequency table that can then be used to display oligonucleotide frequencies
+with CHAOS Game Representation (CGR). This table serves as input to I<draw-heatmap>, which handles
+the graphical display. The oligonucleotide frequencies must be pre-calculated, for example by running I<oligo-analysis> 
+or or using with I<choose-background-model> to retrieve a Markov-chain model (taxon- or organism-specific) precalculated in RSAT.
+
+=head1 AUTHORS
+
+=over
+
+=item Morgane Thomas-Chollier morgane@bigre.ulb.ac.be
+
+=item With the help of Matthieu Defrance defrance@bigre.ulb.ac.be
+
+=back
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=item drawing
+
+=back
+
+=head1 USAGE
+
+ - Produce the CHAOS frequency table only, for user-input frequency file:
+
+chaos-table -i frequency_file -o outputfile [-v #]
+
+ - Produce the CHAOS image from an RSAT predefined Markov Model:
+
+choose-background-model -type oligo
+          -org organism_name [-1str|-2str] -l oligo_length
+          -bg [background] -ovlp|-noov 
+
+it returns the path to the frequency_file
+          
+chaos-table -i frequency_file -return freq -o chaosfile 
+
+draw-heatmap -i chaosfile -o outputfile -out_format [png|jpeg] -chaos -col_width 50 -html output.html
+
+
+
+=head1 INPUT FORMAT
+
+The background model format is specified with the option -bg_format.Supported :
+oligo-analysis, MotifSampler, meme. Default is: oligo-analysis.
+
+For a description of available format, see I<convert-backgound-model -h>
+
+=head1 OUTPUT FORMAT
+
+This program calculates the coordinates of any given word on the CGR square. The output format is thus 
+a table for which each value is printed at the expected position for a given word. By default, the value is 
+the frequency of the words. It can also be the word itself, which provides an easy way to see how words are
+positionned.
+
+=head1 CHAOS Game Representation
+
+CHAOS Game representation (CGR) is an image that represents
+patterns in DNA sequences. It is a fractale structure, first introduced by
+Jeffrey (1990), and that has been enhanced later (Deschavanne, 1999) to directly represents
+k-mers frequencies. The picture is a square for which each angle represents a given nucleotide (A, T, G C).
+To represent the frequency of single letters (1-mers), this square is divided in four smaller squares, each corresponding to the letter of its angle. 
+Each square is then filled with a color taken from a gradient, corresponding to the frequency of each nucleotide.
+To represent 2-mers frequencies, the squares are subdivided in four squares, each representing one of the 16 possible 2-mers.
+Note that the position of each k-mer is always the same on a CGR, which allows to visually compare various CGRs.
+Explanations of how to interpet a CGR are given in (Goldman, 1993). 
+
+=head1 REFERENCES
+
+Jeffrey. Chaos game representation of gene structure. Nucleic Acids Research (1990) vol. 18 (8) pp. 2163-70
+
+Goldman. Nucleotide, dinucleotide and trinucleotide frequencies explain patterns observed in chaos game representations of DNA sequences. Nucleic Acids Research (1993) vol. 21 (10) pp. 2487-91
+
+Deschavanne et al. Genomic signature: characterization and classification of species assessed by chaos game representation of sequences. Mol Biol Evol (1999) vol. 16 (10) pp. 1391-9
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+use RSAT::MarkovModel;
+use RSAT::Chaos;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  local $start_time = &RSAT::util::StartScript();
+  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  ## MarkovModel
+  local $bg_model = new RSAT::MarkovModel();
+  $bg_format = "oligo-analysis";
+  %supported_bg_format = $bg_model->get_supported_input_formats();
+  	
+  ## Chaos Table
+  local $chaos_table = new RSAT::Chaos();
+    
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::verbose = 0;
+  #$main::in = STDIN;
+  $main::out = STDOUT;
+    
+  %oligo_freq =();
+    
+  local %supported_return_fields = (
+				    freq=>1, ## frequency of each word
+				    word=>1, ## the word
+				   );
+  $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+  $return_value = "freq";	## Default is freq
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+    
+  ## Background format
+  unless ($bg_format) {
+    &RSAT::error::FatalError("You should define the background format (option -bg_format)");
+  }
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Read input
+  $bg_model->load_from_file($main::infile{input}, $bg_format);
+	
+  ## get the frequencies of the nucleotides
+  %oligo_pref_suf = $bg_model->get_attribute("oligo_freq");
+	
+  my @prefixes = $bg_model->get_prefixes();
+  my @suffixes = $bg_model->get_suffixes();
+  foreach my $prefix (@prefixes) {
+    foreach my $suffix (@suffixes) {
+      my $pattern = $prefix.$suffix;
+      if ($oligo_pref_suf{$prefix}->{$suffix}) {
+	$oligo_freq{$pattern} = $oligo_pref_suf{$prefix}->{$suffix};
+      }
+    }
+  }
+	
+  $w_length = ($bg_model->get_attribute("order")) + 1;
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Execute the command
+    
+  $chaos_table->init_mapping_table();
+  $chaos_table->init_chaos_table($w_length);
+  my @chaos = $chaos_table->get_chaos_table($return_value,\%oligo_freq);
+
+  ################################################################
+  ## Print output
+  for (my $x = 0; $x < (2**$w_length); $x++) {
+    for (my $y = 0; $y < (2**$w_length); $y++) {
+      print $main::out $chaos[$x][$y]."\t";
+    }
+    print $main::out "\n";
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
+  close $main::out if ($main::outfile{output});
+
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+Oligonucleotide frequency file
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Background model format
+=pod
+
+=item B<-format file_format>
+
+        Supported formats: all the input formats supported by
+        convert-background-model.
+
+=cut
+	} elsif ($arg eq "-bg_format") {
+	    $main::bg_format = lc(shift(@arguments));
+	    &RSAT::error::FatalError(join("\t", $main::bg_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::bg_format))
+		unless ($main::supported_bg_format{$main::bg_format}); 
+	    ## Return fields
+=pod
+
+=item B<-return return_value>
+
+Type of value to print in the chaos table
+
+Supported values: freq,word
+
+=cut
+       } elsif ($arg eq "-return") {
+	  $return_value = shift (@arguments);
+	  &RSAT::error::FatalError(join("\t", $return_value, "Invalid return value. Supported:", $supported_return_fields))
+	  unless ($supported_return_fields{$return_value});
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; chaos-table ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (%main::outfile) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    
+     if (defined($bg_model)) {
+   	printf $main::out "; Frequency file\n";
+	my $order = $bg_model->get_attribute("order");
+	printf $main::out ";\t%-14s\t%d\n", "Oligonucleotide length", $order+1;
+    printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    #printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<draw-heatmap>
+
+=item I<convert-background-model>
+
+=item I<choose-background-model>
+
+=item I<oligo-analysis>
+
+=back
+
+=cut
+

@@ -1,0 +1,238 @@
+#!/usr/bin/perl
+
+#use strict;
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+require RSAT::Sequence;
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+
+local $seq_format = "fasta";	### default sequence format
+local $inputfile = "";
+local $outputfile = "";
+
+local $verbose = 0;
+local $hyperverbose = 0;
+local $both_strands = 1; ### by default, consider both direct and rev. compl.
+	
+my $seq_count = 0;
+
+&ReadArguments;
+
+#### check argument values ####
+
+
+### open output file ###
+my $out = &OpenOutputFile($outputfile);
+
+##### read sequences #####
+my ($in, $input_dir) = &OpenInputFile($inputfile);
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir,"","")) &&
+       (($current_seq) || ($current_id))) {
+  $seq_count++;
+  $seq[$seq_count] = new RSAT::Sequence(id=>$current_id, 
+					sequence=>$current_seq,
+					description=>$comments[0],
+					type=>"dna"
+				       );
+  if ($hyperverbose) {
+    print STDERR "; $seq_count";
+    print STDERR "\t", $seq[$seq_count]->get_id();
+    print STDERR "\t", $seq[$seq_count]->get_length();
+    print STDERR "\n";
+  }
+  
+}
+close $in if ($inputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out "; seq-distances ";
+  &PrintArguments($out);
+  printf $out "; %13s\t%s\n", "seq format", $seq_format;
+  printf $out "; %13s\t%s\n", "input file", $inputfile if ($inputfile);
+  printf $out "; %13s\t%s\n", "output file", $outputfile if ($outputfile);
+  if ($both_strands) {
+    printf $out "; %13s\t%d\n", "strands", 2;
+  } else {
+    printf $out "; %13s\t%d\n", "strands", 1;
+  }
+  printf $out "; %13s\t%d\n", "nb seq", $seq_count;
+  if ($seq_count <= 100) {
+    for $s (1..$seq_count) {
+      printf $out "; \t%s\t%d\n", $seq[$s]->get_id(), $seq[$s]->get_length();
+    }
+  }
+}
+
+###### execute the command #########
+### calculate distances
+if ($verbose) {
+  print $out ";seq1\tseq2\tdist\n";
+}
+for my $s1 (1..$seq_count-1) {
+  for my $s2 ($s1+1..$seq_count) {
+
+    if ($hyperverbose) {
+      print STDERR $s1;
+      print STDERR "\t", $s2;
+      print STDERR "\t", $seq[$s1]->get_id();
+      print STDERR "\t", $seq[$s2]->get_id();
+    } 
+
+    ### calculate edit distance
+    my $distance = &EditDistance(
+				 $seq[$s1]->get_sequence(),
+				 $seq[$s2]->get_sequence()
+				 );
+    
+    ### edit distance with reverse complement
+    if ($both_strands) {
+	my $seq1 = $seq[$s1]->get_sequence();
+	my $seq2 = $seq[$s2]->get_sequence();
+	my $rc_seq = &ReverseComplement($seq2);
+	my $rc_dist = &EditDistance(
+				    $seq1,
+				    $rc_seq);
+	warn "reverse complement $seq1\t$seq2\t$rc_seq\t$distance\t$rc_dist\n" if ($hyperverbose);
+	$distance = &min($distance,$rc_dist); 
+    }
+
+    #### print result line
+    print $out $seq[$s1]->get_id();
+    print $out "\t", $seq[$s2]->get_id();
+    print $out "\t", $distance;
+    print $out "\n";
+
+    if ($hyperverbose) {
+      print STDERR "\t$distance";
+      print STDERR "\t", &AlphaDate;
+      print STDERR "\n";
+    }
+  }
+}
+
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+  #### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	seq-distances
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+DESCRIPTION
+	Calculates the edit distance between sequences from the input
+	file (note: this implementation is very inefficient, it is
+	just for a quick test).
+
+CATEGORY
+	sequences
+
+USAGE
+        seq-distances [-i inputfile] [-o outputfile] 
+		[-format seq_format] [-v] [-2str|-1str]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+
+	-help	(must be first argument) display options
+
+	-v	verbose
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-format seq_format
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-1str	calculate distance between direct strand only
+
+	-2str	calculate the min distance between both direct and
+		reverse complement strands (default)
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+seq-distances options
+---------------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-format 	seq_format
+-o		output file
+-v		verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+#### read arguments
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      $verbose = 1;
+    } elsif ($ARGV[$a] eq "-vv") {
+      $verbose = 1;
+      $hyperverbose = 1;
+      
+      ### strands
+    } elsif ($ARGV[$a] eq "-1str") {
+      $both_strands = 0;
+    } elsif ($ARGV[$a] eq "-2str") {
+      $both_strands = 1;
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+      
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+      
+      ### sequence format
+    } elsif ($ARGV[$a] eq "-format") {
+      $seq_format = lc($ARGV[$a+1]);
+      die "Error: $seq_format is not supported sequence format\n" 
+	unless $accepted_input_seq{$seq_format};
+      
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+      
+    }
+  }
+}
+

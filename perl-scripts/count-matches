@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+require RSAT::pattern;
+require RSAT::match;
+
+&RSAT::message::Warning("The program count-matches has been renamed compare-patterns");
+
+my $command =  "compare-patterns ";
+$command .= join " ", @ARGV;
+system "$command";
+
+&RSAT::message::Warning("The program count-matches has been renamed compare-patterns");
+
+exit();

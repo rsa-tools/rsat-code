@@ -1,0 +1,97 @@
+#! /usr/bin/perl
+print "\n\n";
+print "environment variables\n";
+print "=====================\n";
+foreach $key (sort keys %ENV) {
+    print "\$ENV\{$key\}\t$ENV{$key}\n";
+}
+
+
+print "\n\n";
+print "\@INC\n";
+print "=====\n";
+foreach $i (0..$#INC) {
+    print "\$INC[$i]\t$INC[$i]\n";
+}
+
+
+
+print "\n\n";
+print "SIG\n";
+print "===\n";
+foreach $key (sort keys %SIG) {
+    print "\$SIG\{$key\}\t$SIG{$key}\n";
+}
+
+print "\n\n";
+print "Perl variables\n";
+print "==============\n";
+
+$perlvar{"\$"} = "PROCESS_ID";
+$perlvar{"<"} = "REAL_USER_ID";
+$perlvar{">"} = "EFFECTIVE_USER_ID";
+$perlvar{"("} = "REAL_GROUP_ID";
+$perlvar{")"} = "EFFECTIVE_GROUP_ID";
+$perlvar{"0"} = "PROGRAM_NAME";
+$perlvar{"]"} = "PERL_VERSION";
+$perlvar{"["} = "first_index";
+$perlvar{"ARGV"} = "ARGV";
+$perlvar{""} = "";
+$perlvar{""} = "";
+$perlvar{""} = "";
+print "truc ",$0,"\n";
+
+foreach $varname (sort keys %perlvar) {
+    print "$perlvar{$varname}\t\$$varname\t${$varname}\n";
+}
+
+print "OSNAME	\$^O	$^O\n";
+print "DEBUGGING	\$^D	$^D\n";
+print "SYSTEM_FD_MAX	\$^F	$^F\n";
+print "PERLDB	\$^P	$^P\n";
+print "BASETIME	\$^T	$^T\n";
+print "EXECUTABLE_NAME	\$^X	$^X\n";
+
+print "\n\n";
+
+print "\n\n";
+print "\@ARGV\n";
+print "=====\n";
+foreach $i (0..$#ARGV) {
+    print "\$ARGV[$i]\t$ARGV[$i]\n";
+}
+
+
+
+#### add the program path to @INC
+print "$0\n";
+if ($0 =~ /^(.*)\/([^\/]+)$/) {
+    $program_dir = $1;
+    $program_name = $2;
+} else {
+    $program_dir = "$ENV{PWD}";
+    $program_name = $0;
+}
+print "\$program_name\t$program_name\n";
+print "\$program_dir\t$program_dir\n";
+#push (@INC, $program_dir);
+#push (@INC, $LIB);
+#use GD;
+
+
+
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+
+print "\n\n";
+print "\@INC\n";
+print "=====\n";
+foreach $i (0..$#INC) {
+    print "\$INC[$i]\t$INC[$i]\n";
+}
+

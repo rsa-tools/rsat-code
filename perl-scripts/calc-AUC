@@ -1,0 +1,363 @@
+#!/usr/bin/perl 
+
+=pod
+
+=head1 NAME
+
+calc-AUC
+
+=head1 DESCRIPTION
+
+This program calculates the Area Under the Curve from a ROC table.
+
+=head1 AUTHOR
+
+Rekin's Janky <rekins@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+evaluation statistics
+
+=head1 USAGE
+
+calc-AUC -v 1 --input <file> [options]
+
+=cut
+
+#### Librairies
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require("RSA.stat.lib");
+require RSAT::auc;
+use Getopt::Long qw(:config bundling);
+use Pod::Text;
+
+################################################################
+## Initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+#### package variables
+$verbose = 0;
+
+#### lexical variables
+my $options ="";
+my $help="";
+my $input="";
+my $output="";
+my %col=(score=>1, # column with score thresholds
+	 Sn=>2, # column with sensitivity
+	 FPR=>3); # column with False Positive Rate
+my $number_format = "%.4f";
+my $roc_graph="";
+
+#### options
+my %opt = ('opt|?'=>\$options,
+	   'h|help'=>\$help,
+	   'v|verbose=i'=> \$verbose,
+	   'i|input=s'=> \$input,
+	   'o|output=s'=> \$output,
+	   'col=i%'=>\%col,
+	   'g|graph=s'=>\$roc_graph
+	   );
+&GetOptions(%opt);
+
+################################################################
+## display help menu
+
+&PrintHelp if ($help);
+&displayOptions(%opt) if ($options);
+
+################################################################
+#                                                              #
+#                         MAIN                                 #
+#                                                              #
+################################################################
+
+# Read the scores
+my ($scores)=&getId2score($input,\%col);
+
+# extract FPR and Sn values sorted by score
+my @FPR=(); # FPR
+my @Sn=(); # Sn
+my %scores = %{$scores};
+foreach my $sc (sort {$b<=>$a} keys %scores) {
+    push @FPR, $scores{$sc}->{FPR};
+    push @Sn, $scores{$sc}->{Sn};
+    &Warning(join("\t","score",$sc,"FPR",$scores{$sc}->{FPR},"Sn",$scores{$sc}->{Sn})) if ($main::verbose >= 3); 
+}
+
+# calc AUC
+my ($AUC_mw)=&RSAT::auc::calc_MannWhitney(\@Sn,\@FPR);
+my ($AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@Sn,\@FPR);
+my ($AUC_n)=&RSAT::auc::calc_normal(\@Sn,\@FPR);
+
+# Print the results
+my $out = &RSAT::util::OpenOutputFile($output);
+print $out join("\t","AUCg",sprintf("$number_format",$AUC_gt),"(using geometric)")."\n";
+print $out join("\t","AUCgx",sprintf("$number_format",$AUC_gtx),"(using geometric + added points (0,0) and (1,1))")."\n";
+print $out join("\t","AUCn",sprintf("$number_format",$AUC_n),"(using Normal distribution assumption)")."\n";
+print $out join("\t","AUCmw",sprintf("$number_format",$AUC_mw),"(using Mann-Whitney)")."\n";
+
+if ($roc_graph){
+    &drawROC($input,$roc_graph,$col{Sn},$col{FPR});
+}
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $out if ($output);
+
+
+################################################################
+#                                                              #
+#                      SUBROUTINES                             #
+#                                                              #
+################################################################
+
+
+################################################################
+#### Read Input file and get a hash of status and score by id
+################################################################
+
+=pod
+    
+=head1 INPUT FORMAT
+    
+The format must be a tab-delimited file with one column for the
+score threshold (default:1), one column for the Sn (default:2) 
+and one column for the FPR (default:3).
+
+=cut
+    
+sub getId2score{
+  my ($file,$col,$nodie) = @_;
+  my @lines = &readfile("$file");
+  my %scores=();
+  my %col=%{$col};
+  # careful of unvalid columns
+  my @fields = split (/\t/,$lines[0]);
+  my $nb_fields=scalar(@fields);
+  if (($col{score} > $nb_fields)||($col{Sn} > $nb_fields)||($col{FPR} > $nb_fields)){
+      &RSAT::message::Warning(join(" ","Warning ! one column is improperly specified. Input file have only",scalar(@fields),"columns."));
+      die;
+  }
+  
+  foreach my $line (@lines){
+#      &RSAT::message::Warning("line : ",$line);
+      my @fields = split(/\t/,$line);
+
+      # Careful of doublons
+      my $score=$fields[$col{score}-1];
+      if ($scores{$score}){
+	  &RSAT::message::Warning(join(" ","Warning ! This score", $score," is a doublon"));
+	  die ;#unless ($nodie);
+      }
+
+      # get Sensitivity and FPR
+      $scores{$score}->{Sn}=$fields[$col{Sn}-1];
+      if ($col{Sp}){
+	  $scores{$score}->{FPR}=1-($fields[$col{Sp}-1]);	  
+      }else{
+	  $scores{$score}->{FPR}=$fields[$col{FPR}-1];
+      }
+
+      &RSAT::message::Warning(join("\t","score",$score,"Sn",$scores{$score}->{Sn},"FPR",$scores{$score}->{FPR})) if ($main::verbose >= 2); 
+  }
+  return(\%scores);
+}
+
+
+################################################################
+#### MAke the graph representation
+################################################################
+
+sub drawROC{
+    my ($input,$output,$Sn_col,$FPR_col)=@_;
+    my $command = "XYgraph -i $input -xcol $FPR_col -ycol $Sn_col -o $output -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 \"FPR\" -yleg1 \"TPR\" -title \"$output\" ";
+    &RSAT::message::Warning($command) if ($main::verbose >= 1);
+    &doit($command);
+}
+
+################################################################
+#### Read a file
+################################################################
+sub readfile{
+  my ($file,$noskip)=@_;
+  &RSAT::message::Warning(join("\t","Reading file",$file)) if ($main::verbose >= 2);
+  # get the data from file
+  my @datas=();
+  open (FILE,"<$file")||die("Cannot open $file");
+  while (<FILE>){
+    chomp;
+    if ($noskip){ # don't skip comments
+      &RSAT::message::Warning($_) if ($main::verbose >= 10);
+      push (@datas, $_);
+    }else{
+	next if ($_ =~ /^;/ );    # skip comments
+	next if ($_ =~ /^#/ );    # skip comments
+	&RSAT::message::Warning($_) if ($main::verbose >= 10);
+	push (@datas, $_);
+    }
+  }
+  close (FILE);
+  &RSAT::message::Warning(join("\nread line: ",@datas)) if ($main::verbose > 4);
+  return(@datas);
+}
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+### Display options
+################################################################
+sub displayOptions{
+  my (%opt)=@_;
+  my $opts="";
+  foreach my $key (keys %opt) {
+    my ($k,$p) = split /=/,$key;# ) =~ s/=.*//g ;
+    if ($p =~ /%/){
+	foreach my $k1 (keys %{$opt{$key}}){
+	    $opts .= ";\t".join("\t", $k, $k1,${$opt{$key}}{$k1}). "\n";
+	}
+    }else{
+	$opts .= ";\t".join("\t", $k, ${$opt{$key}}). "\n";
+    }
+  }
+  &RSAT::message::Warning("Options\n$opts");
+  exit(0);
+}
+
+=pod
+
+=head1 ESTIMATION OF THE AREA UNDER THE CURVE (AUC)
+
+Several methods can be used in order to estimate the area under the Receiver
+Operating Characteristic (ROC) curve in order to measure the effectiveness of
+a predictive method. The most popular methods are implemented here. 
+
+A perfect test would have AUC=1, whereas a completely random test with the ROC
+curve lying on the main diagonal would have AUC=0.5. However, any attempt to
+summarize the ROC curve into a single number loses information about the
+pattern of tradeoffs of the particular discriminator algorithm.
+
+=item B<Geometric or Trapezoïdal method>
+
+The total area is calculated by summing the area for each adjacent points
+of the curve, (x1,y1) and (x2,y2), and the base. This is done by
+calculating the area of the rectangle between (x1,0),(x2,0),(x1,y1) and
+(x2,y1), then the area of the triangle corresponding to (x1,y1),(x2,y1)
+and (x2,y2). This method is also called the trapezoïdal method.
+
+=item B<Normal method>
+
+This simple parametric method assumes that the rate of true positives (X)
+and the rate of false positives (Y) are independent normal variates:
+
+=begin text
+
+         X ~ N(mx,sx) and Y ~ N(my,sy)
+
+    where mx = mean of sensitivities
+          sx = variance of sensitivities
+          my = mean of FPR
+          sy = variance of FPR
+
+    Then the AUC is the results of the probability of being less than or equal to
+    the given value :
+
+                    /    mx - my    \
+         AUC= pnorm|  ------------- |  
+                   |            1/2 |
+                    \   (sx - sy)   /
+
+=end text
+
+=item B<Mann-Whitney method>
+
+The Mann-Whitney (MW) approach estimates the AUC as a step-function based on
+empirical cumulative distribution functions. It can be shown that the area
+under the ROC curve is equivalent to the Mann-Whitney U which tests for the
+median difference between scores obtained in the two groups considered in the
+study.
+
+=begin text
+
+         AUC =( R - n1*(n1+1)/2) / (n1*n2)
+
+     where R  = sum of the rank in the sensitivities
+           n1 = number of Sn  values
+           n2 = number of FPR values
+
+=end text
+
+=head1 OUTPUT
+
+=over
+
+I<AUCg> Area calculated by using the geometric method
+
+I<AUCgx> like AUCg, but the extreme points (0,0) and (1,1) are added if missing.
+
+I<AUCn> Area calculated by using the Normal assumption
+
+=back
+
+=cut
+
+################################################################
+
+=pod
+
+=over
+
+=head1 OPTIONS
+
+=over
+
+=item -h|--help
+
+Prints this help message
+
+=item -v|--verbosity [integer]
+
+Level of verbosity (information displayed on the screen to indicate
+the processing).
+
+=item --opt
+
+Print option values.
+
+=item -i|--input <file>
+
+Input file.
+
+=item -o|--output <file>
+
+Output file.
+
+=item --col [score|Sn|FPR]=<col_number> (default:score=1,Sn=2,FPR=3)
+
+Specify the column for the score, sensitivity (Sn) or False Positive rate (FPR).(e.g. --col score=3)
+
+=item -g|--graph <graph.jpeg>
+
+Make the roc graph representation using XYgraph.
+
+C<XYgraph -i input -xcol FPR_col -ycol SN_col -o graph.jpeg -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 "FPR" -yleg1 "TPR" >
+
+=head1 SEE ALSO
+
+=item B<roc-stats>
+
+=item B<XYgraph>
+
+=back

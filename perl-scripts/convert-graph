@@ -1,0 +1,867 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-graph,v 1.65 2012/03/28 09:27:02 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+convert-graph
+
+=head1 DESCRIPTION
+
+Convert graphs between different formats.
+
+In the current state, the only supported input format are
+tab-delimited file, gml file. Various output format are already supported (dot,
+gml, tab, adjacency table).
+
+In the future, there should be as many input as output formats (the
+program should perform interconversions between any supported format).
+
+
+=head1 AUTHORS
+
+Sylvain Brohée <sylvain@bigre.ulb.ac.be>
+
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=head1 CATEGORY
+
+Graph utilities
+
+=head1 USAGE
+
+convert-graph [-i inputfile] [-o outputfile] [-from tab|gml|adj_matrix] [-to format tab|dot|gml|adj_matrix|rnsc]  [-arc_id] [-v #]
+
+=head1 FORMATS
+
+=head2 tab
+
+The tab-delimted text format is the most intuitive way to encode a
+graph. Each row represents an edge, and each column an attribute of
+this edge.  Columns are separated using the tabulation character.
+Some attributes of the edges can be placed in the following columns
+(weight, label, color).
+
+Orphan nodes can be specified using this format simply by specifying a
+source node without target node.
+
+=head2 adj_matrix
+
+An adjacency matrix is a n x n table (n is the number of nodes). In
+cell A[i,j], you find the weight (or 1 if the graph is unweighted) on
+the edge between nodes i and j. An undirected adjacency matrix is
+symmetrical : indeed, if an edge exists from node A to node B, it also
+exists from node B to node A. A directed matrix is asymmetrical. By
+default, convert-graph considers the graphs as undirected but if the
+graph you use is undirected, you can use the -undirected option.
+
+=head2 GML
+
+The GML format allows to specify the location, the color, the label and
+the width of the nodes and of the edges. A GML file is made up of
+pairs of a key and a value. Example for keys are graphs, node and
+edges. You can then add any specific information for each key. GML
+format can be used by most graph editors (like cytoscape and yEd). For
+more information on the GML format, see
+http://www.infosun.fim.uni-passau.de/Graphlet/GML/.
+
+=head2 dot
+
+DOT is a plain text graph description language. The DOT files are
+generally used by the programs composing the GraphViz suite (dot,
+neato, dotty, ...). It is a simple way of describing graphs that both
+humans and computer programs can use. DOT graphs are typically files
+that end with the .dot extension. Like GML, with DOT you can specify a
+lot of feature for the nodes (color, width, label).
+
+=head2 path
+
+The pathway consists in a list of nodes separated by arrows '->' on the same line. Typically, these are
+the output of the NeAT PathFinder algorithm. More than one pathway can be encoded in the pathway files.
+
+=head2 rnsc
+
+rnsc is a graph format format used by Andrew King's Restricted Neighbourhood Search Cluster Algorithm (RNSC) algorithm.
+
+The RNSC input format is an adjacency list in which each edge appears
+only once.  The vertices are labelled with the integers 0, 1, ..., n-1.
+
+The list of neighbours for vertex v appears as
+
+	v n_1 n_2 ... n_x -1
+
+
+This file can then be submitted to the RNSC program.
+In NeAT, however as the nodes present labels in the graph we are working with, the output file will be accompagnied by a two column tab delimited file specifying a label for each node id. For this reason, you must only submit the prefix of both output files.
+
+More information are available in King et al (2004).
+
+
+=head2 pathway_extraction
+
+TO BE DESCRIBED (didier)
+
+
+
+=head2 tab_numeric
+
+Exports a tab delimited file in a tab-delimited format with numerical ids required by some programs (e.g. MFfinder, Milo et al, 2002 or FANMOD, Wernicke 2006). The output file is accompagnied by another file specifying a label for each node id. For this reason, you must only submit the prefix of both output files.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+    $main::out  = STDOUT;
+
+    ## directed
+    $directed = 1;
+
+    ## layout
+    $layout = "";
+
+    ## arc_id_option
+    $arc_id_option = 0;
+
+    ## distinct path
+    $distinct_path = 0;
+
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1,
+	adj_matrix=>1,
+	path=>1,
+	path_extract=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+    local $source_color_col = 0;
+    local $target_color_col = 0;
+    local $target_xpos_col = 0;
+    local $target_ypos_col = 0;
+    local $source_xpos_col = 0;
+    local $source_ypos_col = 0;
+    local $color_col = 0;
+    local $path_col = 1;
+    local $edge_width = 0;
+    local $min_value = undef;
+    local $max_value = undef;
+
+    ## Output formats
+    local $output_format = "gml";
+    %supported_output_format =(
+			       dot=>1,
+			       gml=>1,
+			       tab=>1,
+			       tab_java=>1,
+			       adj_matrix=>1,
+			       rnsc=>1,
+			       tab_numeric=>1);
+
+
+    $supported_output_formats = join (",", keys %supported_output_format);
+
+    ## Color gradients
+    local $edge_colors = 0;
+    %supported_edge_colors =(
+			       blue=>1,
+			       green=>1,
+			       red=>1,
+			       grey=>1,
+			       fire=>1);
+
+
+    $supported_edge_colors = join (",", keys %supported_edge_colors);
+
+    %node_attribute = ();
+    %edge_attribute = ();
+
+    &ReadArguments();
+
+
+    ################################################################
+    #### check argument values
+
+
+    if (($output_format eq "rnsc" || $output_format eq "tab_numeric") && $main::outfile{output} eq "") {
+      &RSAT::error::FatalError("You must specify an output file name without extension with output format rnsc");
+    }
+
+    if ($layout && $output_format ne 'gml') {
+      &RSAT::message::Warning("Computation of node position with format", $output_format, "is useless");
+    }
+    if ($input_format eq 'tab' && $weight_col == 0 && ($edge_colors || $edge_width)) {
+      &RSAT::error::FatalError("You must specify a weight column for the computation of the edge color gradient and edge width according to the weight");
+    }
+    if ($color_col > 0 && $edge_colors != 0) {
+      &RSAT::error::FatalError("You must not specify and both a weight gradient color and a edge color column");
+    }
+    if (!($edge_colors || $edge_width) && ($min_value || $max_value)) {
+      &RSAT::error::FatalError("Min value and max value are only useful when computing the edge width or the edge color (-ewidth or -ecolors options)");
+    }
+
+    if ($path_col != 1 && $input_format ne "path") {
+      &RSAT::error::FatalError("Option -pathcol must be used with the path input format");
+    }
+
+    ################################################################
+    ## Initialize the graph
+    my $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "graph");
+
+
+    ################################################################
+    ##### read input
+    $graph->graph_from_text($input_format,
+			    $main::infile{input},
+			    $source_col,
+			    $target_col,
+			    $weight_col,
+			    $source_color_col,
+			    $target_color_col,
+			    $color_col,
+			    $source_xpos_col,
+			    $source_ypos_col,
+			    $target_xpos_col,
+			    $target_ypos_col,
+			    $distinct_path,
+			    $directed,
+			    $path_col);
+
+
+    ## Calculate the layout
+    $graph->layout($layout) if ($layout);
+
+    ## Check that there is more than one edge if the -ecolor and -ewidth options are used
+    ## If not, the option(s) is (are) inactivated
+    if ($edge_width || $edge_colors) {
+      my $number_of_arcs = scalar $graph->get_attribute("arcs");
+      if ($number_of_arcs <= 1) {
+        $edge_width = 0;
+        $edge_colors = 0;
+        &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
+      }
+    }
+
+    ## Calculate the minimum and maximum values of the weight on the edges
+    my ($mean, $sd, $min, $max);
+    if ($edge_width) {
+      my $real = $graph->get_attribute("real");
+      if ($real eq "null") {
+         ($mean, $sd, $min, $max) = $graph->weight_properties();
+
+	 ## If all weights are equal, the min is arbitrarily set to 0
+	 if ($min == $max) {
+	   if ($max > 0) {
+	     $min = 0;
+	   } elsif ($min < 0) {
+	     $max = 0;
+	   } else {
+	     $min = -0.5;
+	     $max = 0.5;
+	   }
+	 }
+      }
+
+      unless ($real) {
+	## If there is not at least one real number, the weights cannot be computed
+        (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
+        $edge_width = 0;
+      }
+
+    }
+
+    ################################################################
+    ## Specify attributes for all the nodes
+    if (scalar(keys(%node_attribute))) {
+	$graph->set_hash_attribute('node_attribute', %node_attribute);
+    }
+    if (scalar(keys(%edge_attribute))) {
+	$graph->set_hash_attribute('edge_attribute', %edge_attribute);
+	my %edge_attribute2 = $graph->get_attribute('edge_attribute');
+    }
+
+    ################################################################
+    ###### print output
+    ### open output streams
+    if ($output_format ne "rnsc" && $output_format ne "tab_numeric") {
+      $main::out = &OpenOutputFile($main::outfile{output});
+    }
+    if ($output_format eq "tab") {
+      $main::verbose_out = $main::out;
+    } else {
+      $main::verbose_out = STDOUT;
+    }
+    #### print verbose
+    &Verbose() if ($main::verbose);
+    my $output_graph = $graph->to_text($output_format, $arc_id_option, $directed, $edge_width, $min_value, $max_value);
+
+    if ($output_format ne "rnsc" && $output_format ne "tab_numeric") {
+      print $out $output_graph;
+    } elsif ($output_format eq "rnsc" || $output_format eq "tab_numeric") {
+      # RNSC and tab numeric output is composed of two files
+      # a graph file (output.suffix)
+      # a node names file (output_nodes_names.suffix)
+      my $suffix = "tab";
+      $suffix = "rnsc" if ($output_format eq "rnsc");
+
+      my @split = split "#####NODES_NAME#####", $output_graph;
+      my $output_graph_file = $main::outfile{output}.".".$suffix;
+      my $output_graph_node_names_file = $main::outfile{output}."_node_names.".$suffix;
+      $main::out = &OpenOutputFile($output_graph_file);
+      $main::out_names = &OpenOutputFile($output_graph_node_names_file);
+      print $main::out $split[0];
+      print $main::out_names $split[1];
+    }
+
+
+    ################################################################
+    ## Close output stream
+    if ($output_format eq "tab") {
+      my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+      print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    }
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+
+=pod
+	    ## Input file
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+For output format rnsc, you must not give the
+extension of the resulting graph as it will consist of two files (radical.rns and radical_rnsc_labels.tab).
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ### Input format
+=pod
+
+=item B<-from input_format>
+
+Input format. Supported: tab, gml, adj_matrix, path, pathway_extract
+
+=cut
+	} elsif ($arg eq "-from") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+
+	    ### Output format
+
+=item B<-to output_format>
+
+Output format. Supported: tab, dot, gml, adj_matrix, rnsc, tab_numeric
+
+For rnsc and tab_numeric output (see above), you must submit an output prefix as two output files are returned.
+
+=cut
+	} elsif ($arg eq "-to") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes. (default 1)
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes. (default 2)
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the node weights. (no default)
+Node weights are converted to labels.
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+=pod
+
+=item B<-eccol>
+
+Edge color column. Column containing the color of the edges (RGB). (no default)
+
+=cut
+	} elsif ($arg eq "-eccol") {
+	    $color_col = shift (@arguments);
+	    unless (&IsNatural($color_col) && ($color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+=pod
+
+=item B<-sccol>
+
+Source node color colum. Column containing the color of the node
+(RGB). (no default)
+
+A node can only have one color. If in the file, the color of the node
+changes, only the first defined color will be taken into account.
+
+=cut
+	} elsif ($arg eq "-sccol") {
+	    $source_color_col = shift (@arguments);
+	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+
+
+=pod
+
+=item B<-tccol>
+
+Target node color colum. Column containing the color of the node
+(RGB). (no default)
+
+A node can only have one color. If in the file, the color of the node
+changes, only the first defined color will be taken into account.
+
+=cut
+	} elsif ($arg eq "-tccol") {
+	    $target_color_col = shift (@arguments);
+	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+
+=pod
+
+=item B<-source_xpos_col>
+
+Column containing the X position of the source node (no default)
+
+A node can only have X position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
+
+=cut
+	} elsif ($arg eq "-source_xpos_col") {
+	    $source_xpos_col = shift (@arguments);
+	    unless (&IsNatural($source_xpos_col) && ($source_xpos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_xpos_col, "Invalid value for the source X position column. Must be a strictly positive natural number"));
+	    }
+
+=pod
+
+=item B<-target_xpos_col>
+
+Column containing the X position of the target node (no default)
+
+A node can only have one X position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
+
+=cut
+	} elsif ($arg eq "-target_xpos_col") {
+	    $target_xpos_col = shift (@arguments);
+	    unless (&IsNatural($target_xpos_col) && ($target_xpos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_xpos_col, "Invalid value for the target X position column. Must be a strictly positive natural number"));
+	    }
+
+=pod
+
+=item B<-source_ypos_col>
+
+Column containing the Y position of the source node (no default)
+
+A node can only have one Y position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
+
+=cut
+	} elsif ($arg eq "-source_ypos_col") {
+	    $source_ypos_col = shift (@arguments);
+	    unless (&IsNatural($source_ypos_col) && ($source_ypos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_ypos_col, "Invalid value for the source Y position column. Must be a strictly positive natural number"));
+	    }
+
+=pod
+
+=item B<-target_ypos_col>
+
+Column containing the Y position of the target node (no default)
+
+A node can only have y position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
+
+=cut
+	} elsif ($arg eq "-target_ypos_col") {
+	    $target_ypos_col = shift (@arguments);
+	    unless (&IsNatural($target_ypos_col) && ($target_ypos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_ypos_col, "Invalid value for the target Y position column. Must be a strictly positive natural number"));
+	    }
+
+=pod
+
+=item B<-node_attr key value>
+
+Specify the value of an attribute for all the nodes.
+
+=cut
+   } elsif ($arg eq "-node_attr") {
+    my $key = shift(@arguments);
+    my $value = shift(@arguments);
+    $main::node_attribute{$key} = ${value};
+
+=pod
+
+=item B<-edge_attr key value>
+
+Specify the value of an attribute for all the edges.
+
+=cut
+   } elsif ($arg eq "-edge_attr") {
+    my $key = shift(@arguments);
+    my $value = shift(@arguments);
+    $main::edge_attribute{$key} = ${value};
+
+=item B<-pathcol>
+
+Pathway column (specific for trating output files of the PathFinder
+program).
+
+Column containing the pathways (default = 1).  By default, the pathway
+column is seven as it is the case for the output of the PathFinder
+program.
+
+=cut
+	} elsif ($arg eq "-pathcol") {
+	    $path_col = shift (@arguments);
+	    unless (&IsNatural($path_col) && ($path_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $path_col, "Invalid value for the path column. Must be a strictly positive natural number"));
+	    }
+
+=item B<-undirected>
+
+Specifies whether the edges must be considered as undirected, i.e., an
+edge from node A to node B corresponds to an edge from B to A (by
+default, edges are directed). Useful for the output as an adjacency
+table.
+
+=cut
+	} elsif ($arg eq "-undirected") {
+	    $directed = 0;
+
+
+=pod
+
+=item B<-layout layout_algorithm>
+
+Calculate the layout, i.e. assign positions to each node of the
+graph.
+
+This option requires GML as input format.
+
+Supported layout algorithms:
+
+=over
+
+=item I<-layout none>
+
+Do not apply any layout
+
+=item I<-layout spring>
+
+Apply spring embedding algorithm to compute node positions.
+
+=item I<-layout random>
+
+Assign random positions to all nodes.
+
+=item I<-layout fr>
+
+Calculate the layout (provided you have the fr_layout program in
+$RSAT/bin) according to the Fruchterman-Reingold (FR) algorithm.
+
+=back
+
+=cut
+    } elsif ($arg eq "-layout") {
+      $layout = shift(@arguments);
+#       unless ($RSAT::Graph2::supported_layout{$layout}) {
+# 	&RSAT::error::FatalError($layout, "Invalid value for option -layout. Supported: ".$RSAT::Graph2::supported_layouts);
+#       }
+
+=pod
+
+=item B<-arc_id>
+
+Add a unique ID for each arc when using the tab-delimited output.
+
+=cut
+	} elsif ($arg eq "-arc_id") {
+	    $arc_id_option = 1;
+
+=pod
+
+=item B<-ewidth>
+
+Calculate the edge width for the GML output. The width is proportional
+to the weight of the edge. This value can only be computed for the GML
+output.  All weights in the column indicated by the -wcol argument or
+in the label field of the GML file must thus be real values.
+
+=cut
+	} elsif ($arg eq "-ewidth") {
+	    $edge_width = 1;
+
+=item B<-ecolors>
+
+Compute an edge color. The color intensity is proportional to the
+weight of the edge. All weights in the column indicated by the -wcol
+argument must thus be real values.
+
+Supported : green, blue, red, fire, grey.
+
+=cut
+	} elsif ($arg eq "-ecolors") {
+	    $edge_colors = shift(@arguments);
+	    &RSAT::error::FatalError("$edge_colors\tInvalid color gradient (option -ecolors). Supported: $supported_edge_colors")
+		unless ($supported_edge_colors{$edge_colors});
+
+
+
+
+
+
+=item B<-min #>
+
+Minimal value for computing the color gradient and the edge width. By
+default, this value is the minimal value of the input file. If the
+specified value is larger than the minimal value of the graph, then
+the minimal value of the heatmap will be used as minimal value.
+
+=cut
+	} elsif ($arg eq "-min") {
+	    $min_value = shift (@arguments);
+	    unless (&RSAT::util::IsReal($min_value)) {
+		&RSAT::error::FatalError(join("\t", $min_value, "Invalid value for the minimal value. Must be a real number."));
+	    }
+
+=item B<-max #>
+
+Maximal value for computing the color gradient and the edge width. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the graph, then the maximal value of the graph will be used as maximal value.
+
+=cut
+	} elsif ($arg eq "-max") {
+	    $max_value = shift (@arguments);
+	    unless (&RSAT::util::IsReal($max_value)) {
+		&RSAT::error::FatalError(join("\t", $max_value, "Invalid value for the maximal value. Must be a real number."));
+	    }
+
+
+
+=pod
+
+=item B<-distinct_path>
+
+With this option, each pathway of the pathway file will be considered separately.
+
+=cut
+
+	} elsif ($arg eq "-distinct_path") {
+	    $distinct_path = 1;
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::verbose_out "; convert-graph ";
+    &PrintArguments($main::verbose_out);
+    if ((%main::infile)) {
+	print $main::verbose_out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::verbose_out ";\t$key\t$value\n";
+	}
+    }
+    if ((%main::outfile)) {
+	print $main::verbose_out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::verbose_out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item I<compare-graphs>
+
+=item I<graph-get-clusters>
+
+=item I<graph-neighbours>
+
+=item I<graph-node-degree>
+
+=item I<graph-set-attributes>
+
+=cut

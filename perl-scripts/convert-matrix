@@ -1,0 +1,1715 @@
+#!/usr/bin/perl -w
+
+## TO DO: calculate GC content of the motif in parameters
+
+############################################################
+#
+# $Id: convert-matrix,v 1.148 2013/07/17 16:15:50 jvanheld Exp $
+#
+# Time-stamp: <2002-06-06 13:14:17 jvanheld>
+#
+############################################################
+#use strict;
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+  require "RSA.lib";
+}
+use RSAT::MarkovModel;
+use RSAT::matrix;
+use RSAT::MatrixReader;
+use File::Basename;
+use Data::Dumper;
+use POSIX;
+
+#### initialise parameters ####
+local $start_time = &RSAT::util::StartScript();
+local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+$seqlogo_path = &trim($seqlogo_path);
+$decimals = 1;
+$pseudo_weight = 1;
+$equi_pseudo = 0;
+$max_profile = 24;
+$sep="\t";
+$null = "NA";
+$perm = 0;
+%args = (); ## Arguments for matrix reading
+%force_attribute = ();
+$top_matrices = "none";
+$skip_matrices = 0;
+$multiply = 1;
+
+local %infile = ();
+local %outfile = ();
+local @matrix_files = ();
+local @matrices = ();
+local $input_format = "";
+local $output_format = "patser";
+local $verbose = 0;
+local $out = STDOUT;
+local $info_log_base = exp(1);
+
+local $bg_model = new RSAT::MarkovModel();
+
+local $sort_key = "";
+local $sort_order = "";
+
+local $flanks = 0;
+
+## Return type(s)
+@return_fields = ();
+%supported_return_type = (
+			  "profile"=>1,
+			  "counts"=>1,
+			  "frequencies"=>1,
+			  "weights"=>1,
+			  "info"=>1,
+			  "information"=>1,
+			  "logo_matrix"=>1,
+			  "parameters"=>1,
+			  "consensus"=>1,
+			  "header"=>1,
+			  "margins"=>1,
+			  "sites"=>1,
+			  "wdistrib"=>1,
+			  "links"=>1, ## Obsolete but accepted (with warning) for backward compatibility
+			  "logo"=>1,
+			  "logo_table"=>1,
+			 );
+$supported_return_fields = join ",", sort keys %supported_return_type;
+
+## input formats
+%supported_input_format = %RSAT::MatrixReader::supported_input_format;
+$supported_input_formats = join ",", sort keys %supported_input_format;
+
+## output formats
+%supported_output_format = %RSAT::matrix::supported_output_format;
+$supported_output_formats = join ",", sort keys %supported_output_format;
+
+## site formats
+%supported_site_format = ('fasta'=>1,
+			  "wc"=>1,
+			  "multi"=>1,
+			 );
+$supported_site_formats = join ",", sort keys %supported_site_format;
+$site_format="fasta";
+
+## bg formats
+$bg_format = "oligo-analysis";
+%supported_bg_format = $bg_model->get_supported_input_formats();
+$supported_bg_formats = join ",", sort keys %supported_bg_format;
+
+## logo formats
+local $logo_format = "png";
+local $logo_opt = "";
+local $logo_dir = "";
+local $logo_file_base = "";
+@logo_formats=();
+%supported_logo_format =  ('png'=>1,
+			  "eps"=>1,
+#			  "gif"=>1, # log from seqlogo : check logo.conf
+			  "pdf"=>1,
+			 );
+$supported_logo_formats = join ",", sort keys %supported_logo_format;
+
+
+
+################################################################
+## Read command-line arguments
+&ReadArguments();
+
+################################################################
+## Check argument values ####
+
+## Verbosity is only accepted for the tab-delimited format
+unless (lc($output_format ) eq "tab") {
+  $main::verbose = 0;
+}
+
+## Input format
+unless ($input_format) {
+    &RSAT::error::FatalError("You should specify the input matrix format.");
+}
+
+## Matrix provided with option -i
+if ($infile{input}) {
+    push @matrix_files, $infile{input};
+}
+
+## Matrix list has been provided
+if ($infile{matrix_list}) {
+    my ($mlist, $input_dir) = &OpenInputFile($infile{matrix_list});
+    while (<$mlist>) {
+	next if (/'^;'/);		# skip comment lines
+	next if (/'^#'/);		# skip header lines
+	next if (/'^--'/);	# skip mysql-type comment lines
+	next unless (/\S/);	# skip empty lines
+	my @fields = split /\s+/;
+	my $matrix_file = $fields[0];
+	push @matrix_files, $matrix_file;
+    }
+    close $mlist;
+    &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+}
+
+if (scalar(@matrix_files > 1)) {
+    # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
+  &RSAT::message::Info(scalar(@matrix_files)." input matrix files") if ($main::verbose >= 2);
+}
+
+## Decompose logo file name into dirname and basename
+if ($logo_file_base) {
+  my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_file_base);
+  if ($dir) {
+    $logo_dir = $dir;
+    $logo_file_base = $short_file_name;
+    &RSAT::message::Debug("Logo file name decomposed", "logo_dir=".$logo_dir, "logo_file_base=".$logo_file_base) if ($main::verbose >= 5);
+  }
+}
+
+################################################################
+## Check output parameters
+
+## Output file is required for some output formats
+unless ($outfile{output}) {
+  ## Outfile name is required for splitting matrices in a set of output files
+  if ($split_out_files) {
+    &RSAT::error::FatalError("The option -split requires to specify an output file (option -o)");
+  }
+
+  ## Outfile name is required for logo table (HTML)
+  if ($return_field{logo_table}) {
+    &RSAT::error::FatalError("The option -return logo_table requires to specify an output file (option -o)");
+  }
+}
+
+## If logo table has been asked, assume logos are requested even if
+## not explicit on the command line
+if ($return_field{logo_table}) {
+  $return_field{logo} = 1;
+}
+
+## Check return type(s)
+local %return_fields = ();
+unless (scalar(@return_fields)) {
+  if ((lc($output_format ) eq "transfac") ||
+      (lc($output_format ) eq "tf") ||
+      (lc($output_format ) eq "consensus") ||
+      (lc($output_format ) eq "tab") ||
+      (lc($output_format ) eq "infogibbs")
+     ) {
+    push @return_fields, "counts";
+  } else {
+    &RSAT::error::FatalError("You should define at least one return type");
+  }
+}
+
+## Permutations are only compatible with -return counts
+if ($perm) {
+  foreach my $field (@return_fields) {
+    unless ($field eq "counts") {
+      &RSAT::error::FatalError("The option -perm is only compatible with -return counts");
+    }
+  }
+}
+
+## Check return fields
+foreach my $field (@return_fields) {
+  if ($supported_return_type{$field}) {
+    $return_fields{$field}++;
+  } else {
+    &RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
+  }
+}
+
+## Deprecated option -return wdistrib
+if ($return_fields{wdistrib}) {
+    &RSAT::message::Warning( "Option -eturn wdistrib is deprecated. Use matrix-dsitrib instead.");
+}
+
+## Information
+if ($return_fields{information}) {
+  $return_fields{info} = 1;
+  &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
+}
+
+
+## Prior residue frequencies
+local %prior = ();
+if ($infile{prior}) {
+  if (defined($bg_pseudo)) {
+    $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+  }
+  $bg_model->load_from_file($infile{prior}, $bg_format);
+  %prior = $bg_model->get_attribute("suffix_proba");
+  foreach my $key (sort keys %prior) {
+    my $residue = lc($key);
+    &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 3);
+  }
+}
+
+## logo format(s)
+if ($return_fields{logo}) {
+  if (scalar(@logo_formats)>=1){
+    foreach my $logo_format (@logo_formats){
+      unless ($supported_logo_format{$logo_format}) {
+	&RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
+      }
+    }
+  }else{
+    @logo_formats = ($logo_format);
+  }
+
+  ## Check that seqlogo is installed at the expected location
+  if (-e $seqlogo_path) {
+    if(-x $seqlogo_path) {
+      &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+    } else {
+      &RSAT::message::Warning("Cannot execute the program seqlogo", 
+			      $seqlogo_path);
+      $seqlogo_path="";
+    }
+  } else {
+    &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
+			    $seqlogo_path);
+    $seqlogo_path="";
+  }
+}
+
+################################################################
+#### Perform the conversion
+
+### open output file ###
+if ($split_out_files) {
+  $outfile{matrix_list} = $outfile{output}."_matrix_list.tab";
+  $out = &OpenOutputFile($outfile{matrix_list});
+} else {
+  $out = &OpenOutputFile($outfile{output});
+}
+
+##### print output ######
+&Verbose if ($verbose);
+
+## Read the input matrices and collect all matrices
+if (scalar(@matrix_files >= 1)) {
+  $m = 0;
+  foreach my $matrix_file (@matrix_files) {
+    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
+    foreach my $matrix (@matrices_from_file) {
+      $m++;
+      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+      &SetMatrixName($matrix, $m, $matrix_file, $input_format);
+      push @matrices, $matrix;
+    }
+  }
+} else {
+  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
+  my $m = 0;
+  foreach my $matrix (@matrices_from_file) {
+    $m++;
+    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+    &SetMatrixName($matrix, $m, "", $input_format);
+    push @matrices, $matrix;
+  }
+}
+
+## Check that there is at least one input matrix
+if (scalar(@matrices) < 1) {
+  &RSAT::message::Warning("Input file contained not a single matrix");
+} else {
+  &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
+}
+
+
+## Skip matrix if requested
+if ($skip_matrices > 0) {
+  if (scalar(@matrices) > $skip_matrices) {
+    &RSAT::message::Warning("Skipping ".$skip_matrices." top matrices among ".scalar(@matrices)) if ($main::verbose >= 1);
+    @matrices = @matrices[$skip_matrices..$#matrices];
+    &RSAT::message::Info(scalar(@matrices), "matrices left after skipping") if ($main::verbose >= 1);
+  } else {
+    &RSAT::message::Warning("No matrix left after skipping ".$skip_matrices." top matrices among ".scalar(@matrices));
+    exit();
+  }
+}
+
+################################################################
+## Process each matrix
+&RSAT::message::TimeWarn("Processing matrices") if ($main::verbose >= 2);
+my $m = 0;
+foreach my $matrix (@matrices) {
+  $m++;
+
+  ## Multiply
+  if ($multiply != 1) {
+    $matrix->multiply($multiply);
+  }
+
+  ## Add flanks
+  if ($flanks) {
+    my @empty_col = ();
+    my $empty_value = 0;
+    my $nrow = $matrix->nrow();
+    for my $r (1..$nrow) {
+      push @empty_col, $empty_value;
+    }
+    for my $i (1..$flanks) {
+      $matrix->add_column("right",@empty_col);
+      $matrix->add_column("left",@empty_col);
+    }
+  }
+  ## Compute reverse complement
+  $matrix->reverse_complement() if ($rc);
+  $matrix->force_attribute("pseudo", $pseudo_weight);
+  $matrix->force_attribute("equi_pseudo", $equi_pseudo);
+  $matrix->force_attribute("decimals", $decimals);
+  $matrix->force_attribute("max_profile", $max_profile);
+  $matrix->force_attribute("sep", $sep);
+  $matrix->force_attribute("header", $return_fields{header});
+  $matrix->force_attribute("margins", $return_fields{margins});
+  $matrix->setInfoLogBase($info_log_base);
+  $matrix->force_attribute("bg_markov_order", 0);
+  if ($infile{prior}) {
+    $matrix->setPrior(%prior);
+  }
+
+  ## Calculate parameters before sorting because sorting can be done on
+  ## a computed parameter rather than defined in the input file.
+  if ($return_fields{parameters}) {
+    $matrix->calcWeights();
+    $matrix->calcInformation();
+    $matrix->calcConsensus();
+    $matrix->calcGCcontent();
+  }
+
+  ## Generate logo
+  if (($return_fields{logo}) && ($seqlogo_path)) {
+
+    unless ($logo_dir) {
+      if ($outfile{output}) {
+	$logo_dir = dirname($outfile{output});
+      } else {
+	$logo_dir = "logos";
+      }
+    }
+    $logo_dir .= "/";
+    $logo_dir =~ s|/+|/|g;
+    &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
+
+    ## Create logo directory if required
+    &RSAT::util::CheckOutDir($logo_dir);
+
+    my $logo_file = $logo_dir."/";
+    if ($logo_file_base) {
+      $logo_file .= $logo_file_base."_m".$m;
+    } else {
+      my $id = $matrix->get_attribute("id") || $matrix->get_attribute("identifier");
+      my $ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC") || $id;
+      &RSAT::message::Debug("ac=".$ac, "id=".$id) if ($main::verbose >= 3);
+      $logo_file .= $ac || $id;
+      $logo_file .= "_logo";
+    }
+    #	$logo_file =~ s/\.\w+$//;
+#    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
+     $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
+     $matrix->set_attribute("logo_file" => $logo_file);
+#    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
+    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
+    $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
+
+    ## Index the logos in a HTML table
+    if ($return_field{logo_table}) {
+      print $logo_table "<tr>\n";
+      print $logo_table "</tr>\n";
+    }
+  }
+}
+
+################################################################
+## Sort the matrices if requested
+if ($sort_key) {
+  @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
+}
+
+################################################################
+## Print the matrices
+$m = 0;
+&RSAT::message::TimeWarn("Exporting ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
+
+## Number of digits for the counter of split matrix files
+my $id_digits;
+if ($split_out_files) {
+  $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
+}
+
+foreach my $matrix (@matrices) {
+  $m++;
+  last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
+  &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
+    if ($main::verbose >= 3);
+
+  my $current_out;
+  if ($split_out_files) {
+    my $output_prefix = $outfile{output};
+    $output_prefix =~ '|\.tab$ ||';
+    $output_prefix =~ '|\.txt$ ||';
+
+    ## Use the same number of digits for all matrices so that the
+    ## alphabetical order ot the splitted files corresponds to the
+    ## numerical order of the matrices.
+    my $id_nb = sprintf "%${id_digits}s", $m;
+    $id_nb =~ s/ /0/g;
+    $id .= $id_nb;
+
+    my $ID = $matrix->get_attribute("accession")
+      ||  $matrix->get_attribute("identifier")
+	|| $matrix->get_attribute("name")
+	  || $matrix->get_attribute("ID")
+	    || $id_nb;
+
+    $outfile{'matrix_'.$m} = $output_prefix."_".$ID.".".$output_format;
+    $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
+
+    ## Print the name of the file containing each matrix in the main output file
+    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}, $matrix->get_attribute("name")), "\n";
+  } else {
+    $current_out = $out;
+  }
+#   if ($m > 1) {
+#     my $fields = join ('', keys (%return_fields));
+#     # unless ($fields eq "logo") {
+#     #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+#     #}
+#   }
+
+  if ($return_fields{header}) {
+    print $current_out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
+  }
+
+
+  ## Matrix permutations
+  if ($perm) {
+    my $AC = $matrix->get_attribute("accession") || $ID;
+    &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+    &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
+      if ($main::verbose >= 2);
+    for my $i (1..$perm) {
+
+      # if ($i > 1) {
+      #print $current_out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+      #}
+
+      ## Permute the matrix
+      $matrix->permute_columns();
+      my $ID_perm = join("_", $ID, "perm".$i);
+      my $AC_perm = join("_", $AC, "perm".$i);
+      $matrix->force_attribute("name", $ID_perm);
+      $matrix->force_attribute("ID", $ID_perm);
+      $matrix->force_attribute("identifier", $ID_perm);
+      $matrix->force_attribute("accession", $AC_perm);
+      &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
+
+      ## print result
+      if ($main::verbose >= 1) {
+	print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
+	print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);
+	print $current_out "; permutation $i/$perm\n";
+      }
+
+#       print $current_out $matrix->toString(sep=>"\t",
+# 				   type=>"counts",
+# 				   format=>$output_format,
+# 				   #				   format=>"tab",
+# 				   pipe=>"" ## We suppress the pipe for permute-table
+# 				  );
+      &ExportMatrix($matrix, $m, $current_out);
+    }
+  } else {
+    &ExportMatrix($matrix, $m, $current_out);
+  }
+  if ($split_out_files) {
+    close ($current_out);
+  }
+}
+
+
+##### close output file
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outfile{output});
+close $main::logo_table if ($outfile{logo_table});
+
+
+exit(0);
+
+################################################################
+#################### subroutine definition #####################
+################################################################
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-matrix
+
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+USAGE
+        convert-matrix [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+
+	Performs inter-conversions between various formats of
+	position-specific scoring matrices (PSSM).
+
+	The program also performs a statistical analysis of the
+	original matrix to provide different position-specific scores
+	(weight, frequencies, information contents), general
+	statistics (E-value, total information content), and synthetic
+	descriptions (consensus).
+
+	PSSM can be used to represent the binding specificity of a
+	transcription factor or the conserved residues of a protein
+	domain.
+
+	Each row of the matrix corresponds to one residue (nucleotide
+	or amino-acid depending on the sequence type).  Each column
+	corresponds to one position in the alignment.  The value
+	within each cell represents the frequency of each residue at
+	each position.
+
+CATEGORY
+	util
+	conversion
+	PSSM
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-mlist matrix_list
+		Indicate a file containing a list of matrices to be
+		used for scanning the region. This facilitates the
+		scanning of a sequence with a library of matrices
+		(e.g. all the matrices from RegulonDB, or TRANSFAC).
+
+		Format: the matrix list file is a text file. The first
+		word of each row is suppose to indicate a file
+		name. Any further information on the same row is
+		ignored.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+  	-split
+		Split a single multi-matrices input file in a set of
+		separate files. The output file names start with the
+		prefix specificed by the option -o, followed by a
+		suffix indicating the order of the matrix in the input
+		file (m1, m2, ...).
+
+	-prior [deprecated, use -bgfile] prior frequency file
+
+	-bgfile [deprecated] prior frequency file
+		File indicating prior residue frequencies
+		If no prior frequency file is specified, prior
+		frequencies are read from the input file. In case this
+		file does not contain any indication of prior
+		frequencies, equal priors are assumed.
+
+	-bg_format bg_format
+		Format for the background model (prior) files.
+		Supported formats: all the input formats supported by 
+		convert-background-model.
+
+	-bg_pseudo #
+		Pseudo frequency for the background models. Value must be a real
+		between 0 and 1 (default: $bg_model->{bg_pseudo})
+
+	-from
+		input matrix format
+		Supported: $supported_input_formats
+
+	-to
+		output matrix format. 
+		Supported: $supported_output_formats
+
+		The option -out_format allows to export the matrix in
+		different formats in order to use it as input for various
+		pattern matching programs (e.g. patser, MotifScanner, ...).
+
+		The option -return allows to specify the matrix content, the
+		option -out_format its format. 
+
+		Beware: each of these programs expectes to find a specific
+		type of information in the matrix. For instance, patser uses a
+		matrix of counts (or optionnally weights), whereas
+		MotifScanner uses a frequency matrix. 
+
+		In order to use a matrix as input for another program, the
+		verbosity should be set to 0, in order to avoid comment lines
+		(which would be misinterpreted by other programs).
+
+		Recommended combinations of parameters
+
+		Input for patser
+		      -return counts -out_format patser -v 0
+
+		Input for MotifScanner
+		      -return frequencies -out_format MotifScanner -v 0
+
+	-return	return type
+		Supported: $supported_return_fields
+
+		convert-matrix allows to perform various conversions, starting
+		from an input occurrence matrix, in order to obtain various
+		statistics such as frequencies, weights, information contents,
+		.... The supported return types are described in detail below.
+
+	-sort desc|asc|alpha key
+
+		Sort matrices according to the specified attribute
+		(sort_key). The sorting can be done on numerical
+		values, either in descending (desc) or ascending (asc)
+		order. It can also be done in alphabetical order
+		(alpha).
+
+		The key mst be one of the numeric parameters of the
+		matrices (e.g. information.content, E-value, ...).
+
+		This option is convenient, for example, to sort
+		matrices from MotifSampler according to their
+		information content:
+			-sort desc MS.ic
+
+	-top
+	        Maximal number of matrices to return.
+
+		Some of the input formats can contain several matrices
+		in a single file (e.g. consensus, meme,
+		MotifSampler). By default, all the matrices are parsed
+		and exported. The option -top allows to restrict the
+		number of matrices to be exported.
+
+	-pseudo
+		pseudo-weight used for the calculation of the weight
+		matrix (default: $pseudo_weight)
+
+	-equi_pseudo
+		If this option is called, the pseudo-weight is
+		distributed in an equiprobable way between residues.
+		By default, the pseudo-weight is distributed
+		proportionally to residue priors.
+
+	-multiply #
+		Multiply all the values of the input matrices by the
+		number #. This option allows to convert frequency
+		matrices into count matrices. It is somewhat tricky,
+		but can be useful for converting matrices for which
+		the actual counts are not provided but which only
+		provide relative frequencies.
+
+	-base #
+	      Base for the logarithms used in the scores involving a
+ 	      log-likelihood (weight and information
+ 	      content). Default: exp(1) (natural logarithms).
+
+	      A common alternative to natural logarithms is to use
+	      logarithms in base 2, in which case the information
+	      content is computed in bits.
+
+	-decimals
+		Number of decimals to print for real matrices
+		(frequencies, weights, information) or to compute
+		score distributions.
+
+		Warning: for the computation of score distributions,
+		the computing time increases exponentially with the
+		number of decimals. We recommend to restrict the
+		precision to 2 decimals for the weight, this is
+		generally more than sufficient.
+
+	-prefix
+		Prefix to be added before identifier(s) and name(s) of
+		the input matrix/matrices. This can be convenient for
+		converting formats where matrices have no associated
+		name (e.g. tab) to formats with names (e.g. transfac).
+
+	-attr key value
+	        Force an attribute of the matrix (matrices) to have a
+	        given value. This can be convenient for converting
+	        poorly documented formats (e.g. tab-delimited) into
+	        formats with specific requirements for attributes
+	        (e.g. TRANSFAC).
+
+		Example:
+		    convert-matrix -from tab -to transfac \
+		        -i my_matrix.ta -o my_matrix.tf \
+			-attr AC MC0027 \
+			-attr id KNkB_278
+
+	-perm #
+		Number of permuted matrices to return. Matrix columns
+		are permuted so that the total information content
+		remains identical to the original matrix. Note that
+		the output format for permuted matrix is tab.
+
+	-max_profile
+		Maximal width of the profile histogram (units = number
+		of characters).
+
+	-rc
+		Convert the matrix to its reverse complement.
+
+	-logo_format
+		Format for logo image file. supported :
+		$supported_logo_formats (default:png).  Beware: the
+		logo file will be created in current directory by
+		default, unless the -logo_dir option is specified or
+		the -o option. In the last case the logo will be in
+		the same directory than the output file (-o ).
+		Several formats can be sepcified at the same time by
+		using comma as separator (eg. -logo_format png,pdf)
+
+	-logo_dir
+		Specifies a directory for the output of the logo
+		file. By default, the logos are exported in the
+		directory from which is called the convert-matrix
+		command.
+
+	-logo_file
+		Specifies the name of the logo file. The extension is
+		appended automatically, depending on the image file
+		format. If the matix file contains several matrices,
+		the matrix number is appended to the file name.
+
+	-logo_opt 
+
+		Any other option to be passed to seqlogo for
+		generating the logo. This option can be used
+		iteratively to specify multiple options.
+
+		For instance
+		    -logo_opt '-w 12' -logo_opt '-t "CRP matrix" -a'
+		will add the following options to the commande seqlogo:
+		     -w 12 -t "CRP matrix" -a
+
+		To obtain the list of options supported by seqlogo, type
+			    seqlogo
+
+PRIOR FREQUENCY FILE
+
+      The prior frequency file is a tab-delimited text file with one
+      row per residue, and two columns. The first column indicates the
+      residue, the second column its prior frequency.
+
+      Prior frequency files can be generated with the program
+      oligo-analysis.
+
+      oligo-analysis -i reference-seq.fasta -l 1 -return freq -1str -v 1
+
+INPUT/OUTPUT FORMATS
+
+    Some formats are supported only for input, others for
+    output. There are more formats accepted for input, because the
+    general use of this program is to convert a PSSM obtained from a
+    database (e.g. TRANSFAC) or a pattern-discovery program
+    (e.g. consensus, gibbs, meme, MotifSampler, ...) and obtain a
+    matrix either for scanning (with matrix-scan) or for computing
+    statistical parameters (see the return fields below).
+
+    tab (input/output)
+	tab-delimited file. One row per residue, one column per
+	position. The first column of each row indicates the residue,
+	the following columns give the frequency of that residue
+	at the corresponding position of the matrix.
+	e.g.:
+	a	|	0	16	0	1	0	0	11
+	c	|	16	0	15	0	0	0	3
+	g	|	0	0	0	15	0	16	0
+	t	|	1	0	0	1	0	16	0	2
+
+        The tab format accepts a user-specific set of return fields
+        (option -return), provigind different statistics on the matrix
+        (counts, frequencies, weights, information, other parameters:
+        see description below).
+
+    patser (output)
+        This format can be used as input to scan sequences with
+        patser, the pattern-matching program developed by Jerry Hertz.
+
+        This is actually the same format as tab (described above), but
+        the only return field is the count matrix.
+
+    assembly (input)
+	Output file from the program pattern-assembly. One assembly
+	file can contain zero, one or several assemblies. Each
+	assembly is converted to a position-specific scoring matrix by
+	taking, for each residue at each position, the score of the
+	most significant pattern (oligonucleotide) containing that
+	residue in this position of the assembly.
+
+    consensus (input/output)
+	Output file from consensus, the pattern-discovery program
+	developed by Jerry Hertz (Hertz et al., Comput Appl Biosci,
+	1990:6, 81-92). This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
+
+    gibbs (input)
+	Output file from gibbs, the pattern-discovery program
+	developed by Andrew Neuwald (Lawrence et al. Science, 1993:
+	262, 208-214; Neuwald, et al. Protein Sci, 1995: 4, 1618-1632)
+
+    JASPAR (input/output)
+    	http://jaspar.genereg.net/html/TEMPLATES/help.html
+            > Mycn
+            A [ 0 29 0 2 0 0 ]
+            C [31 0 30 1 3 0 ]
+            G [ 0 0 0 28 0 31]
+            T [ 0 2 1 0 28 0 ]
+
+
+    MSCAN (input)
+        http://www.cisreg.ca/cgi-bin/mscan/MSCAN
+          >mef2
+          10  0  0  0 22  0  6  2  3  4 22 10
+           0  2 12  0  0  0  0  0  0  0  0  0
+           9 20  2  0  0  0  0  0  0  0  0 10
+           3  0  8 22  0 22 16 20 19 18  0  2
+          >myf
+           7  9  4  0 16  7  0  6  0  0  6  0
+           8  0  2 15  0  0 15  0  0 10  0  0
+           1  7 10  1  0  9  1  0 16  6  0 16
+           0  0  0  0  0  0  0 10  0  0 10  0
+
+    meme (input)
+	Output file from MEME, the pattern-discovery program developed by
+	tim Bailey.This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
+
+    MotifSampler (input/output)
+	Output file from MotifSampler, the pattern-discovery program
+	developed by Gert Thijs (Thijs et al. Bioinformatics, 2001:17,
+	1113-1122).
+
+    TRANSFAC (input/output)
+        Format used in the TRANSFAC database;
+        (http://www.gene-regulation.com/pub/databases.html)
+
+    STAMP (input/output)
+	Converts the matrix from/to a string in STAMP format
+	(http://www.benoslab.pitt.edu/stamp/help.html).
+
+	STAMP is a dialect of the TRANSFAC format, with important differences:
+	- the fields ID and AC are absent, and the matrix ID comes in the field DE
+	- the header row (PO) is not supported
+	- the positions start at 0 instead of 1
+	- there is no matrix delimiter (the double slash)
+	In additin, STAMP admits two variants: 
+
+	- what they call" TRANSFAC" format, which is actually not
+          TRANSFAC (the fields AC and ID are not defined).
+
+                      NA Mync
+                      XX
+                      DE Mync
+                      XX
+                      P0 A C G T
+                      01 0 31 0 0 C
+                      02 29 0 0 2 A
+                      03 0 30 0 1 C
+                      04 2 1 28 0 G
+                      05 0 3 0 28 T
+                      06 0 0 31 0 G
+                      XX
+
+	- what they call "TRANSFAC-like" (same as above, but the first two rows are missing)
+
+    infogibbs (input/output)
+        Output file from infogibbs.
+
+        infogibbs is a gibbs sampler based on the optimization of the
+        information content of the matrix (rather than the weight of
+        the sampled segments). infogibbs was developed by Matthieu De France.
+
+    InfoGibbs (input)
+        Output file from InfoGibs.
+
+        InfoGibbs is a gibbs sampler based on the optimization of the
+        information content of the matrix (rather than the weight of
+        the sampled segments). InfoGibbs is currently under
+        development in the RSAT team (Gr�gory Gathy, unpublished).
+
+    cluster-buster (input/output)
+	cluster-buster output file (usual extention .cb), which can be
+	used as input by various other programs (clover, trap). The
+	header line starts with a > (like in fasta format). The matrix
+	is then printed "vertically" on the following lines: each
+	column corresponds to one residue, and each row to a position
+	in the alignment.  For TRAP (Roider et al, Bioinformatics,
+	2007), the "/name=" is necessary for the program to work.
+
+	>element1 /name=element1
+	0  4 2 14
+	12 0 0 8
+	8  0 1 11
+	20 0 0 0
+	....
+
+    feature (input)
+
+        Feature file, in the default output format from
+        convert-features (extension .ft).
+
+        This format allows to obtain a PSSM from a list of (supposedly
+        pre-aligned) sites. These sites can themselves have been
+        collected by scanning sequences with a matrix (matrix-scan) or
+        by searching string-based patterns in a sequence
+        (dna-pattern).
+
+        Converting features to matrices can for example be useful for
+        iterative refinment of a matrix (colecting sites from a
+        matrix, and building a matrix from those sites).
+
+        Another application is to detect oligomers or dyads in a
+        sequence set, and build a matrix from these.
+
+    clustal (input)
+	The popular multiple alignemnt program clustalw. 
+
+RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
+
+   The tab output format supports user-specified return fields.
+
+    counts
+        Each cell of the matrix indicates the number of occurrences of the
+        residue at a given position of the alignment.
+
+    profile
+	The matrix is printed vertically (each matrix column becomes a
+	row in the output text). Additional parameters are indicated
+	besides each position, and a histogram is drawed.
+
+    crude frequencies
+        Relative frequencies are calculated as the counts of residues
+        divided by the total count of the column.
+
+        Fij=Cij/SUMi(Cij)
+
+        where
+
+        Cij is the absolute frequency (counts) of residue i at position j of
+            the alignment
+
+        Fij is the relative frequency of residue i at position j of the
+            alignment
+
+    frequencies corrected with pseudo-weights
+        Relative frequencies can be corrected by a pseudo-weight (b) to
+        reduce the bias due to the small number of observations.
+
+        F\'ij=Cij+b*Pi/[SUMi(Cij)+b]
+
+        where
+
+        Pi  is the prior frequency for residue i
+
+        b   is the pseudo-weight, which is "shared" between residues
+            according to their prior frequencies.
+
+    weights
+        Weights are calculated according to the formula from Hertz (1999),
+        as the natural logarithm of the ratio between the relative frequency
+        (corrected for pseudo-weights) and the prior residue probability.
+
+        Wij=ln(F\'ij/Pi)
+
+    information matrix
+        The crude information content is calculated according to the formula
+        from Hertz (1999).
+
+        Iij = Fij*ln(Fij/Pi)
+
+        In addition, we calculate a "corrected" information content which
+        takes pseudo-weights into account.
+
+        I\'ij = F\'ij*ln(F\'ij/Pi)
+
+	One advantage of the corrected information content is that it
+	assigns finite values when Fij=0.
+
+    header
+	Print a header befoer each matrix (useful for multi-matrix
+	files).
+
+    margins
+	Calculate marginal values (column and row sum, min, max) for each 
+        matrix.
+
+    parameters
+        Returns a series of parameters associated to the matrix. The
+        list of parameters to be exported depends on the input formats
+        (each motif discovery program returns specific parameters,
+        which are more or less related to each others but not
+        identical).
+
+        Some additional parameters are optionally calculated
+
+        consensus
+            The degenerate consensus is calculated by collecting, at each
+            position, the list of residues with a positive weight.
+            Contrarily to most applications, this consensus is thus weighted
+            by prior residue frequencies: a residue with a high frequency
+            might not be represented in the consensus if this frequency does
+            not significantly exceed the expected frequency. Uppercases are
+            used to highlight weights >= 1.
+
+            The consensus is exported as regular expression, and with the
+            IUPAC code for ambiguous nucleotides
+            (http://www.chem.qmw.ac.uk/iupac/misc/naseq.html).
+
+                    A                       (Adenine) 
+                    C                       (Cytosine)
+                    G                       (Guanine)
+                    T                       (Thymine)
+                    R       = A or G        (puRines)
+                    Y       = C or T        (pYrimidines)
+                    W       = A or T        (Weak hydrogen bonding)
+                    S       = G or C        (Strong hydrogen bonding)
+                    M       = A or C        (aMino group at common position)
+                    K       = G or T        (Keto group at common position)
+                    H       = A, C or T     (not G)
+                    B       = G, C or T     (not A)
+                    V       = G, A, C       (not T)
+                    D       = G, A or T     (not C)
+                    N       = G, A, C or T  (aNy)
+
+            The strict consensus indicates, at each position, the residue
+            with the highest positive weight.
+
+        information
+            The total information is calculated by summing the
+            information content of all the cells of the matrix. This
+            parameters is already returned by the program consensus
+            (Hertz), but not by other programs.
+
+	wdistrib (deprecated!)
+	    Theoretical distribution of weight probabilities (computed
+	    as in Bailey, Bioinformatics, 1999).
+            WARNING: use matrix-distrib instead
+
+	logo 
+	    Sequence logo, a visual representation of the motif, where
+	    each column of the matrix is represented as a stack of
+	    letters whose size is proportional to the corresponding
+	    residue frequency. The total height of each column is
+	    proportional to its information content.
+
+	    Sequence logo are generated using the freeware program Weblogo
+	    (http://weblogo.berkeley.edu/).
+
+REFERENCES
+
+    Matrix theory
+        Hertz, G.Z. and G.D. Stormo (1999). Identifying DNA and
+        protein patterns with statistically significant alignments of
+        multiple sequences. Bioinformatics, 15(7-8): p. 563-77.
+
+    Sequence logos
+        Schneider, T. D. & Stephens, R. M. Sequence logos: a new way
+        to display consensus sequences. Nucleic Acids Res 18,
+        6097-6100 (1990).
+
+    Weblogo
+        Crooks, G. E., Hon, G., Chandonia, J. M. & Brenner,
+        S. E. WebLogo: a sequence logo generator. Genome Res 14,
+        1188-1190, doi:10.1101/gr.849004 14/6/1188 (2004).
+
+WISH LIST
+
+  info-gibbs format
+  	info-gibbs results can currently be read in tab format, but
+  	the site sequences are not parsed. It would be useful to add
+  	an option -from info-gibbs that would parse the sites + all
+  	parameters from the info-gibbs header.
+
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+convert-matrix options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-v		verbose
+-i		input file
+-mlist 	matrix_list
+-o		output file
+-split		Split a single multi-matrices input file in a set of separate files. 
+-from		input matrix format. Supported: $supported_input_formats
+-to		output matrix format. Supported: $supported_output_formats
+-return		return type(s). Supported: $supported_return_fields
+-sort desc|asc|alpha key     Sort matrices according to the specified key.
+-top		maximal number of matrices to return. 
+-prior [deprecated, use -bgfile] 		background model (prior frequency file)
+-bgfile		background model (prior frequency file)
+-bg_format	background model format. Supported: $supported_bg_formats
+-bg_pseudo	pseudo-frequency for background model. (default:$bg_model->{bg_pseudo})
+-pseudo		pseudo-weight (default: $pseudo_weight)
+-equi_pseudo	equiprobable distribution of pseudo-weights between residues
+-multiply #	multiply all values of the input matrices by #
+-base		base for the logarithms used to compute the weight and info content
+-decimals	number of decimals digits to print for real matrices
+-prefix		prefix to add before matrix identifiers
+-attr key value	force attribute to have a given value
+-perm		number of permuted matrices to return.
+-max_profile	Maximal width of the profile histogram 
+-rc		Convert the matrix to its reverse complement.
+-logo_format	logo image format. Supported $supported_logo_formats 
+-logo_dir	directory to output the logo files
+-logo_file	base name for the logo file(s)
+-logo_opt	options to be passed to seqlogo
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	    ### input file 
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+
+	    ### list of input file 
+	} elsif ($ARGV[$a] eq "-mlist") {
+	    $infile{matrix_list} = $ARGV[$a+1];;
+
+	    ### Maximal number of matrices to return
+	} elsif ($ARGV[$a] eq "-top") {
+	  $top_matrices = $ARGV[$a+1];
+	  $args{top} = $top_matrices;
+	  &FatalError($top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
+	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
+
+	    ### Number of top matrices to skip
+	} elsif ($ARGV[$a] eq "-skip") {
+	    $skip_matrices = $ARGV[$a+1];
+	    &FatalError($skip_matrices, "Invalid value for the option -skip. Should be a strictly positive Natural number.")
+		unless ((&IsNatural($skip_matrices)) && ($skip_matrices >= 1));
+
+	    ## Sort matrices
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort_order = lc($ARGV[$a+1]);
+	    unless (($sort_order eq "desc")
+		    || ($sort_order eq "asc")
+		    || ($sort_order eq "alpha")
+		) {
+		&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
+	    }
+	    $sort_key = $ARGV[$a+2];
+
+	    ### prior frequency file
+	} elsif ($ARGV[$a] eq "-prior") {
+	    $infile{prior} = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-bgfile") {
+	    $infile{prior} = $ARGV[$a+1];
+
+	    ## bg format
+	} elsif ($ARGV[$a] eq "-bg_format") {
+	    $main::bg_format = lc($ARGV[$a+1]);
+	    &RSAT::error::FatalError(join("\t", $main::bg_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::bg_format))
+		unless ($main::supported_bg_format{$main::bg_format});  
+
+	    ##bg_pseudo
+	} elsif ($ARGV[$a] eq "-bg_pseudo") {
+	    $main::bg_pseudo = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+					  "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
+		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+
+	    ### output file 
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ## Split a multi-matrix file into separate output files
+	} elsif ($ARGV[$a] eq "-split") {
+	    $split_out_files = 1;
+
+	    ### return type(s)
+	} elsif ($ARGV[$a] eq "-return") {
+	    my $return_fields = $ARGV[$a+1];
+	    push @return_fields, split(",", $return_fields);
+
+
+	    ### input format 
+	} elsif ($ARGV[$a] eq "-from") {
+	    $input_format = lc($ARGV[$a+1]);
+	    unless ($supported_input_format{$input_format}) {
+		&RSAT::error::FatalError("$input_format\tInvalid input format for matrix\tSupported: $supported_input_formats");
+	    }
+	} elsif ($ARGV[$a] eq "-in_format") {
+	    &RSAT::message::Warning("The option -in_format is obsolete, please use -from instead.");
+	    $input_format = lc($ARGV[$a+1]);
+	    unless ($supported_input_format{$input_format}) {
+		&RSAT::error::FatalError("$input_format\tInvalid output format for matrix\tSupported: $supported_input_formats");
+	    }
+
+	    ### Obsolete option for the input format 
+	} elsif ($ARGV[$a] eq "-format") {
+	    &RSAT::message::Warning("Option -format is obsolete. Use -in_format instead.");
+	    $input_format = $ARGV[$a+1];
+	    unless ($supported_input_format{$input_format}) {
+		&RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+	    }
+
+	    ### output format 
+	} elsif ($ARGV[$a] eq "-to") {
+	    $output_format = lc($ARGV[$a+1]);
+	    unless ($supported_output_format{$output_format}) {
+		&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
+	    }
+	} elsif ($ARGV[$a] eq "-out_format") {
+	    &RSAT::message::Warning("The option -out_format is obsolete, please use -to instead.");
+	    $output_format = lc($ARGV[$a+1]);
+	    unless ($supported_output_format{$output_format}) {
+		&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
+	    }
+
+	    ### site format 
+	} elsif ($ARGV[$a] eq "-site_format") {
+	    $site_format = $ARGV[$a+1];
+	    unless ($supported_site_format{$site_format}) {
+		&RSAT::error::FatalError("$site_format\tInvalid format for sites\tSupported: $supported_site_formats");
+	    }
+
+	    ### pseudo-weight
+	} elsif ($ARGV[$a] eq "-pseudo") {
+	    $pseudo_weight = $ARGV[$a+1];
+	    unless (&IsReal($pseudo_weight)) {
+		&RSAT::error::FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
+	    }
+
+	    ## Equiprobable distribution of the pseudo-weight
+	} elsif ($ARGV[$a] eq "-equi_pseudo") {
+	    $equi_pseudo = 1;
+
+	    ## Multiplicative factor
+	} elsif ($ARGV[$a] eq "-multiply") {
+	    $multiply = $ARGV[$a+1];
+	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. ust be a Real number")
+		unless &RSAT::util::IsReal($multiply);
+
+	    ## base for the logarihtms in the weight and info content
+	} elsif ($ARGV[$a] eq "-base") {
+	    $info_log_base = $ARGV[$a+1];
+	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($info_log_base));
+	    &RSAT::error::FatalError("base should be larger than 1") if ($info_log_base <= 1);
+
+	    ### decimals
+	} elsif ($ARGV[$a] eq "-decimals") {
+	    $decimals = $ARGV[$a+1];
+	    unless (&IsNatural($decimals)) {
+		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a Natural number.");
+	    }
+
+	    ### prefix
+	} elsif ($ARGV[$a] eq "-prefix") {
+	    $main::args{prefix} = $ARGV[$a+1];
+	    $main::args{prefix} =~s/\s/_/g;
+
+	    ### attribute
+	} elsif ($ARGV[$a] eq "-attr") {
+	    my $key = $ARGV[$a+1];
+	    my $value = $ARGV[$a+2];
+	    $main::force_attribute{$key} = ${value};
+
+	    ### permutations
+	} elsif ($ARGV[$a] eq "-perm") {
+	    $perm = $ARGV[$a+1];
+	    unless (&IsNatural($perm)) {
+		&RSAT::error::FatalError("Invalid permutation number $perm. Must be a Natural number.");
+	    }
+
+	    ### max_profile
+	} elsif ($ARGV[$a] eq "-max_profile") {
+	    $max_profile = $ARGV[$a+1];
+	    unless (&IsNatural($max_profile)) {
+		&RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a Natural number.");
+	    }
+
+	    ### flanks
+	} elsif ($ARGV[$a] eq "-flanks") {
+	    $flanks = $ARGV[$a+1];
+	    unless (&IsNatural($flanks)) {
+		&RSAT::error::FatalError($flanks, "Invalid value for the option -flanks. Must be a Natural number.");
+	    }
+
+	    ## Compute reverse complement
+	} elsif ($ARGV[$a] eq "-rc") {
+	    $rc = 1;
+
+	    ## Export logos
+	} elsif ($ARGV[$a] eq "-logo_format") {
+	    $logo_formats = $ARGV[$a+1];
+	    push @logo_formats, split(",", $logo_formats);
+
+	} elsif ($ARGV[$a] eq "-logo_dir") {
+	    $logo_dir = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-logo_file") {
+	    $logo_file_base = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-logo_opt") {
+	    $logo_opt .= " ".$ARGV[$a+1];
+
+	}
+    }
+}
+
+################################################################
+## Print verbosity
+sub Verbose {
+  print $out "; convert-matrix ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  printf $out "%-22s\t%s\n", "; Input format", $input_format;
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  printf $out "%-22s\t%s\n", "; Output format", $output_format;
+
+  printf $out "%-22s\t%d\n", "; pseudo-weight", $pseudo_weight;
+      ## Background model
+    if ($infile{prior}) {
+   	printf $main::out "; Background model\n";
+	my $order = $bg_model->get_attribute("order");
+    if ($order == 0) {
+	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
+    }
+   	printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
+
+    my %bg_prior = $bg_model->get_attribute("suffix_proba");
+    print $main::out ";\tResidue probabilities\n";
+    foreach my $residue (sort keys %bg_prior) {
+	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
+    }
+    }
+}
+
+################################################################
+## Choose the name of a matrix
+sub SetMatrixName {
+  my ($matrix, $m, $matrix_file, $input_format) = @_;
+
+  ## Make sure that the matrix has the mandatory attribute "id"
+  my $matrix_id = $matrix->get_attribute("id");
+  unless ($matrix_id) {
+    if ($matrix_file) {
+      ($matrix_id) =  &RSAT::util::ShortFileName($matrix_file);
+      $matrix_id =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
+      $matrix_id =~ s/\.txt$//; ## suppress .txt extension
+      $matrix_id .= "_m".$m;
+      &RSAT::message::Debug("Matrix", $m."/".scalar(@matrices), "name", $matrix_id) if ($main::verbose >= 5);
+    } else {
+      $matrix_id = "matrix";
+      $matrix_id .= "_m".$m;
+    }
+    $matrix->force_attribute("id", $matrix_id);
+  }
+
+  ## Get accession number (preferred name for TRANSFAC input format)
+  my $matrix_ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC");
+  unless ($matrix_ac) {
+    $matrix_ac = $matrix_id;
+    $matrix->force_attribute("AC", $matrix_ac);
+    $matrix->force_attribute("accession", $matrix_ac);
+  }
+
+  ## Check that the matrix has a name
+  my $matrix_name = $matrix->get_attribute("name");
+  unless ($matrix_name){
+    $matrix_name = $matrix_ac;
+    $matrix->force_attribute("name", $matrix_name);
+  }
+  &RSAT::message::Info($m,
+		       "name=".$matrix->get_attribute("name"),
+		       "id=".$matrix->get_attribute("id"),
+		       "format=".$input_format,
+		       "file=".$matrix_file,
+		      ) if ($main::verbose >= 5);
+}
+
+
+################################################################
+## Export one matrix
+sub ExportMatrix {
+  my ($matrix, $m, $out_handle) = @_;
+  #  $matrix->readFromFile($infile{input}, $input_format);
+  if ($infile{prior}) {
+    $matrix->setPrior(%prior);
+  }
+
+  ## Define an Identifier (ID) and an Accession number (AC)
+  my $ID = $matrix->get_attribute("identifier")
+    || $matrix->get_attribute("name")
+      || $matrix->get_attribute("id")
+	|| $matrix->get_attribute("AC")
+	  || "matrix_".$m;
+  my $AC = $matrix->get_attribute("accession") || $ID;
+  &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+
+  if (($return_fields{consensus}) ||
+      ($return_fields{parameters})) {
+    $matrix->calcConsensus();
+  }
+
+  foreach my $key (keys(%force_attribute)) {
+    my $value = $force_attribute{$key};
+    $matrix->force_attribute($key, $value);
+  }
+
+
+  ## Suppress sites if not required because transfac format includes
+  ## them
+  if (($output_format eq "transfac") || ($output_format eq "tf")) {
+    unless ($return_fields{sites}) {
+      $matrix->set_array_attribute("sequences", ());
+#      &RSAT::message::Debug("After site suppression",  scalar($matrix->get_attribute("sequences"))) if ($main::verbose >= 10);
+    }
+  }
+
+  ## Print the counts matrix
+  if ($return_fields{counts}) {
+    print $out_handle $matrix->toString(sep=>"\t",
+					type=>"counts",
+					format=>$output_format,
+				       );
+  }
+
+  ## Print frequency matrix
+  if ($return_fields{frequencies}) {
+    $matrix->calcFrequencies();
+    print $out_handle $matrix->toString(col_width=>($decimals+4),
+					decimals=>$decimals, 
+					type=>"frequencies",
+					format=>$output_format);
+  }
+
+  ## Print weight matrix
+  if ($return_fields{weights}) {
+    $matrix->calcWeights();
+    print $out_handle $matrix->toString(col_width=>($decimals+4), 
+					decimals=>$decimals, 
+					type=>"weights",
+					format=>$output_format);
+  }
+
+  ## Print the profile matrix
+  if ($return_fields{profile}) {
+    print $out_handle $matrix->toString(sep=>"\t",
+					type=>"profile",
+					format=>$output_format,
+				       );
+  }
+
+  ## Print information content matrix
+  if ($return_fields{info}) {
+    $matrix->calcInformation();
+    print $out_handle $matrix->toString(col_width=>($decimals+4),
+					decimals=>$decimals,
+					type=>"information",
+					format=>$output_format);
+  }
+
+  ## Print logo matrix
+  if ($return_fields{logo_matrix}) {
+    $matrix->calcLogoMatrix();
+    print $out_handle $matrix->toString(col_width=>($decimals+4),
+					decimals=>$decimals,
+					type=>"logo_matrix",
+					format=>$output_format);
+  }
+
+
+  ## Return sites
+  if ($return_fields{sites}) {
+    unless (($output_format eq "transfac") || ($output_format eq "tf")) {
+      print $out_handle "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+      my $s = 0;
+      my @site_ids = $matrix->get_attribute("site_ids");
+      foreach my $site_seq ($matrix->get_attribute("sequences")) {
+	$s++;
+	my $site_id =  $site_ids[$s-1] || $s;
+	&PrintNextSequence($out_handle, $site_format, 0, $site_seq, $site_id);
+	#      print $out_handle $s, "\t\\", $site_seq, "\\\n";
+      }
+    }
+  }
+
+  ## Consensus and parameters are written in comments (lines start with ';') only in tab / infogibbs formats
+  if (($output_format eq "tab") || ($output_format eq "infogibbs")) {
+    ## Calculate consensus
+    if ($return_fields{consensus}) {
+      print $out_handle $matrix->toString(type=>'consensus');
+    }
+
+    ## Return parameters
+    if ($return_fields{parameters}) {
+      print $out_handle $matrix->toString(type=>"parameters") 
+    }
+  }
+
+  ## Return logo
+  if ($return_fields{logo}) {
+    if ($main::verbose >= 1) {
+      my $logo_file = $matrix->get_attribute("logo_file");
+      foreach my $rc_suffix ("", "_rc") {
+	foreach my $logo_format (@logo_formats) {
+	  print $out_handle  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
+	}
+      }
+    }
+  }
+
+#   ## links to external tools for HTML forms The reason for inserting
+#   ## this in the script rather than in the Web interface is that the
+#   ## matrix matching tool TOMTOM takes as input a single matrix ->
+#   ## when convert-matrix is used to convert multiple matrices, a
+#   ## separate HTML button has to be dispplayed aftr each matrix
+   if ($return_fields{links}) {
+     #     print $out_handle "\n", $matrix->link_button_TOMTOM(), "\n";
+     unless ($obsolete_report_done) {
+       &RSAT::message::Warning("The option -return link is not supported anymore by convert-matrix");
+       $obsolete_report_done = 1;
+     }
+   }
+
+
+  ## Return weight distrsibution
+  if ($return_fields{wdistrib}) {
+    #    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
+    $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
+    my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+    my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
+    my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+
+    ## Print the description of column contents
+    my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
+    if ($main::verbose >= 1) {
+      print $out_handle ";\n; Theoretical distribution of weight probabilities\n";
+      my %descr = ();
+      $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
+      $descr{"proba"} = "probability density function: P(W=w)";
+      $descr{"cum"} = "cumulative density function: P(W <= w)";
+      $descr{"Pval"} = "P-value = inverse cumulative density function: Pval = P(W >= w)";
+      $descr{"ln_Pval"} = "natural logarithm of the P-value";
+      $descr{"log_P"} = "base 10 logarithm of the P-value";
+      $descr{"sig"} = "significance: sig = -log10(Pval)";
+      $c =0;
+      foreach my $col (@columns) {
+	$c++;
+	print $out_handle sprintf(";\t%d\t%-12s\t%s", $c, $col, $descr{$col}), "\n";
+      }
+    }
+
+    ## Print header
+    print $out_handle "#", join ("\t", @columns), "\n";
+
+    ## Print the score distribution
+    my $log10 = log(10);
+    foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
+      $weight = sprintf("%.${decimals}f", $weight);
+      my $weight_proba = $null;
+      my $weight_proba_cum = $null;
+      my $weight_proba_inv_cum = $null;
+      my $ln_pval = $null;
+      my $log_P = $null;
+      my $sig = $null;
+      if (defined($weight_proba{$weight})) {
+	if (&IsReal($weight_proba{$weight})) {
+	  $weight_proba = sprintf("%.1e", $weight_proba{$weight});
+	} else {
+	  $weight_proba = $weight_proba{$weight};
+	}
+      }
+      if (defined($weight_proba_cum{$weight})) {
+	$weight_proba_cum = sprintf("%.1e", $weight_proba_cum{$weight});
+      }
+      if (defined($weight_proba_inv_cum{$weight})) {
+	$weight_proba_inv_cum = sprintf("%.1e", $weight_proba_inv_cum{$weight});
+	if ($weight_proba_inv_cum{$weight} > 0) {
+	  $ln_pval =  sprintf("%.3f",log($weight_proba_inv_cum{$weight}));
+	  $sig =  sprintf("%.3f",-log($weight_proba_inv_cum{$weight})/$log10);
+	  $sig =~ s/^-(0.0+)$/$1/;
+	  $log_P = -$sig;
+	} else {
+	  $ln_pval = "-Inf";
+	  $log_P = "-Inf";
+	  $sig = "Inf";
+	}
+      }
+      print $out_handle join("\t", $weight, 
+			     $weight_proba,
+			     $weight_proba_cum,
+			     $weight_proba_inv_cum,
+			     $ln_pval,
+			     $log_P,
+			     $sig,
+			    ), "\n";
+    }
+
+
+  }
+
+}
+
+

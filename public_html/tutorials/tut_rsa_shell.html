@@ -1,0 +1,1323 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>RSA-Tools - tutorials - analyzing regulatory sequences in a unix shell</TITLE>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+<H1 align=center><A HREF="../RSAT_home.cgi">RSA-Tools</A> - 
+<a href="tutorials.html">Tutorials</a> -
+analyzing regulatory sequences in a unix shell
+</H1>
+
+
+
+
+
+<a name=contents>
+<h2>Table of contents</h2>
+<ul>
+
+<ul>
+<li><a href=#introduction>Introduction</a>
+<li><a href=#accessing>Accessing the programs</a>
+<li><a href=#getting_help>Getting help</a>
+<li><a href=#retrieve_seq>Retrieving sequences</a>
+<li><a href=#pattern_discovery>Motif discovery</a>
+<ul>
+<li><a href=#oligo_analysis>oligo-analysis</a>
+<li><a href=#dyad_analysis>dyad-analysis</a>
+<li><a href=#gibbs>gibbs motif sampler</a>
+<li><a href=#consensus>consensus</a>
+</ul>
+
+<li><a href=#pattern_matching>Pattern matching</a>
+<ul>
+<li><a href=#dna_pattern>dna-pattern</a>
+<li><a href=#patser>patser</a>
+</ul>
+
+<li><a href=#drawing_graphs>Drawing graphs</a>
+<ul>
+<li><a href=#accessing_graphs>Accessing graphs in your account from the web</a>
+<li><a href=#feature_map>feature-map</a>
+<li><a href=#xygraph>XYgraph</a>
+</ul>
+
+<li><a href=#utilities>Utilities</a>
+<ul>
+<li><a href=#orf_info>orf-info</a>
+</ul>
+
+<li><a href=#advanced>Advanced use of RSA-Tools</a>
+<ul>
+<li><a href=#install_organism>Installing additional organisms</a>
+</ul>
+
+<li><a href=#references>References</a>
+</ul>
+
+</ul>
+<a name=introduction></a>
+<h2>Introduction</h2>
+<ul>
+
+This tutorial aims at introducing how to use Regulatory Sequence
+Analysis Tools (<B><I>RSAT</I></B>) directly from the unix shell. 
+
+<P>
+<I>RSAT</I> is a package combining a series of specialized programs for the
+detection of regulatory signals in non-coding sequences. A variety of
+tasks can be performed : retrieval of upstream or downstream
+sequences, motif discovery, pattern matching, and gaphical
+reprsentation of regulatory regions.
+
+<P>
+A web interface has been developed for the most common tools, and is
+freely available for academic users.
+
+<UL>
+
+<li><a href=http://www.ucmb.ulb.ac.be/~jvanheld/rsa-tools/>
+http://www.ucmb.ulb.ac.be/~jvanheld/rsa-tools/</a>
+
+<li><a href=http://embnet.cifn.unam.mx/~jvanheld/rsa-tools/>
+http://embnet.cifn.unam.mx/~jvanheld/rsa-tools/</a>
+
+</UL>
+
+<P>
+All programs can also be used directly from the unix shell. The shell
+access is less intuitive than the web interface, but is very
+convenient for automatizing repetitive tasks.
+
+<P>
+This tutorial was written by Jacques van Helden (<a
+href=http://www.ucmb.ulb.ac.be/~jvanheld/>http://www.ucmb.ulb.ac.be/~jvanheld/</a>).
+Unless otherwise specified, the programs presented here were written
+by Jacques van Helden.
+
+
+</ul>
+<a name=accessing></a>
+<h2>Accessing the programs</h2>
+<ul>
+
+In order to use the shell version of <I>RSAT</I>, you first need to
+have a local installation of the scripts. If this is not your case,
+please contact <script type='text/javascript'><!-- var
+v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var
+v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var
+v5=v2.length;var v1="";for(var
+v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a
+href="javascript:void(0)"
+onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques
+van Helden<\/a>');
+//--></script><noscript><a
+href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van
+Helden (using spam protection)</a></noscript>.
+
+<P>
+<LI>Open a ssh session to your account. 
+
+<P>
+<P><LI>TO check if the tools are installed, just type :
+
+<UL><PRE>
+random-seq -l 350
+</PRE></UL>
+
+If your configuration is correct, this command should return a random
+sequence of 350 nucleotides.
+
+<P>
+You are now able to use any program from the <I>RSAT</I> package, untill you
+quit your telnet session. It is however not very convenient to set the
+path manually each time you open a new connection. You can modifu your
+defaul configuration by adding the following line to the file
+<TT>.personal-cshrc</TT> in the root of your home directory. 
+
+<UL><PRE>
+set path=(~jvanheld/rsa-tools/perl-scripts/ ~jvanheld/rsa-tools/bin/ $path)
+</PRE></UL>
+
+If you don't know how to modify this file, see the system
+adiministrator.
+
+</UL>
+<a name=getting_help></a>
+<h2>Getting help</H2> 
+<UL>
+
+The first step before using any program is to read the manual. All
+programs in the <I>RSAT</I> package come with an on-line help, which is
+obtained by typing the name of the program followed by
+<TT>-h</TT>. For example, to get a detailed description of the
+functionality and options for the program <tt>retrieve-seq</tt>, type
+
+<UL><PRE>
+retrieve-seq -h
+</PRE></UL>
+
+The detailed help is specially convenient before using the program for
+the first time. A complementary functionality is offered by the option
+<TT>-help</TT>, which prints a short list of options. Try :
+
+<UL><PRE>
+retrieve-seq -help
+</PRE></UL>
+
+which is convenient to remind the precise formulation of arguments for
+a given progam.
+
+</ul>
+<a name=retrieve_seq></a>
+<h2>Retrieving sequences</h2>
+<ul>
+
+The program <TT>retrieve-seq</tt> allows you to retrieve sequences
+from a genome (provided this genome is supported on your machine). In
+particular (and by default), this program extracts the non-coding
+sequences located upstream the start codon of a series of genes, where
+regulatory elements are generally found, at least in microbial
+organisms.
+
+<h4>Retrieving a single upstream sequence</h4>
+<P>
+First trial : we wll extract the upstream sequence for a single yeast
+gene. Try:
+
+<ul><pre>
+retrieve-seq -type upstream -org ecoli -q metA -from -200 -to -1
+</pre></ul>
+
+This command retrieves a 200 bp upstream sequence for the gene metA of
+<I>Escherichia coli</i>. Note the negative coordinates, indicating the
+upstream side. Also note that all coordinates are calculated starting
+relative to the star codon (position 0 is the A from the start ATG).
+
+<h4>Combining upstream and coding sequence</h4>
+<P>
+For coli genes, regulatory signals sometimes overlap the 5' side of
+the coding sequence. This is often ssociated to a repression effect:
+the bound transcription factor prevents RNA-polymerase from binding
+DNA. <tt>retrieve-seq</tt> allows you to extract a sequence that
+combines an upstream and a coding segment. Try :
+
+<ul><pre>
+retrieve-seq -type upstream -org ecoli -q metA -from -200 -to 49
+</pre></ul>
+
+<h4>Retrieving a few upstream sequences</h4>
+
+The option <tt>-q</tt> can be used iteratively in a command to
+retrieve sequences for several genes.
+
+<ul><pre>
+retrieve-seq -org ecoli -from -200 -to 49  -q metA -q metB -q metC
+</pre></ul>
+
+<h4>Retrieving many upstream sequences</h4>
+
+If you have to retrieve a large number of sequences, it might become
+cumbersome to type each gene name on the command-line. A list of gene
+enames can be provided in a text file, each gene name coming as the
+first word of a new line.
+
+<P>
+To create a test file, you can execute the following steps :
+<ol>
+<LI>to create a new file, call the standard unix command 
+
+<ul><pre>
+cat > PHO_genes.txt
+</pre></ul> 
+
+<LI>You can now type a list of gene names, for example :
+
+<ul><pre>
+PHO5
+PHO8
+PHO11
+PHO81
+PHO84
+</pre></ul> 
+
+<li>Once you have finished typing gene names, press <TT>Ctrl-D</TT>
+
+<LI>Check the content of your file by typing 
+
+<ul><pre>
+cat PHO_genes.txt
+</pre></ul> 
+
+</ol>
+
+
+<P>
+This file can now be used as input to indicate the list of genes.
+
+<ul><pre>
+retrieve-seq -type upstream -i PHO_genes.txt \
+        -org yeast -from -800 -to -1 -label orf
+</pre></ul> 
+
+The option <TT>-o</TT> allows you to indicate a file where the
+sequence will be stored.
+
+<ul><pre>
+retrieve-seq -type upstream -i PHO_genes.txt -org yeast \
+        -from -800 -to -1 -label gene \
+        -o PHO_up800.fasta
+</pre></ul> 
+
+Check the sequence file :
+
+<ul><pre>
+more PHO_up800.fasta
+</pre></ul>
+
+<h4>Retrieving all upstream sequences</h4>
+
+For genome-scale analyses, it is convenient to retrieve upstream
+sequences for all the genes of a given genome, without having to
+specify the complete list of names. Fr this, simply use the option
+<TT>-all</TT>.
+
+<ul><pre>
+retrieve-seq -type upstream -org ecoli -from 0 -to 2 \
+        -all -format wc -nocomments -label orf_gene \
+        -o ecoli_start_codons.wc
+</pre></ul>
+
+Check the result :
+
+<ul><pre>
+more ecoli_start_codons.wc
+</pre></ul>
+
+<h4>Retrieving downstream sequences</h4>
+
+<tt>retrieve-seq</tt> can also be used to retrieve downstream
+sequences. in this case, the origin (position 0) is the third base of
+the stop codon, positive coordinates indicate downstream (3')
+location, and negative coordinates locations upstream (5') from th
+stop codon (i.e. coding sequences). 
+
+<P>Thus, 
+<ul><pre>
+retrieve-seq -type upstream -org ecoli -from -2 -to 0 \
+        -all -format wc -nocomments -label orf_gene \
+        -o ecoli_stop_codons.wc
+</pre></ul>
+returns all the stop codong for <I>E.coli</I>.
+
+</ul>
+<a name=pattern_discovery></a>
+<h2>Motif discovery</h2>
+<UL>
+
+<P>In a motif discovery problem, you start from a set of
+functionally related sequences (e.g.  upstream sequences for a set of
+co-regulated genes) and you try to extract motifs (e.g. regulatory
+elements) that are characteristic of these sequences.
+
+<P>Several approaches exist, either string-based or matrix-based. For
+yeast regulatory elements, string-based approaches give excellent
+results. The advantages :
+
+<UL>
+<LI>simple to use
+<li>Deterministic (if you run it repeatedly, you always get the same result)
+<LI>easily parametrizable
+<LI>easy to interpret
+<LI>fast
+<li>ability to return a negative answer : if no motif is significant,
+the programs return an empty list of motifs. This is particularly
+important to reduce the rate of false positive.
+</UL>
+
+<P>
+Matrix-based approach can provide a more refined description of omtifs
+presenting a high degree of degeneracy. The problem of matrix-based
+approaches is that it is impossible to analyze all possible
+position-weight matrices, and thus on has to use heuristics. There is
+thus a risk to miss the global optimum because the program is
+attracted to local maxima. Another problem is that there are more
+parameters to select (typically, matrix width and expected number of
+occurrences of the motif), and their choice drastically affects the
+quality of the result. Last problem : the result is not easily
+interpretable because the programs always return an answer.
+
+<P>
+Basically, I would tend to prefer string-based approaches for any
+problem of motif discovery. On the contrary, matrix-based approaches
+are much more sensitive for pattern matching problems (see below). The
+ideal would thus be to combine string-based pattern disovery and
+matrix-based pattern matching.
+
+<h3>Requirements</h3>
+<P>
+This part of the tutorial assumes that you already performed the
+tutorial about sequence retrieval (above), and that you have the
+result files in the current directory. Check with the command:
+
+<ul><pre>
+ls -1
+</pre></ul>
+
+You should see the following file list :
+<ul><pre>
+PHO_genes.txt
+PHO_up800.fasta
+ecoli_start_codons.wc
+ecoli_stop_codons.wc
+</pre></ul>
+
+<a name=oligo_analysis></a>
+<h3>oligo-analysis</h3>
+
+The program <tt>oligo-analysis</tt> is the simplest motif discovery
+program. It counts the number of occurrences of all oligonucleotides
+(word) of a given length (typically 6), and compares, for each word,
+the observed and expected occurrences, and return words with a
+significant level of over-representation.  
+
+<P>
+Despite its simplicity, this program already returns good results for
+may families of co-regulated genes in yeast.
+
+<P>
+In a first time, we will simply use the program to count word
+occurrences. The application will be to check the start and stop
+codons retrieved above. 
+
+<P>
+We will then use <tt>oligo-analysis</tt> in a motif discovery
+process, to detect over-represented words from the set of 5 upstream
+sequences retrieved above (the PHO family).  In a first time, we will
+use the appropriate parameters, which have been optimized for pattern
+discovery in yeast upstream sequences (van Helden et al., 1998). We
+will then use the sub-optimal settings to illustrate the fact that the
+success of word-based pattern-discovery crucially depends on a
+rigorous statistical approach.
+
+<h4>Counting word occurrences and frequencies</h4>
+
+Try the following command :
+
+<ul><pre>
+oligo-analysis -i ecoli_start_codons.wc -format wc -l 3 -1str
+</pre></ul>
+
+Call the on-line option description to understand the meaning of the options you used :
+<ul><pre>
+oligo-analysis -help
+</pre></ul>
+
+Or, to obtain more details :
+<ul><pre>
+oligo-analysis -h
+</pre></ul>
+
+
+<P>
+You can also ask some more information (verbose) and store the result
+in a file :
+
+<ul><pre>
+oligo-analysis -i ecoli_start_codons.wc -format wc -l 3 -1str \
+        -return occ,freq -v -o ecoli_start_codon_frequencies
+</pre></ul>
+
+Reaad the result file :
+
+<ul><pre>
+more ecoli_start_codon_frequencies
+</pre></ul>
+
+<P>
+Note the effect of the verbose. You receive information about sequence
+length, number of possible oligonucleotides, the content of the output
+columns, ...
+
+<P>
+<b>Exercise:</b> check the frequencies of <I>E.coli</i> stop codons.
+
+<h4>Motif discovery in yeast upstream regions</h4>
+
+Try the following command :
+
+<ul><PRE> 
+oligo-analysis -i PHO_up800.fasta -format fasta -v -l 6 -2str \
+        -return occ,proba -thosig 0 -ncf -org yeast -sort -o \
+        PHO_up800_6nt_2str_ncf_sig0 
+</pre></ul>
+
+Call the on-line help to understand the meaning of the parameters.
+
+<ul><PRE> 
+oligo-analysis -h
+</pre></ul>
+
+Note that we used pre-calibrated tables as estimators of expected word
+frequencies. these tables have been previously calculated (with
+oligo-analysis) by counting hexanucleotide frequencies in the whole
+set of yeast non-coding (intergenic) regions. Our experience is that
+these frequencies are the optimal estimator for discovering regulatory
+elements in non-coding sequences. 
+
+<P>
+Look the result file :
+
+<ul><pre>
+more PHO_up800_6nt_2str_ncf_sig0
+</pre></ul>
+
+A few questions :
+<ol>
+<li>How many hexanucleotides can be formed with the 4-letter alphabet A,T,G,C ?
+<li>How may possible oligonucleotides are indicated ? Is it the number you would expect ? Why ?
+<li>How many patterns have been selected as significant ?
+<li>Do you see some similarity between some of the selected patterns ?
+</ol>
+
+Answers
+<ol>
+<li>4^6=4,096
+<li>2,080. This is due to the fact that the analysis was performed on
+both strands. Each oligonucleotide is thus equivalent to its reverse
+complement.
+<li>9
+<li>there are strong mutual overlap between some words (e.g. cACGTG
+and ACGTGc).
+</ol>
+
+<h4>Assembling the patterns</h4>
+
+A separate program, <tt>pattern-assembly</tt> allows to assemble a
+list of patterns, in order to group those that overlap mutually. Try :
+
+<ul><pre>
+pattern-assembly -v -i PHO_up800_6nt_2str_ncf_sig0 -sc 7 -subst 1 \
+        -2str -o PHO_up800_6nt_2str_ncf_sig0.assemb
+</pre></ul>
+
+
+Call the on-line help to have a look at the assembly parameters. 
+<ul><pre>
+pattern-assembly -h
+</pre></ul>
+
+Look at the result. There are two alignments (with two contigs), and
+two isolated patterns. Each alignment is made of strongly overlapping
+patterns. The first alignment (cgcacgtgcg) corresponds to the high
+affinity binding site for Pho4p, the protein controlling
+transcriptional response to Phosphate in yeast. the second alignment
+(cgcacgttt) corresponds to the medium affinity binding site for
+Pho4p. Medium affinity binding sites have been shown to participate in
+the transcriptional response to some PHO genes.
+
+<ul><pre>
+more PHO_up800_6nt_2str_ncf_sig0.assemb
+</pre></ul>
+
+<h4>Suboptimal settings</h4>
+
+This chapter only aims at emphasizing how crucial is the choice of
+appropriate statistical parameters. we saw above that the optimal
+parameters give good results with the PHO family : despite the
+simplicity of the algorithm (counting non-degenerate hexanucleotide
+occurrences), we were ablt to extract a description of the regulatory
+motif over a larger width than 6 (by pattern assembly), and we got
+some decription of the degeneracy (the high and low affinity stes).
+
+<P>
+We will now intentionally try other parameter settings and see how
+they affect the quality of the results.
+
+<h5>Equiprobable oligonucleotides</h5>
+
+Let us try the simplest approach : each word is considered
+equiprobable. For this, we simply suppress the options <tt>-ncf -org
+yeast</tt> fom the above commands. We also ommit to specify the output
+file, so results will immediately apper on the screen.
+
+<ul><PRE> 
+oligo-analysis -i PHO_up800.fasta -format fasta -v -l 6 -2str \
+        -return occ,proba -thosig 0 -sort 
+</pre></ul>
+
+Note that
+<ul> 
+<li>The number of selected motifs is higher (27) than in the previous trial
+<li>The most significant motifs have nothing to with Pho4p binding
+sites. All these false positive are A-rich motifs (or T-rich, since we
+are grouping patterns with their reverse-complement).
+
+<il>Two patterns (acgttt and acgtgc) are selected which are related to
+Pho4p binding site. However, they come at the 12th and 14th positions
+only.
+</ul>
+
+<P>
+You can combine oligo-analysis and pattern-assembly in a single
+command, by using the pipe character "|".
+
+<ul><pre>
+oligo-analysis -i PHO_up800.fasta -format fasta -v \
+        -l 6 -2str  -return occ,proba -thosig 0 -sort \
+        | pattern-assembly -2str -sc 7 -subst 1 -v
+</pre></ul>
+
+On unix systems, this special character is used to concatenate
+commands, i.e. the output of the first command (in this case
+oligo-analysis) is not printed to the screen, but is sent as input for
+the second command (in this case pattern-assembly).
+
+<P>
+Note that the most significant patterns are associated to the poly-A
+(aaaaaa) contig. The true positive come isolated. due to the bad
+choice of expected frequencies (all hexanucleotides were considered
+equiprobable here), regulatory sites were lost within a majority of
+false positive, and their description is much less accurate than with
+the option <tt>-ncf</tt>.
+
+<h5>Markov chains</h5>
+
+Another possibility is to use Markov chain models to estimate expected
+word frequencies. Try the following commands and compare the
+results. None is as good as the <tt>-ncf</tt> option, but in case one
+would not have the pre-calibrated non-coding frequencies (for instance
+if the organism has not been completely sequenced), markov chains can
+provide an interesting approach.
+
+<ul><pre>
+oligo-analysis -markov 0 -i PHO_up800.fasta -format fasta -v -l 6 \
+        -2str -return occ,proba -thosig 0 -sort \
+		| pattern-assembly -2str -sc 7 -subst 1 -v
+		
+oligo-analysis -markov 1 -i PHO_up800.fasta -format fasta -v -l 6 \
+        -2str -return occ,proba -thosig 0 -sort \
+		| pattern-assembly -2str -sc 7 -subst 1 -v
+		
+oligo-analysis -markov 2 -i PHO_up800.fasta -format fasta -v -l 6 \
+        -2str -return occ,proba -thosig 0 -sort \
+		| pattern-assembly -2str -sc 7 -subst 1 -v
+		
+oligo-analysis -markov 3 -i PHO_up800.fasta -format fasta -v -l 6 \
+        -2str -return occ,proba -thosig 0 -sort \
+		| pattern-assembly -2str -sc 7 -subst 1 -v
+		
+oligo-analysis -markov 4 -i PHO_up800.fasta -format fasta -v -l 6 \
+        -2str -return occ,proba -thosig 0 -sort \
+		| pattern-assembly -2str -sc 7 -subst 1 -v
+</pre></ul>
+
+<B>Remarks</b>
+
+<ul>
+
+<li>
+Markov 0 returns AT-rich patterns with the highest significance, but
+the Pho4p high affinity site is described with a good accuracy. te
+medium affinity site appears as a single word (acgttt) in the isolated
+patterns.
+
+<li>
+Markov order 1 returns less AT-rich motifs. The poly-A (aaaaaa) is
+however still associated with the highest significance, but comes as
+isolated pattern.
+
+<li>
+The higher the order of the markov chain, the most stringent are the
+conditions. For small sequence sets, selecting a too high order
+prevents from selecting any pattern. Markov order 2 mises most of the
+patterns, and higher orders don't return any single significant word.
+
+</ul>
+
+<a name=dyad_analysis></a>
+<h3>dyad-analysis</h3>
+
+
+
+<a name=gibbs></a>
+<h3>gibbs motif sampler (program developed by Andrew Neuwald)</h3>
+
+
+
+
+<a name=consensus></a>
+<h3>consensus (program developed by Jerry Hertz)</h3>
+
+An alternative approach for matrix-based motif discovery is
+<i>consensus</i>, a program written by Jerry hertz, an based on a
+greedy algorithm. We will see how to extract a profile matrix from ths
+upstream regions of the PHO genes.
+
+<h4>Getting help</h4>
+
+As for RSAT programs, there are two ways to get help from Jerry Hertz'
+proigrams : a detailed manual can be obtained with the option
+<tt>-h</tt>, and a summary of options with <tt>-help</tt>. Try these
+options and read the manual.
+
+<ul><pre>
+consensus -h
+consensus -help
+</pre></ul>
+
+<h4>Sequence conversion</h4>
+
+<p>
+<i>consensus</i> uses a custom sequence format. Fortunately, the RSAT
+package contains a sequence conversion program (<i>convert-seq</i>)
+which supports Jerry Hertz' format. We will thus start by converting
+the fasta sequences in this format. 
+
+<ul><pre>
+convert-seq -i PHO_up800.fasta -from fasta -to wc -o PHO_up800.wc
+</pre></ul>
+
+<h4>Running consensus</h4>
+
+Using consensus requires to chose the appropriate value for a series
+of parameters. We found the following combination of parameters quite
+efficient for discovering patterns in yeast upstream sequences.
+
+<ul><pre>
+consensus -L 10 -f PHO_up800.wc -A a:t c:g -c2 -N 10
+</pre></ul>
+
+<P>
+The two main options here is that we suppose that the pattern has a
+length of about 10 bp (<TT>-L 10</TT>), and that we will find about 10
+occurrences in the sequence set. Since there are 5 genes in the
+family, this means that we expect on average 2 regulatory sites per
+gene, which is generally a good guess for yeast.
+
+<P>
+Notice that several matrices are returned. Each matrix is followed by
+the alignment of the sites on which it is based. Notice that the 4
+matrices are highly similar, basically they are all made of several
+occurrences of the high afinity site CACGTG, and mtrices 1 and 3
+contain one occurrence of the medium affinity site CACGTT. 
+
+<P>
+Also notice that these matrices are not made of exactly 10 sites
+each. <i>consensus</i> is able to adapt the number of sites in the
+alignment in order to get the highest information content. The option
+<tt>-N 10</tt> was an indication rather than a rigid requirement.
+
+<P>
+To save the result in a file, you can use the symbol ">" which
+redirects the output of a program to a file. 
+
+<ul><pre>
+consensus -L 10 -f PHO_up800.wc -A a:t c:g -c2 -N 10 > PHO_consensus
+</pre></ul>
+
+(this takes a few minuts). 
+
+<P>
+Once the task is achieved, check the result.
+
+<ul><pre>
+more PHO_consensus
+</pre></ul>
+
+
+</ul>
+<a name=pattern_matching></a>
+<h2>Pattern matching</h2>
+<UL>
+
+In a pattern matching problem, you start from one or several
+predefined patterns, and you match this pattern against a sequence,
+i.e. you locate all occurrences of this pattern in the sequences.
+
+<P>
+Patterns can be represented as strings (with <i>dna-pattern</i>) or
+position-weight matrices (with <i>patser</i>). 
+
+<a name=dna_pattern></a>
+<h3>dna-pattern</h3>
+
+<P>
+<i>dna-pattern</i> is a string-based pattern matching program,
+specialized for searching patterns in DNA sequences. 
+
+<ul>
+
+<li>
+This specialization mainly consists in the ability to search on both
+the direct and reverse complement strands.
+
+<li>
+A single run can either search for a single pattern, or for a list
+of patterns.
+
+<li>
+multi-sequence file formats (fasta, filelist, wc, ig) are supported,
+allowing to match patterns against a list of sequences with a single
+run of the program.
+
+<li>
+String descriptions can be refined by using the 15-letters IUPAC code
+for uncompletely specified nucleotides, or by using regular
+expressions.
+
+<li>
+The program can either return a list of matching positions (default
+behaviour), or the count of occurrences of each pattern.
+
+<li>
+Imperfect matches can be searched by allowing
+substitutions. Insertions and deletions are not supported.  The reason
+is that, when a regulatory site presents variations, it is generally
+in the form of a tolerance for substitution at a specific position,
+rather than insertions or deletions. It is thus essential to be able
+distinguishing between these types of imperfect matches.
+
+</ul>
+
+
+<h4>Matching a single pattern</h4>
+
+We will start by searching all positions of a single pattern in a
+sequence set. The sequence is the set of upstream regions from the PHO
+genes, that was obtained in the tutorial on sequence retrieval. We
+will search all occurrences of the most conserved core of the Pho4p
+medium affinity binding site ("CACGTT") in this sequence set.
+
+<P>
+Try the following command :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -1str -p cacgtt -id 'Pho4p_site'
+</pre></ul>
+
+You see a list of positions for all the occurrences of CACGTT in the sequence.
+
+Each row represents one match, and the columns provide the following
+information :
+<ol>
+<li>pattern identiifier
+<li>strand
+<li>pattern searched
+<li>sequence identifier
+<li>start position of the match
+<li>end position of the match
+<li>matched sequence
+<li>matching score
+</ol>
+
+<h4>Matching on both strands</h4>
+
+<P>To perform the search on both strands, type :
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt -id 'Pho4p_site'
+</pre></ul>
+
+Notice that the strand colmn now contains two possible values : D for
+"direct" and R for "reverse complement".
+
+<h4>Allowing substitutions</h4>
+
+To allow one substitutions, type :
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt -id 'Pho4p_site' -subst 1
+</pre></ul>
+
+Notice that the score column now contains 2 values : 1.00 for perfect
+matches, 0.83 (=5/6) for single substitutions. This si one possible
+use of the score column : when substitutions are allowed, the score
+indicates the percentage of matching nucleotides.
+
+<P>
+Actually, for regulatory patterns, allowing substitutions usually
+returns many false positive, and this option is usually avoided. We
+will not use it further in the tutorial.
+
+<h4>Extracting flanking sequences</h4>
+
+The matching positions can be extracted along with their flanking nucleotides. Try :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4
+</pre></ul>
+
+Notice the change in the matched sequence column : each matched
+sequence contains the pattern CACGTT in uppercase, and 4 lowercase
+letters on each side (the flanks).
+
+<h4>Changing the origin</h4>
+
+When working with upstream sequences, it is convenient to work with
+coordinates relative to the start codon (i.e. the right side of the
+sequence). Sequence matching programs (including dna-pattern) return
+the positions relative to the beginning (i.e. the left side) of the
+sequence. The reference (coordinate 0) can however be changed iwith
+the option <tt>-origin</tt>. In this case, we retrieved upstream
+sequences over 800bp. the start codon is thus located at position
+801. Try :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4 -origin 801
+</pre></ul>
+
+Notice the change in coordinates.
+
+<P>
+In some cases, a sequence file will contain a mixture of sequences of
+different length (for example if one clipped the sequences to avoid
+upstream coding sequences). The origin should thus vary from sequence
+to sequence. A convenient way to circumvent the problem is to use a
+egative value with the option <tt>origin</tt>. for example,
+<tt>-origin -100</tt> would take as origin the 100th neucleotide
+starting from the right of each sequence in the sequence file. But in
+our case we want to take as origin the position immediately after the
+last nucleotide. For this, there is a special convention : <tt>-origin
+-0</tt>.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4 -origin -0
+</pre></ul>
+
+In the current example, since all sequences have exactly 800bp length,
+the result is identical to the one obtained with <tt>-origin 801</tt>.
+
+<h4>Matching degenerate patterns</h4>
+
+As we said before, there are two forms of Pho4p binding sites : the
+protein has high affinity for motifs containing the core CACGTG, but
+can alos bind, with a medium affinity, CACGTT sites. The IUPAC code
+for partly specified nucleotides allows to represent any combination
+of nucleotids by a single letter.
+
+<P>
+<ul>
+<table align=center>
+<tr><td><b>A</b></td><td></td><td>(Adenine)</td></tr>
+<tr><td><b>C</b></td><td></td><td>(Cytosine)</td></tr>
+<tr><td><b>G</b></td><td></td><td>(Guanine)</td></tr>
+<tr><td><b>T</b></td><td></td><td>(Trymine)</td></tr>
+<tr><td><b>R</b></td><td>= A or G</td><td>(puRines)</td></tr>
+<tr><td><b>Y</b></td><td>= C or T</td><td>(pYrimidines)</td></tr>
+<tr><td><b>W</b></td><td>= A or T</td><td>(Weak hydrogen bonding)</td></tr>
+<tr><td><b>S</b></td><td>= G or C</td><td>(Strong hydrogen bonding)</td></tr>
+<tr><td><b>M</b></td><td>= A or C</td><td>(aMino group at common position)</td></tr>
+<tr><td><b>K</b></td><td>= G or T</td><td>(Keto group at common position)</td></tr>
+<tr><td><b>H</b></td><td>= A, C or T</td><td>(not G)</td></tr>
+<tr><td><b>B</b></td><td>= G, C or T</td><td>(not A)</td></tr>
+<tr><td><b>V</b></td><td>= G, A, C</td><td>(not T)</td></tr>
+<tr><td><b>D</b></td><td>= G, A or T</td><td>(not C)</td></tr>
+<tr><td><b>N</b></td><td>= G, A, C or T</td><td>(aNy)</td></tr>
+</table>
+</ul>
+
+<P>
+Thus, we could use the string CACGT<B>K</B> to represent the Pho4p
+consensus, and search both high and medium affinity sites in a single
+run of the program.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtk \
+     -id  'Pho4p_site' -N 4 -origin -0
+</pre></ul>
+
+<h4>Matching regular expressions</h4>
+
+Another way to represent partly specified strings is by using regular
+expressions. This not only allows to represent combinations of letters
+as we did above, but also spacings of variable width. For example, we
+could search for tandem repeats of 2 Pho4p binding sites, separated by
+less than 100bp. This can be represented by the following regular expression : 
+
+<ul>
+cacgt[gt].{0,100}cacgt[gt]
+</ul>
+
+which means
+<ul>
+<li>cacgt 
+<li>followed by either g or t [gt]
+<li>followed by 0 to 100 unspecified letters .{0,100}
+<li>followed by cacgt
+<li>followed by either g or t [gt]
+</ul>
+
+<P>
+Let us try to use it with dna-pattern
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -id 'Pho4p_pair' \
+      -N 4 -origin -0 -p 'cacgt[gt].{0,100}cacgt[gt]'
+</pre></ul>
+
+
+Note that the pattern has to be quoted, to avoid possible conflicts
+between special characters used in the regular expression and the unix
+shell.
+
+
+<h4>Matching several patterns</h4>
+
+TO match a series of patterns, you first need to store these patterns
+in a file. Let create a pattern file :
+
+<ul><pre>
+cat > test_patterns.txt
+cacgtg	high
+cacgtt	medium
+</pre></ul>
+(then tpye Ctrl-d to close)
+
+<P>
+check the content of your pattern file.
+<ul><pre>
+more test_patterns.txt
+</pre></ul>
+
+There are two lines, each representing a pattern. The first word of
+each line contains the pattern, the second word the identifier for
+that pattern. This column can be left lank, in which case the pattern
+is used as identifier.
+
+<P>
+We can now use this file to search all matching psitions of both
+patterns in the PHO sequences.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0
+</pre></ul>
+
+<h4>Counting pattern matches</h4>
+
+In the previous examples, we were interested in matching positions. It
+is sometimes interesting to get a more synthetic information, in the
+form of a count of matching positions for each sequences. Try :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -c
+</pre></ul>
+
+With the option <tt>-c</tt>, the program returns the number of
+occurrences of each pattern in each sequence. The output format is
+different : there is one row for each combination pattern-sequence. Te
+columns indicate respectively
+<ol>
+<li>sequence identifier
+<li>pattern identifier
+<li>pattern sequence
+<li>match count
+</ol>
+
+<P>
+An even more synthetic result can be obtained with the option
+<tt>-ct</tt> (count total).
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -ct
+</pre></ul>
+
+This time, only two rows are returned, one per pattern. 
+
+<h4>Getting a count table</h4>
+
+Anothe rway to display the count information is in the form of a
+table, where each row represents a gene and each column a pattern.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -table
+</pre></ul>
+
+<P>
+This representation is very convenient for aplying multivariate
+statistics on the results (e.g. classificatying genes according to the
+patterns found in their upstream sequences)
+
+<P>
+Last detail : we can add one column and one row for the totals per
+gene and per pattern.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -table -total
+</pre></ul>
+
+
+
+
+<a name=patser></a>
+<h3>patser (program developed by by Jerry Hertz)</h3>
+
+We will now see how to match a profile matrix against a sequence
+set. For this, we use <i>patser</i>, a program written by Jerry
+Hertz. 
+
+<h4>Gettin help</h4>
+
+help can be obtained with the two usual options.
+
+<ul><pre>
+patser -h
+patser -help
+</pre></ul>
+
+<h4>Matrix conversion</h4>
+
+Patser expects as input a matrix like the 4 matrices we obtained above
+with <i>consensus</i>. The output from <i>consensus</i> can however
+not be used directly because it contains several matrices, and a lot
+of additional information. One possibility is to copy-paste the matrix
+of interest to a separate file.
+
+<P>
+To avoid manual editing, RSAT contains a program
+<i>matrix-from-consensus</i>, which automaticaly extacts the first
+matrix from a consensus output.
+
+<ul><pre>
+matrix-from-consensus -i PHO_consensus -o PHO_matrix
+more PHO_matrix
+</pre></ul>
+
+
+<h4>Detecting Pho4p sites in the PHO genes</h4>
+
+After having extracted the matrix, we can match it against the PHO
+sequences to detect putative regulatory sites.
+
+<ul></pre>
+patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -l 9
+</pre></ul>
+
+<h4>Detecting Pho4p sites in all upstream regions</h4>
+
+We will now match our PHO matrix against the whole set of upstream
+regions from the 6200 yeast genes. This should allow us to detect new
+genes potentially regulated by Pho4p.
+
+<P>
+One possibility would be to use <i>retrieve-seq</i> to extract all
+yeast upstream regions, and save the result in a file, which will then
+be used as input by <i>patser</i>. To avoid occupying too much space
+on the disk, we could combine both tasks in a single command, and
+immediately redirect the output of <i>retrieve-seq</i> as input for
+<i>patser</i>. This can be done with the pipe ("|") character. 
+
+
+<ul><pre>
+retrieve-seq -type upstream -from -1 -to -800  -org yeast \
+        -all -format wc -label gene  \
+		| patser -m PHO_matrix -l 9 -A a:t c:g
+</pre></ul>
+
+</ul>
+<a name=drawing_graphs></a>
+<h2>Drawing graphs</h2>
+<UL>
+
+<a name=accessing_graphs></a>
+<h3>Accessing graphs in your account from the web</h3>
+
+<a name=feature_map></a>
+<h3>feature-map</h3>
+
+<a name=xygraph></a>
+<h3>XYgraph</h3>
+
+
+</ul>
+<a name=utilities></a>
+<h2>Utilities</h2>
+<UL>
+
+<a name=orf_info></a>
+<h3>orf-info</h3>
+
+<b>orf-info</b> allows you to get information on ORFs, given a series of
+query words. Queries are matched against ORF identifiers and ORF
+names. Imperfect matches can be specified by using regular
+expressions.
+
+For example, to get all info about the yeast gene GAT1 :
+
+<ul><pre>
+orf-info -org yeast -q GAT1
+</ul></pre>
+
+And to get all the purine genes from <i>Escherichia coli</I>, type : 
+
+<ul><pre>
+orf-info -org ecoli -q 'pur.*'
+</ul></pre>
+
+Note the use of quotes, which is necessary whenever the query contains
+a *.
+
+<P>
+You can also combine several queries on the same command line, by
+using reiteratively the -q option :
+
+<ul><pre>
+orf-info -org ecoli -q 'met.*' -q 'thr.*' -q 'lys.*'
+</ul></pre>
+
+
+
+</ul>
+<a name=advanced></a>
+<h2>Advanced use of RSA-Tools</h2>
+<UL>
+
+<a name=install_organism></a>
+<h3>Installing additional organisms</h3>
+
+In this chapter, we explain how to add support for an organism on your
+local configuration of RSAT. This assumes that you have the complete
+sequence of a genome, and a table describing the predicted location of
+genes.
+
+<h4>Genome data</h4>
+
+First, prepare a directory where you will store the data for your organism. For example : 
+
+<PRE>
+~myaccount/rsat-add/data/Mygenus_myspecies/
+</PRE>
+
+You need two informations to start installing a new genome :
+
+<ul>
+<li>The genome in fasta format. If the genome contains multiple
+chromosomes, they should all be included in a common multi-sequence
+fasta file.
+
+<li>A feature-table giving the basic information about genes. This is
+a tab-delimited text file. Each row contains information about one
+gene. The columns contain the following information : 
+<ol>
+
+<li>Identifier
+
+<li>Feature type (e.g. ORF, tRNA, ...)
+
+<li>Name
+
+<li>Chromosome. This must correspond to one of the sequence
+identifiers from the fasta file.
+
+<li>Left limit
+
+<li>Right limit
+
+<li>Strand (D for direct, R for reverse complemet)
+
+<li>Description. A one-sentence description of the gene function.
+
+</ol>
+
+<li>Optionally, you can provide a synonym file, which contains two
+columns:
+
+<ol>
+<li>ID. This must be one identifier found in the feature table
+<li>Synonym
+</ol>
+
+Multiple synonyms can be given for a gene, by adding several lines with
+the same ID in the first column.
+
+</ul>
+
+<h4>Installing the genome locally</h4>
+One you have this information, start the program
+<ul><pre>
+install-organism
+</pre></ul>
+You will be asked to enter the information needed for genome installation. 
+
+<h4>Updating your local configuration</h4>
+
+<ul>
+<li>Modify the local config file
+
+<li>You need to define an environment variable called RSA_LOCAL_CONFIG, and which indicates the loca config file. 
+
+</ul>
+
+<h4>Checking that the organism is installed properly</h4>
+
+To check the installation, start by checking whether your newly installed now appears in the list of supported organisms. 
+
+<ul><pre>
+retrieve-seq -help
+</pre></ul>
+
+Will give you a list of installed organisms.
+
+<P>
+Once the organism is found in your configuration, you need to check whether sequences are retrieved properly. A good test for this is to retrieve all the start codons, and check whether they are made of the expected codons (mainly ATG, plus some alternative start codons like GTG or TTG for bacteria). 
+
+<ul><pre>
+retrieve-seq -org myorganism -all -from 0 -to 2 -format multi  | oligo-analysis -format multi -v -1str -l 3 -return occ,freq
+</pre></ul>
+
+
+</ul>
+<a name=references></a>
+<h2>References</h2>
+<UL>
+
+
+<LI>van Helden, J., Andre, B. & Collado-Vides, J. (1998). Extracting
+regulatory sites from the upstream region of yeast genes by
+computational analysis of oligonucleotide frequencies. J Mol Biol
+281(5), 827-42.  <A
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=9719638&dopt=Abstract">Pubmed
+9719638</a>
+
+<LI>van Helden, J., André, B. & Collado-Vides, J. (2000). A web site
+for the computational analysis of yeast regulatory sequences. Yeast
+16(2), 177-187.  <A
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10641039&dopt=Abstract">Pubmed
+10641039</a>
+
+<LI>van Helden, J., Olmo, M. & Perez-Ortin, J. E. (2000). Statistical
+analysis of yeast genomic downstream sequences reveals putative
+polyadenylation signals. Nucleic Acids Res 28(4), 1000-1010.  <A
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10648794&dopt=Abstract">Pubmed
+10648794</A>
+
+<LI>van Helden, J., Rios, A. F. & Collado-Vides,
+J. (2000). Discovering regulatory elements in non-coding sequences by
+analysis of spaced dyads. Nucleic Acids Res. 28(8):1808-18.  <A
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10734201&dopt=Abstract">Pubmed
+10734201</a>
+
+<LI>van Helden, J., Gilbert, D., Wernisch, L., Schroeder, M. & Wodak,
+S. (2001). Applications of regulatory sequence analysis and metabolic
+network analysis to the interpretation of gene expression
+data. Lecture Notes in Computer Sciences 2066: 155-172. 
+
+
+</ul>
+
+<HR SIZE=6 WIDTH="100%">
+
+</blockquot>
+</body>
+</html>

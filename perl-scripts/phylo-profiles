@@ -1,0 +1,547 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: phylo-profiles,v 1.4 2013/09/30 12:53:15 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+phylo-profiles
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Compute phylogenetic profiles for all the genes of a query genome
+across a user-specified taxon, and exract a co-occurrence network.
+
+=head2 Phylogenetic profiles
+
+The notion of phylogenetic profile was introduced by Pellegrini et
+al. (1999). The method relies on the assumption that genes ensuring
+necessary steps in a same biological process should be either present
+together in organisms where this function is enabled, or both absent
+in organisms where the function is not ensured.
+
+Phylogenetic profiles are defined as Boolean profiles of
+presence/absence of gene orthologs in a set of reference genomes
+(e.g. all the Bacterial genomes).
+
+=head2 Similarity between phylogenetic profiles
+
+At the time of the original publication, Pellegrini and colleagues
+only disposed of 16 fully sequenced genomes. Their idea was
+illustrated by showing that groups of gene groups having identical
+profiles of presence/absence across the 16 genomes were involved in
+the same process.
+
+As we now dispose of several thousands of fully sequenced genomes, the
+power of the method has drastically increased. The simplistic
+criterion of selecting identical profiles would give poor results.
+Several metrics have been proposed to measure the similarity between
+two phylogenetic profiles (see Feller et al. for an evaluation of the
+alternative metrics and other parameters).
+
+The program I<phylo-profiles> relies on the hypergeometric
+distribution to compute a significance of the co-occurrence between
+two genes across a set of reference genomes.
+
+An important assumption of the hypergeometric is that the genomes
+should be independent from each other. This is however far from being
+the case, since we dispose of many closely related genomes. To reduce
+this bias, we select non-redundant genomes by retaining only one
+species per sub-taxon, at a given depth of the taxonomic tree. This
+criterion is somewhat rough, but seems to give good results (as far as
+we can judge by comparing the functions of gene pairs detected as
+co-occurring).
+
+=head2 Orthology criterion
+
+Ideally, the method should rely on suitable criteria to infer the
+presence/absence of orthologs in the reference genomes. This would
+however require to infer, for each gene family, a phylogenetic tree,
+and qualify the relations of homology (homologs vs paralogs vs
+xenologs).
+
+For the sake of facility (we could even say feasibility), we use an
+approximative criterion to infer the presence/absence of ortholog, by
+detecting bidirectional best hits (BBH) with the similarity search
+program BLAST.
+
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item comparative genomics
+
+=back
+
+=head1 USAGE
+
+phylo-profiles -org query_organism -taxon reference_taxon [...]
+
+See below for detailed description of the options.
+
+=head1 INPUT DATA
+
+=head1 OUTPUT FORMAT
+
+The program produces a set of output files corresponding
+to the successive steps of the analysis, and a synthetic HTML page
+with links to the individual result files.
+
+=head1 REFERENCES
+
+Pellegrini, M., Marcotte, E. M., Thompson, M. J., Eisenberg, D. &
+Yeates, T. O. (1999).
+Assigning protein functions by comparative genome analysis: protein 
+phylogenetic profiles.
+Proc Natl Acad Sci U SA 96, 4285-8.
+
+Ferrer, L., Dale, J. M. & Karp, P. D. (2010).
+A systematic study of genome context methods: calibration,
+normalization and combination.
+BMC Bioinformatics 11, 493.
+
+
+=head1 SEE ALSO
+
+=over
+
+=item I<genome-blast>
+
+The progam I<phylo-profiles> requires to pre-compute homology tables
+between all proteins of the query genome and each species of the
+reference taxon. This can be done with the program I<genome-blast>.
+
+
+=back
+
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA2.cgi.lib";
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our @outfiles = ();
+
+  ## Thresholds
+  our %lth = ();
+  our %uth = ();
+  $lth{identity}=30; ## Threshold on BLAST identity percentage
+  $lth{len}=50; ## Threshold on BLAST alignment length
+  $uth{expect}=1e-10; ## Threshold on BLAST expect (e-value)
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $taxon;
+  our $organism;
+  our $taxonomic_depth = 5;
+  our $null = "<NA>"; ## String for null/undefined/not assigned values
+
+  ## Supported tasks
+  our @supported_tasks = qw(
+			    species
+			    bbh
+			    profiles
+			    index
+			    all
+			   );
+  our $supported_tasks = join (",", @supported_tasks);
+  our %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+  our %task = ();
+
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  if (scalar(keys(%task)) == 0) {
+    %task = %supported_task;
+  }
+
+  ## Mandatory arguments
+  unless ($organism) {
+    &RSAT::error::FatalError("You must define a query organism (option I<-orf>)");
+  }
+
+  unless ($taxon) {
+    &RSAT::error::FatalError("You must define a reference taxon (option I<-taxon>)");
+  }
+
+  unless ($dir{output}) {
+    $dir{output} = "results/phylo_footprints/".${organism}."_vs_".${taxon};
+#    &RSAT::error::FatalError("You must define an output directory (option I<-o>)");
+  }
+
+  &RSAT::util::CheckOutDir($dir{output});
+
+  ## Specify output files
+  $prefix{output} = $dir{output}."/".$organism."_".$taxon."_depth".$taxonomic_depth;
+  $outfile{html_index} = $prefix{output}."_index.html"; push @outfiles, "html_index";
+  $outfile{species}=$prefix{output}."_selected_species.tab"; push @outfiles, "species";
+  $outfile{species_html}=$prefix{output}."_selected_species.html"; push @outfiles, "species_html";
+  $outfile{species_names}=$prefix{output}."_selected_species_names.tab"; push @outfiles, "species_names";
+  $outfile{bbh} = $prefix{output}."_bbh_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
+  $outfile{profiles_ids}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_ids.tab"; push @outfiles, "profiles_ids";
+
+  ################################################################
+  ## Open output stream
+  local $out = &OpenOutputFile($outfile{output});
+
+  ## Open the HTML index file
+  local $html_index;
+  if ($task{index}) {
+    $html_index = &OpenOutputFile($outfile{html_index});
+    my $header = &PrintHtmlResultHeader(program=>"phylo-profiles", refresh_time=>120);
+    print $html_index $header;
+
+    ## Report command and arguments
+    print $html_index "<p><b>Command:</b> <tt>phylo-profiles ";
+    &PrintArguments($html_index, 1);
+    print $html_index "</tt></p>\n";
+  }
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Select a set of species in a way to reduce redundancy between
+  ## closely related species. This is a bit tricky: we cut the organism
+  ## tree at a given depth (e.g. 5) and select a single species of each
+  ## taxon at this depth.
+  &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
+  my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
+  $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
+  $species_cmd .= " -depth ".$taxonomic_depth;
+  $species_cmd .= " -o ".$outfile{species};
+  $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
+  $species_cmd .= " -i ".$outfile{species};
+  $species_cmd .= " -o ".$outfile{species_html};
+  $species_cmd .= " ; grep -v '^#' ".$outfile{species};
+  $species_cmd .= " | cut -f 1";
+  $species_cmd .= " > ".$outfile{species_names};
+  &one_command($species_cmd, 1, 0, task=>"species");
+  &RSAT::message::Info("species file (tab)", $outfile{species}) if ($main::verbose >= 2);
+  &RSAT::message::Info("species file (html)", $outfile{species_html}) if ($main::verbose >= 2);
+#   my $species_cmd = $SCRIPTS."/supported-organisms -return ID,taxonomy";
+#   $species_cmd .= " | awk '$$1 == \"".$organism."\"' > ".$outfile{species};
+#   $species_cmd .= "; ".$SCRIPTS."/supported-organisms -return ID,taxonomy -taxon ".$taxon;
+#   $species_cmd .= " | perl -pe 's|; |\t|g'";
+#   $species_cmd .= " | cut -f 1-".$taxonomic_depth." | sort -k 2 -u | perl -pe 's|\t|; |g' | perl -pe 's|; |\t|'";
+#   $species_cmd .= " >> ${SPECIES}";
+#   &RSAT::message::Info("BBH file", $outfile{species}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Identify all the putative orthologs (BBH)
+  &RSAT::message::TimeWarn("Detecting all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
+  my $ortho_cmd = $SCRIPTS."/get-orthologs -v 2";
+  $ortho_cmd .= " -all";
+  $ortho_cmd .= " -org ".$organism;
+#  $ortho_cmd .= " -taxon ".${taxon};
+  $ortho_cmd .= " -org_list ".$outfile{species_names};
+  $ortho_cmd .= " -uth rank 1 -lth ali_len ".$lth{len};
+  $ortho_cmd .= " -lth ident ".$lth{identity};
+  $ortho_cmd .= "  -uth e_value ".$uth{expect};
+  $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
+  $ortho_cmd .= " -o ".$outfile{bbh};
+  &one_command($ortho_cmd, 1, 0, task=>"bbh");
+  &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
+
+
+  ################################################################
+  ## Convert ortholog table into a profile table 
+  ## with the IDs of the putative orthologs 
+  &RSAT::message::TimeWarn("Converting ortholog table to profiles") if ($main::verbose >= 2);
+
+  &RSAT::message::TimeWarn("Computing phylogenetic profiles (gene IDs) from BBH");
+  my $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+  $command .= " -from tab -to profiles";
+  $command .= " -ccol 2 -mcol 3 -scol 1 -null '".$null."'";
+  $command .= "| grep -v '^;'";
+  $command .= "> ".$outfile{profiles_ids};
+  &RSAT::message::TimeWarn("ID profiles", $outfile{profiles_ids});
+  &one_command($ortho_cmd, 1, 0, task=>"profiles");
+  &RSAT::message::Info("Phylogenetic profiles by IDs", $outfile{profiles_ids}) if ($main::verbose >= 2);
+
+  ## Convert ortholog table into a Boolean profile table 
+# 	&RSAT::message::TimeWarn("Computing Boolean phylogenetic profiles from BBH"
+# 	@wc -l ${BBH}.tab
+# 	convert-classes -v 2 -i ".$outfile{bbh};
+#   $command .= "-from tab -to profiles";
+#   $command .= "-ccol 2 -mcol 3  -null 0";
+#   $command .= "| grep -v '^;'";
+#   $command .= "> ${$outfile{profiles}}_boolean.tab
+# 	add-gene-info -org ${ORG} -before -i ${$outfile{profiles}}_boolean.tab -info name > ${$outfile{profiles}}_boolean_names.tab
+# 	&RSAT::message::TimeWarn("Boolean profiles	${$outfile{profiles}}_boolean_names.tab"
+
+# 				 ## Convert ortholog table into a profile table with E-values 
+# 	@echo
+# 	&RSAT::message::TimeWarn("Computing E-value phylogenetic profiles from BBH"
+# 	@wc -l ${BBH}.tab
+# 	convert-classes -v 2 -i ".$outfile{bbh};
+#   $command .= "-from tab -to profiles";
+#   $command .= "-ccol 2 -mcol 3  -scol 4 -null "NA"";
+#   $command .= "| grep -v '^;'";
+#   $command .= "> ${$outfile{profiles}}_Evalue.tab
+# 	&RSAT::message::TimeWarn("E-value profiles	${$outfile{profiles}}_boolean_names.tab"
+
+  ################################################################
+  ## Generate the HMTL index of input/output files
+  if ($task{index}) {
+    &IndexFiles();
+    print $main::html_index "<hr>";
+    print $main::html_index "</body>";
+    print $main::html_index "</html>";
+    close $main::html_index;
+    &RSAT::message::TimeWarn("Index file", $outfile{html_index});
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+
+=pod
+
+=item B<-org query_organism>
+
+Name of the query organism (see I<supported-orgnisms> to get a full
+list).
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	    $main::organism = shift (@arguments);
+
+
+=pod
+
+=item B<-taxon ref_taxon>
+
+Reference taxon. Orthologs are returned for each supported organism
+belonging to the reference taxon.
+
+=cut
+
+	} elsif ($arg eq "-taxon") {
+	    $main::taxon = shift (@arguments);
+
+
+=pod
+
+=item B<-depth taxonomic_depth>
+
+Taxonomic depth, i.e. the depth to be traversed across the taxonomic
+tree in order to select "non-redundant" species.
+
+=cut
+
+	} elsif ($arg eq "-depth") {
+	    $main::taxonomic_depth = shift (@arguments);
+	    &RSAT::error::FatalError($main::taxonomic_depth, "Invalid value for depth:  must be n Integer number") 
+	      unless (&IsNatural($taxonomic_depth) && ($taxonomic_depth > 0));
+
+
+=pod
+
+=item	B<-o output_dir>
+
+
+Output directory. I<phylo-profiles> exports several output files in
+the output directory.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $dir{output} = shift(@arguments);
+
+=pod
+
+=item B<-task task1,task2,...>
+
+Supported tasks:
+
+=over
+
+=item I<species>
+
+Select species at a given depth of the taxonomic tree.
+
+=item I<bbh>
+
+Detect bidirectional best hits (BBH).
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	}
+      }
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; phylo-profiles ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::dir) {
+    print $out "; Directories\n";
+    while (my ($key,$value) = each %main::dir) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+
+  print $out &PrintThresholdValues();
+
+
+}
+
+__END__

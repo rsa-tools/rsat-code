@@ -1,0 +1,402 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: contingency-table,v 1.18 2013/07/16 12:53:52 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+
+=pod
+
+=head1 NAME
+
+contingency-table
+
+=head1 DESCRIPTION
+
+Create a contingency table by counting the joint occurrences between
+values of 2 columns of a tab-delimited text file.
+
+=head1 AUTHORS
+
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+contingency-table [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+local $start_time = &RSAT::util::StartScript();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+local @cols = (1,2);
+local %counts;
+local %row_sum;
+local %col_sum;
+local $total=0;
+local $null = 0;
+local $margin = 0;
+local $density = 0;
+local $sort_criterion = "keys";
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+($in) = &OpenInputFile($infile{input});
+while (<$in>) {
+    next if /^;/; ## Skip comments
+    next if /^--/; ## Skip comments
+    next if /^#/; ## Skip header
+    next unless (/\S/); ## Skip emtpy rows
+    s/\r//; ## Remove Windowsspecific carriage return
+    chomp(); ## Remove the newline character
+    my @fields = split "\t";
+    my $value1 = $fields[$cols[0]-1];
+    my $value2 = $fields[$cols[1]-1];
+    $counts{$value1}{$value2}++;
+    $row_sum{$value1}++;
+    $col_sum{$value2}++;
+    $total++;
+#    &RSAT::message::Debug($value1, $value2, $counts{$value1}{$value2}) if ($main::verbose >= 10);
+}
+close $in if ($infile{input});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### print output
+
+## Row and column headers
+my @row_values = ();
+my @col_values = ();
+if ($sort_criterion eq "freq") {
+  @row_values = sort {$row_sum{$b} <=> $row_sum{$a}} keys %row_sum;
+  @col_values = sort {$col_sum{$b} <=> $col_sum{$a}} keys %col_sum;
+} elsif ($sort_criterion eq "num_labels") {
+  @row_values = sort {$a <=> $b} keys %row_sum;
+  @col_values = sort {$a <=> $b} keys %col_sum;
+} else {
+  @row_values = sort keys %row_sum;
+  @col_values = sort keys %col_sum;
+}
+
+## Print column headers
+if ($margin) {
+  print $out join ("\t", "#", "Sum", @col_values), "\n";
+} else {
+  print $out join ("\t", "#", @col_values), "\n";
+}
+
+## Print the column margins (sum of each column)
+if ($margin) {
+  if ($density) {
+    print $out "; Margin freq";
+  } else {
+    print $out "; Sum";
+  }
+  print $out "\t", $total;
+  foreach my $col_value (@col_values) {
+    if ($density) {
+      print $out "\t", $col_sum{$col_value}/$total;
+    } else {
+      print $out "\t", $col_sum{$col_value};
+    }
+  }
+  print $out "\n";
+}
+
+## Print the results
+foreach my $row_value (@row_values) {
+    print $out $row_value;
+
+    ## Print row sums if required
+    if ($margin) {
+      if ($density) {
+	print $out "\t", $row_sum{$row_value}/$total;
+      } else {
+	print $out "\t", $row_sum{$row_value};
+      }
+    }
+
+    foreach my $col_value (@col_values) {
+	if (defined($counts{$row_value}{$col_value})) {
+	  if ($density) {
+	    printf $out "\t%g", $counts{$row_value}{$col_value}/$total;
+	  } else {
+	    printf $out "\t%d", $counts{$row_value}{$col_value};
+	  }
+	} else {
+	    print $out "\t", $null;
+	}
+    }
+    print $out "\n";
+}
+
+################################################################
+###### close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+print $main::out $exec_time if ($main::verbose >= 1);
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    while ($arg = shift (@ARGV)) {
+
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($ARGV[0])) {
+		$verbose = shift(@ARGV);
+	    } else {
+		$verbose = 1;
+	    }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $infile{input} = shift (@ARGV);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} =  shift (@ARGV);
+
+
+=pod
+
+=item	B<-null>
+
+Value for the null character (default: 0).
+
+=cut
+	} elsif ($arg eq "-null") {
+	    $main::null =  shift (@ARGV);
+
+=item	B<-margin>
+
+Calculate the marginal sums
+
+=cut
+	} elsif ($arg eq "-margin") {
+	    $main::margin = 1;
+
+
+=pod
+
+=item	B<-col1>
+
+First column to use for the contingency table (default: 1)
+
+=cut
+	} elsif ($arg eq "-col1") {
+	    $main::cols[0] =  shift (@ARGV);
+
+
+=pod
+
+=item	B<-col2>
+
+Second column to use for the contingency table (default: 1)
+
+=cut
+	} elsif ($arg eq "-col2") {
+	    $main::cols[1] =  shift (@ARGV);
+
+
+=pod
+
+=item B<-density>
+
+Return the density (relative frequency) rather than the counts.
+
+ f_{i,j} = counts_{i,j} / total_counts
+
+=cut 
+	  } elsif ($arg eq "-density") {
+	    $main::density = 1;
+
+
+=pod
+
+=item B<-sort sort_criterion>
+
+Criterion for sorting rows and columns.
+
+
+Supported:
+
+=over
+
+=item freq
+
+Sort columns and rows by frequency of their margial sum. Most frequent
+columns/row are printed first.
+
+=item num_labels
+
+Sort columns and rows by numeric values of the labels (the values
+appearing in the column header and row names).
+
+=item labels
+
+Sort columns and rows by alphabetical values of the labels (the values
+appearing in the column header and row names).
+
+
+=cut 
+	  } elsif ($arg eq "-sort") {
+	    $main::sort_criterion = shift(@ARGV);
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; contingency-table ";
+    &PrintArguments($out);
+    if (%main::infile) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (%main::outfile) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut

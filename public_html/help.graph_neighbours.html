@@ -1,0 +1,66 @@
+<html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">Network Analysis Tools</a> - Help about graph-neighbours
+</h2>
+</center>
+
+<h4>Description</h4>
+<ul>
+
+    Extract from a graph the neighbourhood of all or of a set of seed nodes.
+
+</ul>
+
+
+<h4>Authors</h4>
+<ul>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Brohe&eacute;e</a></li>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a></li>
+</ul>
+
+
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input formats</h4>
+  The accepted input formats are GML, tab-delimited and adjacency matrix. 
+  For more explanations about these, refer to the <a href = 'help.convert_graph.html'>manual of convert-graph</a>.
+<h4>Output formats</h4>
+  Two types of output formats are available.
+  Without any specification, the program will return a four column
+  file "neighbour", "seed", "number of steps" and "direction". This output can then be compared to other file using <a href = 'graph_get_clusters_form.php'>graph-get-clusters</a> or <a href = 'compare-classes_form.cgi'>compare-classes</a><br><br>
+  The program can return one line for each seed node and display some information about the seed nodes neighbours. This option only works with weighted graphs. 
+</ul>
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+<ul><A NAME="wcol"></A><b>Weight or label column</b> Column containing the weight or the label on the edge. </ul>
+
+</ul>
+<h4>Nodes<ul><A NAME="seeds"></A></h4>
+The seed nodes for which the degree is seeked
+</ul>
+
+</ul>
+<h4>Seed nodes inclusion<ul><A NAME="self"></A></h4>
+Include each node in its neighborhood, with a distance of 0,
+even if there is no self-loop at this node. This allows to
+extract the node together with its neighborhood, rather than the
+neighborhood only (default). This option cannot be used with the
+one line per seed node format.</ul>
+<h4>Direction<ul><A NAME="direction"></A></h4>
+This option allow to return only in or out neighbours. This option can only be used with a number of step equal to 1 and without including the self nodes in the neighbourhood.</ul>
+
+
+<h4 class="footer">
+<address>
+For information, contact <a href = 'mailto:sylvain-at-bigre.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+
+</h4>
+</blockquote>
+</body>
+</html>

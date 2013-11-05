@@ -1,0 +1,179 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - string-based representations</title>
+<!--<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">-->
+<link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+</head>
+<body>
+
+
+<center>
+<h1><a href="../RSAT_home.cgi">RSA-tools</A> - <a href="tutorials.html">Tutorials</a> - string-based representations</h1>
+</center>
+
+
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href='#strings'>Strings with DNA alphabet</a>
+<li><a href='#IUPAC>IUPAC code</a>
+<li><a href='#regular'>Regular expressions</a>
+<li><a href='#combination'>Combination of IUPAC code and Regular expressions</a>
+<li><a href='#case'>Case insensiivity</a>
+</ol>
+
+<a name='strings'></a><h2>Strings with DNA alphabet</h2>
+<ul>
+
+<p>The simplest way to represent a transcription factor binding site
+is with a string composed with the 4-letter alphabet of DNA sequences:
+<tt>A</tt>, <tt>C</tt>, <tt>G</tt> and <tt>T</tt>.</p>
+
+<p>Unfortunately, transcription factor binding motifs
+(<a href='abbreviations.html'>TFBM</a>) are generally not
+restricted to one perfectly specified 4-letters string. The simple DNA
+alphabet representation is thus insufficient to represent partly
+specified or aspecific residues in the DNA/factor interface.</p>
+
+<p>Some more elaborate representations have been developed to
+represent partially specified motifs (IUPAC, regular expressions,
+positin-specific scoring matrices). These representations are
+supported on RSAT pattern matching programs (<i>dna-pattern</i>,
+<i>matrix-scan</i>).
+
+</ul>
+<a name=IUPAC></a><h2>IUPAC code</h2>
+<ul>
+
+The <a target='_blank'
+href='http://www.chem.qmul.ac.uk/iupac/'>IUPAC-IUB</a> commission
+defined a <i><b>code for ambiguous nucleotides</b></i>, based on a
+15-letter alphabet. Each letter represents a combination of one or
+several nucleotides.<p>
+
+<table cellpadding=2 cellspacing=2 class="list">
+</td></tr>
+<tr><th align=left>IUPAC</th><th align=left>nucleotides</th><th align=left>Mnemonics</th></tr>
+<tr><td>A</td><td>&nbsp;</td><td>Adenine</td></tr>
+<tr><td>C</td><td>&nbsp;</td><td>Cytosine</td></tr>
+<tr><td>G</td><td>&nbsp;</td><td>Guanine</td></tr>
+<tr><td>T</td><td>&nbsp;</td><td>Thymine</td></tr>
+<tr><td>R</td><td>A or G       </td><td>puRines</td></tr>
+<tr><td>Y</td><td>C or T       </td><td>pYrimidines</td></tr>
+<tr><td>W</td><td>A or T       </td><td>Weak hydrogen bonding</td></tr>
+<tr><td>S</td><td>G or C       </td><td>Strong hydrogen bonding</td></tr>
+<tr><td>M</td><td>A or C       </td><td>aMino group at common position</td></tr>
+<tr><td>K</td><td>G or T       </td><td>Keto group at common position</td></tr>
+<tr><td>H</td><td>A, C or T    </td><td>not G</td></tr>
+<tr><td>B</td><td>G, C or T    </td><td>not A</td></tr>
+<tr><td>V</td><td>G, A, C      </td><td>not T</td></tr>
+<tr><td>D</td><td>G, A or T    </td><td>not C</td></tr>
+<tr><td>N</td><td>G, A, C or T </td><td>aNy</td></tr>
+</table>
+
+
+</ul>
+<a name=regular></a><h2>Regular expressions</h2>
+<ul>
+
+<p>Regular expressions are a convenient way to express complex
+patterns with strings. This formalism supports many syntacic feature,
+which are out of scope for this tutorial, but a complete description
+can be found in many source e.g. in Perl textbooks. We will just
+provide a few examples of useful expressions.</p>
+
+<p>
+  <ol>
+    <p><li><b>Brackets</b> can be used to specify  set of alternative letters. 
+	<br>Example
+	<ul>
+	  <li><tt>GAT[TA]AG</TT> means "<tt>GATTAG</tt> or <tt>GATAAG</tt>"
+	    (this is equivalent to <tt>GATWAG</tt> in IUPAC code)</li>
+	</ul>
+    </li></p>
+    
+    <p><li><b>Fixed multipliers</b> can be specified by a number between curly brackets.
+	<br>Examples: 
+	<ul>
+	  <li><tt>A{8}</TT> means "<tt>AAAAAAAA</tt>"</li>
+	  <li><tt>[AG]{8}</tt> means "a succession of 8 times <tt>A</tt> or <tt>G</tt>"</li>
+	  <li><tt>CGG[ACGT]{11}CCG</TT> means "<tt>CGG</tt> followed by exactly
+	    11 times <tt>A,C,G</tt> or <tt>T</tt>, followed by <tt>CCG</tt>"</li>
+	</ul>
+    </li></p>
+    
+    <p><li><b>Variable multipliers</b> can be specified by two numbers between curly brackets.
+	<br>Example
+	<ul>
+	  <li><tt>GATAAG[ACGT]{0,30}GATAAG</TT> means
+	    "two <tt>GATAAG</tt> separated by a spacing covering
+	    between 0 and 30 letters"</li>
+	</ul>
+    </li></p>
+    
+    <p><li><b>Alternative words</b> can be specified by separating the
+	words by a pipe character ("|").
+	<br>Example
+	<ul>
+	  <li><tt>(?CACGTTTT|CACGTGGG)</TT> means "either CACGTGGG or CACGTTTT"</li>
+	</ul>
+    </li></p>
+	
+  </ol>
+  
+  
+</ul>
+<a name=combination></a><h2>Combinations of IUPAC and regular expressions</h2>
+<ul>
+
+<p>RSAT support patterns described as combinations of IUPAC alphabet
+  and regular expression.</p>
+
+<p>Example
+  <ul>
+  <li><tt>GATAAGN{0,30}GATAAG</TT> means "two GATAAG separated by a
+  spacing covering between 0 and 30 letters"</li>
+</ul>
+</p>
+
+</ul>
+<a name=case></a><h2>Case (in)sensitivity</h2>
+<ul>
+
+<p>Whichever string-based representation is used, upper and lower case
+  are considered equivalent by RSAT pattern matching and motif
+  discovery algorithms.</p>
+
+<p>However, some programs support a filtering option, allowing to mask
+  either lowercases or uppercases before starting the analysis. This
+  option can be used when a specific meaning is attached to lower- or
+  uppercases. For example, the "Get DNA" tool at the
+  <a target='_blank' href='http://genome.ucsc.edu'>UCSC Genome
+  Browser</a> allows to denote specific sequence types with lower- or
+  upper-cases (e.g. repetitive sequences, genes, non-coding, ...)</p>
+
+</ul>
+
+</ul>
+<a name=next></a><h2>Next steps</h2>
+<ul>
+
+<p>You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials, or directly switch to the
+following lessons.</p>
+
+<ol>
+  <li><a href="tut_PSSM.html"><b>Position-specific scoring matrices (PSSM)</b></a></li>
+  <li><a href="tut_dna-pattern.html"><b><i>dna-pattern</i></b></a>: string-based pattern matching</li>
+</ol>
+
+</ul>
+<hr width="100%">
+<address>Last update 15 Jan 2012 - by <script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript></address>
+
+</body>
+</html>

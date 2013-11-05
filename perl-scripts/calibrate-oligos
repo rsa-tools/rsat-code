@@ -1,0 +1,632 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: calibrate-oligos,v 1.18 2013/09/29 04:56:22 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::util;
+require RSAT::OrganismManager;
+
+
+################################################################
+#### initialise parameters
+our $start_time = &RSAT::util::StartScript();
+our $oligo_length = 6;
+our $repet = 1000;
+our $oligo_len = 6;
+our $str = "-2str";
+our $seq_len='';
+our $seq_nb=10;
+our $ov="-noov";
+our $organism_name = "Saccharomyces_cerevisiae";
+our $start = 1;
+our $end = undef;
+
+@supported_tasks = qw (all upstream random oligos group_distrib fit clean_seq clean_oligos);
+foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+}
+$supported_tasks = join ",", @supported_tasks;
+
+our %infile = ();
+our %outfile = ();
+our %dir = ();
+
+our $verbose = 0;
+our $dry_run = 0;
+our $die_on_error = 1;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+#### check selected tasks
+unless (%task) {
+    &RSAT::error::FatalError("You should select at least one task.");
+}
+if ($task{all}) {
+    foreach my $t (@supported_tasks) {
+	next if ($t eq "clean_oligos"); ## clean must be actively requested
+	$task{$t} = 1;
+    }
+}
+
+## organism name
+&RSAT::OrganismManager::CheckOrganismName($organism_name);
+
+## Sequence length
+if ($seq_len) {
+  $up_from = -$seq_len;
+  $up_to = -1;
+} else {
+  $up_from = $supported_organism{$organism_name}->{'up_from'};
+  $up_to = $supported_organism{$organism_name}->{'up_to'};
+  $seq_len = $up_to - $up_from + 1;
+}
+
+
+## output directory
+unless (defined($dir{output})) {
+  $dir{output} = "oligo_calibrations/".$organism_name;
+}
+#&RSAT::util::CheckOutDir($dir{output});
+
+
+## Sub-directories
+$dir{rand_genes} = $dir{output}."/rand_gene_selections/".$oligo_len."nt".$str.$ov."_N".$seq_nb."_L".$seq_len."_R".$repet;
+$dir{sequences} = $dir{output}."/sequences";
+$dir{oligos} = $dir{output}."/oligos";
+#&RSAT::util::CheckOutDir($dir{oligos});
+foreach my $subdir (keys %dir) {
+  &RSAT::message::Info("Directory", $subdir, $dir{$subdir}) if ($main::verbose >= 2);
+  &RSAT::util::CheckOutDir($dir{$subdir});
+}
+
+#chdir($dir{output});
+
+################################################################
+#### output files
+$file_prefix =  $dir{rand_genes}."/".$organism_name."_".$oligo_len."nt_".$str.$ov."_n".$seq_nb."_l".$seq_len."_r".$repet;
+$outfile{log} = $file_prefix."_log.txt";
+$outfile{group_distrib} = $file_prefix."_group_distrib.tab";
+#$outfile{stats} =$file_prefix."_stats.tab";
+$outfile{negbin} =$file_prefix."_negbin.tab";
+$outfile{poisson} =$file_prefix."_poisson.tab";
+$outfile{upstream_seq} = $dir{sequences}."/".$organism_name."_allup".$seq_len.".wc";
+$outfile{groups} = $dir{rand_genes}."/random_genes_n".$seq_nb."_r".$repet.".tab";
+
+
+## Open output stream
+#if ($task{group_distrib}) {
+$out = &OpenOutputFile($outfile{log});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+#### Retrieve all upstream sequences in wc format. This allows to
+#### load them rapidly for further analysis
+if ($task{upstream}) {
+    &RSAT::message::TimeWarn("Retrieving upstream sequences") if ($verbose >= 1);
+    my $command = "retrieve-seq -org $organism_name ";
+    $command .= " -all -type upstream -nocomment -lw 0";
+    $command .= " -from ".$up_from;
+    $command .= "  -to ".$up_to;
+    $command .= "  -format wc";
+    $command .= " -label id";
+    $command .= " -o ".$outfile{upstream_seq};
+    print $out "; $command\n";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+################################################################
+##### Select random gene groups
+if ($task{random}) {
+  &RSAT::message::TimeWarn("Selecting random gene groups", $outfile{groups}) if ($verbose >= 1);
+  $command = "random-genes -org ".$organism_name;
+  $command .= " -g ".$repet;
+  $command .= " -n ".$seq_nb;
+  $command .= " -o ".$outfile{groups};
+  print $out "; $command\n";
+  &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+
+################################################################
+## Run oligo-analysis to count oligonucleotide occurrences in each
+## random sequence set.
+if ($task{oligos}) {
+  unless (defined($end)) {
+    $end = $repet;
+  }
+  for my $r ($start..$end) {
+
+    my $rnum = &RSAT::util::number_with_zeros($r, maxval=>$repet);
+
+    #### select one gene group
+    my $one_group_file = $dir{oligos}."/RAND_n".$seq_nb."_r".$r.".fam";
+    &RSAT::message::TimeWarn("oligo-analysis", "repetition",$rnum."/".$repet) if ($verbose >= 1);
+#    $command = "grep 'RAND".$r."\$' ".$outfile{groups};
+#    $command .= " | cut -f 1 ";
+    $command = "awk -F\'\\t' '\$2==\"rand".$rnum."\" {print \$1}' ".$outfile{groups};
+    $command .= " > ".$one_group_file;
+    print $out "; $command\n" if ($r == 1);
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    #### select the corresponding upstream sequences
+    my $oligo_file = $dir{oligos}."/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$rnum;
+    $command = "grep -f ".$one_group_file." ".$outfile{upstream_seq};
+    $command .= " | oligo-analysis -format wc -return occ ".$str;
+    $command .= " -v 1" if ($r == 1);
+    $command .= " ".$ov;
+    $command .= " -l ".$oligo_len;
+    $command .= " -o ".$oligo_file;
+    print $out "; $command\n" if ($r == 1);
+    &doit($command, $dry_run, $die_on_error, $verbose);
+  }
+}
+
+################################################################
+#### Regroup oligo-counts in a single table
+#  my $oligo_table = $organism_name."_oligo_counts_".$oligo_len."nt_r".$repet.".tab";
+#  &RSAT::message::TimeWarn("oligo table\t",$oligo_table,"\n" if ($verbose >= 1);
+#  $command = "compare-scores -o ".$oligo_table;
+#  $command .= " -null 0 -sc 3 -files oligos/oligos_".$oligo_len."nt_r*";
+# print $out "; $command\n";
+#&doit($command, $dry_run, $die_on_error, $verbose);
+
+################################################################
+#### Calculate distribution of occurrences for each oligonucleotide in random groups of sequences
+our $max_occ = 0;
+our %counts = ();
+our %count_sum = ();
+our %overlaps = ();
+if ($task{group_distrib}) {
+  &RSAT::message::TimeWarn("oligo count distributions in random groups\t",$outfile{group_distrib}) if ($verbose >= 1);
+  for my $r (1..$repet) {
+    my $rnum = &RSAT::util::number_with_zeros($r, maxval=>$repet);
+
+    my $oligo_file = $dir{oligos}."/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$rnum;
+    #	my $oligo_file = "oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$r;
+    &RSAT::message::Debug("oligo file", $r."/".$repet, $oligo_file) if ($main::verbose >= 4);
+    &RSAT::error::FatalError("File ".$oligo_file." does not exist in directory ".$dir{rand_genes}."\n") unless (-e $oligo_file);
+    my ($oligos) = &OpenInputFile($oligo_file);
+    while (<$oligos>) {
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header line
+      next unless (/\S/); ## Skip empty lines
+      chomp;
+      my ($pattern, $id, $occ, $ovl) = split "\t", $_;
+      #	warn $r, "\t", $pattern, "\t", $occ, "\n";
+      $counts{$pattern}{$occ}++;
+      $overlaps{$pattern}{$ovl}++;
+      $max_occ = $occ if ($max_occ < $occ);
+      $count_sum{$pattern}++;
+    }
+    close $oligos;
+  }
+
+  ## Print the group distributions in the output file
+  my $distrib = &OpenOutputFile($outfile{group_distrib});
+  print $distrib "; oligo count distributions in random groups\n";
+  print $distrib "; ", join ("\t", "pattern", 0..$max_occ), "\n";
+  foreach my $pattern (sort keys %count_sum) {
+    ## calculate number of groups without any occurrence of this pattern
+    $counts{$pattern}{0} = $repet - $count_sum{$pattern};
+    print $distrib $pattern;
+    for my $occ (0..$max_occ) {
+      unless ($counts{$pattern}{$occ}) {
+	$counts{$pattern}{$occ} = 0;
+      }
+      printf $distrib "\t%d", $counts{$pattern}{$occ};
+    }
+    print $distrib "\n";
+  }
+  close($distrib);
+}
+
+################################################################
+#### Clean data files (just hold the distrib files).
+
+## Delete sequence files.
+if ($task{clean_seq}) {
+    &RSAT::message::TimeWarn("Deletingsequence file") if ($verbose >= 1);
+    my $command = "rm -f ".$outfile{upstream_seq};
+    &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+## Delete files with oligonucleotide counts.
+if ($task{clean_oligos}) {
+    &RSAT::message::TimeWarn("Deleting oligos from directory\t", $dir{rand_genes}) if ($verbose >= 1);
+    my $command = "\\rm -rf ".$dir{oligos};
+#    $command .= " oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r*";
+#    $command .= " oligos/RAND*.fam";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+################################################################
+## Calculate statistics on each pattern count distribution in random
+## groups of sequences
+
+#&CalculateStatistics() if ($task{stats});
+&FitDistribution() if ($task{fit});
+
+
+&CloseVerbose();
+
+&RSAT::message::TimeWarn("Log file", $outfile{log});
+&RSAT::message::TimeWarn("Result stored in directory", $dir{output});
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	calibrate-oligos
+
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
+DESCRIPTION
+
+	Calibrate oligonucleotide frequencies in upstream sequences of
+	a selected organism. The calibration can be gene-wise (count
+	oligo frequencies in the upstream sequence of each gene) or
+	cluster-wise (count oligo frequencies in upstream sequences of
+	random gene selections).
+
+CATEGORY
+	util
+
+USAGE
+        calibrate-oligos -org organism [-r #] [-start #]
+	    [-sl #] [-sn #] [-ol #]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-outdir outputdir
+	-task selected_task
+		Select the tasks to be performed.
+		Supported tasks: $supported_tasks
+
+		Can be used iteratively on the same command line to
+		select multiple tasks.
+
+		Example:
+		    -task upstream -task oligos -task distrib
+		For a full analysis, simply type
+		    -task all
+    Repetitions
+	-r #	repetitions
+	-start #
+	        starting iteration (to pursue an interrupted test)
+	-end #	ending iteration (to pursue an interrupted test)
+
+    Upstream sequences
+	-org organism
+	-sl	sequence length
+	-sn	sequence number
+
+    oligo-analysis
+	-ol	oligo length
+	-1str   strand-sensitive analysis
+	-2str   strand-insensitive analysis
+	-noov	prevent overlapping matches for self-overlapping patterms
+		(default)
+	-ovlp	allow overlapping matches for self-overlapping patterms
+
+TASKS
+    all
+        Perform all the supported tasks
+
+    upstream
+	Retrieve all upstream sequences in wc format. This allows to
+	load them rapidly for further analysis.
+
+    random
+	Select random gene groups.
+
+    oligos
+	Count oligonucleotide occurrences in each random group.
+
+    group_distrib
+	Calculate distribution of occurrences for each
+	oligonucleotide.
+
+    fit
+	Fit theoretical distributions (Poisson and negbin) on the
+        observed distribution.
+
+   clean_seq
+	Delete sequence files.
+
+   clean_oligos
+	Delete oligonucleotide count files.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+calibrate-oligos options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-outdir		output dir
+-v		verbose
+-task		selected task (supported: $supported_tasks)
+-r #		repetitions
+-start #	starting iteration (to pursue an interrupted test)E
+-end #  	ending iteration (to pursue an interrupted test)E
+-org		organism
+-sl		sequence length
+-sn		sequence number
+-ol		oligo length
+-1str   	strand-sensitive analysis
+-2str   	strand-insensitive analysis
+-noov		prevent overlapping matches for self-overlapping patterms
+-ovlp		allow overlapping matches for self-overlapping patterms
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name =$ARGV[$a+1];
+
+	    ### repetitions
+	} elsif ($ARGV[$a] eq "-r") {
+	    $repet = $ARGV[$a+1];
+
+	    ### sequence length
+	} elsif ($ARGV[$a] eq "-sl") {
+	    $seq_len = $ARGV[$a+1];
+
+	    ### sequence number
+	} elsif ($ARGV[$a] eq "-sn") {
+	    $seq_nb = $ARGV[$a+1];
+	    &RSAT::error::FatalError($seq_nb, "Invalid sequence number. Should be a Natural") unless (&IsNatural($seq_nb));
+	    &RSAT::error::FatalError($seq_nb, "Invalid sequence number. Should be > 1") unless ($seq_nb > 1);
+
+	    ### oligo length
+	} elsif ($ARGV[$a] eq "-ol") {
+	    $oligo_len = $ARGV[$a+1];
+
+	    ### strands
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $force{strands} = "1str";
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $force{strands} = "2str";
+
+	    #### prevent self-overlap
+	} elsif ($ARGV[$a] eq "-noov") {
+	    $noov = 1;
+
+	    #### allow self-overlap
+	} elsif ($ARGV[$a] eq "-ovlp") {
+	    $noov = 0;
+
+	    ### output directory
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $dir{output} = $ARGV[$a+1];
+
+	    ### starting iteration
+	} elsif ($ARGV[$a] eq "-start") {
+	    $start = $ARGV[$a+1];
+
+	    ### ending iteration
+	} elsif ($ARGV[$a] eq "-end") {
+	    $end = $ARGV[$a+1];
+
+	    #### task selection
+	} elsif ($ARGV[$a] eq "-task") {
+	    my @requested_tasks = split ",", $ARGV[$a+1];
+	    foreach my $task (@requested_tasks) {
+		next unless $task;
+		if ($supported_task{$task}) {
+		    $task{$task} = 1;
+		} else {
+		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		}
+	    }
+
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; calibrate-oligos ";
+    &PrintArguments($out);
+
+    printf $out "; %-29s\t%s\n", "Organism", $organism_name;
+    printf $out "; %-29s\t%s\n", "Sequence length", $seq_len;
+    printf $out "; %-29s\t%s\n", "Sequence number", $seq_nb;
+    printf $out "; %-29s\t%s\n", "Repetitions", $repet;
+    printf $out "; %-29s\t%s\n", "Sequence file", $outfile{upstream_seq};
+    printf $out "; %-29s\t%s\n", "Random gene selections", $outfile{groups};
+    printf $out "; %-29s\t%s\n", "Oligonucleotide length", $oligo_len;
+    printf $out "; %-29s\t%s\n", "Strands", $str;
+    printf $out "; %-29s\t%s\n", "Overlap mode", $ov;
+
+    ## Directories
+    if (%main::dir) {
+      print $main::out "; Directories\n";
+      foreach my $key (sort keys  %main::dir) {
+	my $dir = $main::dir{$key};
+	printf $main::out ";\t%-14s\t%s\n", $key, $dir;
+      }
+    }
+
+    ## Input files
+    if (%main::infile) {
+      print $main::out "; Output files\n";
+      foreach my $key (sort keys  %main::infile) {
+	my $file = $main::infile{$key};
+	printf $main::out ";\t%-14s\t%s\n", $key, $file;
+      }
+    }
+
+    ## Output files
+    if (%main::outfile) {
+      print $main::out "; Output files\n";
+      foreach my $key (sort keys  %main::outfile) {
+	my $file = $main::outfile{$key};
+	printf $main::out ";\t%-14s\t%s\n", $key, $file;
+      }
+    }
+}
+
+################################################################
+###### finish verbose
+sub CloseVerbose {
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out;
+}
+
+
+################################################################
+## Fit theoretical distributions (Poisson and negbin) on the observed
+## distribution.
+sub FitDistribution {
+    for my $theor ("negbin", "poisson") {
+	my $command = "fit-distribution -v 1";
+	$command .= " -distrib ". $theor;
+	$command .= " -i ".$outfile{group_distrib};
+	$command .= " -o ".$outfile{$theor};
+	&doit($command, $dry_run, $die_on_error, $verbose);
+    }
+}
+
+################################################################
+### OBSOLETE
+### Previous method for calculating statistics. This is now done with
+### the script fit-distribution
+sub CalculateStatistics {
+    &RSAT::message::TimeWarn("oligo count statistics\t",$outfile{stats}) if ($verbose >= 1);
+
+    $out = &OpenOutputFile($outfile{stats});
+    &Verbose();
+
+    #### header
+    print $out join ("\t",
+		     "; pattern",
+		     "sum",
+#		     "ssq",
+		     "avg",
+		     "var",
+		     "std",
+		     "chi2",
+		     "df",
+		     "Lgroup",
+		     "Rgroup",
+		     ), "\n";
+
+
+    ## Open the file with count distributions
+    ($group_distrib) = &OpenInputFile($outfile{group_distrib});
+
+    my $pattern_count = 0;
+    while (<$group_distrib>) {
+	next unless (/\S/);
+	next if (/^;/);
+	chomp();
+	$pattern_count++;
+	my @counts = split "\t";
+	my $pattern = shift @counts;
+	my $max_occ = $#counts;
+	my $sum = 0;
+	my $ssq = 0;
+	for my $occ (0..$max_occ) {
+	    $sum += $occ*$counts[$occ];
+	    $ssq += $occ*$occ*$counts[$occ];
+	}
+	my $avg = $sum/$repet;
+	my $var = $ssq/$repet - $avg*$avg;
+	my $std = sqrt($var);
+
+	## Fit a poisson distribution and calculate the goodness of fit
+	my @expected = poisson($max_occ, $avg, 1);
+	my $exp_sum = 0;
+	foreach my $i (0..$#expected) {
+	    $expected[$i] *= $repet;
+	    $exp_sum += $expected[$i];
+	}
+
+	## Perform a chi-square test
+	my ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, 1, @counts, @expected);
+
+	## Discard cases where applicability conditions are not met
+	unless (&IsReal($chi2)) {
+	    $chi2 = "NA";
+	}
+
+	warn join ("\t", $pattern, $sum, $ssq, $avg, $var, $std, $exp_sum, $chi2, $df, $left_group, $right_group), "\n" if ($verbose >= 3);
+
+	print $out join ("\t",
+			 $pattern,
+			 $sum,
+#			 $ssq,
+			 $avg,
+			 $var,
+			 $std,
+			 $chi2,
+			 $df,
+			 $left_group,
+			 $right_group,
+#			 @counts,
+#			 @expected,
+			 ), "\n";
+    }
+
+    &CloseVerbose();
+}

@@ -1,0 +1,184 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::OrganismManager;
+
+&FatalError ("add-orf-function is obsolete. Use add-gene-info instead"); 
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	add-orf-function
+
+DESCRIPTION
+	Takes as input a tab-delimited file where the first word of
+	each row is an ORF identifier, and adds a column with a
+	description of the ORFs.
+	
+CATEGORY
+	genomics
+
+USAGE
+        add-orf-function [-i inputfile] [-o outputfile] [-v] 
+        [-col orf_column] -org organism
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-col #  Indicate the column containing the ORF identifier.
+                If not provided, all words looking like an ORF identifier
+                are interpreted.
+	-org organism
+	     supported organisms : 
+$supported_organisms
+	
+INPUT FORMAT
+	Any text file containing yeats ORF identifiers.
+	
+OUTPUT FORMAT
+	After each line containing reference to an ORF, a 
+        column with ORF function is added. 
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+add-orf-function options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-col #  ORF column
+-org		organism
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+$ORF_column = 1;
+
+#### initialise parameters ####
+#$ORF_function_file = "$ENV{RSAT}/public_html/data/yeast/genome/MIPS.orf_function";
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-col") {
+    $ORF_column = $ARGV[$a+1];
+
+    #### organism
+  } elsif ($ARGV[$a] eq "-org") {
+      $organism_name =$ARGV[$a+1];
+  }
+
+}
+
+
+#### output file ####
+$out = &OpenOutputFile($outputfile);
+
+#### organism
+&RSAT::OrganismManager::CheckOrganism($organism_name);
+
+#### read data
+$feature_types = sort keys %supported_feature_types;
+&ReadFeatures($organism_name,"",$feature_types);
+&ReadSynonyms($organism_name);
+
+
+#### verbose ####
+if ($verbose) {
+  print $out "; add-orf-function ";
+  &PrintArguments($out);
+  print $out "; Input file	$inputfile\n" if ($inputfile);
+  print $out "; Output file	$outputfile\n" if ($outputfile);
+
+}
+
+
+#### input file ####
+($in) = &OpenInputFile($inputfile);
+###### execute the command #########
+while ($current_line = <$in>) {
+    if (!($current_line =~ /\S/) || 
+	($current_line =~ /^;/)
+	) {
+	print $out $current_line;
+	next;
+    }
+    $current_line =~ s/\r//g;
+    chomp($current_line);
+    if ($ORF_column > 0) {
+	@columns = split("\t", $current_line);
+	$query = uc($columns[$ORF_column - 1]);
+	my $orf_id = "";
+	my $name = "";
+	my $descr = "";
+	my $synonyms = "";
+	if (defined($orf_id{$query})) {
+	    $orf_id = $orf_id{$query};
+	    $name = $name{$orf_id};
+	    $descr = $descr{$orf_id};
+	    @synonyms = @{$synonyms{$orf_id}};
+	    if (@synonyms) {
+#		$synonyms = "[";
+		$synonyms = join (";", @synonyms);
+#		$synonyms .= "]";
+	    }
+	}
+	print $out join ("\t", $current_line, $descr, $synonyms), "\n";
+    }
+#    print $out "$current_line\t";
+#    print $out "$function{uc($ORF_id)}\n";
+}
+
+
+
+###### close input/output files
+close $in if $inputfile;
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+

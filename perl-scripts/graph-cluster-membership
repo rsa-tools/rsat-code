@@ -1,0 +1,662 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-cluster-membership,v 1.28 2011/02/17 04:54:49 rsat Exp $
+#
+############################################################
+
+## use strict;
+=pod
+
+=head1 NAME
+
+graph-cluster-membership
+
+
+=head1 DESCRIPTION
+
+Map a clustering result onto a graph, and compute the membership
+degree between each node and each cluster, on the basis of egdes
+linking this node to the cluster.
+
+The result is a membership table, indicating the membership
+coefficient of each node (row) to each cluster (column).
+
+The result can be interpreted as a 'fuzzy clustering' of a graph,
+where nodes can belong to multiple clusters, with various degree of
+membership.
+
+=head1 STATISTICS
+
+
+The membership coefficient is the fraction of weight of the edges
+linking a node to a cluster relative to the total weight of edges of
+that node.
+
+In assigning the membership of a node to a cluster, there are several
+possiblities:
+
+=over
+
+=item weight sum (option I<-stat weight>)
+
+The membership of node I<n> for cluster I<c> is is the fraction of
+edge weights linking node I<n> to cluster I<c>.
+
+          Nc            N
+Mw(n,c)= SUM[W(n,i)] / SUM[W(n,j)]
+          i             j
+
+where I<W(n,i)> is the weight of the edge between nodes I<n> and I<i>,
+i is the index for the nodes Nc belonging to
+cluster c, and j is the index for all nodes N.
+
+=item relative weight sum  (option I<-stat relw>)
+
+The weight of the connections of a node to a given cluster are
+normalized to the size of the cluster:
+
+
+           Nc                K    Nk
+Mrw(n,c)= (SUM[W(n,i)]/Nc) / SUM (SUM[W(n,j)/Nk])
+           i                 k    j
+
+where I<K> is the set of all clusters,
+the other symbols are defined as above.
+
+The relative weight reduces the bias of membership coefficients towards
+large clusters
+
+
+=item edge fraction (option I<-stat edge>)
+
+The membership Me(n,c) of node I<n> for a cluster I<c> is the number of edges
+connecting node I<n> to any node belonging to cluster I<c> divided by
+the total number of edges connecting node I<n>.
+
+          Nc           N
+Me(n,c)= SUM[E(n,i)]/ SUM[E(n,j)]
+          i            j
+
+where I<E(n,i)> is a boolean variable indicating if there is an edge
+between nodes I<n> and I<i>, the other symbols are defined as above.
+
+
+=item relative relative edge  (option I<-stat reledge>)
+
+The number of edges of a node to a given cluster are
+normalized to the size of the cluster:
+
+
+           Nc                K    Nk
+Mre(n,c)= (SUM[E(n,i)]/Nc) / SUM (SUM[E(n,j)/Nk])
+           i                 k    j
+
+where all symbols are defined as above.
+
+
+
+=back
+
+
+=head1 AUTHORS
+
+=over
+
+=item Gipsi Lima Mendez <gipsi@bigre.ulb.ac.be>
+
+=back
+
+With the help of
+
+=over
+
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+
+=back
+
+=head1 CATEGORY
+
+=over
+
+=item graph analysis
+
+=item clustering
+
+=back
+
+=head1 USAGE
+
+graph-cluster-membership [-i graphfile] [-clusters file_with_cluster_assignment] [-o outputfile] [-stat stat_option] [-v #] 
+
+=head1 INPUT FORMAT
+
+=head2 Graph format
+
+All the input graph formats supported by RSAT/NeAT (see convert-graphs
+for a description).
+
+=head2 Cluster format
+
+A two-column tab-delimited file with columns corresponding
+respectively to node name and cluster name, respectively. If
+additional columns are present in the cluster file, they are ignored.
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited membership table, where each row represents a node,
+and each column a cluster. Entries are the membership coefficients of
+the node given by the row to the cluster given by the column.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    ################################################################
+    ## Initialize the input graph # this is Sylvain stuff
+     my $graph = new RSAT::Graph2();
+     $graph->set_attribute("label", "graph");
+
+    ## Input formats
+    local $input_format = "tab";
+    local $decimals;
+    %supported_input_format =(
+	tab=>1,
+	gml=>1,
+	adj_matrix=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = "";
+    
+    my @nodeorder = ();
+    
+    my $clusters = {};
+    my $Membership = {};
+    my $WeightMat= {};
+    %main::infile = ();
+    %main::outfile = ();
+    #$main::verbose = 0;
+    $main::out = STDOUT;
+    $main::norm{stat} = 'weight';
+
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    
+    # to check that there are two input files!!!
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    
+    ## Read input graph # this is Sylvain stuff
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0,0,0,0);
+    
+    
+    ### read partition. nodes in the partition are named after their name
+    ($main::in) = &OpenInputFile($main::infile{partition});
+    while (my $line = <$main::in>) {
+    	chomp $line;	
+	next if ($line =~ /^#/ || $line =~ /^;/);
+        my @line = split("\t",$line);
+	$line[1] =~ s/cluster_//g; # this eliminates the prefix of mcl clusters and leaves only the numeric ID. useful to sort.
+	$line[1] =~ s/cl_//g; # this eliminates the prefix of mcl clusters and leaves only the numeric ID. useful to sort.
+	
+        push(@nodeorder, $line[0]);
+	$clusters->{'node_cluster'}->{$line[0]}=$line[1];
+	$clusters->{'cluster_node'}->{$line[1]}->{$line[0]} = 1;
+
+    }
+    close $main::in;
+    # check if clusters names are string or numbers
+    $clusters->{'num'}=1;
+    foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
+    	if ($cluster !~ /^(\d+)$/) {
+			$clusters->{'num'}=0;
+			last;
+		}
+    }
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## get the graph. nodes in the graph object are encoded after an id.
+    
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @weights = $graph->get_attribute("out_label");
+    my $R_weights = $graph->get_weights();
+    if ($R_weights == 0 && ($main::norm{stat} ne 'edge' && $main::norm{stat} ne 'reledge')) {
+    	if ($main::norm{stat} eq 'weight') {
+    	    &RSAT::message::Info("Weights are not real numbers!  Stat switched from weight to edge");
+	    $main::norm{stat} ='edge';
+	}
+	else {
+    	    &RSAT::message::Info("Weights are not real numbers!  Stat switched from relw to relative edge");
+	    $main::norm{stat} = 'reledge';
+	}
+    }
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name= $graph->get_attribute("nodes_id_name");
+    
+    # Check that all nodes of the clusters are in the graph and initialize the membership of node to clusters. Here the node is the node name.
+    foreach my $node (keys %{$clusters->{'node_cluster'}}) {
+    	unless (defined $nodes_name_id{$node}) {
+	    &RSAT::error::FatalError("Incongruence between graph and cluster files: Node $node is in clusters but not in graph");
+	}
+    	foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
+	   $WeightMat->{$node}->{$cluster} = 0;
+	}
+    }
+    
+    
+    foreach my $n1 (keys %{$clusters->{'node_cluster'}}) { # here I get all nodes
+	# get partition cluster for node n1
+	my $clust1 = $clusters->{'node_cluster'}->{$n1};
+	my $sizeCluster1 = scalar(keys %{$clusters->{'cluster_node'}->{$clust1}});
+	# get n1 id
+	my $n1_id = $nodes_name_id{$n1};
+	next unless (defined @{$out_neighbours[$n1_id]});
+	my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
+	my @n1_out_weights = @{$weights[$n1_id]};
+	my $index = 0;
+	foreach my $n2_id (@n1_out_neighbours) {
+	    # get n2 name
+	    my $n2 = $nodes_id_name{$n2_id};
+	    # get cluster where n2 is
+	    next unless (defined $clusters->{'node_cluster'}->{$n2});
+my $clust2 = $clusters->{'node_cluster'}->{$n2};
+	    my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
+
+	    if ($main::norm{stat} eq 'relw') {
+   		     # with this option the weight of the edges to a node n is normalized to the size of the cluster to which node n is assigned in the clustering
+
+		    $WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index]/$sizeCluster2;
+
+		    $WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index]/$sizeCluster1;
+	    }
+
+	    elsif ($main::norm{stat} eq 'weight') {
+	    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index];
+
+		$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index];
+
+	    }
+	    elsif ($main::norm{stat} eq 'edge') {
+	    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + 1;
+
+		$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + 1;
+
+	    }
+	    elsif ($main::norm{stat} eq 'reledge') {
+		    $WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + 1/$sizeCluster2;
+
+		    $WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + 1/$sizeCluster1;
+	    
+	    }
+	    $index++;
+	}
+    }
+    
+    foreach my $node (keys %{$WeightMat}) {
+    	my $totalWeight = 0;
+		my $normWeight = 0;
+    	foreach my $cluster (keys %{$WeightMat->{$node}}) {
+	    	$totalWeight += $WeightMat->{$node}->{$cluster};
+		}
+    	foreach my $cluster (keys %{$WeightMat->{$node}}) {
+	    	unless ($totalWeight == 0) {
+    	    	$Membership->{$node}->{$cluster} = ($WeightMat->{$node}->{$cluster})/$totalWeight;
+				&RSAT::message::Info("Node ", $node, "belongs to cluster ",$cluster, " with membership degree ",$Membership->{$node}->{$cluster}) if ($main::verbose >= 3);
+	    	}
+	    	else {
+	    		$Membership->{$node}->{$cluster} = "NA";
+	    	}	
+    	}
+    }
+
+    ################################################################
+    ## Print output
+    
+    # check if cluster ids are numeric, then sort after id. Otherwise sort alphabetically
+    
+    my @header;
+    if ($clusters->{'num'} == 1) {
+    	@header = sort({$a <=> $b} keys %{$clusters->{'cluster_node'}});
+	}
+	else {
+    	@header = sort({$a cmp $b} keys %{$clusters->{'cluster_node'}});
+	}
+    
+    print $main::out ";\tNode-Cluster Membership\n";
+    print $main::out ";Nodes\\Clusters\n#";
+    foreach my $cluster (@header) {
+    	print $main::out "\t","cl_".$cluster;
+    }
+    print $main::out "\n";
+    
+#     foreach my $node (keys %{$Membership}) {
+      foreach my $node (@nodeorder) {
+    	print $main::out $node;
+    	foreach my $cluster (@header) {
+	    unless (defined $Membership->{$node}->{$cluster}) {
+	    $Membership->{$node}->{$cluster} = 0;
+	    }
+	    if (defined $decimals) {
+		    print $main::out "\t",sprintf("%.${decimals}f", $Membership->{$node}->{$cluster});
+	    }
+	    else {
+		    print $main::out "\t",$Membership->{$node}->{$cluster};
+	    }
+	}
+	print $main::out "\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i graphfile>
+
+graph file. 
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{graph} = shift(@arguments);
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes in the tab-delimited
+graph file.  Default 1.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes in the tab-delimited
+graph file. Default 2.
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight of the nodes in the tab-delimited
+graph file.
+
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+
+
+	    
+=pod
+
+=item	B<-clusters partition_file>
+
+clustering as a tab-delimited file
+
+=cut
+	} elsif ($arg eq "-clusters") {
+	    $main::infile{partition} = shift(@arguments);
+
+=pod
+
+=item B<-in_format input_format>
+
+Input format for graph. See convert-garph for supported graph-formats
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+    ### output file
+=pod
+
+=item B<-o outfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+=pod
+
+=item B<-stat>
+
+Determines how the node membership will be calculated:
+
+
+-stat weight (default)
+
+The membership of node I<n> for cluster I<c> is is the fraction of
+edge weights linking node I<n> to cluster I<c>.
+
+-stat relw
+
+The weight of the edge between node I<n> and nodes of cluster I<c> are standardized after the size of cluster I<c>. Reduces the bias of membership coefficients towards large clusters.
+
+-stat edge
+
+The membership of node I<n> to cluster I<c> is calculated as the fraction of the total edges of  node I<n> that are linking to nodes of the cluster I<c>.  
+
+-stat reledge
+
+The number of edges  of node I<n> to cluster I<c> are first standardized after the size of cluster I<c>. Next, the membership of node I<n> to cluster I<c> is calculated as the fraction of the standardized edges of  node I<n> that are linking to nodes of the cluster I<c>.  
+
+
+=cut
+	    
+	    
+	} elsif ($arg eq '-stat') {
+		$main::norm{stat} = shift(@arguments);
+		unless ($main::norm{stat} eq 'edge' || $main::norm{stat} eq 'reledge' || $main::norm{stat} eq 'relw' || $main::norm{stat} eq 'weight') {
+		  	&RSAT::error::FatalError("Invalid stat ",$main::norm{stat});
+		    
+		}
+=pod
+
+=item B<-decimals number_of_decimals>
+
+Number of decimals to print for the membership. Note that by selecting this option, the entries of the membership-vectors (rows) won't sum up to 1.
+
+=cut
+	    
+	} elsif ($arg eq '-decimals') {
+	    $decimals = shift(@arguments);
+    	  unless (&IsNatural($decimals)) {
+		  	&RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
+    	  }
+		
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+		}
+    }
+
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; graph-cluster-membership ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (%main::infile) {
+		print $main::out "; Input files\n";
+		while (my ($key,$value) = each %main::infile) {
+	    	print $main::out ";\t$key\t$value\n";
+		}
+    }
+    if (%main::outfile) {
+		print $main::out "; Output files\n";
+		while (my ($key,$value) = each %main::outfile) {
+	    	print $main::out ";\t$key\t$value\n";
+		}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<graph-neighbours>
+
+=item I<convert-graph>
+
+=item I<convert-classes>
+
+
+=item All the other graph- and cluster-handling programs of RSAT/NeAT
+
+=back
+
+=cut

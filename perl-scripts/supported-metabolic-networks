@@ -1,0 +1,270 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-metabolic-networks,v 1.2 2013/10/11 04:25:33 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+supported-metabolic-networks
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+This program returns the list of networks supported for the metabolic
+network analysis tools in the RSAT/NeAT suite.
+
+=head1 AUTHORS
+
+=item didier.croes@ulb.ac.be
+
+=item Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=item metabolism
+
+=back
+
+=head1 USAGE
+
+supported-metabolic-networks [-o outputfile] [-v #] [...]
+
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+
+  @selected_sources = ();## TEMPORARY: for the time being, all th sources available on the server are reported
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  $dir{networks} = $ENV{RSAT}."/public_html/data/metabolic_networks/networks";
+
+  ## Collect the list of directories in the network folder
+  my @dirlist = glob($dir{networks}."/*");
+  my @sources = ();
+  foreach my $dir (@dirlist) {
+    $dir =~ s|$dir{networks}/+||;
+    push @sources, $dir;
+  }
+  @selected_sources = @sources; ## TEMPORARY: will be replaced by a parameter allowing the user to select one or several sources
+
+
+  ## Collect the list of networks for each source (list of tab-delimited files)
+  my %networks_per_source;
+  foreach my $source (@selected_sources) {
+    $dir{$source} = $dir{networks}."/".$source;
+    @file_list =  glob($dir{$source}."/*-metab-network.tab");
+    foreach my $filename (@file_list) {
+      my $network = &RSAT::util::ShortFileName($filename);
+      $network =~ s|-metab-network.tab||;
+      push @{$networks_per_source{$source}}, $network;
+    }
+  }
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Print the result
+  foreach my $source (@selected_sources) {
+    foreach my $network (@{$networks_per_source{$source}}) {
+      print $out join("\t", $network, $source), "\n";
+    }
+  }
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; supported-metabolic-networks ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::dir) {
+    print $out "; Directories\n";
+    while (my ($key,$value) = each %main::dir) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__

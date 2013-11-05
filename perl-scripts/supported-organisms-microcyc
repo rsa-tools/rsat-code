@@ -1,0 +1,381 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-organisms-microcyc,v 1.2 2012/08/10 05:57:48 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+supported-organisms-genoscope
+
+=head1 VERSION
+
+$program_version
+
+
+=head1 DESCRIPTION
+
+Get the list of organisms supported at the MicroCyc database
+(https://www.genoscope.cns.fr/agc/microscope/), using the Web services
+(http://www.genoscope.cns.fr/microme/microcyc-wsc/).
+
+=head2 AUTHOR
+
+Jacques van Helden
+
+Adapted from a prototype Python script implemented by Quentin DA COSTA
+and Jonathan VERNEAU, Master students at Aix-Marseille Unviersité,
+March 2012.
+
+=head2 DOCUMENTATION
+
+The Genoscope Web services are documented in the WSDL file.
+
+http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl
+
+=head1 CATEGORY
+
+=over
+
+=item metabolism
+
+=item genomes
+
+=back
+
+=head1 USAGE
+
+supported-organisms-genoscope [-o outputfile] [-v #] [...]
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited file with one row per organism, and one column per
+attribute.
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+use SOAP::Lite;
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $null = "";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+
+  ## Open a connection to the Genoscope Web services
+  my $microcyc_ws_url = 'http://www.genoscope.cns.fr/microcyc-webservice/services/fr.genoscope.agc.microcyc.business.MicrocycService.wsdl';
+  &RSAT::message::TimeWarn("Opening connection to Web services", $microcyc_ws_url) if ($main::verbose >= 2);
+  my $service = SOAP::Lite->service($microcyc_ws_url);
+  &RSAT::message::TimeWarn("Connection established", $service) if ($main::verbose >= 3);
+
+#  my @organism_ids = &GetOrganismIDList($service); &PrintOrganismIDs(@organism_ids);
+
+  my %organism_info = &GetOrganismInfo($service);
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; supported-organisms-genoscope ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+################################################################
+## Get the list of supported organism IDs at Genoscope
+sub GetOrganismIDList {
+  my ($service) = @_;
+
+  ## Retrieve the list of supported organisms.  SOAP returns a Perl
+  ## reference pointing to the result structure, which is a hash
+  ## table.
+  my $result_pointer = $service->getListingPgdbFrameVersion();
+  my %result_hash = %{$result_pointer};
+
+  ## For this service, the result hash table contains a single
+  ## key-value pair, the key is "string", and the value is an array of
+  ## organism IDs. We simply return this array
+  return(@{$result_hash{"string"}});
+}
+
+
+
+################################################################
+## Get information (name, taxid) about each organism.
+sub GetOrganismInfo {
+  my ($service) = @_;
+  my $result_pointer = $service->getAllPgdbs();
+  my $result_array_pointer = $result_pointer->{pgdbVerySimpleVO};
+  my @result_array = @{$result_array_pointer};
+#  &RSAT::message::Debug(join ("\n", @result_array)) if ($main::verbose >= 10);
+
+  ## Print output field descriptions
+  my @output_fields = qw(frameVersion
+			 id
+			 commonName
+			 taxon
+			 frame
+			);
+  my %descr = (frameVersion=>"concatenation of MetaCyc organism identifier (\"frame\") and version.",
+	       frame=>"MetaCyc organism identifier (\"frame\").",
+	       id=>"Identifier (entry number) in the genoscope database (reflects chronology of genome import in MicroScope).",
+	       commonName=>"Genus + species name",
+	       taxon=>"Taxon identifier as specified in the NCBI taxonomy database (TAXID).");
+
+  print $out "; Column contents\n";
+  my $f = 0;
+  foreach my $field (@output_fields) {
+    $f++;
+    print $out join ("\t", ";", $f, $field, $descr{$field}), "\n";
+  }
+
+
+  ## Print header line
+  print $out "#", join("\t", @output_fields), "\n";
+
+  ## Export organism attributes
+  foreach my $org_pointer (@result_array) {
+    my %org = %{$org_pointer};
+
+
+#     ## Explore the fields
+#     if ($main::verbose >= 10) {
+#       foreach my $key (keys %org_attributes) {
+# 	my $value = $org_attributes{$key};
+# 	&RSAT::message::Debug($key, $value);
+#       }
+#     }
+
+    ## Export organism attributes
+    my @attributes = ();
+    foreach my $field (@output_fields) {
+      my $value = $org{$field} || $null;
+      push @attributes, $value;
+    }
+
+    print $out join("\t", @attributes), "\n";
+  }
+
+  return();
+}
+
+
+################################################################
+## Print the table of organisms
+sub PrintOrganismIDs {
+  my @organism_ids = @_;
+
+  ## Print a header line
+  my @output_fields = qw(organism_name
+			 nb);
+
+  ## Print detail of column content. Not very useful for the time
+  ## being since we only have two output fields, but can be useful in
+  ## general if columns are added
+  if ($main::verbose >= 1) {
+    print $out ";\n; Column content\n";
+    my $f = 0;
+    foreach my $field (@output_fields) {
+      $f++;
+      print $out join ("\t", ";", $f, $field), "\n";
+    }
+  }
+
+  ## Print header line
+  print $out "#", join ("\t", @output_fields), "\n";
+  my $i = 0;
+  foreach my $org_name (@organism_ids) {
+    $i++;
+    print $out $org_name, "\t", $i, "\n";
+  }
+}
+
+
+
+__END__
+

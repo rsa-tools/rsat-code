@@ -1,0 +1,165 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials - consensus</title>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+<center>
+<h2><a href="../RSAT_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../consensus_form.cgi">consensus</a> 
+</h2>
+</center>
+
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href=#intro>Introduction</a>
+<li><a href=#example>Example of utilization</a>
+<li><a href=#interpret>Interpreting the result</a>
+<li><a href=#exercises>Additional exercises</a>
+</ol>
+
+<a name=intro></a><h2>Introduction</h2>
+<ul>
+In this tutorial, we will use consensus to discover motifs in the
+upstream sequences of the MET family, as we did for the <a
+href=tut_oligo-analysis.html>tutorial on oligo-analysis</a>.
+
+</ul>
+<a name=example></a><h2>Example of utilization</h2>
+<ul>
+
+We will retrieve the upstream sequence of a set of genes involved in
+phosphate metabolism, and try to predict their regulatory motif with
+consensus.
+
+<p>
+The two main parameters to estimate are the matrix width and the
+expected number of sites. For the matrix width, you should sample
+different possibilities, since some factors (like Pho4p) have a
+binding core of 5-10 contiguous base pairs, whereas other factors
+(like Gal4p) recognized a pair of trinucleotide, separated by a spacer
+of fixed width but variable content (see the <a
+href=tut_dyad-analysis.html>tutorial on dyad-analysis</a>).
+
+<ol>
+<p><li>Retrieve the upstream sequences of the PHO genes. Make sure to
+<b>inactivate</b> the option <b>Prevent overlap with neighbour
+genes</b>.
+
+<ul><pre>
+PHO5
+PHO8
+PHO11
+PHO81
+PHO84
+</pre></ul>
+
+<p><li>Send the resulting sequence to consensus by clicking on the
+button <b>consensus</b> at the bottom of the result page. 
+
+<p><li>In the consensus form, set the expected number of patterns to
+10. This relies on the observation that, in yeast, there are often
+between 1 and 3 binding sites for the same transcription factor per
+upsteram sequence. Since there are 5 genes in our test, we set the
+expected number of sites to 10. Two binding sites per gene is a
+reasonable first guess for yeast regulons, but beware that this might
+vary from organism to organism. 
+
+<p><li>Leave all other parameters unchanged and click <b>GO</b>.
+
+</ol>
+
+<p>
+After a few tens of seconds, you should see the result of this
+analysis.
+
+</ul>
+<a name=interpret></a><h2>Interpreting the results</h2>
+<ul>
+
+<p>
+The consensus outputs starts with a header, providing some description
+of the parameters and data set. After the header, the programs returns
+a set of matrices.
+
+<p>
+Each matrix represents the alignemnt of a set of sequence fragments,
+whose size was specified in the consensus parameters.
+
+<p>
+By default, the program returns the 4 most significant matrices. These
+matrices are often slight variants of the aame motif. With the PHO
+family, the 4 matrices are centered on CACGTG, which is indeeed the
+core of the Pho4p binding site.
+
+<p>
+The most informative statistics for estimating the significant of the
+discovered matrices is the expected frequency. With the settings used
+in the above example, we obtained an expected value of 0.07, which
+indicates the number of matrices with a higher or equal significance
+which would be obtained by chance alone.
+
+
+</ul>
+<a name=exercises></a><h2>Additional exercises</h2>
+<ul>
+
+<p>
+<ol>
+
+<p><li>Use consensus to predict regulatory elements in the GAL
+regulon.
+
+<pre>
+GAL1
+GAL2
+GAL3
+GAL7
+GAL80
+GCY1
+</pre>
+
+Note that you will need to sample different matrix width for detecting
+the Gal4p motif (you can for exmple try 10, 20, 30, and 40). For each
+matrix width, evaluate the significance of the result on the basis of
+the expected frequency. Which matrix width gives the highest
+significance ? Which motif is returned ? Does it contain to the Gal4p
+consensus ?
+
+<p><li>Select a random set of 10 yeast genes (with the program
+<b>random-genes</b>, retrieve their upstream sequences (<b>without</b>
+overlap with neighbour genes), and test this random selection with
+consensus. Perform this test a few times, with different numbers of
+random genes, and different settings. Examine the expected frequency
+of the resulting matrices.
+
+
+</ol>
+
+</ul>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+<page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<h4 class="footer">
+<address>
+For suggestions or information request, please contact 
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+
+</address></h4>
+
+</blockquote>
+</body>
+</html>

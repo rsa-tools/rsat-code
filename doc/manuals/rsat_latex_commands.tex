@@ -1,0 +1,157 @@
+%%%%%% Libraries %%%%%%%%%%%
+% fonts, layout
+% \usepackage[usenames]{color}
+\usepackage[dvipsnames,usenames]{color}
+
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{graphics}
+\usepackage{latexsym}
+\usepackage{makeidx}
+\usepackage{syntonly}
+\usepackage[T1]{fontenc}
+\usepackage{mathptm}
+\usepackage{epsf}
+\usepackage{latexsym}
+\usepackage{makeidx}
+\usepackage{fancyheadings}
+\usepackage{pdfpages}
+\usepackage{setspace} % controllable line spacing (default: 1,5)
+% urls
+\usepackage{url}
+ % tables
+\usepackage{ltxtable}
+\usepackage{longtable, lscape}
+% graphics
+\usepackage[bf,small,center]{subfigure}
+\usepackage[bf,small]{caption}
+\usepackage{multirow}
+\usepackage{color}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%listing package
+\usepackage{listings}
+
+% Specification for listings (code)
+\definecolor{Blue}{rgb}{0,0,0.5} %dark blue
+\definecolor{grey090}{gray}{0.90} % light gray
+\definecolor{bluepale}{rgb}{0.9,0.9,1} % light blue
+\lstset{ %
+  upquote=true,
+  basicstyle=\ttfamily\footnotesize,% the size of the fonts that are used for the code
+  numbers=none,                   % where to put the line-numbers
+  numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+  stepnumber=1,                   % the step between two line-numbers. If it's 1 each line will be numbered
+  numbersep=5pt,                  % how far the line-numbers are from the code
+  backgroundcolor=\color{bluepale},   % choose the background color. You must add \usepackage{color}
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores
+  frame=single,                   % adds a frame around the code
+  tabsize=2,                      % sets default tabsize to 2 spaces
+  captionpos=b,                   % sets the caption-position to bottom
+  breaklines=false,                % sets automatic line breaking
+  breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+  escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
+
+
+% hyperref package should be loaded last
+%\usepackage[hypertex]{hyperref}
+\usepackage[a4paper=true,pagebackref=true]{hyperref}
+% tune hyperref
+\hypersetup{
+  colorlinks = true,
+  linkcolor = blue,
+  anchorcolor = red,
+  citecolor = blue,
+  filecolor = red,
+  pagecolor = red,
+  urlcolor = blue
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%% commands %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\tbw}{\textbf{TO BE WRITTEN}}
+\newcommand{\RSAT}{\textbf{\textit{RSAT}}}
+\newcommand{\ensembl}{\textbf{\textit{EnsEMBL}}}
+\newcommand{\ensemblgenomes}{\textbf{\textit{EnsemblGenomes}}}
+\newcommand{\neat}{\textbf{\textit{NeAT}}}
+\newcommand{\file}[1]{\textit{#1}}
+\newcommand{\concept}[1]{\index{#1}\textsl{#1}}
+\newcommand{\command}[1]{\begin{footnotesize}\begin{quote}\textcolor{Blue}{\texttt{#1}}\end{quote}\end{footnotesize}}
+\newcommand{\result}[1]{\begin{footnotesize}\begin{quote}\textcolor{OliveGreen}{\texttt{#1}}\end{quote}\end{footnotesize}}
+\newcommand{\program}[1]{\textbf{\textsl{#1}}}
+\newcommand{\option}[1]{\texttt{#1}}
+\newcommand{\email}[1]{\textit{#1}}
+
+\newcommand{\authors}[1]{\begin{center}\textcolor{Violet}{\textbf{#1}}\end{center}}
+
+\newcommand{\address}[1]{\small{#1}}
+\newcommand{\org}[1]{\textit{#1}}
+\newcommand{\gene}[1]{\textit{#1}}
+\newcommand{\seq}[1]{\texttt{#1}}
+
+%\newcommand{\url}[1]{\textit{#1}}
+\newcommand{\urlref}[1]{\footnote{\url{#1}}}
+
+
+
+\newcommand{\bigreheader}{
+  \begin{tabular}{cl}
+    \multirow{3}{*}{\includegraphics[width=30mm]{images/bigre_logo2.ps}} 
+    & \small{\noindent Universit\'e Libre de Bruxelles}\\
+    & \small{Service de Bioinformatique des G\'enomes et Res\'eaux (BiGRe)}\\
+    & \small{Laboratory of Genome and Network Biology} \\
+    & \small{\url{http://www.bigre.ulb.ac.be/}}
+  \end{tabular}
+}
+
+\newcommand{\bigre}{
+  Laboratoire de Bioinformatique des G\'enomes et des R\'eseaux (BiGRe) \\
+  Laboratory of Genome and Network Biology \\
+  Universit\'{e} Libre de Bruxelles, Belgium \\
+  http://www.bigre.ulb.ac.be/ \\
+}
+
+\newcommand{\RSATtitlePage}[1]{
+  \begin{titlepage}
+    \begin{center}
+      % Upper part of the page
+      \bigreheader \\[3cm]
+
+      % Title
+      \rule{\linewidth}{0.5mm} \\[0.4cm]
+      { \LARGE \bfseries Regulatory Sequence Analysis Tools (\RSAT) \\[0.5cm]
+        {#1}}\\[0.4cm]
+ 
+      \rule{\linewidth}{0.5mm} \\[1.5cm]
+ 
+      % Author
+      \large \bfseries Jacques \textsc{van Helden} \& the \RSAT team\\
+ 
+      \vfill
+ 
+      % Bottom of the page
+      {\large \today}
+ 
+    \end{center}
+  \end{titlepage}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%% environments %%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\ex@mple{example}
+\def\ex@rcise{exercise}
+\def\theoremfont{\ifx\@currenvir\ex@mple
+	\def\@thmfont{\rm} \else
+	\ifx\@currenvir\ex@rcise
+	\def\@thmfont{\rm} \else
+	\def\@thmfont{\it}\fi\fi}
+\newtheorem{exercise}{Exercise}[chapter]
+\newtheorem{example}{Example}[chapter]
+
+
