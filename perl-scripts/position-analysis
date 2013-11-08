@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.100 2013/11/03 23:51:12 jvanheld Exp $
+# $Id: position-analysis,v 1.101 2013/11/08 21:03:53 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -83,6 +83,7 @@ package main;
     ## Supported return fields
     our @supported_return_fields = qw(distrib
 				      occ
+				      coverage
 				      index
 				      exp_occ
 				      freq_per_window
@@ -219,6 +220,19 @@ package main;
 	}
     }
 
+    ## Observed occurrence profiles
+    if ($return{coverage}) {
+	$outfile{mseq} = $output_prefix."_mseq.tab"; push @outfiles, "mseq";
+	if ($return{html}) {
+	    $outfile{mseq_html} = $output_prefix."_mseq.html"; push @outfiles, "mseq_html";
+	}
+
+	$outfile{coverage} = $output_prefix."_coverage.tab"; push @outfiles, "coverage";
+	if ($return{html}) {
+	    $outfile{coverage_html} = $output_prefix."_coverage.html"; push @outfiles, "coverage_html";
+	}
+    }
+
     ## Expected frequency profiles
     if ($return{exp_occ}) {
 	$outfile{exp_occ} = $output_prefix."_exp_occ.tab"; push @outfiles, "exp_occ";
@@ -258,7 +272,7 @@ package main;
 
       &LocalReadPatterns() if ($pattern_file);
 
-      &ReadSequence();
+      &ReadSequences();
       &CheckDNA() if ($seq_type == "dna");
 
       &CheckZeroOcc();
@@ -316,6 +330,8 @@ package main;
       ## Print the main result file
       &PrintResult();
       &PrintProfiles("occ") if ($return{occ});
+      &PrintProfiles("mseq") if ($return{coverage});
+      &PrintProfiles("coverage") if ($return{coverage});
       &PrintProfiles("exp_occ") if ($return{exp_occ});
       &PrintProfiles("freq_per_window") if ($return{freq_per_window});
       &PrintProfiles("freq_per_word") if ($return{freq_per_word});
@@ -446,7 +462,7 @@ sub SumStrands {
     }
   }
 
-  ## if requested, group results by pairs of reverse complements ####
+  ## if requested, group results by pairs of reverse complements
   if ($group_rc) {
     &RSAT::message::TimeWarn("Grouping patterns by pairs of reverse complements") if ($main::verbose >= 2);
     foreach my $oligo_seq (keys %pattern) {
@@ -463,7 +479,7 @@ sub SumStrands {
 
 
 ################################################################
-#### read patterns from a file
+## read patterns from a file
 sub LocalReadPatterns {
   $date = &AlphaDate();
   chomp $date;
@@ -490,8 +506,8 @@ sub LocalReadPatterns {
 
 
 ################################################################
-#### Read input sequence and calculate oligo distributions
-sub ReadSequence {
+## Read input sequences and calculate oligo distributions
+sub ReadSequences {
   &RSAT::message::TimeWarn("Reading sequences", $infile{sequences})
     if ($main::verbose >= 2);
 
@@ -502,6 +518,8 @@ sub ReadSequence {
 
 
     $sequence_number++;
+
+    my %window_mseq_already_counted= ();
 
     if (($skip_seq > 0) && ($sequence_number <= $skip_seq)) {
       &RSAT::message::Warning("Skipped $skip_seq top sequences (option -skip).")
@@ -548,7 +566,7 @@ sub ReadSequence {
 			     ) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==1)));
 
 
-    ## count oligonucleotides ####
+    ## Count oligonucleotides
     my $current_pos = 1;
     my %windows_in_this_seq = ();
     while ($current_pos <= $last_pos) {
@@ -585,6 +603,17 @@ sub ReadSequence {
 	$pattern{$oligo_seq}->{occ}++;
 	$window_occ{$oligo_seq}{$window}++;
 	$last_pos{$oligo_seq} = $current_pos;
+
+	## Count number of matching sequences
+	if ($return{coverage}) {
+	    $window_mseq{$oligo_seq}{$window}++ unless ($window_mseq_already_counted{$oligo_seq}{$window});
+	    $window_mseq_already_counted{$oligo_seq}{$window} = 1;
+	    ## Tag this sequence as counted for reverse complement if counting on both strands
+	    if (($strands eq "2str") && ($rc ne $oligo_seq)) {
+#		$window_mseq{$rc}{$window}++ unless ($window_mseq_already_counted{$rc}{$window});
+		$window_mseq_already_counted{$rc}{$window} = 1;
+	    }
+	}
       }
       $current_pos++;
     }
@@ -612,8 +641,8 @@ sub ReadSequence {
 			  ) if ($main::verbose >= 4);
 
     for my $window ($current_min_window..$current_max_window) {
-      $seq_per_window{$window}++;
-      $sum_seq_per_window++;
+	$seq_per_window{$window}++;
+	$sum_seq_per_window++;
     }
 
     undef %last_pos;
@@ -963,8 +992,8 @@ sub CalcExpectedUsingMarkov {
 }
 
 ################################################################
-#### calculate chi square statistics to compare expected and observed
-#### frequencies
+## calculate chi square statistics to compare expected and observed
+## frequencies
 sub CalcChi {
 
   ### calculate chi2 to compare the position distribution with a flat line
@@ -1041,9 +1070,6 @@ sub CalcChi {
     }
 
 
-    ##	warn join ("\t", $oligo_seq, $pattern{$oligo_seq}->{occ}, ${chi_square{$oligo_seq}}, $low_th{chi}), "\n";
-
-
     ## check the threshold on chi-square
     if ((&IsReal($lth{chi})) &&
 	($pattern{$oligo_seq}->{chi_square} < $lth{chi})) {
@@ -1078,7 +1104,7 @@ sub CalcWindowPvalues {
 }
 
 ################################################################
-#### help message
+## help message
 sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
@@ -1452,7 +1478,7 @@ End_of_help
 }
 
 ################################################################
-#### short description of the options
+## short description of the options
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_of_help;
@@ -1507,7 +1533,7 @@ End_of_help
 }
 
 ################################################################
-#### read arguments ####
+## Read arguments
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 
@@ -2051,6 +2077,8 @@ sub PrintProfiles {
   my $profile_type = shift(@_) || "occ";
 
   my %profile_desc = ("occ"=>"observed occurrences",
+		      "mseq"=>"matched sequences (sequences with at least one occurrence)",
+		      "coverage"=>"sequence coverage (proportion of sequences withb at least one occurrence)",
 		      "exp_occ"=>"expected occurrences",
 		      "freq_per_window"=>"frequency per window (\"vertical\" frequency)",
 		      "freq_per_word"=>"frequency per word (\"longitudinal\" frequency)",
@@ -2101,6 +2129,10 @@ sub PrintProfiles {
 	$value =  sprintf "%.1f", $exp_occ{$oligo_seq}{$window} || 0;
       } elsif ($profile_type eq "occ") {
 	$value = $window_occ{$oligo_seq}{$window} || 0;
+      } elsif ($profile_type eq "mseq") {
+	$value = $window_mseq{$oligo_seq}{$window} || 0;
+      } elsif ($profile_type eq "coverage") {
+	$value = sprintf "%.3g ", $window_mseq{$oligo_seq}{$window}/$seq_per_window{$window} || 0;
       } elsif ($profile_type eq "freq_per_window") {
 	$value = sprintf "%.3g ", $window_occ{$oligo_seq}{$window} / $occ_per_window{$window} || 0;
       } elsif ($profile_type eq "freq_per_word") {
