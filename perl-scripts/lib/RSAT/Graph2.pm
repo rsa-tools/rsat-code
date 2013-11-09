@@ -913,7 +913,7 @@ sub get_out_labels {
     my $numId = $self->node_by_name($node_name);
     my @out_label = $self->get_attribute("out_label");
     @node_out_label = ();
-    if (defined(@{$out_label[$numId]})) {
+    if (defined($out_label[$numId])) {
       @node_out_label = @{$out_label[$numId]};
     }
     return @node_out_label;
@@ -931,7 +931,7 @@ sub get_out_labels_id {
     my ($self, $numId) = @_;
     my @out_label = $self->get_attribute("out_label");
     @node_out_label = ();
-    if (defined(@{$out_label[$numId]})) {
+    if (defined($out_label[$numId])) {
       @node_out_label = @{$out_label[$numId]};
     }
     return @node_out_label;
@@ -950,7 +950,7 @@ sub get_out_colors {
     my $numId = $self->node_by_name($node_name);
     my @out_color = $self->get_attribute("out_color");
     my @node_out_color = ();
-    if (defined(@{$out_color[$numId]})) {
+    if (defined($out_color[$numId])) {
       @node_out_color = @{$out_color[$numId]};
     }
     return @node_out_color;
@@ -969,7 +969,7 @@ sub get_out_colors_id {
     my ($self, $numId) = @_;
     my @out_color = $self->get_attribute("out_color");
     my @node_out_color = ();
-    if (defined(@{$out_color[$numId]})) {
+    if (defined($out_color[$numId])) {
       @node_out_color = @{$out_color[$numId]};
     }
     return @node_out_color;
@@ -1454,7 +1454,7 @@ sub get_nodes_clusters {
     my @nodes_clusters = $self->get_attribute("nodes_clusters");
     my %node_names_id = $self->get_attribute("nodes_name_id");
     my $numId = $node_names_id{$node_name};
-    if (defined($numId) && defined(@{$nodes_clusters[$numId]})) {
+    if (defined($numId) && defined($nodes_clusters[$numId])) {
       @node_clusters = @{$nodes_clusters[$numId]};
     } else {
       &RSAT::message::Warning("\t","Node",$node_name,"does not belong to any cluster") if ($main::verbose >= 4);;
@@ -1475,7 +1475,7 @@ Return the clusters to which the node specified by its name belongs
 sub get_node_id_clusters {
   my ($self, $numId, @nodes_clusters) = @_;
   @node_clusters = ();
-  if (defined(@{$nodes_clusters[$numId]})) {
+  if (defined($nodes_clusters[$numId])) {
     @node_clusters = @{$nodes_clusters[$numId]};
   } else {
     &RSAT::message::Warning("\t","Node",$numId,"does not belong to any cluster") if ($main::verbose >= 4);
@@ -2694,7 +2694,7 @@ sub to_adj_matrix {
     for (my $i = 0; $i < scalar @nodes; $i++) {
       my @row = @empty_row;
       ## out_neighbours
-      if (defined @{$out_neighbours[$i]}) {
+      if (defined($out_neighbours[$i])) {
         for (my $j = 0; $j < scalar @{$out_neighbours[$i]}; $j++) {
           my $out_id = $out_neighbours[$i][$j];
           my $out_label = $arc_out_label[$i][$j];
@@ -2706,7 +2706,7 @@ sub to_adj_matrix {
         }
       }
       ## in_neighbours
-      if (defined @{$in_neighbours[$i]} && !$directed) {
+      if (defined($in_neighbours[$i]) && !$directed) {
         for (my $j = 0; $j < scalar @{$in_neighbours[$i]}; $j++) {
           my $in_id = $in_neighbours[$i][$j];
           my $in_label = $arc_in_label[$i][$j];
