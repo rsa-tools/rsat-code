@@ -23,6 +23,7 @@ $supported_input_formats = join (",", keys %supported_input_format);
 			   gff3=>1,
 			   dnapat=>1,
 			   bed=>1,
+			   bed3col=>1,
 			   great=>1, ## Great has specific requirements for the bed format -> we consider it as a bed dialect
 			  );
 $supported_output_formats = join (",", keys %supported_output_format);
@@ -38,8 +39,7 @@ $supported_output_formats = join (",", keys %supported_output_format);
 	    );
 
 # RSAT feature-map format (ft)
-@{$columns{ft}} = qw (
-		       seq_name
+@{$columns{ft}} = qw ( seq_name
 		       ft_type
                        feature_name
 		       strand
@@ -143,6 +143,18 @@ $header_char{gff3} = "## ";
 @{$strands{bed}} = ("+", "-", ".");
 $comment_char{bed} = "## ";
 $header_char{bed} = "## ";
+
+################################################################
+## UCSC BED in 3 column (minimal informatiojn)
+## http://genome.ucsc.edu/goldenPath/help/customTrack.html#BED
+## warning: UCSC BED files should be zero-based
+@{$columns{bed3col}} = qw (seq_name
+		       start
+		       end
+		      );
+@{$strands{bed3col}} = ("+", "-", ".");
+$comment_char{bed3col} = "## ";
+$header_char{bed3col} = "## ";
 
 ################################################################
 ## GREAT (Bejerano)
@@ -624,6 +636,12 @@ items in this list should correspond to blockCount.
  chr7	127478198  127479365  Neg3  0  -  127478198  127479365  0,0,255
  chr7	127479365  127480532  Pos5  0  +  127479365  127480532  255,0,0
  chr7	127480532  127481699  Neg4  0  -  127480532  127481699  0,0,255
+
+
+=head2 bed3col
+
+The 3 first columns of the bed format (minimal but sufficient
+information for a bed file).
 
 =head2 galaxy_seq
 
@@ -1113,26 +1131,28 @@ sub to_text {
   }
 
   ## Format-specific treatment for the strand
-  my @strands = @{$strands{$output_format}};
-  my $strand = $self->get_attribute("strand") || $default{strand};
-  my $f = $col_index{"strand"};
-  my $s;
-  if ($strand) {
-    if (defined($strand_index{$strand})) {
+  if (defined($columns{strand})) {
+    my @strands = @{$strands{$output_format}};
+    my $strand = $self->get_attribute("strand") || $default{strand};
+    my $f = $col_index{"strand"};
+    my $s;
+    if ($strand) {
+	if (defined($strand_index{$strand})) {
       $s = $strand_index{$strand};
+	} else {
+	    $s = $strand_index{'DR'};
+	}
     } else {
-      $s = $strand_index{'DR'};
+	$s = $strand_index{'DR'};
     }
-  } else {
-    $s = $strand_index{'DR'};
-  }
 #  &RSAT::message::Debug($f, $strand, $s, @strands, %strand_index) if ($main::verbose >= 10);
-  $fields[$f] = $strands[$s];
-  #    &RSAT::message::Debug( "strand", $strand, "f=$f", 
-  #			   "index:".join(";", %strand_index),
-  #			   $strand_index{$strand},
-  #			   "format:".join(";", @strands), 
-  #			   "s=".$s, $strands[$s], "field=$fields[$f]") if ($main::verbose >= 10);
+    $fields[$f] = $strands[$s];
+    #    &RSAT::message::Debug( "strand", $strand, "f=$f", 
+    #			   "index:".join(";", %strand_index),
+    #			   $strand_index{$strand},
+    #			   "format:".join(";", @strands), 
+    #			   "s=".$s, $strands[$s], "field=$fields[$f]") if ($main::verbose >= 10);
+  }
 
   ## Generate the row to be printed
   my $row = join ("\t", @fields);
