@@ -1,0 +1,105 @@
+#!/usr/bin/python
+
+##########################################################################
+# Authors     : Jerome Callut (jerome.callut@uclouvain.be)               #
+#               Pierre Dupont (pierre.dupont@uclouvain.be)               #
+# Institution : Departement d'Ingenierie Informatique                    #
+#               Universite catholique de Louvain                         #
+# Ref.        : P. Dupont, J. Callut, G. Dooms, J.-N. Monette, and       #
+#               Y. Deville. Relevant subgraph extraction from random     #
+#               walks in a graph. Technical Report RR 2006-07, INGI,     #
+#               UCL, 2006.                                               #
+# Version     : 1.00                                                     #
+# Modified    : 10/10/2007                                               #
+# License     : GPL 3.0                                                  # 
+#               GNU GENERAL PUBLIC LICENSE                               #
+#               Version 3, 29 June 2007                                  #
+#               For details, see the file gpl-3.0.txt in this bundle     #
+##########################################################################
+
+#Standard imports
+import os
+import sys
+import getopt
+import sets
+
+MATLAB_CMD  = 'matlab -nojvm -nosplash -nodesktop'
+BASE_PATH   = '~/UCL/kwalks/matlab/'
+KWALK_PATH  = BASE_PATH + 'kwalks.m'
+
+def printHelp():
+	print "Usage: kwalk -g graphFile -k relNodes -o outFile [-p relProbas]"
+	
+################################################################################
+
+#Get the command line arguments
+gflg = 0
+kflg = 0
+oflg = 0
+pflg = 0
+
+try:
+	opts,args = getopt.getopt(sys.argv[1:], "g:k:o:p:h")
+except getopt.GetoptError:
+	printHelp()
+	sys.exit(2)
+
+for o,a in opts:
+	if o == '-g':
+		gflg = 1
+		graphFname = a
+	if o == '-k':
+		kflg = 1
+		knodes = a.split('#')
+	if o == '-o':
+		oflg = 1
+		outFname = a
+	if o == '-p':
+		pflg = 1
+		kprobas = a.split('#')		
+	if o == '-h':
+		printHelp()
+		sys.exit(2)
+		
+if gflg == 0 or kflg == 0 or oflg == 0 :
+	print 'Mandatory argument(s) missing'
+	printHelp()
+	sys.exit(2)
+	
+#Build and execute the matlab script
+matScript = os.popen(MATLAB_CMD + ' ' + KWALK_PATH + '>'+outFname+'.log','w')
+print >> matScript, "path(path,'"+BASE_PATH+"')"
+print >> matScript, "P  = readMat_sparse('"+graphFname+"');"
+print >> matScript, "nE = nnz(P);"
+print >> matScript, "undirected = isSymmetric(P);"
+if pflg :
+	print >> matScript,"if undirected"
+	print >> matScript,"	kw_start = cputime;"
+	print >> matScript,"	[N,E,DIF] = kwalk(P,[" + ' '.join(knodes) + "],["+' '.join(kprobas) +"]);"
+	print >> matScript,"	kw_stop = cputime;"	
+	print >> matScript,"	writeMat_sparse('" + outFname+".dif',DIF);"
+	print >> matScript,"else"
+	print >> matScript,"	kw_start = cputime;"
+	print >> matScript,"	[N,E] = kwalk(P,[" + ' '.join(knodes) + "],["+' '.join(kprobas) +"]);"
+	print >> matScript,"	kw_stop = cputime;"		
+	print >> matScript,"end"
+else :
+	print >> matScript,"if undirected"
+	print >> matScript,"	kw_start = cputime;"
+	print >> matScript,"	[N,E,DIF] = kwalk(P,[" + ' '.join(knodes) + "]);"
+	print >> matScript,"	kw_stop = cputime;"			
+	print >> matScript, "	writeMat_sparse('" + outFname+".dif',DIF);"
+	print >> matScript,"else"
+	print >> matScript,"	kw_start = cputime;"
+	print >> matScript,"	[N,E] = kwalk(P,[" + ' '.join(knodes) + "]);"
+	print >> matScript,"	kw_stop = cputime;"		
+	print >> matScript,"end"
+print >> matScript, "writeVec('" + outFname+".N',N);"
+print >> matScript, "writeMat_sparse('" + outFname+".E',E);"
+print >> matScript, "sum_N = sum(N);"
+print >> matScript, "E = E/sum_N;"
+print >> matScript, "N = N/sum_N;" 
+print >> matScript, "writeVec('" + outFname+".N.norm',N);"
+print >> matScript, "writeMat_sparse('" + outFname+".E.norm',E);"
+print >> matScript, "writeVec('" + outFname+".time',kw_stop-kw_start);"
+matScript.close()
