@@ -22,7 +22,7 @@ package main;
   unless ($rsat_path) {
     my $pwd = `pwd`;
     chomp($pwd);
-    if ($pwd =~ /rsa\-tools\/*$/) {
+    if ($pwd =~ /rsat\/*$/) {
       $rsat_path = $pwd;
     }
   }
@@ -40,8 +40,8 @@ package main;
   warn "RSAT parent path\t", $rsat_parent_path, "\n";
 
   ## Check that the RSAT path seems correct
-  unless ($rsat_path =~ /rsa\-tools\/*/) {
-    warn ("\nWarning: $rsat_path does not seem to be a conventional RSAT path (should terminate by rsa-tools).", "\n\n");
+  unless ($rsat_path =~ /rsat\/*/) {
+    warn ("\nWarning: $rsat_path does not seem to be a conventional RSAT path (should terminate by rsat).", "\n\n");
   }
 
   ## Check that the RSAT path exists and is a directory

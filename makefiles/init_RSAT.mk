@@ -14,7 +14,7 @@ usage:
 
 ################################################################
 ## Initialize directories and config files
-SUPPORTED_ORGANISMS=public_html/data/supported_organisms.pl
+SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
 COUNT_FILE=public_html/logs/count-file
 CONFIG_FILE=RSA.config
 init:
@@ -26,9 +26,9 @@ init:
 	mkdir -p public_html/data
 	echo "Options +Indexes" > public_html/data/.htaccess
 	mkdir -p public_html/data/genomes
-	mkdir -p public_html/data/KEGG
-	mkdir -p public_html/data/metabolic_networks
-	mkdir -p public_html/data/metabolic_networks/GER_files
+#	mkdir -p public_html/data/KEGG
+#	mkdir -p public_html/data/metabolic_networks
+#	mkdir -p public_html/data/metabolic_networks/GER_files
 	mkdir -p bin
 	mkdir -p lib
 	@${MAKE} _create_download_dir
@@ -74,7 +74,6 @@ init:
 		echo "file already exists	${SUPPORTED_ORGANISMS}" ; \
 	else \
 		echo "creating empty file with supported organisms ${SUPPORTED_ORGANISMS}" ; \
-		echo "return 1;" > ${SUPPORTED_ORGANISMS}; \
 	fi
 	@if [ -f "${COUNT_FILE}" ] ; then \
 		echo "file already exists	${COUNT_FILE}" ; \
