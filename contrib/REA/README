@@ -1,0 +1,340 @@
+%========================================================================
+%
+%  File: README
+%
+%  Program REA - Version 1.1 - July 1999
+%
+%========================================================================
+
+    Copyright (C) 1999 Victor Jimenez and Andres Marzal
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program (file COPYING); if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+    You can contact the authors at:
+
+           Victor Jimenez and Andres Marzal
+           Dept. de Informatica, Universitat Jaume I, Castellon, Spain
+           {vjimenez,amarzal}@inf.uji.es
+
+    Updated information about this software will be available at the
+    following www address:
+
+           http://terra.act.uji.es/REA
+ 
+%=========================================================================
+
+Contents of this file:
+
+     1. Introduction
+     2. List of files
+     3. How to compile REA
+     4. How to run REA
+     5. Graph file format
+     6. Examples and REA output
+     7. Remarks
+
+
+%=====================================================================
+% 1. Introduction
+%=====================================================================
+
+  This   directory  contains  an   implementation  of   the  Recursive
+  Enumeration Algorithm  (REA) that enumerates  (by increasing weight)
+  the N shortest paths in  weighted graphs. The algorithm is described
+  in:
+
+    "Computing the K Shortest Paths: a New Algorithm and an
+    Experimental Comparison" by Victor Jimenez and Andres Marzal,
+    3rd Workshop on Algorithm Engineering, London, July 1999.
+    To be published by Springer Verlag in the LNCS series.
+
+  The sets of candidates are implemented with binary heaps.
+
+  The shortest paths tree  is computed using Dijkstra's algorithm, and
+  this restricts  this implementation to graphs  with non-negative arc
+  weights. If you need to run  it on graphs with positive and negative
+  arc weights, you should just  change Dijkstra algorithm by any other
+  appropriate algorithm.
+
+  Arc  weights   have  been  defined  as   integers  for  experimental
+  comparison  with  implementations  of  alternative K  shortest  path
+  algorithms. It  should be easy to  allow them to be  real values (by
+  just redefining COST_TYPE in REA.h  to float and changing some %d by
+  %f in printf's and scanf's), but we have not tried it.
+
+  More details about the implementation are given in the source files.
+
+  Your comments and suggestions are welcome. If this code is useful to
+  you or you make any improvement to it, please let us know.
+
+
+%=====================================================================
+% 2. List of files
+%=====================================================================
+
+  You should find in this directory the following files:
+  
+     COPYING        - The GNU General Public License
+     README         - This file
+     REA.h          - Shared data structures for representing the
+                      graph and the computed paths
+     REA.c          - Recursive Enumeration Algorithm and main function
+     loadgraph.h
+     loadgraph.c    - Function to read a graph from file
+     dijkstra.h
+     dijkstra.c     - Implementation of Dijkstra's algorithm
+     chronometer.h
+     chronometer.c  - Routines to measure running time
+     Makefile       - To compile REA
+
+  Look the  comment lines  at the  beginning of each  file for  a more
+  detailed description of its contents.
+
+
+%=====================================================================
+% 3. How to compile REA
+%=====================================================================
+
+  To compile REA you should just be in this directory and do
+
+    make
+
+  This will generate in this same directory the object files 
+
+    loadgraph.o
+    dijkstra.o
+    chronometer.o
+
+  and the main program REA.
+
+  Up  to know the  program has  only been  tested on  Pentium machines
+  running  Linux, but it  has been  implemented trying  to make  it as
+  portable  as  possible. You  may  need  to  remove the  "__inline__"
+  directives in the source files if your compiler does not support it.
+
+  You may need to redefine the constant MAX_PATHS in REA.c if you lack
+  enough memory.
+
+  If you  want to make  any change  in the code  it may be  helpful to
+  change the Makefile  to use the flags that  define DEBUG. This makes
+  the code to  output trace information as well as  assert a number of
+  preconditions that should be true if there are not bugs.
+
+%=====================================================================
+% 4. How to run REA
+%=====================================================================
+
+  To use  REA you  should have a  file with  your graph in  the format
+  described below, and do
+
+         ./REA <graph_file> <number_of_paths> [-paths] [-tdijkstra]
+
+  where
+
+    <graph_file>  is  the  name  of  the  file  where  your  graph  is
+                 described,  in  the  format  described  below.   This
+                 argument is compulsory.
+
+    <number_of_paths> is  a positive  integer, the number  of shortest
+                      paths from  the initial  node to the  final node
+                      that  you  want  to  compute. This  argument  is
+                      compulsory.
+
+    -paths prints the nodes in  the computed paths and the path costs,
+            otherwise  only   the  time  counters   are  printed  (for
+            experimental purposes). This argument is optional.
+
+    -tdijkstra adds the  time of Dijkstra's algorithm to  all the time
+                counters, otherwise it is  not added. This argument is
+                optional.
+
+%=====================================================================
+% 5. Graph file format
+%=====================================================================
+
+The graph file  format used in this implementation  is inspired on the
+format defined  for the 1st  and 2nd DIMACS  Implementation Challenges
+described at
+
+       http://dimacs.rutgers.edu/Challenges/index.html
+
+and has in common with it the following features:
+
+ - A file contains all the information about just one graph
+ - The file contains only ASCII characters
+ - Each line begins with a one-character designator to identify the
+   line type
+ - A line is terminated with an end-of-line character
+ - Fields in each line are separated by at least one blank space
+ - For a graph with n nodes, nodes are identified by the integers 1..n
+
+In out case  the format is used to describe a weighted directed graph
+and has 5 possible designators (all of them lower-case):
+ 
+   'n' for the line containing the number of nodes
+   'm' for the line containing the number of arcs
+   's' for the line containing the initial node
+   't' for the line containing the final node
+   'a' for a line containing a directed-arc descriptor
+ 
+Any line that begins with a different character is ignored (therefore
+the file  may contain blank  lines and commentaries).
+
+A file has then the following structure:
+
+n NUMBER_NODES
+m NUMBER_ARCS
+s INITIAL_NODE
+t FINAL_NODE
+a SOURCE DESTINATION COST
+a SOURCE DESTINATION COST
+...
+a SOURCE DESTINATION COST
+
+where
+
+  - NUMBER_NODES and NUMBER_ARCS are positive integers
+
+  - INITIAL_NODE,  FINAL_NODE,  SOURCE  and DESTINATION  are  positive
+    integers in the range 1..NUMBER_NODES
+
+  - The COST fields are non-negative integers (see Section 1 above)
+
+  - There is  exactly one line  beginning with each of  the characters
+    'n', 'm, 's' and 't'. These  lines can appear in any order but all
+    of them should be before any line beginning with 'a'
+
+  - There are exactly NUMBER_ARCS lines beginning with 'a'
+
+
+%=====================================================================
+% 6. Examples and REA output
+%=====================================================================
+	
+  Several example  graphs in the format described  above are provided,
+  together  with  corresponding  postscript  files  so  that  you  can
+  visualize  the graphs  (in  the postscript  files,  a double  circle
+  identifies the final node and  an incoming arrow with no predecessor
+  node identifies the initial node).
+
+  You can  try to run the  REA to find  the K shortest paths  in these
+  graphs. For instance if you run
+
+         ./REA example-graph1.gr 5 -paths
+
+  you should get  a short copyright notice followed  by something like
+  this:
+
+======================================================
+CommandLine:  ./REA example-graph1.gr 5 -paths
+Hostname: ...
+Date: ...
+
+======================================================
+
+N=1:    2-3-1-  (Cost: 0)       (CumulatedSeconds: 0.00)
+N=2:    2-9-1-  (Cost: 1)       (CumulatedSeconds: 0.00)
+N=3:    2-4-1-  (Cost: 4)       (CumulatedSeconds: 0.00)
+N=4:    2-7-1-  (Cost: 5)       (CumulatedSeconds: 0.00)
+N=5:    2-6-1-  (Cost: 5)       (CumulatedSeconds: 0.00)
+TotalExecutionTime: 0.00              
+		    
+  After the  first lines that output  the command line,  host name and
+  date,  there  is one  line  per path  that  contains  its rank,  the
+  sequence of nodes (in reverse  order, with the final node first, and
+  separated by '-'), the path cost, and the cumulated seconds required
+  to compute from  the first path up to that  path.  Finally the total
+  execution time is printed in a separate line.
+
+
+%=====================================================================
+% 7. Remarks
+%=====================================================================
+
+  You should bear in mind that:
+  
+    - The cumulated  seconds and total  execution time do  not include
+      the  time to read  the graph  from file  or printing  the output
+      after the paths have been  computed.
+
+    - It  has  not  been  our  purpose to  choose  the  best  possible
+      implementation  of Dijkstra's  algorithm, we  just use  one that
+      works.
+
+    - If you use the  option -tdijkstra, the value CumulatedSeconds at
+      N=1 will  tell you the  time of Dijkstra's algorithm,  that will
+      also be  added to all the  counters of cumulated  time and total
+      execution  time. You  should  not  use this  option  if you  are
+      interested only in the time of REA after the shortest paths tree
+      has been  computed, for instance  to compare with  alternative K
+      shortest paths algorithms  that use different implementations of
+      the Dijkstra algorithm.
+  
+    - For the small graphs provided, the running time will probably be
+      below the chronometer resolution of 0.01 seconds.
+
+    - The number  of computed  paths may be  lower than the  number of
+      requested paths  in case that no  more paths exist  in the graph
+      Try for instance
+
+           ./REA example-graph2.gr 5 -paths
+
+      and look example-graph2.ps.gz to understand why.
+
+    - If the program  needs more than MAX_PATHS paths,  it will gently
+      abort and will  not output any path.  If  you have memory enough
+      you can  redefine MAX_PATHS in  REA.c, recompile and  try again.
+      The program  will never need more  than n*K+m paths  (where n is
+      the number  of nodes, m the number  of arcs and K  the number of
+      requested  paths from s  to t),  which is  the worst  case bound
+      corresponding to n*K computed  paths at intermediate nodes and m
+      candidate paths.  (But this bound is only exceptionally reached,
+      and is  superior to the memory  of our machine  for the greatest
+      graphs we use  in our experimentation, this is  why we prefer to
+      use  MAX_PATHS.  Alternatively you  can modify  the code  to use
+      malloc for  new paths but  this makes the running  time strongly
+      dependent on the malloc  system policy, something that we prefer
+      to avoid in experimentation.)
+
+    - This is NOT a program to compute the K shortest SIMPLE paths. If
+      there are loops in the  graph, the algorithm finds correctly the
+      K shortest paths, what means that the computed paths may contain
+      loops. Try for instance
+
+         ./REA example-graph3.gr 5 -paths
+
+      and
+
+         ./REA example-graph4.gr 5 -paths
+
+      and   look  example-graph3.ps.gz  and   example-graph4.ps.gz  to
+      understand what happens.
+
+    - The  example  graphs provided  also  illustrate  that REA  works
+      correctly  if there are  nodes that  can not  be reached  from s
+      (example-graph2),  and  if  there  is more  than  one  connected
+      component (example-graph4).
+
+    - The graphs example-graph6.gr  and example-graph7.gr are examples
+      of multistage graphs,  in which all the computed  paths have the
+      same  number of  nodes (and  therefore the  number  of recursive
+      calls performed by  REA to compute every new  path will never be
+      greater than this number).  See  the paper referred in Section 1
+      for more details.
+
+
+%=====================================================================
+%  End of README file
+%=====================================================================

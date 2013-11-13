@@ -158,6 +158,10 @@ package main;
   $param{skip_org} = 0; ## Skip the first entries in the list of organisms
   $param{last_org} = 0; ## Stop after a user-specified number of organisms
 
+
+  ## Footprint-discovery parameters
+  @fpd_tasks = ();
+
   ## Default column order for organism cross-table
 #   our @org_table_columns_old = qw(tax_id
 # 			      microscope_genome_id
@@ -392,7 +396,7 @@ package main;
     ## Discover phylogenetic footprints (conserved cis-regulatory
     ## elements) and infer a co-regulation network by linking pairs of
     ## genes having similar footprints.
-#    &FootprintsAndCoregulation();
+    &FootprintsAndCoregulation();
 
     ## Link gene sets to EC numbers
 #    foreach my $geneset ("gene_operons", "gene_directons") {
@@ -845,6 +849,20 @@ TO BE IMPLEMENTED
 	}
       }
 
+=pod
+
+=item B<-fpd_task>
+
+Task(s) for I<footprint-discovery>.  
+
+This argument is passed to I<footprint-discovery>. It can be used
+iteratively to specify multiple tasks.
+
+=cut
+    } elsif ($arg eq "-fpd_task") {
+      my $fpd_task = shift (@arguments);
+      push @main::fpd_tasks, $fpd_task;
+
 
 =pod
 
@@ -1181,7 +1199,16 @@ sub FootprintsAndCoregulation {
   my $cmd = $SCRIPTS."/footprint-discovery -v 1";
   $cmd .= " -org ".$organism_name;
   $cmd .= " -taxon ".$param{taxon};
-  $cmd .= " -filter -sep_genes -task all -infer_operons -all_genes -nodie";
+  $cmd .= " -lth occ 1 -lth occ_sig 0 -uth rank 50 -return occ,proba,rank";
+  $cmd .= " -bg_model taxfreq";
+  $cmd .= " -filter -sep_genes";
+  if (scalar(@fpd_tasks) > 0) {
+    $cmd .= " -task ";
+    $cmd .= join ",", @fpd_tasks;
+  } else {
+    $cmd .= " -task all";
+  }
+  $cmd .= " -infer_operons -all_genes -nodie";
   $cmd .= " -skip ".$fp_skip if ($fp_skip > 0);
   $cmd .= " -last ".$fp_last if ($fp_last > 0);
   $cmd .= " -o ".$dir{footprints};
@@ -1236,7 +1263,7 @@ sub GetGER() {
   if (($organism_info{$organism_name}->{microscope_metacyc_id}) &&
       ($organism_info{$organism_name}->{microscope_metacyc_id} ne "<NA>")) {
     ## Run the MICROME/MICROSCOPE Web client
-    &RSAT::message::TimeWarn("\tCollecting GER from MicroCyc via Web services") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("\tCollecting GER from MicroCyc via Web services") if (($main::verbose >= 1) && ($task{ger}));
     my $ms_org_id = $organism_info{$organism_name}->{microscope_metacyc_id};
 #    if {
 #      &RSAT::message::Warning("Skipping", $organism_name, $organism_info{$organism_name}->{microscope_metacyc_id});
