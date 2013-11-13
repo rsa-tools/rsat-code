@@ -11,8 +11,14 @@ data
 *.o
 public_html/tmp
 tmp
+downloads
+bin
 public_html/data/KEGG
 public_html/data/genomes
 public_html/data/supported_organisms.tab
 public_html/data/metabolic_networks
 public_html/data/phylogeny
+contrib/count-words/count-words
+contrib/info-gibbs/info-gibbs
+contrib/matrix-scan-quick/matrix-scan-quick
+contrib/compare-matrices-quick/compare-matrices-quick
