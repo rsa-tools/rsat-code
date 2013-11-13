@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+#Standard imports
+import os
+import sys
+
+if len(sys.argv) < 2 :
+	print "Usage: spb2spw inputGraphFile [outputGraphFile]"
+	sys.exit(2)
+
+if len(sys.argv) >= 3:
+	outFile = open(sys.argv[2],'w')
+else:
+	outFile = sys.stdout
+
+inFile = open(sys.argv[1],'U')
+
+for line in inFile:
+	line  = line.strip()
+	elems = line.split(' ')
+	oline = elems[0]
+	for elem in elems[1:]:
+		oline += ' ' + elem +':1'
+	print >> outFile,oline
+	
+inFile.close()
+outFile.close()
