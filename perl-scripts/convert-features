@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.43 2013/09/16 18:00:38 jvanheld Exp $
+# $Id: convert-features,v 1.44 2013/11/13 14:35:24 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -56,7 +56,9 @@ unless ($input_format) {
 }
 
 ## Initialize color palette
-if (($output_format eq "bed") || ($output_format eq "great")) {
+if (($output_format eq "bed") 
+    || ($output_format eq "bed3col") 
+    || ($output_format eq "great")) {
   @palette = &RSAT::Color::RGBColorPalette();
 }
 
@@ -68,8 +70,8 @@ $header = &RSAT::feature::header($output_format);
 print $out $header if ($header);
 
 ################################################################
-##### open the coord file (BED format only) if present
-##### assume this is zero-based
+## Open the coord file (BED format only) if present
+## assume this is zero-based.
 my %coord =();
 if ($infile{coord}){
   ($coord) = &OpenInputFile($infile{coord});
@@ -116,9 +118,9 @@ while (<$in>) {
   next if (/^#/);
   next unless (/\S/);
   ## other lines to discard
-  if ($input_format eq "bed") {
-  	next if (/track name=/);
-  	next if (/^browser/);
+  if (($input_format eq "bed") || ($input_format eq "bed3col")) {
+      next if (/track name=/);
+      next if (/^browser/);
   }
  if ($input_format eq "swembl") {
    next if (/^Region/);
@@ -166,7 +168,9 @@ while (<$in>) {
   }
 
   ## Check BED-specific attributes
-  if (($output_format eq "bed") || ($output_format eq "great")) {
+  if (($output_format eq "bed") 
+      || ($output_format eq "bed3col") 
+      || ($output_format eq "great")) {
 
     ## Add "chr" prefix to chromosome names if requested
     &add_chr($feature)  if ($add_chr_bed);
@@ -546,6 +550,9 @@ INPUT FORMATS
        bed:	Genomic features in the UCSC format.
        		http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
 
+       bed3col: Genomic features in the UCSC format, restricted to the
+       		3 first columns (chr, start, end).
+
        galaxy_seq: Fasta sequences fetched from the Galaxy website
        		http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
 
@@ -554,6 +561,8 @@ OUTPUT FORMATS
        gff
        gff3
        bed
+       bed3col
+       great
 
 FORMAT DESCRIPTIONS
 
@@ -774,6 +783,9 @@ FORMAT DESCRIPTIONS
 	      chr7	127478198  127479365  Neg3  0  -  127478198  127479365  0,0,255
 	      chr7	127479365  127480532  Pos5  0  +  127479365  127480532  255,0,0
 	      chr7	127480532  127481699  Neg4  0  -  127480532  127481699  0,0,255
+
+	bed3col
+              The 3 first columns of the bed format (see above).
 
 	galaxy_seq
 
