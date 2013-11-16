@@ -33,3 +33,6 @@ ensembl_genomes
 problem*
 doc/podpublic_html/web_services/RSATWS.wsdl
 RSAT_config.mk
+makefile
+REA.tgz
+kwalks.tgz
