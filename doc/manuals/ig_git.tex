@@ -1,0 +1,38 @@
+\section{Downloading \RSAT from the CVS server}
+
+\textbf{Warning:} the \program{git} distribution is reserved to the
+members of the \RSAT team. 
+
+For external users, \RSAT is distributed as a tar archive (file
+\file{rsa-tools\_YYYY-MM-DD.tar.gz}, where YYYY-MM-DD indicates the
+release date). If you are not a member of the \RSAT team you can thus
+skip this section.
+
+\subsection{Obtaining a first version of \RSAT sowftare distribution}
+
+The following command should be used the first time you retrieve the
+tools from the server (you need to replace \texttt{[mylogin]} by the
+login name you received when signing the \RSAT license).
+
+\begin{lstlisting}
+git clone git@depot.biologie.ens.fr:rsat
+\end{lstlisting}
+
+
+This will create a directory \file{rsa-tools} on your computer, and
+store the programs in it. Note that at this stage the programs are not
+yet functional, because you still need to install genomes, which are
+not included in the CVS distribution.
+
+\subsection{Updating \RSAT programs}
+
+Once the tools have been retrieved, you can obtain updates very
+easily. For this, you need to change your directory to the rsa-tools
+directory, and use the \texttt{cvs} command in the following way.
+
+\begin{lstlisting}
+cd rsa-tools
+cvs -q update -d
+\end{lstlisting}
+
+
