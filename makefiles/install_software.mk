@@ -809,7 +809,8 @@ _compile_tophat:
 ## MACS, peak-calling program
 MACS_BASE_DIR=${SRC_DIR}/MACS
 MACS_VERSION=1.4.2
-MACS_ARCHIVE=MACS-${MACS_VERSION}.tar.gz
+MACS_PATCH=-1
+MACS_ARCHIVE=MACS-${MACS_VERSION}${MACS_PATCH}.tar.gz
 MACS_URL=https://github.com/downloads/taoliu/MACS/${MACS_ARCHIVE}
 MACS_DISTRIB_DIR=${MACS_BASE_DIR}/MACS-${MACS_VERSION}
 install_macs: _download_macs _compile_macs
@@ -824,6 +825,15 @@ _download_macs:
 
 _compile_macs:
 	(cd ${MACS_DISTRIB_DIR}; ${SUDO} python setup.py install )
+
+## MACS version 2
+install_macs2:
+	${MAKE} _download_macs  MACS_VERSION=2.0.9 MACS_PATCH=-1
+	${MAKE} _compile_macs  MACS_VERSION=2.0.9
+
+## The python Cython library is required for installing macs2
+install_macs2_dependencies:
+	sudo easy_install cython
 
 ################################################################
 ## PeakSplitter, program for splitting the sometimes too large regions
@@ -1161,7 +1171,7 @@ _compile_igv:
 ## HOMER
 HOMER_CONFIG_URL=http://biowhat.ucsd.edu/homer/configureHomer.pl
 HOMER_BASE_DIR=${SRC_DIR}/HOMER
-homer: _download_homer _install_homer
+install_homer: _download_homer _install_homer
 
 _download_homer:
 	@echo 
