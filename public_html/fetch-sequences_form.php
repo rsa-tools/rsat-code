@@ -79,8 +79,9 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 	  </ul>
 	  </p>
 	    
-          <p><b><a href='help.fetch-sequences.html#header'>Header Format</a></b><input type="radio" name="header" value="ucsc" checked="checked"/>UCSC
-            <input type="radio" name="header" value="galaxy"/>Galaxy</p>    
+          <p><b><a href='help.fetch-sequences.html#header'>Header Format</a></b>
+            <input type="radio" name="header" value="galaxy" checked="checked"/>Galaxy
+	    <input type="radio" name="header" value="ucsc"/>UCSC
       </fieldset><br/>
       
       <div class="menu_heading_closed" onclick="toggleMenu('101')" id="heading101">
