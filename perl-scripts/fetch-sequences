@@ -328,7 +328,7 @@ package main;
     ## Uncompress  input file if required
     if ($gzip_url) {
 	&RSAT::message::TimeWarn("Uncompressing uploaded file", $main::outfile{input});
-	system("gunzip ".$main::outfile{input});
+	system("gunzip -f ".$main::outfile{input});
 	$main::outfile{input} =~ s/\.gz//;
     }
 
@@ -344,6 +344,7 @@ package main;
   my $i = 0;
   my $l = 0;
   my $query_nb = 0;
+  my $random_skipped = 0;
   while (<$main::in>) {
     $l++;
     next if (/^#/); ## Skip comment lines
@@ -378,29 +379,38 @@ package main;
 
 #    &RSAT::message::Debug($l, $chrom, $left, $right, $strand) if ($main::verbose >= 5);
 
+    ## Temporary: skip random chromosomes (not supported yet)
+    if ($chrom =~ /_random$/) {
+	if ($random_skipped == 0) {
+	    &RSAT::message::Warning("Skipped features on chromosome chr._random ") if ($main::verbose >= 1);
+	}
+	$random_skipped++;
+	next;
+    }
 
     ## Check validity of the chromosome
-    unless (defined($chr_end{$chrom})) {
-      if (defined($chr_end{"chr".$chrom})) {
-	$chrom = "chr".$chrom;
-	&RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l) if ($main::verbose >= 2);
-      } else {
-	&RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l) if ($main::verbose >= 2);
-	push @skipped_rows, "line ".$l."\t".$_."\tInvalid chromosome name";
-	next;
-      }
+    unless ((defined($chr_end{$chrom})) || 
+	    ($chrom =~ /_random/)) {
+	if (defined($chr_end{"chr".$chrom})) {
+	    $chrom = "chr".$chrom;
+	    &RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l) if ($main::verbose >= 2);
+	} else {
+	    &RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l) if ($main::verbose >= 2);
+	    push @skipped_rows, "line ".$l."\t".$_."\tInvalid chromosome name";
+	    next;
+	}
     }
 
     ## Check validity of left and right positions
     unless (&RSAT::util::IsNatural($left)) {
-      &RSAT::message::Warning("Skipping line", $l, "Invalid left position: ",$left) if ($main::verbose >= 2);
-      push @skipped_rows, "line ".$l."\t".$_."\tInvalid end position";
-      next;
+	&RSAT::message::Warning("Skipping line", $l, "Invalid left position: ",$left) if ($main::verbose >= 2);
+	push @skipped_rows, "line ".$l."\t".$_."\tInvalid end position";
+	next;
     }
     unless (&RSAT::util::IsNatural($right)) {
-      &RSAT::message::Warning("Skipping line", $l, "Invalid right position: ",$right) if ($main::verbose >= 2);
-      push @skipped_rows, "line ".$l."\t".$_."\tInvalid right position";
-      next;
+	&RSAT::message::Warning("Skipping line", $l, "Invalid right position: ",$right) if ($main::verbose >= 2);
+	push @skipped_rows, "line ".$l."\t".$_."\tInvalid right position";
+	next;
     }
 
     ## Check that the left is smaller than the right
@@ -409,55 +419,54 @@ package main;
 #      my $tmp = $left;
 #      $left = $right;
 #      $right = $tmp;
-      &RSAT::message::Warning("Skipping line", $l, "Left (".$left.") > right (".$right.").") if ($main::verbose >= 2);
-      push @skipped_rows, "line ".$l."\t".$_."\tLeft > right";
-      next;
+	&RSAT::message::Warning("Skipping line", $l, "Left (".$left.") > right (".$right.").") if ($main::verbose >= 2);
+	push @skipped_rows, "line ".$l."\t".$_."\tLeft > right";
+	next;
     }
 
     ## Treat specific references (use start or end position as
     ## reference, rather than the whole feature)
     if ($reference eq "start") {
-      if ($strand eq "-") {
-	$left = $right;
-      } else {
-	$right = $left;
-      }
+	if ($strand eq "-") {
+	    $left = $right;
+	} else {
+	    $right = $left;
+	}
     } elsif ($reference eq "end") {
       if ($strand eq "-") {
-	$right = $left;
+	  $right = $left;
       } else {
-	$left = $right;
+	  $left = $right;
       }
     } elsif ($reference eq "center") {
-      $center = ($left + $right)/2;
-      $left = $center;
-      $right = $center;
+	$center = ($left + $right)/2;
+	$left = $center;
+	$right = $center;
     }
 
     ## Check if the right position is not outside the chromosome
-    if ($right > $chr_end{$chrom}) {
-      &RSAT::message::Warning("Skipping line", $l, "Right coordinate (".$right.") > chromosome end (".$chr_end{$chrom}.").") if ($main::verbose >= 2);
-      push @skipped_rows, "line ".$l."\t".$_."\tright > chromosome end (".$chr_end{$chrom}.").";
-      next;
+    if ((defined($chr_end{$chrom})) && ($right > $chr_end{$chrom})) {
+	&RSAT::message::Warning("Skipping line", $l, "Right coordinate (".$right.") > chromosome end (".$chr_end{$chrom}.").") if ($main::verbose >= 2);
+	push @skipped_rows, "line ".$l."\t".$_."\tright > chromosome end (".$chr_end{$chrom}.").";
+	next;
     }
-
+    
     ## Check if the right position is not outside the chromosome
     if ($left < 1) {
-      &RSAT::message::Warning("Skipping line", $l, "Left coordinate (".$left.") < 1") if ($main::verbose >= 2);
-      push @skipped_rows, "line ".$l."\t".$_."\tLeft < 1";
-      next;
+	&RSAT::message::Warning("Skipping line", $l, "Left coordinate (".$left.") < 1") if ($main::verbose >= 2);
+	push @skipped_rows, "line ".$l."\t".$_."\tLeft < 1";
+	next;
     }
-
-
+    
     ## Treat left and right extensions
     if ($strand eq "-") {
-      $left = &RSAT::stats::max(1, $left - $downstr_extension);
-      $right = &RSAT::stats::min($chr_end{$chrom}, $right + $upstr_extension);
-      #$right += $upstr_extension;
+	$left = &RSAT::stats::max(1, $left - $downstr_extension);
+	$right = &RSAT::stats::min($chr_end{$chrom}, $right + $upstr_extension);
+	#$right += $upstr_extension;
     } else {
-      $left = &RSAT::stats::max(1, $left - $upstr_extension);
-      $right = &RSAT::stats::min($chr_end{$chrom}, $right + $downstr_extension);
-      #$right += $downstr_extension;
+	$left = &RSAT::stats::max(1, $left - $upstr_extension);
+	$right = &RSAT::stats::min($chr_end{$chrom}, $right + $downstr_extension);
+	#$right += $downstr_extension;
     }
 
     ## Restore zero-based left after all these checks
