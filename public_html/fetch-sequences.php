@@ -213,6 +213,7 @@ if (!$errors) {
   // Add arguments to the command
   $cmd .= $argument;	
 
+  /* TEMPORARILY INACTIVATE BECAUSE IT DOES NOT WORK 
   // Announce job starting
   $msg = "Starting job.";
   if ($fs_output =="email")  {
@@ -223,6 +224,7 @@ if (!$errors) {
   info($msg);
   echo "<hr>";
   flush(); 
+  */
 
   ################################################################
   // Send email with notification of starting task
@@ -275,6 +277,7 @@ if (!$errors) {
   // Run the command
   exec("$cmd >/dev/null", $error);
 
+  /*
   // Display the command
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
@@ -304,7 +307,8 @@ if (!$errors) {
     warning($warning);
     echo "<hr>";
   }  
-  
+  */
+
   // Display the result
   print_url_table($URL);
 
