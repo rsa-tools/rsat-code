@@ -289,12 +289,14 @@ package main;
       $main::outfile{input} =~ s/\.fa$//;
 
       ## Add extension to the input file, in order to recognize compressed files
-      if ($main::infile{input_url} =~ /\.(\w+)$/) {
-	my $extension = $1;
-	$main::outfile{input} .= ".".$extension;
-      } else {
-	$main::outfile{input} .= ".bed";
+#      if ($main::infile{input_url} =~ /\.(\w+)$/) {
+#	  my $extension = $1;
+#	  $main::outfile{input} .= ".".$extension;
+#      } else {
+      unless ($main::infile{input_url} =~ /\.bed$/) {
+	  $main::outfile{input} .= ".bed";
       }
+
 
     } else {
       ## Create a temporary directory to store the downloaded file
@@ -308,7 +310,28 @@ package main;
       $main::outfile{input} = &RSAT::util::make_temp_file("", "fetch-sequences");
       &RSAT::message::Info("Storing downloaded input file as", $main::outfile{input}) if ($main::verbose >= 3);
     }
+
+
+
+    ## Check if the URL was a gzip compressed file
+    my $gzip_url = 0;
+    if (($main::infile{input_url} =~ /\.gz$/) || 
+	($main::infile{input_url} =~ /2Egz$/)) {
+	$gzip_url = 1;
+	$main::outfile{input} .= ".gz";
+	&RSAT::message::Info("Input URL points to a gzip compressed file. Will be decompressed.") if ($main::verbose >= 3);
+    }
+
+    ## Download the file from the URL
     getstore($main::infile{input_url}, $main::outfile{input});
+
+    ## Uncompress  input file if required
+    if ($gzip_url) {
+	&RSAT::message::TimeWarn("Uncompressing uploaded file", $main::outfile{input});
+	system("gunzip ".$main::outfile{input});
+	$main::outfile{input} =~ s/\.gz//;
+    }
+
     &RSAT::message::TimeWarn("Genomic coordinates transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
     ($main::in) = &OpenInputFile($main::outfile{input});
   } else {
