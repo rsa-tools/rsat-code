@@ -19,7 +19,7 @@ import_request_variables('P','fs_');
 
 // Initialize variables
 $cmd = $properties['RSAT'].'/perl-scripts/fetch-sequences';
-$argument = " -v 2";
+$argument = " -v 1";
 $exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
 
 //Fill buffer
