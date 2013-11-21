@@ -148,7 +148,7 @@ with the command \program{tar}, which is included in most Unix
 distributions.
 
 \begin{lstlisting}
-tar -xpzf rsa-tools_yyyymmdd.tar.gz
+tar -xpzf rsat_yyyymmdd.tar.gz
 \end{lstlisting}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,12 +168,12 @@ tar -xpzf rsa-tools_yyyymmdd.tar.gz
 
 \section{Initializing the directories}
 
-In addition to the programs, the installation of rsa-tools requires
+In addition to the programs, the installation of rsat requires
 the creation of a few directories for storing data, access logs (for
 the web server), and temporary files.
 
 The distribution includes a series of make scripts which will
-facilitate this step. You just need go to the rsa-tools directory, and
+facilitate this step. You just need go to the rsat directory, and
 start the appropriate make file.
 
 \begin{lstlisting}
@@ -190,7 +190,7 @@ make -f makefiles/init_RSAT.mk init
 \subsection{Creating site-specific configuration files}
 
 The \RSAT distribution comes with two template configuration files
-located in the \file{rsa-tools} directory:
+located in the \file{rsat} directory:
 
 \begin{itemize}
 \item \file{RSAT\_config\_default.props} 
@@ -257,7 +257,7 @@ Don't worry if you see a warning looking like this:
 \begin{footnotesize}
 \begin{verbatim}
 ; WARNING	The tabular file with the list of supported organism cannot be read
-; WARNING	Missing file	/no_backup/rsa-tools/public_html/data/supported_organisms.tab
+; WARNING	Missing file	/no_backup/rsat/public_html/data/supported_organisms.tab
 \end{verbatim}
 \end{footnotesize}
 
@@ -330,16 +330,19 @@ sudo bash;
 
 ## Define the RSAT environment variable.
 ## You must replace [PARENT_PATH] by the full directory of the folder
-## where rsa-tools directory has been installed
-export RSAT=[PARENT_PATH]/rsa-tools;
+## where rsat directory has been installed
+export RSAT=[PARENT_PATH]/rsat;
 
 cd $RSAT
 
 ## Display the list of Perl modules that will be installed
-make -f makefiles/install_software.mk list_perl_modules;
+make -f makefiles/install_software.mk perl_modules_list;
+
+## Display the command that will be used to install the Perl modules
+make -f makefiles/install_software.mk perl_modules_cmd;
 
 ## Install the Perl modules
-make -f makefiles/install_software.mk install_perl_modules;
+make -f makefiles/install_software.mk perl_modules_install;
 \end{lstlisting}
 %% closing $
 
@@ -552,9 +555,9 @@ and ensembl libraries on your computer. \emph{The path must be adapted
   to fit your local configuration}.
 
 \begin{lstlisting}
-ensembl=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsa-tools/lib/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsat/lib/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsat/lib/ensembl-variation/modules
 \end{lstlisting}
 
 You also need to define the URL of the Ensembl database in that
@@ -729,7 +732,7 @@ be integrated in the package. All third-party programs may be loacated
 in the directory \emph{bin} directory of the \RSAT distribution.  
 
 In order to add functionalities to \RSAT, install some or all of these
-programs and include their binaries path rsa-tools/bin. If you are not
+programs and include their binaries path $RSAT/bin. If you are not
 familiar with the installation of unix programs, ask assistance to
 your system administrator.
 
