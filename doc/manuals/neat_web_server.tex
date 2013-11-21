@@ -99,7 +99,7 @@ installed in different countries.
 \subsection{Web server pages}
 
 The web pages are located in the directory
-\file{rsa-tools/public\_html}. This directory contains both the HTML help
+\file{rsat/public\_html}. This directory contains both the HTML help
 pages, and the PHP and CGI scripts.
 
 \subsection{Apache modules}
@@ -477,7 +477,7 @@ Tomcat or use the Tomcat manager to deploy the war file.
 
 \item If you are not the rsat user, set the RSAT environment variable, e.g.:
 
-      \textit{export RSAT=/home/rsat/rsa-tools}
+      \textit{export RSAT=/home/rsat/rsat}
       Run the configuration script with the following commands:
 
       \textit{chmod 755 configureWebxml.pl}
@@ -564,7 +564,7 @@ must be replaced by
  <soap:address location="url_of_the_cgi_file_on_your_server"/>
 \end{lstlisting}
 
-The URL can be \file{http://127.0.0.1/rsa-tools/web\_services/RSATWS.cgi}.
+The URL can be \file{http://127.0.0.1/rsat/web\_services/RSATWS.cgi}.
 
 \subsubsection{Edit the \neat config file}
 
@@ -573,7 +573,7 @@ Edit the \file{RSAT\_config.props} present in the main RSAT directory and edit t
 \begin{lstlisting}
 neat_supported=1
 neat_ws=web link to the WSDL file on your computer
-(e.g. http://127.0.0.1/rsa-tools/web_services/RSATWS.wsdl)
+(e.g. http://127.0.0.1/rsat/web_services/RSATWS.wsdl)
 \end{lstlisting}
 
 \subsubsection{Change permissions of the temporary files and log files directories}

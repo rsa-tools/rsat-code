@@ -47,7 +47,7 @@ A few additional mirrors have been installed in different countries.
 \subsection{Web server pages}
 
 The web pages are located in the directory
-\file{rsa-tools/public\_html}. This directory contains both the HTML
+\file{rsat/public\_html}. This directory contains both the HTML
 pages, and the CGI scripts.
 
 \subsection{Apache modules}
@@ -65,9 +65,9 @@ version (at least v5) of the php module, which can be found at the following sit
 
 \subsection{Configuration of the Apache server}
 
-In order to provide web access to the rsa-tools, you need to adapt the
-configuration of your web server. This requires root privileges
-(system administrator). 
+In order to provide web access to the Regulatory Sequence Analysis
+Tools (\RSAT), you need to adapt the configuration of your web
+server. This requires root privileges (system administrator).
 
 
 The detailed settings depend on your web server program. We provide
@@ -80,12 +80,12 @@ In summary, the configuration includes the following steps.
 \item Open the apache configuration file (if your Web server is
   Apache2, the config is defined in \file{/etc/apache2/httpd.conf}).
 
-\item Specify an alias for rsa-tools in the appropriate section. You
+\item Specify an alias for rsat in the appropriate section. You
   can find the appropriate section by searching similar elements (for
   example Alias, ScriptAlias).
 
 \begin{lstlisting}
-Alias /rsat [RSAT_PARENT_PATH]/rsa-tools/public_html/
+Alias /rsat [RSAT_PARENT_PATH]/rsat/public_html/
 \end{lstlisting}
 
 <b>Beware:</b> you need of course to adapt [RSAT\_PARENT\_PATH] to
@@ -101,16 +101,16 @@ need to remove the \texttt{\#} character before it.
 AddHandler cgi-script .cgi
 \end{lstlisting}
 
-\item Give authorization to execute CGI scripts in the rsa-tools directory
+\item Give authorization to execute CGI scripts in the \RSAT directory
 
 \begin{lstlisting}
-ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsa-tools/public_html/
+ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsat/public_html/
 \end{lstlisting}
 
-\item Specify the access options for the rsa-tools directory.
+\item Specify the access options for the \RSAT directory.
 
 \begin{lstlisting}
-<Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/">
+<Directory "[RSAT_PARENT_PATH]/rsat/public_html/">
    AllowOverride None
    AddHandler cgi-script .cgi
    Options ExecCGI
@@ -124,7 +124,7 @@ ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsa-tools/public_html/
 
 
 \begin{lstlisting}
-<Directory "[RSAT_PARENT_PATH]/rsa-tools/public_html/data/">
+<Directory "[RSAT_PARENT_PATH]/rsat/public_html/data/">
    AllowOverride None
    Options Indexes
    Order allow,deny
@@ -307,7 +307,7 @@ EDITOR or VISUAL).
 \item Add the following line to the \file{crontab} file. 
 
 \begin{lstlisting}
-02 04 * * * make -f [RSAT_PARENT_PATH]/rsa-tools/makefiles/server.mk clean_tmp
+02 04 * * * make -f [RSAT_PARENT_PATH]/rsat/makefiles/server.mk clean_tmp
 \end{lstlisting}
 
 This will execute the make script \file{server.mk}, with the target

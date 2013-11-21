@@ -9,7 +9,7 @@ don't know, ask assistance to your system administrator).
 In the following instruction, we will assume that \RSAT is installed
 in the directory 
 
-\texttt{/home/fred/rsa-tools}. 
+\texttt{/home/fred/rsat}. 
 
 This path has to be
 replaced by the actual path where \RSAT has been installed on your
@@ -27,8 +27,8 @@ For the following instructions, we will denote as \file{[RSAT\_PARENT\_PATH]}
 the path of the parent folder in which the \RSAT suite has been
 downloaded.
 
-For example, if the \file{rsa-tools} folder has been installed in your
-home directory (it is thus found at \file{/home/fred/rsa-tools}), you
+For example, if the \file{rsat} folder has been installed in your
+home directory (it is thus found at \file{/home/fred/rsat}), you
 should replace \file{[RSAT\_PARENT\_PATH]} by \file{/home/fred} in all the
 following instructions. 
 
@@ -65,12 +65,12 @@ The answer should be something like \result{/sbin/bash} or
   be found at root of your account.
 
   \emph{Note}: replace [PARENT\_PATH] by the full path of the directory
-  in which the rsa-tools folder has been created.
+  in which the rsat folder has been created.
 
 \begin{lstlisting}
 ################################################################
 ## Configuration for Regulatory Sequence Analysis Tools (RSAT)
-setenv RSAT [PARENT_PATH]/rsa-tools
+setenv RSAT [PARENT_PATH]/rsat
 set path=($RSAT/bin $path)
 set path=($RSAT/perl-scripts $path)
 set path=($RSAT/python-scripts $path)
@@ -84,12 +84,12 @@ set path=($RSAT/python-scripts $path)
   \file{.bashrc}, in case of doubt ask your system administrator).
 
   \emph{Note}: replace [PARENT\_PATH] by the full path of the directory
-  in which the rsa-tools folder has been created.
+  in which the rsat folder has been created.
 
 \begin{lstlisting}
 ################################################################
 ## Configuration for Regulatory Sequence Analysis Tools (RSAT)
-export RSAT=[PARENT_PATH]/rsa-tools
+export RSAT=[PARENT_PATH]/rsat
 export PATH=${RSAT}/bin:${PATH}
 export PATH=${RSAT}/perl-scripts:${PATH}
 export PATH=${RSAT}/python-scripts:${PATH}
@@ -115,7 +115,7 @@ configure your environment variables and your path.
 In the example above, this command should return
 
 \begin{lstlisting}
-/home/fred/rsa-tools
+/home/fred/rsat
 \end{lstlisting}
 
 
