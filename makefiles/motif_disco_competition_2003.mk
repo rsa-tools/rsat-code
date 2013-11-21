@@ -825,7 +825,7 @@ publish_eval:
 TO_PUBLISH=file_index.html
 #PUBLISH_SERVER=jvanheld@rsat.ulb.ac.be:
 PUBLISH_SITE=${PUBLISH_SERVER}${PUBLISH_DIR}
-PUBLISH_DIR=/home/jvanheld/rsa-tools/public_html/data/motif_discovery_competition
+PUBLISH_DIR=${RSAT}/public_html/data/motif_discovery_competition
 publish:
 	for pub in ${TO_PUBLISH}; do					\
 		${MAKE} publish_one_item ITEM_TO_PUBLISH=$${pub} ;	\
