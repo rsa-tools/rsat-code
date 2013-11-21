@@ -90,17 +90,13 @@ PERL_MODULES_PROBLEMS= \
 
 PERLMOD_TO_UPGRADE=Archive::Tar
 
-list_perl_modules:
-	@echo
-	@echo "Perl modules to be upgraded (manually)"
-	@echo ${}
-	@echo
-	@echo "Perl modules to be installed"
-	@echo "----------------------------"
+perl_modules_list:
 	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
-	@echo
 
-install_perl_modules:
+perl_modules_cmd:
+	@echo "cpan -i " ${PERL_MODULES}
+
+perl_modules_install:
 	@for module in ${PERL_MODULES} ; do \
 		${MAKE} _install_one_perl_module PERL_MODULE=$${module}; \
 	done

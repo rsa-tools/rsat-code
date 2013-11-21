@@ -523,7 +523,7 @@ link_one_file:
 ################################################################
 ## Synchronize the results to the server
 SERVER=rsat.ulb.ac.be
-SERVER_DIR=rsa-tools/data/comparative_genomics
+SERVER_DIR=${RSAT}/data/comparative_genomics
 BIGRE=jvanheld@${SERVER}:${SERVER_DIR}
 TO_SYNC=data
 TO_SYNC_DIR=`dirname ${TO_SYNC}`

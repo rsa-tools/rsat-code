@@ -140,7 +140,7 @@ data_from_server:
 
 ## Synchronize the list of supported organisms from the server to the mirror
 supported_from_server:
-	rsync -ruptvl -e ssh rsat@rsat.ulb.ac.be:rsa-tools/data/supported'*' data/
+	rsync -ruptvl -e ssh rsat@rsat.ulb.ac.be:rsat/data/supported'*' data/
 
 ################################################################
 ## Use wget to synchronize this mirror from the main server
