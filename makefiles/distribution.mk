@@ -9,14 +9,14 @@ MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
 DATE=`date +%Y-%m-%d`
-ARCHIVE_PREFIX=rsa-tools_${DATE}
+ARCHIVE_PREFIX=rsat_${DATE}
 ARCHIVE_PREFIX_METAB=metabolic-tools_${DATE}
-ARCHIVE=rsa-tools/${ARCHIVE_PREFIX}
+ARCHIVE=rsat/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
 TAR_EXCLUDE=--exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsa-tools/RSA.config.default rsa-tools/RSAT_config_default.props  rsa-tools/RSAT_config_default.mk
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/RSA.config.default rsat/RSAT_config_default.props  rsat/RSAT_config_default.mk
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
 ################################################################
@@ -45,7 +45,7 @@ manuals:
 
 ## Install manuals on the RSAT Web server
 publish_manuals:
-	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf rsat@${PUB_SERVER}:rsa-tools/public_html/distrib/
+	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf rsat@${PUB_SERVER}:rsat/public_html/distrib/
 
 
 ################################################################
@@ -66,28 +66,28 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES=rsa-tools/perl-scripts		\
-	rsa-tools/RSA.config.default		\
-	rsa-tools/RSA.config.default		\
-	rsa-tools/makefiles			\
-	rsa-tools/doc/manuals/*.pdf		\
-	rsa-tools/python-scripts 		\
-	rsa-tools/contrib/count-words  		\
-	rsa-tools/contrib/matrix-scan-quick  	\
-	rsa-tools/contrib/floydwarshall		\
-	rsa-tools/ws_clients		  	\
-	rsa-tools/public_html			\
-	rsa-tools/contrib/info-gibbs
+DISTRIB_FILES=rsat/perl-scripts		\
+	rsat/RSA.config.default		\
+	rsat/RSA.config.default		\
+	rsat/makefiles			\
+	rsat/doc/manuals/*.pdf		\
+	rsat/python-scripts 		\
+	rsat/contrib/count-words  		\
+	rsat/contrib/matrix-scan-quick  	\
+	rsat/contrib/floydwarshall		\
+	rsat/ws_clients		  	\
+	rsat/public_html			\
+	rsat/contrib/info-gibbs
 
-DISTRIB_FILES_METAB=rsa-tools/java	\
-	rsa-tools/contrib/REA		\
-	rsa-tools/contrib/kwalks
+DISTRIB_FILES_METAB=rsat/java	\
+	rsat/contrib/REA		\
+	rsat/contrib/kwalks
 
 _create_tar_archive:
 	@echo ${TAR_CREATE} 
 	(cd ${TAR_ROOT}; ${TAR_CREATE})
 
-FILE=rsa-tools/perl-scripts
+FILE=rsat/perl-scripts
 _add_one_file:
 	@echo ${ARCHIVE_CMD} ${FILE} ${POST_CMD}
 	${ARCHIVE_CMD} ${FILE}  ${POST_CMD}
@@ -127,7 +127,7 @@ ls_distrib:
 clean_distrib_site:
 	@echo
 	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
-#	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
+#	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
 	@echo "TEMPORARILY DISACTIVATED"
 
 ################################################################
@@ -150,5 +150,5 @@ tar_wsclients:
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:
-	rsync -ruptvl -e "ssh ${SSH_OPT}" ${TAR_WSCLIENTS} ${PUB_LOGIN}@${PUB_SERVER}:rsa-tools/public_html/web_services/
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${TAR_WSCLIENTS} ${PUB_LOGIN}@${PUB_SERVER}:rsat/public_html/web_services/
 

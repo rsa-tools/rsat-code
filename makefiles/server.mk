@@ -6,7 +6,6 @@
 #
 ############################################################
 
-#RSAT=${HOME}/rsa-tools/
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/server.mk
 

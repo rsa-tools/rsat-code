@@ -10,8 +10,6 @@
 MAKEFILE=makefiles/prepare_for_CVS.mk
 MAKE=make -s -f ${MAKEFILE}
 RSYNC=rsync -ruptvl
-RSAT=${HOME}/rsa-tools
-
 
 
 ## default directory
