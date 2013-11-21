@@ -13,7 +13,7 @@ V=1
 ## Get network data from the main RSAT server
 get_data:
 	@echo "Synchronizing data from the server to local RSAT"
-	rsync -ruptvl -e ssh -z rsat@rsat.ulb.ac.be:rsa-tools/public_html/data/metabolic_networks ${RSAT}/public_html/data/
+	rsync -ruptvl -e ssh -z rsat@rsat.ulb.ac.be:rsat/public_html/data/metabolic_networks ${RSAT}/public_html/data/
 	@echo "Data synchronized"
 
 ################################################################
