@@ -98,6 +98,7 @@ package main;
       if ((/(\S+)=(.*)/) && !(/^#/)) {
 	my $key = $1;
 	my $value = $2;
+	$value =~ s/\[RSAT_PARENT_PATH\]/${rsat_path}/;
 	$param{$key} = $value;
 
 	## Prompt for the new value
