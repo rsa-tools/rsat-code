@@ -33,11 +33,11 @@ smtp=[smtp.at.your.site]
 ################################################################
 ## URL of the web server (important for the links).
 ## This is necessary only if you want to install a local Web server
-rsat_www=http://www.rsat.eu/
+rsat_www=http://localhost/rsat/
 
 ## Obsolete version of the web server, for backwards compatibility
 ## This is necessary only if you want to install a local Web server
-www_rsa=http://www.rsat.eu/
+www_rsa=http://localhost/rsat//
 
 ## Echo level of the web server (default 0, set to 1 or 2 for debugging).
 ## This option should usually be left to 0, because it exposes all
@@ -73,10 +73,10 @@ exec_time=0
 ##
 ## This URL may be distinct from rsat_www because some web servers
 ## might delegate the web services to another server.
-rsat_ws=http://www.rsat.eu/web_services/RSATWS.wsdl
+rsat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
 
 ## URL used by the RSAT Web services to give Web access to temporary files
-rsat_ws_tmp=http://www.rsat.eu/tmp
+rsat_ws_tmp=http://localhost/rsat/tmp
 
 ## Default image format
 rsat_img_format=png
@@ -141,30 +141,30 @@ variation=[RSAT_PARENT_PATH]/rsat/perllib/ensembl-variation/modules
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
-neat_supported=0
+neat_supported=1
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
-neat_www_root=http://www.rsat.eu/
+neat_www_root=http://localhost/rsat/
 
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
 ## on the new neat_ws server
-neat_ws=http://www.rsat.eu/web_services/RSATWS.wsdl
+neat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
 
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
-neat_ws_tmp=http://www.rsat.eu/tmp/
+neat_ws_tmp=http://localhost/rsat/tmp/
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
 ## programs before changing this variable.
-neat_java_ws=http://www.rsat.eu/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
+neat_java_ws=http://localhost/rsat/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
 
 ## The java programs on the Web interface are currently supported only at the
 ## ULB server.
-neat_java_host=http://www.rsat.eu/
+neat_java_host=http://localhost/rsat/
 
 # if forwarding to apache is not activated, indicate the tomcat port
 tomcat_port=
