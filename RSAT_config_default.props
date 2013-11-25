@@ -14,7 +14,7 @@ rsat_site=your_server_name
 rsat_server_admin=your.mail@your.mail.server
 
 ## Main RSAT directory
-RSAT=[RSAT_PARENT_PATH]/rsa-tools
+RSAT=[RSAT_PARENT_PATH]/rsat
 
 ## RSAT binary directory. This directory should contain the executable
 ## files resulting from the compilation of C programs in RSAT
@@ -22,10 +22,10 @@ RSAT=[RSAT_PARENT_PATH]/rsa-tools
 ## developed by external developers but required for some RSAT
 ## functions (vmatch, mkvtree) or any other application considered as
 ## complementary to RSAT (patser, consensus, ...).
-RSAT_BIN=[RSAT_PARENT_PATH]/rsa-tools/bin
+RSAT_BIN=[RSAT_PARENT_PATH]/rsat/bin
 
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
-rsat_tmp=[RSAT_PARENT_PATH]/rsa-tools/public_html/tmp
+rsat_tmp=[RSAT_PARENT_PATH]/rsat/public_html/tmp
 
 ## Server for sending mail (SMTP) is site-dependent
 smtp=[smtp.at.your.site]
@@ -135,9 +135,9 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ensembl_version_safe=72
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
-ensembl=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsa-tools/perllib/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsat/perllib/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsat/perllib/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsat/perllib/ensembl-variation/modules
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
@@ -183,11 +183,11 @@ seqlogo_dir=[parent_path_of_weblogo]/weblogo/
 
 ## MCL , graph-based clustering algorithm developed by Stijn Van Dongen, and
 ## integrated in the NeAT suite.
-mcl_dir=[RSAT_PARENT_PATH]/rsa-tools/bin
+mcl_dir=[RSAT_PARENT_PATH]/rsat/bin
 
 ## RNSC , graph-based clustering algorithm developed by Andrew King and Igor
 ## Jurisica, and integrated in the NeAT suite.
-rnsc_dir=[RSAT_PARENT_PATH]/rsa-tools/bin
+rnsc_dir=[RSAT_PARENT_PATH]/rsat/bin
 
 ## BLAST
 blast_dir=[your_path_to_blast]
@@ -195,8 +195,8 @@ blast_dir=[your_path_to_blast]
 
 ## REA, k-shortest path finding program by Jimenez and Marzal. 
 ## Used for the path finding algorithms in the NeAT suite.
-REA_ROOT=[RSAT_PARENT_PATH]/rsa-tools/contrib/REA
+REA_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/REA
 
 ## kWalks, subgraph extraction program by Pierre Dupont and Jerome Callut
 ## Used for the pathway extraction hybrid algorithm in the NeAT suite.
-KWALKS_ROOT=[RSAT_PARENT_PATH]/rsa-tools/contrib/kwalks/bin
+KWALKS_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/kwalks/bin
