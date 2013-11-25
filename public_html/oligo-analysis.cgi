@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 
-#### redirect error log to a file
+## redirect error log to a file
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 BEGIN {
@@ -24,7 +24,7 @@ require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
 ## Open result page
@@ -48,11 +48,11 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 
 #$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
-#### read parameters ####
-$parameters = "";
+## read parameters
+$parameters = " -v 1"; ## verbosity
 $parameters .= " -sort";
 
-### sequence file
+## sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 push @result_files, ("Input sequence", $sequence_file);
 
@@ -80,7 +80,7 @@ if ($purge) {
   $command = $oligo_analysis_command." -i ".$sequence_file;
 }
 
-### fields to return
+## fields to return
 if ($query->param('return') eq "table") {
     $parameters .= " -return occ -table"; 
 } elsif ($query->param('return') eq "distrib") {
@@ -89,7 +89,7 @@ if ($query->param('return') eq "table") {
   &CGI_return_fields();
 }
 
-### single or both strands
+## single or both strands
 $str = "";
 if ($query->param('strand') =~ /single/) {
   $str = " -1str";
@@ -99,33 +99,30 @@ if ($query->param('strand') =~ /single/) {
   $parameters .= " -2str";
 }
 
-### group patterns by pairs of reverse complements
+## group patterns by pairs of reverse complements
 unless ($query->param('grouprc')) {
   $parameters .= " -nogrouprc";
 }
 
-### group patterns by pairs of reverse complements
+## group patterns by pairs of reverse complements
 if ($query->param('side') eq 'under-represented') {
   $parameters .= " -under";
 } elsif ($query->param('side') eq 'both') {
   $parameters .= " -two_tail";
 }
 
-### prevent overlapping matches of the same pattern
+## prevent overlapping matches of the same pattern
 if ($query->param('noov')) {
   $parameters .= " -noov";
 }
 
-### verbose
-$parameters .= " -v 1 ";
-
-### quick count mode
+## quick count mode
 $parameters .= " -quick_if_possible ";
 
-#### sequence type
+## sequence type
 $parameters .= " -seqtype ".$query->param("sequence_type");
 
-#### oligo size ####
+## oligo size
 $oligo_length = $query->param('oligo_length') ;
 &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
 $parameters .= " -l $oligo_length";
@@ -242,13 +239,13 @@ if ($query->param('bg_method') =~ /background/i) {
 }
 $parameters .= "$freq_option";
 
-#### pseudo weight
+## pseudo weight
 if (&IsReal($query->param('pseudo_freq'))) {
     my $pseudo = $query->param('pseudo_freq');
     $parameters .= " -pseudo $pseudo";
 }
 
-#### neighborhood ####
+## neighborhood
 if ($query->param('neighborhood') =~ /N at one position/i) {
   $parameters .= " -oneN";
 } elsif ($query->param('neighborhood') =~ /one degenerated position/i) {
@@ -266,9 +263,8 @@ if ($query->param('output') =~ /display/i) {
 
     ### execute the command ###
     $result_file = $tmp_file_path.".tab";
-#    $result_file = "$TMP/$tmp_file_name.res";
+    #    $result_file = "$TMP/$tmp_file_name.res";
     push @result_files, ('oligos', $result_file);
-
     open RESULT, "$command |";
 
     ### Print result on the web page
