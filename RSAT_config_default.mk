@@ -9,7 +9,7 @@
 RSAT_SITE=your_server_name
 
 ## Web server URL
-RSAT_WWW=http://www.rsat.eu/
+RSAT_WWW=http://localhost/rsat/
 
 ## Email address of RSAT administrator
 RSAT_ADMIN_EMAIL=your.mail@your.mail.server
@@ -55,11 +55,11 @@ BIN_DIR=${RSAT}/bin
 ##
 ## This may differ from the RSAT site, because some tasks may be
 ## delegated to remote RSAT web services.
-RSAT_WS=http://www.rsat.eu
+RSAT_WS=http://localhost/rsat
 
 ## URL used by the RSAT Web services to give Web access to temporary
 ## files
-RSAT_WS_TMP=http://www.rsat.eu/tmp
+RSAT_WS_TMP=http://localhost/rsat/tmp
 
 ################################################################
 ##
