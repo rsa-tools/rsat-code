@@ -58,7 +58,8 @@ package main;
 
     ## Check that the config file exists in the RSAT path
     my $config_file = $rsat_path."/RSAT_config.${extension}";
-    warn("\n\nEditing \".${extension}\" configuration file\t", $config_file,"\n\n");
+    warn("\n\n\n", "################################################################\n", 
+	 "## Editing \".${extension}\" configuration file\t", $config_file,"\n\n");
 
     unless (-f $config_file) {
       my $default_config_file = $rsat_path."/RSAT_config_default.${extension}";
@@ -100,7 +101,7 @@ package main;
       if ((/(\S+)=(.*)/) && !(/^#/)) {
 	my $key = $1;
 	my $value = $2;
-	$value =~ s/\[RSAT_PARENT_PATH\]/${rsat_path}/;
+	$value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
 	$param{$key} = $value;
 
 	## Prompt for the new value
