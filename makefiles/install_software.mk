@@ -406,7 +406,7 @@ install_fastqc: _download_fastqc _install_fastqc
 _download_fastqc:
 	@mkdir -p ${FASTQC_DOWNLOAD_DIR}
 	@echo "Getting fastqc using wget"
-#	(cd ${FASTQC_DOWNLOAD_DIR}; wget -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
+	(cd ${FASTQC_DOWNLOAD_DIR}; wget -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
 	@echo "	fastqc download dir	${FASTQC_DOWNLOAD_DIR}"
 	@echo "	fastqc install dir	${FASTQC_INSTALL_DIR}"
 	@chmod 755 ${FASTQC}
