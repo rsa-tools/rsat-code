@@ -13,7 +13,7 @@ package main;
 {
 
 
-  my @extensions =  ("props", "mk");
+  my @extensions =  ("props", "mk", "bashrc");
 
   ## Check if the RSAT environment variable has been specified
   $rsat_path = $ENV{RSAT};
@@ -51,12 +51,14 @@ package main;
 
   ## Treat successively the two configuration files: .props (for Perl
   ## and php scripts) and .mk (for make scripts).
+  warn("\n", "We will now edit configuration files in interactive mode, for the ", 
+       scalar(@extensions), " following extensions: ", join(", ", @extensions), "\n");
 
   for my $extension (@extensions) {
 
     ## Check that the config file exists in the RSAT path
     my $config_file = $rsat_path."/RSAT_config.${extension}";
-    warn("\n\nEditing ${extension} configuration file\t", $config_file,"\n\n");
+    warn("\n\nEditing \".${extension}\" configuration file\t", $config_file,"\n\n");
 
     unless (-f $config_file) {
       my $default_config_file = $rsat_path."/RSAT_config_default.${extension}";
@@ -83,7 +85,7 @@ package main;
 
     open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
 
-  ## Create a copy of the config file
+    ## Create a copy of the config file
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     my $config_file_bk = $config_file.".bk.".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec;
     warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
@@ -107,8 +109,12 @@ package main;
 	if ($new_value) {
 	  $value = $new_value;
 	}
+	if ($extension eq "bashrc") {
+	    print NEW_CONF "export ", $key, "=", $value, "\n";
+	} else {
+	    print NEW_CONF $key, "=", $value, "\n";
+	}
 
-	print NEW_CONF $key, "=", $value, "\n";
       } else {
 	print;			## Display comments
 	print NEW_CONF;
