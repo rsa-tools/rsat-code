@@ -21,7 +21,16 @@ $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{upload_freq_file} = "";
 $default{sequence_type} = "dna";
-$default{oligo_length} = 6;
+#$default{oligo_length} = 6;
+$default{oligo_length1}="";
+$default{oligo_length2}="";
+$default{oligo_length3}="";
+$default{oligo_length4}="";
+$default{oligo_length5}="";
+$default{oligo_length6}="checked";
+$default{oligo_length7}="checked";
+$default{oligo_length8}="checked";
+
 $default{bg_method} = "Markov model (higher order dependencies)";
 ##$default{bg_method} = "background";
 $default{background} = "upstream-noorf";
@@ -120,14 +129,27 @@ print "<BR>";
 print "<hr>\n";
 print "<b>Oligomer counting mode</b><br>\n";
 
-### oligo size
-print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'oligo_length',
-			 -Values=>[1,2,3,4,5,6,7,8],
-			 -default=>$default{oligo_length});
+# ### oligo size
+# print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+# print $query->popup_menu(-name=>'oligo_length',
+# 			 -Values=>[1,2,3,4,5,6,7,8],
+# 			 -default=>$default{oligo_length});
+
+
+
+## Oligo sizes
+print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer lengths</a>&nbsp;</b>\n";
+@oligo_lengths = 1..8;
+for my $len (@oligo_lengths) {
+    print "&nbsp;"x2;
+    print $query->checkbox(-name=>"oligo_length".$len,
+			   -checked=>$default{"oligo_length".$len},
+			   -label=>$len);
+}
+print "<br><i>Note: motifs can be larger than oligo sizes (oligos are used as seed for building matrices)</i>";
 
 ### prevent overlapping matches of the same pattern
-print $query->checkbox(-name=>'noov',
+print "\n<br>", $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
 print "&nbsp;<A HREF='help.oligo-analysis.html#noov'><B>prevent overlapping matches</B></A>";
