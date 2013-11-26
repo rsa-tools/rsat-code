@@ -863,10 +863,17 @@ sub AssemblePatterns {
 	    $other_word = substr($seed,$offset,$word_length);
 	    $mismatches = &CountMismatches($word,$other_word,$max_subst);
 	    if ($mismatches <= $max_subst) {
-	      #print "$seed\t$offset\t$word\t$other_word\t$mismatches\n";
 	      $found = 1;
-	      $position{$word} = $position{$other_word};
-	      last;
+#	      $position{$word} = $position{$other_word};
+	      $position{$word} = $offset+$origin;
+	      # &RSAT::message::Debug("match found", "seed=".$seed, "offset:".$offset, 
+	      # 			    "word=".$word, 
+	      # 			    "other_word=".$other_word, 
+	      # 			    "pos{other_word}=".$position{$other_word},
+	      # 			    "pos{word}=".$position{$word},
+	      # 			    "mis=".$mismatches) 
+	      # 	  if ($main::verbose >= 10);
+	      last; ## OK for the current word
 	    }
 	    #if ($strand_insensitive) {
 	    #  $mismatches = &CountMismatches($rc_word,$other_word,$max_subst);
