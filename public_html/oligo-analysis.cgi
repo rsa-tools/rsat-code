@@ -75,10 +75,20 @@ if ($purge) {
   $command .= " -format ".$sequence_format;
   $command .= " -o ".$purged_seq_file;
   $command .= " -seqtype ".$sequence_type if ($sequence_type eq "dna");
-  $command .= "; ".$oligo_analysis_command." -i ".$purged_seq_file." -format fasta ";
+
+  ## Define purged sequences as input file
+  $input_file = $purged_seq_file;
 } else {
-  $command = $oligo_analysis_command." -i ".$sequence_file;
+    $input_file = $sequence_file;
 }
+
+
+
+################################################################
+## Collecte "fixed" parameteres (i.e. those that do not depend on oligo length)
+
+## Input sequence
+$parameters .= " -i ".$input_file." -format fasta ";
 
 ## fields to return
 if ($query->param('return') eq "table") {
@@ -122,10 +132,10 @@ $parameters .= " -quick_if_possible ";
 ## sequence type
 $parameters .= " -seqtype ".$query->param("sequence_type");
 
-## oligo size
-$oligo_length = $query->param('oligo_length') ;
-&FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-$parameters .= " -l $oligo_length";
+# ## Oligonucleotide length
+# $oligo_length = $query->param('oligo_length') ;
+# &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
+# $parameters .= " -l $oligo_length";
 
 ################################################################
 ## Background model
@@ -252,7 +262,36 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
   $parameters .= " -onedeg ";
 }
 
-$command .= $parameters;
+#$command .= $parameters;
+
+## Oligonucleotide length(s)
+@selected_oligo_lengths = ();
+@oligo_files = ();
+for my $oligo_length (1..8) {
+    if ($query->param("oligo_length".$oligo_length)) {
+	push @selected_oligo_lengths, $oligo_length;
+	my $oligo_file = $tmp_file_path."_".$oligo_length."nt.tab";
+	push @result_files, ($oligo_length."-mers", $oligo_file);
+	push @oligo_files, $oligo_file;
+	$command .= "; ".$oligo_analysis_command;
+	$command .= " ".$parameters;
+	$command .= " -l ".$oligo_length;
+	$command .= " -o ".$oligo_file;
+    }
+}
+
+## Check if at least one oligo length has been checked
+if (scalar@selected_oligo_lengths < 1) {
+    &RSAT::error::FatalError("You chould check at least one oligonucleotide length");
+}
+
+## Concatenate all results to a single file for assembly
+$result_file = $tmp_file_path.".tab";
+#    $result_file = "$TMP/$tmp_file_name.res";
+push @result_files, ('merged oligos', $result_file);
+$command .= "; cat ";
+$command .= join (" ", @oligo_files);
+#$command .= " > ".$result_file;
 
 &ReportWebCommand($command." ".$parameters);
 
@@ -262,9 +301,6 @@ if ($query->param('output') =~ /display/i) {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = $tmp_file_path.".tab";
-    #    $result_file = "$TMP/$tmp_file_name.res";
-    push @result_files, ('oligos', $result_file);
     open RESULT, "$command |";
 
     ### Print result on the web page
