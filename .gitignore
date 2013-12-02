@@ -23,3 +23,4 @@ contrib/info-gibbs/info-gibbs
 contrib/matrix-scan-quick/matrix-scan-quick
 contrib/compare-matrices-quick/compare-matrices-quick
 public_html/images/RSAT_icon.jpg
+makefile
