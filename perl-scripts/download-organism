@@ -117,6 +117,7 @@ BEGIN {
 }
 require "RSA.lib";
 require RSAT::util;
+require RSAT::server;
 
 
 ################################################################
@@ -131,7 +132,7 @@ package main;
   $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
-  $ssh_login = "rsat\@rsat.ulb.ac.be";
+#  $ssh_login = "rsat\@rsat.ulb.ac.be";
   $rsat_server_dir = "";
 #  $rsat_server_dir = "rsa-tools";
 #  $ssh_login = "rsat\@merlin.bigre.ulb.ac.be";
@@ -168,7 +169,8 @@ package main;
 
   ################################################################
   ## Check that the web aspirator is working
-  $which_aspirator = `which $get_command`;
+#  $which_aspirator = `which $get_command`;
+  $which_aspirator = &RSAT::server::GetProgramPath($get_command);
   &RSAT::message::Debug($which_aspirator) if ($main::verbose >= 3);
   unless ($which_aspirator) {
     &RSAT::error::FatalError("The program ".$get_command." is not found in your path. This program is required for downloading data from the server. ");
@@ -184,6 +186,7 @@ package main;
   &RSAT::message::Info("Download directory", $output_dir) if ($main::verbose >= 1);
   &RSAT::util::CheckOutDir($output_dir);
 #  chdir($output_dir);
+
 
   ## Get RSAT path for rsync
   if ($get_command eq "rsync") {
@@ -240,12 +243,14 @@ package main;
   ## the selected organisms only)
   &RSAT::message::TimeWarn("Getting information about supported organisms from server") if ($main::verbose >= 1);
 
+
   my @all_organisms;
   if ($ssh_login) {
     @all_organisms = `ssh $ssh_login supported-organisms -v 0 -return ID,last_update,source | grep -v '^#'`;
   } else {
     @all_organisms = `supported-organisms -v 0 -server -return ID,last_update,source | grep -v '^#'`;
   }
+  die "HELLO";
   foreach my $org_line (@all_organisms) {
     next unless ($org_line); ## Skip empty line returned by RSAT Web service
     chomp($org_line);
@@ -254,6 +259,7 @@ package main;
     $source{$org} = $source || '<NA>';
     &RSAT::message::Debug("Server supported", $org_line, $org, $last_update{$org}, $source{$org}) if ($main::verbose >= 5);
   }
+
 
   ################################################################
   ## Download the genomes
@@ -290,7 +296,6 @@ package main;
       $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
 
     } elsif ($get_command eq "rsync") {
-
       my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/'*'";
       &RSAT::message::TimeWarn("Downloading genome", $i."/".$org_nb, $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
       $cmd .= "rsync -e ssh -ruptvl -z ";
@@ -300,6 +305,7 @@ package main;
       $cmd =~ s/\/\//\//g;
     }
     &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
+
 
     ## update the organism in the RSAT configuration tables
     my $source = $source{$org} || '<NA>';
@@ -313,9 +319,8 @@ package main;
     &RSAT::message::Debug("Updating config and phylogeny\n", $cmd) if ($main::verbose >= 2);
   }
 
-
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-print $main::out $exec_time if ($main::verbose >= 1);
+  print $main::out $exec_time if ($main::verbose >= 1);
   exit(0);
 }
 
