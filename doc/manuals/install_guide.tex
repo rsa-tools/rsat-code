@@ -543,7 +543,7 @@ the latest release on the Ensembl web page
 command accordingly.
 
 \begin{lstlisting}
-## Install the ensembl library witha  specific branch number.
+## Install the ensembl library with a specific branch number.
 make -f makefiles/install_software.mk install_ensembl_api \
    ENSEMBL_VERSION=73
 \end{lstlisting}
@@ -620,27 +620,6 @@ The EnsEMBL libraries also require the SQL client Perl module
 Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
 (\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
-
-\section{Compiling the Perl Stubb for Web services}
-
-Web services \footnote{beware, this is not the same as Web server} allow you
-
-If you want to use the Web services, you need to compile the Stubb in
-order to synchronize the Perl modules of your client with the service
-specification of the server.
-
-\begin{lstlisting}
-## Compile the stubb.
-## Your computer will open a connection to the Web services server 
-## and collect the WSDL specifications of the supported services.
-cd $RSAT
-make -f makefiles/init_RSAT.mk ws_stubb
-
-## Test the connection to the Web services
-cd $RSAT/ws_clients/perl_clients
-make test
-\end{lstlisting}
-%$
 
 
 

@@ -326,3 +326,32 @@ notice that the temporary files are not properly cleaned, please
 contact your system administrator to check the cron command.
 
 \end{document}
+
+
+
+\section{Compiling the Perl Stubb for Web services}
+
+Web services \footnote{beware, this is not the same as Web server}
+enable external programs to remotely address queries to your Web
+server. The \RSAT Web server relies on Web services for various
+purposes (e.g. synchronizing genomes between servers). Besides the
+Network Analysis Tools are based on a multi-tier architecture relying
+on Web services.
+
+To use the \RSAT and NeAT Web services, you need to compile the Stubb
+in order to synchronize the Perl modules of your client with the
+service specification of the server.
+
+\begin{lstlisting}
+## Compile the stubb.
+## Your computer will open a connection to the Web services server 
+## and collect the WSDL specifications of the supported services.
+cd $RSAT
+make -f makefiles/init_RSAT.mk ws_stubb
+
+## Test the connection to the Web services
+cd $RSAT/ws_clients/perl_clients
+make test
+\end{lstlisting}
+%$
+
