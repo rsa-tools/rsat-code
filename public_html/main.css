@@ -141,6 +141,26 @@ pre,tt
   font-size: 12px;
   }
 
+
+.attention {
+             color: #6B0909;
+             font-size: larger;
+             padding:10px;
+             background-color: #FFEEEE;
+             border: 2px solid #B40404;
+             margin-right: 5%;
+             margin-left: 5%;
+             }  
+
+p.attention
+{
+  padding:10px;
+  background-color: #FFEEEE;
+  border: 2px solid #B40404;
+  margin-right: 5%;
+  margin-left: 5%;
+}
+
 /* Information pages  */
 
 body.info center 
