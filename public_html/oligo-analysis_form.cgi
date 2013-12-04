@@ -30,6 +30,7 @@ $default{oligo_length5}="";
 $default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
 $default{oligo_length8}="checked";
+$default{oligo_length9}="";
 
 $default{bg_method} = "Markov model (higher order dependencies)";
 ##$default{bg_method} = "background";
@@ -139,7 +140,7 @@ print "<b>Oligomer counting mode</b><br>\n";
 
 ## Oligo sizes
 print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer lengths</a>&nbsp;</b>\n";
-@oligo_lengths = 1..8;
+@oligo_lengths = 1..9;
 for my $len (@oligo_lengths) {
     print "&nbsp;"x2;
     print $query->checkbox(-name=>"oligo_length".$len,

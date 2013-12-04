@@ -267,7 +267,7 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 ## Oligonucleotide length(s)
 @selected_oligo_lengths = ();
 @oligo_files = ();
-for my $oligo_length (1..8) {
+for my $oligo_length (1..9) {
     if ($query->param("oligo_length".$oligo_length)) {
 	push @selected_oligo_lengths, $oligo_length;
 	my $oligo_file = $tmp_file_path."_".$oligo_length."nt.tab";
@@ -291,6 +291,7 @@ $result_file = $tmp_file_path.".tab";
 push @result_files, ('merged oligos', $result_file);
 $command .= "; cat ";
 $command .= join (" ", @oligo_files);
+#$command .= " | grep -v '^;'"; ## Discard comment line, too heavy for output with multiple analyses
 #$command .= " > ".$result_file;
 
 &ReportWebCommand($command." ".$parameters);
