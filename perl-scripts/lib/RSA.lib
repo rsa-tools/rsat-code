@@ -141,7 +141,7 @@ sub ExpectedFreqFile {
 	unless (($oligo_length >= 1) && ($oligo_length <= 3));
     } else {
       &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8")
-	unless (($oligo_length >= 1) && ($oligo_length <= 8));
+	unless (($oligo_length >= 1) && ($oligo_length <= 9));
     }
   } elsif ($type eq 'dyad') {
     &RSAT::error::FatalError($oligo_length, "is not a supported length for monads, should be comprised between 1 and 3")
