@@ -140,7 +140,7 @@ print "<b>Oligomer counting mode</b><br>\n";
 
 ## Oligo sizes
 print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer lengths</a>&nbsp;</b>\n";
-@oligo_lengths = 1..9;
+@oligo_lengths = 1..8;
 for my $len (@oligo_lengths) {
     print "&nbsp;"x2;
     print $query->checkbox(-name=>"oligo_length".$len,
