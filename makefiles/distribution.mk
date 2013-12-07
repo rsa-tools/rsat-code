@@ -15,7 +15,7 @@ ARCHIVE=rsat/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
-TAR_EXCLUDE=--exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
+TAR_EXCLUDE=--exclude .git --exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
 TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/RSA.config.default rsat/RSAT_config_default.props  rsat/RSAT_config_default.mk
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
@@ -140,6 +140,12 @@ publish:
 
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
+
+## Open the distribution Web site
+BROWSER=firefox
+DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/
+web:
+	 open -a ${BROWSER} ${DISTRIB_URL}
 
 ################################################################
 ## Make a tar archive of the ws clients
