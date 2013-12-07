@@ -29,3 +29,7 @@ bioperl-live
 lib
 app_sources
 distrib_accounts
+contrib/kwalks/bin/lkwalk
+*.idx
+*.aux
+archives
