@@ -24,11 +24,12 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 all: clean_emacs_bk tar_archive clean_distrib_site publish
 
 ## List parameters
-PUB_SERVER=merlin.bigre.ulb.ac.be
+#PUB_SERVER=merlin.bigre.ulb.ac.be
+PUB_SERVER=rsat.ulb.ac.be
 PUB_LOGIN=jvanheld
 SSH_OPT=
 PUB_FORMAT=tar.gz
-PUB_DIR=rsat_distrib
+PUB_DIR=public_html/rsat_distrib
 list_params:
 	@echo "RSAT distribution parameters"
 	@echo "	ARCHIVE		${ARCHIVE}"
@@ -127,8 +128,7 @@ ls_distrib:
 clean_distrib_site:
 	@echo
 	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
-#	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
-	@echo "TEMPORARILY DISACTIVATED"
+	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
 
 ################################################################
 ## Publish the tar archive of the whole distribution
