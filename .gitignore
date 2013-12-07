@@ -24,3 +24,7 @@ contrib/matrix-scan-quick/matrix-scan-quick
 contrib/compare-matrices-quick/compare-matrices-quick
 public_html/images/RSAT_icon.jpg
 makefile
+bioperl-live
+.DS_Store
+lib
+app_sources
