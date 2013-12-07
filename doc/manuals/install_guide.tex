@@ -58,12 +58,12 @@ the following operating systems.
 \RSAT is not compatible with any version of Microsoft Windows and I
 have no intention to make it compatible in a foreseeable future. Since
 most programs are written in perl, part of them might run under
-windows, but some others will certainly not, because they include
+Windows, but some others will certainly not, because they include
 calls to unix system commands.
 
 \subsection{Perl language}
 
-Most of the programs in \RSAT are written in perl. Version 5.1 or
+Most of the programs in \RSAT are written in Perl. Version 5.1 or
 later is recommended. A set of Perl modules is required, the \RSAT
 package includes a script to install them automatically (see
 Chapter~\ref{chap:perl_modules}).
@@ -77,9 +77,7 @@ Python release
 recommended, because it contains some required libraries for remote
 access to external resources (UCSC genome browser).
 
-The following libraries are required for various programs.
-
-
+The following Python libraries are required for various programs.
 
 \begin{itemize}
 \item
@@ -139,6 +137,8 @@ a Web page.
 
 For the time being, \RSAT is distributed as a compressed archive. 
 
+The license can be obtained from the \RSAT web site (\rsat_url).
+
 \section{Installation from a compressed archive}
 
 Download the latest version of the \RSAT distribution. Uncompress the
@@ -159,9 +159,74 @@ tar -xpzf rsat_yyyymmdd.tar.gz
 %%
 %% \input{ig_cvs}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%M initialization
 \chapter{Initializing \RSAT}
 
-\input{ug_configuration.tex}
+% \input{ug_configuration.tex}
+
+\subsection{Configuring your \RSAT\ server}
+
+RSAT requires to specify a set of parameters, which will be stored in
+three property files:
+\begin{enumerate}
+\item  \file{RSAT\_config.props}
+\item  \file{RSAT\_config.mk}
+\item  \file{RSAT_config.bashrc}
+\end{enumerate}
+
+In particular, \emph{it is crucial to specify the full path of the
+  variable RSAT}, which specifies the RSAT main directory.
+
+The simplest way to update the configuration file is to run the
+following script.
+
+\begin{lstlisting}
+## Enter in RSAT distribution folder
+cd rsat
+
+## Run the configuration script
+perl perl-scripts/configure_rsat.pl
+\end{lstlisting}
+
+Alternatively, you can edit the files with a text editor of your
+choice.
+
+\subsection{Loading RSAT environment variables}
+
+The configuration script has created a bash file
+\file{RSAT_config.bashrc} in the \RSAT distribution directory (folder
+\file{rsat}). 
+
+This file should be loaded each time you enter a session. There are
+several alternative ways to do this.
+
+\begin{enumerate}
+
+\item Source the file manually at each new session
+
+\begin{lstlisting}
+## Load the RSAT environment variables
+source RSAT_config.bashrc
+\end{lstlisting}
+
+\item Copy the content of this file in the bash configuration file in
+  your home directory (\file{~/.bashrc} or
+  \file{~/.bash_profile}). \RSAT environment variables will then be
+  loaded for you at each connexion.
+
+\item If you dispose of admin rights, you can copy the content of this
+  file in the main bash configuration file: 
+  \begin {enumerate}
+  \item in Lunix Centos, you can create a file
+    \file{/etc/profile.d/rsat.bashrc}; 
+  \item Mac OSX, copy it to the main bashrc file (\file{/etc/bashrc}).
+  \end{itemize}
+  \RSAT environment variables will then be automatically loaded for
+  each user of this computer.
+\end{enumerate}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Directories
@@ -182,60 +247,40 @@ make -f makefiles/init_rsat.mk init
 \end{lstlisting}
 % $
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Config file
-\section{Adapting \RSAT \  local configuration}
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% % Config file
+%% \section{Adapting \RSAT \  local configuration}
 
 
-\subsection{Creating site-specific configuration files}
+%% \subsection{Creating site-specific configuration files}
 
-The \RSAT distribution comes with two template configuration files
-located in the \file{rsat} directory:
+%% The \RSAT distribution comes with two template configuration files
+%% located in the \file{rsat} directory:
 
-\begin{itemize}
-\item \file{RSAT\_config\_default.props} 
-\item \file{RSAT\_config\_default.mk}
-\end{itemize}
+%% \begin{itemize}
+%% \item \file{RSAT\_config\_default.props} 
+%% \item \file{RSAT\_config\_default.mk}
+%% \end{itemize}
 
-During the initialization script executed in the previous section,
-these two default files were automatically copied to your
-site-specific configuration files \file{RSAT\_config.props} and
-\file{RSAT\_config.mk}.
+%% During the initialization script executed in the previous section,
+%% these two default files were automatically copied to your
+%% site-specific configuration files \file{RSAT\_config.props} and
+%% \file{RSAT\_config.mk}.
 
-Check this before going any further: 
+%% Check this before going any further: 
 
-\begin{lstlisting}
-ls -1 RSAT_config*
-\end{lstlisting}
+%% \begin{lstlisting}
+%% ls -1 RSAT_config*
+%% \end{lstlisting}
 
-You should see this:
-\begin{verbatim}
-RSAT_config_default.mk
-RSAT_config_default.props
-RSAT_config.mk
-RSAT_config.props
-\end{verbatim}
+%% You should see this:
+%% \begin{verbatim}
+%% RSAT_config_default.mk
+%% RSAT_config_default.props
+%% RSAT_config.mk
+%% RSAT_config.props
+%% \end{verbatim}
 
-\emph{Beware:} this operation should be done only once. If you redo
-the copy commands after having edited the files, you will loose all
-your editing result (this is the reason why the operation is done
-manually rather than automatically).
-
-\subsection{Updating the \RSAT\ local configuration file}
-
-You need to update the file \file{RSAT\_config.props} and specify the
-parameters of your local configuration. In particular, \emph{it is
-  crucial to specify the full path of the variable RSAT}, which
-specifies the RSAT main directory.
-
-The simplest way to update the configuration file is to run the following script.
-
-\begin{lstlisting}
-perl perl-scripts/update_rsat_config.pl
-\end{lstlisting}
-
-Alternatively, you can edit the file \file{RSAT\_config.props} with a
-text editor of your choice.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -257,20 +302,13 @@ Don't worry if you see a warning looking like this:
 \begin{footnotesize}
 \begin{verbatim}
 ; WARNING	The tabular file with the list of supported organism cannot be read
-; WARNING	Missing file	/no_backup/rsat/public_html/data/supported_organisms.tab
+; WARNING	Missing file	[RSAT_PARENT_PATH]/rsat/public_html/data/supported_organisms.tab
 \end{verbatim}
 \end{footnotesize}
 
-This warning will disappear after we download the first organism in
-\RSAT.
+This warning will disappear as soon as you download the first organism
+in \RSAT.
 
-You are now able to use any program from the \RSAT package, untill you
-quit your session. It is however not very convenient to set the path
-manually each time you open a new connection. You can modify your
-default configuration by including the above commands in the file
-\file{.cshrc} (in tcsh) or \file{.bashrc} (in bash) which should be
-found at the root of your home directory. If you don't know how to
-modify this file, see the system administrator.
 
 \chapter{Installing Perl modules}
 \label{chap:perl_modules}
@@ -288,33 +326,38 @@ The Perl module \program{GD.pm} requires prior installation of the
 \begin{itemize}
 
 \item On \emph{Linux} systems, this library can be installed with the
-  package manager of your distribution (e.g. \texttt{apt-get},
-  \texttt{yast}, \ldots).
+  package manager of the distribution. for example:
+  \begin{itemize}
+  \item \program{apt-get} for Ubuntu
+  \item  \program{yum} for Centos
+  \item \program{yast} for Suze
+  \item \ldots
+  \end{itemize}
+  
+\item On \emph{Mac OSX} systems, the installation of the GD library
+  can be done with the program \program{brew}.
+  
+%% First install libpng and libjpeg. Only then install the GD library. Here is an example that worked on OSX 10.8:
+%% \begin{lstlisting}
+%% curl -O http://www.ijg.org/files/jpegsrc.v9.tar.gz
+%% tar -xzvf jpegsrc.v9.tar.gz 
+%% cd jpeg-9/
+%% ./configure
+%% make
+%% sudo make install
 
-\item On \emph{Mac OSX} systems, the installation of the GD library requires more work.
+%% curl -O ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng15/libpng-1.5.16.tar.gz
+%% tar -xvzf libpng-1.5.16.tar.gz 
+%% cd libpng-1.5.16
+%% ./configure
+%% make
+%% sudo make install
 
-First install libpng and libjpeg. Only then install the GD library. Here is an example that worked on OSX 10.8:
-\begin{lstlisting}
-curl -O http://www.ijg.org/files/jpegsrc.v9.tar.gz
-tar -xzvf jpegsrc.v9.tar.gz 
-cd jpeg-9/
-./configure
-make
-sudo make install
-
-curl -O ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng15/libpng-1.5.16.tar.gz
-tar -xvzf libpng-1.5.16.tar.gz 
-cd libpng-1.5.16
-./configure
-make
-sudo make install
-
-curl -O https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.0-rc1.tar.gz
-tar -xvzf libgd-2.1.0-rc1.tar.gz
-cd libgd-2.1.0-rc1
-./configure --with-png=/usr/local
-\end{lstlisting}
-
+%% curl -O https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.0-rc1.tar.gz
+%% tar -xvzf libgd-2.1.0-rc1.tar.gz
+%% cd libgd-2.1.0-rc1
+%% ./configure --with-png=/usr/local
+%% \end{lstlisting}
 \end{itemize}
 
 \section{Automatic installation of Perl modules}
@@ -352,7 +395,8 @@ installation steps. you should thus check the CPAN process and answer
 
 The following command enables to install all the Perl modules in a
 somewhat risky, but less cumbersome way. It relies on the command
-\program{yes} to automatically answer each question by a carriage return, which will lead \program{cpan} to chose the default option.
+\program{yes} to automatically answer each question by a carriage
+return, which will lead \program{cpan} to chose the default option.
 
 \begin{lstlisting}
 ## Install the Perl modules
@@ -363,155 +407,15 @@ In case some modules would not be properly installed with the above
 commands, you can try installing them manually (the list of required
 modules is listed in the next section).
 
-\section{List of Perl modules required for full functionalities of
-  \RSAT}
-
-For information, we describe hereafter the list of modules that will
-be installed with this command, and the reason why it is useful to
-install them before running \RSAT programs.
-
-If you are not interested by technical details, you can skip this
-section.
-
-
-\begin{enumerate}
-\item \program{GD.pm} Interface to Gd Graphics Library. Used by
-  \program{XYgraph} and \program{feature-map}. It is highly recommended to install this perl module manually on MacOS X, as it usually fail with CPAN: 
-  
-  \begin{lstlisting}
- curl -O  http://search.cpan.org/CPAN/authors/id/L/LD/LDS/GD-2.49.tar.gz
- tar -vxzf GD-2.49.tar.gz
- cd GD-2.49.tar.gz
- sudo perl Makefile.PL
- sudo make
- sudo make install
-\end{lstlisting}
-
-\item \program{PostScript::Simple} Produce PostScript files from
-  Perl. Used by \program{feature-map}.
-
-\item \program{Util::Properties} is required to load property files,
-  which are used to specify the site-specific configuration of your
-  \RSAT server. Property files are also useful to write your own perl
-  clients for the Web service interface to \RSAT (RSATWS).
-  
-  Note : CPAN will require to install first the following requisites:
-  
-  \program{Digest::MD5::File}
-  
-  \program{IO::All}
-  
-  \program{LockFile::Simple}
-  
-  \program{Object::InsideOut}
-
-\item 
-  The following modules are required for the Web services. 
-
-  \begin{itemize}
-    \item \program{XML::Compile}
-    \item \program{XML::Compile::Cache}
-    \item \program{XML::Compile::SOAP11}
-    \item \program{XML::Compile::WSDL11}
-    \item \program{XML::Compile::Transport::SOAPHTTP}
-    \item \program{XML::Parser::Expat}
-    \item \program{SOAP::WSDL} 
-    \item \program{SOAP::Lite}
-    Note: SOAP::Lite usually does not compile properly. Use the following command:
-    perl -MCPAN -e "CPAN::Shell->force(qw(install SOAP::Lite));"
-    \item \program{Module::Build::Compat}
-    \item \program{Util::Properties} (already mentioned above) 
-  \end{itemize}
-
-  \RSAT Web services is a convenient interface that permits to write
-  Perl scripts to run \RSAT queries on a remote server. Some Perl
-  scripts of the \RSAT stand-alone commands are using SOAP to connect
-  remote servers (e.g. \program{supported-organisms},
-  \program{download-organism}).
-
-\item \program{Statistics::Distributions} is used to calculate some
-  probability distribution functions. In particular, it is used by the
-  programs \program{position-analysis} and \program{chi-square} to
-  calculate the chi2 P-value.
-
-  \textbf{Notes} 
-  \begin{itemize}
-  \item In previous releases, the chi2 P-value was computed using
-    \program{Math::CDF}, but the precision was limited to
-    1e-15. \program{Statistics::Distributions} can compute P-values
-    down to 1e-65.
-  \item For the discrete functions (binomial , Poisson,
-    hypergeometric) \RSAT relies on a custom library
-    (\$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
-    of 1e-300.
-  \end{itemize}
-
-
-\item \program{Class::Std::Fast} and \program{Storable} are required
-  to bring persistence to data structures like organisms. This library
-  can be easyly installed via CPAN.
-
-\item \program{File::Spec}, \program{POSIX} and \program{Data::Dumper}
-  are required for some functions of \program{matrix-scan}.
-
-\item \program{XML::LibXML} is required for parsing and writing XML and uses
-  the XML::Parser::Expat library. It is necessary for some RSAT
-  applications.
-
-\item \program{DBI}  and \program{DBD::mysql}: those two libraries are
-  required by the program \program{retrieve-ensembl-seq} in order to
-  access the ENSEMBL database.
-  
-  Note that the
-installation of the CPAN module DBD:mysql may require a prior
-installation of a MySQL client on your machine
-(\url{http://dev.mysql.com/downloads/}). Choose MySQL Community Server.
-
-On Mac OSX, there seems to be problems with the mysql bundle,
-
-- for mysql\_config issues, specify the path to mysql\_config (adapt the path to your own installation):
-\begin{verbatim}
-	cd /Users/yourusername/.cpan/build/DBD-mysql-version-xxxxx
-	perl Makefile.pl --mysql_config=/usr/local/mysql/bin/mysql_config 
-\end{verbatim}
-
--then adding a soft link as follows\footnote{\url{http://www.blog.bridgeutopiaweb.com/post/how-to-fix-mysql-load-issues-on-mac-os-x/}}:
-\begin{verbatim}
-sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib
-\end{verbatim}
- - finish with 
-\begin{verbatim}
-make
-make test
-make install
-\end{verbatim}
-
-\item \program{Bio::Perl} is required for the Ensembl API, which in
-  turn is required for handling genomes installed on the ENSEMBL
-  database (\url{http://www.ensembl.org/}).
-
-\item \program{IPC::Run} is required for the analysis of linkage
-  desequilibrium with ENSEMBL API
-  \footnote{\url{http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-variation/C\_code/README.txt?root=ensembl&view=markup}}.
-
-\item \program{Bio::Das} is required to retrieve sequences from DAS
-  servers with the program \program{bed-to-seq}.
-
-\item \program{LWP::Simple} is used by the Web interface, to fetch
-  sequences from remote servers (URL of the sequence file specified in
-  a text field).
-
-\end{enumerate}
 
 \section{Additional Perl modules required to support EnsEMBL genomes}
 \label{sect:ensembl_libraries}
 
 This section is required only if you intend to use the \RSAT programs
-interfaced to the Ensembl database. 
-
-Since 2009, a series of \RSAT programs support a direct access to the
-EnsEMBL database in order to ensure a convenient access to genomes
-from higher organisms \cite{Sand:2009}.
+interfaced to the Ensembl database.  Since 2008, a series of \RSAT
+programs support a direct access to the EnsEMBL database in order to
+ensure a convenient access to genomes from higher organisms
+\cite{Sand:2009}.
 
 \begin{itemize}
 \item \program{supported-organisms-ensembl}
@@ -521,11 +425,12 @@ from higher organisms \cite{Sand:2009}.
 \end{itemize}
 
 Those programs require to install a few Perl libraries as well as a
-MySQL client on your machine. 
+MySQL client on your machine.
 
 The first requirement is the \program{BioPerl} module, which has in
-principle been installed in Chapter~\ref{chap:perl_modules}). The MySQL client should also have been installed in Chapter~\ref{chap:perl_modules}).
-
+principle been installed in Chapter~\ref{chap:perl_modules}). The
+MySQL client should also have been installed in
+Chapter~\ref{chap:perl_modules}).
 
 To obtain EnsEMBL \footnote{Full instructions at
   \url{http://useast.ensembl.org/info/docs/api/api_cvs.html}}.
