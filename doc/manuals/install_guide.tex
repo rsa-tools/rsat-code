@@ -440,20 +440,39 @@ To obtain EnsEMBL \footnote{Full instructions at
 ## Make sure you start from the right directory
 cd $RSAT
 
+## Display the parameters for installing Ensembl API (in particular,
+## the version for Ensembl and EnsemblGenomes).
+##
+## Check the number of the latest release on the respective web sites. 
+##   Ensembl: http://www.ensembl.org/index.html
+##   EnsemblGenomes: http://ensemblgenomes.org/
+make -f makefiles/install_software.mk install_ensembl_api_param
+
 ## Install the ensembl library
 make -f makefiles/install_software.mk install_ensembl_api 
+
+## Notes: you need to enter the following passwords for the CVS
+## servers.
+## - For Ensembl:  CVSUSER.
+## - For bioperl:  cvs
+
 \end{lstlisting}
 %%$ 
-
-The password is : CVSUSER
 
 
 Note that there may be incompatibilities between successive versions
 of the Ensembl API. The install script includes a parameter
 \texttt{ENSEMBL\_VERSION} to specify the version ("branch") of the
-Ensembl API distribution. Before installing Ensembl API, always check
-the latest release on the Ensembl web page
-(\url{http://www.ensembl.org/index.html}), and adapt the following
+Ensembl API distribution.  Moreover, there are different release
+numbers of the ``historical'' Ensembl database, and for the
+EnsemblGenomes databases (Bacteria, Fungi, Plants, Metazoa).
+
+In addition, there are dependencies between releases. So,
+EnsemblGenomes 20 is compatible with Ensembl verison 73, whereas
+Ensembl has already released its version 74. In order to install an
+API compatible with Ensembl and EnsemblGenomes, we recommend always
+check the latest releases of both databases on the EnsemblGenomes web
+page (\url{http://www.ensemblgenomes.org/}), and adapt the following
 command accordingly.
 
 \begin{lstlisting}
@@ -463,10 +482,12 @@ make -f makefiles/install_software.mk install_ensembl_api \
 \end{lstlisting}
 %%$ 
 
-Adapt the 3 following lines in the RSAT configuration file
-\file{RSAT\_config.props} to specify the actual path of the bioperl
-and ensembl libraries on your computer. \emph{The path must be adapted
-  to fit your local configuration}.
+The installation script will print out a series of modifications of
+the PERL5LIB variable, that should be added to your bashrc file in
+order to provide support for Ensembl Perl API.
+
+You should also check the specification of ensembl paths in the props
+file.
 
 \begin{lstlisting}
 ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensembl/modules
@@ -486,55 +507,54 @@ configuration file:
 ensembl_host=ensembldb.ensembl.org
 \end{lstlisting}
 
-Finally, you need to include the BioPerl and Ensembl librairies in the
-Perl module path (specified by the environment variable named
-\$PERL5LIB).
+%% Finally, you need to include the BioPerl and Ensembl librairies in the
+%% Perl module path (specified by the environment variable named
+%% \$PERL5LIB).
 
-If your shell is bash, add the following lines in the file
-\file{.bashrc} at the root of your account.
+%% If your shell is bash, add the following lines in the file
+%% \file{.bashrc} at the root of your account.
 
-\begin{lstlisting}
-## Ensembl Perl API
-export PERL5LIB=${RSAT}/lib/bioperl-release-1-2-3/bioperl-live::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-compara/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-external/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-functgenomics/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-tools/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-variation/modules::${PERL5LIB}
-\end{lstlisting}
-%$
+%% \begin{lstlisting}
+%% ## Ensembl Perl API
+%% export PERL5LIB=${RSAT}/lib/bioperl-release-1-2-3/bioperl-live::${PERL5LIB}
+%% export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl/modules::${PERL5LIB}
+%% export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-compara/modules::${PERL5LIB}
+%% export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-external/modules::${PERL5LIB}
+%% export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-functgenomics/modules::${PERL5LIB}
+%% export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-tools/modules::${PERL5LIB}
+%% export PERL5LIB=${RSAT}/lib/ensemblgenomes-20-73/ensembl-variation/modules::${PERL5LIB}
+%% \end{lstlisting}
+%% %$
 
-If your shell is tcsh or chs, add the following lines in the file
-\file{.cshrc} at the root of your account.
+%% If your shell is tcsh or chs, add the following lines in the file
+%% \file{.cshrc} at the root of your account.
 
-\begin{lstlisting}
-## Ensembl Perl API
-setenv PERL5LIB ${RSAT}/lib/bioperl-release-1-2-3/bioperl-live::${PERL5LIB}
-setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl/modules::${PERL5LIB}
-setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-compara/modules::${PERL5LIB}
-setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-external/modules::${PERL5LIB}
-setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-functgenomics/modules::${PERL5LIB}
-setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-tools/modules::${PERL5LIB}
-setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-variation/modules::${PERL5LIB}
-\end{lstlisting}
+%% \begin{lstlisting}
+%% ## Ensembl Perl API
+%% setenv PERL5LIB ${RSAT}/lib/bioperl-release-1-2-3/bioperl-live::${PERL5LIB}
+%% setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl/modules::${PERL5LIB}
+%% setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-compara/modules::${PERL5LIB}
+%% setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-external/modules::${PERL5LIB}
+%% setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-functgenomics/modules::${PERL5LIB}
+%% setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-tools/modules::${PERL5LIB}
+%% setenv PERL5LIB ${RSAT}/lib/ensemblgenomes-20-73/ensembl-variation/modules::${PERL5LIB}
+%% \end{lstlisting}
 
-The EnsEMBL libraries also require the SQL client Perl module
-\file{DBD::mysql}, as well as \file{DBI}, which can be installed with
-\program{cpan} (for this you need root privileges, see Chapter~\ref{chap:perl_modules}). 
+%% The EnsEMBL libraries also require the SQL client Perl module
+%% \file{DBD::mysql}, as well as \file{DBI}, which can be installed with
+%% \program{cpan} (for this you need root privileges, see Chapter~\ref{chap:perl_modules}). 
 
 \emph{Notes}: 
 \begin{enumerate}
 \item to access EnsEMBL versions above 47, you need port 5306 to be
-  opened on your machine. This might require to consult the system
-  administrator of your network in order to ensure that the Firewall
-  accepts this port.
+  opened on your machine. This might require an intervention of your
+  system administrator of your network in order to ensure that the
+  Firewall accepts this port.
 \end{enumerate}
 
 Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
 (\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -554,41 +574,6 @@ make -f makefiles/init_rsat.mk compile_all
 
 This will compile and install the following programs in the directory
 \file{\$RSAT/bin}. 
-
-The installation directory can be changed by redefining the BIN
-variable. For instance, if you have the system adminstrator
-privileges, you could install the compiled programs in the standard
-directory for compiled packages (\file{/usr/local/bin}).
-
-\begin{lstlisting}
-cd $RSAT;
-make -f makefiles/init_rsat.mk compile_all BIN=/usr/local/bin
-\end{lstlisting}
-
-
-\begin{itemize}
-\item \program{info-gibbs}: a gibbs sampling algorithm based on
-  optimization of the the information content of the motif
-  \cite{Defrance:2009}.
-
-\item \program{count-words}: an efficient algorithm for counting word
-  occurrences in DNA sequences. This program is much faster than
-  \program{oligo-analysis}, but it only returns the occurrences and
-  frequencies, whereas oligo-analysis returns over-representation
-  statistics and supports many additional
-  options. \program{count-words} is routinely used to compute word
-  frequencies in large genome sequences, for calibrating the Markov
-  models used by \program{oligo-analysis}.
-
-\item \program{matrix-scan-quick}: an efficient algorithm for scanning
-  sequences with a position-specific scoring matrix. As its name
-  indicates, \program{matrix-scan-quick} is \emph{much} faster than
-  the Perl script \program{matrix-scan}, but presents reduced
-  functionalities (only computes the weight, returns either a list of
-  sites or the weight score distribution).
-\end{itemize}
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -641,7 +626,7 @@ third-party programs that are complementary to \RSAT.
 
 \begin{lstlisting}
 cd $RSAT;
-make -f makefiles/install_rsat.mk install_ext_apps
+make -f makefiles/install_software.mk install_ext_apps
 \end{lstlisting}
 %$
 
