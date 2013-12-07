@@ -188,7 +188,7 @@ install_ext_apps:
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
 BIOPERL_DIR=${PERLLIB_DIR}/bioperl-release-${BIOPERL_VERSION}
-ENSEMBL_VERSION=73
+ENSEMBL_VERSION=74
 ENSEMBL_BRANCH=ensemblgenomes-20
 ENSEMBL_API_DIR=${PERLLIB_DIR}/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
 install_ensembl_api_param:
