@@ -150,17 +150,15 @@ _compile_python_suds:
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 install_ext_apps:
-	${MAKE} download_seqlogo install_seqlogo
-	${MAKE} bedtools
-	${MAKE} download_meme install_meme
-	${MAKE} download_mcl install_mcl
-	${MAKE} download_rnsc install_rnsc
-#	${MAKE} download_blast install_blast
-#	${MAKE} download_gs install_gs
-#	${MAKE} download_gnuplot install_gnuplot
+	${MAKE} install_seqlogo
+	${MAKE} install_mcl
+	${MAKE} install_rnsc
+	${MAKE} install_blast
 #	${MAKE} install_gibbs
-#	${MAKE} download_consensus install_consensus
-#	${MAKE} download_patser install_patser
+#	${MAKE} install_consensus
+#	${MAKE} install_patser
+#	${MAKE} install_bedtools
+#	${MAKE} install_meme
 
 # ################################################################
 # ## Install the EnsEMBL Perl API
