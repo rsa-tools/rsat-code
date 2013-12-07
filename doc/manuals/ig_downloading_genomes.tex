@@ -101,21 +101,21 @@ organisms supported on a remote server.
 
 
 \begin{lstlisting}
-supported-organisms -server
+supported-organisms-server
 \end{lstlisting}
 
 The command can be refined by restricting the list to a given taxon of
 interest.
 
 \begin{lstlisting}
-supported-organisms -server -taxon Fungi
+supported-organisms-server -taxon Fungi
 \end{lstlisting}
 
 You can also ask additional information, for example the date of the
 last update and the source of each genome.
 
 \begin{lstlisting}
-supported-organisms -server -taxon Fungi -return last_update,source,ID
+supported-organisms-server -taxon Fungi -return last_update,source,ID
 \end{lstlisting}
 
 
@@ -201,7 +201,7 @@ supported-organisms -taxon Enterobacteriales -server
 supported-organisms -taxon Enterobacteriales -server | wc -l
 \end{lstlisting}
 
-In Oct 2009, there are 94 Enterobacteriales supported on the \RSAT
+In Dec 2013, there are 203 Enterobacteriales supported on the \RSAT
 server. Before starting the download, you should check two things:
 \begin{enumerate}
 \item Has your network a sufficient bandwidth to ensure the transfer
