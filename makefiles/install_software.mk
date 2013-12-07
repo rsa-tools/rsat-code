@@ -145,21 +145,6 @@ _compile_python_suds:
 	@echo "Installing suds"
 	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
 
-# ################################################################
-# ## Install the EnsEMBL Perl API
-# ENSEMBL_BRANCH=72
-# ensembl_api:	
-# 	@echo  "Password is 'CVSUSER'"
-# 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-# 	@(cd ${RSAT}/lib; \
-# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
-# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara)
-# 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
-# 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
-# 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
-
 
 ################################################################
 ## Install the applications developed by third-parties and which are required
@@ -176,6 +161,21 @@ install_ext_apps:
 #	${MAKE} install_gibbs
 #	${MAKE} download_consensus install_consensus
 #	${MAKE} download_patser install_patser
+
+# ################################################################
+# ## Install the EnsEMBL Perl API
+# ENSEMBL_BRANCH=74
+# ensembl_api:	
+# 	@echo  "Password is 'CVSUSER'"
+# 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
+# 	@(cd ${RSAT}/lib; \
+# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
+# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara)
+# 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
+# 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
+# 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
 
 
 ################################################################
@@ -202,13 +202,6 @@ install_ensembl_api_param:
 install_ensembl_api:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
-		echo "Installing bioperl release ${BIOPERL_VERSION}"; \
-		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
-		mkdir -p "${BIOPERL_DIR}" ; \
-		echo  "Password is 'cvs'" ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live ; \
-		echo "" ; \
 		echo "Installing ensembl branch ${ENSEMBL_BRANCH} version ${ENSEMBL_VERSION}"; \
 		echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}" ; \
 		mkdir -p "${ENSEMBL_API_DIR}"; \
@@ -216,6 +209,13 @@ install_ensembl_api:
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+		echo "" ; \
+		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
+		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
+		mkdir -p "${BIOPERL_DIR}" ; \
+		echo  "Password is 'cvs'" ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live ; \
 	@echo
 	@${MAKE} install_ensembl_api_env
 
@@ -224,13 +224,13 @@ install_ensembl_api_env:
 	@echo
 	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
 	@echo "Don't forget to adapt the following lines in your bash profile"
-	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-functgenomics/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-tools/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-variation/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
 
 ################################################################
 ## Get and install the program seqlogo

@@ -23,8 +23,8 @@ SSH=-e 'ssh -x'
 ################################################################
 ## Install the RSAT package
 install_rsat:
-	make -f ${RSAT}/makefiles/init_RSAT.mk init
-	make -f ${RSAT}/makefiles/init_RSAT.mk compile_all
+	make -f ${RSAT}/makefiles/init_rsat.mk init
+	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
 	${MAKE} config_rsat
 	make -f ${RSAT}/makefiles/install_software.mk
 
@@ -135,13 +135,13 @@ CPAN_CMD=cpan ${CPAN_OPT}
 ## configuration, cpan may ask you to answer y/n for each module and
 ## dependency.
 perl_modules_install:
-	@${SUDO} ${CPAN_CMD} -i ${PERL_MODULES}
+	@sudo ${CPAN_CMD} -i ${PERL_MODULES}
 
 ## This is a somewhat risky but less cumbersome way to install Perl
 ## modules: automatically send a carriage return to accept the default
 ## options for all the modules
 perl_modules_install_noprompt:
-	@yes '' | ${SUDO} ${CPAN_CMD} -i ${PERL_MODULES}
+	@yes '' | sudo ${CPAN_CMD} -i ${PERL_MODULES}
 
 perl_modules_install_one_by_one:
 	@for module in ${PERL_MODULES} ; do \
@@ -154,7 +154,7 @@ PERL_MODULE=PostScript::Simple
 PERL='/usr/bin/perl'
 _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
-	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
+	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 # ## Some modules must be upgraded befinre installing required ones
 # upgrade_perl_modules:
@@ -165,7 +165,7 @@ _install_one_perl_module:
 # ## Upgrade a single Perl module
 # _upgrade_one_perl_module:
 # 	@echo "Upgrading Perl module ${PERL_MODULE}"
-# 	@${SUDO} ${PERL} -MCPAN -e 'upgrade ${PERL_MODULE}'
+# 	@sudo ${PERL} -MCPAN -e 'upgrade ${PERL_MODULE}'
 
 
 ################################################################
