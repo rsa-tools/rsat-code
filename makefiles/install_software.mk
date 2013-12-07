@@ -151,7 +151,7 @@ _compile_python_suds:
 ## or useful for RSAT.
 EXT_APP_TARGETS=install_seqlogo install_mcl install_rnsc install_blast
 install_ext_apps:
-	${MAKE} ${EXT_APP_TAGETS}
+	@${MAKE} ${EXT_APP_TARGETS}
 #	${MAKE} install_gibbs
 #	${MAKE} install_consensus
 #	${MAKE} install_patser
