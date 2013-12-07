@@ -79,7 +79,7 @@ unix_packages_list:
 	@echo
 	@echo "Required Unix packages"
 	@echo "======================"
-	@echo ${UNIX_PACKAGES} | perl -pe 's|\s+|\n\t|g'
+	@echo ${UNIX_PACKAGES_COMMON} | perl -pe 's|\s+|\n\t|g'
 	@echo
 	@echo "Additional packages for Ubuntu"
 	@echo "=============================="
@@ -88,6 +88,7 @@ unix_packages_list:
 	@echo "Additional packages for Centos"
 	@echo "=============================="
 	@echo ${UNIX_PACKAGES_CENTOS} | perl -pe 's|\s+|\n\t|g'
+	@echo
 
 PACKAGE_MANAGER_MAC=brew install
 PACKAGE_MANAGER_CENTOS=yum install
