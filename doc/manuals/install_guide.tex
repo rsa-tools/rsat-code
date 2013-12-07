@@ -336,19 +336,28 @@ export RSAT=[PARENT_PATH]/rsat;
 cd $RSAT
 
 ## Display the list of Perl modules that will be installed
-make -f makefiles/install_software.mk perl_modules_list;
+make -f makefiles/install_rsat.mk perl_modules_list;
 
-## Display the command that will be used to install the Perl modules
-make -f makefiles/install_software.mk perl_modules_cmd;
+## Print the command that will be used to install the Perl modules (just for checking)
+make -f makefiles/install_rsat.mk perl_modules_cmd;
 
 ## Install the Perl modules
-make -f makefiles/install_software.mk perl_modules_install;
+make -f makefiles/install_rsat.mk perl_modules_install;
 \end{lstlisting}
 %% closing $
 
 Beware, \program{cpan} will frequently ask you to confirm the
 installation steps. you should thus check the CPAN process and answer
 "yes" at each prompt.
+
+The following command enables to install all the Perl modules in a
+somewhat risky, but less cumbersome way. It relies on the command
+\program{yes} to automatically answer each question by a carriage return, which will lead \program{cpan} to chose the default option.
+
+\begin{lstlisting}
+## Install the Perl modules
+make -f makefiles/install_rsat.mk perl_modules_install;
+\end{lstlisting}
 
 In case some modules would not be properly installed with the above
 commands, you can try installing them manually (the list of required
