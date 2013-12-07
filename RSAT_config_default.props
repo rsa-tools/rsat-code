@@ -4,8 +4,7 @@
 ##
 ## In particular, you MUST replace all instances of
 ## [RSAT_PARENT_PATH] by the FULL path of the directry containing the
-## folder rsa-tools.
-
+## "rsat" folder.
 
 ## name of the local server (which will appear in the log file)
 rsat_site=your_server_name
