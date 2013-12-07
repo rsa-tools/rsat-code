@@ -2,7 +2,7 @@
 ## Manage RSAT tasks on a PC cluster
 
 #include ${RSAT}/makefiles/util.mk
-include ${RSAT}/makefiles/init_RSAT.mk
+include ${RSAT}/makefiles/init_rsat.mk
 MAKEFILE=${RSAT}/makefiles/cluster.mk
 
 list_nodes:
@@ -13,7 +13,7 @@ list_nodes:
 ## Specific setting for compiling RSAT on the cluster@bigre
 NODE_TASK=compile_all
 compile_nodes:
-	${MAKE} iterate_nodes NODES='${COMPILE_NODES}' NODE_CMD='cd ${RSAT}; make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin' 
+	${MAKE} iterate_nodes NODES='${COMPILE_NODES}' NODE_CMD='cd ${RSAT}; make -f makefiles/init_rsat.mk compile_all BIN=/usr/local/bin' 
 
 ## Run a command on a single node
 NODE_CMD=hostname
