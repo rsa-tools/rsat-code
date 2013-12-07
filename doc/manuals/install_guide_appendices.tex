@@ -149,3 +149,41 @@ make install
 \end{enumerate}
 
 
+\section{Details about \RSAT compilation}
+
+\subsection{Compiling \RSAT programs in a different directory}
+
+The installation directory can be changed by redefining the BIN
+variable. For instance, if you have the system adminstrator
+privileges, you could install the compiled programs in the standard
+directory for compiled packages (\file{/usr/local/bin}).
+
+\begin{lstlisting}
+cd $RSAT;
+make -f makefiles/init_rsat.mk compile_all BIN=/usr/local/bin
+\end{lstlisting}
+
+\subsection{\RSAT programs requiring compilation}
+
+\begin{itemize}
+
+\item \program{count-words}: an efficient algorithm for counting word
+  occurrences in DNA sequences. This program is much faster than
+  \program{oligo-analysis}, but it only returns the occurrences and
+  frequencies, whereas oligo-analysis returns over-representation
+  statistics and supports many additional
+  options. \program{count-words} is routinely used to compute word
+  frequencies in large genome sequences, for calibrating the Markov
+  models used by \program{oligo-analysis}.
+
+\item \program{matrix-scan-quick}: an efficient algorithm for scanning
+  sequences with a position-specific scoring matrix. As its name
+  indicates, \program{matrix-scan-quick} is \emph{much} faster than
+  the Perl script \program{matrix-scan}, but presents reduced
+  functionalities (only computes the weight, returns either a list of
+  sites or the weight score distribution).
+
+\item \program{info-gibbs}: a gibbs sampling algorithm based on
+  optimization of the the information content of the motif
+  \cite{Defrance:2009}.
+\end{itemize}
