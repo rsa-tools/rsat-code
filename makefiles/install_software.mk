@@ -212,14 +212,14 @@ install_ensembl_api:
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api; \
 		echo "" ; \
 		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
 		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
 		mkdir -p "${BIOPERL_DIR}" ; \
 		echo  "Password is 'cvs'" ; \
 		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live )
 	@echo
 	@${MAKE} install_ensembl_api_env
 
