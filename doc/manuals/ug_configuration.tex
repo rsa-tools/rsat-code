@@ -11,7 +11,7 @@ in the directory
 
 \texttt{/home/fred/rsat}. 
 
-This path has to be
+\emph{Note:} in all subsequent instructions, this path has to be
 replaced by the actual path where \RSAT has been installed on your
 computer.
 
@@ -60,6 +60,39 @@ The answer should be something like \result{/sbin/bash} or
 
 \begin{itemize}
 
+\item \emph{If your shell is bash}, you should copy the following
+  lines in a file named \file{.bash\_profile} at the root of your
+  account (depending on the Unix distribution, the bash custom
+  parameters may be declered in a file named \file{.bash\_profile} or)
+  \file{.bashrc}, in case of doubt ask your system administrator).
+
+  If you dispose of admin rights, you may decide to store this
+  configuration ina file that will be laoded for all users of the
+  server (e.g. \file{/etc/profile.d/rsat.sh} or \file{/etc/bashrc},
+  depending on the operating system).
+
+  \emph{Note}: replace [PARENT\_PATH] by the full path of the directory
+  in which the rsat folder has been created.
+
+\begin{lstlisting}
+################################################################
+## Configuration for Regulatory Sequence Analysis Tools (RSAT)
+export RSAT=[PARENT_PATH]/rsat
+export PATH=${RSAT}/bin:${PATH}
+export PATH=${RSAT}/perl-scripts:${PATH}
+export PATH=${RSAT}/python-scripts:${PATH}
+if  [ ${CLASSPATH} ]; then
+       export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
+else
+       export CLASSPATH=.:${RSAT}/java/lib/NeAT_javatools.jar
+fi
+
+## Pass through ssh for CVS (required to install Ensembl API)
+export CVS_RSH=ssh
+\end{lstlisting}
+%% closing $
+
+
 \item \emph{If your default shell is \textbf{tcsh} or \textbf{csh}},
   copy the following lines in a file named \file{.chsrc} that should
   be found at root of your account.
@@ -74,25 +107,14 @@ setenv RSAT [PARENT_PATH]/rsat
 set path=($RSAT/bin $path)
 set path=($RSAT/perl-scripts $path)
 set path=($RSAT/python-scripts $path)
-\end{lstlisting}
-%% closing $
+if  [ ${CLASSPATH} ]; then
+       setenv CLASSPATH ${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
+else
+       setenv CLASSPATH .:${RSAT}/java/lib/NeAT_javatools.jar
+fi
 
-\item \emph{If your shell is bash}, you should copy the following
-  lines in a file named \file{.bash\_profile} at the root of your
-  account (depending on the Unix distribution, the bash custom
-  parameters may be declered in a file named \file{.bash\_profile} or)
-  \file{.bashrc}, in case of doubt ask your system administrator).
-
-  \emph{Note}: replace [PARENT\_PATH] by the full path of the directory
-  in which the rsat folder has been created.
-
-\begin{lstlisting}
-################################################################
-## Configuration for Regulatory Sequence Analysis Tools (RSAT)
-export RSAT=[PARENT_PATH]/rsat
-export PATH=${RSAT}/bin:${PATH}
-export PATH=${RSAT}/perl-scripts:${PATH}
-export PATH=${RSAT}/python-scripts:${PATH}
+## Pass through ssh for CVS (required to install Ensembl API)
+setenv CVS_RSH=ssh
 \end{lstlisting}
 %% closing $
 
@@ -117,7 +139,6 @@ In the example above, this command should return
 \begin{lstlisting}
 /home/fred/rsat
 \end{lstlisting}
-
 
 \end{enumerate}
 

@@ -6,6 +6,146 @@
 %% I however maintain this appendix to keep track of the motivation
 %% for installing different pieces.
 
-\chapter{Appendices}
+\chapter{Appendices to the installation guide}
+
+\section{List of Perl modules required for full functionalities of
+  \RSAT}
+
+For information, we describe hereafter the list of modules that will
+be installed with this command, and the reason why it is useful to
+install them before running \RSAT programs.
+
+If you are not interested by technical details, you can skip this
+section.
+
+
+\begin{enumerate}
+\item \program{GD.pm} Interface to Gd Graphics Library. Used by
+  \program{XYgraph} and \program{feature-map}. It is highly recommended to install this perl module manually on MacOS X, as it usually fail with CPAN: 
+  
+  \begin{lstlisting}
+ curl -O  http://search.cpan.org/CPAN/authors/id/L/LD/LDS/GD-2.49.tar.gz
+ tar -vxzf GD-2.49.tar.gz
+ cd GD-2.49.tar.gz
+ sudo perl Makefile.PL
+ sudo make
+ sudo make install
+\end{lstlisting}
+
+\item \program{PostScript::Simple} Produce PostScript files from
+  Perl. Used by \program{feature-map}.
+
+\item \program{Util::Properties} is required to load property files,
+  which are used to specify the site-specific configuration of your
+  \RSAT server. Property files are also useful to write your own perl
+  clients for the Web service interface to \RSAT (RSATWS).
+  
+  Note : CPAN will require to install first the following requisites:
+  
+  \program{Digest::MD5::File}
+  
+  \program{IO::All}
+  
+  \program{LockFile::Simple}
+  
+  \program{Object::InsideOut}
+
+\item 
+  The following modules are required for the Web services. 
+
+  \begin{itemize}
+    \item \program{XML::Compile}
+    \item \program{XML::Compile::Cache}
+    \item \program{XML::Compile::SOAP11}
+    \item \program{XML::Compile::WSDL11}
+    \item \program{XML::Compile::Transport::SOAPHTTP}
+    \item \program{XML::Parser::Expat}
+    \item \program{SOAP::WSDL} 
+    \item \program{SOAP::Lite}
+    Note: SOAP::Lite usually does not compile properly. Use the following command:
+    perl -MCPAN -e "CPAN::Shell->force(qw(install SOAP::Lite));"
+    \item \program{Module::Build::Compat}
+    \item \program{Util::Properties} (already mentioned above) 
+  \end{itemize}
+
+  \RSAT Web services is a convenient interface that permits to write
+  Perl scripts to run \RSAT queries on a remote server. Some Perl
+  scripts of the \RSAT stand-alone commands are using SOAP to connect
+  remote servers (e.g. \program{supported-organisms},
+  \program{download-organism}).
+
+\item \program{Statistics::Distributions} is used to calculate some
+  probability distribution functions. In particular, it is used by the
+  programs \program{position-analysis} and \program{chi-square} to
+  calculate the chi2 P-value.
+
+  \textbf{Notes} 
+  \begin{itemize}
+  \item In previous releases, the chi2 P-value was computed using
+    \program{Math::CDF}, but the precision was limited to
+    1e-15. \program{Statistics::Distributions} can compute P-values
+    down to 1e-65.
+  \item For the discrete functions (binomial , Poisson,
+    hypergeometric) \RSAT relies on a custom library
+    (\$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
+    of 1e-300.
+  \end{itemize}
+
+
+\item \program{Class::Std::Fast} and \program{Storable} are required
+  to bring persistence to data structures like organisms. This library
+  can be easyly installed via CPAN.
+
+\item \program{File::Spec}, \program{POSIX} and \program{Data::Dumper}
+  are required for some functions of \program{matrix-scan}.
+
+\item \program{XML::LibXML} is required for parsing and writing XML and uses
+  the XML::Parser::Expat library. It is necessary for some RSAT
+  applications.
+
+\item \program{DBI}  and \program{DBD::mysql}: those two libraries are
+  required by the program \program{retrieve-ensembl-seq} in order to
+  access the ENSEMBL database.
+  
+  Note that the
+installation of the CPAN module DBD:mysql may require a prior
+installation of a MySQL client on your machine
+(\url{http://dev.mysql.com/downloads/}). Choose MySQL Community Server.
+
+On Mac OSX, there seems to be problems with the mysql bundle,
+
+- for mysql\_config issues, specify the path to mysql\_config (adapt the path to your own installation):
+\begin{verbatim}
+	cd /Users/yourusername/.cpan/build/DBD-mysql-version-xxxxx
+	perl Makefile.pl --mysql_config=/usr/local/mysql/bin/mysql_config 
+\end{verbatim}
+
+-then adding a soft link as follows\footnote{\url{http://www.blog.bridgeutopiaweb.com/post/how-to-fix-mysql-load-issues-on-mac-os-x/}}:
+\begin{verbatim}
+sudo ln -s /usr/local/mysql/lib/libmysqlclient.18.dylib /usr/lib/libmysqlclient.18.dylib
+\end{verbatim}
+ - finish with 
+\begin{verbatim}
+make
+make test
+make install
+\end{verbatim}
+
+\item \program{Bio::Perl} is required for the Ensembl API, which in
+  turn is required for handling genomes installed on the ENSEMBL
+  database (\url{http://www.ensembl.org/}).
+
+\item \program{IPC::Run} is required for the analysis of linkage
+  desequilibrium with ENSEMBL API
+  \footnote{\url{http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-variation/C\_code/README.txt?root=ensembl&view=markup}}.
+
+\item \program{Bio::Das} is required to retrieve sequences from DAS
+  servers with the program \program{bed-to-seq}.
+
+\item \program{LWP::Simple} is used by the Web interface, to fetch
+  sequences from remote servers (URL of the sequence file specified in
+  a text field).
+
+\end{enumerate}
 
 
