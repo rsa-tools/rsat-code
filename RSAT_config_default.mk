@@ -22,6 +22,15 @@ RSAT_ADMIN_EMAIL=your.mail@your.mail.server
 OS=linux
 ARCHITECTURE=x64
 
+################################################################
+## Manager for installing Unix packages
+##
+## Options:
+##   PACKAGE_MANAGER=brew install
+##   PACKAGE_MANAGER=yum install
+##   PACKAGE_MANAGER=get-apt
+PACKAGE_MANAGER=
+
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
