@@ -49,18 +49,45 @@ config_rsat:
 
 ################################################################
 ## Install Unix packages required for RSAT
-UNIX_PACKAGES= emacs \
+UNIX_PACKAGES_COMMON= \
+	emacs \
 	git \
 	cvs \
-	cpan \
 	wget \
-	gd \
 	ghostscript \
 	gnuplot \
-	graphviz
+	graphviz \
+	links \
+	finger 
+
+UNIX_PACKAGES_CENTOS= \
+	httpd \
+	cpan \
+	gd \
+	tetex-latex tetex-doc tetex-fontsw
+
+UNIX_PACKAGES_MACOSX= \
+	gd
+
+UNIX_PACKAGES_UBUNTU= \
+	make \
+	apache2 \
+	texlive-latex-base \
+	libgd2-xpm-dev
 
 unix_packages_list:
-	@echo ${UNIX_PACKAGES} | perl -pe 's|\s+|\n|g'
+	@echo
+	@echo "Required Unix packages"
+	@echo "======================"
+	@echo ${UNIX_PACKAGES} | perl -pe 's|\s+|\n\t|g'
+	@echo
+	@echo "Additional packages for Ubuntu"
+	@echo "=============================="
+	@echo ${UNIX_PACKAGES_UBUNTU} | perl -pe 's|\s+|\n\t|g'
+	@echo
+	@echo "Additional packages for Centos"
+	@echo "=============================="
+	@echo ${UNIX_PACKAGES_CENTOS} | perl -pe 's|\s+|\n\t|g'
 
 PACKAGE_MANAGER_MAC=brew install
 PACKAGE_MANAGER_CENTOS=yum install
@@ -72,6 +99,16 @@ unix_packages_cmd:
 ## Install required Unix packages
 unix_packages_install:
 	@${UNIX_PACKAGES_CMD}
+
+## Install required Unix packages
+unix_packages_install_centos:
+	yes | yum upgrade
+	@${MAKE} unix_packages_install PACKAGE_MANAGER=${PACKAGE_MANAGER_CENTOS} UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_CENTOS}"
+
+## Install required Unix packages
+unix_packages_install_ubuntu:
+	yes | apt-get upgrade
+	@${MAKE} unix_packages_install PACKAGE_MANAGER=${PACKAGE_MANAGER_UBUNTU} UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_UBUNTU}"
 
 
 ################################################################
