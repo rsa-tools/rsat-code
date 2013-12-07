@@ -28,3 +28,4 @@ bioperl-live
 .DS_Store
 lib
 app_sources
+distrib_accounts
