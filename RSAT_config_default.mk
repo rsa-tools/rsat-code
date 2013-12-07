@@ -48,8 +48,8 @@ PERLLIB_DIR=${RSAT}/lib
 ## empty. This might make some problems for the "install" step of some
 ## software tools.
 ##
-SUDO=''
-#SUDO=sudo
+#SUDO=
+SUDO=sudo
 
 ## Default installation dir for binaries. By default, will beinstalled
 ## in /usr/local/bin so they will be accessible to all users. This
@@ -83,7 +83,7 @@ RSAT_WS_TMP=http://localhost/rsat/tmp
 ## consequently.
 ##
 ## supported: torque | sge
-QUEUE_MANAGER=sge
+QUEUE_MANAGER=torque
 
 ## Name of the queue where the jobs have to be sent
 QUEUE=
