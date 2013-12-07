@@ -33,3 +33,6 @@ contrib/kwalks/bin/lkwalk
 *.idx
 *.aux
 archives
+doc/manuals/*.log
+doc/manuals/*.out
+doc/manuals/*.toc
