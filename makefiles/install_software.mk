@@ -158,21 +158,6 @@ install_ext_apps:
 #	${MAKE} install_bedtools
 #	${MAKE} install_meme
 
-# ################################################################
-# ## Install the EnsEMBL Perl API
-# ENSEMBL_BRANCH=74
-# ensembl_api:	
-# 	@echo  "Password is 'CVSUSER'"
-# 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-# 	@(cd ${RSAT}/lib; \
-# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
-# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara)
-# 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
-# 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
-# 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
-
 
 ################################################################
 ## Install the EnsEMBL Perl API
