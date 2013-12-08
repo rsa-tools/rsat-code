@@ -145,6 +145,13 @@ use RSAT::PathwayExtraction;
 ## pathwayinference package
 package main;
 {
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
    ## Input/output files
   our %infile = ();	     # input file names container
   our %outfile = ();	     # output file names container
