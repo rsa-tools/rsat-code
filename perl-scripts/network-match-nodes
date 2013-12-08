@@ -15,18 +15,31 @@
 
 =head1 DESCRIPTION
 
-This tools maps input stringd to node id. 
-1. Seed to node mapping. Identify the set of nodes ("seeds") of the network. The
-mapping relies on a user-specified file describing the mapping of
-genes to reactions (GNN and NNN, Gene-Node Name and Network Node
-Name<>NodeID file). The mapping can be partial or exact
+This tool identifies the nodes of a metabolic network that match a
+list of query names (compounds, genes, reactios, EC numbers).
 
+The mapping can be exact or partial (substrings). It relies on two
+user-specified files describing the mapping of genes to reactions : 
+
+=over
+
+=item B<GNN>: Gene node names
+
+=item B<NNN>: Network node names
+
+=back
+
+The result is reported as a tab-delimited file indicating the seed
+name and the information about the corresponding nodes. 
+
+The resulting table can be used as seed nodes by the
+I<pathway-extractor> tool, in order to extract the subgraph connecting
+the query nodes.
 
 
 =head1 AUTHORS
 
-Developed by Didier Croes. 
-The doc was written by Didier Croes and Jacques van Helden.
+Developed by Didier Croes and revised by Jacques van Helden.
 
 =head1 REFERENCES
 
@@ -175,35 +188,41 @@ package main;
   ################################################################
   ## Check argument values
   my @queries = ();
-#  my $isInputFile=0;
-#   print STDERR "inputfile:" .$infile{input}."\n";
-#  if ($infile{input}){
-#    $isInputFile=1;
   ($main::in) = &OpenInputFile($infile{input});
-#  }
   my $seeds = "";
 
-  ################
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
   ################################################################
   ################ ORIGINAL ################
   ################################################################
   my $input="";
   my $isInputFile=0;
-#   print STDERR "inputfile:" .$infile{input}."\n";
   if ($infile{input}){
-    $isInputFile=1;
-    ($main::in) = &OpenInputFile($infile{input});
+      $isInputFile=1;
+      ($main::in) = &OpenInputFile($infile{input});
   }
+
+  $seed_nb = 0;
   while (<$main::in>) {
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
     chomp();
     $input .= &RSAT::util::trim($_);
     $input .= "\n";
+    $seed_nb++;
   }
-#    $input = do { local $/;  <($main::in) > };
+  &RSAT::message::Info("Input file contained", $seed_nb, "seeds") if ($main::verbose >= 2);
+  &RSAT::message::Info("SEEDS\n:".$input) if ($main::verbose >= 3);
 
-   print STDERR "SEEDS:" .$input."\n";
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
 
-  &RSAT::message::Info("--INPUT ", $input) if ($verbose >= 3);
+#  &RSAT::message::Info("--INPUT\n".$input) if ($verbose >= 3);
 
 
 #   while (<$main::in>) {
@@ -224,8 +243,16 @@ package main;
 
   my $output = &RSAT::PathwayExtraction::QueryExactMetabNames($input,$infile{gnn},$infile{nnn},$partial,$verbose);
   my %ouputhash = %{$output};
-  print $out "#Matches\tEC\tnode ids\tnode type\tdescription\n";
+  print $out join ("\t", "#Matches","EC","node ids","node type","description"), "\n";
   print $out $output;
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
 }
 
 
@@ -335,15 +362,18 @@ EC -> REACTION and COUMPOUNDS (ECR) annotation file.
 =cut
     } elsif ($arg eq "-nnn") {
       $infile{nnn} = shift(@arguments);      
+
+
 =pod
 
-=item	B<-o output Directory>
+=item	B<-o outputfile>
 
-If no output file is specified, the current directory is used.
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
 
 =cut
     } elsif ($arg eq "-o") {
-      $dir{output} = shift(@arguments);
+      $outfile{output} = shift(@arguments);
 
     } else {
       
@@ -365,7 +395,7 @@ If no output file is specified, the current directory is used.
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $out "; template ";
+    print $out "; search4metapath-seeds ";
     &RSAT::util::PrintArguments($out);
     printf $out "; %-22s\t%s\n", "Program version", $program_version;
     if (%infile) {
@@ -381,6 +411,18 @@ sub Verbose {
 	}
     }
 }
+
+=head1 WISH LIST
+
+=over
+
+=item B<Case insensitivity>
+
+The current version is case-sensitive. This gives surprizing effects:
+the result is not the same when querying for l-aspartate or
+L-aspartate, resp. Queries should be done in a case-insensitive way.
+
+=back
 
 
 __END__
