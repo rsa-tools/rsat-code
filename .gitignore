@@ -36,3 +36,4 @@ archives
 doc/manuals/*.log
 doc/manuals/*.out
 doc/manuals/*.toc
+bin_linux
