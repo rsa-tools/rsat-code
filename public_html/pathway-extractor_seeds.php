@@ -122,7 +122,8 @@ import_request_variables('P','fs_');
 
 
 $basedir=$properties['RSAT']."/public_html/data/metabolic_networks";
-$cmd = $properties['RSAT'].'/perl-scripts/search4metapath-seeds';
+#$cmd = $properties['RSAT'].'/perl-scripts/search4metapath-seeds';
+$cmd = $properties['RSAT'].'/perl-scripts/network-match-nodes';
 
 ////////////////////////////////////////////////////////////////
 //Print <h3>
