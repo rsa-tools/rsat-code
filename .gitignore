@@ -36,4 +36,6 @@ archives
 doc/manuals/*.log
 doc/manuals/*.out
 doc/manuals/*.toc
+RSAT_config.bashrc
+RSAT_config.*.bk.*
 bin_linux
