@@ -58,22 +58,32 @@ UNIX_PACKAGES_COMMON= \
 	gnuplot \
 	graphviz \
 	links \
-	finger 
+	finger \
+	zip \
+	unzip
 
 UNIX_PACKAGES_CENTOS= \
 	httpd \
 	cpan \
-	gd \
-	tetex-latex tetex-doc tetex-fontsw
+	php \
+	glibc.i686 \
+	zlib.i686 \
+	gd gd gd-devel php-gd perl-GD.x86_64 \
+	tetex-latex tetex-doc tetex-fonts
 
 UNIX_PACKAGES_MACOSX= \
 	gd
 
 UNIX_PACKAGES_UBUNTU= \
 	make \
+	yum \
 	apache2 \
+	php5 \
+	libapache2-mod-php5 \
+	php-elisp \
 	texlive-latex-base \
-	libgd2-xpm-dev
+	libgd2-xpm-dev \
+	libgd-gd2-perl
 
 unix_packages_list:
 	@echo
@@ -118,6 +128,7 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
+	CGI \
 	PostScript::Simple \
 	Statistics::Distributions \
 	Algorithm::Cluster \
