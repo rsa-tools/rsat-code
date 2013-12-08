@@ -58,14 +58,18 @@ UNIX_PACKAGES_COMMON= \
 	gnuplot \
 	graphviz \
 	links \
-	finger
+	finger \
+	zip \
+	unzip
 
 UNIX_PACKAGES_CENTOS= \
 	httpd \
 	cpan \
-	gd \
 	php \
-	tetex-latex tetex-doc tetex-fontsw
+	glibc.i686 \
+	zlib.i686 \
+	gd gd gd-devel php-gd perl-GD.x86_64 \
+	tetex-latex tetex-doc tetex-fonts
 
 UNIX_PACKAGES_MACOSX= \
 	gd
@@ -78,7 +82,8 @@ UNIX_PACKAGES_UBUNTU= \
 	libapache2-mod-php5 \
 	php-elisp \
 	texlive-latex-base \
-	libgd2-xpm-dev
+	libgd2-xpm-dev \
+	libgd-gd2-perl
 
 unix_packages_list:
 	@echo
