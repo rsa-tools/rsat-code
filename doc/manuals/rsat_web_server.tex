@@ -96,50 +96,29 @@ administrator of the computer).
     sudo apache2ctl restart
   \end{lstlisting}
 
-\item Checking the configuration file for the \RSAT server. Check that
-  the properties are properly defined in the \RSAT property file
-  \file{$RSAT/RSAT\_config.props}. In principle you already configured
-  in the beginning of the installation, with the command
+\item Check that all properties related to the Web site URL are
+  properly defined in the \RSAT property files
+  \file{$RSAT/RSAT\_config.props} and
+  \file{\$RSAT/RSAT\_config.mk}. 
+
+  In principle you already configured these files in the beginning of
+  the installation, with the command
   \begin{lstlisting}
     perl perl-scripts/configure_rsta.pl
   \end{lstlisting}
 
+  \texbbf{Note:} it is important to properly define the URL fo the Web
+  server (\texttt{RSAT\_WWW} and related variables). The default URL
+  (http://localhost/rsat/) should work if the Web browser is running
+  on the server itself, but the Web site will not work for browsers
+  located on remote computers.
+
 \end{enumerate}
 
 
-\subsection{Configuring the RSAT options for the web server}
 
-You need to adapt the RSAT configuration file to indicate the
-configuration of your server. For this, edit the \RSAT property file
-\texttt{\$RSAT/RSAT\_config.props}.
 
-The simplest way to update the config file is to run the interactive
-configuration script.
-Alternatively, you can edit this file with a text edito of your
-choice.
-
-You also need to edit \texttt{\$RSAT/RSAT\_config.mk}. 
-
-\subsubsection{IP address of your machine}
-
-By default, the RSAT web server is configured to be used from the
-machine on which it is installed. 
-
-\begin{lstlisting}
-$WWW_RSA = 	"http://localhost/rsat/";
-\end{lstlisting}
-
-If you want to give access from browsers located on other computers
-than your server, you need to adapt the following line and replace
-``localhost'' by the IP address of your machine. Let us assume that
-your mahine has the address www.myserver. You should then edit the row
-as follows.
-
-\begin{lstlisting}
-$WWW_RSA = 	"http://www.myserver/rsat/";
-\end{lstlisting}
-
-\subsubsection{Setting the environment variable RSAT}
+%% \subsubsection{Setting the environment variable RSAT}
 
 %% For the basic RSAT configuration, you had to define an environment
 %% variable RSAT. This is necessary for the perl program to know the
