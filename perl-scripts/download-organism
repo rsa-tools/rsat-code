@@ -162,10 +162,12 @@ package main;
   ## First and lst organisms
   our $skip_org = 0;
   our $last_org = 0;
+  our $no_blast = 1;
 
   ################################################################
   ## Read argument values
   &ReadArguments();
+
 
   ################################################################
   ## Check that the web aspirator is working
@@ -274,15 +276,21 @@ package main;
     ## download one genome
     my $cmd = $which_aspirator;
     if ($get_command eq "wget") {
+      my $RSAT_SERVER_ROOT;
+      if ($RSAT_SERVER =~ /\//) {
+	  $RSAT_SERVER_ROOT = '/'.$'; #'
+      }
+
       &RSAT::message::TimeWarn("Downloading genome", $i."/".$org_nb, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
-      $cmd .= " --reject jobs --reject 'index.html*' ";
-      if ($main::verbose <= 4) {
+      $cmd .= " --reject jobs --reject 'index.html*'";
+      $cmd .= " -X".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
+      if ($main::verbose <= 3) {
 	## quiet mode for wget
-	$cmd .= "-q"; 
+	$cmd .= " -q"; 
       } else {
 	## "low-verbosity" mode for wget (the default mode is VERY
 	## verbosy, the "low-verbosity" mode is still quite verbosy)
-      	$cmd .= "-nv"; 
+      	$cmd .= " -nv"; 
       }
       $cmd .= " --passive-ftp";
       $cmd .= " --no-parent";
@@ -300,6 +308,7 @@ package main;
       &RSAT::message::TimeWarn("Downloading genome", $i."/".$org_nb, $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
       $cmd .= " -e ssh -ruptvl -z ";
       $cmd .= " --exclude jobs --exclude '*~'";
+      $cmd .= " --exclude blast_hits --exclude blastdb" if ($no_blast);
       $cmd .= " ".$remote_genome;
       $cmd .= " ".$output_dir."/".$org."/";
       $cmd =~ s/\/\//\//g;
@@ -430,6 +439,29 @@ specify multiple taxa.
 
 } elsif ($arg eq "-taxon") {
 	  push @taxa,  shift(@arguments);
+
+
+=pod
+
+=item B<-no_blast> |  B<-blast>
+
+Options to specify whether the cross-species blast files should be
+downloaded or not together with the genome. 
+
+Default: -no_blast
+
+These files are used by several comparative genomics programs
+(I<get-orthologs>, I<footprint-discovery>, I<footprint-scan>...). With
+the increase of th number of sequenced genomes, the blast-hit folder
+occupies a large disk space, and should be downloaded only
+
+=cut
+
+} elsif ($arg eq "-no_blast") {
+    $main::no_blast = 1;
+
+} elsif ($arg eq "-blast") {
+    $main::no_blast = 0;
 
 	    ## Output directory
 =pod
