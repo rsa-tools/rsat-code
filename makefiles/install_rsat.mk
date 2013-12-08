@@ -123,6 +123,7 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
+	CGI \
 	PostScript::Simple \
 	Statistics::Distributions \
 	Algorithm::Cluster \
