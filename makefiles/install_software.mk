@@ -149,11 +149,9 @@ _compile_python_suds:
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
+EXT_APP_TARGETS=install_seqlogo install_mcl install_rnsc install_blast
 install_ext_apps:
-	${MAKE} install_seqlogo
-	${MAKE} install_mcl
-	${MAKE} install_rnsc
-	${MAKE} install_blast
+	${MAKE} ${EXT_APP_TAGETS}
 #	${MAKE} install_gibbs
 #	${MAKE} install_consensus
 #	${MAKE} install_patser
