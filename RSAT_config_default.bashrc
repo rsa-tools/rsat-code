@@ -8,7 +8,16 @@
 export RSAT=[RSAT_PARENT_PATH]/rsat
 export PATH=${RSAT}/bin:${PATH}
 export PATH=${RSAT}/perl-scripts:${PATH}
+export PATH=${RSAT}/perl-scripts/parsers:${PATH}
 export PATH=${RSAT}/python-scripts:${PATH}
+
+################################################################
+## Class path for metabolic pathway analysis tools
+if  [ ${CLASSPATH} ]; then
+       export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
+else
+       export CLASSPATH=.:${RSAT}/java/lib/NeAT_javatools.jar
+fi
 
 ################################################################
 ## Default path for the Ensembl Perl modules
