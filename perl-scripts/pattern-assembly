@@ -157,7 +157,7 @@ sub Verbose {
     printf $out "; %-29s\t%d\n", "Max number of patterns", $max_pattern_nb if ($max_pattern_nb);
     printf $out "; %-29s\t%d\n", "Top number of patterns", $top_pattern_nb if ($top_pattern_nb);
     printf $out "; %-29s\t%d\n", "Number of input patterns", $pattern_nb;
-    printf $out "; %-29s\t%d %s\n", "THE ANALYSIS WAS RESTRICTED TO THE", $top_pattern_nb, "TOP PATTERNS" 
+    printf $out "; %-29s\t%d %s\n", "THE ASSEMBLY WAS RESTRICTED TO THE", $top_pattern_nb, "TOP PATTERNS" 
       if (($top_pattern_nb > 0) && ($pattern_nb > $top_pattern_nb));
     printf $out ";\n";
 }
