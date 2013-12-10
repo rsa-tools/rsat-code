@@ -104,7 +104,7 @@ if ($uploaded_file) {
     close FEATURES;
   }
 
-## pasted query features
+## Pasted query features
 }elsif ($query->param('featQ') =~/\S/) {
 #  $tmp_query_features = "${TMP}/${tmp_file_name}_pasted_query_features.tab";
   open FEATURES, "> $tmp_query_features";
@@ -116,7 +116,7 @@ if ($uploaded_file) {
 }
 $parameters .= " -i $tmp_query_features";
 
-#### load the reference feature file
+## Load reference feature file
 $tmp_ref_features = $tmp_file_path."_uploaded_ref_features.tab";
 push @result_files, "Reference features", $tmp_ref_features;
 $uploaded_file = $query->param('upload_ref_features');
@@ -144,6 +144,8 @@ if ($uploaded_file) {
   &FatalError ("Please select the reference feature file on your hard drive with the Browse button or paste features in the text area");
 }
 $parameters .= " -ref $tmp_ref_features";
+
+$command .= " -iformat ".$query->param('feature_format');
 
 $command .= " ".$return_fields." ".$parameters;
 

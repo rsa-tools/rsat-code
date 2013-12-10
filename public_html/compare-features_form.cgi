@@ -12,23 +12,29 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
+
+#local @supported_input_formats = sort(keys(%RSAT::feature::supported_input_format));
+local @supported_input_formats = qw(bed dnapat ft galaxy_seq gft gff gff3bed swembl ucsc_seq);
+
 ### default values for filling the form
 $default{featQ} = "";
 $default{upload_query_features} = "";
 $default{featRef} = "";
 $default{upload_ref_features} = "";
 
-
 $default{stats} = "checked";
 $default{diff} = "";
 $default{inter} = "";
-$default{inter_len} = "none";
+$default{inter_len} = "1";
 $default{inter_cov} = 0.8;
+
+$default{input_format} = "bed";
+
 
 ### print the form ###
 &RSA_header("compare-features", 'form');
 print "<CENTER>";
-print "Compare two or more sets of features. This program takes as input several feature files (two or more), and calculates the intersection, union and difference between features. It also computes contingency tables and comparison statistics.<P>\n";
+print "Compare two or more sets of features. The web-based program takes as input two feature files and computes the intersection, union and difference between features, as well as  contingency tables and comparison statistics. Note: the command-line version of this tool can take more than 2 files.<P>\n";
 print "Program developed by <A HREF='mailto:jvhelden\@ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
 print "and <A HREF='mailto:jturatsi\@ulb.ac.be (Jean-Valéry Turatsinze)'>Jean-Valéry Turatsinze</A>\n";
 print "</CENTER>";
@@ -45,9 +51,9 @@ print $query->start_multipart_form(-action=>"compare-features.cgi");
 
 #### features text areas
 
-print ("<table border=0 cellspacing=0 cellpadding=4 align=center>\n");
+print ("<table border='0' cellspacing='0' cellpadding='4'>\n");
 
-print ("<tr align = 'center'><th>Query features</th><th>Reference features</th></tr>\n");
+print ("<tr align='center'><th>Query features</th><th>Reference features</th></tr>\n");
 
 ################################################################
 ## Query input classes textarea
@@ -70,7 +76,7 @@ print $query->textarea(-name=>'featRef',
 		       -columns=>60);
 
 #print ("<td><textarea name='featRef' rows='10' cols='60'>$demo_featRef</textarea></td></tr>");
-print ("<tr align = 'center'></td>");
+print ("<tr align='center'></td>");
 
 
 #### upload query classifcation file
@@ -91,79 +97,63 @@ print $query->filefield(-name=>'upload_ref_features',
 			-maxlength=>200);
 print ("</td></tr>");
 print ("</table>");
-print "<p>";
+
+#### feature format (pop-up menu)
+print "<A HREF='help.convert-features.html'><B>Input feature format</B></a>&nbsp;";
+print  $query->popup_menu(-name=>'feature_format',
+			 -values=>[@supported_input_formats],
+			 -default=>$default{input_format});
+print "<br/>";
+
+
+#print "<hr color=\"#BBBBBB\"><p>";
 
 #### table with all the statistics and thresholds
 
-print ("<table border=0 cellspacing=0 cellpadding=4 align=center>\n");
 
-print ("<tr align = 'center'><td>\n");
+print "<p><a href='help.compare-features.html#return_fields'><b>Output fields</b></a>\n", "&nbsp"x5;
 
-print "<h4>Return</h4>\n";
+## Return matching statistics
+print $query->checkbox(-name=>'stats', 
+		       -checked=>$default{stats},
+		       -label=>' Statistics ');
 
-print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
+### Return intersections
+print $query->checkbox(-name=>'inter',
+		       -checked=>$default{inter},
+		       -label=>' Intersections ');
+
+### Return differences
+print $query->checkbox(-name=>'diff',
+		       -checked=>$default{diff},
+		       -label=>' Differences ');
+
+print "</p>";
+
+print "<p><b>Thresholds</b></p>\n";
+print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>3},
+		    $query->Tr({-align=>'left',-valign=>'middle'},
 			       [
-				$query->th([" <A HREF='help.compare-features.html#return_fields'>Fields</A> "]),
-
-				### occurrences
-				$query->td([$query->checkbox(-name=>'stats',
-							     -checked=>$default{stats},
-							     -label=>' Statistics ')
-					    ]),
-
-				### Frequencies
-				$query->td([$query->checkbox(-name=>'inter',
-							     -checked=>$default{inter},
-							     -label=>' Intersections ')
-					    ]),
-
-				### Probabilities
-				$query->td([$query->checkbox(-name=>'diff',
-							     -checked=>$default{diff},
-							     -label=>' Differences ')
-					    ]),
-
-			 ]
-			)
-		);
-print ("</td><td>");
-print "<h4>Thresholds</h4>\n";
-print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
-			       [
-				$query->th([" <A HREF='help.compare-features.html#return_fields'>Fields</A> ",
-					    " <A HREF='help.compare-features.html#thresholds'>Lower<BR>Threshold</A> ",
-#					    " <A HREF='help.compare-features.html#thresholds'>Upper<BR>Threshold</A> ",
+				$query->th([" <A HREF='help.compare-features.html#return_fields'>Field</A> ",
+					    " <A HREF='help.compare-features.html#thresholds'>Lower threshold</A> ",
 					    ]),
 				
 				### Query class size
-				$query->td([' Intersection size (nt) ',
+				$query->td(['Minimal overlap (bp)',
 					    $query->textfield(-name=>'inter_len',
 							      -default=>$default{inter_len},
 							      -size=>5),
-#					    $query->textfield(-name=>'uth_q',
-#							      -default=>$default{uth_q},
-#							      -size=>5),
 					    ]),
 				### Reference class size
 				$query->td([' Intersection coverage (0-1)',
 					    $query->textfield(-name=>'inter_cov',
 							      -default=>$default{inter_cov},
 							      -size=>5),
-#					    $query->textfield(-name=>'uth_r',
-#							      -default=>$default{uth_r},
-#							      -size=>5),
 					    ]),
 
 			 ]
 			)
 		);
-print ("</td></tr>");
-print ("</table>");
-print "<p>";
-
-
 
 ################################################################
 ## output format
@@ -191,7 +181,7 @@ print "<HR width=550 align=left>\n";
 
 ### action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
-print "<TR VALIGN=MIDDLE>\n";
+print "<tr valign=middle>\n";
 #print "<TD>", $query->submit(-label=>"DEMO"), "</TD>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
