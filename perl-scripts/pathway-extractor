@@ -480,9 +480,16 @@ Graph file
       $infile{graph} = shift(@arguments);
 =pod
 
-=item	B<-dir true/false>
+=item	B<-d true/false>
 
-true if the graph is directed 
+Specify that the graph is directed. 
+
+B<Note:> by default, graphs will be considered as undirected, i.e. each
+reaction is considered as reversible. Although many reactions are
+chemically irreversible, in physiological conditions they may be
+traversed in the opposite direction due to mass balance action. In
+practice, the pathway extraction works better when considering all
+reactions as reversible.
 
 =cut
     } elsif ($arg eq "-d") {
@@ -510,6 +517,8 @@ If no output file is specified, the current directory is used.
 =pod
 
 =item	B<Pathway inference arguments>
+
+Additional parameters are passed to the java pathway inference tool.
 
 =cut
       
