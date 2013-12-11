@@ -300,7 +300,12 @@ package main;
     my $infile = $input_files[$f];
     &RSAT::message::TimeWarn(join("\t", "", "Reading features from file", ($f+1)."/".scalar(@input_files), $infile)) if ($main::verbose >= 2);
     ($in) = &OpenInputFile($infile);
+    my $l = 0;
     while (<$in>) {
+	$l++;
+	if (($main::verbose >= 2) && ($l%20000==0)) {
+	    &RSAT::message::TimeWarn("\t\tread",$l, "lines from file", $f+1);
+	}
       ## Comment lines
       if ((/^;\s+(.*)/) || (/^--\s+(.*)/)) {
 	next;
@@ -600,7 +605,7 @@ sub CreateIntersection {
 	    &RSAT::message::Info(join ("\t", "Intersection does not reach lower threshold on",
 				       $param, $lth{$param},
 				       "len:".$inter_len, "cov:".$inter_cov))
-		if ($main::verbose >= 3);
+		if ($main::verbose >= 10);
 	    undef $inter_ft;
 	    return();
 	}
