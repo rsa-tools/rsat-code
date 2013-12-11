@@ -784,7 +784,7 @@ sub parse_from_row {
       &RSAT::message::Debug("column ".($c+1), "attr:".$attr, "value:".$value) if ($main::verbose >= 10);
       $self->set_attribute($attr, $value);
     } else {
-      &RSAT::message::Warning("Missing attribute ".$attr, "column:".($c+1)) if ($main::verbose >= 3);
+      &RSAT::message::Warning("Missing attribute ".$attr, "column:".($c+1)) if ($main::verbose >= 4);
     }
   }
 
