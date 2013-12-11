@@ -65,14 +65,14 @@ print "<hr>";
 
 print "<B>Feature</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-print "<A HREF='help.convert-features.html'><B>Format</B></a>&nbsp;";
-
 
 #### feature format (pop-up menu)
+print "<A HREF='help.convert-features.html'><B>Format</B></a>&nbsp;";
 print  $query->popup_menu(-name=>'feature_format',
 			 -Values=>[@supported_input_formats],
 			 -default=>$default{input_format});
 print "<br/>";
+
 ### text area to copy-paste the feature
 print  "Paste your feature in the box below<BR>\n";
 print $query->textarea(-name=>'feature',
