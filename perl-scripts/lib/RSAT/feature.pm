@@ -10,6 +10,7 @@ package RSAT::feature;
 			  gff3=>1,
 			  dnapat=>1,
 			  bed=>1,
+			  bed3col=>1,
 			  galaxy_seq=>1,
 			  ucsc_seq=>1,
 			  swembl=>1,
@@ -1131,21 +1132,21 @@ sub to_text {
   }
 
   ## Format-specific treatment for the strand
-  if (defined($columns{strand})) {
+  if (@{$strands{$output_format}}) {
     my @strands = @{$strands{$output_format}};
     my $strand = $self->get_attribute("strand") || $default{strand};
     my $f = $col_index{"strand"};
     my $s;
     if ($strand) {
 	if (defined($strand_index{$strand})) {
-      $s = $strand_index{$strand};
+	    $s = $strand_index{$strand};
 	} else {
 	    $s = $strand_index{'DR'};
 	}
     } else {
 	$s = $strand_index{'DR'};
     }
-#  &RSAT::message::Debug($f, $strand, $s, @strands, %strand_index) if ($main::verbose >= 10);
+    #&RSAT::message::Debug($f, $strand, $s, @strands, %strand_index) if ($main::verbose >= 10);
     $fields[$f] = $strands[$s];
     #    &RSAT::message::Debug( "strand", $strand, "f=$f", 
     #			   "index:".join(";", %strand_index),
