@@ -619,14 +619,15 @@ sub CreateIntersection {
     }
 
     ## Intersection description
-    my $description = "Intersection";
-    $description .= " (".$inter_ft->get_attribute("inter_len");
+    my $description;
+    $description .= &FileLabel($file_a);
+    $description .= "_".$current_ft->get_attribute("id");
+    $description .= ".inter.";
+    $description .= &FileLabel($file_b);
+    $description .= "_".$next_ft->get_attribute("id");
+    $description .= "_".$inter_ft->get_attribute("inter_len");
     $description .= "/";
-    $description .= $inter_ft->get_attribute("pair_len").")";
-    $description .= " between ";
-    $description .= $current_ft->full_id();
-    $description .= " and ";
-    $description .= $next_ft->full_id();
+    $description .= $inter_ft->get_attribute("pair_len");
     $inter_ft->set_attribute("description", $description);
 
     $inter_ft->set_attribute("score", sprintf("%.2f", $inter_ft->get_attribute("inter_cov")*$max_score));
