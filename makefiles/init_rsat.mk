@@ -198,7 +198,7 @@ compile_kwalks:
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
 	@chmod 777 ${RSAT}/contrib/kwalks
-#	@chmod 777 ${RSAT}/contrib/kwalks/bin
+	@chmod 777 ${RSAT}/contrib/kwalks/bin
 	@echo "Executable	${RSAT}/contrib/kwalks/bin/lkwalk"
 	@${MAKE} check_kwalks_config
 
