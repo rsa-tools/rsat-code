@@ -40,3 +40,4 @@ RSAT_config.bashrc
 RSAT_config.*.bk.*
 bin_linux
 #*
+logs_tmp
