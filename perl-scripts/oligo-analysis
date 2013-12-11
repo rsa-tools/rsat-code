@@ -2164,7 +2164,7 @@ sub ReadArguments {
 	    $bg_method = "Markov model estimated from input sequences";
 	    $return{'exp_freq'} = 1;
 	    $markov_order = shift(@arguments);
-	    &RSAT::error::FatalError("The Markov order must be an integer value") 
+	    &RSAT::error::FatalError($markov_order, "Invalid value for Markov order: must be an Integer value.") 
 		unless (&IsInteger($markov_order));
 
 	    ## Pseudo-counts
