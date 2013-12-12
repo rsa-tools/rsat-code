@@ -75,7 +75,7 @@ if ($query->param('inter_len') =~ /^\d+$/) {
 }
 
 ### lower threshold on interection leength (size)
-if ($query->param('inter_cov') =~ /^\d+$/) {
+if ($query->param('inter_cov') =~ /\d+/) {
   $inter_cov = $query->param('inter_cov');
   if (&IsReal($inter_cov)) {
     $parameters .= " -lth inter_cov ".$inter_cov;
