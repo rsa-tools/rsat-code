@@ -24,9 +24,9 @@ $default{upload_ref_features} = "";
 
 $default{stats} = "checked";
 $default{diff} = "";
-$default{inter} = "";
+$default{inter} = "on";
 $default{inter_len} = "1";
-$default{inter_cov} = 0.8;
+$default{inter_cov} = "none";
 
 $default{input_format} = "bed";
 
@@ -191,56 +191,63 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"compare-features_form.cgi");
-$demoQuery="
-eve	CRER	crer_1	DR	-5395	-5283	2	1.618	2.4e-02	2.0e-09	16.3	113
-eve	CRER	crer_2	DR	-4379	-4202	2	1.223	6.0e-02	6.3e-09	14.7	178
-eve	CRER	crer_3	DR	-3875	-3727	2	1.373	4.2e-02	5.9e-10	14.3	149
-eve	CRER	crer_4	DR	-3741	-3703	2	2.763	1.7e-03	3.1e-10	17.4	39
-eve	CRER	crer_5	DR	-3875	-3703	3	2.157	7.0e-03	2.4e-15	24.4	173
-eve	CRER	crer_6	DR	-3717	-3688	2	3.145	7.2e-04	3.7e-10	17.8	30
-eve	CRER	crer_7	DR	-3741	-3688	3	3.864	1.4e-04	2.8e-14	25.1	54
-eve	CRER	crer_8	DR	-3875	-3688	4	3.042	9.1e-04	2.2e-19	32.1	188
-eve	CRER	crer_9	DR	-3702	-3636	2	2.129	7.4e-03	1.4e-09	14.6	67
-eve	CRER	crer_10	DR	-3717	-3636	3	3.194	6.4e-04	5.5e-15	24.7	82
-eve	CRER	crer_11	DR	-3741	-3636	4	4.082	8.3e-05	4.2e-19	32	106
-eve	CRER	crer_12	DR	-3650	-3582	2	2.098	8.0e-03	1.1e-10	16.7	69
-eve	CRER	crer_13	DR	-3702	-3582	3	2.633	2.3e-03	9.6e-15	24.4	121
-eve	CRER	crer_14	DR	-3717	-3582	4	3.616	2.4e-04	3.9e-20	34.5	136
-eve	CRER	crer_15	DR	-3741	-3582	5	4.484	3.3e-05	3.0e-24	41.8	160
-eve	CRER	crer_16	DR	-3596	-3495	2	1.712	1.9e-02	5.5e-10	15.9	102
-eve	CRER	crer_17	DR	-3650	-3495	3	2.291	5.1e-03	8.2e-15	22.8	156
-eve	CRER	crer_18	DR	-1377	-1199	2	1.218	6.0e-02	2.9e-09	15	179
-eve	CRER	crer_19	DR	-1213	-1194	2	3.991	1.0e-04	2.7e-09	15.1	20
-eve	CRER	crer_20	DR	-1377	-1194	3	2.078	8.4e-03	2.2e-13	22.3	184
-eve	CRER	crer_21	DR	-1208	-1073	2	1.452	3.5e-02	3.4e-09	15.4	136
-eve	CRER	crer_22	DR	-1213	-1073	3	2.425	3.8e-03	1.2e-13	23.2	141
-eve	CRER	crer_23	DR	-1087	-945	2	1.408	3.9e-02	9.9e-10	16.7	143
-eve	CRER	crer_24	DR	-959	-780	2	1.214	6.1e-02	1.2e-09	16.4	180
-eve	CRER	crer_25	DR	-794	-687	2	1.659	2.2e-02	4.6e-09	15.2	108
-eve	CRER	crer_26	DR	-701	-676	2	3.392	4.1e-04	8.1e-09	14.6	26
-eve	CRER	crer_27	DR	-794	-676	3	2.656	2.2e-03	4.6e-13	22.4	119
-eve	CRER	crer_28	DR	-369	-341	2	3.200	6.3e-04	4.8e-10	17.2	29
-eve	CRER	crer_29	DR	-355	-299	2	2.304	5.0e-03	4.8e-10	17.2	57
-eve	CRER	crer_30	DR	-369	-299	3	3.415	3.8e-04	1.1e-14	25.8	71
-eve	CRER	crer_31	DR	-313	-276	2	2.798	1.6e-03	3.1e-11	19.5	38
-eve	CRER	crer_32	DR	-355	-276	3	3.231	5.9e-04	6.8e-16	28.1	80
-eve	CRER	crer_33	DR	-369	-276	4	4.315	4.8e-05	1.5e-20	36.7	94
-eve	CRER	crer_34	DR	-290	-220	2	2.069	8.5e-03	5.0e-14	23.6	71
-eve	CRER	crer_35	DR	-313	-220	3	2.991	1.0e-03	1.1e-18	32.2	94
-eve	CRER	crer_36	DR	-355	-220	4	3.616	2.4e-04	2.4e-23	40.8	136
-eve	CRER	crer_37	DR	-369	-220	5	4.629	2.3e-05	5.4e-28	49.4	150
-";
+$demo_query_file = "demo_files/Blow_2010_GSM348064_forebrain_p300_peaks.bed";
+$demoQuery=`cat $demo_query_file`;
+# $demoQuery="
+# eve	CRER	crer_1	DR	-5395	-5283	2	1.618	2.4e-02	2.0e-09	16.3	113
+# eve	CRER	crer_2	DR	-4379	-4202	2	1.223	6.0e-02	6.3e-09	14.7	178
+# eve	CRER	crer_3	DR	-3875	-3727	2	1.373	4.2e-02	5.9e-10	14.3	149
+# eve	CRER	crer_4	DR	-3741	-3703	2	2.763	1.7e-03	3.1e-10	17.4	39
+# eve	CRER	crer_5	DR	-3875	-3703	3	2.157	7.0e-03	2.4e-15	24.4	173
+# eve	CRER	crer_6	DR	-3717	-3688	2	3.145	7.2e-04	3.7e-10	17.8	30
+# eve	CRER	crer_7	DR	-3741	-3688	3	3.864	1.4e-04	2.8e-14	25.1	54
+# eve	CRER	crer_8	DR	-3875	-3688	4	3.042	9.1e-04	2.2e-19	32.1	188
+# eve	CRER	crer_9	DR	-3702	-3636	2	2.129	7.4e-03	1.4e-09	14.6	67
+# eve	CRER	crer_10	DR	-3717	-3636	3	3.194	6.4e-04	5.5e-15	24.7	82
+# eve	CRER	crer_11	DR	-3741	-3636	4	4.082	8.3e-05	4.2e-19	32	106
+# eve	CRER	crer_12	DR	-3650	-3582	2	2.098	8.0e-03	1.1e-10	16.7	69
+# eve	CRER	crer_13	DR	-3702	-3582	3	2.633	2.3e-03	9.6e-15	24.4	121
+# eve	CRER	crer_14	DR	-3717	-3582	4	3.616	2.4e-04	3.9e-20	34.5	136
+# eve	CRER	crer_15	DR	-3741	-3582	5	4.484	3.3e-05	3.0e-24	41.8	160
+# eve	CRER	crer_16	DR	-3596	-3495	2	1.712	1.9e-02	5.5e-10	15.9	102
+# eve	CRER	crer_17	DR	-3650	-3495	3	2.291	5.1e-03	8.2e-15	22.8	156
+# eve	CRER	crer_18	DR	-1377	-1199	2	1.218	6.0e-02	2.9e-09	15	179
+# eve	CRER	crer_19	DR	-1213	-1194	2	3.991	1.0e-04	2.7e-09	15.1	20
+# eve	CRER	crer_20	DR	-1377	-1194	3	2.078	8.4e-03	2.2e-13	22.3	184
+# eve	CRER	crer_21	DR	-1208	-1073	2	1.452	3.5e-02	3.4e-09	15.4	136
+# eve	CRER	crer_22	DR	-1213	-1073	3	2.425	3.8e-03	1.2e-13	23.2	141
+# eve	CRER	crer_23	DR	-1087	-945	2	1.408	3.9e-02	9.9e-10	16.7	143
+# eve	CRER	crer_24	DR	-959	-780	2	1.214	6.1e-02	1.2e-09	16.4	180
+# eve	CRER	crer_25	DR	-794	-687	2	1.659	2.2e-02	4.6e-09	15.2	108
+# eve	CRER	crer_26	DR	-701	-676	2	3.392	4.1e-04	8.1e-09	14.6	26
+# eve	CRER	crer_27	DR	-794	-676	3	2.656	2.2e-03	4.6e-13	22.4	119
+# eve	CRER	crer_28	DR	-369	-341	2	3.200	6.3e-04	4.8e-10	17.2	29
+# eve	CRER	crer_29	DR	-355	-299	2	2.304	5.0e-03	4.8e-10	17.2	57
+# eve	CRER	crer_30	DR	-369	-299	3	3.415	3.8e-04	1.1e-14	25.8	71
+# eve	CRER	crer_31	DR	-313	-276	2	2.798	1.6e-03	3.1e-11	19.5	38
+# eve	CRER	crer_32	DR	-355	-276	3	3.231	5.9e-04	6.8e-16	28.1	80
+# eve	CRER	crer_33	DR	-369	-276	4	4.315	4.8e-05	1.5e-20	36.7	94
+# eve	CRER	crer_34	DR	-290	-220	2	2.069	8.5e-03	5.0e-14	23.6	71
+# eve	CRER	crer_35	DR	-313	-220	3	2.991	1.0e-03	1.1e-18	32.2	94
+# eve	CRER	crer_36	DR	-355	-220	4	3.616	2.4e-04	2.4e-23	40.8	136
+# eve	CRER	crer_37	DR	-369	-220	5	4.629	2.3e-05	5.4e-28	49.4	150
+# ";
 
-$demoRef="
-eve	TFBS	eve_mas	chr2R	-5303	-5198	5	105
-eve	TFBS	eve_proximal_promoter_inc._TATA	chr2R	-127	80	9	207
-eve	TFBS	eve_stripe2	chr2R	-1480	-996	19	484
-eve	TFBS	eve_stripe_3+7	chr2R	-3741	-3230	18	511
-";
+$demo_ref_file = "demo_files/Blow_2010_GSM559653_midbrain_p300_peaks.bed";
+$demoRef = `cat $demo_ref_file`;
+# $demoRef="
+# eve	TFBS	eve_mas	chr2R	-5303	-5198	5	105
+# eve	TFBS	eve_proximal_promoter_inc._TATA	chr2R	-127	80	9	207
+# eve	TFBS	eve_stripe2	chr2R	-1480	-996	19	484
+# eve	TFBS	eve_stripe_3+7	chr2R	-3741	-3230	18	511
+# ";
 
 print "<TD><B>";
 print $query->hidden(-name=>'featQ',-default=>$demoRef);
 print $query->hidden(-name=>'featRef',-default=>$demoQuery);
+print $query->hidden(-name=>'inter',-default=>"on");
+print $query->hidden(-name=>'stats',-default=>"on");
+print $query->hidden(-name=>'inter_cov',-default=>"0.25");
 # print $query->hidden(-name=>'input_format',-default=>'tab');
 # print $query->hidden(-name=>'info',-default=>"on");
 # print $query->hidden(-name=>'weights',-default=>"on");
