@@ -39,5 +39,9 @@ doc/manuals/*.toc
 RSAT_config.bashrc
 RSAT_config.*.bk.*
 bin_linux
+<<<<<<< HEAD
+contrib/REA/REA
+=======
 #*
 logs_tmp
+>>>>>>> b061d9022f7db3bb5974d664606766bfcb71d631
