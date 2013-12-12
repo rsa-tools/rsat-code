@@ -11,6 +11,10 @@
 
 #include "utils.h"
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
+
 typedef struct
 {
     char *data;
@@ -65,5 +69,9 @@ void seq_append_c(seq_t *seq, char c)
             break;
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

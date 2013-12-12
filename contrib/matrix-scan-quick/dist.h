@@ -11,6 +11,10 @@
 
 #include "utils.h"
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
+
 typedef struct
 {
     int *data;
@@ -27,5 +31,9 @@ void free_values(values_t *values);
 void values_add(values_t *values, double value);
 
 void values_print(FILE *fout, values_t *values);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
