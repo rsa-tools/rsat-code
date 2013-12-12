@@ -10,7 +10,6 @@
 #ifndef __MARKOV__
 #define __MARKOV__
 
-using namespace std;
 
 #include <fstream>
 #include <iostream> 
@@ -18,6 +17,8 @@ using namespace std;
 #include <algorithm>
 #include <string>
 #include <cmath>
+
+using namespace std;
 
 #include "utils.h"
 

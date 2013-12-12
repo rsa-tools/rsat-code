@@ -25,7 +25,7 @@ void set_buffer(char *buffer, char *seq, int i, int l)
 }
 
 int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t *values, 
-            double threshold, int rc, pvalues_t *pvalues, int origin, char *matrix_name, int *scanned_pos)
+            double threshold, int rc, pvalues_t *pvalues, int origin, char *matrix_name, int *scanned_pos, int first_hit)
 {
     char buffer[256];
     int l = matrix.J;
@@ -75,6 +75,9 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
                     fprintf(fout, "\t%G", Pval);
                 fprintf(fout, "\n");
             }
+
+            if (first_hit)
+                break;
         }
 
         if (!rc)
@@ -102,6 +105,10 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
                     fprintf(fout, "\t%G", Pval_rc);
                 fprintf(fout, "\n");
             }
+            
+            if (first_hit)
+                break;
+            
         }
     }
     
