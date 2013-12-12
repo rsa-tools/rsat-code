@@ -1,8 +1,7 @@
 CC      = g++ 
 CCFLAGS = -O3 -Wall
 SRC     = $(wildcard *.cpp) 
-CSRC    = $(wildcard *.c)
-OBJS    = $(SRC:.cpp=.o) $(CSRC:.c=.o)
+OBJS    = $(SRC:.cpp=.o)
 APP     = matrix-scan-quick
 
 compile: $(OBJS)
