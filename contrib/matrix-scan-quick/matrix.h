@@ -24,12 +24,12 @@ struct Array
     double p;
     double pseudo;
     
-    Array(int dim1=0, int dim2=0, double val=0.0, double pseudo=1.0)
+    Array(int dim1=0, int dim2=0, double val=0.0, double pseudo_value=1.0)
     {
         I = dim1;
         J = dim2;
         data = NULL;
-        pseudo = pseudo;
+        pseudo = pseudo_value;
         if (I > 0 && J > 0)
             alloc(I, J, val);
     }

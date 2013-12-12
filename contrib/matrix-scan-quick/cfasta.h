@@ -12,6 +12,10 @@
 #include "seq.h"
 #include "utils.h"
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
+
 typedef struct
 {
     char *buffer;
@@ -26,5 +30,8 @@ void free_fasta_reader(fasta_reader_t *fasta_reader);
 
 seq_t *fasta_reader_next(fasta_reader_t *reader);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
