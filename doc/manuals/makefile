@@ -11,6 +11,9 @@
 MAKE=make -s
 RM=rm -f
 
+#LATEX=pplatex
+LATEX=latex
+
 TEX_FILES = \
 	install_guide.tex \
 	tutorial_shell_rsat.tex \
@@ -129,11 +132,11 @@ SPLIT=4
 	@echo "$<.html"
 
 .tex.dvi:
-	latex $<; bibtex $<; latex $<; latex $<
+	${LATEX} $<; bibtex $<; ${LATEX} $<; ${LATEX} $<
 	@echo "$<.dvi"
-#	latex $< 
+#	${LATEX} $< 
 #	makeindex $< 
-#	latex $< 
+#	${LATEX} $< 
 
 .dvi.pdf:
 	dvipdf $<
