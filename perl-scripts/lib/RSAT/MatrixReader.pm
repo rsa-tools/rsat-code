@@ -50,6 +50,7 @@ formats.
 			   'tab'=>1,
 			   'tf'=>1,
 			   'transfac'=>1,
+			   'cis-bp'=>1,
 			   'uniprobe'=>1,
 			  );
 $supported_input_formats = join ",", sort(keys %supported_input_formats);
@@ -96,7 +97,9 @@ sub readFromFile {
     } elsif ($format eq "transfac") {
 	@matrices = _readFromTRANSFACFile($file, "transfac");
     } elsif ($format eq "stamp") {
-	@matrices = _readFromTRANSFACFile($file, "stamp");
+	@matrices = _readFromTRANSFACFile($file, "stamp"); 
+    } elsif ($format eq "cis-bp") {
+	@matrices = _readFromTRANSFACFile($file, "cis-bp");
     } elsif ($format eq "stamp-previous") {
 	@matrices = _readFromSTAMPFile($file);
     } elsif ($format eq "infogibbs") {
@@ -387,8 +390,31 @@ sub _readFromTRANSFACFile {
       ## Read prior alphabet from the matrix header (PO line)
       ## Equiprobable alphabet
 
-    } elsif ((/^PO\s+/)  || (/^P0\s+/)) { ## 2009/11/03 JvH fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
+    } elsif ((/^PO\s+/)  || (/^P0\s+/) || (/^Pos\s+/)) { ## 2009/11/03 JvH fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
+	## CIS-BP database matrices are similar to trasnfac but do not contain an AC or ID line.
+	## Intialize CIS-BP matrix
+	if  ($format eq "cis-bp"){
+	    $current_matrix_nb++;
+	    $transfac_consensus = "";
+	    $matrix = new RSAT::matrix();
+	    $matrix->set_parameter("program", "cis-bp");
+	    $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+	    push @matrices, $matrix;
+	    &RSAT::message::Info("Empty accession, set to", $accession) if ($main::verbose >= 3) ;
+	    $accession = $short_file_name."_".$current_matrix_nb;
 
+	    ## TRANSFAC ID corresponds to our matrix name. 
+	    ## CIS-BP does not contain AC, ID or name.
+      
+	    &RSAT::message::Info("Setting AC, accession, id and name", $accession) if ($main::verbose >= 5);
+	    $matrix->set_parameter("accession", $accession);
+	    $matrix->set_parameter("AC", $accession);
+	    $matrix->set_parameter("id", $accession);
+	    $matrix->set_parameter("name", $accession);
+	    $matrix->set_parameter("version", $version);
+	    $ncol = 0;
+
+	}
       ## Check for a likely error: user has entered only the PO and
       ## frequencies, without AC and ID.
       if ($current_matrix_nb < 1) {
