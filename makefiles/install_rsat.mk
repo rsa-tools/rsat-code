@@ -205,6 +205,23 @@ _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
+################################################################
+## Install tex-live for generating the doc
+##
+## I found the instructions here:
+##  http://tex.stackexchange.com/questions/1092/how-to-install-vanilla-texlive-on-debian-or-ubuntu
+TL_VERSION=20131213
+install_latex:
+	wget http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+	tar -xzf install-tl-unx.tar.gz
+	cd install-tl-${TL_VERSION}
+	sudo ./install-tl
+
+
+LATEX_PACKAGES=pst-pdf ifplatform 
+install_latex_packages:
+	sudo tlmgr install ${LATEX_PACKAGES}
+
 # ## Some modules must be upgraded befinre installing required ones
 # upgrade_perl_modules:
 # 	@for module in ${PERLMOD_TO_UPGRADE}; do \
