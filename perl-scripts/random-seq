@@ -316,19 +316,26 @@ sub ReadArguments {
       $seed = shift @arguments;
 
     } elsif ($arg eq "-a") {
-      if (shift @arguments eq "yeast") {
-	$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
-	$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
-      # if argument between quotes
-      } elsif (($arguments[0] =~ /a:t\s(\S+)\sc:g\s(\S+)/i) && ($1 <= 1) && ($1 >=0) && ($2 <= 1) && ($2 >= 0)) {
-        $alphabet{'A'} = $alphabet{'T'} = $1;
-        $alphabet{'C'} = $alphabet{'G'} = $2;
+      if ($arguments[0] eq "yeast") {
+	  shift @arguments;
+	  $alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
+	  $alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
+	  # if argument between quotes
+      } elsif ($arguments[0] =~ /a:t\s+(\S+)\s+c:g\s+(\S+)/i) {
+	  if (($1 <= 1) && ($1 >=0) && ($2 <= 1) && ($2 >= 0)) {
+	      $alphabet{'A'} = $alphabet{'T'} = $1;
+	      $alphabet{'C'} = $alphabet{'G'} = $2;
+	      shift @arguments;
+	  } else {
+	      &RSAT::message::FatalError("Alphabet specification : all frequencies must be comprized between 0 and 1.");
+	  }
       } elsif (("$arguments[0] $arguments[1]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)) {
 	$alphabet{'A'} = $alphabet{'T'} = $1;
 	if (("$arguments[2] $arguments[3]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)) {
 	  $alphabet{'C'} = $alphabet{'G'} = $1;
 	}
       } else {
+	  die "HELLO";
 	&RSAT::error::FatalError("Invalid alphabet specification");
     }
 
