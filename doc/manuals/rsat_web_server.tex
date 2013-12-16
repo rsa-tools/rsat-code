@@ -74,7 +74,7 @@ administrator of the computer).
 \begin{enumerate}
 \item A default configuration file is provided with the \RSAT
   distribution (\file{rsat\_apache\_default.conf}). Edit this file to
-  replace the string \textt{[RSAT\_PARENT\_PATH]} by the actual
+  replace the string \texttt{\[RSAT\_PARENT\_PATH\]} by the actual
   location of your rsat folder.
   
 \item The file should then be copied to some appropriate place in the
@@ -98,7 +98,7 @@ administrator of the computer).
 
 \item Check that all properties related to the Web site URL are
   properly defined in the \RSAT property files
-  \file{$RSAT/RSAT\_config.props} and
+  \file{\$RSAT/RSAT\_config.props} and
   \file{\$RSAT/RSAT\_config.mk}. 
 
   In principle you already configured these files in the beginning of
@@ -107,7 +107,7 @@ administrator of the computer).
     perl perl-scripts/configure_rsta.pl
   \end{lstlisting}
 
-  \texbbf{Note:} it is important to properly define the URL fo the Web
+  \textbf{Note:} it is important to properly define the URL fo the Web
   server (\texttt{RSAT\_WWW} and related variables). The default URL
   (http://localhost/rsat/) should work if the Web browser is running
   on the server itself, but the Web site will not work for browsers

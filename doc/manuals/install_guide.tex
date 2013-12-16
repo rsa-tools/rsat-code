@@ -27,6 +27,33 @@
 \tableofcontents
 \newpage
 
+\chapter{Quick installation guide}
+
+I am aware that this installation guide is somewhat heavy. I am
+preparing a simplified installation procedure, which should be ready
+within a few days (Dec 2013). In the mean time the distribution is
+still coming with the detailed installation instructions. In case of
+trouble, don't hesitate to contact me.
+
+%% \begin{enumerate}
+%%   \item Download the compressed tar archive from the \RSAT
+%%     distribution site, uncompress it.
+%%     \begin{lstlisting}
+%% tar -xpzf rsat_yyyymmdd.tar.gz
+%%     \end{lstlisting}
+
+
+%%   \item Open a terminal and set your working directory to the
+%%     folder \file{rsat} extracted from this archive.
+
+%%   \item Run the \RSAT configuration script
+%%     \begin{lstlisting}
+%% perl perl-scripts/configure_rsat.pl
+%%     \end{lstlisting}
+    
+%%   \item Install the required Perl libraries (see below)
+%% \end{enumerate}
+
 \chapter{Description and requirements}
 
 \section{Description}
@@ -55,11 +82,8 @@ the following operating systems.
 
 \end{enumerate}
 
-\RSAT is not compatible with any version of Microsoft Windows and I
-have no intention to make it compatible in a foreseeable future. Since
-most programs are written in perl, part of them might run under
-Windows, but some others will certainly not, because they include
-calls to unix system commands.
+\RSAT is not compatible with any version of Microsoft Windows and we
+have no intention to make it compatible in a foreseeable future.
 
 \subsection{Perl language}
 
@@ -137,7 +161,7 @@ a Web page.
 
 For the time being, \RSAT is distributed as a compressed archive. 
 
-The license can be obtained from the \RSAT web site (\rsat_url).
+The license can be obtained from the \RSAT web site (\rsaturl).
 
 \section{Installation from a compressed archive}
 
@@ -173,7 +197,7 @@ three property files:
 \begin{enumerate}
 \item  \file{RSAT\_config.props}
 \item  \file{RSAT\_config.mk}
-\item  \file{RSAT_config.bashrc}
+\item  \file{RSAT\_config.bashrc}
 \end{enumerate}
 
 In particular, \emph{it is crucial to specify the full path of the
@@ -196,7 +220,7 @@ choice.
 \subsection{Loading RSAT environment variables}
 
 The configuration script has created a bash file
-\file{RSAT_config.bashrc} in the \RSAT distribution directory (folder
+\file{RSAT\_config.bashrc} in the \RSAT distribution directory (folder
 \file{rsat}). 
 
 This file should be loaded each time you enter a session. There are
@@ -213,12 +237,12 @@ source RSAT_config.bashrc
 
 \item Copy the content of this file in the bash configuration file in
   your home directory (\file{~/.bashrc} or
-  \file{~/.bash_profile}). \RSAT environment variables will then be
+  \file{~/.bash\_profile}). \RSAT environment variables will then be
   loaded for you at each connexion.
 
 \item If you dispose of admin rights, you can copy the content of this
   file in the main bash configuration file: 
-  \begin {enumerate}
+  \begin {itemize}
   \item in Lunix Centos, you can create a file
     \file{/etc/profile.d/rsat.bashrc}; 
   \item Mac OSX, copy it to the main bashrc file (\file{/etc/bashrc}).
@@ -603,15 +627,15 @@ This will compile and install the following programs in the directory
   sequences}
 
 The \RSAT distribution only contains the programs developed by the
-\RSAT \ team. 
+\RSAT team.
 
 A few additional programs, developed by third parties, can optionally
 be integrated in the package. All third-party programs may be loacated
 in the directory \emph{bin} directory of the \RSAT distribution.  
 
 In order to add functionalities to \RSAT, install some or all of these
-programs and include their binaries path $RSAT/bin. If you are not
-familiar with the installation of unix programs, ask assistance to
+programs and include their binaries path \file{\$RSAT/bin}. If you are
+not familiar with the installation of unix programs, ask assistance to
 your system administrator.
 
 Some of those can be downloaded and installed automatically using the
