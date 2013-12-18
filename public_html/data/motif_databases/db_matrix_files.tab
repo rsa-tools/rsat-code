@@ -1,0 +1,26 @@
+; This file describes the files containing collection of curated
+;  position-specific scoring matrices (PSSM) used by the tools
+;  compare-matrices and peak-motifs, in order to compare discovered
+;  motifs with those bound by known transcription factors.
+;
+; Column description
+; 	 1	DB_NAME	Database name
+;	 2	FORMAT	Matrix format (see convert-matrices for supported formats)
+;	 3	FILE    Matrix file (path relative to the motif DB directory ${RSAT}/data/motif_databases/)
+;	 4	DESCR	Human-readable description of the database (source, data type, ...)
+;	 5	VERSION	Version (date) of the import
+#DB_NAME	FORMAT	FILE	DESCR   VERSION
+jaspar_core_vertebrates	tf	JASPAR/jaspar_core_vertebrates_2009_10.tf	 JASPAR core Vertebrates	2009_10
+jaspar_core_fungi	tf	JASPAR/jaspar_core_fungi_2009_10.tf	 JASPAR core Fungi	2009_10
+jaspar_core_insects	tf	JASPAR/jaspar_core_insects_2009_10.tf	 JASPAR core Insects	2009_10
+jaspar_core_nematodes	tf	JASPAR/jaspar_core_nematodes_2009_10.tf	 JASPAR core Nematodes	2009_10
+jaspar_core_plants	tf	JASPAR/jaspar_core_plants_2009_10.tf	 JASPAR core Plants	2009_10
+jaspar_core_urochordates	tf	JASPAR/jaspar_core_urochordates_2009_10.tf	 JASPAR core Urochordates	2009_10
+jaspar_pbm_mouse	tf	JASPAR/jaspar_pbm_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Mouse	2009_10
+jaspar_pbm-homeo_mouse	tf	JASPAR/jaspar_pbm-homeo_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Homeo Mouse	2009_10
+jaspar_pbm-hlh_nematode	tf	JASPAR/jaspar_pbm-hlh_nematode_2009_10.tf	JASPAR PBM (UNIPROBE) HLH Nematode	2009_10
+FlyFactorSurvey	tf	FlyFactorSurvey/PWM_FlyFactorSurvey.tf	Drosophila FlyFactorSurvey	2011_06
+DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://autosome.ru/DMMPMM/)	2010_11
+IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://autosome.ru/DMMPMM/)	2010_11
+regulonDB	tf	REGULONDB/regulonDB_2012-05.tf	RegulonDB prokaryotes	2012_05
+Uniprobe_worm	uniprobe	uniprobe/uniprobe_worm_Cell09.tf	Uniprobe worm from Groves (Cell09)	2009	http://thebrain.bwh.harvard.edu/uniprobe/downloads/Cell09/worm_pwm_all.zip
