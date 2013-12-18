@@ -1942,62 +1942,82 @@ sub _readFromUniprobeFile {
 #    my @alphabet = qw(a c g t); ## The alphabet will be read from the matrix
 
     while ($line = <$in>) {
-      $l++;
+	$l++;
 #      next unless ($line =~ /\S/); ## Skip empty lines
-      chomp($line); ## Suppress newline character
-      $line =~ s/\r//; ## Suppress Windows-specific carriage return
-      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+	chomp($line); ## Suppress newline character
+	$line =~ s/\r//; ## Suppress Windows-specific carriage return
+	$line =~ s/\s+/\t/g; ## Replace spaces by tabulation
 
-      ## Read frequencies for one residue
-      if ($line =~ /^(\S)\:\s*/) {
-	if ($in_matrix) {
-	  my $residue = lc($1);
-	  my @fields = split(/\s+/, $line);
-	  shift(@fields);
-	  $matrix->addIndexedRow($residue, @fields);
-	  &RSAT::message::Debug("Added row", $residue, join ":", @fields), if ($main::verbose >= 5);
-	  next;
-	} else {
-	  &RSAT::error::FatalError("This file does not seem to be in Uniprobe format");
-	}
+	## Read frequencies for one residue
+	if ($line =~ /^(\S)\:\s*/) {
+	    if ($in_matrix) {
+		my $residue = lc($1);
+		my @fields = split(/\s+/, $line);
+		shift(@fields);
+		$matrix->addIndexedRow($residue, @fields);
+		&RSAT::message::Debug("Added row", $residue, join ":", @fields), if ($main::verbose >= 5);
+		next;
+	    } else {
+		&RSAT::error::FatalError("This file does not seem to be in Uniprobe format");
+	    }
 
-	## New matrix identifier
-      } elsif  ((!$in_matrix) && ($line =~ /^(\S+)/)) {
-
-	## Stop reading if the number of matrices to read has been restricted
-	if (defined($args{top})) {
-	  if (scalar(@matrices) >= $args{top}) {
-	    &RSAT::message::Warning("Stop reading after",
-				    $current_matrix_nb, scalar(@matrices),
-				    "top matrices (-top $args{top}), but the file seems to contain more.") if ($main::verbose >= 2);
-	    last;
-	  }
-	}
-
-	## Create a new matrix
-	$current_matrix_nb++;
-	$in_matrix = 1;
-	my $name = $1;
-	$matrix = new RSAT::matrix();
-	$matrix->set_parameter("program", "uniprobe");
-	$ncol = 0;
-	$matrix->force_attribute("id", $name);
-	$matrix->set_attribute("name", $name);
-	$matrix->set_attribute("AC", $name);
-	$matrix->set_attribute("accession", $name);
-
+	    ## New matrix identifier
+	} elsif  (($line =~ /Protein:\s+(\S+)/) ||
+		  ((!$in_matrix) && ($line =~ /^(\S+)/))) {
+	    
+	    ## Stop reading if the number of matrices to read has been restricted
+	    if (defined($args{top})) {
+		if (scalar(@matrices) >= $args{top}) {
+		    &RSAT::message::Warning("Stop reading after",
+					    $current_matrix_nb, scalar(@matrices),
+					    "top matrices (-top $args{top}), but the file seems to contain more.") if ($main::verbose >= 2);
+		    last;
+		}
+	    }
+	    
+	    ## Create a new matrix
+	    $current_matrix_nb++;
+	    $in_matrix = 1;
+	    $matrix = new RSAT::matrix();
+	    $matrix->set_parameter("program", "uniprobe");
+	    $ncol = 0;
+	    
+	    ## Protein name becomes matrix name + ID
+	    my $name = $1;
+	    if ($line =~ /Protein:\s+(\S+)/i) {
+		$name = $1;
+	    }
+	    $matrix->force_attribute("id", $name);
+	    $matrix->set_attribute("name", $name);
+	    $matrix->set_attribute("AC", $name);
+	    $matrix->set_attribute("accession", $name);
+	    
+	    ## Seed k-mer
+	    my $seed_kmer = "";
+	    if ($line =~ /k-mer:\s+(\S+)/i) {
+		$seed_kmer = $1;
+		$matrix->set_attribute("seed_kmer", $seed_kmer);
+	    }
+	    ## Enrichment score
+	    my $enrich_score = "";
+	    if ($line =~ /Score:\s+(\S+)/i) {
+		$enrich_score = $1;
+		$matrix->set_attribute("enrich_score", $enrich_score);
+	    }
+	    
+	    &RSAT::message::Info("New Uniprobe matrix", $name, $seed_kmer, $enrich_score) if ($main::verbose >= 3);
 #	$matrix->setAlphabet_lc(@alphabet);
 #	$matrix->force_attribute("nrow", 4);
-	push @matrices, $matrix;
-	&RSAT::message::Info("line ".$l, "matrix ".$current_matrix_nb, $name) if ($main::verbose >= 4);
-	next;
+	    push @matrices, $matrix;
+	    &RSAT::message::Info("line ".$l, "matrix ".$current_matrix_nb, $name) if ($main::verbose >= 4);
+	    next;
 
-	## Blank rows separate multiple matrices
-      } elsif ($line !~ /\S/) {
-	&RSAT::message::Debug("Separator line between matrices") if ($main::verbose >= 5);
+	    ## Blank rows separate multiple matrices
+	} elsif ($line !~ /\S/) {
+	    &RSAT::message::Debug("Separator line between matrices") if ($main::verbose >= 5);
 #	print($matrix->to_tab());
-	$in_matrix = 0;
-      }
+	    $in_matrix = 0;
+	}
 
     }
     close $in if ($file);
