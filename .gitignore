@@ -7,7 +7,6 @@ RSAT_config.mk
 public_html/logs
 logs
 jobs
-data
 *.o
 public_html/tmp
 tmp
@@ -18,6 +17,7 @@ public_html/data/genomes
 public_html/data/supported_organisms.tab
 public_html/data/metabolic_networks
 public_html/data/phylogeny
+public_html/data/motif_databases/*/downloads
 contrib/count-words/count-words
 contrib/info-gibbs/info-gibbs
 contrib/matrix-scan-quick/matrix-scan-quick
@@ -39,9 +39,11 @@ doc/manuals/*.toc
 RSAT_config.bashrc
 RSAT_config.*.bk.*
 bin_linux
-<<<<<<< HEAD
 contrib/REA/REA
-=======
 #*
 logs_tmp
->>>>>>> b061d9022f7db3bb5974d664606766bfcb71d631
+public_html/data/GO
+public_html/data/genomes*
+public_html/data/supported_*
+public_html/data/taxon_frequencies
+data
