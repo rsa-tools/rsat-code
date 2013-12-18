@@ -2005,7 +2005,7 @@ sub _readFromUniprobeFile {
 		$matrix->set_attribute("enrich_score", $enrich_score);
 	    }
 	    
-	    &RSAT::message::Info("New Uniprobe matrix", $name, $seed_kmer, $enrich_score) if ($main::verbose >= 0);
+	    &RSAT::message::Info("New Uniprobe matrix", $name, $seed_kmer, $enrich_score) if ($main::verbose >= 3);
 #	$matrix->setAlphabet_lc(@alphabet);
 #	$matrix->force_attribute("nrow", 4);
 	    push @matrices, $matrix;
