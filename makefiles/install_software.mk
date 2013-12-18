@@ -208,7 +208,9 @@ install_ensembl_api:
 install_ensembl_api_env:
 	@echo
 	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
-	@echo "Don't forget to adapt the following lines in your bash profile"
+	@echo
+	@echo "BEWARE !"
+	@echo "You need to paste the following lines in your bash profile"
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
