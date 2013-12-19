@@ -56,6 +56,16 @@ The RSAT interface relies on CGI (for the earlier tools) and PHP (for
 the most recent tools). These modules should be installed on the web
 server, and activated in the Apache configuration files. 
 
+Log in as super-user of your server, and check that the following
+lines are uncommented in the main apache configuration file
+(\file{/etc/apache2/httpd.conf}).
+
+\begin{lstlisting}
+LoadModule perl_module libexec/apache2/mod_perl.so
+LoadModule php5_module libexec/apache2/libphp5.so
+\end{lstlisting}
+                                                        
+
 \subsubsection{PHP module for Mac OSX}
 
 If your server is running under Mac OSX, you need to install a recent
@@ -86,6 +96,9 @@ administrator of the computer).
   \begin{itemize}
   \item On Centos: \file{/etc/httpd/conf.d/rsat.conf}
   \item On Ubuntu: \file{/etc/apache2/sites-enabled/rsat.conf}
+  \item On Mac OSX: 
+\begin{lstlisting}
+sudo cp ${RSAT}/ /etc/apache2/users/rsat.conf
   \end{itemize}
   
 \item You need to restart the Web server (the command depends on your
