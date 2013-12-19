@@ -359,8 +359,16 @@ The Perl module \program{GD.pm} requires prior installation of the
   \end{itemize}
   
 \item On \emph{Mac OSX} systems, the installation of the GD library
-  can be done with the program \program{brew}.
+  can be done with the program \program{brew} (\url{http://brew.sh/}).
+
+  After having installed brew, you can install the GD library in your
+  system by typing.
+  \begin{lstlisting}
+brew install gd
+\end{lstlisting}
+   
   
+
 %% First install libpng and libjpeg. Only then install the GD library. Here is an example that worked on OSX 10.8:
 %% \begin{lstlisting}
 %% curl -O http://www.ijg.org/files/jpegsrc.v9.tar.gz
@@ -396,10 +404,18 @@ password, please consult your system administrator.
 sudo bash;
 
 ## Define the RSAT environment variable.
-## You must replace [PARENT_PATH] by the full directory of the folder
-## where rsat directory has been installed
-export RSAT=[PARENT_PATH]/rsat;
+##
+## You must replace [RSAT_PATH] by the full path to your rsat folder.
+export RSAT=[RSAT_PATH]
 
+## Check that the RSAT environment variable has been defined
+echo $RSAT
+
+## Check that the RSAT environment variable points towards the right directory
+ls -1 $RSAT
+## This should give you the list of the files and folders included in your rsat folder.
+
+## Set your working directory to the rsat folder
 cd $RSAT
 
 ## Display the list of Perl modules that will be installed
