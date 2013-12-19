@@ -134,6 +134,9 @@ package main;
   ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
   @pattern_types = ();
   @patterns_to_merge = ();
+  @oligos_to_merge = ();
+  @local_words_to_merge = ();
+  @positions_to_merge = ();
 
   ## This is a bit tricky: I first called "timelog" the time
   ## measurements taken from RSAT programs. Then I implemented a
@@ -395,7 +398,7 @@ package main;
   if ($motif_nb > 0) {
     &MotifsVersusReference() if ((defined($main::infile{ref_motifs}))
 				 && ($task{motifs_vs_ref}));
-
+    
     &MotifsVersusDatabase() if ((scalar(@motif_databases) > 0)
 				&& ($task{motifs_vs_db}));
 
@@ -518,7 +521,8 @@ sub DefaultParameters {
   $main::param{disco_pseudo} = 0.01;
   $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
   $main::param{oligo_max_len} = 7; push(@main::param_list, "oligo_max_len");
-  $main::param{patterns_max_rank} = 50; push(@main::param_list, "patterns_max_rank");
+  $main::param{merge_lengths} = 1; ## Merge oligos of different lengths before assembly
+  $main::param{patterns_max_rank} = 100; push(@main::param_list, "patterns_max_rank");
 
   ## Thresholds for oligo-analysis, dyad-analysis and oligo-diff
   $main::param{min_ratio} = 1; push(@main::param_list, "min_ratio");
@@ -641,6 +645,9 @@ sub SetOutFileNames {
   ## $auto_markov.
   @pattern_types = ();
   @patterns_to_merge = ();
+  @oligos_to_merge = ();
+  @local_words_to_merge = ();
+  @positions_to_merge = ();
 
 
   ################################################################
@@ -755,8 +762,9 @@ sub SetOutFileNames {
     if ($disco{oligo_diff}) {
       $pattern_type = 'oligo_diff_'.$len.'nt';
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$len."nt");
-      push @pattern_types, $pattern_type;
+      push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
       push @patterns_to_merge, $pattern_type;
+      push @oligos_to_merge, $pattern_type;
     }
 
     ################################################################
@@ -765,7 +773,8 @@ sub SetOutFileNames {
 
       ## Test versus control sequences
       if ($main::infile{ctrl_seq}) {
-	$pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
+	$main::param{oligo_bg_suffix} = "test_vs_ctrl";
+	$pattern_type = 'oligos_'.$len.'nt'.$main::param{oligo_bg_suffix};
 
 	## Background models estimated from the control sequences
 	## (Markov chain m = k - 1).
@@ -775,9 +784,10 @@ sub SetOutFileNames {
 
 	## oligo-analysis result file
 	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-						     $len."nt", "vs_ctrl");
-	push @pattern_types, $pattern_type;
+						     $len."nt", $oligo_bg_suffix);
+	push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
 	push @patterns_to_merge, $pattern_type;
+	push @oligos_to_merge, $pattern_type;
 
       } else {
 
@@ -789,14 +799,16 @@ sub SetOutFileNames {
 	    ($main::param{oligo_min_mkv} eq "auto")) {
 	  my $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
 	  my $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
+	  $main::param{oligo_bg_suffix} = "mvk".$main::param{oligo_min_mkv}."_".$main::param{oligo_max_mkv};
 	  for my $markov ($min_mkv..$max_mkv) {
-
+	    $oligo_bg_suffix = "mkv".$markov;
 	    ## oligo-analysis result file
-	    $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+	    $pattern_type = 'oligos_'.$len.'nt_'.$oligo_bg_suffix;
 	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-							 $len."nt", "mkv".$markov);
-	    push @pattern_types, $pattern_type;
+							 $len."nt", $oligo_bg_suffix);
+	    push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
 	    push @patterns_to_merge, $pattern_type;
+	    push @oligos_to_merge, $pattern_type;
 
 	    ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
 	    #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
@@ -820,9 +832,9 @@ sub SetOutFileNames {
 						   #$main::param{local_words_heuristic},
 						   #"mkv".$markov
 						  );
-      push @pattern_types, $pattern_type;
+      push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
       push @patterns_to_merge, $pattern_type;
-      # }
+      push @local_words_to_merge, $pattern_type;
     }
 
     ################################################################
@@ -831,8 +843,51 @@ sub SetOutFileNames {
       $pattern_type = 'positions_'.$len.'nt';
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
 						   $len."nt", "ci".$main::param{positions_ci});
-      push @pattern_types, $pattern_type;
+      push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
       push @patterns_to_merge, $pattern_type;
+      push @positions_to_merge, $pattern_type;
+    }
+  }
+
+
+  ################################################################
+  ## Merge oligos of different lengths before pattern assembly
+  $main::param{oligo_range} = $main::param{oligo_min_len}."-".$main::param{oligo_max_len}."nt";
+  if ($main::param{merge_lengths}) {
+
+    ## Merge position-analysis result files
+    if ($disco{positions}) {
+      my $pattern_type = "positions_".$main::param{oligo_range};
+      $main::outfile{$pattern_type} =
+	  &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
+		       $main::param{oligo_range}, "ci".$main::param{positions_ci});
+      push @pattern_types, $pattern_type;
+    }
+
+
+    ## Merge local-word-analysis result files
+    if ($disco{local_words}) {
+      my $pattern_type = "local_words_".$main::param{oligo_range};
+      $main::outfile{$pattern_type} =
+	  &OutFileName("results/".$pattern_type, ".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
+		       $main::param{oligo_range}, "windgroup".$main::param{local_words_windowgroup});
+      push @pattern_types, $pattern_type;
+    }
+
+    ## Merge oligo-analysis result files
+    if ($disco{oligos}) {
+      my $pattern_type = "oligos_".$main::param{oligo_range};
+      $main::outfile{$pattern_type} =
+	  &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
+		       $main::param{oligo_range}, $main::param{oligo_bg_suffix});
+      push @pattern_types, $pattern_type;
+    }
+
+    ## Merge oligo-diff result files
+    if ($disco{oligo_diff}) {
+      my $pattern_type = "oligo_diff_".$main::param{oligo_range};
+      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$main::param{oligo_range});
+      push @pattern_types, $pattern_type;
     }
   }
 
@@ -1224,7 +1279,7 @@ sub ComputeBgModels {
   if ($disco{oligos}) {
     &RSAT::message::TimeWarn("Computing expected oligo frequencies from control set.") if ($main::verbose >= 2);
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-      my $pattern_type = 'oligos_'.$len.'nt_vs_ctrl';
+      my $pattern_type = 'oligos_'.$len.'nt_test_vs_ctrl';
       #    my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
       my $cmd = $SCRIPTS."/oligo-analysis -v 1";
       $cmd .= " -quick";
@@ -1245,7 +1300,7 @@ sub ComputeBgModels {
   ## in control sequences).
   if ($disco{dyads}) {
     &RSAT::message::TimeWarn("Computing expected dyad frequencies from control set.") if ($main::verbose >= 2);
-    my $pattern_type = 'dyads_vs_ctrl';
+    my $pattern_type = 'dyads_test_vs_ctrl';
     my $cmd = $SCRIPTS."/dyad-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"ctrl_purged"}; ## NOTE: AS A NEGATIVE CONTROL, USE SAME FILE AS INPUT AND CTRL, AND SET PSEUDO TO 0.
     $cmd .= " -quick";
@@ -1264,6 +1319,7 @@ sub ComputeBgModels {
 ################################################################
 ## Run oligo-analysis on the test set
 sub OligoAnalysis {
+  my @oligo_files = ();
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
 
     ## Define Markov order(s) depending on the background model type
@@ -1274,7 +1330,7 @@ sub OligoAnalysis {
       ## When control sequences are provided, oligo-analysis runs with
       ## a single markov model (m = k-1) trained on these sequences.
       push @markov_orders, $len - 1;
-      push @oligo_types, 'oligos_'.$len.'nt_vs_ctrl';
+      push @oligo_types, 'oligos_'.$len.'nt_test_vs_ctrl';
     } else {
       for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
 	$markov += $len if ($markov < 0); ## Convert negative markov orders relative to the oligo length
@@ -1286,6 +1342,7 @@ sub OligoAnalysis {
 
     for my $i (0..$#oligo_types) {
       my $pattern_type = $oligo_types[$i];
+      push @oligo_files, $main::outfile{$pattern_type};
       my $markov = $markov_orders[$i];
 
       &RSAT::message::TimeWarn("Running oligo-analysis", $pattern_type) if ($main::verbose >= 2);
@@ -1311,9 +1368,15 @@ sub OligoAnalysis {
       $cmd .= " -pseudo ".$main::param{disco_pseudo};;
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0) unless ($main::param{merge_lengths});
     }
   }
+
+  ## Merge oligo-analysis result files
+  if ($main::param{merge_lengths}) {
+    &MergeAndBuildMatrix("oligos_".$main::param{oligo_range}, @oligo_files);
+  }
+    
 }
 
 ################################################################
@@ -1351,7 +1414,7 @@ sub DyadAnalysis {
 
   ## Test versus control sequences
   if ($main::infile{ctrl_seq}) {
-    $pattern_type = 'dyads_vs_ctrl';
+    $pattern_type = 'dyads_test_vs_ctrl';
   } else {
     ## Single-input mode
       $pattern_type = "dyads";
@@ -1387,8 +1450,10 @@ sub DyadAnalysis {
 ## Run position-analysis to discover oligonucleotides with positional
 ## biases
 sub PositionAnalysis {
+  my @position_files = ();
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'positions_'.$len.'nt';
+    push @position_files, $main::outfile{$pattern_type};
     &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 2);
     my $cmd = $SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"test_purged"};
@@ -1410,8 +1475,23 @@ sub PositionAnalysis {
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0) unless ($main::param{merge_lengths});
   }
+
+  ## Merge oligo-analysis result files
+  if ($main::param{merge_lengths}) {
+    &MergeAndBuildMatrix("positions_".$main::param{oligo_range}, @position_files);
+  }
+
+  # ## Merge position-analysis result files
+  # if ($main::param{merge_lengths}) {
+  #   my $pattern_type = "positions_".$main::param{oligo_range};
+  #   my $cmd = "cat ";
+  #   $cmd .= join " ", @position_files;
+  #   $cmd .= "> ".$main::outfile{$pattern_type};
+  #   &one_command($cmd, 1);
+  #   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
+  # }
 }
 
 
@@ -1496,6 +1576,18 @@ sub LocalWords {
 
 
 ################################################################
+## Merge a set of oligo files and use it as input for
+## matrix-from-patterns.
+sub MergeAndBuildMatrix {
+  my ($pattern_type, @pattern_files) = @_;
+  my $cmd = "cat ";
+  $cmd .= join " ", @pattern_files;
+  $cmd .= "> ".$main::outfile{$pattern_type};
+  &one_command($cmd, 1);
+  &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
+}
+
+################################################################
 ## Concatenate the options for MEME and compute the suffix
 sub CalcMemeOptions {
   $meme_options = ""; ## Must be a global variable
@@ -1540,7 +1632,7 @@ sub CalcDremeOptions {
   ## If background sequences have been specified, sue them as negative sequence file for DREME
   if (($main::infile{ctrl_seq})) {
     $dreme_options .= " -n ".$main::outfile{"ctrl_purged"};
-    $dreme_options .= "_vs_ctrl";
+    $dreme_options .= "_test_vs_ctrl";
   }
 
   foreach my $option (@DREME_options) {
@@ -4585,6 +4677,41 @@ between the two trinucleotide monads.
     } elsif ($arg eq "-maxol") {
       $main::param{oligo_max_len} = shift (@arguments);
       $main::param{dreme_maxk} = $main::param{oligo_max_len};
+
+
+=pod
+
+=item B<-merge_lengths>
+
+=item B<-no_merge_lengths>
+
+These two options define whether oligonucleotides of different lengths
+should be merged (used algtogther) for assembly (I<pattern-assembly>)
+and matrix building (I<matrix-from-patterns>).
+
+Default: -merge_lengths
+
+The program I<oligo-analysis>, I<position-analysis> and
+I<local-word-analysis> can run with different oligonucleotide sizes
+(e.g. 6, 7, 8), which generally reveal redundant fragments of larger
+motifs. 
+
+When the option I<-no_merge_lengths> is active, matrices are built
+separately for each oligo length. However, this generally leads to
+redundant motifs, which were detected separately as 6-mers and
+7-mers. Separate assembly was the initial mode of assembly
+since the original publication of the method (2011). 
+
+The option I<-merge_lengths> was implemented in December 2013.
+
+=cut
+
+  } elsif ($arg eq "-merge_lengths") {
+    $main::param{merge_lengths} = 1;
+
+  } elsif ($arg eq "-no_merge_lengths") {
+    $main::param{merge_lengths} = 0;
+
 
 =pod
 
