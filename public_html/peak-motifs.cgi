@@ -165,7 +165,7 @@ if (scalar(@disco_algo) >= 1) {
 
   ## Oligonucleotide lengths (used for oligo-analysis, position-analysis and local-word-analysis)
   my @oligo_lengths =();
-  foreach my $i (6..7){
+  foreach my $i (6..8){
     if ($query->param('oligo_length'.$i) =~ /on/){
       push (@oligo_lengths, $i);
     }
@@ -173,9 +173,17 @@ if (scalar(@disco_algo) >= 1) {
   @oligo_lengths = sort @oligo_lengths;
   &RSAT::error::FatalError("Select at least one oligo size for oligo-analysis") if (scalar(@oligo_lengths) < 1 );
   $parameters .= " -minol ".$oligo_lengths[0]." -maxol ".$oligo_lengths[-1]." ";
+
+  ## Merge oligo lengths before assembly
+  if ($query->param('merge_lengths') =~ /on/) {
+    $parameters .= " -merge_lengths",
+  } else {
+    $parameters .= " -no_merge_lengths",
+  }
+  
 }
 
-
+################################################################
 ## Strands
 if ($query->param('strand')) {
     $parameters .= " ".$query->param('strand')." ";
