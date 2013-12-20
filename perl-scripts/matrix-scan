@@ -1623,7 +1623,7 @@ package main;
     ################################################################
     ## Rank CRERs
     if (($return_fields{crer0})  && 
-	(defined(@{$crer_per_seq{$seq_id}}))) {
+	(defined($crer_per_seq{$seq_id}))) {
       &RSAT::message::TimeWarn( "Returning individual CRER for sequence", $seq_id)
 	if ($main::verbose >= 4);
 
@@ -1673,7 +1673,7 @@ package main;
       &RSAT::message::TimeWarn("Detecting CRERs in seq", $sequence_number, $seq_id) if ($main::verbose >= 3);
 
       ## Sort predicted sites (matches) per position
-      if (defined(@{$matches_per_seq{$seq_id}})) {
+      if (defined($matches_per_seq{$seq_id})) {
 	my @matches_sorted_per_position =
 	  sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
 	    @{$matches_per_seq{$seq_id}};
@@ -1970,7 +1970,7 @@ package main;
 
     ################################################################
     ## Print sorted matches
-    if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
+    if (($return_fields{sites})  && (defined($matches_per_seq{$seq_id}))) {
       &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id)
 	if ($main::verbose >= 4);
 
