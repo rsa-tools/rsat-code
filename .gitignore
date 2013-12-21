@@ -7,7 +7,6 @@ RSAT_config.mk
 public_html/logs
 logs
 jobs
-data
 *.o
 public_html/tmp
 tmp
@@ -18,10 +17,38 @@ public_html/data/genomes
 public_html/data/supported_organisms.tab
 public_html/data/metabolic_networks
 public_html/data/phylogeny
+public_html/data/motif_databases/*/downloads
 contrib/count-words/count-words
 contrib/info-gibbs/info-gibbs
 contrib/matrix-scan-quick/matrix-scan-quick
 contrib/compare-matrices-quick/compare-matrices-quick
 public_html/images/RSAT_icon.jpg
 makefile
+<<<<<<< HEAD
 denied_IP_addresses*
+=======
+bioperl-live
+.DS_Store
+lib
+app_sources
+distrib_accounts
+contrib/kwalks/bin/lkwalk
+*.idx
+*.aux
+archives
+doc/manuals/*.log
+doc/manuals/*.out
+doc/manuals/*.toc
+RSAT_config.bashrc
+RSAT_config.*.bk.*
+bin_linux
+contrib/REA/REA
+#*
+logs_tmp
+public_html/data/GO
+public_html/data/genomes*
+public_html/data/supported_*
+public_html/data/taxon_frequencies
+data
+CVS
+>>>>>>> d74ed06d0d8c94055074dd41df5390011a838a12

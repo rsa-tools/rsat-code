@@ -60,7 +60,7 @@ onclick='toggleMenu('203')' id='heading203'>Clusters</div>
 <div class='menu_heading_open'
 onclick='toggleMenu('204')' id='heading204'>Clusters/Networks</div>
 <div id='menu204' >
-	<a class='menu_item' href='graph_clique_form.php' target='tools'>Find cliques</a>
+<!--	<a class='menu_item' href='graph_clique_form.php' target='tools'>Find cliques</a>-->
 	<a class='menu_item' href='mcl_form.php' target='tools'>MCL clustering</a>
 	<a class='menu_item' href='rnsc_form.php' target='tools'>RNSC clustering</a>
 	<a class='menu_item' href='graph_get_clusters_form.php' target='tools'>Map clusters onto network</a>

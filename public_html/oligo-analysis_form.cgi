@@ -30,6 +30,7 @@ $default{oligo_length5}="";
 $default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
 $default{oligo_length8}="checked";
+#$default{oligo_length9}="";
 
 $default{bg_method} = "Markov model (higher order dependencies)";
 ##$default{bg_method} = "background";
