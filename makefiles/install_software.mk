@@ -44,104 +44,6 @@ list_versions:
 	@echo "Software versions"
 	@echo "${VERSIONS}"
 
-################################################################
-## Install perl modules
-## 
-## Modules are installed using cpan. Beware, this requires admin
-## rights.
-PERL_MODULES= \
-	PostScript::Simple \
-	Statistics::Distributions \
-	File::Spec \
-	POSIX \
-	Data::Dumper \
-	Digest::MD5::File \
-	IO::All \
-	LockFile::Simple \
-	Object::InsideOut \
-	Util::Properties \
-	Class::Std::Fast  \
-	GD \
-	REST::Client \
-	JSON \
-	MIME::Base64 \
-	XML::LibXML \
-	XML::LibXML::Simple \
-	XML::Compile \
-	XML::Compile::Cache \
-	XML::Compile::SOAP11 \
-	XML::Compile::WSDL11 \
-	XML::Parser::Expat \
-	XML::Compile::Transport::SOAPHTTP \
-	SOAP \
-	SOAP::WSDL \
-	SOAP::Lite \
-	SOAP::Transport::HTTP \
-	Module::Build::Compat \
-	DBI \
-	DBD::mysql \
-	DB_File \
-	LWP::Simple \
-	Bio::Perl \
-	Bio::Das \
-	Algorithm::Cluster
-
-PERL_MODULES_PROBLEMS= \
-
-PERLMOD_TO_UPGRADE=Archive::Tar
-
-perl_modules_list:
-	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
-
-perl_modules_cmd:
-	@echo "cpan -i " ${PERL_MODULES}
-
-perl_modules_install:
-	@for module in ${PERL_MODULES} ; do \
-		${MAKE} _install_one_perl_module PERL_MODULE=$${module}; \
-	done
-
-## Install a single Perl module
-PERL_MODULE=PostScript::Simple
-#PERL=`which perl`
-PERL='/usr/bin/perl'
-_install_one_perl_module:
-	@echo "Installing Perl module ${PERL_MODULE}"
-	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
-
-# ## Some modules must be upgraded befinre installing required ones
-# upgrade_perl_modules:
-# 	@for module in ${PERLMOD_TO_UPGRADE}; do \
-# 		${MAKE} _upgrade_one_perl_module PERL_MODULE=$${module}; \
-# 	done
-
-# ## Upgrade a single Perl module
-# _upgrade_one_perl_module:
-# 	@echo "Upgrading Perl module ${PERL_MODULE}"
-# 	@${SUDO} ${PERL} -MCPAN -e 'upgrade ${PERL_MODULE}'
-
-
-################################################################
-## Install the BioPerl library
-##
-## For this example, we install Bioperl and EnsEMBL libraries 
-## in $RSAT/lib, but you can install it in some other place
-### (password is 'cvs')
-_old_bioperl:
-	@mkdir -p ${RSAT}/lib
-	@echo "Password is 'cvs'"
-	@cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
-	(cd ${RSAT}/lib;  cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live)
-
-bioperl_git:
-	@echo "This method is obsolete, BioPerl module can now be installed with cpan"
-	@mkdir -p $RSAT/lib
-	@cd $RSAT/lib
-	git clone git://github.com/bioperl/bioperl-live.git
-
-bioperl_test:
-	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
-
 
 ################################################################
 ## Obsolete: compile some perl scripts to binaries.  This was a test and the
@@ -243,37 +145,18 @@ _compile_python_suds:
 	@echo "Installing suds"
 	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
 
-# ################################################################
-# ## Install the EnsEMBL Perl API
-# ENSEMBL_BRANCH=72
-# ensembl_api:	
-# 	@echo  "Password is 'CVSUSER'"
-# 	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-# 	@(cd ${RSAT}/lib; \
-# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl ; \
-# 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-# 		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara)
-# 	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
-# 	@echo "ensembl=${RSAT}/lib/ensembl/modules"
-# 	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
-
 
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
+EXT_APP_TARGETS=install_seqlogo install_mcl install_rnsc install_blast
 install_ext_apps:
-	${MAKE} download_seqlogo install_seqlogo
-	${MAKE} bedtools
-	${MAKE} download_meme install_meme
-	${MAKE} download_mcl install_mcl
-	${MAKE} download_rnsc install_rnsc
-#	${MAKE} download_blast install_blast
-#	${MAKE} download_gs install_gs
-#	${MAKE} download_gnuplot install_gnuplot
+	@${MAKE} ${EXT_APP_TARGETS}
 #	${MAKE} install_gibbs
-#	${MAKE} download_consensus install_consensus
-#	${MAKE} download_patser install_patser
+#	${MAKE} install_consensus
+#	${MAKE} install_patser
+#	${MAKE} install_bedtools
+#	${MAKE} install_meme
 
 
 ################################################################
@@ -286,6 +169,10 @@ install_ext_apps:
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
 BIOPERL_DIR=${PERLLIB_DIR}/bioperl-release-${BIOPERL_VERSION}
+
+## Note: In some cases, there are delays between Ensembl and
+## EnsemblGenome releases. To ensure compatibility, please check the
+## versions of both distributions on http://ensemblgenomes.org/.
 ENSEMBL_VERSION=73
 ENSEMBL_BRANCH=ensemblgenomes-20
 ENSEMBL_API_DIR=${PERLLIB_DIR}/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
@@ -300,20 +187,20 @@ install_ensembl_api_param:
 install_ensembl_api:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
-		echo "Installing bioperl release ${BIOPERL_VERSION}"; \
-		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
-		mkdir -p "${BIOPERL_DIR}" ; \
-		echo  "Password is 'cvs'" ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live ; \
-		echo "" ; \
 		echo "Installing ensembl branch ${ENSEMBL_BRANCH} version ${ENSEMBL_VERSION}"; \
 		echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}" ; \
 		mkdir -p "${ENSEMBL_API_DIR}"; \
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api; \
+		echo "" ; \
+		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
+		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
+		mkdir -p "${BIOPERL_DIR}" ; \
+		echo  "Password is 'cvs'" ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
+		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live )
 	@echo
 	@${MAKE} install_ensembl_api_env
 
@@ -321,14 +208,16 @@ install_ensembl_api:
 install_ensembl_api_env:
 	@echo
 	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
-	@echo "Don't forget to adapt the following lines in your bash profile"
-	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
+	@echo
+	@echo "BEWARE !"
+	@echo "You need to paste the following lines in your bash profile"
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-functgenomics/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-tools/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-variation/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
 
 ################################################################
 ## Get and install the program seqlogo

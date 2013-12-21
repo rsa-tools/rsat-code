@@ -12,6 +12,10 @@
 #include "utils.h"
 #include <math.h>
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
+
 typedef struct
 {
     double *data;
@@ -27,5 +31,9 @@ void free_pvalues(pvalues_t *pvalues);
 double score2pvalue(pvalues_t *pvalues, double score);
 
 pvalues_t *read_distrib(char *filename);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -22,6 +22,15 @@ RSAT_ADMIN_EMAIL=your.mail@your.mail.server
 OS=linux
 ARCHITECTURE=x64
 
+################################################################
+## Manager for installing Unix packages
+##
+## Options:
+##   PACKAGE_MANAGER=brew install
+##   PACKAGE_MANAGER=yum install
+##   PACKAGE_MANAGER=get-apt
+PACKAGE_MANAGER=
+
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
@@ -39,8 +48,8 @@ PERLLIB_DIR=${RSAT}/lib
 ## empty. This might make some problems for the "install" step of some
 ## software tools.
 ##
-SUDO=''
-#SUDO=sudo
+#SUDO=
+SUDO=sudo
 
 ## Default installation dir for binaries. By default, will beinstalled
 ## in /usr/local/bin so they will be accessible to all users. This
@@ -74,7 +83,7 @@ RSAT_WS_TMP=http://localhost/rsat/tmp
 ## consequently.
 ##
 ## supported: torque | sge
-QUEUE_MANAGER=sge
+QUEUE_MANAGER=torque
 
 ## Name of the queue where the jobs have to be sent
 QUEUE=

@@ -15,8 +15,8 @@ ARCHIVE=rsat/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
-TAR_EXCLUDE=--exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/RSA.config.default rsat/RSAT_config_default.props  rsat/RSAT_config_default.mk
+TAR_EXCLUDE=--exclude .git --exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/RSAT_config_default.props  rsat/RSAT_config_default.mk   rsat/RSAT_config_default.bashrc
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
 ################################################################
@@ -24,11 +24,12 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 all: clean_emacs_bk tar_archive clean_distrib_site publish
 
 ## List parameters
-PUB_SERVER=merlin.bigre.ulb.ac.be
+#PUB_SERVER=merlin.bigre.ulb.ac.be
+PUB_SERVER=rsat.ulb.ac.be
 PUB_LOGIN=jvanheld
 SSH_OPT=
 PUB_FORMAT=tar.gz
-PUB_DIR=rsat_distrib
+PUB_DIR=public_html/rsat_distrib
 list_params:
 	@echo "RSAT distribution parameters"
 	@echo "	ARCHIVE		${ARCHIVE}"
@@ -66,20 +67,23 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES=rsat/perl-scripts		\
-	rsat/RSA.config.default		\
-	rsat/RSA.config.default		\
-	rsat/makefiles			\
-	rsat/doc/manuals/*.pdf		\
-	rsat/python-scripts 		\
+DISTRIB_FILES=rsat/perl-scripts			\
+	rsat/R-scripts 				\
+	rsat/makefiles				\
+	rsat/RSAT_config.props			\
+	rsat/RSAT_config.mk			\
+	rsat/RSAT_config.bashrc			\
+	rsat/doc/manuals/*.pdf			\
+	rsat/python-scripts 			\
 	rsat/contrib/count-words  		\
+	rsat/contrib/compare-matrices-quick  	\
+	rsat/contrib/info-gibbs			\
 	rsat/contrib/matrix-scan-quick  	\
 	rsat/contrib/floydwarshall		\
-	rsat/ws_clients		  	\
-	rsat/public_html			\
-	rsat/contrib/info-gibbs
+	rsat/ws_clients		  		\
+	rsat/public_html
 
-DISTRIB_FILES_METAB=rsat/java	\
+DISTRIB_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\
 	rsat/contrib/kwalks
 
@@ -127,8 +131,7 @@ ls_distrib:
 clean_distrib_site:
 	@echo
 	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
-#	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
-	@echo "TEMPORARILY DISACTIVATED"
+	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
 
 ################################################################
 ## Publish the tar archive of the whole distribution
@@ -140,6 +143,12 @@ publish:
 
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
+
+## Open the distribution Web site
+BROWSER=firefox
+DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/
+web:
+	 open -a ${BROWSER} ${DISTRIB_URL}
 
 ################################################################
 ## Make a tar archive of the ws clients
