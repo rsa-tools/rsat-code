@@ -231,9 +231,9 @@ if ($query->param('bg_method') =~ /background/i) {
 
 } elsif ($query->param('bg_method') =~ /markov/i) {
   ## Markov model calibrated on input sequences
-  $freq_option = " -markov";
-  if (&IsNatural($query->param('markov_order'))) {
-    $freq_option .= " ".$query->param('markov_order');
+  if (&IsInteger($query->param('markov_order'))) {
+      $freq_option = " -markov";
+      $freq_option .= " ".$query->param('markov_order');
   }
 
 } elsif ($query->param('bg_method') =~ /lexicon/i) {
@@ -291,6 +291,7 @@ $result_file = $tmp_file_path.".tab";
 push @result_files, ('merged oligos', $result_file);
 $command .= "; cat ";
 $command .= join (" ", @oligo_files);
+#$command .= " | grep -v '^;'"; ## Discard comment line, too heavy for output with multiple analyses
 #$command .= " > ".$result_file;
 
 &ReportWebCommand($command." ".$parameters);

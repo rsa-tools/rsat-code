@@ -9,7 +9,6 @@
 #ifndef __UTILS__
 #define __UTILS__
 
-using namespace std;
 
 #include <iostream>
 #include <sstream>
@@ -17,6 +16,8 @@ using namespace std;
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+
+using namespace std;
 
 extern int VERBOSITY;
 extern int VERSION;

@@ -21,6 +21,14 @@ random-seq -l 200 -n 4
 
 Should generate a random sequence of 200 nucleotides.
 
+You can optionnally specify different frequencies for A,C,G and T
+residues.
+
+\begin{lstlisting}
+random-seq -l 200 -n 4 -a a:t 0.3 c:g 0.2
+\end{lstlisting}
+
+
 
 \subsection{Testing Perl graphical librairies}
 
@@ -62,7 +70,7 @@ You can test the correct installation of the C programs with the
 following command.
 
 \begin{lstlisting}
-random-seq -l 1000 -n 10 | count-words -l 2 -v 1 -2str -i /dev/stdin
+random-seq -l 10000 -n 10 | count-words -l 2 -v 1 -2str -i /dev/stdin
 \end{lstlisting}
 
 The first program (\program{random-seq}) is a Perl script, which
@@ -98,12 +106,20 @@ Select an organism (say \org{Saccharomyces cerevisiae}), and
 retrieve all the start codons with the following options :
 
 \begin{lstlisting}
-retrieve-seq -org Saccharomyces_cerevisiae \
+retrieve-seq -org Saccharomyces_cerevisiae -feattype CDS \
         -type upstream -from 0 -to +2 -all \
         -format wc -nocomment
 \end{lstlisting}
 
 
 This should return a set of 3 bp sequences, mostly ATG (in the case of
-\org{Saccharomyces cerevisiae} at least)
+\org{Saccharomyces cerevisiae} at least). We can combine
+\program{retrieve-seq} and \program{oligo-analysis} to check the
+frequencies of trinucleotides found at the start positions of all
+yeast genes.
 
+\begin{lstlisting}
+retrieve-seq -org Saccharomyces_cerevisiae -feattype CDS \
+  -type upstream -from 0 -to +2 -all \
+  | oligo-analysis -l 3 -1str -return occ,freq -v 1 -sort
+\end{lstlisting}

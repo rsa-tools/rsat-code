@@ -28,6 +28,8 @@ $default{uth_pval} = "1e-4";
 $default{assembly} = "";
 $default{oligo_length6}="checked";
 $default{oligo_length7}="checked";
+$default{oligo_length8}="checked";
+$default{merge_lengths}="checked";
 $default{"oligo-analysis"}="checked";
 $default{"dyad-analysis"}="";
 $default{"position-analysis"}="checked";
@@ -39,7 +41,7 @@ $default{compare_motif_db}="checked";
 $default{title}="";
 $default{max_seq_len}="500";
 $default{top_sequences}="";
-$default{nmotifs} = 3;
+$default{nmotifs} = 5;
 
 $default{visualize}="none";
 $checked{$default{visualize}} = "CHECKED";
@@ -245,6 +247,7 @@ print $query->hidden(-name=>'position-analysis', -default=>'');
 print $query->hidden(-name=>'oligo-analysis', -default=>'on');
 print $query->hidden(-name=>'oligo_length6', -default=>'on');
 print $query->hidden(-name=>'oligo_length7', -default=>'on');
+print $query->hidden(-name=>'oligo_length8', -default=>'');
 print $query->hidden(-name=>'nmotifs', -default=>'5');
 print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->hidden(-name=>'visualize',-default=>"galaxy");
@@ -381,7 +384,7 @@ print "<br><i>Note:position-analysis and local-word-analysis will not run if a c
 
 
 ## Word size
-print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer length</a>&nbsp;</b> for the three programs above\n";
+print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer lengths</a>&nbsp;</b> for the three programs above\n";
 
 print $query->checkbox(-name=>'oligo_length6',
 		       -checked=>$default{oligo_length6},
@@ -391,6 +394,13 @@ print $query->checkbox(-name=>'oligo_length7',
 		       -checked=>$default{oligo_length7},
 		       -label=>'7');
 print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length8',
+		       -checked=>$default{oligo_length8},
+		       -label=>'8');
+print "&nbsp;"x6;
+print $query->checkbox(-name=>'merge_lengths',
+		       -checked=>$default{merge_lengths},
+		       -label=>'merge lengths for assembly');
 print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
 
 

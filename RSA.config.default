@@ -18,7 +18,7 @@
 ################################################################
 
 ## URL of the web server
-$WWW_RSA = 	"http://localhost/rsa-tools/";
+$WWW_RSA = 	"http://localhost/rsat/";
 
 ## Prefix for the web server log file.
 $config_site =	`hostname`;
@@ -37,7 +37,7 @@ $ENV{SERVER_ADMIN} = "your.login\@your.place";
 # Main path for RSAT
 unless ($ENV{RSAT}) {
   ## PLEASE REPLACE THE LINE "die ..." by the following one, adapted to specify the RSAT path on your computer
-  ##  $ENV{RSAT} = "/your//path/to/rsa-tools/";
+  ##  $ENV{RSAT} = "/your//path/to/rsat/";
   die "Error: the environment variable RSAT needs to be defined. Check the files RSAT_config.props and RSA.config\n";
 }
 $RSA = $ENV{RSAT};

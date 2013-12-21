@@ -23,3 +23,4 @@ FlyFactorSurvey	tf	FlyFactorSurvey/PWM_FlyFactorSurvey.tf	Drosophila FlyFactorSu
 DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://autosome.ru/DMMPMM/)	2010_11
 IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://autosome.ru/DMMPMM/)	2010_11
 regulonDB	tf	REGULONDB/regulonDB_2012-05.tf	RegulonDB prokaryotes	2012_05
+Uniprobe_worm	tf	uniprobe/uniprobe_worm_Cell09.tf	Uniprobe worm from Groves (Cell09)	2009	http://thebrain.bwh.harvard.edu/uniprobe/downloads/Cell09/worm_pwm_all.zip
