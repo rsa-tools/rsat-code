@@ -16,7 +16,7 @@ package main;
   my @extensions =  ("props", "mk", "bashrc");
 
   ## Check if the RSAT environment variable has been specified
-  $rsat_path = $ENV{RSAT};
+#  $rsat_path = $ENV{RSAT};
 
   ## Try to guess RSAT path if not specified in the environment variable
   unless ($rsat_path) {
@@ -101,8 +101,26 @@ package main;
       if ((/(\S+)=(.*)/) && !(/^#/)) {
 	my $key = $1;
 	my $value = $2;
+
+	## Replace the RSAT parent path if required (at first installation)
 	$value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
-	$param{$key} = $value;
+
+#	if ($key eq "rsat_www") {
+#	    $param{rsat_www_ori} = $value;
+#	    warn "rsat_www_ori\t", $param{rsat_www_ori}, "\n";
+#	}
+
+	## Replace the RSAT web server path if required (at first installation)
+	if ($key eq "rsat_www") {
+	    $value .= "/";
+	    $value =~ s|//$|/|;
+	} elsif (($prev_param{rsat_www}) && ($new_param{rsat_www})
+		 && ($value =~ /$prev_param{rsat_www}/)
+		 && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
+	    $value =~ s|$prev_param{rsat_www}|$new_param{rsat_www}|;
+	}
+
+	$prev_param{$key} = $value;
 
 	## Prompt for the new value
 	print "\n", $key, " [", $value, "] : ";
@@ -115,6 +133,10 @@ package main;
 	} else {
 	    print NEW_CONF $key, "=", $value, "\n";
 	}
+	$new_param{$key} = $value;
+
+#	warn join ("\t", "key=".$key, "value=".$value, "param=".$new_param{$key}, "previous=".$prev_param{$key}), "\n";
+
 
       } else {
 	print;			## Display comments

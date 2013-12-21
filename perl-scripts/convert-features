@@ -551,7 +551,8 @@ INPUT FORMATS
        		http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
 
        bed3col: Genomic features in the UCSC format, restricted to the
-       		3 first columns (chr, start, end).
+       		3 first columns (chr, start, end). This format is
+       		useful to read non-conventional bed files.
 
        galaxy_seq: Fasta sequences fetched from the Galaxy website
        		http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1

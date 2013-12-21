@@ -2,7 +2,7 @@
 ## Initialize Regulatory Sequence Analysis Tools (in principle, this
 ## script should be used only once at installation).
 
-MAKEFILE=${RSAT}/makefiles/init_RSAT.mk
+MAKEFILE=${RSAT}/makefiles/init_rsat.mk
 MAKE = make -sk -f ${MAKEFILE}
 include ${RSAT}/RSAT_config.mk
 
@@ -40,7 +40,7 @@ init:
 	chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
 	echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
-	chmod 644 public_html/tmp/index.html
+	chmod 444 public_html/tmp/index.html
 
 	@echo ""
 	@echo "Initializing directory	public_html/logs"
@@ -49,8 +49,7 @@ init:
 	mkdir -p public_html/logs/peak-footprints_logs; chmod 777 public_html/logs/peak-footprints_logs
 #	echo "Options -Indexes" > public_html/logs/.htaccess
 	echo "<html><body></b<Forbidden</b></body></html>" > public_html/logs/index.html
-	chmod 644 public_html/logs/index.html
-
+	chmod 444 public_html/logs/index.html
 
 	@echo
 	@echo "Setting exec rights to script directories"
@@ -135,9 +134,9 @@ SRC_DIR=${RSAT}/contrib/${PROGRAM}
 BIN=${RSAT}/bin
 ## It may be necessary to run the synchronization as super-user (su) with the command sudo.
 ## For this, type:
-##   make -f makefiles/init_RSAT.mk compile_all SUDO=sudo BIN=[target_dir]
+##   make -f makefiles/init_rsat.mk compile_all SUDO=sudo BIN=[target_dir]
 ## For instance, on the lab cluster Brussels I run
-##   make -f makefiles/init_RSAT.mk compile_all SUDO=sudo BIN=/usr/local/bin
+##   make -f makefiles/init_rsat.mk compile_all SUDO=sudo BIN=/usr/local/bin
 SUDO=
 compile_one_program:
 	@echo "Compiling ${PROGRAM}"
@@ -199,7 +198,7 @@ compile_kwalks:
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
 	@chmod 777 ${RSAT}/contrib/kwalks
-#	@chmod 777 ${RSAT}/contrib/kwalks/bin
+	@chmod 777 ${RSAT}/contrib/kwalks/bin
 	@echo "Executable	${RSAT}/contrib/kwalks/bin/lkwalk"
 	@${MAKE} check_kwalks_config
 
@@ -221,11 +220,10 @@ check_lkwalk_help:
 compile_rea:
 	@echo "Compiling REA"
 	@(cd ${RSAT}/contrib/REA/; \
-		tar -xpzf REA.tgz; \
 		make; rsync -ruptvl REA ${BIN})
 	@echo "Setting read/write access to  ${RSAT}/contrib/REA for temporary files"
 	@chmod 777 ${RSAT}/contrib/REA
-	@echo "Executable	 ${BIN}/rea"
+	@echo "Executable	 ${BIN}/REA"
 	@${MAKE} check_rea_config
 
 check_rea_config:

@@ -1,0 +1,2 @@
+#! /bin/sh
+./matrix-scan-quick -v 1 -e 0.1 -i ../data/Drosophila_melanogaster_upstream_mRNA-2000-1-maskcoding.fasta -m ../data/Abd-B_meme_matrix_mkv3_w10_all-upstream_matrix_perm_col_all_1.tab.tab -2str -bgfile ../data/bg_Drosophila_melanogaster_upstream_mRNA-2000-1-maskcoding_markov3_inclusive.txt -bg_format MotifSampler -return distrib

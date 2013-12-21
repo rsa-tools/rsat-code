@@ -1,0 +1,453 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: feature-profiles,v 1.00 2013/12/19 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+feature-profiles
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Compute positional distributions (=profiles) of motif occurrences.
+
+This program takes as input a list of features (e.g. binding sites
+predicted by I<matrix-scan>, word positions predicted by
+I<dna-pattern>).
+
+It returns several output types: 
+
+=over 
+
+=item occurrence profiles
+
+Number of occurrences per positional window, for each motif.
+
+=item matching sequence profiles    
+
+Number of matching sequences, i.e. number of sequences with least one
+occurrence of the motif in the considered window.
+
+=back
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item pattern matching
+
+=back
+
+=head1 USAGE
+
+feature-profiles [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head2 site file
+
+Output from I<matrix-scan>
+
+=head1 OUTPUT FORMAT
+
+
+
+=head1 SEE ALSO
+
+=head2 B<matrix-scan>
+
+The sites or CRERs detected by I<matrix-scan> can be used as input for
+I<feature-profiles>.  "site").
+
+=head2 B<dna-pattern>
+
+The pattern positions detected by I<dna-pattern> can be used as input for
+I<feature-profiles>.  "site").
+
+=head2 B<convert-features>
+
+The program I<convert-features> can be used to convert any typ of
+features into the .ft format supported by I<feature-profiles>. This
+can be convenient to analyze e.g. bed- or gff-formatted
+features.
+
+=head1 WISH LIST
+
+=over
+
+=item B<-return graphs>
+
+Return figures representing each profile.
+
+The abcsissa indicates positions, the ordinate the number of
+occurrences or matching sequencesw, depending on the selected profile
+types. The mean occ/mseq per window is indicated by an horizontal
+line.
+
+=item B<p-value>
+
+Compute the p-value of the profile, based on a chi-squared test (test
+the fitting betwen the profile and an horizontal line).
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use POSIX;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $class_interval = 25;
+  our %return_type = ();
+  our $sep_strands  = 0;
+
+  our $min_pos = "NA";
+  our $max_pos = "NA";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  our $sites_read = 0;
+  our $sites_retained = 0;
+  while (<$main::in>) {
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
+    my ($seq_id, $ft_type, $ft_name, $strand, $start, $end, $sequence, $weight, $pval, $ln_pval, $sig)= split "\t", $_;
+    $sites_read++;
+#    next unless ($ft_type eq "site");
+    my $center = ($start+$end)/2;
+    next if (($min_pos ne "NA") && ($center < $min_pos)); ## Skip sites left to the minimal position
+    next if (($max_pos ne "NA") && ($center > $max_pos)); ## Skip sites right to the maximal position
+
+
+    my $profile_name = $ft_name;
+    if ($sep_strands) {
+      $profile_name .= "_".$strand;
+    }
+
+    my $class_index = floor(($center -$min_pos) / $class_interval); ## Compute the class index to which the site belongs
+
+    if (defined($min_class_index)) {
+      $min_class_index = &min($class_index, $min_class_index);
+    } else {
+      $min_class_index = $class_index;
+    }
+    if (defined($max_class_index)) {
+      $max_class_index = &max($class_index, $max_class_index);
+    } else {
+      $max_class_index = $class_index;
+    }
+
+    ## Coverage mode: only count the first occurrence of a motif in
+    ## each window, to calculate the number of sequences containing at
+    ## least one instance of the motif in the considered window
+    if ($return_type{mseq}) {
+      ## Only count once the presence of a given motif in a give window of a given sequence
+      if ($motif_counted{$seq_id}{$profile_name}[$class_index]) {
+	next;
+      } else {
+	$motif_counted{$seq_id}{$profile_name}[$class_index] = 1;
+      }
+    }
+
+    $sites_retained++;
+    $motif_count{$profile_name}[$class_index]++;
+    
+
+    &RSAT::message::Debug($sites_read, $sites_retained, $profile_name, $center, $class_index, $motif_count{$profile_name}[$class_index]) if ($main::verbose >= 5);
+  }
+  close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Export the result
+
+  ## Print header
+  print $out "#profile_name";
+  foreach my $class_index ($min_class_index..$max_class_index) {
+    $class_min =  $class_index * $class_interval + $min_pos;
+    $class_max =  $class_min + $class_interval;
+    print $out "\t", "[", $class_min, ",", $class_max, "[";
+  }
+  print $out "\n";
+
+  ## Print distributions
+  foreach my $profile_name (sort keys %motif_count) {
+    print $out $profile_name;
+    foreach my $class_index ($min_class_index..$max_class_index) {
+      print $out "\t", $motif_count{$profile_name}[$class_index] || 0;
+    }
+    print $out "\n";
+  }
+  
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+The input file must be formatted as the output of I<matrix-scan>.
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-ci class_interval>
+
+Class interval, i.e. width of the non-overlapping positional windows
+for computing the distribution.
+
+=cut
+
+    } elsif ($arg eq "-ci") {
+      $main::class_interval = shift @arguments;
+      &RSAT::error::FatalError ($main::class_interval, "invalid value for class interval. Must be a strictly positive Natural number.") unless ((&IsNatural($main::class_interval)) && ($main::class_interval > 0));
+
+=pod
+
+=item B<-min_pos #>
+
+=item B<-max_pos #>
+
+Minimal and maximal positions to take in consideration.  Sites located
+on the left of min_pos or on the right of max_pos are ignored.
+
+=cut
+
+    } elsif ($arg eq "-min_pos") {
+      $main::min_pos = shift @arguments;
+
+    } elsif ($arg eq "-max_pos") {
+      $main::max_pos = shift @arguments;
+
+=pod
+
+=item B<-return return_type1,return_type2,,...>
+
+Data type(s) to return. 
+
+B<Note:> the current version only supports a single return field.
+
+B<Supported return types>
+
+=over
+
+=item B<-return occ>
+
+Count all occurrences of each motif in each positional window.
+
+=item B<-return mseq>
+
+Count the number of matching sequences rather than the total number of
+sites. This amounts to take into account the first occurrence of a
+motif in each window, to calculate the number of sequences containing
+at least one instance of the motif in the considered window
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-return") {
+      my @return_types = split(",", shift(@arguments));
+      foreach my $field (@return_types) {
+	$return_type{$field} = 1;
+      }
+
+=pod
+
+=item B<-sep_strands>
+
+Compute separate profiles for direct (D) and reverse (R) strands,
+respectively.
+
+=cut
+
+    } elsif ($arg eq "-sep_strands") {
+      $main::sep_strands = 1;
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; feature-profiles ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__

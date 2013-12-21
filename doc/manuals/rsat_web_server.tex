@@ -56,6 +56,16 @@ The RSAT interface relies on CGI (for the earlier tools) and PHP (for
 the most recent tools). These modules should be installed on the web
 server, and activated in the Apache configuration files. 
 
+Log in as super-user of your server, and check that the following
+lines are uncommented in the main apache configuration file
+(\file{/etc/apache2/httpd.conf}).
+
+\begin{lstlisting}
+LoadModule perl_module libexec/apache2/mod_perl.so
+LoadModule php5_module libexec/apache2/libphp5.so
+\end{lstlisting}
+                                                        
+
 \subsubsection{PHP module for Mac OSX}
 
 If your server is running under Mac OSX, you need to install a recent
@@ -67,184 +77,107 @@ version (at least v5) of the php module, which can be found at the following sit
 
 In order to provide web access to the Regulatory Sequence Analysis
 Tools (\RSAT), you need to adapt the configuration of your web
-server. This requires root privileges (system administrator).
+server. This requires root privileges (can be done only by the system
+administrator of the computer).
 
-
-The detailed settings depend on your web server program. We provide
-here an example of typical settings for the Apache server (the most
-widely used web server).
-
-In summary, the configuration includes the following steps.
 
 \begin{enumerate}
-\item Open the apache configuration file (if your Web server is
-  Apache2, the config is defined in \file{/etc/apache2/httpd.conf}).
-
-\item Specify an alias for rsat in the appropriate section. You
-  can find the appropriate section by searching similar elements (for
-  example Alias, ScriptAlias).
-
+\item A default configuration file is provided with the \RSAT
+  distribution (\file{rsat\_apache\_default.conf}). Edit this file to
+  replace the string \texttt{\[RSAT\_PARENT\_PATH\]} by the actual
+  location of your rsat folder.
+  
+\item The file should then be copied to some appropriate place in the
+  Apache configuration folder of your computer. This place depends on
+  the operating system (Mac OSX or Linux) and on the distribution
+  (Linux Ubuntu, Centos, ...).
+  
+  Some Usual places:
+  \begin{itemize}
+  \item On Centos: \file{/etc/httpd/conf.d/rsat.conf}
+  \item On Ubuntu: \file{/etc/apache2/sites-enabled/rsat.conf}
+  \item On Mac OSX: 
 \begin{lstlisting}
-Alias /rsat [RSAT_PARENT_PATH]/rsat/public_html/
-\end{lstlisting}
+sudo cp ${RSAT}/ /etc/apache2/users/rsat.conf
+  \end{itemize}
+  
+\item You need to restart the Web server (the command depends on your
+  OS. Can be \program{apachectl}, \program{httpd} or
+  \program{apache2ctl}.
 
-<b>Beware:</b> you need of course to adapt [RSAT\_PARENT\_PATH] to
-indicate the parent directory of your \RSAT installation.
+  \begin{lstlisting}
+    sudo apache2ctl restart
+  \end{lstlisting}
 
-\item Associate .cgi extension to CGI scripts
+\item Check that all properties related to the Web site URL are
+  properly defined in the \RSAT property files
+  \file{\$RSAT/RSAT\_config.props} and
+  \file{\$RSAT/RSAT\_config.mk}. 
 
-Make sure the following line is present in the config file. If the
-server has not yet been configured, the line is commented, and you
-need to remove the \texttt{\#} character before it.
+  In principle you already configured these files in the beginning of
+  the installation, with the command
+  \begin{lstlisting}
+    perl perl-scripts/configure_rsta.pl
+  \end{lstlisting}
 
-\begin{lstlisting}
-AddHandler cgi-script .cgi
-\end{lstlisting}
-
-\item Give authorization to execute CGI scripts in the \RSAT directory
-
-\begin{lstlisting}
-ScriptAlias /rsat/ [RSAT_PARENT_PATH]/rsat/public_html/
-\end{lstlisting}
-
-\item Specify the access options for the \RSAT directory.
-
-\begin{lstlisting}
-<Directory "[RSAT_PARENT_PATH]/rsat/public_html/">
-   AllowOverride None
-   AddHandler cgi-script .cgi
-   Options ExecCGI
-   Order allow,deny
-   Allow from all
-</Directory>
-\end{lstlisting}
-
-\item We will now add the possibility for web browsers to access the file
-  content of sub-folders of the data directory. 
-
-
-\begin{lstlisting}
-<Directory "[RSAT_PARENT_PATH]/rsat/public_html/data/">
-   AllowOverride None
-   Options Indexes
-   Order allow,deny
-   Allow from all
-</Directory>
-\end{lstlisting}
-
-  Note that ``Options Indexes'' should never be authorized at the level of the
-  parent folder \file{public\_html}, because this would make the content of the tmp
-  directory visible to anyone!
+  \textbf{Note:} it is important to properly define the URL fo the Web
+  server (\texttt{RSAT\_WWW} and related variables). The default URL
+  (http://localhost/rsat/) should work if the Web browser is running
+  on the server itself, but the Web site will not work for browsers
+  located on remote computers.
 
 \end{enumerate}
 
-These are the basic steps to configure the web access to
-\RSAT. Depending on your operating system, you probably need to
-specify some additional settings. For example, on the Max OSX version
-of Apache server allows to define a user-specific configuration in the
-directory \file{/etc/httpd/users}.
 
-Note that you need to restart the web server for these changes to take
-effect. The command to restart the Apache server depends on the
-version installed on your computer. 
 
-Note that you need system administration privileges to restart the
-Apache server.
 
-You can try the following commands, and if they don'r work check the
-documentation of your web server.
+%% \subsubsection{Setting the environment variable RSAT}
 
-\begin{lstlisting}
-sudo apache2ctl restart
-\end{lstlisting}
+%% For the basic RSAT configuration, you had to define an environment
+%% variable RSAT. This is necessary for the perl program to know the
+%% location of your programs. If this variable is not specified, the
+%% scripts are stopped with an error message.
 
-\subsection{Editing the configuration file for the \RSAT server}
+%% \begin{lstlisting}
+%% unless ($ENV{RSAT}) {
+%%     die "Error: the environment variable RSAT needs to be defined\n";
+%% }
+%% \end{lstlisting}
 
-If you want to install a web server, you need to edit two variables on
-the file \file{RSA.config}. Open this file with a text editor, and
-specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
-according to your local configuration.
+%% Since the web server is ran by another user, you need to define this
+%% environment variable for this user as well. For this, edit the
+%% above line in the following way.
 
-\subsection{Configuring the RSAT options for the web server}
-
-You need to adapt the RSAT configuration file to indicate the
-configuration of your server. For this, edit the \RSAT property file
-\texttt{\$RSAT/RSAT\_config.props}.
-
-The simplest way to update the config file is to run the interactive
-configuration script.
-
-\begin{lstlisting}
-perl perl-scripts/update_rsat_config.pl
-\end{lstlisting}
-
-Alternatively, you can edit this file with a text edito of your
-choice.
-
-You also need to edit \texttt{\$RSAT/RSAT\_config.mk}. 
-
-\subsubsection{IP address of your machine}
-
-By default, the RSAT web server is configured to be used from the
-machine on which it is installed. 
-
-\begin{lstlisting}
-$WWW_RSA = 	"http://localhost/rsat/";
-\end{lstlisting}
-
-If you want to give access from external machines, you need to adapt
-the following line and replace ``localhost'' by the IP address of your
-machine. Let us assume that your mahine has the address
-www.myserver. You should then edit the row as follows.
-
-\begin{lstlisting}
-$WWW_RSA = 	"http://www.myserver/rsat/";
-\end{lstlisting}
-
-\subsubsection{Setting the environment variable RSAT}
-
-For the basic RSAT configuration, you had to define an environment
-variable RSAT. This is necessary for the perl program to know the
-location of your programs. If this variable is not specified, the
-scripts are stopped with an error message.
-
-\begin{lstlisting}
-unless ($ENV{RSAT}) {
-    die "Error: the environment variable RSAT needs to be defined\n";
-}
-\end{lstlisting}
-
-Since the web server is ran by another user, you need to define this
-environment variable for this user as well. For this, edit the
-above line in the following way.
-
-\begin{lstlisting}
-unless ($ENV{RSAT}) {
-    $ENV{RSAT} = "[RSAT_PARENT_PATH]/rsat";
-}
-\end{lstlisting}
+%% \begin{lstlisting}
+%% unless ($ENV{RSAT}) {
+%%     $ENV{RSAT} = "[RSAT_PARENT_PATH]/rsat";
+%% }
+%% \end{lstlisting}
 
 
 \subsection{Testing the web server}
 
-To test the werb server, open a web browser and connect your \RSAT server
+To test the werb server, open a web browser and connect your \RSAT
+server (of course you need to adapt the following URL according to
+your IP address).
 
 \url{http://www.myserver/rsat/} 
-
-Of course you  need to adapt the URL according to your IP address.
 
 If the connection works, try to execute the demonstration of the
 following pages.
 
 \begin{description}
-\item[\program{retrieve-seq}] to test the correct installation of genomes. 
+\item[\program{supported organisms}] to check that genomes have
+  been insalled.
+  
+\item[\program{retrieve-seq}] to test the correct installation of
+  genomes.
 
 \item[\program{oligo-analysis}] to test the correct installation of
-background oligonucleotide frequencies.
+  background oligonucleotide frequencies.
 
 \item[\program{feature-map}] to test the correct installation of the
-graphical librairies.
-
+  graphical librairies.
 \end{description}
 
 \section{Managing a local web server}
@@ -326,3 +259,32 @@ notice that the temporary files are not properly cleaned, please
 contact your system administrator to check the cron command.
 
 \end{document}
+
+
+
+\section{Compiling the Perl Stubb for Web services}
+
+Web services \footnote{beware, this is not the same as Web server}
+enable external programs to remotely address queries to your Web
+server. The \RSAT Web server relies on Web services for various
+purposes (e.g. synchronizing genomes between servers). Besides the
+Network Analysis Tools are based on a multi-tier architecture relying
+on Web services.
+
+To use the \RSAT and NeAT Web services, you need to compile the Stubb
+in order to synchronize the Perl modules of your client with the
+service specification of the server.
+
+\begin{lstlisting}
+## Compile the stubb.
+## Your computer will open a connection to the Web services server 
+## and collect the WSDL specifications of the supported services.
+cd $RSAT
+make -f makefiles/init_RSAT.mk ws_stubb
+
+## Test the connection to the Web services
+cd $RSAT/ws_clients/perl_clients
+make test
+\end{lstlisting}
+%$
+
