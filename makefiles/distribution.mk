@@ -16,7 +16,7 @@ ARCHIVE=rsat/${ARCHIVE_PREFIX}
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
 TAR_EXCLUDE=--exclude .git --exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/RSA.config.default rsat/RSAT_config_default.props  rsat/RSAT_config_default.mk
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/RSAT_config_default.props  rsat/RSAT_config_default.mk   rsat/RSAT_config_default.bashrc
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
 ################################################################
@@ -67,20 +67,23 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES=rsat/perl-scripts		\
-	rsat/RSA.config.default		\
-	rsat/RSA.config.default		\
-	rsat/makefiles			\
-	rsat/doc/manuals/*.pdf		\
-	rsat/python-scripts 		\
+DISTRIB_FILES=rsat/perl-scripts			\
+	rsat/R-scripts 				\
+	rsat/makefiles				\
+	rsat/RSAT_config.props			\
+	rsat/RSAT_config.mk			\
+	rsat/RSAT_config.bashrc			\
+	rsat/doc/manuals/*.pdf			\
+	rsat/python-scripts 			\
 	rsat/contrib/count-words  		\
+	rsat/contrib/compare-matrices-quick  	\
+	rsat/contrib/info-gibbs			\
 	rsat/contrib/matrix-scan-quick  	\
 	rsat/contrib/floydwarshall		\
-	rsat/ws_clients		  	\
-	rsat/public_html			\
-	rsat/contrib/info-gibbs
+	rsat/ws_clients		  		\
+	rsat/public_html
 
-DISTRIB_FILES_METAB=rsat/java	\
+DISTRIB_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\
 	rsat/contrib/kwalks
 

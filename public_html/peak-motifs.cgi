@@ -190,6 +190,12 @@ if ($query->param('strand')) {
 }
 
 ################################################################
+## Origin
+if ($query->param('origin')) {
+    $parameters .= " -origin ".$query->param('origin')." ";
+}
+
+################################################################
 ## Compare discovered motifs with motif databases
 my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
 if (scalar(@selected_db) > 0) {
