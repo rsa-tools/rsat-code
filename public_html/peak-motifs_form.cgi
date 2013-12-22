@@ -372,7 +372,18 @@ print "<br>";
 print $query->checkbox(-name=>'position-analysis',
 		       -checked=>$default{"position-analysis"},
 		       -label=>'');
-print "&nbsp;<b>Discover words with a positional biais</b> <a href='help.position-analysis.html'>[position-analysis]</a>\n";
+print "&nbsp;<b>Discover words with a positional bias</b> <a href='help.position-analysis.html'>[position-analysis]</a>\n";
+
+## Origin
+print "&nbsp;"x6, "<b>Origin </b>", "&nbsp;"x2;
+my $originPopup =  "<select NAME='origin'>\n";
+$originPopup .=  "<option value='left'>left</option>\n";
+$originPopup .=  "<option  selected value='center'>center</option>\n";
+$originPopup .=  "<option value='left'>right</option>\n";
+$originPopup .=  "</select>";
+print $originPopup;
+
+
 
 ### local-word-analysis
 print "<br>", $query->checkbox(-name=>'local-word-analysis',
