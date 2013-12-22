@@ -721,11 +721,14 @@ sub OrganismPopUpString {
     return $organismPopup;
 }
 
+################################################################
+## Display a pop-up menu with the list of organisms supported at
+## Ensembl.
 sub OrganismPopUpEnsembl {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-    my $org_list = `$SCRIPTS/supported-organisms-ensembl `;
-		@selected_organisms = split(/\n/,$org_list);
+      my $org_list = `$SCRIPTS/supported-organisms-ensembl `;
+      @selected_organisms = split(/\n/,$org_list);
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
