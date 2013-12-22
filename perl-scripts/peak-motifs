@@ -4858,6 +4858,8 @@ Class interval for I<position-analysis>.
 
 =item B<-origin center|start|end>
 
+Default: center
+
 Reference point for position-analysis. By default, peak-motifs aims at
 analyzing peaks from ChIP-seq and related experiments. The peak center
 is thus the default origin (position 0). However, for some particular
