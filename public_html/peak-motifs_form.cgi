@@ -377,9 +377,9 @@ print "&nbsp;<b>Discover words with a positional bias</b> <a href='help.position
 ## Origin
 print "&nbsp;"x6, "<b>Origin </b>", "&nbsp;"x2;
 my $originPopup =  "<select NAME='origin'>\n";
-$originPopup .=  "<option value='left'>left</option>\n";
-$originPopup .=  "<option  selected value='center'>center</option>\n";
-$originPopup .=  "<option value='left'>right</option>\n";
+$originPopup .=  "<option value='start'>start</option>\n";
+$originPopup .=  "<option selected value='center'>center</option>\n";
+$originPopup .=  "<option value='end'>end</option>\n";
 $originPopup .=  "</select>";
 print $originPopup;
 
