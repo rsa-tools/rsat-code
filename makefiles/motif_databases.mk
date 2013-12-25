@@ -54,3 +54,48 @@ uniprobe_human:
 		UNIPROBE_COLLECTION=human \
 		UNIPROBE_DATE=2010 \
 		UNIPROBE_ARCHIVE=NAR10_pwm
+
+################################################################
+## Import JASPAR database
+JASPAR_COLLECTIONS=all fungi insects nematodes plants urochordates vertebrates
+JASPAR_COLLECTION=fungi
+JASPAR_MATRICES_URL=http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant
+JASPAR_MARICES_ORI=pfm_${JASPAR_COLLECTION}.txt
+JASPAR_COLLECTION_URL=${JASPAR_MATRICES_URL}/${JASPAR_MARICES_ORI}
+
+## Download and convert jaspar matrices
+jaspar_matrices:
+	@echo
+	@echo "Importing JASPAR matrices"
+	@echo
+	@echo "#DB_NAME	FORMAT	FILE	DESCR   VERSION	URL" > new_jaspar_db_matrix_files.tab
+	@for col in ${JASPAR_COLLECTIONS}; do \
+		${MAKE} jaspar_matrices_one_collection JASPAR_COLLECTION=$${col}; \
+	done
+	@echo "JASPAR matrices have been parsed"
+	@echo
+	@echo "You can now check the content of DB matrix file"
+	@echo "	new_jaspar_db_matrix_files.tab"
+	@echo "and paste its content in the RSAT DB matrix file"
+	@echo "	public_html/data/motif_databases/db_matrix_files.tab"
+
+JASPAR_MATRICES_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+JASPAR_RELEASE=2013-11
+JASPAR_COLLECTION_TF=${JASPAR_MATRICES_DIR}/jaspar_core_${JASPAR_COLLECTION}_${JASPAR_RELEASE}.tf
+jaspar_matrices_one_collection:
+	@echo
+	@echo "Downloading and converting JASPAR collection	${JASPAR_COLLECTION}"
+	(cd ${JASPAR_MATRICES_DIR}; wget --no-verbose --timestamping --no-directories ${JASPAR_COLLECTION_URL}; )
+	@echo "	${JASPAR_MATRICES_DIR}/${JASPAR_MARICES_ORI}"
+	convert-matrix -v 0 -from jaspar -to transfac \
+		-i ${JASPAR_MATRICES_DIR}/${JASPAR_MARICES_ORI} \
+		-pseudo 1 -bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${JASPAR_COLLECTION_TF}
+	@echo "	${JASPAR_COLLECTION_TF}"
+	@echo "jaspar_core_${JASPAR_COLLECTION}	tf	JASPAR/jaspar_core_${JASPAR_COLLECTION}_${JASPAR_RELEASE}.tf	 JASPAR core ${JASPAR_COLLECTION}	${JASPAR_RELEASE}	${JASPAR_COLLECTION_URL}" >> new_jaspar_db_matrix_files.tab
+
+JASPAR_SITES_URL=http://jaspar.genereg.net/html/DOWNLOAD/sites/
+JASPAR_SITES_DIR=
+jaspar_sites_download:
+	(cd ${JASPAR_SITES_DIR}; wget --no-verbose -rNL --no-directories ${JASPAR_SITES_URL})
