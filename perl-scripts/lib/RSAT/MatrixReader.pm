@@ -12,7 +12,6 @@ use RSAT::feature;
 
 ### class attributes
 
-################################################################
 
 =pod
 
@@ -55,7 +54,6 @@ formats.
 			  );
 $supported_input_formats = join ",", sort(keys %supported_input_formats);
 
-################################################################
 
 =pod
 
@@ -242,7 +240,6 @@ sub readFromFile {
     return @matrices;
 }
 
-################################################################
 
 =pod
 
@@ -316,8 +313,6 @@ sub readMatrixFileList {
     return @matrices;
 }
 
-
-################################################################
 
 =pod
 
@@ -535,8 +530,6 @@ sub _readFromTRANSFACFile {
 }
 
 
-################################################################
-
 =pod
 
 =item _readFromSTAMPFile($file)
@@ -727,9 +720,6 @@ sub _readFromSTAMPFile_PreviousFormat {
 }
 
 
-
-################################################################
-
 =pod
 
 =item _readFromInfoGibbsFile($file)
@@ -912,7 +902,6 @@ sub _readFromInfoGibbsFile {
     return (@matrices);
 }
 
-################################################################
 
 =pod
 
@@ -1141,7 +1130,6 @@ sub _readFromOldInfoGibbsFile {
 
 }
 
-################################################################
 
 =pod
 
@@ -1246,8 +1234,6 @@ sub _readFromAlignACEFile {
   return @matrices;
 }
 
-
-################################################################
 
 =pod
 
@@ -1439,8 +1425,6 @@ sub _readFromGibbsFile {
 }
 
 
-################################################################
-
 =pod
 
 =item _readFromConsensusFile($file)
@@ -1568,7 +1552,6 @@ sub _readFromConsensusFile {
   return @matrices;
 }
 
-################################################################
 
 =pod
 
@@ -1684,7 +1667,6 @@ sub _readFromAssemblyFile {
   return @matrices;
 }
 
-################################################################
 
 =pod
 
@@ -1719,7 +1701,6 @@ sub _from_isolated {
   return $matrix;
 }
 
-################################################################
 
 =pod
 
@@ -1821,10 +1802,6 @@ sub _readFromTabFile {
 }
 
 
-
-
-################################################################
-
 =pod
 
 =item _readFromClusterBusterFile($file)
@@ -1912,7 +1889,6 @@ sub _readFromClusterBusterFile {
     return (@matrices);
 }
 
-################################################################
 
 =pod
 
@@ -2036,8 +2012,6 @@ sub _readFromUniprobeFile {
 }
 
 
-################################################################
-
 =pod
 
 =item _readFromJasparFile($file)
@@ -2062,7 +2036,7 @@ sub _readFromJasparFile {
 #    }
 
     ## Special treatment for the alphabet: sometimes indicated in the first column, sometimes not.
-    my @temp_alphabet = qw(A C G T);
+    my @temp_alphabet = qw(a c g t);
 
     ## Initialize the matrix LIST
     local @matrices = (); ## updated in subroutine
@@ -2089,6 +2063,9 @@ sub _readFromJasparFile {
 	  $name = &RSAT::util::trim($postmatch);
 	  $name =~ s/\s+/_/g;
 	}
+
+	## Reset the alphabet for the new matrix (in the Nov 2013 release, JASPAR matrix format apparently changed)
+	@temp_alphabet = qw(a c g t);
 
 	## Instantiate new matrix
 	$matrix = &NewJasparMatrix($id, $name);
@@ -2142,6 +2119,10 @@ sub _readFromJasparFile {
     }
     close $in if ($file);
 
+    foreach my $matrix (@matrices) {
+      $matrix->setAlphabet_lc(@temp_alphabet);
+    }
+
     &InitializeEquiPriors(@matrices);
     return (@matrices);
 }
@@ -2158,13 +2139,14 @@ sub NewJasparMatrix {
   &RSAT::message::Debug("_readFromJasparFile", $id, $name, $matrix) if ($main::verbose >= 5);
   $matrix->set_parameter("program", "jaspar");
   $ncol = 0;
-  @temp_alphabet = qw(A C G T);
+  @temp_alphabet = qw(a c g t);
 
   ## JASPAR header line contains an ID and a name
   $matrix->set_attribute("id", $id);
   $matrix->set_attribute("name", $name);
   $matrix->set_attribute("accession", $id); ## For compatibility with TRANSFAC format
   $matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
+#  $matrix->setAlphabet_lc(@temp_alphabet);
   push @matrices, $matrix;
   $current_matrix_nb++;
   &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
@@ -2172,7 +2154,6 @@ sub NewJasparMatrix {
   return ($matrix);
 }
 
-################################################################
 
 =pod
 
@@ -2291,8 +2272,6 @@ sub _readFromMEMEFile {
 }
 
 
-################################################################
-
 =pod
 
 =item _readFromSeq($file)
@@ -2335,7 +2314,6 @@ sub _readFromSeq {
   return ($matrix);
 }
 
-################################################################
 
 =pod
 
@@ -2418,8 +2396,6 @@ sub _readFromFeatureFile {
   return @matrices;
 }
 
-
-################################################################
 
 =pod
 
@@ -2511,7 +2487,6 @@ sub _readFromMotifSamplerFile {
   return (@matrices);
 }
 
-################################################################
 
 =pod
 
@@ -2581,10 +2556,6 @@ sub _readFromMotifSamplerMatrixFile {
 }
 
 
-
-
-################################################################
-
 =pod
 
 =item _readFromClustalFile($file)
@@ -2618,7 +2589,7 @@ sub _readFromClustalFile {
 
     ## Read the sequences
     my %sequences = ();
-    warn "; Reading sequences\n" if ($main::verbose >= 5);
+    &RSAT::message::Debug("&RSAT::MatrixRedaer::_readFromClustalFile()", "Reading sequences") if ($main::verbose >= 5);
     while (<$in>) {
 	next unless (/\S/);
 	s/\r//;
@@ -2630,9 +2601,9 @@ sub _readFromClustalFile {
 	    
 	    ## index the new sequence
 	    $sequences{$seq_id} .= $new_seq;
-	    warn join ("\t", ";", "Sequence", $seq_id, 
-		       length($new_seq), length($sequences{$seq_id}),
-		       ),"\n" if ($main::verbose >= 5);
+	    &RSAT::message::Debug("\tSequence", $seq_id, 
+				  length($new_seq), length($sequences{$seq_id}))
+		if ($main::verbose >= 5);
 	}
     }
     
@@ -2662,10 +2633,10 @@ sub _readFromClustalFile {
 	    my $trailing_gap = ${terminal_gap_char}x$trailing_gap_len;
 	    $sequence =~ s|(\-+)$|${trailing_gap}|;
 	}
-	warn join ("\t",";", $seq_id,$sequence), "\n" if ($main::verbose >= 5);
+	&RSAT::message::Debug($seq_id,$sequence) if ($main::verbose >= 5);
 	    
 	$ncol = &main::max($ncol, length($sequence));
-	warn join ("\t", ";", "Sequence", $seq_id, length($sequence)),"\n" if ($main::verbose >= 5);
+	&RSAT::message::Debug("Sequence", $seq_id, length($sequence)) if ($main::verbose >= 5);
 	my @sequence = split '|', $sequence;
 	foreach my $i (0..$#sequence) {
 	    my $res = lc($sequence[$i]);
@@ -2691,7 +2662,6 @@ sub _readFromClustalFile {
 	} else {
 	    $prior{$res} = 0;
 	}
-#	warn join "\t", $res, $alpha_sum, $prior{$res};
     }
     $matrix->setPrior(%prior);
 
@@ -2722,9 +2692,6 @@ sub _readFromClustalFile {
     return (@matrices);
 }
 
-
-
-################################################################
 
 =pod
 
