@@ -1,7 +1,7 @@
-; This file describes the files containing collection of curated
-;  position-specific scoring matrices (PSSM) used by the tools
-;  compare-matrices and peak-motifs, in order to compare discovered
-;  motifs with those bound by known transcription factors.
+; This file describes the collections of curated position-specific
+; scoring matrices (PSSM) used by the tools compare-matrices and
+; peak-motifs, in order to compare discovered motifs with those bound
+; by known transcription factors.
 ;
 ; Column description
 ; 	 1	DB_NAME	Database name
@@ -9,13 +9,15 @@
 ;	 3	FILE    Matrix file (path relative to the motif DB directory ${RSAT}/data/motif_databases/)
 ;	 4	DESCR	Human-readable description of the database (source, data type, ...)
 ;	 5	VERSION	Version (date) of the import
-#DB_NAME	FORMAT	FILE	DESCR   VERSION
-jaspar_core_vertebrates	tf	JASPAR/jaspar_core_vertebrates_2009_10.tf	 JASPAR core Vertebrates	2009_10
-jaspar_core_fungi	tf	JASPAR/jaspar_core_fungi_2009_10.tf	 JASPAR core Fungi	2009_10
-jaspar_core_insects	tf	JASPAR/jaspar_core_insects_2009_10.tf	 JASPAR core Insects	2009_10
-jaspar_core_nematodes	tf	JASPAR/jaspar_core_nematodes_2009_10.tf	 JASPAR core Nematodes	2009_10
-jaspar_core_plants	tf	JASPAR/jaspar_core_plants_2009_10.tf	 JASPAR core Plants	2009_10
-jaspar_core_urochordates	tf	JASPAR/jaspar_core_urochordates_2009_10.tf	 JASPAR core Urochordates	2009_10
+;	 6	URL	URL from the file from which matrices were obtained
+#DB_NAME	FORMAT	FILE	DESCR   VERSION	URL
+jaspar_core_vertebrates	tf	JASPAR/jaspar_core_vertebrates_2013-11.tf	 JASPAR core vertebrates	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_vertebrates.txt
+jaspar_core_fungi	tf	JASPAR/jaspar_core_fungi_2013-11.tf	 JASPAR core fungi	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_fungi.txt
+jaspar_core_insects	tf	JASPAR/jaspar_core_insects_2013-11.tf	 JASPAR core insects	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_insects.txt
+jaspar_core_nematodes	tf	JASPAR/jaspar_core_nematodes_2013-11.tf	 JASPAR core nematodes	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_nematodes.txt
+jaspar_core_plants	tf	JASPAR/jaspar_core_plants_2013-11.tf	 JASPAR core plants	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_plants.txt
+jaspar_core_urochordates	tf	JASPAR/jaspar_core_urochordates_2013-11.tf	 JASPAR core urochordates	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_urochordates.txt
+jaspar_core_all	tf	JASPAR/jaspar_core_all_2013-11.tf	 JASPAR core all	2013-11	http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/redundant/pfm_all.txt
 jaspar_pbm_mouse	tf	JASPAR/jaspar_pbm_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Mouse	2009_10
 jaspar_pbm-homeo_mouse	tf	JASPAR/jaspar_pbm-homeo_mouse_2009_10.tf	JASPAR PBM (UNIPROBE) Homeo Mouse	2009_10
 jaspar_pbm-hlh_nematode	tf	JASPAR/jaspar_pbm-hlh_nematode_2009_10.tf	JASPAR PBM (UNIPROBE) HLH Nematode	2009_10
