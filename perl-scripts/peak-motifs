@@ -496,6 +496,7 @@ sub DefaultParameters {
 
   ################################################################
   ## Residue  profiles (position-analysis)
+  $main::param{origin} = "center"; push(@main::param_list, "origin");
   $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
@@ -1084,7 +1085,7 @@ sub PurgeSeq {
     &RSAT::message::Info("\tTruncating to ", $main::param{max_seq_len}." bp max") if ($main::verbose >= 2);
     $cmd .= "| ".$SCRIPTS."/sub-sequence";
     #    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
-    $cmd .= " -origin center";
+    $cmd .= " -origin ".$main::param{origin};
     $cmd .= " -from ".$from;
     $cmd .= " -to ".$to;
   }
@@ -1220,7 +1221,7 @@ sub CompositionProfiles {
     $cmd .= " -ci ".$main::param{profiles_ci};
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
-    $cmd .= " -origin center ";
+    $cmd .= " -origin ".$main::param{origin};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
     &one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt");
 
@@ -1471,7 +1472,7 @@ sub PositionAnalysis {
     $cmd .= " -uth_rank ".$main::param{patterns_max_rank};
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
-    $cmd .= " -origin center ";
+    $cmd .= " -origin ".$main::param{origin};
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
@@ -2484,7 +2485,7 @@ sub ScanSequences {
       $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
       $cmd .= " -coord ".$main::outfile{"test_seq_coord"} if ($main::param{seq_source});
-      $cmd .= " -origin center ";
+      $cmd .= " -origin ".$main::param{origin};
       $cmd .= " -to bed ";
       my $bed_prefix = $main::param{title};
       my $bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
@@ -2512,7 +2513,7 @@ sub ScanSequences {
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
     $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
-    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak center'";
+    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak ".$main::param{origin}."'";
     $cmd .= " -title1 'Predicted sites : $motif_id'";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &one_command($cmd, 1);
@@ -4087,9 +4088,9 @@ Supported source: galaxy
 
 When the sequence file comes from Galaxy, peak coordinates embedded in
 the fasta headers are extracted and used to convert predicted site
-coordinates (relative to peak center) to genomic coordinates (in the
-form of a bed file), which can then be uploaded to the UCSC genome
-browser as an annotation track.
+coordinates to genomic coordinates (in the form of a bed file), which
+can then be uploaded to the UCSC genome browser as an annotation
+track.
 
 This option is incompatible with -coord.
 
@@ -4112,10 +4113,10 @@ file.  Assembly are encoded in the form of uscsc (eg. mm9, hg19 ...)
 
 Example: -coord hg19 path/to/bed/file.bed
 
-When a coordinate file is provided, predicted site coordinates
-(relative to peak center) are also converted to genomic coordinates
-(in the form of a bed file), which can be uploaded to the UCSC genome
-browser as an annotation track.
+When a coordinate file is provided, predicted site coordinates are
+also converted to genomic coordinates (in the form of a bed file),
+which can be uploaded to the UCSC genome browser as an annotation
+track.
 
 The 4th column of the BED file must correspond to the fasta
 headers. See the documentation of the UCSC Genome Browser for the
@@ -4387,6 +4388,9 @@ poly-adenylation signals in downstream sequences (van Helden et al.,
 2001), and it turns out to be very efficient for detecting motifs
 centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
 position is the center of each sequence.
+
+The reference position can however be changed with the option
+I<-origin> (center, start, end).
 
 Note that I<peak-motifs> also uses I<position-analysis> for the
 task B<composition>, in order to detect compositional biases (residues,
@@ -4850,6 +4854,23 @@ Class interval for I<position-analysis>.
       &RSAT::error::FatalError($main::param{profiles_ci}, "is not a valid value for class interval. Should be a strictly positive Natural number.")
 	unless ((&IsNatural($main::param{profiles_ci})) && ($main::param{profiles_ci} > 0));
 
+=pod
+
+=item B<-origin center|start|end>
+
+Default: center
+
+Reference point for position-analysis. By default, peak-motifs aims at
+analyzing peaks from ChIP-seq and related experiments. The peak center
+is thus the default origin (position 0). However, for some particular
+purposes it might be relevant to take the left or the end of the
+sequences as position 0.
+
+=cut
+
+    } elsif ($arg eq "-origin") {
+      $main::param{origin} = shift(@arguments);
+
       ## Other parameters are not accepted
     } else {
       &RSAT::error::FatalError("Invalid option", $arg);
@@ -4996,7 +5017,8 @@ sub CheckArguments {
 
   ## Options used for site scanning but not for enrichment analysis
   $main::param{scan_sites_options} = " -lth score ".$main::param{scan_min_score};
-  $main::param{scan_sites_options} .= " -origin center -return sites";
+  $main::param{scan_sites_options} .= " -origin ".$main::param{origin};
+  $main::param{scan_sites_options} .= " -return sites";
 
   ## Options used for enrichment in matrix hits but not for site detection
   $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
