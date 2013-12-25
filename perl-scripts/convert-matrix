@@ -23,7 +23,8 @@ use File::Basename;
 use Data::Dumper;
 use POSIX;
 
-#### initialise parameters ####
+################################################################
+## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
 local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
 $seqlogo_path = &trim($seqlogo_path);
