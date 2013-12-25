@@ -28,7 +28,7 @@ package main;
   ## Read arguments
   &ReadArguments();
 
-  &RSAT::message::TimeWarn("Opening connection to DB", $host_db) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Opening connection to DB", $host_db) if ($main::verbose >= 3);
   our $dbh = DBI->connect("DBI:mysql:host=".$host_db.":port=5306", "anonymous", "", {'RaiseError' => 1});
   our $sth = $dbh->prepare("SHOW DATABASES");
   $sth->execute();

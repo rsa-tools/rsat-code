@@ -721,11 +721,14 @@ sub OrganismPopUpString {
     return $organismPopup;
 }
 
+################################################################
+## Display a pop-up menu with the list of organisms supported at
+## Ensembl.
 sub OrganismPopUpEnsembl {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-    my $org_list = `$SCRIPTS/supported-organisms-ensembl `;
-		@selected_organisms = split(/\n/,$org_list);
+      my $org_list = `$SCRIPTS/supported-organisms-ensembl `;
+      @selected_organisms = split(/\n/,$org_list);
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
@@ -1236,19 +1239,21 @@ sub MatrixDBcheckBox {
   while (my $line = <MAT_DB>) {
     next if ($line =~ /^;/);
     next if ($line =~ /^#/);
-    my @mat_line = split (/\t/,$line);
+    my ($db_name, $format, $file, $descr, $version) = split (/\t/,$line);
     my $status = "";
-    if ($mat_line[0] eq $default{compare_motif_database}) {
+    if ($db_name eq $default{compare_motif_database}) {
       $status = "checked";
     }
 
+    my $label = $descr." (".$version.")";
+
     if ($choice_mode eq "checkbox") {
-      print $query->checkbox(-name=>$mat_line[0],
+      print $query->checkbox(-name=>$db_name,
 			     -checked=>$status,
-			     -label=>$mat_line[3]);
+			     -label=>$label);
     } elsif ($choice_mode eq "radiobox") {
-      print( "<input type='radio' NAME='db_choice' VALUE='",$mat_line[0],"' $status>");
-      print "$mat_line[3]";
+      print( "<input type='radio' NAME='db_choice' VALUE='",$db_name,"' $status>");
+      print $label;
     } else {
       &RSAT::error::FatalError("&MatrixDBcheckBox()", $choice_mode, "invalid value for choice_mode", );
     }
