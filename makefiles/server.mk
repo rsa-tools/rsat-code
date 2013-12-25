@@ -37,7 +37,7 @@ MAMAZE=rsat@${MERLIN}:/rsat_servers/mamaze
 
 #CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
 CCG=rsat@itzamna.ccg.unam.mx:rsa-tools
-TAGC=jvanheld@139.124.66.43:rsa-tools
+TAGC=jvanheld@pedagogix-tagc.univ-mrs.fr:rsa-tools
 UPPSALA=jvanheld@bongcam1.hgen.slu.se:rsa-tools
 PRETORIA=jvanheld@anjie.bi.up.ac.za:.
 LOG_SERVERS= ${MAMAZE} ${WWWSUP}  ${CCG} ${UPPSALA} ${PRETORIA} ${BIGRE} 
@@ -126,20 +126,7 @@ rsync_logs:
 		echo "${RSYNC} $${mirror}/logs/log-file_* logs/" ;	\
 		${RSYNC} $${mirror}/logs/log-file_* logs/ ;		\
 	done
-	rsync -ruptvl -e 'ssh -p 24222'  jvanheld@139.124.66.43:rsa-tools/logs/log-file_* logs/
-
-
-FOLDERS=data pdf_files
-from_ucmb:
-	@for folder in ${FOLDERS}; do \
-		${RSYNC} jvanheld@${PAULUS}:rsa-tools/$${folder} . ; \
-	done
-
-FOLDERS=data 
-from_cifn:
-	@for folder in ${FOLDERS}; do \
-		${RSYNC} jvanheld@${CCG}:rsa-tools/$${folder}/* ./$${folder} ; \
-	done
+	rsync -ruptvl -e 'ssh -p 24222'  jvanheld@pedagogix-tagc.univ-mrs.fr:rsa-tools/logs/log-file_* logs/
 
 
 ################################################################
