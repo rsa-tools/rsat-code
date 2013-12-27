@@ -1201,7 +1201,7 @@ sub DyadAnalysis {
     &CheckDependency("asmb", "dyads");
     $cmd = $SCRIPTS."/pattern-assembly -v 1";
     $cmd .= " -i ".$outfile{dyads};
-    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+    $cmd .= " -subst 1 -weight 5 -maxfl 1 -toppat 50";
     $cmd .= " -max_asmb_nb 5";
     $cmd .= " -o ".$outfile{asmb};
 #    &report_command ($cmd, "pattern-assembly");
