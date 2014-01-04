@@ -132,7 +132,10 @@ package main;
     local $cluster_column = 0;
     local $asmb_maxfl = 1;
     local $asmb_subst = 1;
+    local $asmb_match = 0;
+    local $asmb_weight = 0;
     local $max_asmb_size = 50;
+    local $max_asmb_width = 25;
     local $max_asmb_nb = 5;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
@@ -262,8 +265,12 @@ package main;
       $assembly_cmd .= " ".$strands;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
+      $assembly_cmd .= " -weight ".$asmb_weight if ($asmb_weight > 0);
+      $assembly_cmd .= " -match ".$asmb_match if ($asmb_match > 0);
+      $assembly_cmd .= " -max_asmb_width ".$max_asmb_width if ($max_asmb_width > 0);
       $assembly_cmd .= " -toppat ".$top_pattern_nb;
       $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
+      $assembly_cmd .= " -max_asmb_width ".$max_asmb_width;
       $assembly_cmd .= " -sc ".$score_column if ($score_column > 0);
       if ($cluster_column > 0) {
 	$assembly_cmd .= " -cc ".$cluster_column;
@@ -564,15 +571,89 @@ the option -cc is used.
 
 =item B<-subst>
 
-Maximum number of allowed substitution for pattern assembly.  This
-parameter is passed to the program I<pattern-assembly>.
+Maximum number of allowed substitution for pattern assembly.  
 
+This parameter is passed to the program I<pattern-assembly>.
 
 =cut
 	} elsif ($arg eq "-subst") {
 	  $asmb_subst = shift(@arguments);
 	  &RSAT::error::FatalError($asmb_subst, "is not a valid value for option -subst (should be Natural number).")
 	    unless (&IsNatural($asmb_subst));
+
+
+=pod
+
+=item B<-maxfl>
+
+Maximum number of flanking residues for pattern assembly. 
+
+This parameter is passed to the program I<pattern-assembly>.
+
+=cut
+	} elsif ($arg eq "-maxfl") {
+	  $asmb_maxfl = shift(@arguments);
+	  &RSAT::error::FatalError($asmb_maxfl, "is not a valid value for option -maxfl (should be Natural number).")
+	    unless (&IsNatural($asmb_maxfl));
+
+=pod
+
+=item B<-match>
+
+Minimum number of matching residues for pattern assembly. 
+
+This parameter is passed to the program I<pattern-assembly>.
+
+=cut
+	} elsif ($arg eq "-match") {
+	  $asmb_match = shift(@arguments);
+	  &RSAT::error::FatalError($asmb_match, "is not a valid value for option -match (should be Natural number).")
+	    unless (&IsNatural($asmb_match));
+
+
+=pod
+
+=item B<-weight>
+
+Minimum matching weight for pattern assembly. 
+
+This parameter is passed to the program I<pattern-assembly>.
+
+=cut
+	} elsif ($arg eq "-weight") {
+	  $asmb_weight = shift(@arguments);
+	  &RSAT::error::FatalError($asmb_weight, "is not a valid value for option -weight (should be a positive Real number).")
+	    unless ((&IsReal($asmb_weight)) && ($asmb_weight >= 0));
+
+
+=pod
+
+=item B<-max_asmb_size>
+
+Maximum assembly size (number of patterns per assembly). 
+
+This parameter is passed to the program I<pattern-assembly>.
+
+=cut
+	} elsif ($arg eq "-max_asmb_size") {
+	  $max_asmb_size = shift(@arguments);
+	  &RSAT::error::FatalError($max_asmb_size, "is not a valid value for option -max_asmb_size (should be Natural number).")
+	    unless (&IsNatural($max_asmb_size));
+
+
+=pod
+
+=item B<-max_asmb_width>
+
+Maximum assembly width. 
+
+This parameter is passed to the program I<pattern-assembly>.
+
+=cut
+	} elsif ($arg eq "-max_asmb_width") {
+	  $max_asmb_width = shift(@arguments);
+	  &RSAT::error::FatalError($max_asmb_width, "is not a valid value for option -max_asmb_width (should be Natural number).")
+	    unless (&IsNatural($max_asmb_width));
 
 
 	    ## Assembly file
