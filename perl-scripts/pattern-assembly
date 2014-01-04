@@ -14,6 +14,7 @@ our $max_subst = 0;
 our $min_matches = 0;
 our $min_weight = 0;
 our $max_asmb_size = 50;
+our $max_asmb_width = 0;
 our $strand_insensitive = 1;
 our $pattern_nb = 0;
 our $max_pattern_nb = 0;
@@ -158,6 +159,7 @@ sub Verbose {
     printf $out "; %-29s\t%d\n", "Min matches", $min_matches;
     printf $out "; %-29s\t%d\n", "Min weight", $min_weight;
     printf $out "; %-29s\t%d\n", "Max assembly size", $max_asmb_size;
+    printf $out "; %-29s\t%d\n", "Max assembly width", $max_asmb_width;
     printf $out "; %-29s\t%d\n", "Max number of patterns", $max_pattern_nb if ($max_pattern_nb);
     printf $out "; %-29s\t%d\n", "Top number of patterns", $top_pattern_nb if ($top_pattern_nb);
     printf $out "; %-29s\t%d\n", "Number of input patterns", $pattern_nb;
@@ -320,7 +322,7 @@ sub BestOffset {
     local($word1) = $_[0];
     local($word2) = $_[1];
     if (&IsNatural($_[2])) {
-	local($max_flanking) = $_[2];
+      local($max_flanking) = $_[2];
     }
     local($l1) =length($word1);
     local($l2) =length($word2);
@@ -607,6 +609,9 @@ OPTIONS
 		maximal assembly size, i.e. the number of patterns per
 		alignment group (default: $max_asmb_size)
 
+	-max_asmb_width #
+		maximal width for an assembly (default: $max_asmb_width)
+
 	-single_sep
 
 		Report the isolated words (i.e. words that do not
@@ -688,6 +693,7 @@ pattern-assembly options
 -max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb_default)
 -max_asmb_per_cluster #	maximal number of assemblies per cluster (default: $max_asmb_per_cluster)
 -max_asmb_size #	maximal assembly size, i.e. number of patterns per assembly (default: $max_asmb_size)
+-max_asmb_width #	maximal assembly width (default: $max_asmb_width)
 -maxpat #	maximum number of allowed patterns
 -toppat #	maximum number of patterns to assemble
 -single_sep	Report the isolated words separately. 
@@ -776,41 +782,48 @@ sub ReadArguments {
 	&RSAT::error::FatalError("the matching weight must be a positive Real number");
       }
 
-      ### max flank
+      ## Max flank
     } elsif ($ARGV[$a] =~ /^-maxfl/i) {
       $max_flanking = $ARGV[$a+1];
       unless (&IsNatural($max_flanking)) {
 	&RSAT::error::FatalError("the flanking segment size must be a positive integer");
       }
 
-      ### max number of assemblies
+      ## Max number of assemblies
     } elsif ($ARGV[$a] =~ /^-max_asmb_nb/i) {
       $max_asmb_nb = $ARGV[$a+1];
       unless (&IsNatural($max_asmb_nb)) {
 	&RSAT::error::FatalErro("maximal number of assemblies must be a positive integer");
       }
 
-      ### max number of assemblies per cluster
+      ## Max number of assemblies per cluster
     } elsif ($ARGV[$a] eq "-max_asmb_per_cluster") {
       $max_asmb_per_cluster = $ARGV[$a+1];
       unless (&IsNatural($max_asmb_per_cluster)) {
 	  &RSAT::error::FatalErro("maximal number of assemblies per cluster must be a positive integer");
       }
 
-      ### max cluster size
+      ## Max assembly size (number of patterns)
     } elsif ($ARGV[$a] =~ /^-max_asmb_size/i) {
       $max_asmb_size = $ARGV[$a+1];
       unless (&IsNatural($max_asmb_size)) {
 	&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
       }
 
+
+      ## Max assembly width
+    } elsif ($ARGV[$a] =~ /^-max_asmb_width/i) {
+      $max_asmb_width = $ARGV[$a+1];
+      unless (&IsNatural($max_asmb_width)) {
+	&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
+      }
+
     } elsif ($ARGV[$a] =~ /^-maxcl/i) {
-      &RSAT::message::Warning("Option -maxcl has been replaced by -mac_cl_size.");
+      &RSAT::message::Warning("Option -maxcl has been replaced by -max_asmb_size.");
       $max_asmb_size = $ARGV[$a+1];
       unless (&IsNatural($max_asmb_size)) {
 	&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
       }
-
 
       ### report isolated words separately
     } elsif ($ARGV[$a] eq "-single_sep") {
@@ -878,6 +891,7 @@ sub AssemblePatterns {
     my $assembly_size = 1;
     while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
       $found = 0;
+
       while (($assembly_size < $max_asmb_size) && ($#to_align > -1)) {
 	$best_offset = "";
 
@@ -891,6 +905,7 @@ sub AssemblePatterns {
 	if ($max_subst > 0) {
 	  $word_length = length($word);
 	  $last_pos = length($seed) - $word_length;
+
 	  foreach $offset (0..$last_pos) {
 	    $other_word = substr($seed,$offset,$word_length);
 	    $mismatches = &CountMismatches($word,$other_word,$max_subst);
@@ -947,6 +962,11 @@ sub AssemblePatterns {
 	  #print "$seed\t$word\t$best_word\t$best_offset\t$flanking_length\t$assembly_score\t$min_score\n";
 	  next if ($best_offset eq "none");
 	  next if ($flanking_length > $max_flanking);
+	  if (($max_asmb_width > 0) && (length($seed) >= $max_asmb_width) && ($flanking_length > 0)) {
+	    &RSAT::message::Debug("Cannot assemble word",  $word, "because max assembly width (".$max_asmb_width.") reached", $seed, length($seed)) 
+		if ($main::verbose >= 0);
+	    next;
+	  }
 	  next if ($assembly_score < $min_score);
 
 	  $seed = &AssembleFragments($seed,$best_word,$best_offset);
