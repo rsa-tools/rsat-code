@@ -552,6 +552,7 @@ sub DefaultParameters {
 
   ## matrix-from-patterns
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
+  $main::param{max_asmb_width} = 20; push(@main::param_list, "max_asmb_width");
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
 
@@ -2392,6 +2393,7 @@ sub MatrixFromPatterns {
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
   $cmd .= " -toppat ".$main::param{asmb_toppat};
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
+  $cmd .= " -max_asmb_width ".$main::param{max_asmb_width};
   $cmd .= " -sc ".$score_column if ($score_column > 0);
   if ($pattern_type eq "dyads") {
     $cmd .= " -subst 0";
