@@ -964,7 +964,7 @@ sub AssemblePatterns {
 	  next if ($flanking_length > $max_flanking);
 	  if (($max_asmb_width > 0) && (length($seed) >= $max_asmb_width) && ($flanking_length > 0)) {
 	    &RSAT::message::Debug("Cannot assemble word",  $word, "because max assembly width (".$max_asmb_width.") reached", $seed, length($seed)) 
-		if ($main::verbose >= 0);
+		if ($main::verbose >= 10);
 	    next;
 	  }
 	  next if ($assembly_score < $min_score);
