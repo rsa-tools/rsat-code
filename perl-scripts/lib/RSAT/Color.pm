@@ -116,7 +116,7 @@ sub RGBColorPalette {
   push @palette, \@blue_064;
   push @palette, \@gray_064;
 
-  &RSAT::message::Info("Defined RGB palette with ".scalar(@palette)." colors") if ($main::verbose >= 3);
+  &RSAT::message::Info("Defined RGB palette with ".scalar(@palette)." colors") if ($main::verbose >= 4);
   if ($main::verbose >= 4) {
     foreach my $c (0..$#palette) {
       my $color_ref = $palette[$c];
