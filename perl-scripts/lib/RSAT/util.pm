@@ -849,7 +849,7 @@ sub hex2rgb {
 ##    $add_date (value 0 or 1): if 1, the date is added to the suffix
 ##    $make_dir (value 0 or 1): if 1, create a temporary directory rather than temporary file
 sub make_temp_file {
-  my ($tmp_dir, $tmp_prefix, $add_date, $make_dir) = @_;
+  my ($tmp_dir, $tmp_prefix, $add_date, $make_dir, $protect) = @_;
 #    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
 #  			"\n\ttmp_dir=".$tmp_dir,
 #  			"\n\ttmp_prefix=".$tmp_prefix,
@@ -879,15 +879,16 @@ sub make_temp_file {
   }
   &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
 
-
-  ## Create an index file in the nexw directory to prevent Web users from seing its whole content
+  ## Create an index file in the new directory to prevent Web users from seing its whole content
   my $index_file = $tmp_dir."/index.html";
-  unless (-e $index_file) {
-    open INDEX, ">".$index_file;
-    print INDEX "<html>";
-    print INDEX "<b>Access forbidden</b>";
-    print INDEX "</html>";
-    close INDEX;
+  if ($protect) {
+    unless (-e $index_file) {
+      open INDEX, ">".$index_file;
+      print INDEX "<html>";
+      print INDEX "<b>Access forbidden</b>";
+      print INDEX "</html>";
+      close INDEX;
+    }
   }
 
   ## Add date if required
@@ -906,7 +907,6 @@ sub make_temp_file {
 
   ## Ensure that everyone can read the temporary file
 #  system("chmod a+r $temp_file");
-
 #    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
 #   			"\n\ttmp_dir=".$tmp_dir,
 #   			"\n\ttmp_prefix=".$tmp_prefix,
@@ -1100,7 +1100,7 @@ sub one_command {
       ## elapsed time.
       my $OS = `uname -a`;
       chomp($OS);
-      &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 5);
       if (($OS =~ /ubuntu/i) || ($OS =~ /bongcam/i) 
 	  ) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
