@@ -273,6 +273,7 @@ package main;
   ## Read argument values
   &ReadArguments();
 
+
   &CheckArguments();
 
   &SetOutFileNames();
@@ -684,7 +685,6 @@ sub SetOutFileNames {
 #    ## Prefix for sequence files
 #    $seqfile{$seq_type} = $main::infile{$seq_type."_seq"};
 
-
     ## Sequence lengths
     $main::outfile{$seq_type."_seqlen"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen");
     $main::outfile{$seq_type."_seqlen_distrib"} = &OutFileName("data/sequences", ".tab", $seq_type."_seqlen_distrib");
@@ -775,18 +775,21 @@ sub SetOutFileNames {
 
       ## Test versus control sequences
       if ($main::infile{ctrl_seq}) {
+
 	$main::param{oligo_bg_suffix} = "test_vs_ctrl";
-	$pattern_type = 'oligos_'.$len.'nt'.$main::param{oligo_bg_suffix};
+	$pattern_type = 'oligos_'.$len.'nt_'.$main::param{oligo_bg_suffix};
 
 	## Background models estimated from the control sequences
 	## (Markov chain m = k - 1).
 	my $mkv = $len -1;
 	$main::outfile{$pattern_type."_bg_file"} = &OutFileName("results/".$pattern_type, ".tab", "oligos_bg_from_ctrl_".$len."nt".$main::param{strand}.$main::param{disco_noov});
+#	&RSAT::message::Debug("bg_file", $pattern_type."_bg_file", $main::outfile{$pattern_type."_bg_file"}) if ($main::verbose >= 10);
 
 
 	## oligo-analysis result file
 	$main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
-						     $len."nt", $oligo_bg_suffix);
+						     $len."nt", $main::param{oligo_bg_suffix});
+#	&RSAT::message::Debug("pattern_file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 10);
 	push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
 	push @patterns_to_merge, $pattern_type;
 	push @oligos_to_merge, $pattern_type;
@@ -803,7 +806,7 @@ sub SetOutFileNames {
 	  my $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
 	  $main::param{oligo_bg_suffix} = "mvk".$main::param{oligo_min_mkv}."_".$main::param{oligo_max_mkv};
 	  for my $markov ($min_mkv..$max_mkv) {
-	    $oligo_bg_suffix = "mkv".$markov;
+	    my $oligo_bg_suffix = "mkv".$markov;
 	    ## oligo-analysis result file
 	    $pattern_type = 'oligos_'.$len.'nt_'.$oligo_bg_suffix;
 	    $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
@@ -892,6 +895,7 @@ sub SetOutFileNames {
       push @pattern_types, $pattern_type;
     }
   }
+
 
   ################################################################
   ## dyad-analysis
@@ -2104,7 +2108,7 @@ sub SplitMotifs {
 sub MotifsVersusMotifs {
 
   ## Comparison between discovered matrices, and with the reference motif
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose;
+  my $cmd = $SCRIPTS."/compare-matrices -v 1";
   $cmd .= " -format transfac -file ".$main::outfile{motifs_discovered};
   $cmd .= " -distinct";
   $cmd .= $main::param{motif_compa_options};
@@ -2252,7 +2256,7 @@ sub MotifsVersusReference {
     &RSAT::message::Info("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 4);
 
     ## Compare one discovered motif with the reference motif
-    my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+    my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
     $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
     $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
     $cmd .= $main::param{motif_compa_options};
@@ -2270,7 +2274,7 @@ sub MotifsVersusReference {
 
   ################################################################
   ## Compare all matrices to the reference motif
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
   $cmd .= $main::param{motif_compa_options};
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
@@ -2323,7 +2327,7 @@ sub MotifsVersusDatabase {
       &RSAT::message::Debug("comparing motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
 
       ## Compare one discovered motif with the reference motif
-      my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+      my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
       $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -format2 ".$main::motif_db_format{$db_name};
       $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
@@ -2344,7 +2348,7 @@ sub MotifsVersusDatabase {
 
     ################################################################
     ## Comparison between all discovered matrices and the database
-    my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+    my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
     $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};
     $cmd .= " -format2 ".$main::motif_db_format{$db_name};
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
@@ -2397,6 +2401,8 @@ sub MatrixFromPatterns {
   $cmd .= " -sc ".$score_column if ($score_column > 0);
   if ($pattern_type eq "dyads") {
     $cmd .= " -subst 0";
+#    $cmd .= " -match 5";
+#    $cmd .= " -weight 5";
   } else {
     $cmd .= " -subst 1";
   }
@@ -3390,7 +3396,7 @@ sub PrintFileLinks_New {
     while ($key = shift (@$links)){
     last unless $key;
     $file = shift(@$links);
-    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 3);
+    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
     if (($file)&&(-e $file)) {
       my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn "<a href='".$link."'>".$key."</a>\n";
