@@ -902,7 +902,7 @@ sub SetOutFileNames {
   if ($disco{dyads}) {
     ## Test versus control sequences
     if ($main::infile{ctrl_seq}) {
-      $pattern_type = 'dyads_vs_ctrl';
+      $pattern_type = 'dyads_test_vs_ctrl';
 
       ## Background models estimated from the control sequences
       $main::outfile{$pattern_type."_bg_file"} = &OutFileName("results/".$pattern_type, ".tab", "dyads_bg_from_ctrl".$main::param{strand}.$main::param{disco_noov},"3nt_sp0-20_bg_monads");
@@ -1423,8 +1423,8 @@ sub DyadAnalysis {
     $pattern_type = 'dyads_test_vs_ctrl';
   } else {
     ## Single-input mode
-      $pattern_type = "dyads";
-    }
+    $pattern_type = "dyads";
+  }
 
   my $cmd = $SCRIPTS."/dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"test_purged"};
