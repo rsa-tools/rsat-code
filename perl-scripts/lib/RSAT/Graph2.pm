@@ -351,7 +351,7 @@ sub randomize {
         $non_decreasing_count = 0;
       }
       if ($main::verbose >= 3) {
-        &RSAT::message::TimeWarn("\t",$invalid, "arcs invalid... Shuffling procedure starts again on those arcs", $loopcount, "iteration") if ($main::verbose >= 3);
+        &RSAT::message::TimeWarn("\t",$invalid, "invalid arcs... Shuffling procedure starts again on those arcs", $loopcount, "iteration") if ($main::verbose >= 3);
       }
 
       
@@ -772,7 +772,7 @@ sub create_random_graph_old {
       $rdm_graph_array[$cpt][3] = "#000088";
       $rdm_graph_array[$cpt][4] = "#000088";
       $rdm_graph_array[$cpt][5] = "#000044";
-      &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 3);
+      &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 5);
     }
     $count++;
   }
@@ -1019,7 +1019,7 @@ sub get_out_neighbours {
         push @out_neighbours_names, $out_neighbour_name;
       }
     } else {
-      &RSAT::message::Warning("Node $node_name has no out neighbours") if $main::verbose >= 3;
+      &RSAT::message::Warning("Node $node_name has no out neighbours") if ($main::verbose >= 4);
     }
     return @out_neighbours_names;
 }
@@ -1041,7 +1041,7 @@ returns an array contening the out neighbours of a node to a certain step self, 
 =cut
 sub get_neighbours_id {
   my ($self, $node_id, $step, $included, $weight) = @_;
-  &RSAT::message::Info("\t","Looking for neighbours of node", $node_id) if $main::verbose > 2;
+  &RSAT::message::Info("\t","Looking for neighbours of node", $node_id) if ($main::verbose > 5);
   my %node_id_name = $self->get_attribute("nodes_id_name");
   my @out_neighbours = $self->get_attribute("out_neighbours");
   my @in_neighbours = $self->get_attribute("in_neighbours");
@@ -1249,7 +1249,7 @@ sub get_out_neighbours_id {
       }
     } else {
       my $node_name = $self->node_by_id($numId);
-      &RSAT::message::Warning("Node $node_name has no out neighbours") if $main::verbose >= 3;;
+      &RSAT::message::Warning("Node $node_name has no out neighbours") if ($main::verbose >= 4);
     }
     return @out_neighbours_names;
 }
@@ -1932,7 +1932,7 @@ Usage	:	$graph->remove_duplicated_arcs($directed)
 sub remove_duplicated_arcs {
   my ($self, $directed) = @_;
   if ($main::verbose >= 2) {
-    &RSAT::message::TimeWarn("Remove duplicated edges");
+    &RSAT::message::TimeWarn("Removing duplicated edges");
   }
   my %seen;
   my %nodes_name_id = $self->get_attribute("nodes_name_id");
@@ -2012,7 +2012,7 @@ empty all tables composing the graph
 
 sub reload_graph {
   if ($main::verbose >= 2) {
-    &RSAT::message::TimeWarn("Reload graph");
+    &RSAT::message::TimeWarn("Reloading graph");
   }
   my ($self) = @_;
   my @out_neighbours =();
@@ -2176,7 +2176,7 @@ sub load_from_gml {
 	     $node_label,
 	     $node_index,
 	     $node_label)
-	     ) if ($main::verbose >= 3);
+	     ) if ($main::verbose >= 5);
 	  }
         }
       }
@@ -2265,7 +2265,7 @@ sub load_from_gml {
 				    "target=".$target_edge,
 				    "label=".$label_edge,
 				    "arccpt:".$arccpt)
-	  		      ) if ($main::verbose >= 3);
+	  		      ) if ($main::verbose >= 5);
         }
       }
     }
@@ -2407,7 +2407,7 @@ sub load_from_array {
 				      $source_name,
 				      $source_node_index, 
 				      $node_label)
-	 			     ) if ($main::verbose >= 3);
+	 			     ) if ($main::verbose >= 5);
 	}
 
 	## Target node
@@ -2429,7 +2429,7 @@ sub load_from_array {
 				      $target_name,
 				      $target_node_index, 
 				      $node_label)
-				     ) if ($main::verbose >= 3);
+				     ) if ($main::verbose >= 5);
 	}
 	## Create the arc
 	my $arc_label = "";
@@ -3215,7 +3215,7 @@ sub layout_spring_embedding {
 	&RSAT::message::Info("Arc", $i, $source, $target, 
 			     "factor=".$weight_factor, 
 			     "weight=".$weight, 
-			     "len=".$arc_index{$source}{$target}) if ($main::verbose >= 3);
+			     "len=".$arc_index{$source}{$target}) if ($main::verbose >= 5);
       }
     } else {
       &RSAT::message::Info("Non-weighted spring embedding") if ($main::verbose >= 1);
@@ -3708,7 +3708,7 @@ sub to_gml {
     $gml .= "	directed	1\n";
 
     ## Export nodes
-    &RSAT::message::Info("Exporting nodes") if $main::verbose >= 3;
+    &RSAT::message::Info("Exporting nodes") if ($main::verbose >= 3);
     while (($id, $node_name) = each %nodes_id_name) {
         my $label = $nodes_label{$id};
 	my $w = 1 + length($label)*$letter_width; ## label width
@@ -4126,7 +4126,7 @@ sub load_classes {
             $cluster_list{$family_name} = 1;
             $lines{$line}++;
           } else {
-            &RSAT::message::Warning("Node\t$node_name\talready in class\t$family_name\t.Skipped") if ($main::verbose >= 3);
+            &RSAT::message::Warning("Node\t$node_name\talready in class\t$family_name\t.Skipped") if ($main::verbose >= 4);
           }
         } else {
           &RSAT::message::Warning("Node\t$node_name\tdoes not exist in the graph") if ($main::verbose >= 3);
@@ -4225,7 +4225,7 @@ sub c_topology {
   print FWINPUTFILE $directed."\n" if ($floydwarshall !~ /ndir/);
   my $node_nb = scalar (keys %nodes_id_name);
   for (my $i = 0; $i < $node_nb; $i++) {
-    &RSAT::message::Info("Computing topology for node", $i."/".$node_nb) if ($main::verbose >= 3);
+    &RSAT::message::Info("Computing topology for node", $i."/".$node_nb) if ($main::verbose >= 5);
     @weight_list = @empty_array;
     @i_neighbours = ();
     @i_neighbours = (@i_neighbours, @{$out_neighbours[$i]}) if (defined $out_neighbours[$i]);
