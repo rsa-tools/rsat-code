@@ -1813,7 +1813,7 @@ sub GetSequence {
       foreach my $homology (@{$homologies}) {
 
       # You will find different kind of description UBRH, MBRH, MBRH, RHS, YoungParalogues see ensembl-compara/docs/docs/schema_doc.html for more details
-	&RSAT::message::Info("Homology type:",$homology->description,"Taxon:", $homology->subtype) if ($main::verbose >= 1);
+	&RSAT::message::Info("Homology type:",$homology->description,"Taxon:", $homology->taxonomy_level) if ($main::verbose >= 1);
 
 	# each homology relation have only 2 members, you should find there the initial member used in the first fetching
 #	foreach my $member_attribute (@{$homology->get_all_Members}) { # method depreceated from version 68
@@ -1851,12 +1851,12 @@ sub GetSequence {
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
 #		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
-		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $member->perc_id, $member->perc_pos, $member->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
+		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->taxonomy_level, $member->perc_id, $member->perc_pos, $member->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
 		}
 
 		if ($ortho_type) {
 		    if ($taxon) {
-			if (($homology->description =~ /$ortho_type/) && (lc($taxon) eq lc($homology->subtype))) {
+			if (($homology->description =~ /$ortho_type/) && (lc($taxon) eq lc($homology->taxonomy_level))) {	
 			    $taxon_filter_flag = 1;
 			    my $gene = $member->get_Gene;
 			    &Main($gene, $bin_name);
