@@ -238,6 +238,19 @@ _compile_seqlogo:
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}
 
+
+################################################################
+## Get the d3 javascript library, for motif clustering and dynamical display
+install_d3: _download_d3
+
+D3_URL=http://d3js.org/d3.v3.zip
+D3_DIR=${SRC_DIR}/d3.${D3_VERSION}
+D3_VERSION=v3
+D3_ARCHIVE=d3.${D3_VERSION}.zip
+_download_d3:
+	@mkdir -p ${D3_DIR}
+	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE}) 
+
 ################################################################
 ## Get and install the program ghostscript
 ## Note: for Mac users, please go to the ghostscript Web site
