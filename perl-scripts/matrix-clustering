@@ -36,9 +36,19 @@ RSAT makefile:
 
 =head1 AUTHORS
 
-Implementation : Jacques.van.Helden@ulb.ac.be
+=head2 Implementation
 
-Conception: Jacques van Helden, Carl Herrmann and Denis Thieffry.
+=item Jacques.van-Helden@univ-amu.fr
+
+=item Jaime Castro <jcastro@lcg.unam.mx>
+
+=head2 Conception
+
+=item Jacques van Helden
+
+=item Carl Herrmann
+
+=item Denis Thieffry
 
 =head1 CATEGORY
 
@@ -167,6 +177,10 @@ package main;
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
 	if ($main::verbose >= 2);
     }
+
+    ################################################################
+    ## Cluster the matrices
+    &CompareMatrices();
 
     ################################################################
     ## Cluster the matrices
@@ -339,14 +353,9 @@ sub Verbose {
     }
 }
 
-
-
 ################################################################
-## Compare each discovered motifs to each other, and with the
-## reference motif, identify clusters of similar motifs, and build
-## consensus motifs.
-sub ClusterMotifs {
-
+## Compare each discovered motifs to each other.
+sub CompareMatrices {
   ## Pariwise comparisons between discovered matrices.  We don't
   ## the option "distinct" in order to ensure that all the motifs are
   ## in the output graph even if they are not related to any other
@@ -383,6 +392,12 @@ sub ClusterMotifs {
   if ($main::param{score_column} == 0) {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
+}
+
+################################################################
+## Identify clusters of similar motifs, and build
+## consensus motifs.
+sub ClusterMotifs {
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
