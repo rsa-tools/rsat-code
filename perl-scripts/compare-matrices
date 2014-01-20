@@ -493,6 +493,8 @@ package main;
 				    "alignments_pairwise", ## Shifted matrices resulting from the pairwise alignments.
 				    "alignments_1ton", ## Shifted matrices resulting from the 1-to-N alignments.
 				    "alignments", ## Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+				    "matrix_desc", ## Description table for all the input motifs
+				    "logos", ## Logos of the input matrices
 				    "all", ## All supported output fields, including all metrics
 				);
   local %supported_return_field = ();
@@ -567,6 +569,7 @@ package main;
   ## Matrices
   local @matrices1 = ();
   local @matrices2 = ();
+  local @matrices = ();
 
   ## Matches
   local @match_ids = (); ## Identifiers of the matches
@@ -618,6 +621,11 @@ package main;
     }
     delete($return_field{all});
     delete($return_field{direction});
+  }
+
+  ## Description table requires consensus
+  if ($return_field{matrix_desc}) {
+    $return_field{consensus} = 1;
   }
 
   ## Field w is converted to width, for the Web interface
@@ -793,6 +801,12 @@ package main;
     &RSAT::util::CheckOutDir($dir{output});
     push @dirs, "output";
 
+    ## Matrix description file
+    if ($return_field{matrix_desc}) {
+      $main::outfile{matrix_desc} = $main::outfile{output_prefix}."_matrix_desc.tab";
+      push @outfiles, "matrix_desc";
+    }
+
     ## tab-delimited output file
     $main::outfile{match_table_txt} = $main::outfile{output_prefix}.".tab";
     push @outfiles, "match_table_txt";
@@ -800,7 +814,6 @@ package main;
     ## HTML-formatted table of matches
     $main::outfile{match_table_html} = $main::outfile{output_prefix}.".html";
     push @outfiles, "match_table_html";
-
 
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
@@ -881,15 +894,22 @@ package main;
 	print $main::alignments_1ton_html "<body>\n";
 	print $main::alignments_1ton_html "<h1>".$title."</h1>\n";
       }
+    }
+  }
 
-      ## Define directory for the logos
+
+  ## Define directory for the logos and create it if required
+  if (($return_field{alignments_pairwise}) ||
+      ($return_field{alignments_1ton}) ||
+      ($return_field{descr_table})){
+
       $main::dir{logos} = $main::outfile{match_table_txt};
       $main::dir{logos} =~ s/\.tab$//;
       $main::dir{logos} .= "_aligned_logos";
       push @dirs, "logos";
-    }
+      &CheckOutDir($dir{logos});
   }
-
+  
   ################################################################
   ## Output stream must be open in all cases, even if there is no
   ## output prefix (in which case results are printed on STDOUT).
@@ -948,8 +968,6 @@ package main;
     &RSAT::message::Warning("Selecting ".$main::top2." top motifs among ".scalar(@matrices2)." in file 2");
     @matrices2 = @matrices2[0..($main::top2-1)];
   }
-  my @matrices = @matrices1;
-  push @matrices, @matrices2  unless ($single_input_file);
 
 
   ## Skip initial matrices of the second input file if requested
@@ -963,10 +981,14 @@ package main;
     }
   }
 
+
+  ## Generate a list with all matrices
+  @matrices = @matrices1;
+  push @matrices, @matrices2  unless ($single_input_file);
+
   local $matrix_nb1 = scalar(@matrices1);
   local $matrix_nb2 = scalar(@matrices2);
   &RSAT::message::Info("Comparing ".$matrix_nb1." against ".$matrix_nb2." motifs.") if ($main::verbose >= 2);
-
 
 
   ################################################################
@@ -1083,27 +1105,30 @@ package main;
 
   ################################################################
   ## Compute the required parameters for each matrix
-  my $count_m=0;
+  my $m=0;
   foreach my $matrix (@matrices) {
-      $count_m ++;
-      ## Calculate the consensus for each matrix
-      $matrix->calcConsensus() if ($return_field{consensus});
-
-      ################################################################
-      ## Compute the number of sites as the maximal sum of counts
-      ## per column. Note that some matrices might have been built
-      ## from sites of varying lengths, so that the col sum is not
-      ## always the same for all the columns
-      my @counts = $matrix->getMatrix();
-      my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
-      my $nsites = &RSAT::stats::max(@counts_per_col);
-      $matrix->set_attribute("nsites", $nsites);
-      my $matrix_name = $matrix->get_attribute("name");
-      unless (defined($matrix_name)){
-	  $matrix->set_attribute("name","matrix1.".$count_m);
-	  $matrix_name=$matrix->get_attribute("name");
-      }
+    $m ++;
+    ## Calculate the consensus for each matrix
+    $matrix->calcConsensus() if ($return_field{consensus});
+    
+    ################################################################
+    ## Compute the number of sites as the maximal sum of counts
+    ## per column. Note that some matrices might have been built
+    ## from sites of varying lengths, so that the col sum is not
+    ## always the same for all the columns
+    my @counts = $matrix->getMatrix();
+    my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
+    my $nsites = &RSAT::stats::max(@counts_per_col);
+    $matrix->set_attribute("nsites", $nsites);
+    my $matrix_name = $matrix->get_attribute("name");
+    unless (defined($matrix_name)){
+      $matrix->set_attribute("name","matrix1.".$m);
+      $matrix_name=$matrix->get_attribute("name");
+    }
   }
+
+  ################################################################
+  ## Start the amtrix comparison
   &RSAT::message::TimeWarn("Starting comparison between",
 			   scalar(@matrices1) , "matrices from file 1 and ",
 			   scalar(@matrices2) , "matrices from file 2.",
@@ -1251,6 +1276,51 @@ package main;
   }
   print $out "#", join("\t", @header), "\n";
 
+  ################################################################
+  ## Generate logos for all input matrices (these logos will be used by cluster-motifs)
+  if ($return_field{logos}) {
+    &RSAT::message::TimeWarn("Generating logos for the input matrices") if ($main::verbose >= 2);
+    my $m=0;
+    foreach my $matrix (@matrices) {
+      $m ++;
+      &RSAT::message::Debug("Generating logo for matrix", $m, $matrix->get_attribute("id")) if ($main::verbose >= 0);
+      my $logo_file = $dir{logos}."/".$matrix->get_attribute("id");
+      $matrix->makeLogo($logo_file, "", " -h 3", 0);
+      $matrix->force_attribute("logo_file", $logo_file);
+    }
+  }
+
+
+  ################################################################
+  ## Export a description of the matrices
+  if ($return_field{matrix_desc}) {
+    &RSAT::message::TimeWarn("Generating description table for the input matrices") if ($main::verbose >= 2);
+    $main::matrix_desc = &OpenOutputFile($main::outfile{matrix_desc});
+    
+    ## Print header
+    print $matrix_desc join ("\t", 
+			     "#n",
+			     "id",
+			     "name",
+			     "width",
+			     "consensus",
+			     "logo_file",
+	), "\n";
+
+    my $m=0;
+    foreach my $matrix (@matrices) {
+      $m ++;
+      print $matrix_desc join ("\t", 
+			       $m,
+			       $matrix->get_attribute("id"),
+			       $matrix->get_attribute("name"),
+			       $matrix->get_attribute("ncol"),
+			       $matrix->get_attribute("consensus.IUPAC"),
+			       $matrix->get_attribute("logo_file"),
+	  ), "\n";
+    }
+    close $main::matrix_desc;
+  }
 
   ################################################################
   ## Compare the matrices and print the result
