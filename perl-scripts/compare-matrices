@@ -415,6 +415,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 require "RSA.disco.lib";
+use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::stats;
@@ -898,18 +899,28 @@ package main;
   }
 
 
-  ## Define directory for the logos and create it if required
-  if (($return_field{alignments_pairwise}) ||
-      ($return_field{alignments_1ton}) ||
-      ($return_field{descr_table})){
 
+  ## Define directory for the logos of input matrices and create it if required
+  if ($return_field{logos}) {
       $main::dir{logos} = $main::outfile{match_table_txt};
       $main::dir{logos} =~ s/\.tab$//;
-      $main::dir{logos} .= "_aligned_logos";
+      $main::dir{logos} .= "_logos";
       push @dirs, "logos";
-      &CheckOutDir($dir{logos});
+      &RSAT::util::CheckOutDir($dir{logos});
+  }
+
+  ## Define directory for the aligned logos and create it if required
+  if (($return_field{alignments_pairwise}) ||
+      ($return_field{alignments_1ton})) {
+      $main::dir{aligned_logos} = $main::outfile{match_table_txt};
+      $main::dir{aligned_logos} =~ s/\.tab$//;
+      $main::dir{aligned_logos} .= "_aligned_logos";
+      push @dirs, "aligned_logos";
+      &RSAT::util::CheckOutDir($dir{aligned_logos});
   }
   
+
+
   ################################################################
   ## Output stream must be open in all cases, even if there is no
   ## output prefix (in which case results are printed on STDOUT).
@@ -1279,12 +1290,12 @@ package main;
   ################################################################
   ## Generate logos for all input matrices (these logos will be used by cluster-motifs)
   if ($return_field{logos}) {
-    &RSAT::message::TimeWarn("Generating logos for the input matrices") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Generating logos for the input matrices", $dir{logos}) if ($main::verbose >= 2);
     my $m=0;
     foreach my $matrix (@matrices) {
       $m ++;
-      &RSAT::message::Debug("Generating logo for matrix", $m, $matrix->get_attribute("id")) if ($main::verbose >= 0);
       my $logo_file = $dir{logos}."/".$matrix->get_attribute("id");
+      &RSAT::message::Info("Generating logo for matrix", $m, $matrix->get_attribute("id"), $logo_file) if ($main::verbose >= 3);
       $matrix->makeLogo($logo_file, "", " -h 3", 0);
       $matrix->force_attribute("logo_file", $logo_file);
     }
@@ -2269,8 +2280,8 @@ sub PairwiseAlignments {
     print $alignments_pairwise $matrix2_string;
 
     ## Generate a sequence logo for the HTML output file
-    my $logo1_file = $main::dir{logos}."/".$matrix1_shifted->get_attribute("id");
-#    $matrix1_shifted->makeLogo($logo1_file, "", $main::dir{logos}, " -h 3", 0);
+    my $logo1_file = $main::dir{aligned_logos}."/".$matrix1_shifted->get_attribute("id");
+#    $matrix1_shifted->makeLogo($logo1_file, "", $main::dir{aligned_logos}, " -h 3", 0);
     $matrix1_shifted->makeLogo($logo1_file, "", " -h 3", 0);
     my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo1_file.".png");
     $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
@@ -2281,8 +2292,8 @@ sub PairwiseAlignments {
     print $alignments_pairwise_html "</tr>\n";
 
     ## Generate a sequence logo for the HTML output file
-    my $logo2_file = $main::dir{logos}."/".$matrix2_shifted->get_attribute("id");
-#    $matrix2_shifted->makeLogo($logo2_file, "", $main::dir{logos}, " -h 3", $rc);
+    my $logo2_file = $main::dir{aligned_logos}."/".$matrix2_shifted->get_attribute("id");
+#    $matrix2_shifted->makeLogo($logo2_file, "", $main::dir{aligned_logos}, " -h 3", $rc);
     $matrix2_shifted->makeLogo($logo2_file, "", " -h 3", $rc);
     my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo2_file.".png");
     $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
@@ -2305,8 +2316,8 @@ sub PairwiseAlignments {
       print $alignments_pairwise $merged_matrix_string;
 
       ## Generate a sequence logo for the merged matrix
-      my $logo_file = $main::dir{logos}."/".$id_align;
-#      $merged_matrix->makeLogo($logo_file, "", $main::dir{logos}, " -h 3", 0);
+      my $logo_file = $main::dir{aligned_logos}."/".$id_align;
+#      $merged_matrix->makeLogo($logo_file, "", $main::dir{aligned_logos}, " -h 3", 0);
       $merged_matrix->makeLogo($logo_file, "", " -h 3", 0);
       my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo_file.".png");
       $merged_matrix_string =~ s|//\n||mg;
@@ -2524,8 +2535,8 @@ sub PrintAlignedMatrices {
     print $alignments_1ton $matrix_string;
 
     ## Generate a sequence logo for the HTML output file
-    my $logo_file = $main::dir{logos}."/".$shifted_matrix->get_attribute("id");
-#    $shifted_matrix->makeLogo($logo_file, "", $main::dir{logos}, " -h 3", $rc);
+    my $logo_file = $main::dir{aligned_logos}."/".$shifted_matrix->get_attribute("id");
+#    $shifted_matrix->makeLogo($logo_file, "", $main::dir{aligned_logos}, " -h 3", $rc);
     $shifted_matrix->makeLogo($logo_file, "", " -h 3", $rc);
     my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_1ton_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
@@ -3122,6 +3133,19 @@ Shifted matrices resulting from the 1-to-N alignments.
 =item I<alignments>
 
 Shifted matrices resulting from the alignments (pairwise and 1-to-N).
+
+=item I<logos>
+
+Draw logos of each input matrix.  
+
+These logos are independent from the (shifted) logos of the aligned
+matrices, returned with the options I<-return alignments_pairwise> and
+I<-return alignments_1ton>.
+
+=item I<matrix_desc>
+
+A tab-delimited file contanin a description of the input matrices,
+wich one row per matrix, and one column per attribute.
 
 =item I<all>
 
