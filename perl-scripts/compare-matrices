@@ -1294,7 +1294,7 @@ package main;
     my $m=0;
     foreach my $matrix (@matrices) {
       $m ++;
-      my $logo_file = $dir{logos}."/".$matrix->get_attribute("id");
+      my $logo_file = $dir{logos}."/".$matrix->get_attribute("id").".png";
       &RSAT::message::Info("Generating logo for matrix", $m, $matrix->get_attribute("id"), $logo_file) if ($main::verbose >= 3);
       $matrix->makeLogo($logo_file, "", " -h 3", 0);
       $matrix->force_attribute("logo_file", $logo_file);
