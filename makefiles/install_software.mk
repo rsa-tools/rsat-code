@@ -233,7 +233,7 @@ _download_seqlogo:
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 _compile_seqlogo:
-	@echo "Installing seqlogo"
+	@echo "Installing seqlogo in dir	${BIN_DIR}"
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}
@@ -271,7 +271,7 @@ _download_gs:
 	@echo "gs dir	${GS_DIR}"
 
 _compile_gs:
-	@echo "Installing gs"
+	@echo "Compiling gs"
 	(cd ${GS_DIR}/${GS_VER}; ./configure && make)
 
 ################################################################
@@ -289,7 +289,7 @@ _download_gnuplot:
 	@echo "gnuplot dir	${GNUPLOT_DIR}"
 
 _compile_gnuplot:
-	@echo "Installing gnuplot"
+	@echo "Compiling and installing gnuplot"
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; ./configure && make; ${SUDO} make install)
 
 
@@ -354,7 +354,7 @@ BED_SRC_DIR=${BED_DOWNLOAD_DIR}
 BED_BIN_DIR=${BED_SRC_DIR}/bin
 _compile_bedtools:
 	@echo
-	@echo "Installing bedtools from ${BED_SRC_DIR}"
+	@echo "Compiling bedtools from ${BED_SRC_DIR}"
 	@echo
 	@mkdir -p ${BED_SRC_DIR}
 	(cd ${BED_SRC_DIR}; make clean; make)
@@ -417,7 +417,7 @@ MEME_COMPILE_DIR=${MEME_INSTALL_DIR}
 MEME_BIN_DIR=${MEME_COMPILE_DIR}/bin
 _compile_meme:
 	@echo
-	@echo "Installing MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
+	@echo "Compiling MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
 	@mkdir -p ${MEME_INSTALL_DIR}
 	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
 #	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
@@ -478,7 +478,7 @@ MCL_COMPILE_DIR=`dirname ${BIN_DIR}`
 MCL_BIN_DIR=${BIN_DIR}
 _compile_mcl:
 	@echo
-	@echo "Installing MCL"
+	@echo "Installing MCL in dir ${MCL_BIN_DIR}"
 	@mkdir -p ${MCL_COMPILE_DIR}
 	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_COMPILE_DIR} ; \
 	make clean; make ; ${SUDO} make install)
@@ -502,7 +502,7 @@ _download_rnsc:
 
 _compile_rnsc:
 	@echo
-	@echo "Installing RNSC"
+	@echo "Installing RNSC in dir ${BIN_DIR}"
 	@${SUDO} mkdir -p ${BIN_DIR}
 	(cd ${RNSC_BASE_DIR}; make ;  \
 	${SUDO} rsync -ruptvl rnsc ${BIN_DIR}; \
@@ -632,7 +632,7 @@ _download_patser:
 	@echo "patser dir	${PATSER_DIR}"
 
 _compile_patser:
-	@echo "Installing patser"
+	@echo "Installing patser in dir	${BIN_DIR}"
 	(cd ${PATSER_DIR}; rm *.o; make)
 	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${BIN_DIR}
 	(cd ${BIN_DIR}; ${SUDO} ln -fs ${PATSER_APP} patser)
@@ -697,7 +697,7 @@ TOPHAT_COMPILE_DIR=`dirname ${BIN_DIR}`
 TOPHAT_BIN_DIR=${TOPHAT_COMPILE_DIR}/bin
 _compile_tophat:
 	@echo
-	@echo "Installing TopHat"
+	@echo "Compiling and installing TopHat"
 	@mkdir -p ${TOPHAT_COMPILE_DIR}
 	(cd ${TOPHAT_DISTRIB_DIR}; ./configure --prefix=${TOPHAT_COMPILE_DIR}; \
 	make ; ${SUDO} make install)
