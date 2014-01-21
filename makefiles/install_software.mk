@@ -234,9 +234,9 @@ _download_seqlogo:
 
 _compile_seqlogo:
 	@echo "Installing seqlogo in dir	${BIN_DIR}"
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}/
 
 
 ################################################################
@@ -364,7 +364,7 @@ _install_bedtools:
 	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${BIN_DIR}"
 	@echo
 	@mkdir -p ${BIN_DIR}
-	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}
+	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}/
 
 ################################################################
 ## Install Biotoolbox
@@ -510,7 +510,7 @@ _compile_rnsc:
 	)
 	@echo "Please check that RNSC bin directory in your path."
 	@echo "	${BIN_DIR}"
-#	${SUDO} rsync -ruptvl rnscconvert ${BIN_DIR}; \
+#	${SUDO} rsync -ruptvl rnscconvert ${BIN_DIR}/; \
 
 ################################################################
 ## Install BLAST
@@ -759,7 +759,7 @@ _compile_peaksplitter_linux:
 	${MAKE} __compile_peaksplitter OS=Linux64
 
 __compile_peaksplitter:
-	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
+	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR}/)
 
 ################################################################
 ## FindPeaks
@@ -927,7 +927,7 @@ _compile_bowtie_os:
 	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
 	(cd ${BOWTIE_BASE_DIR}; unzip ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
-	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
 
 ################################################################
 ## Install  Cis-regulatory Element Annotation System  (CEAS)
@@ -978,7 +978,7 @@ _compile_samtools:
 	(cd ${SAMTOOLS_BASE_DIR}; tar --bzip2 -xpf ${SAMTOOLS_ARCHIVE})
 	@echo ${SAMTOOLS_DISTRIB_DIR}
 	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
-	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
 
 ################################################################
 ## Install  SRA toolkit
@@ -1002,7 +1002,7 @@ _compile_sra:
 	(cd ${SRA_BASE_DIR}; tar --bzip2 -xpf ${SRA_ARCHIVE})
 	@echo ${SRA_DISTRIB_DIR}
 	(cd ${SRA_DISTRIB_DIR}; make)
-	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
 
 ################################################################
 ## Install  SWEMBL
@@ -1024,7 +1024,7 @@ _compile_swembl:
 	@echo "Installing SWEMBL in dir	${SWEMBL_DISTRIB_DIR}"
 	(cd ${SWEMBL_BASE_DIR}; tar --bzip2 -xpf ${SWEMBL_ARCHIVE})
 	@echo ${SWEMBL_DISTRIB_DIR}
-	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR})
+	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR}/)
 
 ################################################################
 ## Internet Genome Browser
