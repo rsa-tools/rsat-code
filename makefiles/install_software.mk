@@ -249,7 +249,9 @@ D3_VERSION=v3
 D3_ARCHIVE=d3.${D3_VERSION}.zip
 _download_d3:
 	@mkdir -p ${D3_DIR}
-	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE}) 
+	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE} ; \
+		wget http://mbostock.github.com/d3/d3.js \
+		wget http://mbostock.github.com/d3/d3.layout.js) 
 
 ################################################################
 ## Get and install the program ghostscript
