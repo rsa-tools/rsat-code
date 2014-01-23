@@ -114,6 +114,7 @@ package main;
 
     ## Matrices
     local @matrices = ();
+    local $matrix_num = 0;
 
 
     ################################################################
@@ -587,6 +588,7 @@ sub Add_attributes_to_JSON(){
     ## Read the JSON file and add the link data to each node
 
     $line = "";
+    $matrix_num = 0;
 
     ### Open the JSON file 
     open(JSON, $main::outfile{raw_json}) || &RSAT::error::FatalError($main::outfile{raw_json}, "Cannot open the JSON file");
@@ -599,14 +601,16 @@ sub Add_attributes_to_JSON(){
 	### Search the pattern separating the matrices names
 	if($line =~ /\s*\"name\":\s*\"(.+)\",/){
 
-	   $Flag = 1;
-	   ($M1, $Add_this) = "";
-	   $M1 = $1;
-			
-	   ### Create the line that will be added to JSON file
-	   $Add_this = "\"image\" : \"".$matrix_info{$M1}."\", ";
-	   $Add_this .= "\"url\" : \"".$matrix_info{$M1}."\"";
-	   #print $Add_this."\n";
+	    $matrix_num++;
+	    $Flag = 1;
+	    ($M1, $Add_this) = "";
+	    $M1 = $1;
+	    
+	    ### Create the line that will be added to JSON file
+	    $Add_this = "\"image\" : \"file://".$matrix_info{$M1}{logo_file}.".png\", ";
+	    $Add_this .= "\"url\" : \"file://".$matrix_info{$M1}{logo_file}.".png\", ";
+	    $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
+	    #print $Add_this."\n";
 	}
 	push(@Parsed_JSON, $line."\n");
 	
@@ -614,7 +618,7 @@ sub Add_attributes_to_JSON(){
 	if($Flag){push(@Parsed_JSON, $Add_this."\n");}
     }
     close(JSON);
-
+    
     ### Create the JSON parsed FILE
     open(PARSED_JSON, ">".$main::outfile{parsed_json}) || &RSAT::error::FatalError($main::outfile{parsed_json}, "Cannot create the PARSED JSON file");
     print PARSED_JSON @Parsed_JSON;
@@ -629,11 +633,20 @@ sub Add_attributes_to_JSON(){
 ## display the tree
 sub Create_html_tree_file(){
     
-    system("cp ".$ENV{RSAT}."/public_html/Display_tree.html ".$main::outfile{tree_html});
+    $matrix_num += 2;
+    system("cp ".$ENV{RSAT}."public_html/lib/display_d3_tree.html ".$main::outfile{tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{tree_html}) || &RSAT::error::FatalError($main::outfile{tree_html}, "Cannot found the HTML tree file");
     while(<TREE>){
 	chomp;
+
+	### Add the d3 library path
+	$_ =~ s|src=\"\"|src=\"$ENV{RSAT}/public_html/lib/d3/d3.v3.js\"|;
+
+	### Set the height 
+	$_ =~ s/\s+height =,/\t\theight = 250 * $matrix_num,/;
+
+	### Add the JSON file name
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$main::outfile{parsed_json}\"/;
 	print TEMP $_."\n";
     }
