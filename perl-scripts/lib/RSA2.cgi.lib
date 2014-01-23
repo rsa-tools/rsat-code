@@ -1692,7 +1692,7 @@ sub EmailTheResult {
     unless ($no_email) {
       my $submission_mail_command = "echo \"".$submission_message."\" ";
       $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
-      print "<PRE>Mail: $submission_mail_command</PRE>" if ($ENV{rsat_echo} >= 2);
+      print "<pre>Mail: $submission_mail_command</pre>" if ($ENV{rsat_echo} >= 2);
       system($submission_mail_command);
     }
 
@@ -2672,7 +2672,13 @@ sub PrintFileLinks {
 
 ################################################################
 ## Generate a HTML index with links to all input/output files
+##
+## Supported arguments
+##  img_height
+##  img_width
 sub IndexFiles {
+  my (%args) = @_;
+
   &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
 
   ## Input files
@@ -2731,7 +2737,15 @@ sub IndexFiles {
       print $html_index "<tr>\n";
       print $html_index "<td>".$key."</td>";
       print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-      print $html_index "<td><a href='".$link."'><img width='200' src='".$link."'></a></td>";
+
+      print $html_index "<td><a href='".$link."'><img";
+      if (&IsReal($args{img_width})) {
+	print $html_index " width='".$args{img_width}."'";
+      }
+      if (&IsReal($args{img_height})) {
+	print $html_index " height='".$args{img_height}."'";
+      }
+      print $html_index " src='".$link."'></a></td>";
 
       ## A special trick for sequence logos: check the reverse complement
       if ($file =~ /(_logo_m\d+)/) {
@@ -2739,7 +2753,14 @@ sub IndexFiles {
 	my $rc_file = $file;
 	$rc_file =~ s/${suffix}/${suffix}_rc/;
 	my $rc_link = &RSAT::util::RelativePath($main::outfile{html_index}, $rc_file);
-	print $html_index "<td><a href='".$rc_link."'><img width='200' src='".$rc_link."'></a></td>";	  print $html_index "<td></td>";
+	print $html_index "<td><a href='".$rc_link."'><img";
+	if (defined($args{img_width})) {
+	  print $html_index " width='".$args{img_width}."'";
+	}
+	if (defined($args{img_height})) {
+	  print $html_index " height='".$args{img_height}."'";
+	}
+	print $html_index " src='".$rc_link."'></a></td>";	  print $html_index "<td></td>";
       }
 
       print $html_index "</tr>\n";
