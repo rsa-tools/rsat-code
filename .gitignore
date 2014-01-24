@@ -26,7 +26,7 @@ public_html/images/RSAT_icon.jpg
 makefile
 bioperl-live
 .DS_Store
-lib
+./lib
 app_sources
 distrib_accounts
 contrib/kwalks/bin/lkwalk
