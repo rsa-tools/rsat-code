@@ -51,7 +51,7 @@ if ($fs_directedgraph =="directedgraph") {
   $argumenta .= " -J -Q ";
 }
 
-$argumenta .= " -gd ". $groupdescriptor;
+$argumenta .= " -prefix ". $groupdescriptor;
 #$exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
 
 ////////////////////////////////////////////////////////////////
