@@ -8,18 +8,14 @@ include ${RSAT}/RSAT_config.mk
 V=1
 
 ################################################################
-### commands
+## commands
 MAKEFILE=makefile
 MAKE=make -s -f ${MAKEFILE}
-DATE=`date +%Y-%m-%d_%Hh%Mm%Ss`
-
+DATE=`date +%Y-%M-%d_%H:%M:%S`
 SSH_OPT = -e ssh 
 RSYNC_OPT= -ruptvlz  ${SSH_OPT} 
 RSYNC = rsync  ${RSYNC_OPT}
-
 WGET=wget --passive-ftp -np -rNL
-
-DATE=`date +%Y-%M-%d_%H:%M:%S`
 
 ################################################################
 #### list of targets
