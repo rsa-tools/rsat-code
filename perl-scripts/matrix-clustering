@@ -634,12 +634,12 @@ sub Add_attributes_to_JSON(){
 sub Create_html_tree_file(){
     
     $matrix_num += 2;
-    system("cp ".$ENV{RSAT}."public_html/lib/display_d3_tree.html ".$main::outfile{tree_html});
+    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{tree_html}) || &RSAT::error::FatalError($main::outfile{tree_html}, "Cannot found the HTML tree file");
     while(<TREE>){
 	chomp;
-
+	
 	### Add the d3 library path
 	$_ =~ s|src=\"\"|src=\"$ENV{RSAT}/public_html/lib/d3/d3.v3.js\"|;
 
