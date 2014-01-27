@@ -233,10 +233,10 @@ _download_seqlogo:
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 _compile_seqlogo:
-	@echo "Installing seqlogo"
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}
+	@echo "Installing seqlogo in dir	${BIN_DIR}"
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}/
 
 
 ################################################################
@@ -249,7 +249,9 @@ D3_VERSION=v3
 D3_ARCHIVE=d3.${D3_VERSION}.zip
 _download_d3:
 	@mkdir -p ${D3_DIR}
-	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE}) 
+	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE} ; \
+		wget http://mbostock.github.com/d3/d3.js \
+		wget http://mbostock.github.com/d3/d3.layout.js) 
 
 ################################################################
 ## Get and install the program ghostscript
@@ -271,7 +273,7 @@ _download_gs:
 	@echo "gs dir	${GS_DIR}"
 
 _compile_gs:
-	@echo "Installing gs"
+	@echo "Compiling gs"
 	(cd ${GS_DIR}/${GS_VER}; ./configure && make)
 
 ################################################################
@@ -289,7 +291,7 @@ _download_gnuplot:
 	@echo "gnuplot dir	${GNUPLOT_DIR}"
 
 _compile_gnuplot:
-	@echo "Installing gnuplot"
+	@echo "Compiling and installing gnuplot"
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; ./configure && make; ${SUDO} make install)
 
 
@@ -354,7 +356,7 @@ BED_SRC_DIR=${BED_DOWNLOAD_DIR}
 BED_BIN_DIR=${BED_SRC_DIR}/bin
 _compile_bedtools:
 	@echo
-	@echo "Installing bedtools from ${BED_SRC_DIR}"
+	@echo "Compiling bedtools from ${BED_SRC_DIR}"
 	@echo
 	@mkdir -p ${BED_SRC_DIR}
 	(cd ${BED_SRC_DIR}; make clean; make)
@@ -364,7 +366,7 @@ _install_bedtools:
 	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${BIN_DIR}"
 	@echo
 	@mkdir -p ${BIN_DIR}
-	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}
+	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}/
 
 ################################################################
 ## Install Biotoolbox
@@ -417,7 +419,7 @@ MEME_COMPILE_DIR=${MEME_INSTALL_DIR}
 MEME_BIN_DIR=${MEME_COMPILE_DIR}/bin
 _compile_meme:
 	@echo
-	@echo "Installing MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
+	@echo "Compiling MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
 	@mkdir -p ${MEME_INSTALL_DIR}
 	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
 #	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
@@ -478,7 +480,7 @@ MCL_COMPILE_DIR=`dirname ${BIN_DIR}`
 MCL_BIN_DIR=${BIN_DIR}
 _compile_mcl:
 	@echo
-	@echo "Installing MCL"
+	@echo "Installing MCL in dir ${MCL_BIN_DIR}"
 	@mkdir -p ${MCL_COMPILE_DIR}
 	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_COMPILE_DIR} ; \
 	make clean; make ; ${SUDO} make install)
@@ -502,7 +504,7 @@ _download_rnsc:
 
 _compile_rnsc:
 	@echo
-	@echo "Installing RNSC"
+	@echo "Installing RNSC in dir ${BIN_DIR}"
 	@${SUDO} mkdir -p ${BIN_DIR}
 	(cd ${RNSC_BASE_DIR}; make ;  \
 	${SUDO} rsync -ruptvl rnsc ${BIN_DIR}; \
@@ -510,7 +512,7 @@ _compile_rnsc:
 	)
 	@echo "Please check that RNSC bin directory in your path."
 	@echo "	${BIN_DIR}"
-#	${SUDO} rsync -ruptvl rnscconvert ${BIN_DIR}; \
+#	${SUDO} rsync -ruptvl rnscconvert ${BIN_DIR}/; \
 
 ################################################################
 ## Install BLAST
@@ -632,7 +634,7 @@ _download_patser:
 	@echo "patser dir	${PATSER_DIR}"
 
 _compile_patser:
-	@echo "Installing patser"
+	@echo "Installing patser in dir	${BIN_DIR}"
 	(cd ${PATSER_DIR}; rm *.o; make)
 	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${BIN_DIR}
 	(cd ${BIN_DIR}; ${SUDO} ln -fs ${PATSER_APP} patser)
@@ -697,7 +699,7 @@ TOPHAT_COMPILE_DIR=`dirname ${BIN_DIR}`
 TOPHAT_BIN_DIR=${TOPHAT_COMPILE_DIR}/bin
 _compile_tophat:
 	@echo
-	@echo "Installing TopHat"
+	@echo "Compiling and installing TopHat"
 	@mkdir -p ${TOPHAT_COMPILE_DIR}
 	(cd ${TOPHAT_DISTRIB_DIR}; ./configure --prefix=${TOPHAT_COMPILE_DIR}; \
 	make ; ${SUDO} make install)
@@ -759,7 +761,7 @@ _compile_peaksplitter_linux:
 	${MAKE} __compile_peaksplitter OS=Linux64
 
 __compile_peaksplitter:
-	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR})
+	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR}/)
 
 ################################################################
 ## FindPeaks
@@ -927,7 +929,7 @@ _compile_bowtie_os:
 	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
 	(cd ${BOWTIE_BASE_DIR}; unzip ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
-	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
 
 ################################################################
 ## Install  Cis-regulatory Element Annotation System  (CEAS)
@@ -978,7 +980,7 @@ _compile_samtools:
 	(cd ${SAMTOOLS_BASE_DIR}; tar --bzip2 -xpf ${SAMTOOLS_ARCHIVE})
 	@echo ${SAMTOOLS_DISTRIB_DIR}
 	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
-	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
 
 ################################################################
 ## Install  SRA toolkit
@@ -1002,7 +1004,7 @@ _compile_sra:
 	(cd ${SRA_BASE_DIR}; tar --bzip2 -xpf ${SRA_ARCHIVE})
 	@echo ${SRA_DISTRIB_DIR}
 	(cd ${SRA_DISTRIB_DIR}; make)
-	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR} \;
+	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
 
 ################################################################
 ## Install  SWEMBL
@@ -1024,7 +1026,7 @@ _compile_swembl:
 	@echo "Installing SWEMBL in dir	${SWEMBL_DISTRIB_DIR}"
 	(cd ${SWEMBL_BASE_DIR}; tar --bzip2 -xpf ${SWEMBL_ARCHIVE})
 	@echo ${SWEMBL_DISTRIB_DIR}
-	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR})
+	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR}/)
 
 ################################################################
 ## Internet Genome Browser
