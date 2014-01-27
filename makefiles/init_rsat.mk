@@ -164,7 +164,6 @@ compile_compare_matrices_quick:
 install_rsat_extra:
 	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_seqlogo
 
-
 ################################################################
 ## Compile the NeAT tools (network analysis + pathway analysis)
 
@@ -217,6 +216,7 @@ check_lkwalk_help:
 
 ################################################################
 ## Compile REA (shortest path finding algorithm)
+
 compile_rea:
 	@echo "Compiling REA"
 	@(cd ${RSAT}/contrib/REA/; \
@@ -225,6 +225,10 @@ compile_rea:
 	@chmod 777 ${RSAT}/contrib/REA
 	@echo "Executable	 ${BIN}/REA"
 	@${MAKE} check_rea_config
+
+## Specific configuration to compile REA on Mac OSX
+compile_rea_macosx:
+	${MAKE} compile_rea CFLAGS='-O3 -Wall -I.'
 
 check_rea_config:
 	@echo
