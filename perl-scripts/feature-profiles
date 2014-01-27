@@ -150,8 +150,14 @@ package main;
   ################################################################
   ## Check argument values
 
+  unless ($prefix{output}) {
+    &RSAT::error::FatalError("You must specify an output prefix (option -o)");
+  }
+
   ################################################################
   ## Open output stream
+
+  $outfile{output} = $prefix{outfile}.".tab";
   $out = &OpenOutputFile($outfile{output});
 
   ################################################################
@@ -406,14 +412,14 @@ respectively.
 
 =pod
 
-=item	B<-o outputfile>
+=item	B<-o output_prefix>
 
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
+Output prefix is mandatory, because this program can produce several
+output files.
 
 =cut
     } elsif ($arg eq "-o") {
-      $outfile{output} = shift(@arguments);
+      $prefix{output} = shift(@arguments);
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
