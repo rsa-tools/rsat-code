@@ -53,7 +53,8 @@
 
 
 	var cluster = d3.layout.cluster()
-		.size([height, width - 1200]);
+		.size([height, width - 1200])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 0.3 : 0.3); });
 
 
 	var svg = d3.select("body").append("svg")
