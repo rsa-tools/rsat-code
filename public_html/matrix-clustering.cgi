@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
-############################################ imports
-### redirect error log to a file
+############################################ 
+## redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
