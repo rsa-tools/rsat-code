@@ -644,7 +644,7 @@ sub Create_html_tree_file(){
 	$_ =~ s|src=\"\"|src=\"$ENV{RSAT}/public_html/lib/d3/d3.v3.js\"|;
 
 	### Set the height 
-	$_ =~ s/\s+height =,/\t\theight = 250 * $matrix_num,/;
+	$_ =~ s/\s+height =,/\t\theight = 150 * $matrix_num,/;
 
 	### Add the JSON file name
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$main::outfile{parsed_json}\"/;
@@ -665,3 +665,4 @@ sub Create_html_tree_file(){
 ## Set the tree heigth: 150 * num_motifs
 
 __END__
+
