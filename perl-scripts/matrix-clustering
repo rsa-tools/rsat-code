@@ -114,6 +114,7 @@ package main;
 
     ## Matrices
     local @matrices = ();
+    local @temp = ();
     local $matrix_num = 0;
 
 
@@ -180,7 +181,6 @@ package main;
 
     $main::outfile{raw_json} = $main::outfile{prefix}."_json_tree.json";
     $main::outfile{parsed_json} = $main::outfile{prefix}."_parsed_json_tree.json";
-#    $main::outfile{attr_json} = $main::outfile{prefix}."_attributes_json.txt";
     $main::outfile{attr_json} = $main::outfile{prefix}."_compa_matrix_desc.tab";
     $main::outfile{tree_html} = $main::outfile{prefix}."_clustering_tree.html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
@@ -589,6 +589,7 @@ sub Add_attributes_to_JSON(){
 
     $line = "";
     $matrix_num = 0;
+    chomp($path = `pwd`);
 
     ### Open the JSON file 
     open(JSON, $main::outfile{raw_json}) || &RSAT::error::FatalError($main::outfile{raw_json}, "Cannot open the JSON file");
@@ -607,8 +608,8 @@ sub Add_attributes_to_JSON(){
 	    $M1 = $1;
 	    
 	    ### Create the line that will be added to JSON file
-	    $Add_this = "\"image\" : \"file://".$matrix_info{$M1}{logo_file}.".png\", ";
-	    $Add_this .= "\"url\" : \"file://".$matrix_info{$M1}{logo_file}.".png\", ";
+	    $Add_this = "\"image\" : \"file://".$path."/".$matrix_info{$M1}{logo_file}.".png\", ";
+	    $Add_this .= "\"url\" : \"file://".$path."/".$matrix_info{$M1}{logo_file}.".png\", ";
 	    $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
 	    #print $Add_this."\n";
 	}
@@ -647,7 +648,10 @@ sub Create_html_tree_file(){
 	$_ =~ s/\s+height =,/\t\theight = 150 * $matrix_num,/;
 
 	### Add the JSON file name
-	$_ =~ s/^\s+d3.json\(/d3.json\(\"$main::outfile{parsed_json}\"/;
+	@temp = split(m|/|,$main::outfile{parsed_json});
+	$json_file_name = pop(@temp);
+
+	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
 	print TEMP $_."\n";
     }
     close(TREE);
