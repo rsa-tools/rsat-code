@@ -51,3 +51,4 @@ CVS
 public_html/rsat
 ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
 ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
+available_species_ensembl*
