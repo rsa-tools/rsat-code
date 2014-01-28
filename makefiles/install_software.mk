@@ -129,7 +129,7 @@ install_python_suds: _download_python_suds _compile_python_suds
 
 PYTHON_LIBS=SUDS Rpy2
 install_python_libs:
-	@for lib in ${PYTHON_LIBS} ; don \
+	@for lib in ${PYTHON_LIBS} ; do \
 		${SUDO} easy_install $${lib}; \
 	done
 
