@@ -206,6 +206,21 @@ _install_one_perl_module:
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ################################################################
+## Install R modules required for some RSAT scripts
+R_MODULES=RJSONIO
+install_r_modules:
+	@echo
+	@echo "Installing R modules"
+	@for m in ${R_MODULES}; do \
+		${MAKE} install_one_r_module R_MODULE=$${m}; \
+	done
+
+R_MODULE=RJSONIO
+install_one_r_module:
+	${SUDO} R CMD INSTALL ${R_MODULE}
+
+
+################################################################
 ## Install tex-live for generating the doc
 ##
 ## I found the instructions here:
