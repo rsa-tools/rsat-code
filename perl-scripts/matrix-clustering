@@ -82,6 +82,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
@@ -175,32 +176,59 @@ package main;
     &RSAT::util::CheckOutDir($dir{output});
     push @dirs, "output";
 
+    ## Directory containing the matrix logos (to be displayed in the HTML tree)
+    $dir{logos} = $main::outfile{prefix}."_pairwise_compa_logos"; push @dirs, "logos";
 
     ################################################################
     ## Specify output file names and open output stream
-    $main::outfile{log} = $main::outfile{prefix}."_log.txt";
-    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt";
+    $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
+    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
     $main::out = &OpenOutputFile($main::outfile{log});
 
-    $main::outfile{compa} = $main::outfile{prefix}."_compa.tab";
-    $main::outfile{matrix_desc} = $main::outfile{prefix}."_compa_matrix_dex.tab";
-    $main::outfile{compa_html} = $main::outfile{prefix}."_compa.html";
-    $main::outfile{compa_gml} = $main::outfile{prefix}."_compa.gml";
-    $main::outfile{compa_png} = $main::outfile{prefix}."_compa.png";
 
-    $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl";
-    $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab";
-    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab";
-    $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml";
-    $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png";
-    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab";
-    $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab";
+    ## Pairwise comparisons between matrices
+    $main::outfile{pairwise_compa} = $main::outfile{prefix}."_pairwise_compa.tab"; push @outfiles, "pairwise_compa";
+    $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
 
-    $main::outfile{raw_json} = $main::outfile{prefix}."_json_tree.json";
-    $main::outfile{parsed_json} = $main::outfile{prefix}."_parsed_json_tree.json";
-    $main::outfile{attr_json} = $main::outfile{prefix}."_compa_matrix_desc.tab";
-    $main::outfile{tree_html} = $main::outfile{prefix}."_clustering_tree.html";
+
+    ## Individual matrix descriptions
+    $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions";
+
+    ## Simliarity network between matrices
+    if ($main::return_field{network}) {
+      $main::outfile{matrix_network_gml} = $main::outfile{prefix}."_matrix_network.gml"; push @outfiles, "matrix_network_gml";
+      $main::outfile{matrix_network_png} = $main::outfile{prefix}."_matrix_network.png"; push @outfiles, "matrix_network_png";
+    }
+
+    ## MCL clustering (by segmentation of the matrix network)
+    if ($main::return_field{mcl_clusters}) {
+      $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl"; push @outfiles, "clusters_mcl";
+      $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab"; push @outfiles, "clusters_tab";
+      $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab"; push @outfiles, "clusters_subgraph";
+      $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml"; push @outfiles, "clusters_subgraph_gml";
+      $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png"; push @outfiles, "clusters_subgraph_png";
+      $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab"; push @outfiles, "intra_cluster_degree";
+    }
+
+    $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_matrix_tree.json"; # push @outfiles, "matrix_tree_json";
+    $main::outfile{parsed_tree_json} = $main::outfile{prefix}."_parsed_tree.json"; push @outfiles, "parsed_tree_json";
+#    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
+    $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
+
+    ## Open the HTML index file
+    $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
+    push @outfiles, "html_index";
+    $main::html_index = &OpenOutputFile($main::outfile{html_index});
+    my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
+    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+    print $main::html_index $header;
+
+    ## Report command
+    print $html_index "<p><tt><b>Command:</b> compare-matrices ";
+    &PrintArguments($main::html_index, 1);
+    print $html_index "</tt></p>\n";
+
 
     ################################################################
     ## Read input matrices
@@ -233,13 +261,21 @@ package main;
 
 
     ################################################################
-    ## Insert here output printing
+    ## Generate the HMTL index of input/output files
+    &IndexFiles() if ($main::outfile{html_index});
 
     ################################################################
     ## Close output stream
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); print $main::out $exec_time if ($main::verbose >= 1);
     close $main::out if ($main::outfile{prefix});
 
+  ## Close the HTML index file
+  if ($main::outfile{html_index}) {
+    print $main::html_index "<hr>";
+    print $main::html_index "</body>";
+    print $main::html_index "</html>";
+    close $main::html_index;
+  }
 
     exit(0);
 }
@@ -416,27 +452,27 @@ sub CompareMatrices {
   #$cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
   $cmd .= " ".$args_to_pass;
-  $cmd .= " -o ".$main::outfile{compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{compa};
-  $cmd .= " -o ".$main::outfile{compa_html};
+  $cmd .= " -o ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
 
-  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{compa}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
 
 =pod
   ## Use the mean_rank as score column
-  open COMPA, $main::outfile{compa};
+  open COMPA, $main::outfile{pairwise_compa};
   $main::param{score_column} = 0;
   while (<COMPA>) {
     if (/;\t(\d+)\t$param{matrix_compa_score}/) {
       $main::param{score_column} = $1;
-      &RSAT::message::Info("Score", $param{matrix_compa_score}, "column", $main::param{score_column}, "file", $main::outfile{compa}) if ($main::verbose >= 0);
+      &RSAT::message::Info("Score", $param{matrix_compa_score}, "column", $main::param{score_column}, "file", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
       last;
     }
   }
   close COMPA;
   if ($main::param{score_column} == 0) {
-    &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{compa}.").");
+    &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
 =cut
 }
@@ -478,8 +514,8 @@ sub Hclustering {
     $cluster_motifs_cmd .= " | ".$r_path;
     $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
     $cluster_motifs_cmd .= " --args \"";
-    $cluster_motifs_cmd .= "infile='".$main::outfile{compa}."'";
-    $cluster_motifs_cmd .= ";outfile='".$main::outfile{raw_json}."'";
+    $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
+    $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
     $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
@@ -501,16 +537,16 @@ sub Hclustering {
 #sub ClusterMotifs {
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{compa};
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
   $cmd .= " -ewidth -ecolors fire";
   $cmd .= " -layout spring_new";
   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-  $cmd .= " -o ".$main::outfile{compa_gml};
+  $cmd .= " -o ".$main::outfile{matrix_network_gml};
   &RSAT::util::one_command($cmd, 1);
 
   ## Generate a figure of the motif comparison graph
   $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{compa_gml};
+  $cmd .= " -in_format gml -i ".$main::outfile{matrix_network_gml};
   $cmd .= " -ewidth";
   $cmd .= " -layout none";
   $cmd .= " -out_format png -o ".$main::outfile{compa_png};
@@ -523,8 +559,8 @@ sub Hclustering {
     &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
   }
   my $mcl = $mcl_dir."/mcl";
-  $cmd = "grep -v '^;' ".$main::outfile{compa}.">".$main::outfile{compa}.".mcl";
-  $cmd .= "; ".$mcl."/mcl ".$main::outfile{compa}.".mcl";
+  $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
+  $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{clusters_mcl};
   $cmd .= " >& /dev/null";
@@ -536,7 +572,7 @@ sub Hclustering {
   ## Split the motif graph into clusters as defined by MCL, and
   ## compute the intra-cluster degree (k) and weighted degree (wk) of
   ## each node
-  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{compa};
+  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{pairwise_compa};
   $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol ".$main::param{score_column};
   $cmd .= " -return clusters ";
   $cmd .= " -clusters ".$main::outfile{clusters_tab};
@@ -590,7 +626,7 @@ sub Add_attributes_to_JSON(){
     ##	values : attribute (link, etc)
 
     ### Open the file with the picture's data
-    open(DATA, $main::outfile{attr_json}) || &RSAT::error::FatalError($main::outfile{attr_json}, "Cannot open DATA file");
+    open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
     while(<DATA>){
       next unless (/\S/); ## Skip empty rows
       next if (/^;/); ## Skip comment rows
@@ -615,7 +651,7 @@ sub Add_attributes_to_JSON(){
     chomp($path = `pwd`);
 
     ### Open the JSON file 
-    open(JSON, $main::outfile{raw_json}) || &RSAT::error::FatalError($main::outfile{raw_json}, "Cannot open the JSON file");
+    open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
     while(<JSON>){
 	
 	chomp;
@@ -644,10 +680,10 @@ sub Add_attributes_to_JSON(){
     close(JSON);
     
     ### Create the JSON parsed FILE
-    open(PARSED_JSON, ">".$main::outfile{parsed_json}) || &RSAT::error::FatalError($main::outfile{parsed_json}, "Cannot create the PARSED JSON file");
+    open(PARSED_JSON, ">".$main::outfile{parsed_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{parsed_tree_json});
     print PARSED_JSON @Parsed_JSON;
     close(PARSED_JSON);
-    system("rm ".$main::outfile{raw_json});
+    system("rm ".$main::outfile{matrix_tree_json});
     return();
 }
 
@@ -658,9 +694,9 @@ sub Add_attributes_to_JSON(){
 sub Create_html_tree_file(){
     
     $matrix_num += 2;
-    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{tree_html});
+    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
-    open(TREE,$main::outfile{tree_html}) || &RSAT::error::FatalError($main::outfile{tree_html}, "Cannot found the HTML tree file");
+    open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
     while(<TREE>){
 	chomp;
 	
@@ -671,7 +707,7 @@ sub Create_html_tree_file(){
 	$_ =~ s/\s+height =,/\t\theight = 150 * $matrix_num,/;
 
 	### Add the JSON file name
-	@temp = split(m|/|,$main::outfile{parsed_json});
+	@temp = split(m|/|,$main::outfile{parsed_tree_json});
 	$json_file_name = pop(@temp);
 
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
@@ -679,17 +715,11 @@ sub Create_html_tree_file(){
     }
     close(TREE);
     close(TEMP);
-    system("rm ".$main::outfile{tree_html});
-    system("mv ".$main::outfile{temp}." ".$main::outfile{tree_html});
+    system("rm ".$main::outfile{matrix_tree_html});
+    system("mv ".$main::outfile{temp}." ".$main::outfile{matrix_tree_html});
     return();
 }
 
-
-############
-### Notes
-
-## The file $main::outfile{attr_json} must be created to get the links
-## Set the tree heigth: 150 * num_motifs
 
 __END__
 
