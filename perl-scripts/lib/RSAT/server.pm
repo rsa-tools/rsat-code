@@ -302,7 +302,7 @@ sub ReportWebAttack {
 
 
 ################################################################
-## Append the execition time of a the current script in a specific log file
+## Append the execution time of a the current script in a specific log file
 ## Usage:
 ##     &UpdateExecTimeLogFile($start_time, $done_time, $elapsed);
 sub UpdateExecTimeLogFile {
