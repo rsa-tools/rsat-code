@@ -99,6 +99,8 @@ package main;
 
     %main::infile = ();
     %main::outfile = ();
+    %main::dir = ();
+    @dirs = ();
 
     $main::verbose = 0;
 #    $main::in = STDIN;
@@ -118,6 +120,11 @@ package main;
     local $matrix_num = 0;
 
 
+    ## Unrecognized arguments are passed to compare-matrices
+    local @args_to_pass = ();
+    local $args_to_pass = "";
+
+
     ################################################################
     ## Options used for motif comparison
     local %param = ();
@@ -135,6 +142,15 @@ package main;
 
     ################################################################
     ## Check argument values
+
+    &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
+    ## Non-recognized parameters are passed to compare-matrices
+    if (scalar(@args_to_pass)) {
+      $args_to_pass = join (" ", @args_to_pass);
+      &RSAT::message::Info("Un-ecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
+    }
+
 
     ## Check that the  input file has been specified
     unless ($infile{matrices}) {
@@ -163,6 +179,7 @@ package main;
     ################################################################
     ## Specify output file names and open output stream
     $main::outfile{log} = $main::outfile{prefix}."_log.txt";
+    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt";
     $main::out = &OpenOutputFile($main::outfile{log});
 
     $main::outfile{compa} = $main::outfile{prefix}."_compa.tab";
@@ -340,7 +357,12 @@ list of output files (pariwise matrix comparisons, matrix clusters).
       $main::outfile{prefix} = shift(@arguments);
 
     } else {
-      &FatalError("Invalid option", $arg);
+      if ($arg =~ /\s/) {
+	push @args_to_pass, "'".$arg."'";
+      } else {
+	push @args_to_pass, $arg;
+      }
+#      &FatalError("Invalid option", $arg);
 
     }
   }
@@ -393,6 +415,7 @@ sub CompareMatrices {
   #$cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   #$cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{compa};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{compa};
   $cmd .= " -o ".$main::outfile{compa_html};
@@ -459,7 +482,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{raw_json}."'";
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
-    $cluster_motifs_cmd .= " > cluster_log.txt";
+    $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
     if ($r_path) {
         &doit($cluster_motifs_cmd, $dry_run, $die_on_error, $verbose);
     } else {

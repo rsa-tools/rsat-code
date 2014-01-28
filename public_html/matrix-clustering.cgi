@@ -36,7 +36,6 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
-
 ################################################################
 ## Output paths
 $command = "$ENV{RSAT}/perl-scripts/matrix-clustering";
@@ -49,12 +48,10 @@ $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = 
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 
 ################################################################
-## command line paramters
-### read parameters
-$parameters = " -v 1";
+## Command line paramters
 
-#### read parameters ####
-local $parameters = " -v 1";
+## Read parameters
+local $parameters = " -v 2";
 
 ################################################################
 ## Matrix input format
@@ -165,21 +162,21 @@ my @supported_output_fields = qw(cor
 				 alignments_1ton
 				);
 
-my @selected_output_fields = qw(
-				cor
-				Ncor
-				NIcor
-				NsEucl
-				SSD
-				NSW
-				match_rank
-				matrix_id
-				matrix_ac
-				width
-				strand
-				offset
-				consensus
-				alignments_1ton);
+# my @selected_output_fields = qw(
+# 				cor
+# 				Ncor
+# 				NIcor
+# 				NsEucl
+# 				SSD
+# 				NSW
+# 				match_rank
+# 				matrix_id
+# 				matrix_ac
+# 				width
+# 				strand
+# 				offset
+# 				consensus
+# 				alignments_1ton);
 my @selected_output_fields = ();
 my $thresholds = "";
 foreach my $field (@supported_output_fields) {
@@ -217,6 +214,9 @@ $parameters .= $thresholds;
 ### Output file
 $output_file = $output_path."/".$output_prefix.".tab";
 $parameters .= " -o ".$output_file;
+
+$log_file = $output_path."/".$output_prefix."_log.txt";
+$parameters .= " >& ".$log_file;
 
 ## Report the full command before executing
 &ReportWebCommand($command." ".$parameters);
