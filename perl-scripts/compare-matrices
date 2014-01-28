@@ -65,43 +65,43 @@ also export a series of additional files.
 
 =over
 
-=item [output_prefix].tab
+=item [prefix].tab
 
 Tab-delimited text file containing the primary result (comparison
 score table): one column per comparison (match or profile position),
 one row per field (score, matrix descriptor, ...).
 
-=item [output_prefix].html
+=item [prefix].html
 
 HTML file presenting the comparison table in a user-friendly way. The
 clickable headers allow to re-order the table according to any column.
 
-=item [output_prefix].gml
+=item [prefix].gml
 
 Matrix comparison graph in GML format, which can be open with
 CitoScape or Yed.
 
-=item [output_prefix].dot
+=item [prefix].dot
 
 Matrix comparison graph in dot format, which can be open with
 graphviz.
 
-=item [output_prefix_alignments_pairwise.tab]
+=item [prefix_alignments_pairwise.tab]
 
 Tab-delimited text file containing the shifted matrices resulting from
 pairwise alignments.
 
-=item [output_prefix_alignments_pairwise.html]
+=item [prefix_alignments_pairwise.html]
 
 HTML file presentig the pairwise alignments in a user-friendly way:
 motifs are presented as sequence logos.
 
-=item [output_prefix_alignments_1ton.tab]
+=item [prefix_alignments_1ton.tab]
 
 Tab-delimited text file containing the shifted matrices resulting from
 1-to-n alignments.
 
-=item [output_prefix_alignments_1ton.html]
+=item [prefix_alignments_1ton.html]
 
 HTML file presentig the 1-to-n alignments in a user-friendly way:
 motifs are presented as sequence logos.
@@ -673,7 +673,7 @@ package main;
   if (($return_field{alignments_pairwise}) ||
        ($return_field{alignments_1ton})) {
     &RSAT::error::FatalError("You must specify an output file to obtain alignments.") 
-      unless $main::outfile{output_prefix};
+      unless $main::outfile{prefix};
   }
 
   ## Incompatibilities between output modes
@@ -793,31 +793,31 @@ package main;
   ## Open output stream(s)
 
   ## Check that output file is specified if required (for the alignments)
-  if (defined($main::outfile{output_prefix})) {
+  if (defined($main::outfile{prefix})) {
 
     ## Create output dir if required
     my $basename;
-    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{output_prefix});
+    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
     $dir{output} = "." if ($dir{output} eq "");
     &RSAT::util::CheckOutDir($dir{output});
     push @dirs, "output";
 
     ## Matrix description file
     if ($return_field{matrix_desc}) {
-      $main::outfile{matrix_desc} = $main::outfile{output_prefix}."_matrix_desc.tab";
+      $main::outfile{matrix_desc} = $main::outfile{prefix}."_matrix_descriptions.tab";
       push @outfiles, "matrix_desc";
     }
 
     ## tab-delimited output file
-    $main::outfile{match_table_txt} = $main::outfile{output_prefix}.".tab";
+    $main::outfile{match_table_txt} = $main::outfile{prefix}.".tab";
     push @outfiles, "match_table_txt";
 
     ## HTML-formatted table of matches
-    $main::outfile{match_table_html} = $main::outfile{output_prefix}.".html";
+    $main::outfile{match_table_html} = $main::outfile{prefix}.".html";
     push @outfiles, "match_table_html";
 
     ## Open the HTML index file
-    $main::outfile{html_index} = $main::outfile{output_prefix}."_index.html";
+    $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
     push @outfiles, "html_index";
     $main::html_index = &OpenOutputFile($main::outfile{html_index});
     my $header = &PrintHtmlResultHeader(program=>"compare-matrices", refresh_time=>120);
@@ -830,7 +830,7 @@ package main;
     print $html_index "</tt></p>\n";
 
     if ($return_field{graph}) {
-      $main::outfile{gml} = $main::outfile{output_prefix}.".gml";
+      $main::outfile{gml} = $main::outfile{prefix}.".gml";
       push @outfiles, "gml";
     }
 
@@ -838,18 +838,18 @@ package main;
     if (($return_field{alignments_pairwise}) ||
 	($return_field{alignments_1ton})) {
       &RSAT::error::FatalError("The option -return alignments requires to specify an output prefix (option -o).")
-	unless ($main::outfile{output_prefix});
+	unless ($main::outfile{prefix});
 
       ## Pariwise alignments
       if ($return_field{alignments_pairwise}) {
 
 	## Text output stream for pairwise alignments
-	$main::outfile{alignments_pairwise} = $main::outfile{output_prefix}."_alignments_pairwise.tab";
+	$main::outfile{alignments_pairwise} = $main::outfile{prefix}."_alignments_pairwise.tab";
 	push @outfiles, "alignments_pairwise";
 	$main::alignments_pairwise = &OpenOutputFile($main::outfile{alignments_pairwise});
 
 	## Pairwise alignments in HTML format
-	$main::outfile{alignments_pairwise_html} = $main::outfile{output_prefix}."_alignments_pairwise.html";
+	$main::outfile{alignments_pairwise_html} = $main::outfile{prefix}."_alignments_pairwise.html";
 	#      ## Open the stream for the HTML index of aligned matrices
 	#      $main::outfile{alignments_pairwise_html} = $main::outfile{alignments_pairwise};
 	#      $main::outfile{alignments_pairwise_html} =~ s/\.tab$//;
@@ -870,7 +870,7 @@ package main;
       if ($return_field{alignments_1ton}) {
 
 	## Text output stream for 1ton alignments
-	$main::outfile{alignments_1ton} = $main::outfile{output_prefix}."_alignments_1ton.tab";
+	$main::outfile{alignments_1ton} = $main::outfile{prefix}."_alignments_1ton.tab";
 	push @outfiles, "alignments_1ton";
 	$main::alignments_1ton = &OpenOutputFile($main::outfile{alignments_1ton});
 
@@ -878,7 +878,7 @@ package main;
 	#      $main::outfile{alignments_1ton_html} = $main::outfile{alignments_1ton};
 	#      $main::outfile{alignments_1ton_html} =~ s/\.tab$//;
 	#      $main::outfile{alignments_1ton_html} .= ".html";
-	$main::outfile{alignments_1ton_html} = $main::outfile{output_prefix}."_alignments_1ton.html";
+	$main::outfile{alignments_1ton_html} = $main::outfile{prefix}."_alignments_1ton.html";
 	push @outfiles, "alignments_1ton_html";
 	$main::alignments_1ton_html = &OpenOutputFile($main::outfile{alignments_1ton_html});
 	print $main::alignments_1ton_html "<html>\n";
@@ -2123,6 +2123,7 @@ package main;
   }
 
 
+  ## Close the HTML index file
   if ($main::outfile{html_index}) {
     print $main::html_index "<hr>";
     print $main::html_index "</body>";
@@ -2805,7 +2806,7 @@ analysis to a given subset of a large library.
 
 =pod
 
-=item	B<-o output_prefix>
+=item	B<-o prefix>
 
 Prefix for the output files. The output prefix is mandatory for some
 return fields (alignments, graphs, ...).
@@ -2817,8 +2818,8 @@ detail).
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outfile{output_prefix} = shift(@arguments);
-      $main::outfile{output_prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
+      $main::outfile{prefix} = shift(@arguments);
+      $main::outfile{prefix} =~ s/\.tab$//; ## Suppress .tab from the prefix, since it will be automaticaly appended
 
 
 =pod
