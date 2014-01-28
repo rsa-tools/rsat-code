@@ -51,7 +51,7 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 ## Command line paramters
 
 ## Read parameters
-local $parameters = " -v 2";
+local $parameters = " -v 1";
 
 ################################################################
 ## Matrix input format
@@ -212,18 +212,18 @@ $parameters .= $thresholds;
 
 ################################################################
 ### Output file
-$output_file = $output_path."/".$output_prefix.".tab";
-$parameters .= " -o ".$output_file;
+$parameters .= " -o ".$output_path."/".$output_prefix;
 
-$log_file = $output_path."/".$output_prefix."_log.txt";
-$parameters .= " >& ".$log_file;
+## Add an error-log file for matrix-clustering
+$err_file = $output_path."/".$output_prefix."_err.txt";
+$parameters .= " >& ".$err_file;
 
 ## Report the full command before executing
 &ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Display or send result by email
-$index_file = $output_path."/".$output_prefix."_index.html";
+$index_file = $output_path."/".$output_prefix."_clustering_tree.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
