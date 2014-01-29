@@ -447,7 +447,7 @@ sub CompareMatrices {
   $cmd .= " -DR";
 #  $cmd .= " -distinct"; ## We disactivate the option "distinct" in order to ensure that all the motifs are in the output graph even if they are not related to any other motif
   $cmd .= " -sort cor";
-  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
+#  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   #$cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   #$cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
@@ -520,7 +520,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; \"";
     $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
     if ($r_path) {
-        &doit($cluster_motifs_cmd, $dry_run, $die_on_error, $verbose);
+        &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
@@ -697,11 +697,25 @@ sub Create_html_tree_file(){
     system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
+
+
+    $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+      $d3_base_url = "http://d3js.org/";
+#	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
+    }
+
     while(<TREE>){
 	chomp;
 	
-	### Add the d3 library path
-	$_ =~ s|src=\"\"|src=\"$ENV{RSAT}/public_html/lib/d3/d3.v3.js\"|;
+
+	if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	}
+
+	### Fix the d3 library path
+	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
 
 	### Set the height 
 	$_ =~ s/\s+height =,/\t\theight = 150 * $matrix_num,/;
