@@ -225,7 +225,7 @@ package main;
     print $main::html_index $header;
 
     ## Report command
-    print $html_index "<p><tt><b>Command:</b> compare-matrices ";
+    print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
     &PrintArguments($main::html_index, 1);
     print $html_index "</tt></p>\n";
 
