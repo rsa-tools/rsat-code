@@ -212,7 +212,7 @@ package main;
       $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab"; push @outfiles, "intra_cluster_degree";
     }
 
-    $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_matrix_tree.json"; # push @outfiles, "matrix_tree_json";
+    $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_matrix_tree.json"; push @outfiles, "matrix_tree_json";
     $main::outfile{parsed_tree_json} = $main::outfile{prefix}."_parsed_tree.json"; push @outfiles, "parsed_tree_json";
 #    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
@@ -651,7 +651,7 @@ sub Add_attributes_to_JSON(){
   my $matrix_num = 0;
 #  chomp($path = `pwd`);
 
-  ### Open the JSON file 
+  ### Open the JSON file produced by R
   open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
   while(<JSON>){
     
@@ -670,7 +670,7 @@ sub Add_attributes_to_JSON(){
       ## Define te URL of the logo file, relative to the location of the json file
       my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
       my $logo_url = $logo_link.".png";
-#      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
+#@      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
       
       ### Create the line that will be added to JSON file
       $Add_this = "\"image\" : \"${logo_url}\", ";
@@ -681,7 +681,9 @@ sub Add_attributes_to_JSON(){
     push(@Parsed_JSON, $line."\n");
     
     ### Add the new line
-    if($Flag){push(@Parsed_JSON, $Add_this."\n");}
+    if ($Flag) {
+      push(@Parsed_JSON, $Add_this."\n");
+    }
   }
   close(JSON);
   
@@ -689,7 +691,7 @@ sub Add_attributes_to_JSON(){
   open(PARSED_JSON, ">".$main::outfile{parsed_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{parsed_tree_json});
   print PARSED_JSON @Parsed_JSON;
   close(PARSED_JSON);
-  system("rm ".$main::outfile{matrix_tree_json});
+#  system("rm ".$main::outfile{matrix_tree_json});
   return();
 }
 
