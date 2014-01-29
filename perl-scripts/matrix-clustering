@@ -125,6 +125,8 @@ package main;
     local @args_to_pass = ();
     local $args_to_pass = "";
 
+    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+
 
     ################################################################
     ## Options used for motif comparison
@@ -614,77 +616,81 @@ sub Hclustering {
 ## Add attributes to JSON file, like links to pictures and other
 ## attributes
 sub Add_attributes_to_JSON(){
-
-    my ($Line, $M1, $M2, $Add_this, $Flag);
-    my (@Split_line, @Parsed_JSON) = ();
-    my (%matrix_info) = ();
-
-
-    #############################################
-    ## Create a hash with the attribute data:
-    ##	key :  name
-    ##	values : attribute (link, etc)
-
-    ### Open the file with the picture's data
-    open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
-    while(<DATA>){
-      next unless (/\S/); ## Skip empty rows
-      next if (/^;/); ## Skip comment rows
-      next if (/^#/); ## Skip header rows
-      chomp();
-      my $line = $_;
-      @split_line = split(/\s+/, $line);
-      my $matrix_id = $split_line[1];
-      $matrix_info{$matrix_id}{name} = $split_line[2];
-      $matrix_info{$matrix_id}{width} = $split_line[3];
-      $matrix_info{$matrix_id}{consensus} = $split_line[4];
-      $matrix_info{$matrix_id}{logo_file} = $split_line[5];
-    }
-    close(DATA);
+  my ($Line, $M1, $M2, $Add_this, $Flag);
+  my (@Split_line, @Parsed_JSON) = ();
+  my (%matrix_info) = ();
 
 
-    ############################################################
-    ## Read the JSON file and add the link data to each node
+  #############################################
+  ## Create a hash with the attribute data:
+  ##	key :  name
+  ##	values : attribute (link, etc)
 
-    $line = "";
-    $matrix_num = 0;
-    chomp($path = `pwd`);
+  ### Open the file with the picture's data
+  open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
+  while(<DATA>){
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
+    my $line = $_;
+    @split_line = split(/\s+/, $line);
+    my $matrix_id = $split_line[1];
+    $matrix_info{$matrix_id}{name} = $split_line[2];
+    $matrix_info{$matrix_id}{width} = $split_line[3];
+    $matrix_info{$matrix_id}{consensus} = $split_line[4];
+    $matrix_info{$matrix_id}{logo_file} = $split_line[5];
+  }
+  close(DATA);
 
-    ### Open the JSON file 
-    open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
-    while(<JSON>){
-	
-	chomp;
-	$Flag = 0;
-	$line = $_;
-	
-	### Search the pattern separating the matrices names
-	if($line =~ /\s*\"name\":\s*\"(.+)\",/){
 
-	    $matrix_num++;
-	    $Flag = 1;
-	    ($M1, $Add_this) = "";
-	    $M1 = $1;
-	    
-	    ### Create the line that will be added to JSON file
-	    $Add_this = "\"image\" : \"file://".$path."/".$matrix_info{$M1}{logo_file}.".png\", ";
-	    $Add_this .= "\"url\" : \"file://".$path."/".$matrix_info{$M1}{logo_file}.".png\", ";
-	    $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
-	    #print $Add_this."\n";
-	}
-	push(@Parsed_JSON, $line."\n");
-	
-	### Add the new line
-	if($Flag){push(@Parsed_JSON, $Add_this."\n");}
-    }
-    close(JSON);
+  ############################################################
+  ## Read the JSON file and add the link data to each node
+
+  my $line = "";
+  my $matrix_num = 0;
+#  chomp($path = `pwd`);
+
+  ### Open the JSON file 
+  open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
+  while(<JSON>){
     
-    ### Create the JSON parsed FILE
-    open(PARSED_JSON, ">".$main::outfile{parsed_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{parsed_tree_json});
-    print PARSED_JSON @Parsed_JSON;
-    close(PARSED_JSON);
-    system("rm ".$main::outfile{matrix_tree_json});
-    return();
+    chomp;
+    $Flag = 0;
+    $line = $_;
+    
+    ### Search the pattern separating the matrices names
+    if($line =~ /\s*\"name\":\s*\"(.+)\",/){
+
+      $matrix_num++;
+      $Flag = 1;
+      $Add_this = "";
+      $M1 = $1;
+
+      ## Define te URL of the logo file, relative to the location of the json file
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
+      my $logo_url = $logo_link.".png";
+#      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
+      
+      ### Create the line that will be added to JSON file
+      $Add_this = "\"image\" : \"${logo_url}\", ";
+      $Add_this .= "\"url\" : \"${logo_url}\", ";
+      $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
+      #print $Add_this."\n";
+    }
+    push(@Parsed_JSON, $line."\n");
+    
+    ### Add the new line
+    if($Flag){push(@Parsed_JSON, $Add_this."\n");}
+  }
+  close(JSON);
+  
+  ### Create the JSON parsed FILE
+  open(PARSED_JSON, ">".$main::outfile{parsed_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{parsed_tree_json});
+  print PARSED_JSON @Parsed_JSON;
+  close(PARSED_JSON);
+  system("rm ".$main::outfile{matrix_tree_json});
+  return();
 }
 
 
@@ -698,10 +704,8 @@ sub Create_html_tree_file(){
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
 
-
-    $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
-
-    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
       $d3_base_url = "http://d3js.org/";
 #	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
     }
@@ -710,7 +714,8 @@ sub Create_html_tree_file(){
 	chomp;
 	
 
-	if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
 
