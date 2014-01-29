@@ -648,7 +648,7 @@ sub Add_attributes_to_JSON(){
   ## Read the JSON file and add the link data to each node
 
   my $line = "";
-  my $matrix_num = 0;
+  $matrix_num = 0;
 #  chomp($path = `pwd`);
 
   ### Open the JSON file produced by R
@@ -713,8 +713,7 @@ sub Create_html_tree_file(){
     }
 
     while(<TREE>){
-	chomp;
-	
+	chomp;	
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
