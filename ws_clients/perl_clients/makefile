@@ -26,6 +26,12 @@ list_servers:
 	@echo "SERVER	${SERVER}"
 	@echo "WSDL_URL	${WSDL_URL}"
 
+stubb_param:
+	@echo "Parameters for generating the stubb"
+	@echo "SERVERS	${SERVERS}"
+	@echo "SERVER	${SERVER}"
+	@echo "WSDL_URL	${WSDL_URL}"
+
 WSDL_URL=${SERVER}/web_services/RSATWS.wsdl
 stubb:
 	@echo
