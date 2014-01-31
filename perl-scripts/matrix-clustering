@@ -395,18 +395,20 @@ list of output files (pariwise matrix comparisons, matrix clusters).
     } elsif ($arg eq "-o") {
       $main::outfile{prefix} = shift(@arguments);
 
-    } elsif ($arg eq "-cons"){
-	if (&IsNatural($arguments[0])) {
-	    $show_consensus = shift(@arguments);
-	}
 =pod
 
-=item	B<-cons 1>
+=item	B<-cons #>
 
 Option to display the consensus in the tree's branches
 
 =cut
-
+    } elsif ($arg eq "-cons"){
+	if (&IsNatural($arguments[0])) {
+	    $show_consensus = shift(@arguments);
+	}
+	else{
+	    &RSAT::error::FatalError($show_consensus, "Invalid argument for parameter -cons: It must be a digit");
+	}
     } else {
       if ($arg =~ /\s/) {
 	push @args_to_pass, "'".$arg."'";
@@ -697,13 +699,15 @@ sub Add_attributes_to_JSON(){
       ## Define te URL of the logo file, relative to the location of the json file
       my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
       my $logo_url = $logo_link.".png";
-#      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
       
       ### Create the line that will be added to JSON file
       $Add_this = "\"image\" : \"${logo_url}\", ";
       $Add_this .= "\"url\" : \"${logo_url}\", ";
       $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
-      #print $Add_this."\n";
+      
+      if($show_consensus){
+	  $Add_this .= ", \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
+      }
     }
     push(@Parsed_JSON, $line."\n");
     
