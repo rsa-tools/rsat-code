@@ -282,7 +282,7 @@ package main;
 
     ## Treat the case of subfields
     foreach my $field (@return_fields) {
-      if (defined(@{$sub_fields{$field}})) {
+      if (defined(${$sub_fields{$field}})) {
 	push @return_subfields, @{$sub_fields{$field}};
       } else {
 	push @return_subfields, $field;
