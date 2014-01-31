@@ -119,6 +119,7 @@ package main;
     local @matrices = ();
     local @temp = ();
     local $matrix_num = 0;
+    local $show_consensus = 0;
 
 
     ## Unrecognized arguments are passed to compare-matrices
@@ -394,6 +395,18 @@ list of output files (pariwise matrix comparisons, matrix clusters).
     } elsif ($arg eq "-o") {
       $main::outfile{prefix} = shift(@arguments);
 
+    } elsif ($arg eq "-cons"){
+	if (&IsNatural($arguments[0])) {
+	    $show_consensus = shift(@arguments);
+	}
+=pod
+
+=item	B<-cons 1>
+
+Option to display the consensus in the tree's branches
+
+=cut
+
     } else {
       if ($arg =~ /\s/) {
 	push @args_to_pass, "'".$arg."'";
@@ -648,8 +661,8 @@ sub Add_attributes_to_JSON(){
   ## Read the JSON file and add the link data to each node
 
   my $line = "";
+  my $children = 0;
   $matrix_num = 0;
-#  chomp($path = `pwd`);
 
   ### Open the JSON file produced by R
   open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
@@ -659,6 +672,20 @@ sub Add_attributes_to_JSON(){
     $Flag = 0;
     $line = $_;
     
+
+    ### If the user select the option -cons 1
+    ### Add the consensus to the json file to be displayed in the tree
+    if($show_consensus){
+	if($line =~ /(\s*\"children\":\s*\[)/){
+
+	    $children++;
+	    $Add_this = "";
+	    if($children > 2){
+		$Add_this = " \"name\" : \"$matrix_info{oligos_7nt_mkv4_m5}{consensus}\", ";
+	    push(@Parsed_JSON, $Add_this."\n");
+	    }
+	}
+    }
     ### Search the pattern separating the matrices names
     if($line =~ /\s*\"name\":\s*\"(.+)\",/){
 
@@ -670,7 +697,7 @@ sub Add_attributes_to_JSON(){
       ## Define te URL of the logo file, relative to the location of the json file
       my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
       my $logo_url = $logo_link.".png";
-#@      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
+#      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
       
       ### Create the line that will be added to JSON file
       $Add_this = "\"image\" : \"${logo_url}\", ";
