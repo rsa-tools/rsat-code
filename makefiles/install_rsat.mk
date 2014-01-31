@@ -227,13 +227,20 @@ r_modules_install_all:
 	@echo
 	@echo "Installing R modules"
 	@for m in ${R_MODULES}; do \
-		${MAKE} install_one_r_module R_MODULE=$${m}; \
+		${MAKE} r_modules_install_one R_MODULE=$${m}; \
 	done
 
 R_MODULE=RJSONIO
 r_modules_install_one:
 	${SUDO} R CMD INSTALL ${R_MODULE}
 
+BIOCONDUCTOR_MODULES=ctc
+r_bioconductor_modules:
+	for module in ${BIOCONDUCTOR_MODULES}; do \
+		echo "Insalling bioconductor module	$${module}"; \
+		${SUDO} echo "source('http://bioconductor.org/biocLite.R'); biocLite('$${module}')" \
+		| R --slave --no-save --no-restore --no-environ ; \
+	done
 
 ################################################################
 ## Install tex-live for generating the doc
