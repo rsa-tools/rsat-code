@@ -5,7 +5,7 @@
 
 	<script type="text/javascript" src=""></script>
     <meta charset=utf-8 />
-    <title> Test Hclust </title>
+    <title> matrix-clustering matrices' tree </title>
     <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
 </head>
 
@@ -44,7 +44,7 @@
 	<div id="chart"></div>
 	<script type="text/javascript">
 
-	var width = 2100,
+	var width = 2200,
 		height =,
 		m = [40, 240, 40, 240],
 		w = width ,//-m[0] -m[0],
@@ -90,11 +90,18 @@
 	node.append("a")
 		.attr("xlink:href", function(d) { return d.url; })
 		.append("text")
-		.text(function(d) { return d.name; })
+		.text(function(d) { return d.children ? "" : d.name; })
 		.attr("dx", function(d) { return d.children ? -20 : 20; })
 		.attr("dy", function(d) { return d.children ? -6 : 3; })
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 	
+	// Add the consensus
+	node.append("text")
+		.text(function(d) { return d.children ? d.name : ""; })
+		.attr("x", -23)
+		.attr("dy", -6)
+		.attr("text-anchor", "end")
+	;
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image; })  
