@@ -19,6 +19,7 @@
 ### Install rjson package
 # install.packages("RJSONIO")
 library("RJSONIO")
+library("ctc")
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -119,9 +120,6 @@ verbose(paste("Output file", outfile), 1)
 if (!exists("score")) {
   score <- "Ncor";
 }
-
-
-print(paste("########### ", outfile, "##########"), sep = "")
 
 
 ##################################
@@ -227,6 +225,10 @@ dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table)
 ### Runs and plot the hierarchical cluster
 tree <- hclust(dist.matrix)
 if (plot.tree) {plot(tree) }
+
+if (export == "newick") {
+  write(hc2Newick(tree, flat = TRUE), file=export_newick)
+}
 
 #######################################
 ### Creates and parse the json file
