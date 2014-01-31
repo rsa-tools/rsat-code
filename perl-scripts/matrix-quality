@@ -673,6 +673,9 @@ package main;
       $main::seqfile{matrix_sites} = $outfile{matrix_sites} if ($infile{matrix_sites});
       &RSAT::message::Debug("Adding file to index ",  "matrix_sites", $outfile{matrix_sites}  ) if ($main::verbose >= 10);
 
+      if(($tasks{cv} )&& (!$main::infile{matrix_sites} )){
+	  &RSAT::error::FatalError("CrossValiadtion option is selected but matrix sites were not provided, verify options -ms and -seq ");
+      }
 
       ## Export input sites with the matrix
       if ($main::infile{matrix_sites}) {
@@ -1079,7 +1082,7 @@ If the file includes several matrices, it will only take the first one.
 	    if ($main::infile{matrix_sites});
 	  &RSAT::error::FatalError("You are not allowed to specify several matrices.")
 	    if ($main::infile{matrix});
-	  $main::infile{matrix} = shift(@arguments);
+	    $main::infile{matrix} = shift(@arguments);
 
 
 	    ## File containing both the matrix and its sites
@@ -1117,6 +1120,7 @@ If the file includes several matrices, it will only take the first one.
 	  &RSAT::error::FatalError("You are not allowed to specify several matrices.")
 	    if ($main::infile{matrix_sites});
 	  $main::infile{matrix_sites} = shift(@arguments);
+
 #	  push @seq_types, 'matrix_sites';
 
 
@@ -1395,6 +1399,7 @@ I<matrix-distrib>.
 	    ## Format of Background model for theoretical score distribution
 # If the option -th_prior and -bg_file are used at the same time
 # the background format must be the same in both cases.
+
 
 =pod
 
@@ -2150,43 +2155,43 @@ sub AddSequenceDistribOptions_classfreq {
 ################################################################
 ## Scan a sequence set with the matrix
 ## BEWARE: THIS FUNCTION IS APPARENTLY NOT CALLED ANYMORE
-sub ScanSequences {
-  my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
+# sub ScanSequences {
+#   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
 
-  ## Define the output file fpor the current sequence type
-  $main::outfile{$seq_type} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib_matrixscan.tab";
+#   ## Define the output file fpor the current sequence type
+#   $main::outfile{$seq_type} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib_matrixscan.tab";
 
-  ## Scan the sequences if requested
-  return unless  ($tasks{scan});
-  &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{'empirical_distrib_'.$seq_type})
-    if ($main::verbose >= 2);
+#   ## Scan the sequences if requested
+#   return unless  ($tasks{scan});
+#   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{'empirical_distrib_'.$seq_type})
+#     if ($main::verbose >= 2);
 
-  ## Scan the sequences with matrix-scan
-  my $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
-  $matrix_scan_cmd .= " -decimals ".$decimals;
-  $matrix_scan_cmd .= " -top_matrices 1";
-  $matrix_scan_cmd .= " -i ".$sequence_file;
-  $matrix_scan_cmd .= " -m ".$matrix_file;
-  $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
-  $matrix_scan_cmd .= " -o ".$outfile{'empirical_distrib_'.$seq_type};
-  $matrix_scan_cmd .=  " -return distrib";
-  $matrix_scan_cmd .= join(" ", "", @args);
-  if (defined($main::scanopt{$seq_type})) {
-      $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
-  }
+#   ## Scan the sequences with matrix-scan
+#   my $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
+#   $matrix_scan_cmd .= " -decimals ".$decimals;
+#   $matrix_scan_cmd .= " -top_matrices 1";
+#   $matrix_scan_cmd .= " -i ".$sequence_file;
+#   $matrix_scan_cmd .= " -m ".$matrix_file;
+#   $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+#   $matrix_scan_cmd .= " -o ".$outfile{'empirical_distrib_'.$seq_type};
+#   $matrix_scan_cmd .=  " -return distrib";
+#   $matrix_scan_cmd .= join(" ", "", @args);
+#   if (defined($main::scanopt{$seq_type})) {
+#       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
+#   }
 
-  ## Print the complete command in the log file
-  print $main::out ";\n;matrix-scan command\n";
-  printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
-  printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
-  if (defined($main::scanopt{$seq_type})) {
-      printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
-  }
-  printf $main::out ";\t%-22s\t%s\n", "Command", $matrix_scan_cmd;
+#   ## Print the complete command in the log file
+#   print $main::out ";\n;matrix-scan command\n";
+#   printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
+#   printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
+#   if (defined($main::scanopt{$seq_type})) {
+#       printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
+#   }
+#   printf $main::out ";\t%-22s\t%s\n", "Command", $matrix_scan_cmd;
 
-  ## Execute the command
-  &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-}
+#   ## Execute the command
+#   &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+# }
 
 ################################################################
 ## Calculate the distribution of scores from a given matrix-scan result file
@@ -2459,7 +2464,6 @@ sub CompareDistrib {
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
   }
- # die "BOOM".$matrix_name;
   if ($tasks{graphs}) {
     &RSAT::message::TimeWarn("Generating comparison graphs")
       if ($main::verbose >= 2);
