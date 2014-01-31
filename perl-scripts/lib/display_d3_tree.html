@@ -97,10 +97,10 @@
 	
 	// Add the consensus
 	node.append("text")
-		.text(function(d) { return d.children ? d.name : ""; })
-		.attr("x", -23)
-		.attr("dy", -6)
-		.attr("text-anchor", "end")
+		.text(function(d){ return d.children ? d.name : d.consensus; })
+		.attr("x", function(d){ return d.children ? -23 : 20; })
+		.attr("dy", function(d){ return d.children ? -6 : 25; })
+		.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
 	;
 		
 	node.append("svg:image")
