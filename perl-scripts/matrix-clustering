@@ -115,6 +115,15 @@ package main;
     }
     local $supported_matrix_formats = join ",", @supported_matrix_formats;
 
+    ## output formats for hclust
+    local @supported_tree_formats = qw (json newick);
+    local %supported_tree_formats = ();
+    foreach my $format (@supported_tree_formats) {
+	$supported_tree_formats{$format} = 1;
+    }
+    local $supported_tree_formats = join ",", @supported_tree_formats;
+    local $export_tree_format = "";
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
@@ -218,7 +227,9 @@ package main;
 #    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
-
+    if($export_tree_format eq "newick"){
+	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick";
+    }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
     push @outfiles, "html_index";
@@ -409,7 +420,24 @@ Option to display the consensus in the tree's branches
 	else{
 	    &RSAT::error::FatalError($show_consensus, "Invalid argument for parameter -cons: It must be a digit");
 	}
-    } else {
+    
+=pod
+
+=item	B<-export format>
+
+Specify the output tree format
+
+B<Supported trees formats>
+
+(DEFAULT: json, OPTIONAL: newick).
+
+=cut
+    }  elsif ($arg eq "-export") {
+      $export_tree_format = shift(@arguments);
+      unless ($supported_tree_formats{$export_tree_format}) {
+	&RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+      }
+    }else {
       if ($arg =~ /\s/) {
 	push @args_to_pass, "'".$arg."'";
       } else {
@@ -533,6 +561,10 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
+    if($export_tree_format eq "newick"){
+	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
+	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
+    }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
     $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
