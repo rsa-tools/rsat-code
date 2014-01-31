@@ -206,9 +206,24 @@ _install_one_perl_module:
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ################################################################
+## Install modules required for python
+PYTHON_MODULES=SUDS Rpy2 SOAPpy
+python_modules_list:
+	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
+
+python_modules_install:
+	@for module in ${PYTHON_MODULES} ; do \
+		${SUDO} easy_install $${module}; \
+	done
+
+
+################################################################
 ## Install R modules required for some RSAT scripts
 R_MODULES=RJSONIO
-install_r_modules:
+r_modules_list:
+	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
+
+r_modules_install_all:
 	@echo
 	@echo "Installing R modules"
 	@for m in ${R_MODULES}; do \
@@ -216,7 +231,7 @@ install_r_modules:
 	done
 
 R_MODULE=RJSONIO
-install_one_r_module:
+r_modules_install_one:
 	${SUDO} R CMD INSTALL ${R_MODULE}
 
 
