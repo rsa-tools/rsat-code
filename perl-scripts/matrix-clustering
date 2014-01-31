@@ -115,10 +115,20 @@ package main;
     }
     local $supported_matrix_formats = join ",", @supported_matrix_formats;
 
+    ## output formats for hclust
+    local @supported_tree_formats = qw (json newick);
+    local %supported_tree_formats = ();
+    foreach my $format (@supported_tree_formats) {
+	$supported_tree_formats{$format} = 1;
+    }
+    local $supported_tree_formats = join ",", @supported_tree_formats;
+    local $export_tree_format = "";
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
     local $matrix_num = 0;
+    local $show_consensus = 0;
 
 
     ## Unrecognized arguments are passed to compare-matrices
@@ -217,7 +227,9 @@ package main;
 #    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
-
+    if($export_tree_format eq "newick"){
+	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick";
+    }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
     push @outfiles, "html_index";
@@ -394,7 +406,38 @@ list of output files (pariwise matrix comparisons, matrix clusters).
     } elsif ($arg eq "-o") {
       $main::outfile{prefix} = shift(@arguments);
 
-    } else {
+=pod
+
+=item	B<-cons #>
+
+Option to display the consensus in the tree's branches
+
+=cut
+    } elsif ($arg eq "-cons"){
+	if (&IsNatural($arguments[0])) {
+	    $show_consensus = shift(@arguments);
+	}
+	else{
+	    &RSAT::error::FatalError($show_consensus, "Invalid argument for parameter -cons: It must be a digit");
+	}
+    
+=pod
+
+=item	B<-export format>
+
+Specify the output tree format
+
+B<Supported trees formats>
+
+(DEFAULT: json, OPTIONAL: newick).
+
+=cut
+    }  elsif ($arg eq "-export") {
+      $export_tree_format = shift(@arguments);
+      unless ($supported_tree_formats{$export_tree_format}) {
+	&RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+      }
+    }else {
       if ($arg =~ /\s/) {
 	push @args_to_pass, "'".$arg."'";
       } else {
@@ -518,6 +561,10 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
+    if($export_tree_format eq "newick"){
+	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
+	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
+    }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
     $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
@@ -648,8 +695,8 @@ sub Add_attributes_to_JSON(){
   ## Read the JSON file and add the link data to each node
 
   my $line = "";
-  my $matrix_num = 0;
-#  chomp($path = `pwd`);
+  my $children = 0;
+  $matrix_num = 0;
 
   ### Open the JSON file produced by R
   open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
@@ -659,6 +706,20 @@ sub Add_attributes_to_JSON(){
     $Flag = 0;
     $line = $_;
     
+
+    ### If the user select the option -cons 1
+    ### Add the consensus to the json file to be displayed in the tree
+    if($show_consensus){
+	if($line =~ /(\s*\"children\":\s*\[)/){
+
+	    $children++;
+	    $Add_this = "";
+	    if($children > 2){
+		$Add_this = " \"name\" : \"$matrix_info{oligos_7nt_mkv4_m5}{consensus}\", ";
+	    push(@Parsed_JSON, $Add_this."\n");
+	    }
+	}
+    }
     ### Search the pattern separating the matrices names
     if($line =~ /\s*\"name\":\s*\"(.+)\",/){
 
@@ -670,13 +731,15 @@ sub Add_attributes_to_JSON(){
       ## Define te URL of the logo file, relative to the location of the json file
       my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
       my $logo_url = $logo_link.".png";
-#@      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
       
       ### Create the line that will be added to JSON file
       $Add_this = "\"image\" : \"${logo_url}\", ";
       $Add_this .= "\"url\" : \"${logo_url}\", ";
       $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
-      #print $Add_this."\n";
+      
+      if($show_consensus){
+	  $Add_this .= ", \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
+      }
     }
     push(@Parsed_JSON, $line."\n");
     
@@ -713,8 +776,7 @@ sub Create_html_tree_file(){
     }
 
     while(<TREE>){
-	chomp;
-	
+	chomp;	
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
