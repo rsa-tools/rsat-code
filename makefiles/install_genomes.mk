@@ -37,11 +37,21 @@ ORG_DIR=${NCBI_DIR}/${ORG}
 PARSE_TASK=config,parse
 CALIBRATE_TASK=allup,seq_len_distrib,dyads,oligos,start_stop,upstream_freq,genome_segments,protein_freq
 INSTALL_TASK=${PARSE_TASK},${CALIBRATE_TASK}
-INSTALL_CMD=install-organism -v ${V}		\
-		-genbank ${NCBI_DIR}		\
-		-org ${ORG} ${MASKING}		\
-		-task ${INSTALL_TASK}		\
-		${OPT}
+INSTALL_CMD=install-organism -v ${V}            \
+	-genbank ${NCBI_DIR}            \
+	-org ${ORG} ${MASKING}          \
+	-task ${PARSE_TASK}             \
+	${OPT} ;		        \
+	install-organism -v ${V}        \
+	-genbank ${NCBI_DIR}            \
+	-org ${ORG} ${MASKING}          \
+	-task ${CALIBRATE_TASK}         \
+	${OPT}
+# INSTALL_CMD=install-organism -v ${V}		\
+# 		-genbank ${NCBI_DIR}		\
+# 		-org ${ORG} ${MASKING}		\
+# 		-task ${INSTALL_TASK}		\
+# 		${OPT}
 
 parse_one_organism:
 	@echo "Parsing organism ${ORG}" 
