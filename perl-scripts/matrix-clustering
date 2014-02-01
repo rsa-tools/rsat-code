@@ -38,17 +38,25 @@ RSAT makefile:
 
 =head2 Implementation
 
+=over
+
 =item Jacques.van-Helden@univ-amu.fr
 
 =item Jaime Castro <jcastro@lcg.unam.mx>
 
+=back
+
 =head2 Conception
+
+=over
 
 =item Jacques van Helden
 
 =item Carl Herrmann
 
 =item Denis Thieffry
+
+=back
 
 =head1 CATEGORY
 
@@ -70,6 +78,8 @@ cluster-matrices [-i inputfile] [-o outputfile] [-v #] [...]
 The program I<compare-matrices> is used by I<cluster-matrices> to
 measure pairwise similarities and define the best alignment (offset,
 strand) between each pair of matrices.
+
+=back
 
 =head1 WISH LIST
 
@@ -425,11 +435,11 @@ Option to display the consensus in the tree's branches
 
 =item	B<-export format>
 
-Specify the output tree format
+Specify format for the output tree.
 
 B<Supported trees formats>
 
-(DEFAULT: json, OPTIONAL: newick).
+(Default: json; optional: newick).
 
 =cut
     }  elsif ($arg eq "-export") {
@@ -504,8 +514,7 @@ sub CompareMatrices {
 
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
 
-=pod
-  ## Use the mean_rank as score column
+  ## Read the score column
   open COMPA, $main::outfile{pairwise_compa};
   $main::param{score_column} = 0;
   while (<COMPA>) {
@@ -519,7 +528,7 @@ sub CompareMatrices {
   if ($main::param{score_column} == 0) {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
-=cut
+
 }
 
 
@@ -578,12 +587,12 @@ sub Hclustering {
 }
 
 
-=pod
 
 ################################################################
-## Identify clusters of similar motifs, and build
+## Identify clusters of similar motifs using MCL ("Markov clustering",
+## an algorithm partitioning a network into clusters), and build
 ## consensus motifs.
-#sub ClusterMotifs {
+sub ClusterMotifs {
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
@@ -657,7 +666,7 @@ sub Hclustering {
 
   return();
 }
-=cut
+
 
 ################################################################
 ## Add attributes to JSON file, like links to pictures and other
