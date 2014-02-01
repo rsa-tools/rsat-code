@@ -43,7 +43,7 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Options
 plot.tree <- FALSE
-
+export <- 'json'
 
 
 #################
@@ -225,9 +225,10 @@ dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table)
 ### Runs and plot the hierarchical cluster
 tree <- hclust(dist.matrix)
 if (plot.tree) {plot(tree) }
-
 if (export == "newick") {
-  write(hc2Newick(tree, flat = TRUE), file=export_newick)
+  newick.file <- sub('.json', '', outfile)
+  newick.file <- paste(sep='.', newick.file, "newick")
+  write(hc2Newick(tree, flat = TRUE), file=newick.file)
 }
 
 #######################################
