@@ -529,7 +529,7 @@ package main;
 				 "dKL"=>"asc",
 				);
   local $supported_sort_fields = join (",", keys (%supported_sort_field));
-  local @sorted_match_id = (); ## list of sorted matches for the final output
+  local @sorted_match_ids = (); ## list of sorted matches for the final output
   ## Default sort field
 #  local $sort_field = "offset";
 #  $sort_field = "Icor";
@@ -560,7 +560,7 @@ package main;
 
   ## Comparison mode
   local $comparison_mode = "matches";
-  local @supported_comparison_modes = qw(matches profiles scan);
+  local @supported_comparison_modes = qw(matches scores profiles scan);
   local %supported_comparison_mode = ();
   foreach my $format (@supported_comparison_modes) {
     $supported_comparison_mode{$format} = 1;
@@ -735,25 +735,35 @@ package main;
       &RSAT::error::FatalError("The mode scan still needs to be implemented");
     }
 
-  } if ($comparison_mode eq "matches") {
+  } if (($comparison_mode eq "matches") || ($comparison_mode eq "scores")) {
+    
+    ## Treat common parameters between modes "matches" and "scores"
     $sort_field = "Ncor" unless ($sort_field);
     $return_field{matrix_name} = 1;
     $return_field{strand} = 1;
     $return_field{Ncor} = 1;
-#    $return_field{Icor} = 1;
-#    $return_field{NIcor} = 1;
-#    $return_field{NWcor} = 1;
-#    $return_field{consensus} = 1;
-
-    $uth{offset_rank}=1 unless(defined($uth{offset_rank})); ## Only return the best match for each alignment
-
-    ## Impose (somewhat arbitrary) minimal thresholds on cor and Ncor
-    $lth{w}=5 unless (defined($lth{w}));
-#    $lth{Icor}=0.75 unless (defined($lth{Icor}));
-    $lth{cor}=0.7 unless (defined($lth{cor}));
-    $lth{Ncor}=0.4 unless (defined($lth{Ncor}));
+    
+    ## Parameters specific to the mode "scores"
+    if ($comparison_mode eq "scores") {
+      ## Check that the user did not specify any threshold
+      if ((scalar(keys(%uth))) || (scalar(keys(%lth)))) {
+	&RSAT::error::FatalError("The mode 'scores' is incompatible with thresholds, since a score is required between all the matrix pairs");
+      }
+    } else {
+      ## Impose (somewhat arbitrary) minimal thresholds on alignment
+      ## width, correlation and normalized correlations
+      $lth{w}=5 unless (defined($lth{w}));
+      $lth{cor}=0.7 unless (defined($lth{cor}));
+      $lth{Ncor}=0.4 unless (defined($lth{Ncor}));
+    }
+    
+    ## In both modes "matches" and "scores", only return the best
+    ## match for each alignment. This threshold can only be specified
+    ## after the control that the users did not define any threshold
+    ## in mode "scores".
+    $uth{offset_rank}=1 unless(defined($uth{offset_rank})); 
   }
-
+  
   ## Sort order
   local $sort_order = $supported_sort_field{$sort_field};
 
@@ -1909,7 +1919,8 @@ package main;
 
 #	&RSAT::message::Debug("Treating output for offset/strand", $compa_id, $offset, $strand) if ($main::verbose >= 10);
 
-	if ($comparison_mode eq "matches") {
+	if (($comparison_mode eq "matches") ||
+	    ($comparison_mode eq "scores")) {
 	  ################################################################
 	  ## In matching mode, index the matrix pair for further sorting
 	  ## after all matrices have been compared (sorting all matrix
@@ -1941,7 +1952,6 @@ package main;
 	  print $out "\t", $offset_rank{$compa_id} if ($return_field{offset_rank});
 	  print $out "\n";
 	}
-
       }				## offset/strand pair
       #      } ## strands
     }				## matrix 2
@@ -1957,7 +1967,6 @@ package main;
     &RSAT::message::TimeWarn("Computing match ranks") if ($main::verbose >= 2);
 
     foreach my $metric (@rank_metrics) {
-      &RSAT::message::TimeWarn("Computing ranks for metric", $metric) if ($main::verbose >= 3);
       my @sorted_match_ids = ();
       next unless ($return_field{$metric});
 #      next if ($metric eq "match_rank");
@@ -1965,7 +1974,7 @@ package main;
 
       ## Sort the matches
       my $metric_order = $supported_sort_field{$metric};
-      &RSAT::message::Debug("Computing matching rank on", $metric, $metric_order) if ($main::verbose >= 5);
+      &RSAT::message::TimeWarn("Computing matching ranks on", $metric, $metric_order) if ($main::verbose >= 3);
       if ($metric_order eq "asc") {
 	## Sort results in ascending order
 	@sorted_match_ids = sort {$score{$metric}{$a} <=> $score{$metric}{$b}} @match_ids;
@@ -2028,24 +2037,24 @@ package main;
 
   }
 
-
   ################################################################
   ## Sort all matches and print them out
-  if ($comparison_mode eq "matches") {
+  if (($comparison_mode eq "matches") ||
+      ($comparison_mode eq "scores")) {
     &RSAT::message::TimeWarn("Sorting matches by", $sort_order, $sort_field) if ($main::verbose >= 2);
 
     ## Sort the matches
     if ($sort_order eq "asc") {
       ## Sort results in ascending order
-      @sorted_match_id = sort {$sort_score{$a} <=> $sort_score{$b}} keys(%sort_score);
+      @sorted_match_ids = sort {$sort_score{$a} <=> $sort_score{$b}} keys(%sort_score);
     } else {
       ## Sort results in descending order
-      @sorted_match_id = sort {$sort_score{$b} <=> $sort_score{$a}} keys(%sort_score);
+      @sorted_match_ids = sort {$sort_score{$b} <=> $sort_score{$a}} keys(%sort_score);
     }
 
     ## Print the output rows
     my $match_rank = 0;
-    foreach my $compa_id (@sorted_match_id) {
+    foreach my $compa_id (@sorted_match_ids) {
       $match_rank++;
       $match_rank{$compa_id} = $match_rank;
       $match_score{$compa_id}{match_rank} = $match_rank; ## Index for further use in other output formats
@@ -2213,7 +2222,7 @@ sub PairwiseAlignments {
   &PrintArguments($alignments_pairwise_html, 1);
   print $alignments_pairwise_html "</pre></p>\n";
 
-  foreach my $compa_id (@sorted_match_id) {
+  foreach my $compa_id (@sorted_match_ids) {
     local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
 
     my $matrix1 = $matrix_by_id1{$id1};
@@ -2342,7 +2351,7 @@ sub OneToNAlignments {
   &RSAT::message::TimeWarn("Computing one-to-n alignments") if ($main::verbose >= 2);
 
   ## Index matches per matrix
-  foreach my $compa_id (@sorted_match_id) {
+  foreach my $compa_id (@sorted_match_ids) {
     local ($id1, $id2, $offset, $strand) = split (":", $compa_id);
     push @{$matches_by_matrix1{$id1}}, $compa_id;
   }
@@ -2848,7 +2857,7 @@ buffering by default.
 
 =pod
 
-=item B<-mode matches | profiles>
+=item B<-mode matches | scores | profiles | scan >
 
 =over
 
@@ -2872,6 +2881,17 @@ strand (with the option -strand DR) that maximizes the default score
 (Ncor). Alternative scores can be used as optimality criteria with the
 option -sort.
 
+
+=item I<-mode scores>
+
+Return scores of the best-matching alignment between each matrix pair.
+
+This mode is used by I<cluster-matrices> in order to obtain a table
+with pairwise comparison scores between each pair of input
+matrices. Since the hierarchical clustering requires a table with all
+scores defined, the score mode is incompatible with the options -uth
+and -lth.
+
 =item I<-mode profiles>
 
 Return a table with one row for each possible alignment offset between
@@ -2885,6 +2905,16 @@ but they are too verbosy for the typical use of I<compare-matrices>
 (detect matches between a query matrix and a database of reference
 matrices). The formats "matches" and "table" are more convenient for
 basic use.
+
+=item I<-mode scan>
+
+Scan I<reference matrices> with I<query matrices> in order to identify
+matching positons. This mode was designed to identify regulatory
+motifs in phylogenetically conserved blocks resulting from genome
+alignments (e.g. the multi-alignment files from UCSC). Multiple
+alignments can be converted to position-specific matrices (conserved
+blocks), which can be used as reference matrices to be scanned with
+transcription factor binding motifs (query matrices).
 
 =back
 
