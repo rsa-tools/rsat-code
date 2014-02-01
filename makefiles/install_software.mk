@@ -127,12 +127,6 @@ _compile_python:
 
 install_python_suds: _download_python_suds _compile_python_suds
 
-PYTHON_LIBS=SUDS Rpy2
-install_python_libs:
-	@for lib in ${PYTHON_LIBS} ; do \
-		${SUDO} easy_install $${lib}; \
-	done
-
 ################################################################
 ## Install suds library for python2.7, required for the MICROME Web
 ## clients to connect Genoscope/Microscope Web services.
