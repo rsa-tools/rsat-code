@@ -238,7 +238,7 @@ package main;
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
     if($export_tree_format eq "newick"){
-	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick";
+      $main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
     }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
@@ -496,15 +496,11 @@ sub CompareMatrices {
   ## in the output graph even if they are not related to any other
   ## motif.
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode scores";
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
-#  $cmd .= " -distinct"; ## We disactivate the option "distinct" in order to ensure that all the motifs are in the output graph even if they are not related to any other motif
   $cmd .= " -sort cor";
-#  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
-  #$cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
-  #$cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
   $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
