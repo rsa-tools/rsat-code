@@ -129,7 +129,7 @@ if ($query->param('db_choice') eq "custom") {
 
 ### other default parmaters
 $parameters .= " -strand DR";
-$parameters .= " -return newick";
+$parameters .= " -export newick";
 
 
 ################################################################
