@@ -148,17 +148,17 @@ local %score_descriptions = ('w'=>'Width = number of aligned columns',
 
 ################################################################
 ## Other selectable output fields
-my @other_fields = qw(matrix_number
-		      matrix_id
-		      matrix_name
-		      matrix_ac
-		      strand
-		      direction
-		      pos
-		      consensus
-		      alignments_pairwise
-		      alignments_1ton
-		     );
+# my @other_fields = qw(matrix_number
+# 		      matrix_id
+# 		      matrix_name
+# 		      matrix_ac
+# 		      strand
+# 		      direction
+# 		      pos
+# 		      consensus
+# 		      alignments_pairwise
+# 		      alignments_1ton
+# 		     );
 
 ################################################################
 ### send results by email only
