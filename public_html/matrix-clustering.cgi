@@ -206,8 +206,8 @@ push @selected_output_fields, qw(
 				 strand
 				 offset
 				 consensus
-				 alignments_1ton
 				);
+#				 alignments_1ton
 my $selected_output_fields = join (",", @selected_output_fields);
 $parameters .= " -return ".$selected_output_fields;
 $parameters .= $thresholds;
