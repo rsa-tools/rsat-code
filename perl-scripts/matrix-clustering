@@ -424,13 +424,8 @@ Option to display the consensus in the tree's branches
 
 =cut
     } elsif ($arg eq "-cons"){
-	if (&IsNatural($arguments[0])) {
-	    $show_consensus = shift(@arguments);
-	}
-	else{
-	    &RSAT::error::FatalError($show_consensus, "Invalid argument for parameter -cons: It must be a digit");
-	}
-    
+	    $show_consensus = 1;
+   
 =pod
 
 =item	B<-export format>
@@ -810,4 +805,3 @@ sub Create_html_tree_file(){
 
 
 __END__
-
