@@ -134,6 +134,16 @@ package main;
     local $supported_tree_formats = join ",", @supported_tree_formats;
     local $export_tree_format = "";
 
+    ## Select d3 base
+    local @d3_base_formats = qw (file link);
+    local %d3_base_formats = ();
+    foreach my $format (@d3_base_formats) {
+	$d3_base_formats{$format} = 1;
+    }
+    local $d3_base_formats = join ",", @d3_base_formats;
+    local $d3_base_format = "";
+    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
@@ -145,7 +155,7 @@ package main;
     local @args_to_pass = ();
     local $args_to_pass = "";
 
-    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+    
 
 
     ################################################################
@@ -238,7 +248,7 @@ package main;
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
     if($export_tree_format eq "newick"){
-      $main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
+	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
     }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
@@ -247,7 +257,7 @@ package main;
     my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
-
+    
     ## Report command
     print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
     &PrintArguments($main::html_index, 1);
@@ -378,7 +388,7 @@ matrices.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{matrices} = shift(@arguments);
+	$main::infile{matrices} = shift(@arguments);
 
 =pod
 
@@ -397,10 +407,10 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
     } elsif ($arg eq "-format") {
-      $main::matrix_format = shift(@arguments);
-      unless ($supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-      }
+	$main::matrix_format = shift(@arguments);
+	unless ($supported_matrix_format{$matrix_format}) {
+	    &RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+	}
 
 
 =pod
@@ -414,17 +424,17 @@ list of output files (pariwise matrix comparisons, matrix clusters).
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outfile{prefix} = shift(@arguments);
+	$main::outfile{prefix} = shift(@arguments);
 
 =pod
 
-=item	B<-cons #>
+=item	B<-cons>
 
 Option to display the consensus in the tree's branches
 
 =cut
     } elsif ($arg eq "-cons"){
-	    $show_consensus = 1;
+	$show_consensus = 1;
    
 =pod
 
@@ -437,22 +447,36 @@ B<Supported trees formats>
 (Default: json; optional: newick).
 
 =cut
-    }  elsif ($arg eq "-export") {
-      $export_tree_format = shift(@arguments);
-      unless ($supported_tree_formats{$export_tree_format}) {
-	&RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
-      }
-    }else {
-      if ($arg =~ /\s/) {
-	push @args_to_pass, "'".$arg."'";
-      } else {
-	push @args_to_pass, $arg;
-      }
-#      &FatalError("Invalid option", $arg);
+    } elsif ($arg eq "-export") {
+        $export_tree_format = shift(@arguments);
+        unless($supported_tree_formats{$export_tree_format}) {
+	    &RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+        }
 
+=pod
+
+=item	B<-d3_base>
+
+Option to specify any type of URL (file://, http://, ...) as base for the d3 library.
+    
+B<Supported d3 bases>
+    
+(Default: file, optional: link )
+
+=cut
+    } elsif ($arg eq "-d3_base") {
+        $d3_base_format = shift(@arguments);
+        unless ($d3_base_formats{$d3_base_format}) {
+	    &RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
+        }
+    }else {
+        if ($arg =~ /\s/) {
+	    push @args_to_pass, "'".$arg."'";
+        } else {
+	    push @args_to_pass, $arg;
+        }
     }
   }
-
 =pod
 
 =back
@@ -769,10 +793,15 @@ sub Create_html_tree_file(){
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
 
-    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      $d3_base_url = "http://d3js.org/";
+#    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+#      $d3_base_url = "http://d3js.org/";
 #	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
+#    }
+
+    ## Select the D3 base
+    if($d3_base_format eq "link"){
+	$d3_base_url = "http://d3js.org";	
     }
 
     while(<TREE>){
@@ -780,7 +809,7 @@ sub Create_html_tree_file(){
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
 
 	### Fix the d3 library path
