@@ -485,6 +485,18 @@ B<Supported d3 bases>
         unless ($d3_base_formats{$d3_base_format}) {
 	    &RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
         }
+
+=pod
+
+=item	B<-labels>
+
+Mandatory option to select the matrix label fields displayed in the html tree
+    
+B<Supported labels>
+    
+(name, consensus, id)
+
+=cut
     }elsif ($arg eq "-labels") {
       $label_fields_to_return = shift(@arguments);
       my @label_fields_to_return = split (",", $label_fields_to_return);
