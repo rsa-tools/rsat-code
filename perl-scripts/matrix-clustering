@@ -144,6 +144,17 @@ package main;
     local $d3_base_format = "";
     local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
 
+
+    ## Supported label fields
+    local @supported_label_fields = qw (id name consensus);
+    local %supported_label_fields = ();
+    foreach my $field (@supported_label_fields) {
+	$supported_label_fields{$field} = 1;
+    }
+    local $supported_label_fields = join ",", @supported_label_fields;
+    local $label_fields_to_return = "";
+    local %label_fields_to_return = ();
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
@@ -199,6 +210,11 @@ package main;
     ## Check that the output prefix has been specified
     unless ($outfile{prefix}) {
       &RSAT::error::FatalError("You must define the output prefix (option -o).");
+    }
+
+    ## Check that the matrix label field have been specified
+    unless ($label_fields_to_return) {
+      &RSAT::error::FatalError("You must define the matrix label fields to return (option -labels).");
     }
 
     ## Create output dir if required
@@ -469,6 +485,16 @@ B<Supported d3 bases>
         unless ($d3_base_formats{$d3_base_format}) {
 	    &RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
         }
+    }elsif ($arg eq "-labels") {
+      $label_fields_to_return = shift(@arguments);
+      my @label_fields_to_return = split (",", $label_fields_to_return);
+      foreach $field (@label_fields_to_return) {
+	if ($supported_label_fields{$field}) {
+	  $label_fields_to_return{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
+	}
+      }
     }else {
         if ($arg =~ /\s/) {
 	    push @args_to_pass, "'".$arg."'";
@@ -707,6 +733,7 @@ sub Add_attributes_to_JSON(){
     my $line = $_;
     @split_line = split(/\s+/, $line);
     my $matrix_id = $split_line[1];
+    $matrix_info{$matrix_id}{id} = $split_line[1];
     $matrix_info{$matrix_id}{name} = $split_line[2];
     $matrix_info{$matrix_id}{width} = $split_line[3];
     $matrix_info{$matrix_id}{consensus} = $split_line[4];
@@ -757,13 +784,20 @@ sub Add_attributes_to_JSON(){
       my $logo_url = $logo_link.".png";
       
       ### Create the line that will be added to JSON file
-      $Add_this = "\"image\" : \"${logo_url}\", ";
-      $Add_this .= "\"url\" : \"${logo_url}\", ";
-      $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
-      
-      if($show_consensus){
-	  $Add_this .= ", \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
+      $Add_this = " \"image\" : \"${logo_url}\"";
+      $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+        
+      ## The user specifies if this label will be displayed in the html tree
+      if($label_fields_to_return{"id"}){
+	  $Add_this .= ",\n \"id\" : \"$matrix_info{$M1}{id}\"";
       }
+
+      ## The user specifies if this label will be displayed in the html tree
+      if($label_fields_to_return{"consensus"}){
+	  $Add_this .= ",\n \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
+      }
+
+      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
     }
     push(@Parsed_JSON, $line."\n");
     
@@ -788,6 +822,30 @@ sub Add_attributes_to_JSON(){
 ## display the tree
 sub Create_html_tree_file(){
     
+    my $add_this = "";
+    my $main_label = 	        
+	"\tnode.append(\"a\")
+	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? -20 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? -6 : 3; })
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
+
+    my $consensus_branch_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
+	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 20; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 25; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+
+    my $new_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? \"\" : d.; })
+	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : 25; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+	
     $matrix_num += 2;
     system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
@@ -823,6 +881,61 @@ sub Create_html_tree_file(){
 	$json_file_name = pop(@temp);
 
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
+
+	if($_ =~ /Insert labels/){
+
+	    ###################################################################
+	    ## If one label was selected, set that label to the html script
+	    if(scalar keys %label_fields_to_return == 1){
+		$add_this = $main_label;
+		if(exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
+		    $add_this =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	    
+		}elsif(exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"id"})){
+		    $add_this =~ s/d\.;/ \"NAME: \" \+ d\.name;/;	
+		}elsif(exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"})){	    
+		    $add_this =~ s/d\.;/ \"ID: \" \+ d\.id;/;	
+		}
+	    }
+	    
+	    ###############################################################
+	    ## If two labels were selected, set them to the html script
+	    if(scalar keys %label_fields_to_return == 2){
+		my $cp1 = $main_label;
+		my $cp2 = $new_label;
+		if(exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
+		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
+		    $cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
+		}elsif(exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"name"})){
+		    $cp1 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
+		    $cp2 =~ s/d\.;/ \"id: \" \+ d\.id;/;
+		}elsif(exists($label_fields_to_return{"name"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"consensus"})){	    
+		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
+		    $cp2 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
+		}
+		$add_this = $cp1."\n".$cp2."\n";
+	    }
+
+	    #####################################################################
+	    ## If the three labels were selected, set them to the html script
+	    if(scalar keys %label_fields_to_return == 3){
+		my $cp1 = $main_label;
+		my $cp2 = $new_label;
+		my $cp3 = $new_label;
+
+		$cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
+		$cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;
+		$cp3 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
+		$cp3 =~ s/25/43/;
+		$add_this = $cp1."\n".$cp2."\n\n".$cp3."\n";
+	    }
+	    print TEMP $add_this."\n";
+	}
+
+	if($show_consensus){
+	    if($_ =~ /Insert consensus/){
+		print TEMP $consensus_branch_label."\n";
+	    }
+	}
 	print TEMP $_."\n";
     }
     close(TREE);
