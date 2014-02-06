@@ -79,12 +79,18 @@ class RSATUtils:
         
         return destination_files
             
+
+    # ---------------------------------------------------------------------------------------------
+    # Compute the histogram of chosen indexes and graph it in PNG
+    @staticmethod
+    def outputHistogram( table, histogram_interval, dir_path, prefix, title1, title2,  legendx,  legendy, other_columns, fhisto):
+        return RSATUtils.outputHistogramFormat(table, histogram_interval, dir_path, prefix, title1, title2, legendx, legendy, other_columns, fhisto, "png")
     
     
     # ---------------------------------------------------------------------------------------------
     # Compute the histogram of chosen indexes and graph it
     @staticmethod
-    def outputHistogram( table, histogram_interval, dir_path, prefix, title1, title2,  legendx,  legendy, other_columns, fhisto):
+    def outputHistogramFormat( table, histogram_interval, dir_path, prefix, title1, title2,  legendx,  legendy, other_columns, fhisto, out_format):
         
         # save the stats to a tabbed file for classfreq command
         input_path = os.path.join( dir_path, prefix + ".tab")
@@ -108,7 +114,7 @@ class RSATUtils:
 
 
         # Build the graph corresponding to the histogram using RSAT XYGraph command
-        graph_path = os.path.join( dir_path, prefix + ".png")
+        graph_path = os.path.join( dir_path, prefix + "." + out_format)
         cmd = os.path.join( RSATUtils.RSAT_PATH, "perl-scripts/XYgraph")
         cmd += " -i '" + histo_path + "'"
         cmd += " -title1 '" + title1 + "'" 
@@ -118,7 +124,7 @@ class RSATUtils:
             cmd += "," + ",".join( other_columns)
         cmd += " -xleg1 '" + legendx + "'"
         cmd += " -yleg1 '" + legendy + "'"
-        cmd += " -legend -header -format png"
+        cmd += " -legend -header -format "+ out_format
         if fhisto:
             cmd += " -fhisto"
         else:
@@ -131,6 +137,10 @@ class RSATUtils:
             Log.log( "  XYgraph output is = \n" + str( cmd_result[1]))
 
         return (histo_path, graph_path)
+
+
+
+    
 
     # --------------------------------------------------------------------------------------
     # create the logo image of the motif which definition is provided in the given Transfac file
