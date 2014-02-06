@@ -17,12 +17,12 @@ from manager.PipelineManagerFactory import PipelineManagerFactory
 # --------------------------------------------------------------------------------------
 def main( argv):
     
-    table= [1,1,1,6,6,6,6,-2,-2,-2,-10,-10,-10,-10,-10,20,20,20,20,20,20]
+    #table= [1,1,1,6,6,6,6,-2,-2,-2,-10,-10,-10,-10,-10,20,20,20,20,20,20]
     
-    RUtils.plotHistogram( table, 5, "./", "test_RUtil", "MyTitle1", "MyTitle2",  "MyLegenX", "MyLegendY", "png")
-    RUtils.plotHistogram( table, 5, "./", "test_RUtil", "MyTitle1", "MyTitle2",  "MyLegenX", "MyLegendY", "ps")
+    #RUtils.plotHistogram( table, 5, "./", "test_RUtil", "MyTitle1", "MyTitle2",  "MyLegenX", "MyLegendY", "png")
+    #RUtils.plotHistogram( table, 5, "./", "test_RUtil", "MyTitle1", "MyTitle2",  "MyLegenX", "MyLegendY", "ps")
     
-    return 0
+    #return 0
     
 
     # Directory where output fir will be created
