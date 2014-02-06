@@ -115,6 +115,14 @@
 		.attr("height", 120)
 		.attr("x", 250)    
 		.attr("y", -50) 
+		.attr("preserveAspectRatio", "none");	
+		
+	node.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image_RC; })  
+		.attr("width", function(d) { return (d.size + 2)  * 27; })
+		.attr("height", 120)
+		.attr("x", 1100)    
+		.attr("y", -50) 
 		.attr("preserveAspectRatio", "none");
 
 	d3.select("svg")
