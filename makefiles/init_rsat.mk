@@ -50,6 +50,7 @@ init:
 	mkdir -p ${LOG_DIR}
 	mkdir -p ${LOG_DIR}/peak-footprints_logs; chmod 777 ${LOG_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOG_DIR}/.htaccess
+	@rm -f ${LOG_DIR}/index.html
 	echo "<html><body></b<Forbidden</b></body></html>" > ${LOG_DIR}/index.html
 	chmod 444 ${LOG_DIR}/index.html
 
