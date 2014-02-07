@@ -238,7 +238,7 @@ BIOCONDUCTOR_MODULES=ctc
 r_bioconductor_modules:
 	for module in ${BIOCONDUCTOR_MODULES}; do \
 		echo "Insalling bioconductor module	$${module}"; \
-		${SUDO} echo "source('http://bioconductor.org/biocLite.R'); biocLite('$${module}')" \
+		${SUDO} echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
 		| R --slave --no-save --no-restore --no-environ ; \
 	done
 
