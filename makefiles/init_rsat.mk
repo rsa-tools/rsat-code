@@ -15,8 +15,9 @@ usage:
 ################################################################
 ## Initialize directories and config files
 SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
-COUNT_FILE=public_html/logs/count-file
 CONFIG_FILE=RSA.config
+LOG_DIR=${RSAT}/public_html/logs
+COUNT_FILE=${LOG_DIR}/count-file
 init:
 	@echo ""
 	@echo "Creating directories"
@@ -39,17 +40,18 @@ init:
 	mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
 	chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
-	echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
+	@rm -f public_html/tmp/index.html
+	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
 	chmod 444 public_html/tmp/index.html
 
 	@echo ""
-	@echo "Initializing directory	public_html/logs"
-	chmod 777 public_html/logs
-	mkdir -p public_html/logs
-	mkdir -p public_html/logs/peak-footprints_logs; chmod 777 public_html/logs/peak-footprints_logs
-#	echo "Options -Indexes" > public_html/logs/.htaccess
-	echo "<html><body></b<Forbidden</b></body></html>" > public_html/logs/index.html
-	chmod 444 public_html/logs/index.html
+	@echo "Initializing directory	${LOG_DIR}"
+	chmod 777 ${LOG_DIR}
+	mkdir -p ${LOG_DIR}
+	mkdir -p ${LOG_DIR}/peak-footprints_logs; chmod 777 ${LOG_DIR}/peak-footprints_logs
+#	echo "Options -Indexes" > ${LOG_DIR}/.htaccess
+	echo "<html><body></b<Forbidden</b></body></html>" > ${LOG_DIR}/index.html
+	chmod 444 ${LOG_DIR}/index.html
 
 	@echo
 	@echo "Setting exec rights to script directories"
@@ -65,7 +67,7 @@ init:
 	@echo "Creating links"
 	ln -fs public_html/data .
 	ln -fs public_html/tmp .
-	ln -fs public_html/logs .
+	ln -fs ${LOG_DIR} .
 
 	@echo ""
 	@echo "Checking config files"
