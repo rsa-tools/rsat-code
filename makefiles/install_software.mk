@@ -228,7 +228,8 @@ install_seqlogo: _download_seqlogo _compile_seqlogo
 
 _download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
-	@echo "Getting seqlogo using wget"
+	@echo
+	@echo "Downloading seqlogo	${SEQLOGO_URL}"
 	(cd ${SEQLOGO_DIR}; wget -nv -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
@@ -261,7 +262,7 @@ _download_d3:
 ## GS_VER=ghostscript-8.64
 ## GS_TAR=${GS_VER}.tar.gz
 GS_URL=http://downloads.ghostscript.com/public/binaries/
-GS_VER=ghostscript-9.06-linux-x86_64
+GS_VER=ghostscript-9.10-linux-x86_64
 GS_TAR=${GS_VER}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
 install_ghostscript: _download_gs _compile_gs
