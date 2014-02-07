@@ -134,6 +134,27 @@ package main;
     local $supported_tree_formats = join ",", @supported_tree_formats;
     local $export_tree_format = "";
 
+    ## Select d3 base
+    local @d3_base_formats = qw (file link);
+    local %d3_base_formats = ();
+    foreach my $format (@d3_base_formats) {
+	$d3_base_formats{$format} = 1;
+    }
+    local $d3_base_formats = join ",", @d3_base_formats;
+    local $d3_base_format = "";
+    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+
+
+    ## Supported label fields
+    local @supported_label_fields = qw (id name consensus);
+    local %supported_label_fields = ();
+    foreach my $field (@supported_label_fields) {
+	$supported_label_fields{$field} = 1;
+    }
+    local $supported_label_fields = join ",", @supported_label_fields;
+    local $label_fields_to_return = "";
+    local %label_fields_to_return = ();
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
@@ -145,7 +166,7 @@ package main;
     local @args_to_pass = ();
     local $args_to_pass = "";
 
-    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+    
 
 
     ################################################################
@@ -189,6 +210,11 @@ package main;
     ## Check that the output prefix has been specified
     unless ($outfile{prefix}) {
       &RSAT::error::FatalError("You must define the output prefix (option -o).");
+    }
+
+    ## Check that the matrix label field have been specified
+    unless ($label_fields_to_return) {
+      &RSAT::error::FatalError("You must define the matrix label fields to return (option -labels).");
     }
 
     ## Create output dir if required
@@ -238,7 +264,7 @@ package main;
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
     if($export_tree_format eq "newick"){
-      $main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
+	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
     }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
@@ -247,7 +273,7 @@ package main;
     my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
-
+    
     ## Report command
     print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
     &PrintArguments($main::html_index, 1);
@@ -378,7 +404,7 @@ matrices.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{matrices} = shift(@arguments);
+	$main::infile{matrices} = shift(@arguments);
 
 =pod
 
@@ -397,10 +423,10 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
     } elsif ($arg eq "-format") {
-      $main::matrix_format = shift(@arguments);
-      unless ($supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-      }
+	$main::matrix_format = shift(@arguments);
+	unless ($supported_matrix_format{$matrix_format}) {
+	    &RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+	}
 
 
 =pod
@@ -414,23 +440,18 @@ list of output files (pariwise matrix comparisons, matrix clusters).
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outfile{prefix} = shift(@arguments);
+	$main::outfile{prefix} = shift(@arguments);
 
 =pod
 
-=item	B<-cons #>
+=item	B<-cons>
 
 Option to display the consensus in the tree's branches
 
 =cut
     } elsif ($arg eq "-cons"){
-	if (&IsNatural($arguments[0])) {
-	    $show_consensus = shift(@arguments);
-	}
-	else{
-	    &RSAT::error::FatalError($show_consensus, "Invalid argument for parameter -cons: It must be a digit");
-	}
-    
+	$show_consensus = 1;
+   
 =pod
 
 =item	B<-export format>
@@ -442,22 +463,58 @@ B<Supported trees formats>
 (Default: json; optional: newick).
 
 =cut
-    }  elsif ($arg eq "-export") {
-      $export_tree_format = shift(@arguments);
-      unless ($supported_tree_formats{$export_tree_format}) {
-	&RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+    } elsif ($arg eq "-export") {
+        $export_tree_format = shift(@arguments);
+        unless($supported_tree_formats{$export_tree_format}) {
+	    &RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+        }
+
+=pod
+
+=item	B<-d3_base>
+
+Option to specify any type of URL (file://, http://, ...) as base for the d3 library.
+    
+B<Supported d3 bases>
+    
+(Default: file, optional: link )
+
+=cut
+    } elsif ($arg eq "-d3_base") {
+        $d3_base_format = shift(@arguments);
+        unless ($d3_base_formats{$d3_base_format}) {
+	    &RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
+        }
+
+=pod
+
+=item	B<-labels>
+
+Mandatory option to select the matrix label fields displayed in the html tree
+    
+B<Supported labels>
+    
+(name, consensus, id)
+
+=cut
+    }elsif ($arg eq "-labels") {
+      $label_fields_to_return = shift(@arguments);
+      my @label_fields_to_return = split (",", $label_fields_to_return);
+      foreach $field (@label_fields_to_return) {
+	if ($supported_label_fields{$field}) {
+	  $label_fields_to_return{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
+	}
       }
     }else {
-      if ($arg =~ /\s/) {
-	push @args_to_pass, "'".$arg."'";
-      } else {
-	push @args_to_pass, $arg;
-      }
-#      &FatalError("Invalid option", $arg);
-
+        if ($arg =~ /\s/) {
+	    push @args_to_pass, "'".$arg."'";
+        } else {
+	    push @args_to_pass, $arg;
+        }
     }
   }
-
 =pod
 
 =back
@@ -688,6 +745,7 @@ sub Add_attributes_to_JSON(){
     my $line = $_;
     @split_line = split(/\s+/, $line);
     my $matrix_id = $split_line[1];
+    $matrix_info{$matrix_id}{id} = $split_line[1];
     $matrix_info{$matrix_id}{name} = $split_line[2];
     $matrix_info{$matrix_id}{width} = $split_line[3];
     $matrix_info{$matrix_id}{consensus} = $split_line[4];
@@ -738,13 +796,20 @@ sub Add_attributes_to_JSON(){
       my $logo_url = $logo_link.".png";
       
       ### Create the line that will be added to JSON file
-      $Add_this = "\"image\" : \"${logo_url}\", ";
-      $Add_this .= "\"url\" : \"${logo_url}\", ";
-      $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
-      
-      if($show_consensus){
-	  $Add_this .= ", \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
+      $Add_this = " \"image\" : \"${logo_url}\"";
+      $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+        
+      ## The user specifies if this label will be displayed in the html tree
+      if($label_fields_to_return{"id"}){
+	  $Add_this .= ",\n \"id\" : \"$matrix_info{$M1}{id}\"";
       }
+
+      ## The user specifies if this label will be displayed in the html tree
+      if($label_fields_to_return{"consensus"}){
+	  $Add_this .= ",\n \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
+      }
+
+      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
     }
     push(@Parsed_JSON, $line."\n");
     
@@ -769,15 +834,44 @@ sub Add_attributes_to_JSON(){
 ## display the tree
 sub Create_html_tree_file(){
     
+    my $add_this = "";
+    my $main_label = 	        
+	"\tnode.append(\"a\")
+	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? -20 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? -6 : 3; })
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
+
+    my $consensus_branch_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
+	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 20; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 25; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+
+    my $new_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? \"\" : d.; })
+	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : 25; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+	
     $matrix_num += 2;
     system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
 
-    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      $d3_base_url = "http://d3js.org/";
+#    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+#      $d3_base_url = "http://d3js.org/";
 #	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
+#    }
+
+    ## Select the D3 base
+    if($d3_base_format eq "link"){
+	$d3_base_url = "http://d3js.org";	
     }
 
     while(<TREE>){
@@ -785,7 +879,7 @@ sub Create_html_tree_file(){
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
 
 	### Fix the d3 library path
@@ -799,6 +893,61 @@ sub Create_html_tree_file(){
 	$json_file_name = pop(@temp);
 
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
+
+	if($_ =~ /Insert labels/){
+
+	    ###################################################################
+	    ## If one label was selected, set that label to the html script
+	    if(scalar keys %label_fields_to_return == 1){
+		$add_this = $main_label;
+		if(exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
+		    $add_this =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	    
+		}elsif(exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"id"})){
+		    $add_this =~ s/d\.;/ \"NAME: \" \+ d\.name;/;	
+		}elsif(exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"})){	    
+		    $add_this =~ s/d\.;/ \"ID: \" \+ d\.id;/;	
+		}
+	    }
+	    
+	    ###############################################################
+	    ## If two labels were selected, set them to the html script
+	    if(scalar keys %label_fields_to_return == 2){
+		my $cp1 = $main_label;
+		my $cp2 = $new_label;
+		if(exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
+		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
+		    $cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
+		}elsif(exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"name"})){
+		    $cp1 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
+		    $cp2 =~ s/d\.;/ \"id: \" \+ d\.id;/;
+		}elsif(exists($label_fields_to_return{"name"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"consensus"})){	    
+		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
+		    $cp2 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
+		}
+		$add_this = $cp1."\n".$cp2."\n";
+	    }
+
+	    #####################################################################
+	    ## If the three labels were selected, set them to the html script
+	    if(scalar keys %label_fields_to_return == 3){
+		my $cp1 = $main_label;
+		my $cp2 = $new_label;
+		my $cp3 = $new_label;
+
+		$cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
+		$cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;
+		$cp3 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
+		$cp3 =~ s/25/43/;
+		$add_this = $cp1."\n".$cp2."\n\n".$cp3."\n";
+	    }
+	    print TEMP $add_this."\n";
+	}
+
+	if($show_consensus){
+	    if($_ =~ /Insert consensus/){
+		print TEMP $consensus_branch_label."\n";
+	    }
+	}
 	print TEMP $_."\n";
     }
     close(TREE);
@@ -810,4 +959,3 @@ sub Create_html_tree_file(){
 
 
 __END__
-
