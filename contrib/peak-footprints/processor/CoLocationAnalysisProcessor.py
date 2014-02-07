@@ -7,7 +7,9 @@ from processor.Processor import Processor
 from processor.io.BedSeqAlignmentStatsCommStruct import BedSeqAlignmentStatsCommStruct
 from processor.io.BedSeqAlignmentStatsCommStruct import MotifStatistics
 
+from utils.Constants import Constants
 from utils.RSATUtils import RSATUtils
+from utils.RUtils import RUtils
 from utils.exception.ExecutionException import ExecutionException
 from utils.FileUtils import FileUtils
 
@@ -104,10 +106,12 @@ class CoLocationAnalysisProcessor(Processor):
                     title1 = self.component.pipelineName
                     title2 = "Distribution of distances between " + motif_name + " and " + reference_motif
                     legendx = "Distance to " + reference_motif
-                    legendy = "Number of occurence"
-                    result_info = RSATUtils.outputHistogram(final_distances[ motif_name], histogram_interval, dir_path, prefix, title1, title2, legendx, legendy, None, True)
+                    legendy = "Number of motif hits"
+                    result_info = RUtils.plotHistogram(final_distances[ motif_name], histogram_interval, dir_path, prefix, title1, title2, legendx, legendy, "png")
                     motif_stats.setAttribute(MotifStatistics.MOTIF_COLOCATION_HISTOGRAM, result_info[ 0])
                     motif_stats.setAttribute(MotifStatistics.MOTIF_COLOCATION_HISTOGRAM_GRAPH, result_info[ 1])
+                    result_info_pdf = RUtils.plotHistogram(final_distances[ motif_name], histogram_interval, dir_path, prefix, title1, title2, legendx, legendy,"pdf")
+                    motif_stats.setAttribute(MotifStatistics.MOTIF_COLOCATION_HISTOGRAM_GRAPH_PDF, result_info_pdf[ 1])
             count_motif += 1
             ProgressionManager.setTaskProgression("Building histograms", self.component, count_motif / float(total_motif))
             
@@ -191,16 +195,26 @@ class CoLocationAnalysisProcessor(Processor):
                 
                 if math.fabs(distance1) > math.fabs(distance2):
                     ref_motif_length = new_ref_motif.indexEnd - new_ref_motif.indexStart
-                    distance = distance2
+                    if new_ref_motif.strand == Constants.NEGATIVE_STRAND:
+                        distance = -distance2
+                    else:
+                        distance = distance2
                 else:
                     ref_motif_length = current_ref_motif.indexEnd - current_ref_motif.indexStart
-                    distance = distance1
+                    if current_ref_motif.strand == Constants.NEGATIVE_STRAND:
+                        distance = -distance1
+                    else:
+                        distance = distance1
+                
             # If no reference motif site was found before, uses the distance to the new reference motif site
             else:
                 ref_motif_length = new_ref_motif.indexEnd - new_ref_motif.indexStart
                 distance2 = motif_middle_position
                 distance2 -= motifs_middle_positions[ new_ref_motif]
-                distance = distance2
+                if new_ref_motif.strand == Constants.NEGATIVE_STRAND:
+                    distance = -distance2
+                else:
+                    distance = distance2
             
             # Consider only the distance under the distance max
             if distance >= -distance_max and distance <= distance_max:

@@ -41,7 +41,7 @@
 
 <body>
 	
-	<div id="chart"></div>
+	<div id="viz"></div>
 	<script type="text/javascript">
 
 	var width = 2200,
@@ -57,7 +57,7 @@
 	        .separation(function(a, b) { return (a.parent == b.parent ? 0.3 : 0.3); });
 
 
-	var svg = d3.select("body").append("svg")
+	var svg = d3.select("#viz").append("svg")
 		.attr("width", width)
 		.attr("height", height)
 		.append("g")
@@ -85,8 +85,13 @@
 	
 	node.append("circle")
 		.attr("r", 6.5);
-	
 
+	/*Insert labels*/
+	
+	
+	/*Insert consensus*/
+	
+/*
 	node.append("a")
 		.attr("xlink:href", function(d) { return d.url; })
 		.append("text")
@@ -102,12 +107,21 @@
 		.attr("dy", function(d){ return d.children ? -6 : 25; })
 		.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
 	;
+*/
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image; })  
 		.attr("width", function(d) { return (d.size + 2)  * 27; })
 		.attr("height", 120)
 		.attr("x", 250)    
+		.attr("y", -50) 
+		.attr("preserveAspectRatio", "none");	
+		
+	node.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image_RC; })  
+		.attr("width", function(d) { return (d.size + 2)  * 27; })
+		.attr("height", 120)
+		.attr("x", 1100)    
 		.attr("y", -50) 
 		.attr("preserveAspectRatio", "none");
 
