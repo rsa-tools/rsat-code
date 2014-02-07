@@ -339,6 +339,7 @@ sub UpdateExecTimeLogFile {
   ## Write header of the exec time log file if required
   &RSAT::message::Debug("exec_time_log_file", $main::exec_time_log_file) if ($main::verbose >= 5);
   unless (-e $main::exec_time_log_file) {
+    &RSAT::message::Info("Creating execution time log file",  $main::exec_time_log_file) if ($main::verbose >= 2);
     open LOG, ">".$main::exec_time_log_file;
     print LOG join ("\t",
 		    "#start_date.time",
