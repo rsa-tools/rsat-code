@@ -258,14 +258,16 @@ _download_d3:
 ## Get and install the program ghostscript
 ## Note: for Mac users, please go to the ghostscript Web site
 ##
-## GS_URL=http://ghostscript.com/releases/
-## GS_VER=ghostscript-8.64
-## GS_TAR=${GS_VER}.tar.gz
 GS_URL=http://downloads.ghostscript.com/public/binaries/
-GS_VER=ghostscript-9.10-linux-x86_64
-GS_TAR=${GS_VER}.tgz
+GS_VER=9
+## Beware: I use an older version 9.07 because linux version 9.10 issues
+## warnings Unrecoverable error: stackunderflow in .setdistillerparams"
+GS_SUBVER=07
+GS_BIN=gs-${GS_VER}${GS_SUBVER}-linux_x86_64
+GS_DISTRIB=ghostscript-${GS_VER}.${GS_SUBVER}-linux-x86_64
+GS_TAR=${GS_DISTRIB}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
-install_ghostscript: _download_gs _compile_gs
+install_ghostscript: _download_gs _install_gs
 
 _download_gs:
 	@mkdir -p ${GS_DIR}
@@ -273,9 +275,13 @@ _download_gs:
 	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
 	@echo "gs dir	${GS_DIR}"
 
-_compile_gs:
-	@echo "Compiling gs"
-	(cd ${GS_DIR}/${GS_VER}; ./configure && make)
+_install_gs:
+	@echo "Installing gs in ${BIN_DIR}"
+	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${BIN_DIR}/; cd ${BIN_DIR}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
+
+#_compile_gs:
+#	@echo "Compiling gs"
+#	(cd ${GS_DIR}/${GS_DISTRIB}; ./configure && make)
 
 ################################################################
 ## Get and install the program gnuplot
