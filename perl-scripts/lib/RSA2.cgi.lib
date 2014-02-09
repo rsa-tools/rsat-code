@@ -911,6 +911,7 @@ sub GetMatrix {
 				'motifsampler'=>1,
 				'sequences' => 1,
 				'stamp'=>1,
+				'stamp-transfac'=>1,
       				'cis-bp'=>1,
 				'tab'=>1,
 				'transfac'=>1,
