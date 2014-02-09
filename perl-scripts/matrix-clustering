@@ -152,8 +152,9 @@ package main;
 	$supported_label_fields{$field} = 1;
     }
     local $supported_label_fields = join ",", @supported_label_fields;
-    local $label_fields_to_return = "";
+#    local $label_fields_to_return = "";
     local %label_fields_to_return = ();
+    local @label_fields_to_return = ();
 
     ## Matrices
     local @matrices = ();
@@ -189,6 +190,7 @@ package main;
 
     &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
 
+
     ## Non-recognized parameters are passed to compare-matrices
     if (scalar(@args_to_pass)) {
       $args_to_pass = join (" ", @args_to_pass);
@@ -212,10 +214,14 @@ package main;
       &RSAT::error::FatalError("You must define the output prefix (option -o).");
     }
 
-    ## Check that the matrix label field have been specified
-    unless ($label_fields_to_return) {
-      &RSAT::error::FatalError("You must define the matrix label fields to return (option -labels).");
+    ## Check that at least one field is selected for the option
+    ## "-labels".
+    if (scalar(@label_fields_to_return) == 0) {
+      $label_fields_to_return{id} = 1;
+      $label_fields_to_return{name} = 1;
     }
+    $label_fields_to_return = join ",", @label_fields_to_return;
+    &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
 
     ## Create output dir if required
     my $basename;
@@ -263,7 +269,7 @@ package main;
 #    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
-    if($export_tree_format eq "newick"){
+    if ($export_tree_format eq "newick"){
 	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
     }
     ## Open the HTML index file
@@ -497,16 +503,18 @@ B<Supported labels>
 (name, consensus, id)
 
 =cut
-    }elsif ($arg eq "-labels") {
-      $label_fields_to_return = shift(@arguments);
-      my @label_fields_to_return = split (",", $label_fields_to_return);
-      foreach $field (@label_fields_to_return) {
+    } elsif ($arg eq "-labels") {
+      my $label_fields_to_return = shift(@arguments);
+      my @new_label_fields_to_return = split (",", $label_fields_to_return);
+      foreach $field (@new_label_fields_to_return) {
 	if ($supported_label_fields{$field}) {
 	  $label_fields_to_return{$field} = 1;
 	} else {
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
 	}
       }
+      push @label_fields_to_return, @new_label_fields_to_return;
+
     }else {
         if ($arg =~ /\s/) {
 	    push @args_to_pass, "'".$arg."'";
@@ -558,7 +566,8 @@ sub CompareMatrices {
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
   $cmd .= " -sort cor";
-  $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -return matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
@@ -623,13 +632,13 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
-    if($export_tree_format eq "newick"){
+    if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
 	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
     }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
-    $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
+    $cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
     } else {
@@ -749,7 +758,9 @@ sub Add_attributes_to_JSON(){
     $matrix_info{$matrix_id}{name} = $split_line[2];
     $matrix_info{$matrix_id}{width} = $split_line[3];
     $matrix_info{$matrix_id}{consensus} = $split_line[4];
-    $matrix_info{$matrix_id}{logo_file} = $split_line[5];
+    $matrix_info{$matrix_id}{label} = $split_line[5];
+    $matrix_info{$matrix_id}{logo_file} = $split_line[6];
+
   }
   close(DATA);
 
@@ -769,22 +780,22 @@ sub Add_attributes_to_JSON(){
     $Flag = 0;
     $line = $_;
     
-
     ### If the user select the option -cons 1
     ### Add the consensus to the json file to be displayed in the tree
-    if($show_consensus){
-	if($line =~ /(\s*\"children\":\s*\[)/){
-
-	    $children++;
-	    $Add_this = "";
-	    if($children > 2){
-		$Add_this = " \"name\" : \"$matrix_info{oligos_7nt_mkv4_m5}{consensus}\", ";
-	    push(@Parsed_JSON, $Add_this."\n");
-	    }
+    if ($show_consensus){
+      if ($line =~ /(\s*\"children\":\s*\[)/){
+	
+	$children++;
+	$Add_this = "";
+	if ($children > 2){
+	  $Add_this = " \"name\" : \"$matrix_info{oligos_7nt_mkv4_m5}{consensus}\", ";
+	  push(@Parsed_JSON, $Add_this."\n");
 	}
+      }
     }
+
     ### Search the pattern separating the matrices names
-    if($line =~ /\s*\"name\":\s*\"(.+)\",/){
+    if ($line =~ /\s*\"name\":\s*\"(.+)\",/){
 
       $matrix_num++;
       $Flag = 1;
@@ -799,16 +810,13 @@ sub Add_attributes_to_JSON(){
       $Add_this = " \"image\" : \"${logo_url}\"";
       $Add_this .= ",\n \"url\" : \"${logo_url}\"";
         
-      ## The user specifies if this label will be displayed in the html tree
-      if($label_fields_to_return{"id"}){
-	  $Add_this .= ",\n \"id\" : \"$matrix_info{$M1}{id}\"";
+      foreach my $field (@supported_label_fields) {
+	next if ($field eq "name");
+	if ($label_fields_to_return{$field}) {
+#	  &RSAT::message::Debug("Matrix", $M1, "Adding field", $field) if ($main::verbose >= 0);
+	  $Add_this .= ",\n \"".${field}."\" : \"".$matrix_info{$M1}{$field}."\"";
+	}
       }
-
-      ## The user specifies if this label will be displayed in the html tree
-      if($label_fields_to_return{"consensus"}){
-	  $Add_this .= ",\n \"consensus\" : \"$matrix_info{$M1}{consensus}\"";
-      }
-
       $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
     }
     push(@Parsed_JSON, $line."\n");
@@ -870,7 +878,7 @@ sub Create_html_tree_file(){
 #    }
 
     ## Select the D3 base
-    if($d3_base_format eq "link"){
+    if ($d3_base_format eq "link"){
 	$d3_base_url = "http://d3js.org";	
     }
 
@@ -894,42 +902,40 @@ sub Create_html_tree_file(){
 
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
 
-	if($_ =~ /Insert labels/){
+	if ($_ =~ /Insert labels/){
 
-	    ###################################################################
-	    ## If one label was selected, set that label to the html script
-	    if(scalar keys %label_fields_to_return == 1){
+	  ###################################################################
+	  ## If one label was selected, set that label to the html script
+	  if (scalar keys %label_fields_to_return == 1){
 		$add_this = $main_label;
-		if(exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
+		if (exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
 		    $add_this =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	    
-		}elsif(exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"id"})){
+		}elsif (exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"id"})){
 		    $add_this =~ s/d\.;/ \"NAME: \" \+ d\.name;/;	
-		}elsif(exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"})){	    
+		}elsif (exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"})){	    
 		    $add_this =~ s/d\.;/ \"ID: \" \+ d\.id;/;	
 		}
-	    }
 	    
 	    ###############################################################
 	    ## If two labels were selected, set them to the html script
-	    if(scalar keys %label_fields_to_return == 2){
+	    } elsif (scalar keys %label_fields_to_return == 2){
 		my $cp1 = $main_label;
 		my $cp2 = $new_label;
-		if(exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
+		if (exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
 		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
 		    $cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
-		}elsif(exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"name"})){
+		}elsif (exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"name"})){
 		    $cp1 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
 		    $cp2 =~ s/d\.;/ \"id: \" \+ d\.id;/;
-		}elsif(exists($label_fields_to_return{"name"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"consensus"})){	    
+		}elsif (exists($label_fields_to_return{"name"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"consensus"})){	    
 		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
 		    $cp2 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
 		}
 		$add_this = $cp1."\n".$cp2."\n";
-	    }
 
 	    #####################################################################
 	    ## If the three labels were selected, set them to the html script
-	    if(scalar keys %label_fields_to_return == 3){
+	    } elsif (scalar keys %label_fields_to_return == 3){
 		my $cp1 = $main_label;
 		my $cp2 = $new_label;
 		my $cp3 = $new_label;
@@ -943,8 +949,8 @@ sub Create_html_tree_file(){
 	    print TEMP $add_this."\n";
 	}
 
-	if($show_consensus){
-	    if($_ =~ /Insert consensus/){
+	if ($show_consensus){
+	    if ($_ =~ /Insert consensus/){
 		print TEMP $consensus_branch_label."\n";
 	    }
 	}
