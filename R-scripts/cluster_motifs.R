@@ -123,7 +123,7 @@ if (!exists("score")) {
 
 
 ##################################
-### Read matrix comparison table
+## Read matrix comparison table
 compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
 names(compare.matrices.table)[1] <- sub("^X.", "", names(compare.matrices.table)[1])
 
@@ -194,6 +194,7 @@ compare.matrices.table$score.dist <- score.dist
 
 ################################################################
 ## Build a distance matrix from the distance score list
+#dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
 dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
 
 ################
