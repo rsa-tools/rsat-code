@@ -46,6 +46,7 @@ formats.
 			   'meme'=>1,
 			   'motifsampler'=>1,
 			   'stamp'=>1,
+			   'stamp-transfac'=>1,
 			   'tab'=>1,
 			   'tf'=>1,
 			   'transfac'=>1,
@@ -94,12 +95,13 @@ sub readFromFile {
 	@matrices = _readFromConsensusFile($file);
     } elsif ($format eq "transfac") {
 	@matrices = _readFromTRANSFACFile($file, "transfac");
-    } elsif ($format eq "stamp") {
-	@matrices = _readFromTRANSFACFile($file, "stamp"); 
     } elsif ($format eq "cis-bp") {
 	@matrices = _readFromTRANSFACFile($file, "cis-bp");
-    } elsif ($format eq "stamp-previous") {
+#    } elsif ($format eq "stamp-previous") {
+    } elsif ($format eq "stamp") { ## This is the format of STAMP demo matrices
 	@matrices = _readFromSTAMPFile($file);
+    } elsif ($format eq "stamp-transfac") { ## STAMP exports files in a pseudo-transfac format
+	@matrices = _readFromTRANSFACFile($file, "stamp"); 
     } elsif ($format eq "infogibbs") {
 	@matrices = _readFromInfoGibbsFile($file);
     } elsif ($format eq "assembly") {
@@ -538,7 +540,7 @@ Read a matrix from a STAMP file. This method is called by the method
 C<readFromFile($file, "STAMP")>.
 
 =cut
-sub _readFromSTAMPFile_PreviousFormat {
+sub _readFromSTAMPFile {
   my ($file) = @_;
   &RSAT::message::Info ("Reading matrix from STAMP file", $file) if ($main::verbose >= 3);
 
