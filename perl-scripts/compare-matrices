@@ -481,6 +481,7 @@ package main;
 				    "matrix_number", ## Number of the matrices in the input files
 				    "matrix_id", ## Identifiers of the matrices
 				    "matrix_name", ## Names of the matrices
+				    "matrix_label", ## Label of the matrices (the label can contain a concatenation of various fields)
 				    "matrix_ac", ## Accession number of the matrices
 				    "w", ## Width of the alignment (included in width, but useful for the Web page parameters)
 				    "width", ## Width of the matrices and the alignment
@@ -592,6 +593,20 @@ package main;
 #  local $triangle = 0;
   local $merging_stat = "mean";
 
+
+  ## Fields for the matrix description table
+  ##
+  ## Supported label fields
+  local @supported_label_fields = qw (id name consensus);
+  local %supported_label_fields = ();
+  foreach my $field (@supported_label_fields) {
+    $supported_label_fields{$field} = 1;
+  }
+  local $supported_label_fields = join ",", @supported_label_fields;
+#    local $label_fields_to_return = "";
+  local %label_fields_to_return = ();
+  local @label_fields_to_return = ();
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -623,6 +638,15 @@ package main;
     delete($return_field{all});
     delete($return_field{direction});
   }
+
+  ## Check that at least one field is selected for the option
+  ## "-labels".
+  if (scalar(@label_fields_to_return) == 0) {
+    $label_fields_to_return{id} = 1;
+    $label_fields_to_return{name} = 1;
+  }
+  $label_fields_to_return = join ",", @label_fields_to_return;
+  &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 0);
 
   ## Description table requires consensus
   if ($return_field{matrix_desc}) {
@@ -1028,6 +1052,47 @@ package main;
     }
   }
 
+
+  ################################################################
+  ## Compute the required parameters for each matrix
+  $m=0;
+  foreach my $matrix (@matrices) {
+    $m ++;
+    ## Calculate the consensus for each matrix
+    $matrix->calcConsensus() if ($return_field{consensus});
+
+    ################################################################
+    ## Define labels by concatenating user-specified fields
+    my @label_terms = ();
+    foreach my $field (@label_fields_to_return) {
+      if ($field eq "consensus") {
+	$field = "consensus.IUPAC";
+      }
+      # &RSAT::message::Debug("compare-matrices", 
+      # 		      "matrix", $matrix->get_attribute("id"),  
+      # 		      "adding field to label", 
+      # 		      $field,
+      # 		      $matrix->get_attribute($field)) if ($main::verbose >= 10);
+      push @label_terms, $matrix->get_attribute($field);
+    }
+    $matrix->force_attribute("label",  join "_", @label_terms);
+
+    ################################################################
+    ## Compute the number of sites as the maximal sum of counts
+    ## per column. Note that some matrices might have been built
+    ## from sites of varying lengths, so that the col sum is not
+    ## always the same for all the columns
+    my @counts = $matrix->getMatrix();
+    my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
+    my $nsites = &RSAT::stats::max(@counts_per_col);
+    $matrix->set_attribute("nsites", $nsites);
+    my $matrix_name = $matrix->get_attribute("name");
+    unless (defined($matrix_name)){
+      $matrix->set_attribute("name","matrix1.".$m);
+      $matrix_name=$matrix->get_attribute("name");
+    }
+  }
+
   ################################################################
   ## Compute maximal lengths of string attributes (id, ac, name) for
   ## nice display in tab-delimited columns
@@ -1036,6 +1101,7 @@ package main;
   local $max_name_len1 = 0;
   local $max_id_len1 = 0;
   local $max_ac_len1 = 0;
+  local $max_label_len1 = 0;
   local %matrix_by_id1 = (); ## index matrices by ID
   local $m = 0;
   foreach my $matrix (@matrices1) {
@@ -1070,12 +1136,18 @@ package main;
     my $name_len = length($name);
     $max_name_len1 = $name_len if ($name_len > $max_name_len1);
 
+    ## Compute max label lengths to align column headers
+    my $label = $matrix ->get_attribute("label");
+    my $label_len = length($label);
+    $max_label_len1 = $label_len if ($label_len > $max_label_len1);
+
 #    &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
   }
   &RSAT::message::Debug("max string lengths for matrices 1",
 			"id:".$max_id_len1,
 			"ac:".$max_ac_len1,
 			"name:".$max_name_len1,
+			"label:".$max_label_len1,
 		       ) if ($main::verbose >= 5);
 
   ## treat the second matrix set
@@ -1087,6 +1159,7 @@ package main;
     $max_name_len2 = $max_name_len1;
     $max_id_len2 = $max_id_len1;
     $max_ac_len2 = $max_ac_len1;
+    $max_label_len2 = $max_label_len1;
     %matrix_by_id2 = %matrix_by_id1;
   } else {
     foreach my $matrix (@matrices2) {
@@ -1118,35 +1191,22 @@ package main;
     my $name = $matrix ->get_attribute("name");
     my $name_len = length($name);
     $max_name_len2 = $name_len if ($name_len > $max_name_len2);
+
+    ## Compute max size for matrix labels
+    unless ($matrix->get_attribute("label")) {
+      $matrix->force_attribute("label", $id)
+    }
+    my $label = $matrix ->get_attribute("label");
+    my $label_len = length($label);
+    $max_label_len2 = $label_len if ($label_len > $max_label_len2);
+
+    
 #      &RSAT::message::Debug("Matrix", $m, "ID=".$id, "NAME=".$name, "AC=".$ac) if ($main::verbose >= 10);
     }
   }
 #  &RSAT::message::Debug("max name length for matrices 2", $max_name_len2) if ($main::verbose >= 10);
 
-
-  ################################################################
-  ## Compute the required parameters for each matrix
-  my $m=0;
-  foreach my $matrix (@matrices) {
-    $m ++;
-    ## Calculate the consensus for each matrix
-    $matrix->calcConsensus() if ($return_field{consensus});
-    
-    ################################################################
-    ## Compute the number of sites as the maximal sum of counts
-    ## per column. Note that some matrices might have been built
-    ## from sites of varying lengths, so that the col sum is not
-    ## always the same for all the columns
-    my @counts = $matrix->getMatrix();
-    my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
-    my $nsites = &RSAT::stats::max(@counts_per_col);
-    $matrix->set_attribute("nsites", $nsites);
-    my $matrix_name = $matrix->get_attribute("name");
-    unless (defined($matrix_name)){
-      $matrix->set_attribute("name","matrix1.".$m);
-      $matrix_name=$matrix->get_attribute("name");
-    }
-  }
+  ### WAS HERE ###
 
   ################################################################
   ## Start the amtrix comparison
@@ -1178,11 +1238,21 @@ package main;
     push (@header, sprintf("%-${max_ac_len2}s", "ac2"));
   }
 #  push (@header, "ac1", "ac2") if ($return_field{matrix_ac});
+
+  ## Matrix name
   if ($return_field{matrix_name}) {
     my $width  = ${max_name_len1};
     $width -= 1 if (scalar(@header)==0);
     push (@header, sprintf("%-${width}s", "name1"));
     push (@header, sprintf("%-${max_name_len2}s", "name2"));
+  }
+
+  ## Matrix label
+  if ($return_field{matrix_label}) {
+    my $width  = ${max_label_len1};
+    $width -= 1 if (scalar(@header)==0);
+    push (@header, sprintf("%-${width}s", "label1"));
+    push (@header, sprintf("%-${max_label_len2}s", "label2"));
   }
   push (@header, "cor") if ($return_field{cor});
   push (@header, "Ncor") if ($return_field{Ncor});
@@ -1243,6 +1313,8 @@ package main;
     $description{ac2} = "Accession number of the second matrix";
     $description{name1} = "Name of the first matrix";
     $description{name2} = "Name of the second matrix";
+    $description{label1} = "Label of the first matrix";
+    $description{label2} = "Label of the second matrix";
     $description{offset} = "shift of the second matrix relative to the first matrix (negative:left; positive: right)";
     $description{strand} = "\"strand\", i.e. orientation of matrix 2 relative to matrix 1 (D=direct;  R=reverse)";
     $description{w1} = "Width of the first matrix";
@@ -1305,9 +1377,11 @@ package main;
     foreach my $matrix (@matrices) {
       $m ++;
       my $logo_file = $dir{logos}."/".$matrix->get_attribute("id");
+      my $rc_logo_file = $logo_file."_rc";
       &RSAT::message::Info("Generating logo for matrix", $m, $matrix->get_attribute("id"), $logo_file) if ($main::verbose >= 3);
       $matrix->makeLogo($logo_file, "", " -h 3", 0);
       $matrix->force_attribute("logo_file", $logo_file);
+      $matrix->force_attribute("rc_logo_file", $rc_logo_file);
     }
   }
 
@@ -1325,7 +1399,9 @@ package main;
 			     "name",
 			     "width",
 			     "consensus",
+			     "label",
 			     "logo_file",
+			     "rc_logo_file",
 	), "\n";
 
     my $m=0;
@@ -1337,7 +1413,9 @@ package main;
 			       $matrix->get_attribute("name"),
 			       $matrix->get_attribute("ncol"),
 			       $matrix->get_attribute("consensus.IUPAC"),
+			       $matrix->get_attribute("label"),
 			       $matrix->get_attribute("logo_file"),
+			       $matrix->get_attribute("rc_logo_file"),
 	  ), "\n";
     }
     close $main::matrix_desc;
@@ -1813,6 +1891,13 @@ package main;
 	    my $name2 = $matrix2->get_attribute("name") || "<NA>";
 #	    $name2 = sprintf("%-${max_name_len2}s", $name2);
 	    push (@out_fields, $name1, $name2);
+	  }
+	  if ($return_field{matrix_label}) {
+	    my $label1 = $matrix1->get_attribute("label") || "<NA>";
+#	    $label1 = sprintf("%-${max_label_len1}s", $label1);
+	    my $label2 = $matrix2->get_attribute("label") || "<NA>";
+#	    $label2 = sprintf("%-${max_label_len2}s", $label2);
+	    push (@out_fields, $label1, $label2);
 	  }
 	  push (@out_fields, sprintf("%.3f", $cor)) if ($return_field{cor});
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
@@ -3102,6 +3187,11 @@ Identifiers of the matrices
 
 Names of the matrices
 
+=item I<matrix_label>
+
+Label of the matrices. The label is made of a concatenation of
+user-specificed fields (using the option I<-labels>).
+
 =item I<matrix_ac>
 
 Accession number of the matrices (TRANSFAC format makes a distinction
@@ -3195,6 +3285,36 @@ All supported output fields, including all metrics.
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	}
       }
+
+=pod
+
+=item	B<-labels>
+
+Attributes to inclute in the matrix labels of the description table.
+
+B<Supported labels>
+    
+(name, consensus, id)
+
+The order of the fields is taken into consideration. 
+
+Example: 
+   -labels id,name,consensus
+wll give a different result from 
+   -labels id,consensus,name
+
+=cut
+    } elsif ($arg eq "-labels") {
+      my $label_fields_to_return = shift(@arguments);
+      my @new_label_fields_to_return = split (",", $label_fields_to_return);
+      foreach $field (@new_label_fields_to_return) {
+	if ($supported_label_fields{$field}) {
+	  $label_fields_to_return{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
+	}
+      }
+      push @label_fields_to_return, @new_label_fields_to_return;
 
 =pod
 
