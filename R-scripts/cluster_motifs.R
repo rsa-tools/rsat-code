@@ -17,6 +17,7 @@
 # install.packages("RJSONIO")
 library("RJSONIO")
 library("ctc")
+library("reshape")
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -249,6 +250,11 @@ writeLines(jsonTree, outfile)
 
 verbose(paste("JSON tree file", outfile), 1)
 
-
-
-
+################################
+## Print the distance matrix
+m <- as.matrix(dist.matrix)
+row.names(m) <- as.vector(description.table$label)
+colnames(m) <- as.vector(description.table$label)
+m2 <- melt(m)[melt(upper.tri(m))$value,]
+names(m2) <- c(";label1", "label2", "distance")
+write.table(m2, file = distance.table, quote = FALSE, row.names = FALSE, sep = "\t")
