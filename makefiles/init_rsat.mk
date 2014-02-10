@@ -16,92 +16,107 @@ usage:
 ## Initialize directories and config files
 SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
 CONFIG_FILE=RSA.config
-LOG_DIR=${RSAT}/public_html/logs
-COUNT_FILE=${LOG_DIR}/count-file
+LOGS_DIR=${RSAT}/public_html/logs
+COUNT_FILE=${LOGS_DIR}/count-file
+
+EXEC_FILES='bin/*' \
+	'python-scripts/*' \
+	'perl-scripts/*' \
+	'perl-scripts/parsers/*' \
+	'public_html/*.cgi' \
+	'public_html/web_services/*.cgi' \
+	'ws_clients/perl_clients/*.pl'
 init:
 	@echo ""
 	@echo "Creating directories"
-
-	@echo ""
-	@echo "Initializing directory	public_html/data"
-	mkdir -p public_html/data
-	echo "Options +Indexes" > public_html/data/.htaccess
-	mkdir -p public_html/data/genomes
+	@echo "	data	${RSAT}/public_html/data"
+	@mkdir -p public_html/data
+	@echo "Options +Indexes" > public_html/data/.htaccess
+	@echo "	genomes	${RSAT}/public_html/data/genomes"
+	@mkdir -p public_html/data/genomes
 #	mkdir -p public_html/data/KEGG
 #	mkdir -p public_html/data/metabolic_networks
 #	mkdir -p public_html/data/metabolic_networks/GER_files
-	mkdir -p bin
-	mkdir -p lib
+	@echo "	bin	${RSAT}/bin"
+	@mkdir -p bin
+	@echo "	lib	${RSAT}/lib"
+	@mkdir -p lib
 	@${MAKE} _create_download_dir
 
-	@echo ""
-	@echo "Initializing directory	public_html/tmp"
-	mkdir -p public_html/tmp
-	mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
-	chmod 777 public_html/tmp
+	@echo "	tmp	${RSAT}/public_html/tmp"
+	@mkdir -p public_html/tmp
+	@mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
+	@chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
 	@rm -f public_html/tmp/index.html
 	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
-	chmod 444 public_html/tmp/index.html
+	@chmod 444 public_html/tmp/index.html
 
-	@echo ""
-	@echo "Initializing directory	${LOG_DIR}"
-	chmod 777 ${LOG_DIR}
-	mkdir -p ${LOG_DIR}
-	mkdir -p ${LOG_DIR}/peak-footprints_logs; chmod 777 ${LOG_DIR}/peak-footprints_logs
-#	echo "Options -Indexes" > ${LOG_DIR}/.htaccess
-	@rm -f ${LOG_DIR}/index.html
-	echo "<html><body></b<Forbidden</b></body></html>" > ${LOG_DIR}/index.html
-	chmod 444 ${LOG_DIR}/index.html
+	@echo "	logs	${LOGS_DIR}"
+	@chmod 777 ${LOGS_DIR}
+	@mkdir -p ${LOGS_DIR}
+	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
+#	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
+	@rm -f ${LOGS_DIR}/index.html
+	@echo "<html><body></b<Forbidden</b></body></html>" > ${LOGS_DIR}/index.html
+	@chmod 444 ${LOGS_DIR}/index.html
 
 	@echo
-	@echo "Setting exec rights to script directories"
-	chmod -R 755 bin
-	chmod 755 python-scripts/*
-	chmod 755 perl-scripts/*
-	chmod 755 perl-scripts/parsers/*
-	chmod 755 public_html/*.cgi
-	chmod 755 public_html/web_services/*.cgi
-	chmod 755 ws_clients/perl_clients/*.pl
+	@echo "Setting exec rights to executable files"
+	@for f in ${EXEC_FILES} ; do \
+		echo "	$${f}"; \
+		chmod 755 $${f}; \
+	done ; \
+
+#	@chmod -R 755 bin
+#	@chmod 755 python-scripts/*
+#	@chmod 755 perl-scripts/*
+#	@chmod 755 perl-scripts/parsers/*
+#	@chmod 755 public_html/*.cgi
+#	@chmod 755 public_html/web_services/*.cgi
+#	@chmod 755 ws_clients/perl_clients/*.pl
 
 	@echo ""
 	@echo "Creating links"
-	ln -fs public_html/data .
-	ln -fs public_html/tmp .
-	ln -fs ${LOG_DIR} .
+	@echo "	data"
+	@ln -fs public_html/data .
+	@echo "	tmp"
+	@ln -fs public_html/tmp .
+	@echo "	logs"
+	@ln -fs ${LOGS_DIR} logs
 
 	@echo ""
 	@echo "Checking config files"
 	@if [ -f "${SUPPORTED_ORGANISMS}" ] ; then \
-		echo "file already exists	${SUPPORTED_ORGANISMS}" ; \
+		echo "	File already exists	${SUPPORTED_ORGANISMS}" ; \
 	else \
-		echo "creating empty file with supported organisms ${SUPPORTED_ORGANISMS}" ; \
+		echo "	Creating empty file with supported organisms ${SUPPORTED_ORGANISMS}" ; \
 	fi
 	@if [ -f "${COUNT_FILE}" ] ; then \
-		echo "file already exists	${COUNT_FILE}" ; \
+		echo "	File already exists	${COUNT_FILE}" ; \
 	else \
-		echo "creating count file ${COUNT_FILE}" ; \
+		echo "	Creating count file ${COUNT_FILE}" ; \
 		echo "0" > ${COUNT_FILE}; \
 	fi
 	@if [ -f "${CONFIG_FILE}" ] ; then \
-		echo "file already exists	${CONFIG_FILE}" ; \
+		echo "	File already exists	${CONFIG_FILE}" ; \
 	else \
-		echo "creating config file ${CONFIG_FILE}" ; \
+		echo "	Creating config file ${CONFIG_FILE}" ; \
 		cp RSA.config.default ${CONFIG_FILE}; \
 	fi
 	@if [ -f "${RSAT}/RSAT_config.props" ] ; then \
-		echo "RSAT property file already exists	${RSAT}/RSAT_config.props" ; \
+		echo "	RSAT property file already exists	${RSAT}/RSAT_config.props" ; \
 	else \
-		echo "Creating RSAT property file ${RSAT}/RSAT_config.props" ; \
+		echo "	Creating RSAT property file ${RSAT}/RSAT_config.props" ; \
 		cp ${RSAT}/RSAT_config_default.props ${RSAT}/RSAT_config.props; \
 	fi
 	@if [ -f "${RSAT}/RSAT_config.mk" ] ; then \
-		echo "RSAT makefiles config already exists	${RSAT}/RSAT_config.mk" ; \
+		echo "	RSAT makefiles config already exists	${RSAT}/RSAT_config.mk" ; \
 	else \
-		echo "Creating RSAT config for makefiles ${RSAT}/RSAT_config.mk" ; \
+		echo "	Creating RSAT config for makefiles ${RSAT}/RSAT_config.mk" ; \
 		cp ${RSAT}/RSAT_config_default.mk ${RSAT}/RSAT_config.mk; \
 	fi
-	chmod a+w ${COUNT_FILE}
+	@chmod a+w ${COUNT_FILE}
 
 
 
