@@ -632,13 +632,14 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
+    $cluster_motifs_cmd .= ";description='".$main::outfile{matrix_descriptions}."'";
     if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
 	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
     }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
-    $cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
+    #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
     } else {
@@ -753,13 +754,14 @@ sub Add_attributes_to_JSON(){
     chomp();
     my $line = $_;
     @split_line = split(/\s+/, $line);
-    my $matrix_id = $split_line[1];
-    $matrix_info{$matrix_id}{id} = $split_line[1];
-    $matrix_info{$matrix_id}{name} = $split_line[2];
-    $matrix_info{$matrix_id}{width} = $split_line[3];
-    $matrix_info{$matrix_id}{consensus} = $split_line[4];
-    $matrix_info{$matrix_id}{label} = $split_line[5];
-    $matrix_info{$matrix_id}{logo_file} = $split_line[6];
+    my $matrix_label = $split_line[5];
+    $matrix_info{$matrix_label}{id} = $split_line[1];
+    $matrix_info{$matrix_label}{name} = $split_line[2];
+    $matrix_info{$matrix_label}{width} = $split_line[3];
+    $matrix_info{$matrix_label}{consensus} = $split_line[4];
+    $matrix_info{$matrix_label}{label} = $split_line[5];
+    $matrix_info{$matrix_label}{logo_file} = $split_line[6];
+    $matrix_info{$matrix_label}{logo_file_rc} = $split_line[7];
 
   }
   close(DATA);
@@ -788,14 +790,17 @@ sub Add_attributes_to_JSON(){
 	$children++;
 	$Add_this = "";
 	if ($children > 2){
-	  $Add_this = " \"name\" : \"$matrix_info{oligos_7nt_mkv4_m5}{consensus}\", ";
-	  push(@Parsed_JSON, $Add_this."\n");
+
+	    ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
+	    ### here must be displayed the consensus of consensus
+	    $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
+	    push(@Parsed_JSON, $Add_this."\n");
 	}
       }
     }
 
     ### Search the pattern separating the matrices names
-    if ($line =~ /\s*\"name\":\s*\"(.+)\",/){
+    if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
 
       $matrix_num++;
       $Flag = 1;
@@ -805,15 +810,16 @@ sub Add_attributes_to_JSON(){
       ## Define te URL of the logo file, relative to the location of the json file
       my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
       my $logo_url = $logo_link.".png";
-      
+      my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file_rc});
+      $logo_url_rc .= ".png";
+
       ### Create the line that will be added to JSON file
       $Add_this = " \"image\" : \"${logo_url}\"";
+      $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
       $Add_this .= ",\n \"url\" : \"${logo_url}\"";
         
       foreach my $field (@supported_label_fields) {
-	next if ($field eq "name");
 	if ($label_fields_to_return{$field}) {
-#	  &RSAT::message::Debug("Matrix", $M1, "Adding field", $field) if ($main::verbose >= 0);
 	  $Add_this .= ",\n \"".${field}."\" : \"".$matrix_info{$M1}{$field}."\"";
 	}
       }
@@ -842,30 +848,31 @@ sub Add_attributes_to_JSON(){
 ## display the tree
 sub Create_html_tree_file(){
     
+    my $labels_num = 0;
     my $add_this = "";
     my $main_label = 	        
 	"\tnode.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
-	\t\t.attr(\"dx\", function(d) { return d.children ? -20 : 20; })
-	\t\t.attr(\"dy\", function(d) { return d.children ? -6 : 3; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
-
-    my $consensus_branch_label = 
-	"\tnode.append(\"text\")
-	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
-	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 20; })
-	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 25; })
-	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 
     my $new_label = 
 	"\tnode.append(\"text\")
 	\t\t.text(function(d){ return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
-	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : 25; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 	
+    my $consensus_branch_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
+	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 0; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 0; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+
     $matrix_num += 2;
     system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
@@ -904,47 +911,31 @@ sub Create_html_tree_file(){
 
 	if ($_ =~ /Insert labels/){
 
-	  ###################################################################
-	  ## If one label was selected, set that label to the html script
-	  if (scalar keys %label_fields_to_return == 1){
-		$add_this = $main_label;
-		if (exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
-		    $add_this =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	    
-		}elsif (exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"}) && !exists($label_fields_to_return{"id"})){
-		    $add_this =~ s/d\.;/ \"NAME: \" \+ d\.name;/;	
-		}elsif (exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"consensus"})){	    
-		    $add_this =~ s/d\.;/ \"ID: \" \+ d\.id;/;	
-		}
-	    
-	    ###############################################################
-	    ## If two labels were selected, set them to the html script
-	    } elsif (scalar keys %label_fields_to_return == 2){
-		my $cp1 = $main_label;
-		my $cp2 = $new_label;
-		if (exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"name"}) && !exists($label_fields_to_return{"id"})){	    
-		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
-		    $cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
-		}elsif (exists($label_fields_to_return{"consensus"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"name"})){
-		    $cp1 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;	
-		    $cp2 =~ s/d\.;/ \"id: \" \+ d\.id;/;
-		}elsif (exists($label_fields_to_return{"name"}) && exists($label_fields_to_return{"id"}) && !exists($label_fields_to_return{"consensus"})){	    
-		    $cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
-		    $cp2 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
-		}
-		$add_this = $cp1."\n".$cp2."\n";
 
-	    #####################################################################
-	    ## If the three labels were selected, set them to the html script
-	    } elsif (scalar keys %label_fields_to_return == 3){
-		my $cp1 = $main_label;
-		my $cp2 = $new_label;
-		my $cp3 = $new_label;
+	    ################################################################
+	    ## Insert in the html script the labels selected by the user
 
-		$cp1 =~ s/d\.;/ \"NAME: \" \+ d\.name;/;
-		$cp2 =~ s/d\.;/ \"CONSENSUS: \" \+ d\.consensus;/;
-		$cp3 =~ s/d\.;/ \"ID: \" \+ d\.id;/;
-		$cp3 =~ s/25/43/;
-		$add_this = $cp1."\n".$cp2."\n\n".$cp3."\n";
+	    foreach my $field (@label_fields_to_return) {
+		if ($label_fields_to_return{$field}) {
+		    $labels_num++;
+		    
+		    ### Add the first label with the the link to the logo
+		    if($labels_num == 1){
+			$add_this = $main_label;
+			$up = uc($field);
+			$add_this =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
+		    }
+		    
+		    ### Add the new labels, set the distances among the labels in the tree
+		    if($labels_num > 1){
+			my $copy = $new_label;
+			$up = uc($field);
+			$copy =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
+			my $y_displacement = 3 + (($labels_num -1) * 20);
+			$copy =~ s/#/$y_displacement/;
+			$add_this .= "\n\n".$copy."\n";
+		    }
+		}
 	    }
 	    print TEMP $add_this."\n";
 	}
