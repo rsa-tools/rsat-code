@@ -12,9 +12,6 @@
 ## - Define an argument infile.consensus, providing a 3-columns file with the logo ID + its consensus in direct and reverse complementary strands. This consensus file should be exported by comapre-matrices.
 ## -> this consensus could e used to display trees in R, without requiring the
 
-## Pruebita
-##   infile <- "/Users/jvanheld/Documents/theses_et_memoires/Jaime_Castro/motif_clustering_scripts/peak-motifs_7nt_merged_oligos_positions_compa.tab"
-##   outfile <- "/Users/jvanheld/Documents/theses_et_memoires/Jaime_Castro/motif_clustering_scripts/peak-motifs_7nt_merged_oligos_positions_tree.json"
 
 ### Install rjson package
 # install.packages("RJSONIO")
@@ -37,8 +34,7 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 #######################
 ### File Input data
-#infile <- "peak-motifs_7nt_merged_oligos_positions_compa.tab"
-#Compare.Matrices.File.Path <- "/home/jaimecm/Documents/TAGC/Clustering_test/results/"
+#infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
 
 
 ## Options
@@ -53,7 +49,7 @@ export <- 'json'
 #################################################################################
 ## Etxract the tree from an hclust object and convert it into json object.
 createLeafNode <- function(hclust, i) {
-  list(name = hclust$labels[[i]],
+  list(label = hclust$labels[[i]],
        order = hclust$order[[i]])
 }
 hclustToTree <- function(hclust) {
@@ -127,6 +123,7 @@ if (!exists("score")) {
 compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
 names(compare.matrices.table)[1] <- sub("^X.", "", names(compare.matrices.table)[1])
 
+
 ##############################################
 ## Extract the score from the matrix comparison table
 
@@ -195,7 +192,7 @@ compare.matrices.table$score.dist <- score.dist
 ################################################################
 ## Build a distance matrix from the distance score list
 #dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
-dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
+dist.matrix <- as.dist(t(xtabs(score.dist ~ label1+label2, compare.matrices.table) ))
 
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
