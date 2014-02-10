@@ -101,7 +101,10 @@ genomes are available. For this, use the option
 
 \begin{lstlisting}
 ## Retrieve the list of supported species on EnsEMBL
-install-ensembl-genome -v 1  -available_species
+install-ensembl-genome -v 1  -available_species -o available_species_ensembl.tab
+
+## Read the result file
+more available_species_ensembl.tab
 \end{lstlisting}
 
 \emph{Note:} inter-individual variations are available for a subset
