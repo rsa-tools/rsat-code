@@ -32,10 +32,6 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 #source(file.path(dir.util, 'util_plots.R'))
 #source(file.path(dir.util, 'util_chip_analysis.R'))
 
-#######################
-### File Input data
-#infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
-
 
 ## Options
 plot.tree <- FALSE
@@ -117,12 +113,19 @@ if (!exists("score")) {
   score <- "Ncor";
 }
 
+#infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
+# description <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa_matrix_descriptions.tab"
 
 ##################################
 ## Read matrix comparison table
 compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
 names(compare.matrices.table)[1] <- sub("^X.", "", names(compare.matrices.table)[1])
 
+
+####
+## Read description table 
+description.table <- read.csv(description, sep = "\t", comment.char = ";")
+matrix.labels <-  as.vector(description.table$label)
 
 ##############################################
 ## Extract the score from the matrix comparison table
@@ -191,8 +194,7 @@ compare.matrices.table$score.dist <- score.dist
 
 ################################################################
 ## Build a distance matrix from the distance score list
-#dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
-dist.matrix <- as.dist(t(xtabs(score.dist ~ label1+label2, compare.matrices.table) ))
+dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
 
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
@@ -222,6 +224,7 @@ dist.matrix <- as.dist(t(xtabs(score.dist ~ label1+label2, compare.matrices.tabl
 ##############################################
 ### Runs and plot the hierarchical cluster
 tree <- hclust(dist.matrix)
+tree$labels <- as.vector(description.table$label)
 if (plot.tree) {plot(tree) }
 if (export == "newick") {
   newick.file <- sub('.json', '', outfile)
