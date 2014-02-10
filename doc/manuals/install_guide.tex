@@ -35,24 +35,69 @@ within a few days (Dec 2013). In the mean time the distribution is
 still coming with the detailed installation instructions. In case of
 trouble, don't hesitate to contact me.
 
-%% \begin{enumerate}
-%%   \item Download the compressed tar archive from the \RSAT
-%%     distribution site, uncompress it.
-%%     \begin{lstlisting}
-%% tar -xpzf rsat_yyyymmdd.tar.gz
-%%     \end{lstlisting}
+\section{Basic installation steps}
 
 
-%%   \item Open a terminal and set your working directory to the
-%%     folder \file{rsat} extracted from this archive.
+\begin{enumerate}
+\item \textbf{Download} the compressed tar archive from the \RSAT
+  distribution site, uncompress it.
+  \begin{lstlisting}
+tar -xpzf rsat_yyyymmdd.tar.gz
+  \end{lstlisting}
+  
+  
+\item Open a terminal, set your working directory to the folder
+  \file{rsat} extracted from this archive, and run the \RSAT
+  \textbf{configuration script}.
 
-%%   \item Run the \RSAT configuration script
-%%     \begin{lstlisting}
-%% perl perl-scripts/configure_rsat.pl
-%%     \end{lstlisting}
-    
-%%   \item Install the required Perl libraries (see below)
-%% \end{enumerate}
+  \begin{lstlisting}
+cd rsat
+perl perl-scripts/configure_rsat.pl
+  \end{lstlisting}
+
+\item Initialize \RSAT folders
+
+  \begin{lstlisting}
+make -f makefiles/init_rsat.mk init
+  \end{lstlisting}
+  
+\item Install the required Perl libraries (see below)
+
+\end{enumerate}
+
+\section{Full installation steps}
+
+  \begin{lstlisting}
+make -f makefiles/init_rsat.mk ws_stubb
+  \end{lstlisting}
+
+\section{Quick testing}
+
+\subsection{Testing the path}
+
+Check that the RSAT envionment variable is well defined
+
+\begin{lstlisting}
+echo $RSAT
+\end{lstlisting}
+
+Check that the folders containing RSAT executables are included in
+your path.
+
+\begin{lstlisting}
+echo $PATH | perl -pe 's|:|\n|g' | grep rsat
+\end{lstlisting}
+
+The result should contain the full path to the folders \file{bin},
+\file{perl-scripts}, and \file{python-scripts}.
+
+Test a simple perl script that does not require organisms to be
+installed.
+
+\begin{lstlisting}
+random-seq -l 100 -n 2
+\end{lstlisting}
+
 
 \chapter{Description and requirements}
 
