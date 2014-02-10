@@ -219,7 +219,7 @@ python_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO
+R_MODULES=RJSONIO,reshape
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 
