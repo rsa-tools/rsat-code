@@ -36,7 +36,7 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  $server = "http://rsat.ulb.ac.be/";
+  $server_url = "http://rsat.ulb.ac.be/";
 
   ################################################################
   ## Read argument values
@@ -44,7 +44,7 @@ package main;
 
   ################################################################
   ## Check argument values
-  unless ($main::server =~ /^http/) {
+  unless ($main::server_url =~ /^http/) {
     &RSAT::error::FatalError("Server URL should start with http://");
   }
 
@@ -53,11 +53,11 @@ package main;
   $out = &OpenOutputFile($outfile{output});
 
   ## Define the server (required
-  &RSAT::message::TimeWarn("Querying server", $server) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Querying server", $server_url) if ($main::verbose >= 2);
   eval
   {
     # Retrieving and processing the WSDL
-    my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
+    my $wsdl_url = $server_url.'/web_services/RSATWS.wsdl';
     &RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url);
     my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
 #    &RSAT::message::Debug("WSDL: ".$wsdl) if ($main::verbose >= 10);
@@ -68,7 +68,7 @@ package main;
     my $client = $proxy->compileClient('supported_organisms');
     
       # Calling the service and getting the response
-    &RSAT::message::TimeWarn("Sending query to server", $server);
+    &RSAT::message::TimeWarn("Sending query to server", $server_url);
     my $answer = $client->( request => {%args});
 #    &RSAT::message::Debug("Answer: ".$answer) if (main::verbose >= 10);
     
@@ -81,7 +81,7 @@ package main;
     # If no answer has arrived, return 1 to indicate the test failed.
     if ($answer) {
       &RSAT::message::Info("Server command : ".$answer->{output}->{response}->{command}) if ($main::verbose >= 2);
-      print $out "; Server : ", $server, "\n";
+      print $out "; Server : ", $server_url, "\n";
       print $out "; WSDL URL : ", $wsdl_url, "\n";
       print $out "; Server command : ".$answer->{output}->{response}->{command}."\n";
       print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
@@ -173,8 +173,8 @@ OPTIONS
 	       vary along branches, so that positive values will give
 	       different results from negative values.
 
-	-server Return the list of organisms supported on a remote
-		RSAT server, via the Web services interface
+	-url    Specify the URL of the remote RSAT server. 
+      Default: $
 		(http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl).
 
 		The option -server can be combined with the option
@@ -277,8 +277,9 @@ URL of the RSAT server.
 =cut
 
 
-    } elsif ($arg eq "-server") {
-      $main::server = shift(@arguments);
+    } elsif (($arg eq "-url")
+	     || ($arg eq "-server")) {
+      $main::server_url = shift(@arguments);
 
       ## Output fields
     } elsif ($arg eq "-return") {
