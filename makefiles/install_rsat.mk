@@ -205,6 +205,16 @@ _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
+## Check which modules are installed
+perl_modules_check:
+	@echo
+	@echo "Checking perl modules"
+	@echo `hostname` > perl_modules_check.txt
+	@for module in ${PERL_MODULES} ; do \
+		 perldoc -l $${module} >> perl_modules_check.txt; \
+	done
+	@echo "	perl_modules_check.txt"
+
 ################################################################
 ## Install modules required for python
 PYTHON_MODULES=SUDS Rpy2 SOAPpy
@@ -219,7 +229,7 @@ python_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO,reshape
+R_MODULES=RJSONIO reshape
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 
