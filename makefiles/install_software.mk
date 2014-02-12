@@ -105,11 +105,11 @@ config_local_lib:
 	@echo '## Perl local::lib module'  >>~/.bashrc
 	@echo 'eval $$(perl -I$$HOME/perl5/lib/perl5 -Mlocal::lib)' >>~/.bashrc
 
-install_one_perl_module_locally:
-	${MAKE} SUDO='' install_one_perl_module
-
-install_perl_modules_locally:
-	${MAKE} SUDO='' install_perl_modules
+#install_one_perl_module_locally:
+#	${MAKE} SUDO='' install_one_perl_module
+#
+#install_perl_modules_locally:
+#	${MAKE} SUDO='' install_perl_modules
 
 ################################################################
 ## Install Python 2.7.  We deliberately chose version 2.7 (and not
