@@ -27,20 +27,36 @@
 \tableofcontents
 \newpage
 
+\chapter{Introduction}
+
+This documents describes the installation procedure for the software
+suite \textbf{Regulatory Sequence Analysis Tools} (\RSAT), which
+integrates several dozens of tools to detect cis-regulatory elements
+in DNA sequences
+\cite{Thomas-Chollier:2011:W86-91,Thomas-Chollier:2008:W119-27,vanHelden:2003:3593-6,vanHelden:2000:177-87}.
+
 \chapter{Quick installation guide}
 
-I am aware that this installation guide is somewhat heavy. I am
-preparing a simplified installation procedure, which should be ready
-within a few days (Dec 2013). In the mean time the distribution is
-still coming with the detailed installation instructions. In case of
-trouble, don't hesitate to contact me.
+The full installation of all the \RSAT functionalities requires some
+external libraries and companion programs, some of which are not
+trivial to install. However, the majority of the tools does not
+require a full installation. 
+
+In order to give you a quick start, this section proposes a simplified
+installation procedure.
+
+The detailed installation instructions are still presented (in the
+next chapters), to indicate the particular usage of the different
+libraries, and provide some hints about their installation. In case of
+trouble, don't hesitate to contact Jacques van Helden.
 
 \section{Basic installation steps}
 
 
 \begin{enumerate}
 \item \textbf{Download} the compressed tar archive from the \RSAT
-  distribution site, uncompress it.
+  distribution site, and uncompress it.
+
   \begin{lstlisting}
 tar -xpzf rsat_yyyymmdd.tar.gz
   \end{lstlisting}
@@ -55,17 +71,76 @@ cd rsat
 perl perl-scripts/configure_rsat.pl
   \end{lstlisting}
 
+\item Define RSAT environment variable and adapt your path
+
+  \begin{lstlisting}
+source RSAT_config.bashrc
+  \end{lstlisting}
+
+Check the RSAT environment variable
+
+  \begin{lstlisting}
+echo $RSAT
+  \end{lstlisting}
+
 \item Initialize \RSAT folders
 
   \begin{lstlisting}
 make -f makefiles/init_rsat.mk init
   \end{lstlisting}
   
-\item Install the required Perl libraries (see below)
+\item Install the required Perl libraries.
 
+
+  \begin{lstlisting}
+## Get the list of Perl modules to be installed
+make -f makefiles/install_rsat.mk  perl_modules_list
+
+## Check which Perl modules are already installed
+make -f makefiles/install_rsat.mk perl_modules_check
+## The locations of installed modules are stored in perl_modules_check.txt
+
+## Install these modules
+make -f makefiles/install_rsat.mk perl_modules_install
+  \end{lstlisting}
+
+
+  \begin{itemize}
+  \item \textbf{Beware: } this step requires admin rights (you will e
+    prompted for sudo password in order to install modules in cpan).
+    
+  \item \program{cpan} installation takes some time, and is interrupted
+    by many prompts to let you choose some installation options. We
+    recommend to use the default option for all questions (just press
+    the ``Enter'' key).
+    
+  \item even though some Perl modules may fail to install, don't worry
+    too much. At this stage, you should be able to use most of \RSAT
+    functionalities.
+  \end{itemize}
 \end{enumerate}
 
+
 \section{Full installation steps}
+
+\subsection{Activating web services on your \RSAT instance}
+
+By default, Web services requests are redirected towards the main
+\RSAT server. To configure your \RSAT instance as a Web services
+provider, you need to edit the WSDL file.
+
+Open this file withb a text editor.
+
+\file{public_html/web_services/RSATWS.wsdl}
+
+At the bottom of the file, locate the following line, and adapt the
+URL to your local configuration.
+
+\begin{verbatim}
+<soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+\end{verbatim}
+
+After this, you shoudl re-generate the web services stubb.
 
   \begin{lstlisting}
 make -f makefiles/init_rsat.mk ws_stubb
@@ -75,11 +150,13 @@ make -f makefiles/init_rsat.mk ws_stubb
 
 \subsection{Testing the path}
 
-Check that the RSAT envionment variable is well defined
+\subsubsection{RSAT envionment variable}
 
 \begin{lstlisting}
 echo $RSAT
 \end{lstlisting}
+
+\subsubsection{RSAT exec dirs in the PATH}
 
 Check that the folders containing RSAT executables are included in
 your path.
@@ -91,23 +168,49 @@ echo $PATH | perl -pe 's|:|\n|g' | grep rsat
 The result should contain the full path to the folders \file{bin},
 \file{perl-scripts}, and \file{python-scripts}.
 
-Test a simple perl script that does not require organisms to be
+\subsubsection{A simple \RSAT perl script}
+
+Test a simple Perl script that does not require organisms to be
 installed.
 
 \begin{lstlisting}
 random-seq -l 100 -n 2
 \end{lstlisting}
 
+\subsubsection{A simple \RSAT python script}
+
+Test a simple python script that does not require organisms to be
+installed.
+
+\begin{lstlisting}
+random-motif -l 10 -c 0.90
+\end{lstlisting}
+
+\subsubsection{Supported organisms}
+
+Get the list of organisms supported on your computer.
+
+\begin{lstlisting}
+supported-organisms
+\end{lstlisting}
+
+Get the list of organisms supported on the server \url{http://rsat.eu/}. 
+
+\begin{lstlisting}
+supported-organisms-server -server http://rsat.eu/
+\end{lstlisting}
+
+Get the list of organisms supported on the server \url{http://rsat.fr/}. 
+
+
+\begin{lstlisting}
+supported-organisms-server -server http://rsat.fr/
+\end{lstlisting}
 
 \chapter{Description and requirements}
 
 \section{Description}
 
-This documents describes the installation procedure for the software
-suite \textbf{Regulatory Sequence Analysis Tools} (\RSAT), which
-integrates several dozens of tools to detect cis-regulatory elements
-in DNA sequences
-\cite{Thomas-Chollier:2011:W86-91,Thomas-Chollier:2008:W119-27,vanHelden:2003:3593-6,vanHelden:2000:177-87}.
 
 \section{Requirements}
 
