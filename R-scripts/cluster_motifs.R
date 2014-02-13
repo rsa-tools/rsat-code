@@ -103,11 +103,25 @@ if (!exists("infile")) {
 }
 verbose(paste("Input file", infile), 1)
 
+## Check that description file
+if (!exists("description.file")) {
+  stop("Missing mandatory argument: description.file=[matrix_description_table] ")
+}
+verbose(paste("Description file", description.file), 1)
+
 ## Check that output file has been specified
 if (!exists("outfile")) {
   stop("Missing mandatory argument: outfile=[json_tree_file] ")
 }
 verbose(paste("Output file", outfile), 1)
+
+
+
+## Check that output file has been specified
+if (!exists("distance.table")) {
+  distance.table <- paste(sep="", outfile, "_dist_table.tab")
+}
+verbose(paste("Distance table", distance.table), 1)
 
 ## Default score is the normalized correlation
 if (!exists("score")) {
@@ -123,10 +137,11 @@ compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
 names(compare.matrices.table)[1] <- sub("^X.", "", names(compare.matrices.table)[1])
 
 
-####
+################################################################
 ## Read description table 
-description.table <- read.csv(description, sep = "\t", comment.char = ";")
+description.table <- read.csv(description.file, sep = "\t", comment.char = ";")
 matrix.labels <-  as.vector(description.table$label)
+names(matrix.labels) <- as.vector(description.table$id)
 
 ##############################################
 ## Extract the score from the matrix comparison table
@@ -144,6 +159,8 @@ score.values <- compare.matrices.table[,score]
 ## Each score requires to be treated according to its nature
 ## (similarity or distance) plus some specificities (correlation goes
 ## from -1 to 1, ...).
+
+## Similarity sores bounded to 1
 if ((score == "Ncor")
     || (score=="cor")
     || (score=="logocor")
@@ -181,7 +198,7 @@ if ((score == "Ncor")
   ## SW 			Sandelin-Wasserman
   ## NSW 			Relative width-normalized Sandelin-Wasserman
 
-  score.dist <- score
+  score.dist <- score.values
   
 } else if (score == "match_rank") {
   ## match_rank rank of current match among all sorted matches
@@ -191,11 +208,27 @@ if ((score == "Ncor")
   stop(paste(score, "is not a valid score", sep="\t"))
 }
 
+## Add a column with score column to the compare matrices table, will
+## be used to generate a cross-table
 compare.matrices.table$score.dist <- score.dist
 
 ################################################################
 ## Build a distance matrix from the distance score list
-dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
+dist.table <- t(xtabs(score.dist ~ name1+name2, compare.matrices.table) )
+## Ensure that symmetrical distances are defined
+for (i in 1:nrow(dist.table)) {
+  for (j in i:ncol(dist.table)) {
+    if (i==j) {next}
+    dist.max <- max(dist.table[i,j], dist.table[j,i])
+    dist.table[i,j] <- dist.max
+    dist.table[j,i] <- dist.max
+  }
+}
+print(dist.table)
+write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, col.names=NA, sep = "\t")
+
+## Convert distance table into a distance matrix, required by hclust()
+dist.matrix <- as.dist(dist.table)
 
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
@@ -250,11 +283,12 @@ writeLines(jsonTree, outfile)
 
 verbose(paste("JSON tree file", outfile), 1)
 
-################################
-## Print the distance matrix
-m <- as.matrix(dist.matrix)
-row.names(m) <- as.vector(description.table$label)
-colnames(m) <- as.vector(description.table$label)
-m2 <- melt(m)[melt(upper.tri(m))$value,]
-names(m2) <- c(";label1", "label2", "distance")
-write.table(m2, file = distance.table, quote = FALSE, row.names = FALSE, sep = "\t")
+## ################################
+## ## Convert distance matrix (one row per motif x one column per motif)
+## ## into a distance table, with one row per matrix pair.
+## m <- as.matrix(dist.matrix)
+## row.names(m) <- as.vector(description.table$label)
+## colnames(m) <- as.vector(description.table$label)
+## m2 <- melt(m)[melt(upper.tri(m))$value,]
+## names(m2) <- c(";label1", "label2", "distance")
+## write.table(m2, file = distance.table, quote = FALSE, row.names = FALSE, sep = "\t")
