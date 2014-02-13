@@ -190,6 +190,7 @@ pre,tt {
              margin-left: 5%;
              }  
 
+
 p.attention
 {
   padding:10px;
@@ -225,6 +226,22 @@ p.attention
             color: #000055;
             background-color: #EEEEFF;
             }
+
+/* Concept definitions */
+.concept 
+{ 
+  color: darkgreen;
+  font-style: italic;
+  font-weight: bold;
+  }
+
+/* Figure legend */
+.legend
+{ 
+  text-align: center;
+  font-style: italic;
+  }
+
 
 /* TABLE */
 
