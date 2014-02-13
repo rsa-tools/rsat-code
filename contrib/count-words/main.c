@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 20100518;
+int VERSION = 20140213;
 
 // ===========================================================================
 // =                            usage & help
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     struct tm * start_time;
     start_time = localtime(&rawtime);
 
-    FILE *input_fp = NULL; //stdin;
+    FILE *input_fp = stdin;
     FILE *output_fp = stdout;
     if (input_filename) 
     {
