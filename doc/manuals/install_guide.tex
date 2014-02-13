@@ -77,20 +77,31 @@ perl perl-scripts/configure_rsat.pl
 source RSAT_config.bashrc
   \end{lstlisting}
 
+
 Check the RSAT environment variable
 
   \begin{lstlisting}
 echo $RSAT
   \end{lstlisting}
 
-\item Initialize \RSAT folders
+\item Include RSAT parameters in your default bash config.
+
+For future sessions, include the following line in your bash
+configuration file (\file{$HOME/.bashrc} or, even better,
+\file{/etc/bashrc} if you have admin rights on the machine).
+
+\begin{verbatim}
+source [RSAT_FULL_PATH]/RSAT_config.bashrc
+\end{verbatim}
+
+
+\item \textbf{Initialize \RSAT folders}
 
   \begin{lstlisting}
 make -f makefiles/init_rsat.mk init
   \end{lstlisting}
   
 \item Install the required Perl libraries.
-
 
   \begin{lstlisting}
 ## Get the list of Perl modules to be installed
@@ -118,10 +129,35 @@ make -f makefiles/install_rsat.mk perl_modules_install
     too much. At this stage, you should be able to use most of \RSAT
     functionalities.
   \end{itemize}
+
+\item compile \RSAT programs written in C
+
+  \begin{lstlisting}
+make -f makefiles/init_rsat.mk compile_all
+  \end{lstlisting}
+
+
+\item Install two model organisms, required for some of the Web tools.
+
+  \begin{lstlisting}
+download-organism -v 1 -org Saccharomyces_cerevisiae
+download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
+  \end{lstlisting}
+  
+  Optionally, you can download additional organisms with the same
+  command. The list of supported-organisms can be obtained with the
+  command \program{supported-organisms-server}.
+
 \end{enumerate}
 
 
 \section{Full installation steps}
+
+\subsection{Activating your web server}
+
+This requires administration rights on your machine.
+
+\tbw
 
 \subsection{Activating web services on your \RSAT instance}
 
@@ -131,7 +167,7 @@ provider, you need to edit the WSDL file.
 
 Open this file withb a text editor.
 
-\file{public_html/web_services/RSATWS.wsdl}
+\file{public\_html/web\_services/RSATWS.wsdl}
 
 At the bottom of the file, locate the following line, and adapt the
 URL to your local configuration.
@@ -140,7 +176,7 @@ URL to your local configuration.
 <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 \end{verbatim}
 
-After this, you shoudl re-generate the web services stubb.
+After this, you should re-generate the web services stubb, with the following command.
 
   \begin{lstlisting}
 make -f makefiles/init_rsat.mk ws_stubb
@@ -155,6 +191,7 @@ make -f makefiles/init_rsat.mk ws_stubb
 \begin{lstlisting}
 echo $RSAT
 \end{lstlisting}
+%$
 
 \subsubsection{RSAT exec dirs in the PATH}
 
@@ -186,7 +223,7 @@ installed.
 random-motif -l 10 -c 0.90
 \end{lstlisting}
 
-\subsubsection{Supported organisms}
+\subsubsection{Testing supported organisms}
 
 Get the list of organisms supported on your computer.
 
@@ -200,8 +237,8 @@ Get the list of organisms supported on the server \url{http://rsat.eu/}.
 supported-organisms-server -server http://rsat.eu/
 \end{lstlisting}
 
-Get the list of organisms supported on the server \url{http://rsat.fr/}. 
-
+Get the list of organisms supported on the server
+\url{http://rsat.fr/}.
 
 \begin{lstlisting}
 supported-organisms-server -server http://rsat.fr/
@@ -216,8 +253,8 @@ supported-organisms-server -server http://rsat.fr/
 
 \subsection{Operating system}
 
-\RSAT is a unix-based package. It has been installed successfully on
-the following operating systems.
+\RSAT is a unix-based software suite. It has been installed
+successfully on the following operating systems.
 
 \begin{enumerate}
 \item Linux
