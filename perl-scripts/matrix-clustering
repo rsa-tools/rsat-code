@@ -236,7 +236,7 @@ package main;
     ################################################################
     ## Specify output file names and open output stream
     $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
-    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
+#    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
     $main::out = &OpenOutputFile($main::outfile{log});
 
 
@@ -634,7 +634,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
-    $cluster_motifs_cmd .= ";description='".$main::outfile{matrix_descriptions}."'";
+    $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
     if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
