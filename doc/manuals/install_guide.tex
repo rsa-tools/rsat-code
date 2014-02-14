@@ -86,7 +86,6 @@ perl perl-scripts/configure_rsat.pl
 source RSAT_config.bashrc
   \end{lstlisting}
 
-
 Check the RSAT environment variable
 
   \begin{lstlisting}
@@ -143,6 +142,13 @@ make -f makefiles/install_rsat.mk perl_modules_install
 
 \begin{lstlisting}
 make -f makefiles/init_rsat.mk compile_all
+\end{lstlisting}
+
+\item Install some third-party programs required by some \RSAT
+  scripts.
+
+\begin{lstlisting}
+make -f makefiles/install_software.mk  install_ext_apps
 \end{lstlisting}
 
 
@@ -210,6 +216,21 @@ random-motif -l 10 -c 0.90
 random-seq -l 1000 -n 100  | count-words -v 1 -1str
 \end{lstlisting}
 
+\subsubsection{Testing external programs}
+
+\begin{lstlisting}
+## Locate the path of seqlogo
+which seqlogo
+
+## get the help for seqlogo
+seqlogo
+
+## ghostscript
+which gs
+gs --version
+\end{lstlisting}
+
+
 \subsubsection{Testing supported organisms}
 
 Get the list of organisms supported on your computer.
@@ -245,12 +266,20 @@ The full installation of \RSAT sowftare suite includes some additional steps.
 You should read this chapter only if you want to enable some of the
 following functionalities:
 \begin{enumerate}
+  \item programs complementary to \RSAT, developed by other teams
   \item local Web server
   \item Web services
   \item distributed computing on a cluster (or on multiple processors
     of a single computer)
   \item metabolic pawthay analysis tools
 \end{enumerate}
+
+\section{Installing third-party programs}
+
+\subsection{vmatch and mkvtree}
+
+The programs \program{vmatch} and \program{mkvtree} are used by the
+\RSAT progam \program{purge-sequence}
 
 \section{Activating a local Web server}
 
