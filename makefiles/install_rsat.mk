@@ -25,27 +25,7 @@ SSH=-e 'ssh -x'
 install_rsat:
 	make -f ${RSAT}/makefiles/init_rsat.mk init
 	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
-	${MAKE} config_rsat
-	make -f ${RSAT}/makefiles/install_software.mk
-
-
-install_required_apps:
-	make -f makefiles/install_software.mk install_seqlogo
-	make -f makefiles/install_software.mk install_gnuplot
-
-
-not_working:
-	make -f makefiles/install_software.mk install_ghostscript
-
-################################################################
-## To do: write a Perl script that interactively prompts for
-## configuration parameters and adapts the RSAT_config.mk and
-## RSAT_config.props files.
-config_rsat:
-	@echo "INTERACTIVE CONFIGURATION NOT IMPLEMENTED YET" 
-	@echo "Please edit manually the following files"
-	@echo "	${RSAT}/RSAT_config.props"
-	@echo "	${RSAT}/RSAT_config.mk"
+	make -f ${RSAT}/makefiles/install_software.mk install_ext_apps
 
 ################################################################
 ## Install Unix packages required for RSAT
