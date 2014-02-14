@@ -51,10 +51,16 @@ EXT_APP_TARGETS=install_seqlogo \
 	install_gnuplot \
 	install_ghostscript \
 	install_d3 \
-	install_ensembl_api \
 	install_mcl \
 	install_rnsc \
-	install_blast
+	install_blast \
+	install_ensembl_api \
+	install_ensembl_bioperl
+list_ext_apps:
+	@echo
+	@echo "External applications to install"
+	@echo "	${EXT_APP_TARGETS}" | perl -pe 's| |\n\t|g'
+
 install_ext_apps:
 	@${MAKE} ${EXT_APP_TARGETS}
 
@@ -176,7 +182,12 @@ install_ensembl_api:
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api; \
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+	@echo
+	@${MAKE} install_ensembl_api_env
+
+install_ensembl_bioperl:
+	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
 		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
 		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
@@ -184,8 +195,6 @@ install_ensembl_api:
 		echo  "Password is 'cvs'" ; \
 		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
 		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live )
-	@echo
-	@${MAKE} install_ensembl_api_env
 
 ## Print the settings for including ensembl in the PERL5LIB environment variable
 install_ensembl_api_env:
@@ -335,15 +344,18 @@ _download_blast_macosx:
 ## Get the d3 javascript library, for motif clustering and dynamical display
 install_d3: _download_d3
 
-D3_URL=http://d3js.org/d3.v3.zip
+#D3_URL=http://d3js.org/d3.v3.zip
+D3_URL=https://github.com/mbostock/d3/releases/download/v3.4.1/d3.v3.zip
 D3_DIR=${SRC_DIR}/d3.${D3_VERSION}
 D3_VERSION=v3
 D3_ARCHIVE=d3.${D3_VERSION}.zip
 _download_d3:
 	@mkdir -p ${D3_DIR}
-	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE} ; \
-		wget http://mbostock.github.com/d3/d3.js \
-		wget http://mbostock.github.com/d3/d3.layout.js) 
+	(cd ${D3_DIR};  \
+	wget http://mbostock.github.com/d3/d3.js ;  \
+	wget http://mbostock.github.com/d3/d3.min.js )
+
+#	wget http://mbostock.github.com/d3/d3.layout.js)
 
 
 ################################################################
