@@ -38,17 +38,16 @@ in DNA sequences
 \chapter{Quick installation guide}
 
 The full installation of all the \RSAT functionalities requires some
-external libraries and companion programs, some of which are not
-trivial to install. However, the majority of the tools does not
-require a full installation. 
+external libraries and companion programs. Some installation steps are
+tricky, because they depend on the operating system. However, the
+majority of the tools does not require a full installation.
 
 In order to give you a quick start, this section proposes a simplified
 installation procedure.
 
-The detailed installation instructions are still presented (in the
-next chapters), to indicate the particular usage of the different
-libraries, and provide some hints about their installation. In case of
-trouble, don't hesitate to contact Jacques van Helden.
+The detailed installation instructions willl be presented in the next
+chapters. In case of trouble, don't hesitate to contact
+\href{mailto:me@example.com}{Jacques.van-Helden@univ-amu.fr}.
 
 \section{Basic installation steps}
 
@@ -62,14 +61,24 @@ tar -xpzf rsat_yyyymmdd.tar.gz
   \end{lstlisting}
   
   
-\item Open a terminal, set your working directory to the folder
-  \file{rsat} extracted from this archive, and run the \RSAT
+\item Open a terminal, set your working directory to the \file{rsat}
+  folder extracted from this archive, and run the \RSAT
   \textbf{configuration script}.
 
   \begin{lstlisting}
-cd rsat
+cd rsat; 
 perl perl-scripts/configure_rsat.pl
   \end{lstlisting}
+
+  \textbf{Tip:} at this stage, the way to specify some parameters
+  might seem obscure to you (e.g. URL of your web site, cluster
+  parameters, NeAT, pathway tools, paths for helper
+  programs). Actually these parameters are only required for the full
+  installation of a web- and cluster-enabled \RSAT instance. 
+
+  If you don't know how to specify a parameter, just leave it to its
+  default value. You will have the possibility to re-run the
+  configuration script later.
 
 \item Define RSAT environment variable and adapt your path
 
@@ -87,7 +96,7 @@ echo $RSAT
 \item Include RSAT parameters in your default bash config.
 
 For future sessions, include the following line in your bash
-configuration file (\file{$HOME/.bashrc} or, even better,
+configuration file (\file{\$HOME/.bashrc} or, even better,
 \file{/etc/bashrc} if you have admin rights on the machine).
 
 \begin{verbatim}
@@ -117,7 +126,7 @@ make -f makefiles/install_rsat.mk perl_modules_install
 
 
   \begin{itemize}
-  \item \textbf{Beware: } this step requires admin rights (you will e
+  \item \textbf{Beware: } this step requires admin rights (you will be
     prompted for sudo password in order to install modules in cpan).
     
   \item \program{cpan} installation takes some time, and is interrupted
@@ -125,16 +134,16 @@ make -f makefiles/install_rsat.mk perl_modules_install
     recommend to use the default option for all questions (just press
     the ``Enter'' key).
     
-  \item even though some Perl modules may fail to install, don't worry
+  \item Even though some Perl modules may fail to install, don't worry
     too much. At this stage, you should be able to use most of \RSAT
     functionalities.
   \end{itemize}
 
 \item compile \RSAT programs written in C
 
-  \begin{lstlisting}
+\begin{lstlisting}
 make -f makefiles/init_rsat.mk compile_all
-  \end{lstlisting}
+\end{lstlisting}
 
 
 \item Install two model organisms, required for some of the Web tools.
@@ -150,14 +159,102 @@ download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
 \end{enumerate}
 
+\section{Testing the basic installation}
 
-\section{Full installation steps}
+At this stage, you should now dispose of a local installation of \RSAT
+with all the basic functionalities enabled. We can now test the proper
+functioning of the different types of programs.
 
-\subsection{Activating your web server}
+\subsection{Testing the path}
 
-This requires administration rights on your machine.
+\subsubsection{RSAT envionment variable}
 
-\tbw
+\begin{lstlisting}
+echo $RSAT
+\end{lstlisting}
+%$
+
+\subsubsection{RSAT exec dirs in the PATH}
+
+Check that the folders containing RSAT executables are included in
+your path.
+
+\begin{lstlisting}
+echo $PATH | perl -pe 's|:|\n|g' | grep rsat
+\end{lstlisting}
+
+The result should contain the full path to the folders \file{bin},
+\file{perl-scripts}, and \file{python-scripts}.
+
+\subsubsection{Testing a \RSAT Perl script}
+
+Test a simple Perl script that does not require organisms to be
+installed.
+
+\begin{lstlisting}
+random-seq -l 100 -n 2
+\end{lstlisting}
+
+\subsubsection{Testing a \RSAT python script}
+
+Test a simple python script that does not require organisms to be
+installed.
+
+\begin{lstlisting}
+random-motif -l 10 -c 0.90
+\end{lstlisting}
+
+\subsubsection{Testing a compiled C program}
+
+\begin{lstlisting}
+random-seq -l 1000 -n 100  | count-words -v 1 -1str
+\end{lstlisting}
+
+\subsubsection{Testing supported organisms}
+
+Get the list of organisms supported on your computer.
+
+\begin{lstlisting}
+supported-organisms
+\end{lstlisting}
+
+Get the list of organisms supported on the server
+\url{http://rsat.eu/}. This script requires some Perl libraries for
+the SOAP/WSDL protocol. If it works, it emans that you are ready for
+using \RSAT Web services.
+
+\begin{lstlisting}
+supported-organisms-server -v 2 -server http://rsat.eu/ -o supported_on_rsat_eu.tab ; 
+wc -l  supported_on_rsat_eu.tab
+\end{lstlisting}
+
+Get the list of organisms supported on another server
+\url{http://rsat.fr/}.
+
+\begin{lstlisting}
+supported-organisms-server -server http://rsat.fr/ -o supported_on_rsat_fr.tab ; 
+wc -l  supported_on_rsat_fr.tab
+\end{lstlisting}
+
+
+
+\chapter{Full installation}
+
+The full installation of \RSAT sowftare suite includes some additional steps.
+
+You should read this chapter only if you want to enable some of the
+following functionalities:
+\begin{enumerate}
+  \item local Web server
+  \item Web services
+  \item distributed computing on a cluster (or on multiple processors
+    of a single computer)
+  \item metabolic pawthay analysis tools
+\end{enumerate}
+
+\section{Activating a local Web server}
+
+\include{ig_apache_config.tex}
 
 \subsection{Activating web services on your \RSAT instance}
 
@@ -182,67 +279,7 @@ After this, you should re-generate the web services stubb, with the following co
 make -f makefiles/init_rsat.mk ws_stubb
   \end{lstlisting}
 
-\section{Quick testing}
 
-\subsection{Testing the path}
-
-\subsubsection{RSAT envionment variable}
-
-\begin{lstlisting}
-echo $RSAT
-\end{lstlisting}
-%$
-
-\subsubsection{RSAT exec dirs in the PATH}
-
-Check that the folders containing RSAT executables are included in
-your path.
-
-\begin{lstlisting}
-echo $PATH | perl -pe 's|:|\n|g' | grep rsat
-\end{lstlisting}
-
-The result should contain the full path to the folders \file{bin},
-\file{perl-scripts}, and \file{python-scripts}.
-
-\subsubsection{A simple \RSAT perl script}
-
-Test a simple Perl script that does not require organisms to be
-installed.
-
-\begin{lstlisting}
-random-seq -l 100 -n 2
-\end{lstlisting}
-
-\subsubsection{A simple \RSAT python script}
-
-Test a simple python script that does not require organisms to be
-installed.
-
-\begin{lstlisting}
-random-motif -l 10 -c 0.90
-\end{lstlisting}
-
-\subsubsection{Testing supported organisms}
-
-Get the list of organisms supported on your computer.
-
-\begin{lstlisting}
-supported-organisms
-\end{lstlisting}
-
-Get the list of organisms supported on the server \url{http://rsat.eu/}. 
-
-\begin{lstlisting}
-supported-organisms-server -server http://rsat.eu/
-\end{lstlisting}
-
-Get the list of organisms supported on the server
-\url{http://rsat.fr/}.
-
-\begin{lstlisting}
-supported-organisms-server -server http://rsat.fr/
-\end{lstlisting}
 
 \chapter{Description and requirements}
 
