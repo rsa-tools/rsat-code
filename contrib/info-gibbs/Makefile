@@ -1,4 +1,4 @@
-CC      = g++ 
+CC      = g++
 CCFLAGS = -O3 -Wall
 SRC		= $(wildcard *.cpp)
 OBJS    = $(SRC:.cpp=.o)
