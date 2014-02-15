@@ -646,7 +646,7 @@ package main;
     $label_fields_to_return{name} = 1;
   }
   $label_fields_to_return = join ",", @label_fields_to_return;
-  &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 0);
+  &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
 
   ## Description table requires consensus
   if ($return_field{matrix_desc}) {
@@ -1102,6 +1102,7 @@ package main;
   local $max_id_len1 = 0;
   local $max_ac_len1 = 0;
   local $max_label_len1 = 0;
+  local $max_label_len2 = 0;
   local %matrix_by_id1 = (); ## index matrices by ID
   local $m = 0;
   foreach my $matrix (@matrices1) {
