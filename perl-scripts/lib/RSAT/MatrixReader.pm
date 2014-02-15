@@ -209,8 +209,10 @@ sub readFromFile {
 
       ## Suppress invalid characters from the matrix ID
       my $id = $matrix->get_attribute("id");
-      $id =~ s/[\(\)\/]/_/g;
-      $matrix->force_attribute("id", $id);
+      if ($id) {
+	$id =~ s/[\(\)\/]/_/g;
+	$matrix->force_attribute("id", $id);
+      }
 
       ## Suppress invalid characters from the matrix accession, and ensure that matrices always have an accession
       my $ac = $matrix->get_attribute("accession");
