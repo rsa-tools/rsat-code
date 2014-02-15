@@ -1403,7 +1403,7 @@ package main;
 			       $seq_id,"len=".$seq_len,
 			       "orig=".$origin, "offset=".$offset,
 			       "with ".$matrix_nb." PSSM")
-	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 10) == 1)));
+	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 50) == 1)));
       &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
 			     $seq_id,"len=".$seq_len, 
 			     "orig=".$origin, "offset=".$offset,
@@ -3868,8 +3868,8 @@ sub score_segment {
 #  my $proba_B = $bg_model->segment_proba($segment);
 
   ## Compute the conditional probabilities for the sequence segment
-   my ($proba_M) = $matrix->segment_proba($segment, 1);
-   my ($proba_B) = $bg_model->segment_proba($segment, 1);
+   my ($proba_M) = $matrix->segment_proba($segment, 0);
+   my ($proba_B) = $bg_model->segment_proba($segment, 0);
 #   my ($proba_M, $ref_residue_proba_M) = $matrix->segment_proba($segment, 1);
 #   my ($proba_B, $ref_residue_proba_B)= $bg_model->segment_proba($segment, 1);
 #   &RSAT::message::Debug("Segment", $segment,
