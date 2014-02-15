@@ -492,7 +492,6 @@ foreach my $matrix (@matrices) {
 
   ## Matrix permutations
   if ($perm) {
-#    my $ID = $matrix->get_attribute("ID");
     my $AC = $matrix->get_attribute("accession") || $ID;
     &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
     &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
@@ -510,6 +509,10 @@ foreach my $matrix (@matrices) {
       $matrix->force_attribute("name", $ID_perm);
       $matrix->force_attribute("ID", $ID_perm);
       $matrix->force_attribute("identifier", $ID_perm);
+#      my $descr_perm = join ("_", $matrix->get_attribute("description", ), "perm".$i);
+      $matrix->calcConsensus();
+      my $descr_perm = join ($matrix->get_attribute("consensus.IUPAC"));
+      $matrix->force_attribute("description", $descr_perm);
       $matrix->force_attribute("accession", $AC_perm);
       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
