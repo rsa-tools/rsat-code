@@ -1910,7 +1910,7 @@ Detailed output:
  my ($seq_proba, $ref_residue_proba, $details) = $bg_model->segment_proba($sequence, $return_detail);
 
 where $return_detail is a boolean indicating whether the computation
-details (probabilities of sub-sequences) shoudl be returned,
+details (probabilities of sub-sequences) should be returned,
 $ref_residue_proba is a reference to an array indicating the
 individual residue probailities, and $details a string dsplayed by the
 program seq-proba when the option -return detail is acivated.
@@ -1956,7 +1956,7 @@ sub segment_proba {
 			    $prefix.uc($suffix),
 			    $prefix.uc($suffix),
 			    sprintf("%5g",$self->{prefix_proba}->{$prefix}),
-			   );
+	    );
 	$detail .= $detail_line."\n";
 	&RSAT::message::Info($detail_line) if ($main::verbose >= 5);
       }
