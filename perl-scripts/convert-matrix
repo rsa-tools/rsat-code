@@ -516,7 +516,7 @@ foreach my $matrix (@matrices) {
       $matrix->force_attribute("accession", $AC_perm);
       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
-      ## print result
+      ## Print result
       if ($main::verbose >= 1) {
 	print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
 	print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);
