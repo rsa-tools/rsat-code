@@ -879,10 +879,10 @@ package main;
       }
 
       ## use count-words to calculate bginput
-      my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
-      $tmp_bg_file .= "_MotifSampler.txt";
-      &RSAT::message::TimeWarn("Creating background model file", $tmp_bg_file) if ($main::verbose >= 2);
       my $oligo_len = $main::markov+1;
+      my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_mkv".$main::markov);
+      $tmp_bg_file .= "_inclusive.txt";
+      &RSAT::message::TimeWarn("Creating background model file", $tmp_bg_file) if ($main::verbose >= 2);
       my $count_words_cmd = &RSAT::server::GetProgramPath("count-words",1); # die if cound-words not found
 
       my $bg_cmd = $count_words_cmd;
