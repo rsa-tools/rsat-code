@@ -208,9 +208,7 @@ compile_floydwarshall:
 ## during execution. Quick and dirty solution, will need to be revised
 compile_kwalks:
 	@echo "Compiling kwalks (software developed by Jerome Callut and Pierre Dupont, UCL, Belgium)"
-	@(cd ${RSAT}/contrib/; \
-		tar -xpzf kwalks/kwalks.tgz; \
-		cd kwalks/src; make ; \
+	@(cd ${RSAT}/contrib/kwalks/src; make ; \
 		echo "Installing lkwalk executable in bin directory ${BIN}"; \
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
