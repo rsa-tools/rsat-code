@@ -135,7 +135,8 @@ Assembled dyads
 
 Feature-map
 
-=item NOTE : 'ortho' is replaced by 'leaders' in the filename prefix with option -infer_operons
+=item NOTE : 'ortho' is replaced by 'leaders' in the filename prefix
+with option -infer_operons
 
 =back
 
