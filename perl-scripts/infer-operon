@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ## TEMPORARY (2012-04-17): I SUPPRESS THE -w FLAG BECAUSE IT ISSUES A
-## WARNING OF DEEP RECURSION FOR LARGE INTERGENIC DISTANCES (syntons).
+## WARNING OF DEEP RECURSION FOR LARGE INTERGENIC DISTANCES (directons).
 ##
 ## I should "derecursivate" &ExtendOperon()
 ## !/usr/bin/perl -w
