@@ -259,7 +259,8 @@ sub ScoresAndThresholdsDiv {
 #  my ($title, $help_file, @fields) = @_;
 
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\">
+     <span title=\"".$title.".\"><b>$title</b></span></div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
@@ -267,7 +268,11 @@ sub ScoresAndThresholdsDiv {
 #  &FieldsThresholdsTable($help_file, @fields);
 
   print "</fieldset><p/>";
-  print '</div></div><p class="clear"></p>';
+  print '</div>
+</div>
+<p class="clear"></p>';
+#  print "</fieldset><p/>";
+#  print '</div></div><p class="clear"></p>';
   print "<hr>";
 }
 
