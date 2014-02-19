@@ -2527,7 +2527,7 @@ End_of_form
 sub display_matrices_web {
   my ($in_matrix_file, $in_format, $no_convert, $logo_dir) = @_;
 
-  my $TMP = &RSAT::util::get_pub_temp();
+  my $public_temp_dir = &RSAT::util::get_pub_temp();
   print "\n<hr>\n";
 
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
@@ -2576,7 +2576,7 @@ sub display_matrices_web {
   while (<$res>) {
     next if ($_ =~ /logo file:(.*)\.pdf$/);
     if ($_ =~ /logo file:(.*)\.png$/){
-      (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+      (local $logo = $1 )=~ s|${public_temp_dir}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
       print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
 
