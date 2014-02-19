@@ -36,7 +36,6 @@ $query = new CGI;
 $command = "$SCRIPTS/dna-pattern";
 $prefix = "dna-pattern";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
 
 #### read parameters ####
 $parameters = " -v 1";
