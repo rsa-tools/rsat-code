@@ -16,7 +16,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -124,7 +124,7 @@ push @result_files, "Output matrix (tab)", $matrix_file;
 $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
 
 #### error file
-#$error_file  = "$TMP/$tmp_file_name.err";
+#$error_file  = &RSAT::util::get_pub_temp()."/$tmp_file_name.err";
 
 #### execute the command ###
 if ($query->param('output') eq "display") {
