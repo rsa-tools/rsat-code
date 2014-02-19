@@ -268,7 +268,8 @@ sub NextSequence {
       } elsif ($_ =~ /(.*)[12]/) { ### end of the current sequence
         $current_seq .= $1;
         ($sec, $min, $hour,$day,$month,$year) = localtime(time);
-        $tmp_file_name = sprintf("oligo_distances.%02d%02d%02d.%02d%02d%02d.seq", $year,$month+1,$day,$hour, $min, $sec);
+#        $tmp_file_name = sprintf("oligo_distances.%02d%02d%02d.%02d%02d%02d.seq", $year,$month+1,$day,$hour, $min, $sec);
+	$tmp_file_name = &RSAT::util::make_temp_file("", "oligo-distance-matrix", 1);
         unless (open TEMP, ">$tmp_file_name") {
           print "	Error: cannot open temporary file\n";
           exit;
