@@ -856,7 +856,6 @@ sub make_temp_file {
 #  			"\n\tadd_date=".$add_date,
 #  			"\n\tmake_dir=".$make_dir,
 #  		       ) if ($main::verbose >= 10);
-
   my $prefix_dir = "";
 
   ## Check $tmp_dir and $tmp_prefix
@@ -873,21 +872,28 @@ sub make_temp_file {
 
   ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
-      my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-      my $login = getpwuid($<) || "temp_user";
-      $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
+    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+    my $login = getpwuid($<) || "temp_user";
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+      $tmp_base = $main::TMP;
+    } else {
+      $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
+    }
+    $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $tmp_base, $login, 1900+$year,$month+1,$day); 
   }
   &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
-
+  
   ## Create an index file in the new directory to prevent Web users from seing its whole content
-  my $index_file = $tmp_dir."/index.html";
-  if ($protect) {
-    unless (-e $index_file) {
-      open INDEX, ">".$index_file;
-      print INDEX "<html>";
-      print INDEX "<b>Access forbidden</b>";
-      print INDEX "</html>";
-      close INDEX;
+  if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+    my $index_file = $tmp_dir."/index.html";
+    if ($protect) {
+      unless (-e $index_file) {
+	open INDEX, ">".$index_file;
+	print INDEX "<html>";
+	print INDEX "<b>Access forbidden</b>";
+	print INDEX "</html>";
+	close INDEX;
+      }
     }
   }
 
@@ -907,14 +913,13 @@ sub make_temp_file {
 
   ## Ensure that everyone can read the temporary file
 #  system("chmod a+r $temp_file");
-#    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
-#   			"\n\ttmp_dir=".$tmp_dir,
-#   			"\n\ttmp_prefix=".$tmp_prefix,
-#   			"\n\tprefix_dir=".$prefix_dir,
-#   			"\n\ttemp_file=".$temp_file,
-#   			"\n\tmktmp_cmd=".$mktmp_cmd,
-#   		       ) if ($main::verbose >= 10);
-
+#   &RSAT::message::Debug("&RSAT::util::make_temp_file()",
+#  			"\n\ttmp_dir=".$tmp_dir,
+#  			"\n\ttmp_prefix=".$tmp_prefix,
+#  			"\n\tprefix_dir=".$prefix_dir,
+  			"\n\ttemp_file\t".$temp_file,
+#  			"\n\tmktmp_cmd=".$mktmp_cmd,
+#  		       ) if ($main::verbose >= 10);
   return ($temp_file);
 }
 
