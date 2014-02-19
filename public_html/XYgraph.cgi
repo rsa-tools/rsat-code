@@ -188,8 +188,8 @@ $XYgraph_command .= " ".$parameters;
 
 ### print the result ###
 ### display the result ###
-my $graph_URL = $ENV{rsat_www}."/tmp/"; $graph_URL .= &RSAT::util::RelativePath($TMP, $graph_file);
-my $data_URL = $ENV{rsat_www}."/tmp/"; $data_URL .= &RSAT::util::RelativePath($TMP, $data_file);
+my $graph_URL = $ENV{rsat_www}."/tmp/"; $graph_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $graph_file);
+my $data_URL = $ENV{rsat_www}."/tmp/"; $data_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $data_file);
 if ($htmap) {
   my $short_graph_file = &ShortFileName($graph_file);
   my $short_data_file = &ShortFileName($data_file);
@@ -224,8 +224,8 @@ if ($htmap) {
 print "<hr size='3'>";
 print &HtmlBot();
 
-&DelayedRemoval("$TMP/$graph_file");
-&DelayedRemoval("$TMP/$data_file");
+&DelayedRemoval($graph_file);
+&DelayedRemoval($data_file);
 
 exit(0);
 
