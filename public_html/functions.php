@@ -79,7 +79,6 @@ Function getTempFileName($prefix, $ext) {
                #  faire sur tous les miroirs
 #  $user = $processUser['name'];
   $user = `whoami`; ## THIS WORKS BY IT IS TOO TRICKY TO CLAL A SYSTEM COMMAND.I should check why all the solutions above do not work
-
   $tmpDir .= $user."/";
 
   ## Append
