@@ -39,20 +39,18 @@ $feature_map_command = "$SCRIPTS/feature-map ";
 $prefix = "feature-map";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 $tmp_color_path = &RSAT::util::make_temp_file("","color_file", 1); $tmp_color_file = &ShortFileName($tmp_color_path);
-#$tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
-#$tmp_color_file = sprintf "color-file.%s", &AlphaDate();
 
-$features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
-$features_from_msf_cmd = "$SCRIPTS/features-from-msf";
-$features_from_gibbs_cmd = "$SCRIPTS/features-from-gibbs";
-$features_from_fugue_cmd = "$SCRIPTS/features-from-fugue";
-$features_from_dssp_cmd = "$SCRIPTS/features-from-dssp";
-$features_from_matins_cmd = "$SCRIPTS/features-from-matins";
-$features_from_sigscan_cmd = "$SCRIPTS/features-from-sigscan";
-$features_from_dnapat_cmd = "$SCRIPTS/features-from-dnapat";
-$features_from_tffact_cmd = "$SCRIPTS/features-from-tffact";
-$features_from_tfgene_cmd = "$SCRIPTS/features-from-tfgene";
-$features_from_patser_cmd = "$SCRIPTS/features-from-patser";
+$features_from_swissprot_cmd = $SCRIPTS."/features-from-swissprot";
+$features_from_msf_cmd = $SCRIPTS."/features-from-msf";
+$features_from_gibbs_cmd = $SCRIPTS."/features-from-gibbs";
+$features_from_fugue_cmd = $SCRIPTS."/features-from-fugue";
+$features_from_dssp_cmd = $SCRIPTS."/features-from-dssp";
+$features_from_matins_cmd = $SCRIPTS."/features-from-matins";
+$features_from_sigscan_cmd = $SCRIPTS."/features-from-sigscan";
+$features_from_dnapat_cmd = $SCRIPTS."/features-from-dnapat";
+$features_from_tffact_cmd = $SCRIPTS."/features-from-tffact";
+$features_from_tfgene_cmd = $SCRIPTS."/features-from-tfgene";
+$features_from_patser_cmd = $SCRIPTS."/features-from-patser";
 
 $title = "feature-map result";
 
@@ -301,8 +299,8 @@ system($feature_map_command);
 &DelayedRemoval($htmap_file);
 
 ### display the result ###
-my $graph_URL = $ENV{rsat_www}."/tmp/"; $graph_URL .= &RSAT::util::RelativePath($TMP, $graph_file);
-my $html_URL = $ENV{rsat_www}."/tmp/"; $html_URL .= &RSAT::util::RelativePath($TMP, $htmap_file);
+my $graph_URL = $ENV{rsat_www}."/tmp/"; $graph_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $graph_file);
+my $html_URL = $ENV{rsat_www}."/tmp/"; $html_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $htmap_file);
 my $short_graph_file = &ShortFileName($graph_file);
 my $short_feature_file = &ShortFileName($feature_file);
 
