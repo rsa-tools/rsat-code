@@ -28,8 +28,11 @@ unless ($ENV{RSAT}) {
   $ENV{RSAT} =~ s|/public_html/.*||;
 }
 
-my $SCRIPTS = $ENV{RSAT}.'/perl-scripts';
-my $TMP = $ENV{RSAT}.'/public_html/tmp';
+$SCRIPTS = $ENV{RSAT}.'/perl-scripts';
+$TMP = $ENV{RSAT}.'/public_html/tmp';
+
+## Define the context
+$ENV{RSA_OUTPUT_CONTEXT} = "RSATWS";
 
 
 #require "RSA.lib";
@@ -3252,6 +3255,7 @@ sub compare_classes {
     close TMP_IN;
   }
 
+
   ## idem for query classes
   if ($args{"query_classes"}) {
     my $query = $args{"query_classes"};
@@ -3262,6 +3266,7 @@ sub compare_classes {
     print TMP_IN $query;
     close TMP_IN;
   }
+
 
   ## Idem for input classes
   if ($args{"input_classes"}) {
