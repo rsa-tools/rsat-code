@@ -299,14 +299,6 @@ package main;
 
 
     } else {
-      ## Create a temporary directory to store the downloaded file
-#      $tmp_dir = &RSAT::util::make_temp_file("", "fetch-sequences", 1, 1);
-#      ## Define temporary directory
-#      if ($main::TMP) {
-#	$tmp_dir = $main::TMP;
-#      } else {
-#	$tmp_dir = ".";
-#      }
       $main::outfile{input} = &RSAT::util::make_temp_file("", "fetch-sequences");
       &RSAT::message::Info("Storing downloaded input file as", $main::outfile{input}) if ($main::verbose >= 3);
     }
