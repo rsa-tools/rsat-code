@@ -45,7 +45,6 @@ $command = $BIN."/consensus";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
 $convert_matrix_command = "$SCRIPTS/convert-matrix -from consensus -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-#$tmp_file_name = sprintf "consensus.%s", &AlphaDate();
 $prefix = "consensus";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 @result_files = ();
@@ -124,7 +123,7 @@ push @result_files, "Output matrix (tab)", $matrix_file;
 $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
 
 #### error file
-#$error_file  = &RSAT::util::get_pub_temp()."/$tmp_file_name.err";
+#$error_file  = $tmp_file_path.".err";
 
 #### execute the command ###
 if ($query->param('output') eq "display") {
