@@ -279,7 +279,7 @@ push @result_files, "Result file (tab)", $result_file;
 
 &ReportWebCommand($command);
 
-#&SaveCommand("$command", "$TMP/$tmp_file_name");
+#&SaveCommand("$command", &RSAT::util::get_pub_temp()."/$tmp_file_name");
 
 if ($query->param('output') =~ /display/i) {
 
@@ -315,7 +315,7 @@ if ($query->param('output') =~ /display/i) {
       $pattern_assembly_command .= " -o ".$assembly_file;
 
 #       ## Pattern-assembly
-#       $assembly_file = "$TMP/$tmp_file_name.asmb";
+#       $assembly_file = &RSAT::util::get_pub_temp()."/$tmp_file_name.asmb";
 #       $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -toppat 50";
 #       if ($query->param('strand') =~ /single/) {
 # 	$pattern_assembly_command .= " -1str";
