@@ -859,7 +859,7 @@ sub get_temp_dir {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
   }
   my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day); 
-  &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 0);
+  &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 5);
   return($tmp_dir);
 }
 
