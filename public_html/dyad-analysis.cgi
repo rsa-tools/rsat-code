@@ -18,7 +18,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
   $ERR_LOG = "/dev/null";
-  #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+  #    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
   use CGI::Carp qw(carpout);
   open (LOG, ">> $ERR_LOG")
     || die "Unable to redirect log\n";
@@ -235,7 +235,7 @@ if ($query->param('output') eq "display") {
 
     ## Assemble the significant patterns with pattern-assembly
     $assembly_file = $tmp_file_path.".asmb";
-#    $assembly_file = "$TMP/$tmp_file_name.asmb";
+#    $assembly_file = &RSAT::util::get_pub_temp()."/$tmp_file_name.asmb";
     push @result_files, ('assembly', $assembly_file);
     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1";
     $pattern_assembly_command .= " -subst 1 -weight 5 -maxfl 1 -toppat 50";
