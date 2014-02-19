@@ -1,7 +1,7 @@
-###############################################################
-#
-# A class for util handling
-#
+################################################################
+##
+## A class for util handling
+##
 package RSAT::util;
 
 use POSIX;
@@ -840,6 +840,29 @@ sub hex2rgb {
   return ($r,$g,$b);
 }
 
+
+################################################################
+## Return a user-specific directory for storing temporary files.
+##
+## By default, temporary files are stored in a hidden folder
+## $HOME/.rsat_tmp_dir. 
+##
+## For the Web server, temporary files are stored in
+## $RSAT/public_html/tmp, in order to be accessible to web browsers.
+sub get_temp_dir {
+  my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+  my $login = getpwuid($<) || "temp_user";
+  my $tmp_base;
+  if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+    $tmp_base = $main::TMP."/".$login;
+  } else {
+    $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
+  }
+  my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day); 
+  &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 0);
+  return($tmp_dir);
+}
+
 ################################################################
 ## Return a unique name for a temporary file in the $TMP directory
 ## Usage:
@@ -872,16 +895,17 @@ sub make_temp_file {
 
   ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
-    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-    my $login = getpwuid($<) || "temp_user";
-    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
-      $tmp_base = $main::TMP;
-    } else {
-      $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
-    }
-    $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $tmp_base, $login, 1900+$year,$month+1,$day); 
+#    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+#    my $login = getpwuid($<) || "temp_user";
+#    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+#      $tmp_base = $main::TMP;
+#    } else {
+#      $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
+#    }
+#    $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $tmp_base, $login, 1900+$year,$month+1,$day); 
+    $tmp_dir = &get_temp_dir();
   }
-  &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
+  &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
   
   ## Create an index file in the new directory to prevent Web users from seing its whole content
   if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
