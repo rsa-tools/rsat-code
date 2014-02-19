@@ -106,7 +106,6 @@ if ($uploaded_file) {
 
 ## Pasted query features
 }elsif ($query->param('featQ') =~/\S/) {
-#  $tmp_query_features = "${TMP}/${tmp_file_name}_pasted_query_features.tab";
   open FEATURES, "> $tmp_query_features";
   print FEATURES $query->param('featQ');
   close FEATURES;
