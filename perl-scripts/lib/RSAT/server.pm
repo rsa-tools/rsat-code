@@ -446,6 +446,7 @@ sub ReadProperties {
 
     ## Load RSAT site-specific properties
     if (-e $property_file) {
+      &RSAT::message::Info("Reading property file", $property_file) if ($main::verbose >= 5);
       my ($props) = &RSAT::util::OpenInputFile($property_file);
       while (<$props>) {
 	next if (/^#/);
@@ -455,12 +456,12 @@ sub ReadProperties {
 	if (/\=/) {
 	  my $value = $'; #'
 	  my $key = $`; #`
-	  if ($default_props) {
-	    $value =~ s|\[RSAT_PARENT_PATH\]/rsa-tools|$ENV{RSAT}|g;
-	  }
+#	  if ($default_props) {
+	  $value =~ s|\[RSAT_PARENT_PATH\]/rsat|$ENV{RSAT}|g;
+#	  }
 	  $ENV{$key} = $value;
 	  $server::config{$key} = $value;
-	  #        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
+#	  &RSAT::message::Info("Site property", sprintf("%-15s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
 	}
       }
     }
