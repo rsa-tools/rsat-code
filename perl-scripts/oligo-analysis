@@ -1068,7 +1068,7 @@ sub CalcExpected {
 	$outfile{bg_model} =~ s/.tab$//;
 	$outfile{bg_model} .= "_bg_mkv".$markov_order.".tab";
       } else {
-	$outfile{bg_model} = &RSAT::util::make_temp_file($TMP, "bg_mkv".$markov_order);
+	$outfile{bg_model} = &RSAT::util::make_temp_file("", "oligo-analysis_for_quick_bg_mkv".$markov_order);
       }
       local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
       my $cmd = $count_words_cmd;
