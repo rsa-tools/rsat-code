@@ -17,7 +17,9 @@ $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
 $add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
 $link_command = "$SCRIPTS/add-yeast-link";
-$tmp_file_name = sprintf "genome-scale-patser.%s", &AlphaDate;
+$prefix = "gs-patser";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
+#$tmp_file_name = sprintf "genome-scale-patser.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
