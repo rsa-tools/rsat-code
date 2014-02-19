@@ -19,7 +19,9 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/random-genome-fragments";
+$prefix="random-genome-fragments";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+
 #$tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
 @result_files = ();
 
@@ -47,14 +49,14 @@ $parameters = "";
 ## Random fragments
 
 ## template file (optional)
-($template_file, $template_format) = &MultiGetSequenceFile(1, "$TMP/$tmp_file_name"."_template.fa", 0);
+($template_file, $template_format) = &MultiGetSequenceFile(1, $tmp_file_path."_template.fa", 0);
 
 ## a template file has been given
 if ($template_file) {
   push @result_files, ("Template file ($template_format)",$template_file);
 
   ## Compute sequence lengths from the template sequence file
-  my $length_file = "$TMP/$tmp_file_name".".lengths";
+  my $length_file = $tmp_file_path.".lengths";
   push @result_files, ("Sequence lengths",$length_file);
 
   my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
@@ -139,6 +141,8 @@ if ($query->param('rm') =~ /on/) {
 
 ## Output file
 $result_file = $tmp_file_path."_fragments.".$output_format;
+#$parameters .= " -o ".$result_file;
+#&RSAT::message::Info("result_file", $result_file) if ($echo >= 0);
 push @result_files, ("Genome fragments ($output_format)",$result_file);
 
 ############################################################
@@ -152,7 +156,6 @@ open RESULT, "$command $parameters |";
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
-
 
   ### print the result
   print '<H4>Result</H4>';
@@ -172,15 +175,8 @@ if (($query->param('output') =~ /display/i) ||
   close RESULT;
   close MIRROR if ($mirror);
 
-
-
   ## Print table with links to the result files
   &PrintURLTable(@result_files);
-#   $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-#   print ("The result is available at the following URL: ", "\n<br>",
-# 	 "<a href=${result_URL}>${result_URL}</a>",
-# 	 "<p>\n");
-
 
   ### prepare data for piping
   if ($query->param('outputformat') eq "outputseq"){
@@ -202,7 +198,7 @@ exit(0);
 
 ############################################
 sub PipingForm {
-	my $assembly = `grep Ensembl $TMP/$tmp_file_name.res `;
+	my $assembly = `grep Ensembl ${tmp_file_path}.res `;
 	$assembly =~ s/.*assembly:(.*)$/$1/;
     ### prepare data for piping
     print <<End_of_form;
