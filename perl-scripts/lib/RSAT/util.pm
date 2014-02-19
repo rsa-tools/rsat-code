@@ -840,6 +840,11 @@ sub hex2rgb {
   return ($r,$g,$b);
 }
 
+################################################################
+## Return the root of the public temporary directory
+sub get_pub_temp {
+  return ($main::TMP);
+}
 
 ################################################################
 ## Return a user-specific directory for storing temporary files.
@@ -854,7 +859,7 @@ sub get_temp_dir {
   my $login = getpwuid($<) || "temp_user";
   my $tmp_base;
   if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
-    $tmp_base = $main::TMP."/".$login;
+    $tmp_base = &get_pub_temp()."/".$login;
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
   }
@@ -895,14 +900,6 @@ sub make_temp_file {
 
   ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
-#    my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-#    my $login = getpwuid($<) || "temp_user";
-#    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
-#      $tmp_base = $main::TMP;
-#    } else {
-#      $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
-#    }
-#    $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $tmp_base, $login, 1900+$year,$month+1,$day); 
     $tmp_dir = &get_temp_dir();
   }
   &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
