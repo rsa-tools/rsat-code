@@ -72,25 +72,27 @@ BEGIN {
     push (@INC, "$`lib/");
   }
 }
+
 require "RSA.lib";
-push (@INC, $ENV{bioperl});
-push (@INC, $ENV{ensembl});
-
-
-## EnsEMBL libraries
-use DBI();
-require Bio::EnsEMBL::Registry;
-
 require RSAT::organism;
 require RSAT::feature;
 use RSAT::server;
+
+## EnsEMBL libraries
+use DBI();
+push (@INC, $ENV{bioperl}) if ($ENV{bioperl});
+push (@INC, $ENV{ensembl}) if ($ENV{ensembl});
+require Bio::EnsEMBL::Registry;
+
 use Data::Dumper;
 
+#&RSAT::message::Debug("INC", join ("\n\t", @INC)) if ($main::verbose >= 5);
 
 ################################################################
 ## Main package
 package main;
 {
+
 
   ################################################################
   ## Initialise parameters
