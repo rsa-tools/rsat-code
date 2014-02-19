@@ -9,7 +9,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 #BEGIN {
 #    $ERR_LOG = "/dev/null";
-##    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+##    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
 #    use CGI::Carp qw(carpout);
 #    open (LOG, ">> $ERR_LOG")
 #	|| die "Unable to redirect log\n";
@@ -185,9 +185,6 @@ if ($query->param('output') eq "display") {
       (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
       print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
-#      print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
-#      print "<br/>";
-#      &DelayedRemoval("$TMP/$1");
     } else {
       print $_;
     }
