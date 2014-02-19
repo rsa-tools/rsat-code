@@ -687,7 +687,7 @@ sub GnuPlotEPS {
 
   ## remove lines starting by ; and adapt the comment line
     ($in, $input_dir) = &OpenInputFile($inputfile);
-    our $tmp_file = "tmp_gnuplot_for_input.tab";
+    our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_gnuplot", 1);
     my ($out) = &OpenOutputFile($tmp_file);
     while (<$in>) {
       next if (/^;/); # skip comment lines
@@ -794,10 +794,23 @@ sub GnuPlotEPS {
   ## tics
   $gnuplot_cmd .= "set tics font big;\n";
 
-  ## grid
-  $gnuplot_cmd .= "set grid '".($lw-1)."';\n";
+    ################################################################
+    ################################################################
+    ################################################################
+    ## TEMPORARY (2014-02-18): this line provokes an error in gnuplot:
+    ## gnuplot> set grid '3';
+    ##                  ^
+    ##         line 0: ';' expected
 
-  ## x axis
+  ## grid
+#  $gnuplot_cmd .= "set grid '".($lw-1)."';\n";
+
+    ## end temporary inactivation
+    ################################################################
+    ################################################################
+    ################################################################
+
+  ## X axis
   if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
     if ($x_axis_min eq "ND") {
       $x_axis_min = "";
