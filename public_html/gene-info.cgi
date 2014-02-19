@@ -29,8 +29,6 @@ $query = new CGI;
 $command = "$SCRIPTS/gene-info";
 $prefix = "gene-info";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
 @result_files = ();
 
 #### read parameters ####
