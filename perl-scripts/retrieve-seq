@@ -15,10 +15,7 @@ require "RSA.seq.lib";
 require RSAT::organism;
 use Storable qw(nstore retrieve);
 
-# temporary directory
-my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
-
-#### initialize parameters
+## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
 my $organism = "";
 my %chomosome = ();
