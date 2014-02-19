@@ -7,9 +7,6 @@ require RSAT::OrganismManager;
 
 use Storable qw(nstore retrieve);
 
-# temporary directory
-my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
-
 ## Initialization
 $start_time = &RSAT::util::StartScript();
 $calc_neighbours = 0;
