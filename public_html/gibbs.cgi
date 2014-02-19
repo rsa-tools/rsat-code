@@ -29,7 +29,8 @@ $command = "$BIN/gibbs";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -to tab -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "gibbs.%s", &AlphaDate();
+$prefix = "gibbs";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
@@ -86,8 +87,8 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = &RSAT::util::get_pub_temp()."/$tmp_file_name.res";
-    $matrix_file = &RSAT::util::get_pub_temp()."/$tmp_file_name.matrix";
+    $result_file = $tmp_file_path.".res";
+    $matrix_file = $tmp_file_path.".matrix";
 
     system "$command $parameters > $result_file";
 
