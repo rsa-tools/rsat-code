@@ -13,7 +13,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -172,7 +172,7 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### execute the command ###
-    #$matrix_file = "$TMP/$tmp_file_name.matrix";
+    #$matrix_file = &RSAT::util::get_pub_temp()."/$tmp_file_name.matrix";
     #print("$command $parameters\n");
     system "$command $parameters > $result_file";
     &DelayedRemoval($result_file);
