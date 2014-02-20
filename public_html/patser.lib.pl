@@ -259,7 +259,7 @@ sub ReadPatserParameters {
 	&cgiError("You did not enter the matrix");
     }
 
-    $matrix_file = "$TMP/$tmp_file_name.matrix";
+    $matrix_file = $tmp_file_path.".matrix";
 
     if ($matrix_format =~ /tab/i) {
 	open MAT, "| $convert_matrix_command | grep -v '\/\/' | perl -pe 's|\t|   |g' > $matrix_file";
@@ -395,10 +395,10 @@ sub ReadPatserParameters {
 
 ################################################################
 ### parameters for the piping to the feature map ###
-#$feature_file =  "$TMP/$tmp_file_name.ft";
+#$feature_file =  $tmp_file_path.".ft";
 sub ReadFeaturesFromPatserParams {
 
-    #$feature_file =  "$TMP/$tmp_file_name.ft";
+    #$feature_file =  $tmp_file_path.".ft";
     $features_from_patser_cmd .= " -seq $sequence_file ";
 
     #### origin 
