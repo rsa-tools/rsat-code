@@ -8,7 +8,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -35,8 +35,6 @@ $query = new CGI;
 $command = $SCRIPTS."/matrix-distrib -v 1 -top 1";
 $prefix = "matrix-distrib";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "matrix-distrib.%s", &AlphaDate();
-#$result_file = "$TMP/$tmp_file_name.res";
 @result_files = ();
 
 #### read parameters ####
@@ -102,7 +100,7 @@ if ($bg_method eq "bgfile") {
 
 } elsif ($bg_method =~ /upload/i) {
   ## Upload user-specified background file
-  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $bgfile = $tmp_file_path."_bgfile.txt";
   my $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     if ($upload_bgfile =~ /\.gz$/) {
@@ -170,12 +168,6 @@ if (($query->param('output') =~ /display/i) ||
   close RESULT;
   close MIRROR if ($mirror);
 
-#   if ($query->param('output') =~ /server/i) {
-#     $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-#     print ("The result is available at the following URL: ", "\n<br>",
-# 	   "<a href=${result_URL}>${result_URL}</a>",
-# 	   "<p>\n");
-#   }
   print "<hr/>";
   if (($error_found)&&($query->param('output') =~ /server/i)) {
     &RSAT::error::FatalError("Error has occured, check output file.");
@@ -186,7 +178,6 @@ if (($query->param('output') =~ /display/i) ||
     my $plot_format = "png";
     my $XYgraph_command = "$SCRIPTS/XYgraph";
     my $graph_file1 = $tmp_file_path."_1.".${plot_format};
-    #    my $graph_file1 = "$tmp_file_name"."_1.".${plot_format};
     my $figure = $graph_file1;
     my $command2 = "$XYgraph_command";
     $command2 .= " -i $distrib_file";
@@ -199,14 +190,12 @@ if (($query->param('output') =~ /display/i) ||
     $command2 .= " -o $figure";
     print "<pre>command2: $command2\n</pre>" if ($ENV{rsat_echo} >= 1);
     system($command2);
-    $graph_URL1 = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($TMP, $figure);
+    $graph_URL1 = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $figure);
     print "<center><a href = \"".$graph_URL1."\"><img src=\"".$graph_URL1."\" width='200'></a>";
-#    print "<center><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
-    &DelayedRemoval("$TMP/$graph_file1");
+    &DelayedRemoval($graph_file1);
     push (@result_files, "Weight distrib plot", $graph_file1);
 
     my $graph_file2 = $tmp_file_path."_2.".${plot_format};
-    #    my $graph_file2 = "$tmp_file_name"."_2.".${plot_format};
     $figure = $graph_file2;
     my $command3 = "$XYgraph_command";
     $command3 .= " -i $distrib_file";
@@ -222,10 +211,9 @@ if (($query->param('output') =~ /display/i) ||
     $command3 .= " -o $figure";
     print "<pre>command3: $command3\n</pre>" if ($ENV{rsat_echo} >= 1);
     system($command3);
-    $graph_URL2 = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($TMP, $figure);
+    $graph_URL2 = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $figure);
     print "<center><a href = \"".$graph_URL2."\"><img src=\"".$graph_URL2."\" width='200'></a>";
-#    print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
-    &DelayedRemoval("$TMP/$graph_file2");
+    &DelayedRemoval($graph_file2);
     push (@result_files, "P-value distrib plot", $graph_file2);
 
     ## Links to the result files
