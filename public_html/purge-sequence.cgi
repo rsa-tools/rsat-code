@@ -15,7 +15,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -41,7 +41,6 @@ $query = new CGI;
 $command = "$SCRIPTS/purge-sequence";
 $prefix = "purge-sequence";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "purge-sequence.%s", &AlphaDate;
 $out_format = "fasta";
 @result_files = ();
 
@@ -81,8 +80,6 @@ if (&IsNatural($query->param('match_len'))) {
 if (&IsNatural($query->param('mismatches'))) {
     $parameters .= " -mis ".$query->param('mismatches');
 }
-
-#$parameters .= " -o $TMP/bounpurged";
 
 &ReportWebCommand($command." ".$parameters);
 
