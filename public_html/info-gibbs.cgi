@@ -44,7 +44,6 @@ $command = "$ENV{RSAT}/contrib/info-gibbs/info-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $prefix = "info-gibbs";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate();
 
 ################################################################
 #
@@ -129,11 +128,12 @@ if ($query->param('freq_estimate') =~ /background/i) {
   ## Convert the background model because info-gibbs requires bg in MotifSampler (inclusive) format
   #$exp_freq_file = "$ENV{RSAT}/public_html/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
   $exp_freq_file = &ExpectedFreqFile($organism, $oligo_length, $background, type=>$oligotype, noov=>$overlap, str=>$strand, taxon=>$taxon);
-  $convert_bg_cmd = "$SCRIPTS/convert-background-model -from oligo-analysis -to MotifSampler -i $exp_freq_file -o ${TMP}/$tmp_file_name.bg";
+  $bg_file = $tmp_file_path."_bg.inclusive";
+  $convert_bg_cmd = "$SCRIPTS/convert-background-model -from oligo-analysis -to MotifSampler -i $exp_freq_file -o ".$bg_file;
   &ReportWebCommand($convert_bg_cmd);
   system "$convert_bg_cmd";
 
-  $parameters .= "--bgfile=${TMP}/$tmp_file_name.bg ";
+  $parameters .= "--bgfile=".$bg_file;
   #print $exp_freq_file;
   #$freq_option = " -bg $background -org $organism";
   #$freq_option = " --bgoligo=$exp_freq_file.gz";
