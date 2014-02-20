@@ -7,7 +7,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -142,7 +142,6 @@ if ($query->param('genes') eq "all") {
   push @result_files, ("query genes",$gene_list_file);
   if ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
-    #    $gene_list_file = "${TMP}/${tmp_file_name}.genes";
     if ($upload_file =~ /\.gz$/) {
       $gene_list_file .= ".gz";
     }
@@ -202,13 +201,7 @@ if (($query->param('output') =~ /display/i) ||
     close RESULT;
     close MIRROR if ($mirror);
 
-#    if ($query->param('output') =~ /server/i) {
-      &PrintURLTable(@result_files);
-#      $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-#      print ("The result is available at the following URL: ", "\n<br>",
-#	     "<a href=${result_URL}>${result_URL}</a>",
-#	     "<p>\n");
-#    }
+    &PrintURLTable(@result_files);
 
     ### prepare data for piping
     &PipingFormForSequence();
