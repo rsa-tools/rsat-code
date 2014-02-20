@@ -1373,170 +1373,169 @@ sub GrayScalePalette {
 ################################################################
 ## Read command line arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
+  foreach $a (0..$#ARGV) {
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
 
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
 
-	    ### input, output files ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+      ### input, output files ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
 
-	    ### image format
-	} elsif ($ARGV[$a] eq "-format") {
-	    $img_format = lc($ARGV[$a+1]);
-	    unless ($supported_format{$img_format}) {
-		&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
-	    }
+      ### image format
+    } elsif ($ARGV[$a] eq "-format") {
+      $img_format = lc($ARGV[$a+1]);
+      unless ($supported_format{$img_format}) {
+	&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
+      }
 
-	    ### data report ###
-	} elsif ($ARGV[$a] eq "-data") {
-	    $data_report = 1;
+      ### data report ###
+    } elsif ($ARGV[$a] eq "-data") {
+      $data_report = 1;
 
-	    ### HTML map ###
-	} elsif ($ARGV[$a] eq "-htmap") {
-	    $HTML_map = 1;
+      ### HTML map ###
+    } elsif ($ARGV[$a] eq "-htmap") {
+      $HTML_map = 1;
 
-	    ### reference sequence file (for calculating backbone lengths)
-	} elsif ($ARGV[$a] eq "-seq") {
-	    $sequence_file = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-seqformat") {
-	    $sequence_format = $ARGV[$a+1];
+      ### reference sequence file (for calculating backbone lengths)
+    } elsif ($ARGV[$a] eq "-seq") {
+      $sequence_file = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-seqformat") {
+      $sequence_format = $ARGV[$a+1];
 
-	    ### amino acid specific colors ###
-	} elsif ($ARGV[$a] eq "-aacolors") {
-	    $aa_colors = 1;
+      ### amino acid specific colors ###
+    } elsif ($ARGV[$a] eq "-aacolors") {
+      $aa_colors = 1;
 
-	    ### specific colors ###
-	} elsif ($ARGV[$a] eq "-colors") {
-	    $color_file = $ARGV[$a+1];
+      ### specific colors ###
+    } elsif ($ARGV[$a] eq "-colors") {
+      $color_file = $ARGV[$a+1];
 
-	    ### export the colors
-	  } elsif ($ARGV[$a] eq "-export_colors") {
-	    $ftcol_file = $ARGV[$a+1];
+      ### export the colors
+    } elsif ($ARGV[$a] eq "-export_colors") {
+      $ftcol_file = $ARGV[$a+1];
 
-	    ### specify the background color
-	  } elsif ($ARGV[$a] eq "-bg") {
-	    &RSAT::message::Warning("option -bg is obsolete, please use -bgcolor instead.");
-	    $bg_rgb = $ARGV[$a+1];
+      ### specify the background color
+    } elsif ($ARGV[$a] eq "-bg") {
+      &RSAT::message::Warning("option -bg is obsolete, please use -bgcolor instead.");
+      $bg_rgb = $ARGV[$a+1];
 
-	    ### specify the background color
-	  } elsif ($ARGV[$a] eq "-bgcolor") {
-	    $bg_rgb = $ARGV[$a+1];
+      ### specify the background color
+    } elsif ($ARGV[$a] eq "-bgcolor") {
+      $bg_rgb = $ARGV[$a+1];
 
-	    ### monochrome palette ###
-	} elsif ($ARGV[$a] =~ /^-mono/) {
-	    $monochrome = 1;
+      ### monochrome palette ###
+    } elsif ($ARGV[$a] =~ /^-mono/) {
+      $monochrome = 1;
 
-	    ### map orientation
-	} elsif  ($ARGV[$a] =~ /^-horiz/) {
-	    $horizontal_map = 1;
-	} elsif  ($ARGV[$a] =~ /^-vertic/) {
-	    $horizontal_map = 0;
+      ### map orientation
+    } elsif  ($ARGV[$a] =~ /^-horiz/) {
+      $horizontal_map = 1;
+    } elsif  ($ARGV[$a] =~ /^-vertic/) {
+      $horizontal_map = 0;
 
-	    ### title ###
-	} elsif ($ARGV[$a] eq "-title") {
-	    $title = $ARGV[$a+1];
+      ### title ###
+    } elsif ($ARGV[$a] eq "-title") {
+      $title = $ARGV[$a+1];
 
-	    ### legend ###
-	} elsif ($ARGV[$a] eq "-legend") {
-	    $legend = 1;
+      ### legend ###
+    } elsif ($ARGV[$a] eq "-legend") {
+      $legend = 1;
 
-	    ### scale bar ###
-	} elsif ($ARGV[$a] eq "-scalebar") {
-	    $scalebar = 1;
-	    ### scale bar step ###
-	} elsif ($ARGV[$a] eq "-scalestep") {
-	    $scale_bar_step = $ARGV[$a+1];
+      ### scale bar ###
+    } elsif ($ARGV[$a] eq "-scalebar") {
+      $scalebar = 1;
+      ### scale bar step ###
+    } elsif ($ARGV[$a] eq "-scalestep") {
+      $scale_bar_step = $ARGV[$a+1];
 
-	    ### map name
-	} elsif ($ARGV[$a] =~ /^-no_name/) {
-	    $map_names = 0;
+      ### map name
+    } elsif ($ARGV[$a] =~ /^-no_name/) {
+      $map_names = 0;
 
-	    ### label keys
-	} elsif ($ARGV[$a] eq "-label") {
-	    @label_keys = split(/,/, $ARGV[$a+1]);
-	}elsif ($ARGV[$a] =~ /^-boxlabel/) {
-	    $box_labels = 1;
+      ### label keys
+    } elsif ($ARGV[$a] eq "-label") {
+      @label_keys = split(/,/, $ARGV[$a+1]);
+    }elsif ($ARGV[$a] =~ /^-boxlabel/) {
+      $box_labels = 1;
 
-	    ### ID selection ###
-	} elsif ($ARGV[$a] eq "-select") {
-	    $id_selection = 1;
-	    @selected_ids = split(/,/, $ARGV[$a+1]);
-	    foreach $id (@selected_ids) {
-		$id =~ s/\'//g;
-		$id =~ s/\s//g;
-		$selected{$id} = 1;
-	    }
+      ### ID selection ###
+    } elsif ($ARGV[$a] eq "-select") {
+      $id_selection = 1;
+      @selected_ids = split(/,/, $ARGV[$a+1]);
+      foreach $id (@selected_ids) {
+	$id =~ s/\'//g;
+	$id =~ s/\s//g;
+	$selected{$id} = 1;
+      }
 
-	    ### feature handle ###
-	} elsif ($ARGV[$a] =~ /^-symbol/) {
-	    $draw_symbols = 1;
-	    $draw_dots = 0;
-	    $draw_handles = 1;
-	    $handle_thick = $symbol_thick;
-	    $handle_length = $symbol_length;
+      ### feature handle ###
+    } elsif ($ARGV[$a] =~ /^-symbol/) {
+      $draw_symbols = 1;
+      $draw_dots = 0;
+      $draw_handles = 1;
+      $handle_thick = $symbol_thick;
+      $handle_length = $symbol_length;
 
-	} elsif ($ARGV[$a] =~ /^-dot/) {
-	    $draw_dots = 1;
-	    $draw_symbols = 0;
-	    $draw_handles = 1;
-	    $handle_thick = $dot_thick;
-	    $handle_length = $dot_length;
+    } elsif ($ARGV[$a] =~ /^-dot/) {
+      $draw_dots = 1;
+      $draw_symbols = 0;
+      $draw_handles = 1;
+      $handle_thick = $dot_thick;
+      $handle_length = $dot_length;
 
-	    ### from, to coordinates and origin ###
-	} elsif (($ARGV[$a] eq "-origin") && (&IsReal($ARGV[$a+1]))){
-	    $origin = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))){
-	    $view_from = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-to") &&  (&IsReal($ARGV[$a+1]))){
-	    $view_to = $ARGV[$a+1];
+      ### from, to coordinates and origin ###
+    } elsif (($ARGV[$a] eq "-origin") && (&IsReal($ARGV[$a+1]))){
+      $origin = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))){
+      $view_from = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-to") &&  (&IsReal($ARGV[$a+1]))){
+      $view_to = $ARGV[$a+1];
 
-	    ### thickness proportional to score
-	} elsif ($ARGV[$a] =~ /^-score/) {
-	    $score_thick = 1;
+      ### thickness proportional to score
+    } elsif ($ARGV[$a] =~ /^-score/) {
+      $score_thick = 1;
 
-	    ### max and min score values
-	} elsif (($ARGV[$a] =~ /^-maxscore/) && (&IsReal($ARGV[$a+1]))) {
-	    $fixed_max_score = $ARGV[$a+1];
-	} elsif (($ARGV[$a] =~ /^-minscore/) && (&IsReal($ARGV[$a+1]))) {
-	    $fixed_min_score = $ARGV[$a+1];
+      ### max and min score values
+    } elsif (($ARGV[$a] =~ /^-maxscore/) && (&IsReal($ARGV[$a+1]))) {
+      $fixed_max_score = $ARGV[$a+1];
+    } elsif (($ARGV[$a] =~ /^-minscore/) && (&IsReal($ARGV[$a+1]))) {
+      $fixed_min_score = $ARGV[$a+1];
 
-	    ### max and min feature thickness
-	} elsif (($ARGV[$a] =~ /^-maxfthick/) && (&IsNatural($ARGV[$a+1]))) {
-	    $max_feature_thick = $ARGV[$a+1];
-	} elsif (($ARGV[$a] =~ /^-minfthick/) && (&IsNatural($ARGV[$a+1]))) {
-	    $min_feature_thick = $ARGV[$a+1];
+      ### max and min feature thickness
+    } elsif (($ARGV[$a] =~ /^-maxfthick/) && (&IsNatural($ARGV[$a+1]))) {
+      $max_feature_thick = $ARGV[$a+1];
+    } elsif (($ARGV[$a] =~ /^-minfthick/) && (&IsNatural($ARGV[$a+1]))) {
+      $min_feature_thick = $ARGV[$a+1];
 
-	    ### axis size (in pixels) ###
-	} elsif (($ARGV[$a] eq "-mlen") && (&IsNatural($ARGV[$a+1]))){
-	    $map_length = $ARGV[$a+1];
+      ### axis size (in pixels) ###
+    } elsif (($ARGV[$a] eq "-mlen") && (&IsNatural($ARGV[$a+1]))){
+      $map_length = $ARGV[$a+1];
 
-	} elsif (($ARGV[$a] eq "-mapthick") && ((&IsNatural($ARGV[$a+1]))) || ($ARGV[$a+1] eq "auto")){
-	    $map_thick = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-mapthick") && ((&IsNatural($ARGV[$a+1]))) || ($ARGV[$a+1] eq "auto")){
+      $map_thick = $ARGV[$a+1];
 
-	} elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
-	    $map_spacing = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
+      $map_spacing = $ARGV[$a+1];
 
-	    ## image border
-	} elsif (($ARGV[$a] eq "-border") && (&IsNatural($ARGV[$a+1]))){
-	    $border = $ARGV[$a+1];
-	}
+      ## image border
+    } elsif (($ARGV[$a] eq "-border") && (&IsNatural($ARGV[$a+1]))){
+      $border = $ARGV[$a+1];
     }
-
+  }
 }
 
 
@@ -1831,7 +1830,8 @@ sub OpenHTMLmap {
   print "</HEAD>\n";
   print "<BODY>\n";
   print "<img src=\"";
-  print ShortFileName($outputfile);
+#  print &RSAT::util::RelativePath(".", $outputfile);
+  print &ShortFileName($outputfile);
   print "\" border=0 usemap=\"#map1\">\n";
   print "<map name=\"map1\">\n";
 }
