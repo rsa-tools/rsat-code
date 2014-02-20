@@ -15,7 +15,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -43,7 +43,6 @@ $query = new CGI;
 $command = $SCRIPTS."/matrix-scan -v 1 ";
 $prefix = "matrix-scan";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
 @result_files = ();
 
 ################################################################
@@ -119,7 +118,6 @@ if ($query->param('output') eq "display") {
 
   ################################################################
   ## Convert features to GFF3 format
-#  $gff3_file =  $TMP."/".$tmp_file_name.".gff3";
   $gff3_file =  $tmp_file_path.".gff3";
   $command = "${SCRIPTS}/convert-features -from ft -to gff3 ";
   $command .= " -i ".$result_file;
@@ -131,7 +129,6 @@ if ($query->param('output') eq "display") {
   ################################################################
   ## Convert features for loading as genome tracks
   if ($origin eq "genomic") {
-#    $bed_file =  $TMP."/".$tmp_file_name.".bed";
     $bed_file =  $tmp_file_path.".bed";
     $command = "${SCRIPTS}/convert-features -from ft -to bed ";
     $command .= " -i ".$result_file;
@@ -144,24 +141,6 @@ if ($query->param('output') eq "display") {
 
   ################################################################
   ## Table with links to the raw result files in various formats
-#   $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name;
-#   print "<center><table class=\"nextstep\">\n";
-#   print "<tr><td colspan='3'><h3>Raw result files</h3> </td></tr>";
-# #  print ("<tr>",
-# #	 "<th>Format</th>",
-# #	 "<th>URL</th>",
-# #	 "<th>Usage</th>",
-# #	 "</tr>");
-#   print ("<tr>",
-# 	 "<td>FT</td>",
-# 	 "<td>","<a href='".$result_URL.".ft'>".$result_URL.".ft</a>","</td>",
-# 	 "<td>RSAT feature-map</td>",
-# 	 "</tr>");
-#   print ("<tr>",
-# 	 "<td>GFF3</td>",
-# 	 "<td>","<a href='".$result_URL.".gff3'>".$result_URL.".gff3</a>","</td>",
-# 	 "<td>General feature format</td>",
-# 	 "</tr>");
   &PrintURLTable(@result_files);
 
   if ($origin eq "genomic") {
@@ -262,7 +241,6 @@ sub ReadMatrixScanParameters {
   unless ($query->param('matrix') =~ /\S/) { ### empty matrix
     &RSAT::error::FatalError("You did not enter the matrix");
   }
-#  $matrix_file = "$TMP/$tmp_file_name.matrix";
   $matrix_file = $tmp_file_path.".matrix";
 
   $matrix_format = lc($query->param('matrix_format'));
@@ -362,7 +340,6 @@ sub ReadMatrixScanParameters {
 
   } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
-#    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
     my $bgfile = $tmp_file_path."_bgfile.txt";
     push @result_files, ("Background model", $bgfile);
     my $upload_bgfile = $query->param('upload_bgfile');
