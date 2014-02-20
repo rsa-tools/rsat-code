@@ -550,21 +550,22 @@ sub InitRSAT {
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
 
-  ## Check temporary directory
-  $main::TMP = $ENV{RSAT}."/public_html/tmp";
-
 
   ################################################################
-  ## I would like to define a month-specific tmp directory But this
-  ## requires to revisit all the pulic-html + perl-script dir to
-  ## replace $RSAT/public_html/tmp by this $TMP.
-#   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-#   $year_month = sprintf("%02d_%02d", $day, $month+1, 1900+$year);
-#   $main::TMP .= "/".$year_month;
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ## JvH, 2014-02-19 : I suppress this, because with the user-specific
+  ## temp folders, all users should not have the possibility to create
+  ## a directory in the public_html folder anymore
 
-   &RSAT::util::CheckOutDir($main::TMP);
-   chmod(0777, $main::TMP);
+
+  ## Check temporary directory
+#  $main::TMP = $ENV{RSAT}."/public_html/tmp";
+#  &RSAT::util::CheckOutDir($main::TMP);
+#  chmod(0777, $main::TMP);
 #   &RSAT::message::Debug("Temporary dir", $main::TMP) if ($main::verbose >= 5);
+
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ################################################################
 
   $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
   $main::PYTHON = "$ENV{RSAT}/python-scripts";
