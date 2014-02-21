@@ -17,7 +17,8 @@ $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
 $add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
 $link_command = "$SCRIPTS/add-yeast-link";
-$tmp_file_name = sprintf "genome-scale-patser.%s", &AlphaDate;
+$prefix = "gs-patser";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
 ### Read the CGI query
 $query = new CGI;
@@ -39,7 +40,7 @@ $query = new CGI;
 &ReadPatserParameters();
 
 ### parameters for the piping to the feature map ###
-$feature_file =  "$TMP/$tmp_file_name.ft";
+$feature_file =  $tmp_file_path.".ft";
 #$features_from_patser_cmd .= " -seq $sequence_file";
 #$features_from_patser_cmd .= " -o $feature_file";
 
@@ -66,7 +67,7 @@ $command .= "| $add_orf_function_command -org $org ";
 if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
+    $result_file = $tmp_file_path.".res";
     open RESULT, "$command & |";
 
     unless ($query->param('table')) {

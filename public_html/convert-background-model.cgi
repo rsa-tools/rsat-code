@@ -8,7 +8,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -40,7 +40,6 @@ $query = new CGI;
 $command = "$SCRIPTS/convert-background-model";
 $prefix = "convert-bg";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
 @result_files = ();
 
 #### read parameters ####
@@ -189,11 +188,10 @@ if ($query->param('output') eq "display") {
 
       print "<pre>command: $command2<p>\n</pre>" if ($ENV{rsat_echo} >= 1);
       `$command2`;
-      $heatmap_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath($TMP, $heatmap_file);
+      $heatmap_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $heatmap_file);
       print "<center><a href = \"".$heatmap_URL."\"><img src=\"".$heatmap_URL."\"></a>";
-#      print "<center><a href = \"$WWW_TMP/${heatmap_file}.png\"><img src=\"$WWW_TMP/${heatmap_file}.png\"></a>";
-      &DelayedRemoval("$TMP/${heatmap_file}.png");
-      &DelayedRemoval("$TMP/${heatmap_file}.html");
+      &DelayedRemoval(&RSAT::util::get_pub_temp()."/${heatmap_file}.png");
+      &DelayedRemoval(&RSAT::util::get_pub_temp()."/${heatmap_file}.html");
     }
 
     &PrintURLTable(@result_files);

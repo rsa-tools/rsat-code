@@ -3073,8 +3073,7 @@ sub SynthesisByMotif {
 
       if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
 	## UCSC link to genomic location of predicted sites
-#	my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'});
-	my $BED_URL =$ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath($TMP, $main::outfile{$motif_id.'_pssm_sites_genomic'});
+	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$motif_id.'_pssm_sites_genomic'});
 	#	my $BED_URL = join ("/", 
 	#			    $ENV{rsat_www},
 	#			    "tmp",
@@ -3189,8 +3188,7 @@ sub SynthesisMergedSites {
     my $browser_url = "";
     if (($main::infile{coord})||($main::param{seq_source})) {
       ## UCSC link to genomic location of predicted sites
-#      my $BED_URL = $ENV{rsat_www}."/tmp/".&RSAT::util::ShortFileName($main::dir{output})."/".&RSAT::util::RelativePath($main::dir{output}, $main::outfile{merged_sites_bed});
-      my $BED_URL =$ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath($TMP, $main::outfile{merged_sites_bed});
+      my $BED_URL =$ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{merged_sites_bed});
       $browser_url = "<a target='_blank' href='";
       $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
       $browser_url .= "db=".$genome_assembly;
@@ -3510,9 +3508,9 @@ sub SynthesisSequenceComposition {
 #      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
 #      $BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
       if ($main::outfile{"test_seq_coord"}) {
-	  $BED_URL = $ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath($TMP, $main::outfile{"test_seq_coord"});
+	  $BED_URL = $ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{"test_seq_coord"});
       } elsif ($main::infile{coord}) {
-	  $BED_URL = $ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath($TMP, $main::infile{coord});
+	  $BED_URL = $ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::infile{coord});
       }
 
       my $browser_url = "<a target='_blank' href='";

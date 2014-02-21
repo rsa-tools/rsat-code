@@ -495,7 +495,6 @@ sub GetSequenceFile {
     ### sequence file already on the server side
     ### create a new temporary sequence file
     $sequence_file = &RSAT::util::make_temp_file("","tmp_sequence", 1);
-#    $sequence_file = "$main::TMP/$tmp_file_name.seq";
 
     ### upload sequence file from the client side
     $upload_file = $query->param('uploaded_file');
@@ -1199,7 +1198,6 @@ sub SetBackgroundModel {
   } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
     local $bgfile = $tmp_file_path."_bgfile.txt";
-#    local $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
     local $upload_bgfile = $query->param('upload_bgfile');
     if ($upload_bgfile) {
       if ($upload_bgfile =~ /\.gz$/) {
@@ -1603,7 +1601,7 @@ sub SaveCommand {
 
   #### temporary file for storing the result
   unless ($tmp_file_path) {
-    $tmp_file_path = join("", "command_", &AlphaDate(), ".txt");
+    $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); 
   }
   open CMD, ">".$tmp_file_path."_command.txt";
   print CMD $command, "\n";
@@ -1656,25 +1654,18 @@ sub EmailTheResult {
     ## Check the email address
     &CheckEmailAddress($email_address)  unless ($no_email);;
 
-    #### temporary file for storing the result
+    ## Temporary file for storing the result
     unless ($tmp_file_path) {
-#      $tmp_file_path = sprintf "result.%s", &AlphaDate.".txt";
       $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); 
-      #($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
     }
     my $result_URL = $ENV{rsat_www}."/tmp/";
     if ($args{index}) {
-      $result_URL .= &RSAT::util::RelativePath($TMP, $args{index});
-#      $result_URL = $ENV{rsat_www}."/tmp/".$args{index};
+      $result_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $args{index});
     } else {
-      $result_URL .= &RSAT::util::RelativePath($TMP, $tmp_file_path);
-#die "HELLO\n", join "\n", $TMP, $tmp_file_path, $result_URL, "\n";
-#      $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_path";
+      $result_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $tmp_file_path);
     }
     $result_URL =~ s|//tmp|/tmp|g;
 
-    #### debugging: report the command
-    print "<pre>", &RSAT::util::hide_RSAT_path("$command >> $tmp_file_path"), "</pre>" if ($ENV{rsat_echo} >= 1);
 
     #### Indicate the URL of the future result file
     my $submission_message = $mail_title."\n";
@@ -1699,14 +1690,14 @@ sub EmailTheResult {
     }
 
 
-    #### concatenate the command with the email notification
+    ## Concatenate the command with the email notification
     my $completion_mail_command = "mail -s \'".$mail_title." completion\'";
     my $completion_message;
     $completion_message .= $mail_title."\n";
     $completion_message .= "\n\nCommand: ".$clean_command;
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
-    print "<PRE>", &RSAT::util::hide_RSAT_path($command), "</PRE>" if ($ENV{rsat_echo} >= 1);
+#    print "<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 1);
 
     ## Run the command and send a notification mail if the user provided an email address
     $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $tmp_file_path; ";
@@ -2536,7 +2527,7 @@ End_of_form
 sub display_matrices_web {
   my ($in_matrix_file, $in_format, $no_convert, $logo_dir) = @_;
 
-
+  my $public_temp_dir = &RSAT::util::get_pub_temp();
   print "\n<hr>\n";
 
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
@@ -2585,7 +2576,7 @@ sub display_matrices_web {
   while (<$res>) {
     next if ($_ =~ /logo file:(.*)\.pdf$/);
     if ($_ =~ /logo file:(.*)\.png$/){
-      (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+      (local $logo = $1 )=~ s|${public_temp_dir}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
       print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
 
@@ -2594,7 +2585,6 @@ sub display_matrices_web {
 	print "\n";
       }
       $after_logo = 1;
-#      &DelayedRemoval("$TMP/$1");
     } else {
       $after_logo = 0;
 #      s|$ENV{RSAT}/||g;
@@ -2623,7 +2613,7 @@ sub PrintURLTable {
     my $file = shift @files;
 #    $file = &ShortFileName($file);
     my $result_URL = $ENV{rsat_www}."/tmp/";
-    $result_URL .= &RSAT::util::RelativePath($TMP, $file);
+    $result_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $file);
     print ("<tr>","<td>".$type."</td>","<td>","<a href='".$result_URL."'>".$result_URL."</a>","</td>","</tr>");
   }
   print "</table>";

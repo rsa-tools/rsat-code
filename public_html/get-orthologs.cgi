@@ -28,7 +28,6 @@ $query = new CGI;
 $command = "$SCRIPTS/get-orthologs";
 $prefix = "get-orthologs";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
 @result_files = ();
 
 
