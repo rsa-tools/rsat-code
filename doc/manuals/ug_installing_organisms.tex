@@ -101,7 +101,10 @@ genomes are available. For this, use the option
 
 \begin{lstlisting}
 ## Retrieve the list of supported species on EnsEMBL
-install-ensembl-genome -v 1  -available_species
+install-ensembl-genome -v 1  -available_species -o available_species_ensembl.tab
+
+## Read the result file
+more available_species_ensembl.tab
 \end{lstlisting}
 
 \emph{Note:} inter-individual variations are available for a subset
@@ -184,7 +187,7 @@ download-ensembl-variations -v 1  -available_species
 We can now download all the variations available for the yeast.
 
 \begin{lstlisting}
-## Retrieve the list of supported species in the EnsEMBL variation database
+## Download all variations for a selected organism on your server
 download-ensembl-variations -v 1 -species Saccharomyces_cerevisiae
 \end{lstlisting}
 

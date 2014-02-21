@@ -529,14 +529,20 @@ class MotifStatistics:
     MOTIF_CHI2 = "Chi2"
     MOTIF_CHI2_PVALUE = "Chi2PValue"
     
+    CONTIGENCY_MOTIF_COOCCURENCE = "Contingency_ContingentMotifBedSeqNumber"
+    CONTIGENCY_REFERENCE_MOTIF_BEDSEQ = "Contingency_ReferenceMotifBedSeqNumber" 
+    CONTINGENCY_TOTAL_BEDSEQ = "Contingency_TotalBedSeqNumber"
+    
     MOTIF_DISTANCE_HISTOGRAM = "DistanceHistogram"
     MOTIF_DISTANCE_HISTOGRAM_GRAPH = "DistanceHistogramGraph"
+    MOTIF_DISTANCE_HISTOGRAM_GRAPH_PDF = "DistanceHistogramGraphPDF"
     
     MOTIF_PEAK_SCORE_HISTOGRAM = "PeakScoreHistogram"
-    MOTIF_PEAK_SCORE_HISTOGRAM_GRAPH ="PeakScoreHistogramGraph"
+    MOTIF_PEAK_SCORE_HISTOGRAM_GRAPH = "PeakScoreHistogramGraph"
     
     MOTIF_COLOCATION_HISTOGRAM = "CoLocationHistogram"
     MOTIF_COLOCATION_HISTOGRAM_GRAPH = "CoLocationHistogramGraph"
+    MOTIF_COLOCATION_HISTOGRAM_GRAPH_PDF = "CoLocationHistogramGraphPDF"
     
     MOTIF_RANK = "Rank"
     MOTIF_FAMILY_RANK = "FamilyRank"

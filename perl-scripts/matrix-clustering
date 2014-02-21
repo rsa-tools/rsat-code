@@ -36,9 +36,27 @@ RSAT makefile:
 
 =head1 AUTHORS
 
-Implementation : Jacques.van.Helden@ulb.ac.be
+=head2 Implementation
 
-Conception: Jacques van Helden, Carl Herrmann and Denis Thieffry.
+=over
+
+=item Jacques.van-Helden@univ-amu.fr
+
+=item Jaime Castro <jcastro@lcg.unam.mx>
+
+=back
+
+=head2 Conception
+
+=over
+
+=item Jacques van Helden
+
+=item Carl Herrmann
+
+=item Denis Thieffry
+
+=back
 
 =head1 CATEGORY
 
@@ -61,6 +79,8 @@ The program I<compare-matrices> is used by I<cluster-matrices> to
 measure pairwise similarities and define the best alignment (offset,
 strand) between each pair of matrices.
 
+=back
+
 =head1 WISH LIST
 
 =cut
@@ -72,6 +92,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
@@ -89,6 +110,8 @@ package main;
 
     %main::infile = ();
     %main::outfile = ();
+    %main::dir = ();
+    @dirs = ();
 
     $main::verbose = 0;
 #    $main::in = STDIN;
@@ -102,8 +125,49 @@ package main;
     }
     local $supported_matrix_formats = join ",", @supported_matrix_formats;
 
+    ## output formats for hclust
+    local @supported_tree_formats = qw (json newick);
+    local %supported_tree_formats = ();
+    foreach my $format (@supported_tree_formats) {
+	$supported_tree_formats{$format} = 1;
+    }
+    local $supported_tree_formats = join ",", @supported_tree_formats;
+    local $export_tree_format = "";
+
+    ## Select d3 base
+    local @d3_base_formats = qw (file link);
+    local %d3_base_formats = ();
+    foreach my $format (@d3_base_formats) {
+	$d3_base_formats{$format} = 1;
+    }
+    local $d3_base_formats = join ",", @d3_base_formats;
+    local $d3_base_format = "";
+    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+
+
+    ## Supported label fields
+    local @supported_label_fields = qw (id name consensus);
+    local %supported_label_fields = ();
+    foreach my $field (@supported_label_fields) {
+	$supported_label_fields{$field} = 1;
+    }
+    local $supported_label_fields = join ",", @supported_label_fields;
+#    local $label_fields_to_return = "";
+    local %label_fields_to_return = ();
+    local @label_fields_to_return = ();
+
     ## Matrices
     local @matrices = ();
+    local @temp = ();
+    local $matrix_num = 0;
+    local $show_consensus = 0;
+
+
+    ## Unrecognized arguments are passed to compare-matrices
+    local @args_to_pass = ();
+    local $args_to_pass = "";
+
+    
 
 
     ################################################################
@@ -111,8 +175,8 @@ package main;
     local %param = ();
     $param{matrix_compa_min_w} = 5; ## min number of aligned columns
     $param{matrix_compa_min_Wr} = 0.3; ## min relative width
-    $param{matrix_compa_min_cor} = 0.7; ## min correlation
-    $param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
+    #$param{matrix_compa_min_cor} = 0.7; ## min correlation
+    #$param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
     $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
     $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
     $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
@@ -123,6 +187,16 @@ package main;
 
     ################################################################
     ## Check argument values
+
+    &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
+
+    ## Non-recognized parameters are passed to compare-matrices
+    if (scalar(@args_to_pass)) {
+      $args_to_pass = join (" ", @args_to_pass);
+      &RSAT::message::Info("Un-ecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
+    }
+
 
     ## Check that the  input file has been specified
     unless ($infile{matrices}) {
@@ -140,25 +214,79 @@ package main;
       &RSAT::error::FatalError("You must define the output prefix (option -o).");
     }
 
+    ## Check that at least one field is selected for the option
+    ## "-labels".
+    if (scalar(@label_fields_to_return) == 0) {
+      $label_fields_to_return{id} = 1;
+      $label_fields_to_return{name} = 1;
+    }
+    $label_fields_to_return = join ",", @label_fields_to_return;
+    &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
 
+    ## Create output dir if required
+    my $basename;
+    ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
+    $dir{output} = "." if ($dir{output} eq "");
+    &RSAT::util::CheckOutDir($dir{output});
+    push @dirs, "output";
+
+    ## Directory containing the matrix logos (to be displayed in the HTML tree)
+    $dir{logos} = $main::outfile{prefix}."_pairwise_compa_logos"; push @dirs, "logos";
 
     ################################################################
     ## Specify output file names and open output stream
-    $main::outfile{log} = $main::outfile{prefix}."_log.txt";
+    $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
+#    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
     $main::out = &OpenOutputFile($main::outfile{log});
 
-    $main::outfile{pairwise_compa} = $main::outfile{prefix}."_pairwise_compa.tab";
-    $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_pairwise_compa.html";
-    $main::outfile{pairwise_compa_gml} = $main::outfile{prefix}."_pairwise_compa.gml";
-    $main::outfile{pairwise_compa_png} = $main::outfile{prefix}."_pairwise_compa.png";
 
-    $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl";
-    $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab";
-    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab";
-    $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml";
-    $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png";
-    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab";
-    $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab";
+    ## Pairwise comparisons between matrices
+    $main::outfile{pairwise_compa} = $main::outfile{prefix}."_pairwise_compa.tab"; push @outfiles, "pairwise_compa";
+    $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
+
+
+    ## Individual matrix descriptions
+    $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions";
+
+    ## Simliarity network between matrices
+    if ($main::return_field{network}) {
+      $main::outfile{matrix_network_gml} = $main::outfile{prefix}."_matrix_network.gml"; push @outfiles, "matrix_network_gml";
+      $main::outfile{matrix_network_png} = $main::outfile{prefix}."_matrix_network.png"; push @outfiles, "matrix_network_png";
+    }
+
+    ## MCL clustering (by segmentation of the matrix network)
+    if ($main::return_field{mcl_clusters}) {
+      $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl"; push @outfiles, "clusters_mcl";
+      $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab"; push @outfiles, "clusters_tab";
+      $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab"; push @outfiles, "clusters_subgraph";
+      $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml"; push @outfiles, "clusters_subgraph_gml";
+      $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png"; push @outfiles, "clusters_subgraph_png";
+      $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab"; push @outfiles, "intra_cluster_degree";
+    }
+
+    $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_matrix_tree.json"; push @outfiles, "matrix_tree_json";
+    $main::outfile{parsed_tree_json} = $main::outfile{prefix}."_parsed_tree.json"; push @outfiles, "parsed_tree_json";
+#    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
+    $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
+    $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
+    $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table";
+    if ($export_tree_format eq "newick"){
+	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
+	
+    }
+    ## Open the HTML index file
+    $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
+    push @outfiles, "html_index";
+    $main::html_index = &OpenOutputFile($main::outfile{html_index});
+    my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
+    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+    print $main::html_index $header;
+    
+    ## Report command
+    print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
+    &PrintArguments($main::html_index, 1);
+    print $html_index "</tt></p>\n";
+
 
     ################################################################
     ## Read input matrices
@@ -170,23 +298,42 @@ package main;
 
     ################################################################
     ## Cluster the matrices
-    &ClusterMotifs();
+    &CompareMatrices();
+
+    ################################################################
+    ## Cluster the matrices
+    #&ClusterMotifs();
+    &Hclustering();
+
+    ################################################################
+    ## Parse the JSON file
+    &Add_attributes_to_JSON();
+
+    ################################################################
+    ## Creates the html template to display the tree
+    &Create_html_tree_file();
 
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
 
-    ################################################################
-    ## Execute the command
 
     ################################################################
-    ## Insert here output printing
+    ## Generate the HMTL index of input/output files
+    &IndexFiles() if ($main::outfile{html_index});
 
     ################################################################
     ## Close output stream
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time); print $main::out $exec_time if ($main::verbose >= 1);
     close $main::out if ($main::outfile{prefix});
 
+  ## Close the HTML index file
+  if ($main::outfile{html_index}) {
+    print $main::html_index "<hr>";
+    print $main::html_index "</body>";
+    print $main::html_index "</html>";
+    close $main::html_index;
+  }
 
     exit(0);
 }
@@ -265,7 +412,7 @@ matrices.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{matrices} = shift(@arguments);
+	$main::infile{matrices} = shift(@arguments);
 
 =pod
 
@@ -284,10 +431,10 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
     } elsif ($arg eq "-format") {
-      $main::matrix_format = shift(@arguments);
-      unless ($supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-      }
+	$main::matrix_format = shift(@arguments);
+	unless ($supported_matrix_format{$matrix_format}) {
+	    &RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+	}
 
 
 =pod
@@ -301,14 +448,83 @@ list of output files (pariwise matrix comparisons, matrix clusters).
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outfile{prefix} = shift(@arguments);
+	$main::outfile{prefix} = shift(@arguments);
 
-    } else {
-      &FatalError("Invalid option", $arg);
+=pod
 
+=item	B<-cons>
+
+Option to display the consensus in the tree's branches
+
+=cut
+    } elsif ($arg eq "-cons"){
+	$show_consensus = 1;
+   
+=pod
+
+=item	B<-export format>
+
+Specify format for the output tree.
+
+B<Supported trees formats>
+
+(Default: json; optional: newick).
+
+=cut
+    } elsif ($arg eq "-export") {
+        $export_tree_format = shift(@arguments);
+        unless($supported_tree_formats{$export_tree_format}) {
+	    &RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+        }
+
+=pod
+
+=item	B<-d3_base>
+
+Option to specify any type of URL (file://, http://, ...) as base for the d3 library.
+    
+B<Supported d3 bases>
+    
+(Default: file, optional: link )
+
+=cut
+    } elsif ($arg eq "-d3_base") {
+        $d3_base_format = shift(@arguments);
+        unless ($d3_base_formats{$d3_base_format}) {
+	    &RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
+        }
+
+=pod
+
+=item	B<-labels>
+
+Mandatory option to select the matrix label fields displayed in the html tree
+    
+B<Supported labels>
+    
+(name, consensus, id)
+
+=cut
+    } elsif ($arg eq "-labels") {
+      my $label_fields_to_return = shift(@arguments);
+      my @new_label_fields_to_return = split (",", $label_fields_to_return);
+      foreach $field (@new_label_fields_to_return) {
+	if ($supported_label_fields{$field}) {
+	  $label_fields_to_return{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
+	}
+      }
+      push @label_fields_to_return, @new_label_fields_to_return;
+
+    }else {
+        if ($arg =~ /\s/) {
+	    push @args_to_pass, "'".$arg."'";
+        } else {
+	    push @args_to_pass, $arg;
+        }
     }
   }
-
 =pod
 
 =back
@@ -339,29 +555,22 @@ sub Verbose {
     }
 }
 
-
-
 ################################################################
-## Compare each discovered motifs to each other, and with the
-## reference motif, identify clusters of similar motifs, and build
-## consensus motifs.
-sub ClusterMotifs {
-
+## Compare each discovered motifs to each other.
+sub CompareMatrices {
   ## Pariwise comparisons between discovered matrices.  We don't
   ## the option "distinct" in order to ensure that all the motifs are
   ## in the output graph even if they are not related to any other
   ## motif.
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode scores";
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
-#  $cmd .= " -distinct"; ## We disactivate the option "distinct" in order to ensure that all the motifs are in the output graph even if they are not related to any other motif
   $cmd .= " -sort cor";
-  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
-  $cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
-  $cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus";
+  $cmd .= " -return matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -labels ".$label_fields_to_return;
+  $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
@@ -369,7 +578,7 @@ sub ClusterMotifs {
 
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
 
-  ## Use the mean_rank as score column
+  ## Read the score column
   open COMPA, $main::outfile{pairwise_compa};
   $main::param{score_column} = 0;
   while (<COMPA>) {
@@ -384,20 +593,87 @@ sub ClusterMotifs {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
 
+}
+
+
+###############################################################
+## Run the R script "cluster_motifs.R" 
+##
+## This script takes as input a matrix comparison file
+## (generated by compare-matrices), performs hierarchical
+## clustering.
+##
+## It returns the resulting tree in json format
+## 
+
+sub Hclustering {
+    
+    &RSAT::message::TimeWarn("Clustering matrices on the basis of the selected parameter.") if ($main::verbose >= 2);
+
+
+    ##################################
+    ### This lines are required?
+    #my $r_path = &RSAT::server::GetProgramPath("R", 0);
+    #RSAT::message::Info("R path", $r_path) if ($main::verbose >= 3);
+
+    ####################################
+    ### Modify the path
+    chomp(my $r_path = `which R`);
+
+
+    my $cluster_motifs_script  = $ENV{RSAT}."/R-scripts/cluster_motifs.R";
+    &RSAT::error::FatalError("Cannot read cluster motifs script", $cluster_motifs_script) unless (-r $cluster_motifs_script);
+
+
+
+#  my $pos_drawing_offset = -($pos_interval-1)/2;
+    my $pos_drawing_offset = 0;
+    my  $cluster_motifs_cmd = "cat ".$cluster_motifs_script;
+    $cluster_motifs_cmd .= " | ".$r_path;
+    $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
+    $cluster_motifs_cmd .= " --args \"";
+    $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
+    $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
+    $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
+    $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
+    if ($export_tree_format eq "newick"){
+	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
+	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
+    }
+    #$cluster_motifs_cmd .= ";score='Ncor'";
+    $cluster_motifs_cmd .= "; \"";
+    #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
+    if ($r_path) {
+        &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
+    } else {
+        &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
+    }
+
+    return();
+}
+
+
+
+################################################################
+## Identify clusters of similar motifs using MCL ("Markov clustering",
+## an algorithm partitioning a network into clusters), and build
+## consensus motifs.
+sub ClusterMotifs {
+
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
   $cmd .= " -ewidth -ecolors fire";
   $cmd .= " -layout spring_new";
   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-  $cmd .= " -o ".$main::outfile{pairwise_compa_gml};
+  $cmd .= " -o ".$main::outfile{matrix_network_gml};
   &RSAT::util::one_command($cmd, 1);
 
   ## Generate a figure of the motif comparison graph
   $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{pairwise_compa_gml};
+  $cmd .= " -in_format gml -i ".$main::outfile{matrix_network_gml};
   $cmd .= " -ewidth";
   $cmd .= " -layout none";
-  $cmd .= " -out_format png -o ".$main::outfile{pairwise_compa_png};
+  $cmd .= " -out_format png -o ".$main::outfile{compa_png};
   &RSAT::util::one_command($cmd, 1);
 
   ## Use MCL to partition the motif graph into clusters
@@ -453,8 +729,232 @@ sub ClusterMotifs {
   $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
   &RSAT::util::one_command($cmd, 1);
 
-  return();
 
+  return();
+}
+
+
+################################################################
+## Add attributes to JSON file, like links to pictures and other
+## attributes
+sub Add_attributes_to_JSON(){
+  my ($Line, $M1, $M2, $Add_this, $Flag);
+  my (@Split_line, @Parsed_JSON) = ();
+  my (%matrix_info) = ();
+
+
+  #############################################
+  ## Create a hash with the attribute data:
+  ##	key :  name
+  ##	values : attribute (link, etc)
+
+  ### Open the file with the picture's data
+  open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
+  while(<DATA>){
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
+    my $line = $_;
+    @split_line = split(/\s+/, $line);
+    my $matrix_label = $split_line[5];
+    $matrix_info{$matrix_label}{id} = $split_line[1];
+    $matrix_info{$matrix_label}{name} = $split_line[2];
+    $matrix_info{$matrix_label}{width} = $split_line[3];
+    $matrix_info{$matrix_label}{consensus} = $split_line[4];
+    $matrix_info{$matrix_label}{label} = $split_line[5];
+    $matrix_info{$matrix_label}{logo_file} = $split_line[6];
+    $matrix_info{$matrix_label}{logo_file_rc} = $split_line[7];
+
+  }
+  close(DATA);
+
+
+  ############################################################
+  ## Read the JSON file and add the link data to each node
+
+  my $line = "";
+  my $children = 0;
+  $matrix_num = 0;
+
+  ### Open the JSON file produced by R
+  open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
+  while(<JSON>){
+    
+    chomp;
+    $Flag = 0;
+    $line = $_;
+    
+    ### If the user select the option -cons 1
+    ### Add the consensus to the json file to be displayed in the tree
+    if ($show_consensus){
+      if ($line =~ /(\s*\"children\":\s*\[)/){
+	
+	$children++;
+	$Add_this = "";
+	if ($children > 2){
+
+	    ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
+	    ### here must be displayed the consensus of consensus
+	    $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
+	    push(@Parsed_JSON, $Add_this."\n");
+	}
+      }
+    }
+
+    ### Search the pattern separating the matrices names
+    if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
+
+      $matrix_num++;
+      $Flag = 1;
+      $Add_this = "";
+      $M1 = $1;
+
+      ## Define te URL of the logo file, relative to the location of the json file
+      my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
+      my $logo_url = $logo_link.".png";
+      my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file_rc});
+      $logo_url_rc .= ".png";
+
+      ### Create the line that will be added to JSON file
+      $Add_this = " \"image\" : \"${logo_url}\"";
+      $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
+      $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+        
+      foreach my $field (@supported_label_fields) {
+	if ($label_fields_to_return{$field}) {
+	  $Add_this .= ",\n \"".${field}."\" : \"".$matrix_info{$M1}{$field}."\"";
+	}
+      }
+      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
+    }
+    push(@Parsed_JSON, $line."\n");
+    
+    ### Add the new line
+    if ($Flag) {
+      push(@Parsed_JSON, $Add_this."\n");
+    }
+  }
+  close(JSON);
+  
+  ### Create the JSON parsed FILE
+  open(PARSED_JSON, ">".$main::outfile{parsed_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{parsed_tree_json});
+  print PARSED_JSON @Parsed_JSON;
+  close(PARSED_JSON);
+#  system("rm ".$main::outfile{matrix_tree_json});
+  return();
+}
+
+
+###################################
+## Create the html file to 
+## display the tree
+sub Create_html_tree_file(){
+    
+    my $labels_num = 0;
+    my $add_this = "";
+    my $main_label = 	        
+	"\tnode.append(\"a\")
+	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
+
+    my $new_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? \"\" : d.; })
+	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+	
+    my $consensus_branch_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
+	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 0; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 0; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+
+    $matrix_num += 2;
+    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
+    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
+    open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
+
+#    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+#      $d3_base_url = "http://d3js.org/";
+#	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
+#    }
+
+    ## Select the D3 base
+    if ($d3_base_format eq "link"){
+	$d3_base_url = "http://d3js.org";	
+    }
+
+    while(<TREE>){
+	chomp;	
+
+	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	}
+
+	### Fix the d3 library path
+	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
+
+	### Set the height 
+	$_ =~ s/\s+height =,/\t\theight = 150 * $matrix_num,/;
+
+	### Add the JSON file name
+	@temp = split(m|/|,$main::outfile{parsed_tree_json});
+	$json_file_name = pop(@temp);
+
+	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
+
+	if ($_ =~ /Insert labels/){
+
+
+	    ################################################################
+	    ## Insert in the html script the labels selected by the user
+
+	    foreach my $field (@label_fields_to_return) {
+		if ($label_fields_to_return{$field}) {
+		    $labels_num++;
+		    
+		    ### Add the first label with the the link to the logo
+		    if($labels_num == 1){
+			$add_this = $main_label;
+			$up = uc($field);
+			$add_this =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
+		    }
+		    
+		    ### Add the new labels, set the distances among the labels in the tree
+		    if($labels_num > 1){
+			my $copy = $new_label;
+			$up = uc($field);
+			$copy =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
+			my $y_displacement = 3 + (($labels_num -1) * 20);
+			$copy =~ s/#/$y_displacement/;
+			$add_this .= "\n\n".$copy."\n";
+		    }
+		}
+	    }
+	    print TEMP $add_this."\n";
+	}
+
+	if ($show_consensus){
+	    if ($_ =~ /Insert consensus/){
+		print TEMP $consensus_branch_label."\n";
+	    }
+	}
+	print TEMP $_."\n";
+    }
+    close(TREE);
+    close(TEMP);
+    system("rm ".$main::outfile{matrix_tree_html});
+    system("mv ".$main::outfile{temp}." ".$main::outfile{matrix_tree_html});
+    return();
 }
 
 

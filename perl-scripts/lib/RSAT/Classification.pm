@@ -404,7 +404,7 @@ sub read_profiles {
 	  $got_header = 1;
 	  @class_names = split /\t/;
 	    shift @class_names;
-	    &RSAT::message::Debug("line", $line, "Header", "class names",join( "; ", @class_names)) if ($main::verbose >= 3);
+	    &RSAT::message::Debug("line", $line, "Header", "class names",join( "; ", @class_names)) if ($main::verbose >= 5);
 	    foreach my $c (0..$#class_names) {
 	      my $class_name = &RSAT::util::trim($class_names[$c]);
 
@@ -434,7 +434,7 @@ sub read_profiles {
 	my @fields = split /\t/;
 	### class members
 	$member_name = shift @fields;
-	&RSAT::message::Info(join("\t", "Treating row", $line, $member_name)) if ($main::verbose >= 3);
+	&RSAT::message::Info(join("\t", "Treating row", $line, $member_name)) if ($main::verbose >= 5);
 	unless ($member_name =~ /\S/) {
 	    &RSAT::message::Warning(join ("\t", "Error class file", 
 					  $class_file,  "line", 

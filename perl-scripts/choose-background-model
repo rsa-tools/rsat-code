@@ -339,7 +339,6 @@ organism.
 	} elsif ($arg eq "-bg") {
 	  $main::background = shift(@arguments);
 
-	    ## Oligo length
 =pod
 
 =item B<-l oligo_length>
@@ -348,11 +347,31 @@ Length of the oligomer. When the pattern type is set to oligo, this is
 the oligonucleotide length. When the pattern type is set to dyad, the
 oligo length is the length of the monads.
 
+This option is mutually exclusive with I<-markov>.
+
 =cut
 	} elsif ($arg eq "-l") {
 	  $main::oligo_length = shift(@arguments);
-	  &RSAT::error::FatalError($main::oligo_length, "Invlaid value for oligo length. Must be a strictly positive Natural number")
+	  &RSAT::error::FatalError($main::oligo_length, "Invalid value for oligo length. Must be a strictly positive Natural number")
 	    unless (&IsNatural($main::oligo_length) && ($main::oligo_length > 0));
+
+=pod
+
+=item B<-markov markov_order>
+
+Markov order. The value of the Markov order (m) is converted to
+oligonucleotide lengths (k=m+1).
+
+This option is mutually exclusive with I<-l>.
+
+This option is only valid for oligonucleotides (not for dyads).
+
+=cut
+	} elsif ($arg eq "-markov") {
+	  $main::markov = shift(@arguments);
+	  &RSAT::error::FatalError($main::oligo_length, "Invalid value for Markov order. Must be a Natural number")
+	    unless (&IsNatural($main::markov));
+	  $main::oligo_length = $main::markov-1;
 
 	    ## Scan direct strand only
 =pod

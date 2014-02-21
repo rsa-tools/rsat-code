@@ -50,10 +50,8 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 
 ################################################################
 ## command line paramters
-### read parameters
-$parameters = " -v 1";
 
-#### read parameters ####
+## read parameters
 local $parameters = " -v 1";
 
 ################################################################
@@ -163,21 +161,21 @@ my @supported_output_fields = qw(cor
 				 alignments_1ton
 				);
 
-my @selected_output_fields = qw(
-				cor
-				Ncor
-				NIcor
-				NsEucl
-				SSD
-				NSW
-				match_rank
-				matrix_id
-				matrix_ac
-				width
-				strand
-				offset
-				consensus
-				alignments_1ton);
+# my @selected_output_fields = qw(
+# 				cor
+# 				Ncor
+# 				NIcor
+# 				NsEucl
+# 				SSD
+# 				NSW
+# 				match_rank
+# 				matrix_id
+# 				matrix_ac
+# 				width
+# 				strand
+# 				offset
+# 				consensus
+# 				alignments_1ton);
 my @selected_output_fields = ();
 my $thresholds = "";
 foreach my $field (@supported_output_fields) {

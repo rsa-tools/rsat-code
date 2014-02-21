@@ -441,9 +441,7 @@ $m = 0;
 
 ## Number of digits for the counter of split matrix files
 my $id_digits;
-if ($split_out_files) {
-  $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
-}
+$id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
 
 foreach my $matrix (@matrices) {
   $m++;
@@ -451,24 +449,26 @@ foreach my $matrix (@matrices) {
   &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
     if ($main::verbose >= 3);
 
+  ## Define a matrix number with same number of digits for all
+  ## matricesso that alphabetical order corresponds to numerical order
+  ## of the matrices.
+  my $id_nb = sprintf "%${id_digits}s", $m;
+  $id_nb =~ s/ /0/g;
+  $id .= $id_nb;
+
+  my $ID = $matrix->get_attribute("accession")
+      ||  $matrix->get_attribute("identifier")
+      || $matrix->get_attribute("name")
+      || $matrix->get_attribute("ID")
+      || $id_nb;
+  $matrix->force_attribute("ID", $ID);
+
   my $current_out;
   if ($split_out_files) {
     my $output_prefix = $outfile{output};
     $output_prefix =~ '|\.tab$ ||';
     $output_prefix =~ '|\.txt$ ||';
 
-    ## Use the same number of digits for all matrices so that the
-    ## alphabetical order ot the splitted files corresponds to the
-    ## numerical order of the matrices.
-    my $id_nb = sprintf "%${id_digits}s", $m;
-    $id_nb =~ s/ /0/g;
-    $id .= $id_nb;
-
-    my $ID = $matrix->get_attribute("accession")
-      ||  $matrix->get_attribute("identifier")
-	|| $matrix->get_attribute("name")
-	  || $matrix->get_attribute("ID")
-	    || $id_nb;
 
     $outfile{'matrix_'.$m} = $output_prefix."_".$ID.".".$output_format;
     $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
@@ -509,10 +509,14 @@ foreach my $matrix (@matrices) {
       $matrix->force_attribute("name", $ID_perm);
       $matrix->force_attribute("ID", $ID_perm);
       $matrix->force_attribute("identifier", $ID_perm);
+#      my $descr_perm = join ("_", $matrix->get_attribute("description", ), "perm".$i);
+      $matrix->calcConsensus();
+      my $descr_perm = join ($matrix->get_attribute("consensus.IUPAC"));
+      $matrix->force_attribute("description", $descr_perm);
       $matrix->force_attribute("accession", $AC_perm);
       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
-      ## print result
+      ## Print result
       if ($main::verbose >= 1) {
 	print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
 	print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);

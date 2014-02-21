@@ -16,10 +16,10 @@ CFLAGS = -g -I. -DDEBUG -DDEBUG_LOAD_GRAPH
 CFLAGS = -g -I. -DDEBUG
 
 # Flags for experimentation (maximum optimization level):
-CFLAGS = -O6 -Wall -I. 
+#CFLAGS = -O6 -Wall -I. 
 
 ## Flags for Mac OSX
-# CFLAGS = -O3 -Wall -I. 
+#CFLAGS=-O3 -Wall -I.
 
 OBJS = loadgraph.o dijkstra.o chronometer.o 
 
