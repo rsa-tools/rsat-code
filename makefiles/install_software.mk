@@ -54,8 +54,9 @@ EXT_APP_TARGETS=install_seqlogo \
 	install_mcl \
 	install_rnsc \
 	install_blast \
-	install_ensembl_api \
-	install_ensembl_bioperl
+	install_ensembl_api
+## NOT WORKING ANYMORE ?
+##	install_ensembl_bioperl
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -186,6 +187,11 @@ install_ensembl_api:
 	@echo
 	@${MAKE} install_ensembl_api_env
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+##
+## NOT WORKING ANYMORE ?
+##
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 install_ensembl_bioperl:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
