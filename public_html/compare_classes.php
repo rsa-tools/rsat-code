@@ -368,7 +368,8 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-   
+
+
     # Execute the command and catch the errors
     try {
       $cc_echoed = $soap_client->compare_classes($cc_parameters);

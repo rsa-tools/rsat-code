@@ -8,22 +8,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-### intialization
-$feature_map_command = "$SCRIPTS/feature-map";
-$tmp_file_name = sprintf "feature-map.%s", &AlphaDate();
-
-# $features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
-# $features_from_msf_cmd = "$SCRIPTS/features-from-msf";
-# $features_from_gibbs_cmd = "$SCRIPTS/features-from-gibbs";
-# $features_from_fugue_cmd = "$SCRIPTS/features-from-fugue";
-# $features_from_dssp_cmd = "$SCRIPTS/features-from-dssp";
-# $features_from_matins_cmd = "$SCRIPTS/features-from-matins";
-# $features_from_sigscan_cmd = "$SCRIPTS/features-from-sigscan";
-# $features_from_dnapat_cmd = "$SCRIPTS/features-from-dnapat";
-# $features_from_tffact_cmd = "$SCRIPTS/features-from-tffact";
-# $features_from_tfgene_cmd = "$SCRIPTS/features-from-tfgene";
-# $features_from_patser_cmd = "$SCRIPTS/features-from-patser";
-
 
 ### Read the CGI query
 $query = new CGI;

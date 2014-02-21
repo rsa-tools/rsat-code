@@ -20,6 +20,7 @@ package main;
     $sequence_type = "dna";
     $seq_prefix = "rand";
 
+    local @tmp_to_delete = ();
     local %infile;
 
     ################################################################
@@ -83,9 +84,10 @@ package main;
       } else {
 	## Compute sequence lengths
 	my $job_prefix = "random-genome-fragments";
-	my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate();
-	$main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
-	my $seqlength_cmd = "sequence-lengths -v 1";
+	$main::infile{length_file} = &RSAT::util::make_temp_file("", "random_seq_lengts.tab");
+	push @tmp_to_delete, $main::infile{length_file};
+	&RSAT::message::Debug("temporary length_file", $main::infile{length_file}) if ($main::verbose >= 5);
+ 	my $seqlength_cmd = "sequence-lengths -v 1";
 	$seqlength_cmd .= " -i ".$main::infile{template_file};
 	$seqlength_cmd .= " -in_format ".$template_format;
 	$seqlength_cmd .= " -o ".$main::infile{length_file};
@@ -257,6 +259,7 @@ package main;
     print $main::out $exec_time if ($main::verbose >= 1);
     close $out if ($outputfile);
 
+    foreach my $file (@tmp_to_delete) { unlink($file) };
     exit(0);
 }
 
@@ -389,6 +392,7 @@ sub ReadArguments {
 	&RSAT::error::FatalError("Option -lf is incompatible with option -i") if ($main::infile{template_file});
 	$main::infile{length_file} = shift(@arguments);
 	&RSAT::message::Warning("Option -lf is deprecated, use -i len_file -template_format len");
+	&RSAT::message::FatalError("Options -i and -lf are mutually incompatible") if ($main::infile{template_file});
 
 #      ## file containing a list of the desired lengths of random sequences
 #    } elsif ($arg eq "-lf") {

@@ -10,7 +10,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -48,10 +48,6 @@ $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = 
 ## We need to create the output directory before starting
 ## the analysis, since it will generate multiple output files.
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
-
-#$prefix = "position-analysis";
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "position-analysis.%s", &AlphaDate;
 
 ## Read parameters ####
 $parameters = " -v 2";
@@ -211,69 +207,6 @@ if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
 }
 
-# &ReportWebCommand($command." ".$parameters);
-
-# if ($query->param('output') =~ /display/i) {
-
-#   &PipingWarning();
-
-#   ### execute the command ###
-#   $result_file = $tmp_file_path.".tab";
-#   push @result_files, ("Position analysis result", $result_file);
-#   open RESULT, "$command $parameters |";
-
-
-#   ### Print result on the web page
-#   print '<H2>Result</H2>';
-#   &PrintHtmlTable(RESULT, $result_file, true);
-#   close(RESULT);
-
-#   #### oligonucleotide assembly ####
-#   if (&IsReal($query->param('occ_significance_threshold'))) {
-
-#     ## Assemble the significant patterns with pattern-assembly
-#     $assembly_file = $tmp_file_path.".asmb";
-#     #      $assembly_file = "$TMP/$tmp_file_name.asmb";
-#     push @result_files, ('assembly', $assembly_file);
-#     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 0 -toppat 50";
-#     if ($query->param('strand') =~ /single/) {
-#       $pattern_assembly_command .= " -1str";
-#     } else {
-#       $pattern_assembly_command .= " -2str";
-#     }
-
-#     #     if (&IsNatural($query->param('max_asmb_nb'))) {
-#     #       $pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
-#     #     }
-#     #     $pattern_assembly_command .= " -i ".$result_file;
-#     #     $pattern_assembly_command .= " -o ".$assembly_file;
-#     # 	$pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1";
-#     # 	if ($query->param('strand') =~ /single/) {
-#     # 	    $pattern_assembly_command .= " -1str";
-#     # 	} else {
-#     # 	    $pattern_assembly_command .= " -2str";
-#     # 	}
-
-#     unless ($ENV{RSA_ERROR}) {
-#       print "<H2>Pattern assembly</H2>\n";
-#       open CLUSTERS, "$pattern_assembly_command  |";
-#       print "<PRE>\n";
-#       while (<CLUSTERS>) {
-# 	s|$ENV{RSAT}/||g;
-# 	print;
-#       }
-#       print "</PRE>\n";
-#       close(CLUSTERS);
-#     }
-#   }
-
-#   &PrintURLTable(@result_files);
-#   &PipingForm();
-#   print '<HR SIZE=3>';
-
-# } else {
-#   &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_path);
-# }
 
 print $query->end_html;
 

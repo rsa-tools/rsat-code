@@ -8,7 +8,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 #BEGIN {
 #    $ERR_LOG = "/dev/null";
-##    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+##    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
 #    use CGI::Carp qw(carpout);
 #    open (LOG, ">> $ERR_LOG")
 #	|| die "Unable to redirect log\n";
@@ -226,10 +226,6 @@ $parameters .= " -archive -o ".$result_dir."/".$file_prefix ." ";
 
 &ReportWebCommand($command." ".$parameters);
 
-## Convert the absolute path of the directory into a path relative to the tmp directory for the Web link
-#$result_subdir = $tmp_file_name;
-#$result_subdir =~ s/${TMP}//;
-#$index_file = $result_subdir."/".$file_prefix."_synthesis.html";
 $index_file = $tmp_file_name."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
 &EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
