@@ -18,7 +18,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
   $ERR_LOG = "/dev/null";
-  #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+  #    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
   use CGI::Carp qw(carpout);
   open (LOG, ">> $ERR_LOG")
     || die "Unable to redirect log\n";
@@ -52,7 +52,6 @@ $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
 $prefix = "dyad-analysis";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 
 @result_files = ();
 
@@ -183,7 +182,6 @@ if ($query->param('bg_method') eq 'background') {
   #    $parameters .= " -bg ".$query->param('background');
 } elsif ($query->param('bg_method') =~ /upload/i) {
   $exp_freq_file = $tmp_file_path.".expfreq";
-#  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
   push @result_files, ('exp_freq', $exp_freq_file);
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
@@ -235,7 +233,6 @@ if ($query->param('output') eq "display") {
 
     ## Assemble the significant patterns with pattern-assembly
     $assembly_file = $tmp_file_path.".asmb";
-#    $assembly_file = "$TMP/$tmp_file_name.asmb";
     push @result_files, ('assembly', $assembly_file);
     $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1";
     $pattern_assembly_command .= " -subst 1 -weight 5 -maxfl 1 -toppat 50";

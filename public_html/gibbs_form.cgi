@@ -47,7 +47,7 @@ print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van H
 print "</CENTER>\n";
 
 print "<CENTER><font color='red' size=2>\n";
-print "<font>We recommend to use the new program <a href='info-gibbs_form.cgi'>info-gibbs</a> rather than this version.";
+print "We recommend to use the new program <a href='info-gibbs_form.cgi'>info-gibbs</a> rather than this version.";
 print "</font></CENTER>\n";
 
 
