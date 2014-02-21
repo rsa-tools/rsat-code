@@ -10,14 +10,14 @@
 #ifndef __MARKOV__
 #define __MARKOV__
 
-using namespace std;
-
 #include <fstream>
 #include <iostream> 
 #include <vector>
 #include <algorithm>
 #include <string>
 #include <cmath>
+
+using namespace std;
 
 #define ALPHABET_SIZE 4
 #define ALPHABET "ACGT"

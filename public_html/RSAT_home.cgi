@@ -100,6 +100,11 @@ print <<EndText;
   </table>
 </div>
 
+    <div class="attention">
+    <p><b>Attention!</b></p>
+    <p>The main address for Regulatory Sequence Analysis Tools (RSAT) will be changed to <a target="_top" href="http://www.rsat.eu/">http://www.rsat.eu/</a></p>
+    <p>Please update your bookmarks.</p>
+    </div>
 
 <table border=0 cellpadding=3>
   <tr>
@@ -155,10 +160,10 @@ print <<EndText;
     <tr align=center valign=bottom>
       
       <td>
-	<a href="http://rsat.ulb.ac.be/rsat/" target="_top">
+	<a href="http://bigre.rsat.eu/" target="_top">
 	  <b>Brussels - Belgium</b><br>
 	  <img src="images/manneken_pis.jpg" height=80 border=0><br>
-	  http://rsat.ulb.ac.be/rsat/</a>
+	  http://bigre.rsat.eu/</a>
       </td>
 
 <!--

@@ -1,5 +1,5 @@
 
-import os, shutil
+import os, shutil, zipfile
 
 from xml.etree.ElementTree import Element
 from xml.etree import cElementTree as ET
@@ -162,6 +162,9 @@ class FinalOutputProcessor( Processor):
         # Copy other information
         FileUtils.copyFile( os.path.join( self.component.outputDir, Constants.PROGRESSION_XSL_FILE), self.outPath) 
         FileUtils.copyFile( os.path.join( self.component.outputDir, Constants.PROGRESSION_XML_FILE), self.outPath)
+        
+        # Zip the complete result
+        self.zipdir( self.outPath)
 
 
     # --------------------------------------------------------------------------------------
@@ -201,6 +204,7 @@ class FinalOutputProcessor( Processor):
             self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_DISTANCE_HISTOGRAM, FinalOutputProcessor.MOTIF_DISTANCE_HISTOGRAM_ATT, file_pathes)
             # copy the distance histogram graph file
             self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_DISTANCE_HISTOGRAM_GRAPH, FinalOutputProcessor.MOTIF_DISTANCE_HISTOGRAM_GRAPH_ATT, file_pathes)
+            self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_DISTANCE_HISTOGRAM_GRAPH_PDF, FinalOutputProcessor.MOTIF_DISTANCE_HISTOGRAM_GRAPH_PDF_ATT, file_pathes)
             
             # copy the peak score histogram file
             self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_PEAK_SCORE_HISTOGRAM, FinalOutputProcessor.MOTIF_PEAK_SCORE_HISTOGRAM_ATT, file_pathes)
@@ -211,6 +215,7 @@ class FinalOutputProcessor( Processor):
             self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_COLOCATION_HISTOGRAM, FinalOutputProcessor.MOTIF_COLOCATION_HISTOGRAM_ATT, file_pathes)
             # copy the co-location histogram graph file
             self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_COLOCATION_HISTOGRAM_GRAPH, FinalOutputProcessor.MOTIF_COLOCATION_HISTOGRAM_GRAPH_ATT, file_pathes)
+            self.copyMotifResultFileToFinalOutput( motif_stats, MotifStatistics.MOTIF_COLOCATION_HISTOGRAM_GRAPH_PDF, FinalOutputProcessor.MOTIF_COLOCATION_HISTOGRAM_GRAPH_PDF_ATT, file_pathes)
 
             # retrieve the motif classification 
             if motif_stats.hasAttribute( MotifStatistics.MOTIF_FAMILY_RANK):
@@ -293,6 +298,33 @@ class FinalOutputProcessor( Processor):
                 Log.log( "FinalOutputProcessor.createLogos : No definition found to create logo for motif : " + motif_name)
 
 
+    # Create the zip file of the complete results
+    # -------------------------------------------
+    def zipdir(self, path):
+        
+        # Memorize ol workign dir
+        old_working_dir = os.getcwd()
+        
+        # Change dir to parent of output dir
+        # This permits to avoid having complete pathes in the zip file
+        os.chdir( os.path.dirname(path))
+        
+        # Define the zip file and create it (outside the output dir to avoid recursion)
+        zip_path = self.component.pipelineName + ".zip"
+        zip = zipfile.ZipFile( zip_path, 'w')
+        for root, dirs, files in os.walk( os.path.basename(path)):
+            for file in files:
+                zip.write(os.path.join(root, file))
+        zip.close()
+        
+        # Move the zip file to correct final location
+        dir_path = os.path.join( self.outPath, "zip")
+        FileUtils.moveFile( zip_path, dir_path)
+        
+        # Restore previous working dir
+        os.chdir( old_working_dir)
+
+
     # --------------------------------------------------------------------------------------
     # Output the motif classification
     def outputClassification(self, input_commstruct, analysis, limit_value, parameter_dic):
@@ -311,7 +343,9 @@ class FinalOutputProcessor( Processor):
             outfile.close()
             # Copy the XSL file in the same directory than the XML
             shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/classification.xsl"), self.outPath)
+            shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/RSAT_menu.js"), self.outPath)
             shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/jquery.dataTables.js"), self.outPath)
+            shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/results.css"), self.outPath)
             shutil.copy( os.path.join( self.component.getParameter( Constants.INSTALL_DIR_PARAM), "resources/xsl/classification/peak-footprints.css"), self.outPath)
         except IOError, exce:
             Log.log( "ClassificationProcessor.outputClassification : Unable to write classification to XML file. From:\n\t---> " + str( exce))
@@ -355,6 +389,8 @@ class FinalOutputProcessor( Processor):
 
         classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_PATH_ATT]
         classification_element.attrib[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT] = file_pathes[ FinalOutputProcessor.BED_SEQUENCES_SIZE_GRAPH_PATH_ATT]
+
+        classification_element.attrib[ FinalOutputProcessor.ZIP_FILE] =  os.path.join( os.path.join( self.outPath, "zip"), self.component.pipelineName+".zip")
 
         # Add all other parameters values
         for param_name in parameter_dic.keys():
@@ -429,6 +465,14 @@ class FinalOutputProcessor( Processor):
                 if motif_stats.hasAttribute( MotifStatistics.MOTIF_CHI2_PVALUE):
                     motif_element.attrib[ FinalOutputProcessor.MOTIF_CHI2_PVALUE_ATT] = motif_stats.getAttribute( MotifStatistics.MOTIF_CHI2_PVALUE)
 
+                # fill the motif contingency values
+                if motif_stats.hasAttribute( MotifStatistics.CONTIGENCY_MOTIF_COOCCURENCE):
+                     motif_element.attrib[ FinalOutputProcessor.MOTIFCONTIGENCY_MOTIF_COOCCURENCE] = motif_stats.getAttribute( MotifStatistics.CONTIGENCY_MOTIF_COOCCURENCE)
+                if motif_stats.hasAttribute( MotifStatistics.CONTIGENCY_REFERENCE_MOTIF_BEDSEQ):
+                     motif_element.attrib[ FinalOutputProcessor.MOTIFCONTIGENCY_REFERENCE_MOTIF_BEDSEQ] = motif_stats.getAttribute( MotifStatistics.CONTIGENCY_REFERENCE_MOTIF_BEDSEQ)
+                if motif_stats.hasAttribute( MotifStatistics.CONTINGENCY_TOTAL_BEDSEQ):
+                     motif_element.attrib[ FinalOutputProcessor.MOTIFCONTINGENCY_TOTAL_BEDSEQ] = motif_stats.getAttribute( MotifStatistics.CONTINGENCY_TOTAL_BEDSEQ)
+                
 
                 # fill the ratio overlap attribute
                 motif_element.attrib[ FinalOutputProcessor.MOTIF_RATIO_HOMOLOCATION] = str( int( motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_RATIO_HOMOLOCATION)*1000.0)/float(10)) + "%"
@@ -440,12 +484,14 @@ class FinalOutputProcessor( Processor):
                 # fill the motif element graphs
                 self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_DISTANCE_HISTOGRAM_ATT, motif_name, file_pathes)
                 self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_DISTANCE_HISTOGRAM_GRAPH_ATT, motif_name, file_pathes)
+                self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_DISTANCE_HISTOGRAM_GRAPH_PDF_ATT, motif_name, file_pathes)
 
                 self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_PEAK_SCORE_HISTOGRAM_ATT, motif_name, file_pathes)
                 self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_PEAK_SCORE_HISTOGRAM_GRAPH_ATT, motif_name, file_pathes)
                 
                 self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_COLOCATION_HISTOGRAM_ATT, motif_name, file_pathes)
                 self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_COLOCATION_HISTOGRAM_GRAPH_ATT, motif_name, file_pathes)
+                self.addMotifFilePathAttribute( motif_element, FinalOutputProcessor.MOTIF_COLOCATION_HISTOGRAM_GRAPH_PDF_ATT, motif_name, file_pathes)
 
         return classification_element
 
@@ -528,6 +574,8 @@ class FinalOutputProcessor( Processor):
     BED_SEQUENCES_SIZE_PATH_ATT = "BEDSequencesSizeHistogram"
     BED_SEQUENCES_SIZE_GRAPH_PATH_ATT = "BEDSequencesSizeHistogramGraph"
     
+    ZIP_FILE = "ZipFile"
+    
     CONSERVED_BLOCKS_SIZE_PATH_ATT = "ConservedBlocksSizeHistogram"
     CONSERVED_BLOCKS_SIZE_GRAPH_PATH_ATT = "ConservedBlocksSizeGraph"
     MSA_SIZE_PATH_ATT = "MSASizeHistogram"
@@ -555,11 +603,16 @@ class FinalOutputProcessor( Processor):
     MOTIF_RATIO_HOMOLOCATION = "ratioHomoLocation"
     MOTIF_LOGO_ATT = "logo"
     MOTIF_MATRIX_ATT = "matrix"
+    MOTIFCONTIGENCY_MOTIF_COOCCURENCE = "Contingency_ContingentMotifBedSeqNumber"
+    MOTIFCONTIGENCY_REFERENCE_MOTIF_BEDSEQ = "Contingency_ReferenceMotifBedSeqNumber" 
+    MOTIFCONTINGENCY_TOTAL_BEDSEQ = "Contingency_TotalBedSeqNumber"
 
     MOTIF_DISTANCE_HISTOGRAM_ATT = "distanceHistogram"
     MOTIF_DISTANCE_HISTOGRAM_GRAPH_ATT = "distanceHistogramGraph"
+    MOTIF_DISTANCE_HISTOGRAM_GRAPH_PDF_ATT = "distanceHistogramGraphPDF"
     MOTIF_PEAK_SCORE_HISTOGRAM_ATT ="peakScoreHistogram"
     MOTIF_PEAK_SCORE_HISTOGRAM_GRAPH_ATT = "peakScoreHistogramGraph"
     MOTIF_COLOCATION_HISTOGRAM_ATT = "coLocationHistogram"
     MOTIF_COLOCATION_HISTOGRAM_GRAPH_ATT = "coLocationHistogramGraph"
+    MOTIF_COLOCATION_HISTOGRAM_GRAPH_PDF_ATT = "coLocationHistogramGraphPDF"
 

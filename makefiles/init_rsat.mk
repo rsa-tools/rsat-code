@@ -15,90 +15,108 @@ usage:
 ################################################################
 ## Initialize directories and config files
 SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
-COUNT_FILE=public_html/logs/count-file
 CONFIG_FILE=RSA.config
+LOGS_DIR=${RSAT}/public_html/logs
+COUNT_FILE=${LOGS_DIR}/count-file
+
+EXEC_FILES='bin/*' \
+	'python-scripts/*' \
+	'perl-scripts/*' \
+	'perl-scripts/parsers/*' \
+	'public_html/*.cgi' \
+	'public_html/web_services/*.cgi' \
+	'ws_clients/perl_clients/*.pl'
 init:
 	@echo ""
 	@echo "Creating directories"
-
-	@echo ""
-	@echo "Initializing directory	public_html/data"
-	mkdir -p public_html/data
-	echo "Options +Indexes" > public_html/data/.htaccess
-	mkdir -p public_html/data/genomes
+	@echo "	data	${RSAT}/public_html/data"
+	@mkdir -p public_html/data
+	@echo "Options +Indexes" > public_html/data/.htaccess
+	@echo "	genomes	${RSAT}/public_html/data/genomes"
+	@mkdir -p public_html/data/genomes
 #	mkdir -p public_html/data/KEGG
 #	mkdir -p public_html/data/metabolic_networks
 #	mkdir -p public_html/data/metabolic_networks/GER_files
-	mkdir -p bin
-	mkdir -p lib
+	@echo "	bin	${RSAT}/bin"
+	@mkdir -p bin
+	@echo "	lib	${RSAT}/lib"
+	@mkdir -p lib
 	@${MAKE} _create_download_dir
 
-	@echo ""
-	@echo "Initializing directory	public_html/tmp"
-	mkdir -p public_html/tmp
-	mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
-	chmod 777 public_html/tmp
+	@echo "	tmp	${RSAT}/public_html/tmp"
+	@mkdir -p public_html/tmp
+	@mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
+	@chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
-	echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
-	chmod 444 public_html/tmp/index.html
+	@rm -f public_html/tmp/index.html
+	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
+	@chmod 444 public_html/tmp/index.html
 
-	@echo ""
-	@echo "Initializing directory	public_html/logs"
-	chmod 777 public_html/logs
-	mkdir -p public_html/logs
-	mkdir -p public_html/logs/peak-footprints_logs; chmod 777 public_html/logs/peak-footprints_logs
-#	echo "Options -Indexes" > public_html/logs/.htaccess
-	echo "<html><body></b<Forbidden</b></body></html>" > public_html/logs/index.html
-	chmod 444 public_html/logs/index.html
+	@echo "	logs	${LOGS_DIR}"
+	@chmod 777 ${LOGS_DIR}
+	@mkdir -p ${LOGS_DIR}
+	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
+#	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
+	@rm -f ${LOGS_DIR}/index.html
+	@echo "<html><body></b<Forbidden</b></body></html>" > ${LOGS_DIR}/index.html
+	@chmod 444 ${LOGS_DIR}/index.html
 
 	@echo
-	@echo "Setting exec rights to script directories"
-	chmod -R 755 bin
-	chmod 755 python-scripts/*
-	chmod 755 perl-scripts/*
-	chmod 755 perl-scripts/parsers/*
-	chmod 755 public_html/*.cgi
-	chmod 755 public_html/web_services/*.cgi
-	chmod 755 ws_clients/perl_clients/*.pl
+	@echo "Setting exec rights to executable files"
+	@for f in ${EXEC_FILES} ; do \
+		echo "	$${f}"; \
+		chmod 755 $${f}; \
+	done ; \
+
+#	@chmod -R 755 bin
+#	@chmod 755 python-scripts/*
+#	@chmod 755 perl-scripts/*
+#	@chmod 755 perl-scripts/parsers/*
+#	@chmod 755 public_html/*.cgi
+#	@chmod 755 public_html/web_services/*.cgi
+#	@chmod 755 ws_clients/perl_clients/*.pl
 
 	@echo ""
 	@echo "Creating links"
-	ln -fs public_html/data .
-	ln -fs public_html/tmp .
-	ln -fs public_html/logs .
+	@echo "	data"
+	@ln -fs public_html/data .
+	@echo "	tmp"
+	@ln -fs public_html/tmp .
+	@echo "	logs"
+	@ln -fs ${LOGS_DIR} logs
 
 	@echo ""
 	@echo "Checking config files"
 	@if [ -f "${SUPPORTED_ORGANISMS}" ] ; then \
-		echo "file already exists	${SUPPORTED_ORGANISMS}" ; \
+		echo "	File already exists	${SUPPORTED_ORGANISMS}" ; \
 	else \
-		echo "creating empty file with supported organisms ${SUPPORTED_ORGANISMS}" ; \
+		echo "	Creating empty file with supported organisms ${SUPPORTED_ORGANISMS}" ; \
 	fi
 	@if [ -f "${COUNT_FILE}" ] ; then \
-		echo "file already exists	${COUNT_FILE}" ; \
+		echo "	File already exists	${COUNT_FILE}" ; \
 	else \
-		echo "creating count file ${COUNT_FILE}" ; \
+		echo "	Creating count file ${COUNT_FILE}" ; \
 		echo "0" > ${COUNT_FILE}; \
 	fi
 	@if [ -f "${CONFIG_FILE}" ] ; then \
-		echo "file already exists	${CONFIG_FILE}" ; \
+		echo "	File already exists	${CONFIG_FILE}" ; \
 	else \
-		echo "creating config file ${CONFIG_FILE}" ; \
+		echo "	Creating config file ${CONFIG_FILE}" ; \
 		cp RSA.config.default ${CONFIG_FILE}; \
 	fi
 	@if [ -f "${RSAT}/RSAT_config.props" ] ; then \
-		echo "RSAT property file already exists	${RSAT}/RSAT_config.props" ; \
+		echo "	RSAT property file already exists	${RSAT}/RSAT_config.props" ; \
 	else \
-		echo "Creating RSAT property file ${RSAT}/RSAT_config.props" ; \
+		echo "	Creating RSAT property file ${RSAT}/RSAT_config.props" ; \
 		cp ${RSAT}/RSAT_config_default.props ${RSAT}/RSAT_config.props; \
 	fi
 	@if [ -f "${RSAT}/RSAT_config.mk" ] ; then \
-		echo "RSAT makefiles config already exists	${RSAT}/RSAT_config.mk" ; \
+		echo "	RSAT makefiles config already exists	${RSAT}/RSAT_config.mk" ; \
 	else \
-		echo "Creating RSAT config for makefiles ${RSAT}/RSAT_config.mk" ; \
+		echo "	Creating RSAT config for makefiles ${RSAT}/RSAT_config.mk" ; \
 		cp ${RSAT}/RSAT_config_default.mk ${RSAT}/RSAT_config.mk; \
 	fi
-	chmod a+w ${COUNT_FILE}
+	@chmod a+w ${COUNT_FILE}
 
 
 
@@ -164,7 +182,6 @@ compile_compare_matrices_quick:
 install_rsat_extra:
 	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_seqlogo
 
-
 ################################################################
 ## Compile the NeAT tools (network analysis + pathway analysis)
 
@@ -191,9 +208,7 @@ compile_floydwarshall:
 ## during execution. Quick and dirty solution, will need to be revised
 compile_kwalks:
 	@echo "Compiling kwalks (software developed by Jerome Callut and Pierre Dupont, UCL, Belgium)"
-	@(cd ${RSAT}/contrib/; \
-		tar -xpzf kwalks/kwalks.tgz; \
-		cd kwalks/src; make ; \
+	@(cd ${RSAT}/contrib/kwalks/src; make ; \
 		echo "Installing lkwalk executable in bin directory ${BIN}"; \
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
@@ -217,6 +232,7 @@ check_lkwalk_help:
 
 ################################################################
 ## Compile REA (shortest path finding algorithm)
+
 compile_rea:
 	@echo "Compiling REA"
 	@(cd ${RSAT}/contrib/REA/; \
@@ -225,6 +241,10 @@ compile_rea:
 	@chmod 777 ${RSAT}/contrib/REA
 	@echo "Executable	 ${BIN}/REA"
 	@${MAKE} check_rea_config
+
+## Specific configuration to compile REA on Mac OSX
+compile_rea_macosx:
+	${MAKE} compile_rea CFLAGS='-O3 -Wall -I.'
 
 check_rea_config:
 	@echo

@@ -223,7 +223,7 @@ sub read_from_table {
 				      $source_name,
 				      "id=".$source_node->get_attribute("id"), 
 				      "label=".$source_node->get_attribute("label"),
-				     )) if ($main::verbose >= 3);
+				     )) if ($main::verbose >= 5);
 	}
 
 	## Target node
@@ -237,7 +237,7 @@ sub read_from_table {
 				      $target_name,
 				      "id=".$target_node->get_attribute("id"), 
 				      "label=".$target_node->get_attribute("label"),
-				     )) if ($main::verbose >= 3);
+				     )) if ($main::verbose >= 5);
 	}
 
 	## Create the arc

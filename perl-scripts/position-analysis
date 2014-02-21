@@ -2419,7 +2419,7 @@ sub OpenHtmlIndex {
 ## Generate a HTML index
 sub HtmlIndex {
 
-    &IndexFiles();
+    &IndexFiles("img_height"=>50);
 
     print $html_index "<hr>";
     print $html_index "</body>";
