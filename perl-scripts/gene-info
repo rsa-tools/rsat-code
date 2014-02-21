@@ -23,9 +23,6 @@ use Storable qw(nstore retrieve);
 package main;
 {
 
-## Obsolete.
-#my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
-
   local $start_time = &RSAT::util::StartScript();
   local $date = $start_time;
 
@@ -63,7 +60,6 @@ package main;
   &Verbose();
 
   ### Read ORF information
-  #my $serial_file = $TMP."/serialized_genomes/".$organism_name."1syn.serial";
   my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
   if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
     $organism = retrieve $serial_file;

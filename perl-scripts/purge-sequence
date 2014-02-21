@@ -76,11 +76,6 @@ if ($input_file) {
 &RSAT::message::Debug("Input dir and file", $dirname, $basename) if ($main::verbose >= 5);
 
 #### create a temp file to filter out non-conform lines 
-#$tmp_file = `mktemp tmp_".$basename.".fasta.XXXXXX`;
-#$tmp_file= `$tmp_file`;
-#chomp($tmp_file);
-#$command = "cd $TMP ; ";
-# $tmp_file = &RSAT::util::make_temp_file("", "purge");
 $prefix = "purge"; 
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 &RSAT::message::Debug("\ntmp_file_path = ", $tmp_file_path,
@@ -150,7 +145,6 @@ if ($vmatch_installed) {
 	&doit($command, $dry_run, $die_on_error, $verbose);
     }
     $command = "rm -f $tmp_file_path";
-    ## $command = "rm -f ${TMP}/$tmp_file_name";
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     ################################################################
