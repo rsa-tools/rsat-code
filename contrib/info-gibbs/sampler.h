@@ -7,8 +7,6 @@
  *                                                                         *
  ***************************************************************************/
 
-using namespace std;
-
 #ifndef __GIBBS__
 #define __GIBBS__
 
@@ -18,6 +16,8 @@ using namespace std;
 #include <cmath>
 #include <ctime> 
 #include <set>
+
+using namespace std;
 
 #include "utils.h"
 #include "fasta.h"

@@ -1,0 +1,191 @@
+<html>
+  <head>
+    <title>RSAT course - Exercises - Bacterial regulons - from sites to moifs</title>
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+  </head>
+  <body class="info">
+
+    <h1>RSAT course - Exercises - Bacterial regulons - from sites to motifs</h1>
+
+    <a name='contents'></a>
+    <h2>Contents</h2>
+    <ul>
+      <li><a href='#intro'>Introduction</a></li>
+      <li><a href='#resources'>Resources</a></li>
+      <li><a href='#datasets'>Data sets</a></li>
+      <li><a href='#exercises'>Exercises</a>
+	<ol>
+	  <li><a href="#from_sites_to_motifs">Building a motif from annotated binding sites</a></li>
+	  <li><a href="#scanning_consensus">Scanning promoters with a consensus sequence</a></li>
+	  <li><a href="#scanning_matrix">Scanning promoters with a position-specific scoring matrix</a></li>
+	</ol>
+      </li>
+    </ul>
+
+    <hr>
+    
+    <h2>Introduction</h2>
+
+
+    <p>This series of exercise aims at comparing a set of approaches
+      to build motifs from collections of annotated binding
+      sites. 
+      
+      <ol>
+	<li><p><b>Data collection</b>: each participant will choose a
+	  transcription factor of <i>Escherichia coli</i> in the
+	  database RegulonDB, and collect the lists of annotated
+	  binding sites and regulated genes.</p></li>
+
+	<li><p><b>Motif building</b>: we will then use two alternative
+	  approaches (<span class="program">consensus</span>
+	  and <span class="program">MEME</span>) to build a motif from
+	  these binding sites. </p></li>
+
+	<li><p><b>String-based pattern matching</b>. We will then use
+	  the consensus (IUPAC or regular expression) to scan
+	  promoters for putative binding, and evaluate the
+	  correspondance between the predicted target genes and the
+	  regulated genes annotated in RegulonDB.</p></li>
+
+	<li><p><b>Matrix-based pattern matching</b>. We will then use
+	  the position-specific scoring matrices to scan all promoters
+	  for putative binding sites, and compare the predicted target
+	  genes with the list of regulated genes annotated in . </li>
+      </ol>
+      
+
+      <h3>Pedagogic objectives</h3>
+
+      <ol>
+	<li>Understand the way a motif can be built from a handfull
+	  of binding sites.</li>
+	<li>Understand the interest and limitations of two alternative
+	  approaches (consensus and matrix) to predict transcription
+	  factor binding sites.</li>
+      </ol>
+    
+
+    <hr><a name="resources"></a>
+    <a href="#contents"><font size=-2>[back to contents]</font></a>
+    <h2>Resources</h2>
+
+    <table width="800">
+      <tr>
+	<td>RegulonDB</td>
+	<td><a target="_blank" href="http://regulondb.ccg.unam.mx/">http://regulondb.ccg.unam.mx/</a></td>
+	<td>A database of transcripitonal regulation in the Bacteria
+	  Escherichia coli K12.</td>
+      </tr>
+
+      <tr>
+	<td>Regulatory Sequence Analysis Tools (RSAT)</td>
+	<td><a target="_blank" href="http://www.rsat.eu/">http://www.rsat.eu/</a></td>
+	<td>A web-based software suite to detect cis-regulatory
+	  elements in DNA sequences.</td>
+      </tr>
+
+      <tr>
+	<td>MEME</td>
+	<td><a target="_blank"
+	href="http://meme.nbcr.net/meme/">http://meme.nbcr.net/meme/</a></td>
+	<td>A software suite for the analysis of sequence motif,
+	  including the motif discovery tool called "MEME".</td>
+      </tr>
+
+    </table>
+
+    
+    <hr><a name="exercises"></a>
+    <a href="#contents"><font size=-2>[back to contents]</font></a>
+    <h2>Exercises</h2>
+    
+
+    
+    <hr><a name="from_sites_to_motifs"></a>
+    <h3>Building a motif from annotated binding sites</h3>
+
+    <div class="protocol">
+      <h4>Protocol</h4>
+      <ol>
+      <li>Open a connection to <a target="_blank"
+      href="http://regulondb.ccg.unam.mx/">RegulonDB</a>.</li>
+      <li>In the menu under <span class="option">Search by type of
+	  object</span>, select "in Regulon", and
+	  click <span class="option">Search</span> without entering
+	  anything in the search box. This will return a list of all
+	  the regulons supported in RegulonDB.</li>
+      <li>Browse some records, and select a regulon that contains a
+	reasonable number of binding sites (between 10 to 30).</li>
+      <li>In the page corresponding to the selected regulon, collect
+	the names of the regulated genes, and store them in a text
+	file on your computer. You will need this list to answer some
+	questions.</li>
+      <li>Click on the "+" sign on the right side of the
+	  title <i>"Transcription factor binding sites (TFBSs)
+	  arrangements"</i>, and select the
+	  option <span class="option">Export > DNA binding sites >
+	  fasta.</span></li>
+      <li>Open the fasta file with a text editor, and suppress all the
+	comment line (lines starting with a '#'), because they would not
+	be recognized by some sequence analysis tools. </li>
+
+      <li>Open a connection to <a target="_blank"
+	href="http://meme.nbcr.net/meme/">MEME</a>. Paste the
+	sequences in fasta format, leave all parameters to their
+	default values, and start the analysis. store the result files
+	(in html + text formats) on your computer.</li>
+
+      <li>Come back to the MEME form, and redo the analysis with
+	custom parameters, based on your perceoption of this particular
+	request (building a motif from a handful of experimentally
+	proven binding sites).</li>
+
+      </ol>
+    </div>
+
+
+    
+    <a name="scanning_consensus"></a>
+    <h3>Scanning promoters with a consensus sequence</h3>
+
+    <p>We will now use a string-based pattern matching approach to
+      predict putative binding sites and target genes for the selected
+      factor. </p>
+
+    <div class="protocol">
+      <ol>
+	<li>Open a connection to the <a target="_blank"
+					href="http://www.rsat.eu/">Regulatory Sequence Analysis Tools
+	    (RSAT) web server</a>.</li>
+	<li>In the left-side menu, click on the
+	  link <span class="program">retrieve sequence</span>.</li>
+	<li>Select the organism <i>Escherichia coli K 12 substr MG1655
+	    uid 57779</i>; click on the radio
+	    button <span class="option">all</span> to select all
+	    genes; leave all other parameters unchanged and
+	    click <span class="option">GO</span>.</li>
+	<li>Download the sequence file (fasta) on your computer for
+	  further usage.</li>
+	<li>In the <span class="option">Next step</span> box at the
+	  bottom of the result page,
+	  click <span class="program">dna-pattern</span>. This will
+	  open a new form with your sequence file automatically loaded
+	  (<span class="option"> Sequence transferred from previous
+	  query</span>).</li>
+	<li>In the box <span class="option">Query pattern(s)</span>,
+	  paste the regular expression produced by MEME with the
+	  default parameters. Uncheck the
+	  options <span class="option">Sequence limits</span>
+	  and <span class="option">match positions</span>. Check the
+	  option <span class="option">match counts</span>, set
+	  the <span class="option">min count</span> to 1, and
+	  click <span class="option">GO</span>.</li>
+      </ol>
+    </div>
+    
+    <hr>
+    
+  </body>
+</html>
+
