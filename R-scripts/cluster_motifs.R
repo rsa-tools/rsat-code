@@ -129,7 +129,7 @@ if (!exists("score")) {
 }
 
 #infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
-# description <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa_matrix_descriptions.tab"
+# description.file <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa_matrix_descriptions.tab"
 
 ##################################
 ## Read matrix comparison table
