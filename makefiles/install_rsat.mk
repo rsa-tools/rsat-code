@@ -25,27 +25,7 @@ SSH=-e 'ssh -x'
 install_rsat:
 	make -f ${RSAT}/makefiles/init_rsat.mk init
 	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
-	${MAKE} config_rsat
-	make -f ${RSAT}/makefiles/install_software.mk
-
-
-install_required_apps:
-	make -f makefiles/install_software.mk install_seqlogo
-	make -f makefiles/install_software.mk install_gnuplot
-
-
-not_working:
-	make -f makefiles/install_software.mk install_ghostscript
-
-################################################################
-## To do: write a Perl script that interactively prompts for
-## configuration parameters and adapts the RSAT_config.mk and
-## RSAT_config.props files.
-config_rsat:
-	@echo "INTERACTIVE CONFIGURATION NOT IMPLEMENTED YET" 
-	@echo "Please edit manually the following files"
-	@echo "	${RSAT}/RSAT_config.props"
-	@echo "	${RSAT}/RSAT_config.mk"
+	make -f ${RSAT}/makefiles/install_software.mk install_ext_apps
 
 ################################################################
 ## Install Unix packages required for RSAT
@@ -204,6 +184,53 @@ PERL='/usr/bin/perl'
 _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
+
+## Check which modules are installed
+perl_modules_check:
+	@echo
+	@echo "Checking perl modules"
+	@echo `hostname` > perl_modules_check.txt
+	@for module in ${PERL_MODULES} ; do \
+		 perldoc -l $${module} >> perl_modules_check.txt; \
+	done
+	@echo "	perl_modules_check.txt"
+
+################################################################
+## Install modules required for python
+PYTHON_MODULES=SUDS Rpy2 SOAPpy
+python_modules_list:
+	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
+
+python_modules_install:
+	@for module in ${PYTHON_MODULES} ; do \
+		${SUDO} easy_install $${module}; \
+	done
+
+
+################################################################
+## Install R modules required for some RSAT scripts
+R_MODULES=RJSONIO reshape
+r_modules_list:
+	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
+
+r_modules_install_all:
+	@echo
+	@echo "Installing R modules"
+	@for m in ${R_MODULES}; do \
+		${MAKE} r_modules_install_one R_MODULE=$${m}; \
+	done
+
+R_MODULE=RJSONIO
+r_modules_install_one:
+	${SUDO} R CMD INSTALL ${R_MODULE}
+
+BIOCONDUCTOR_MODULES=ctc
+r_bioconductor_modules:
+	for module in ${BIOCONDUCTOR_MODULES}; do \
+		echo "Insalling bioconductor module	$${module}"; \
+		${SUDO} echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
+		| R --slave --no-save --no-restore --no-environ ; \
+	done
 
 ################################################################
 ## Install tex-live for generating the doc

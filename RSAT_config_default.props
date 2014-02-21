@@ -114,8 +114,10 @@ NODES=
 
 ################################################################
 ## Mirror of the NCBI genomes (which are parsed to install genomes in RSAT)
-## Example: GENBANK_DIR=/databases/ftp.ncbi.nih.gov/genomes/
-GENKBANK_DIR=
+##
+## This will only be required if you intend to install yourself some
+## organisms from tne NCBI genomes repository.
+GENBANK_DIR=[RSAT_PARENT_PATH]/databases/ftp.ncbi.nih.gov/genomes/
 
 ################################################################
 ## Libraries required for direct access to the EnsEMBL genomes.
@@ -175,7 +177,7 @@ tomcat_port=
 ## provide useful complements.
 
 ## seqlogo, program to draw sequence logos used by convert-matrix
-seqlogo_dir=[parent_path_of_weblogo]/weblogo/
+seqlogo_dir=[RSAT_PARENT_PATH]/app_sources/seqlogo/weblogo/
 
 ## MEME, motif discovery program developed by Tim Bailey
 # meme_dir=/rsat/applications/meme.3.0.5/

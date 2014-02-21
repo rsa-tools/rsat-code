@@ -868,7 +868,7 @@ sub to_TRANSFAC {
       for my $param (@params) {
 	$to_print .= sprintf("CC  %s: ",$param);
 	my $value = $self->get_attribute($param);
-	$to_print .= $value;
+	$to_print .= $value || "";
 	$to_print .= "\n";
 	&RSAT::message::Debug("param", $param, $value) if ($main::verbose >= 10);
       }

@@ -9,11 +9,11 @@
 #ifndef __ARRAY__
 #define __ARRAY__
 
-using namespace std;
-
 #include <iostream>
 #include <sstream>
 #include <cmath>
+
+using namespace std;
 
 #include "fasta.h"
 #include "utils.h"

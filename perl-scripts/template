@@ -149,7 +149,7 @@ sub ReadArguments {
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
   while (scalar(@arguments) >= 1) {
     $arg = shift (@arguments);
-    ## Verbosity
+
 
 =pod
 
