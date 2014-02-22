@@ -34,22 +34,31 @@ PACKAGE_MANAGER=
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
 
-## Main directory for installing third-party software
-SOFT_DIR=${RSAT}
-
-## Directory to store the downloaded software (sources, before compilation)
+## Directory to store the downloaded software (sources, before
+## compilation)
 SRC_DIR=${RSAT}/app_sources
 
 ## Directory to store libraries
 PERLLIB_DIR=${RSAT}/lib
 
-## The sudo command is required for installing some software. If you
-## are not sudoer of your server, you can let this variable
-## empty. This might make some problems for the "install" step of some
-## software tools.
+################################################################
+## Your sudoer status
 ##
-#SUDO=
-SUDO=sudo
+## The sudo command is required for installing some third-party
+## software in directories accessible to all users (e.g. /usr/bin).
+##
+## Supported: sudo (or empty if you are not administrator)
+##
+## If you are not sudoer of your server, you should let this variable
+## empty, and make sure that the BIN_DIR defined below is set toa
+## directory of your ownership. 
+##
+## Your non-admin status might cause problems for the "install" step
+## of some third-party software, but it will at least allow you to
+## have a functional RSAT disribution locally.
+##
+#SUDO=sudo
+SUDO=
 
 ## Default installation dir for binaries. By default, will beinstalled
 ## in /usr/local/bin so they will be accessible to all users. This
