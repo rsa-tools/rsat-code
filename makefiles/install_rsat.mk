@@ -191,9 +191,9 @@ perl_modules_check:
 	@echo "Checking perl modules"
 	@echo `hostname` > perl_modules_check.txt
 	@for module in ${PERL_MODULES} ; do \
-		 perldoc -l $${module} >> perl_modules_check.txt; \
+		 perldoc -l $${module} >> check_perl_modules.txt; \
 	done
-	@echo "	perl_modules_check.txt"
+	@echo "	check_perl_modules.txt"
 
 ################################################################
 ## Install modules required for python
