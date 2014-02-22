@@ -457,7 +457,7 @@ MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
 MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
-MEME_LOCAL_UR=http://localhost/meme
+MEME_LOCAL_URL=http://localhost/meme
 install_meme: _download_meme _compile_meme _after_meme
 
 _download_meme:
