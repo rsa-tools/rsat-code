@@ -491,7 +491,8 @@ _after_meme:
 	@echo "Creating links to meme"
 	@echo "	MEME_BIN_DIR	${MEME_BIN_DIR}"
 	@echo "	MEME_VERSION	${MEME_VERSION}"
-	cd ${MEME_BIN_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
+	@echo "	BIN_DIR		${BIN_DIR}"
+	cd ${BIN_DIR}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
 	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
