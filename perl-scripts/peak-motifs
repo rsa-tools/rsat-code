@@ -3152,6 +3152,8 @@ sub OpenSynthesis {
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
   print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
+
+  &ReportCommand();
 }
 
 
@@ -3210,6 +3212,20 @@ sub SynthesisMergedSites {
   }
 }
 
+
+################################################################
+## Report the command before running the analysis, for the sake of
+## debugging and to facilitate copy-paste of the options.
+sub ReportCommand {
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "peak-motifs ";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
+}
+
+
 ################################################################
 ## Report the list if input/output files. This has to be done at the
 ## end of the process, since it includes a list of discovered motifs
@@ -3237,8 +3253,6 @@ sub SynthesisParamsAndFiles {
   ## Close the synthetic table
   print $syn "</table></p>\n";
   print $syn &close_menu_heading();
-
-
 }
 
 
