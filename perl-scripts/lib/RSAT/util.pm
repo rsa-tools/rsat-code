@@ -265,30 +265,34 @@ sub StartScript {
 
     ## Write header of the exec time log file if required
     unless (-e $main::start_time_log_file) {
-      open LOG, ">".$main::start_time_log_file;
-      print LOG join ("\t",
-		      "#start_date.time",
-		      "hostname",
-		      "PID",
-		      "username",
-		      "script_name",
-		      "command",
-		      "remote_addr",
-		     ), "\n";
-      close LOG;
+	if (open LOG, ">".$main::start_time_log_file) {
+	    print LOG join ("\t",
+			    "#start_date.time",
+			    "hostname",
+			    "PID",
+			    "username",
+			    "script_name",
+			    "command",
+			    "remote_addr",
+		), "\n";
+	    close LOG;
+	    chmod 0666, $main::start_time_log_file;
+	}
     }
 
-    open LOG, ">>".$main::start_time_log_file;
-    print LOG join ("\t",
-		    $start_time,
-		    $$,
-		    $login,
-		    $script_name,
-		    $command,
-		    $remote_addr,
-		   ), "\n";
-    close LOG;
-    chmod 0666, $main::start_time_log_file;
+    if (open LOG, ">>".$main::start_time_log_file) {
+	print LOG join ("\t",
+			$start_time,
+			$$,
+			$login,
+			$script_name,
+			$command,
+			$remote_addr,
+	    ), "\n";
+	close LOG;
+	chmod 0666, $main::start_time_log_file;
+    }
+
   }
   return($start_time);
 }
