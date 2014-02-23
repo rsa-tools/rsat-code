@@ -265,30 +265,34 @@ sub StartScript {
 
     ## Write header of the exec time log file if required
     unless (-e $main::start_time_log_file) {
-      open LOG, ">".$main::start_time_log_file;
-      print LOG join ("\t",
-		      "#start_date.time",
-		      "hostname",
-		      "PID",
-		      "username",
-		      "script_name",
-		      "command",
-		      "remote_addr",
-		     ), "\n";
-      close LOG;
+	if (open LOG, ">".$main::start_time_log_file) {
+	    print LOG join ("\t",
+			    "#start_date.time",
+			    "hostname",
+			    "PID",
+			    "username",
+			    "script_name",
+			    "command",
+			    "remote_addr",
+		), "\n";
+	    close LOG;
+	    chmod 0666, $main::start_time_log_file;
+	}
     }
 
-    open LOG, ">>".$main::start_time_log_file;
-    print LOG join ("\t",
-		    $start_time,
-		    $$,
-		    $login,
-		    $script_name,
-		    $command,
-		    $remote_addr,
-		   ), "\n";
-    close LOG;
-    chmod 0666, $main::start_time_log_file;
+    if (open LOG, ">>".$main::start_time_log_file) {
+	print LOG join ("\t",
+			$start_time,
+			$$,
+			$login,
+			$script_name,
+			$command,
+			$remote_addr,
+	    ), "\n";
+	close LOG;
+	chmod 0666, $main::start_time_log_file;
+    }
+
   }
   return($start_time);
 }
@@ -859,9 +863,8 @@ sub get_temp_dir {
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
   my $login = getpwuid($<) || "temp_user";
   my $tmp_base;
-  if (($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") ||
-      ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS")
-      ){
+  if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+      (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
     $tmp_base = &get_pub_temp()."/".$login;
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
@@ -920,10 +923,13 @@ sub make_temp_file {
 
   &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
   
-  ## Create an index file in the new directory to prevent Web users from seing its whole content
-  if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
-    my $index_file = $tmp_dir."/index.html";
-    if ($protect) {
+  ## Create an index file in the new directory to prevent Web users
+  ## from seing its whole content
+  if ($protect) {
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	($ENV{RSA_OUTPUT_CONTEXT}eq "cgi")) {
+#  if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+      my $index_file = $tmp_dir."/index.html";
       unless (-e $index_file) {
 	open INDEX, ">".$index_file;
 	print INDEX "<html>";

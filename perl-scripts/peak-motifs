@@ -2835,7 +2835,7 @@ sub SynthesisOneMotifComparison {
     #&RSAT::message::Debug("DB matches", join ("; ", @fields)) if ($main::verbose >= 10);
     
     ## small summary file
-    print $small_sum_txt $fields[$col_index{'name2'}].", " if (defined($fields[$col_index{'name2'}]));
+    print $small_sum_txt ($fields[$col_index{'name2'}], ", ") if ((defined($fields[$col_index{'name2'}])) && ($task{small_summary}));
     
     my @values = ();
     foreach my $field (@match_fields) {
@@ -2852,8 +2852,11 @@ sub SynthesisOneMotifComparison {
     }
     $db_match_table .= "</tr>\n";
   }
-  print $small_sum_txt "no match" if ($match_nb == 0);
-  print $small_sum_txt "</br>";
+
+  if ($task{small_summary}) {
+    print $small_sum_txt "no match" if ($match_nb == 0);
+    print $small_sum_txt "</br>";
+  }
 
   ## Report number of matches
   my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
@@ -2882,8 +2885,8 @@ sub SynthesisByMotif {
   
   ## Prepare summary text file
   if ($task{small_summary}) {
-  	$small_sum_txt = &OpenOutputFile($main::outfile{small_summary_txt}) ; 
-  	print $small_sum_txt "#Motif\tLogo\t3 Top hits in databases\n";
+    $small_sum_txt = &OpenOutputFile($main::outfile{small_summary_txt}) ; 
+    print $small_sum_txt "#Motif\tLogo\t3 Top hits in databases\n";
   }
 
   &ReadMotifTable();
@@ -2916,7 +2919,7 @@ sub SynthesisByMotif {
     print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
     print $syn "<td><table align='center' ><tr>";
     
-    print $small_sum_txt $matrix->get_attribute("name")."\t";
+    print $small_sum_txt $matrix->get_attribute("name"), "\t" if ($task{small_summary});
     
     ## Sequence logo
     my $file = $main::outfile{$motif_id."_logo"};
@@ -2927,11 +2930,12 @@ sub SynthesisByMotif {
 		  "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
 		  "' src='",$logo_link,"'>","</a>","</td>\n");
 	  
-	  print $small_sum_txt "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
-		  "' src='",$logo_link,"'>"."\t";
+      print $small_sum_txt ("<img border='", $main::param{img_border}, 
+			    "' height='", $main::param{logo_table_height}, 
+			    "' src='",$logo_link,"'>"."\t" ) if ($task{small_summary});
     } else {
       print $syn "<td><font color='red'>No logo</font>","</td>\n";
-      print $small_sum_txt "\t";
+      print $small_sum_txt "\t" if ($task{small_summary});
     }
     
 
@@ -2975,7 +2979,7 @@ sub SynthesisByMotif {
       my $file = $compa_files[$f];
       my $prefix = $compa_prefixes[$f];
       
-      print $small_sum_txt "<u>versus $db_name:</u>  ";
+      print $small_sum_txt "<u>versus $db_name:</u>  " if ($task{small_summary});
 		  
       if (-e $file) {
 	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file,$colored_consensus);
@@ -3009,7 +3013,7 @@ sub SynthesisByMotif {
 
     }
     print $syn "</td></tr>\n";
-    print $small_sum_txt "\n";
+    print $small_sum_txt "\n" if ($task{small_summary});
 
     ## Scan results
     my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
@@ -3071,7 +3075,7 @@ sub SynthesisByMotif {
 	$genome_assembly = $main::param{coord_assembly};
       }
 
-      if (-e $main::outfile{$motif_id.'_pssm_sites_genomic'}) {
+      if ((defined($main::outfile{$motif_id.'_pssm_sites_genomic'})) && (-e $main::outfile{$motif_id.'_pssm_sites_genomic'})) {
 	## UCSC link to genomic location of predicted sites
 	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$motif_id.'_pssm_sites_genomic'});
 	#	my $BED_URL = join ("/", 
@@ -4008,20 +4012,19 @@ sub SynthesisMotifsVersusDatabase {
 ## Creates a separate HTML file
 ## with a very synthetic view of the results
 sub SmallSummary {
-	## close the text file handler
-	close $small_sum_txt;
-	## convert into html file
-	my $cmd = $SCRIPTS."/text-to-html ";
-    $cmd .= " -i ".$main::outfile{small_summary_txt};
-    $cmd .= " -no_sort ";
-    $cmd .= " -o ".$main::outfile{small_summary};
+  ## close the text file handler
+  close $small_sum_txt;
 
-    &one_command($cmd, 1);
-
-	## Add the small summary to the archive
-  	&Archive(0, $main::outfile{small_summary}) if ($task{archive});
-
-
+  ## Convert into html file
+  my $cmd = $SCRIPTS."/text-to-html ";
+  $cmd .= " -i ".$main::outfile{small_summary_txt};
+  $cmd .= " -no_sort ";
+  $cmd .= " -o ".$main::outfile{small_summary};
+  
+  &one_command($cmd, 1);
+  
+  ## Add the small summary to the archive
+  &Archive(0, $main::outfile{small_summary}) if ($task{archive});
 }
 
 
