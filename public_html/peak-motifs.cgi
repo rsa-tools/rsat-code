@@ -10,7 +10,6 @@ use CGI::Carp qw/fatalsToBrowser/;
 ### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "/tmp/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -45,7 +44,7 @@ $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
 ## We need to create the output directory before starting peak-motif
 ## for uploading the input sequences and reference motifs
 $output_dir_prefix = sprintf "peak-motifs.%s", &AlphaDate();
-$output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1); $output_dir = &ShortFileName($tmp_file_path);
+$output_dir_full_path = &RSAT::util::make_temp_file("", $output_dir_prefix, 1, 1); $output_dir = &ShortFileName($output_dir_full_path);
 $output_prefix = "peak-motifs";
 system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 

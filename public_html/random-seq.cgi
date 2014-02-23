@@ -12,7 +12,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -40,7 +40,6 @@ $query = new CGI;
 $command = "$SCRIPTS/random-seq";
 $prefix = "random-seq";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "random-seq.%s", &AlphaDate();
 @result_files = ();
 
 $size_limit = 25e+6;
@@ -50,14 +49,14 @@ $size_limit = 25e+6;
 $parameters = "";
 
 ## template file (optional)
-($template_file, $template_format) = &MultiGetSequenceFile(1, "$TMP/$tmp_file_name"."_template.fa", 0);
+($template_file, $template_format) = &MultiGetSequenceFile(1, $tmp_file_path."_template.fa", 0);
 
 ## a template file has been given
 if ($template_file) {
   push @result_files, ("Template file ($template_format)",$template_file);
 
   ## Compute sequence lengths from the template sequence file
-  my $length_file = "$TMP/$tmp_file_name".".lengths";
+  my $length_file = $tmp_file_path.".lengths";
   push @result_files, ("Sequence lengths",$length_file);
 
   my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;

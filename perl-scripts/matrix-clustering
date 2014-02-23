@@ -144,6 +144,10 @@ package main;
     local $d3_base_format = "";
     local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
 
+    ## Select phylo and newick d3 bases
+    local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
+    local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
+
 
     ## Supported label fields
     local @supported_label_fields = qw (id name consensus);
@@ -269,10 +273,12 @@ package main;
 #    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
+    $main::outfile{temp_2} = $main::outfile{prefix}."_temporal_2.html";
     $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table";
     if ($export_tree_format eq "newick"){
 	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
-	
+	$main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "tree_newick";
+ 
     }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
@@ -312,6 +318,10 @@ package main;
     ################################################################
     ## Creates the html template to display the tree
     &Create_html_tree_file();
+
+    ################################################################
+    ## Creates the html template to display the pylogram
+    &Create_phylogram();
 
     ################################################################
     ## Print verbose
@@ -896,10 +906,12 @@ sub Create_html_tree_file(){
 	chomp;	
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
-
+	
 	### Fix the d3 library path
 	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
 
@@ -957,5 +969,47 @@ sub Create_html_tree_file(){
     return();
 }
 
+
+###################################
+## Create the phylogram
+sub Create_phylogram(){
+
+    ### Save the newick tree in the variable
+    chomp(my $newick_tree = `more $main::outfile{tree_newick}`);
+
+    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_phylogram.html ".$main::outfile{phylogram_html});
+    open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporal file");
+    open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
+
+
+    ## Select the D3 base
+    if ($d3_base_format eq "link"){
+	$d3_base_url = "http://d3js.org";	
+    }
+
+    while(<PHYLO>){
+	chomp;	
+
+#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+#	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+#	}
+
+	### Fix the d3 libraries path
+	$_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
+	$_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
+	$_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
+
+	### Paste the newick tree in the HTML code
+	$_ =~ s/Paste_newick_here/$newick_tree/;
+
+	print TEMP $_."\n";
+    }
+    close(TEMP);
+    close(PHYLO);
+    system("rm ".$main::outfile{phylogram_html});
+    system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
+    return();
+}
 
 __END__
