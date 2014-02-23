@@ -2398,10 +2398,11 @@ sub OpenHtmlIndex {
     
 
     my $refresh_time;
-    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
-	$refresh_time = 120;
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	    ($ENV{RSA_OUTPUT_CONTEXT}eq "cgi")) {
+      $refresh_time = 120;
     } else {
-	$refresh_time = 0;
+      $refresh_time = 0;
     }
 
     my $header = &PrintHtmlResultHeader(program=>"position-analysis", refresh_time=>0);
