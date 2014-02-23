@@ -180,7 +180,7 @@ tomcat_port=
 seqlogo_dir=[RSAT_PARENT_PATH]/app_sources/seqlogo/weblogo/
 
 ## MEME, motif discovery program developed by Tim Bailey
-# meme_dir=/rsat/applications/meme.3.0.5/
+# meme_dir=[RSAT_PARENT_DIR]/rsat/app_sources/MEME/meme_4.9.1
 
 ## MCL , graph-based clustering algorithm developed by Stijn Van Dongen, and
 ## integrated in the NeAT suite.
@@ -191,7 +191,7 @@ mcl_dir=[RSAT_PARENT_PATH]/rsat/bin
 rnsc_dir=[RSAT_PARENT_PATH]/rsat/bin
 
 ## BLAST
-blast_dir=[your_path_to_blast]
+blast_dir=[RSAT_PARENT_DIR]/rsat/bin
 
 
 ## REA, k-shortest path finding program by Jimenez and Marzal. 
