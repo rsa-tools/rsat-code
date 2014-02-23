@@ -906,10 +906,12 @@ sub Create_html_tree_file(){
 	chomp;	
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
-
+	
 	### Fix the d3 library path
 	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
 
