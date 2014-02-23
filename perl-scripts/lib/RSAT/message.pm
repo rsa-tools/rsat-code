@@ -1,11 +1,12 @@
-###############################################################
-#
-# A class for message handling
-#
+################################################################
+##
+## A class for message handling
+##
 package RSAT::message;
 
 use RSAT::GenericObject;
 @ISA = qw( RSAT::GenericObject );
+
 
 =pod
 
@@ -20,7 +21,6 @@ Message handling for RSAT.
 =cut
 
 
-################################################################
 
 =pod
 
@@ -36,8 +36,6 @@ sub new {
     return $message;
 }
 
-
-################################################################
 
 =pod
 
@@ -61,7 +59,6 @@ sub Warning {
 }
 
 
-################################################################
 
 =pod
 
@@ -76,7 +73,6 @@ sub cgiWarning {
     &cgiMessage($warning_message, "Warning", $warning_color);
 }
 
-################################################################
 
 =pod
 
@@ -97,7 +93,6 @@ sub Info {
     }
 }
 
-################################################################
 
 =pod
 
@@ -117,7 +112,6 @@ sub Debug {
     }
 }
 
-################################################################
 
 =pod
 
@@ -128,7 +122,7 @@ Print a message in HTML format (STDOUT)
 =cut
 sub cgiMessage {
   my ($message, $message_type, $color) = @_;
-  $color = "#008800" unless ($color);
+  $color = "#006600" unless ($color);
   $message_type = "Information" unless ($message_type);
   print  ("<blockquote class='",lc($message_type),"'>",
 	  "\n",
@@ -141,7 +135,6 @@ sub cgiMessage {
 
 
 
-################################################################
 
 =pod
 
@@ -164,7 +157,6 @@ sub TimeWarn {
     }
 }
 
-################################################################
 
 =pod
 
@@ -189,7 +181,6 @@ sub psWarn {
 #    warn ($message);
 }
 
-################################################################
 
 =pod
 
@@ -209,6 +200,7 @@ return 1;
 
 
 __END__
+
 
 =pod
 

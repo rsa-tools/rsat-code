@@ -8,7 +8,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -52,7 +52,6 @@ $command .= " ".$parameters;
 open RESULT, "$command | awk '{print \$0\"\t<a href=$ENV{rsat_www}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
 
 ### Print result on the web page
-#$result_file = "$TMP/$tmp_file_name.res";
 print "<CENTER>\n";
 &PrintHtmlTable(RESULT, $tmp_file_path, false, 10000);
 print "</CENTER>\n";

@@ -70,14 +70,15 @@ Function getTempFileName($prefix, $ext) {
 
   ## Append user name
   global $_ENV; ## ceci ne marche pas
-  $user = $_ENV["USER"]; ## ceci ne marche pas
+#  $user = $_ENV["USER"]; ## ceci ne marche pas
 #  $user = getenv('REMOTE_USER'); ## ceci ne marche pas
 #  $user = getenv('USER'); ## ceci ne marche pas
 #  $processUser = posix_getpwuid(posix_geteuid()); ## ceci ne marche pas sur
-               #  RSAT mais bien sur mon portable, je suppose qu'il faut
+               #  RSAT mais bien sur mon portable, je suppose qu''il faut
                #  installer posix, mais je prefere eviter car je devrais le
                #  faire sur tous les miroirs
 #  $user = $processUser['name'];
+  $user = `whoami`; ## THIS WORKS BY IT IS TOO TRICKY TO CLAL A SYSTEM COMMAND.I should check why all the solutions above do not work
   $tmpDir .= $user."/";
 
   ## Append
@@ -208,7 +209,7 @@ $neat_www_root = $properties['neat_www_root'];
 $neat_java_host = $properties['neat_java_host'];
 # host may include tomcat port
 $tomcat_port = $properties['tomcat_port'];
-if(strcmp($tomcat_port,"") != 0){
+if (strcmp($tomcat_port,"") != 0){
   $neat_java_host = $neat_java_host . ":" . $tomcat_port;
  }
 $neat_java_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl";
