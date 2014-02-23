@@ -448,22 +448,16 @@ _download_biotoolbox:
 	(cd ${BTB_BASE_DIR}; wget -nv -nd ${BTB_URL} ; tar -xpzf ${BTB_ARCHIVE})
 	@echo ${BTB_DOWNLOAD_DIR}
 
-
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
-MEME_VERSION=4.9.0
-MEME_PATCH=_4
-#MEME_VERSION=4.8.0
-#MEME_PATCH=
-#MEME_VERSION=current
+MEME_VERSION=4.9.1
+MEME_PATCH=_1
 MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
-##MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
-#MEME_URL=ftp://ftp.ebi.edu.au/pub/software/MEME/r${MEME_VERSION}/rc5/${MEME_ARCHIVE}
-#MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
-MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
-MEME_INSTALL_SUBDIR=${SOFT_DIR}/MEME
+MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
+MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
+MEME_LOCAL_URL=http://localhost/meme
 install_meme: _download_meme _compile_meme _after_meme
 
 _download_meme:
@@ -483,15 +477,22 @@ MEME_BIN_DIR=${MEME_COMPILE_DIR}/bin
 _compile_meme:
 	@echo
 	@echo "Compiling MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
+	@echo "	MEME_INSTALL_DIR	${MEME_INSTALL_DIR}"
+	@echo "	MEME_INSTALL_SUBDIR	${MEME_INSTALL_SUBDIR}"
+	@echo "	MEME_COMPILE_DIR	${MEME_COMPILE_DIR}"
 	@mkdir -p ${MEME_INSTALL_DIR}
 	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
 #	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
-	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_COMPILE_DIR} --with-url="http://localhost/meme")
+	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_COMPILE_DIR} --with-url="${MEME_LOCAL_URL}")
 	(cd ${MEME_INSTALL_DIR}; make clean; make ; make test; ${SUDO} make install)
 	@echo "MEME installed in ${MEME_COMPILE_DIR}"
 
 _after_meme:
-#	@cd ${MEME_BIN_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
+	@echo "Creating links to meme"
+	@echo "	MEME_BIN_DIR	${MEME_BIN_DIR}"
+	@echo "	MEME_VERSION	${MEME_VERSION}"
+	@echo "	BIN_DIR		${BIN_DIR}"
+	cd ${BIN_DIR}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
 	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"

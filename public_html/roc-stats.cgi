@@ -21,12 +21,10 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
-#$ENV{rsat_echo}= 2; # TMP
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 @result_files = ();
 $command = "$SCRIPTS/roc-stats2";
-#my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
 $prefix = "roc-stats";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
@@ -167,7 +165,7 @@ if ($query->param('graphs')){
     $cmd .= " -o ".$score_distrib_plot;
     &doit($cmd);
     print "<CENTER><B><A NAME=\"scores\"></A>";
-    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath($TMP, $score_distrib_plot);
+    $img_URL = $ENV{rsat_www}."/tmp/"; $img_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $score_distrib_plot);
     print "<a href='".$img_URL."'><IMG SRC='".$img_URL."'></a><BR>";
 
     ## Draw stats as a function of score, with log scale on X axis

@@ -3432,27 +3432,36 @@ sub Verbose {
 
   print $main::out "; Matrices\n";
   print $main::out join ("\t", ";", "file1", $matrix_nb1." matrices", $main::infile{file1}),"\n";
-  print $main::out join ("\t", ";", "file2", $matrix_nb2." matrices", $main::infile{file2}),"\n";
-  #    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
 
   ## Matrices in the first file
   my $m1 = 0;
   foreach my $matrix (@matrices1) {
     $m1++;
-    print $main::out join ("\t", ";", "file1", $m1,
+    print $main::out join ("\t", ";", "\tfile1", $m1,
 			   $matrix->get_attribute("ncol"),
 			   $matrix->get_attribute("nsites"),
 			   $matrix->get_attribute("consensus.IUPAC")), "\n";
+    if ($m1 > 10) {
+      print $main::out (";\t\t...\t", scalar(@matrices1)-10, " more matrices\n");
+      last;
+    }
   }
+
+  print $main::out join ("\t", ";", "file2", $matrix_nb2." matrices", $main::infile{file2}),"\n";
+  #    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
 
   ## Matrices in the second file
   my $m2 = 0;
   foreach my $matrix (@matrices2) {
     $m2++;
-    print $main::out join ("\t", ";", "file2", $m2,
+    print $main::out join ("\t\t", ";", "file2", $m2,
 			   $matrix->get_attribute("ncol"),
 			   $matrix->get_attribute("nsites"),
 			   $matrix->get_attribute("consensus.IUPAC")),  "\n";
+    if ($m2 > 10) {
+      print $main::out (";\t\t...\t", scalar(@matrices2)-10, " more matrices\n");
+      last;
+    }
   }
   printf $out &PrintThresholdValues();
 }
