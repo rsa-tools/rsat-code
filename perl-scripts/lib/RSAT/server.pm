@@ -228,7 +228,12 @@ sub UpdateLogFile {
 
   ## Check log file
   unless ($log_file) {
-    $log_file = $main::log_file;
+      if ($main::log_file) {
+	  $log_file = $main::log_file;
+      } else {
+	  &RSAT::message::Warning("&RSAT::server::UpdateLogFile() called without \$log_file argument") if ($main::verbose >= 4);
+	  return;
+      }
   }
 
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
@@ -237,6 +242,7 @@ sub UpdateLogFile {
 			"<p>log=".$log_file,
 			"<p>email=".$user_email,
 			 ) if ($main::verbose >= 5);
+
 
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
