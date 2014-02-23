@@ -272,12 +272,10 @@ print $query->checkbox(-name=>'sort',
 
 print "<HR width=550 align=left>\n";
 
-print "<font color=red><B>Warning!</B> position-analysis is time-consuming. If the result is not displayed after 5 minutes, try email output.</font><BR>\n";
-
+#print "<font color=red><B>Warning!</B> position-analysis is time-consuming. If the result is not displayed after 5 minutes, try email output.</font><BR>\n";
 
 ## Send results by email or display on the browser
 &SelectOutput($default{output});
-
 
 ## Action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";
@@ -293,6 +291,7 @@ $demo_seq_file = "$ENV{RSAT}/public_html/demo_files/SWEMBL_mmus_HNF4A_vs_mmus_In
 ##$demo_seq_file = "$ENV{RSAT}/public_html/demo_files/Mycoplasma_genitalium_upstream_-30_+29.fasta.gz";
 $demo_seq = `gunzip -c $demo_seq_file`;
 ##$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
+
 
 
 ################################################################
