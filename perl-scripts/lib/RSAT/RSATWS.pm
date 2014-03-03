@@ -18,6 +18,7 @@ unshift (@INC, "../../perl-scripts/lib/");
 require RSAT::util;
 require RSAT::server;
 require RSAT::TaskManager;
+require RSAT::OrganismManager;
 
 &main::InitRSAT();
 
@@ -3594,15 +3595,13 @@ if ($args{"equi_pseudo"} == 1 ) {
       $oligo_length = $args{"markov"} + 1;
       if ($args{"organism"}) {
 
-## sub not found => HELP, Jacques!
-##
 ## JvH (2014-03-03): I should enable &ExpectedFreqFile() from within RSATWS,
 ## it is cleaner than defining a hard path towards the expected frequency
 ## file.
-#	  $tmp_background_infile = &ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
-#			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
 #	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
-	  $tmp_background_infile = $ENV{RSAT}."/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+#	  $tmp_background_infile = $ENV{RSAT}."/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+	  $tmp_background_infile = &RSAT::OrganismManager::ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
+			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
 
 ## Only noov taxon bckgds available at the moment => useless
 #      } elsif ($args{"taxon"}) {
