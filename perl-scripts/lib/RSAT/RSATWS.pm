@@ -3598,6 +3598,7 @@ if ($args{"equi_pseudo"} == 1 ) {
 #	  $tmp_background_infile = &ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
 #			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
 #	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+	  $tmp_background_infile = $ENV{RSAT}."/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
 
 ## Only noov taxon bckgds available at the moment => useless
 #      } elsif ($args{"taxon"}) {
