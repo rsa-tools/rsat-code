@@ -1,4 +1,4 @@
-\subsection{Configuration of the Apache server}
+\section{Configuring and activating a local \RSAT Web server}
 
 In order to provide web access to the Regulatory Sequence Analysis
 Tools (\RSAT), you need to adapt the configuration of your web
@@ -8,14 +8,16 @@ administrator of the computer).
 
 \begin{enumerate}
 \item A default configuration file is provided with the \RSAT
-  distribution (\file{rsat\_apache\_default.conf}). Edit this file to
-  replace the string \texttt{\[RSAT\_PARENT\_PATH\]} by the actual
-  location of your rsat folder.
+  distribution (\file{rsat\_apache\_default.conf}). 
+
+  Copy this template to a file named \file{rsat.conf}, which you will
+  edit to replace the string \texttt{[RSAT\_PARENT\_PATH]} by the
+  full path of your \file{rsat} folder.
   
-\item The file should then be copied to some appropriate place in the
-  Apache configuration folder of your computer. This place depends on
-  the operating system (Mac OSX or Linux) and on the distribution
-  (Linux Ubuntu, Centos, ...).
+\item The configuration file should then be copied to some appropriate
+  place in the Apache configuration folder of your computer. This
+  place depends on the operating system (Mac OSX or Linux) and on the
+  distribution (Linux Ubuntu, Centos, ...).
   
   Some Usual places:
   \begin{itemize}
@@ -40,14 +42,14 @@ sudo apache2ctl restart
   In principle you already configured these files in the beginning of
   the installation, with the command
   \begin{lstlisting}
-perl perl-scripts/configure_rsta.pl
+perl perl-scripts/configure_rsat.pl
   \end{lstlisting}
 
   \textbf{Note:} it is important to properly define the URL fo the Web
   server (\texttt{RSAT\_WWW} and related variables). The default URL
   (http://localhost/rsat/) only works if the server and client (your
   Web browser) are on the same machine. This internal access is very
-  convenient to work in places where yo don't have internet
+  convenient to work in places where you don't have Internet
   connections, but does not allow other computers to use your Web
   server.  If you want to enable Web queries from remote computers,
   you should specify an externally visible URL.
