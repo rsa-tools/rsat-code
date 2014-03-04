@@ -6,18 +6,18 @@
 ##
 ## Usage:
 
-use strict;
-use Getopt::Long qw(:config bundling); ## Required for parsing command-line arguments
+## Load some standard Perl libraries
+use strict;  ## Strict forces the programmer to write properly (without it Perl enables to hack awful things)
+use Getopt::Long qw(:config bundling); ## Getopt is a Pelr module enabling automatic parsing otf the command-line arguments
 
-# import the modules we need for this test; XML::Compile is included
-# on the server by default.
+# Import the modules (libraries) needed for this test; 
 use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 
 package main;
 {
-  ## Initialize variables
+  ## Initialize variables with default values
   my $server = "http://rsat.ulb.ac.be/rsat";
   my $organism = "";
   my $help = "";
