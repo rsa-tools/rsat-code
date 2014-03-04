@@ -128,6 +128,11 @@ if (!exists("score")) {
   score <- "Ncor";
 }
 
+## Default hclust method is the complete method
+if (!exists("hclust.method")) {
+  hclust.method <- "complete";
+}
+
 #infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
 # description.file <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa_matrix_descriptions.tab"
 
@@ -257,7 +262,7 @@ dist.matrix <- as.dist(dist.table)
 
 ##############################################
 ### Runs and plot the hierarchical cluster
-tree <- hclust(dist.matrix)
+tree <- hclust(dist.matrix, method = hclust.method)
 tree$labels <- as.vector(description.table$label)
 if (plot.tree) {plot(tree) }
 if (export == "newick") {
