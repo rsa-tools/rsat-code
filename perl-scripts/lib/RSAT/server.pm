@@ -540,6 +540,8 @@ sub LoadLocalOrganisms {
 ## THIS SHOULD BE CLEANED WHEN I FIND TIME TO DO IT
 sub InitRSAT {
   umask 0022;
+  
+#  $ENV{RSA_OUTPUT_CONTEXT} = "screen";
 
   &ReadProperties();
 #  &ReadConfig();
@@ -550,13 +552,11 @@ sub InitRSAT {
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
 
-
   ################################################################
   ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ## JvH, 2014-02-19 : I suppress this, because with the user-specific
   ## temp folders, all users should not have the possibility to create
   ## a directory in the public_html folder anymore
-
 
   ## Check temporary directory
 #  $main::TMP = $ENV{RSAT}."/public_html/tmp";
