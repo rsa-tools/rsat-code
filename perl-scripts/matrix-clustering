@@ -160,6 +160,15 @@ package main;
     local %label_fields_to_return = ();
     local @label_fields_to_return = ();
 
+    ## Supported hclust methods
+    local @supported_hclust_methods = qw (average complete single);
+    local %supported_hclust_methods = ();
+    foreach my $method (@supported_hclust_methods) {
+	$supported_hclust_methods{$method} = 1;
+    }
+    local $supported_hclust_methods = join ",", @supported_hclust_methods;
+    local $hclust_method = "complete";
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
@@ -508,7 +517,7 @@ B<Supported d3 bases>
 
 =item	B<-labels>
 
-Mandatory option to select the matrix label fields displayed in the html tree
+Option to select the matrix label fields displayed in the html tree
     
 B<Supported labels>
     
@@ -526,6 +535,25 @@ B<Supported labels>
 	}
       }
       push @label_fields_to_return, @new_label_fields_to_return;
+
+=pod
+
+=item	B<-hclust_method>
+
+Option to select the hierarchical clustering method to be performed. 
+Default method: complete
+    
+B<Supported methods>
+    
+(single, complete, average)
+
+=cut
+
+    } elsif ($arg eq "-hclust_method") {
+       $hclust_method = shift(@arguments);
+       unless(exists($supported_hclust_methods{$hclust_method})){
+          &RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
+       }
 
     }else {
         if ($arg =~ /\s/) {
@@ -646,6 +674,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
     $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
+    $cluster_motifs_cmd .= ";hclust.method='".$hclust_method."'";
     if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
 	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
