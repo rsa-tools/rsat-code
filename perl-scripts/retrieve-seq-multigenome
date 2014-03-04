@@ -146,6 +146,11 @@ foreach my $org (sort(keys( %genes_per_org))) {
 
   my @genes = @{$genes_per_org{$org}};
   if (scalar(@genes) > 0) {
+
+
+      ################################################################
+      ## Quick mode : grep sequences from pre-computed sequence files
+      ## in the genome directory.
     my $quick_mode_done = 0;
     if ($quick_mode) {
       my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$org."/genome";
@@ -168,7 +173,9 @@ foreach my $org (sort(keys( %genes_per_org))) {
       }
     }
 
-    ## Retrieve the sequence with retrieve-seq unless it has already been retrieve in quick mode
+    ################################################################
+    ## Retrieve the sequence with retrieve-seq unless it has already
+    ## been retrieve in quick mode
     unless ($quick_mode_done) {
 
       my $command = "$retrieve_seq_cmd -org ".$org;
@@ -186,7 +193,13 @@ foreach my $org (sort(keys( %genes_per_org))) {
       $command .= " -q ";
       $command .= join(" -q ", @genes);
       &RSAT::message::TimeWarn($command)  if ($main::verbose >= 1);
-      print $out `$command`;
+      if ($quick_mode) {
+	  $command .= ">> ".$outfile{output};
+	  &RSAT::message::Debug($command)  if ($main::verbose >= 5);
+	  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      } else {
+	  print $out `$command`;
+      }
     }
   }
 }

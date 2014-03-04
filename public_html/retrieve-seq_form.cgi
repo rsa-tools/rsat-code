@@ -19,7 +19,7 @@ $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{rm} = "";
 $default{noorf} = "checked";
-$default{imp_pos} = "checked";
+$default{imp_pos} = "";
 $default{from} = "default";
 $default{to} = "default";
 $default{genes} = "selection";
@@ -166,12 +166,19 @@ print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
 print "&nbsp;<A HREF='help.retrieve-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
 print "<BR>\n";
 
-### allows for imprecise postions
-print $query->checkbox(-name=>'imp_pos',
-  		       -checked=>$default{imp_pos},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#imp_pos'><B>Admit imprecise positions</A></B>";
-print "<BR>\n";
+################################################################
+## Allows for imprecise postions
+##
+## 2014-03-03: JvH temporarily inactivates this option becauses it provokes a
+## bug with Arabidopsis thaliana genome.
+##
+## Besides, I should revise the utility of this option.
+##
+# print $query->checkbox(-name=>'imp_pos',
+#   		       -checked=>$default{imp_pos},
+#   		       -label=>'');
+# print "&nbsp;<A HREF='help.retrieve-seq.html#imp_pos'><B>Admit imprecise positions</A></B>";
+# print "<BR>\n";
 
 ### sequence format 
 print "<B><A HREF='help.retrieve-seq.html#formats'>Sequence format</A></B>&nbsp;";
