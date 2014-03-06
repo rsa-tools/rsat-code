@@ -2736,6 +2736,11 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="quick" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Delegates scanning to the C program matrix-scan-quick (developed by Matthieu Defrance). Evaluate if the quick mode is compatible with the selected output parameters, otherwise, run in the slower mode. Incompatible with - CRER scanning - window background model.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="n_treatment" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Treatment of N characters. These characters are often used in DNA sequences to represent undefined or masked nucleotides.
