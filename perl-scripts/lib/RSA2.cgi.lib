@@ -1053,17 +1053,17 @@ sub GetBackgroundModel {
   ## Display option to estimate BG model from input sequences
   if ($params{bg_input}) {
     #### Input sequences
-    print ("<br><input type='radio' name='bg_method' value='bginput' $checked{'bginput'}>","<b>Estimate from input sequences</b>");
+    print ("<br><input type='radio' name='bg_method' value='bginput' $checked{'bginput'}>","<b>Estimate residue probabilities from input sequences</b>");
   }
 
   ## Display option to estimate BG model from sliding window
-  if ($params{bg_window}) {
-    ## Sliding window
-    print ("<br><input type='radio' NAME='bg_method' VALUE='window' $checked{'window'}>","<b>Sliding window</b> &nbsp;");
-    print $query->textfield(-name=>'window_size',
-			    -default=>$default{window_size},
-			    -size=>5);
-  }
+#  if ($params{bg_window}) {
+#    ## Sliding window
+#    print ("<br><input type='radio' NAME='bg_method' VALUE='window' $checked{'window'}>","<b>Sliding window</b> &nbsp;");
+#    print $query->textfield(-name=>'window_size',
+#			    -default=>$default{window_size},
+#			    -size=>5);
+#  }
 
 
   ## Display option to select organism- and taxon-specific BG models
