@@ -3549,6 +3549,10 @@ sub matrix_scan {
       $command .= " -matrix_format '".$matrix_format."'";
   }
 
+if ($args{"quick"} == 1) {
+      $command .= " -quick";
+  }
+
   if ($args{"n_treatment"} eq "score" || $args{"n_treatment"} eq "skip") {
       $command .= " -n ".$args{"n_treatment"};
   } else {
