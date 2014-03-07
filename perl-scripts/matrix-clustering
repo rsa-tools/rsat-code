@@ -286,7 +286,7 @@ package main;
     $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table";
     if ($export_tree_format eq "newick"){
 	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
-	$main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "tree_newick";
+	$main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram";
  
     }
     ## Open the HTML index file
