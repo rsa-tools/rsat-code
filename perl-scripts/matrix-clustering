@@ -138,7 +138,7 @@ package main;
     local @d3_base_formats = qw (file link);
     local %d3_base_formats = ();
     foreach my $format (@d3_base_formats) {
-	$d3_base_formats{$format} = 1;
+      $d3_base_formats{$format} = 1;
     }
     local $d3_base_formats = join ",", @d3_base_formats;
     local $d3_base_format = "";
@@ -207,7 +207,7 @@ package main;
     ## Non-recognized parameters are passed to compare-matrices
     if (scalar(@args_to_pass)) {
       $args_to_pass = join (" ", @args_to_pass);
-      &RSAT::message::Info("Un-ecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
+      &RSAT::message::Info("Unrecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
     }
 
 
@@ -606,7 +606,7 @@ sub CompareMatrices {
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
   $cmd .= " -sort cor";
-  $cmd .= " -return matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
@@ -916,7 +916,7 @@ sub Create_html_tree_file(){
 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 
     $matrix_num += 2;
-    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
+    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
 
@@ -1006,7 +1006,7 @@ sub Create_phylogram(){
     ### Save the newick tree in the variable
     chomp(my $newick_tree = `more $main::outfile{tree_newick}`);
 
-    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_phylogram.html ".$main::outfile{phylogram_html});
+    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
     open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporal file");
     open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
 
