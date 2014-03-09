@@ -77,6 +77,7 @@ t	1	8	1	5	11	4	13	0	0	3	0';
     my $origin = 'start';
     my $pseudo = 1;
     my $n_treatment = 'score';
+#   my $quick = '1';
 
     my %args = (
 #	'verbosity' => 1,
@@ -84,6 +85,7 @@ t	1	8	1	5	11	4	13	0	0	3	0';
 	'matrix' => $matrix,
 	'background' => $background,
 	'organism' => $organism,
+#	'quick' => $quick,
 	'markov' => $markov,
 	#'tmp_background_infile' => $tmp_background_infile,
 	'background_pseudo' => $background_pseudo,
