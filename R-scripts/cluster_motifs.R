@@ -15,9 +15,9 @@
 
 ### Install rjson package
 # install.packages("RJSONIO")
-library("RJSONIO")
-library("ctc")
-library("reshape")
+library("RJSONIO") ## To export JSON file used by the d3 library
+library("ctc") ## To convert tree to newick format
+## library("reshape") ## Not necessary anymore ? To be checked by Jaime
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -229,7 +229,7 @@ for (i in 1:nrow(dist.table)) {
     dist.table[j,i] <- dist.max
   }
 }
-print(dist.table)
+#print(dist.table)
 write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, col.names=NA, sep = "\t")
 
 ## Convert distance table into a distance matrix, required by hclust()
