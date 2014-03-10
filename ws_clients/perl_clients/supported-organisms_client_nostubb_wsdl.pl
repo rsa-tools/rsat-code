@@ -14,7 +14,6 @@ use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 
-
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || qw(

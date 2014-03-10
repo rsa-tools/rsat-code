@@ -1,0 +1,58 @@
+\section{Configuring and activating a local \RSAT Web server}
+
+In order to provide web access to the Regulatory Sequence Analysis
+Tools (\RSAT), you need to adapt the configuration of your web
+server. This requires root privileges (can be done only by the system
+administrator of the computer).
+
+
+\begin{enumerate}
+\item A default configuration file is provided with the \RSAT
+  distribution (\file{rsat\_apache\_default.conf}). 
+
+  Copy this template to a file named \file{rsat.conf}, which you will
+  edit to replace the string \texttt{[RSAT\_PARENT\_PATH]} by the
+  full path of your \file{rsat} folder.
+  
+\item The configuration file should then be copied to some appropriate
+  place in the Apache configuration folder of your computer. This
+  place depends on the operating system (Mac OSX or Linux) and on the
+  distribution (Linux Ubuntu, Centos, ...).
+  
+  Some Usual places:
+  \begin{itemize}
+  \item On Centos: \file{/etc/httpd/conf.d/rsat.conf}
+  \item On Ubuntu: \file{/etc/apache2/sites-enabled/rsat.conf}
+  \item On Mac OSX: \file{/etc/apache2/users/rsat.conf}
+  \end{itemize}
+  
+\item You need to restart the Web server (the command depends on your
+  OS. Can be \program{apachectl}, \program{apache2ctl} or
+  \program{httpd}.
+
+  \begin{lstlisting}
+sudo apache2ctl restart
+  \end{lstlisting}
+
+\item Check that all properties related to the Web site URL are
+  properly defined in the \RSAT property files
+  \file{\$RSAT/RSAT\_config.props} and
+  \file{\$RSAT/RSAT\_config.mk}. 
+
+  In principle you already configured these files in the beginning of
+  the installation, with the command
+  \begin{lstlisting}
+perl perl-scripts/configure_rsat.pl
+  \end{lstlisting}
+
+  \textbf{Note:} it is important to properly define the URL fo the Web
+  server (\texttt{RSAT\_WWW} and related variables). The default URL
+  (http://localhost/rsat/) only works if the server and client (your
+  Web browser) are on the same machine. This internal access is very
+  convenient to work in places where you don't have Internet
+  connections, but does not allow other computers to use your Web
+  server.  If you want to enable Web queries from remote computers,
+  you should specify an externally visible URL.
+
+\end{enumerate}
+

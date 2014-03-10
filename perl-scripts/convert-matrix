@@ -24,460 +24,464 @@ use Data::Dumper;
 use POSIX;
 
 ################################################################
-## Initialize parameters
-local $start_time = &RSAT::util::StartScript();
-local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
-$seqlogo_path = &trim($seqlogo_path);
-$decimals = 1;
-$pseudo_weight = 1;
-$equi_pseudo = 0;
-$max_profile = 24;
-$sep="\t";
-$null = "NA";
-$perm = 0;
-%args = (); ## Arguments for matrix reading
-%force_attribute = ();
-$top_matrices = "none";
-$skip_matrices = 0;
-$multiply = 1;
+## Main package
+package main;
+{
 
-local %infile = ();
-local %outfile = ();
-local @matrix_files = ();
-local @matrices = ();
-local $input_format = "";
-local $output_format = "patser";
-local $verbose = 0;
-local $out = STDOUT;
-local $info_log_base = exp(1);
+  ################################################################
+  ## Initialize parameters
+  local $start_time = &RSAT::util::StartScript();
+  local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+  $seqlogo_path = &trim($seqlogo_path);
+  $decimals = 1;
+  $pseudo_weight = 1;
+  $equi_pseudo = 0;
+  $max_profile = 24;
+  $sep="\t";
+  $null = "NA";
+  $perm = 0;
+  %args = (); ## Arguments for matrix reading
+  %force_attribute = ();
+  $top_matrices = "none";
+  $skip_matrices = 0;
+  $multiply = 1;
 
-local $bg_model = new RSAT::MarkovModel();
+  local %infile = ();
+  local %outfile = ();
+  local @matrix_files = ();
+  local @matrices = ();
+  local $input_format = "";
+  local $output_format = "patser";
+  local $verbose = 0;
+  local $out = STDOUT;
+  local $info_log_base = exp(1);
 
-local $sort_key = "";
-local $sort_order = "";
+  local $bg_model = new RSAT::MarkovModel();
 
-local $flanks = 0;
+  local $sort_key = "";
+  local $sort_order = "";
 
-## Return type(s)
-@return_fields = ();
-%supported_return_type = (
-			  "profile"=>1,
-			  "counts"=>1,
-			  "frequencies"=>1,
-			  "weights"=>1,
-			  "info"=>1,
-			  "information"=>1,
-			  "logo_matrix"=>1,
-			  "parameters"=>1,
-			  "consensus"=>1,
-			  "header"=>1,
-			  "margins"=>1,
-			  "sites"=>1,
-			  "wdistrib"=>1,
-			  "links"=>1, ## Obsolete but accepted (with warning) for backward compatibility
-			  "logo"=>1,
-			  "logo_table"=>1,
-			 );
-$supported_return_fields = join ",", sort keys %supported_return_type;
+  local $flanks = 0;
 
-## input formats
-%supported_input_format = %RSAT::MatrixReader::supported_input_format;
-$supported_input_formats = join ",", sort keys %supported_input_format;
+  ## Return type(s)
+  @return_fields = ();
+  %supported_return_type = (
+    "profile"=>1,
+    "counts"=>1,
+    "frequencies"=>1,
+    "weights"=>1,
+    "info"=>1,
+    "information"=>1,
+    "logo_matrix"=>1,
+    "parameters"=>1,
+    "consensus"=>1,
+    "header"=>1,
+    "margins"=>1,
+    "sites"=>1,
+    "wdistrib"=>1,
+    "links"=>1, ## Obsolete but accepted (with warning) for backward compatibility
+    "logo"=>1,
+    "logo_table"=>1,
+      );
+  $supported_return_fields = join ",", sort keys %supported_return_type;
 
-## output formats
-%supported_output_format = %RSAT::matrix::supported_output_format;
-$supported_output_formats = join ",", sort keys %supported_output_format;
+  ## input formats
+  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  $supported_input_formats = join ",", sort keys %supported_input_format;
 
-## site formats
-%supported_site_format = ('fasta'=>1,
-			  "wc"=>1,
-			  "multi"=>1,
-			 );
-$supported_site_formats = join ",", sort keys %supported_site_format;
-$site_format="fasta";
+  ## output formats
+  %supported_output_format = %RSAT::matrix::supported_output_format;
+  $supported_output_formats = join ",", sort keys %supported_output_format;
 
-## bg formats
-$bg_format = "oligo-analysis";
-%supported_bg_format = $bg_model->get_supported_input_formats();
-$supported_bg_formats = join ",", sort keys %supported_bg_format;
+  ## site formats
+  %supported_site_format = ('fasta'=>1,
+			    "wc"=>1,
+			    "multi"=>1,
+      );
+  $supported_site_formats = join ",", sort keys %supported_site_format;
+  $site_format="fasta";
 
-## logo formats
-local $logo_format = "png";
-local $logo_opt = "";
-local $logo_dir = "";
-local $logo_file_base = "";
-@logo_formats=();
-%supported_logo_format =  ('png'=>1,
-			  "eps"=>1,
+  ## bg formats
+  $bg_format = "oligo-analysis";
+  %supported_bg_format = $bg_model->get_supported_input_formats();
+  $supported_bg_formats = join ",", sort keys %supported_bg_format;
+
+  ## logo formats
+  local $logo_format = "png";
+  local $logo_opt = "";
+  local $logo_dir = "";
+  local $logo_file_base = "";
+  @logo_formats=();
+  %supported_logo_format =  ('png'=>1,
+			     "eps"=>1,
 #			  "gif"=>1, # log from seqlogo : check logo.conf
-			  "pdf"=>1,
-			 );
-$supported_logo_formats = join ",", sort keys %supported_logo_format;
+			     "pdf"=>1,
+      );
+  $supported_logo_formats = join ",", sort keys %supported_logo_format;
 
+  ################################################################
+  ## Read command-line arguments
+  &ReadArguments();
 
+  ################################################################
+  ## Check argument values
 
-################################################################
-## Read command-line arguments
-&ReadArguments();
+  ## Verbosity is only accepted for the tab-delimited format
+  unless (lc($output_format ) eq "tab") {
+    $main::verbose = 0;
+  }
 
-################################################################
-## Check argument values ####
-
-## Verbosity is only accepted for the tab-delimited format
-unless (lc($output_format ) eq "tab") {
-  $main::verbose = 0;
-}
-
-## Input format
-unless ($input_format) {
+  ## Input format
+  unless ($input_format) {
     &RSAT::error::FatalError("You should specify the input matrix format.");
-}
+  }
 
-## Matrix provided with option -i
-if ($infile{input}) {
+  ## Matrix provided with option -i
+  if ($infile{input}) {
     push @matrix_files, $infile{input};
-}
+  }
 
-## Matrix list has been provided
-if ($infile{matrix_list}) {
+  ## Matrix list has been provided
+  if ($infile{matrix_list}) {
     my ($mlist, $input_dir) = &OpenInputFile($infile{matrix_list});
     while (<$mlist>) {
-	next if (/'^;'/);		# skip comment lines
-	next if (/'^#'/);		# skip header lines
-	next if (/'^--'/);	# skip mysql-type comment lines
-	next unless (/\S/);	# skip empty lines
-	my @fields = split /\s+/;
-	my $matrix_file = $fields[0];
-	push @matrix_files, $matrix_file;
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+      my @fields = split /\s+/;
+      my $matrix_file = $fields[0];
+      push @matrix_files, $matrix_file;
     }
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
-}
+  }
 
-if (scalar(@matrix_files > 1)) {
+  if (scalar(@matrix_files > 1)) {
     # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
-  &RSAT::message::Info(scalar(@matrix_files)." input matrix files") if ($main::verbose >= 2);
-}
-
-## Decompose logo file name into dirname and basename
-if ($logo_file_base) {
-  my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_file_base);
-  if ($dir) {
-    $logo_dir = $dir;
-    $logo_file_base = $short_file_name;
-    &RSAT::message::Debug("Logo file name decomposed", "logo_dir=".$logo_dir, "logo_file_base=".$logo_file_base) if ($main::verbose >= 5);
-  }
-}
-
-################################################################
-## Check output parameters
-
-## Output file is required for some output formats
-unless ($outfile{output}) {
-  ## Outfile name is required for splitting matrices in a set of output files
-  if ($split_out_files) {
-    &RSAT::error::FatalError("The option -split requires to specify an output file (option -o)");
+    &RSAT::message::Info(scalar(@matrix_files)." input matrix files") if ($main::verbose >= 2);
   }
 
-  ## Outfile name is required for logo table (HTML)
+  ## Decompose logo file name into dirname and basename
+  if ($logo_file_base) {
+    my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_file_base);
+    if ($dir) {
+      $logo_dir = $dir;
+      $logo_file_base = $short_file_name;
+      &RSAT::message::Debug("Logo file name decomposed", "logo_dir=".$logo_dir, "logo_file_base=".$logo_file_base) if ($main::verbose >= 5);
+    }
+  }
+
+  ################################################################
+  ## Check output parameters
+
+  ## Output file is required for some output formats
+  unless ($outfile{output}) {
+    ## Outfile name is required for splitting matrices in a set of output files
+    if ($split_out_files) {
+      &RSAT::error::FatalError("The option -split requires to specify an output file (option -o)");
+    }
+
+    ## Outfile name is required for logo table (HTML)
+    if ($return_field{logo_table}) {
+      &RSAT::error::FatalError("The option -return logo_table requires to specify an output file (option -o)");
+    }
+  }
+
+  ## If logo table has been asked, assume logos are requested even if
+  ## Not explicit on the command line
   if ($return_field{logo_table}) {
-    &RSAT::error::FatalError("The option -return logo_table requires to specify an output file (option -o)");
+    $return_field{logo} = 1;
   }
-}
 
-## If logo table has been asked, assume logos are requested even if
-## not explicit on the command line
-if ($return_field{logo_table}) {
-  $return_field{logo} = 1;
-}
-
-## Check return type(s)
-local %return_fields = ();
-unless (scalar(@return_fields)) {
-  if ((lc($output_format ) eq "transfac") ||
-      (lc($output_format ) eq "tf") ||
-      (lc($output_format ) eq "consensus") ||
-      (lc($output_format ) eq "tab") ||
-      (lc($output_format ) eq "infogibbs")
-     ) {
-    push @return_fields, "counts";
-  } else {
-    &RSAT::error::FatalError("You should define at least one return type");
+  ## Check return type(s)
+  local %return_fields = ();
+  unless (scalar(@return_fields)) {
+    if ((lc($output_format ) eq "transfac") ||
+	(lc($output_format ) eq "tf") ||
+	(lc($output_format ) eq "consensus") ||
+	(lc($output_format ) eq "tab") ||
+	(lc($output_format ) eq "infogibbs")
+	) {
+      push @return_fields, "counts";
+    } else {
+      &RSAT::error::FatalError("You should define at least one return type");
+    }
   }
-}
 
 ## Permutations are only compatible with -return counts
-if ($perm) {
-  foreach my $field (@return_fields) {
-    unless ($field eq "counts") {
-      &RSAT::error::FatalError("The option -perm is only compatible with -return counts");
-    }
-  }
-}
-
-## Check return fields
-foreach my $field (@return_fields) {
-  if ($supported_return_type{$field}) {
-    $return_fields{$field}++;
-  } else {
-    &RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
-  }
-}
-
-## Deprecated option -return wdistrib
-if ($return_fields{wdistrib}) {
-    &RSAT::message::Warning( "Option -eturn wdistrib is deprecated. Use matrix-dsitrib instead.");
-}
-
-## Information
-if ($return_fields{information}) {
-  $return_fields{info} = 1;
-  &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
-}
-
-
-## Prior residue frequencies
-local %prior = ();
-if ($infile{prior}) {
-  if (defined($bg_pseudo)) {
-    $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
-  }
-  $bg_model->load_from_file($infile{prior}, $bg_format);
-  %prior = $bg_model->get_attribute("suffix_proba");
-  foreach my $key (sort keys %prior) {
-    my $residue = lc($key);
-    &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 3);
-  }
-}
-
-## logo format(s)
-if ($return_fields{logo}) {
-  if (scalar(@logo_formats)>=1){
-    foreach my $logo_format (@logo_formats){
-      unless ($supported_logo_format{$logo_format}) {
-	&RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
+  if ($perm) {
+    foreach my $field (@return_fields) {
+      unless ($field eq "counts") {
+	&RSAT::error::FatalError("The option -perm is only compatible with -return counts");
       }
     }
-  }else{
-    @logo_formats = ($logo_format);
   }
 
-  ## Check that seqlogo is installed at the expected location
-  if (-e $seqlogo_path) {
-    if(-x $seqlogo_path) {
-      &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+## Check return fields
+  foreach my $field (@return_fields) {
+    if ($supported_return_type{$field}) {
+      $return_fields{$field}++;
     } else {
-      &RSAT::message::Warning("Cannot execute the program seqlogo", 
+      &RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
+    }
+  }
+
+  ## Deprecated option -return wdistrib
+  if ($return_fields{wdistrib}) {
+    &RSAT::message::Warning( "Option -eturn wdistrib is deprecated. Use matrix-dsitrib instead.");
+  }
+
+  ## Information
+  if ($return_fields{information}) {
+    $return_fields{info} = 1;
+    &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
+  }
+
+
+  ## Prior residue frequencies
+  local %prior = ();
+  if ($infile{prior}) {
+    if (defined($bg_pseudo)) {
+      $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+    }
+    $bg_model->load_from_file($infile{prior}, $bg_format);
+    %prior = $bg_model->get_attribute("suffix_proba");
+    foreach my $key (sort keys %prior) {
+      my $residue = lc($key);
+      &RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 3);
+    }
+  }
+
+  ## Logo format(s)
+  if ($return_fields{logo}) {
+    if (scalar(@logo_formats)>=1){
+      foreach my $logo_format (@logo_formats){
+	unless ($supported_logo_format{$logo_format}) {
+	  &RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
+	}
+      }
+    }else{
+      @logo_formats = ($logo_format);
+    }
+
+    ## Check that seqlogo is installed at the expected location
+    if (-e $seqlogo_path) {
+      if(-x $seqlogo_path) {
+	&RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+      } else {
+	&RSAT::message::Warning("Cannot execute the program seqlogo", 
+				$seqlogo_path);
+	$seqlogo_path="";
+      }
+    } else {
+      &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
 			      $seqlogo_path);
       $seqlogo_path="";
     }
-  } else {
-    &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
-			    $seqlogo_path);
-    $seqlogo_path="";
   }
-}
 
-################################################################
-#### Perform the conversion
+  ################################################################
+  ## Open output file
+  if ($split_out_files) {
+    $outfile{matrix_list} = $outfile{output}."_matrix_list.tab";
+    $out = &OpenOutputFile($outfile{matrix_list});
+  } else {
+    $out = &OpenOutputFile($outfile{output});
+  }
 
-### open output file ###
-if ($split_out_files) {
-  $outfile{matrix_list} = $outfile{output}."_matrix_list.tab";
-  $out = &OpenOutputFile($outfile{matrix_list});
-} else {
-  $out = &OpenOutputFile($outfile{output});
-}
+  ## Print verbose
+  &Verbose if ($verbose);
 
-##### print output ######
-&Verbose if ($verbose);
-
-## Read the input matrices and collect all matrices
-if (scalar(@matrix_files >= 1)) {
-  $m = 0;
-  foreach my $matrix_file (@matrix_files) {
-    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
-    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
+  ################################################################
+  ## Read the input matrices and collect all matrices
+  &RSAT::message::TimeWarn("Reading matrices") if ($main::verbose >= 2);
+  if (scalar(@matrix_files >= 1)) {
+    $m = 0;
+    foreach my $matrix_file (@matrix_files) {
+      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
+      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
+      foreach my $matrix (@matrices_from_file) {
+	$m++;
+	last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+	&SetMatrixName($matrix, $m, $matrix_file, $input_format);
+	push @matrices, $matrix;
+      }
+    }
+  } else {
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
+    my $m = 0;
     foreach my $matrix (@matrices_from_file) {
       $m++;
       last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
-      &SetMatrixName($matrix, $m, $matrix_file, $input_format);
+      &SetMatrixName($matrix, $m, "", $input_format);
       push @matrices, $matrix;
     }
   }
-} else {
-  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
-  my $m = 0;
-  foreach my $matrix (@matrices_from_file) {
-    $m++;
-    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
-    &SetMatrixName($matrix, $m, "", $input_format);
-    push @matrices, $matrix;
-  }
-}
 
-## Check that there is at least one input matrix
-if (scalar(@matrices) < 1) {
-  &RSAT::message::Warning("Input file contained not a single matrix");
-} else {
-  &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
-}
-
-
-## Skip matrix if requested
-if ($skip_matrices > 0) {
-  if (scalar(@matrices) > $skip_matrices) {
-    &RSAT::message::Warning("Skipping ".$skip_matrices." top matrices among ".scalar(@matrices)) if ($main::verbose >= 1);
-    @matrices = @matrices[$skip_matrices..$#matrices];
-    &RSAT::message::Info(scalar(@matrices), "matrices left after skipping") if ($main::verbose >= 1);
+  ## Check that there is at least one input matrix
+  if (scalar(@matrices) < 1) {
+    &RSAT::message::Warning("Input file contained not a single matrix");
+    &close_and_quit();
   } else {
-    &RSAT::message::Warning("No matrix left after skipping ".$skip_matrices." top matrices among ".scalar(@matrices));
-    exit();
-  }
-}
-
-################################################################
-## Process each matrix
-&RSAT::message::TimeWarn("Processing matrices") if ($main::verbose >= 2);
-my $m = 0;
-foreach my $matrix (@matrices) {
-  $m++;
-
-  ## Multiply
-  if ($multiply != 1) {
-    $matrix->multiply($multiply);
+    &RSAT::message::TimeWarn("Read ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
   }
 
-  ## Add flanks
-  if ($flanks) {
-    my @empty_col = ();
-    my $empty_value = 0;
-    my $nrow = $matrix->nrow();
-    for my $r (1..$nrow) {
-      push @empty_col, $empty_value;
-    }
-    for my $i (1..$flanks) {
-      $matrix->add_column("right",@empty_col);
-      $matrix->add_column("left",@empty_col);
+
+  ## Skip matrix if requested
+  if ($skip_matrices > 0) {
+    if (scalar(@matrices) > $skip_matrices) {
+      &RSAT::message::Warning("Skipping ".$skip_matrices." top matrices among ".scalar(@matrices)) if ($main::verbose >= 1);
+      @matrices = @matrices[$skip_matrices..$#matrices];
+      &RSAT::message::Info(scalar(@matrices), "matrices left after skipping") if ($main::verbose >= 1);
+    } else {
+      &RSAT::message::Warning("No matrix left after skipping ".$skip_matrices." top matrices among ".scalar(@matrices));
+      &close_and_quit();
     }
   }
-  ## Compute reverse complement
-  $matrix->reverse_complement() if ($rc);
-  $matrix->force_attribute("pseudo", $pseudo_weight);
-  $matrix->force_attribute("equi_pseudo", $equi_pseudo);
-  $matrix->force_attribute("decimals", $decimals);
-  $matrix->force_attribute("max_profile", $max_profile);
-  $matrix->force_attribute("sep", $sep);
-  $matrix->force_attribute("header", $return_fields{header});
-  $matrix->force_attribute("margins", $return_fields{margins});
-  $matrix->setInfoLogBase($info_log_base);
-  $matrix->force_attribute("bg_markov_order", 0);
-  if ($infile{prior}) {
-    $matrix->setPrior(%prior);
-  }
 
-  ## Calculate parameters before sorting because sorting can be done on
-  ## a computed parameter rather than defined in the input file.
-  if ($return_fields{parameters}) {
-    $matrix->calcWeights();
-    $matrix->calcInformation();
-    $matrix->calcConsensus();
-    $matrix->calcGCcontent();
-  }
+  ################################################################
+  ## Process each matrix
+  &RSAT::message::TimeWarn("Processing matrices") if ($main::verbose >= 2);
+  my $m = 0;
+  foreach my $matrix (@matrices) {
+    $m++;
 
-  ## Generate logo
-  if (($return_fields{logo}) && ($seqlogo_path)) {
+    ## Multiply
+    if ($multiply != 1) {
+      $matrix->multiply($multiply);
+    }
 
-    unless ($logo_dir) {
-      if ($outfile{output}) {
-	$logo_dir = dirname($outfile{output});
-      } else {
-	$logo_dir = "logos";
+    ## Add flanks
+    if ($flanks) {
+      my @empty_col = ();
+      my $empty_value = 0;
+      my $nrow = $matrix->nrow();
+      for my $r (1..$nrow) {
+	push @empty_col, $empty_value;
+      }
+      for my $i (1..$flanks) {
+	$matrix->add_column("right",@empty_col);
+	$matrix->add_column("left",@empty_col);
       }
     }
-    $logo_dir .= "/";
-    $logo_dir =~ s|/+|/|g;
-    &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
-
-    ## Create logo directory if required
-    &RSAT::util::CheckOutDir($logo_dir);
-
-    my $logo_file = $logo_dir."/";
-    if ($logo_file_base) {
-      $logo_file .= $logo_file_base."_m".$m;
-    } else {
-      my $id = $matrix->get_attribute("id") || $matrix->get_attribute("identifier");
-      my $ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC") || $id;
-      &RSAT::message::Debug("ac=".$ac, "id=".$id) if ($main::verbose >= 3);
-      $logo_file .= $ac || $id;
-      $logo_file .= "_logo";
+    ## Compute reverse complement
+    $matrix->reverse_complement() if ($rc);
+    $matrix->force_attribute("pseudo", $pseudo_weight);
+    $matrix->force_attribute("equi_pseudo", $equi_pseudo);
+    $matrix->force_attribute("decimals", $decimals);
+    $matrix->force_attribute("max_profile", $max_profile);
+    $matrix->force_attribute("sep", $sep);
+    $matrix->force_attribute("header", $return_fields{header});
+    $matrix->force_attribute("margins", $return_fields{margins});
+    $matrix->setInfoLogBase($info_log_base);
+    $matrix->force_attribute("bg_markov_order", 0);
+    if ($infile{prior}) {
+      $matrix->setPrior(%prior);
     }
-    #	$logo_file =~ s/\.\w+$//;
-#    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
-     $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
-     $matrix->set_attribute("logo_file" => $logo_file);
-#    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
-    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
-    $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
 
-    ## Index the logos in a HTML table
-    if ($return_field{logo_table}) {
-      print $logo_table "<tr>\n";
-      print $logo_table "</tr>\n";
+    ## Calculate parameters before sorting because sorting can be done on
+    ## a computed parameter rather than defined in the input file.
+    if ($return_fields{parameters}) {
+      $matrix->calcWeights();
+      $matrix->calcInformation();
+      $matrix->calcConsensus();
+      $matrix->calcGCcontent();
+    }
+
+    ## Generate logo
+    if (($return_fields{logo}) && ($seqlogo_path)) {
+
+      unless ($logo_dir) {
+	if ($outfile{output}) {
+	  $logo_dir = dirname($outfile{output});
+	} else {
+	  $logo_dir = "logos";
+	}
+      }
+      $logo_dir .= "/";
+      $logo_dir =~ s|/+|/|g;
+      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
+
+      ## Create logo directory if required
+      &RSAT::util::CheckOutDir($logo_dir);
+
+      my $logo_file = $logo_dir."/";
+      if ($logo_file_base) {
+	$logo_file .= $logo_file_base."_m".$m;
+      } else {
+	my $id = $matrix->get_attribute("id") || $matrix->get_attribute("identifier");
+	my $ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC") || $id;
+	&RSAT::message::Debug("ac=".$ac, "id=".$id) if ($main::verbose >= 3);
+	$logo_file .= $ac || $id;
+	$logo_file .= "_logo";
+      }
+      #	$logo_file =~ s/\.\w+$//;
+#    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
+      $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
+      $matrix->set_attribute("logo_file" => $logo_file);
+#    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
+      $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
+      $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
+
+      ## Index the logos in a HTML table
+      if ($return_field{logo_table}) {
+	print $logo_table "<tr>\n";
+	print $logo_table "</tr>\n";
+      }
     }
   }
-}
 
-################################################################
-## Sort the matrices if requested
-if ($sort_key) {
-  @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
-}
+  ################################################################
+  ## Sort the matrices if requested
+  if ($sort_key) {
+    @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
+  }
 
-################################################################
-## Print the matrices
-$m = 0;
-&RSAT::message::TimeWarn("Exporting ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
+  ################################################################
+  ## Print the matrices
+  $m = 0;
+  &RSAT::message::TimeWarn("Exporting ".scalar(@matrices)." matrices") if ($main::verbose >= 2);
 
-## Number of digits for the counter of split matrix files
-my $id_digits;
-if ($split_out_files) {
+  ## Number of digits for the counter of split matrix files
+  my $id_digits;
   $id_digits = POSIX::ceil(log(scalar(@matrices))/log(10));
-}
 
-foreach my $matrix (@matrices) {
-  $m++;
-  last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
-  &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
-    if ($main::verbose >= 3);
+  foreach my $matrix (@matrices) {
+    $m++;
+    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
+    &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
+	if ($main::verbose >= 3);
 
-  my $current_out;
-  if ($split_out_files) {
-    my $output_prefix = $outfile{output};
-    $output_prefix =~ '|\.tab$ ||';
-    $output_prefix =~ '|\.txt$ ||';
-
-    ## Use the same number of digits for all matrices so that the
-    ## alphabetical order ot the splitted files corresponds to the
-    ## numerical order of the matrices.
+    ## Define a matrix number with same number of digits for all
+    ## matricesso that alphabetical order corresponds to numerical order
+    ## of the matrices.
     my $id_nb = sprintf "%${id_digits}s", $m;
     $id_nb =~ s/ /0/g;
     $id .= $id_nb;
 
     my $ID = $matrix->get_attribute("accession")
-      ||  $matrix->get_attribute("identifier")
+	||  $matrix->get_attribute("identifier")
 	|| $matrix->get_attribute("name")
-	  || $matrix->get_attribute("ID")
-	    || $id_nb;
+	|| $matrix->get_attribute("ID")
+	|| $id_nb;
+    $matrix->force_attribute("ID", $ID);
 
-    $outfile{'matrix_'.$m} = $output_prefix."_".$ID.".".$output_format;
-    $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
+    my $current_out;
+    if ($split_out_files) {
+      my $output_prefix = $outfile{output};
+      $output_prefix =~ '|\.tab$ ||';
+      $output_prefix =~ '|\.txt$ ||';
 
-    ## Print the name of the file containing each matrix in the main output file
-    print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}, $matrix->get_attribute("name")), "\n";
-  } else {
-    $current_out = $out;
-  }
+
+      $outfile{'matrix_'.$m} = $output_prefix."_".$ID.".".$output_format;
+      $current_out = &OpenOutputFile($outfile{'matrix_'.$m});
+
+      ## Print the name of the file containing each matrix in the main output file
+      print $out join ("\t", $m, $matrix->get_attribute("id"), $outfile{'matrix_'.$m}, $matrix->get_attribute("name")), "\n";
+    } else {
+      $current_out = $out;
+    }
 #   if ($m > 1) {
 #     my $fields = join ('', keys (%return_fields));
 #     # unless ($fields eq "logo") {
@@ -485,39 +489,43 @@ foreach my $matrix (@matrices) {
 #     #}
 #   }
 
-  if ($return_fields{header}) {
-    print $current_out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
-  }
+    if ($return_fields{header}) {
+      print $current_out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
+    }
 
 
-  ## Matrix permutations
-  if ($perm) {
-    my $AC = $matrix->get_attribute("accession") || $ID;
-    &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
-    &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
-      if ($main::verbose >= 2);
-    for my $i (1..$perm) {
+    ## Matrix permutations
+    if ($perm) {
+      my $AC = $matrix->get_attribute("accession") || $ID;
+      &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+      &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
+	  if ($main::verbose >= 2);
+      for my $i (1..$perm) {
 
-      # if ($i > 1) {
-      #print $current_out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
-      #}
+	# if ($i > 1) {
+	#print $current_out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+	#}
 
-      ## Permute the matrix
-      $matrix->permute_columns();
-      my $ID_perm = join("_", $ID, "perm".$i);
-      my $AC_perm = join("_", $AC, "perm".$i);
-      $matrix->force_attribute("name", $ID_perm);
-      $matrix->force_attribute("ID", $ID_perm);
-      $matrix->force_attribute("identifier", $ID_perm);
-      $matrix->force_attribute("accession", $AC_perm);
-      &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
+	## Permute the matrix
+	$matrix->permute_columns();
+	my $ID_perm = join("_", $ID, "perm".$i);
+	my $AC_perm = join("_", $AC, "perm".$i);
+	$matrix->force_attribute("name", $ID_perm);
+	$matrix->force_attribute("ID", $ID_perm);
+	$matrix->force_attribute("identifier", $ID_perm);
+#      my $descr_perm = join ("_", $matrix->get_attribute("description", ), "perm".$i);
+	$matrix->calcConsensus();
+	my $descr_perm = join ($matrix->get_attribute("consensus.IUPAC"));
+	$matrix->force_attribute("description", $descr_perm);
+	$matrix->force_attribute("accession", $AC_perm);
+	&RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
-      ## print result
-      if ($main::verbose >= 1) {
-	print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
-	print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);
-	print $current_out "; permutation $i/$perm\n";
-      }
+	## Print result
+	if ($main::verbose >= 1) {
+	  print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
+	  print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);
+	  print $current_out "; permutation $i/$perm\n";
+	}
 
 #       print $current_out $matrix->toString(sep=>"\t",
 # 				   type=>"counts",
@@ -525,25 +533,44 @@ foreach my $matrix (@matrices) {
 # 				   #				   format=>"tab",
 # 				   pipe=>"" ## We suppress the pipe for permute-table
 # 				  );
+	&ExportMatrix($matrix, $m, $current_out);
+      }
+    } else {
       &ExportMatrix($matrix, $m, $current_out);
     }
-  } else {
-    &ExportMatrix($matrix, $m, $current_out);
+    if ($split_out_files) {
+      close ($current_out);
+    }
   }
-  if ($split_out_files) {
-    close ($current_out);
-  }
+  &close_and_quit();
 }
 
 
-##### close output file
-my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-close $main::out if ($outfile{output});
-close $main::logo_table if ($outfile{logo_table});
+################################################################
+## Close output file and quit
+sub close_and_quit {
 
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
-exit(0);
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## Close logo table
+  if ($outfile{logo_table}) {
+    close $main::logo_table;
+    if ($outfile{logo_table}) {
+      close $main::out;
+      &RSAT::message::TimeWarn("Logo_Table file", $outfile{logo_table}) if ($main::verbose >= 2);
+    }
+  }
+
+  exit(0);
+}
 
 ################################################################
 #################### subroutine definition #####################

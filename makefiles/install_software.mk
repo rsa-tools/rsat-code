@@ -44,125 +44,108 @@ list_versions:
 	@echo "Software versions"
 	@echo "${VERSIONS}"
 
-
-################################################################
-## Obsolete: compile some perl scripts to binaries.  This was a test and the
-## results were not very good, the compiled programs were unstable.
-SRC=perl-scripts
-COMPIL=compil/
-PROGRAMS=	\
-	oligo-analysis	\
-	retrieve-seq	\
-	dyad-analysis	\
-	dna-pattern	\
-	orf-info
-LIBRARIES=\
-	RSA.stat.lib 	\
-#	RSA.classes	\
-#	RSA.seq.lib	\
-#	RSA.cgi.lib	\
-#	RSA.lib 	
-_compile_perl_scripts:
-	@mkdir -p ${COMPIL}/lib
-	@mkdir -p ${COMPIL}/bin
-	@(cd  ${COMPIL}/bin; ln -fs ../lib)
-	@cp -f config/default.config ${COMPIL}/RSA.config
-
-	@for lb in ${LIBRARIES}; do \
-		echo "compiling library $${lb}"; \
-		cp -f ${SRC}/lib/$${lb} ${COMPIL}/lib/$${lb}.pl ; \
-		(cd ${COMPIL}/lib; pwd; perlcc $${lb}.pl && rm -f $${lb}.pl); \
-	done
-
-	@for pgm in ${PROGRAMS}; do \
-		echo "compiling program $${pgm}"; \
-		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
-		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
-	dgone
-
-
-
-################################################################
-## This library allows you to install the Perl libraries locally, if you are not system administrator
-LOCAL_LIB_URL=http://search.cpan.org/CPAN/authors/id/A/AP/APEIRON/local-lib-1.008004.tar.gz
-LOCAL_LIB_DIR=lib/perl_lib/locallib
-
-local_lib: download_local_lib install_local_lib config_local_lib
-
-download_local_lib:
-	@echo "Downloading Perl module local::lib"
-	(mkdir -p ${LOCAL_LIB_DIR}; cd ${LOCAL_LIB_DIR}; wget ${LOCAL_LIB_URL}; tar -xzf local-lib-1.008004.tar.gz)
-
-install_local_lib:
-	@echo "Installing Perl module local::lib"
-	(mkdir -p ${RSAT}/lib/perl5; ln -s ${RSAT}/lib/perl5 ${HOME}/perl5)
-	(cd ${LOCAL_LIB_DIR}/local-lib-1.008004;  perl Makefile.PL --bootstrap; make; make test; make install)
-
-config_local_lib:
-	@echo "Adding path to Perl module local::lib in ${HOME}/.bashrc"
-	@echo ''  >>~/.bashrc
-	@echo '################################################################'  >>~/.bashrc
-	@echo '## Perl local::lib module'  >>~/.bashrc
-	@echo 'eval $$(perl -I$$HOME/perl5/lib/perl5 -Mlocal::lib)' >>~/.bashrc
-
-install_one_perl_module_locally:
-	${MAKE} SUDO='' install_one_perl_module
-
-install_perl_modules_locally:
-	${MAKE} SUDO='' install_perl_modules
-
-################################################################
-## Install Python 2.7.  We deliberately chose version 2.7 (and not
-## version 3.x) because some modules are not working with version 3.x.
-PYTHON_COMPILE_DIR=${SRC_DIR}/python
-install_python: _download_python _compile_python
-
-_download_python:
-	@echo "Downloading Python-2.7 to dir ${PYTHON_COMPILE_DIR}"
-	(mkdir -p ${PYTHON_COMPILE_DIR}; cd ${PYTHON_COMPILE_DIR}; wget -NL http://www.python.org/ftp/python/2.7/Python-2.7.tgz; tar -xpzf Python-2.7.tgz)
-
-_compile_python:
-	@echo "Compiling python2.7"
-	(cd ${PYTHON_COMPILE_DIR}/Python-2.7; ./configure; make; ${SUDO} make install)
-
-install_python_suds: _download_python_suds _compile_python_suds
-
-PYTHON_LIBS=SUDS Rpy2
-install_python_libs:
-	@for lib in ${PYTHON_LIBS} ; do \
-		${SUDO} easy_install $${lib}; \
-	done
-
-################################################################
-## Install suds library for python2.7, required for the MICROME Web
-## clients to connect Genoscope/Microscope Web services.
-SUDS_VERSION=0.4
-SUDS_TAR=python-suds-${SUDS_VERSION}.tar.gz
-SUDS_URL=https://fedorahosted.org/releases/s/u/suds/${SUDS_ARCHIVE}
-SUDS_DIR=${SRC_DIR}/suds
-_download_python_suds:
-	@mkdir -p ${SUDS_DIR}
-	@echo "Getting suds (Python library) using wget"
-	(cd ${SUDS_DIR}; wget -nv -nd ${SUDS_URL}/${SUDS_TAR}; tar -xpzf ${SUDS_TAR})
-	@echo "suds dir	${SUDS_DIR}"
-
-SUDS_INSTALL_DIR=${SUDS_DIR}/python-suds-${SUDS_VERSION}
-_compile_python_suds:
-	@echo "Installing suds"
-	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
-
-
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
-EXT_APP_TARGETS=install_seqlogo install_mcl install_rnsc install_blast
+EXT_APP_TARGETS=install_seqlogo \
+	install_gnuplot \
+	install_ghostscript \
+	install_d3 \
+	install_mcl \
+	install_rnsc \
+	install_blast \
+	install_ensembl_api \
+	install_ensembl_bioperl
+list_ext_apps:
+	@echo
+	@echo "External applications to install"
+	@echo "	${EXT_APP_TARGETS}" | perl -pe 's| |\n\t|g'
+
 install_ext_apps:
 	@${MAKE} ${EXT_APP_TARGETS}
-#	${MAKE} install_gibbs
-#	${MAKE} install_consensus
-#	${MAKE} install_patser
-#	${MAKE} install_bedtools
-#	${MAKE} install_meme
+
+
+not_working:
+	make -f makefiles/install_software.mk install_ghostscript_macosx
+
+EXT_APP_TARGETS_OPTIONAL=install_gibbs \
+	install_consensus \
+	install_patser \
+	install_meme \
+	install_bedtools
+
+install_ext_apps_optional:
+	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
+
+
+################################################################
+## Get and install the program seqlogo
+SEQLOGO_URL=http://weblogo.berkeley.edu/release
+SEQLOGO_TAR=weblogo.2.8.2.tar.gz
+SEQLOGO_DIR=${SRC_DIR}/seqlogo
+install_seqlogo: _download_seqlogo _compile_seqlogo
+
+_download_seqlogo:
+	@mkdir -p ${SEQLOGO_DIR}
+	@echo
+	@echo "Downloading seqlogo	${SEQLOGO_URL}"
+	(cd ${SEQLOGO_DIR}; wget -nv -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	@echo "seqlogo dir	${SEQLOGO_DIR}"
+
+_compile_seqlogo:
+	@echo "Installing seqlogo in dir	${BIN_DIR}"
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}/
+
+
+################################################################
+## Get and install the program gnuplot
+GNUPLOT_VER=4.6.4
+GNUPLOT_TAR=gnuplot-${GNUPLOT_VER}.tar.gz
+GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VER}/${GNUPLOT_TAR}
+GNUPLOT_DIR=${SRC_DIR}/gnuplot
+install_gnuplot: _download_gnuplot _compile_gnuplot
+
+_download_gnuplot:
+	@mkdir -p ${GNUPLOT_DIR}
+	@echo "Getting gnuplot using wget"
+	(cd ${GNUPLOT_DIR}; wget -nv -nd ${GNUPLOT_URL}; tar -xpzf ${GNUPLOT_TAR})
+	@echo "gnuplot dir	${GNUPLOT_DIR}"
+
+_compile_gnuplot:
+	@echo "Compiling and installing gnuplot"
+	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; \
+	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER} --bindir ${BIN_DIR}  && make; ${SUDO} make install)
+
+################################################################
+## Get and install the program ghostscript
+## Note: for Mac users, please go to the ghostscript Web site
+##
+GS_URL=http://downloads.ghostscript.com/public/binaries/
+GS_VER=9
+## Beware: I use an older version 9.07 because linux version 9.10 issues
+## warnings Unrecoverable error: stackunderflow in .setdistillerparams"
+GS_SUBVER=07
+GS_BIN=gs-${GS_VER}${GS_SUBVER}-linux_x86_64
+GS_DISTRIB=ghostscript-${GS_VER}.${GS_SUBVER}-linux-x86_64
+GS_TAR=${GS_DISTRIB}.tgz
+GS_DIR=${SRC_DIR}/ghostscript
+install_ghostscript: _download_gs _install_gs
+
+_download_gs:
+	@mkdir -p ${GS_DIR}
+	@echo "Getting gs using wget"
+	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
+	@echo "gs dir	${GS_DIR}"
+
+_install_gs:
+	@echo "Installing gs in ${BIN_DIR}"
+	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${BIN_DIR}/; cd ${BIN_DIR}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
+
+#_compile_gs:
+#	@echo "Compiling gs"
+#	(cd ${GS_DIR}/${GS_DISTRIB}; ./configure && make)
 
 
 ################################################################
@@ -199,7 +182,12 @@ install_ensembl_api:
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api; \
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+	@echo
+	@${MAKE} install_ensembl_api_env
+
+install_ensembl_bioperl:
+	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
 		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
 		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
@@ -207,8 +195,6 @@ install_ensembl_api:
 		echo  "Password is 'cvs'" ; \
 		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
 		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live )
-	@echo
-	@${MAKE} install_ensembl_api_env
 
 ## Print the settings for including ensembl in the PERL5LIB environment variable
 install_ensembl_api_env:
@@ -224,246 +210,6 @@ install_ensembl_api_env:
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-tools/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-variation/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
-
-################################################################
-## Get and install the program seqlogo
-SEQLOGO_URL=http://weblogo.berkeley.edu/release
-SEQLOGO_TAR=weblogo.2.8.2.tar.gz
-SEQLOGO_DIR=${SRC_DIR}/seqlogo
-install_seqlogo: _download_seqlogo _compile_seqlogo
-
-_download_seqlogo:
-	@mkdir -p ${SEQLOGO_DIR}
-	@echo "Getting seqlogo using wget"
-	(cd ${SEQLOGO_DIR}; wget -nv -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
-	@echo "seqlogo dir	${SEQLOGO_DIR}"
-
-_compile_seqlogo:
-	@echo "Installing seqlogo in dir	${BIN_DIR}"
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}/
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}/
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}/
-
-
-################################################################
-## Get the d3 javascript library, for motif clustering and dynamical display
-install_d3: _download_d3
-
-D3_URL=http://d3js.org/d3.v3.zip
-D3_DIR=${SRC_DIR}/d3.${D3_VERSION}
-D3_VERSION=v3
-D3_ARCHIVE=d3.${D3_VERSION}.zip
-_download_d3:
-	@mkdir -p ${D3_DIR}
-	(cd ${D3_DIR}; wget http://d3js.org/${D3_ARCHIVE}; unzip ${D3_ARCHIVE} ; \
-		wget http://mbostock.github.com/d3/d3.js \
-		wget http://mbostock.github.com/d3/d3.layout.js) 
-
-################################################################
-## Get and install the program ghostscript
-## Note: for Mac users, please go to the ghostscript Web site
-##
-## GS_URL=http://ghostscript.com/releases/
-## GS_VER=ghostscript-8.64
-## GS_TAR=${GS_VER}.tar.gz
-GS_URL=http://downloads.ghostscript.com/public/binaries/
-GS_VER=ghostscript-9.06-linux-x86_64
-GS_TAR=${GS_VER}.tgz
-GS_DIR=${SRC_DIR}/ghostscript
-install_ghostscript: _download_gs _compile_gs
-
-_download_gs:
-	@mkdir -p ${GS_DIR}
-	@echo "Getting gs using wget"
-	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
-	@echo "gs dir	${GS_DIR}"
-
-_compile_gs:
-	@echo "Compiling gs"
-	(cd ${GS_DIR}/${GS_VER}; ./configure && make)
-
-################################################################
-## Get and install the program gnuplot
-GNUPLOT_VER=4.6.0
-GNUPLOT_TAR=gnuplot-${GNUPLOT_VER}.tar.gz
-GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VER}/${GNUPLOT_TAR}
-GNUPLOT_DIR=${SRC_DIR}/gnuplot
-install_gnuplot: _download_gnuplot _compile_gnuplot
-
-_download_gnuplot:
-	@mkdir -p ${GNUPLOT_DIR}
-	@echo "Getting gnuplot using wget"
-	(cd ${GNUPLOT_DIR}; wget -nv -nd ${GNUPLOT_URL}; tar -xpzf ${GNUPLOT_TAR})
-	@echo "gnuplot dir	${GNUPLOT_DIR}"
-
-_compile_gnuplot:
-	@echo "Compiling and installing gnuplot"
-	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; ./configure && make; ${SUDO} make install)
-
-
-################################################################
-## Install fastqc, a software tool to control the quality of read
-## files (next generation sequencing).
-FASTQC_VER=0.10.1
-FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
-FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
-FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
-FASTQC_INSTALL_DIR=${FASTQC_DOWNLOAD_DIR}
-FASTQC_EXEC_DIR=${FASTQC_INSTALL_DIR}/FastQC
-FASTQC=${FASTQC_EXEC_DIR}/fastqc
-install_fastqc: _download_fastqc _install_fastqc
-
-_download_fastqc:
-	@mkdir -p ${FASTQC_DOWNLOAD_DIR}
-	@echo "Getting fastqc using wget"
-	(cd ${FASTQC_DOWNLOAD_DIR}; wget -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
-	@echo "	fastqc download dir	${FASTQC_DOWNLOAD_DIR}"
-	@echo "	fastqc install dir	${FASTQC_INSTALL_DIR}"
-	@chmod 755 ${FASTQC}
-	@echo "	fastqc executable dir	${FASTQC_EXEC_DIR}"
-	@echo "	fastqc script    	${FASTQC}"
-	@echo
-	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
-	@echo "export PATH=\$$PATH:${FASTQC_EXEC_DIR}"
-
-################################################################
-## Install BEDTools
-##
-## BEDTools is a collection of utilities for comparing, summarizing,
-## and intersecting genomic features in BED, GTF/GFF, VCF and BAM
-## formats.
-#bedtools: git_bedtools compile_bedtools _compile_bedtools
-install_bedtools: _download_bedtools _compile_bedtools _install_bedtools
-
-#http://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
-#BED_VERSION=2.13.3
-BED_VERSION=2.17.0
-BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
-BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
-BEDTOOL_MANUAL=http://bedtools.googlecode.com/files/BEDTools-User-Manual.v4.pdf
-BED_BASE_DIR=${SRC_DIR}/BEDTools
-BED_DOWNLOAD_DIR=${BED_BASE_DIR}/bedtools-${BED_VERSION}
-_download_bedtools:
-	@echo
-	@echo "Downloading BEDTools ${BED_VERSION}"
-	@echo
-	@mkdir -p ${BED_BASE_DIR}
-	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE}; \
-		wget ${BEDTOOL_MANUAL})
-	@echo ${BED_DOWNLOAD_DIR}
-
-BED_GIT_DIR=${SRC_DIR}/bedtools
-_git_bedtools:
-	@mkdir -p ${BED_GIT_DIR}
-	(cd ${SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
-
-#BED_SRC_DIR=${BED_GIT_DIR}
-BED_SRC_DIR=${BED_DOWNLOAD_DIR}
-BED_BIN_DIR=${BED_SRC_DIR}/bin
-_compile_bedtools:
-	@echo
-	@echo "Compiling bedtools from ${BED_SRC_DIR}"
-	@echo
-	@mkdir -p ${BED_SRC_DIR}
-	(cd ${BED_SRC_DIR}; make clean; make)
-
-_install_bedtools:
-	@echo
-	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${BIN_DIR}"
-	@echo
-	@mkdir -p ${BIN_DIR}
-	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}/
-
-################################################################
-## Install Biotoolbox
-install_biotoolbox: _download_biotoolbox
-
-BTB_VERSION=1.9.4
-BTB_ARCHIVE=biotoolbox_v${BTB_VERSION}.tgz
-BTB_URL=http://biotoolbox.googlecode.com/files/${BTB_ARCHIVE}
-BTB_BASE_DIR=${SRC_DIR}/biotoolbox
-BTB_DOWNLOAD_DIR=${BTB_BASE_DIR}/biotoolbox
-_download_biotoolbox:
-	@echo
-	@echo "Downloading biotoolbox ${BTB_VERSION}"
-	@echo
-	@mkdir -p ${BTB_BASE_DIR}
-	(cd ${BTB_BASE_DIR}; wget -nv -nd ${BTB_URL} ; tar -xpzf ${BTB_ARCHIVE})
-	@echo ${BTB_DOWNLOAD_DIR}
-
-
-################################################################
-## Install MEME (Tim Bailey)
-MEME_BASE_DIR=${SRC_DIR}/MEME
-MEME_VERSION=4.9.0
-MEME_PATCH=_4
-#MEME_VERSION=4.8.0
-#MEME_PATCH=
-#MEME_VERSION=current
-MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
-##MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
-#MEME_URL=ftp://ftp.ebi.edu.au/pub/software/MEME/r${MEME_VERSION}/rc5/${MEME_ARCHIVE}
-#MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
-MEME_URL=http://ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
-MEME_INSTALL_SUBDIR=${SOFT_DIR}/MEME
-MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
-install_meme: _download_meme _compile_meme _after_meme
-
-_download_meme:
-	@echo
-	@echo "Downloading MEME ${MEME_VERSION}"
-	@echo
-	@echo "MEME base directory	${MEME_BASE_DIR}"
-	@mkdir -p ${MEME_BASE_DIR}
-	(cd ${MEME_BASE_DIR}; wget -nv -nd ${MEME_URL})
-	@echo "MEME base directory	${MEME_BASE_DIR}"
-	@echo "MEME install directory	${MEME_INSTALL_DIR}"
-
-## BEWARE, MEME creates a lot of folders and files, it should NOT be
-## installed in /usr/local nor ${RSAT} directories
-MEME_COMPILE_DIR=${MEME_INSTALL_DIR}
-MEME_BIN_DIR=${MEME_COMPILE_DIR}/bin
-_compile_meme:
-	@echo
-	@echo "Compiling MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
-	@mkdir -p ${MEME_INSTALL_DIR}
-	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
-#	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
-	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_COMPILE_DIR} --with-url="http://localhost/meme")
-	(cd ${MEME_INSTALL_DIR}; make clean; make ; make test; ${SUDO} make install)
-	@echo "MEME installed in ${MEME_COMPILE_DIR}"
-
-_after_meme:
-#	@cd ${MEME_BIN_DIR}; rm -f meme; ln -s meme_${MEME_VERSION} meme
-	@echo "Please edit the bashrc file"
-	@echo "and copy-paste the following lines to specify the MEME bin pathway"
-	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
-
-################################################################
-## Install a clustering algorithm "cluster"
-CLUSTER_BASE_DIR=${SRC_DIR}/cluster
-CLUSTER_VERSION=1.50
-CLUSTER_ARCHIVE=cluster-${CLUSTER_VERSION}.tar.gz
-CLUSTER_URL=http://bonsai.hgc.jp/~mdehoon/software/cluster/${CLUSTER_ARCHIVE}
-CLUSTER_DISTRIB_DIR=${CLUSTER_BASE_DIR}/cluster-${CLUSTER_VERSION}
-install_cluster: _download_cluster _compile_clustera
-
-_download_cluster:
-	@echo
-	@echo "Downloading CLUSTER"
-	@mkdir -p ${CLUSTER_BASE_DIR}
-	wget -nd  --directory-prefix ${CLUSTER_BASE_DIR} -rNL ${CLUSTER_URL}
-	(cd ${CLUSTER_BASE_DIR}; tar -xpzf ${CLUSTER_ARCHIVE})
-	@echo ${CLUSTER_DISTRIB_DIR}
-
-CLUSTER_COMPILE_DIR=`dirname ${BIN_DIR}`
-CLUSTER_BIN_DIR=${CLUSTER_COMPILE_DIR}/bin
-_compile_cluster:
-	@echo
-	@echo "Installing CLUSTER in dir	${CLUSTER_COMPILE_DIR}"
-	@mkdir -p ${CLUSTER_COMPILE_DIR}
-	(cd ${CLUSTER_DISTRIB_DIR}; ./configure --without-x --prefix=${CLUSTER_COMPILE_DIR} ; \
-	make clean; make ; ${SUDO} make install)
 
 ################################################################
 ## Install the graph-based clustering algorithm MCL
@@ -592,6 +338,190 @@ _download_blast_macosx:
 # 	@${SUDO} mkdir -p ${BIN_DIR}
 # 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
 # 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
+
+
+################################################################
+## Get the d3 javascript library, for motif clustering and dynamical display
+install_d3: _download_d3
+
+#D3_URL=http://d3js.org/d3.v3.zip
+D3_URL=https://github.com/mbostock/d3/releases/download/v3.4.1/d3.v3.zip
+D3_DIR=${SRC_DIR}/d3.${D3_VERSION}
+D3_VERSION=v3
+D3_ARCHIVE=d3.${D3_VERSION}.zip
+_download_d3:
+	@mkdir -p ${D3_DIR}
+	(cd ${D3_DIR};  \
+	wget http://mbostock.github.com/d3/d3.js ;  \
+	wget http://mbostock.github.com/d3/d3.min.js )
+
+#	wget http://mbostock.github.com/d3/d3.layout.js)
+
+
+################################################################
+## Install fastqc, a software tool to control the quality of read
+## files (next generation sequencing).
+FASTQC_VER=0.10.1
+FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
+FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
+FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
+FASTQC_INSTALL_DIR=${FASTQC_DOWNLOAD_DIR}
+FASTQC_EXEC_DIR=${FASTQC_INSTALL_DIR}/FastQC
+FASTQC=${FASTQC_EXEC_DIR}/fastqc
+install_fastqc: _download_fastqc _install_fastqc
+
+_download_fastqc:
+	@mkdir -p ${FASTQC_DOWNLOAD_DIR}
+	@echo "Getting fastqc using wget"
+	(cd ${FASTQC_DOWNLOAD_DIR}; wget -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
+	@echo "	fastqc download dir	${FASTQC_DOWNLOAD_DIR}"
+	@echo "	fastqc install dir	${FASTQC_INSTALL_DIR}"
+	@chmod 755 ${FASTQC}
+	@echo "	fastqc executable dir	${FASTQC_EXEC_DIR}"
+	@echo "	fastqc script    	${FASTQC}"
+	@echo
+	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
+	@echo "export PATH=\$$PATH:${FASTQC_EXEC_DIR}"
+
+################################################################
+## Install BEDTools
+##
+## BEDTools is a collection of utilities for comparing, summarizing,
+## and intersecting genomic features in BED, GTF/GFF, VCF and BAM
+## formats.
+#bedtools: git_bedtools compile_bedtools _compile_bedtools
+install_bedtools: _download_bedtools _compile_bedtools _install_bedtools
+
+#http://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
+#BED_VERSION=2.13.3
+BED_VERSION=2.17.0
+BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
+BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
+BEDTOOL_MANUAL=http://bedtools.googlecode.com/files/BEDTools-User-Manual.v4.pdf
+BED_BASE_DIR=${SRC_DIR}/BEDTools
+BED_DOWNLOAD_DIR=${BED_BASE_DIR}/bedtools-${BED_VERSION}
+_download_bedtools:
+	@echo
+	@echo "Downloading BEDTools ${BED_VERSION}"
+	@echo
+	@mkdir -p ${BED_BASE_DIR}
+	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE}; \
+		wget ${BEDTOOL_MANUAL})
+	@echo ${BED_DOWNLOAD_DIR}
+
+BED_GIT_DIR=${SRC_DIR}/bedtools
+_git_bedtools:
+	@mkdir -p ${BED_GIT_DIR}
+	(cd ${SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
+
+#BED_SRC_DIR=${BED_GIT_DIR}
+BED_SRC_DIR=${BED_DOWNLOAD_DIR}
+BED_BIN_DIR=${BED_SRC_DIR}/bin
+_compile_bedtools:
+	@echo
+	@echo "Compiling bedtools from ${BED_SRC_DIR}"
+	@echo
+	@mkdir -p ${BED_SRC_DIR}
+	(cd ${BED_SRC_DIR}; make clean; make)
+
+_install_bedtools:
+	@echo
+	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${BIN_DIR}"
+	@echo
+	@mkdir -p ${BIN_DIR}
+	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}/
+
+################################################################
+## Install Biotoolbox
+install_biotoolbox: _download_biotoolbox
+
+BTB_VERSION=1.9.4
+BTB_ARCHIVE=biotoolbox_v${BTB_VERSION}.tgz
+BTB_URL=http://biotoolbox.googlecode.com/files/${BTB_ARCHIVE}
+BTB_BASE_DIR=${SRC_DIR}/biotoolbox
+BTB_DOWNLOAD_DIR=${BTB_BASE_DIR}/biotoolbox
+_download_biotoolbox:
+	@echo
+	@echo "Downloading biotoolbox ${BTB_VERSION}"
+	@echo
+	@mkdir -p ${BTB_BASE_DIR}
+	(cd ${BTB_BASE_DIR}; wget -nv -nd ${BTB_URL} ; tar -xpzf ${BTB_ARCHIVE})
+	@echo ${BTB_DOWNLOAD_DIR}
+
+################################################################
+## Install MEME (Tim Bailey)
+MEME_BASE_DIR=${SRC_DIR}/MEME
+MEME_VERSION=4.9.1
+MEME_PATCH=_1
+MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
+MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
+MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME
+MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
+MEME_LOCAL_URL=http://localhost/meme
+install_meme: _download_meme _compile_meme _after_meme
+
+_download_meme:
+	@echo
+	@echo "Downloading MEME ${MEME_VERSION}"
+	@echo
+	@echo "MEME base directory	${MEME_BASE_DIR}"
+	@mkdir -p ${MEME_BASE_DIR}
+	(cd ${MEME_BASE_DIR}; wget -nv -nd ${MEME_URL})
+	@echo "MEME base directory	${MEME_BASE_DIR}"
+	@echo "MEME install directory	${MEME_INSTALL_DIR}"
+
+## BEWARE, MEME creates a lot of folders and files, it should NOT be
+## installed in /usr/local nor ${RSAT} directories
+MEME_COMPILE_DIR=${MEME_INSTALL_DIR}
+MEME_BIN_DIR=${MEME_COMPILE_DIR}/bin
+_compile_meme:
+	@echo
+	@echo "Compiling MEME ${MEME_VERSION} in dir ${MEME_INSTALL_DIR}"
+	@echo "	MEME_INSTALL_DIR	${MEME_INSTALL_DIR}"
+	@echo "	MEME_INSTALL_SUBDIR	${MEME_INSTALL_SUBDIR}"
+	@echo "	MEME_COMPILE_DIR	${MEME_COMPILE_DIR}"
+	@mkdir -p ${MEME_INSTALL_DIR}
+	(cd ${MEME_INSTALL_SUBDIR}; tar -xpzf ${MEME_BASE_DIR}/${MEME_ARCHIVE})
+#	@echo "MEME configuration prefix	${MEME_CONFIG_PREFIX}"
+	(cd ${MEME_INSTALL_DIR}; ./configure --prefix=${MEME_COMPILE_DIR} --with-url="${MEME_LOCAL_URL}")
+	(cd ${MEME_INSTALL_DIR}; make clean; make ; make test; ${SUDO} make install)
+	@echo "MEME installed in ${MEME_COMPILE_DIR}"
+
+_after_meme:
+	@echo "Creating links to meme"
+	@echo "	MEME_BIN_DIR	${MEME_BIN_DIR}"
+	@echo "	MEME_VERSION	${MEME_VERSION}"
+	@echo "	BIN_DIR		${BIN_DIR}"
+	cd ${BIN_DIR}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
+	@echo "Please edit the bashrc file"
+	@echo "and copy-paste the following lines to specify the MEME bin pathway"
+	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
+
+################################################################
+## Install a clustering algorithm "cluster"
+CLUSTER_BASE_DIR=${SRC_DIR}/cluster
+CLUSTER_VERSION=1.50
+CLUSTER_ARCHIVE=cluster-${CLUSTER_VERSION}.tar.gz
+CLUSTER_URL=http://bonsai.hgc.jp/~mdehoon/software/cluster/${CLUSTER_ARCHIVE}
+CLUSTER_DISTRIB_DIR=${CLUSTER_BASE_DIR}/cluster-${CLUSTER_VERSION}
+install_cluster: _download_cluster _compile_clustera
+
+_download_cluster:
+	@echo
+	@echo "Downloading CLUSTER"
+	@mkdir -p ${CLUSTER_BASE_DIR}
+	wget -nd  --directory-prefix ${CLUSTER_BASE_DIR} -rNL ${CLUSTER_URL}
+	(cd ${CLUSTER_BASE_DIR}; tar -xpzf ${CLUSTER_ARCHIVE})
+	@echo ${CLUSTER_DISTRIB_DIR}
+
+CLUSTER_COMPILE_DIR=`dirname ${BIN_DIR}`
+CLUSTER_BIN_DIR=${CLUSTER_COMPILE_DIR}/bin
+_compile_cluster:
+	@echo
+	@echo "Installing CLUSTER in dir	${CLUSTER_COMPILE_DIR}"
+	@mkdir -p ${CLUSTER_COMPILE_DIR}
+	(cd ${CLUSTER_DISTRIB_DIR}; ./configure --without-x --prefix=${CLUSTER_COMPILE_DIR} ; \
+	make clean; make ; ${SUDO} make install)
 
 ################################################################
 ## Generic call for installing a program. This tag is called with
@@ -851,8 +781,6 @@ _download_sissrs:
 	@echo "Downloading SISSRS"
 	@mkdir -p ${SISSRS_BASE_DIR}
 	wget -nd  --directory-prefix ${SISSRS_BASE_DIR} -rNL ${SISSRS_URL}
-
-
 
 ## This installation is VERY tricky. The user has to replace the
 ## hard-coded path in 3 shell files
@@ -1132,3 +1060,106 @@ _compile_clustalw:
 	(cd ${CLUSTALW_BASE_DIR}/${CLUSTALW_SOURCE_DIR}; ./configure; make clean ; make ; \
 	${SUDO} rsync -ruptvl src/clustalw2 ${BIN_DIR}/)
 	@echo "	clustalw2 should now be executable from ${BIN_DIR}";
+
+
+################################################################
+## Obsolete: compile some perl scripts to binaries.  This was a test and the
+## results were not very good, the compiled programs were unstable.
+SRC=perl-scripts
+COMPIL=compil/
+PROGRAMS=	\
+	oligo-analysis	\
+	retrieve-seq	\
+	dyad-analysis	\
+	dna-pattern	\
+	orf-info
+LIBRARIES=\
+	RSA.stat.lib 	\
+#	RSA.classes	\
+#	RSA.seq.lib	\
+#	RSA.cgi.lib	\
+#	RSA.lib 	
+_compile_perl_scripts:
+	@mkdir -p ${COMPIL}/lib
+	@mkdir -p ${COMPIL}/bin
+	@(cd  ${COMPIL}/bin; ln -fs ../lib)
+	@cp -f config/default.config ${COMPIL}/RSA.config
+
+	@for lb in ${LIBRARIES}; do \
+		echo "compiling library $${lb}"; \
+		cp -f ${SRC}/lib/$${lb} ${COMPIL}/lib/$${lb}.pl ; \
+		(cd ${COMPIL}/lib; pwd; perlcc $${lb}.pl && rm -f $${lb}.pl); \
+	done
+
+	@for pgm in ${PROGRAMS}; do \
+		echo "compiling program $${pgm}"; \
+		cp -f ${SRC}/$${pgm} ${COMPIL}/bin/$${pgm}.pl ; \
+		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
+	dgone
+
+
+
+################################################################
+## This library allows you to install the Perl libraries locally, if you are not system administrator
+LOCAL_LIB_URL=http://search.cpan.org/CPAN/authors/id/A/AP/APEIRON/local-lib-1.008004.tar.gz
+LOCAL_LIB_DIR=lib/perl_lib/locallib
+
+local_lib: download_local_lib install_local_lib config_local_lib
+
+download_local_lib:
+	@echo "Downloading Perl module local::lib"
+	(mkdir -p ${LOCAL_LIB_DIR}; cd ${LOCAL_LIB_DIR}; wget ${LOCAL_LIB_URL}; tar -xzf local-lib-1.008004.tar.gz)
+
+install_local_lib:
+	@echo "Installing Perl module local::lib"
+	(mkdir -p ${RSAT}/lib/perl5; ln -s ${RSAT}/lib/perl5 ${HOME}/perl5)
+	(cd ${LOCAL_LIB_DIR}/local-lib-1.008004;  perl Makefile.PL --bootstrap; make; make test; make install)
+
+config_local_lib:
+	@echo "Adding path to Perl module local::lib in ${HOME}/.bashrc"
+	@echo ''  >>~/.bashrc
+	@echo '################################################################'  >>~/.bashrc
+	@echo '## Perl local::lib module'  >>~/.bashrc
+	@echo 'eval $$(perl -I$$HOME/perl5/lib/perl5 -Mlocal::lib)' >>~/.bashrc
+
+#install_one_perl_module_locally:
+#	${MAKE} SUDO='' install_one_perl_module
+#
+#install_perl_modules_locally:
+#	${MAKE} SUDO='' install_perl_modules
+
+################################################################
+## Install Python 2.7.  We deliberately chose version 2.7 (and not
+## version 3.x) because some modules are not working with version 3.x.
+PYTHON_COMPILE_DIR=${SRC_DIR}/python
+install_python: _download_python _compile_python
+
+_download_python:
+	@echo "Downloading Python-2.7 to dir ${PYTHON_COMPILE_DIR}"
+	(mkdir -p ${PYTHON_COMPILE_DIR}; cd ${PYTHON_COMPILE_DIR}; wget -NL http://www.python.org/ftp/python/2.7/Python-2.7.tgz; tar -xpzf Python-2.7.tgz)
+
+_compile_python:
+	@echo "Compiling python2.7"
+	(cd ${PYTHON_COMPILE_DIR}/Python-2.7; ./configure; make; ${SUDO} make install)
+
+install_python_suds: _download_python_suds _compile_python_suds
+
+################################################################
+## Install suds library for python2.7, required for the MICROME Web
+## clients to connect Genoscope/Microscope Web services.
+SUDS_VERSION=0.4
+SUDS_TAR=python-suds-${SUDS_VERSION}.tar.gz
+SUDS_URL=https://fedorahosted.org/releases/s/u/suds/${SUDS_ARCHIVE}
+SUDS_DIR=${SRC_DIR}/suds
+_download_python_suds:
+	@mkdir -p ${SUDS_DIR}
+	@echo "Getting suds (Python library) using wget"
+	(cd ${SUDS_DIR}; wget -nv -nd ${SUDS_URL}/${SUDS_TAR}; tar -xpzf ${SUDS_TAR})
+	@echo "suds dir	${SUDS_DIR}"
+
+SUDS_INSTALL_DIR=${SUDS_DIR}/python-suds-${SUDS_VERSION}
+_compile_python_suds:
+	@echo "Installing suds"
+	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
+
+

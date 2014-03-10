@@ -117,16 +117,32 @@ package main;
 
   ################################################################
   ## Report execution time and close output stream
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-  close $out if ($outfile{output});
-
-  exit(0);
+  &close_and_quit();
 }
 
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
 
 
 ################################################################
@@ -149,7 +165,7 @@ sub ReadArguments {
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
   while (scalar(@arguments) >= 1) {
     $arg = shift (@arguments);
-    ## Verbosity
+
 
 =pod
 

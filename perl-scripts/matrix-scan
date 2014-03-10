@@ -6,7 +6,8 @@
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
 ############################################################
-## TO DO: add an option to sort hits either by position or by score
+
+## TO DO: add an option to sort hits either by position or by score.
 ## TO DO: improve the rank output: calcualte a rank per sequence + a total rank + a rank per matrix+sequence
 
 ## use strict;
@@ -83,8 +84,7 @@ fasta).
 =head2 Matrix file
 
 The matrix format is specified with the option -matrix_format.
-Supported : tab,cb,consensus,gibbs,meme,assembly. Default : tab.
-
+Supported : all the input formats supported by I<convert-matrix>.
 For a description of these format, see I<convert-matrix -h>
 
 =head1 OUTPUT FORMAT
@@ -879,10 +879,10 @@ package main;
       }
 
       ## use count-words to calculate bginput
-      my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_");
-      $tmp_bg_file .= "_MotifSampler.txt";
-      &RSAT::message::TimeWarn("Creating background model file", $tmp_bg_file) if ($main::verbose >= 2);
       my $oligo_len = $main::markov+1;
+      my $tmp_bg_file  = &RSAT::util::make_temp_file("", "bg_model_mkv".$main::markov);
+      $tmp_bg_file .= "_inclusive.txt";
+      &RSAT::message::TimeWarn("Creating background model file", $tmp_bg_file) if ($main::verbose >= 2);
       my $count_words_cmd = &RSAT::server::GetProgramPath("count-words",1); # die if cound-words not found
 
       my $bg_cmd = $count_words_cmd;
@@ -1403,7 +1403,7 @@ package main;
 			       $seq_id,"len=".$seq_len,
 			       "orig=".$origin, "offset=".$offset,
 			       "with ".$matrix_nb." PSSM")
-	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 10) == 1)));
+	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 50) == 1)));
       &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
 			     $seq_id,"len=".$seq_len, 
 			     "orig=".$origin, "offset=".$offset,
@@ -2473,7 +2473,7 @@ matrix-scan options
 -o		outputfile
 -m		matrix file
 -mlist		list of matrices
--matrix_format  format of the matrix (supported: tab(default), meme, consensus,MotifSampler)
+-matrix_format  format of the matrix (supported: tab(default), meme,transfa)
 -top_matrices #	only scan with the top # matrices per matrix file
 -top_seq #	only scan the top # sequences
 -consensus_name use the motif (degenerate) consensus as matrix name.
@@ -3868,8 +3868,8 @@ sub score_segment {
 #  my $proba_B = $bg_model->segment_proba($segment);
 
   ## Compute the conditional probabilities for the sequence segment
-   my ($proba_M) = $matrix->segment_proba($segment, 1);
-   my ($proba_B) = $bg_model->segment_proba($segment, 1);
+   my ($proba_M) = $matrix->segment_proba($segment, 0);
+   my ($proba_B) = $bg_model->segment_proba($segment, 0);
 #   my ($proba_M, $ref_residue_proba_M) = $matrix->segment_proba($segment, 1);
 #   my ($proba_B, $ref_residue_proba_B)= $bg_model->segment_proba($segment, 1);
 #   &RSAT::message::Debug("Segment", $segment,

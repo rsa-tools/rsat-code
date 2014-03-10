@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ## TEMPORARY (2012-04-17): I SUPPRESS THE -w FLAG BECAUSE IT ISSUES A
-## WARNING OF DEEP RECURSION FOR LARGE INTERGENIC DISTANCES (syntons).
+## WARNING OF DEEP RECURSION FOR LARGE INTERGENIC DISTANCES (directons).
 ##
 ## I should "derecursivate" &ExtendOperon()
 ## !/usr/bin/perl -w
@@ -282,7 +282,7 @@ package main;
 
     ## Treat the case of subfields
     foreach my $field (@return_fields) {
-      if (defined(@{$sub_fields{$field}})) {
+      if (defined($sub_fields{$field})) {
 	push @return_subfields, @{$sub_fields{$field}};
       } else {
 	push @return_subfields, $field;

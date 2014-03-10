@@ -9,12 +9,12 @@
 #ifndef __SCAN__
 #define __SCAN__
 
-using namespace std;
-
 #include <iostream> 
 #include <fstream>
 #include <vector>
 #include <string>
+
+using namespace std;
 
 #include "sampler.h"
 
