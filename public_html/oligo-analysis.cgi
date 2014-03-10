@@ -10,8 +10,6 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "/tmp/RSA_ERROR_LOG.txt";
-#    $ERR_LOG = "/rubens/dsk2/jvanheld/rsa/rsa-tools/logs/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -46,13 +44,11 @@ $purge_sequence_command = $SCRIPTS."/purge-sequence";
 $prefix = "oligo-analysis";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
-#$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
-
-## read parameters
+## Read parameters
 $parameters = " -v 1"; ## verbosity
 $parameters .= " -sort";
 
-## sequence file
+## Sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 push @result_files, ("Input sequence", $sequence_file);
 
@@ -177,7 +173,6 @@ if ($query->param('bg_method') =~ /background/i) {
 } elsif ($query->param('bg_method') eq 'freq_file_upload') {
   ## User-specific expected freqency file (oligos of same sise as analyzed oligos)
   $exp_freq_file = $tmp_file_path.".expfreq";
-#  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
   push @result_files, ('Expected frequencies', $exp_freq_file);
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
@@ -202,7 +197,6 @@ if ($query->param('bg_method') =~ /background/i) {
   ## User-specific background model (any Markov order)
   $bgfile = $tmp_file_path.".bgfile";
   push @result_files, ('Background file', $bgfile);
-#  $bgfile = "${TMP}/$tmp_file_name.bgfile";
   $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     ## Support compressed .gz files
@@ -287,7 +281,6 @@ if (scalar@selected_oligo_lengths < 1) {
 
 ## Concatenate all results to a single file for assembly
 $result_file = $tmp_file_path.".tab";
-#    $result_file = "$TMP/$tmp_file_name.res";
 push @result_files, ('merged oligos', $result_file);
 $command .= "; cat ";
 $command .= join (" ", @oligo_files);

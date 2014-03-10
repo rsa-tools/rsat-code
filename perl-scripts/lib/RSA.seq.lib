@@ -1540,7 +1540,6 @@ sub parse_genomic_coordinates {
     $genome_format = "retrieve-ensembl-seq";
 
     $browser_url = "http://www.ensembl.org/${seq_org}/Location/View?r=${seq_chrom}:${seq_start}-${seq_end}";
-#    $browser_url .= "contigviewbottom=url:http://rsat.bigre.ulb.ac.be/rsat/tmp/BED_FILE_NAME.bed=normal";
 
   } elsif ($comments =~ /(\w+).+range=(\S+):(\d+)\-(\d+).*strand=(\S+)/) {
     ## Genomic coordinates in the UCSC format.

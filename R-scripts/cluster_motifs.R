@@ -12,13 +12,12 @@
 ## - Define an argument infile.consensus, providing a 3-columns file with the logo ID + its consensus in direct and reverse complementary strands. This consensus file should be exported by comapre-matrices.
 ## -> this consensus could e used to display trees in R, without requiring the
 
-## Pruebita
-##   infile <- "/Users/jvanheld/Documents/theses_et_memoires/Jaime_Castro/motif_clustering_scripts/peak-motifs_7nt_merged_oligos_positions_compa.tab"
-##   outfile <- "/Users/jvanheld/Documents/theses_et_memoires/Jaime_Castro/motif_clustering_scripts/peak-motifs_7nt_merged_oligos_positions_tree.json"
 
 ### Install rjson package
 # install.packages("RJSONIO")
-library("RJSONIO")
+library("RJSONIO") ## To export JSON file used by the d3 library
+library("ctc") ## To convert tree to newick format
+## library("reshape") ## Not necessary anymore ? To be checked by Jaime
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -34,15 +33,10 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 #source(file.path(dir.util, 'util_plots.R'))
 #source(file.path(dir.util, 'util_chip_analysis.R'))
 
-#######################
-### File Input data
-#infile <- "peak-motifs_7nt_merged_oligos_positions_compa.tab"
-#Compare.Matrices.File.Path <- "/home/jaimecm/Documents/TAGC/Clustering_test/results/"
-
 
 ## Options
 plot.tree <- FALSE
-
+export <- 'json'
 
 
 #################
@@ -52,7 +46,7 @@ plot.tree <- FALSE
 #################################################################################
 ## Etxract the tree from an hclust object and convert it into json object.
 createLeafNode <- function(hclust, i) {
-  list(name = hclust$labels[[i]],
+  list(label = hclust$labels[[i]],
        order = hclust$order[[i]])
 }
 hclustToTree <- function(hclust) {
@@ -109,25 +103,50 @@ if (!exists("infile")) {
 }
 verbose(paste("Input file", infile), 1)
 
+## Check that description file
+if (!exists("description.file")) {
+  stop("Missing mandatory argument: description.file=[matrix_description_table] ")
+}
+verbose(paste("Description file", description.file), 1)
+
 ## Check that output file has been specified
 if (!exists("outfile")) {
   stop("Missing mandatory argument: outfile=[json_tree_file] ")
 }
 verbose(paste("Output file", outfile), 1)
 
+
+
+## Check that output file has been specified
+if (!exists("distance.table")) {
+  distance.table <- paste(sep="", outfile, "_dist_table.tab")
+}
+verbose(paste("Distance table", distance.table), 1)
+
 ## Default score is the normalized correlation
 if (!exists("score")) {
   score <- "Ncor";
 }
 
+## Default hclust method is the complete method
+if (!exists("hclust.method")) {
+  hclust.method <- "complete";
+}
 
-print(paste("########### ", outfile, "##########"), sep = "")
-
+#infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
+# description.file <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa_matrix_descriptions.tab"
 
 ##################################
-### Read matrix comparison table
+## Read matrix comparison table
 compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
 names(compare.matrices.table)[1] <- sub("^X.", "", names(compare.matrices.table)[1])
+
+
+################################################################
+## Read description table 
+description.table <- read.csv(description.file, sep = "\t", comment.char = ";")
+matrix.labels <-  as.vector(description.table$label)
+names(matrix.labels) <- as.vector(description.table$id)
 
 ##############################################
 ## Extract the score from the matrix comparison table
@@ -145,6 +164,8 @@ score.values <- compare.matrices.table[,score]
 ## Each score requires to be treated according to its nature
 ## (similarity or distance) plus some specificities (correlation goes
 ## from -1 to 1, ...).
+
+## Similarity sores bounded to 1
 if ((score == "Ncor")
     || (score=="cor")
     || (score=="logocor")
@@ -182,7 +203,7 @@ if ((score == "Ncor")
   ## SW 			Sandelin-Wasserman
   ## NSW 			Relative width-normalized Sandelin-Wasserman
 
-  score.dist <- score
+  score.dist <- score.values
   
 } else if (score == "match_rank") {
   ## match_rank rank of current match among all sorted matches
@@ -192,11 +213,27 @@ if ((score == "Ncor")
   stop(paste(score, "is not a valid score", sep="\t"))
 }
 
+## Add a column with score column to the compare matrices table, will
+## be used to generate a cross-table
 compare.matrices.table$score.dist <- score.dist
 
 ################################################################
 ## Build a distance matrix from the distance score list
-dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table) ))
+dist.table <- t(xtabs(score.dist ~ name1+name2, compare.matrices.table) )
+## Ensure that symmetrical distances are defined
+for (i in 1:nrow(dist.table)) {
+  for (j in i:ncol(dist.table)) {
+    if (i==j) {next}
+    dist.max <- max(dist.table[i,j], dist.table[j,i])
+    dist.table[i,j] <- dist.max
+    dist.table[j,i] <- dist.max
+  }
+}
+#print(dist.table)
+write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, col.names=NA, sep = "\t")
+
+## Convert distance table into a distance matrix, required by hclust()
+dist.matrix <- as.dist(dist.table)
 
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
@@ -225,8 +262,14 @@ dist.matrix <- as.dist(t(xtabs(score.dist ~ name1+name2, compare.matrices.table)
 
 ##############################################
 ### Runs and plot the hierarchical cluster
-tree <- hclust(dist.matrix)
+tree <- hclust(dist.matrix, method = hclust.method)
+tree$labels <- as.vector(description.table$label)
 if (plot.tree) {plot(tree) }
+if (export == "newick") {
+  newick.file <- sub('.json', '', outfile)
+  newick.file <- paste(sep='.', newick.file, "newick")
+  write(hc2Newick(tree, flat = TRUE), file=newick.file)
+}
 
 #######################################
 ### Creates and parse the json file
@@ -245,6 +288,12 @@ writeLines(jsonTree, outfile)
 
 verbose(paste("JSON tree file", outfile), 1)
 
-
-
-
+## ################################
+## ## Convert distance matrix (one row per motif x one column per motif)
+## ## into a distance table, with one row per matrix pair.
+## m <- as.matrix(dist.matrix)
+## row.names(m) <- as.vector(description.table$label)
+## colnames(m) <- as.vector(description.table$label)
+## m2 <- melt(m)[melt(upper.tri(m))$value,]
+## names(m2) <- c(";label1", "label2", "distance")
+## write.table(m2, file = distance.table, quote = FALSE, row.names = FALSE, sep = "\t")

@@ -104,6 +104,19 @@ class FileUtils:
             os.chmod( path, chmod)
             return result_file
             
+    # --------------------------------------------------------------------------------------
+    # Move a file do destination
+    @staticmethod
+    def moveFile( origin_path, destination_path):
+        
+        if os.path.exists( origin_path):
+            if not os.path.isfile( origin_path):
+                raise ExecutionException( "FileUtils.moveFile: unable to move file. Provided path is not a file : " + origin_path)
+            if not os.path.exists( destination_path):
+                FileUtils.createDirectory( destination_path)
+            shutil.move( origin_path, destination_path)
+        else:
+            raise ExecutionException( "FileUtils.moveFile: unable to move file. File does not exist : " + origin_path)
 
     # --------------------------------------------------------------------------------------
     # Remove the file at the given path

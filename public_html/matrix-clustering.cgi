@@ -129,6 +129,8 @@ if ($query->param('db_choice') eq "custom") {
 
 ### other default parmaters
 $parameters .= " -strand DR";
+$parameters .= " -export newick";
+
 
 ################################################################
 ## Output fields and thresolds
@@ -186,16 +188,16 @@ foreach my $field (@supported_output_fields) {
   }
 
   ## Lower threshold
-  my $lth = $query->param('lth_'.$field);
-  if (&IsReal($lth)) {
-    $thresholds .= " -lth ".$field." ".$lth;
-  }
+#  my $lth = $query->param('lth_'.$field);
+#  if (&IsReal($lth)) {
+#    $thresholds .= " -lth ".$field." ".$lth;
+#  }
 
   ## Upper threshold
-  my $uth = $query->param('uth_'.$field);
-  if (&IsReal($uth)) {
-    $thresholds .= " -uth ".$field." ".$uth;
-  }
+#  my $uth = $query->param('uth_'.$field);
+#  if (&IsReal($uth)) {
+#    $thresholds .= " -uth ".$field." ".$uth;
+#  }
 }
 push @selected_output_fields, qw(
 				 matrix_id
@@ -204,8 +206,8 @@ push @selected_output_fields, qw(
 				 strand
 				 offset
 				 consensus
-				 alignments_1ton
 				);
+#				 alignments_1ton
 my $selected_output_fields = join (",", @selected_output_fields);
 $parameters .= " -return ".$selected_output_fields;
 $parameters .= $thresholds;

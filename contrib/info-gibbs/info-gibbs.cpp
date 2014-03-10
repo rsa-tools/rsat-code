@@ -11,12 +11,12 @@
 //  that directly optimizes information content during sampling,
 //  Bioinformatics. 2009;25:2715-2722.
 
-using namespace std;
-
 #include <iostream> 
 #include <vector>
 #include <string>
 #include <cstring>
+
+using namespace std;
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -29,7 +29,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 20130321;
+int VERSION = 20140213;
 char *COMMAND_LINE;
 
 /*
@@ -435,16 +435,16 @@ int main(int argc, char *argv[])
     VERBOSE1("running info-gibbs version %d\n", VERSION);
 
     // read the sequences
-    if (seqfile == NULL)
-    {
-        ERROR("must provide at least a fasta file");
-    }
+    // if (seqfile == NULL)
+    // {
+    //     ERROR("must provide at least a fasta file");
+    // }
     
     // read sequences
     vector<string> raw_sequences;
     if (read_fasta(raw_sequences, seqfile, params.rc) == 0)
     {
-            ERROR("can not load sequences");        
+        ERROR("can not load sequences");        
     }
     
     Sequences sequences = convert_sequences(raw_sequences);

@@ -2736,6 +2736,11 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="quick" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Delegates scanning to the C program matrix-scan-quick (developed by Matthieu Defrance). Evaluate if the quick mode is compatible with the selected output parameters, otherwise, run in the slower mode. Incompatible with - CRER scanning - window background model.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="n_treatment" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Treatment of N characters. These characters are often used in DNA sequences to represent undefined or masked nucleotides.
@@ -3067,6 +3072,85 @@ Type of sequences used as background model for estimating expected oligonucleoti
 The length file contains two columns : sequence ID (ignored) and sequence length.</xsd:documentation>
 	   </xsd:annotation>
 	 </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+            <xsd:complexType name="FetchSequencesRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation fetch_sequences.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
+Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="input" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>The input file should be in bed format.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="tmp_input_file" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Input file on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="url" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Use as input a file available on a remote Web server (e.g. a bed file on your Galaxy account). This option is mutually exclusive with the previous two options.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="genome" type="xsd:string" minOccurs="1">
+            <xsd:annotation>
+              <xsd:documentation>Genome version (e.g. mm9, hg19).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="header" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Format for sequence headers (UCSC | galaxy).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="upstr_ext" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Extend each region by # base pairs on the upstream side (i.e. left side for + strands, right side for - strand)..</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="downstr_ext" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Extend each region by # base pairs on the downstream side (i.e. right for + strand, left for - strand)..</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="extend" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Extend each region by # base pairs on both upstream and downstream sides.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="reference" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Reference from which the sequences should be fetched.
+		segment (default)
+            Retrieve sequences from the start to the end positions of each
+            feature (possibly extended with the options -upstr_ext, -downstr_ext or -extend).
+
+		start | end | center
+            Retrieve sequences relative to repsectively the start, the end or the central position of each feature.
+
+            This option is generally combined with the options -upstr_ext, -downstr_ext or -extend, in order to retrieve sequences of a fixed width around the reference coordinate (e.g. 200 bp on each side of peak centers).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="top" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Only consider the # top features of the bed file as queries.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="chunck" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Send queries to UCSC by chunk of # features (default: chunk=10000).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 
@@ -4715,6 +4799,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="FetchSequencesResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <!-- NeA TOOLS RESPONSES -->
       <xsd:complexType name="ConvertGraphResponse">
 	<xsd:sequence>
@@ -5550,6 +5654,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="fetch_sequences">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:FetchSequencesRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="fetch_sequencesResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:FetchSequencesResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <!-- NeA TOOLS MAIN ELEMENTS -->
       <xsd:element name="convert_graph">
 	<xsd:complexType>
@@ -6076,6 +6196,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:random_seqResponse"/>
   </message>
 
+  <message name="fetch_sequencesRequest">
+    <part name="parameters" element="tns:fetch_sequences"/>
+  </message>
+
+  <message name="fetch_sequencesResponse">
+    <part name="output" element="tns:fetch_sequencesResponse"/>
+  </message>
+
   <!-- NeA TOOLS MESSAGES -->
   <message name="convert_graphRequest">
     <part name="parameters" element="tns:convert_graph"/>
@@ -6372,6 +6500,11 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <documentation>Generates random sequences.</documentation>
       <input name="RandomSequenceRequest" message="tns:random_seqRequest"/>
       <output name="RandomSequenceResponse" message="tns:random_seqResponse"/>
+    </operation>
+    <operation name="fetch_sequences">
+      <documentation>Returns DNA sequences for list of coordinates in BED format.</documentation>
+      <input name="FetchSequencesRequest" message="tns:fetch_sequencesRequest"/>
+      <output name="FetchSequencesResponse" message="tns:fetch_sequencesResponse"/>         
     </operation>
 
     <!-- NeA TOOLS PORTTYPES -->
@@ -6759,6 +6892,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </output>
     </operation>
+    <operation name="fetch_sequences">
+      <soap:operation soapAction=""/>
+      <input name="FetchSequencesRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="FetchSequencesResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
 
     <!-- NeA TOOLS BINDINGS -->
     <operation name="convert_graph">
@@ -6912,8 +7054,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <service name="RSATWebServices">
     <documentation>Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be).</documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-<!--      <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>-->
-      <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>
+      <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+<!--      <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>-->
     </port>
   </service>
 </definitions>

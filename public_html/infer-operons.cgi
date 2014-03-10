@@ -7,7 +7,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -34,7 +34,6 @@ $query = new CGI;
 
 $prefix = "infer-operons";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "infer-operon.%s", &AlphaDate();
 
 @result_files = ();
 
@@ -54,9 +53,7 @@ $parameters = "";
 
 # }
 
-
-
-#### organism
+## Organism
 $organism = $query->param('organism');
 if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
@@ -68,23 +65,19 @@ if (defined($supported_organism{$organism})) {
 	      "' is not supported on this web site.");
 }
 
-
-
-#### distance threshold
+## Distance threshold
 my $dist_thr = $query->param('dist_thr');
 &RSAT::error::FatalError($dist_thr, "Invalid value for distance threshold. Should be an Integer value.") 
   unless (&IsInteger($dist_thr));
 $parameters .= " -dist ".$dist_thr;
 
-#### Min gene number
+## Min gene number
 my $min_gene_nb = $query->param('min_gene_nb');
 &RSAT::error::FatalError($min_gene_nb, "Invalid value for min gene number. Should be a strictly positive Natural number.") 
   unless ((&IsNatural($min_gene_nb)) && ($min_gene_nb > 0));
 $parameters .= " -min_gene_nb ".$min_gene_nb;
 
-
-
-### return fields
+## Output fields
 my $i=0;
 foreach my $field ("query", "name", "leader","trailer","operon", "upstr_dist", "q_info","up_info","down_info", "gene_nb") {
     my $return_field = "return_".$field;
@@ -96,7 +89,8 @@ foreach my $field ("query", "name", "leader","trailer","operon", "upstr_dist", "
 }
 &cgiError("Invalid output fields, please check at least one output field.") if ($i==0);
 
-#### queries ####
+################################################################
+## Queries
 if ($query->param('genes') eq "all") {
     ### take all genes as query
     $parameters .= " -all ";
@@ -120,15 +114,16 @@ if ($query->param('genes') eq "all") {
     my $gene_selection = $query->param('gene_selection');
     $gene_selection =~ s/\r/\n/g;
     my @gene_selection = split ("\n", $gene_selection);
+    $query_file = $tmp_file_path."_query.txt";
     if ($gene_selection =~ /\S/) {
-	open QUERY, ">$TMP/$tmp_file_name";
+	open QUERY, ">".$query_file;
 	foreach my $row (@gene_selection) {
 	    $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
 	    print QUERY $row, "\n";
 	}
 	close QUERY;
-	&DelayedRemoval("$TMP/$tmp_file_name");
-	$parameters .= " -i $TMP/$tmp_file_name";
+	&DelayedRemoval($query_file);
+	$parameters .= " -i ".$query_file;
     } else {
 	&cgiError("You should enter at least one gene identifier in the query box..");
     }
