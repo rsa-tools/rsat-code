@@ -18,7 +18,7 @@ eval
     my $proxy = XML::Compile::WSDL11->new($wsdl);
     
     # Generating a request message based on the WSDL
-    my $getSequence = $proxy->compileClient('matrix_scan');
+    my $client = $proxy->compileClient('matrix_scan');
     
     #Defining a few parameters
     my $sequence = '>Hoxb1  ENSMUSG00000018973; upstream from -2000 to -1; size: 2000; location: chromosome:NCBIM36:11:1:121798632:1 96179917 96181916 D; upstream neighbour: ENSMUSP00000098092 (distance: 12200)
@@ -69,7 +69,6 @@ t	1	8	1	5	11	4	13	0	0	3	0';
 
     my $background = 'upstream';
     my $organism = 'Mus_musculus_EnsEMBL';
-    #my $tmp_background_infile="/home/rsat/rsat/public_html/data/genomes/Homo_sapiens_ensembl_74_GRCh37/oligo-frequencies/1nt_upstream-noorf_Homo_sapiens_ensembl_74_GRCh37-ovlp-1str.freq.gz";
     my $markov = 0;
     my $background_pseudo = 0.01;
     my @uth = ('pval 0.001');
@@ -85,7 +84,6 @@ t	1	8	1	5	11	4	13	0	0	3	0';
 	'background' => $background,
 	'organism' => $organism,
 	'markov' => $markov,
-	#'tmp_background_infile' => $tmp_background_infile,
 	'background_pseudo' => $background_pseudo,
 	'uth' => \@uth,
 	'str' => $str,
@@ -95,27 +93,26 @@ t	1	8	1	5	11	4	13	0	0	3	0';
 	);
 
     # Calling the service and getting the response
-    my $answer = $getSequence->( request => {%args});
+    my $answer = $client->( request => {%args});
 
     # If the response arrived, look for a specific match
     # If the match is correct, return 0 because the test passed.
     # If the result is something else, return 2 to indicate a warning.
     # If no answer has arrived, return 1 to indicate the test failed.
     if ( defined $answer ) {
-    warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
-#	print "Result : ".$answer->{output}->{response}->{client}."\n";
-	if ($answer->{output}->{response}->{client} =~ 'TGGGTGTTGGA'){
-	    print "Passed\n";
-	    print "\nResult :\n\n", $answer->{output}->{response}->{client}, "\n";
-	    exit 0;
-	} else {
-	    print "Unexpected data\n";
-	    print "\nResult : ", Dumper($answer), "\n";
-	    exit 2;
-	}
+      warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
+      if ($answer->{output}->{response}->{client} =~ 'TGGGTGTTGGA'){
+	print "Passed\n";
+	print "\nResult :\n\n", $answer->{output}->{response}->{client}, "\n";
+	exit 0;
+      } else {
+	print "Unexpected data\n";
+	print "\nResult : ", Dumper($answer), "\n";
+	exit 2;
+      }
     } else {    
-	print "Failed\n";
-	exit 1;
+      print "Failed\n";
+      exit 1;
     }
 };
 
