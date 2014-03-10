@@ -31,7 +31,7 @@ eval
     ## Define the parameters
     my %args = ( url => "http://www.rsat.eu/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed",
 		 genome => "mm9",
-		 header => "", ## Header format
+		 header_format => "", ## Header format
 		 upstr_ext => 0, ## Upstream extension
 		 downstr_ext => 0, ## Downstream extension
 		 extend => 0, ## Extension (alternative to the two previous arguments, since it applies downstream + upstream)
