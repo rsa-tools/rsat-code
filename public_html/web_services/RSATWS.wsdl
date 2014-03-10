@@ -3075,9 +3075,9 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	</xsd:sequence>
       </xsd:complexType>
 
-            <xsd:complexType name="FetchSequenceRequest">
+            <xsd:complexType name="FetchSequencesRequest">
         <xsd:annotation>
-	  <xsd:documentation>Parameters for the operation fetch_sequence.</xsd:documentation>
+	  <xsd:documentation>Parameters for the operation fetch_sequences.</xsd:documentation>
         </xsd:annotation>
         <xsd:sequence>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -3098,7 +3098,7 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>Input file on the server.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="url" type="xsd:string" minOccurs="1">
+	  <xsd:element name="url" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Use as input a file available on a remote Web server (e.g. a bed file on your Galaxy account). This option is mutually exclusive with the previous two options.</xsd:documentation>
             </xsd:annotation>
@@ -4799,7 +4799,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
-      <xsd:complexType name="FetchSequenceResponse">
+      <xsd:complexType name="FetchSequencesResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -5654,18 +5654,18 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="fetch_sequence">
+      <xsd:element name="fetch_sequences">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="request" type="tns:FetchSequenceRequest" />
+	    <xsd:element name="request" type="tns:FetchSequencesRequest" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="fetch_sequenceResponse">
+      <xsd:element name="fetch_sequencesResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="response" type="tns:FetchSequenceResponse" />
+	    <xsd:element name="response" type="tns:FetchSequencesResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
@@ -6196,12 +6196,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:random_seqResponse"/>
   </message>
 
-  <message name="fetch_sequenceRequest">
-    <part name="parameters" element="tns:fetch_sequence"/>
+  <message name="fetch_sequencesRequest">
+    <part name="parameters" element="tns:fetch_sequences"/>
   </message>
 
-  <message name="fetch_sequenceResponse">
-    <part name="output" element="tns:fetch_sequenceResponse"/>
+  <message name="fetch_sequencesResponse">
+    <part name="output" element="tns:fetch_sequencesResponse"/>
   </message>
 
   <!-- NeA TOOLS MESSAGES -->
@@ -6501,10 +6501,10 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <input name="RandomSequenceRequest" message="tns:random_seqRequest"/>
       <output name="RandomSequenceResponse" message="tns:random_seqResponse"/>
     </operation>
-    <operation name="fetch_sequence">
+    <operation name="fetch_sequences">
       <documentation>Returns DNA sequences for list of coordinates in BED format.</documentation>
-      <input name="FetchSequenceRequest" message="tns:fetch_sequenceRequest"/>
-      <output name="FetchSequenceResponse" message="tns:fetch_sequenceResponse"/>         
+      <input name="FetchSequencesRequest" message="tns:fetch_sequencesRequest"/>
+      <output name="FetchSequencesResponse" message="tns:fetch_sequencesResponse"/>         
     </operation>
 
     <!-- NeA TOOLS PORTTYPES -->
@@ -6892,12 +6892,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </output>
     </operation>
-    <operation name="fetch_sequence">
+    <operation name="fetch_sequences">
       <soap:operation soapAction=""/>
-      <input name="FetchSequenceRequest">
+      <input name="FetchSequencesRequest">
         <soap:body use="literal" />
       </input>
-      <output name="FetchSequenceResponse">
+      <output name="FetchSequencesResponse">
         <soap:body use="literal" />
       </output>
     </operation>
