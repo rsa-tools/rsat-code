@@ -4345,7 +4345,7 @@ sub random_seq {
 }
 
 ##########
-sub fetch_sequence {
+sub fetch_sequences {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
   my $output_choice = $args{"output"};
@@ -4356,7 +4356,7 @@ sub fetch_sequence {
   if ($args{"input"}) {
       my $input = $args{"input"};
       chomp $input;
-      $tmp_input_file = &RSAT::util::make_temp_file("","fetch-sequence", 1,0);
+      $tmp_input_file = &RSAT::util::make_temp_file("","fetch-sequences", 1,0);
       open TMP_IN, ">".$tmp_input_file or die "cannot open temp file ".$tmp_input_file."\n";
       print TMP_IN $input;
       close TMP_IN;
@@ -4377,7 +4377,7 @@ sub fetch_sequence {
   my $top = $args{"top"};
   my $chunk = $args{"chunck"};
 
-  my $command = "$SCRIPTS/fetch-sequence";
+  my $command = "$SCRIPTS/fetch-sequences";
 
   if ($tmp_input_file) {
       $command .= " -i '".$tmp_input_file."'";
@@ -4395,6 +4395,7 @@ sub fetch_sequence {
     $command .= " -genome '".$genome."'";
   }
 
+  ## Header format
   if ($header) {
     $header =~ s/\'//g;
     $header =~ s/\"//g;
@@ -4437,7 +4438,9 @@ sub fetch_sequence {
     $command .= " -chunck '".$chunck."'";
  }
 
-  &run_WS_command($command, $output_choice, "fetch-sequence", $format);
+#  &RSAT::error::FatalError("&RSAT::RSATWS::fetch_sequence()", "command", $command);
+
+  &run_WS_command($command, $output_choice, "fetch-sequences", $format);
 }
 
 ################################################################
