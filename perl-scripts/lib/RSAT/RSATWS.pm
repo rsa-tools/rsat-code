@@ -4369,7 +4369,7 @@ sub fetch_sequences {
 
   my $url = $args{"url"};
   my $genome = $args{"genome"};
-  my $header = $args{"header"};
+  my $header = $args{"header_format"};
   my $upstr_ext = $args{"upstr_ext"};
   my $downstr_ext = $args{"downstr_ext"};
   my $extend = $args{"extend"};
