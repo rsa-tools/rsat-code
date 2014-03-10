@@ -2,6 +2,7 @@
 
 class GeneInfoRequest:
 
+    ## Define the variables
     def __init__(self):
 
         self.organism = None
@@ -13,10 +14,15 @@ class GeneInfoRequest:
 
 if __name__ == '__main__':
 
-    import os, sys, SOAPpy
-    
+    ## Import the required packages
+    import os, sys
+    import SOAPpy ## used to communicate withb RSAT web services
+
+
+    ## os.environ
     if os.environ.has_key("http_proxy"):
         my_http_proxy=os.environ["http_proxy"].replace("http://","")
+        print os.environ["http_proxy"]
     else:
         my_http_proxy=None
 
