@@ -7,6 +7,15 @@
 ##
 ## The interface relies on the SOAP/SWDL standard, which requires to
 ## pre-install some libraries.
+##
+## This script sends the URL of a bed file to the RSAT Web services,
+## which run fetch-sequences in order to collect the sequences from
+## UCSC. The sequences are then transferred from the RSAT Web services
+## to the current client.
+##
+## This tester program only collects the two first sequences of the
+## bed file (option -top 2), checks if the first sequence of the
+## result matches the expected sequence and issue a message "Passed".
 
 use strict;
 
