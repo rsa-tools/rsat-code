@@ -13,7 +13,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -41,7 +41,6 @@ $command = "$ENV{RSAT}/python-scripts/implant-sites";
 #$convert_matrix_command = "$SCRIPTS/convert-matrix -return counts";
 $prefix = "implant-sites";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-#$tmp_file_name = sprintf "implant-sites.%s", &AlphaDate();
 
 ################################################################
 #
@@ -87,7 +86,7 @@ $parameters .= " -s " . $sites_file;
 
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
-$result_file = $TMP."/".$tmp_file_name.".fasta";
+$result_file = $tmp_file_path.".fasta";
 push @result_files, "Result (fasta)", $result_file;
 $out_format = "fasta"; ## implant-site always exports fasta, but this variable is required for the piping form
 $command  .= " -o ".$result_file;
@@ -108,7 +107,7 @@ if ($query->param('output') eq "display") {
 
 
     ## Add link to the result file
-    $result_file = $tmp_file_name.".". "fasta";
+#    $result_file = $tmp_file_path.".". "fasta";
     &PrintURLTable(@result_files);
 
     ## Form for sending results to other programs

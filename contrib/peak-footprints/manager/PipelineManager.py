@@ -1,4 +1,6 @@
 
+import sys, os, shutil, time, threading, ast
+
 from processor.ProcessorFactory import ProcessorFactory
 
 from manager.Component import Component
@@ -7,7 +9,7 @@ from manager.ProgressionManager import ProgressionManager
 from manager.PipelineListener import PipelineListener
 from manager.OptionManager import OptionManager
 
-from utils.Constants import Constants
+from utils.PFConstants import PFConstants
 from utils.FileUtils import FileUtils
 from utils.RSATUtils import RSATUtils
 from utils.MotifUtils import MotifUtils
@@ -16,8 +18,6 @@ from utils.exception.ParsingException import ParsingException
 from utils.exception.ConfigException import ConfigException
 from utils.log.Log import Log
 from utils.log.ListenerLog import ListenerLog
-
-import sys, os, shutil, time, threading, ast
 
 # This class is the central manager. It's role is to manage the pipelines execution.
 # It reads the definition of the pipelines from the XML file, create the corresponding object structure,
@@ -33,33 +33,33 @@ class PipelineManager:
         
         # Try to detect the RSAT install dir if not provided
         if rsat_path == None:
-            self.config[ Constants.RSAT_DIR_PARAM] = ""
-            if Constants.RSAT_PATH_ENV_VAR in os.environ.keys():
-                rsat_path = os.environ[ Constants.RSAT_PATH_ENV_VAR]
+            self.config[ PFConstants.RSAT_DIR_PARAM] = ""
+            if PFConstants.RSAT_PATH_ENV_VAR in os.environ.keys():
+                rsat_path = os.environ[ PFConstants.RSAT_PATH_ENV_VAR]
         
         # Test the RSAT installation path
         if rsat_path != None and len( rsat_path) > 0:
-            self.config[ Constants.RSAT_DIR_PARAM] = rsat_path
-            install_path = os.path.join( rsat_path, Constants.PROJECT_PATH_IN_RSAT)
+            self.config[ PFConstants.RSAT_DIR_PARAM] = rsat_path
+            install_path = os.path.join( rsat_path, PFConstants.PROJECT_PATH_IN_RSAT)
             if not os.path.exists( install_path):
                 print "Project not installed in RSA-Tools"
                 install_path = None
         else:
             print "PipelineManager.init : Unable to find RSAT directory : using user HOME directory"
-            self.config[ Constants.RSAT_DIR_PARAM] = os.path.join( os.environ( "HOME"), Constants.PROJECT_NAME)
+            self.config[ PFConstants.RSAT_DIR_PARAM] = os.path.join( os.environ( "HOME"), PFConstants.PROJECT_NAME)
                 
         # If Project is not in RSAT, test if the project as its own environment variable set
-        if (install_path == None or len( install_path) == 0 ) and (Constants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
-            install_path = os.environ[ Constants.PROJECT_INSTALL_PATH_ENV_VAR]
+        if (install_path == None or len( install_path) == 0 ) and (PFConstants.PROJECT_INSTALL_PATH_ENV_VAR in os.environ.keys()):
+            install_path = os.environ[ PFConstants.PROJECT_INSTALL_PATH_ENV_VAR]
         
         # Test if a install_path has been found. If not, take the current working dir as path
         if install_path != None and len( install_path) > 0:
-            self.config[ Constants.INSTALL_DIR_PARAM] = install_path
+            self.config[ PFConstants.INSTALL_DIR_PARAM] = install_path
         else:
             print "PipelineManager.init : Unable to find peak-footprint installation directory : using user HOME directory"
-            self.config[ Constants.INSTALL_DIR_PARAM] = os.path.join( os.environ( "HOME"), Constants.PROJECT_NAME)
+            self.config[ PFConstants.INSTALL_DIR_PARAM] = os.path.join( os.environ( "HOME"), PFConstants.PROJECT_NAME)
             
-        self.readConfig( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], Constants.MANAGER_CONFIG_FILE_NAME))
+        self.readConfig( os.path.join( self.config[ PFConstants.INSTALL_DIR_PARAM], PFConstants.MANAGER_CONFIG_FILE_NAME))
         
         self.initVariables( output_dir)
         
@@ -75,7 +75,7 @@ class PipelineManager:
         try:
             config_file = FileUtils.openFile( param_file)
             for line in config_file:
-                if line.isspace() or line[0] == Constants.COMMENT_CHAR:
+                if line.isspace() or line[0] == PFConstants.COMMENT_CHAR:
                     continue
                 tokens = line.split( "=")
                 if tokens !=  None and len( tokens) == 2:
@@ -97,40 +97,40 @@ class PipelineManager:
         # Define and create the output directory parameter as the provided output_dir if non null
         # or as the RSAT path + base output dir path retrieved from the manager.props
         if output_dir != None:
-            self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = output_dir
+            self.config[ PFConstants.BASE_OUTPUT_DIR_PARAM] = output_dir
         else:
-            self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM)) 
-        FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
+            self.config[ PFConstants.BASE_OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( PFConstants.RSAT_DIR_PARAM), self.getParameter( PFConstants.BASE_OUTPUT_DIR_PARAM)) 
+        FileUtils.createDirectory( self.config[ PFConstants.BASE_OUTPUT_DIR_PARAM], 0777)
         
         # Initialize the output directory
-        self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
-        FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
+        self.config[ PFConstants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( PFConstants.BASE_OUTPUT_DIR_PARAM), PFConstants.OUTPUT_DIR_NAME)
+        FileUtils.createDirectory( self.config[ PFConstants.OUTPUT_DIR_PARAM], 0777)
         
         # Define the path to the listening dir according situations
-        if self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM) != None:
-            queue_path = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM))
+        if self.getParameter( PFConstants.SERVER_QUEUE_DIR_PARAM) != None:
+            queue_path = os.path.join( self.getParameter( PFConstants.RSAT_DIR_PARAM), self.getParameter( PFConstants.SERVER_QUEUE_DIR_PARAM))
             FileUtils.createDirectory( queue_path, 0777)
-            self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( queue_path, self.getParameter( Constants.LISTENING_DIR_PARAM))
+            self.config[ PFConstants.LISTENING_DIR_PARAM] = os.path.join( queue_path, self.getParameter( PFConstants.LISTENING_DIR_PARAM))
         else:
-            self.config[ Constants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), self.getParameter( Constants.LISTENING_DIR_PARAM))
-        FileUtils.createDirectory( self.config[ Constants.LISTENING_DIR_PARAM], 0777)
+            self.config[ PFConstants.LISTENING_DIR_PARAM] = os.path.join( self.getParameter( PFConstants.INSTALL_DIR_PARAM), self.getParameter( PFConstants.LISTENING_DIR_PARAM))
+        FileUtils.createDirectory( self.config[ PFConstants.LISTENING_DIR_PARAM], 0777)
         
         # Set the path for the job queue directory
-        if self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM) != None:
-            queue_path = os.path.join( self.getParameter( Constants.RSAT_DIR_PARAM), self.getParameter( Constants.SERVER_QUEUE_DIR_PARAM))
+        if self.getParameter( PFConstants.SERVER_QUEUE_DIR_PARAM) != None:
+            queue_path = os.path.join( self.getParameter( PFConstants.RSAT_DIR_PARAM), self.getParameter( PFConstants.SERVER_QUEUE_DIR_PARAM))
             FileUtils.createDirectory( queue_path, 0777)
-            self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( queue_path, Constants.QUEUE_DIR_NAME)
+            self.config[ PFConstants.QUEUE_DIR_PARAM] = os.path.join( queue_path, PFConstants.QUEUE_DIR_NAME)
         else:
-            self.config[ Constants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), Constants.QUEUE_DIR_NAME)
-        FileUtils.createDirectory( self.config[ Constants.QUEUE_DIR_PARAM]) 
+            self.config[ PFConstants.QUEUE_DIR_PARAM] = os.path.join( self.getParameter( PFConstants.INSTALL_DIR_PARAM), PFConstants.QUEUE_DIR_NAME)
+        FileUtils.createDirectory( self.config[ PFConstants.QUEUE_DIR_PARAM]) 
 
         # Set the RSAT_PATH
-        RSATUtils.RSAT_PATH = self.getParameter( Constants.RSAT_DIR_PARAM)        
+        RSATUtils.RSAT_PATH = self.getParameter( PFConstants.RSAT_DIR_PARAM)        
         # Set the path to the jaspar database. This is used to create the motif logo
         RSATUtils.RSAT_JASPAR_MOTIF_DATABASE = os.path.join( RSATUtils.RSAT_PATH, "public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf")
          
         # Set the path to the Jaspar TF details files. Those files contains information on TF like family, class...
-        MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( Constants.INSTALL_DIR_PARAM), "resources/jaspar/motif")
+        MotifUtils.JASPAR_FLAT_DB_PATH = os.path.join( self.getParameter( PFConstants.INSTALL_DIR_PARAM), "resources/jaspar/motif")
 
     
     # --------------------------------------------------------------------------------------
@@ -149,11 +149,11 @@ class PipelineManager:
         self.initServerQueue()
         
         # Init the logs of the listener
-        ListenerLog.initLog( self.getParameter( Constants.OUTPUT_DIR_PARAM), 1)
+        ListenerLog.initLog( self.getParameter( PFConstants.OUTPUT_DIR_PARAM), 1)
         
         # Retrieve the path of the directory to listen
         if listener_path == None or len( listener_path) == 0:
-            listener_path = self.getParameter( Constants.LISTENING_DIR_PARAM)
+            listener_path = self.getParameter( PFConstants.LISTENING_DIR_PARAM)
         
         # Launch the listener thread
         self.ListenerThread = threading.Thread( None, PipelineListener.start, "PipelineListener", ( self, listener_path, ))
@@ -207,7 +207,7 @@ class PipelineManager:
     def outputServerQueue(self):
         
         try:
-            queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
+            queue_file_path = os.path.join( self.config[ PFConstants.QUEUE_DIR_PARAM], PFConstants.SERVER_QUEUE_FILE_NAME)
             queue_file = FileUtils.openFile( queue_file_path, "w", 0666)
             for infos in self.serverQueue:
                 line = ""
@@ -225,14 +225,14 @@ class PipelineManager:
     # Read the server queue file content to initialize the queue
     def initServerQueue(self):
         
-        queue_file_path = os.path.join( self.config[ Constants.QUEUE_DIR_PARAM], Constants.SERVER_QUEUE_FILE_NAME)
+        queue_file_path = os.path.join( self.config[ PFConstants.QUEUE_DIR_PARAM], PFConstants.SERVER_QUEUE_FILE_NAME)
         if os.path.exists( queue_file_path):
             try:
                 commands_list = []
                 file = FileUtils.openFile( queue_file_path)
                 for line in file:
                     command_params = [None, None, 0, "True", None]
-                    if not line.isspace() and line[0] != Constants.COMMENT_CHAR:
+                    if not line.isspace() and line[0] != PFConstants.COMMENT_CHAR:
                         tokens = line.split("|**|")
                         if len( tokens) > 0 and len( tokens) <= 5:
                             for index in range( len( tokens)):
@@ -267,15 +267,15 @@ class PipelineManager:
             
             # Modifies the config if required and initialize logs and output directory
             if working_dir != None and len( working_dir) > 0:
-                self.config[ Constants.BASE_OUTPUT_DIR_PARAM] = working_dir
+                self.config[ PFConstants.BASE_OUTPUT_DIR_PARAM] = working_dir
                 
             # Verify the base output dir and the output dir are created and create them if not
-            FileUtils.createDirectory( self.config[ Constants.BASE_OUTPUT_DIR_PARAM], 0777)
-            self.config[ Constants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( Constants.BASE_OUTPUT_DIR_PARAM), Constants.OUTPUT_DIR_NAME)
-            FileUtils.createDirectory( self.config[ Constants.OUTPUT_DIR_PARAM], 0777)
+            FileUtils.createDirectory( self.config[ PFConstants.BASE_OUTPUT_DIR_PARAM], 0777)
+            self.config[ PFConstants.OUTPUT_DIR_PARAM] = os.path.join( self.getParameter( PFConstants.BASE_OUTPUT_DIR_PARAM), PFConstants.OUTPUT_DIR_NAME)
+            FileUtils.createDirectory( self.config[ PFConstants.OUTPUT_DIR_PARAM], 0777)
             
             # Switch log location
-            Log.switchFiles( self.getParameter( Constants.OUTPUT_DIR_PARAM), verbosity)
+            Log.switchFiles( self.getParameter( PFConstants.OUTPUT_DIR_PARAM), verbosity)
             
             # Parse the XML file to retrieve the pipelines definition
             Log.trace( "#################################################################################")
@@ -285,7 +285,7 @@ class PipelineManager:
             try:
                 pipelines = PipelineXMLParser.getPipelines( pipelines_filepath)
                 OptionManager.applyOptions( pipelines, pipeline_options)
-                PipelineXMLParser.toXMLFile( self.config[ Constants.OUTPUT_DIR_PARAM], pipelines)
+                PipelineXMLParser.toXMLFile( self.config[ PFConstants.OUTPUT_DIR_PARAM], pipelines)
             except SyntaxError, syn_exce:
                 raise ParsingException( "PipelineManager.executePipelines : Unable to read definition of pipelines from XML file: '" + pipelines_filepath + "'. From:\n\t---> " + str( syn_exce))
             except ParsingException, par_exce:
@@ -302,7 +302,7 @@ class PipelineManager:
                 raise ParsingException( "PipelineManager.executePipelines : Canceling execution of pipelines. From:\n\t---> " + str( exe_exce))
 
             # Initialize the ProgressionManager
-            ProgressionManager.initialize( pipelines, self.getParameter( Constants.OUTPUT_DIR_PARAM), self.getParameter( Constants.INSTALL_DIR_PARAM))
+            ProgressionManager.initialize( pipelines, self.getParameter( PFConstants.OUTPUT_DIR_PARAM), self.getParameter( PFConstants.INSTALL_DIR_PARAM))
 
             # Execute the pipelines
             Log.trace( "**************************************************")
@@ -313,17 +313,12 @@ class PipelineManager:
                 Log.trace("--------------------------------------------------------------------------")
                 Log.trace("# Starting pipeline '" + pipeline.name + "'")
                 Log.trace("--------------------------------------------------------------------------")
-                pipeline_output = os.path.join( self.getParameter( Constants.OUTPUT_DIR_PARAM), pipeline.name)
+                pipeline_output = os.path.join( self.getParameter( PFConstants.OUTPUT_DIR_PARAM), pipeline.name)
 	        
                 liste_dir = FileUtils.getDirectoryList( os.path.dirname( pipeline_output))
-                print "0/LISTE DIR AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_dir) 
                 liste_file = FileUtils.getFileList( os.path.dirname( pipeline_output), None)
-                print "0/LISTE FILE AVANT " + os.path.dirname( pipeline_output) + " = " + str(liste_file) 
                 
                 # Manage the pipeline output directory and the logs
-                print "self.getParameter( Constants.OUTPUT_DIR_PARAM) = " + self.getParameter( Constants.OUTPUT_DIR_PARAM)
-                print "pipeline_output = " + pipeline_output
-                print "Resume mode = " + str(resume)
                 if resume == False:
                     shutil.rmtree( pipeline_output, True)
                     FileUtils.createDirectory( pipeline_output, 0777)
@@ -333,7 +328,7 @@ class PipelineManager:
                     FileUtils.createDirectory( pipeline_output, 0777)
                     Log.initLog( pipeline_output)
                 ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.RUNNING_STATUS)
-                shutil.copy( os.path.join( self.config[ Constants.INSTALL_DIR_PARAM], os.path.join( Constants.PROGRESSION_XSL_PATH, Constants.PROGRESSION_XSL_FILE)), pipeline_output)
+                shutil.copy( os.path.join( self.config[ PFConstants.INSTALL_DIR_PARAM], os.path.join( PFConstants.PROGRESSION_XSL_PATH, PFConstants.PROGRESSION_XSL_FILE)), pipeline_output)
 
                 # Fill the queue with the pipeline first components
                 component_queue_list = pipeline.firstComponents
@@ -386,7 +381,7 @@ class PipelineManager:
                 # Verify if the pipeline log file contains errors. In such case, warns the user
                 if Log.isLogEmpty() == False:
                     ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.FINISHED_ERROR_STATUS)
-                    Log.switchFiles( self.getParameter( Constants.OUTPUT_DIR_PARAM))
+                    Log.switchFiles( self.getParameter( PFConstants.OUTPUT_DIR_PARAM))
                     Log.log( "PipelineManager.executePipelines : WARNING : pipeline '" + pipeline.name + "' ended with errors. See log file for more details")
                     Log.trace("--------------------------------------------------------------------------")
                     Log.trace("# Pipeline '" + pipeline.name + "' ended with errors. See logs for more details")
@@ -394,7 +389,7 @@ class PipelineManager:
                     result = False
                 else:
                     ProgressionManager.setPipelineStatus( pipeline, ProgressionManager.FINISHED_STATUS)
-                    Log.switchFiles( self.getParameter( Constants.OUTPUT_DIR_PARAM))
+                    Log.switchFiles( self.getParameter( PFConstants.OUTPUT_DIR_PARAM))
                     Log.trace("--------------------------------------------------------------------------")
                     Log.trace("# Pipeline '" + pipeline.name + "' ended normaly")
                     Log.trace("--------------------------------------------------------------------------")

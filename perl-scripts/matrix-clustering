@@ -38,17 +38,25 @@ RSAT makefile:
 
 =head2 Implementation
 
+=over
+
 =item Jacques.van-Helden@univ-amu.fr
 
 =item Jaime Castro <jcastro@lcg.unam.mx>
 
+=back
+
 =head2 Conception
+
+=over
 
 =item Jacques van Helden
 
 =item Carl Herrmann
 
 =item Denis Thieffry
+
+=back
 
 =head1 CATEGORY
 
@@ -70,6 +78,8 @@ cluster-matrices [-i inputfile] [-o outputfile] [-v #] [...]
 The program I<compare-matrices> is used by I<cluster-matrices> to
 measure pairwise similarities and define the best alignment (offset,
 strand) between each pair of matrices.
+
+=back
 
 =head1 WISH LIST
 
@@ -115,17 +125,62 @@ package main;
     }
     local $supported_matrix_formats = join ",", @supported_matrix_formats;
 
+    ## output formats for hclust
+    local @supported_tree_formats = qw (json newick);
+    local %supported_tree_formats = ();
+    foreach my $format (@supported_tree_formats) {
+	$supported_tree_formats{$format} = 1;
+    }
+    local $supported_tree_formats = join ",", @supported_tree_formats;
+    local $export_tree_format = "";
+
+    ## Select d3 base
+    local @d3_base_formats = qw (file link);
+    local %d3_base_formats = ();
+    foreach my $format (@d3_base_formats) {
+      $d3_base_formats{$format} = 1;
+    }
+    local $d3_base_formats = join ",", @d3_base_formats;
+    local $d3_base_format = "";
+    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+
+    ## Select phylo and newick d3 bases
+    local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
+    local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
+
+
+    ## Supported label fields
+    local @supported_label_fields = qw (id name consensus);
+    local %supported_label_fields = ();
+    foreach my $field (@supported_label_fields) {
+	$supported_label_fields{$field} = 1;
+    }
+    local $supported_label_fields = join ",", @supported_label_fields;
+#    local $label_fields_to_return = "";
+    local %label_fields_to_return = ();
+    local @label_fields_to_return = ();
+
+    ## Supported hclust methods
+    local @supported_hclust_methods = qw (average complete single);
+    local %supported_hclust_methods = ();
+    foreach my $method (@supported_hclust_methods) {
+	$supported_hclust_methods{$method} = 1;
+    }
+    local $supported_hclust_methods = join ",", @supported_hclust_methods;
+    local $hclust_method = "complete";
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
     local $matrix_num = 0;
+    local $show_consensus = 0;
 
 
     ## Unrecognized arguments are passed to compare-matrices
     local @args_to_pass = ();
     local $args_to_pass = "";
 
-    local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+    
 
 
     ################################################################
@@ -148,10 +203,11 @@ package main;
 
     &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
 
+
     ## Non-recognized parameters are passed to compare-matrices
     if (scalar(@args_to_pass)) {
       $args_to_pass = join (" ", @args_to_pass);
-      &RSAT::message::Info("Un-ecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
+      &RSAT::message::Info("Unrecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
     }
 
 
@@ -171,6 +227,15 @@ package main;
       &RSAT::error::FatalError("You must define the output prefix (option -o).");
     }
 
+    ## Check that at least one field is selected for the option
+    ## "-labels".
+    if (scalar(@label_fields_to_return) == 0) {
+      $label_fields_to_return{id} = 1;
+      $label_fields_to_return{name} = 1;
+    }
+    $label_fields_to_return = join ",", @label_fields_to_return;
+    &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
+
     ## Create output dir if required
     my $basename;
     ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
@@ -184,7 +249,7 @@ package main;
     ################################################################
     ## Specify output file names and open output stream
     $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
-    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
+#    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
     $main::out = &OpenOutputFile($main::outfile{log});
 
 
@@ -217,7 +282,13 @@ package main;
 #    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
-
+    $main::outfile{temp_2} = $main::outfile{prefix}."_temporal_2.html";
+    $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table";
+    if ($export_tree_format eq "newick"){
+	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
+	$main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram";
+ 
+    }
     ## Open the HTML index file
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
     push @outfiles, "html_index";
@@ -225,7 +296,7 @@ package main;
     my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
-
+    
     ## Report command
     print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
     &PrintArguments($main::html_index, 1);
@@ -256,6 +327,10 @@ package main;
     ################################################################
     ## Creates the html template to display the tree
     &Create_html_tree_file();
+
+    ################################################################
+    ## Creates the html template to display the pylogram
+    &Create_phylogram();
 
     ################################################################
     ## Print verbose
@@ -356,7 +431,7 @@ matrices.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{matrices} = shift(@arguments);
+	$main::infile{matrices} = shift(@arguments);
 
 =pod
 
@@ -375,10 +450,10 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
     } elsif ($arg eq "-format") {
-      $main::matrix_format = shift(@arguments);
-      unless ($supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-      }
+	$main::matrix_format = shift(@arguments);
+	unless ($supported_matrix_format{$matrix_format}) {
+	    &RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+	}
 
 
 =pod
@@ -392,19 +467,102 @@ list of output files (pariwise matrix comparisons, matrix clusters).
 
 =cut
     } elsif ($arg eq "-o") {
-      $main::outfile{prefix} = shift(@arguments);
+	$main::outfile{prefix} = shift(@arguments);
 
-    } else {
-      if ($arg =~ /\s/) {
-	push @args_to_pass, "'".$arg."'";
-      } else {
-	push @args_to_pass, $arg;
+=pod
+
+=item	B<-cons>
+
+Option to display the consensus in the tree's branches
+
+=cut
+    } elsif ($arg eq "-cons"){
+	$show_consensus = 1;
+   
+=pod
+
+=item	B<-export format>
+
+Specify format for the output tree.
+
+B<Supported trees formats>
+
+(Default: json; optional: newick).
+
+=cut
+    } elsif ($arg eq "-export") {
+        $export_tree_format = shift(@arguments);
+        unless($supported_tree_formats{$export_tree_format}) {
+	    &RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
+        }
+
+=pod
+
+=item	B<-d3_base>
+
+Option to specify any type of URL (file://, http://, ...) as base for the d3 library.
+    
+B<Supported d3 bases>
+    
+(Default: file, optional: link )
+
+=cut
+    } elsif ($arg eq "-d3_base") {
+        $d3_base_format = shift(@arguments);
+        unless ($d3_base_formats{$d3_base_format}) {
+	    &RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
+        }
+
+=pod
+
+=item	B<-labels>
+
+Option to select the matrix label fields displayed in the html tree
+    
+B<Supported labels>
+    
+(name, consensus, id)
+
+=cut
+    } elsif ($arg eq "-labels") {
+      my $label_fields_to_return = shift(@arguments);
+      my @new_label_fields_to_return = split (",", $label_fields_to_return);
+      foreach $field (@new_label_fields_to_return) {
+	if ($supported_label_fields{$field}) {
+	  $label_fields_to_return{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
+	}
       }
-#      &FatalError("Invalid option", $arg);
+      push @label_fields_to_return, @new_label_fields_to_return;
 
+=pod
+
+=item	B<-hclust_method>
+
+Option to select the hierarchical clustering method to be performed. 
+Default method: complete
+    
+B<Supported methods>
+    
+(single, complete, average)
+
+=cut
+
+    } elsif ($arg eq "-hclust_method") {
+       $hclust_method = shift(@arguments);
+       unless(exists($supported_hclust_methods{$hclust_method})){
+          &RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
+       }
+
+    }else {
+        if ($arg =~ /\s/) {
+	    push @args_to_pass, "'".$arg."'";
+        } else {
+	    push @args_to_pass, $arg;
+        }
     }
   }
-
 =pod
 
 =back
@@ -443,16 +601,13 @@ sub CompareMatrices {
   ## in the output graph even if they are not related to any other
   ## motif.
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode matches";
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose." -mode scores";
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
-#  $cmd .= " -distinct"; ## We disactivate the option "distinct" in order to ensure that all the motifs are in the output graph even if they are not related to any other motif
   $cmd .= " -sort cor";
-#  $cmd .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
-  #$cmd .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
-  #$cmd .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $cmd .= " -return matrix_name,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
@@ -461,8 +616,7 @@ sub CompareMatrices {
 
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
 
-=pod
-  ## Use the mean_rank as score column
+  ## Read the score column
   open COMPA, $main::outfile{pairwise_compa};
   $main::param{score_column} = 0;
   while (<COMPA>) {
@@ -476,7 +630,7 @@ sub CompareMatrices {
   if ($main::param{score_column} == 0) {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
-=cut
+
 }
 
 
@@ -518,9 +672,16 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
+    $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
+    $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
+    $cluster_motifs_cmd .= ";hclust.method='".$hclust_method."'";
+    if ($export_tree_format eq "newick"){
+	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
+	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
+    }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
-    $cluster_motifs_cmd .= " > ".$main::outfile{Rlog};
+    #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
     } else {
@@ -531,12 +692,12 @@ sub Hclustering {
 }
 
 
-=pod
 
 ################################################################
-## Identify clusters of similar motifs, and build
+## Identify clusters of similar motifs using MCL ("Markov clustering",
+## an algorithm partitioning a network into clusters), and build
 ## consensus motifs.
-#sub ClusterMotifs {
+sub ClusterMotifs {
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
@@ -610,7 +771,7 @@ sub Hclustering {
 
   return();
 }
-=cut
+
 
 ################################################################
 ## Add attributes to JSON file, like links to pictures and other
@@ -635,11 +796,15 @@ sub Add_attributes_to_JSON(){
     chomp();
     my $line = $_;
     @split_line = split(/\s+/, $line);
-    my $matrix_id = $split_line[1];
-    $matrix_info{$matrix_id}{name} = $split_line[2];
-    $matrix_info{$matrix_id}{width} = $split_line[3];
-    $matrix_info{$matrix_id}{consensus} = $split_line[4];
-    $matrix_info{$matrix_id}{logo_file} = $split_line[5];
+    my $matrix_label = $split_line[5];
+    $matrix_info{$matrix_label}{id} = $split_line[1];
+    $matrix_info{$matrix_label}{name} = $split_line[2];
+    $matrix_info{$matrix_label}{width} = $split_line[3];
+    $matrix_info{$matrix_label}{consensus} = $split_line[4];
+    $matrix_info{$matrix_label}{label} = $split_line[5];
+    $matrix_info{$matrix_label}{logo_file} = $split_line[6];
+    $matrix_info{$matrix_label}{logo_file_rc} = $split_line[7];
+
   }
   close(DATA);
 
@@ -648,8 +813,8 @@ sub Add_attributes_to_JSON(){
   ## Read the JSON file and add the link data to each node
 
   my $line = "";
+  my $children = 0;
   $matrix_num = 0;
-#  chomp($path = `pwd`);
 
   ### Open the JSON file produced by R
   open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
@@ -659,8 +824,25 @@ sub Add_attributes_to_JSON(){
     $Flag = 0;
     $line = $_;
     
+    ### If the user select the option -cons 1
+    ### Add the consensus to the json file to be displayed in the tree
+    if ($show_consensus){
+      if ($line =~ /(\s*\"children\":\s*\[)/){
+	
+	$children++;
+	$Add_this = "";
+	if ($children > 2){
+
+	    ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
+	    ### here must be displayed the consensus of consensus
+	    $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
+	    push(@Parsed_JSON, $Add_this."\n");
+	}
+      }
+    }
+
     ### Search the pattern separating the matrices names
-    if($line =~ /\s*\"name\":\s*\"(.+)\",/){
+    if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
 
       $matrix_num++;
       $Flag = 1;
@@ -670,13 +852,20 @@ sub Add_attributes_to_JSON(){
       ## Define te URL of the logo file, relative to the location of the json file
       my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
       my $logo_url = $logo_link.".png";
-#@      my $logo_url = "file://".$path."/".$matrix_info{$M1}{logo_file}.".png";
-      
+      my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file_rc});
+      $logo_url_rc .= ".png";
+
       ### Create the line that will be added to JSON file
-      $Add_this = "\"image\" : \"${logo_url}\", ";
-      $Add_this .= "\"url\" : \"${logo_url}\", ";
-      $Add_this .= "\"size\" : ".$matrix_info{$M1}{width};
-      #print $Add_this."\n";
+      $Add_this = " \"image\" : \"${logo_url}\"";
+      $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
+      $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+        
+      foreach my $field (@supported_label_fields) {
+	if ($label_fields_to_return{$field}) {
+	  $Add_this .= ",\n \"".${field}."\" : \"".$matrix_info{$M1}{$field}."\"";
+	}
+      }
+      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
     }
     push(@Parsed_JSON, $line."\n");
     
@@ -701,25 +890,57 @@ sub Add_attributes_to_JSON(){
 ## display the tree
 sub Create_html_tree_file(){
     
+    my $labels_num = 0;
+    my $add_this = "";
+    my $main_label = 	        
+	"\tnode.append(\"a\")
+	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
+
+    my $new_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? \"\" : d.; })
+	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+	
+    my $consensus_branch_label = 
+	"\tnode.append(\"text\")
+	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
+	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 0; })
+	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 0; })
+	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+
     $matrix_num += 2;
-    system("cp ".$ENV{RSAT}."/public_html/lib/display_d3_tree.html ".$main::outfile{matrix_tree_html});
+    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{matrix_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{matrix_tree_html}) || &RSAT::error::FatalError($main::outfile{matrix_tree_html}, "Cannot found the HTML tree file");
 
-    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      $d3_base_url = "http://d3js.org/";
+#    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+#      $d3_base_url = "http://d3js.org/";
 #	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
+#    }
+
+    ## Select the D3 base
+    if ($d3_base_format eq "link"){
+	$d3_base_url = "http://d3js.org";	
     }
 
     while(<TREE>){
 	chomp;	
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
-
+	
 	### Fix the d3 library path
 	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
 
@@ -731,6 +952,43 @@ sub Create_html_tree_file(){
 	$json_file_name = pop(@temp);
 
 	$_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
+
+	if ($_ =~ /Insert labels/){
+
+
+	    ################################################################
+	    ## Insert in the html script the labels selected by the user
+
+	    foreach my $field (@label_fields_to_return) {
+		if ($label_fields_to_return{$field}) {
+		    $labels_num++;
+		    
+		    ### Add the first label with the the link to the logo
+		    if($labels_num == 1){
+			$add_this = $main_label;
+			$up = uc($field);
+			$add_this =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
+		    }
+		    
+		    ### Add the new labels, set the distances among the labels in the tree
+		    if($labels_num > 1){
+			my $copy = $new_label;
+			$up = uc($field);
+			$copy =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
+			my $y_displacement = 3 + (($labels_num -1) * 20);
+			$copy =~ s/#/$y_displacement/;
+			$add_this .= "\n\n".$copy."\n";
+		    }
+		}
+	    }
+	    print TEMP $add_this."\n";
+	}
+
+	if ($show_consensus){
+	    if ($_ =~ /Insert consensus/){
+		print TEMP $consensus_branch_label."\n";
+	    }
+	}
 	print TEMP $_."\n";
     }
     close(TREE);
@@ -741,5 +999,46 @@ sub Create_html_tree_file(){
 }
 
 
-__END__
+###################################
+## Create the phylogram
+sub Create_phylogram(){
 
+    ### Save the newick tree in the variable
+    chomp(my $newick_tree = `more $main::outfile{tree_newick}`);
+
+    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
+    open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporal file");
+    open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
+
+
+    ## Select the D3 base
+    if ($d3_base_format eq "link"){
+	$d3_base_url = "http://d3js.org";	
+    }
+
+    while(<PHYLO>){
+	chomp;	
+
+#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+#	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+#	}
+
+	### Fix the d3 libraries path
+	$_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
+	$_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
+	$_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
+
+	### Paste the newick tree in the HTML code
+	$_ =~ s/Paste_newick_here/$newick_tree/;
+
+	print TEMP $_."\n";
+    }
+    close(TEMP);
+    close(PHYLO);
+    system("rm ".$main::outfile{phylogram_html});
+    system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
+    return();
+}
+
+__END__

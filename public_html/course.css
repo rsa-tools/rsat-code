@@ -190,6 +190,7 @@ pre,tt {
              margin-left: 5%;
              }  
 
+
 p.attention
 {
   padding:10px;
@@ -225,6 +226,57 @@ p.attention
             color: #000055;
             background-color: #EEEEFF;
             }
+
+/* Concept definitions */
+.concept 
+{ 
+  color: darkgreen;
+  font-style: italic;
+  font-weight: bold;
+  }
+
+/* Figure legend */
+.legend
+{ 
+  text-align: center;
+  font-style: italic;
+  }
+/* software tool, program */
+.program
+{ 
+  font-style: italic;
+  font-weight: bold;
+  color: darkgreen;
+  }
+
+/* option for a program */
+.option
+{ 
+  font-style: italic;
+  color: darkgreen;
+  }
+
+
+/* Page header line */
+.header
+{ 
+  font-style: italic;
+  color: #888888;
+  text-align: center;
+  font-size: 10px;
+  }
+
+
+/* Mathematical formula */
+.formula
+{ 
+  font-style: italic;
+  color: darkviolet;
+  text-align: center;
+  /*  background-color: #EBEBEB;*/
+  }
+
+
 
 /* TABLE */
 
