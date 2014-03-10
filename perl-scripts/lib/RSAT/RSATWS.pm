@@ -6177,8 +6177,6 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
-#  my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
-#  chomp($tmp_outfile);
   my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
   $tmp_outfile .= ".".$out_format if ($out_format);
   my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
@@ -6279,6 +6277,8 @@ sub run_WS_command {
 							       SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'both') {
+#      &RSAT::error::FatalError("HELLO", "tmp_outfile", $tmp_outfile, &RSAT::util::hide_RSAT_path($tmp_outfile));
+
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
 							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
 							       SOAP::Data->name('client' => $result)))
