@@ -3549,6 +3549,10 @@ sub matrix_scan {
       $command .= " -matrix_format '".$matrix_format."'";
   }
 
+if ($args{"quick"} == 1) {
+      $command .= " -quick";
+  }
+
   if ($args{"n_treatment"} eq "score" || $args{"n_treatment"} eq "skip") {
       $command .= " -n ".$args{"n_treatment"};
   } else {
@@ -4338,6 +4342,105 @@ sub random_seq {
   }
 
  &run_WS_command($command, $output_choice, ".random-seq", $args{format})
+}
+
+##########
+sub fetch_sequences {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  if ($args{"input"}) {
+      my $input = $args{"input"};
+      chomp $input;
+      $tmp_input_file = &RSAT::util::make_temp_file("","fetch-sequences", 1,0);
+      open TMP_IN, ">".$tmp_input_file or die "cannot open temp file ".$tmp_input_file."\n";
+      print TMP_IN $input;
+      close TMP_IN;
+  } elsif ($args{"tmp_input_file"}) {
+      $tmp_input_file = $args{"tmp_input_file"};
+      $tmp_input_file =~ s/\'//g;
+      $tmp_input_file =~ s/\"//g;
+  }
+  chomp $tmp_input_file;
+
+  my $url = $args{"url"};
+  my $genome = $args{"genome"};
+  my $header = $args{"header"};
+  my $upstr_ext = $args{"upstr_ext"};
+  my $downstr_ext = $args{"downstr_ext"};
+  my $extend = $args{"extend"};
+  my $reference = $args{"reference"};
+  my $top = $args{"top"};
+  my $chunk = $args{"chunck"};
+
+  my $command = "$SCRIPTS/fetch-sequences";
+
+  if ($tmp_input_file) {
+      $command .= " -i '".$tmp_input_file."'";
+  }
+
+  if ($url) {
+    $url =~ s/\'//g;
+    $url =~ s/\"//g;
+    $command .= " -u '".$url."'";
+  }
+
+  if ($genome) {
+    $genome =~ s/\'//g;
+    $genome =~ s/\"//g;
+    $command .= " -genome '".$genome."'";
+  }
+
+  ## Header format
+  if ($header) {
+    $header =~ s/\'//g;
+    $header =~ s/\"//g;
+    $command .= " -header_format '".$header."'";
+  }
+
+  if ($upstr_ext =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $upstr_ext =~ s/\'//g;
+    $upstr_ext =~ s/\"//g;
+    $command .= " -upstr_ext '".$upstr_ext."'";
+  }
+
+  if ($downstr_ext =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $downstr_ext =~ s/\'//g;
+    $downstr_ext =~ s/\"//g;
+    $command .= " -downstr_ext '".$downstr_ext."'";
+  }
+
+  if ($extend =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $extend =~ s/\'//g;
+    $extend =~ s/\"//g;
+    $command .= " -extend '".$extend."'";
+ }
+
+  if ($reference) {
+    $reference =~ s/\'//g;
+    $reference =~ s/\"//g;
+    $command .= " -reference '".$reference."'";
+  }
+
+  if ($top =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $top =~ s/\'//g;
+    $top =~ s/\"//g;
+    $command .= " -top '".$top."'";
+ }
+
+  if ($chunck =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $chunck =~ s/\'//g;
+    $chunck =~ s/\"//g;
+    $command .= " -chunck '".$chunck."'";
+ }
+
+#  &RSAT::error::FatalError("&RSAT::RSATWS::fetch_sequence()", "command", $command);
+
+  &run_WS_command($command, $output_choice, "fetch-sequences", $format);
 }
 
 ################################################################
