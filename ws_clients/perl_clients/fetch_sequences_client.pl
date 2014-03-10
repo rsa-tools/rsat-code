@@ -30,8 +30,9 @@ eval
 {
 
   ## Choosing the RSAT server
-#    my $wsdl  = XML::LibXML->new->parse_file('http://www.rsat.eu/web_services/RSATWS.wsdl');
-  my $wsdl  = XML::LibXML->new->parse_file('http://localhost/rsat/web_services/RSATWS.wsdl');
+  my $wsdl  = XML::LibXML->new->parse_file('http://www.rsat.eu/web_services/RSATWS.wsdl');
+#  my $wsdl  = XML::LibXML->new->parse_file('http://www.rsat.fr/web_services/RSATWS.wsdl');
+#  my $wsdl  = XML::LibXML->new->parse_file('http://localhost/rsat/web_services/RSATWS.wsdl');
   
   ## Retriving and processing the WSDL
   my $proxy = XML::Compile::WSDL11->new($wsdl);
@@ -42,15 +43,17 @@ eval
   
 
   ## Defining the parameters for fetch-sequences
-  my %args = ( url => "http://www.rsat.eu/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed",
-	       genome => "mm9",
-	       header => "", ## Header format
-	       upstr_ext => 0, ## Upstream extension
-	       downstr_ext => 0, ## Downstream extension
-	       extend => 0, ## Extension (alternative to the two previous arguments, since it applies downstream + upstream)
-	       reference => "segment",
-	       top => 2, ## For this test, we only fetch the two first sequences
-	       chunk => 10000);
+  my %args = ( 
+    output => "both", ## Return both the URL of the result file on the server, and the result itself.  Alternatives: "server", "client"
+    url => "http://www.rsat.eu/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed",
+    genome => "mm9",
+    header => "", ## Header format
+    upstr_ext => 0, ## Upstream extension
+    downstr_ext => 0, ## Downstream extension
+    extend => 0, ## Extension (alternative to the two previous arguments, since it applies downstream + upstream)
+    reference => "segment",
+    top => 2, ## For this test, we only fetch the two first sequences
+    chunk => 10000);
   
   # Calling the service and getting the response
   my $answer = $client->( request => {%args});
@@ -61,6 +64,13 @@ eval
   # If no answer has arrived, return 1 to indicate the test failed.
   if ( defined $answer ) {
     warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
+
+## Note: this currently does not work. In debugging
+#    warn ("Server command : ".$answer->{output}->{response}->{server}."\n");
+#    my $response = $answer->get_response();
+#    my $server_file = $response->get_server();
+#    warn ("Result path on the server : ".$server_file."\n");
+
     if ($answer->{output}->{response}->{client} =~ 'CTGTCTATATGCCAC'){
       print "Passed\n";
       print "\nResult :\n\n", $answer->{output}->{response}->{client}, "\n";
