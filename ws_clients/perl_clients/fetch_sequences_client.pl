@@ -28,53 +28,57 @@ use Data::Dumper;
 
 eval
 {
-    # Retriving and processing the WSDL
-    my $wsdl  = XML::LibXML->new->parse_file('http://www.rsat.eu/web_services/RSATWS.wsdl');
-    my $proxy = XML::Compile::WSDL11->new($wsdl);
-    
-    # Generating a request message based on the WSDL
-    my $method = 'fetch_sequences';
-    my $client = $proxy->compileClient($method);
-    
 
-    ## Define the parameters
-    my %args = ( url => "http://www.rsat.eu/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed",
-		 genome => "mm9",
-		 header => "", ## Header format
-		 upstr_ext => 0, ## Upstream extension
-		 downstr_ext => 0, ## Downstream extension
-		 extend => 0, ## Extension (alternative to the two previous arguments, since it applies downstream + upstream)
-		 reference => "segment",
-		 top => 2, ## For this test, we only fetch the two first sequences
-		 chunk => 10000);
-    
-    # Calling the service and getting the response
-    my $answer = $client->( request => {%args});
+  ## Choosing the RSAT server
+#    my $wsdl  = XML::LibXML->new->parse_file('http://www.rsat.eu/web_services/RSATWS.wsdl');
+  my $wsdl  = XML::LibXML->new->parse_file('http://localhost/rsat/web_services/RSATWS.wsdl');
+  
+  ## Retriving and processing the WSDL
+  my $proxy = XML::Compile::WSDL11->new($wsdl);
+  
+  ## Generating a request message based on the WSDL
+  my $method = 'fetch_sequences';
+  my $client = $proxy->compileClient($method);
+  
 
-    # If the response arrived, look for a specific match
-    # If the match is correct, return 0 because the test passed.
-    # If the result is something else, return 2 to indicate a warning.
-    # If no answer has arrived, return 1 to indicate the test failed.
-    if ( defined $answer ) {
-      warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
-      if ($answer->{output}->{response}->{client} =~ 'CTGTCTATATGCCAC'){
-	print "Passed\n";
-	print "\nResult :\n\n", $answer->{output}->{response}->{client}, "\n";
-	exit 0;
-      } else {
-	print "Unexpected data\n";
-	print "\nResult : ", Dumper($answer), "\n";
-	exit 2;
-      }
-    } else {    
-      print "Failed\n";
-      exit 1;
+  ## Defining the parameters for fetch-sequences
+  my %args = ( url => "http://www.rsat.eu/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed",
+	       genome => "mm9",
+	       header => "", ## Header format
+	       upstr_ext => 0, ## Upstream extension
+	       downstr_ext => 0, ## Downstream extension
+	       extend => 0, ## Extension (alternative to the two previous arguments, since it applies downstream + upstream)
+	       reference => "segment",
+	       top => 2, ## For this test, we only fetch the two first sequences
+	       chunk => 10000);
+  
+  # Calling the service and getting the response
+  my $answer = $client->( request => {%args});
+
+  # If the response arrived, look for a specific match
+  # If the match is correct, return 0 because the test passed.
+  # If the result is something else, return 2 to indicate a warning.
+  # If no answer has arrived, return 1 to indicate the test failed.
+  if ( defined $answer ) {
+    warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
+    if ($answer->{output}->{response}->{client} =~ 'CTGTCTATATGCCAC'){
+      print "Passed\n";
+      print "\nResult :\n\n", $answer->{output}->{response}->{client}, "\n";
+      exit 0;
+    } else {
+      print "Unexpected data\n";
+      print "\nResult : ", Dumper($answer), "\n";
+      exit 2;
     }
+  } else {    
+    print "Failed\n";
+    exit 1;
+  }
 };
 
 if ($@)
 {
-    print "Caught an exception\n";
-    print $@."\n";
-    exit 1;
+  print "Caught an exception\n";
+  print $@."\n";
+  exit 1;
 }
