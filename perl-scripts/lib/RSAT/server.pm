@@ -228,7 +228,12 @@ sub UpdateLogFile {
 
   ## Check log file
   unless ($log_file) {
-    $log_file = $main::log_file;
+      if ($main::log_file) {
+	  $log_file = $main::log_file;
+      } else {
+	  &RSAT::message::Warning("&RSAT::server::UpdateLogFile() called without \$log_file argument") if ($main::verbose >= 4);
+	  return;
+      }
   }
 
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
@@ -237,6 +242,7 @@ sub UpdateLogFile {
 			"<p>log=".$log_file,
 			"<p>email=".$user_email,
 			 ) if ($main::verbose >= 5);
+
 
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
@@ -339,6 +345,7 @@ sub UpdateExecTimeLogFile {
   ## Write header of the exec time log file if required
   &RSAT::message::Debug("exec_time_log_file", $main::exec_time_log_file) if ($main::verbose >= 5);
   unless (-e $main::exec_time_log_file) {
+    &RSAT::message::Info("Creating execution time log file",  $main::exec_time_log_file) if ($main::verbose >= 2);
     open LOG, ">".$main::exec_time_log_file;
     print LOG join ("\t",
 		    "#start_date.time",
@@ -445,6 +452,7 @@ sub ReadProperties {
 
     ## Load RSAT site-specific properties
     if (-e $property_file) {
+      &RSAT::message::Info("Reading property file", $property_file) if ($main::verbose >= 5);
       my ($props) = &RSAT::util::OpenInputFile($property_file);
       while (<$props>) {
 	next if (/^#/);
@@ -454,12 +462,12 @@ sub ReadProperties {
 	if (/\=/) {
 	  my $value = $'; #'
 	  my $key = $`; #`
-	  if ($default_props) {
-	    $value =~ s|\[RSAT_PARENT_PATH\]/rsa-tools|$ENV{RSAT}|g;
-	  }
+#	  if ($default_props) {
+	  $value =~ s|\[RSAT_PARENT_PATH\]/rsat|$ENV{RSAT}|g;
+#	  }
 	  $ENV{$key} = $value;
 	  $server::config{$key} = $value;
-	  #        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
+#	  &RSAT::message::Info("Site property", sprintf("%-15s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
 	}
       }
     }
@@ -538,6 +546,8 @@ sub LoadLocalOrganisms {
 ## THIS SHOULD BE CLEANED WHEN I FIND TIME TO DO IT
 sub InitRSAT {
   umask 0022;
+  
+#  $ENV{RSA_OUTPUT_CONTEXT} = "screen";
 
   &ReadProperties();
 #  &ReadConfig();
@@ -548,21 +558,20 @@ sub InitRSAT {
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
 
-  ## Check temporary directory
-  $main::TMP = $ENV{RSAT}."/public_html/tmp";
-
-
   ################################################################
-  ## I would like to define a month-specific tmp directory But this
-  ## requires to revisit all the pulic-html + perl-script dir to
-  ## replace $RSAT/public_html/tmp by this $TMP.
-#   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-#   $year_month = sprintf("%02d_%02d", $day, $month+1, 1900+$year);
-#   $main::TMP .= "/".$year_month;
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ## JvH, 2014-02-19 : I suppress this, because with the user-specific
+  ## temp folders, all users should not have the possibility to create
+  ## a directory in the public_html folder anymore
 
-   &RSAT::util::CheckOutDir($main::TMP);
-   chmod(0777, $main::TMP);
+  ## Check temporary directory
+#  $main::TMP = $ENV{RSAT}."/public_html/tmp";
+#  &RSAT::util::CheckOutDir($main::TMP);
+#  chmod(0777, $main::TMP);
 #   &RSAT::message::Debug("Temporary dir", $main::TMP) if ($main::verbose >= 5);
+
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ################################################################
 
   $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
   $main::PYTHON = "$ENV{RSAT}/python-scripts";

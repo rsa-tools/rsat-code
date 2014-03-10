@@ -9,12 +9,12 @@
 #ifndef __FASTA__
 #define __FASTA__
 
-using namespace std;
-
 #include <iostream> 
 #include <fstream>
 #include <vector>
 #include <string>
+
+using namespace std;
 
 #define ALPHABET_SIZE 4
 #define ALPHABET "ACGT"
@@ -112,7 +112,7 @@ struct Sequences
 };
 
 // read the seuqneces in sequences (an empty vector)
-int read_fasta(vector<string> &sequences, string filename, bool rc);
+int read_fasta(vector<string> &sequences, char *filename, bool rc);
 
 // convert sequence to vector of int
 Sequences convert_sequences(vector<string> &raw_sequences);

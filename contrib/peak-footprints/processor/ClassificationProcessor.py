@@ -103,25 +103,29 @@ class ClassificationProcessor( Processor):
         family_order = []
         motif_order_in_family = {}
         rank = 1
+        count_motif = 1
+        old_hyp_eval = 0
+        old_chi2_eval = 0
         for motif_stats in motif_stats_list:
             motif_name = motif_stats.motifName
             motif_family = motif_stats.motifFamily
             # test the number of result already listed if required
-            if max_motif_number != None and rank > max_motif_number:
+            if max_motif_number != None and count_motif > max_motif_number:
                 input_commstruct.motifStatistics.pop( motif_name)
                 continue
             # test the value of the hypergeometric e-value if required
+            hyp_evalue = motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE)
             if max_hyp_evalue != None:
-                hyp_evalue = motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_HYP_PVALUE)
                 if hyp_evalue == None or hyp_evalue > max_hyp_evalue:
                     input_commstruct.motifStatistics.pop( motif_name)
                     continue
             # test the value of the chi2 e-value if required
+            chi2_evalue = motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_CHI2_PVALUE)
             if max_chi2_evalue != None:
-                chi2_evalue = motif_stats.getAttributeAsfloat( MotifStatistics.MOTIF_CHI2_PVALUE)
                 if chi2_evalue == None or chi2_evalue > max_chi2_evalue:
                     input_commstruct.motifStatistics.pop( motif_name)
-                    continue            
+                    continue
+                            
             # add the motif in the ordered list of its family if the family is not full
             if not motif_family in motif_order_in_family.keys():
                 motif_order_in_family[ motif_family] = []
@@ -136,8 +140,20 @@ class ClassificationProcessor( Processor):
                 family_order.append( motif_family)
             # set the rank of the family as the index of the family in the ordered list
             motif_stats.setAttribute( MotifStatistics.MOTIF_FAMILY_RANK, family_order.index( motif_family) + 1)
-            # set the global rank of the motif
+            
+            # Test if current motif is exaequo with previous motif
+            if count_motif > 1:
+                if old_hyp_eval != hyp_evalue or old_chi2_eval != chi2_evalue:
+                    rank = rank + 1
+
+            # Set the global rank of the motif
             motif_stats.setAttribute( MotifStatistics.MOTIF_RANK, rank)
-            rank = rank +1
+            
+            # Increase the motif counter
+            count_motif = count_motif +1
+            
+            # Memorize the motif E-values
+            old_hyp_eval = hyp_evalue
+            old_chi2_eval = chi2_evalue
                 
 

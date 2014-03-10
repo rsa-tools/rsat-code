@@ -81,7 +81,9 @@ DISTRIB_FILES=rsat/perl-scripts			\
 	rsat/contrib/matrix-scan-quick  	\
 	rsat/contrib/floydwarshall		\
 	rsat/ws_clients		  		\
-	rsat/public_html
+	rsat/public_html			\
+	rsat/contrib/REA			\
+	rsat/contrib/kwalks
 
 DISTRIB_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\

@@ -1,7 +1,7 @@
-###############################################################
-#
-# A class for util handling
-#
+################################################################
+##
+## A class for util handling
+##
 package RSAT::util;
 
 use POSIX;
@@ -265,30 +265,34 @@ sub StartScript {
 
     ## Write header of the exec time log file if required
     unless (-e $main::start_time_log_file) {
-      open LOG, ">".$main::start_time_log_file;
-      print LOG join ("\t",
-		      "#start_date.time",
-		      "hostname",
-		      "PID",
-		      "username",
-		      "script_name",
-		      "command",
-		      "remote_addr",
-		     ), "\n";
-      close LOG;
+	if (open LOG, ">".$main::start_time_log_file) {
+	    print LOG join ("\t",
+			    "#start_date.time",
+			    "hostname",
+			    "PID",
+			    "username",
+			    "script_name",
+			    "command",
+			    "remote_addr",
+		), "\n";
+	    close LOG;
+	    chmod 0666, $main::start_time_log_file;
+	}
     }
 
-    open LOG, ">>".$main::start_time_log_file;
-    print LOG join ("\t",
-		    $start_time,
-		    $$,
-		    $login,
-		    $script_name,
-		    $command,
-		    $remote_addr,
-		   ), "\n";
-    close LOG;
-    chmod 0666, $main::start_time_log_file;
+    if (open LOG, ">>".$main::start_time_log_file) {
+	print LOG join ("\t",
+			$start_time,
+			$$,
+			$login,
+			$script_name,
+			$command,
+			$remote_addr,
+	    ), "\n";
+	close LOG;
+	chmod 0666, $main::start_time_log_file;
+    }
+
   }
   return($start_time);
 }
@@ -841,6 +845,36 @@ sub hex2rgb {
 }
 
 ################################################################
+## Return the root of the public temporary directory
+sub get_pub_temp {
+  my $public_temp_dir = $ENV{RSAT}."/public_html/tmp";
+  return ($public_temp_dir);
+}
+
+################################################################
+## Return a user-specific directory for storing temporary files.
+##
+## By default, temporary files are stored in a hidden folder
+## $HOME/.rsat_tmp_dir. 
+##
+## For the Web server, temporary files are stored in
+## $RSAT/public_html/tmp, in order to be accessible to web browsers.
+sub get_temp_dir {
+  my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
+  my $login = getpwuid($<) || "temp_user";
+  my $tmp_base;
+  if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+      (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+    $tmp_base = &get_pub_temp()."/".$login;
+  } else {
+    $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
+  }
+  my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day); 
+  &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 5);
+  return($tmp_dir);
+}
+
+################################################################
 ## Return a unique name for a temporary file in the $TMP directory
 ## Usage:
 ##  my $temp_file_name = &RSAT::util::make_temp_file($tmp_dir, $tmp_prefix, $add_date, $make_dir);
@@ -856,7 +890,6 @@ sub make_temp_file {
 #  			"\n\tadd_date=".$add_date,
 #  			"\n\tmake_dir=".$make_dir,
 #  		       ) if ($main::verbose >= 10);
-
   my $prefix_dir = "";
 
   ## Check $tmp_dir and $tmp_prefix
@@ -871,23 +904,39 @@ sub make_temp_file {
     $tmp_prefix = 'tmp';
   }
 
+
   ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
-      my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
-      my $login = getpwuid($<) || "temp_user";
-      $tmp_dir = sprintf("%s/%s/%04d/%02d/%02d", $main::TMP, $login, 1900+$year,$month+1,$day);
+    $tmp_dir = &get_temp_dir();
   }
-  &CheckOutDir($tmp_dir, "", 777); ## temporary dir and all of its parents must be writable by all users
 
-  ## Create an index file in the new directory to prevent Web users from seing its whole content
-  my $index_file = $tmp_dir."/index.html";
+  # die(join("\n\t", 
+  # 	   "ENV{RSAT}\t".$ENV{RSAT},
+  # 	   "&get_pub_temp\t".&get_pub_temp(),
+  # 	   "&get_temp_dir\t".&get_temp_dir(),
+  # 	   "TMP\t".$TMP,
+  # 	   "tmp_dir\t".$tmp_dir,
+  # 	   "tmp_prefix\t".$tmp_prefix,
+  # 	   "prefix_dir\t".$prefix_dir,
+  # 	    "OK"));
+  # die "HEREAMI";
+
+  &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
+  
+  ## Create an index file in the new directory to prevent Web users
+  ## from seing its whole content
   if ($protect) {
-    unless (-e $index_file) {
-      open INDEX, ">".$index_file;
-      print INDEX "<html>";
-      print INDEX "<b>Access forbidden</b>";
-      print INDEX "</html>";
-      close INDEX;
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	($ENV{RSA_OUTPUT_CONTEXT}eq "cgi")) {
+#  if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+      my $index_file = $tmp_dir."/index.html";
+      unless (-e $index_file) {
+	open INDEX, ">".$index_file;
+	print INDEX "<html>";
+	print INDEX "<b>Access forbidden</b>";
+	print INDEX "</html>";
+	close INDEX;
+      }
     }
   }
 
@@ -907,14 +956,13 @@ sub make_temp_file {
 
   ## Ensure that everyone can read the temporary file
 #  system("chmod a+r $temp_file");
-#    &RSAT::message::Debug("&RSAT::util::make_temp_file()",
-#   			"\n\ttmp_dir=".$tmp_dir,
-#   			"\n\ttmp_prefix=".$tmp_prefix,
-#   			"\n\tprefix_dir=".$prefix_dir,
-#   			"\n\ttemp_file=".$temp_file,
-#   			"\n\tmktmp_cmd=".$mktmp_cmd,
-#   		       ) if ($main::verbose >= 10);
-
+#   &RSAT::message::Debug("&RSAT::util::make_temp_file()",
+#  			"\n\ttmp_dir=".$tmp_dir,
+#  			"\n\ttmp_prefix=".$tmp_prefix,
+#  			"\n\tprefix_dir=".$prefix_dir,
+  			"\n\ttemp_file\t".$temp_file,
+#  			"\n\tmktmp_cmd=".$mktmp_cmd,
+#  		       ) if ($main::verbose >= 10);
   return ($temp_file);
 }
 

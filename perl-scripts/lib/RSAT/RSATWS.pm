@@ -18,6 +18,7 @@ unshift (@INC, "../../perl-scripts/lib/");
 require RSAT::util;
 require RSAT::server;
 require RSAT::TaskManager;
+require RSAT::OrganismManager;
 
 &main::InitRSAT();
 
@@ -28,8 +29,11 @@ unless ($ENV{RSAT}) {
   $ENV{RSAT} =~ s|/public_html/.*||;
 }
 
-my $SCRIPTS = $ENV{RSAT}.'/perl-scripts';
-my $TMP = $ENV{RSAT}.'/public_html/tmp';
+$SCRIPTS = $ENV{RSAT}.'/perl-scripts';
+$TMP = $ENV{RSAT}.'/public_html/tmp';
+
+## Define the context
+$ENV{RSA_OUTPUT_CONTEXT} = "RSATWS";
 
 
 #require "RSA.lib";
@@ -3252,6 +3256,7 @@ sub compare_classes {
     close TMP_IN;
   }
 
+
   ## idem for query classes
   if ($args{"query_classes"}) {
     my $query = $args{"query_classes"};
@@ -3262,6 +3267,7 @@ sub compare_classes {
     print TMP_IN $query;
     close TMP_IN;
   }
+
 
   ## Idem for input classes
   if ($args{"input_classes"}) {
@@ -3543,6 +3549,10 @@ sub matrix_scan {
       $command .= " -matrix_format '".$matrix_format."'";
   }
 
+if ($args{"quick"} == 1) {
+      $command .= " -quick";
+  }
+
   if ($args{"n_treatment"} eq "score" || $args{"n_treatment"} eq "skip") {
       $command .= " -n ".$args{"n_treatment"};
   } else {
@@ -3589,10 +3599,13 @@ if ($args{"equi_pseudo"} == 1 ) {
       $oligo_length = $args{"markov"} + 1;
       if ($args{"organism"}) {
 
-## sub not found => HELP, Jacques!
-#	  $tmp_background_infile = &ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
-#			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
+## JvH (2014-03-03): I should enable &ExpectedFreqFile() from within RSATWS,
+## it is cleaner than defining a hard path towards the expected frequency
+## file.
 #	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+#	  $tmp_background_infile = $ENV{RSAT}."/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+	  $tmp_background_infile = &RSAT::OrganismManager::ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
+			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
 
 ## Only noov taxon bckgds available at the moment => useless
 #      } elsif ($args{"taxon"}) {
@@ -4329,6 +4342,105 @@ sub random_seq {
   }
 
  &run_WS_command($command, $output_choice, ".random-seq", $args{format})
+}
+
+##########
+sub fetch_sequences {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  if ($args{"input"}) {
+      my $input = $args{"input"};
+      chomp $input;
+      $tmp_input_file = &RSAT::util::make_temp_file("","fetch-sequences", 1,0);
+      open TMP_IN, ">".$tmp_input_file or die "cannot open temp file ".$tmp_input_file."\n";
+      print TMP_IN $input;
+      close TMP_IN;
+  } elsif ($args{"tmp_input_file"}) {
+      $tmp_input_file = $args{"tmp_input_file"};
+      $tmp_input_file =~ s/\'//g;
+      $tmp_input_file =~ s/\"//g;
+  }
+  chomp $tmp_input_file;
+
+  my $url = $args{"url"};
+  my $genome = $args{"genome"};
+  my $header = $args{"header"};
+  my $upstr_ext = $args{"upstr_ext"};
+  my $downstr_ext = $args{"downstr_ext"};
+  my $extend = $args{"extend"};
+  my $reference = $args{"reference"};
+  my $top = $args{"top"};
+  my $chunk = $args{"chunck"};
+
+  my $command = "$SCRIPTS/fetch-sequences";
+
+  if ($tmp_input_file) {
+      $command .= " -i '".$tmp_input_file."'";
+  }
+
+  if ($url) {
+    $url =~ s/\'//g;
+    $url =~ s/\"//g;
+    $command .= " -u '".$url."'";
+  }
+
+  if ($genome) {
+    $genome =~ s/\'//g;
+    $genome =~ s/\"//g;
+    $command .= " -genome '".$genome."'";
+  }
+
+  ## Header format
+  if ($header) {
+    $header =~ s/\'//g;
+    $header =~ s/\"//g;
+    $command .= " -header_format '".$header."'";
+  }
+
+  if ($upstr_ext =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $upstr_ext =~ s/\'//g;
+    $upstr_ext =~ s/\"//g;
+    $command .= " -upstr_ext '".$upstr_ext."'";
+  }
+
+  if ($downstr_ext =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $downstr_ext =~ s/\'//g;
+    $downstr_ext =~ s/\"//g;
+    $command .= " -downstr_ext '".$downstr_ext."'";
+  }
+
+  if ($extend =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $extend =~ s/\'//g;
+    $extend =~ s/\"//g;
+    $command .= " -extend '".$extend."'";
+ }
+
+  if ($reference) {
+    $reference =~ s/\'//g;
+    $reference =~ s/\"//g;
+    $command .= " -reference '".$reference."'";
+  }
+
+  if ($top =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $top =~ s/\'//g;
+    $top =~ s/\"//g;
+    $command .= " -top '".$top."'";
+ }
+
+  if ($chunck =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $chunck =~ s/\'//g;
+    $chunck =~ s/\"//g;
+    $command .= " -chunck '".$chunck."'";
+ }
+
+#  &RSAT::error::FatalError("&RSAT::RSATWS::fetch_sequence()", "command", $command);
+
+  &run_WS_command($command, $output_choice, "fetch-sequences", $format);
 }
 
 ################################################################

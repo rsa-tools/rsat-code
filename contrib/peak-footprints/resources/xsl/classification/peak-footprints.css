@@ -4,68 +4,68 @@
 /*
 body {
        font-family: Verdana, Helvetica, Arial, sans-serif;
-       font-size: 10pt;
+       font-size: 70%;
        margin-top: 2px;
        margin-left: 20px;
        text-align: justify;
        background: #ffffff;
        margin-right: 20px;
-
-}*/
-
-/*
-* Table title_table
+}
 */
 
-
-table.title_table {
-	width: 100%;
-	font-size: 20pt;
-	font-weight: bold;
-	text-align: center;
-	border-top: 1px solid #000000;
-	border-right: 1px solid #000000;
-	border-bottom: 1px solid #000000;
-	border-left: 1px solid #000000;
-	background-color: #A9E2F3;
-	color: #2E9AFE 
-}
-
-table.title_table th{
-	width: 100%;
-	font-size: 20pt;
-	font-weight: bold;
-	text-align: center;
-	background-color: #A9E2F3;
-	color: #2E9AFE 
-}
-
-
+/* HEADERS */
 /*
- * Table section_table
- */
-
-
-table.section_table {
-	/*margin: 10px 20px 20px;*/
-	width: 100%;
-	margin-left:10px;
-	margin-top:30px;  
-	color: #000000;
-	border-spacing: 0px;
+h1 {
+	margin-top: 10px;
+	padding-top: 15px;
+	padding-bottom: 15px;
+	margin-bottom: 0px;
+	padding-left: 10px;
+	border: 1px solid #2D282E;
+	background-color: #0D73A7;
+	font-size: 16px;
+	color: #D6EEFA;
+}
+h1 a:link, h1 a:visited {
+	color: #D6EEFA;
 }
 
-table.section_table th {
-	width: 100%;
-	font-size: 12pt;
-	padding: 2px 10px;
-	margin-left:10px;
-	margin-top:30px;
-	text-align: justify;
-	background-color: #A9E2F3;
-	color: #000000 /*#2E9AFE*/
+h1 a:hover {
+	color: #ffffff;
 }
 
+h2 {
+	margin-top: 10px;
+	padding-top: 15px;
+	margin-bottom: 0px;
+	color: #002266;
+	font-size: 15px;
+}
+
+h3 {
+	margin-top: 6px;
+	padding-top: 6px;
+	margin-bottom: 0px;
+	color: #002266;
+	font-size: 11px;
+}
+
+h4 {
+	margin-top: 4px;
+	padding-top: 4px;
+	margin-bottom: 0px;
+	color : #2D282E;
+	font-size: 11px;
+}
+
+h2.motif {
+	margin-top: 3px;
+	padding-top: 0px;
+	margin-bottom: 4px;
+	color : #2D282E;
+	font-size: 12px;
+}
+*/
 
 /*
  * Table no_line_table
@@ -79,6 +79,18 @@ table.no_line_table {
 	border-spacing: 0px;
 }
 
+table.no_line_table thead th { 	
+	font-size: 10pt;
+	border-right: 1px solid #cbcbb4;
+	border-bottom: 1px solid #cbcbb4;
+	padding: 2px 10px;
+	background-color: #F6E6CA;
+	color: #000000
+}
+
+table.no_line_table tr.odd { background-color: #E2E4FF; }
+table.no_line_table tr.even { background-color: white; }
+
 
 /*
  * Table statistic_table
@@ -86,7 +98,7 @@ table.no_line_table {
 
 
 table.statistic_table {
-	margin-left:20px; 
+	margin-left:10px; 
 	margin-top:5px;
 	margin-bottom:5px;
 	color: #000000;
@@ -98,8 +110,8 @@ table.statistic_table {
 table.statistic_table th {
 	font-size: 10pt;
 	padding: 2px 10px;
-	background-color: #A9E2F3;
-	color: #2E9AFE
+	background-color: #F6E6CA;
+	color: #000000
 }
 
 table.statistic_table td {
@@ -118,7 +130,7 @@ table.statistic_table td {
 table.dataTable {
 	clear: both;
 	width: 100%;
-	margin-left:20px; 
+	margin-left:10px; 
 	margin-top:5px;
 	margin-bottom:5px;
 	color: #000000;
@@ -135,8 +147,8 @@ table.dataTable thead th {
 	border-right: 1px solid #cbcbb4;
 	border-bottom: 1px solid #cbcbb4;
 	padding: 2px 10px;
-	background-color: #A9E2F3;
-	color: #2E9AFE
+	background-color: #F6E6CA;
+	color: #000000
 }
 
 table.dataTable tfoot th {
@@ -166,7 +178,7 @@ table.dataTable tr.even { background-color: white; }
 tr.referenceMotifRow td{
 	font-size: 10pt;
 	padding: 2px 10px;
-	background-color: #A9F3E2;
+	background-color: #87E990;
 	text-align: center;
 	border-right: 1px solid #cbcbb4;
 	border-bottom: 1px solid #cbcbb4;

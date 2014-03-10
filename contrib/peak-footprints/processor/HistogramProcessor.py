@@ -197,7 +197,7 @@ class HistogramProcessor( Processor):
                     motif_stats.setAttribute( MotifStatistics.MOTIF_CHI2, "0.0")
                     motif_stats.setAttribute( MotifStatistics.MOTIF_CHI2_PVALUE, "1.0")                    
                 
-                # Build the graph corresponding to all histograms using RSAT XYGraph command
+                # Build the PNG graph corresponding to all histograms using RSAT XYGraph command
                 graph_path = os.path.join( dir_path, motif_name + prefix_id + "_Distances.png")
                 cmd = os.path.join( RSAT_PATH, "perl-scripts/XYgraph")
                 cmd += " -i '" + all_histo_path + "'"
@@ -217,6 +217,27 @@ class HistogramProcessor( Processor):
                     continue
                     
                 motif_stats.setAttribute( MotifStatistics.MOTIF_DISTANCE_HISTOGRAM_GRAPH, graph_path)
+                
+                # Build the PDF graph corresponding to all histograms using RSAT XYGraph command
+                graph_path_pdf = os.path.join( dir_path, motif_name + prefix_id + "_Distances.pdf")
+                cmd = os.path.join( RSAT_PATH, "perl-scripts/XYgraph")
+                cmd += " -i '" + all_histo_path + "'"
+                cmd += " -title1 '" + self.component.pipelineName + "'" 
+                cmd += " -title2 ''" 
+                #cmd += " -xcol 3 -ycol 4,5"
+                cmd += " -xcol 3 -ycol 4"
+                cmd += " -xleg1 'Distance to peak maximum'"
+                cmd += " -yleg1 'Number of motif hits'"
+                cmd += " -legend -header -format pdf -fhisto"
+                cmd += " -o '" + graph_path_pdf + "'"
+                
+                cmd_result = commands.getstatusoutput( cmd)
+                if cmd_result[0] != 0:
+                    Log.log( "HistogramProcessor.buildHistogramsAndGraphs : status returned is :" + str( cmd_result[0]) + " for command '" + cmd + "'" )
+                    Log.log( "  Command output is = \n" + str( cmd_result[1]))
+                    continue
+                    
+                motif_stats.setAttribute( MotifStatistics.MOTIF_DISTANCE_HISTOGRAM_GRAPH_PDF, graph_path_pdf)
                 
                 # Output the histogram of motif peak scores
                 if len( hits_peakscore[ motif_name]) > 1:

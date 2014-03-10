@@ -9,7 +9,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 #BEGIN {
 #    $ERR_LOG = "/dev/null";
-##    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+##    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
 #    use CGI::Carp qw(carpout);
 #    open (LOG, ">> $ERR_LOG")
 #	|| die "Unable to redirect log\n";
@@ -35,7 +35,6 @@ $query = new CGI;
 $command = $SCRIPTS."/convert-matrix";
 $prefix = "convert-matrix";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
-#$tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 $ENV{rsat_echo} = 1;
 @result_files = ();
 
@@ -176,18 +175,15 @@ if ($query->param('output') eq "display") {
   &doit("$command $parameters"); ## DEBUG test
   open RESULT, "$result_file";  ## DEBUG
 
-
+  my $public_temp_dir = &RSAT::util::get_pub_temp();
   print '<H4>Result</H4>';
   print '<PRE>';
   while (<RESULT>) {
     next if ($_ =~ /logo file:(.*)\.pdf$/);
     if ($_ =~ /logo file:(.*)\.png$/){
-      (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+      (local $logo = $1 )=~ s|${public_temp_dir}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
       print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
-#      print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
-#      print "<br/>";
-#      &DelayedRemoval("$TMP/$1");
     } else {
       print $_;
     }

@@ -98,19 +98,30 @@ string reverse_complement(string s)
     return rc;
 }
 
-int read_fasta(vector<string> &sequences, string filename, bool rc=false)
+int read_fasta(vector<string> &sequences, char *filename, bool rc=false)
 {
     vector<string> titles;
     int i = 0;
 
     // read sequences
-    ifstream f;
-    f.open(filename.c_str());
+    istream *f;
+    ifstream ifn;
+
+    if (filename == NULL)
+    {
+        f = &cin;
+    }
+    else
+    {
+        ifn.open(filename);
+        f = &ifn;
+    }
+
     if (!f)
         return 0;
 
     string line;
-    while (getline(f, line))
+    while (getline(*f, line))
     {
         if (line[0] == '>')
         {
@@ -123,7 +134,9 @@ int read_fasta(vector<string> &sequences, string filename, bool rc=false)
                 sequences.back() += line;
         }
     }
-    f.close();
+    
+    if (filename != NULL)
+        ifn.close();
 
     // convert sequences
     int n = sequences.size();
