@@ -51,6 +51,7 @@ eval
       if ($answer->{output}->{response}->{client} =~ 'CTGTCTATATGCCAC'){
 	print "Passed\n";
 	print "\nResult :\n\n", $answer->{output}->{response}->{client}, "\n";
+	print "\nServer :\n\n", $answer->{output}->{response}->{server}, "\n";
 	exit 0;
       } else {
 	print "Unexpected data\n";
