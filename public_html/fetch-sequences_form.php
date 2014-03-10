@@ -9,7 +9,7 @@
     <script src="RSAT_tabs.js" type="text/javascript"></script>
     <script type="text/javascript">
 			function add_demo() {
-				document.getElementById('genome').value = 'mm9'; 	
+				document.getElementById('genome').value = 'mm9';
 				document.forms[0].bed.value="";
 				document.getElementById('bedfile').value=''; 				
 				document.forms[0].header[0].checked=true;			
