@@ -49,11 +49,11 @@ hclustToTree <- function(hclust) {
 }
 
 
-dir.results <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results"
-file.prefix <- file.path(dir.results, "Testing_10_03_2014")
+#dir.results <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results"
+#file.prefix <- file.path(dir.results, "Testing_10_03_2014")
 
-#dir.results <- "/Users/jvanheld/test/motif_clustering/results/peakmo_clustering"
-#file.prefix <- file.path(dir.results, "peakmo_example")
+dir.results <- "/Users/jvanheld/test/motif_clustering/results/peakmo_clustering"
+file.prefix <- file.path(dir.results, "peakmo_example")
 
 setwd(dir.results)
 
@@ -111,6 +111,54 @@ write(hc2Newick(tree, flat = TRUE), file="test_output_hclust_average.newick")
 ### Traversing the tree ###
 ###########################
 
+################################################################
+## Collect the list of leaves (motif) associated to each internal node
+## (motif cluster) of the tree.
+##
+## This method works for any hclust result tree, irrespective of the
+## fact that it refers to motifs or anything else.
+##
+## Usage: generate a vector with the list of leaves (string-formatted)
+## per internal node
+##   treenodes <- leaves.per.node(tree) ## The input tre must be an hclust result
+##
+## Then to get a vector with the leaves associated to a given internal
+## node (e.g. node 4):
+##   leaves.for.node.4 <- as.numeric(unlist(strsplit(tree.nodes[4], split=" ")))
+##
+leaves.per.node <- function (tree 
+                             ) {
+  merge.table <- tree$merge
+  leave.lists <- vector()
+
+  for (i in 1:nrow(merge.table)) {
+    branch1 <- merge.table[i, 1]
+    branch2 <- merge.table[i, 2]
+
+    ## Dependingon whether the left branch points to a leave or an
+    ## iternal nodes, collect a single leave or the pre-defined list
+    ## of leaves from this internal node
+    if (branch1 < 0) {
+      nodes1 <- -branch1 ## branch one only contains one leave
+    } else {
+      nodes1 <- leave.lists[branch1]
+    }
+    
+    ## Dependingon whether the right branch points to a leave or an
+    ## iternal nodes, collect a single leave or the pre-defined list
+    ## of leaves from this internal node
+    if (branch2 < 0) {
+      nodes2 <- -branch2 ## branch one only contains one leave
+    } else {
+      nodes2 <- leave.lists[branch2]
+    }
+
+    leave.lists[i] <- paste(nodes1, nodes2)
+  }  
+  return (leave.lists)
+}
+
+
 ##########################################
 ## Given a merge level return all the
 ## motifs clustered in that level
@@ -132,18 +180,21 @@ get.all.leaves.below <- function(num){
   }
 }
 
+## Propuesta alternativa (por JvH): traverse the tree only once, but
+## progressively store the lists of files in a specific structure.
+
 
 ########################################
 ## Given a cluster number returns all
 ## nodes within that cluster
-#get.all.leaves.in.cluster <- function(cluster){
-  
+#get.all.leaves.in.cluster <- function(cluster){  
 #}
 
 
-#################################################################################
-## Get the if of the motif with the leatest distance between the motif and the
-## leaves in the cluster
+################################################################
+## Identify the "central" leaf (motif) of a subtre (cluster), i.e. the
+## motif with the smallest average distance to all other motifs of
+## this the cluster.
 minor.distance.id <- function(id,motif.numbers){
   
   id.2 <- get.id(motif.numbers)
@@ -191,7 +242,6 @@ merge.level <- 1
 merge.information.list <- list()
 motif.consensus <- list()
 motif.number <- list()
-
 #for (merge.level in 1:nrow(tree$merge)) {
 for (merge.level in 1:6) { 
   child1 <- tree$merge[merge.level,1]
@@ -201,9 +251,9 @@ for (merge.level in 1:6) {
   merge.information.list[[merge.id]] <- list()
   
   
-###############################################
+  ## #############################################
   ## Simplest case: merging between two leaves ##
-###############################################
+  ## #############################################
   if ((child1 < 0) && (child2 < 0)) {
     
     ## Identify the two motifs
