@@ -3,7 +3,6 @@
 library("RJSONIO")
 library("ctc")
 library("reshape")
-# library("dynamicTreeCut")
 library("dendroextras")
 
 ## Define parameters
@@ -49,11 +48,11 @@ hclustToTree <- function(hclust) {
 }
 
 
-#dir.results <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results"
-#file.prefix <- file.path(dir.results, "Testing_10_03_2014")
+dir.results <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results"
+file.prefix <- file.path(dir.results, "Testing_10_03_2014")
 
-dir.results <- "/Users/jvanheld/test/motif_clustering/results/peakmo_clustering"
-file.prefix <- file.path(dir.results, "peakmo_example")
+#dir.results <- "/Users/jvanheld/test/motif_clustering/results/peakmo_clustering"
+#file.prefix <- file.path(dir.results, "peakmo_example")
 
 setwd(dir.results)
 
@@ -104,7 +103,7 @@ dist.matrix <- as.dist(dist.table)
 ### Runs and plot the hierarchical cluster
 tree <- hclust(dist.matrix, method = hclust.method)
 tree$labels <- as.vector(description.table$label)
-write(hc2Newick(tree, flat = TRUE), file="test_output_hclust_average.newick")
+#write(hc2Newick(tree, flat = TRUE), file="test_output_hclust_average.newick")
 
 
 ###########################
@@ -129,13 +128,13 @@ write(hc2Newick(tree, flat = TRUE), file="test_output_hclust_average.newick")
 leaves.per.node <- function (tree 
                              ) {
   merge.table <- tree$merge
-  leave.lists <- vector()
+  leave.lists <- list()
 
   for (i in 1:nrow(merge.table)) {
     branch1 <- merge.table[i, 1]
     branch2 <- merge.table[i, 2]
 
-    ## Dependingon whether the left branch points to a leave or an
+    ## Depending on whether the left branch points to a leave or an
     ## iternal nodes, collect a single leave or the pre-defined list
     ## of leaves from this internal node
     if (branch1 < 0) {
@@ -143,7 +142,7 @@ leaves.per.node <- function (tree
     } else {
       nodes1 <- leave.lists[branch1]
     }
-    
+
     ## Dependingon whether the right branch points to a leave or an
     ## iternal nodes, collect a single leave or the pre-defined list
     ## of leaves from this internal node
@@ -152,60 +151,37 @@ leaves.per.node <- function (tree
     } else {
       nodes2 <- leave.lists[branch2]
     }
-
+    
     leave.lists[i] <- paste(nodes1, nodes2)
-  }  
+  }
+  leave.lists <- sapply(leave.lists, function(x){ as.numeric(unlist(strsplit(x, " "))) })
   return (leave.lists)
 }
 
 
-##########################################
-## Given a merge level return all the
-## motifs clustered in that level
-get.all.leaves.below <- function(num){
-
-  X <- tree$merge[num,1]
-  Y <- tree$merge[num,2]
-
-  if(X < 0 & Y < 0){
-    return(abs(c(X,Y)))
-  }
-  
-  else if( (X < 0 & Y > 0) | (X > 0 & Y < 0) ){
-    return(abs(c(min(c(X,Y)), get.all.leaves.below(max(c(X,Y))))))
-  }
-
-  else if (X > 0 & Y > 0){
-    return(abs(c(get.all.leaves.below(X), get.all.leaves.below(Y))))
-  }
-}
-
-## Propuesta alternativa (por JvH): traverse the tree only once, but
-## progressively store the lists of files in a specific structure.
-
-
-########################################
-## Given a cluster number returns all
-## nodes within that cluster
-#get.all.leaves.in.cluster <- function(cluster){  
-#}
-
-
 ################################################################
-## Identify the "central" leaf (motif) of a subtre (cluster), i.e. the
-## motif with the smallest average distance to all other motifs of
-## this the cluster.
-minor.distance.id <- function(id,motif.numbers){
-  
-  id.2 <- get.id(motif.numbers)
-  
-  n.2 <- as.vector(sapply(id.2, function(X){
-    get.compa.nb(id,X)
-  }))
+## Identify the "central" leaf (motif) of a subtre (cluster),
+## i.e. the motif with the smallest average distance to all
+## other motifs of this cluster.
+minor.distance.ids <- function(motif.numbers.1, motif.numbers.2){
 
-  compa.info <- compare.matrices.table[n.2,][which(compare.matrices.table[n.2,"Ncor"] == max(compare.matrices.table[n.2,"Ncor"])),c("id1","id2")]
-  id.highest <- as.vector(compa.info[,which(compa.info != id)])
-  return(id.highest)
+  ## Get the ids
+  id.1 <- get.id(motif.numbers.1)
+  id.2 <- get.id(motif.numbers.2)
+
+  ## Get the comparison numbers
+  compa.numbers <- sapply(id.2, function(X){
+    sapply(id.1, function(Y){
+      get.compa.nb(X, Y)
+    })
+  })
+  compa.numbers <- as.vector(compa.numbers)
+
+  ## Get the ids of the less distant nodes
+  compa.info <- compare.matrices.table[compa.numbers,][which(compare.matrices.table[compa.numbers,score] == max(compare.matrices.table[compa.numbers,score])),c("id1","id2")]
+  #compa.info <- as.vector(unlist(compa.info))
+  #id.highest <- as.vector(compa.info[,which(compa.info != id.1)])
+  return(as.vector(unlist(compa.info)))
 }
 
 
@@ -213,20 +189,15 @@ minor.distance.id <- function(id,motif.numbers){
 ## Get the number of comparison between the input IDs
 ## in the compare-matrices results table
 get.compa.nb <- function(ID1,ID2){
+  
   return(which( (compare.matrices.table[,"id2"] == ID2 & compare.matrices.table[,"id1"] == ID1) | (compare.matrices.table[,"id1"] == ID2 & compare.matrices.table[,"id2"] == ID1) ))
-}
-
-#################################################
-## Given the IDs of the leaves in two clusters
-## return the pairs of closest IDs 
-get.ids.minor.distance.two.clusters <- function(cluster1, cluster2){
-
 }
 
 
 ########################################################
 ## Given the number of leaf, get the id of the motif
 get.id <- function(num){
+  
   return(as.vector(sapply(num, function(X){
     description.table[X,"id"]
   })))
@@ -239,16 +210,20 @@ tree$labels <- paste(as.vector(description.table$consensus), 1:length(descriptio
 #############################################################
 ## Bottom-up traversal of the tree to orientate the logos
 merge.level <- 1
-merge.information.list <- list()
+merge.info <- list()
 motif.consensus <- list()
 motif.number <- list()
 #for (merge.level in 1:nrow(tree$merge)) {
-for (merge.level in 1:6) { 
+
+for (merge.level in 1:5) {
+
+  merge.levels.leaves <- leaves.per.node(tree)
+  
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
   
   merge.id <- paste("merge_level_", merge.level, sep = "")
-  merge.information.list[[merge.id]] <- list()
+  merge.info[[merge.id]] <- list()
   
   
   ## #############################################
@@ -289,15 +264,8 @@ for (merge.level in 1:6) {
     tree$labels[n1] <- paste(consensus1, n1)      
     tree$labels[n2] <- paste(consensus2, n2)
     
-    ## Store the information in a list of lists
-    merge.information.list[[merge.id]][[paste("motif", n1, sep = "_")]][["id"]] <- id1
-    merge.information.list[[merge.id]][[paste("motif", n1, sep = "_")]][["consensus"]] <- consensus1
-    
-    merge.information.list[[merge.id]][[paste("motif", n2, sep = "_")]][["id"]] <- id2
-    merge.information.list[[merge.id]][[paste("motif", n1, sep = "_")]][["consensus"]] <- consensus2
-    
-    merge.information.list[[merge.id]][[paste("motifs", n1, n2, sep = "_")]][["relative_strand"]] <- strand
-    
+    ## Store the strand of the cluster, the consensuses and numbers   
+    merge.info[[merge.id]][["relative_strand"]] <- strand  
     
     motif.consensus[[id1]] <- consensus1
     motif.consensus[[id2]] <- consensus2
@@ -307,9 +275,10 @@ for (merge.level in 1:6) {
   }
   
   
-  ############################################
-  ## Merging aligned logos with another one ##
-  ############################################
+  ####################################
+  ## Merging a motif with a cluster ##
+  ####################################
+  
   if (((child1 < 0) && (child2 > 0))
       || ((child1 > 0) && (child2 < 0)) ) {
     
@@ -320,16 +289,19 @@ for (merge.level in 1:6) {
     ## Id of the leaf
     id1 <- get.id(n1)
     
-    
     ## Get all motifs in the cluster
-    N2.motifs <- get.all.leaves.below(N2)
+    N2.motifs <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
     
-    ## Get the motif with the lowest distance between the leaf and the leaves in the cluster
-    id2 <- minor.distance.id(id1,N2.motifs)
+    ## Get the id of the motif with the lowest distance between the new leaf
+    ## and the leaves in the cluster
+    ids <- minor.distance.id(n1,N2.motifs)
+    id2 <- ids[which(ids != id1)]
+
+    ## Get the comparison number
     compa.nb <- get.compa.nb(id1, id2)
     
     ## Get the orientation of the previous cluster
-    prev.cluster.strand <- merge.information.list[[paste("merge_level_", N2, sep = "")]][[3]][["relative_strand"]]
+    prev.cluster.strand <- merge.info[[N2]][["relative_strand"]]
     
     ## Choose the relative orientation of the motif
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -367,14 +339,25 @@ for (merge.level in 1:6) {
       }
     }
 
-    merge.information.list[[merge.id]][[paste("motif", n1, sep = "_")]][["id"]] <- id1
-    merge.information.list[[merge.id]][[paste("motif", n1, sep = "_")]][["consensus"]] <- consensus1
-    
-    merge.information.list[[merge.id]][[paste("cluster", N2, sep = "_")]][["id"]] <- N2
-    
-    merge.information.list[[merge.id]][[paste("motifs", paste(get.all.leaves.below(N2), collapse = "_"), sep = "_")]][["relative_strand"]] <- strand
-    
-  } 
+    ## Stores the orientation of the new cluster
+    merge.info[[merge.id]][["relative_strand"]] <- prev.cluster.strand    
+  }
+
+  
+  ##########################
+  ## Merging two clusters ##
+  ##########################
+
+  if((child1 > 0) && (child2 > 0)){
+
+    ## Identify the two clusters
+    N1 <- merge.levels.leaves[min(child1, child2)]
+    N2 <- merge.levels.leaves[max(child1, child2)]
+
+    ## Get the ids of the clusters members
+    ids.cluster1 <- get.id(N1)
+    ids.cluster2 <- get.id(N2)
+  }
 } 
 
 ###############################################################################
@@ -383,3 +366,21 @@ dev.new(width=10, height=7)
 par(mar=c(3,2,1,20),family="mono")
 plot(as.dendrogram(tree), horiz=TRUE)
 
+
+a <- unlist(merge.levels.leaves[4])
+b <- unlist(merge.levels.leaves[5])
+
+shortest.ids <- minor.distance.ids(a,b)
+
+## id1
+id1 <- shortest.ids[1]
+n1 <- motif.number[[id1]]
+
+## id2
+id2 <- shortest.ids[2]
+n2 <- motif.number[[id2]]
+
+compa.nb <- get.compa.nb(id1, id2)
+
+     TtTGCATgACAATrr
+.....TTTGCATAACAAwrr
