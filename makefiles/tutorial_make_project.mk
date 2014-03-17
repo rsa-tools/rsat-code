@@ -8,7 +8,9 @@
 ##
 ## 1. Hello world
 ## 2. Simple example: generating a random sequence
-## 3. Iterating a target
+## 3. Conditional execution (if)
+## 4. Iterating a target ("for" loop)
+
 
 ################################################################
 ## Specify the path of this makefile in a variable, in order to be
@@ -113,18 +115,25 @@ randseq:
 randseq_n9:
 	@${MAKE} randseq SEQ_NB=9
 
-################################################################
-## We will now run several repetitions of the random sequence
-## generation. Each repetition will be stored in a separate file for
-## further analysis.
 
-## Create a directory for storing random sequences
+
+################################################################
+##                                                            ##
+##         Section 3: Conditional execution (if)              ##
+##                                                            ##
+################################################################
+
+## Create a directory for storing random sequences.  First test if the
+## directory exists. If not, create it and display a message.
 RANDSEQ_DIR=results/randseq
 randseq_dir:
-	@echo ""
-	@echo "Creating directory to store random sequences"
-	@mkdir -p ${RANDSEQ_DIR}
-	@echo "	RANDSEQ_DIR	${RANDSEQ_DIR}"
+	@if [ -d "${RANDSEQ_DIR}" ] ; then \
+		echo ""; \
+	else \
+		echo "Creating directory to store random sequences"; \
+		mkdir -p ${RANDSEQ_DIR} ; \
+		echo "	RANDSEQ_DIR	${RANDSEQ_DIR}" ; \
+	fi
 
 ################################################################
 ## Generate a random sequence and store it to a file. By default, the
@@ -132,15 +141,18 @@ randseq_dir:
 ##
 ## In the header of this target, we indicate that it depdends from the
 ## target randseq_dir.
+##
+## After command execution, we report the result file name.
 REP=01
-RAND_SEQ_FILE=${RAND_SEQ_DIR}/
+RAND_SEQ_FILE=${RANDSEQ_DIR}/randseq_L${SEQ_LEN}_N${SEQ_NB}_rep${REP}.fasta
 RAND_SEQ_CMD=random-seq -n ${SEQ_NB} -l ${SEQ_LEN} -o ${RAND_SEQ_FILE}
 randseq_to_file: randseq_dir
 	${RAND_SEQ_CMD}
+	@echo "	${RAND_SEQ_FILE}"
 
 ################################################################
 ##                                                            ##
-##                 Section 1: Hello world                     ##
+##       Section 4: Task iteration ("for" loop)               ##
 ##                                                            ##
 ################################################################
 
@@ -148,13 +160,22 @@ randseq_to_file: randseq_dir
 ## same number of digits. This is convenient, since alphabetical and
 ## numerical orders are then identical.
 RAND_REP_FROM=0
-RAND_REP_NB=20
+RAND_REP_TO=20
 RAND_REP_DIGITS=02
-RAND_REPEATS=`perl -le 'for $$i (${RAND_REP_FROM}..${RAND_REP_NB}) {printf "%${RAND_REP_DIGITS}d\n", $$i}' | xargs`
-list_rand_rep:
-	@echo "Random repetitions from ${RAND_REP_FROM} to ${RAND_REP_NB}"
+RAND_REPEATS=`perl -le 'for $$i (${RAND_REP_FROM}..${RAND_REP_TO}) {printf "%${RAND_REP_DIGITS}d\n", $$i}' | xargs`
+list_rep_numbers:
+	@echo "Random repetitions from ${RAND_REP_FROM} to ${RAND_REP_TO}"
 	@echo "	${RAND_REPEATS}"
 
+
+## Run a task iteratively using a "for" loop
+ITERATING_TASK=randseq_to_file
+iterate_randseq:
+	@echo
+	@echo "Iterating task ${ITERATING_TAKS}	from ${RAND_REP_FROM} to ${RAND_REP_TO}"
+	@for i in ${RAND_REPEATS}; do \
+		${MAKE} -s ${ITERATING_TASK} REP=$$i; \
+	done
 
 
 
