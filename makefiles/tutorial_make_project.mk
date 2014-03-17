@@ -5,12 +5,11 @@
 ## Date: 2014-03-13
 
 ## Contents
-##
-## 1. Hello world
-## 2. Simple example: generating a random sequence
-## 3. Conditional execution (if)
-## 4. Iterating a target ("for" loop)
-
+##   Section 1. Hello world
+##   Section 2. Simple example: generating a random sequence
+##   Section 3. Conditional execution (if)
+##   Section 4. Iterating a target ("for" loop)
+##   Section 5: Submitting jobs to a cluster
 
 ################################################################
 ## Specify the path of this makefile in a variable, in order to be
@@ -177,5 +176,76 @@ iterate_randseq:
 		${MAKE} -s ${ITERATING_TASK} REP=$$i; \
 	done
 
+################################################################
+##                                                            ##
+##       Section 5: Submitting jobs to a cluster              ##
+##                                                            ##
+################################################################
+
+## Send a jobs to a cluster using the torque quee management system.
+## The command is written in a script file (stored in the JOB dir),
+## and this script is submitted to qsub.
+##
+## Note: qsub is used by several queue management systems (SGE,
+## torque, ...), but the options are slightly different. The script
+## should be adapted to use it with another queue manager. An SGE
+## example is available in ${RSAT}/makefiles/util.mk
+## 
+## A unique name is obtained for the script file with the command
+## mktemp.  I use an awful trick to ensure that this name is generated
+## only once for this target, by running a "for" loop with a single
+## element (JOB). Without this script, mktemp would be called once for
+## creating the script, and another time when sending it to the queue
+## (it would thus have a different name, and the task would fail).
+DATE=`date +%Y%m%d`
+TIME=`date +%Y%m%d_%H%M%S`
+JOB_DIR=`pwd`/jobs/${DATE}
+JOB_PREFIX=job
+JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
+QUEUE=any
+QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}
+command_queue_torque:
+	@mkdir -p ${JOB_DIR}
+	@for job in ${JOB} ; do	\
+		rm $${job} ;\
+		echo; \
+		echo "Command to queue:	${MY_COMMAND}" ;	\
+		echo "Job file:		${JOB_DIR}/$${job}" ;	\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
+		echo "hostname" >> ${JOB_DIR}/$${job}; \
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
+		chmod u+x ${JOB_DIR}/$${job} ;	\
+		echo "Qsub command:		${QSUB_CMD}" ;	\
+		${QSUB_CMD}; \
+	done
 
 
+## Submit a command to the cluster.  
+##
+## BEWARE: the command MY_COMMAND must be quoted as below. It can thus not contain
+## quotes of the same type. If some parameters of the command need
+## quotes, you can use single quotes within the command, and double
+## quotes to specify MY_COMMAND (or the opposite).
+queue_randseq:
+	@${MAKE} command_queue_torque MY_COMMAND="${RAND_SEQ_CMD}"
+
+################################################################
+## Iterate the submission of a job to the queue. In this case, we
+## iterte over the REP (repetition) variable of the randseq_queue
+## target. This can easly be adapted to use another iterator (data
+## set, program parameter, ...).
+iterate_queue_randseq:
+	@echo
+	@echo "Iterating task ${ITERATING_TAKS}	from ${RAND_REP_FROM} to ${RAND_REP_TO}"
+	@for i in ${RAND_REPEATS}; do \
+		${MAKE} queue_randseq REP=$$i ; \
+	done
+
+## A convenient targetto watch the status of your jobs
+watch_jobs_torque:
+	@hostname
+	@date
+	@echo "`qstat | grep -v '^---'| grep -v '^Job id' | wc -l`	Jobs"
+	@echo "`qstat | grep ' R ' | wc -l`	Running"
+	@echo "`qstat | grep ' Q ' | wc -l`	Queued" 
+	@echo "`qstat | grep ' C ' | wc -l`	Completed"
