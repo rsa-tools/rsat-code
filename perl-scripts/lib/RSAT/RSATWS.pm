@@ -51,7 +51,8 @@ Documentation for this module is at
 
 =cut
 
-##########
+
+################################################################
 sub retrieve_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -178,7 +179,8 @@ sub retrieve_seq {
   &run_WS_command($command, $output_choice, "retrieve-seq", $format);
 }
 
-##########
+
+################################################################
 sub retrieve_seq_multigenome {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -307,7 +309,8 @@ sub retrieve_seq_multigenome {
   &run_WS_command($command, $output_choice, "retrieve-seq-multigenome", $format);
 }
 
-##########
+
+################################################################
 sub retrieve_ensembl_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -581,7 +584,8 @@ sub retrieve_ensembl_seq {
  &run_WS_command($command, $output_choice, "retrieve-ensembl-seq", $format)
 }
 
-##########
+
+################################################################
 sub purge_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -655,7 +659,8 @@ sub purge_seq {
     &run_WS_command($command, $output_choice, "purge-sequence", $format);
 }
 
-##########
+
+################################################################
 sub oligo_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -801,7 +806,8 @@ sub oligo_analysis {
     &run_WS_command($command, $output_choice, "oligo-analysis", "tab");
 }
 
-##########
+
+################################################################
 sub oligo_diff {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -924,6 +930,7 @@ sub oligo_diff {
 
     &run_WS_command($command, $output_choice, "oligo-diff", "tab");
 }
+
 
 ################################################################
 ##
@@ -1265,7 +1272,8 @@ sub peak_motifs_cmd {
 #    &run_WS_command($command, $output_choice, "peak-motifs");
 }
 
-##########
+
+################################################################
 sub dyad_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1423,7 +1431,8 @@ sub dyad_analysis {
     &run_WS_command($command, $output_choice, "dyad-analysis", "tab");
 }
 
-##########
+
+################################################################
 sub position_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1637,7 +1646,8 @@ sub position_analysis {
     &run_WS_command($command, $output_choice, "position-analysis", "tab");
 }
 
-##########
+
+################################################################
 sub pattern_assembly {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1729,7 +1739,8 @@ sub pattern_assembly {
     &run_WS_command($command, $output_choice, "pattern-assembly", "asmb");
 }
 
-##########
+
+################################################################
 sub dna_pattern {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1854,7 +1865,8 @@ sub dna_pattern {
     &run_WS_command($command, $output_choice, "dna-pattern", "tab");
 }
 
-##########
+
+################################################################
 sub convert_features {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1897,7 +1909,8 @@ sub convert_features {
      &run_WS_command($command, $output_choice, "convert-features", $to);
 }
 
-##########
+
+################################################################
 sub feature_map {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2112,7 +2125,8 @@ sub feature_map {
     &run_WS_command($command, $output_choice, "feature_map", $extension);
 }
 
-##########
+
+################################################################
 sub get_orthologs {
   my ($self, $args_ref) = @_;
 
@@ -2261,7 +2275,8 @@ sub get_orthologs_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub footprint_discovery {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2499,6 +2514,7 @@ sub footprint_discovery_cmd {
     return $command;
 }
 
+
 ################################################################
 ## infer-operon
 sub infer_operon {
@@ -2591,7 +2607,8 @@ sub infer_operon {
   &run_WS_command($command, $output_choice, "infer-operon", "tab");
 }
 
-##########
+
+################################################################
 sub gene_info {
     my ($self, $args_ref) = @_;
 
@@ -2647,7 +2664,8 @@ sub gene_info {
     &run_WS_command($command, $output_choice, "gene-info", "tab");
 }
 
-##########
+
+################################################################
 sub supported_organisms {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2656,18 +2674,32 @@ sub supported_organisms {
     $output_choice = 'both';
   }
 
-  my $command = "$SCRIPTS/supported-organisms";
+  my $command = $SCRIPTS."/supported-organisms";
 
+  ## Output format
+  unless ($args{format}) {
+    $args{format} = "tab";
+  }
   if ($args{format}) {
     $args{format} =~ s/\'//g;
     $args{format} =~ s/\"//g;
-    $command .= " -format '".$args{format}."'";
+    $command .= " -format ".$args{format};
   }
+
+  ## Output fields
   if ($args{return}) {
     $args{return} =~ s/\'//g;
     $args{return} =~ s/\"//g;
     $command .= " -return '".$args{return}."'";
   }
+
+  ## Depth
+  if ($args{depth}) {
+    &RSAT::error::FatalError() unless (&RSAT::util::IsInteger($args{depth}));
+    $command .= " -depth ".$args{depth};
+  }
+
+  ## Taxon
   if ($args{taxon}) {
     $args{taxon} =~ s/\'//g;
     $args{taxon} =~ s/\"//g;
@@ -2677,7 +2709,8 @@ sub supported_organisms {
   &run_WS_command($command, $output_choice, "supported-organisms", "tab");
 }
 
-##########
+
+################################################################
 sub text_to_html {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2716,8 +2749,9 @@ sub text_to_html {
   &run_WS_command($command, $output_choice, "text-to-html", "html");
 }
 
-##########
-sub roc_stats{
+
+################################################################
+sub roc_stats {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
@@ -2767,7 +2801,8 @@ sub roc_stats{
   &run_WS_command($command, $output_choice, "roc-stats", "tab");
 }
 
-##########
+
+################################################################
 sub classfreq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2830,7 +2865,8 @@ sub classfreq {
   &run_WS_command($command, $output_choice, "classfreq", "tab");
 }
 
-##########
+
+################################################################
 sub convert_classes {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2913,7 +2949,8 @@ sub convert_classes {
   &run_WS_command($command, $output_choice, "convert-classes", $extension);
 }
 
-##########
+
+################################################################
 sub contingency_stats {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2978,7 +3015,8 @@ sub contingency_stats {
   &run_WS_command($command, $output_choice, "contingency-stats", "tab");
 }
 
-##########
+
+################################################################
 sub contingency_table {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3028,7 +3066,8 @@ sub contingency_table {
   &run_WS_command($command, $output_choice, "contingency-table", "tab");
 }
 
-##########
+
+################################################################
 sub xygraph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3195,7 +3234,8 @@ sub xygraph_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub convert_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3236,7 +3276,8 @@ sub convert_seq {
     &run_WS_command($command, $output_choice, "convert-seq", $args{to});
 }
 
-##########
+
+################################################################
 sub compare_classes {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3399,7 +3440,8 @@ sub compare_classes {
  &run_WS_command($command, $output_choice, "compare-classes", "tab");
 }
 
-##########
+
+################################################################
 sub matrix_scan {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3697,7 +3739,8 @@ if ($args{"equi_pseudo"} == 1 ) {
  &run_WS_command($command, $output_choice, ".matrix-scan", "ft")
 }
 
-##########
+
+################################################################
 sub convert_matrix {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3829,7 +3872,8 @@ sub convert_matrix {
  &run_WS_command($command, $output_choice, ".convert-matrix", $to)
 }
 
-##########
+
+################################################################
 sub matrix_distrib {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3918,7 +3962,8 @@ sub matrix_distrib {
   &run_WS_command($command, $output_choice, ".matrix-distrib", "tab")
 }
 
-##########
+
+################################################################
 sub compare_matrices {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3991,7 +4036,8 @@ sub compare_matrices {
     }
 }
 
-##########
+
+################################################################
 sub compare_matrices_cmd {
   my ($self, %args) =@_;
   if ($args{"matrix_1"}) {
@@ -4245,7 +4291,8 @@ sub compare_matrices_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub random_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4344,7 +4391,8 @@ sub random_seq {
  &run_WS_command($command, $output_choice, ".random-seq", $args{format})
 }
 
-##########
+
+################################################################
 sub fetch_sequences {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4443,8 +4491,10 @@ sub fetch_sequences {
   &run_WS_command($command, $output_choice, "fetch-sequences", $format);
 }
 
+
 ################################################################
 ## RSAT GRAPH TOOLS
+
 ################################################################
 
 sub convert_graph {
@@ -4593,7 +4643,8 @@ sub convert_graph_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub alter_graph {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4691,7 +4742,8 @@ sub alter_graph {
 }
 
 
-##########
+
+################################################################
 sub graph_cliques {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4749,7 +4801,8 @@ sub graph_cliques {
 
   &run_WS_command($command, $output_choice, "graph-clique", "tab");
 }
-##########
+
+################################################################
 sub display_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -4877,7 +4930,8 @@ sub display_graph_cmd {
 }
 
 
-##########
+
+################################################################
 sub draw_heatmap {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -4996,7 +5050,8 @@ sub draw_heatmap_cmd {
 }
 
 
-##########
+
+################################################################
 # sub graph_get_clusters {
 #     my ($self, $args_ref) = @_;
 #     my %args = %$args_ref;
@@ -5304,7 +5359,8 @@ sub graph_topology_cmd {
 
 }
 
-##########
+
+################################################################
 sub graph_cluster_membership {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -5423,7 +5479,8 @@ sub graph_cluster_membership_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub compare_graphs {
     ## In order to recuperate the statistics calculated by compare-graphs, I
     ## place all the standard error in a separate file. Indeed the computation
@@ -5591,7 +5648,8 @@ sub compare_graphs_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub graph_neighbours {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -5678,7 +5736,8 @@ sub graph_neighbours {
   &run_WS_command($command, $output_choice, "graph-neighbours", "tab");
 }
 
-##########
+
+################################################################
 sub rnsc {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -5931,7 +5990,8 @@ sub mcl_cmd {
   }
   return $command;
 }
-##########
+
+################################################################
 sub parse_psi_xml {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -5986,7 +6046,8 @@ sub parse_psi_xml {
   }
   &run_WS_command($command, $output_choice, "parse-psi-xml", "tab");
 }
-##########
+
+################################################################
 sub random_graph {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -6119,6 +6180,7 @@ sub random_graph {
   &run_WS_command($command, $output_choice, "random-graph", $extension);
 }
 
+
 ################################################################
 sub monitor {
   my ($self, $args_ref) = @_;
@@ -6132,6 +6194,7 @@ sub monitor {
       return SOAP::Data->name('response' => {'status' => 'Done'});
   }
 }
+
 
 ################################################################
 sub get_result {
@@ -6286,6 +6349,7 @@ sub run_WS_command {
   }
 }
 
+
 ################################################################
 ## Run the command on the server and send an email when the task is done
 sub email_command {
@@ -6342,14 +6406,14 @@ sub UpdateLogFileWS {
   }
 }
 
+
 ################################################################
 ## This function handles the error verbosity
 ##
 ## This can be very useful as the majority of the functions die on any error
 ## (even if this error is a simple warning).
 sub error_handling {
-  my $stderr = shift;
-  my $verbosity = shift;
+  my ($stderr, $verbosity) = @_;
   my $result = "";
   if ($verbosity == 0) {
     $result = "";
