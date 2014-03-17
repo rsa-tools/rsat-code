@@ -11,6 +11,10 @@
 ##   Section 4. Iterating a target ("for" loop)
 ##   Section 5: Submitting jobs to a cluster
 
+## Incude RSAT local configuration, which will be required for some
+## site-specific parameters (e.g. the cluster queue name).
+include ${RSAT}/RSAT_config.mk
+
 ################################################################
 ## Specify the path of this makefile in a variable, in order to be
 ## able to call the file from itself.
