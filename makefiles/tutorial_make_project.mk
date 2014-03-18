@@ -185,8 +185,7 @@ iterate_randseq:
 ##       Section 5: Submitting jobs to a cluster              ##
 ##                                                            ##
 ################################################################
-
-## Send a jobs to a cluster using the torque quee management system.
+## Send a jobs to a cluster using the torque queue management system.
 ## The command is written in a script file (stored in the JOB dir),
 ## and this script is submitted to qsub.
 ##
@@ -201,28 +200,27 @@ iterate_randseq:
 ## element (JOB). Without this script, mktemp would be called once for
 ## creating the script, and another time when sending it to the queue
 ## (it would thus have a different name, and the task would fail).
-DATE=`date +%Y%m%d`
+DAY=`date +%Y%m%d`
 TIME=`date +%Y%m%d_%H%M%S`
-JOB_DIR=`pwd`/jobs/${DATE}
+JOB_DIR=`pwd`/jobs/${DAY}
 JOB_PREFIX=job
-JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
-QUEUE=any
-QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}
+JOB=`mktemp -u ${JOB_PREFIX}.XXXXXX`
+QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do	\
-		rm $${job} ;\
 		echo; \
-		echo "Command to queue:	${MY_COMMAND}" ;	\
-		echo "Job file:		${JOB_DIR}/$${job}" ;	\
-		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
-		echo "hostname" >> ${JOB_DIR}/$${job}; \
-		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
-		chmod u+x ${JOB_DIR}/$${job} ;	\
-		echo "Qsub command:		${QSUB_CMD}" ;	\
+		echo "Enqueued command:	${MY_COMMAND}" ;	\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}.sh; \
+		echo "hostname" >> ${JOB_DIR}/$${job}.sh; \
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job}.sh ;	\
+		chmod u+x ${JOB_DIR}/$${job}.sh ;	\
+		echo "	Qsub command:	${QSUB_CMD}" ;	\
+		echo "	Job file: 	${JOB_DIR}/$${job}.sh" ;	\
+		echo "	Log file: 	${JOB_DIR}/$${job}.log" ;	\
+		echo "	Error log:	${JOB_DIR}/$${job}.err" ;	\
 		${QSUB_CMD}; \
 	done
-
 
 ## Submit a command to the cluster.  
 ##
@@ -231,18 +229,18 @@ command_queue_torque:
 ## quotes, you can use single quotes within the command, and double
 ## quotes to specify MY_COMMAND (or the opposite).
 queue_randseq:
-	@${MAKE} command_queue_torque MY_COMMAND="${RAND_SEQ_CMD}"
+	@${MAKE} -s command_queue_torque MY_COMMAND="${RAND_SEQ_CMD}"
 
 ################################################################
 ## Iterate the submission of a job to the queue. In this case, we
 ## iterte over the REP (repetition) variable of the randseq_queue
 ## target. This can easly be adapted to use another iterator (data
 ## set, program parameter, ...).
-iterate_queue_randseq:
+iterate_queue_randseq: randseq_dir
 	@echo
 	@echo "Iterating task ${ITERATING_TAKS}	from ${RAND_REP_FROM} to ${RAND_REP_TO}"
 	@for i in ${RAND_REPEATS}; do \
-		${MAKE} queue_randseq REP=$$i ; \
+		${MAKE} -s queue_randseq REP=$$i ; \
 	done
 
 ## A convenient targetto watch the status of your jobs

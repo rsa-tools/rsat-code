@@ -12,6 +12,8 @@ V=1
 MAKEFILE=makefile
 MAKE=make -s -f ${MAKEFILE}
 DATE=`date +%Y-%M-%d_%H:%M:%S`
+DAY=`date +%Y%m%d`
+TIME=`date +%Y%m%d_%H%M%S`
 SSH_OPT = -e ssh 
 RSYNC_OPT= -ruptvlz  ${SSH_OPT} 
 RSYNC = rsync  ${RSYNC_OPT}
@@ -32,17 +34,52 @@ my_command:
 	@echo "${WHEN} command ${MY_COMMAND}"
 	${MAKE} command_${WHEN}
 
-HOUR=`date +%Y%m%d_%Hh`
-JOB_DIR=`pwd`/jobs/${HOUR}
-JOB_PREFIX=job
+#HOUR=`date +%Y%m%d_%Hh`
+#JOB_DIR=`pwd`/jobs/${HOUR}
+#JOB_PREFIX=job
 #JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
-JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
+#JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
 
+################################################################
+## Send a jobs to a cluster using either SGE or torque as queue
+## management system.  The command is written in a shell script
+## (stored in the JOB dir), which is submitted to qsub.
+##
+## Note: qsub is used by several queue management systems (SGE,
+## torque, ...), but the options are slightly different. The targets
+## should be adapted to use it with another queue manager. 
+## 
+## A unique name is obtained for the script file with the command
+## mktemp.  I use an awful trick to ensure that this name is generated
+## only once for this target, by running a "for" loop with a single
+## element (JOB). Without this script, mktemp would be called once for
+## creating the script, and another time when sending it to the queue
+## (it would thus have a different name, and the task would fail).
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
 
-## Send a jobs to a cluster using the torque quee management system
+JOB_DIR=`pwd`/jobs/${DAY}
+JOB_PREFIX=job
+JOB=`mktemp -u ${JOB_PREFIX}.XXXXXX`
+QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
 command_queue_torque:
+	@mkdir -p ${JOB_DIR}
+	@for job in ${JOB} ; do	\
+		echo; \
+		echo "Enqueued command:	${MY_COMMAND}" ;	\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}.sh; \
+		echo "hostname" >> ${JOB_DIR}/$${job}.sh; \
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job}.sh ;	\
+		chmod u+x ${JOB_DIR}/$${job}.sh ;	\
+		echo "	Qsub command:	${QSUB_CMD}" ;	\
+		echo "	Job file: 	${JOB_DIR}/$${job}.sh" ;	\
+		echo "	Log file: 	${JOB_DIR}/$${job}.log" ;	\
+		echo "	Error log:	${JOB_DIR}/$${job}.err" ;	\
+		${QSUB_CMD}; \
+	done
+
+## Send a jobs to a cluster using the torque quee management system
+_command_queue_torque_prev:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do	\
 		echo "Job ${JOB_DIR}/$${job}" ;	\
