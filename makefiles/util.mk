@@ -4,11 +4,9 @@
 ## Load site-specific options for the cluster + other parameters
 include ${RSAT}/RSAT_config.mk
 
-## level of verbosity
-V=1
-
 ################################################################
-## commands
+## Variables
+V=1
 MAKEFILE=makefile
 MAKE=make -s -f ${MAKEFILE}
 DATE=`date +%Y-%M-%d_%H:%M:%S`
@@ -18,7 +16,7 @@ RSYNC = rsync  ${RSYNC_OPT}
 WGET=wget --passive-ftp -np -rNL
 
 ################################################################
-#### list of targets
+## List of targets
 usage:
 	@echo "usage: make [-OPT='options'] target"
 	@echo "implemented targets"
@@ -42,6 +40,13 @@ command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
 
 ## Send a jobs to a cluster using the torque quee management system
+##
+## A unique name is obtained for the script file with the command
+## mktemp.  I use an awful trick to ensure that this name is generated
+## only once for this target, by running a "for" loop with a single
+## element (JOB). Without this script, mktemp would be called once for
+## creating the script, and another time when sending it to the queue
+## (it would thus have a different name, and the task would fail).
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do	\
@@ -55,6 +60,13 @@ command_queue_torque:
 	done
 
 ## Send a jobs to a cluster using the SGE queue management system
+##
+## A unique name is obtained for the script file with the command
+## mktemp.  I use an awful trick to ensure that this name is generated
+## only once for this target, by running a "for" loop with a single
+## element (JOB). Without this script, mktemp would be called once for
+## creating the script, and another time when sending it to the queue
+## (it would thus have a different name, and the task would fail).
 command_queue_sge:
 	@mkdir -p ${JOB_DIR}
 	@echo "job dir	${JOB_DIR}"
