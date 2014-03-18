@@ -206,7 +206,6 @@ TIME=`date +%Y%m%d_%H%M%S`
 JOB_DIR=`pwd`/jobs/${DATE}
 JOB_PREFIX=job
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
-QUEUE=any
 QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
