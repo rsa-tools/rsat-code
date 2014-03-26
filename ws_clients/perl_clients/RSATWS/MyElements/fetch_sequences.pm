@@ -1,5 +1,5 @@
 
-package MyElements::supported_organisms;
+package MyElements::fetch_sequences;
 use strict;
 use warnings;
 
@@ -7,7 +7,7 @@ use warnings;
 
 sub get_xmlns { 'urn:RSATWS' }
 
-__PACKAGE__->__set_name('supported_organisms');
+__PACKAGE__->__set_name('fetch_sequences');
 __PACKAGE__->__set_nillable();
 __PACKAGE__->__set_minOccurs();
 __PACKAGE__->__set_maxOccurs();
@@ -42,7 +42,7 @@ __PACKAGE__->_factory(
         'request' => \%request_of,
     },
     {
-        'request' => 'MyTypes::SupportedOrganismsRequest',
+        'request' => 'MyTypes::FetchSequencesRequest',
     },
     {
 
@@ -68,12 +68,12 @@ __PACKAGE__->_factory(
 
 =head1 NAME
 
-MyElements::supported_organisms
+MyElements::fetch_sequences
 
 =head1 DESCRIPTION
 
 Perl data type class for the XML Schema defined element
-supported_organisms from the namespace urn:RSATWS.
+fetch_sequences from the namespace urn:RSATWS.
 
 
 
@@ -104,17 +104,24 @@ methods:
 
 =head2 new
 
- my $element = MyElements::supported_organisms->new($data);
+ my $element = MyElements::fetch_sequences->new($data);
 
 Constructor. The following data structure may be passed to new():
 
  {
-   request =>  { # MyTypes::SupportedOrganismsRequest
+   request =>  { # MyTypes::FetchSequencesRequest
      output =>  $some_value, # string
-     return =>  $some_value, # string
-     format =>  $some_value, # string
-     taxon =>  $some_value, # string
-     depth =>  $some_value, # int
+     input =>  $some_value, # string
+     tmp_input_file =>  $some_value, # string
+     url =>  $some_value, # string
+     genome =>  $some_value, # string
+     header_format =>  $some_value, # string
+     upstr_ext =>  $some_value, # int
+     downstr_ext =>  $some_value, # int
+     extend =>  $some_value, # int
+     reference =>  $some_value, # string
+     top =>  $some_value, # int
+     chunck =>  $some_value, # int
    },
  },
 
