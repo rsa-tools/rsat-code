@@ -1,0 +1,326 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: create-background-model,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+create-background-model
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Create a background model by computing oligonucleotide frequencies in
+a user-specified sequence file (he "background" file).
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=back
+
+=head1 USAGE
+
+create-background-model [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Input file is a sequence file in any of the input formats supported by
+I<convert-seq>.
+
+=head1 OUTPUT FORMAT
+
+Output format is a background file in any of the output formats
+supported by I<convert-background-model>.
+
+=head1 SEE ALSO
+
+=head2 I<convert-background-model>
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use RSAT::MarkovModel;
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $strand = "-1str";
+  our $noov = "-ovlp";
+  our $markov = 0; ## Markov order
+  $output_format = "oligos";
+
+  ## Collect the list of supported background formats
+  local $bg_model = new RSAT::MarkovModel();
+#  %supported_output_format = &RSAT::MarkovModel::get_supported_output_formats();
+  %supported_output_format = $bg_model->get_supported_output_formats();
+  $supported_output_formats = join (",", keys %supported_output_format);
+
+  my $dry=0;
+  my $batch=0;
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  my $oligo_len = $markov+1;
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ## Generate the command to create the background model
+  my $cmd = $SCRIPTS."/oligo-analysis -quick";
+  $cmd .= " -i ".$infile{input} if ($infile{input});
+  $cmd .= " -l ".$oligo_len;
+  $cmd .= " ".$noov;
+  $cmd .= " ".$strand;
+  $cmd .= " -return occ,freq";
+  ## Convert output if required
+  unless ($output_format eq "oligos") {
+    $cmd .= " | ".$SCRIPTS."/convert-background-model";
+    $cmd .= " -from oligos -to ".$output_format;
+  }
+  $cmd .= " -o ".$outfile{output} if ($outfile{output});
+  ## Run the command
+  &doit($cmd, $dry, 1, $verbose, $batch);
+ 
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+Input file (sequence).
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+Output file (background).
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+
+=pod
+
+=item B<-out_format output_format>
+
+Output format.
+
+Supported: transitions, tab, oligo-analysis, oligos, meme,
+motifsampler, ms, inclusive, patser, tables.
+
+=cut
+    } elsif ($arg eq "-out_format") {
+      $main::output_format = lc(shift(@arguments));
+      &RSAT::error::FatalError(join("\t", $main::output_format,
+				    "Invalid output format.",
+				    "Supported: ", $main::supported_output_formats))
+	unless ($main::supported_output_format{$main::output_format});
+
+
+=pod
+
+=item	B<-markov markov_order>
+
+Markov order.
+
+=cut
+    } elsif ($arg eq "-markov") {
+      $main::markov = shift(@arguments);
+      &RSAT::error::FatalError($main::markov, "Invalid Markov order. Must be a Natural number") unless &IsNatural($main::markov);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; create-background-model ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
