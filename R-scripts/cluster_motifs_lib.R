@@ -189,7 +189,8 @@ inverted.aligment <- function(ids){
            
   })
 
-  names(temporal.list) <- sapply(strsplit(names(temporal.list), "\\."), function(X){return(X[1])})
+  #names(temporal.list) <- sapply(strsplit(names(temporal.list), "\\."), function(X){return(X[1])})
+  names(temporal.list) <- ids
   return(temporal.list)
 }
 
