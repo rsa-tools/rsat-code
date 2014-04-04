@@ -284,6 +284,8 @@ package main;
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
     $main::outfile{temp_2} = $main::outfile{prefix}."_temporal_2.html";
     $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table";
+    $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table";
+    $main::outfile{hclust_tree} = $main::outfile{prefix}."_hclust_tree.jpeg"; push @outfiles, "hclust_tree";
     if ($export_tree_format eq "newick"){
 	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
 	$main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram";
@@ -317,8 +319,11 @@ package main;
 
     ################################################################
     ## Cluster the matrices
-    #&ClusterMotifs();
     &Hclustering();
+
+    ################################################################
+    ## Add empty columns to the matrices
+    &Add_empty_columns_to_logos();
 
     ################################################################
     ## Parse the JSON file
@@ -674,6 +679,8 @@ sub Hclustering {
     $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
     $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
+    $cluster_motifs_cmd .= ";alignment.file='".$main::outfile{alignment_table}."'";
+    $cluster_motifs_cmd .= ";hclust.tree='".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= ";hclust.method='".$hclust_method."'";
     if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
@@ -1039,6 +1046,98 @@ sub Create_phylogram(){
     system("rm ".$main::outfile{phylogram_html});
     system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
     return();
+}
+
+
+###################################
+## Add the empty columns to the 
+## logos that will be displayed
+sub Add_empty_columns_to_logos(){
+
+    my @split_line = ();
+    my %alignment_info = ();
+
+    ## Creates the files with single matrices' information
+    %alignment_info = &Create_single_matrix_files();
+
+
+    ## Open the alignment_table daata
+    open(ALIGNMENT_TABLE, $main::outfile{alignment_table}) || &RSAT::error::FatalError( "Cannot open ALIGNMENT_TABLE file", $main::outfile{alignment_table});
+
+    while(<ALIGNMENT_TABLE>){
+    	next unless (/\S/); ## Skip empty rows
+    	next if (/^;/); ## Skip comment rows
+    	next if (/^#/); ## Skip header rows
+    	chomp();
+    	@split_line = split(/\s+/, $_);
+    	$split_line[0] =~ s/\s+//g;
+
+    	## Store the ID, strand and offset of each aligned motif
+    	$alignment_info{$split_line[0]}{strand} =  $split_line[3];
+    	$alignment_info{$split_line[0]}{offset} =  $split_line[4];
+    }
+    close(ALIGNMENT_TABLE);
+
+    #foreach my $id (keys %alignment_info){
+    #	print "### ".$id."\t".$alignment_info{$id}{file_name}."\t".$alignment_info{$id}{strand}."\t".$alignment_info{$id}{offset}."\n";
+    #}
+    #<STDIN>;
+
+    ## Call the program 'convert-matrix' to add the empty columns
+    ## to the aligned logos and retrieve the logos in RC
+    foreach my $id (keys %alignment_info){
+
+    	my ($rc, $offset) = "";
+
+	## Option to return the reverse-complement of a matrix
+    	if($alignment_info{$id}{strand} eq "R"){
+    	    $rc = "-rc";
+    	}
+
+	$offset = $alignment_info{$id}{offset};
+
+	## Testing the convert-matrix command
+	# convert-matrix single_matrices_positions_7nt_m1.tf -from tf -to tf -return counts,consensus,parameters,logo -logo_format png -o test
+	# /home/jaimecm/Documents/TAGC/Clustering_test/Test_different_hclust_methods/data
+
+	# print "\n\n#### --> ";
+    	# print "convert-matrix -i ".$alignment_info{$id}{file_name}." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo ".$rc." -o ".$main::outfile{prefix}."_aligned_logos \n";
+	# <STDIN>;
+
+	system("rm $alignment_info{$id}{file_name}");
+
+
+    }
+}
+
+
+###################################
+## Print the matrices in separated
+## files that will be used to add
+## the offset of empty columns in
+## convert matrices 
+sub Create_single_matrix_files(){
+
+    my @ids = ();
+    my %matrices_files = ();
+
+    ## Split the matrix file into single matrices file, 
+    ## in order to process individually each matrix
+    system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."single_matrices-");
+   
+    ## Get the ids of the matrices
+    chomp(@ids = `ls $main::outfile{prefix}* | grep '.tf' | grep 'single' | rev | cut -d '-' -f1 | rev | cut -d '.' -f1`);
+
+    ## Get the file name of each matrix and stores it in the hash
+    foreach my $id (@ids){
+	$id =~ s/_//;
+	$id =~ s/\s+//g;
+	chomp($matrices_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
+	
+	#print "\n\n##### ".$id."\n\n";
+	#<STDIN>;
+    }
+    return(%matrices_files);
 }
 
 __END__
