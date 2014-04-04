@@ -12,11 +12,16 @@
 ## - Define an argument infile.consensus, providing a 3-columns file with the logo ID + its consensus in direct and reverse complementary strands. This consensus file should be exported by comapre-matrices.
 ## -> this consensus could e used to display trees in R, without requiring the
 
+## Load required libraries
+library("RJSONIO")
+library("ctc")
+library("reshape")
+library("dendroextras")
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
 
-dir.rsat <- Sys.getenv("RSAT");
+dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
@@ -24,56 +29,12 @@ if (dir.rsat == "") {
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
-library("RJSONIO") ## To export JSON file used by the d3 library
-library("ctc") ## To convert tree to newick format
-library("dendroextras")
 
 
 ## Options
 plot.tree <- FALSE
 export <- 'json'
 
-
-#################
-### Functions ###
-#################
-
-#################################################################################
-## Etxract the tree from an hclust object and convert it into json object.
-createLeafNode <- function(hclust, i) {
-  list(label = hclust$labels[[i]],
-       order = hclust$order[[i]])
-}
-hclustToTree <- function(hclust) {
-  if (length(hclust$merge) == 0)
-    return(NULL)
-  merges <- list()
-  for (index in 1:nrow(hclust$merge)) {
-    left <- hclust$merge[index, 1]
-    right <- hclust$merge[index, 2]
-    if (left < 0)
-      left <- createLeafNode(hclust, -left)
-    else
-      left <- merges[[left]]
-    if (right < 0)
-      right <- createLeafNode(hclust, -right)
-    else
-      right <- merges[[right]]
-    if (left$order > right$order) {
-      tmp <- left
-      left <- right
-      right <- tmp
-    }
-    merges[[index]] <- list(
-                            children = list(
-                              left,
-                              right
-                              ),
-                            order = left$order
-                            )
-  }
-  return(merges[nrow(hclust$merge)])
-}
 
 ################################################################
 ## Read arguments from the command line.
@@ -89,47 +50,8 @@ if (length(args >= 1)) {
   }
 }
 
-################################################################
-## Check parameter values
-
-## Check that input file has been specified
-if (!exists("infile")) {
-  stop("Missing mandatory argument: infile=[matrix_comparison_table] ")
-}
-verbose(paste("Input file", infile), 1)
-
-## Check that description file
-if (!exists("description.file")) {
-  stop("Missing mandatory argument: description.file=[matrix_description_table] ")
-}
-verbose(paste("Description file", description.file), 1)
-
-## Check that output file has been specified
-if (!exists("outfile")) {
-  stop("Missing mandatory argument: outfile=[json_tree_file] ")
-}
-verbose(paste("Output file", outfile), 1)
-
-
-
-## Check that output file has been specified
-if (!exists("distance.table")) {
-  distance.table <- paste(sep="", outfile, "_dist_table.tab")
-}
-verbose(paste("Distance table", distance.table), 1)
-
-## Default score is the normalized correlation
-if (!exists("score")) {
-  score <- "Ncor";
-}
-
-## Default hclust method is the complete method
-if (!exists("hclust.method")) {
-  hclust.method <- "complete";
-}
-
-#infile <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa.tab"
-# description.file <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results/Testing_10_02_2014_pairwise_compa_matrix_descriptions.tab"
+## Check parameters
+check.param()
 
 ##################################
 ## Read matrix comparison table
@@ -154,59 +76,9 @@ if (length(grep(pattern=score, names(compare.matrices.table))) < 1) {
 ## Extract score values
 score.values <- compare.matrices.table[,score]
 
-## Convert scores to distance metrices
-##
-## Each score requires to be treated according to its nature
-## (similarity or distance) plus some specificities (correlation goes
-## from -1 to 1, ...).
-
-## Similarity sores bounded to 1
-if ((score == "Ncor")
-    || (score=="cor")
-    || (score=="logocor")
-    || (score=="Nlocogor")
-    || (score=="Icor")
-    || (score=="NIcor")
-    ) {
-  ## cor 			Pearson correlation (computed on residue occurrences in aligned columns)
-  ## Ncor 			Relative width-normalized Pearson correlation
-  ## logocor 			correlation computed on sequence logos
-  ## Nlogocor 			Relative width-normalized logocor
-  ## Icor 			Pearson correlation computed on Information content
-  ## NIcor 			Relative width-normalized Icor
-  score.dist <- 1 - score.values
-
-} else if ((score == "logoDP")
-           || (score == "cov")) {
-  ## logoDP 			dot product of sequence logos
-  ## cov 			covariance between residues in aligned columns
-  
-  stop("logoDP and cov scores are not supported yet")
-  
-} else if ((score == "dEucl")
-           || (score == "NdEucl")
-           || (score == "NdEucl")
-           || (score == "NsEucl")
-           || (score == "SSD")
-           || (score == "SW")
-           || (score == "NSW")
-           ) {
-  ## dEucl 			Euclidian distance between residue occurrences in aligned columns
-  ## NdEucl 			Relative width-normalized dEucl
-  ## NsEucl 			similarity derived from Relative width-normalized Euclidian distance
-  ## SSD 			Sum of square deviations
-  ## SW 			Sandelin-Wasserman
-  ## NSW 			Relative width-normalized Sandelin-Wasserman
-
-  score.dist <- score.values
-  
-} else if (score == "match_rank") {
-  ## match_rank rank of current match among all sorted matches
-  stop("match_rank score is not supported yet")
-
-} else {
-  stop(paste(score, "is not a valid score", sep="\t"))
-}
+################################################################
+## Convert user-selected score to distance metrics
+convert.scores(score.values, score)
 
 ## Add a column with score column to the compare matrices table, will
 ## be used to generate a cross-table
@@ -256,20 +128,22 @@ dist.matrix <- as.dist(dist.table)
 
 
 ##############################################
-### Runs and plot the hierarchical cluster
+### Build the tree by hierarchical clustering, and export it in Newick format
 tree <- hclust(dist.matrix, method = hclust.method)
 tree$labels <- as.vector(description.table$label)
-if (plot.tree) {plot(tree) }
+if (plot.tree) {
+  plot(tree) 
+}
 if (export == "newick") {
-  newick.file <- sub('.json', '', outfile)
-  newick.file <- paste(sep='.', newick.file, "newick")
+  newick.file <- paste(sep='.', out.prefix, "newick")
+  verbose(paste("Exporing newick file", newick.file), 1)
   write(hc2Newick(tree, flat = TRUE), file=newick.file)
 }
 
 #######################################
 ### Creates and parse the json file
-halfway <- hclustToTree(tree)
-jsonTree <- toJSON(halfway)
+halfway.tree <- hclustToTree(tree)
+jsonTree <- toJSON(halfway.tree)
 ## Fix some little technical issues for JSON compatibility with the tree display javascript
 jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
 jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
@@ -279,9 +153,15 @@ jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
 
 #############################
 ### Prints the .json file 
-writeLines(jsonTree, outfile)
+json.file <- paste(out.prefix, ".json", sep="")
+verbose(paste("JSON tree file", json.file), 1)
+writeLines(jsonTree, con=json.file)
 
-verbose(paste("JSON tree file", outfile), 1)
+
+
+## ################################
+## ################################
+## Jaime: please check if the following commented code is still required
 
 ## ################################
 ## ## Convert distance matrix (one row per motif x one column per motif)
@@ -306,10 +186,9 @@ tree$labels <- paste(as.vector(description.table$consensus), 1:length(descriptio
 ## Bottom-up traversal of the tree to orientate the logos
 merge.level <- 1
 motifs.info <- list()
-#for (merge.level in 1:nrow(tree$merge)) {
 
 merge.levels.leaves <- leaves.per.node(tree)
-for (merge.level in 1:14) {
+for (merge.level in 1:nrow(tree$merge)) {
 
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
@@ -644,19 +523,39 @@ for (merge.level in 1:14) {
   }
 }
 
+## Jaime: aqui tienes que recoger el ancho del alineamiento + espacio para los numeros (3 letras)
+## Y adaptar para que el parametro mar este correcto
+alignment.width <- 23
+
 ## Export the tree with the aligment
-jpeg(filename = hclust.tree)
-#dev.new(width=10, height=7)
-par(mar=c(3,2,1,20),family="mono")
-plot(as.dendrogram(tree), horiz=TRUE)
-dev.off()
+plot.format <- "pdf" ## Default for testing inside the loop
+for (plot.format in c("pdf", "png")) {
+  w.inches <- 10 ## width in inches
+  h.inches <- 7 ## height in inches
+  resol <- 72 ## Screen resolution
+  tree.drawing.file <- paste(sep="", out.prefix, "_hclust_tree.", plot.format)
+  verbose(paste("Exporting hclust tree drawing", tree.drawing.file), 1)
+  if (plot.format == "pdf") {
+    pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
+  } else if (plot.format == "png") {
+    png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+  }
+ #dev.new(width=10, height=7)
+  par(mar=c(3,2,1,alignment.width),family="mono")
+  plot(as.dendrogram(tree), horiz=TRUE)
+  dev.off()
+}
 
 ## Produce the aligment table
 alignment.table <- lapply(motifs.info, function(X){
-  return(c(X[["number"]], X[["consensus"]], X[["strand"]], X[["spacer"]]))
+  return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["consensus"]]))
 })
 alignment.table <- as.data.frame(t(data.frame(alignment.table)))
 alignment.table$id <- as.vector(rownames(alignment.table))
 alignment.table <- alignment.table[,c(5,1:4)]
-colnames(alignment.table) <- c("#id", "number", "consensus", "strand", "spacer")
+colnames(alignment.table) <- c("#id", "number", "strand", "offset", "aligned_consensus")
+alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
+
+
+

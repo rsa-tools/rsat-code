@@ -1,17 +1,108 @@
 ###################################################################
-###################################################################
 ## Library with R functions required in R-scripts/cluster_motifs.R
 
+################################################################
+## Check parameter values
+check.param <- function() {
+  ## Check that input file has been specified
+  if (!exists("infile")) {
+    stop("Missing mandatory argument: infile=[matrix_comparison_table] ")
+  }
+  verbose(paste("Input file", infile), 1)
+  
+  ## Check that description file
+  if (!exists("description.file")) {
+    stop("Missing mandatory argument: description.file=[matrix_description_table] ")
+  }
+  verbose(paste("Description file", description.file), 1)
+  
+  ## Check that output file has been specified
+  if (!exists("out.prefix")) {
+    stop("Missing mandatory argument: out.prefix=[output_prefix] ")
+  }
+  verbose(paste("Output prefix", out.prefix), 1)
+  
+  ## Check that distance table file has been specified
+  if (!exists("distance.table")) {
+    distance.table <- paste(sep="", out.prefix, "_dist_table.tab")
+  }
+  verbose(paste("Distance table", distance.table), 1)
+  
+  ## Default score is the normalized correlation
+  if (!exists("score")) {
+    score <- "Ncor";
+  }
+  
+  ## Default hclust method is the complete method
+  if (!exists("hclust.method")) {
+    hclust.method <- "complete";
+  }
+}
+
+################################################################
+## Convert user-selected score to distance metrics
+##
+## Each score requires to be treated according to its nature
+## (similarity or distance) plus some specificities (correlation goes
+## from -1 to 1, ...).
+convert.scores <- function (score.values,
+                            score) {
+  ## Similarity sores bounded to 1
+  if ((score == "Ncor")
+      || (score=="cor")
+      || (score=="logocor")
+      || (score=="Nlocogor")
+      || (score=="Icor")
+      || (score=="NIcor")
+  ) {
+    ## cor   		Pearson correlation (computed on residue occurrences in aligned columns)
+    ## Ncor 			Relative width-normalized Pearson correlation
+    ## logocor 			correlation computed on sequence logos
+    ## Nlogocor 			Relative width-normalized logocor
+    ## Icor 			Pearson correlation computed on Information content
+    ## NIcor 			Relative width-normalized Icor
+    score.dist <- 1 - score.values
+    
+  } else if ((score == "logoDP")
+             || (score == "cov")) {
+    ## logoDP 			dot product of sequence logos
+    ## cov 			covariance between residues in aligned columns
+    
+    stop("logoDP and cov scores are not supported yet")
+    
+  } else if ((score == "dEucl")
+             || (score == "NdEucl")
+             || (score == "NdEucl")
+             || (score == "NsEucl")
+             || (score == "SSD")
+             || (score == "SW")
+             || (score == "NSW")
+  ) {
+    ## dEucl 			Euclidian distance between residue occurrences in aligned columns
+    ## NdEucl 			Relative width-normalized dEucl
+    ## NsEucl 			similarity derived from Relative width-normalized Euclidian distance
+    ## SSD 			Sum of square deviations
+    ## SW 			Sandelin-Wasserman
+    ## NSW 			Relative width-normalized Sandelin-Wasserman
+    
+    score.dist <- score.values
+    
+  } else if (score == "match_rank") {
+    ## match_rank rank of current match among all sorted matches
+    stop("match_rank score is not supported yet")
+    
+  } else {
+    stop(paste(score, "is not a valid score", sep="\t"))
+  }
+}
 
 #######################################################
-#######################################################
-## Etxract the tree from an hclust object 
+## Extract the tree from an hclust object 
 createLeafNode <- function(hclust, i) {
   list(label = hclust$labels[[i]],
        order = hclust$order[[i]])
 }
 
-########################################################
 ########################################################
 ## Convert an hclust tree into a JSON format tree
 hclustToTree <- function(hclust) {
@@ -46,7 +137,6 @@ hclustToTree <- function(hclust) {
 }
 
 
-################################################################
 ################################################################
 ## Collect the list of leaves (motif) associated to each
 ## internal node (motif cluster) of the tree.
@@ -96,7 +186,6 @@ leaves.per.node <- function (tree
 }
 
 
-################################################################
 ################################################################
 ## Identify the "central" leaf (motif) of a subtre (cluster),
 ## i.e. the motif with the smallest average distance to all

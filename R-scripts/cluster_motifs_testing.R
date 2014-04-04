@@ -1,30 +1,43 @@
-library("RJSONIO")
-library("ctc")
-library("reshape")
-library("dendroextras")
+################################################################
+## Load paameters for the demo 1: motifs discovered with peak-motif demo.
+demo.nb <- 1
 
 ## How to chance this path to make it general? 
-source("/home/jaimecm/rsat/R-scripts/cluster_motifs_lib.R")
+rsat.dir <- Sys.getenv("RSAT")
+source(file.path(rsat.dir, "R-scripts", "cluster_motifs_lib.R"))
+dir.demo <- file.path(rsat.dir, "public_html", "demo_files")
+
+demo.prefix <- "matrix-clustering_demo_peak-motifs"
+file.prefix.peakmo <- file.path(dir.demo, demo.prefix)
+
+if (demo.nb == 1) {
+  file.prefix <- file.prefix.peakmo
+}
+
+
 
 ## Define parameters
 score <- "Ncor";
 hclust.method <- "average"
 
-## Chen matrices
-dir.results <- "/home/jaimecm/Documents/TAGC/Clustering_test/Prueba_Jacques/results"
-file.prefix <- file.path(dir.results, "Testing_10_03_2014")
-
 ## RDB matrices
 #dir.results <- "/home/jaimecm/Documents/TAGC/Clustering_test/Test_different_hclust_methods/results/RDB_TF_Fam"
 #file.prefix <- file.path(dir.results, "E_coli_LacI_LysR_")
 
-#dir.results <- "/Users/jvanheld/test/motif_clustering/results/peakmo_clustering"
-#file.prefix <- file.path(dir.results, "peakmo_example")
-
-setwd(dir.results)
-
 infile <- paste(sep="", file.prefix, "_pairwise_compa.tab")
-description.file <-  paste(sep="", file.prefix, "_pairwise_compa_matrix_descriptions.tab")
+description.file <-  paste(sep="", file.prefix, "_matrix_descriptions.tab")
+
+## Create a temporary result dir if required
+dir.results <- file.path(Sys.getenv("HOME"), "rsat_demo", demo.prefix)
+dir.create(dir.results, showWarnings = FALSE, recursive = TRUE)
+setwd(dir.results)
+out.prefix <- file.path(dir.results, "clustered_motifs")
+
+stop("OK")
+
+## Jaime: please check if all the subsequent code can be suppressed 
+## (already incorporated in cluster_motifs.R)
+
 
 ##################################
 ## Read matrix comparison table
@@ -98,7 +111,7 @@ motifs.info <- list()
 #for (merge.level in 1:nrow(tree$merge)) {
 
 merge.levels.leaves <- leaves.per.node(tree)
-for (merge.level in 1:14) {
+for (merge.level in 1:9) {
 
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
@@ -435,8 +448,8 @@ for (merge.level in 1:14) {
 
 #jpeg(filename = "/home/jaimecm/Documents/TAGC/Clustering_test/Test_different_hclust_methods/results/testing.jpeg")
 dev.new(width=10, height=7)
-par(mar=c(3,2,1,30),family="mono")
-#par(mar=c(3,2,1,20),family="mono")
+#par(mar=c(3,2,1,30),family="mono")
+par(mar=c(3,2,1,20),family="mono")
 plot(as.dendrogram(tree), horiz=TRUE)
 #dev.off()
 
