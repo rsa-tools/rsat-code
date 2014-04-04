@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/python
 
 ################################################################
 ## This script provides an example of the invocation of the Web
