@@ -277,9 +277,8 @@ package main;
       $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab"; push @outfiles, "intra_cluster_degree";
     }
 
-    $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_matrix_tree.json"; push @outfiles, "matrix_tree_json";
-    $main::outfile{parsed_tree_json} = $main::outfile{prefix}."_parsed_tree.json"; push @outfiles, "parsed_tree_json";
-#    $main::outfile{attr_json} = $main::outfile{prefix}."_matrix_descriptions.tab"; push @outfiles, "attr_json";
+    $main::outfile{json} = $main::outfile{prefix}.".json"; push @outfiles, "matrix_tree_json";
+    $main::outfile{parsed_tree_json} = $main::outfile{prefix}."_parsed_tree.json"; push @outfiles, "json";
     $main::outfile{matrix_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "matrix_tree_html";
     $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
     $main::outfile{temp_2} = $main::outfile{prefix}."_temporal_2.html";
@@ -287,7 +286,7 @@ package main;
     $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table";
     $main::outfile{hclust_tree} = $main::outfile{prefix}."_hclust_tree.jpeg"; push @outfiles, "hclust_tree";
     if ($export_tree_format eq "newick"){
-	$main::outfile{tree_newick} = $main::outfile{prefix}."_matrix_tree.newick"; push @outfiles, "tree_newick";
+	$main::outfile{tree_newick} = $main::outfile{prefix}.".newick"; push @outfiles, "tree_newick";
 	$main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram";
  
     }
@@ -323,7 +322,7 @@ package main;
 
     ################################################################
     ## Add empty columns to the matrices
-    &Add_empty_columns_to_logos();
+    #&Add_empty_columns_to_logos();
 
     ################################################################
     ## Parse the JSON file
@@ -676,12 +675,12 @@ sub Hclustering {
     $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
     $cluster_motifs_cmd .= " --args \"";
     $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
-    $cluster_motifs_cmd .= ";outfile='".$main::outfile{matrix_tree_json}."'";
+    $cluster_motifs_cmd .= ";hclust.method='".$hclust_method."'";
     $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= ";alignment.file='".$main::outfile{alignment_table}."'";
-    $cluster_motifs_cmd .= ";hclust.tree='".$main::outfile{distance_table}."'";
-    $cluster_motifs_cmd .= ";hclust.method='".$hclust_method."'";
+    $cluster_motifs_cmd .= ";score='".$param{matrix_compa_score}."'";
+    $cluster_motifs_cmd .= ";out.prefix='".$main::outfile{prefix}."'";
     if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
 	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{tree_newick}."'";
@@ -784,7 +783,7 @@ sub ClusterMotifs {
 ## Add attributes to JSON file, like links to pictures and other
 ## attributes
 sub Add_attributes_to_JSON(){
-  my ($Line, $M1, $M2, $Add_this, $Flag);
+  my ($M1, $M2, $Add_this, $Flag);
   my (@Split_line, @Parsed_JSON) = ();
   my (%matrix_info) = ();
 
@@ -797,21 +796,21 @@ sub Add_attributes_to_JSON(){
   ### Open the file with the picture's data
   open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
   while(<DATA>){
-    next unless (/\S/); ## Skip empty rows
-    next if (/^;/); ## Skip comment rows
-    next if (/^#/); ## Skip header rows
-    chomp();
-    my $line = $_;
-    @split_line = split(/\s+/, $line);
-    my $matrix_label = $split_line[5];
-    $matrix_info{$matrix_label}{id} = $split_line[1];
-    $matrix_info{$matrix_label}{name} = $split_line[2];
-    $matrix_info{$matrix_label}{width} = $split_line[3];
-    $matrix_info{$matrix_label}{consensus} = $split_line[4];
-    $matrix_info{$matrix_label}{label} = $split_line[5];
-    $matrix_info{$matrix_label}{logo_file} = $split_line[6];
-    $matrix_info{$matrix_label}{logo_file_rc} = $split_line[7];
-
+      next unless (/\S/); ## Skip empty rows
+      next if (/^;/); ## Skip comment rows
+      next if (/^#/); ## Skip header rows
+      chomp();
+      @split_line = split(/\s+/, $_);
+      my $matrix_label = $split_line[6];
+      $matrix_info{$matrix_label}{id} = $split_line[1];
+      $matrix_info{$matrix_label}{name} = $split_line[2];
+      $matrix_info{$matrix_label}{width} = $split_line[3];
+      $matrix_info{$matrix_label}{consensus} = $split_line[4];
+      $matrix_info{$matrix_label}{consensus_rc} = $split_line[5];
+      $matrix_info{$matrix_label}{label} = $split_line[6];
+      $matrix_info{$matrix_label}{logo_file} = $split_line[7];
+      $matrix_info{$matrix_label}{logo_file_rc} = $split_line[8];
+      
   }
   close(DATA);
 
@@ -823,63 +822,67 @@ sub Add_attributes_to_JSON(){
   my $children = 0;
   $matrix_num = 0;
 
-  ### Open the JSON file produced by R
-  open(JSON, $main::outfile{matrix_tree_json}) || &RSAT::error::FatalError($main::outfile{matrix_tree_json}, "Cannot open the JSON file");
+  ### Open the JSON file produced by R      
+  open(JSON, $main::outfile{json}) || &RSAT::error::FatalError($main::outfile{json}, "Cannot open the JSON file");
   while(<JSON>){
-    
-    chomp;
-    $Flag = 0;
-    $line = $_;
-    
-    ### If the user select the option -cons 1
-    ### Add the consensus to the json file to be displayed in the tree
-    if ($show_consensus){
-      if ($line =~ /(\s*\"children\":\s*\[)/){
-	
-	$children++;
-	$Add_this = "";
-	if ($children > 2){
-
-	    ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
-	    ### here must be displayed the consensus of consensus
-	    $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
-	    push(@Parsed_JSON, $Add_this."\n");
-	}
+      
+      chomp;
+      $Flag = 0;
+      $line = $_;
+      
+      ### If the user select the option -cons 1
+      ### Add the consensus to the json file to be displayed in the tree
+      
+      ## Not finished ###
+      ## Consensus of consensuses
+      
+      if ($show_consensus){
+	  if ($line =~ /(\s*\"children\":\s*\[)/){
+	      
+	      $children++;
+	      $Add_this = "";
+	      if ($children > 2){
+		  
+		  ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
+		  ### here must be displayed the consensus of consensus
+		  $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
+		  push(@Parsed_JSON, $Add_this."\n");
+	      }
+	  }
       }
-    }
 
     ### Search the pattern separating the matrices names
-    if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
-
-      $matrix_num++;
-      $Flag = 1;
-      $Add_this = "";
-      $M1 = $1;
-
-      ## Define te URL of the logo file, relative to the location of the json file
-      my $logo_link = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file});
-      my $logo_url = $logo_link.".png";
-      my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{matrix_tree_json}, $matrix_info{$M1}{logo_file_rc});
-      $logo_url_rc .= ".png";
-
-      ### Create the line that will be added to JSON file
-      $Add_this = " \"image\" : \"${logo_url}\"";
-      $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
-      $Add_this .= ",\n \"url\" : \"${logo_url}\"";
-        
-      foreach my $field (@supported_label_fields) {
-	if ($label_fields_to_return{$field}) {
-	  $Add_this .= ",\n \"".${field}."\" : \"".$matrix_info{$M1}{$field}."\"";
-	}
+      if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
+	  $matrix_num++;
+	  $Flag = 1;
+	  $Add_this = "";
+	  $M1 = $1;
+	  
+	  ## Define te URL of the logo file, relative to the location of the json file
+	  my $logo_link = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_file});
+	  my $logo_url = $logo_link.".png";
+	  my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_file_rc});
+	  $logo_url_rc .= ".png";
+	  
+	  ### Create the line that will be added to JSON file
+	  $Add_this = " \"image\" : \"${logo_url}\"";
+	  $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
+	  $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+	  
+	  foreach my $field (@supported_label_fields) {
+	      if ($label_fields_to_return{$field}) {
+		  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+	      }
+	  }
+	  $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
+	  $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
       }
-      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
-    }
-    push(@Parsed_JSON, $line."\n");
-    
-    ### Add the new line
-    if ($Flag) {
-      push(@Parsed_JSON, $Add_this."\n");
-    }
+      push(@Parsed_JSON, $line."\n");
+      
+      ### Add the new line
+      if ($Flag) {
+	  push(@Parsed_JSON, $Add_this."\n");
+      }
   }
   close(JSON);
   
@@ -887,7 +890,7 @@ sub Add_attributes_to_JSON(){
   open(PARSED_JSON, ">".$main::outfile{parsed_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{parsed_tree_json});
   print PARSED_JSON @Parsed_JSON;
   close(PARSED_JSON);
-#  system("rm ".$main::outfile{matrix_tree_json});
+  #system("rm ".$main::outfile{json});
   return();
 }
 
@@ -1141,3 +1144,5 @@ sub Create_single_matrix_files(){
 }
 
 __END__
+
+
