@@ -569,6 +569,66 @@ sub setMatrix {
 }
 
 
+=pod
+
+=item insert_columns($left_col_nb, $right_col_nb, $fill_value)
+
+Insert columns on either or both flanks of the matrix, and fill it
+with a user-speicifed value (default: 0).
+
+=cut
+sub insert_columns {
+  my ($self, $left_col_nb, $right_col_nb, $fill_value) = @_;
+  
+  ## Check fill value
+  unless (defined($fill_value)) {
+    $fill_value = 0;
+  }
+  
+  ## Check parameter "left column number"
+  $left_col_nb = 0 if ($left_col_nb eq "");
+  &RSAT::error::FatalError("Invalid value for right values") unless &RSAT::util::IsNatural($left_col_nb);
+  
+  ## Check parameter "right column number"
+  $right_col_nb = 0 if ($right_col_nb eq "");
+  &RSAT::error::FatalError("Invalid value for right values") unless &RSAT::util::IsNatural($right_col_nb);
+  
+  &RSAT::message::TimeWarn("Inserting columns to matrix", $self->get_attribute("name"), $left_col_nb, $right_col_nb, $fill_value) if ($main::verbose >= 0);
+  
+
+  my @counts = $self->getMatrix();
+  my @shifted_counts = ();
+  
+  my $ncol = $self->get_attribute("ncol");
+  my $nrow = $self->get_attribute("nrow");
+  
+  for my $r (0..($nrow-1)) {
+    my $c;
+    
+    ## Insert columns on left side
+    if ($left_col_nb > 0) {
+      for $c (0..($left_col_nb-1)) {
+	$shifted_counts[$c][$r] = $fill_value;
+      }
+    }
+    
+    ## Fill the values of the original matrix in the extended matrix
+    for $c (0..$ncol) {
+      $shifted_counts[$c+$left_col_nb][$r] = $counts[$c][$r];
+    }
+    
+    ## Insert columns on right side
+    if ($right_col_nb > 0) {
+      for $c (($ncol+$left_col_nb)..($ncol+$left_col_nb+$right_col_nb)) {
+	$shifted_counts[$c][$r] = $fill_value;
+      }
+    }
+  }
+
+  ## Set the counts of the shifted matrix 1
+  $self->setMatrix($nrow, $ncol + $left_col_nb + $right_col_nb, @shifted_counts);
+}
+
 
 =pod
 
