@@ -191,7 +191,7 @@ mcl_dir=[RSAT_PARENT_PATH]/rsat/bin
 rnsc_dir=[RSAT_PARENT_PATH]/rsat/bin
 
 ## BLAST
-blast_dir=[RSAT_PARENT_DIR]/rsat/bin
+blast_dir=[RSAT_PARENT_PATH]/rsat/bin
 
 
 ## REA, k-shortest path finding program by Jimenez and Marzal. 

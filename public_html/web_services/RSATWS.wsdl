@@ -2091,6 +2091,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Root taxon.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="depth" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Traversal depth for the taxononmic tree. If several organisms are supported in a max-dept taxon, only one is reported.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 
@@ -7059,8 +7064,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <service name="RSATWebServices">
     <documentation>Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be).</documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-      <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-<!--      <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>-->
+       <soap:address location="http://www.rsat.eu/web_services/RSATWS.cgi"/>
+<!--       <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>-->
     </port>
   </service>
 </definitions>

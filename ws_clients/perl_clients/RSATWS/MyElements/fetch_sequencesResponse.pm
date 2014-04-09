@@ -1,5 +1,5 @@
 
-package MyElements::supported_organisms;
+package MyElements::fetch_sequencesResponse;
 use strict;
 use warnings;
 
@@ -7,7 +7,7 @@ use warnings;
 
 sub get_xmlns { 'urn:RSATWS' }
 
-__PACKAGE__->__set_name('supported_organisms');
+__PACKAGE__->__set_name('fetch_sequencesResponse');
 __PACKAGE__->__set_nillable();
 __PACKAGE__->__set_minOccurs();
 __PACKAGE__->__set_maxOccurs();
@@ -32,21 +32,21 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
-my %request_of :ATTR(:get<request>);
+my %response_of :ATTR(:get<response>);
 
 __PACKAGE__->_factory(
-    [ qw(        request
+    [ qw(        response
 
     ) ],
     {
-        'request' => \%request_of,
+        'response' => \%response_of,
     },
     {
-        'request' => 'MyTypes::SupportedOrganismsRequest',
+        'response' => 'MyTypes::FetchSequencesResponse',
     },
     {
 
-        'request' => 'request',
+        'response' => 'response',
     }
 );
 
@@ -68,12 +68,12 @@ __PACKAGE__->_factory(
 
 =head1 NAME
 
-MyElements::supported_organisms
+MyElements::fetch_sequencesResponse
 
 =head1 DESCRIPTION
 
 Perl data type class for the XML Schema defined element
-supported_organisms from the namespace urn:RSATWS.
+fetch_sequencesResponse from the namespace urn:RSATWS.
 
 
 
@@ -88,10 +88,10 @@ methods:
 
 =over
 
-=item * request
+=item * response
 
- $element->set_request($data);
- $element->get_request();
+ $element->set_response($data);
+ $element->get_response();
 
 
 
@@ -104,17 +104,15 @@ methods:
 
 =head2 new
 
- my $element = MyElements::supported_organisms->new($data);
+ my $element = MyElements::fetch_sequencesResponse->new($data);
 
 Constructor. The following data structure may be passed to new():
 
  {
-   request =>  { # MyTypes::SupportedOrganismsRequest
-     output =>  $some_value, # string
-     return =>  $some_value, # string
-     format =>  $some_value, # string
-     taxon =>  $some_value, # string
-     depth =>  $some_value, # int
+   response =>  { # MyTypes::FetchSequencesResponse
+     server =>  $some_value, # string
+     command =>  $some_value, # string
+     client =>  $some_value, # string
    },
  },
 
