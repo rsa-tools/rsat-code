@@ -651,4 +651,3 @@ fill.downstream <- function(motifs.list){
   }
   return(motifs.list)
 }
-
