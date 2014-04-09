@@ -1,0 +1,48 @@
+################################################################
+## Demo for the RSAT tool matrix-clustering
+##
+## Authors: Jaime Castro & Jacques van Helden
+## Date: Jan-April 2014
+
+
+include ${RSAT}/makefiles/util.mk
+MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
+
+V=2
+
+################################################################
+## Compare all matrices from the input file, with specific parameters
+## to ensure that all distances are computed.
+compa_alone:
+	@echo
+	@echo "Motif comparisons"
+	compare-matrices  -v 1 \
+		-file data/peak-motifs_7nt_merged_oligos_positions.tf -format tf \
+		-lth w 1 -lth cor -1 -lth Ncor -1 \
+		-o results/peak-motifs_7nt_merged_oligos_positions_compa.tab
+	@echo "	results/peak-motifs_7nt_merged_oligos_positions_compa.tab"
+
+_cluster_old:
+	cat cluster_motifs.R | \
+		R  --slave --no-save --no-restore --no-environ \
+		--args "infile='results/peak-motifs_7nt_merged_oligos_positions_compa.tab';outfile='results/peak-motifs_7nt_merged_oligos_positions_compa.json';score='Ncor'" \
+		> cluster_log.txt
+################################################################
+## Demo 1: clustering between motifs discovered by peak-motifs
+PEAKMO_DEMO_MATRICES=${RSAT}/public_html/demo_files/matrix-clustering_demo_peak-motifs_result.tf
+cluster_peakmo:
+	@echo "Clustering of motifs discovered by peak-motifs"
+	matrix-clustering -v ${V} \
+		-i ${PEAKMO_DEMO_MATRICES} -format tf \
+		-export newick -d3_base file -hclust_method average \
+		-labels name,consensus \
+		-o results/peakmo_clustering/peakmo_example
+	@echo "	results/peakmo_clustering/peakmo_example"
+
+## Cluster all motifs from RegulonDB
+RDB_CLUSTER_DIR=results/regulondDB_clusters
+RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
+cluster_rdb:
+	@echo "Clustering all matrices from RegulonDB"
+	matrix-clustering -v ${V} -i data/RDB_PSSMs.tf -format transfac -o ${RDB_CLUSTERS}
+	@echo ${RDB_CLUSTERS}
