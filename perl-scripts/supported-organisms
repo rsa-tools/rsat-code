@@ -28,7 +28,7 @@ package main;
     ## Main RSAT server for the option -server
     ## WSDL  Web services
     $from_server = 0;
-    $server = 'http://rsat.ulb.ac.be/rsat';
+    $server = 'http://rsat.eu/';
 
     ## Ouptut formats
     $out_format = "tab";
@@ -70,7 +70,7 @@ package main;
     ################################################################
     ## Get the list supported organisms from a remote RSAT server
     if ($from_server) {
-	&RSAT::message::Warning("option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
+	&RSAT::message::Warning("Option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
 
 	## Pass the query to supported-organisms-server
 	my $cmd = $SCRIPTS."/supported-organisms-server";
@@ -79,87 +79,24 @@ package main;
 
 	exit(0);
 
-	# # import the modules we need for this test; XML::Compile is included on the server
-	# # by default.
-	
-	# ## Retrieve-seq parameters
-	# my %args = (
-	#     'taxon' => $taxon,
-	#     'format'=> $out_format,
-	#     'return'=> $return_fields,
-	#     );
-	
-	# # Retrieving and processing the WSDL
-	# my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
-	# &RSAT::message::TimeWarn("Parsing Web service description from WSDL", $wsdl_url) if ($main::verbose >= 2);
-	# my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
-	# my $proxy = XML::Compile::WSDL11->new($wsdl);
-	
-	# ## Compiling the client for supported-organisms
-	# &RSAT::message::TimeWarn("Compiling client") if ($main::verbose >= 2);
-	# my $client = $proxy->compileClient('supported_organisms');
-	
-	# # Calling the service and getting the response
-	# &RSAT::message::TimeWarn("Sending query to server", $server) if ($main::verbose >= 2);
-	# my $answer = $client->( request => {%args});
-	
-	# if ($main::verbose >= 1) {
-	#     print $out "; Server : ", $server, "\n";
-	#     print $out "; WSDL : ", $wsdl_url, "\n";
-	#     my $server_command = $answer->{output}->{response}->{command};
-	#     print $out "; Server command : ".$server_command."\n";
-	#     print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
-	# }
-	# print $out $answer->{output}->{response}->{client}."\n";
-	
-# } elsif ($from_server) {
-	
-#     ## Required for the option -server (obtaining the supported organisms from a remote server)
-#     require MyInterfaces::RSATWebServices::RSATWSPortType;
-#     require SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
-#
-#     ## Service call
-#     my $soap = MyInterfaces::RSATWebServices::RSATWSPortType->new();
-#
-#     ## Output option
-#     my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
-#
-#     ## Retrieve-seq parameters
-#     my %args = (
-# 	'taxon' => $taxon,
-# 	'format'=> $out_format,
-# 	'return'=> $return_fields,
-# 	);
-#
-#     ## Send the request to the server
-#     &RSAT::message::Info("Sending request to the remote server") if ($main::verbose >= 1);
-#     my $som = $soap->supported_organisms({'request' => \%args});
-#
-#     ## Get the result
-#     if ($som) {
-# 	my $results = $som->get_response();
-#
-# 	## Report the remote command
-# 	my $command = $results -> get_command();
-# 	&RSAT::message::Info("Command used on the server:\n;\t".$command) if ($main::verbose >= 1);
-#
-# 	## Report the result
-# 	my $result = $results -> get_client();
-# 	print $out $result;
-#     } else {
-# 	&RSAT::error::FatalError("Web services. A fault (%s) occured : %s\n", $som->get_faultcode(), $som->get_faultstring());
-#     }
-
     } else {
-	if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
-	    ## Create a tree with the taxonomy
-	    my $tree = new RSAT::Tree();
-	    $tree->LoadSupportedTaxonomy_rj("Organisms", \%main::supported_organism);
-	    print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef) if (($out_format eq "tree")||($out_format eq "html_tree"));
-	    print $out $tree->as_newick($taxon) if ($out_format eq "newick");
+      if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
+	&RSAT::message::TimeWarn("Building organism tree") if ($main::verbose >= 2);
+	## Create a tree with the taxonomy
+	my $tree = new RSAT::Tree();
+	$tree->LoadSupportedTaxonomy_rj("Organisms", \%main::supported_organism);
+
+	&RSAT::message::TimeWarn("Printing organism tree in ",$out_format, " format") if ($main::verbose >= 2);
+	if (($out_format eq "tree")||($out_format eq "html_tree")) {
+	  print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef);
+	} elsif ($out_format eq "newick") {
+	  print $out $tree->as_newick($taxon);
 	} else {
-	    print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, $depth, @return_fields); ## Export the table with header and absolute paths
+	  &RSAT::error::FatalError($out_format, "Invalid output format");
 	}
+      } else {
+	print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, $depth, @return_fields); ## Export the table with header and absolute paths
+      }
     }
 
     ################################################################
