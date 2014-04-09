@@ -25,12 +25,14 @@ my %output_of :ATTR(:get<output>);
 my %return_of :ATTR(:get<return>);
 my %format_of :ATTR(:get<format>);
 my %taxon_of :ATTR(:get<taxon>);
+my %depth_of :ATTR(:get<depth>);
 
 __PACKAGE__->_factory(
     [ qw(        output
         return
         format
         taxon
+        depth
 
     ) ],
     {
@@ -38,12 +40,14 @@ __PACKAGE__->_factory(
         'return' => \%return_of,
         'format' => \%format_of,
         'taxon' => \%taxon_of,
+        'depth' => \%depth_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'taxon' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'depth' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
     },
     {
 
@@ -51,6 +55,7 @@ __PACKAGE__->_factory(
         'return' => 'return',
         'format' => 'format',
         'taxon' => 'taxon',
+        'depth' => 'depth',
     }
 );
 
@@ -100,6 +105,9 @@ methods:
 =item * taxon
 
 
+=item * depth
+
+
 
 
 =back
@@ -116,6 +124,7 @@ Constructor. The following data structure may be passed to new():
    return =>  $some_value, # string
    format =>  $some_value, # string
    taxon =>  $some_value, # string
+   depth =>  $some_value, # int
  },
 
 

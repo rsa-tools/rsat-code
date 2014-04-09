@@ -103,15 +103,35 @@ source [RSAT_FULL_PATH]/RSAT_config.bashrc
 \end{verbatim}
 
 
+Note: for Ubuntu distribution , the simplest solution is to create a
+soft link from the directory \file{/etc/profile.d/}. This requires
+admin rights.
+
+\begin{verbatim}
+sudo ln -s $RSAT/RSAT_config.bashrc /etc/profile.d/rsat.sh
+\end{verbatim}
+
 \item \textbf{Initialize \RSAT folders}
 
   \begin{lstlisting}
 make -f makefiles/init_rsat.mk init
   \end{lstlisting}
   
-\item Install the required Perl libraries.
+\item Install the required Perl libraries. For this you need admin
+  rights.
 
   \begin{lstlisting}
+## sudo bash
+
+## Check that RSAT path has been defined
+echo $RSAT
+
+## If not, try this and check again
+##   source /etc/profile.d/rsat.sh
+
+## Set working directory to RSAT
+cd $RSAT
+
 ## Get the list of Perl modules to be installed
 make -f makefiles/install_rsat.mk  perl_modules_list
 
@@ -128,10 +148,16 @@ make -f makefiles/install_rsat.mk perl_modules_install
   \item \textbf{Beware: } this step requires admin rights (you will be
     prompted for sudo password in order to install modules in cpan).
     
-  \item \program{cpan} installation takes some time, and is interrupted
-    by many prompts to let you choose some installation options. We
-    recommend to use the default option for all questions (just press
-    the ``Enter'' key).
+  \item \program{cpan} installation takes some time, and is
+    interrupted by many prompts to let you choose some installation
+    options. We recommend to use the default option for all questions
+    (just press the ``Enter'' key). If you are bored to confirm each
+    installation step, you can run the following target, which will
+    automatically blindly accept all the default options.
+
+\begin{lstlisting}
+    make -f makefiles/install_rsat.mk perl_modules_install_noprompt
+\end{lstlisting}
     
   \item Even though some Perl modules may fail to install, don't worry
     too much. At this stage, you should be able to use most of \RSAT
@@ -148,7 +174,7 @@ make -f makefiles/init_rsat.mk compile_all
   scripts.
 
 \begin{lstlisting}
-make -f makefiles/install_software.mk  install_ext_apps
+make -f makefiles/install_software.mk install_ext_apps
 \end{lstlisting}
 
 

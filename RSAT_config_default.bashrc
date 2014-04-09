@@ -3,6 +3,9 @@
 ## to your local configuration (should be the directory in which the
 ## rsat folder is installed.
 
+
+
+
 ################################################################ 
 ## Configuration for Regulatory Sequence Analysis Tools (RSAT)
 export RSAT=[RSAT_PARENT_PATH]/rsat
@@ -18,6 +21,10 @@ if  [ ${CLASSPATH} ]; then
 else
        export CLASSPATH=.:${RSAT}/java/lib/NeAT_javatools.jar
 fi
+
+################################################################
+## Use ssh as remote shell for CVS (required to install Ensembl API)
+export CVS_RSH=ssh
 
 ################################################################
 ## Default path for the Ensembl Perl modules

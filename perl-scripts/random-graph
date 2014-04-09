@@ -451,7 +451,10 @@ Number of requested edges.
 
 =item B<-n #>
 
-Number of random graphs to create. By default, n = 1. If n is > 1, then you must specify an output prefix for the output files (-o option). In this case, the name of the files will be prefix_graph_number.[tab|gml|dot] according to the output format.
+Number of random graphs to create. By default, n = 1. If n is > 1,
+then you must specify an output prefix for the output files (-o
+option). In this case, the name of the files will be
+prefix_graph_number.[tab|gml|dot] according to the output format.
 
 =cut
 	} elsif ($arg eq "-n") {
@@ -478,7 +481,8 @@ required, you must specify a prefix for the output files.
 
 =item B<-input_format input_format>
 
-Input format. Supported: tab, gml. By default, the output format is tab.
+Input format. Supported: tab, gml. By default, the output format is
+tab.
 
 =cut
 	} elsif ($arg eq "-in_format") {
@@ -534,7 +538,8 @@ but the deree of each individual will be changed.
 
 =item B<-out_format output_format>
 
-Output format. Supported: tab, dot, gml. By default, the output format is tab.
+Output format. Supported: tab, dot, gml. By default, the output format
+is tab.
 
 =cut 
 	} elsif ($arg eq "-out_format") {
