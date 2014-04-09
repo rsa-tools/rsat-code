@@ -46,6 +46,8 @@ $default{max_profile}=10;
 $default{decimals}=1;
 $default{rc} = "";
 $default{multiply} = 1;
+$default{insert_col_left} = 0;
+$default{insert_col_right} = 0;
 $default{perm} = 0;
 $default{pseudo_prior} = "pseudo_prior";
 $checked{$default{pseudo_prior}} = "CHECKED";
@@ -160,13 +162,26 @@ print $query->textfield(-name=>'multiply',
 			-size=>2);
 print " (convert frequency matrices into count matrices)\n";
 
+## Insert columns on left and/or right flanks
+print "<BR>\n";
+print "<B><A HREF='help.convert-matrix.html#insert_col'>Insert columns</A></b>\n";
+print "&nbsp;"x10, "Left side";
+print $query->textfield(-name=>'insert_col_left',
+			-default=>$default{insert_col_left},
+			-size=>2);
+print "&nbsp;"x10, "Right side";
+print $query->textfield(-name=>'insert_col_right',
+			-default=>$default{insert_col_right},
+			-size=>2);
+print "<BR>\n";
+
 #### permutations
 print "<BR>\n";
-print "<B><A HREF='help.convert-matrix.html#permutations'>Number of permutations</A></b>\n";
+print "<B><A HREF='help.convert-matrix.html#permutations'>Permutations</A></b>\n";
 print $query->textfield(-name=>'perm',
 			-default=>$default{perm},
 			-size=>2);
-print "<B>(returns 'counts' field only)</b>\n";
+print "For random controls. Note: this option only returns 'counts'.</b>\n";
 
 ################################################################
 ### send results by email or display on the browser
