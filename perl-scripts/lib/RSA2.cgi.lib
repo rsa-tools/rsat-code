@@ -329,9 +329,11 @@ sub SequenceChoice {
   $sequenceChoiceString .=  "<B>Sequence</B>";
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
+
+
   if ($sequence_file = $query->param("sequence_file")) {
-    ### Sequence file is already on the server machine
-    ### (piped from a previous script)
+    ## Sequence file is already on the server machine
+    ## (piped from a previous script)
     $sequence_url = $sequence_file;
     $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
     $sequenceChoiceString .=  "<a href=$sequence_url>";
@@ -340,8 +342,8 @@ sub SequenceChoice {
     $sequence_format = $query->param(sequence_format);
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
-  } else {
 
+  } else {
     #### sequence format (pop-up menu)
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
@@ -355,7 +357,7 @@ sub SequenceChoice {
 							   'multi'],
 						 -default=>$sequence_format);
 
-    ### text area to copy-paste the sequence
+    ## Text area to copy-paste the sequence
     $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence',
 					       -default=>$default{sequence},
@@ -363,7 +365,7 @@ sub SequenceChoice {
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
 
-    ### option to upload the sequence file from the client machine
+    ## Option to upload the sequence file from the client machine
     $sequenceChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
     $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
 						-default=>'',
@@ -373,7 +375,7 @@ sub SequenceChoice {
 
   }
 
-  #### Mask option
+  ## Mask option
   $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
   $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
 					       -Values=>['none',
@@ -390,7 +392,7 @@ sub SequenceChoice {
 
 
 #################################
-#Multiple Sequence choice
+## Multiple Sequence choice
 sub MultiSequenceChoice {
   my $seq_title = shift(@_);
   my $seq_num = shift(@_);
@@ -595,6 +597,7 @@ sub GetSequenceFile {
 sub MultiGetSequenceFile {
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
+
   ### sequence file format
   my $sequence_format = "fasta";
   #    my $sequence_format = lc($query->param("sequence_format".$seq_num));
@@ -631,8 +634,20 @@ sub MultiGetSequenceFile {
 	&RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
       }
     }
-    my $seq_kb = sprintf("%d", length($seq)/1000);
-    &RSAT::message::Info("Fetched ".$seq_kb." kb file from ".$url) if ($main::verbose >= 0);
+
+    ## Check sequence file
+    my $file_type = `file $sequence_file`;
+    if ($file_type =~ "gzip") {
+      &RSAT::message::TimeWarn("Uncompressing sequence file", $sequence_file);
+      my $cmd = "mv ".$sequence_file." ".$sequence_file.".gz";
+      $cmd .= " ; gunzip ".$sequence_file.".gz";
+      &doit($cmd);
+    }
+    &RSAT::message::Debug("Sequence file=".$sequence_file, 
+			  "<p>File type=".$file_type,
+	) if ($main::verbose >= 0);
+
+#    my $seq_kb = sprintf("%d", length($seq)/1000);
 
     ### Read sequence from the textarea "sequence"
   } elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
