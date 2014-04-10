@@ -122,10 +122,12 @@ BMC Bioinformatics 11, 493.
 
 =item I<genome-blast>
 
-The progam I<phylo-profiles> requires to pre-compute homology tables
-between all proteins of the query genome and each species of the
-reference taxon. This can be done with the program I<genome-blast>.
+Pior to using the progam I<phylo-profiles> homology tables have to be
+pre-computed between all proteins of the query genome and each species
+of the reference taxon. This can be done with the program
+I<genome-blast>.
 
+ genome-blast -v 2 -q query_org -dbtaxon taxon -reciprocal
 
 =back
 
@@ -211,7 +213,7 @@ package main;
   }
 
   unless ($dir{output}) {
-    $dir{output} = "results/phylo_footprints/".${organism}."_vs_".${taxon};
+    $dir{output} = "results/phylo_profiles/".${organism}."_vs_".${taxon};
 #    &RSAT::error::FatalError("You must define an output directory (option I<-o>)");
   }
 
@@ -225,6 +227,10 @@ package main;
   $outfile{species_names}=$prefix{output}."_selected_species_names.tab"; push @outfiles, "species_names";
   $outfile{bbh} = $prefix{output}."_bbh_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
   $outfile{profiles_ids}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_ids.tab"; push @outfiles, "profiles_ids";
+  $outfile{profiles_boolean}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_boolean.tab"; push @outfiles, "profiles_boolean";
+  $outfile{profiles_boolean_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_boolean_names.tab"; push @outfiles, "profiles_boolean_names";
+  $outfile{profiles_evalues}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_evalues.tab"; push @outfiles, "profiles_evalues";
+  $outfile{profiles_evalues_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_evalues_names.tab"; push @outfiles, "profiles_evalues_names";
 
   ################################################################
   ## Open output stream
@@ -241,6 +247,8 @@ package main;
     print $html_index "<p><b>Command:</b> <tt>phylo-profiles ";
     &PrintArguments($html_index, 1);
     print $html_index "</tt></p>\n";
+  } else {
+    &RSAT::message::TimeWarn("Skipping index task") if ($main::verbose >= 2);
   }
 
   ################################################################
@@ -252,20 +260,21 @@ package main;
   ## closely related species. This is a bit tricky: we cut the organism
   ## tree at a given depth (e.g. 5) and select a single species of each
   ## taxon at this depth.
-  &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
-  my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
-  $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
-  $species_cmd .= " -depth ".$taxonomic_depth;
-  $species_cmd .= " -o ".$outfile{species};
-  $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
-  $species_cmd .= " -i ".$outfile{species};
-  $species_cmd .= " -o ".$outfile{species_html};
-  $species_cmd .= " ; grep -v '^#' ".$outfile{species};
-  $species_cmd .= " | cut -f 1";
-  $species_cmd .= " > ".$outfile{species_names};
-  &one_command($species_cmd, 1, 0, task=>"species");
-  &RSAT::message::Info("species file (tab)", $outfile{species}) if ($main::verbose >= 2);
-  &RSAT::message::Info("species file (html)", $outfile{species_html}) if ($main::verbose >= 2);
+  if ($task{species}) {
+    &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
+    my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
+    $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
+    $species_cmd .= " -depth ".$taxonomic_depth;
+    $species_cmd .= " -o ".$outfile{species};
+    $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
+    $species_cmd .= " -i ".$outfile{species};
+    $species_cmd .= " -o ".$outfile{species_html};
+    $species_cmd .= " ; grep -v '^#' ".$outfile{species};
+    $species_cmd .= " | cut -f 1";
+    $species_cmd .= " > ".$outfile{species_names};
+    &one_command($species_cmd, 1, 0, task=>"species");
+    &RSAT::message::Info("species file (tab)", $outfile{species}) if ($main::verbose >= 2);
+    &RSAT::message::Info("species file (html)", $outfile{species_html}) if ($main::verbose >= 2);
 #   my $species_cmd = $SCRIPTS."/supported-organisms -return ID,taxonomy";
 #   $species_cmd .= " | awk '$$1 == \"".$organism."\"' > ".$outfile{species};
 #   $species_cmd .= "; ".$SCRIPTS."/supported-organisms -return ID,taxonomy -taxon ".$taxon;
@@ -273,60 +282,89 @@ package main;
 #   $species_cmd .= " | cut -f 1-".$taxonomic_depth." | sort -k 2 -u | perl -pe 's|\t|; |g' | perl -pe 's|; |\t|'";
 #   $species_cmd .= " >> ${SPECIES}";
 #   &RSAT::message::Info("BBH file", $outfile{species}) if ($main::verbose >= 2);
+  } else {
+    &RSAT::message::TimeWarn("Skipping species selection task") if ($main::verbose >= 2);
+  }
 
   ################################################################
   ## Identify all the putative orthologs (BBH)
-  &RSAT::message::TimeWarn("Detecting all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
-  my $ortho_cmd = $SCRIPTS."/get-orthologs -v 2";
-  $ortho_cmd .= " -all";
-  $ortho_cmd .= " -org ".$organism;
+  if ($task{bbh}) {
+    &RSAT::message::TimeWarn("Detecting all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
+    my $ortho_cmd = $SCRIPTS."/get-orthologs -v 2";
+    $ortho_cmd .= " -all";
+    $ortho_cmd .= " -org ".$organism;
 #  $ortho_cmd .= " -taxon ".${taxon};
-  $ortho_cmd .= " -org_list ".$outfile{species_names};
-  $ortho_cmd .= " -uth rank 1 -lth ali_len ".$lth{len};
-  $ortho_cmd .= " -lth ident ".$lth{identity};
-  $ortho_cmd .= "  -uth e_value ".$uth{expect};
-  $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
-  $ortho_cmd .= " -o ".$outfile{bbh};
-  &one_command($ortho_cmd, 1, 0, task=>"bbh");
-  &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
-
+    $ortho_cmd .= " -org_list ".$outfile{species_names};
+    $ortho_cmd .= " -uth rank 1 -lth ali_len ".$lth{len};
+    $ortho_cmd .= " -lth ident ".$lth{identity};
+    $ortho_cmd .= "  -uth e_value ".$uth{expect};
+    $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
+    $ortho_cmd .= " -o ".$outfile{bbh};
+    &one_command($ortho_cmd, 1, 0, task=>"bbh");
+    &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
+  } else {
+    &RSAT::message::TimeWarn("Skipping detection of all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
+  }
 
   ################################################################
   ## Convert ortholog table into a profile table 
   ## with the IDs of the putative orthologs 
-  &RSAT::message::TimeWarn("Converting ortholog table to profiles") if ($main::verbose >= 2);
+  if ($task{profiles}) {
+    &RSAT::message::TimeWarn("Converting ortholog table to profiles") if ($main::verbose >= 2);
 
-  &RSAT::message::TimeWarn("Computing phylogenetic profiles (gene IDs) from BBH");
-  my $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
-  $command .= " -from tab -to profiles";
-  $command .= " -ccol 2 -mcol 3 -scol 1 -null '".$null."'";
-  $command .= "| grep -v '^;'";
-  $command .= "> ".$outfile{profiles_ids};
-  &RSAT::message::TimeWarn("ID profiles", $outfile{profiles_ids});
-  &one_command($ortho_cmd, 1, 0, task=>"profiles");
-  &RSAT::message::Info("Phylogenetic profiles by IDs", $outfile{profiles_ids}) if ($main::verbose >= 2);
+    ## Gene ID table
+    &RSAT::message::TimeWarn("Computing phylogenetic profiles (gene IDs) from BBH") if ($main::verbose >= 2);
+    my $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+    $command .= " -from tab -to profiles";
+    $command .= " -ccol 2 -mcol 3 -scol 1 -null '".$null."'";
+    $command .= "| grep -v '^;'";
+    $command .= "> ".$outfile{profiles_ids};
+    &RSAT::message::TimeWarn("ID profiles", $outfile{profiles_ids}) if ($main::verbose >= 2);
+    &one_command($command, 1, 0, task=>"profiles");
+    &RSAT::message::Info("Phylogenetic profiles by IDs", $outfile{profiles_ids}) if ($main::verbose >= 2);
 
-  ## Convert ortholog table into a Boolean profile table 
-# 	&RSAT::message::TimeWarn("Computing Boolean phylogenetic profiles from BBH"
-# 	@wc -l ${BBH}.tab
-# 	convert-classes -v 2 -i ".$outfile{bbh};
-#   $command .= "-from tab -to profiles";
-#   $command .= "-ccol 2 -mcol 3  -null 0";
-#   $command .= "| grep -v '^;'";
-#   $command .= "> ${$outfile{profiles}}_boolean.tab
-# 	add-gene-info -org ${ORG} -before -i ${$outfile{profiles}}_boolean.tab -info name > ${$outfile{profiles}}_boolean_names.tab
-# 	&RSAT::message::TimeWarn("Boolean profiles	${$outfile{profiles}}_boolean_names.tab"
+    ## Convert ortholog table into a Boolean profile table 
+    &RSAT::message::TimeWarn("Computing Boolean phylogenetic profiles from BBH") if ($main::verbose >= 2);
+    $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+    $command .= " -from tab -to profiles";
+    $command .= " -ccol 2 -mcol 3  -null 0";
+    $command .= " | grep -v '^;'";
+    $command .= " > ".$outfile{profiles_boolean};
+    $command .= " ; add-gene-info -org ".${organism};
+    $command .= " -before -i ".$outfile{profiles_boolean};
+    $command .= " -info name -o ".$outfile{profiles_boolean_names};
+    &RSAT::message::TimeWarn("Boolean profiles", $outfile{profiles_boolean});
+    &RSAT::message::TimeWarn("Boolean profiles with names", $outfile{profiles_boolean_names});
+    &one_command($command, 1, 0, task=>"profiles");
 
-# 				 ## Convert ortholog table into a profile table with E-values 
-# 	@echo
-# 	&RSAT::message::TimeWarn("Computing E-value phylogenetic profiles from BBH"
-# 	@wc -l ${BBH}.tab
-# 	convert-classes -v 2 -i ".$outfile{bbh};
-#   $command .= "-from tab -to profiles";
-#   $command .= "-ccol 2 -mcol 3  -scol 4 -null "NA"";
-#   $command .= "| grep -v '^;'";
-#   $command .= "> ${$outfile{profiles}}_Evalue.tab
-# 	&RSAT::message::TimeWarn("E-value profiles	${$outfile{profiles}}_boolean_names.tab"
+    ## Convert ortholog table into a e-value (BLAST expect) profile table 
+    &RSAT::message::TimeWarn("Computing e-value (BLAST expect) phylogenetic profiles from BBH") if ($main::verbose >= 2);
+    $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+    $command .= " -from tab -to profiles";
+    $command .= " -ccol 2 -mcol 3 -scol 4 -null 0";
+    $command .= " | grep -v '^;'";
+    $command .= " > ".$outfile{profiles_evalues};
+    $command .= " ; add-gene-info -org ".${organism};
+    $command .= " -before -i ".$outfile{profiles_evalues};
+    $command .= " -info name -o ".$outfile{profiles_evalues_names};
+    &RSAT::message::TimeWarn("e-values profiles", $outfile{profiles_evalues});
+    &RSAT::message::TimeWarn("e-values profiles with names", $outfile{profiles_evalues_names});
+    &one_command($command, 1, 0, task=>"profiles");
+
+
+  #   ## Convert ortholog table into a profile table with E-values 
+  # 	@echo
+  # 	&RSAT::message::TimeWarn("Computing E-value phylogenetic profiles from BBH"
+  # 	@wc -l ${BBH}.tab
+  # 	convert-classes -v 2 -i ".$outfile{bbh};
+  # $command .= "-from tab -to profiles";
+  # $command .= "-ccol 2 -mcol 3  -scol 4 -null "NA"";
+  # $command .= "| grep -v '^;'";
+  # $command .= "> ${$outfile{profiles}}_Evalue.tab
+  # 	&RSAT::message::TimeWarn("E-value profiles	${$outfile{profiles}}_boolean_names.tab"
+  } else {
+    &RSAT::message::TimeWarn("Skipping conversion from bbh tables to profiles") if ($main::verbose >= 2);
+  }
 
   ################################################################
   ## Generate the HMTL index of input/output files
