@@ -115,7 +115,6 @@ A systematic study of genome context methods: calibration,
 normalization and combination.
 BMC Bioinformatics 11, 493.
 
-
 =head1 SEE ALSO
 
 =over
@@ -131,6 +130,19 @@ I<genome-blast>.
 
 =back
 
+=head1 WISH LIST
+
+=head2 Computation of co-occurrence network
+
+(Jacques van Helden just needs to add the command in this work flow,
+it can be done easily)
+
+In a co-occurrence network, nodes represent (protein-coding) genes and
+edges are used to link pairs of co-occurring genes. Co-occurrence
+means that the genes are generally either both present or both absent
+in the genomes of the reference taxon. Various statistics can be used
+to measure the level of co-occurrence (for a comparison of these
+statistics, see Ferrer et al., 2010).
 
 =cut
 
@@ -231,6 +243,8 @@ package main;
   $outfile{profiles_boolean_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_boolean_names.tab"; push @outfiles, "profiles_boolean_names";
   $outfile{profiles_evalues}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_evalues.tab"; push @outfiles, "profiles_evalues";
   $outfile{profiles_evalues_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_evalues_names.tab"; push @outfiles, "profiles_evalues_names";
+  $outfile{profiles_sig}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_sig.tab"; push @outfiles, "profiles_sig";
+  $outfile{profiles_sig_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_sig_names.tab"; push @outfiles, "profiles_sig_names";
 
   ################################################################
   ## Open output stream
@@ -351,17 +365,21 @@ package main;
     &RSAT::message::TimeWarn("e-values profiles with names", $outfile{profiles_evalues_names});
     &one_command($command, 1, 0, task=>"profiles");
 
+    ## Convert ortholog table into a significance profile table, where sig = -log10(expect)
+    &RSAT::message::TimeWarn("Computing e-value (BLAST expect) phylogenetic profiles from BBH") if ($main::verbose >= 2);
+    $command = 'awk -F\'\t\' \'{print $1"\t"$2"\t"$3"\t"$4"\t"(-log($4)/log(10))}\' '.$outfile{bbh};
+    $command .= " | ".$SCRIPTS."/convert-classes -v 2";
+    $command .= " -from tab -to profiles";
+    $command .= " -ccol 2 -mcol 3 -scol 5 -null 0";
+    $command .= " | grep -v '^;'";
+    $command .= " > ".$outfile{profiles_sig};
+    $command .= " ; add-gene-info -org ".${organism};
+    $command .= " -before -i ".$outfile{profiles_sig};
+    $command .= " -info name -o ".$outfile{profiles_sig_names};
+    &RSAT::message::TimeWarn("e-values profiles", $outfile{profiles_sig});
+    &RSAT::message::TimeWarn("e-values profiles with names", $outfile{profiles_sig_names});
+    &one_command($command, 1, 0, task=>"profiles");
 
-  #   ## Convert ortholog table into a profile table with E-values 
-  # 	@echo
-  # 	&RSAT::message::TimeWarn("Computing E-value phylogenetic profiles from BBH"
-  # 	@wc -l ${BBH}.tab
-  # 	convert-classes -v 2 -i ".$outfile{bbh};
-  # $command .= "-from tab -to profiles";
-  # $command .= "-ccol 2 -mcol 3  -scol 4 -null "NA"";
-  # $command .= "| grep -v '^;'";
-  # $command .= "> ${$outfile{profiles}}_Evalue.tab
-  # 	&RSAT::message::TimeWarn("E-value profiles	${$outfile{profiles}}_boolean_names.tab"
   } else {
     &RSAT::message::TimeWarn("Skipping conversion from bbh tables to profiles") if ($main::verbose >= 2);
   }
@@ -518,11 +536,22 @@ Supported tasks:
 
 =item I<species>
 
-Select species at a given depth of the taxonomic tree.
+Select the list of species at a given depth of the taxonomic tree.
 
 =item I<bbh>
 
-Detect bidirectional best hits (BBH).
+Detect all bidirectional best hits (BBH) between each protein of the
+query genome and each genome of the reference taxon.
+
+The result is a table with one row per BBH, with different scores.
+
+=item I<profiles>
+
+Convert the BBH to phylogenetic profile tables.  A phylogenetic
+profile table contains 1 row per protein-coding gene of the query
+oranism, and one column per genome of the reference taxon. This
+program exports a series of separate phylogenetic profiles whose cell
+values indicate various statistics.
 
 =back
 
