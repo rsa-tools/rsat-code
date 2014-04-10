@@ -40,7 +40,10 @@ UNIX_PACKAGES_COMMON= \
 	links \
 	finger \
 	zip \
-	unzip
+	unzip \
+	python3.2 \
+	python2.7
+
 
 UNIX_PACKAGES_CENTOS= \
 	httpd \
@@ -199,12 +202,20 @@ perl_modules_check:
 ################################################################
 ## Install modules required for python
 PYTHON_MODULES=SUDS Rpy2 SOAPpy
+PYTHON3_MODULES=scipy
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
 python_modules_install:
+	@echo
+	@echo "Installing modules for python"
 	@for module in ${PYTHON_MODULES} ; do \
 		${SUDO} easy_install $${module}; \
+	done
+	@echo
+	@echo "Installing modules for python3"
+	@for module in ${PYTHON3_MODULES} ; do \
+		${SUDO} easy_install3 $${module}; \
 	done
 
 
