@@ -40,7 +40,12 @@ UNIX_PACKAGES_COMMON= \
 	links \
 	finger \
 	zip \
-	unzip
+	unzip \
+	python3.2 \
+	python3-setuptools \
+	python2.7
+
+
 
 UNIX_PACKAGES_CENTOS= \
 	httpd \
@@ -203,10 +208,21 @@ python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
 python_modules_install:
+	@echo
+	@echo "Installing modules for python"
 	@for module in ${PYTHON_MODULES} ; do \
 		${SUDO} easy_install $${module}; \
 	done
 
+PYTHON3_MODULES=numpy scipy
+python3_modules_install:
+	@echo
+	@echo "Installing modules for python3"
+	@echo "${PYTHON3_MODULES}"
+	@echo
+	@for module in ${PYTHON3_MODULES} ; do \
+		${SUDO} pip install -U $${module}; \
+	done
 
 ################################################################
 ## Install R modules required for some RSAT scripts
