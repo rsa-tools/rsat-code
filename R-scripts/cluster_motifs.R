@@ -221,7 +221,7 @@ for(nb in 1:length(tree$labels)){
 
 ## Get the aligment width, to calculate the limits of the plot
 alignment.width <- nchar(motifs.info[[1]][["consensus"]])
-mar4 <- alignment.width + 5 - 20
+mar4 <- alignment.width + 5 - 10
 
 ## Export the tree with the aligment
 plot.format <- "pdf" ## Default for testing inside the loop
