@@ -816,8 +816,8 @@ sub Add_attributes_to_JSON(){
       $matrix_info{$matrix_label}{logo_file_rc} = $split_line[8];
 
       ## The path of the aligned logo (in D or R) that will be displayed 
-      if($aligned_logos_path{$id}{strand} eq "D"){
-	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
+      if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
+	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo_rc};
       }else{
 	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo_rc}; 
       }
