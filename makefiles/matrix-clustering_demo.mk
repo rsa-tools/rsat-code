@@ -8,6 +8,13 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
+## Define a set of demo files
+PEAKMO_DEMO_MATRICES=${RSAT}/public_html/demo_files/matrix-clustering_demo_peak-motifs_matrices.tf
+## We should add some other demo files (e.g. RegulonDB)
+
+## Select one of the demo files for the test
+MATRIX_FILE=${PEAKMO_DEMO_MATRICES}
+
 V=2
 
 ################################################################
@@ -17,7 +24,7 @@ compa_alone:
 	@echo
 	@echo "Motif comparisons"
 	compare-matrices  -v 1 \
-		-file data/peak-motifs_7nt_merged_oligos_positions.tf -format tf \
+		-file ${MATRIX_FILE} -format tf \
 		-lth w 1 -lth cor -1 -lth Ncor -1 \
 		-o results/peak-motifs_7nt_merged_oligos_positions_compa.tab
 	@echo "	results/peak-motifs_7nt_merged_oligos_positions_compa.tab"
@@ -29,7 +36,6 @@ _cluster_old:
 		> cluster_log.txt
 ################################################################
 ## Demo 1: clustering between motifs discovered by peak-motifs
-PEAKMO_DEMO_MATRICES=${RSAT}/public_html/demo_files/matrix-clustering_demo_peak-motifs_result.tf
 cluster_peakmo:
 	@echo "Clustering of motifs discovered by peak-motifs"
 	matrix-clustering -v ${V} \
