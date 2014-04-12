@@ -221,7 +221,7 @@ for(nb in 1:length(tree$labels)){
 
 ## Get the aligment width, to calculate the limits of the plot
 alignment.width <- nchar(motifs.info[[1]][["consensus"]])
-mar4 <- alignment.width + 5 - 20
+mar4 <- alignment.width + 5 - 10
 
 ## Export the tree with the aligment
 plot.format <- "pdf" ## Default for testing inside the loop
@@ -248,7 +248,11 @@ alignment.table <- lapply(motifs.info, function(X){
 })
 alignment.table <- as.data.frame(t(data.frame(alignment.table)))
 alignment.table$id <- as.vector(rownames(alignment.table))
-alignment.table <- alignment.table[,c(6,1:5)]
-colnames(alignment.table) <- c("#id", "number", "strand", "offset_up", "offset_down", "aligned_consensus")
+final.width <- rep(nchar(motifs.info[[get.id(1)]][["consensus"]]), times = length(motifs.info))
+alignment.table$width <- final.width
+alignment.table <- alignment.table[,c(6, 1:4, 7, 5)]
+final.width <- rep(nchar(motifs.info[[get.id(1)]][["consensus"]]), times = length(motifs.info))
+alignment.table$width <- final.width
+colnames(alignment.table) <- c("#id", "number", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)

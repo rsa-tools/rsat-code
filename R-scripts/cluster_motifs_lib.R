@@ -230,7 +230,7 @@ get.id <- function(num){
 ## Given a vector with IDs, return a list with the 
 ## information (consensus, number, id, strand, spacer)
 ## of the inverted alignment
-inverted.aligment <- function(ids, motifs.info){
+inverted.alignment <- function(ids, motifs.info){
 
   temporal.list <- list()
   
@@ -267,7 +267,7 @@ inverted.aligment <- function(ids, motifs.info){
     new.consensus <- paste(unlist(strsplit(new.consensus, "[A-Za-z]+", perl = TRUE))[1], inverted.consensus, sep = "")
 
     ## Fill the new list
-    inverted.aligment.list[[X]][["consensus"]] <- inverted.consensus
+    inverted.aligment.list[[X]][["consensus"]] <- new.consensus
     inverted.aligment.list[[X]][["number"]] <- as.numeric(motifs.info[[X]][["number"]])
     inverted.aligment.list[[X]][["spacer"]] <- length(unlist(strsplit(new.consensus, "-")))-1
     
@@ -347,16 +347,16 @@ align.two.leaves <- function(child1, child2, motifs.info, tree){
 align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
 
   n1 <- abs(min(child1, child2))
-  n2 <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
-  N2 <- abs(max(child1, child2))
+  n.aligned <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
+  n2 <- n.aligned
   
   ## Get ids
   motifs.info[[get.id(n1)]][["number"]] <- as.numeric(n1)
   motifs.info[[get.id(n1)]][["spacer"]] <- 0
-  ids2 <- get.id(n2)
+  ids.aligned <- get.id(n.aligned)
   
   ## Find the central motif of the cluster
-  central.motifs <- central.motifs.ids(get.id(n1), ids2)
+  central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)
   id1 <- central.motifs[1]
   id2 <- central.motifs[2]
   
@@ -386,9 +386,7 @@ align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
   ## Assign values for the cases
   case <- 0
   if(switch.ids == 1){
-    
     if(strand == "D"){
-      
       if(motifs.info[[aligned]][["strand"]] == "D"){
         case <- 1
       } else{
@@ -417,90 +415,61 @@ align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
     } 
   }
   
+  ## Invert the aligned motifs
+  ## This is just required in some cases
+  ## See table at the final comments
+  if(case %in% c(2,4,6,7)){
+    ids <- get.id(n.aligned)
+    inverted.alignment.ids <- inverted.alignment(ids, motifs.info)
+    for(id in names(inverted.alignment.ids)){
+      motifs.info[[id]] <- NULL
+      motifs.info[[id]] <- inverted.alignment.ids[[id]]
+      tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
+    }
+  }
+  
   ## Get the spacers
   aligned.spacer <- as.numeric(motifs.info[[aligned]][["spacer"]])
   new.spacer <- as.numeric(motifs.info[[new]][["spacer"]])
   
   ## Choose the consensus for the new motif
-  consensus.new <-as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
-  motifs.info[[new]][["strand"]] <- "D"
-  motifs.info[[new]][["consensus"]] <- consensus.new
+  if(case %in% c(1,2,5,6,7,8)){
+    consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
+    motifs.info[[new]][["strand"]] <- "D"
+    motifs.info[[new]][["consensus"]] <- consensus.new
+  } else if(case %in% c(3,4)){
+    consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"rc_consensus"])
+    motifs.info[[new]][["strand"]] <- "R"
+    motifs.info[[new]][["consensus"]] <- consensus.new
+  }
+  tree$labels[as.numeric(motifs.info[[new]][["number"]])] <- paste(motifs.info[[new]][["consensus"]], as.numeric(motifs.info[[new]][["number"]]))
   
   ## Reset the offset
-  if(case %in% c(1,3,5,8)){
-    
-    if(case == 3){
-      ids <- get.id(n2)
-      print(paste("##### ", ids, " #####"))
-      inverted.aligment.ids <- inverted.aligment(ids, motifs.info)
-      for(id in names(inverted.aligment.ids)){
-        motifs.info[[id]] <- inverted.aligment.ids[[id]]
-      }
-      new.spacer <- as.numeric(motifs.info[[new]][["spacer"]])
-    }
-    
-    if(case %in% c(1,3)){
-      spacer.diff <- (aligned.spacer - new.spacer)
-    } else if (case %in% c(5,8)){
-      spacer.diff <- (new.spacer - aligned.spacer)
-    }
-    
-    offset <- offset + spacer.diff
-    
-  } else if(case %in% c(2,4,6,7)){
-    
-    ## Get the ids of the aligment that will be inverted
-    if(case %in% c(2,4)){
-      ids <- get.id(n2)
-    } else if(case %in% c(6,7)){
-      ids <- get.id(n1)
-    }
-    
-    ## Invert the aligment and store the information in a list
-    inverted.aligment.ids <- inverted.aligment(ids, motifs.info)
-    
-    ## Change the information in motifs.info list
-    for(id in names(inverted.aligment.ids)){
-      motifs.info[[id]] <- NULL
-      motifs.info[[id]] <- inverted.aligment.ids[[id]]
-    }
-    
-    aligned.spacer <- as.numeric(motifs.info[[aligned]][["spacer"]])
-    new.spacer <- as.numeric(motifs.info[[new]][["spacer"]])
-    
-    if(case %in% c(6,7)){
-      length.diff <- nchar(as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]), "consensus"])) - nchar(as.vector(description.table[as.numeric(motifs.info[[aligned]][["number"]]), "consensus"]))
-      spacer.diff <- (new.spacer - aligned.spacer)
-    } else if(case %in% c(2,4)){
-      length.diff <- nchar(as.vector(description.table[as.numeric(motifs.info[[aligned]][["number"]]), "consensus"])) - nchar(as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]), "consensus"]))
-      spacer.diff <- (aligned.spacer - new.spacer)
-    }
-    
-    offset <- length.diff - offset + spacer.diff
-    tree$labels[as.numeric(motifs.info[[new]][["number"]])] <- paste(motifs.info[[new]][["consensus"]], as.numeric(motifs.info[[new]][["number"]]))
+  if(case %in% c(1:4)){
+    spacer.diff <- (aligned.spacer - new.spacer)
+  } else if(case %in% c(5:8)){
+    spacer.diff <- (new.spacer - aligned.spacer)
   }
+  offset <- offset + spacer.diff
   
   ## Create the spacer
   spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
   
-  ##
-  if(offset <= 0){
-    
+  ## Add the gaps
+  if(offset < 0){
     for (id in get.id(n1)){
       motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
       motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
       tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
     }
-  }
-  else{
-    
+  } else{
     for (id in get.id(n2)){
       motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
       motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
       tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
     }
   }
-
+  
   export.list <- list()
   export.list[["info"]] <- motifs.info
   export.list[["tree"]] <- tree
@@ -585,11 +554,11 @@ align.clusters <- function(child1, child2, motifs.info, tree){
     ids <- get.id(n2)
     
     ## Invert the aligment and store the information in a list
-    inverted.aligment.ids <- inverted.aligment(ids)
+    inverted.alignment.ids <- inverted.alignment(ids, motifs.info)
     
     ## Change the information in motifs.info list
-    for(id in names(inverted.aligment.ids)){
-      motifs.info[[id]] <- inverted.aligment.ids[[id]]
+    for(id in names(inverted.alignment.ids)){
+      motifs.info[[id]] <- inverted.alignment.ids[[id]]
     }
     
     cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
@@ -651,4 +620,3 @@ fill.downstream <- function(motifs.list){
   }
   return(motifs.list)
 }
-
