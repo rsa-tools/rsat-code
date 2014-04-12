@@ -179,8 +179,12 @@ package main;
     ## Unrecognized arguments are passed to compare-matrices
     local @args_to_pass = ();
     local $args_to_pass = "";
-
     
+    ## Hash with the path to tha aligned logos
+    local %aligned_logos_path = ();
+
+    ## Final width of the aligned logos
+    local $final_width = 0;
 
 
     ################################################################
@@ -319,10 +323,6 @@ package main;
     ################################################################
     ## Cluster the matrices
     &Hclustering();
-
-    ################################################################
-    ## Add empty columns to the matrices
-    #&Add_empty_columns_to_logos();
 
     ################################################################
     ## Parse the JSON file
@@ -787,6 +787,9 @@ sub Add_attributes_to_JSON(){
   my (@Split_line, @Parsed_JSON) = ();
   my (%matrix_info) = ();
 
+  ## Create the logos with the empty columns, which will be displayed
+  ## in the HTML5 file
+  &Add_empty_columns_to_logos();
 
   #############################################
   ## Create a hash with the attribute data:
@@ -804,15 +807,23 @@ sub Add_attributes_to_JSON(){
       my $matrix_label = $split_line[6];
       $matrix_info{$matrix_label}{id} = $split_line[1];
       $matrix_info{$matrix_label}{name} = $split_line[2];
-      $matrix_info{$matrix_label}{width} = $split_line[3];
+      #$matrix_info{$matrix_label}{width} = $split_line[3];
+      $matrix_info{$matrix_label}{width} = $final_width;
       $matrix_info{$matrix_label}{consensus} = $split_line[4];
       $matrix_info{$matrix_label}{consensus_rc} = $split_line[5];
       $matrix_info{$matrix_label}{label} = $split_line[6];
       $matrix_info{$matrix_label}{logo_file} = $split_line[7];
       $matrix_info{$matrix_label}{logo_file_rc} = $split_line[8];
-      
+
+      ## The path of the aligned logo (in D or R) that will be displayed 
+      if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
+	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo_rc};
+      }else{
+	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo_rc}; 
+      }
   }
   close(DATA);
+
 
 
   ############################################################
@@ -859,15 +870,23 @@ sub Add_attributes_to_JSON(){
 	  $M1 = $1;
 	  
 	  ## Define te URL of the logo file, relative to the location of the json file
-	  my $logo_link = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_file});
-	  my $logo_url = $logo_link.".png";
-	  my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_file_rc});
-	  $logo_url_rc .= ".png";
+
+	  # my $logo_link = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_file});
+	  # my $logo_url = $logo_link.".png";
+	  # my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_file_rc});
+	  # $logo_url_rc .= ".png";
+
+	  my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{json}, $matrix_info{$M1}{logo_aligned_file});
+	  my $aligned_logo_url = $aligned_logo_link.".png";
 	  
 	  ### Create the line that will be added to JSON file
-	  $Add_this = " \"image\" : \"${logo_url}\"";
-	  $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
-	  $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+
+	  # $Add_this = " \"image\" : \"${logo_url}\"";
+	  # $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
+	  # $Add_this .= ",\n \"url\" : \"${logo_url}\"";
+
+	  $Add_this .= "\n \"image\" : \"${aligned_logo_link}\"";
+	  $Add_this .= ",\n \"url\" : \"${aligned_logo_link}\"";
 	  
 	  foreach my $field (@supported_label_fields) {
 	      if ($label_fields_to_return{$field}) {
@@ -1076,41 +1095,49 @@ sub Add_empty_columns_to_logos(){
     	$split_line[0] =~ s/\s+//g;
 
     	## Store the ID, strand and offset of each aligned motif
-    	$alignment_info{$split_line[0]}{strand} =  $split_line[3];
-    	$alignment_info{$split_line[0]}{offset} =  $split_line[4];
+    	$alignment_info{$split_line[0]}{strand} =  $split_line[2];
+    	$alignment_info{$split_line[0]}{offset_left} =  $split_line[3];
+    	$alignment_info{$split_line[0]}{offset_right} =  $split_line[4];
+	$final_width = $split_line[5];
     }
     close(ALIGNMENT_TABLE);
 
-    #foreach my $id (keys %alignment_info){
-    #	print "### ".$id."\t".$alignment_info{$id}{file_name}."\t".$alignment_info{$id}{strand}."\t".$alignment_info{$id}{offset}."\n";
-    #}
-    #<STDIN>;
+
+    # foreach my $id (keys %alignment_info){
+    #  	print "\n### ".$id."\t".$alignment_info{$id}{file_name}."\t".$alignment_info{$id}{strand}."\t".$alignment_info{$id}{offset_left}."\t".$alignment_info{$id}{offset_right}."\n";
+    # 	<STDIN>;
+    # }
+   
+ 
+    ## Create the folder to store the aligned logos
+    system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
     foreach my $id (keys %alignment_info){
 
-    	my ($rc, $offset) = "";
+    	my ($rc, $offset_left, $offset_right, $file_name, $strand) = "";
 
-	## Option to return the reverse-complement of a matrix
-    	if($alignment_info{$id}{strand} eq "R"){
-    	    $rc = "-rc";
-    	}
+	## Reset the variables
+	$offset_left = $alignment_info{$id}{offset_left};
+	$offset_right = $alignment_info{$id}{offset_right};
+	$file_name = $alignment_info{$id}{file_name};
+	$strand = $alignment_info{$id}{strand};
 
-	$offset = $alignment_info{$id}{offset};
+    	## Run the convert-matrix command to add the empty columns to the logos
+    	if($alignment_info{$id}{strand} eq "D"){
+	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc  -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+    	}else{
+	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_right." -insert_col_right ".$offset_left." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+	}
 
-	## Testing the convert-matrix command
-	# convert-matrix single_matrices_positions_7nt_m1.tf -from tf -to tf -return counts,consensus,parameters,logo -logo_format png -o test
-	# /home/jaimecm/Documents/TAGC/Clustering_test/Test_different_hclust_methods/data
+    	system("rm ".$file_name);
 
-	# print "\n\n#### --> ";
-    	# print "convert-matrix -i ".$alignment_info{$id}{file_name}." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo ".$rc." -o ".$main::outfile{prefix}."_aligned_logos \n";
-	# <STDIN>;
-
-	system("rm $alignment_info{$id}{file_name}");
-
-
-    }
+	## Store the path of the logos
+	$aligned_logos_path{$id}{strand} = $strand;
+	$aligned_logos_path{$id}{logo} = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
+	$aligned_logos_path{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
+    }    
 }
 
 
@@ -1126,19 +1153,20 @@ sub Create_single_matrix_files(){
 
     ## Split the matrix file into single matrices file, 
     ## in order to process individually each matrix
-    system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."single_matrices-");
+    system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
    
     ## Get the ids of the matrices
-    chomp(@ids = `ls $main::outfile{prefix}* | grep '.tf' | grep 'single' | rev | cut -d '-' -f1 | rev | cut -d '.' -f1`);
+    @ids = `ls $main::outfile{prefix}* | grep '.tf' | grep 'single_matrices' | rev | cut -d '-' -f1 | rev | cut -d '.' -f1`;
+
 
     ## Get the file name of each matrix and stores it in the hash
     foreach my $id (@ids){
-	$id =~ s/_//;
-	$id =~ s/\s+//g;
-	chomp($matrices_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
+    	$id =~ s/_//;
+    	$id =~ s/\s+//g;
+    	chomp($matrices_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
 	
-	#print "\n\n##### ".$id."\n\n";
-	#<STDIN>;
+    	# print "\n\n##### ".$id."\t".$matrices_files{$id}{file_name}."\n\n";
+    	# <STDIN>;
     }
     return(%matrices_files);
 }
