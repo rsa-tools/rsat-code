@@ -80,7 +80,7 @@ cluster_footprints:
 RDB_CLUSTER_DIR=results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2012-05
-RDB_MATRICES=data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
+RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES}
