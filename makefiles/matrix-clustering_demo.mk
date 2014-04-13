@@ -26,7 +26,7 @@ V=2
 ## Compare all matrices from the input file, with specific parameters
 ## to ensure that all distances are computed.
 COMPA_DIR=results/${DEMO_PREFIX}/pairwise_comparisons
-COMPA_FILE=${COMPA_DIR}/peak-motifs_7nt_merged_oligos_positions_compa.tab
+COMPA_FILE=${COMPA_DIR}/${DEMO_PREFIX}_compa.tab
 compa:
 	@echo
 	@echo "Motif comparisons"
@@ -51,15 +51,30 @@ compa_footprint_discovery:
 	${MAKE} compa DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
 
 ################################################################
-## Demo 1: clustering between motifs discovered by peak-motifs
-cluster_peakmo:
-	@echo "Clustering of motifs discovered by peak-motifs"
+## Run matrix-clusteringon one demo set (the particular cases will be
+## specified below)
+CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters
+CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
+cluster:
+	@echo "Running matrix-clustering	${DEMO_PREFIX}"
 	matrix-clustering -v ${V} \
-		-i ${PEAKMO_MATRIX_FILE} -format tf \
+		-i ${MATRIX_FILE} -format tf \
 		-export newick -d3_base file -hclust_method average \
 		-labels name,consensus \
-		-o results/peakmo_clustering/peakmo_example
-	@echo "	results/peakmo_clustering/peakmo_example"
+		-o ${CLUSTER_PREFIX}
+	@echo "		${CLUSTER_PREFIX}_index.html"
+
+## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+cluster_peakmo:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX}
+
+## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
+cluster_footprints:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriales)"
+	${MAKE} cluster DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
 
 ## Cluster all motifs from RegulonDB
 RDB_CLUSTER_DIR=results/regulondDB_clusters
