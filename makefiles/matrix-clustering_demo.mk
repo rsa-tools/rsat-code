@@ -20,19 +20,22 @@ V=2
 ################################################################
 ## Compare all matrices from the input file, with specific parameters
 ## to ensure that all distances are computed.
+COMPA_DIR=results/pairwise_motif_comparisons
+COMPA_FILE=${COMPA_DIR}/peak-motifs_7nt_merged_oligos_positions_compa.tab
 compa_alone:
 	@echo
 	@echo "Motif comparisons"
 	compare-matrices  -v 1 \
 		-file ${MATRIX_FILE} -format tf \
 		-lth w 1 -lth cor -1 -lth Ncor -1 \
-		-o results/peak-motifs_7nt_merged_oligos_positions_compa.tab
-	@echo "	results/peak-motifs_7nt_merged_oligos_positions_compa.tab"
+		-return Ncor,strand,offset,width,consensus \
+		-o ${COMPA_FILE}
+	@echo "	${COMPA_FILE}"
 
 _cluster_old:
 	cat cluster_motifs.R | \
 		R  --slave --no-save --no-restore --no-environ \
-		--args "infile='results/peak-motifs_7nt_merged_oligos_positions_compa.tab';outfile='results/peak-motifs_7nt_merged_oligos_positions_compa.json';score='Ncor'" \
+		--args "infile='${COMPA_FILE}';outfile='results/peak-motifs_7nt_merged_oligos_positions_compa.json';score='Ncor'" \
 		> cluster_log.txt
 ################################################################
 ## Demo 1: clustering between motifs discovered by peak-motifs
