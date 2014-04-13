@@ -195,6 +195,7 @@ package main;
     #$param{matrix_compa_min_cor} = 0.7; ## min correlation
     #$param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
     $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
+    #$param{matrix_compa_metrics} = "Ncor";
     $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
     $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
 
@@ -609,8 +610,8 @@ sub CompareMatrices {
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
-  $cmd .= " -sort cor";
-  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",width,consensus,matrix_desc,logos";
+  $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,matrix_desc,logos";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
