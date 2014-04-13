@@ -9,26 +9,32 @@ include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
 ## Define a set of demo files
-PEAKMO_DEMO_MATRICES=${RSAT}/public_html/demo_files/matrix-clustering_demo_peak-motifs_matrices.tf
-## We should add some other demo files (e.g. RegulonDB)
+PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
+FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 
-## Select one of the demo files for the test
-MATRIX_FILE=${PEAKMO_DEMO_MATRICES}
+## Choose a particular demo set
+DEMO_PREFIX=${PEAKMO_PREFIX}
 
+## Define file locations based on the chosen demo set
+MATRIX_DIR=${RSAT}/public_html/demo_files/
+MATRIX_FILE=${MATRIX_DIR}/${DEMO_PREFIX}_matrices.tf
+
+## Verbosity
 V=2
 
 ################################################################
 ## Compare all matrices from the input file, with specific parameters
 ## to ensure that all distances are computed.
-COMPA_DIR=results/pairwise_motif_comparisons
+COMPA_DIR=results/${DEMO_PREFIX}/pairwise_comparisons
 COMPA_FILE=${COMPA_DIR}/peak-motifs_7nt_merged_oligos_positions_compa.tab
-compa_alone:
+compa:
 	@echo
 	@echo "Motif comparisons"
-	compare-matrices  -v 1 \
+	@mkdir -p ${COMPA_DIR}
+	compare-matrices  -v ${V} \
 		-file ${MATRIX_FILE} -format tf \
 		-lth w 1 -lth cor -1 -lth Ncor -1 \
-		-return Ncor,strand,offset,width,consensus \
+		-return Ncor,strand,offset,width,consensus,alignments_1ton \
 		-o ${COMPA_FILE}
 	@echo "	${COMPA_FILE}"
 
@@ -37,12 +43,19 @@ _cluster_old:
 		R  --slave --no-save --no-restore --no-environ \
 		--args "infile='${COMPA_FILE}';outfile='results/peak-motifs_7nt_merged_oligos_positions_compa.json';score='Ncor'" \
 		> cluster_log.txt
+
+compa_peak_motifs:
+	${MAKE} compa DEMO_PREFIX=${PEAKMO_PREFIX}
+
+compa_footprint_discovery:
+	${MAKE} compa DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
+
 ################################################################
 ## Demo 1: clustering between motifs discovered by peak-motifs
 cluster_peakmo:
 	@echo "Clustering of motifs discovered by peak-motifs"
 	matrix-clustering -v ${V} \
-		-i ${PEAKMO_DEMO_MATRICES} -format tf \
+		-i ${PEAKMO_MATRIX_FILE} -format tf \
 		-export newick -d3_base file -hclust_method average \
 		-labels name,consensus \
 		-o results/peakmo_clustering/peakmo_example
