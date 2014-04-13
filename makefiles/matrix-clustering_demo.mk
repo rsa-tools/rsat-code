@@ -79,7 +79,10 @@ cluster_footprints:
 ## Cluster all motifs from RegulonDB
 RDB_CLUSTER_DIR=results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
+RDB_PREFIX=regulonDB_2012-05
+RDB_MATRICES=data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
-	matrix-clustering -v ${V} -i data/RDB_PSSMs.tf -format transfac -o ${RDB_CLUSTERS}
-	@echo ${RDB_CLUSTERS}
+	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES}
+#	matrix-clustering -v ${V} -i data/RDB_PSSMs.tf -format transfac -o ${RDB_CLUSTERS}
+#	@echo ${RDB_CLUSTERS}
