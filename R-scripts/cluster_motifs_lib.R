@@ -270,7 +270,7 @@ inverted.alignment <- function(ids, motifs.info){
     inverted.aligment.list[[X]][["consensus"]] <- new.consensus
     inverted.aligment.list[[X]][["number"]] <- as.numeric(motifs.info[[X]][["number"]])
     inverted.aligment.list[[X]][["spacer"]] <- length(unlist(strsplit(new.consensus, "-")))-1
-    
+    inverted.aligment.list[[X]][["alignment_status"]] <- motifs.info[[X]][["alignment_status"]]
 
     return(inverted.aligment.list)
            
@@ -287,15 +287,41 @@ inverted.alignment <- function(ids, motifs.info){
 ## (strand, consensus, offset) of the aligned motifs
 align.two.leaves <- function(child1, child2, motifs.info, tree){
 
-    ## Identify the two motifs
-    n1 <- min(-child1,-child2) ## row number of the first motif in the description table
-    n2 <- max(-child1,-child2) ## row number of the second motif in the description table
+  export.list <- list()
+  
+  ## Identify the two motifs
+  n1 <- min(-child1,-child2) ## row number of the first motif in the description table
+  n2 <- max(-child1,-child2) ## row number of the second motif in the description table
+  
+  id1 <- get.id(n1) ## Id of the first motif
+  id2 <- get.id(n2) ## Id of the second motif
+  
+  ## Comparison number in the compare-matrices table
+  compa.nb <- get.compa.nb(id1,id2)
+  
+  ## Check the threshold values for the corresponding
+  ## metric used
+  aligned.motif.flag <- 0
+  score.val <- compare.matrices.table[compa.nb, score]
+  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val)
+
+  ## In case the motifs should not be aligned
+  ## fill the motifs.info list with the default parameters
+  if(aligned.motif.flag == 0){
+    for(n in c(n1, n2)){
+      motifs.info[[get.id(n)]][["strand"]] <- "D"
+      motifs.info[[get.id(n)]][["number"]] <- n
+      motifs.info[[get.id(n)]][["spacer"]] <- 0
+      motifs.info[[get.id(n)]][["consensus"]] <- as.vector(description.table[as.numeric(motifs.info[[get.id(n)]][["number"]]),"consensus"])
+      motifs.info[[get.id(n)]][["alignment_status"]] <- "Non-aligned"
+    }
     
-    id1 <- get.id(n1) ## Id of the first motif
-    id2 <- get.id(n2) ## Id of the second motif
-    
-    ## Comparison number in the compare-matrices table
-    compa.nb <- get.compa.nb(id1,id2)
+    export.list[["info"]] <- motifs.info
+    export.list[["tree"]] <- tree
+    return(export.list)
+
+  ## Conversely align the motifs
+  }else{
     
     ## Choose the relative orientation of the two motifs
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -329,15 +355,18 @@ align.two.leaves <- function(child1, child2, motifs.info, tree){
     
     motifs.info[[id2]][["consensus"]] <- consensus2
     motifs.info[[id2]][["number"]] <- n2
-
+    
     motifs.info[[id1]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id1]][["consensus"]], "-")))-1
     motifs.info[[id2]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id2]][["consensus"]], "-")))-1
 
-    export.list <- list()
+    motifs.info[[id1]][["alignment_status"]] <- "Aligned"
+    motifs.info[[id2]][["alignment_status"]] <- "Aligned"
+    
     export.list[["info"]] <- motifs.info
     export.list[["tree"]] <- tree
     return(export.list)
- }
+  }
+}
 
 
 ##############################################################
@@ -345,7 +374,7 @@ align.two.leaves <- function(child1, child2, motifs.info, tree){
 ## to the already aligned cluster; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
 align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
-
+  
   n1 <- abs(min(child1, child2))
   n.aligned <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
   n2 <- n.aligned
@@ -363,117 +392,141 @@ align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
   ## Get the comparison number in the compare-matrices table
   compa.nb <- get.compa.nb(id1,id2)
   
-  ## Get the strand
-  strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
-  
-  ## Identified the new and the aligned motif
-  switch.ids <- 0
-  if(length(motifs.info[[id1]]) > 2){
-    aligned <- id1
-    new <- id2
-    temporal <- n1
-    n1 <- n2
-    n2 <- temporal
-    switch.ids <- 1
+  ## Check the threshold values for the corresponding
+  ## metric used
+  aligned.motif.flag <- 0
+  score.val <- compare.matrices.table[compa.nb, score]
+  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val)
+
+  ## In case the motifs should not be aligned
+  ## fill the motifs.info list with the default parameters
+  if(aligned.motif.flag == 0){
+    motifs.info[[get.id(n1)]][["strand"]] <- "D"
+    motifs.info[[get.id(n1)]][["consensus"]] <- as.vector(description.table[as.numeric(motifs.info[[get.id(n1)]][["number"]]),"consensus"])
+    motifs.info[[get.id(n1)]][["alignment_status"]] <- "Non-aligned" 
+
+    export.list <- list()
+    export.list[["info"]] <- motifs.info
+    export.list[["tree"]] <- tree
+    return(export.list)
+
+  ## Conversely align the motifs
   } else{
-    aligned <- id2
-    new <- id1
-  }
-  
-  ## Get the offset
-  offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
-  
-  ## Assign values for the cases
-  case <- 0
-  if(switch.ids == 1){
-    if(strand == "D"){
-      if(motifs.info[[aligned]][["strand"]] == "D"){
-        case <- 1
+ 
+    motifs.info[[get.id(n1)]][["alignment_status"]] <- "Aligned"
+    
+    ## Get the strand
+    strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
+    
+    ## Identified the new and the aligned motif
+    switch.ids <- 0
+    if(id1 != get.id(n1)){
+      aligned <- id1
+      new <- id2
+      temporal <- n1
+      n1 <- n2
+      n2 <- temporal
+      switch.ids <- 1
+    } else{
+      aligned <- id2
+      new <- id1
+    }
+    
+    ## Get the offset
+    offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
+    
+    ## Assign values for the cases
+    case <- 0
+    if(switch.ids == 1){
+      if(strand == "D"){
+        if(motifs.info[[aligned]][["strand"]] == "D"){
+          case <- 1
+        } else{
+          case <- 2
+        }
       } else{
-        case <- 2
+        if(motifs.info[[aligned]][["strand"]] == "D"){
+          case <- 3
+        } else{
+          case <- 4
+        } 
+      }
+    }else{
+      if(strand == "D"){
+        if(motifs.info[[aligned]][["strand"]] == "D"){
+          case <- 5
+        } else{
+          case <- 6
+        }
+      } else{   
+        if(motifs.info[[aligned]][["strand"]] == "D"){
+          case <- 7
+        } else{
+          case <- 8
+        } 
+      } 
+    }
+    
+    ## Invert the aligned motifs
+    ## This is just required in some cases
+    ## See table at the final comments
+    if(case %in% c(2,4,6,7)){
+      ids <- get.id(n.aligned)
+      inverted.alignment.ids <- inverted.alignment(ids, motifs.info)
+      for(id in names(inverted.alignment.ids)){
+        motifs.info[[id]] <- NULL
+        motifs.info[[id]] <- inverted.alignment.ids[[id]]
+        tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
+      }
+    }
+    
+    ## Get the spacers
+    aligned.spacer <- as.numeric(motifs.info[[aligned]][["spacer"]])
+    new.spacer <- as.numeric(motifs.info[[new]][["spacer"]])
+    
+    ## Choose the consensus for the new motif
+    if(case %in% c(1,2,5,6,7,8)){
+      consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
+      motifs.info[[new]][["strand"]] <- "D"
+      motifs.info[[new]][["consensus"]] <- consensus.new
+    } else if(case %in% c(3,4)){
+      consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"rc_consensus"])
+      motifs.info[[new]][["strand"]] <- "R"
+      motifs.info[[new]][["consensus"]] <- consensus.new
+    }
+    tree$labels[as.numeric(motifs.info[[new]][["number"]])] <- paste(motifs.info[[new]][["consensus"]], as.numeric(motifs.info[[new]][["number"]]))
+    
+    ## Reset the offset
+    if(case %in% c(1:4)){
+      spacer.diff <- (aligned.spacer - new.spacer)
+    } else if(case %in% c(5:8)){
+      spacer.diff <- (new.spacer - aligned.spacer)
+    }
+    offset <- offset + spacer.diff
+    
+    ## Create the spacer
+    spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
+    
+    ## Add the gaps
+    if(offset < 0){
+      for (id in get.id(n1)){
+        motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
+        motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
+        tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
       }
     } else{
-      if(motifs.info[[aligned]][["strand"]] == "D"){
-        case <- 3
-      } else{
-        case <- 4
-      } 
-    }
-  }else{
-    if(strand == "D"){
-      if(motifs.info[[aligned]][["strand"]] == "D"){
-        case <- 5
-      } else{
-        case <- 6
+      for (id in get.id(n2)){
+        motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
+        motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
+        tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
       }
-    } else{   
-      if(motifs.info[[aligned]][["strand"]] == "D"){
-        case <- 7
-      } else{
-        case <- 8
-      } 
-    } 
-  }
-  
-  ## Invert the aligned motifs
-  ## This is just required in some cases
-  ## See table at the final comments
-  if(case %in% c(2,4,6,7)){
-    ids <- get.id(n.aligned)
-    inverted.alignment.ids <- inverted.alignment(ids, motifs.info)
-    for(id in names(inverted.alignment.ids)){
-      motifs.info[[id]] <- NULL
-      motifs.info[[id]] <- inverted.alignment.ids[[id]]
-      tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
     }
+    
+    export.list <- list()
+    export.list[["info"]] <- motifs.info
+    export.list[["tree"]] <- tree
+    return(export.list)
   }
-  
-  ## Get the spacers
-  aligned.spacer <- as.numeric(motifs.info[[aligned]][["spacer"]])
-  new.spacer <- as.numeric(motifs.info[[new]][["spacer"]])
-  
-  ## Choose the consensus for the new motif
-  if(case %in% c(1,2,5,6,7,8)){
-    consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
-    motifs.info[[new]][["strand"]] <- "D"
-    motifs.info[[new]][["consensus"]] <- consensus.new
-  } else if(case %in% c(3,4)){
-    consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"rc_consensus"])
-    motifs.info[[new]][["strand"]] <- "R"
-    motifs.info[[new]][["consensus"]] <- consensus.new
-  }
-  tree$labels[as.numeric(motifs.info[[new]][["number"]])] <- paste(motifs.info[[new]][["consensus"]], as.numeric(motifs.info[[new]][["number"]]))
-  
-  ## Reset the offset
-  if(case %in% c(1:4)){
-    spacer.diff <- (aligned.spacer - new.spacer)
-  } else if(case %in% c(5:8)){
-    spacer.diff <- (new.spacer - aligned.spacer)
-  }
-  offset <- offset + spacer.diff
-  
-  ## Create the spacer
-  spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
-  
-  ## Add the gaps
-  if(offset < 0){
-    for (id in get.id(n1)){
-      motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
-      motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
-      tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
-    }
-  } else{
-    for (id in get.id(n2)){
-      motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
-      motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
-      tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
-    }
-  }
-  
-  export.list <- list()
-  export.list[["info"]] <- motifs.info
-  export.list[["tree"]] <- tree
-  return(export.list)
 }
 
 
@@ -482,7 +535,7 @@ align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
 align.clusters <- function(child1, child2, motifs.info, tree){
-
+  
   N1 <- abs(min(child1, child2))
   N2 <- abs(max(child1, child2))
     
@@ -503,101 +556,114 @@ align.clusters <- function(child1, child2, motifs.info, tree){
   
   ## Get the strand
   strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
+
+  ## Check the threshold values for the corresponding
+  ## metric used
+  aligned.motif.flag <- 0
+  score.val <- compare.matrices.table[compa.nb, score]
+  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val)
+  if(aligned.motif.flag == 0){
+    export.list <- list()
+    export.list[["info"]] <- motifs.info
+    export.list[["tree"]] <- tree
+    return(export.list)
+  } else {
   
-  ## Get the previous orientation of the aligned motifs
-  prev.strand.1 <- motifs.info[[id1]][["strand"]]
-  prev.strand.2 <- motifs.info[[id2]][["strand"]]
-  change.offset <- 0
-  
-  ## Get the offset
-  offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
-  
-  ## Switch the ids
-  if(id1 %in% ids2 == TRUE){
-    temporal <- ids2
-    ids1 <- ids2
-    ids2 <- temporal
-  }
-  
-  ## Get the current spacer of both motifs
-  cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
-  cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
-  case <- 0
-  
-  ## Assign the value for the cases
-  if(strand == "D"){
-    if(prev.strand.1 == "R" && prev.strand.2 == "R"){
-      case <- 1	
-    } else if(prev.strand.1 == "R" && prev.strand.2 == "D"){
-      case <- 2	
-    } else if(prev.strand.1 == "D" && prev.strand.2 == "R"){
-      case <- 3	
-    } else if(prev.strand.1 == "D" && prev.strand.2 == "D"){
-      case <- 4	
-    }
-  }else{
-    if(prev.strand.1 == "R" && prev.strand.2 == "R"){
-      case <- 5	
-    } else if(prev.strand.1 == "R" && prev.strand.2 == "D"){
-      case <- 6	
-    } else if(prev.strand.1 == "D" && prev.strand.2 == "R"){
-      case <- 7	
-    } else if(prev.strand.1 == "D" && prev.strand.2 == "D"){
-      case <- 8	
-    }
-  }
-  
-  ## Cases in which is required invert the aligment
-  if(case %in% c(2,3,8)){
+    ## Get the previous orientation of the aligned motifs
+    prev.strand.1 <- motifs.info[[id1]][["strand"]]
+    prev.strand.2 <- motifs.info[[id2]][["strand"]]
+    change.offset <- 0
     
-    ## Get the ids of the aligment that will be inverted
-    ids <- get.id(n2)
+    ## Get the offset
+    offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
     
-    ## Invert the aligment and store the information in a list
-    inverted.alignment.ids <- inverted.alignment(ids, motifs.info)
-    
-    ## Change the information in motifs.info list
-    for(id in names(inverted.alignment.ids)){
-      motifs.info[[id]] <- inverted.alignment.ids[[id]]
+    ## Switch the ids
+    if(id1 %in% ids2 == TRUE){
+      temporal <- ids2
+      ids1 <- ids2
+      ids2 <- temporal
     }
     
+    ## Get the current spacer of both motifs
     cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
-    cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])  
-  }
-  
-  ## According to the cases, reset the offset
-  if(case %in% c(1,2,5,6)){
-    offset <- nchar(as.vector(description.table[as.numeric(motifs.info[[id1]][["number"]]), "consensus"])) - nchar(as.vector(description.table[as.numeric(motifs.info[[id2]][["number"]]), "consensus"]))  - offset + (cluster.1.spacer - cluster.2.spacer)
-  } else if(case %in% c(3,4,7,8)){
-    offset <- offset + (cluster.1.spacer - cluster.2.spacer)
-  }
-  
-  ## Add the spacer to the motifs
-  if(offset <= 0){
-    spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
+    cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
+    case <- 0
     
-    for (id in ids1){
-      motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
-      motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
-      tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
+    ## Assign the value for the cases
+    if(strand == "D"){
+      if(prev.strand.1 == "R" && prev.strand.2 == "R"){
+        case <- 1	
+      } else if(prev.strand.1 == "R" && prev.strand.2 == "D"){
+        case <- 2	
+      } else if(prev.strand.1 == "D" && prev.strand.2 == "R"){
+        case <- 3	
+      } else if(prev.strand.1 == "D" && prev.strand.2 == "D"){
+        case <- 4	
+      }
+    }else{
+      if(prev.strand.1 == "R" && prev.strand.2 == "R"){
+        case <- 5	
+      } else if(prev.strand.1 == "R" && prev.strand.2 == "D"){
+        case <- 6	
+      } else if(prev.strand.1 == "D" && prev.strand.2 == "R"){
+        case <- 7	
+      } else if(prev.strand.1 == "D" && prev.strand.2 == "D"){
+        case <- 8	
+      }
     }
-  }
-  else{
-    spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
     
-    for (id in ids2){
-      motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
-      motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
-      tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
+    ## Cases in which is required invert the aligment
+    if(case %in% c(2,3,8)){
+      
+      ## Get the ids of the aligment that will be inverted
+      ids <- get.id(n2)
+      
+      ## Invert the aligment and store the information in a list
+      inverted.alignment.ids <- inverted.alignment(ids, motifs.info)
+      
+      ## Change the information in motifs.info list
+      for(id in names(inverted.alignment.ids)){
+        motifs.info[[id]] <- inverted.alignment.ids[[id]]
+      }
+      
+      cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
+      cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])  
     }
-  }
+    
+    ## According to the cases, reset the offset
+    if(case %in% c(1,2,5,6)){
+      offset <- nchar(as.vector(description.table[as.numeric(motifs.info[[id1]][["number"]]), "consensus"])) - nchar(as.vector(description.table[as.numeric(motifs.info[[id2]][["number"]]), "consensus"]))  - offset + (cluster.1.spacer - cluster.2.spacer)
+    } else if(case %in% c(3,4,7,8)){
+      offset <- offset + (cluster.1.spacer - cluster.2.spacer)
+    }
+    
+    ## Add the spacer to the motifs
+    if(offset <= 0){
+      spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
+      
+      for (id in ids1){
+        motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
+        motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
+        tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
+      }
+    }
+    else{
+      spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
+      
+      for (id in ids2){
+        motifs.info[[id]][["consensus"]] <- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
+        motifs.info[[id]][["spacer"]] <- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
+        tree$labels[as.numeric(motifs.info[[id]][["number"]])] <- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
+      }
+    }
 
-  export.list <- list()
-  export.list[["info"]] <- motifs.info
-  export.list[["tree"]] <- tree
-  return(export.list)
+    export.list <- list()
+    export.list[["info"]] <- motifs.info
+    export.list[["tree"]] <- tree
+    return(export.list)
+  }
 }
-
+  
 
 ###################################################
 ## Set the sizes of all consensuses to the largest
@@ -611,12 +677,34 @@ fill.downstream <- function(motifs.list){
   max.cons.length <- max(consensuses)
 
   for(id in 1:length(motifs.list)){
-
-    spacer.length <-  max.cons.length - nchar(motifs.list[[id]][["consensus"]])
-    spacer <- paste(rep("-", times = spacer.length), collapse = "")
-    motifs.list[[id]][["consensus"]] <- paste( motifs.list[[id]][["consensus"]], spacer, sep = "")
-    motifs.list[[id]][["offset_down"]] <- spacer.length
-    
-  }
+    if(motifs.list[[id]][["alignment_status"]] == "Aligned"){
+      spacer.length <-  max.cons.length - nchar(motifs.list[[id]][["consensus"]])
+      spacer <- paste(rep("-", times = spacer.length), collapse = "")
+      motifs.list[[id]][["consensus"]] <- paste( motifs.list[[id]][["consensus"]], spacer, sep = "")
+      motifs.list[[id]][["offset_down"]] <- spacer.length
+    } else{
+      motifs.list[[id]][["offset_down"]] <- 0
+    }
+  } 
   return(motifs.list)
+}
+
+
+################################################################
+## Given the metric score and the threshold selected returns
+## 0 if the value is under the threshold which means the motif
+## will not be aligned, conversely, returns 1
+select.motifs.for.be.aligned <- function(score, score.value){
+
+  alignment.flag <- 0
+  if(score == "Ncor"){
+    if(score.value >= 0.3){
+      alignment.flag <- 1
+    }
+  } else if (score == "cor"){
+    if(score.value >= 0.6){
+      alignment.flag <- 1
+    }
+  }
+  return(alignment.flag)
 }
