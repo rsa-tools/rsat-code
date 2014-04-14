@@ -244,15 +244,19 @@ for (plot.format in c("pdf", "png")) {
 
 ## Produce the aligment table
 alignment.table <- lapply(motifs.info, function(X){
-  return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]]))
+  return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["alignment_status"]], X[["consensus"]]))
 })
 alignment.table <- as.data.frame(t(data.frame(alignment.table)))
 alignment.table$id <- as.vector(rownames(alignment.table))
-final.width <- rep(nchar(motifs.info[[get.id(1)]][["consensus"]]), times = length(motifs.info))
+
+## Get the final length of the motifs
+final.width <- as.vector(sapply(motifs.info, function(X){
+  nchar(X[["consensus"]])
+}))
 alignment.table$width <- final.width
-alignment.table <- alignment.table[,c(6, 1:4, 7, 5)]
-final.width <- rep(nchar(motifs.info[[get.id(1)]][["consensus"]]), times = length(motifs.info))
-alignment.table$width <- final.width
-colnames(alignment.table) <- c("#id", "number", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
+
+##  Re-order the table and export it
+alignment.table <- alignment.table[,c(7, 1:4, 8, 5, 6)]
+colnames(alignment.table) <- c("#id", "number", "strand", "offset_up", "offset_down", "width", "alignment_status", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
