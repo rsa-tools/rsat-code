@@ -182,6 +182,7 @@ package main;
     
     ## Hash with the path to tha aligned logos
     local %aligned_logos_path = ();
+    local %alignment_info = ();
 
     ## Final width of the aligned logos
     local $final_width = 0;
@@ -808,8 +809,7 @@ sub Add_attributes_to_JSON(){
       my $matrix_label = $split_line[6];
       $matrix_info{$matrix_label}{id} = $split_line[1];
       $matrix_info{$matrix_label}{name} = $split_line[2];
-      #$matrix_info{$matrix_label}{width} = $split_line[3];
-      $matrix_info{$matrix_label}{width} = $final_width;
+      $matrix_info{$matrix_label}{width} = $alignment_info{$matrix_info{$matrix_label}{id}}{width};
       $matrix_info{$matrix_label}{consensus} = $split_line[4];
       $matrix_info{$matrix_label}{consensus_rc} = $split_line[5];
       $matrix_info{$matrix_label}{label} = $split_line[6];
@@ -848,20 +848,20 @@ sub Add_attributes_to_JSON(){
       ## Not finished ###
       ## Consensus of consensuses
       
-      if ($show_consensus){
-	  if ($line =~ /(\s*\"children\":\s*\[)/){
+      # if ($show_consensus){
+      # 	  if ($line =~ /(\s*\"children\":\s*\[)/){
 	      
-	      $children++;
-	      $Add_this = "";
-	      if ($children > 2){
+      # 	      $children++;
+      # 	      $Add_this = "";
+      # 	      if ($children > 2){
 		  
-		  ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
-		  ### here must be displayed the consensus of consensus
-		  $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
-		  push(@Parsed_JSON, $Add_this."\n");
-	      }
-	  }
-      }
+      # 		  ### positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1 is just an example
+      # 		  ### here must be displayed the consensus of consensus
+      # 		  $Add_this = " \"name\" : \"$matrix_info{positions_7nt_m1_kkcyTTTGTTATGCAAATGvarkc_positions_7nt_m1}{consensus}\", ";
+      # 		  push(@Parsed_JSON, $Add_this."\n");
+      # 	      }
+      # 	  }
+      # }
 
     ### Search the pattern separating the matrices names
       if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
@@ -1078,7 +1078,6 @@ sub Create_phylogram(){
 sub Add_empty_columns_to_logos(){
 
     my @split_line = ();
-    my %alignment_info = ();
 
     ## Creates the files with single matrices' information
     %alignment_info = &Create_single_matrix_files();
@@ -1099,7 +1098,7 @@ sub Add_empty_columns_to_logos(){
     	$alignment_info{$split_line[0]}{strand} =  $split_line[2];
     	$alignment_info{$split_line[0]}{offset_left} =  $split_line[3];
     	$alignment_info{$split_line[0]}{offset_right} =  $split_line[4];
-	$final_width = $split_line[5];
+	$alignment_info{$split_line[0]}{width} = $split_line[5];
     }
     close(ALIGNMENT_TABLE);
 
