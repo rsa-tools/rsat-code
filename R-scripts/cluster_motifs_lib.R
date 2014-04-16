@@ -37,6 +37,11 @@ check.param <- function() {
   if (!exists("hclust.method")) {
     hclust.method <- "average";
   }
+
+  ## Default lower threshold equals to zero
+  if (!exists("lth")) {
+    lth <- 0;
+  }
 }
 
 ################################################################
@@ -285,7 +290,7 @@ inverted.alignment <- function(ids, motifs.info){
 ##################################################
 ## Align two leaves: creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.two.leaves <- function(child1, child2, motifs.info, tree){
+align.two.leaves <- function(child1, child2, motifs.info, tree, lth){
 
   export.list <- list()
   
@@ -303,7 +308,7 @@ align.two.leaves <- function(child1, child2, motifs.info, tree){
   ## metric used
   aligned.motif.flag <- 0
   score.val <- compare.matrices.table[compa.nb, score]
-  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val)
+  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val, lth)
 
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
@@ -373,7 +378,7 @@ align.two.leaves <- function(child1, child2, motifs.info, tree){
 ## Align a leaf and one cluster: align the single motif relative
 ## to the already aligned cluster; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
+align.leave.and.cluster <- function(child1, child2, motifs.info, tree, lth){
   
   n1 <- abs(min(child1, child2))
   n.aligned <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
@@ -396,7 +401,7 @@ align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
   ## metric used
   aligned.motif.flag <- 0
   score.val <- compare.matrices.table[compa.nb, score]
-  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val)
+  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val, lth)
 
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
@@ -534,7 +539,7 @@ align.leave.and.cluster <- function(child1, child2, motifs.info, tree){
 ## Align two clusters: align the two cluster, in some cases is
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.clusters <- function(child1, child2, motifs.info, tree){
+align.clusters <- function(child1, child2, motifs.info, tree, lth){
   
   N1 <- abs(min(child1, child2))
   N2 <- abs(max(child1, child2))
@@ -561,7 +566,7 @@ align.clusters <- function(child1, child2, motifs.info, tree){
   ## metric used
   aligned.motif.flag <- 0
   score.val <- compare.matrices.table[compa.nb, score]
-  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val)
+  aligned.motif.flag <- select.motifs.for.be.aligned(score, score.val, lth)
   if(aligned.motif.flag == 0){
     export.list <- list()
     export.list[["info"]] <- motifs.info
@@ -694,15 +699,15 @@ fill.downstream <- function(motifs.list){
 ## Given the metric score and the threshold selected returns
 ## 0 if the value is under the threshold which means the motif
 ## will not be aligned, conversely, returns 1
-select.motifs.for.be.aligned <- function(score, score.value){
+select.motifs.for.be.aligned <- function(score, score.value, threshold){
 
   alignment.flag <- 0
   if(score == "Ncor"){
-    if(score.value >= 0.3){
+    if(score.value >= threshold){
       alignment.flag <- 1
     }
   } else if (score == "cor"){
-    if(score.value >= 0.6){
+    if(score.value >= threshold){
       alignment.flag <- 1
     }
   }
