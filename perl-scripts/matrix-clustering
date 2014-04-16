@@ -169,6 +169,33 @@ package main;
     local $supported_hclust_methods = join ",", @supported_hclust_methods;
     local $hclust_method = "complete";
 
+
+    ## Threshold parameters
+    local %lth = ();		# lower threshold values
+    #local %uth = ();		# upper threshold values
+    local @supported_thresholds = qw(
+				     cor
+                                     Ncor
+				   );
+    local $supported_thresholds = join ",", @supported_thresholds;
+    local %supported_threshold = ();
+    foreach my $thr (@supported_thresholds) {
+	$supported_threshold{lc($thr)} = 1;
+    }
+
+
+    ## Metric parameters
+    local @supported_metrics = qw(
+				     cor
+                                     Ncor
+				   );
+    local $supported_metrics = join ",", @supported_metrics;
+    local %supported_metrics = ();
+    foreach my $met (@supported_metrics) {
+	$supported_metrics{lc($met)} = 1;
+    }
+
+
     ## Matrices
     local @matrices = ();
     local @temp = ();
@@ -186,6 +213,9 @@ package main;
 
     ## Final width of the aligned logos
     local $final_width = 0;
+
+    ## Variables for the threshold value and threshold metric
+    local ($thr_field, $thr_value) =  "";
 
 
     ################################################################
@@ -316,6 +346,12 @@ package main;
       @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
 	if ($main::verbose >= 2);
+    }
+    
+    ## The metric for alignment always must be the same as the metric 
+    ## for the threshold
+    if($main::param{matrix_compa_score} ne $main::thr_field){
+	&RSAT::error::FatalError("The metric for alignment always must be the same as the metric for the threshold. Metric for alignment: $main::param{matrix_compa_score}; Metric for threshold: $thr_field");
     }
 
     ################################################################
@@ -556,11 +592,64 @@ B<Supported methods>
 =cut
 
     } elsif ($arg eq "-hclust_method") {
-       $hclust_method = shift(@arguments);
-       unless(exists($supported_hclust_methods{$hclust_method})){
-          &RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
-       }
+         $hclust_method = shift(@arguments);
+         unless(exists($supported_hclust_methods{$hclust_method})){
+            &RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
+         }
 
+=pod
+
+=item	B<-lth param lower_threshold>
+
+Threshold on some parameter (-lth: lower threshold).
+
+Supported threshold fields : cor, Ncor
+
+Before the aligment, if two motifs have a score lower than the selected threshold, skips the aligment among them. 
+
+The status of each motif (Aligned or Non-aligned) is reported in the file prefix_matrix_alignment_table.tab
+
+Suggested thresholds:
+
+    cor >= 0.6
+
+    Ncor >= 0.3
+
+Default values equal to zero. 
+
+=cut
+
+    }elsif ($arg eq "-lth") {
+      $thr_field = shift(@arguments);
+      $thr_value =  shift(@arguments);
+      unless ($supported_threshold{lc($thr_field)}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
+	unless (&RSAT::util::IsReal($thr_value));
+      $lth{$thr_field} = $thr_value;
+
+=pod
+
+=item	B<-score metric>
+
+Select the metric which will be used to cluster the motifs.
+
+Supported metrics : cor, Ncor
+
+Default: Ncor 
+
+=cut
+
+    }elsif ($arg eq "-score") {
+      my $metric = shift(@arguments);
+      unless ($supported_metrics{lc($metric)}) {
+	&RSAT::error::FatalError("Invalid metric field $metric. Supported: $supported_metrics");	
+      }
+      $main::param{matrix_compa_score} = $metric;
+      $main::param{matrix_compa_sort_field} = $metric;
+
+    ## Additional arguments are passed to compare-matrices
     }else {
         if ($arg =~ /\s/) {
 	    push @args_to_pass, "'".$arg."'";
@@ -682,6 +771,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= ";alignment.file='".$main::outfile{alignment_table}."'";
     $cluster_motifs_cmd .= ";score='".$param{matrix_compa_score}."'";
+    $cluster_motifs_cmd .= ";lth='".$main::thr_value."'";
     $cluster_motifs_cmd .= ";out.prefix='".$main::outfile{prefix}."'";
     if ($export_tree_format eq "newick"){
 	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
