@@ -53,6 +53,9 @@ if (length(args >= 1)) {
 ## Check parameters
 check.param()
 
+##
+lth <- as.numeric(lth)
+
 ##################################
 ## Read matrix comparison table
 compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
@@ -185,7 +188,7 @@ for (merge.level in 1:nrow(tree$merge)) {
   ## Case 1: merging between two leaves ##
   ########################################
    if ((child1 < 0) && (child2 < 0)) {
-     alignment <- align.two.leaves(child1, child2, motifs.info, tree)
+     alignment <- align.two.leaves(child1, child2, motifs.info, tree, lth)
      motifs.info <- alignment$info
      tree <- alignment$tree
    }
@@ -195,7 +198,7 @@ for (merge.level in 1:nrow(tree$merge)) {
   ## Case 2: merging a motif with a cluster ##
   ############################################
   if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
-    alignment <- align.leave.and.cluster(child1, child2, motifs.info, tree)
+    alignment <- align.leave.and.cluster(child1, child2, motifs.info, tree, lth)
     motifs.info <- alignment$info
     tree <- alignment$tree
   }
@@ -205,7 +208,7 @@ for (merge.level in 1:nrow(tree$merge)) {
   ## Case 3: merging between two clusters ##
   ##########################################
   if ((child1 > 0) && (child2 > 0)) {
-    alignment <- align.clusters(child1, child2, motifs.info, tree)
+    alignment <- align.clusters(child1, child2, motifs.info, tree, lth)
     motifs.info <- alignment$info
     tree <- alignment$tree
   }
