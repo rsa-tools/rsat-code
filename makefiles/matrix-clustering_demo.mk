@@ -60,7 +60,7 @@ cluster:
 	matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
 		-export newick -d3_base file -hclust_method average \
-		-labels name,consensus \
+		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
 	@echo "		${CLUSTER_PREFIX}_index.html"
 
@@ -69,6 +69,12 @@ cluster_peakmo:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX}
+
+## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+cluster_peakmo_threhsolds:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} OPT="-lth Ncor 0.3"
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
