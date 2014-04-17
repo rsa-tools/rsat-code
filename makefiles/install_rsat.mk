@@ -56,8 +56,10 @@ UNIX_PACKAGES_CENTOS= \
 	gd gd gd-devel php-gd perl-GD.x86_64 \
 	tetex-latex tetex-doc tetex-fonts
 
+## gfortran required for python scipy
 UNIX_PACKAGES_MACOSX= \
-	gd
+	gd \
+	gfortran
 
 UNIX_PACKAGES_UBUNTU= \
 	make \
@@ -68,7 +70,9 @@ UNIX_PACKAGES_UBUNTU= \
 	php-elisp \
 	texlive-latex-base \
 	libgd2-xpm-dev \
-	libgd-gd2-perl
+	libgd-gd2-perl \
+	python3 \
+	python3-dev
 
 unix_packages_list:
 	@echo
@@ -220,13 +224,13 @@ python3_modules_install:
 	@echo "Installing modules for python3"
 	@echo "${PYTHON3_MODULES}"
 	@echo
-	@for module in ${PYTHON3_MODULES} ; do \
+	@for module in ${PY	THON3_MODULES} ; do \
 		${SUDO} pip install -U $${module}; \
 	done
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO reshape
+R_MODULES=RJSONIO reshape ctc plyr dendroextras
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 
