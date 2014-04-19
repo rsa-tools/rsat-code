@@ -926,7 +926,7 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 		
 	filehandle.close()
 	
-	return liste_object, list_limit, number_of_matrix
+	return object_list, list_limit, number_of_matrix
 
 
 
@@ -1255,6 +1255,7 @@ if __name__=='__main__':
 	nb_crer_expect= 0
 	nb_binom_computation = 0
 	nb_sig_computation = 0
+	nb_crer = 0
 	
 	# Do a temporary file 
 	# Used to realized a pre-scan to compute e-value
@@ -1526,13 +1527,13 @@ if __name__=='__main__':
 										nb_binom_computation = 0
 										e_val = 0
 										
-										nb_crer=+ 1
-										crer_end = max(list_Site_one_seq[j].end(),list_Site_one_seq[i].end())
-										crer_end_center = max(list_Site_one_seq[j].center(),list_Site_one_seq[i].center())
+										nb_crer += 1
+										crer_end = max(list_site_one_seq[j].end(),list_site_one_seq[i].end())
+										crer_end_center = max(list_site_one_seq[j].center(),list_site_one_seq[i].center())
 										crer_size = crer_end-crer_start+1
 										
 										# Put crer description in a list
-										crer = [list_Site_one_seq[i].seq_id(),"crer","DR", crer_start,crer_end,nb_sites,crer_sig,e_val,crer_pval,pval_prod,weight_crer,crer_size,size]
+										crer = [list_site_one_seq[i].seq_id(),"crer","DR", crer_start,crer_end,nb_sites,crer_sig,e_val,crer_pval,pval_prod,weight_crer,crer_size,size]
 										
 										# Open right file
 										if outfile:
@@ -1544,7 +1545,7 @@ if __name__=='__main__':
 										# Return the limit of sequence where there is the crer
 										if return_limits_filtered:
 											for seq in init_table :
-												if seq[0]== seq[0]:
+												if crer[0]== seq[0]:
 													filehandle.write("%s	limit	START_END	D	%s	%s	.	0	0	0	0	0	0	0\n" % (seq[0],seq[1], seq[2]))
 													init_table.remove(seq)
 										
