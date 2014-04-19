@@ -2,15 +2,16 @@
 ## Tester for crer-scan
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=scripts/makefiles/crer-scan_test.mk
+MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 
 SITES_DIR=data
 SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
-RES_DIR=~/Dropbox/M1_PIB_2014_crer-scan/results
+RES_DIR=crer-scan_test/results
 SITES=${SITES_DORSAL}
 demo_dorsal:
-	python3 scripts/python-scripts/crer_scan.py  \
+	mkdir -p ${RES_DIR}
+	python3 python-scripts/crer_scan.py  \
 		-i ${SITES_DORSAL} -s -in_format ft \
 		-lth_crer_size 30 -uth_crer_size 500 -lth_crer_sites 2 -uth_crer_sites 1000 \
 		-lth_crer_sites_distance 1 -uth_crer_sites_distance 1000 \
@@ -22,8 +23,10 @@ demo_dorsal:
 CRER_DIR=${RES_DIR}/crers
 demo_eve:
 	@echo "Detectiong CRERS	${SITES_DIR}/matrix-scan_2014-03_segmentation_DEMO1.ft"
-	python3 scripts/python-scripts/crer_scan.py -v ${V} \
-		-i ${RSAT}/public_html/demo_files/drosophila_eve_segmentation_sites.ft \
+	mkdir -p ${CRER_DIR}
+	python3 python-scripts/crer_scan.py -v ${V} \
+		-i ${RSAT}/public_html/demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft \
+		-s \
 		-in_format ft \
 		-lth_crer_size 30 -uth_crer_size 500 \
 		-lth_crer_sites 2 -uth_crer_sites 1000 \
@@ -35,7 +38,7 @@ demo_eve:
 		-lth_score 0 -uth_score 1000 \
 		-uth_overlap 1 \
 		-return_limits_filtered \
-		-o ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer_-1free.ft
-	@echo "	 ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer_-1free.ft"
+		-o ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer.ft
+	@echo "	 ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer.ft"
 
 
