@@ -93,28 +93,27 @@ push @result_files, ("Scan result (FT)",$result_file);
 #$command .= " -o ".$result_file;
 
 ################################################################
-#### echo the command (for debugging)
+## Echo the command (for debugging)
 &ReportWebCommand($command);
 
 ################################################################
-### execute the command ###
+## Execute the command
 if ($query->param('output') eq "display") {
 
+  ## Print a warning telling that the results will appear below
   unless ($query->param('table')) {
     &PipingWarning() unless ($query->param("analysis_type") eq "analysis_occ");
   }
 
-
-
-  ### Print the result on Web page
+  ## Run the command, print the result on Web page, and store a copy in result file
   open RESULT, "$command |";
-  print "<PRE>";
+#  print "<PRE>";
   &PrintHtmlTable(RESULT, $result_file, true, 1000);
-  print "</PRE>";
+#  print "</PRE>";
+  close RESULT;
   print "<HR SIZE = 3>";
 
 #  system("$command");
-
 
   ################################################################
   ## Convert features to GFF3 format
