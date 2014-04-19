@@ -31,7 +31,7 @@ $default{lth_site_score} = "None";
 $default{uth_site_score} = "None";
 
 $descr{crer_size} = "CRER size";
-$default{lth_crer_size} = 30;
+$default{lth_crer_size} = 100;
 $default{uth_crer_size} = 500;
 
 $descr{crer_sites} = "Sites per CRER";
@@ -40,7 +40,7 @@ $default{uth_crer_sites} = "None";
 
 $descr{crer_sites_distance} = "Inter-site distance (bp)";
 $default{lth_crer_sites_distance} = 1;
-$default{uth_crer_sites_distance} = 30;
+$default{uth_crer_sites_distance} = 100;
 
 $descr{crer_sig} = "CRER significance";
 $default{lth_crer_sig} = 2;
@@ -130,8 +130,9 @@ print $query->end_form;
 ################################################################
 ## Data for the demo
 print $query->start_multipart_form(-action=>"crer-scan_form.cgi");
-$demo_file = "demo_files/drosophila_eve_segmentation_sites.ft";
-$demo_sites = `cat $demo_file | grep -v '^;'`;
+$demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
+#$demo_sites = `grep -v '^;' $demo_file`;
+$demo_sites = `cat $demo_file`;
 print "<TD><B>";
 print $query->hidden(-name=>'sites',-default=>$demo_sites);
 print $query->hidden(-name=>'in_format',-default=>"ft");
