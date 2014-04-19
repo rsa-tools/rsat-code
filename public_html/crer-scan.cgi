@@ -23,7 +23,7 @@ $query = new CGI;
 
 ### Print the header
 &RSA_header("crer-scan result", "results");
-&ListParameters() if ($ENV{rsat_echo} >= 0);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ## Check security issues
 &CheckWebInput($query);
