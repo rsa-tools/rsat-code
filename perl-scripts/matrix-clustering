@@ -172,7 +172,7 @@ package main;
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
-  #local %uth = ();		# upper threshold values
+  local %uth = ();		# upper threshold values
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
@@ -186,9 +186,9 @@ package main;
 
   ## Metric parameters
   local @supported_metrics = qw(
-				     cor
-                                     Ncor
-				   );
+			         cor
+                                 Ncor
+			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
   foreach my $met (@supported_metrics) {
@@ -316,11 +316,12 @@ package main;
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table";
   $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table";
+  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
 
   $main::outfile{json_ori} = $main::outfile{prefix}.".json";
-  $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_parsed_tree.json"; push @outfiles, "matrix_tree_json";
-  $main::outfile{logo_tree_html} = $main::outfile{prefix}."_matrix_tree.html"; push @outfiles, "logo_tree_html";
-  $main::outfile{consensus_tree_png} = $main::outfile{prefix}."_hclust_tree.png"; push @outfiles, "consensus_tree_png";
+  $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_matrix_tree.json"; push @outfiles, "matrix_tree_json";
+  $main::outfile{logo_tree_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_tree_html";
+  $main::outfile{consensus_tree_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_tree_png";
   if ($export_tree_format eq "newick"){
     $main::outfile{consensus_tree_newick} = $main::outfile{prefix}.".newick"; push @outfiles, "consensus_tree_newick";
     $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";
@@ -644,26 +645,28 @@ Suggested thresholds:
 
     } elsif ($arg eq "-lth") {
       my $thr_field = shift(@arguments);
-      my $thr_value =  shift(@arguments);
+      my $thr_value =  lc(shift(@arguments));
       unless ($supported_threshold{lc($thr_field)}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
       &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
 	  unless (&RSAT::util::IsReal($thr_value));
       $lth{$thr_field} = $thr_value;
+
       ## TEMPORARILY INACTIVATE PASSING THRESHOLDS TO compare-matrices
 #      push @args_to_pass, join(" ", "-lth", $thr_field, $thr_value);
       
       ### Upper threshold
     } elsif ($arg eq "-uth") {
-      my $thr_field = lc(shift(@arguments));
+      my $thr_field = shift(@arguments);
       my $thr_value = shift(@arguments);
-      unless ($supported_threshold{$thr_field}) {
+      unless ($supported_threshold{lc($thr_field)}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
       &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
 	  unless (&RSAT::util::IsReal($thr_value));
-      $uth{$thr_field} = $thr_value;#
+      $uth{$thr_field} = $thr_value;
+
       ## TEMPORARILY INACTIVATE PASSING THRESHOLDS TO compare-matrices
 #      push @args_to_pass, join(" ", "-uth", $thr_field, $thr_value);
 
@@ -805,23 +808,23 @@ sub Hclustering {
     $cluster_motifs_cmd .= " | ".$r_path;
     $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
     $cluster_motifs_cmd .= " --args \"";
-    $cluster_motifs_cmd .= "infile='".$main::outfile{pairwise_compa}."'";
-    $cluster_motifs_cmd .= ";hclust.method='".$hclust_method."'";
-    $cluster_motifs_cmd .= ";description.file='".$main::outfile{matrix_descriptions}."'";
-    $cluster_motifs_cmd .= ";distance.table='".$main::outfile{distance_table}."'";
-    $cluster_motifs_cmd .= ";alignment.file='".$main::outfile{alignment_table}."'";
-    $cluster_motifs_cmd .= ";score='".$param{matrix_compa_score}."'";
+    $cluster_motifs_cmd .= " infile = '".$main::outfile{pairwise_compa}."'";
+    $cluster_motifs_cmd .= "; hclust.method = '".$hclust_method."'";
+    $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
+    $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
+    $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
+    $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
-      $cluster_motifs_cmd .= ";lth='".$lth{$param{matrix_compa_score}}."'";
+      $cluster_motifs_cmd .= "; lth = '".$lth{$param{matrix_compa_score}}."'";
     }
     if (defined($uth{$param{matrix_compa_score}})) {
-      $cluster_motifs_cmd .= ";uth='".$uth{$param{matrix_compa_score}}."'";
+      $cluster_motifs_cmd .= "; uth = '".$uth{$param{matrix_compa_score}}."'";
     }
-    $cluster_motifs_cmd .= ";out.prefix='".$main::outfile{prefix}."'";
+    $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     if ($export_tree_format eq "newick"){
-	$cluster_motifs_cmd .= ";export='".$export_tree_format."'";
-	$cluster_motifs_cmd .= ";export_newick='".$main::outfile{consensus_tree_newick}."'";
+	$cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
+	$cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_tree_newick}."'";
     }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
@@ -1046,7 +1049,7 @@ sub Add_attributes_to_JSON(){
   open(PARSED_JSON, ">".$main::outfile{matrix_tree_json}) || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{matrix_tree_json});
   print PARSED_JSON @Parsed_JSON;
   close(PARSED_JSON);
-  #system("rm ".$main::outfile{json_ori});
+  system("rm ".$main::outfile{json_ori});
   return();
 }
 
@@ -1292,17 +1295,11 @@ sub Create_single_matrix_files(){
     system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
    
     ## Get the ids of the matrices
-    @ids = `ls $main::outfile{prefix}* | grep '.tf' | grep 'single_matrices' | rev | cut -d '-' -f1 | rev | cut -d '.' -f1`;
-
+    chomp(@ids = `more $main::outfile{alignment_table} | grep -v '#' | cut -f1`);
 
     ## Get the file name of each matrix and stores it in the hash
     foreach my $id (@ids){
-    	$id =~ s/_//;
-    	$id =~ s/\s+//g;
     	chomp($matrices_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
-	
-    	# print "\n\n##### ".$id."\t".$matrices_files{$id}{file_name}."\n\n";
-    	# <STDIN>;
     }
     return(%matrices_files);
 }
