@@ -53,102 +53,60 @@ if (length(args >= 1)) {
 ## Check parameters
 check.param()
 
+
 ##################################
 ## Read matrix comparison table
-compare.matrices.table <- read.csv(infile, sep = "\t", comment.char = ";")
-names(compare.matrices.table)[1] <- sub("^X.", "", names(compare.matrices.table)[1])
+global.compare.matrices.table <<- read.csv(infile, sep = "\t", comment.char = ";")
+names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
 
 
 ################################################################
 ## Read description table 
-description.table <- read.csv(description.file, sep = "\t", comment.char = ";")
-matrix.labels <-  as.vector(description.table$label)
-names(matrix.labels) <- as.vector(description.table$id)
+global.description.table <<- read.csv(description.file, sep = "\t", comment.char = ";")
+## In reference to the names, order alphabetically the description table
+global.description.table <- global.description.table[order(global.description.table$name),]
+global.description.table$n <- 1:length(global.description.table$n)
 
-## Extract score values
-score.values <- compare.matrices.table[,score] 
-score.dist <- 1 - score.values
+matrix.labels <-  as.vector(global.description.table$label)
+names(matrix.labels) <- as.vector(global.description.table$id)
 
-##############################################
-## Extract the score from the matrix comparison table
 
 ## Check that the compare-matrices table contains the required score column
-if (length(grep(pattern=score, names(compare.matrices.table))) < 1) {
+if (length(grep(pattern=score, names(global.compare.matrices.table))) < 1) {
   stop(paste(sep="", "Input file (", infile, ") does not contain the score column (", score, ")."))
 }
 
-## Extract score values
-score.values <- compare.matrices.table[,score]
+## Convert distance table into a distance matrix, required by hclust
+distances.objects <- build.distance.matrix(global.compare.matrices.table)
+dist.table <- distances.objects[[1]]
+dist.matrix <- distances.objects[[2]]
 
-################################################################
-## Convert user-selected score to distance metrics
-convert.scores(score.values, score)
-
-
-## Add a column with score column to the compare matrices table, will
-## be used to generate a cross-table
-compare.matrices.table$score.dist <- score.dist
-
-################################################################
-## Build a distance matrix from the distance score list
-dist.table <- t(xtabs(score.dist ~ name1+name2, compare.matrices.table) )
-## Ensure that symmetrical distances are defined
-for (i in 1:nrow(dist.table)) {
-  for (j in i:ncol(dist.table)) {
-    if (i==j) {next}
-    dist.max <- max(dist.table[i,j], dist.table[j,i])
-    dist.table[i,j] <- dist.max
-    dist.table[j,i] <- dist.max
-  }
-}
-#print(dist.table)
+## Export the distance table
 write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, col.names=NA, sep = "\t")
-
-## Convert distance table into a distance matrix, required by hclust()
-dist.matrix <- as.dist(dist.table)
-
-################
-### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
-## matrix.names <- sort(unique(as.vector(as.matrix((compare.matrices.table[,c(1,2)])))))
-## matrix.nb <- length(matrix.names)
-## dist.matrix <- data.frame(matrix(NA, nrow=matrix.nb, ncol=matrix.nb))
-## names(dist.matrix) <- matrix.names
-## rownames(dist.matrix) <- matrix.names
-## for (i in 1:matrix.nb) {
-##   for (j in i:matrix.nb) {
-##     ## Identify the relevant rows in matrix comparison table
-##     matrix.id1 <- matrix.names[i]
-##     matrix.id2 <- matrix.names[j]
-##     matches <- ((compare.matrices.table[,1] == matrix.id1 & compare.matrices.table[,2] == matrix.id2) |
-##                 (compare.matrices.table[,1] == matrix.id2 & compare.matrices.table[,2] == matrix.id1))
-##     if (sum(matches) >= 1) {
-##       current.score <- compare.matrices.table[which(matches),score]
-##     } else {
-##       current.score <- "NA"
-##     }    
-##     dist.matrix[i,j] <- current.score
-##     dist.matrix[j,i] <- current.score
-##   }
-## }
 
 
 ##############################################
 ### Build the tree by hierarchical clustering, and export it in Newick format
-tree <- hclust(dist.matrix, method = hclust.method)
-tree$labels <- as.vector(description.table$label)
+tree <<- hclust(dist.matrix, method = hclust.method)
+tree$labels <- as.vector(global.description.table$label)
+
 if (plot.tree) {
   plot(tree) 
 }
 if (export == "newick") {
+  temp.tree <- tree
+  temp.tree[[2]] <- round(tree[[2]], digits = 3)
   newick.file <- paste(sep='.', out.prefix, "newick")
   verbose(paste("Exporing newick file", newick.file), 1)
-  write(hc2Newick(tree, flat = TRUE), file=newick.file)
+  write(hc2Newick(temp.tree, flat = TRUE), file=newick.file)
+  rm(temp.tree)
 }
 
 #######################################
 ### Creates and parse the json file
 halfway.tree <- hclustToTree(tree)
 jsonTree <- toJSON(halfway.tree)
+
 ## Fix some little technical issues for JSON compatibility with the tree display javascript
 jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
 jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
@@ -163,31 +121,43 @@ verbose(paste("JSON tree file", json.file), 1)
 writeLines(jsonTree, con=json.file)
 
 
-###########################
-### Traversing the tree ###
-###########################
-
-#tree$labels <- as.vector(description.table$consensus)
-tree$labels <- paste(as.vector(description.table$consensus), 1:length(description.table$consensus))
-
 #############################################################
 ## Bottom-up traversal of the tree to orientate the logos
+## Initialize global variables
+tree$labels <- paste(as.vector(global.description.table$consensus), 1:length(global.description.table$consensus))
 merge.level <- 1
-motifs.info <- list()
+motifs.info <<- list()
+internal.nodes.attributes <<- list()
+forest.nb <<- 1
+forest.list <- list()
 
-merge.levels.leaves <- leaves.per.node(tree)
+compare.matrices.table <- global.compare.matrices.table
+description.table <- global.description.table
+
+## Saves the nodes clustered on each level
+## of the merge
+merge.levels.leaves <<- leaves.per.node(tree)
+
+## Saves the attributes of the merge
+internal.nodes.attributes <<- list() 
+
+#########################################
+## Traversing the tree: read the merge of
+## the hclust tree and align the leaves.
+## Bottom-up traversal of the tree to orientate the logos
 for (merge.level in 1:nrow(tree$merge)) {
 
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
 
+  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["merge_level"]] <- merge.level
+  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["method"]] <- hclust.method
+
   ########################################
   ## Case 1: merging between two leaves ##
   ########################################
    if ((child1 < 0) && (child2 < 0)) {
-     alignment <- align.two.leaves(child1, child2, motifs.info, tree)
-     motifs.info <- alignment$info
-     tree <- alignment$tree
+     align.two.leaves(child1, child2)
    }
 
 
@@ -195,9 +165,7 @@ for (merge.level in 1:nrow(tree$merge)) {
   ## Case 2: merging a motif with a cluster ##
   ############################################
   if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
-    alignment <- align.leave.and.cluster(child1, child2, motifs.info, tree)
-    motifs.info <- alignment$info
-    tree <- alignment$tree
+    align.leave.and.cluster(child1, child2)
   }
 
 
@@ -205,14 +173,13 @@ for (merge.level in 1:nrow(tree$merge)) {
   ## Case 3: merging between two clusters ##
   ##########################################
   if ((child1 > 0) && (child2 > 0)) {
-    alignment <- align.clusters(child1, child2, motifs.info, tree)
-    motifs.info <- alignment$info
-    tree <- alignment$tree
+    align.clusters(child1, child2)
   }
 }
 
 ## Fill the downstream end 
 motifs.info <- fill.downstream(motifs.info)
+forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 
 ## Reset the labels
 for(nb in 1:length(tree$labels)){
@@ -229,30 +196,209 @@ for (plot.format in c("pdf", "png")) {
   w.inches <- 10 ## width in inches
   h.inches <- 7 ## height in inches
   resol <- 72 ## Screen resolution
-  tree.drawing.file <- paste(sep="", out.prefix, "_hclust_tree.", plot.format)
+  tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
   verbose(paste("Exporting hclust tree drawing", tree.drawing.file), 1)
   if (plot.format == "pdf") {
     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
   } else if (plot.format == "png") {
     png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
   }
- #dev.new(width=10, height=7)
+
   par(mar=c(3,2,1,mar4),family="mono")
   plot(as.dendrogram(tree), horiz=TRUE)
   dev.off()
 }
 
-## Produce the aligment table
-alignment.table <- lapply(motifs.info, function(X){
-  return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]]))
+#########################
+##  Produce the internal nodes attributes table
+internal.nodes.attributes.table <- lapply(internal.nodes.attributes, function(X){
+  return(c(X[["merge_level"]], X[["method"]], X[["min_score"]], X[["max_score"]], X[["median_score"]], X[["alignment_status"]], X[["cluster_1"]], X[["cluster_2"]]))
 })
+internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
+colnames(internal.nodes.attributes.table) <- c("#merge_level", "method", "min_score", "max_score", "median_score", "alignment_status", "cluster_1", "cluster_2")
+attributes.file <- paste(sep="", out.prefix, "_internal_nodes_attributes.tab")
+write.table(internal.nodes.attributes.table, file = attributes.file, sep = "\t", quote = FALSE, row.names = FALSE)
+verbose(paste("Exporting merge attributes table", attributes.file), 1)
+
+
+#####################################################
+## Produce the forests: when a pair of clusters is
+## not aligned, it is splited and each part (forest)
+## is realigned and printed in pdf and png
+if(forest.nb > 1){
+  global.motifs.info <<- motifs.info
+  forest <<- cutree(tree, k = forest.nb)
+  forest.list <- list()
+  ids.forest <<- list()
+  
+  ## Get IDs of the forest
+  for( lvl in 1:length(table(forest))){
+    ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
+  }
+  
+  rm(compare.matrices.table)
+  rm(description.table)
+  rm(tree)
+  rm(motifs.info)
+  rm(internal.nodes.attributes)
+  
+  
+  for(nb in 1:length(table(forest))){
+
+    verbose(paste("Exploring the forest generated: ", nb ), 1)
+    
+    internal.nodes.attributes <<- list()
+    
+    ids <- ids.forest[[paste("forest_", nb, sep = "")]]
+    if(length(ids) < 2){
+      forest.list[[nb]] <- NULL
+      next
+    }
+    
+    ## New comparison table
+    compare.matrices.table <<- global.compare.matrices.table[which((global.compare.matrices.table[,"id1"] %in% ids & global.compare.matrices.table[,"id2"] %in% ids)),]
+    
+    compare.matrices.table$name1 <- as.vector(compare.matrices.table$name1)
+    compare.matrices.table$name2 <- as.vector(compare.matrices.table$name2)
+    
+    ## New description table
+    description.table <<- global.description.table[global.description.table[,"id"] %in% ids, ]
+    ## names(description.table)[1] <- sub("^X.", "", names(description.table)[1])
+    ## In reference to the names, order alphabetically the description table
+    description.table <- description.table[order(as.vector(description.table$name)),]
+    description.table$n <- 1:length(description.table$n)
+    matrix.labels <-  as.vector(description.table$label)
+    names(matrix.labels) <- as.vector(description.table$id)
+    
+    ################################################################
+    ## Build a distance matrix from the distance score list, this
+    ## distance matrix is required for hclust
+    distances.objects <- build.distance.matrix(compare.matrices.table)
+    dist.table <- distances.objects[[1]]
+    dist.matrix <- distances.objects[[2]]
+    
+
+    #############################################
+    ## Runs and plot the hierarchical cluster
+    tree <<- hclust(dist.matrix, method = hclust.method)
+    tree$labels <- as.vector(description.table$label)
+    tree$labels <- paste(as.vector(description.table$consensus), 1:length(description.table$consensus))
+
+    motifs.info <<- list()
+
+    ## Saves the nodes clustered on each level
+    ## of the merge
+    merge.levels.leaves <<- leaves.per.node(tree)
+  
+
+    #########################################
+    ## Traversing the tree: read the merge of
+    ## the hclust tree and align the leaves.
+    ## Bottom-up traversal of the tree to orientate the logos
+    for (merge.level in 1:nrow(tree$merge)) {
+      
+      child1 <- tree$merge[merge.level,1]
+      child2 <- tree$merge[merge.level,2]
+      
+      internal.nodes.attributes[[paste("merge_level_", merge.level)]][["merge_level"]] <- merge.level
+      internal.nodes.attributes[[paste("merge_level_", merge.level)]][["method"]] <- hclust.method
+      
+      ########################################
+      ## Case 1: merging between two leaves ##
+      ########################################
+      if ((child1 < 0) && (child2 < 0)) {
+        align.two.leaves(child1, child2)
+      }
+      
+      ############################################
+      ## Case 2: merging a motif with a cluster ##
+      ############################################
+      if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
+        align.leave.and.cluster(child1, child2)
+      }
+      
+      ##########################################
+      ## Case 3: merging between two clusters ##
+      ##########################################
+      if ((child1 > 0) && (child2 > 0)) {
+        align.clusters(child1, child2)
+      }
+    }
+  
+  
+    ## Fill the downstream end 
+    motifs.info <- fill.downstream(motifs.info)
+    
+    ## Reset the labels
+    for(x in 1:length(tree$labels)){
+      tree$labels[x] <- paste(motifs.info[[get.id(x)]][["consensus"]], x, sep = " ")
+    }
+    
+    ## Get the aligment width, to calculate the limits of the plot
+    alignment.width <- nchar(motifs.info[[1]][["consensus"]])
+    mar4 <- alignment.width + 5 - 10
+
+    ## Export the tree with the aligment
+    plot.format <- "pdf" ## Default for testing inside the loop
+    for (plot.format in c("pdf", "png")) {
+      w.inches <- 10 ## width in inches
+      h.inches <- 7 ## height in inches
+      resol <- 72 ## Screen resolution
+      tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", nb, ".", plot.format)
+      if (plot.format == "pdf") {
+        pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
+      } else if (plot.format == "png") {
+        png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+      }
+      ## dev.new(width=10, height=7)
+      par(mar=c(3,2,1,mar4),family="mono")
+      plot(as.dendrogram(tree), horiz=TRUE)
+      dev.off()
+    }
+    
+    forest.list[[paste("forest_", nb, sep = "")]] <- motifs.info
+  }
+}
+
+
+#################################
+## Produce the aligment table
+if(forest.nb > 1){
+  alignment.table <- sapply(forest.list, function(X){
+    sapply(X, function(Y){
+      return(c(Y[["number"]], Y[["strand"]], Y[["spacer"]], Y[["offset_down"]], Y[["consensus"]]))
+    })
+  })
+} else{
+  alignment.table <- lapply(forest.list[[1]], function(X){
+    return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]]))
+  })
+}
 alignment.table <- as.data.frame(t(data.frame(alignment.table)))
-alignment.table$id <- as.vector(rownames(alignment.table))
-final.width <- rep(nchar(motifs.info[[get.id(1)]][["consensus"]]), times = length(motifs.info))
-alignment.table$width <- final.width
-alignment.table <- alignment.table[,c(6, 1:4, 7, 5)]
-final.width <- rep(nchar(motifs.info[[get.id(1)]][["consensus"]]), times = length(motifs.info))
-alignment.table$width <- final.width
-colnames(alignment.table) <- c("#id", "number", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
+
+## Produce the column ID
+temp <- unlist(strsplit(rownames(alignment.table), "forest_\\d+."))
+alignment.table$id <- as.vector(temp[which(temp != "")])
+
+## Produce the column Width
+width.tmp <- unlist(sapply(forest.list, function(X){
+  sapply(X, function(Y){
+    return( nchar(Y[["consensus"]]))
+  })
+}))
+names(width.tmp) <- NULL
+alignment.table$width <- width.tmp
+
+## Produce the column Forest_ID
+forest.names <- names(forest.list)
+forest.id <- vector()
+for(name in forest.names){
+  forest.id <- append(forest.id, rep(name, length(forest.list[[name]])))
+}
+alignment.table$forest <- forest.id
+
+##  Re-order the table and export it
+alignment.table <- alignment.table[,c(6, 8, 2:4, 7, 5)]
+colnames(alignment.table) <- c("#id", "forest", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
-write.table(alignment.table, alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
