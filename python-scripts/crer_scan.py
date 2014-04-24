@@ -76,7 +76,7 @@ Optional arguments:
   -uth_site_pval UTH_SITE_PVAL
 		maximal p-value of sites to be considered
 		Recommended to be the higher site p-value considered.
-		Default = 1e-4
+		Recommended = 1e-4
 		
   -lth_score LTH_SITE_SCORE
 		minimal site score to be considered
@@ -86,11 +86,11 @@ Optional arguments:
 
   -lth_crer_size LTH_CRER_SIZE
 		minimal size of the enriched region (in bp). 
-		Default: minimal site size = 30bp
+		Recommended: minimal site size = 30bp
 		
   -uth_crer_size UTH_CRER_SIZE
 		maximal size of the enriched region (in bp). 
-		Default: maximal site site = 500bp
+		Recommended: maximal site site = 500bp
 		
   -lth_crer_sites LTH_CRER_SITES
 		minimal number of sites covered by the enriched region. 
@@ -108,19 +108,19 @@ Optional arguments:
 		distance between successive sites to be considered. 
 		A maximal inter-site distance can be used to prevent merging distinct modules into a single one. 
 		Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. 
-		Default = maximal distance = 35 bp
+		Recommanded = maximal distance = 100 bp
 		
   -uth_crer_pval UTH_CRER_PVAL
 		maximal binomial p-value
-		Default: 1e-4
+		Recommanded: 1e-4
 		
   -uth_crer_eval UTH_CRER_EVAL
 		maximal e-value
-		Default: 1e-4
+		Recommanded: 1e-4
 		
   -lth_crer_sig LTH_CRER_SIGNIFICANCE
 		minimal binomial significance
-		Default: 2
+		Recommanded: 2
 		
   -uth_overlap UTH_OVERLAP
 		maximal overlap to define two distinct sites
@@ -149,13 +149,6 @@ Mr Tichit for his psychological support at the breakfast time
 And Genopole class room for its liberality
 """
 
-"""
-Us to be the Best
-Mr Jack for his support 
-Mr Gonzalez for his legendary A+ in the bus
-Genopole class room for its liberality
-and last not least Mr Tichit for nothing
-"""
 
 __version__ = 'v.1.00 '
 
@@ -164,7 +157,6 @@ __version__ = 'v.1.00 '
 # Modules
 #===============================================================================
 
-import crer_scan
 import argparse
 import sys
 import tempfile
@@ -618,7 +610,34 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 		
 		# If the site's p-value and score are between the thresholds
 		# Sites are instantiated and added to the list of Site object
-		if eval(j[8]) <= pval_threshold and lth_score_threshold<= float(j[7]) <= uth_score_threshold :
+		if pval_threshold :
+			if pval_threshold >= eval(j[8]):
+				lth_pval_site_threshold = True
+			else:
+				lth_pval_site_threshold = False 
+		
+		if not pval_threshold:
+			lth_pval_site_threshold = True
+			
+		if lth_score_threshold :
+			if lth_score_threshold <= float(j[7]):
+				lth_threshold = True
+			else:
+				lth_threshold = False 
+		
+		if not lth_score_threshold:
+			lth_threshold = True
+		
+		if uth_score_threshold :
+			if uth_score_threshold >= float(j[7]):
+				uth_threshold = True
+			else:
+				uth_threshold = False 
+		
+		if not uth_score_threshold:
+			uth_threshold = True
+		
+		if lth_threshold and uth_threshold and lth_pval_site_threshold:
 			
 			max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 			
@@ -735,7 +754,35 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			
 			# If the site's p-value and score are between the thresholds
 			# Sites are instantiated and added to the list of Site object
-			if eval(j[8]) <= pval_threshold and lth_score_threshold<= float(j[7]) <= uth_score_threshold :
+			if pval_threshold :
+				if pval_threshold >= eval(j[8]):
+					lth_pval_site_threshold = True
+				else:
+					lth_pval_site_threshold = False 
+			
+			if not pval_threshold:
+				lth_pval_site_threshold = True
+				
+			if lth_score_threshold :
+				if lth_score_threshold <= float(j[7]):
+					lth_threshold = True
+				else:
+					lth_threshold = False 
+			
+			if not lth_score_threshold:
+				lth_threshold = True
+			
+			if uth_score_threshold :
+				if uth_score_threshold >= float(j[7]):
+					uth_threshold = True
+				else:
+					uth_threshold = False 
+			
+			if not uth_score_threshold:
+				uth_threshold = True
+			
+			if lth_threshold and uth_threshold and lth_pval_site_threshold:
+				
 				max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 				j[0] = Siteft(j[1],j[2],j[3],j[4],j[5],j[6],j[7],j[8],j[9],j[10])
 				object_list.append(j[0])
@@ -813,7 +860,25 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			
 			# If the site's p-value and score are between the thresholds
 			# Sites are instantiated and added to the list of Site object
-			if lth_score_threshold<= float(site[5]) <= uth_score_threshold:
+			if lth_score_threshold :
+				if lth_score_threshold<= float(site[5]):
+					lth_threshold = True
+				else:
+					lth_threshold = False 
+			
+			if not lth_score_threshold:
+				lth_threshold = True
+			
+			if uth_score_threshold :
+				if uth_score_threshold >= float(site[5]):
+					uth_threshold = True
+				else:
+					uth_threshold = False 
+			
+			if not uth_score_threshold:
+				uth_threshold = True
+			
+			if lth_threshold and uth_threshold:
 				
 				# list of every transcription factors
 				matrix.append(site[4])
@@ -910,7 +975,25 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 		
 		# If the site's p-value and score are between the thresholds
 		# Sites are instantiated and added to the list of Site object
-		if lth_score_threshold<= float(site[5]) <= uth_score_threshold:
+		if lth_score_threshold :
+			if lth_score_threshold<= float(site[5]):
+				lth_threshold = True
+			else:
+				lth_threshold = False 
+		
+		if not lth_score_threshold:
+			lth_threshold = True
+		
+		if uth_score_threshold :
+			if uth_score_threshold >= float(site[5]):
+				uth_threshold = True
+			else:
+				uth_threshold = False 
+		
+		if not uth_score_threshold:
+			uth_threshold = True
+		
+		if lth_threshold and uth_threshold:
 			
 			# list of every transcription factors
 			matrix.append(site[4])
@@ -990,31 +1073,31 @@ if __name__=='__main__':
 	parse.add_argument('-o',action = 'store', dest='outfile',help ="Output file in ft format")
 	parse.add_argument('-v',action = 'store', dest = 'verbose',default=1,type = int ,help = "level of verbose. Messages are wrote on standard error. Supported: Integer = 1,2,3. By default : 1 = No message. Level 2 : moderately density of messages. Level 3 : High density")
 	
-	parse.add_argument('-s', action='store_true', dest='sort', default=False, help ="sort the list of sites. Very recommended. The sites are sorted by center position")
-	parse.add_argument('-return_limits',action='store_true',dest='return_limits',default= False, help = "return every limits of sequences. By default : no return any limits")
-	parse.add_argument('-return_limits_filtered',action='store_true',dest='return_limits_filtered',default= False, help = "return the limits filtered of the sequence. Only the sequence limits of CRERs. By default : no return any limits")
-	parse.add_argument('-uth_site_pval',action='store',dest='uth_site_pval',default= 1e-4, type=float, help = "maximal p-value of sites to be considered. Recommended to be the higher site p-value considered. Default = 1e-4" )
-	parse.add_argument('-lth_score',action='store',dest='lth_site_score',default= 0,type= float, help = "minimal site score to be considered")
-	parse.add_argument('-uth_score',action='store',dest='uth_site_score',default= 1000, type= float, help = "maximal site score to be considered")
+	parse.add_argument('-s', action='store_true', dest='sort', default=None, help ="sort the list of sites. Very recommended. The sites are sorted by center position")
+	parse.add_argument('-return_limits',action='store_true',dest='return_limits',default= None, help = "return every limits of sequences. By default : no return any limits")
+	parse.add_argument('-return_limits_filtered',action='store_true',dest='return_limits_filtered',default= None, help = "return the limits filtered of the sequence. Only the sequence limits of CRERs. By default : no return any limits")
+	parse.add_argument('-uth_site_pval',action='store',dest='uth_site_pval',default= None, type=float, help = "maximal p-value of sites to be considered. Recommended to be the higher site p-value considered. Recommended = 1e-4" )
+	parse.add_argument('-lth_score',action='store',dest='lth_site_score',default= None ,type= float, help = "minimal site score to be considered")
+	parse.add_argument('-uth_score',action='store',dest='uth_site_score',default= None, type= float, help = "maximal site score to be considered")
 	
 	# Arguments for return CRERs
 	
-	parse.add_argument('-lth_crer_size',action='store',dest='lth_crer_size',default=30,type= float, help = "minimal size of the enriched region (in bp). Default: minimal size = 30bp")
-	parse.add_argument('-uth_crer_size',action='store',dest='uth_crer_size',default=500, type= float, help = "maximal size of the enriched region (in bp). Default:  maximal site = 500bp")
+	parse.add_argument('-lth_crer_size',action='store',dest='lth_crer_size',default=None,type= float, help = "minimal size of the enriched region (in bp). Recommended: minimal size = 30bp")
+	parse.add_argument('-uth_crer_size',action='store',dest='uth_crer_size',default=None, type= float, help = "maximal size of the enriched region (in bp). Recommended:  maximal size = 500bp")
 	
-	parse.add_argument('-lth_crer_sites',action='store',dest='lth_crer_sites', default=2, type = float, help="minimal number of sites covered by the enriched region. Default: minimal number of sites = 2")
-	parse.add_argument('-uth_crer_sites',action='store',dest='uth_crer_sites',default= 1000, type = float, help ="maximal number of sites covered by the enriched region. ")
+	parse.add_argument('-lth_crer_sites',action='store',dest='lth_crer_sites', default=None, type = float, help="minimal number of sites covered by the enriched region. Recommended: minimal number of sites = 2")
+	parse.add_argument('-uth_crer_sites',action='store',dest='uth_crer_sites',default=None, type = float, help ="maximal number of sites covered by the enriched region. ")
 	
-	parse.add_argument('-lth_crer_sites_distance',action='store',dest='lth_crer_sites_distance',default=1,type = float,  help = "distance between successive sites to be considered. A minimal inter-site distance can be used to prevent overlap between redundant matrices. Default = minimal distance = 1")
-	parse.add_argument('-uth_crer_sites_distance',action='store',dest='uth_crer_sites_distance',default=50,type = float,  help ="distance between successive sites to be considered. A maximal inter-site distance can be used to prevent merging distinct modules into a single one. Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. Default: maximal distance = 35")
+	parse.add_argument('-lth_crer_sites_distance',action='store',dest='lth_crer_sites_distance',default=None,type = float,  help = "distance between successive sites to be considered. A minimal inter-site distance can be used to prevent overlap between redundant matrices. Recommended = minimal distance = 1")
+	parse.add_argument('-uth_crer_sites_distance',action='store',dest='uth_crer_sites_distance',default=None,type = float,  help ="distance between successive sites to be considered. A maximal inter-site distance can be used to prevent merging distinct modules into a single one. Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. Recommended: maximal distance = 100")
 	
-	parse.add_argument('-uth_crer_pval',action='store',dest='uth_crer_pval',default = 1e-4, type= float, help = "maximal binomial p-value. Default: 1e-4")
+	parse.add_argument('-uth_crer_pval',action='store',dest='uth_crer_pval',default = None, type= float, help = "maximal binomial p-value. Recommended: 1e-4")
 	
-	parse.add_argument('-uth_crer_eval',action='store',dest='uth_crer_eval',default = 1e-4, type= float, help = "maximal e-value. Default: 1e-4")
+	parse.add_argument('-uth_crer_eval',action='store',dest='uth_crer_eval',default = None, type= float, help = "maximal e-value. Recommended: 1e-4")
 	
-	parse.add_argument('-lth_crer_sig',action='store',dest='lth_crer_significance', type = float, default= 2,help = "minimal binomial significance. Default: 2")
+	parse.add_argument('-lth_crer_sig',action='store',dest='lth_crer_significance', type = float, default= None,help = "minimal binomial significance. Recommended: 2")
 
-	parse.add_argument('-uth_overlap',action='store',dest='uth_overlap',default= 1, type= int, help = "maximal overlap to define two distinct sites")
+	parse.add_argument('-uth_overlap',action='store',dest='uth_overlap',default= None, type= int, help = "maximal overlap to define two distinct sites. Recommended = 1")
 
 	parse.add_argument('-nopval',action='store_true',dest='nopval',default= False, help = "compute CRER without p value")
 	parse.add_argument('-pre_table',action = 'store_true', dest = 'pre_table',default= False,help = "compute a table where is all possible p_value. Useful where there is a huge number of sites to scan.")
@@ -1156,36 +1239,54 @@ if __name__=='__main__':
 	if outfile:
 		filehandle.write("-o %s " % args.outfile)
 	filehandle.write("-v %d " % verbose)
-	
+	 
 	if sort:
 		filehandle.write("-s ")
-	
+	 
 	if return_limits:
 		filehandle.write("-return_limits ")
-	
+	 
 	if return_limits_filtered:
 		filehandle.write("-return_limits_filtered ")
+	 
+	if pval_threshold:
+		filehandle.write("-uth_site_pval %g " % args.uth_site_pval)
 	
-	filehandle.write("-uth_site_pval %g " % args.uth_site_pval)
-	filehandle.write("-lth_score %g " % args.lth_site_score)
-	
-	if uth_score_threshold != 1000 :
+	if lth_score_threshold:
+		filehandle.write("-lth_score %g " % args.lth_site_score)
+	 
+	if uth_score_threshold :
 		filehandle.write("-uth_score %g " % args.uth_site_score)
 	
-	filehandle.write("-lth_crer_size %g " % args.lth_crer_size)
-	filehandle.write("-uth_crer_size %g " % args.uth_crer_size)
-	filehandle.write("-lth_crer_sites %g " % args.lth_crer_sites)
+	if lth_size: 
+		filehandle.write("-lth_crer_size %g " % args.lth_crer_size)
 	
-	if uth_sites != 1000 :
+	if uth_size:
+		filehandle.write("-uth_crer_size %g " % args.uth_crer_size)
+	
+	if lth_sites:
+		filehandle.write("-lth_crer_sites %g " % args.lth_crer_sites)
+	 
+	if uth_sites:
 		filehandle.write("-uth_crer_sites %g " % args.uth_crer_sites)
-		
-	filehandle.write("-lth_crer_sites_distance %g " % args.lth_crer_sites_distance)
 	
-	filehandle.write("-uth_crer_sites_distance %g " % args.uth_crer_sites_distance)
-	filehandle.write("-uth_crer_eval %g " % args.uth_crer_eval)
-	filehandle.write("-uth_crer_pval %g " % args.uth_crer_pval)
-	filehandle.write("-lth_crer_sig %s " % args.lth_crer_significance)
-	filehandle.write("-uth_overlap %g \n"% args.uth_overlap)
+	if lth_dist:	 
+		filehandle.write("-lth_crer_sites_distance %g " % args.lth_crer_sites_distance)
+	
+	if uth_dist: 
+		filehandle.write("-uth_crer_sites_distance %g " % args.uth_crer_sites_distance)
+	
+	if uth_eval:
+		filehandle.write("-uth_crer_eval %g " % args.uth_crer_eval)
+	
+	if uth_pval:
+		filehandle.write("-uth_crer_pval %g " % args.uth_crer_pval)
+	
+	if lth_sig:
+		filehandle.write("-lth_crer_sig %s " % args.lth_crer_significance)
+	
+	if uth_overlap:
+		filehandle.write("-uth_overlap %g \n"% args.uth_overlap)
 	
 	if nopval :
 		filehandle.write("-nopval " )
@@ -1203,10 +1304,10 @@ if __name__=='__main__':
 	filehandle.write(";	crer_size	%s	%s\n" % (lth_size, uth_size))
 	filehandle.write(";	crer_sites	%s	%s\n" % (lth_sites, uth_sites))
 	filehandle.write(";	crer_sites_distance	%s	%s\n" % (lth_dist, uth_dist))
-	filehandle.write(";	crer_pval	%s\n" % uth_pval)
-	filehandle.write(";	crer_sig	%s\n" % lth_sig)
-	filehandle.write(";	crer_eval	%s\n" % uth_eval)
-	filehandle.write(";	site_pval	Na	%s\n" % (pval_threshold))
+	filehandle.write(";	crer_pval	None	%s\n" % uth_pval)
+	filehandle.write(";	crer_sig	%s	None\n" % lth_sig)
+	filehandle.write(";	crer_eval	None	%s\n" % uth_eval)
+	filehandle.write(";	site_pval	None	%s\n" % (pval_threshold))
 	filehandle.write(";	site_score	%s	%s\n" % (lth_score_threshold, uth_score_threshold))
 	if format == 'ft':
 		filehandle.write(";	maximal site p-value	%g \n" % max_site_pvalue)
@@ -1291,7 +1392,7 @@ if __name__=='__main__':
 				
 				# Compute p-value for the number of positions with at least one site
 				# pvalue positions = crer pvalue
-				crer_pval = scipy.stats.binom_test(nb_expect_sites,N,p)
+				crer_pval = scipy.stats.binom.sf(nb_expect_sites-1,N,p)
 				val_pval[nb_expect_size,nb_expect_sites]= crer_pval
 
 	# Add site objects in SiteSet object
@@ -1320,7 +1421,9 @@ if __name__=='__main__':
 				if return_limits :
 					# Write in temporary file
 					if not nopval :
-						tmp.write("%s	limit	START_END	D	%s	%s	.	0	0	0	0	0	0\n" % (seq[0],seq[1], seq[2]))
+						data = "%s	limit	START_END	D	%s	%s	.	0	0	0	0	0	0\n" % (seq[0],seq[1], seq[2])
+						data = data.encode('UTF-8')
+						tmp.write(data)
 					
 					# Write in output file
 					if nopval:
@@ -1338,7 +1441,7 @@ if __name__=='__main__':
 		#=======================================================================
 		# Extract and sort sites in SiteSetOnSameSeq object by center positions
 		#=======================================================================
-		if sort == True :
+		if sort :
 			
 			list_site_one_seq= SiteSetOnSameSeq.get_sorted_sites()
 			
@@ -1394,8 +1497,15 @@ if __name__=='__main__':
 				#=======================================================================
 				# Overlap threshold
 				#=======================================================================
-				if overlap < uth_overlap:
-					
+				if uth_overlap:
+					if overlap <= uth_overlap:
+						overlap_threshold=True
+					else:
+						overlap_threshold=False
+				if not uth_overlap:
+					overlap_threshold=True
+				
+				if overlap_threshold : 
 					# Verbose message
 					if verbose >=3 :
 							time_warn("	overlap is good")
@@ -1407,7 +1517,25 @@ if __name__=='__main__':
 					# Size threshold
 					# Verification of the size of the crer
 					#=======================================================================
-					if lth_size<= size <= uth_size :
+					if lth_size:
+						if lth_size <= size:
+							lth_size_threshold = True
+						else :
+							lth_size_threshold = False
+								
+					if not lth_size:
+						lth_size_threshold = True
+					   
+					if uth_size:
+						if uth_size >= size:
+							uth_size_threshold = True
+						else:
+							uth_size_threshold = False
+					if not uth_size:
+						uth_size_threshold = True
+					
+					
+					if lth_size_threshold and uth_size_threshold :
 						
 						# Verbose message
 						if verbose >=3 :
@@ -1423,7 +1551,25 @@ if __name__=='__main__':
 						# Verification of the distance between following sites
 						# If the distance is not correct the jth site is not keeping in the crer 
 						#=======================================================================
-						if lth_dist <= dist <= uth_dist : 
+						if lth_dist:
+							if lth_dist <= dist:
+								lth_dist_threshold = True
+							else :
+								lth_dist_threshold = False
+								
+						if not lth_dist:
+							lth_dist_threshold = True
+						
+						if uth_dist:
+							if uth_dist >= dist:
+								uth_dist_threshold = True
+							else:
+								uth_dist_threshold = False
+								
+						if not uth_dist:
+							uth_dist_threshold = True
+						
+						if lth_dist_threshold and uth_dist_threshold : 
 							
 							# Verbose message
 							if verbose >=3 :
@@ -1446,7 +1592,25 @@ if __name__=='__main__':
 							# Default minimal value is 2
 							# if it is not correct we don't keep the jth site in the crer
 							#=======================================================================
-							if lth_sites <= nb_sites <= uth_sites :
+							if lth_sites:
+								if lth_sites <= nb_sites:
+									lth_sites_threshold = True
+								else :
+									lth_sites_threshold = False
+								
+							if not lth_sites:
+								lth_sites_threshold = True
+						
+							if uth_sites:
+								if uth_sites >= nb_sites:
+									uth_sites_threshold = True
+								else:
+									uth_sites_threshold = False
+								
+							if not uth_sites:
+								uth_sites_threshold = True
+							
+							if lth_sites_threshold and uth_sites_threshold :
 								
 								# Verbose message
 								if verbose >=3 :
@@ -1462,6 +1626,7 @@ if __name__=='__main__':
 								# Expected sites number threshold
 								# keep crers with more sites than random expectation
 								#=======================================================================
+								
 								if nb_sites >= exp_sites:
 									
 									#=======================================================================
@@ -1499,8 +1664,25 @@ if __name__=='__main__':
 										# P-value threshold
 										# E-value threshold
 										#=======================================================================
-										if crer_pval <= uth_pval and crer_pval<= uth_eval:
+										if uth_pval:
+											if uth_pval >= crer_pval:
+												uth_pval_threshold = True
+											else :
+												uth_pval_threshold = False
+								
+										if not uth_pval:
+											uth_pval_threshold = True
+						
+										if uth_eval:
+											if uth_eval >= crer_pval:
+												uth_eval_threshold = True
+											else:
+												uth_eval_threshold = False
+								
+										if not uth_eval:
+											uth_eval_threshold = True
 											
+										if uth_pval_threshold and uth_eval_threshold:
 											
 											crer_end = max(list_site_one_seq[j].end(),list_site_one_seq[i].end())
 											crer_end_center = max(list_site_one_seq[j].center(),list_site_one_seq[i].center())
@@ -1568,11 +1750,10 @@ if __name__=='__main__':
 		read = read.decode()
 		read = read.strip().split('\n')
 		nb_crer = 0
-	
-		try:
+		
+		try :
 			for ligne in read :
 				crer_tmp = ligne.split('\t')
-				
 				# Extract limits of sequences, only here if there is retur_limits option
 				# Write limits on file
 				if crer_tmp[1] == 'limit':
@@ -1600,7 +1781,16 @@ if __name__=='__main__':
 					#=======================================================================
 					# Significance threshold
 					#=======================================================================
-					if lth_sig <= crer_sig :
+					if lth_sig:
+						if lth_sig <= crer_sig:
+							lth_sig_threshold = True
+						else :
+							lth_sig_threshold = False
+								
+					if not lth_sig:
+						lth_sig_threshold = True
+					
+					if lth_sig_threshold :
 						
 						crer = [crer_tmp[0],crer_tmp[1],crer_tmp[2],int(crer_tmp[3]),int(crer_tmp[4]),int(crer_tmp[5]),crer_sig,e_val,float(crer_tmp[7]),float(crer_tmp[8]),int(crer_tmp[9]),int(crer_tmp[10]),int(crer_tmp[11])]
 						
