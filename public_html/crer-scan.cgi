@@ -34,7 +34,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 @result_files = ();
 
 #### read parameters ####
-$parameters = " -v 1";
+$parameters = " -v 1 -s ";
 
 ################################################################
 ## Sites
@@ -56,7 +56,6 @@ if ($query->param('in_format')) {
     my ($in_format) = split " ", $query->param('in_format'); ### take the first word
     $parameters .= " -in_format ".$in_format;
 }
-
 
 ## Lower threshold on CRER size
 if (&IsNatural($query->param('lth_crer_size'))) {
