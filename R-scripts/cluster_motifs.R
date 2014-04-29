@@ -245,13 +245,18 @@ if(forest.nb > 1){
   
   for(nb in 1:length(table(forest))){
 
-    verbose(paste("Exploring the forest generated: ", nb ), 1)
+    #verbose(paste("Exploring the forest generated: ", nb ), 1)
     
     internal.nodes.attributes <<- list()
     
     ids <- ids.forest[[paste("forest_", nb, sep = "")]]
     if(length(ids) < 2){
       forest.list[[nb]] <- NULL
+      forest.list[[paste("forest_", nb, sep = "")]][[ids]] <- global.motifs.info[[ids]]
+      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["consensus"]] <- gsub("-", "", forest.list[[paste("forest_", nb, sep = "")]][[ids]][["consensus"]])
+      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["number"]] <- as.numeric(1)
+      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["spacer"]] <- as.numeric(0)
+      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["offset_down"]] <- as.numeric(0)
       next
     }
     
