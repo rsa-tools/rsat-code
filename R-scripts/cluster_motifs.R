@@ -177,8 +177,17 @@ for (merge.level in 1:nrow(tree$merge)) {
   }
 }
 
+## Split the tree into forest
+forest <<- cutree(tree, k = forest.nb)
+ids.forest <<- list()
+
+## Get IDs of the forest
+for( lvl in 1:length(table(forest))){
+  ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
+}
+
 ## Fill the downstream end 
-motifs.info <- fill.downstream(motifs.info)
+motifs.info <- fill.downstream(motifs.info, ids.forest)
 forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 
 ## Reset the labels
@@ -186,8 +195,15 @@ for(nb in 1:length(tree$labels)){
   tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], nb, sep = " ")
 }
 
+## Colour the branches
+tree.dendro <- as.dendrogram(tree)
+tree.dendro <- color_clusters(tree.dendro, k = forest.nb, col = rainbow)
+
 ## Get the aligment width, to calculate the limits of the plot
-alignment.width <- nchar(motifs.info[[1]][["consensus"]])
+alignment.width <- sapply(motifs.info, function(X){
+  nchar(X[["consensus"]])
+})
+alignment.width <- max(alignment.width)
 mar4 <- alignment.width + 5 - 10
 
 ## Export the tree with the aligment
@@ -205,7 +221,7 @@ for (plot.format in c("pdf", "png")) {
   }
 
   par(mar=c(3,2,1,mar4),family="mono")
-  plot(as.dendrogram(tree), horiz=TRUE)
+  plot(tree.dendro, horiz=TRUE)
   dev.off()
 }
 
@@ -235,6 +251,7 @@ if(forest.nb > 1){
   for( lvl in 1:length(table(forest))){
     ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
   }
+
   
   rm(compare.matrices.table)
   rm(description.table)
@@ -332,7 +349,7 @@ if(forest.nb > 1){
   
   
     ## Fill the downstream end 
-    motifs.info <- fill.downstream(motifs.info)
+    motifs.info <- fill.downstream.forest(motifs.info)
     
     ## Reset the labels
     for(x in 1:length(tree$labels)){
