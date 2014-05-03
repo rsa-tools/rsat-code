@@ -644,15 +644,22 @@ sub sendmail {
 #     system($mail_command);
 
 
-    ## Send message using Mail::sendmail
+    ## Define the SMTP server
+    my $smtp_server = "localhost::25"; ## Default is send by local machine
     if (($ENV{smtp}) && ($ENV{smtp} !~ /smtp.at.your.site/)) {
 	$smtp_server = $ENV{smtp};
-    } else {
-	$smtp_server = "localhost:25";
     }
+
+    ## Define the "from" email (can be defined in RSAT_config.props or
+    ## as environment variable smtp_sender)
+    my $from = "";
+    if ($ENV{smtp_sender}) {
+	$from = $ENV{smtp_sender};
+    }
+
     ## Send the message using MIME::Lite
     my $msg = MIME::Lite->new(
-#	From    => $from,
+	From    => $from,
 	To      => $recipient,
 	Subject => $subject,
 	Type    => 'text/plain',
@@ -660,7 +667,8 @@ sub sendmail {
 	);
     $msg->send('smtp', $smtp_server);
 
-    &RSAT::message::TimeWarn("mail sent to", $recipient) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("mail sent from", $from, "to", $recipient) if ($ENV{rsat_echo} >= 1);
+
 }
 
 
