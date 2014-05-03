@@ -17,7 +17,8 @@ unshift (@INC, "../../perl-scripts/lib/");
 
 require RSAT::util;
 require RSAT::server;
-require RSAT::TaskManager;
+## require RSAT::TaskManager;## JvH 2014-05-03: The TaskManager was actually not called from RSATWS.pm
+require RSAT::OrganismManager;
 
 &main::InitRSAT();
 
@@ -50,7 +51,8 @@ Documentation for this module is at
 
 =cut
 
-##########
+
+################################################################
 sub retrieve_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -177,7 +179,8 @@ sub retrieve_seq {
   &run_WS_command($command, $output_choice, "retrieve-seq", $format);
 }
 
-##########
+
+################################################################
 sub retrieve_seq_multigenome {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -306,7 +309,8 @@ sub retrieve_seq_multigenome {
   &run_WS_command($command, $output_choice, "retrieve-seq-multigenome", $format);
 }
 
-##########
+
+################################################################
 sub retrieve_ensembl_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -580,7 +584,8 @@ sub retrieve_ensembl_seq {
  &run_WS_command($command, $output_choice, "retrieve-ensembl-seq", $format)
 }
 
-##########
+
+################################################################
 sub purge_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -654,7 +659,8 @@ sub purge_seq {
     &run_WS_command($command, $output_choice, "purge-sequence", $format);
 }
 
-##########
+
+################################################################
 sub oligo_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -800,7 +806,8 @@ sub oligo_analysis {
     &run_WS_command($command, $output_choice, "oligo-analysis", "tab");
 }
 
-##########
+
+################################################################
 sub oligo_diff {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -924,6 +931,7 @@ sub oligo_diff {
     &run_WS_command($command, $output_choice, "oligo-diff", "tab");
 }
 
+
 ################################################################
 ##
 ## peak-motifs
@@ -953,18 +961,6 @@ sub peak_motifs {
     $command .= " -outdir '".$output_path."'";
     $command .= " -prefix '".$output_prefix."'";
 
-#     if ($output_choice eq 'ticket') {
-# 	my $ticket = $output_directory;
-# 	$ticket =~ s/$TMP\///;
-# # 	my $error_file = $tmp_outfile.".err";
-# 	my $error_file = $output_path.".err";
-# 	# Both stdout (1) and stderr (2) need to be redirected to allow background (&) mode
-# #      `$command 1>$tmp_outfile 2>$error_file &`;
-# 	`$command &>$error_file &`;
-# 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
-# 								 SOAP::Data->name('command' => $command)))
-# 	    ->attr({'xmlns' => ''});
-#     }
 
     ################################################################
     ## PROBLEM: THESE ABSOLUTE PATHS SHOULD NOT BE USED (JvH, 2013-08-09)
@@ -1264,7 +1260,8 @@ sub peak_motifs_cmd {
 #    &run_WS_command($command, $output_choice, "peak-motifs");
 }
 
-##########
+
+################################################################
 sub dyad_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1422,7 +1419,8 @@ sub dyad_analysis {
     &run_WS_command($command, $output_choice, "dyad-analysis", "tab");
 }
 
-##########
+
+################################################################
 sub position_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1636,7 +1634,8 @@ sub position_analysis {
     &run_WS_command($command, $output_choice, "position-analysis", "tab");
 }
 
-##########
+
+################################################################
 sub pattern_assembly {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1728,7 +1727,8 @@ sub pattern_assembly {
     &run_WS_command($command, $output_choice, "pattern-assembly", "asmb");
 }
 
-##########
+
+################################################################
 sub dna_pattern {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1853,7 +1853,8 @@ sub dna_pattern {
     &run_WS_command($command, $output_choice, "dna-pattern", "tab");
 }
 
-##########
+
+################################################################
 sub convert_features {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1896,7 +1897,8 @@ sub convert_features {
      &run_WS_command($command, $output_choice, "convert-features", $to);
 }
 
-##########
+
+################################################################
 sub feature_map {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2111,7 +2113,8 @@ sub feature_map {
     &run_WS_command($command, $output_choice, "feature_map", $extension);
 }
 
-##########
+
+################################################################
 sub get_orthologs {
   my ($self, $args_ref) = @_;
 
@@ -2260,7 +2263,8 @@ sub get_orthologs_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub footprint_discovery {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2498,6 +2502,7 @@ sub footprint_discovery_cmd {
     return $command;
 }
 
+
 ################################################################
 ## infer-operon
 sub infer_operon {
@@ -2590,7 +2595,8 @@ sub infer_operon {
   &run_WS_command($command, $output_choice, "infer-operon", "tab");
 }
 
-##########
+
+################################################################
 sub gene_info {
     my ($self, $args_ref) = @_;
 
@@ -2642,11 +2648,15 @@ sub gene_info {
       $args{feattype} =~ s/\"//g;
       $command .= " -feattype '".$args{feattype}."'";
   }
+if ($args{all_genes} == 1) {
+    $command .= " -all_genes";
+  }
 
     &run_WS_command($command, $output_choice, "gene-info", "tab");
 }
 
-##########
+
+################################################################
 sub supported_organisms {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2655,18 +2665,32 @@ sub supported_organisms {
     $output_choice = 'both';
   }
 
-  my $command = "$SCRIPTS/supported-organisms";
+  my $command = $SCRIPTS."/supported-organisms";
 
+  ## Output format
+  unless ($args{format}) {
+    $args{format} = "tab";
+  }
   if ($args{format}) {
     $args{format} =~ s/\'//g;
     $args{format} =~ s/\"//g;
-    $command .= " -format '".$args{format}."'";
+    $command .= " -format ".$args{format};
   }
+
+  ## Output fields
   if ($args{return}) {
     $args{return} =~ s/\'//g;
     $args{return} =~ s/\"//g;
     $command .= " -return '".$args{return}."'";
   }
+
+  ## Depth
+  if ($args{depth}) {
+    &RSAT::error::FatalError() unless (&RSAT::util::IsInteger($args{depth}));
+    $command .= " -depth ".$args{depth};
+  }
+
+  ## Taxon
   if ($args{taxon}) {
     $args{taxon} =~ s/\'//g;
     $args{taxon} =~ s/\"//g;
@@ -2676,7 +2700,8 @@ sub supported_organisms {
   &run_WS_command($command, $output_choice, "supported-organisms", "tab");
 }
 
-##########
+
+################################################################
 sub text_to_html {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2715,8 +2740,9 @@ sub text_to_html {
   &run_WS_command($command, $output_choice, "text-to-html", "html");
 }
 
-##########
-sub roc_stats{
+
+################################################################
+sub roc_stats {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
@@ -2766,7 +2792,8 @@ sub roc_stats{
   &run_WS_command($command, $output_choice, "roc-stats", "tab");
 }
 
-##########
+
+################################################################
 sub classfreq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2829,7 +2856,8 @@ sub classfreq {
   &run_WS_command($command, $output_choice, "classfreq", "tab");
 }
 
-##########
+
+################################################################
 sub convert_classes {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2912,7 +2940,8 @@ sub convert_classes {
   &run_WS_command($command, $output_choice, "convert-classes", $extension);
 }
 
-##########
+
+################################################################
 sub contingency_stats {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2977,7 +3006,8 @@ sub contingency_stats {
   &run_WS_command($command, $output_choice, "contingency-stats", "tab");
 }
 
-##########
+
+################################################################
 sub contingency_table {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3027,7 +3057,8 @@ sub contingency_table {
   &run_WS_command($command, $output_choice, "contingency-table", "tab");
 }
 
-##########
+
+################################################################
 sub xygraph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3194,7 +3225,8 @@ sub xygraph_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub convert_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3235,7 +3267,8 @@ sub convert_seq {
     &run_WS_command($command, $output_choice, "convert-seq", $args{to});
 }
 
-##########
+
+################################################################
 sub compare_classes {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3398,7 +3431,8 @@ sub compare_classes {
  &run_WS_command($command, $output_choice, "compare-classes", "tab");
 }
 
-##########
+
+################################################################
 sub matrix_scan {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3548,6 +3582,10 @@ sub matrix_scan {
       $command .= " -matrix_format '".$matrix_format."'";
   }
 
+if ($args{"quick"} == 1) {
+      $command .= " -quick";
+  }
+
   if ($args{"n_treatment"} eq "score" || $args{"n_treatment"} eq "skip") {
       $command .= " -n ".$args{"n_treatment"};
   } else {
@@ -3594,10 +3632,13 @@ if ($args{"equi_pseudo"} == 1 ) {
       $oligo_length = $args{"markov"} + 1;
       if ($args{"organism"}) {
 
-## sub not found => HELP, Jacques!
-#	  $tmp_background_infile = &ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
-#			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
+## JvH (2014-03-03): I should enable &ExpectedFreqFile() from within RSATWS,
+## it is cleaner than defining a hard path towards the expected frequency
+## file.
 #	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+#	  $tmp_background_infile = $ENV{RSAT}."/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+	  $tmp_background_infile = &RSAT::OrganismManager::ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
+			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
 
 ## Only noov taxon bckgds available at the moment => useless
 #      } elsif ($args{"taxon"}) {
@@ -3689,7 +3730,8 @@ if ($args{"equi_pseudo"} == 1 ) {
  &run_WS_command($command, $output_choice, ".matrix-scan", "ft")
 }
 
-##########
+
+################################################################
 sub convert_matrix {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3821,7 +3863,8 @@ sub convert_matrix {
  &run_WS_command($command, $output_choice, ".convert-matrix", $to)
 }
 
-##########
+
+################################################################
 sub matrix_distrib {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3910,7 +3953,8 @@ sub matrix_distrib {
   &run_WS_command($command, $output_choice, ".matrix-distrib", "tab")
 }
 
-##########
+
+################################################################
 sub compare_matrices {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3983,7 +4027,8 @@ sub compare_matrices {
     }
 }
 
-##########
+
+################################################################
 sub compare_matrices_cmd {
   my ($self, %args) =@_;
   if ($args{"matrix_1"}) {
@@ -4237,7 +4282,8 @@ sub compare_matrices_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub random_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4336,8 +4382,110 @@ sub random_seq {
  &run_WS_command($command, $output_choice, ".random-seq", $args{format})
 }
 
+
+################################################################
+sub fetch_sequences {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  if ($args{"input"}) {
+      my $input = $args{"input"};
+      chomp $input;
+      $tmp_input_file = &RSAT::util::make_temp_file("","fetch-sequences", 1,0);
+      open TMP_IN, ">".$tmp_input_file or die "cannot open temp file ".$tmp_input_file."\n";
+      print TMP_IN $input;
+      close TMP_IN;
+  } elsif ($args{"tmp_input_file"}) {
+      $tmp_input_file = $args{"tmp_input_file"};
+      $tmp_input_file =~ s/\'//g;
+      $tmp_input_file =~ s/\"//g;
+  }
+  chomp $tmp_input_file;
+
+  my $url = $args{"url"};
+  my $genome = $args{"genome"};
+  my $header = $args{"header_format"};
+  my $upstr_ext = $args{"upstr_ext"};
+  my $downstr_ext = $args{"downstr_ext"};
+  my $extend = $args{"extend"};
+  my $reference = $args{"reference"};
+  my $top = $args{"top"};
+  my $chunk = $args{"chunck"};
+
+  my $command = "$SCRIPTS/fetch-sequences";
+
+  if ($tmp_input_file) {
+      $command .= " -i '".$tmp_input_file."'";
+  }
+
+  if ($url) {
+    $url =~ s/\'//g;
+    $url =~ s/\"//g;
+    $command .= " -u '".$url."'";
+  }
+
+  if ($genome) {
+    $genome =~ s/\'//g;
+    $genome =~ s/\"//g;
+    $command .= " -genome '".$genome."'";
+  }
+
+  ## Header format
+  if ($header) {
+    $header =~ s/\'//g;
+    $header =~ s/\"//g;
+    $command .= " -header_format '".$header."'";
+  }
+
+  if ($upstr_ext =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $upstr_ext =~ s/\'//g;
+    $upstr_ext =~ s/\"//g;
+    $command .= " -upstr_ext '".$upstr_ext."'";
+  }
+
+  if ($downstr_ext =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $downstr_ext =~ s/\'//g;
+    $downstr_ext =~ s/\"//g;
+    $command .= " -downstr_ext '".$downstr_ext."'";
+  }
+
+  if ($extend =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $extend =~ s/\'//g;
+    $extend =~ s/\"//g;
+    $command .= " -extend '".$extend."'";
+ }
+
+  if ($reference) {
+    $reference =~ s/\'//g;
+    $reference =~ s/\"//g;
+    $command .= " -reference '".$reference."'";
+  }
+
+  if ($top =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $top =~ s/\'//g;
+    $top =~ s/\"//g;
+    $command .= " -top '".$top."'";
+ }
+
+  if ($chunck =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $chunck =~ s/\'//g;
+    $chunck =~ s/\"//g;
+    $command .= " -chunck '".$chunck."'";
+ }
+
+#  &RSAT::error::FatalError("&RSAT::RSATWS::fetch_sequence()", "command", $command);
+
+  &run_WS_command($command, $output_choice, "fetch-sequences", $format);
+}
+
+
 ################################################################
 ## RSAT GRAPH TOOLS
+
 ################################################################
 
 sub convert_graph {
@@ -4486,7 +4634,8 @@ sub convert_graph_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub alter_graph {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4584,7 +4733,8 @@ sub alter_graph {
 }
 
 
-##########
+
+################################################################
 sub graph_cliques {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -4642,7 +4792,8 @@ sub graph_cliques {
 
   &run_WS_command($command, $output_choice, "graph-clique", "tab");
 }
-##########
+
+################################################################
 sub display_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -4770,7 +4921,8 @@ sub display_graph_cmd {
 }
 
 
-##########
+
+################################################################
 sub draw_heatmap {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -4889,7 +5041,8 @@ sub draw_heatmap_cmd {
 }
 
 
-##########
+
+################################################################
 # sub graph_get_clusters {
 #     my ($self, $args_ref) = @_;
 #     my %args = %$args_ref;
@@ -5197,7 +5350,8 @@ sub graph_topology_cmd {
 
 }
 
-##########
+
+################################################################
 sub graph_cluster_membership {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -5316,7 +5470,8 @@ sub graph_cluster_membership_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub compare_graphs {
     ## In order to recuperate the statistics calculated by compare-graphs, I
     ## place all the standard error in a separate file. Indeed the computation
@@ -5484,7 +5639,8 @@ sub compare_graphs_cmd {
   return $command;
 }
 
-##########
+
+################################################################
 sub graph_neighbours {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -5571,7 +5727,8 @@ sub graph_neighbours {
   &run_WS_command($command, $output_choice, "graph-neighbours", "tab");
 }
 
-##########
+
+################################################################
 sub rnsc {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -5824,7 +5981,8 @@ sub mcl_cmd {
   }
   return $command;
 }
-##########
+
+################################################################
 sub parse_psi_xml {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -5879,7 +6037,8 @@ sub parse_psi_xml {
   }
   &run_WS_command($command, $output_choice, "parse-psi-xml", "tab");
 }
-##########
+
+################################################################
 sub random_graph {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -6012,6 +6171,7 @@ sub random_graph {
   &run_WS_command($command, $output_choice, "random-graph", $extension);
 }
 
+
 ################################################################
 sub monitor {
   my ($self, $args_ref) = @_;
@@ -6025,6 +6185,7 @@ sub monitor {
       return SOAP::Data->name('response' => {'status' => 'Done'});
   }
 }
+
 
 ################################################################
 sub get_result {
@@ -6070,11 +6231,14 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
-#  my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
-#  chomp($tmp_outfile);
+  ## Define temporary output file and open it for writing
   my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
   $tmp_outfile .= ".".$out_format if ($out_format);
   my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
+
+  ## Generate the externally visible URL (accessible from Web site)
+  my $result_URL = $tmp_outfile;
+  $result_URL =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g; ## Added by JvH 2014-03-10
 
   &UpdateLogFileWS(command=>$command,
 		   tmp_outfile=>$tmp_outfile,
@@ -6085,19 +6249,7 @@ sub run_WS_command {
       ## Execute the command and send the result URL by email
       my $email_address = $output_choice;
       my $delay = "72 hours";
-      my $result_URL = $tmp_outfile;
 
-
-      ################################################################
-      ################################################################
-      ##
-      ## TO FIX: THE ADDRESS IS HARD-CODED HERE !!!
-      ## In principle it only affects footprint-discovery.
-      ##
-      ################################################################
-      ################################################################
-#      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g; ## commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
       &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
       my $response = "The server is now processing your request.\n"; 
       $response .= "Once it will be finished, the result will become available at the following URL\n";
@@ -6164,20 +6316,27 @@ sub run_WS_command {
   close $TMP_OUT;
 
   if ($output_choice eq 'server') {
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
-							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+# TO FIX in RSATWS.wsdl							       SOAP::Data->name('URL' => $result_URL),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'client') {
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
 							       SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'both') {
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
-							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-							       SOAP::Data->name('client' => $result)))
+#      &RSAT::error::FatalError("HELLO", "tmp_outfile", $tmp_outfile, &RSAT::util::hide_RSAT_path($tmp_outfile));
+
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+# TO FIX in RSATWS.wsdl				  SOAP::Data->name('URL' => $result_URL),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
   }
 }
+
 
 ################################################################
 ## Run the command on the server and send an email when the task is done
@@ -6235,14 +6394,14 @@ sub UpdateLogFileWS {
   }
 }
 
+
 ################################################################
 ## This function handles the error verbosity
 ##
 ## This can be very useful as the majority of the functions die on any error
 ## (even if this error is a simple warning).
 sub error_handling {
-  my $stderr = shift;
-  my $verbosity = shift;
+  my ($stderr, $verbosity) = @_;
   my $result = "";
   if ($verbosity == 0) {
     $result = "";

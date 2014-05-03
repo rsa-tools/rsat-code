@@ -1653,8 +1653,8 @@ sub read_from_table {
 
 
     ## Load the graph
-    $cpt = 0;
-    my $line_nb = 0;
+    $cpt = 0; ## Counter for edges
+    my $line_nb = 0; ## Line number in the file (for problem reports)
     while (my $line = <$main::in>) {
       $line_nb++;
       $line =~ s/\r//; ## Replace Windows-specific carriage return
@@ -1667,10 +1667,8 @@ sub read_from_table {
 
       ## Filter on node names (for induced graphs and graph-get-clusters)
       my $source_id = &RSAT::util::trim($linecp[$source_col-1]);
-#      chomp $source_id;
       if ($linecp[$target_col-1]) {
         my $target_id = &RSAT::util::trim($linecp[$target_col-1]);
-#        chomp $target_id;
       }
       if ($self->{seed_nodes}) {
 	next unless $self->{seed_index}->{$source_id};
@@ -1678,6 +1676,7 @@ sub read_from_table {
       }
       $array[$cpt][0] = $linecp[$source_col-1];
       $array[$cpt][1] = $linecp[$target_col-1];
+
       ## If there is only a source node, the target node is called ###NANODE###
       ## This term will be recognized by the function load_from_array in order no to create an edge
       ## for this node
@@ -1747,7 +1746,7 @@ sub read_from_table {
         }
       }
 
-      # target node X position 
+      ## Target node X position 
       $array[$cpt][8] = undef;
       if (defined($target_xpos_col)) {
         if (defined($linecp[$target_xpos_col-1])) {
@@ -1757,7 +1756,7 @@ sub read_from_table {
         }
       }
 
-      # target node Y position 
+      ## Target node Y position 
       $array[$cpt][9] = undef;
       if (defined($target_ypos_col)) {
         if (defined($linecp[$target_ypos_col-1])) {
@@ -2501,12 +2500,20 @@ sub load_from_array {
 
 }
 
-################################################################
+
 =pod
 
 =item B<graph_from_text()>
 
+Load a graph from a text-formatted file.
+
+Usage: 
+  $graph->graph_from_text($input_format, %args);
+
 Supported formats: gml, tab, adj_matrix
+
+Arguments depend on the graph format.
+
 
 =cut
 sub graph_from_text {
@@ -3709,8 +3716,20 @@ sub to_gml {
 
     ## Export nodes
     &RSAT::message::Info("Exporting nodes") if ($main::verbose >= 3);
+    my %already_exported = ();
     while (($id, $node_name) = each %nodes_id_name) {
         my $label = $nodes_label{$id};
+
+	## BUG detected by JVH 2014-02-09
+      # ## Prevent exporting two nodes with same ID. For some reason,
+      # ## random-graph creates graphs where the same ID may appear
+      # ## multiple times. This prevents CytoScape from loading the
+      # ## graph. We should check the source of this error.
+      # next if ($already_exported{$label}); 
+      # $already_exported{$label} = 1;
+      # &RSAT::message::Debug("RSAT::Graph2::to_gml()", "exporting node", $label, $node_name);
+
+
 	my $w = 1 + length($label)*$letter_width; ## label width
 	my $h = 16; ## label height
 	my $x = $nodes_id_xpos{$id};

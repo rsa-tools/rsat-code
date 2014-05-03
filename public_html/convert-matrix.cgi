@@ -97,6 +97,23 @@ if (&IsReal($query->param('multiply'))) {
 }
 
 ################################################################
+## Insert columns on left and/or right flanks
+if ($query->param('insert_col_left') > 0) {
+  if (&IsNatural($query->param('insert_col_left'))) {
+    $parameters .= " -insert_col_left ".$query->param('insert_col_left');
+  }else {
+    &RSAT::error::FatalError("Option 'Insert columns' should be a Natural number");
+  }
+}
+if ($query->param('insert_col_right') > 0) {
+  if (&IsNatural($query->param('insert_col_right'))) {
+    $parameters .= " -insert_col_right ".$query->param('insert_col_right');
+  }else {
+    &RSAT::error::FatalError("Option 'Insert columns' should be a Natural number");
+  }
+}
+
+################################################################
 ## decimals
 if (&IsInteger($query->param('decimals'))) {
     $parameters .= " -decimals ".$query->param('decimals');
