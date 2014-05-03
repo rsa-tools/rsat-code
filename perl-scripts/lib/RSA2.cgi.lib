@@ -628,7 +628,7 @@ sub MultiGetSequenceFile {
     ### Fetch sequence from an URL
   } elsif ($query->param('sequence_url'.$seq_num) =~ /\S/) {
     my $url = $query->param('sequence_url'.$seq_num);
-    &RSAT::message::Info("Fetching sequences from URL ".$url) if ($main::verbose >= 0);
+    &RSAT::message::Info("Fetching sequences from URL ".$url) if if ($ENV{rsat_echo} >= 1);
     my $seq = "";
     if (open SEQ, ">$sequence_file") {
       $seq = get($url);
@@ -648,9 +648,11 @@ sub MultiGetSequenceFile {
       $cmd .= " ; gunzip ".$sequence_file.".gz";
       &doit($cmd);
     }
-    &RSAT::message::Debug("Sequence file=".$sequence_file, 
-			  "<p>File type=".$file_type,
-	) if ($main::verbose >= 0);
+
+
+    &RSAT::message::Debug("Sequence file=", &RSAT::util::hide_RSAT_path($sequence_file), 
+			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
+	) if ($main::verbose >= 5);
 
 #    my $seq_kb = sprintf("%d", length($seq)/1000);
 
@@ -1754,7 +1756,7 @@ sub CheckWebInput {
   foreach my $field (@fields_to_check) {
     my $field_contents = $cgi->param($field);
 
-#    &RSAT::message::Debug("Field", $field, "contents", $field_contents) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("Field", $field, "contents", $field_contents) if ($main::verbose >= 10);
 
     ## Detect HTML tags
     $field_contents =~ s/\s+/ /g; ## make a single-line of the field content
