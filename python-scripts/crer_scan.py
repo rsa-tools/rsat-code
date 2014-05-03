@@ -76,7 +76,7 @@ Optional arguments:
   -uth_site_pval UTH_SITE_PVAL
 		maximal p-value of sites to be considered
 		Recommended to be the higher site p-value considered.
-		Recommended = 1e-4
+		Default = 1e-4
 		
   -lth_score LTH_SITE_SCORE
 		minimal site score to be considered
@@ -86,11 +86,11 @@ Optional arguments:
 
   -lth_crer_size LTH_CRER_SIZE
 		minimal size of the enriched region (in bp). 
-		Recommended: minimal site size = 30bp
+		Default: minimal site size = 30bp
 		
   -uth_crer_size UTH_CRER_SIZE
 		maximal size of the enriched region (in bp). 
-		Recommended: maximal site site = 500bp
+		Default: maximal site site = 500bp
 		
   -lth_crer_sites LTH_CRER_SITES
 		minimal number of sites covered by the enriched region. 
@@ -108,19 +108,19 @@ Optional arguments:
 		distance between successive sites to be considered. 
 		A maximal inter-site distance can be used to prevent merging distinct modules into a single one. 
 		Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. 
-		Recommanded = maximal distance = 100 bp
+		Default = maximal distance = 35 bp
 		
   -uth_crer_pval UTH_CRER_PVAL
 		maximal binomial p-value
-		Recommanded: 1e-4
+		Default: 1e-4
 		
   -uth_crer_eval UTH_CRER_EVAL
 		maximal e-value
-		Recommanded: 1e-4
+		Default: 1e-4
 		
   -lth_crer_sig LTH_CRER_SIGNIFICANCE
 		minimal binomial significance
-		Recommanded: 2
+		Default: 2
 		
   -uth_overlap UTH_OVERLAP
 		maximal overlap to define two distinct sites
@@ -149,6 +149,13 @@ Mr Tichit for his psychological support at the breakfast time
 And Genopole class room for its liberality
 """
 
+"""
+Us to be the Best
+Mr Jack for his support 
+Mr Gonzalez for his legendary A+ in the bus
+Genopole class room for its liberality
+and last not least Mr Tichit for nothing
+"""
 
 __version__ = 'v.1.00 '
 
@@ -384,7 +391,7 @@ class SiteSetOnSameSeq(object):
 	
 	
 	def add_site_same_seq(self,site):
-		"""
+		"""	print()
 		This method adds a site to the list of site located on the same sequence. 
 		For this, we verify that the site is well to add the sequence concerned.
 		
@@ -734,10 +741,9 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			j= j+1
 		
 		# Number of matrix is the maximum of the matrix_list
-		number_of_matrix = max(matrix)
+		number_of_matrix = max(matrix_list)
 		
 		
-		del sites_list[0]
 		object_list=[]
 		
 		if verbose >=3 :
@@ -785,6 +791,7 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 				
 				max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 				j[0] = Siteft(j[1],j[2],j[3],j[4],j[5],j[6],j[7],j[8],j[9],j[10])
+				
 				object_list.append(j[0])
 			
 		# Verbose message
@@ -1076,28 +1083,27 @@ if __name__=='__main__':
 	parse.add_argument('-s', action='store_true', dest='sort', default=None, help ="sort the list of sites. Very recommended. The sites are sorted by center position")
 	parse.add_argument('-return_limits',action='store_true',dest='return_limits',default= None, help = "return every limits of sequences. By default : no return any limits")
 	parse.add_argument('-return_limits_filtered',action='store_true',dest='return_limits_filtered',default= None, help = "return the limits filtered of the sequence. Only the sequence limits of CRERs. By default : no return any limits")
-	parse.add_argument('-uth_site_pval',action='store',dest='uth_site_pval',default= None, type=float, help = "maximal p-value of sites to be considered. Recommended to be the higher site p-value considered. Recommended = 1e-4" )
 	parse.add_argument('-lth_score',action='store',dest='lth_site_score',default= None ,type= float, help = "minimal site score to be considered")
 	parse.add_argument('-uth_score',action='store',dest='uth_site_score',default= None, type= float, help = "maximal site score to be considered")
+	parse.add_argument('-uth_site_pval', action='store', dest='uth_site_pval', default= 1e-4, type = float, help='maximal p_value of sites to be considered. recommended to be the higher site p_value considered')
 	
 	# Arguments for return CRERs
+	parse.add_argument('-lth_crer_size',action='store',dest='lth_crer_size',default=None,type= float, help = "minimal size of the enriched region (in bp). Default: minimal size = 30bp")
+	parse.add_argument('-uth_crer_size',action='store',dest='uth_crer_size',default=None, type= float, help = "maximal size of the enriched region (in bp). Default:  maximal site = 500bp")
 	
-	parse.add_argument('-lth_crer_size',action='store',dest='lth_crer_size',default=None,type= float, help = "minimal size of the enriched region (in bp). Recommended: minimal size = 30bp")
-	parse.add_argument('-uth_crer_size',action='store',dest='uth_crer_size',default=None, type= float, help = "maximal size of the enriched region (in bp). Recommended:  maximal size = 500bp")
-	
-	parse.add_argument('-lth_crer_sites',action='store',dest='lth_crer_sites', default=None, type = float, help="minimal number of sites covered by the enriched region. Recommended: minimal number of sites = 2")
+	parse.add_argument('-lth_crer_sites',action='store',dest='lth_crer_sites', default=None, type = float, help="minimal number of sites covered by the enriched region. Default: minimal number of sites = 2")
 	parse.add_argument('-uth_crer_sites',action='store',dest='uth_crer_sites',default=None, type = float, help ="maximal number of sites covered by the enriched region. ")
 	
-	parse.add_argument('-lth_crer_sites_distance',action='store',dest='lth_crer_sites_distance',default=None,type = float,  help = "distance between successive sites to be considered. A minimal inter-site distance can be used to prevent overlap between redundant matrices. Recommended = minimal distance = 1")
-	parse.add_argument('-uth_crer_sites_distance',action='store',dest='uth_crer_sites_distance',default=None,type = float,  help ="distance between successive sites to be considered. A maximal inter-site distance can be used to prevent merging distinct modules into a single one. Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. Recommended: maximal distance = 100")
+	parse.add_argument('-lth_crer_sites_distance',action='store',dest='lth_crer_sites_distance',default=None,type = float,  help = "distance between successive sites to be considered. A minimal inter-site distance can be used to prevent overlap between redundant matrices. Default = minimal distance = 1")
+	parse.add_argument('-uth_crer_sites_distance',action='store',dest='uth_crer_sites_distance',default=None,type = float,  help ="distance between successive sites to be considered. A maximal inter-site distance can be used to prevent merging distinct modules into a single one. Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. Default: maximal distance = 35")
 	
-	parse.add_argument('-uth_crer_pval',action='store',dest='uth_crer_pval',default = None, type= float, help = "maximal binomial p-value. Recommended: 1e-4")
+	parse.add_argument('-uth_crer_pval',action='store',dest='uth_crer_pval',default = None, type= float, help = "maximal binomial p-value. Default: 1e-4")
 	
-	parse.add_argument('-uth_crer_eval',action='store',dest='uth_crer_eval',default = None, type= float, help = "maximal e-value. Recommended: 1e-4")
+	parse.add_argument('-uth_crer_eval',action='store',dest='uth_crer_eval',default = None, type= float, help = "maximal e-value. Default: 1e-4")
 	
-	parse.add_argument('-lth_crer_sig',action='store',dest='lth_crer_significance', type = float, default= None,help = "minimal binomial significance. Recommended: 2")
+	parse.add_argument('-lth_crer_sig',action='store',dest='lth_crer_significance', type = float, default= None,help = "minimal binomial significance. Default: 2")
 
-	parse.add_argument('-uth_overlap',action='store',dest='uth_overlap',default= None, type= int, help = "maximal overlap to define two distinct sites. Recommended = 1")
+	parse.add_argument('-uth_overlap',action='store',dest='uth_overlap',default= None, type= int, help = "maximal overlap to define two distinct sites")
 
 	parse.add_argument('-nopval',action='store_true',dest='nopval',default= False, help = "compute CRER without p value")
 	parse.add_argument('-pre_table',action = 'store_true', dest = 'pre_table',default= False,help = "compute a table where is all possible p_value. Useful where there is a huge number of sites to scan.")
@@ -1148,10 +1154,11 @@ if __name__=='__main__':
 		
 		try:
 			list_site, init_table,number_of_matrix,max_site_pvalue = read_stdin(read,format,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
-		
+			
 		except (UnboundLocalError,IndexError,NameError,ValueError):
 			sys.stderr.write("Parsing error :\n Sites in STDIN not in right format. /n Check the format: Default = ft. \n. Supported = ft or bed")
 			sys.exit()
+		
 	else:
 		
 		# Test file format 
@@ -1305,7 +1312,7 @@ if __name__=='__main__':
 	filehandle.write(";	crer_sites	%s	%s\n" % (lth_sites, uth_sites))
 	filehandle.write(";	crer_sites_distance	%s	%s\n" % (lth_dist, uth_dist))
 	filehandle.write(";	crer_pval	None	%s\n" % uth_pval)
-	filehandle.write(";	crer_sig	%s	None\n" % lth_sig)
+	filehandle.write(";	crer_sig	%s\n	None" % lth_sig)
 	filehandle.write(";	crer_eval	None	%s\n" % uth_eval)
 	filehandle.write(";	site_pval	None	%s\n" % (pval_threshold))
 	filehandle.write(";	site_score	%s	%s\n" % (lth_score_threshold, uth_score_threshold))
@@ -1372,13 +1379,14 @@ if __name__=='__main__':
 	# As the R function : pbinom(q,size,prob,lower.tail=FALSE)
 	# p is the probability to have at least one site with the number of matrix.
 	# With the maximum p-value of sites
+	
 	if format == 'ft':
 		p = scipy.stats.binom.sf(0,number_of_matrix,max_site_pvalue)
 	
 	# With the p-value threshold
 	if format == 'bed':
 		p = scipy.stats.binom.sf(0,number_of_matrix,pval_threshold)
-
+		
 	# Computation of pre p-value in function of all possible size for crer
 	if pre_table:
 		if verbose >= 2:
@@ -1751,7 +1759,7 @@ if __name__=='__main__':
 		read = read.strip().split('\n')
 		nb_crer = 0
 		
-		try :
+		if not nopval :
 			for ligne in read :
 				crer_tmp = ligne.split('\t')
 				# Extract limits of sequences, only here if there is retur_limits option
@@ -1762,7 +1770,7 @@ if __name__=='__main__':
 					else :
 						filehandle = sys.stdout
 					
-					filehandle.write("%s	limit	START_END	D	%s	%s	.	0	0	0	0	0	0	0\n" % (crer_tmp[0],crer_tmp[4], crer_tmp[5]))
+					filehandle.write("%s	limit	START_END	D	%s	%s		0	0	0	0	0	0	0\n" % (crer_tmp[0],crer_tmp[4], crer_tmp[5]))
 			
 				# Compute e-value and significance
 				# E-value depend on number of expected crer 
@@ -1771,6 +1779,7 @@ if __name__=='__main__':
 					
 					# For this moment we define sig_base as one and after we can compute this.
 					# Computation of crer significance
+					
 					crer_sig = -math.log10(e_val)
 					
 					# Verbose message for significance
@@ -1822,8 +1831,8 @@ if __name__=='__main__':
 							time_warn("	Printing %d crer" % nb_crer)
 		
 		# Write an error if there is no crer in temporary file
-		except (IndexError):
-			sys.stderr.write("No Crer found\n")
+	   # except (IndexError):
+		#	sys.stderr.write("No Crer found\n")
 			
 	if verbose >=3 :
 		time_warn("	Computation of crer finished")
@@ -1866,3 +1875,4 @@ if __name__=='__main__':
 	# Print time when the script is finished on standard error
 	if verbose >= 2:
 		time_warn("Finished")
+
