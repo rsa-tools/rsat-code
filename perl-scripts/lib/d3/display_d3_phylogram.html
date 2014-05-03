@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'>
+  <head>
+    <meta content='text/html;charset=UTF-8' http-equiv='content-type'>
+    <title> Phylogram </title>
+    <script src="d3" type="text/javascript"></script>
+    <script src="newick" type="text/javascript"></script>
+    <script src="phylog" type="text/javascript"></script>
+    <script>
+      function load() {
+        var newick = Newick.parse("Paste_newick_here")
+		var newickNodes = []
+        function buildNewickNodes(node, callback) {
+          newickNodes.push(node)
+          if (node.branchset) {
+            for (var i=0; i < node.branchset.length; i++) {
+              buildNewickNodes(node.branchset[i])
+            }
+          }
+        }
+        buildNewickNodes(newick)
+        
+ /*       
+        d3.phylogram.buildRadial('#radialtree', newick, {
+          width: 400,
+          skipLabels: true
+        })
+*/        
+
+        d3.phylogram.build('#phylogram', newick, {
+          width: 400,
+          height: 500
+        });
+      }
+    </script>
+    <style type="text/css" media="screen">
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+      td { vertical-align: top; }
+    </style>
+  </head>
+  <body onload="load()">
+    <table>
+      <tr>
+<!--
+		<td>
+			<h2>Circular Dendrogram</h2>
+			<div id='radialtree'></div>
+		</td>
+-->
+        <td>
+          <h2>Phylogram</h2>
+          <div id='phylogram'></div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

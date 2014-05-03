@@ -1036,6 +1036,7 @@ sub InferQueryOperons {
   &one_command($cmd) if ($task{operons});
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
+#  die "HELLO";
 }
 
 ################################################################

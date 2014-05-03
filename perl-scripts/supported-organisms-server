@@ -36,7 +36,17 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  $server_url = "http://rsat.ulb.ac.be/";
+  $server_url = "http://rsat.eu/";
+
+  ## Output fields
+  $return_fields = "";
+  @return_fields = ();
+  @supported_return_fields = @RSAT::OrganismManager::supported_org_fields;
+  %supported_return_fields = ();
+  foreach my $field (@supported_return_fields) {
+    $supported_return_fields{$field} = 1;
+  }
+  $supported_return_fields = join ",", @supported_return_fields;
 
   ################################################################
   ## Read argument values
@@ -46,6 +56,11 @@ package main;
   ## Check argument values
   unless ($main::server_url =~ /^http/) {
     &RSAT::error::FatalError("Server URL should start with http://");
+  }
+
+  ## Return fields
+  if (scalar(@return_fields) > 0) {
+    $args{return} = join (",", @return_fields);
   }
 
   ################################################################
@@ -143,6 +158,22 @@ OPTIONS
 
 	-help	(must be first argument) display options
 
+	-url    Specify the URL of the remote RSAT server. 
+                Default: $server_url
+
+		The option -server can be combined with the option
+		-taxon in order to obtain the list of organisms
+		supported on the main RSAT server, before downloading
+		them.
+
+		Example: 
+		   supported-organisms-server -taxon Fungi -server http://rsat.fr/
+
+		An alternative server RSAT server can be selected by
+		specifying the URL of the Web server.
+
+		    supported-organisms-server -taxon Fungi -server http://embnet.ccg.unam.mx/rsa-tools
+
  	-return output fields
 		supported: $supported_return_fields
 
@@ -173,22 +204,6 @@ OPTIONS
 	       vary along branches, so that positive values will give
 	       different results from negative values.
 
-	-url    Specify the URL of the remote RSAT server. 
-      Default: $
-		(http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl).
-
-		The option -server can be combined with the option
-		-taxon in order to obtain the list of organisms
-		supported on the main RSAT server, before downloading
-		them.
-
-		Example: 
-		   supported-organisms-server -taxon Fungi -server http://rsat.fr/
-
-		An alternative server RSAT server can be selected by
-		specifying the URL of the Web server.
-
-		    supported-organisms-server -taxon Fungi -server http://embnet.ccg.unam.mx/rsa-tools
 
 End_of_help
   close HELP;
@@ -223,11 +238,10 @@ End_short_help
 sub ReadArguments {
   my $arg;
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-
+  
   while (scalar(@arguments) >= 1) {
     $arg = shift (@arguments);
-
-
+    
 =pod
 
 =head1 OPTIONS
@@ -239,6 +253,7 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
+
     if ($arg eq "-v") {
       if (&IsNatural($arguments[0])) {
 	$main::verbose = shift(@arguments);
@@ -276,33 +291,42 @@ URL of the RSAT server.
 
 =cut
 
-
     } elsif (($arg eq "-url")
 	     || ($arg eq "-server")) {
       $main::server_url = shift(@arguments);
 
       ## Output fields
     } elsif ($arg eq "-return") {
-	$return_fields = $ARGV[$a+1];
-	chomp($return_fields);
-	my @fields_to_return = split ",", $return_fields;
-	foreach $field (@fields_to_return) {
-	    if ($supported_return_fields{$field}) {
-		push @return_fields, $field;
-	    } else {
-		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-	    }
+      $return_fields = shift(@arguments);
+      chomp($return_fields);
+      my @fields_to_return = split ",", $return_fields;
+      foreach $field (@fields_to_return) {
+	if ($supported_return_fields{$field}) {
+	  push @return_fields, $field;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	}
+      }
 
-      ### root taxon
+      ## Root taxon
     } elsif ($arg eq "-taxon") {
-      $taxon = shift(@arguments);
+      $args{taxon} = shift(@arguments);
 
-      ## Tree depth
+
+=pod
+
+=item	B<-depth #>
+
+Maximal taxonomic depth. If
+several organisms are supported
+at the maximal taxonomic depth,
+only one is reported.
+
+=cut
     } elsif ($arg eq "-depth") {
-      $depth = $ARGV[$a+1];
+      $args{depth} = shift(@arguments);
       &RSAT::error::FatalError($depth, "Invalid value for depth, must be an Integer number") 
-	unless &IsInteger($depth);
+	unless &IsInteger($args{depth});
 
 =pod
 
@@ -314,10 +338,10 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
-
+      
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
-
+      &FatalError("Invalid option", $arg);
+      
     }
   }
 }

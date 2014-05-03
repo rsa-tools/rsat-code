@@ -1,7 +1,7 @@
 ###############################################################
-#
-# Class to handle organisms supporte in RSAT
-#
+##
+## Class to handle organisms supported in this instance of RSAT.
+##
 
 package RSAT::OrganismManager;
 
@@ -44,9 +44,11 @@ our @supported_org_fields = qw(ID
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
 
+## Flag indicating whether the organism table has been loaded
+our $organism_table_loaded = 0;
+
 ## Null value for undefined fields
 our $null = "<NA>";
-
 
 ## Taxonomic tree (should be loaded only once)
 our $tree;
@@ -135,6 +137,9 @@ sub load_supported_organisms {
       }
     }
   }
+
+  ## Activate the "loaded" flag
+  $organism_table_loaded = 1;
 }
 
 # ################################################################
@@ -282,8 +287,6 @@ sub supported_organism_table {
 
   ## Default fields
   if (scalar(@fields) == 0) {
-#    @fields = qw(name data last_update features genome seq_format taxonomy synonyms up_from up_to);
-#    @fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
     @fields = @supported_org_fields;
   }
 
@@ -332,8 +335,6 @@ sub supported_organism_table {
 	  $value =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|;
 	  $value =~ s|\/+|\/|g;
 	}
-#      } elsif ($field eq "nb") {
-#	$value = $n;
       } else {
 	$value = $null;
 	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
@@ -359,6 +360,9 @@ site.  Return value is boolean (1=true, 0=false).
 =cut
 sub is_supported {
     my ($organism_name) = @_;
+
+    &load_supported_organisms() unless ($organism_table_loaded);
+
     if (defined($main::supported_organism{$organism_name})) {
 	return 1;
     } else {
@@ -409,7 +413,7 @@ sub CheckOrganism {
 ################################################################
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
-  my ($taxon, $depth) = @_;
+  my ($taxon, $depth, $die_if_noorg) = @_;
   my @organisms = ();
   unless ($tree) {
     $tree = new RSAT::Tree();
@@ -425,8 +429,13 @@ sub GetOrganismsForTaxon {
     if (defined($depth) && ($depth != 0)) {
       @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
     }
-  }else{
-    &RSAT::error::FatalError("Taxon $taxon is not supported\n");
+  } else {
+    $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
+    if ($die_if_noorg) {
+      &RSAT::error::FatalError($message);
+    } else {
+      &RSAT::message::TimeWarn($message);
+    }
   }
   return @organisms;
 }
@@ -517,6 +526,7 @@ site. If not, die.
 =cut
 sub check_name {
   my ($organism_name, $no_die) = @_;
+
   unless ($organism_name) {
     if ($no_die) {
       &RSAT::message::Warning("You should specify an organism name");
@@ -626,6 +636,161 @@ sub is_serialized {
       return (0);
   }
 }
+
+
+################################################################
+## Name of the expected oligo frequency file, 
+## given the organism, oligo length and background model
+##
+## Usage:
+##
+## For an organism-specific background model
+##    my $background_file = &ExpectedFreqFile($organism_name, $oligo_length,
+##				$background,str=>$str,noov=>$overlap,type=>$type,
+##                              warn=>0|1,nowarn=>0|1,
+##                              taxon=>0);
+##
+## For a taxon-wide background model
+##    my $background_file = &ExpectedFreqFile($taxon_name, $oligo_length,
+##				$background,str=>$str,noov=>$overlap,type=>$type,
+##                              warn=>0|1,nowarn=>0|1,
+##                              taxon=>1);
+ sub ExpectedFreqFile {
+  my ($org_or_taxon, $oligo_length, $background, %args) = @_;
+  my $exp_freq_file = "";
+
+  my $type = $args{type} || "oligo";
+  my $str = $args{str} || "-2str";
+  my $overlap = $args{noov} || "-noov";
+  my $overlap_suffix;
+  my $taxon = $args{taxon} || 0;
+  if ($overlap eq "-noov") {
+    $overlap_suffix = "-noov";
+  } else { 
+    $overlap_suffix = "-ovlp";
+  }
+  
+
+  #### Check organism or taxon
+  my $data_dir = "";
+  if ($taxon) {
+    &CheckTaxon($org_or_taxon, 1);
+    $data_dir = $ENV{RSAT}."/public_html/data";
+    $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
+    $data_dir =~ s/\s/_/g;
+  } else {
+#    &CheckOrganismName($org_or_taxon);
+    &check_name($org_or_taxon);
+    $data_dir = $main::supported_organism{$org_or_taxon}->{'data'};
+    $data_dir .= "/oligo-frequencies/";
+  }
+
+  #### check oligo length
+  unless ($oligo_length) {
+    &FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
+  }
+
+  unless (&RSAT::util::IsNatural($oligo_length)) {
+    &RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
+  }
+
+  #### check background
+  my %supported_bg = ('upstream'=>1,
+		      'upstream-noorf'=>1,
+		      'upstream-rm'=>1,
+		      'upstream-noorf-rm'=>1,
+		      'protein'=>1,
+#		      'intergenic'=>1,
+		      'genomic'=>1
+		     );
+
+  my @sequence_types = ('upstream_mRNA','upstream_CDS','firstintron','intron','utr');
+  my @maskcoding = ('-maskcoding');
+#  my @noorf = ('-noorf','-nogene','');
+  my @maskrepeats = ('-rm','');
+
+  foreach my $sequence_type(@sequence_types) {
+      foreach my $maskcod(@maskcoding) {
+	  foreach my $maskrep(@maskrepeats) {
+	      my $bg_type = $sequence_type.$maskcod.$maskrep;
+		  $supported_bg{$bg_type} = 1; 
+	  }
+      }
+  }
+
+  $supported_bg = join ",", sort keys %supported_bg;
+  unless ($supported_bg{$background}) {
+    &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
+  }
+
+  ## Residue type
+  my $residue_type;
+  if ($background eq 'protein') {
+    $residue_type = "pept";
+  } else {
+    $residue_type = "nt";
+  }
+
+  ## Oligo length
+  if ($type eq 'oligo') {
+    if ($background eq "protein") {
+      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligopeptides, should be comprised between 1 and 3")
+	unless (($oligo_length >= 1) && ($oligo_length <= 3));
+    } else {
+      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8")
+	unless (($oligo_length >= 1) && ($oligo_length <= 8));
+    }
+  } elsif ($type eq 'dyad') {
+    &RSAT::error::FatalError($oligo_length, "is not a supported length for monads, should be comprised between 1 and 3")
+      unless (($oligo_length >= 1) && ($oligo_length <= 3));
+  }
+
+  $exp_freq_file = $data_dir;
+  if ($type eq "dyad") {
+    ## Dyad frequencies
+    $exp_freq_file = join("",
+			  $data_dir,
+			  "dyads_",$oligo_length,"nt_sp0-20_",
+			  $background,
+			  "_",
+			  $org_or_taxon,
+			  $overlap_suffix.$str,
+			  ".freq");
+
+  } elsif ($background eq "upstreamL") {
+    ## ???
+    $exp_freq_file .= "_".$org_or_taxon;
+    $exp_freq_file .= "_allup500";
+    $exp_freq_file .= $oligo_length.$residue_type;
+    $exp_freq_file .= $str unless ($background eq "protein");
+    $exp_freq_file .= $overlap_suffix;
+    $exp_freq_file .= "_freq.tab";
+
+  } else {
+    ## Oligonucleotide frequencies
+    $exp_freq_file .= $oligo_length.$residue_type;
+    $exp_freq_file .= "_".$background;
+    $exp_freq_file .= "_".$org_or_taxon;
+    $exp_freq_file .= $overlap_suffix;
+    $exp_freq_file .= $str unless ($background eq "protein");
+    $exp_freq_file .= ".freq";
+  }
+
+  ## Check the existence of the exp freq file
+  unless ((-e $exp_freq_file) ||
+	  (-e $exp_freq_file.".gz")) {
+    if ($args{warn}) {
+      &RSAT::message::Warning("Cannot find expected frequency file $exp_freq_file");
+    } elsif ($args{nowarn}) {
+      ## Do nothing
+    } else {
+      &RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
+    }
+  }
+  &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 4);
+  return($exp_freq_file);
+}
+
 
 return 1;
 
