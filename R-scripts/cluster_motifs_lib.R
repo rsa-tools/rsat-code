@@ -403,6 +403,7 @@ align.leave.and.cluster <- function(child1, child2){
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
+    
     motifs.info[[get.id(n1)]][["strand"]] <<- "D"
     motifs.info[[get.id(n1)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n1)]][["number"]]),"consensus"])
     
@@ -412,7 +413,7 @@ align.leave.and.cluster <- function(child1, child2){
     
   ## Conversely align the motifs
   } else{
-
+    
     internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Aligned"
     
     ## Get the strand
@@ -420,9 +421,12 @@ align.leave.and.cluster <- function(child1, child2){
     
     ## Identified the new and the aligned motif
     switch.ids <- 0
+    new <- NULL
+    aligned <- NULL 
     if(id1 != get.id(n1)){
       aligned <- id1
       new <- id2
+      temporal <- NULL
       temporal <- n1
       n1 <- n2
       n2 <- temporal
@@ -489,6 +493,7 @@ align.leave.and.cluster <- function(child1, child2){
       consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
       motifs.info[[new]][["strand"]] <<- "D"
       motifs.info[[new]][["consensus"]] <<- consensus.new
+      
     } else if(case %in% c(3,4)){
       consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"rc_consensus"])
       motifs.info[[new]][["strand"]] <<- "R"
@@ -516,6 +521,7 @@ align.leave.and.cluster <- function(child1, child2){
       }
     } else{
       for (id in get.id(n2)){
+        
         motifs.info[[id]][["consensus"]] <<- paste(spacer, motifs.info[[id]][["consensus"]], sep="")
         motifs.info[[id]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id]][["consensus"]], "-")))-1
         tree$labels[as.numeric(motifs.info[[id]][["number"]])] <<- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
@@ -667,21 +673,27 @@ align.clusters <- function(child1, child2){
 ###################################################
 ## Set the sizes of all consensuses to the largest
 ## one, adding "-" at the end of the consensuses
-fill.downstream <- function(motifs.list){
+fill.downstream <- function(motifs.list, forest.ids){
 
-  ## Get the highest length among the consensuses
-  consensuses <- sapply(motifs.list, function(X){
-    nchar(X[["consensus"]])
+  ## Saves the max width of the motifs belongig to each forest
+  max.width.forest <- sapply(forest.ids, function(X){
+
+    ## Get the highest length among the consensuses
+    consensuses <- sapply(X, function(Y){
+      nchar(motifs.list[[Y]][["consensus"]])
+    })
+    max.cons.length <- max(consensuses)
   })
-  max.cons.length <- max(consensuses)
 
-  for(id in 1:length(motifs.list)){
-    spacer.length <-  max.cons.length - nchar(motifs.list[[id]][["consensus"]])
-    spacer <- paste(rep("-", times = spacer.length), collapse = "")
-    motifs.list[[id]][["consensus"]] <- paste( motifs.list[[id]][["consensus"]], spacer, sep = "")
-    motifs.list[[id]][["offset_down"]] <- spacer.length
-  } 
-
+  ## Fill the spaces
+  for(i in 1:length(max.width.forest)){
+    for(id in forest.ids[[paste("forest_", i, sep = "")]]){
+      spacer.length <-  max.width.forest[i] - nchar(motifs.list[[id]][["consensus"]])
+      spacer <- paste(rep("-", times = spacer.length), collapse = "")
+      motifs.list[[id]][["consensus"]] <- paste( motifs.list[[id]][["consensus"]], spacer, sep = "")
+      motifs.list[[id]][["offset_down"]] <- spacer.length
+    }
+  }
   return(motifs.list)
 }
 
@@ -841,7 +853,7 @@ central.motifs.ids <- function(ids1, ids2){
   compa.numbers <- as.vector(compa.numbers)
 
   ## Get the ids of the less distant nodes
-  compa.info <- compare.matrices.table[compa.numbers,][which(compare.matrices.table[compa.numbers,score] == max(compare.matrices.table[compa.numbers,score])),c("id1","id2")]
+  compa.info <- compare.matrices.table[compa.numbers,][which(compare.matrices.table[compa.numbers,score] == max(compare.matrices.table[compa.numbers,score])),c("id1","id2")][1,]
   return(as.vector(unlist(compa.info)))
 }
 
@@ -896,6 +908,26 @@ build.distance.matrix <- function(comparison.table){
 }
 
 
+########################################
+## 
+fill.downstream.forest <- function(motifs.list){
+
+  ## Get the highest length among the consensuses
+  consensuses <- sapply(motifs.list, function(X){
+    nchar(X[["consensus"]])
+  })
+  max.cons.length <- max(consensuses)
+
+  for(id in 1:length(motifs.list)){
+      spacer.length <-  max.cons.length - nchar(motifs.list[[id]][["consensus"]])
+      spacer <- paste(rep("-", times = spacer.length), collapse = "")
+      motifs.list[[id]][["consensus"]] <- paste( motifs.list[[id]][["consensus"]], spacer, sep = "")
+      motifs.list[[id]][["offset_down"]] <- spacer.length
+    } 
+  return(motifs.list)
+}
+
+
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
 ## matrix.names <- sort(unique(as.vector(as.matrix((compare.matrices.table[,c(1,2)])))))
@@ -919,3 +951,5 @@ build.distance.matrix <- function(comparison.table){
 ##     dist.matrix[j,i] <- current.score
 ##   }
 ## }
+
+

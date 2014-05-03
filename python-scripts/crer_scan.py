@@ -466,9 +466,10 @@ class SiteSet(object):
 		"""
 		This method allows us to add a site in the collection of site collections.
 		This is done in several stages.
-		At first we check if the collection is empty collections whether we add the site object by instantiating the class SiteSetOnSameSeq.
-		If the collection of collections is not empty then we check if the site is added to a sequence investigate 
-		whether it is added to the good list if not we create a new object of the class SiteSetOnSameSeq for him.
+		At first we check if the collection is empty collections. In that case we add the site object by instantiating the class SiteSetOnSameSeq.
+		If the collection of collections is not empty, we check if there is a corresponding SiteSetOnSameSeq object 
+		then the site is added to the right SiteSetOnSameSeq object.
+		If the good object is not found we create a new object of the class SiteSetOnSameSeq for it.
 		
 		The Argument is:
 			site -> Site object to add. Type = Site or Siteft object
@@ -1146,7 +1147,6 @@ if __name__=='__main__':
 	# Print the start of the program in standard err
 	if verbose >= 2:
 		time_warn("Starting")
-	
 	
 	# If there is not a file, take sites on standard input
 	if file == False :

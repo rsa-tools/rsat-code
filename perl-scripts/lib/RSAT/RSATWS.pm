@@ -17,7 +17,7 @@ unshift (@INC, "../../perl-scripts/lib/");
 
 require RSAT::util;
 require RSAT::server;
-require RSAT::TaskManager;
+## require RSAT::TaskManager;## JvH 2014-05-03: The TaskManager was actually not called from RSATWS.pm
 require RSAT::OrganismManager;
 
 &main::InitRSAT();
@@ -961,18 +961,6 @@ sub peak_motifs {
     $command .= " -outdir '".$output_path."'";
     $command .= " -prefix '".$output_prefix."'";
 
-#     if ($output_choice eq 'ticket') {
-# 	my $ticket = $output_directory;
-# 	$ticket =~ s/$TMP\///;
-# # 	my $error_file = $tmp_outfile.".err";
-# 	my $error_file = $output_path.".err";
-# 	# Both stdout (1) and stderr (2) need to be redirected to allow background (&) mode
-# #      `$command 1>$tmp_outfile 2>$error_file &`;
-# 	`$command &>$error_file &`;
-# 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
-# 								 SOAP::Data->name('command' => $command)))
-# 	    ->attr({'xmlns' => ''});
-#     }
 
     ################################################################
     ## PROBLEM: THESE ABSOLUTE PATHS SHOULD NOT BE USED (JvH, 2013-08-09)
@@ -2659,6 +2647,9 @@ sub gene_info {
       $args{feattype} =~ s/\'//g;
       $args{feattype} =~ s/\"//g;
       $command .= " -feattype '".$args{feattype}."'";
+  }
+if ($args{all_genes} == 1) {
+    $command .= " -all_genes";
   }
 
     &run_WS_command($command, $output_choice, "gene-info", "tab");
@@ -6240,9 +6231,14 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
+  ## Define temporary output file and open it for writing
   my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
   $tmp_outfile .= ".".$out_format if ($out_format);
   my $TMP_OUT = open ">".$tmp_outfile || die "Cannot open temporary file ".$tmp_outfile;
+
+  ## Generate the externally visible URL (accessible from Web site)
+  my $result_URL = $tmp_outfile;
+  $result_URL =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g; ## Added by JvH 2014-03-10
 
   &UpdateLogFileWS(command=>$command,
 		   tmp_outfile=>$tmp_outfile,
@@ -6253,19 +6249,7 @@ sub run_WS_command {
       ## Execute the command and send the result URL by email
       my $email_address = $output_choice;
       my $delay = "72 hours";
-      my $result_URL = $tmp_outfile;
 
-
-      ################################################################
-      ################################################################
-      ##
-      ## TO FIX: THE ADDRESS IS HARD-CODED HERE !!!
-      ## In principle it only affects footprint-discovery.
-      ##
-      ################################################################
-      ################################################################
-#      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
-#      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g; ## commented by JvH on 2013-08-09. PLease dont modify without noticing to JvH.
       &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
       my $response = "The server is now processing your request.\n"; 
       $response .= "Once it will be finished, the result will become available at the following URL\n";
@@ -6332,8 +6316,10 @@ sub run_WS_command {
   close $TMP_OUT;
 
   if ($output_choice eq 'server') {
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
-							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+# TO FIX in RSATWS.wsdl							       SOAP::Data->name('URL' => $result_URL),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'client') {
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
@@ -6342,9 +6328,11 @@ sub run_WS_command {
   } elsif ($output_choice eq 'both') {
 #      &RSAT::error::FatalError("HELLO", "tmp_outfile", $tmp_outfile, &RSAT::util::hide_RSAT_path($tmp_outfile));
 
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
-							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-							       SOAP::Data->name('client' => $result)))
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+# TO FIX in RSATWS.wsdl				  SOAP::Data->name('URL' => $result_URL),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
   }
 }
