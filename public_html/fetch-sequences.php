@@ -249,7 +249,7 @@ if (!$errors) {
   		$headers .= "\r\n";
   	} else {
   		$msg = "fetch-sequences starting\n";
-  		$msg .= "Result files will :\n";
+  		$msg .= "Result files :\n";
   		foreach ($URL as $key => $value) {
   			$msg .= "\t".$key."\t".$value."\n";
   		}
@@ -265,9 +265,9 @@ if (!$errors) {
   	} else {
   		info("Sending mail via SMTP ".$smtp);
   		ini_set ( "SMTP", $smtp);
-  		$mail_sent = mail($to, $subject, $msg, $headers);
+  		$mail_sent = mail($to, $subject." ; Job submitted", $msg, $headers);
   		if ($mail_sent) {
-  			info("Job start, email sent to ".$to);
+  			info("Job started, submission mail sent to ".$to);
   		} else {
   			error("Notification mail could not be sent.\n\n.".$msg);
   		}
@@ -352,9 +352,9 @@ if (!$errors) {
     } else {
       info("Sending mail via SMTP ".$smtp);
       ini_set ( "SMTP", $smtp); 
-      $mail_sent = mail($to, $subject, $msg, $headers);
+      $mail_sent = mail($to, $subject." ; Job completed", $msg, $headers);
       if ($mail_sent) {
-	info("Job done, email sent to ".$to);
+	info("Job done, completion mail sent to ".$to);
       } else {
 	error("Notification mail could not be sent.\n\n.".$msg);
       }
