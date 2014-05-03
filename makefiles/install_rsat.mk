@@ -117,6 +117,7 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
+	perl-doc \
 	YAML \
 	CGI \
 	PostScript::Simple \
@@ -207,7 +208,7 @@ perl_modules_check:
 
 ################################################################
 ## Install modules required for python
-PYTHON_MODULES=SUDS Rpy2 SOAPpy
+PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
@@ -216,9 +217,9 @@ python_modules_install:
 	@echo "Installing modules for python"
 	@for module in ${PYTHON_MODULES} ; do \
 		${SUDO} easy_install $${module}; \
-	done
+	PYTHON3
 
-PYTHON3_MODULES=numpy scipy
+MODULES_done=numpy scipy soappy
 python3_modules_install:
 	@echo
 	@echo "Installing modules for python3"
@@ -230,7 +231,8 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO reshape ctc plyr dendroextras
+R_MODULES=RJSONIO reshape plyr dendroextras 
+## Note: package  ctc does not exist. To check with Jaime Castro
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 
