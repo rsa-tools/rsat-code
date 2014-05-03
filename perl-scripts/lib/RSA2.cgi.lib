@@ -628,7 +628,7 @@ sub MultiGetSequenceFile {
     ### Fetch sequence from an URL
   } elsif ($query->param('sequence_url'.$seq_num) =~ /\S/) {
     my $url = $query->param('sequence_url'.$seq_num);
-    &RSAT::message::Info("Fetching sequences from URL ".$url) if if ($ENV{rsat_echo} >= 1);
+    &RSAT::message::Info("Fetching sequences from URL ".$url) if ($ENV{rsat_echo} >= 1);
     my $seq = "";
     if (open SEQ, ">$sequence_file") {
       $seq = get($url);
