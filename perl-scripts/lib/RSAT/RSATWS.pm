@@ -20,7 +20,7 @@ require RSAT::server;
 ## require RSAT::TaskManager;## JvH 2014-05-03: The TaskManager was actually not called from RSATWS.pm
 require RSAT::OrganismManager;
 
-&main::InitRSAT();
+&RSAT::server::InitRSAT();
 
 ## Guess RSAT path from module full name
 unless ($ENV{RSAT}) {
