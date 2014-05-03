@@ -1651,14 +1651,6 @@ sub EmailTheResult {
     my $subject = $args{title};
     my $no_email = $args{no_email} || 0;
 
-    ## Run the task in nice mode
-    $command = "nice -n 19 ".$command;
-
-    my $clean_command = &RSAT::util::hide_RSAT_path($command);
-
-    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
-    $clean_command =~ s|\$|\\\$|;
-
     my $script_name = &RSAT::util::hide_RSAT_path($0);
 #    my $script_name = $0;
 #    ## Avoid providing the full path of the RSAT package
@@ -1667,7 +1659,11 @@ sub EmailTheResult {
     $script_name =~ s|.*public_html\/+||g; ## Suppress the public_html folder
     $script_name =~ s|\.cgi$||; ## Suppress cgi extension
 
-    unless ($subject) {
+
+    ## Check the subject
+    if ($subject) {
+	$subject =~ s/'/\'/g;
+    } else {
       $subject = join " ", "[RSAT]", $script_name, &AlphaDate();
     }
 
@@ -1689,6 +1685,13 @@ sub EmailTheResult {
     }
     $result_URL =~ s|//tmp|/tmp|g;
 
+    ## Run the task in nice mode
+    $command = "nice -n 19 ".$command;
+    my $clean_command = &RSAT::util::hide_RSAT_path($command);
+
+    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
+#    $clean_command =~ s|\$|\\\$|;
+
 
     ## Indicate the URL of the future result file
     my $submission_message = $subject."\n";
@@ -1704,23 +1707,23 @@ sub EmailTheResult {
     $html_submission_message =~ s|\\\$|\$|gm;
     &Info($html_submission_message);
 
-    &RSAT::server::sendmail($submission_message, $recipient, $subject) unless ($no_email);
+    &RSAT::server::sendmail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
 
     ## Concatenate the command with the email notification
-    my $completion_mail_command = "mail -s \'".$subject." completion\'";
     my $completion_message;
     $completion_message .= $subject."\n";
     $completion_message .= "\n\nCommand: ".$clean_command;
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
-#    print "<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 1);
 
     ## Run the command and send a notification mail if the user provided an email address
-    $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $tmp_file_path; ";
-    $command .= "echo \"$completion_message\" | $completion_mail_command $recipient &" unless ($no_email);
+    $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> ".$tmp_file_path;
+    $command .= "; echo \"$completion_message\" | send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
+    $command .= " &"; ## Run task in background
+    print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
     system $command;
 
-    #### prepare removal of the temporary file
+    ## Prepare removal of the temporary file
     &DelayedRemoval($tmp_file_path, $delay);
 }
 
