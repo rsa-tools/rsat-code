@@ -31,7 +31,7 @@ package main;
 ############################################################################
 ####################### INITIALIZE THE RSAT SERVER  ########################
 ############################################################################
-&InitRSAT();
+&RSAT::server::InitRSAT();
 
 ## Load the list of supported organisms
 &RSAT::OrganismManager::load_supported_organisms();
