@@ -79,6 +79,7 @@ Function getTempFileName($prefix, $ext) {
                #  faire sur tous les miroirs
 #  $user = $processUser['name'];
   $user = `whoami`; ## THIS WORKS BY IT IS TOO TRICKY TO CLAL A SYSTEM COMMAND.I should check why all the solutions above do not work
+  $user = rtrim($user); ##remove space at the end of username ADDED By Didier Croes 11/04/2014
   $tmpDir .= $user."/";
 
   ## Append
