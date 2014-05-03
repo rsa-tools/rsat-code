@@ -54,8 +54,8 @@ EXT_APP_TARGETS=install_seqlogo \
 	install_mcl \
 	install_rnsc \
 	install_blast \
-	install_ensembl_api \
-	install_ensembl_bioperl
+	install_ensembl_api
+#	install_ensembl_bioperl ## does not work anymore.  Not sure it is required since bioperl is installed with cpan
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
