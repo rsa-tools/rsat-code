@@ -100,9 +100,11 @@ sub load_supported_organisms {
   $organism_table = $organism_table || $ENV{RSAT}."/public_html/data/".$organism_table_name;
 
   unless (-e $organism_table) {
+    if ($main::verbose >= 2) {
       &RSAT::message::Warning("The tabular file with the list of supported organism cannot be read");
       &RSAT::message::Warning("Missing file",  $organism_table);
-      return();
+    }
+    return();
   }
   my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
   my @fields = ();

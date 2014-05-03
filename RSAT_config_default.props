@@ -23,11 +23,22 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## complementary to RSAT (patser, consensus, ...).
 RSAT_BIN=[RSAT_PARENT_PATH]/rsat/bin
 
-## Directory for storing temporary file (for stand-alone scripts + web server + web services)
+## Directory for temporary files (stand-alone scripts + web server + web services)
 rsat_tmp=[RSAT_PARENT_PATH]/rsat/public_html/tmp
 
-## Server for sending mail (SMTP) is site-dependent
-smtp=[smtp.at.your.site]
+
+################################################################
+## Sending mail parameters
+
+## Server for sending mail (SMTP). If not provided, mail messages will
+## be sent via the sendmail program, which may be either allowed or
+## not depending on the server configuration.
+smtp=
+
+## If an email address is specified, notification email will be sent
+## with this email in the "from" field of the mail. This address
+## should be an authorized mail sender for the smtp server.
+smtp_sender=
 
 ################################################################
 ## URL of the web server (important for the links).
