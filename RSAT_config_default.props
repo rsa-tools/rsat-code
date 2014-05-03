@@ -33,12 +33,12 @@ rsat_tmp=[RSAT_PARENT_PATH]/rsat/public_html/tmp
 ## Server for sending mail (SMTP). If not provided, mail messages will
 ## be sent via the sendmail program, which may be either allowed or
 ## not depending on the server configuration.
-smtp=
+smtp=localhost:25
 
 ## If an email address is specified, notification email will be sent
 ## with this email in the "from" field of the mail. This address
 ## should be an authorized mail sender for the smtp server.
-smtp_sender=
+smtp_sender=rsat@localhost
 
 ################################################################
 ## URL of the web server (important for the links).
