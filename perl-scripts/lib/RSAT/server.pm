@@ -645,7 +645,7 @@ sub sendmail {
 
 
     ## Define the SMTP server
-    my $smtp_server = "localhost::25"; ## Default is send by local machine
+    my $smtp_server = "localhost:25"; ## Default is send by local machine
     if (($ENV{smtp}) && ($ENV{smtp} !~ /smtp.at.your.site/)) {
 	$smtp_server = $ENV{smtp};
     }
@@ -657,6 +657,8 @@ sub sendmail {
 	$from = $ENV{smtp_sender};
     }
 
+    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") if ($ENV{rsat_echo} >= 1);
+
     ## Send the message using MIME::Lite
     my $msg = MIME::Lite->new(
 	From    => $from,
@@ -666,8 +668,6 @@ sub sendmail {
 	Data    => $message,
 	);
     $msg->send('smtp', $smtp_server);
-
-    &RSAT::message::TimeWarn("mail sent from", $from, "to", $recipient) if ($ENV{rsat_echo} >= 1);
 
 }
 
