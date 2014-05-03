@@ -114,6 +114,7 @@ Constructor. The following data structure may be passed to new():
      return =>  $some_value, # string
      format =>  $some_value, # string
      taxon =>  $some_value, # string
+     depth =>  $some_value, # int
    },
  },
 

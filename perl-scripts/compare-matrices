@@ -1400,6 +1400,7 @@ package main;
 			     "name",
 			     "width",
 			     "consensus",
+			     "rc_consensus",
 			     "label",
 			     "logo_file",
 			     "rc_logo_file",
@@ -1408,16 +1409,17 @@ package main;
     my $m=0;
     foreach my $matrix (@matrices) {
       $m ++;
-      print $matrix_desc join ("\t", 
-			       $m,
-			       $matrix->get_attribute("id"),
-			       $matrix->get_attribute("name"),
-			       $matrix->get_attribute("ncol"),
-			       $matrix->get_attribute("consensus.IUPAC"),
-			       $matrix->get_attribute("label"),
-			       $matrix->get_attribute("logo_file"),
-			       $matrix->get_attribute("rc_logo_file"),
-	  ), "\n";
+      my $matrix_desc_string = join ("\t", 
+				     $m,
+				     $matrix->get_attribute("id"),
+				     $matrix->get_attribute("name"),
+				     $matrix->get_attribute("ncol"),
+				     $matrix->get_attribute("consensus.IUPAC"),
+				     $matrix->get_attribute("consensus.IUPAC.rc"),
+				     $matrix->get_attribute("label"),
+				     $matrix->get_attribute("logo_file"),
+				     $matrix->get_attribute("rc_logo_file"));
+      print $matrix_desc $matrix_desc_string,  "\n";
     }
     close $main::matrix_desc;
   }

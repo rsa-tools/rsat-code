@@ -1,7 +1,7 @@
 ##############################################################
-#
-# Class MatrixReader
-#
+##
+## Class MatrixAlignment
+##
 package RSAT::MatrixAlignment;
 
 use RSAT::GenericObject;
@@ -189,7 +189,6 @@ sub AlignMatrixPair {
 # 			   ) if ($main::verbose >= 10);
 
     }
-#    die "HELLO" if ($c > 3);
   }
 
   ## Set the counts of the shifted matrix 1

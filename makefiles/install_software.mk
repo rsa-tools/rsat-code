@@ -788,8 +788,6 @@ _download_sissrs:
 	@mkdir -p ${SISSRS_BASE_DIR}
 	wget -nd  --directory-prefix ${SISSRS_BASE_DIR} -rNL ${SISSRS_URL}
 
-
-
 ## This installation is VERY tricky. The user has to replace the
 ## hard-coded path in 3 shell files
 _link_sissrs:

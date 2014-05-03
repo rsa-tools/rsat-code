@@ -15,7 +15,6 @@ usage:
 ################################################################
 ## Initialize directories and config files
 SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
-CONFIG_FILE=RSA.config
 LOGS_DIR=${RSAT}/public_html/logs
 COUNT_FILE=${LOGS_DIR}/count-file
 
@@ -53,8 +52,8 @@ init:
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
-	@chmod 777 ${LOGS_DIR}
 	@mkdir -p ${LOGS_DIR}
+	@chmod 777 ${LOGS_DIR}
 	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
 	@rm -f ${LOGS_DIR}/index.html
@@ -97,12 +96,6 @@ init:
 	else \
 		echo "	Creating count file ${COUNT_FILE}" ; \
 		echo "0" > ${COUNT_FILE}; \
-	fi
-	@if [ -f "${CONFIG_FILE}" ] ; then \
-		echo "	File already exists	${CONFIG_FILE}" ; \
-	else \
-		echo "	Creating config file ${CONFIG_FILE}" ; \
-		cp RSA.config.default ${CONFIG_FILE}; \
 	fi
 	@if [ -f "${RSAT}/RSAT_config.props" ] ; then \
 		echo "	RSAT property file already exists	${RSAT}/RSAT_config.props" ; \

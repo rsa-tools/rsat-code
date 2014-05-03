@@ -4250,13 +4250,13 @@ Calculate the score of the CRER
 =cut
   sub score_crer {
     my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
-    my $hit_p = $uth{pval} || $lth{pval}; ## JvH: I don't understand why hit_p would be lth{pval} in case uth{pval} is not defined.
+    my $hit_p = $uth{pval} || 1;
 
     my @strands = ();
     push @strands,"D";
     push @strands,"R" if ($main::both_strands);
 
-    ## initiate sum of hits with hit of last position
+    ## Initiate sum of hits with hit of last position
     my $hit_sum = $crer_sum_hits[$last_hit];
     return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
 

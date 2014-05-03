@@ -351,6 +351,11 @@ package main;
     if ($multiply != 1) {
       $matrix->multiply($multiply);
     }
+    
+    ## Insert columns 
+    if (($insert_col_left > 0) || ($insert_col_right > 0)) {
+      $matrix->insert_columns($insert_col_left, $insert_col_right);
+    }
 
     ## Add flanks
     if ($flanks) {
@@ -746,6 +751,13 @@ OPTIONS
 		but can be useful for converting matrices for which
 		the actual counts are not provided but which only
 		provide relative frequencies.
+
+	-insert_col_left #
+	-insert_col_right #
+	-insert_col #
+	      Insert columns on the left, right, or both flanks of the
+	      count matrix. The inserted columns are filled with
+	      zeros.
 
 	-base #
 	      Base for the logarithms used in the scores involving a
@@ -1210,6 +1222,9 @@ convert-matrix options
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -multiply #	multiply all values of the input matrices by #
+-insert_col_left #  Insert columns on the left flank of the count matrix.
+-insert_col_right # Insert columns on the right flank of the count matrix.
+-insert_col #	    Insert columns on both flanks of the count matrix.
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -prefix		prefix to add before matrix identifiers
@@ -1369,8 +1384,25 @@ sub ReadArguments {
 	    ## Multiplicative factor
 	} elsif ($ARGV[$a] eq "-multiply") {
 	    $multiply = $ARGV[$a+1];
-	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. ust be a Real number")
+	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. Must be a Real number")
 		unless &RSAT::util::IsReal($multiply);
+
+	    ## Multiplicative factor
+	} elsif ($ARGV[$a] eq "-insert_col_left") {
+	    $insert_col_left = $ARGV[$a+1];
+	    &RSAT::error::FatalError($insert_col_left, "Invalid number for columns. Must be a Natural number")
+		unless &RSAT::util::IsNatural($insert_col_left);
+	} elsif ($ARGV[$a] eq "-insert_col_right") {
+	    $insert_col_right = $ARGV[$a+1];
+	    &RSAT::error::FatalError($insert_col_right, "Invalid number for columns. Must be a Natural number")
+		unless &RSAT::util::IsNatural($insert_col_right);
+	} elsif ($ARGV[$a] eq "-insert_col") {
+	    $insert_col_left = $ARGV[$a+1];
+	    $insert_col_right = $ARGV[$a+1];
+	    &RSAT::error::FatalError($insert_col_left, "Invalid number for columns. Must be a Natural number")
+		unless &RSAT::util::IsNatural($insert_col_left);
+	    &RSAT::error::FatalError($insert_col_right, "Invalid number for columns. Must be a Natural number")
+		unless &RSAT::util::IsNatural($insert_col_right);
 
 	    ## base for the logarihtms in the weight and info content
 	} elsif ($ARGV[$a] eq "-base") {

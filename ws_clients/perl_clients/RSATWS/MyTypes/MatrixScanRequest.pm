@@ -28,6 +28,7 @@ my %matrix_of :ATTR(:get<matrix>);
 my %tmp_matrix_infile_of :ATTR(:get<tmp_matrix_infile>);
 my %sequence_format_of :ATTR(:get<sequence_format>);
 my %matrix_format_of :ATTR(:get<matrix_format>);
+my %quick_of :ATTR(:get<quick>);
 my %n_treatment_of :ATTR(:get<n_treatment>);
 my %consensus_name_of :ATTR(:get<consensus_name>);
 my %pseudo_of :ATTR(:get<pseudo>);
@@ -59,6 +60,7 @@ __PACKAGE__->_factory(
         tmp_matrix_infile
         sequence_format
         matrix_format
+        quick
         n_treatment
         consensus_name
         pseudo
@@ -91,6 +93,7 @@ __PACKAGE__->_factory(
         'tmp_matrix_infile' => \%tmp_matrix_infile_of,
         'sequence_format' => \%sequence_format_of,
         'matrix_format' => \%matrix_format_of,
+        'quick' => \%quick_of,
         'n_treatment' => \%n_treatment_of,
         'consensus_name' => \%consensus_name_of,
         'pseudo' => \%pseudo_of,
@@ -122,6 +125,7 @@ __PACKAGE__->_factory(
         'tmp_matrix_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'sequence_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'matrix_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'quick' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'n_treatment' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'consensus_name' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -154,6 +158,7 @@ __PACKAGE__->_factory(
         'tmp_matrix_infile' => 'tmp_matrix_infile',
         'sequence_format' => 'sequence_format',
         'matrix_format' => 'matrix_format',
+        'quick' => 'quick',
         'n_treatment' => 'n_treatment',
         'consensus_name' => 'consensus_name',
         'pseudo' => 'pseudo',
@@ -232,6 +237,9 @@ methods:
 
 
 =item * matrix_format
+
+
+=item * quick
 
 
 =item * n_treatment
@@ -319,6 +327,7 @@ Constructor. The following data structure may be passed to new():
    tmp_matrix_infile =>  $some_value, # string
    sequence_format =>  $some_value, # string
    matrix_format =>  $some_value, # string
+   quick =>  $some_value, # string
    n_treatment =>  $some_value, # string
    consensus_name =>  $some_value, # string
    pseudo =>  $some_value, # int

@@ -14,7 +14,6 @@ use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 
-
 ## Specification of the server
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || qw(
@@ -35,12 +34,16 @@ my @servers =  $ARGV[0] || qw(
 # 			    http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## Query parameters
-my $taxon = '';
+my $taxon = 'Bacteria';
 my $return = 'ID,taxonomy';
+my $format = "tab";
+my $depth = 5;
 my %args = (
-	    'taxon' => $taxon,
-	    'return'=>$return,
-	   );
+  'return'=>$return,
+  'format'=>$format,
+  'taxon' => $taxon,
+  'depth'=>$depth,
+    );
 
 
 warn "Getting lists of supported organisms from server(s)\n\t", join("\n\t", @servers), "\n\n";
@@ -48,59 +51,53 @@ warn "Getting lists of supported organisms from server(s)\n\t", join("\n\t", @se
 foreach my $server (@servers) {
   warn "\n\n", "Querying server\t", $server, "\n";
   eval
-    {
-      # Retrieving and processing the WSDL
-      my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
-      warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n");
-      my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
-      my $proxy = XML::Compile::WSDL11->new($wsdl);
-
-      ## Compiling the client for supported-organisms
-      warn ("Compiling client\n");
-      my $client = $proxy->compileClient('supported_organisms');
-
-      # Calling the service and getting the response
-      warn ("Sending query to server", "\t", $server, "\n");
+  {
+    # Retrieving and processing the WSDL
+    my $wsdl_url = $server.'/web_services/RSATWS.wsdl';
+    warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n");
+    my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
+    my $proxy = XML::Compile::WSDL11->new($wsdl);
+    
+    ## Compiling the client for supported-organisms
+    warn ("Compiling client\n");
+    my $client = $proxy->compileClient('supported_organisms');
+    
+    # Calling the service and getting the response
+    warn ("Sending query to server", "\t", $server, "\n");
 #      warn "Getting list of supported organisms from server\t", $server, "\n";
-      my $answer = $client->( request => {%args});
-      #    print OUT "Answer: ".$answer."\n";
+    my $answer = $client->( request => {%args});
+    #    print OUT "Answer: ".$answer."\n";
+    
+    my $file = "organisms_".$server.".txt";
+    $file =~ s|http://||;
+    $file =~ s|/|_|g;
+    open OUT, ">$file";
+    warn "Result stored in file\t", $file, "\n";
 
-      my $file = "organisms_".$server.".txt";
-      $file =~ s|http://||;
-      $file =~ s|/|_|g;
-      open OUT, ">$file";
-      warn "Result stored in file\t", $file, "\n";
+    ## Open output file
+    # If the response arrived, look for a specific pattern
+    # If the pattern is present, return 0 because the test passed.
+    # If the result is something else, return 2 to indicate a warning.
+    # If no answer has arrived, return 1 to indicate the test failed.
+    if ( defined $answer ) {
+      warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
+      print OUT "; Server : ", $server, "\n";
+      print OUT "; WSDL URL : ", $wsdl_url, "\n";
+      print OUT "; Server command : ".$answer->{output}->{response}->{command}."\n";
+      print OUT "; Server file : ".$answer->{output}->{response}->{server}."\n";
+      print OUT $answer->{output}->{response}->{client}."\n";
+    } else {
+      print OUT "No answer\n";
+    }
 
-      ## Open output file
-      # If the response arrived, look for a specific pattern
-      # If the pattern is present, return 0 because the test passed.
-      # If the result is something else, return 2 to indicate a warning.
-      # If no answer has arrived, return 1 to indicate the test failed.
-      if ( defined $answer ) {
-	warn ("Server command : ".$answer->{output}->{response}->{command}."\n");
-	print OUT "; Server : ", $server, "\n";
-	print OUT "; WSDL URL : ", $wsdl_url, "\n";
-	print OUT "; Server command : ".$answer->{output}->{response}->{command}."\n";
-	print OUT "; Server file : ".$answer->{output}->{response}->{server}."\n";
-	print OUT $answer->{output}->{response}->{client}."\n";
-	# 	if ($answer->{output}->{response}->{client} =~ 'tgccaa'){
-	# 	    print OUT "Passed\n";
-	# 	    exit 0;
-	# 	} else {
-	# 	    print OUT "Unexpected data\n";
-	# 	    exit 2;
-	# 	}
-      } else {
-	print OUT "No answer\n";
-      }
+    close OUT;
+  };
 
-      if ($@) {
-	  warn "Caught an exception\n";
-	  warn $@."\n";
-	  print OUT "Caught an exception\n";
-	  print OUT $@."\n";
-      }
-
-      close OUT;
-    };
+  ## Report exceptions
+  if ($@) {
+    warn "Caught an exception\n";
+    warn $@."\n";
+    print OUT "Caught an exception\n";
+    print OUT $@."\n";
+  }  
 }
