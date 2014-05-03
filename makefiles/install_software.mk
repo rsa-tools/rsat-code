@@ -186,6 +186,11 @@ install_ensembl_api:
 	@echo
 	@${MAKE} install_ensembl_api_env
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+##
+## NOT WORKING ANYMORE ?
+##
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 install_ensembl_bioperl:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
