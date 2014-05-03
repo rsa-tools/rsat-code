@@ -590,13 +590,13 @@ sub InitRSAT {
   $main::HTML = "$ENV{RSAT}/public_html"; 
   $main::WWW_TMP = "$ENV{rsat_www}/tmp";
   $main::LOGS = "$ENV{RSAT}/logs";
-  $main::counter_file = "$LOGS/count-file";
+  $main::counter_file = $main::LOGS."/count-file";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
-  $main::log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
-  $main::web_attacks_log_file = join("", $LOGS, "/web_attacks_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-  $main::denied_access_log_file = join("", $LOGS, "/denied_access_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-  $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-  $main::start_time_log_file = join("", $LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::log_file = join("", $main::LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
+  $main::web_attacks_log_file = join("", $main::LOGS, "/web_attacks_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::denied_access_log_file = join("", $main::LOGS, "/denied_access_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::exec_time_log_file = join("", $main::LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::start_time_log_file = join("", $main::LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::date = &RSAT::util::AlphaDate();
 }
 
@@ -636,14 +636,6 @@ sub sendmail {
 	$subject = join " ", "[RSAT]", $script_name, &AlphaDate();
     }
 
-    ## Send the mail by a system call (quick and dirty, was not working anymor in 2014 I [JvH] don't know why)
-#     my $mail_command = "echo \"".$message."\" ";
-# #    my $mail_command = "echo 'HELLO' ";
-#     $mail_command .= " | mail -s \'".$subject." submission\' ".$recipient;
-#     print "<pre>Mail: $mail_command</pre>" if ($ENV{rsat_echo} >= 0); ## For debugging
-#     system($mail_command);
-
-
     ## Define the SMTP server
     my $smtp_server = "localhost:25"; ## Default is send by local machine
     if (($ENV{smtp}) && ($ENV{smtp} !~ /smtp.at.your.site/)) {
@@ -657,7 +649,7 @@ sub sendmail {
 	$from = $ENV{smtp_sender};
     }
 
-    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") if ($ENV{rsat_echo} >= 1);
+    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") if ($ENV{rsat_echo} >= 2);
 
     ## Send the message using MIME::Lite
     my $msg = MIME::Lite->new(
