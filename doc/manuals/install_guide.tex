@@ -103,15 +103,35 @@ source [RSAT_FULL_PATH]/RSAT_config.bashrc
 \end{verbatim}
 
 
+Note: for Ubuntu distribution , the simplest solution is to create a
+soft link from the directory \file{/etc/profile.d/}. This requires
+admin rights.
+
+\begin{verbatim}
+sudo ln -s $RSAT/RSAT_config.bashrc /etc/profile.d/rsat.sh
+\end{verbatim}
+
 \item \textbf{Initialize \RSAT folders}
 
   \begin{lstlisting}
 make -f makefiles/init_rsat.mk init
   \end{lstlisting}
   
-\item Install the required Perl libraries.
+\item Install the required Perl libraries. For this you need admin
+  rights.
 
   \begin{lstlisting}
+## sudo bash
+
+## Check that RSAT path has been defined
+echo $RSAT
+
+## If not, try this and check again
+##   source /etc/profile.d/rsat.sh
+
+## Set working directory to RSAT
+cd $RSAT
+
 ## Get the list of Perl modules to be installed
 make -f makefiles/install_rsat.mk  perl_modules_list
 
@@ -128,10 +148,16 @@ make -f makefiles/install_rsat.mk perl_modules_install
   \item \textbf{Beware: } this step requires admin rights (you will be
     prompted for sudo password in order to install modules in cpan).
     
-  \item \program{cpan} installation takes some time, and is interrupted
-    by many prompts to let you choose some installation options. We
-    recommend to use the default option for all questions (just press
-    the ``Enter'' key).
+  \item \program{cpan} installation takes some time, and is
+    interrupted by many prompts to let you choose some installation
+    options. We recommend to use the default option for all questions
+    (just press the ``Enter'' key). If you are bored to confirm each
+    installation step, you can run the following target, which will
+    automatically blindly accept all the default options.
+
+\begin{lstlisting}
+    make -f makefiles/install_rsat.mk perl_modules_install_noprompt
+\end{lstlisting}
     
   \item Even though some Perl modules may fail to install, don't worry
     too much. At this stage, you should be able to use most of \RSAT
@@ -148,7 +174,7 @@ make -f makefiles/init_rsat.mk compile_all
   scripts.
 
 \begin{lstlisting}
-make -f makefiles/install_software.mk  install_ext_apps
+make -f makefiles/install_software.mk install_ext_apps
 \end{lstlisting}
 
 
@@ -245,7 +271,8 @@ the SOAP/WSDL protocol. If it works, it emans that you are ready for
 using \RSAT Web services.
 
 \begin{lstlisting}
-supported-organisms-server -v 2 -server http://rsat.eu/ -o supported_on_rsat_eu.tab ; 
+supported-organisms-server -v 2 -server http://rsat.eu/ \
+   -o supported_on_rsat_eu.tab ; 
 wc -l  supported_on_rsat_eu.tab
 \end{lstlisting}
 
@@ -253,7 +280,8 @@ Get the list of organisms supported on another server
 \url{http://rsat.fr/}.
 
 \begin{lstlisting}
-supported-organisms-server -server http://rsat.fr/ -o supported_on_rsat_fr.tab ; 
+supported-organisms-server -server http://rsat.fr/ \
+   -o supported_on_rsat_fr.tab ; 
 wc -l  supported_on_rsat_fr.tab
 \end{lstlisting}
 
@@ -278,12 +306,55 @@ following functionalities:
 
 \subsection{vmatch and mkvtree}
 
-The programs \program{vmatch} and \program{mkvtree} are used by the
-\RSAT progam \program{purge-sequence}
+The programs \program{vmatch} and \program{mkvtree} are required by
+the \RSAT progam \program{purge-sequence}, which plays an important
+role to discard redundant sequences before running motif discovery
+algorithms (\program{oligo-analysis}, \program{dyad-analysis},
+\program{position-analysis}, \program{local-word-analysis}).
 
-\section{Activating a local Web server}
+A free academic license can be obtained at Stefan Kurt's web page:
 
-\include{ig_apache_config.tex}
+\url{http://www.vmatch.de/}
+
+After having obtained the licence, install the 3 following files in
+the \file{\$RSAT/bin} folder: \file{vmatch}, \file{mkvtree},
+\file{vmatch.lic}.
+
+Quick test for the correct functioning of \program{purge-sequence}:
+
+\begin{lstlisting}
+retrieve-seq -org Saccharomyces_cerevisiae -q GAL1 -q GAL10 -noorf \
+  | purge-sequence
+\end{lstlisting}
+
+The second sequence (GAL10) should be masked (replaced by ``n''),
+because GAL10 and GAL1 shar the same promoter (the genes are
+transcribed in opposite direction).
+
+\subsection{Other third-pary programs}
+
+Some additional freeware programs are required for some particular
+tasks in \RSAT. The list of these programs can be obtained as follows.
+
+\begin{lstlisting}
+make -f makefiles/install_software.mk list_ext_apps
+\end{lstlisting}
+
+Calling the makefile with the target \option{install\_ext\_apps} will
+start the automatic installation of all these programs. 
+
+\begin{lstlisting}
+make -f makefiles/install_software.mk install_ext_apps
+\end{lstlisting}
+
+Note: for some programs, you may be prompted for the sudo password,
+depending on the configuration you entered in the previous step (with
+the script \file{configure\_rsat.pl}).
+
+In case of trouble, try to install the programs one by one by calling
+separately each target listed by \option{list\_ext\_apps}.
+
+\include{ig_apache_config}
 
 \subsection{Activating web services on your \RSAT instance}
 
@@ -295,16 +366,21 @@ Open this file withb a text editor.
 
 \file{public\_html/web\_services/RSATWS.wsdl}
 
-At the bottom of the file, locate the following line, and adapt the
-URL to your local configuration.
+At the bottom of the file, locate the following line.
 
+\begin{footnotesize}
 \begin{verbatim}
 <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 \end{verbatim}
+\end{footnotesize}
 
-After this, you should re-generate the web services stubb, with the following command.
+Adapt the URL to your local configuration.
+
+After this, you should re-generate the web services stubb, with the
+following command.
 
   \begin{lstlisting}
+cd $RSAT; 
 make -f makefiles/init_rsat.mk ws_stubb
   \end{lstlisting}
 

@@ -117,6 +117,7 @@ Constructor. The following data structure may be passed to new():
      tmp_matrix_infile =>  $some_value, # string
      sequence_format =>  $some_value, # string
      matrix_format =>  $some_value, # string
+     quick =>  $some_value, # string
      n_treatment =>  $some_value, # string
      consensus_name =>  $some_value, # string
      pseudo =>  $some_value, # int
