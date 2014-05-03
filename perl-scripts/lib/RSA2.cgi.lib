@@ -556,7 +556,7 @@ sub GetSequenceFile {
       &cgiError("Invalid sequence format : ${required_format}.");
     }
     my $converted_seq_file = $sequence_file.".".$required_format;
-    my $convert_seq_command = "$SCRIPTS/convert-seq ";
+    my $convert_seq_command = $SCRIPTS."/convert-seq ";
     $convert_seq_command .= " -i ".$sequence_file;
     $convert_seq_command .= " -from  $sequence_format -to $required_format ";
 
@@ -678,7 +678,7 @@ sub MultiGetSequenceFile {
       $mask = $query->param('mask'.$seq_num);
       &CheckMask($mask);
       my $converted_seq_file = $sequence_file.".masked";
-      my $convert_seq_command = "$SCRIPTS/convert-seq ";
+      my $convert_seq_command = $SCRIPTS."/convert-seq ";
       $convert_seq_command .= " -i ".$sequence_file;
       $convert_seq_command .= " -from  $sequence_format -to fasta ";
 ##    $convert_seq_command .= " -from  fasta -to fasta ";
@@ -1718,7 +1718,7 @@ sub EmailTheResult {
 
     ## Run the command and send a notification mail if the user provided an email address
     $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> ".$tmp_file_path;
-    $command .= "; echo \"$completion_message\" | send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
+    $command .= "; echo \"$completion_message\" | ".$SCRIPTS."/send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
     $command .= " &"; ## Run task in background
     print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
     system $command;
