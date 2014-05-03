@@ -27,7 +27,7 @@ RSAT_BIN=[RSAT_PARENT_PATH]/rsat/bin
 rsat_tmp=[RSAT_PARENT_PATH]/rsat/public_html/tmp
 
 ## Server for sending mail (SMTP) is site-dependent
-smtp=[smtp.at.your.site]
+smtp=
 
 ################################################################
 ## URL of the web server (important for the links).

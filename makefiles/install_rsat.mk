@@ -119,6 +119,7 @@ unix_packages_install_ubuntu:
 PERL_MODULES= \
 	YAML \
 	CGI \
+	MIME::Lite \
 	PostScript::Simple \
 	Statistics::Distributions \
 	Algorithm::Cluster \
