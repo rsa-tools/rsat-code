@@ -120,6 +120,7 @@ PERL_MODULES= \
 	perl-doc \
 	YAML \
 	CGI \
+	MIME::Lite \
 	PostScript::Simple \
 	Statistics::Distributions \
 	Algorithm::Cluster \

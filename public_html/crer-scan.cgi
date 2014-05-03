@@ -213,19 +213,9 @@ print <<End_of_form;
     <INPUT type="submit" value="feature map">
     </FORM>
   </TD>
-  <TD>
-    <FORM METHOD="POST" ACTION="gene-info_form.cgi">
-    <INPUT type="hidden" NAME="queries" VALUE="$genes">
-    <INPUT type="submit" value="gene information"> Specify the source organism of the scanned sequences<br/>
-End_of_form
-	&OrganismPopUp;
-	print '
-    
-    </FORM>
-  </TD>
 </TR>
 </TABLE>
-</CENTER>';
-#End_of_form
+</CENTER>
+End_of_form
 }
 

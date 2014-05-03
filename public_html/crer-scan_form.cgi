@@ -131,8 +131,8 @@ print $query->end_form;
 ## Data for the demo
 print $query->start_multipart_form(-action=>"crer-scan_form.cgi");
 $demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
-#$demo_sites = `grep -v '^;' $demo_file`;
 $demo_sites = `cat $demo_file`;
+$#demo_sites = `grep -v '^;' $demo_file`;
 print "<TD><B>";
 print $query->hidden(-name=>'sites',-default=>$demo_sites);
 print $query->hidden(-name=>'in_format',-default=>"ft");
