@@ -42,7 +42,7 @@ export <- 'json'
 ## Arguments passed on the command line will over-write the default
 ## arguments specified above.
 args = commandArgs(trailingOnly=TRUE);
-print("Parsing command-line arguments")
+#print("Parsing command-line arguments")
 if (length(args >= 1)) {
   print(args)
   for(i in 1:length(args)){

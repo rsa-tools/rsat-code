@@ -3,7 +3,12 @@ package RSAT::server;
 require RSAT::util;
 require RSAT::message;
 require RSAT::error;
+use MIME::Lite;
+#use Mail::Sendmail;
 
+
+################################################################
+## Check that the environment variable RSAT has been defined
 unless ($ENV{RSAT}) {
     $ENV{RSAT} = $0; #
 #    $ENV{RSAT} =~ s|\/[^\/]+$||g; ## Guess RSAT path from module full name
@@ -411,17 +416,6 @@ sub DelayedRemoval {
 }
 
 
-
-################################################################
-## The initialization is performed in the main scope, because this si
-## the place where most RSAT programs expect to find the global
-## variables, due to the initial organization of RSAT.
-##
-## This should be changed at some point, by having server-specific
-## variables attached to the RSAT::server class.
-
-package main;
-
 ################################################################
 ## Read props file
 sub ReadProperties {
@@ -596,14 +590,90 @@ sub InitRSAT {
   $main::HTML = "$ENV{RSAT}/public_html"; 
   $main::WWW_TMP = "$ENV{rsat_www}/tmp";
   $main::LOGS = "$ENV{RSAT}/logs";
-  $main::counter_file = "$LOGS/count-file";
+  $main::counter_file = $main::LOGS."/count-file";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
-  $main::log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
-  $main::web_attacks_log_file = join("", $LOGS, "/web_attacks_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-  $main::denied_access_log_file = join("", $LOGS, "/denied_access_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-  $main::exec_time_log_file = join("", $LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
-  $main::start_time_log_file = join("", $LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::log_file = join("", $main::LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
+  $main::web_attacks_log_file = join("", $main::LOGS, "/web_attacks_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::denied_access_log_file = join("", $main::LOGS, "/denied_access_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::exec_time_log_file = join("", $main::LOGS, "/exec_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
+  $main::start_time_log_file = join("", $main::LOGS, "/start_time_log_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1), ".txt");
   $main::date = &RSAT::util::AlphaDate();
 }
+
+=pod
+
+=item B<CheckEmailAddress($email_address)>
+
+check email address format
+
+=cut
+sub CheckEmailAddress {
+    my ($email_address) = @_;
+    if ($email_address eq "") {
+	&RSAT::error::FatalError ("You did not enter your e-mail address");
+    } if ($email_address =~ /http:\/\//) {
+	&RSAT::error::FatalError ("Invalid email address: $email_address<br>", "Submitting http links in Web form is a hacking practice. This attempt will be reported.");
+
+    } elsif ($email_address !~ /(\S+\@\S+)/) {
+	&RSAT::error::FatalError ("Invalid email address: $email_address<br>");
+    }
+}
+
+=pod
+
+=item B<Send an email message>
+
+=cut
+sub sendmail {
+    my ($message, $recipient, $subject) = @_;
+
+    ## Check if recipient argument contains a valid email address
+    &CheckEmailAddress($recipient);
+
+    ## Set a subject if not specificed in arguents
+    unless ($subject) {
+	$script_namen= $0;
+	$subject = join " ", "[RSAT]", $script_name, &AlphaDate();
+    }
+
+    ## Define the SMTP server
+    my $smtp_server = "localhost:25"; ## Default is send by local machine
+    if (($ENV{smtp}) && ($ENV{smtp} !~ /smtp.at.your.site/)) {
+	$smtp_server = $ENV{smtp};
+    }
+
+    ## Define the "from" email (can be defined in RSAT_config.props or
+    ## as environment variable smtp_sender)
+    my $from = "";
+    if ($ENV{smtp_sender}) {
+	$from = $ENV{smtp_sender};
+    }
+
+    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") if ($ENV{rsat_echo} >= 2);
+
+    ## Send the message using MIME::Lite
+    my $msg = MIME::Lite->new(
+	From    => $from,
+	To      => $recipient,
+	Subject => $subject,
+	Type    => 'text/plain',
+	Data    => $message,
+	);
+    $msg->send('smtp', $smtp_server);
+
+}
+
+
+
+################################################################
+## The initialization is performed in the main scope, because this si
+## the place where most RSAT programs expect to find the global
+## variables, due to the initial organization of RSAT.
+##
+## This should be changed at some point, by having server-specific
+## variables attached to the RSAT::server class.
+
+## OBSOLETE ? (JvH 2014-05-03)
+# package main;
 
 return(1);
