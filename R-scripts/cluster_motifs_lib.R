@@ -47,21 +47,48 @@ check.param <- function() {
     
     ## Default lower and upper thresholds equals to zero
     if (!exists("lth")) {
-      lth <<- 0;
+      lth <<- list()
+      lth[["Ncor"]] <<- 0;
+      lth[["cor"]] <<- 0;
+
+      lth.values <<- unlist(lth)
+      lth.scores <<- names(lth.values)
     }
     if (!exists("uth")) {
-      uth <<- 1;
+      uth <<- list()
+      uth[["Ncor"]] <<- 1;
+      uth[["cor"]] <<- 1;
+
+      uth.values <<- unlist(uth)
+      uth.scores <<- names(uth.values)
     }
     
   } else if(score %in% supported.distances){
     metric <<- "distances"
 
-    ## Default lower and upper thresholds equals to zero
-    if (!exists("lth")) {
-      lth <<- 1;
-    }
-    if (!exists("uth")) {
-      uth <<- 0;
+    ## ## Default lower and upper thresholds equals to zero
+    ## if (!exists("lth")) {
+    ##   lth <<- 1;
+    ## }
+    ## if (!exists("uth")) {
+    ##   uth <<- 0;
+    ## }
+  }
+
+  
+  #####################
+  ##
+  if(exists("lthsp")){
+    lthsp <- unlist(strsplit(lthsp, "-"))
+    lth.scores <<- lthsp[seq(1,length(lthsp), by = 2)]
+    lth.values <<- as.numeric(lthsp[seq(2,length(lthsp), by = 2)])
+    
+    supported <- c("Ncor", "cor")
+    if(length(setdiff(supported, lth.scores)) > 0){
+      for(add in setdiff(supported, lth.scores)){
+        lth.scores <<- append(lth.scores, add)
+        lth.values <<- append(lth.values, 0) 
+      }
     }
   }
 }
@@ -742,22 +769,18 @@ alignment.test.method.single <- function(ids1, ids2){
   scores <- compare.matrices.table[compa.numbers,score]
 
   if(metric == "similarity"){
-    if(length(which(scores >= lth)) > 0){
+    if(pairs.satisfy.lth() > 0){
       return(1)
     }else{
       return(0)
     }
   } else if (metric == "distance"){
-    if(length(which(scores <= uth)) > 0){
+    if(pairs.satisfy.uth() > 0){
       return(1)
     }else{
       return(0)
     }
   }
-  
-  ## scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
-  ## ## Count the number of pairs which satisfied the condition
-  ## sat.cond <- length(which(scores != "NA"))
 }
 
 
@@ -771,13 +794,13 @@ alignment.test.method.complete <- function(ids1, ids2){
 
   ## Get the scores of the comparisons
   scores <- compare.matrices.table[compa.numbers,score]
-  scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
+  #scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
 
   ## Count the number of pairs which satisfied the condition
   if(metric == "similarity"){
-    sat.cond <- length(which(scores >= lth))
+    sat.cond <- pairs.satisfy.lth()
   } else if(metric == "distances"){
-    sat.cond <- length(which(scores <= uth))
+    sat.cond <- pairs.satisfy.uth
   }
 
   ## If all the pairs satisfied the condition,
@@ -799,22 +822,26 @@ alignment.test.method.average <- function(ids1, ids2){
   compa.numbers <- get.comparison.number(ids1, ids2)
   
   ## Get the scores of the comparisons
-  scores <- compare.matrices.table[compa.numbers,score]
+  if (metric == "similarity"){
+    scores <- compare.matrices.table[compa.numbers, lth.scores]
+  } else if(metric == "distance"){
+    scores <- compare.matrices.table[compa.numbers, uth.scores]
+  }
   #scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
   
   ## Calculate the median of the data
-  median.scores <- median(scores, na.rm = TRUE)
+  median.scores<- apply(scores, 2, median)
 
   ## According to the kind of metric selected
   ## evaluates if the clusters will be aligned
   if(metric == "distance"){
-    if(median.scores <= uth){
+    if(sum(median.scores <= uth.values) == length(uth.values)){
       return(1)
     }else{
       return(0)
     }
   } else if (metric == "similarity"){
-    if(median.scores >= lth){
+    if(sum(median.scores >= lth.values) == length(lth.values)){
       return(1)
     }else{
       return(0)
@@ -908,8 +935,8 @@ build.distance.matrix <- function(comparison.table){
 }
 
 
-########################################
-## 
+######################################################
+## Fill with gaps those alignments within  a forest
 fill.downstream.forest <- function(motifs.list){
 
   ## Get the highest length among the consensuses
@@ -925,6 +952,27 @@ fill.downstream.forest <- function(motifs.list){
       motifs.list[[id]][["offset_down"]] <- spacer.length
     } 
   return(motifs.list)
+}
+
+
+###############################################################
+## Count the numbers of pairs which satisfied the thresholds
+pairs.satisfy.lth <- function(){
+  
+  values.list <- list()
+  for(i in 1:length(lth.scores)){
+    values.list[[lth.scores[i]]] <- which(scores >= lth.values[i])
+  }
+  return(length(Reduce(intersect, values.list)))
+}
+
+pairs.satisfy.uth <- function(){
+  
+  values.list <- list()
+  for(i in 1:length(lth.scores)){
+    values.list[[lth.scores[i]]] <- which(scores <= lth.values[i])
+  }
+  return(length(Reduce(intersect, values.list)))
 }
 
 
