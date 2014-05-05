@@ -197,7 +197,9 @@ for(nb in 1:length(tree$labels)){
 
 ## Colour the branches
 tree.dendro <- as.dendrogram(tree)
-tree.dendro <- color_clusters(tree.dendro, k = forest.nb, col = rainbow)
+tree.dendro <- color_clusters(tree.dendro, k = forest.nb, col = rainbow, groupLabels = TRUE)
+
+# col = c("black", "red", "blue", "green", "purple", "yellow", "turquoise1", "orange", "deeppink")
 
 ## Get the aligment width, to calculate the limits of the plot
 alignment.width <- sapply(motifs.info, function(X){
