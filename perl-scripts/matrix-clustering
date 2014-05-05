@@ -637,9 +637,9 @@ prefix_matrix_alignment_table.tab
 
 Suggested thresholds:
 
-    cor >= 0.6
+    cor >= 0.7
 
-    Ncor >= 0.3
+    Ncor >= 0.4
 
 =cut
 
@@ -653,8 +653,6 @@ Suggested thresholds:
 	  unless (&RSAT::util::IsReal($thr_value));
       $lth{$thr_field} = $thr_value;
 
-      ## TEMPORARILY INACTIVATE PASSING THRESHOLDS TO compare-matrices
-#      push @args_to_pass, join(" ", "-lth", $thr_field, $thr_value);
       
       ### Upper threshold
     } elsif ($arg eq "-uth") {
@@ -744,7 +742,7 @@ sub CompareMatrices {
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
   $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
-  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,matrix_desc,logos";
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,matrix_desc";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
@@ -816,7 +814,11 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
-      $cluster_motifs_cmd .= "; lth = '".$lth{$param{matrix_compa_score}}."'";
+	my $lthsp = "";
+	foreach my $par (keys %lth){
+	    $lthsp.= $par."-".$lth{$par}."-";
+	}
+	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
     if (defined($uth{$param{matrix_compa_score}})) {
       $cluster_motifs_cmd .= "; uth = '".$uth{$param{matrix_compa_score}}."'";
