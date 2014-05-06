@@ -11,6 +11,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
+PEAKMO_NEG_CONTROL_PREFIX=peak-motifs_result_Chen_Oct4_permuted
 
 ## Choose a particular demo set
 DEMO_PREFIX=${PEAKMO_PREFIX}
@@ -59,7 +60,7 @@ cluster:
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
 	matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
-		-export newick -d3_base file -hclust_method average \
+		-export newick -d3_base link -hclust_method average \
 		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
 	@echo "		${CLUSTER_PREFIX}_index.html"
@@ -74,7 +75,13 @@ cluster_peakmo:
 cluster_peakmo_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} OPT="-lth Ncor 0.3"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} OPT="-lth Ncor 0.4"
+
+## Permuted PSSMS from Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+cluster_peakmo_neg_control:
+	@echo
+	@echo "Running matrix-clustering on permuted PSSMs from motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_NEG_CONTROL_PREFIX} OPT="-lth Ncor 0.4"
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
