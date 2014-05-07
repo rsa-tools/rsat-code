@@ -61,7 +61,7 @@ db_vs_itself:
 		-lth Ncor 0.4 \
 		-return matrix_name,matrix_id \
 		-return cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW,match_rank \
-		-return width,strand,offset,consensus,alignments_1ton \
+		-return width,strand,offset,consensus \
 		-sort Ncor \
 		-o ${DB_COMPA_RESULT}
 	@echo ${DB_COMPA_RESULT}_index.html
@@ -73,10 +73,28 @@ db_vs_itself_param:
 	@echo "DB_COMPA_DIR	${DB_COMPA_DIR}"
 	@echo "DB_COMPA_RESULT	${DB_COMPA_RESULT}"
 
+## Permute all matrices of a database (for negative control)
+DB_MATRICES_PERM=${DB_DIR}/${DB_PREFIX}_perm.tf
+permute_db:
+	@echo
+	@echo "Permuting columns for ${DB_PREFIX}"
+	permute-matrix -i ${DB_MATRICES} -in_format tf -out_format tf -o ${DB_MATRICES_PERM}
+	@echo "	${DB_MATRICES_PERM}"
 
+## RegulonDB
 REGULONDB_PREFIX=regulonDB_2012-05
 REGULONDB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
 REGULONDB_MATRICES=${REGULONDB_DIR}/${REGULONDB_PREFIX}.tf
 regulondb_vs_itself:
-	@${MAKE} db_vs_itself DB_PREFIX=regulonDB_2012-05 DB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
+	@${MAKE} db_vs_itself DB_PREFIX=${REGULONDB_PREFIX} DB_DIR=${REGULONDB_DIR}
+
+permute_regulondb:
+	@${MAKE} permute_db  DB_PREFIX=${REGULONDB_PREFIX} DB_DIR=${REGULONDB_DIR}
+
+## RegulonDB versus permuted regulonDB
+REGULONDB_PREFIX=regulonDB_2012-05
+REGULONDB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
+REGULONDB_MATRICES=${REGULONDB_DIR}/${REGULONDB_PREFIX}.tf
+regulondb_vs_permuted:
+	@${MAKE} db_vs_itself DB_PREFIX=${REGULONDB_PREFIX}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
 
