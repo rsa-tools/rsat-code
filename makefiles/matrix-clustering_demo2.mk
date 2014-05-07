@@ -13,6 +13,8 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo2.mk
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
+PEAKMO_NEG_CONTROL_PREFIX=peak-motifs_result_Chen_Oct4_permuted
+
 
 ## Choose a particular demo set
 DEMO_PREFIX=${PEAKMO_PREFIX}
@@ -61,7 +63,7 @@ CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
 		-lth Ncor ${MIN_NCOR} \
-		-export newick -d3_base link -hclust_method average \
+		-export newick -d3_base file -hclust_method average \
 		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
 CLUSTER_TIME_FILE=${CLUSTER_PREFIX}_time_log.txt
@@ -85,11 +87,19 @@ cluster_peakmo_threhsolds:
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0.3
 
+## Cluster permuted motifs resulting from peak-motifs (Chen Oct4 data set)
+cluster_peakmo_neg_control:
+	@echo
+	@echo "Running matrix-clustering on permuted motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_NEG_CONTROL_PREFIX} MIN_NCOR=0.3
+
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriales)"
 	${MAKE} cluster DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
+
+
 
 ## Cluster all motifs from RegulonDB
 RDB_CLUSTER_DIR=results/regulondDB_clusters
