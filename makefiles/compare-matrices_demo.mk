@@ -70,20 +70,52 @@ DB_COMPA_CMD=compare-matrices -v ${V} \
 		-return width,strand,offset,consensus \
 		-sort Ncor \
 		-o ${DB_COMPA_RESULT}
-TIME_FILE=time_${DB_PREFIX}_vs_itself.txt
-DB_COMPA_EDGE_NB=`grep -v '^;' ${DB_COMPA_RESULT}.tab | grep -v '^\#' | wc -l`
+#TIME_FILE=${DB_COMPA_DIR}/time_${DB_PREFIX}_vs_itself.txt
+TIME_FILE=time_measurements/time_${DB_PREFIX}_vs_itself.txt
 db_vs_itself:
 	@echo ""
 	@echo "Comparing DB with itself	${DB_PREFIX}"
 	@mkdir -p ${DB_COMPA_DIR}
-	(time ${DB_COMPA_CMD}) >& time_${DB_PREFIX}_vs_itself.txt
+	(time -p ${DB_COMPA_CMD}) >& ${TIME_FILE}
 	@echo "	${DB_COMPA_RESULT}_index.html"
 	@echo "	${TIME_FILE}"
-	@echo "${DB_PREFIX}_vs_itself	${DB_COMPA_EDGE_NB}	edges" > ${DB_PREFIX}_vs_itself_edges.txt
-	@echo ${DB_PREFIX}_vs_itself_edges.txt
+	@${MAKE} db_vs_itself_graph
+	@${MAKE} graph_stats
+
+STATS_FILE=${DB_COMPA_DIR}/${DB_PREFIX}_vs_itself_stats.tab
+DB_MATRIX_NB=`grep '^AC' ${DB_MATRICES} | wc -l | perl -pe 's|^\s+||'`
+DB_COMPA_EDGE_NB=`grep -v '^;' ${DB_COMPA_RESULT}.tab | grep -v '^\#' | wc -l | perl -pe 's|^\s+||'`
+DB_COMPA_TIME=`grep '^user' ${TIME_FILE} | perl -pe 's|^user\s+||'`
+graph_stats:
+	@echo
+	@echo "Collecting stats for ${DB_PREFIX}"
+	@echo "DB_PREFIX	${DB_PREFIX}" > ${STATS_FILE}
+	@echo "matrices  	${DB_MATRIX_NB}" >> ${STATS_FILE}
+	@echo "graph_edges  	${DB_COMPA_EDGE_NB}" >> ${STATS_FILE}
+	@echo "compa_time  	${DB_COMPA_TIME}" >> ${STATS_FILE}
+	@echo "	${STATS_FILE}"
 
 ## Generate a graph of motif similarity (nodes = motifs, edges = similarity between two motifs)
+WCOL=6
 db_vs_itself_graph:
+	@echo ""
+	@echo "Generating motif similarity graph"
+	perl -pe 's|\.\dnt\S+||g' ${DB_COMPA_RESULT}.tab \
+		| convert-graph  -from tab -to gml \
+		-scol 3 -tcol 4 -wcol ${WCOL} -undirected -ewidth -ecolors fire -min -1 -max 1 \
+		> ${DB_COMPA_RESULT}.gml
+	@echo "	${DB_COMPA_RESULT}.gml"
+	@perl -pe 's|\.\dnt\S+||g' ${DB_COMPA_RESULT}.tab \
+		| convert-graph -from tab -to dot \
+		-scol 3 -tcol 4 -wcol ${WCOL} -undirected -ewidth -ecolors fire -min ${MIN_NCOR} -max 1 \
+		| perl -pe 's|\.\dnt\S+||g' \
+		> ${DB_COMPA_RESULT}.dot
+	@echo "	${DB_COMPA_RESULT}.dot"
+	@neato -Tdot ${DB_COMPA_RESULT}.dot > ${DB_COMPA_RESULT}_neato.dot
+	@echo "	${DB_COMPA_RESULT}_neato.dot"
+	@neato -Tpdf ${DB_COMPA_RESULT}.dot > ${DB_COMPA_RESULT}.pdf
+	@echo "	${DB_COMPA_RESULT}.pdf"
+
 
 ## Display parameters for the matrix comparison
 db_vs_itself_param:
@@ -120,7 +152,7 @@ regulondb_vs_permuted:
 
 ## JASPAR core insects
 JASPAR_GROUPS=all insects vertebrates nematods fungi urochordates plants
-JASPAR_GROUP=insects
+JASPAR_GROUP=all
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
 JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
@@ -128,14 +160,18 @@ jaspar_one_group_vs_itself:
 	${MAKE} db_vs_itself DB_PREFIX=${JASPAR_PREFIX} DB_DIR=${JASPAR_DIR}
 
 permute_jaspar_one_group:
-	@${MAKE} permute_db  DB_PREFIX=${JASPAR_PREFIX} DB_DIR=${JASPAR_DIR}
+	@${MAKE} permute_db DB_PREFIX=${JASPAR_PREFIX} DB_DIR=${JASPAR_DIR}
 
 jaspar_one_group_vs_permuted:
 	@${MAKE} db_vs_itself DB_PREFIX=${JASPAR_PREFIX}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 
-jaspar:
+JASPAR_TASK=jaspar_one_group_vs_itself permute_jaspar_one_group jaspar_one_group_vs_permuted
+iterate_jaspar:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} JASPAR_GROUP=$$g jaspar_one_group_vs_itself; \
-		${MAKE} JASPAR_GROUP=$$g permute_jaspar_one_group; \
-		${MAKE} JASPAR_GROUP=$$g jaspar_one_group_vs_permuted; \
+		${MAKE} DB_PREFIX=jaspar_core_$${g}_2013-11 DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
+	done
+
+iterate_jaspar_perm:
+	@for g in ${JASPAR_GROUPS}; do \
+		${MAKE} DB_PREFIX=jaspar_core_$${g}_2013-11_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
 	done
