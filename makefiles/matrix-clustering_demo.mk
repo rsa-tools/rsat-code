@@ -6,6 +6,7 @@
 
 
 #include ${RSAT}/makefiles/util.mk
+## We include compare-matrices_demo.mk to get the parameters (matrix files)
 include ${RSAT}/makefiles/compare-matrices_demo.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
@@ -54,28 +55,35 @@ compa_footprint_discovery:
 ################################################################
 ## Run matrix-clusteringon one demo set (the particular cases will be
 ## specified below)
-CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters
-CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
-cluster:
-	@echo "Running matrix-clustering	${DEMO_PREFIX}"
-	matrix-clustering -v ${V} \
+MIN_NCOR=0.3
+CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters_Ncor${MIN_NCOR}
+CLUSTER_PREFIX=${CLUSTER_DIR}/${DEMO_PREFIX}_clustering
+CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
+		-lth Ncor ${MIN_NCOR} \
 		-export newick -d3_base file -hclust_method average \
 		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
+CLUSTER_TIME_FILE=${CLUSTER_PREFIX}_time_log.txt
+cluster:
+	@echo
+	@echo "Running matrix-clustering	${DEMO_PREFIX}"
+	@echo "	verbosity +time in file	${CLUSTER_TIME}"
+	${CLUSTER_CMD}
+#	(time ${CLUSTER_CMD}) >& ${CLUSTER_TIME_FILE}
 	@echo "		${CLUSTER_PREFIX}_index.html"
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
-cluster_peakmo:
+cluster_peakmo_no_threshold:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX}
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} OPT="-lth Ncor 0.3"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0.3
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
@@ -91,5 +99,8 @@ RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES}
-#	matrix-clustering -v ${V} -i data/RDB_PSSMs.tf -format transfac -o ${RDB_CLUSTERS}
-#	@echo ${RDB_CLUSTERS}
+
+
+cluster_jaspar_one_group:
+	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
+	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES}
