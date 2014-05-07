@@ -39,7 +39,7 @@ peakmo_vs_jaspar:
 		-return matrix_name,matrix_id \
 		-return cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW,match_rank \
 		-return width,strand,offset,consensus,alignments_1ton \
-		-sort Ncor \
+		-sort Ncor ${OPT} \
 		-o ${PEAKMO_VS_JASPAR}
 	@echo ${PEAKMO_VS_JASPAR}
 
@@ -68,7 +68,7 @@ DB_COMPA_CMD=compare-matrices -v ${V} \
 		-return matrix_name,matrix_id \
 		-return cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW,match_rank \
 		-return width,strand,offset,consensus \
-		-sort Ncor \
+		-sort Ncor ${OPT} \
 		-o ${DB_COMPA_RESULT}
 #TIME_FILE=${DB_COMPA_DIR}/time_${DB_PREFIX}_vs_itself.txt
 TIME_FILE=time_measurements/time_${DB_PREFIX}_vs_itself.txt
@@ -146,13 +146,13 @@ regulondb_vs_itself:
 permute_regulondb:
 	@${MAKE} permute_db  DB_PREFIX=${REGULONDB_PREFIX} DB_DIR=${REGULONDB_DIR}
 
-regulondb_vs_permuted:
+permuted_regulondb_vs_itself:
 	@${MAKE} db_vs_itself DB_PREFIX=${REGULONDB_PREFIX}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
 
 
 ## JASPAR core insects
-JASPAR_GROUPS=all insects vertebrates nematods fungi urochordates plants
-JASPAR_GROUP=all
+JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
+JASPAR_GROUP=insects
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
 JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
@@ -162,10 +162,10 @@ jaspar_one_group_vs_itself:
 permute_jaspar_one_group:
 	@${MAKE} permute_db DB_PREFIX=${JASPAR_PREFIX} DB_DIR=${JASPAR_DIR}
 
-jaspar_one_group_vs_permuted:
+permuted_jaspar_one_group_vs_itself:
 	@${MAKE} db_vs_itself DB_PREFIX=${JASPAR_PREFIX}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 
-JASPAR_TASK=jaspar_one_group_vs_itself permute_jaspar_one_group jaspar_one_group_vs_permuted
+JASPAR_TASK=jaspar_one_group_vs_itself permute_jaspar_one_group permuted_jaspar_one_group_vs_itself
 iterate_jaspar:
 	@for g in ${JASPAR_GROUPS}; do \
 		${MAKE} DB_PREFIX=jaspar_core_$${g}_2013-11 DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
