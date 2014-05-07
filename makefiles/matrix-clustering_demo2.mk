@@ -57,11 +57,11 @@ compa_footprint_discovery:
 ## specified below)
 MIN_NCOR=0.3
 CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters_Ncor${MIN_NCOR}
-CLUSTER_PREFIX=${CLUSTER_DIR}/${DEMO_PREFIX}_clustering
+CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
 		-lth Ncor ${MIN_NCOR} \
-		-export newick -d3_base file -hclust_method average \
+		-export newick -d3_base link -hclust_method average \
 		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
 CLUSTER_TIME_FILE=${CLUSTER_PREFIX}_time_log.txt
@@ -77,7 +77,7 @@ cluster:
 cluster_peakmo_no_threshold:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_threhsolds:
