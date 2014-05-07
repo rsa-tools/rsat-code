@@ -152,7 +152,7 @@ permuted_regulondb_vs_itself:
 
 ## JASPAR core insects
 JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
-JASPAR_GROUP=insects
+JASPAR_GROUP=vertebrates
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
 JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
