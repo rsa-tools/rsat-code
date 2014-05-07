@@ -34,7 +34,7 @@ compa:
 	compare-matrices  -v ${V} \
 		-file ${MATRIX_FILE} -format tf \
 		-lth w 1 -lth cor -1 -lth Ncor -1 \
-		-return Ncor,strand,offset,width,consensus,alignments_1ton \
+		-return Ncor,strand,offset,width,consensus \
 		-o ${COMPA_FILE}
 	@echo "	${COMPA_FILE}"
 
