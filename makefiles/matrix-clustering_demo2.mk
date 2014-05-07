@@ -8,7 +8,7 @@
 #include ${RSAT}/makefiles/util.mk
 ## We include compare-matrices_demo.mk to get the parameters (matrix files)
 include ${RSAT}/makefiles/compare-matrices_demo.mk
-MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
+MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo2.mk
 
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
