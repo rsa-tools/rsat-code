@@ -5,7 +5,8 @@
 ## Date: Jan-April 2014
 
 
-include ${RSAT}/makefiles/util.mk
+#include ${RSAT}/makefiles/util.mk
+include ${RSAT}/makefiles/compare-matrices_demo.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
 ## Define a set of demo files
