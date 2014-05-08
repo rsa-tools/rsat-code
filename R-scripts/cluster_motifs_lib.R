@@ -91,6 +91,10 @@ check.param <- function() {
       }
     }
   }
+
+  ## Set the labels
+  labels <<- unique(labels)
+  print(paste("### ", labels, " ###"))
 }
 
 ################################################################
