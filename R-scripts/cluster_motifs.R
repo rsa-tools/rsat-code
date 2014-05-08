@@ -192,27 +192,42 @@ forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 
 ## Reset the labels
 for(nb in 1:length(tree$labels)){
-  tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], nb, sep = " ")
+
+  ## Add the aligned consensus
+  tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], sep = "   ")
+  
+  ## Add the new labels
+  for(label in labels){
+    if(label == "consensus"){
+      next
+    } else if(label == "id"){
+      tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
+    } else if(label == "number"){
+      tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
+    } else if(label == "strand"){
+      tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
+    }
+  }
 }
 
 ## Colour the branches
 tree.dendro <- as.dendrogram(tree)
 tree.dendro <- color_clusters(tree.dendro, k = forest.nb, col = rainbow, groupLabels = TRUE)
 
-# col = c("black", "red", "blue", "green", "purple", "yellow", "turquoise1", "orange", "deeppink")
-
 ## Get the aligment width, to calculate the limits of the plot
-alignment.width <- sapply(motifs.info, function(X){
-  nchar(X[["consensus"]])
+alignment.width <- sapply(tree$labels, function(X){
+  nchar(X)
 })
 alignment.width <- max(alignment.width)
-mar4 <- alignment.width + 5 - 10
+mar4 <- alignment.width - 18
 
 ## Export the tree with the aligment
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
-  w.inches <- 10 ## width in inches
-  h.inches <- 7 ## height in inches
+  #w.inches <- 10 ## width in inches
+  #h.inches <- 7 ## height in inches
+  w.inches <- 15 ## width in inches
+  h.inches <- 8 ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
   verbose(paste("Exporting hclust tree drawing", tree.drawing.file), 1)
@@ -223,7 +238,7 @@ for (plot.format in c("pdf", "png")) {
   }
 
   par(mar=c(3,2,1,mar4),family="mono")
-  plot(tree.dendro, horiz=TRUE)
+  plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(labels, collapse = ","), sep = " "))
   dev.off()
 }
 
@@ -254,18 +269,15 @@ if(forest.nb > 1){
     ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
   }
 
-  
-  rm(compare.matrices.table)
-  rm(description.table)
-  rm(tree)
-  rm(motifs.info)
-  rm(internal.nodes.attributes)
-  
-  
   for(nb in 1:length(table(forest))){
 
-    #verbose(paste("Exploring the forest generated: ", nb ), 1)
-    
+    cluster.nb <<- nb 
+    verbose(paste("Exploring the cluster generated: ", nb ), 1)
+    rm(compare.matrices.table)
+    rm(description.table)
+    rm(tree)
+    rm(motifs.info)
+    rm(internal.nodes.attributes)
     internal.nodes.attributes <<- list()
     
     ids <- ids.forest[[paste("forest_", nb, sep = "")]]
@@ -354,29 +366,54 @@ if(forest.nb > 1){
     motifs.info <- fill.downstream.forest(motifs.info)
     
     ## Reset the labels
-    for(x in 1:length(tree$labels)){
-      tree$labels[x] <- paste(motifs.info[[get.id(x)]][["consensus"]], x, sep = " ")
+    for(nb in 1:length(tree$labels)){
+
+      ## Add the aligned consensus
+      tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], sep = "   ")
+      
+      ## Add the new labels
+      for(label in labels){
+        if(label == "consensus"){
+          next
+        } else if(label == "id"){
+          tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
+        } else if(label == "number"){
+          tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
+        } else if(label == "strand"){
+          tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
+        }
+      }
     }
     
+    ## for(x in 1:length(tree$labels)){
+    ##   tree$labels[x] <- paste(motifs.info[[get.id(x)]][["consensus"]], x, sep = " ")
+    ## }
+
+    
     ## Get the aligment width, to calculate the limits of the plot
-    alignment.width <- nchar(motifs.info[[1]][["consensus"]])
-    mar4 <- alignment.width + 5 - 10
+    alignment.width <- sapply(tree$labels, function(X){
+      nchar(X)
+    })
+    alignment.width <- max(alignment.width)
+    mar4 <- alignment.width - 20
 
     ## Export the tree with the aligment
     plot.format <- "pdf" ## Default for testing inside the loop
     for (plot.format in c("pdf", "png")) {
-      w.inches <- 10 ## width in inches
+      ## w.inches <- 10 ## width in inches
+      ## h.inches <- 7 ## height in inches
+      w.inches <- 15 ## width in inches
       h.inches <- 7 ## height in inches
       resol <- 72 ## Screen resolution
-      tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", nb, ".", plot.format)
+      tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
       if (plot.format == "pdf") {
         pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
       } else if (plot.format == "png") {
         png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
       }
       ## dev.new(width=10, height=7)
-      par(mar=c(3,2,1,mar4),family="mono")
-      plot(as.dendrogram(tree), horiz=TRUE)
+      par(mar=c(3,2,2,mar4),family="mono")
+      plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
       dev.off()
     }
     
