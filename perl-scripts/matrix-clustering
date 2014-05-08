@@ -196,6 +196,21 @@ package main;
   }
 
 
+  ## Consensuses alignment labels
+  local @supported_consensuses_alignment_labels = qw(
+			         consensus
+                                 id
+                                 strand
+                                 number
+			     );
+  local $supported_consensuses_alignment_labels = join(",", @supported_consensuses_alignment_labels);
+  local %supported_consensuses_alignment_labels = ();
+  foreach my $lab (@supported_consensuses_alignment_labels) {
+    $supported_consensuses_alignment_labels{lc($lab)} = 1;
+  }
+  local @cons_labels = @supported_consensuses_alignment_labels;
+
+
   ## Matrices
   local @matrices = ();
   local @temp = ();
@@ -617,6 +632,36 @@ B<Supported methods>
 	&RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
       }
 
+
+=pod
+
+=item	B<-consensus_labels>
+
+Option to select the labels displayed in the consensus
+alignment picture
+
+Default: consensus, id, strand
+
+B<Supported labels>
+    
+ (consensus, id, strand, number)
+
+=cut
+
+    } elsif ($arg eq "-consensus_labels") {
+
+	$cons_labels = shift(@arguments);
+	my @new_cons_labels = split (",", $cons_labels);
+	foreach $field (@new_cons_labels) {
+	    if ($supported_consensuses_alignment_labels{$field}) {
+		$supported_consensuses_alignment_labels{$field} = 1;
+	    } else {
+		&RSAT::error::FatalError(join("\t", $field, "Invalid consensus alignment label. Supported:", $supported_consensuses_alignment_labels));
+	    }
+	}
+	@cons_labels =  @new_cons_labels;	
+
+	
 =pod
 
 =item	B<-lth param lower_threshold>
@@ -797,9 +842,19 @@ sub Hclustering {
 
     my $cluster_motifs_script  = $ENV{RSAT}."/R-scripts/cluster_motifs.R";
     &RSAT::error::FatalError("Cannot read cluster motifs script", $cluster_motifs_script) unless (-r $cluster_motifs_script);
+    
+    ## Create the string with the labels
+    ## It will be passed to R as command-line argument
+    my @temp_consensus_fields = @cons_labels;
+    unshift(@temp_consensus_fields, "consensus");
+    foreach (@temp_consensus_fields){
+	$_ = "'".$_."'";
+    }
+    my $arg_labels = "c(";
+    my $join_labels = join(",", @temp_consensus_fields);
+    $arg_labels .= $join_labels." )"; 
 
-
-
+       
 #  my $pos_drawing_offset = -($pos_interval-1)/2;
     my $pos_drawing_offset = 0;
     my  $cluster_motifs_cmd = "cat ".$cluster_motifs_script;
@@ -811,6 +866,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
+    $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
