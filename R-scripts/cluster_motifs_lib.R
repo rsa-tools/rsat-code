@@ -988,9 +988,9 @@ add.empty.columns <- function(id){
   strand <- motifs.info[[id]][["strand"]]
 
   if(strand == "D"){
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
   } else{
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -rc -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
   }
 }
 
