@@ -338,7 +338,13 @@ sub _readFromTRANSFACFile {
   my $command = "";
   my $ncol = 0;
   my $transfac_consensus = "";
-  my $short_file_name = &RSAT::util::ShortFileName($file);
+
+  my $short_file_name;
+  if ($file) {
+    $short_file_name = &RSAT::util::ShortFileName($file);
+  } else {
+    $short_file_name = "input";
+  }
 
   my %prior = ();
   my $l = 0;
