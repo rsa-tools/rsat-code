@@ -812,6 +812,8 @@ sub CompareMatrices {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
 
+  ## Creates the files with single matrices' information (Temporal files)
+  %alignment_info = &Create_single_matrix_files();
 }
 
 
@@ -1276,10 +1278,6 @@ sub Add_empty_columns_to_logos(){
 
     my @split_line = ();
 
-    ## Creates the files with single matrices' information
-    %alignment_info = &Create_single_matrix_files();
-
-
     ## Open the alignment_table daata
     open(ALIGNMENT_TABLE, $main::outfile{alignment_table}) || &RSAT::error::FatalError( "Cannot open ALIGNMENT_TABLE file", $main::outfile{alignment_table});
 
@@ -1299,12 +1297,10 @@ sub Add_empty_columns_to_logos(){
     }
     close(ALIGNMENT_TABLE);
 
-
     # foreach my $id (keys %alignment_info){
     #  	print "\n### ".$id."\t".$alignment_info{$id}{file_name}."\t".$alignment_info{$id}{strand}."\t".$alignment_info{$id}{offset_left}."\t".$alignment_info{$id}{offset_right}."\n";
     # 	<STDIN>;
-    # }
-   
+    # }  
  
     ## Create the folder to store the aligned logos
     system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
@@ -1338,11 +1334,11 @@ sub Add_empty_columns_to_logos(){
 }
 
 
-###################################
-## Print the matrices in separated
-## files that will be used to add
-## the offset of empty columns in
-## convert matrices 
+#################################################
+## Print the matrices in separated files. They 
+## will be used to add empty columns with 
+## convert-matrices and to create the merged
+## consensus
 sub Create_single_matrix_files(){
 
     my @ids = ();
@@ -1353,7 +1349,7 @@ sub Create_single_matrix_files(){
     system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
    
     ## Get the ids of the matrices
-    chomp(@ids = `more $main::outfile{alignment_table} | grep -v '#' | cut -f1`);
+    chomp(@ids = `more $main::outfile{matrix_descriptions} | grep -v '#' | cut -f2`);
 
     ## Get the file name of each matrix and stores it in the hash
     foreach my $id (@ids){
