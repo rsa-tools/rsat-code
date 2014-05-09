@@ -86,6 +86,10 @@ depending on the context of the analysis.
 
 Calculate the consensus and use it as name for the merged matrix.
 
+=item B<decimals>
+
+JvH should Fix a bug with the decimals: currently, they only apply to frequencies, not to counts.
+
 =back
 
 =cut
@@ -120,7 +124,7 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  $operator = "mean";
+  $operator = "sum";
 
   ## input formats
   local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
@@ -209,6 +213,11 @@ package main;
   if ($operator eq "diff") {
     &RSAT::error::FatalError("Matrix difference is not supported yet, please contact Jaime Castro to upgrade the program.");
   } else { 
+    my $divider = 1;
+    if ($operator eq "mean") {
+      $divider *= $nb_matrices;
+    }
+
     foreach my $matrix (@matrices) {
       ## count matrix
       my @counts = $matrix->getMatrix();
@@ -218,7 +227,7 @@ package main;
       for my $c (0..($ncol-1)) {
 	my $col_sum = 0;
 	for my $r (0..($nrow-1)) {
-	  $merged_counts[$c][$r] += $counts[$c][$r];
+	  $merged_counts[$c][$r] += $counts[$c][$r]/$divider;
 	}
       }
     }
@@ -228,8 +237,7 @@ package main;
   
   ################################################################
   ## Output
-  print $out $merged_matrix->toString(type=>"counts",
-				      format=>$output_format);
+  print $out $merged_matrix->toString(type=>"counts",format=>$output_format, "decimals"=>2);
 
 
   ################################################################
