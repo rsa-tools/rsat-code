@@ -15,7 +15,6 @@
 ## Load required libraries
 library("RJSONIO")
 library("ctc")
-#library("reshape")
 library("dendroextras")
 
 ## Redefine the main directory (this should be adapted to local configuration)
@@ -178,6 +177,9 @@ for (merge.level in 1:nrow(tree$merge)) {
 
   
   ## Create the files with the aligned matrices
+  single.mat.files <<- NULL
+  merge.consensus.info <<- NULL
+  verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
   aligned.matrices.to.merge(merge.level)
 }
 
