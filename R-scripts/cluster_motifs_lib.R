@@ -94,7 +94,7 @@ check.param <- function() {
 
   ## Set the labels
   labels <<- unique(labels)
-  print(paste("### ", labels, " ###"))
+  print(paste("### ", out.prefix, " ###"))
 }
 
 ################################################################
@@ -978,6 +978,74 @@ pairs.satisfy.uth <- function(){
   }
   return(length(Reduce(intersect, values.list)))
 }
+
+
+########################################
+## Call the program convert-matrix to
+## add empty columns to the matrices  
+add.empty.columns <- function(id){
+
+  strand <- motifs.info[[id]][["strand"]]
+
+  if(strand == "D"){
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+  } else{
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -rc -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+  }
+}
+
+#####################################
+## Generate the aligned matrices
+## for each merge level of the tree
+aligned.matrices.to.merge <- function(level){
+
+  ## Create the folder with the merged consensuses
+  system(paste("mkdir ", out.prefix, "_merged_consensuses/merge_level_", merge.level, " -p", sep = ""))
+
+  ids <- get.id(merge.levels.leaves[[level]])
+  
+  ## Add the spacer to the consensuses
+  merge.consensus.info <<- consensus.internal.merge(motifs.info, ids)
+
+  ## Get the single matrices file names
+  single.mat.files <<- sapply(ids, function(X){
+    system(paste("ls ", out.prefix, "* | grep ", X, "| grep -v 'merged' | grep '.tf'", sep = ""), intern = TRUE)
+  })
+  single.mat.files <<- as.list(single.mat.files)
+
+  ## For each level, add the empty columns to the
+  ## corresponding matrices
+  sapply(ids, add.empty.columns)
+}
+
+
+###################################################
+## Set the sizes of all consensuses to the largest
+## one, adding "-" at the end of the consensuses
+consensus.internal.merge <- function(motifs.list, ids){
+
+  ## Temporal list with ids info
+  temporal <- list()
+  for(id in ids){
+    temporal[[id]] <- motifs.list[[id]]
+  }
+
+  ## Get the highest length among the consensuses
+  width <- sapply(temporal, function(X){
+    consensuses <- sapply(X[["consensus"]], nchar)
+  })
+  max.width <- unique(max(width))
+
+  ## Fill the spaces
+  for(id in ids){
+    spacer.length <-  max.width - nchar(temporal[[id]][["consensus"]])
+    spacer <- paste(rep("-", times = spacer.length), collapse = "")
+    temporal[[id]][["consensus"]] <- paste(temporal[[id]][["consensus"]], spacer, sep = "")
+    temporal[[id]][["offset_down"]] <- spacer.length
+  }
+  return(temporal)
+}
+
 
 
 ################
