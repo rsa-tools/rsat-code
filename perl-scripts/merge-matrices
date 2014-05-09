@@ -1,0 +1,423 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: merge-matrices,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+merge-matrices
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+This programs takes as input a list of position-specific scoring
+matrices, and merges them by applying a user-selected operator on the
+aligned cell of all matrices.
+
+Supported operators (option -calc): sum, mean, diff.
+
+The diff operator returns the result of the subtraction between the
+first and the second matrices (if the input file contains more than
+two matrices, a warning message is issued).
+
+=back
+
+=head1 AUTHORS
+
+Jaime Castro <jcastro@lcg.unam.mx>
+
+Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
+
+=head1 CATEGORY
+
+=over
+
+=item PSSM
+
+=back
+
+=head1 USAGE
+
+merge-matrices [-v #]  [-i inputfile] [-in_format input_format] \
+  [-o outputfile] [-out_format output_format]
+  [-calc sum|mean|diff]
+
+=head1 INPUT/OUTPUT FORMAT
+
+I<merge-matrices> supports the same input and output formats as
+I<convert-matrix>.
+
+=head2 Constraint on matrix widths
+
+The merging operations assume that all input matrices have the same
+width. 
+
+=head1 SEE ALSO
+
+=head2 convert-matrix
+
+=head2 matrix-clustering
+
+The program I<matrix-clustering> uses I<merge-matrices> to generate
+the merged matrices and consensuses at each intermediate branch of the
+matrix tree.
+
+=head1 WISH LIST
+
+=over
+
+=item B<-merged_attr key value>
+
+Impose the value of specific attribtues of the merged matrix. 
+
+This option is useful to specify meaningful identifiers or names
+depending on the context of the analysis.
+
+=item B<-consensus_name>
+
+Calculate the consensus and use it as name for the merged matrix.
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+use RSAT::matrix;
+use RSAT::MatrixReader;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  $operator = "mean";
+
+  ## input formats
+  local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  local $supported_input_formats = join ",", sort keys %supported_input_format;
+
+  ## output formats
+  local %supported_output_format = %RSAT::matrix::supported_output_format;
+  local $supported_output_formats = join ",", sort keys %supported_output_format;
+
+  ## initialize some attributes (can be over-written with the option -merged_attr)
+  local %merged_attributes = ();
+  $merged_attributes{"id"} = "merged";
+  $merged_attributes{"AC"} = "merged";
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Two redundant attribtue names, maintained for compatibility
+  ## between different matrix formats
+  unless (defined($merged_attributes{"accession"})) {
+    $merged_attributes{"accession"} =  $merged_attributes{"AC"};
+  }
+  unless (defined($merged_attributes{"identifier"})) {
+    $merged_attributes{"identifier"} =  $merged_attributes{"id"};
+  }
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Read input
+  my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+
+
+  ## Check the number of input matrices
+  local $nb_matrices = scalar(@matrices);
+  if ($nb_matrices < 2) {
+    &RSAT::error::FatalError("Input file must contain at least two matrices.");
+  } elsif ($main::verbose >= 2) {
+    &RSAT::message::Info("Input file contains", $nb_matrices, "matrices");
+  }
+
+  ## Check that all input matrices have the same width
+
+  ## First matrix width
+  $matrix_width = $matrices[0]->ncol();
+  @alphabet = $matrices[0]->get_attribute("alphabet");
+  $alphabet_size = $matrices[0]->nrow();
+  if ($main::verbose >= 2) {
+    &RSAT::message::Info("Width of the first matrix", $matrix_width);
+  }
+
+  ## Check that all subsequent matrices have the same with as the first one
+  for my $i (1..$#matrices) {
+    my $matrix = $matrices[$i]; 
+    my $width = $matrix->ncol();
+    unless ($width == $matrix_width) {
+      my $id = $matrix->get_attribute("id");
+      &RSAT::error::FatalError("Matrix", $id, "contains", $width, 
+			       "columns. All matrices should have the same width as the first matrix (".$matrix_width.").");
+    }
+  }
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+  my $merged_matrix = new RSAT::matrix();
+  foreach my $key (keys %merged_attributes) {
+    my $value = $merged_attributes{$key};
+    $merged_matrix->force_attribute($key, $value);
+  }
+
+  $merged_matrix->setAlphabet_lc(@alphabet);
+
+  @merged_counts = ();
+  if ($operator eq "diff") {
+    &RSAT::error::FatalError("Matrix difference is not supported yet, please contact Jaime Castro to upgrade the program.");
+  } else { 
+    foreach my $matrix (@matrices) {
+      ## count matrix
+      my @counts = $matrix->getMatrix();
+      my $ncol = $matrix->ncol();
+      my $nrow = $matrix->nrow();
+      
+      for my $c (0..($ncol-1)) {
+	my $col_sum = 0;
+	for my $r (0..($nrow-1)) {
+	  $merged_counts[$c][$r] += $counts[$c][$r];
+	}
+      }
+    }
+  }
+  $merged_matrix->setMatrix($alphabet_size, $matrix_width, @merged_counts);
+  
+  
+  ################################################################
+  ## Output
+  print $out $merged_matrix->toString(type=>"counts",
+				      format=>$output_format);
+
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-in_format input_formaat>
+
+Input format. See I<convert-matrix> for a list of supported input
+formats.
+
+=cut
+
+    } elsif ($arg eq "-in_format") {
+      $input_format = lc(shift(@arguments));
+      unless ($supported_input_format{$input_format}) {
+	&RSAT::error::FatalError($input_format, "Invalid input format for matrix", "Supported: ".$supported_input_formats);
+      }
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+
+=pod
+
+=item B<-out_format output_formaat>
+
+Output format. See I<convert-matrix> for a list of supportd output formats.
+
+=cut
+
+    } elsif ($arg eq "-out_format") {
+      $output_format = lc(shift(@arguments));
+      unless ($supported_output_format{$output_format}) {
+	&RSAT::error::FatalError("$output_format\tInvalid output format for matrix\tSupported: $supported_output_formats");
+      }
+
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; merge-matrices ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  printf $out "%-22s\t%s\n", "; Input format", $input_format;
+
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  printf $out "%-22s\t%s\n", "; Output format", $output_format;
+
+  printf $out "; %-22s\t%s\n", "Input matrices", $main::nb_matrices;
+  printf $out "; %-22s\t%s\n", "Matrix width", $main::matrix_width;
+}
+
+
+__END__
