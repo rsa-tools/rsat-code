@@ -15,7 +15,7 @@
 ## Load required libraries
 library("RJSONIO")
 library("ctc")
-library("reshape")
+#library("reshape")
 library("dendroextras")
 
 ## Redefine the main directory (this should be adapted to local configuration)
@@ -175,6 +175,10 @@ for (merge.level in 1:nrow(tree$merge)) {
   if ((child1 > 0) && (child2 > 0)) {
     align.clusters(child1, child2)
   }
+
+  
+  ## Create the files with the aligned matrices
+  aligned.matrices.to.merge(merge.level)
 }
 
 ## Split the tree into forest
