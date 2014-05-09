@@ -1303,7 +1303,7 @@ sub Add_empty_columns_to_logos(){
     # }  
  
     ## Create the folder to store the aligned logos
-    system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
+    system("mkdir -p ".$main::outfile{prefix}."_aligned_logos");
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
