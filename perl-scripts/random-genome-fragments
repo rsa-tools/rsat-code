@@ -108,7 +108,7 @@ package main;
   our $die_on_error = 1;
   our $batchmode = 0;
 
-  our $out_format = "ft";
+  our $out_format = "bed";
   our $rm = 0;
   our @lengths =();
   our @contig_names = ();
@@ -117,6 +117,7 @@ package main;
   our $null = "";
   our $assembly_version = "";
 
+  our $keep_names = 0; ## Keep same names for output fragments as in template file
 
   ## Return fields
   our %supported_return_fields = (
@@ -145,6 +146,13 @@ package main;
 #    ## Verbosity is not compatible with bed format
 #    $main::verbose = 0;
 #  }
+
+  ## The option -keep_names requires to specify a template file
+  if ($keep_names) {
+      unless ($main::infile{template_file}) {
+	  &RSAT::error::FatalError("The option -keep_names requires to specify a template file (option -i)");
+      }
+  }
 
   ################################################################
   ## File with template sequences
@@ -177,23 +185,25 @@ package main;
       next if ($line =~ /^--/);
       next if ($line =~ /^#/);
       next unless ($line =~ /\S/);
-      my @fields = split ("\t",$line);
-      my $length = $fields[1];
+      my ($name, $length) = split ("\t",$line);
       if (&IsNatural($length)) {
-	push @lengths, $length;
+	  push @names, $name;
+	  push @lengths, $length;
       }
     }
     close $len_handle;
 
     ## Repeat length list if requested
     if ($repetitions > 1) {
+      my @rep_names = @names;
       my @rep_lengths = @lengths;
       for my $r (1..$repetitions) {
+	push @rep_names, @names;
 	push @rep_lengths, @lengths;
       }
+      @names = @rep_names;
       @lengths = @rep_lengths;
     }
-
     $main::nb_fragments = scalar(@lengths);
   } else {
 
@@ -351,21 +361,15 @@ package main;
   for (my $i=1; $i<= $main::nb_fragments; $i++) {
 
     ## 1- get a random contig
-#    my $rand_contig = int(rand ($#main::contig_names+1));
     my $rand_contig = $rand_contigs[$i-1];
     my $rand_contig_name = $main::contig_names[$rand_contig];
 
     ## 2 - get contig length, and calculate last possible position to have
     ## a fragment of the desired length
     my $contig_length = $contig_len{$rand_contig_name};
-#    if ($main::organism_name) {
-#      $contig_length = $main::contigs{$rand_contig_name}->get_length();
-#    } elsif ($main::organism_ens) {
-#      $contig_length = $main::ens_chroms{$rand_contig_name}->length();
-#    }
+
     &RSAT::message::Info("Random chrom", $rand_contig, $rand_contig_name, "length",$contig_length)
       if ($main::verbose >= 4);
-
 
     my $rand_fragment_size;
     if ($main::fragment_len) {
@@ -408,7 +412,12 @@ package main;
     my @strands = ("D","R");
     my $rand_strand = $strands[rand @strands];
 
-    my $seq_id = "rand_".$i;
+    my $seq_id;
+    if ($main::keep_names) {
+	$seq_id = $names[$i-1];
+    } else {
+	$seq_id = "rand_".$i;
+    }
 
     &RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
       if ($main::verbose >= 4);
@@ -424,6 +433,7 @@ package main;
 			  "$rand_start:$rand_end:$rand_strand"
 			 );
       &PrintNextSequence($main::out, "fasta",0, $current_seq, $seq_id, @comments);
+
     } else {
       ################################################################
       ## print the coordinates
@@ -612,21 +622,24 @@ from 0-based into 1-based)
       } elsif ($arg eq "-coord_format") {
 	$main::out_format = shift(@arguments);
 
-	### repeat_masked
 
 =pod
 
-=item	B<-rm>
+=item B<-keep_names>
 
-Will use the version of genome with repeat masked
+Keep the same names as in the template file. This option obviously
+applies only when a template file is provided.
 
+By default, the name of output genome fragments is "rand_N", where N
+is the fragment number. In some cases, one would like to preserve the
+original feature name in order to distinguish groups of features
+(e.g. binding sites for different transcription factors).  
 
 =cut
-      } elsif ($arg eq "-rm") {
-	$main::rm = 1;
 
 
-	### organism
+     } elsif ($arg eq "-keep_names") {
+       $main::keep_names = 1;
 
 =pod
 
@@ -665,6 +678,18 @@ Uses a local EnsEMBL server. (Advanced users)
       } elsif ($arg eq "-ensemblhost") {
 	$main::local_server = shift(@arguments);
 
+
+
+=pod
+
+=item	B<-rm>
+
+Will use the version of genome with repeat masked
+
+
+=cut
+      } elsif ($arg eq "-rm") {
+	$main::rm = 1;
 
 
 	### nb of fragments
