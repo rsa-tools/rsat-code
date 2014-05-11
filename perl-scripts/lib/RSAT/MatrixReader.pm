@@ -210,16 +210,18 @@ sub readFromFile {
       ## Suppress invalid characters from the matrix ID
       my $id = $matrix->get_attribute("id");
       if ($id) {
-	$id =~ s/[\(\)\/]/_/g;
+#	$id =~ s/[\(\)\/]/_/g;
+	$id = &clean_id($id);
 	$matrix->force_attribute("id", $id);
       }
 
       ## Suppress invalid characters from the matrix accession, and ensure that matrices always have an accession
       my $ac = $matrix->get_attribute("accession");
       if ($ac) {
-	  $ac =~ s/[\(\)\/]/_/g;
+#	  $ac =~ s/[\(\)\/]/_/g;
+	$ac = &clean_id($ac);
       } else {
-	  $ac = $id;
+	  $ac = &clean_id($id);
       }
       $matrix->force_attribute("accession", $ac);
       $matrix->force_attribute("AC", $ac);
@@ -244,6 +246,17 @@ sub readFromFile {
     return @matrices;
 }
 
+
+=pod
+
+Suppress problematic characters from the ID (parentheses, spaces, pipe, ...)
+
+=cut
+sub clean_id {
+  my ($id) = @_;
+  $id =~ s/[\(\)\/\\\s\|]/_/g;
+  return $id;
+}
 
 =pod
 
@@ -365,8 +378,8 @@ sub _readFromTRANSFACFile {
     } elsif (/^XX/) {
 
       ## Start a new matrix (one TRANSFAC file contains several matrices)
-    } elsif (/^AC\s*(\S*)/) {
-      my $accession = $1;
+    } elsif (/^AC\s*(.*)/) {
+      my $accession = &clean_id($1);
       $current_matrix_nb++;
       $transfac_consensus = "";
       $matrix = new RSAT::matrix();
@@ -534,6 +547,8 @@ sub _readFromTRANSFACFile {
   }
   close $in if ($file);
 
+  &RSAT::message::Debug("&RSAT::MatrixReader::readFromTRANSFAC()", "Finished reading TRANSFAC matrices") 
+      if ($main::verbose >= 5);
 
   return @matrices;
 
@@ -615,8 +630,7 @@ sub _readFromSTAMPFile {
       ## one is maintained for backwards compatibility.
 
       my $field = $1;
-      my $accession = $2; ## Name and description are both acceptable
-			  ## as AC.
+      my $accession = &clean_id($2); ## Name and description are both acceptable as AC
 
       ## STAMP uses the description field as accession number
       $comment_nb = 0;
@@ -766,7 +780,7 @@ sub _readFromInfoGibbsFile {
     my $current_matrix_nb = 1;
     #    my $id = $file."_".$current_matrix_nb;
     my $id_prefix = $file || "matrix";
-    my $id = $id_prefix."_".$current_matrix_nb;
+    my $id = &clean_id($id_prefix."_".$current_matrix_nb);
     $matrix->set_attribute("AC", $id);
     $matrix->set_attribute("id", $id);
     my $l = 0;
@@ -857,7 +871,7 @@ sub _readFromInfoGibbsFile {
 	$matrix->set_parameter("program", "tab");
 	push @matrices, $matrix;
 	$current_matrix_nb++;
-	$id = $id_prefix."_".$current_matrix_nb;
+	$id = &clean_id($id_prefix."_".$current_matrix_nb);
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
 	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
@@ -997,7 +1011,7 @@ sub _readFromOldInfoGibbsFile {
 
       ## Start a new matrix (an InfoGibbs file contains several matrices)
     } elsif (/^AC\s+(\S+)/) {
-      my $accession = $1;
+      my $accession = &clean_id($1);
       &RSAT::message::Info("New matrix", $accession) if ($main::verbose >= 2);
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
@@ -1749,7 +1763,7 @@ sub _readFromTabFile {
     my $no_path_file=$file;
     $no_path_file=~s/.+\/+//;
     my $id_prefix = $no_path_file|| "matrix";
-    my $id = $id_prefix."_".$current_matrix_nb;
+    my $id = &clean_id($id_prefix."_".$current_matrix_nb);
     $matrix->set_attribute("AC", $id);
     $matrix->set_attribute("id", $id);
     my $l = 0;
@@ -1774,7 +1788,7 @@ sub _readFromTabFile {
 	$matrix->set_parameter("program", "tab");
 	push @matrices, $matrix;
 	$current_matrix_nb++;
-	$id = $id_prefix."_".$current_matrix_nb;
+	$id = &clean_id($id_prefix."_".$current_matrix_nb);
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
 	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
@@ -2066,7 +2080,7 @@ sub _readFromJasparFile {
       if  ($line =~ /^\>(\S+)/) {
 
 	## Parse ID and name from JASPAR header line
-	my $id = $1;
+	my $id = &clean_id($1);
 	my $postmatch = $'; #'
 	my $name = $id;
 	if ($postmatch =~ /\S+/) {
@@ -2455,8 +2469,8 @@ sub _readFromMotifSamplerFile {
       my $motif_desc = $1;
       chomp($motif_desc);
       my @fields = split(/\s+/, $motif_desc);
-      my $id = shift (@fields);
-
+      my $id = shift (@fields); $id = &clean_id($id);
+      
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("program", "MotifSampler");
       $matrix->set_parameter("id", $id);
@@ -2539,7 +2553,7 @@ sub _readFromMotifSamplerMatrixFile {
       next if /^#*$/; ## Skip empty lines
 
       if(/^#ID\s*=\s*(\S+)/) {
-	my $id = $1;
+	my $id = &clean_id($1);
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "MotifSampler");
 	$matrix->set_attribute("AC", $id);
