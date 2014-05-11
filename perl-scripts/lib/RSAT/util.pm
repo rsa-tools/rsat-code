@@ -904,6 +904,8 @@ sub make_temp_file {
     $tmp_prefix = 'tmp';
   }
 
+  $tmp_prefix =~ s/[\(\)\|\:\s]/_/g;
+#  &RSAT::message::Debug("&RSAT::util::make_temp_file()", "tmp_prefix", $tmp_prefix) if ($main::verbose >= 10);
 
   ## Check that temp dir is defined and create it if required
   unless ($tmp_dir) {
