@@ -112,7 +112,6 @@ jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
 jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
 #jsonTree <- gsub(",\\s*\n\\s*}", "\n}", jsonTree, perl = TRUE)
 
-
 #############################
 ### Prints the .json file 
 json.file <- paste(out.prefix, ".json", sep="")
@@ -247,6 +246,11 @@ for (plot.format in c("pdf", "png")) {
   plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(labels, collapse = ","), sep = " "))
   dev.off()
 }
+
+##################
+## Produce the table to add the merged
+## consensuses into the logo tree
+JSON.clusters()
 
 #########################
 ##  Produce the internal nodes attributes table
