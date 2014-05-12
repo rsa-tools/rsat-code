@@ -1163,5 +1163,3 @@ JSON.clusters <- function(){
 ##     dist.matrix[j,i] <- current.score
 ##   }
 ## }
-
-
