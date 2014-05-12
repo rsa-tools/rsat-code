@@ -1047,6 +1047,98 @@ consensus.internal.merge <- function(motifs.list, ids){
 }
 
 
+########################################################
+## Creates a temporal file with the information of
+## the clusters on each partition of the JSON tree
+## this information is used to create the logos tree
+## with JavaScript, at the end this file is deleted
+JSON.clusters <- function(){
+  tree2 <<- tree
+  tree2$labels <- NULL
+  tree2$labels <- as.vector(global.description.table$n)
+  halfway.tree2 <- hclustToTree(tree2)
+  jsonTree2 <- toJSON(halfway.tree2)
+  jsonTree2 <- gsub("\\],", "\\]", jsonTree2, perl = TRUE)
+  jsonTree2 <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree2, "}", sep = "")
+  jsonTree2 <- gsub("\n\"order\":\\s+\\d+", "", jsonTree2, perl = TRUE)
+  copy.Json <- jsonTree2
+  copy.Json <- gsub("[^ \\d+ \\[ \\]  \\.]", "", copy.Json, perl = TRUE)
+  copy.Json <- gsub("(\\d+)", "|\\1", copy.Json, perl = TRUE)
+  
+  copy.Json.vector <- unlist(strsplit(copy.Json, " "))
+  copy.Json.vector <- copy.Json.vector[2:length(copy.Json.vector)]
+  copy.Json.vector <- copy.Json.vector[which(copy.Json.vector != "")]
+  
+  symbol.counter <- length(which(copy.Json.vector == "[")) 
+  symbol <- which(copy.Json.vector == "[")[2:symbol.counter]
+  
+  up.pos <- 1
+  col1 <- NULL
+  col2 <- NULL
+  for(j in 1:(symbol.counter-1)){
+    
+    col1 <- append(col1, j)
+    
+    up.count <- 0
+    down.count <- 0
+    for(i in symbol[j]:length(copy.Json.vector)){
+      
+      ## Counters
+      if(copy.Json.vector[i] == "["){
+        up.count <- up.count + 1
+        
+        ## Positions up
+        if(up.count == 1){
+          up.pos <- i
+        }
+      } else if(copy.Json.vector[i] == "]"){
+        down.count <- down.count + 1
+      }
+      
+      ## Condition
+      if(up.count == down.count){
+        
+        ## Position down
+        down.pos <- i
+        
+        ## Print the number of the clusters members
+                                        #print(paste(" ### ", up.pos, "   ", down.pos, " ###"))
+        temp <- NULL
+        temp <- gsub("[^\\d+ \\|]", "" ,copy.Json.vector[up.pos:down.pos], perl = TRUE)
+        numb <- NULL
+        numb <- as.integer(unlist((strsplit(paste(temp, collapse = ""), "\\|"))))
+        numb <- numb[which(numb != "NA")]
+                                        #print(paste(" ### ", paste(numb, collapse = " "), " ###"))
+        col2 <- append(col2, paste(numb, collapse = " "))
+        break
+      }
+    }
+  }
+  JSON.clusters.table <- data.frame(col1)
+  JSON.clusters.table$cluster <- col2
+  colnames(JSON.clusters.table) <- c(";level", "cluster")
+  
+  cluster <- NULL
+  for(x in 1:nrow(JSON.clusters.table)){
+    leaves.JSON <- sort(as.integer(unlist(strsplit(JSON.clusters.table[x,2], " "))))
+    for(y in 1:length(merge.levels.leaves)){
+      leaves.merge <- sort(merge.levels.leaves[[y]])
+      if(length(leaves.JSON) == length(leaves.merge)){
+        if(sum(leaves.merge == leaves.JSON) == length(leaves.JSON)){
+          cluster <- append(cluster, paste("merge_level_", y, sep = ""))
+          break
+        }
+      }
+    } 
+  }
+  JSON.clusters.table$mergelevel <- cluster
+  
+  JSON.clusters.table.file <- paste(sep="", out.prefix, "_JSON_clusters_table.tab")
+  write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+}
+
+
+
 
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
