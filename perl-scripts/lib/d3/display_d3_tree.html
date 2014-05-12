@@ -100,15 +100,16 @@
 		.attr("dx", function(d) { return d.children ? -20 : 20; })
 		.attr("dy", function(d) { return d.children ? -6 : 3; })
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+*/
 	
 	// Add the consensus
 	node.append("text")
-		.text(function(d){ return d.children ? d.name : d.consensus; })
-		.attr("x", function(d){ return d.children ? -23 : 20; })
-		.attr("dy", function(d){ return d.children ? -6 : 25; })
+		.text(function(d){ return d.children ? d.name : ""; })
+		.attr("x", function(d){ return d.children ? -23 : 0; })
+		.attr("dy", function(d){ return d.children ? -6 : 0; })
 		.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
 	;
-*/
+
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image; })  
