@@ -227,7 +227,7 @@ package main;
   local %alignment_info = ();
 
   ## Final width of the aligned logos
-  local $final_width = 0;
+#  local $final_width = 0;
 
   ## Lower and upper threshold on matrix comparison scores
   local %lth = ();
@@ -543,7 +543,8 @@ list of output files (pariwise matrix comparisons, matrix clusters).
 
 =item B<-cons>
 
-Option to display the consensus in the tree's branches
+Display consensus of merged matrices on the internal branches of the
+tree.
 
 =cut
     } elsif ($arg eq "-cons"){
@@ -572,6 +573,8 @@ d3 library.
 =item I<newick> (optional)
 
 Widely used textual format to describe phylogenetic trees.
+
+=back
 
 =cut
       
@@ -625,12 +628,27 @@ B<Supported labels>
 
 =item	B<-hclust_method>
 
-Option to select the hierarchical clustering method to be performed. 
-Default method: complete
-    
-B<Supported methods>
-    
- (single, complete, average)
+Option to select the agglomeration rule for hierarchical clustering.
+
+
+Supported agglomeration rules:
+ 
+=over
+
+=item I<complete> (default)
+
+Compute inter-cluster distances based on the two most distant nodes.
+
+=item I<average>
+
+Compute inter-cluster distances as the average distance between nodes
+belonging to the relative clusters.
+
+=item I<single>
+
+Compute inter-cluster distances based on the closest nodes.
+
+=back
 
 =cut
 
