@@ -60,7 +60,7 @@ compa_footprint_discovery:
 MIN_NCOR=0.3
 CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters_Ncor${MIN_NCOR}
 CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
-HCLUST_METHOD=complete
+HCLUST_METHOD=average
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
 		-lth Ncor ${MIN_NCOR} -cons \
