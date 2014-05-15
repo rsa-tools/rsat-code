@@ -306,7 +306,6 @@ package main;
   $dir{aligned_logos} = $main::outfile{prefix}."_aligned_logos";
   &RSAT::util::CheckOutDir($dir{aligned_logos});
   
-
   ################################################################
   ## Specify output file names and open output stream
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
