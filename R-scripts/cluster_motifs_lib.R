@@ -797,7 +797,7 @@ alignment.test.method.complete <- function(ids1, ids2){
   compa.numbers <- get.comparison.number (ids1, ids2)
 
   ## Get the scores of the comparisons
-  scores <- compare.matrices.table[compa.numbers,score]
+  scores <<- compare.matrices.table[compa.numbers,score]
   #scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
 
   ## Count the number of pairs which satisfied the condition
