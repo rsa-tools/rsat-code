@@ -1001,7 +1001,10 @@ aligned.matrices.to.merge <- function(level){
 
   ## Create the folder with the merged consensuses
   system(paste("mkdir -p ", out.prefix, "_merged_consensuses/merge_level_", merge.level, sep = ""))
-
+  flag <- system(paste("ls ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/ | wc -l", sep = ""), intern = TRUE)
+  if(flag >= 1){
+    system(paste("rm -r ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/*", sep = ""))
+  }
   ids <- get.id(merge.levels.leaves[[level]])
   
   ## Add the spacer to the consensuses
