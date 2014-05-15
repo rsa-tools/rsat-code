@@ -117,7 +117,7 @@ print "&nbsp;"x3,  $query->popup_menu(-name=>'sequence_type',
 				      -Values=>["dna","protein","other"],
 				      -default=>$default{sequence_type});
 
-#### purge sequences
+## Purge sequences
 print "<br>", $query->checkbox(-name=>'purge',
 		       -checked=>$default{purge},
 		       -label=>'');
