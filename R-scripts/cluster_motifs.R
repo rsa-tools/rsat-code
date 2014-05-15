@@ -232,7 +232,8 @@ for (plot.format in c("pdf", "png")) {
   #w.inches <- 10 ## width in inches
   #h.inches <- 7 ## height in inches
   w.inches <- 15 ## width in inches
-  h.inches <- 8 ## height in inches
+  h.inches <- round(0.7* length(motifs.info)) ## height in inches
+  #h.inches <- 8 ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
   verbose(paste("Exporting hclust tree drawing", tree.drawing.file), 1)
