@@ -28,8 +28,7 @@ $default{matrix_file}="";
 #$default{pseudo_distribution}="pseudo_prior";
 #$checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
-$default{bg_format}="oligo-analysis";
-$default{bg_method}="from_matrix";
+$default{hclust_method}="complete";
 $checked{$default{bg_method}} = "CHECKED";
 
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
@@ -91,9 +90,31 @@ print "<hr>";
 ################################################################
 ## Specific options for matrix-clustering
 
+print "<h2>", "Clustering options", ,"</h2>";
+
+
+print "<b>Agglomeration rule</b>";
+print "<B><A HREF='help.matrix-clustering.html#hclust_method'>Aglomeration rule</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'hclust_method',
+ 			 -Values=>["complete", "average", "single"],
+ 			 -default=>$default{hclust_method});
+
+
 ################################################################
 ## Selection of output fields and thresholds
 &PrintMatrixMatchingScores();
+
+print "<h2>", "Display options", ,"</h2>";
+
+## Display consensus of merged matrices on internal branches of the
+## tree.
+print "<br>", $query->checkbox(-name=>'internal_cons',
+		       -checked=>$default{internal_cons},
+		       -label=>'');
+print "&nbsp;<A HREF='help.matrix-clustering.html#cons'>Display consensus of merged motifs on internal branches</A>";
+print "<BR>";
+
+print "<hr>";
 
 ################################################################
 ## Send results by email only
