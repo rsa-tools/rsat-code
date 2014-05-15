@@ -1313,8 +1313,6 @@ sub Create_phylogram(){
 ## logos that will be displayed
 sub Add_empty_columns_to_logos(){
 
-    my @split_line = ();
-
     ## Open the alignment_table daata
     open(ALIGNMENT_TABLE, $main::outfile{alignment_table}) || &RSAT::error::FatalError( "Cannot open ALIGNMENT_TABLE file", $main::outfile{alignment_table});
 
@@ -1323,7 +1321,11 @@ sub Add_empty_columns_to_logos(){
     	next if (/^;/); ## Skip comment rows
     	next if (/^#/); ## Skip header rows
     	chomp();
-    	@split_line = split(/\s+/, $_);
+
+	
+    	my @split_line = split(/\s+/, $_);
+	#print "@split_line\n";
+	#print @split_line."\n";
     	$split_line[0] =~ s/\s+//g;
 
     	## Store the ID, strand and offset of each aligned motif
@@ -1331,13 +1333,19 @@ sub Add_empty_columns_to_logos(){
     	$alignment_info{$split_line[0]}{offset_left} =  $split_line[3];
     	$alignment_info{$split_line[0]}{offset_right} =  $split_line[4];
 	$alignment_info{$split_line[0]}{width} = $split_line[5];
+
+	#print "\n###ID:".$split_line[0]."\tLEFT:".$alignment_info{$split_line[0]}{offset_left}."\tRIGHT:".$alignment_info{$split_line[0]}{offset_right}."\n";
+	#print "\n### ".$split_line[0]."\t".$split_line[2]."\t".$split_line[3]."\t".$split_line[4]."\n";
+	#print $_."\n";
+     	#<STDIN>;
     }
     close(ALIGNMENT_TABLE);
 
     # foreach my $id (keys %alignment_info){
     #  	print "\n### ".$id."\t".$alignment_info{$id}{file_name}."\t".$alignment_info{$id}{strand}."\t".$alignment_info{$id}{offset_left}."\t".$alignment_info{$id}{offset_right}."\n";
     # 	<STDIN>;
-    # }  
+    # } 
+    
  
     ## Create the folder to store the aligned logos
 #    system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
@@ -1345,21 +1353,25 @@ sub Add_empty_columns_to_logos(){
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
+    #my $c = 0;
     foreach my $id (keys %alignment_info){
 
-    	my ($rc, $offset_left, $offset_right, $file_name, $strand) = "";
-
 	## Reset the variables
-	$offset_left = $alignment_info{$id}{offset_left};
-	$offset_right = $alignment_info{$id}{offset_right};
-	$file_name = $alignment_info{$id}{file_name};
-	$strand = $alignment_info{$id}{strand};
+	my $offset_left = $alignment_info{$id}{offset_left};
+	my $offset_right = $alignment_info{$id}{offset_right};
+	my $file_name = $alignment_info{$id}{file_name};
+	my $strand = $alignment_info{$id}{strand};
+
+	$c++;
+     	#<STDIN>;
 
     	## Run the convert-matrix command to add the empty columns to the logos
-    	if($alignment_info{$id}{strand} eq "D"){
-	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc  -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+    	if($strand eq "D"){
+	    #print "convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos\t\t$c\n";
+	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
     	}else{
-	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_right." -insert_col_right ".$offset_left." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+	    #print "convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos\t\t$c\n";
+	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
 	}
 
     	system("rm ".$file_name);
