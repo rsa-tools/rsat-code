@@ -1173,12 +1173,12 @@ sub Create_html_tree_file(){
 	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 	
-    my $consensus_branch_label = 
-	"\tnode.append(\"text\")
-	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
-	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 0; })
-	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 0; })
-	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+    # my $consensus_branch_label = 
+    # 	"\tnode.append(\"text\")
+    # 	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
+    # 	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 0; })
+    # 	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 0; })
+    # 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 
     $matrix_num += 2;
     system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_tree_html});
