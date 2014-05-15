@@ -97,7 +97,7 @@
 		.text(function(d) { return d.children ? d.name : ""; })
 		.attr("dx", function(d) { return d.children ? -20 : 0; })
 		.attr("dy", function(d) { return d.children ? -6 : 0; })
-		.attr("fill", function(d) { return d.children ? "red" : "black"; })
+		.attr("fill", function(d) { return d.children ? "red" : ""; })
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 		
