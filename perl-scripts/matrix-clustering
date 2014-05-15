@@ -300,6 +300,12 @@ package main;
 
   ## Directory containing the matrix logos (to be displayed in the HTML tree)
   $dir{logos} = $main::outfile{prefix}."_pairwise_compa_logos"; push @dirs, "logos";
+  &RSAT::util::CheckOutDir($dir{logos});
+
+  ## Directory to create the aligned logos
+  $dir{aligned_logos} = $main::outfile{prefix}."_aligned_logos";
+  &RSAT::util::CheckOutDir($dir{aligned_logos});
+  
 
   ################################################################
   ## Specify output file names and open output stream
@@ -1335,7 +1341,8 @@ sub Add_empty_columns_to_logos(){
     # }  
  
     ## Create the folder to store the aligned logos
-    system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
+#    system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
+
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
