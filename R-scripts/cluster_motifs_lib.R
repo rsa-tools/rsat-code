@@ -1000,7 +1000,7 @@ add.empty.columns <- function(id){
 aligned.matrices.to.merge <- function(level){
 
   ## Create the folder with the merged consensuses
-  system(paste("mkdir ", out.prefix, "_merged_consensuses/merge_level_", merge.level, " -p", sep = ""))
+  system(paste("mkdir -p ", out.prefix, "_merged_consensuses/merge_level_", merge.level, sep = ""))
 
   ids <- get.id(merge.levels.leaves[[level]])
   
