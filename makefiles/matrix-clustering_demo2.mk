@@ -60,10 +60,11 @@ compa_footprint_discovery:
 MIN_NCOR=0.3
 CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters_Ncor${MIN_NCOR}
 CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
+HCLUST_METHOD=complete
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
-		-lth Ncor ${MIN_NCOR} \
-		-export newick -d3_base file -hclust_method average \
+		-lth Ncor ${MIN_NCOR} -cons \
+		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
 CLUSTER_TIME_FILE=${CLUSTER_PREFIX}_time_log.txt
