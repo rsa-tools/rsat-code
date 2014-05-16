@@ -8,9 +8,14 @@ require RSAT::OrganismManager;
 require RSAT::server;
 require RSAT::error;
 
-################################################################
-## Print a tag for Google Analytics, a tool for monitoring the access to the
-## Web site.
+=pod
+
+=item B<google_analytics_tag_old>
+
+Print a tag for Google Analytics, a tool for monitoring the access to the
+Web site.
+
+=cut
 sub google_analytics_tag_old {
     print <<EndGATag
 <script type="text/javascript">
@@ -329,9 +334,11 @@ sub SequenceChoice {
   $sequenceChoiceString .=  "<B>Sequence</B>";
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
+
+
   if ($sequence_file = $query->param("sequence_file")) {
-    ### Sequence file is already on the server machine
-    ### (piped from a previous script)
+    ## Sequence file is already on the server machine
+    ## (piped from a previous script)
     $sequence_url = $sequence_file;
     $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
     $sequenceChoiceString .=  "<a href=$sequence_url>";
@@ -340,8 +347,8 @@ sub SequenceChoice {
     $sequence_format = $query->param(sequence_format);
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
-  } else {
 
+  } else {
     #### sequence format (pop-up menu)
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
@@ -355,7 +362,7 @@ sub SequenceChoice {
 							   'multi'],
 						 -default=>$sequence_format);
 
-    ### text area to copy-paste the sequence
+    ## Text area to copy-paste the sequence
     $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence',
 					       -default=>$default{sequence},
@@ -363,7 +370,7 @@ sub SequenceChoice {
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
 
-    ### option to upload the sequence file from the client machine
+    ## Option to upload the sequence file from the client machine
     $sequenceChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
     $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
 						-default=>'',
@@ -373,7 +380,7 @@ sub SequenceChoice {
 
   }
 
-  #### Mask option
+  ## Mask option
   $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
   $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
 					       -Values=>['none',
@@ -390,7 +397,7 @@ sub SequenceChoice {
 
 
 #################################
-#Multiple Sequence choice
+## Multiple Sequence choice
 sub MultiSequenceChoice {
   my $seq_title = shift(@_);
   my $seq_num = shift(@_);
@@ -549,7 +556,7 @@ sub GetSequenceFile {
       &cgiError("Invalid sequence format : ${required_format}.");
     }
     my $converted_seq_file = $sequence_file.".".$required_format;
-    my $convert_seq_command = "$SCRIPTS/convert-seq ";
+    my $convert_seq_command = $SCRIPTS."/convert-seq ";
     $convert_seq_command .= " -i ".$sequence_file;
     $convert_seq_command .= " -from  $sequence_format -to $required_format ";
 
@@ -595,6 +602,7 @@ sub GetSequenceFile {
 sub MultiGetSequenceFile {
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
+
   ### sequence file format
   my $sequence_format = "fasta";
   #    my $sequence_format = lc($query->param("sequence_format".$seq_num));
@@ -620,7 +628,7 @@ sub MultiGetSequenceFile {
     ### Fetch sequence from an URL
   } elsif ($query->param('sequence_url'.$seq_num) =~ /\S/) {
     my $url = $query->param('sequence_url'.$seq_num);
-    &RSAT::message::Info("Fetching sequences from URL ".$url) if ($main::verbose >= 0);
+    &RSAT::message::Info("Fetching sequences from URL ".$url) if ($ENV{rsat_echo} >= 1);
     my $seq = "";
     if (open SEQ, ">$sequence_file") {
       $seq = get($url);
@@ -631,8 +639,22 @@ sub MultiGetSequenceFile {
 	&RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
       }
     }
-    my $seq_kb = sprintf("%d", length($seq)/1000);
-    &RSAT::message::Info("Fetched ".$seq_kb." kb file from ".$url) if ($main::verbose >= 0);
+
+    ## Check sequence file
+    my $file_type = `file $sequence_file`;
+    if ($file_type =~ "gzip") {
+      &RSAT::message::TimeWarn("Uncompressing sequence file", $sequence_file);
+      my $cmd = "mv ".$sequence_file." ".$sequence_file.".gz";
+      $cmd .= " ; gunzip ".$sequence_file.".gz";
+      &doit($cmd);
+    }
+
+
+    &RSAT::message::Debug("Sequence file=", &RSAT::util::hide_RSAT_path($sequence_file), 
+			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
+	) if ($main::verbose >= 5);
+
+#    my $seq_kb = sprintf("%d", length($seq)/1000);
 
     ### Read sequence from the textarea "sequence"
   } elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
@@ -658,7 +680,7 @@ sub MultiGetSequenceFile {
       $mask = $query->param('mask'.$seq_num);
       &CheckMask($mask);
       my $converted_seq_file = $sequence_file.".masked";
-      my $convert_seq_command = "$SCRIPTS/convert-seq ";
+      my $convert_seq_command = $SCRIPTS."/convert-seq ";
       $convert_seq_command .= " -i ".$sequence_file;
       $convert_seq_command .= " -from  $sequence_format -to fasta ";
 ##    $convert_seq_command .= " -from  fasta -to fasta ";
@@ -980,6 +1002,126 @@ onclick="toggleMenu(';
     print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
     print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
   }
+}
+
+
+################################################################
+## Print the many scores supported by compare-matrices, which are also
+## available for matrix-clustering.
+sub PrintMatrixMatchingScores {
+  my @matching_scores = qw(w
+			 cor
+			 Ncor
+                         logoDP
+			 logocor
+			 Nlogocor
+			 Icor
+			 NIcor
+			 cov
+			 dEucl
+			 NdEucl
+			 NsEucl
+			 SSD
+			 SW
+			 NSW
+			 match_rank
+			 offset
+			);
+
+  my %score_descriptions = ('w'=>'Width = number of aligned columns',
+			    'cor'=>'Pearson correlation (computed on residue occurrences in aligned columns)',
+			    'Ncor'=>'Relative width-normalized Pearson correlation',
+			    'logoDP'=>'dot product of sequence logos',
+			    'logocor'=>'correlation computed on sequence logos',
+			    'Nlogocor'=>'Relative width-normalized logocor',
+			    'Icor'=>'Pearson correlation computed on Information content',
+			    'NIcor'=>'Relative width-normalized Icor',
+			    'cov'=>'covariance between residues in aligned columns',
+			    'dEucl'=>'Euclidian distance between residue occurrences in aligned columns',
+			    'NdEucl'=>'Relative width-normalized dEucl',
+			    'NsEucl'=>'similarity derived from Relative width-normalized Euclidian distance',
+			    'SSD'=>'Sum of square deviations',
+			    'SW'=>'Sandelin-Wasserman',
+			    'NSW'=>'Relative width-normalized Sandelin-Wasserman',
+			    'match_rank'=>'rank of current match among all sorted matches',
+			    'offset'=>'offset between first and second matrices',
+      );
+
+
+  ## ##############################################################
+  ## Other selectable output fields
+  ##
+  ## Note (JvH, 2014-05-15): I think these output fields are just
+  ## ignored by compare-matrices, I should revise this.
+  
+  my @other_fields = qw(matrix_number
+		      matrix_id
+		      matrix_name
+		      matrix_ac
+		      strand
+		      direction
+		      pos
+		      consensus
+		      alignments_pairwise
+		      alignments_1ton
+		     );
+
+
+
+  &ScoresAndThresholdsDiv("Matrix comparison scores and thresholds",
+			  "help.compare-matrices.html#return_fields",
+			  \@matching_scores,
+			  \%score_descriptions);
+}
+
+
+################################################################
+## Display a collapsable div with selectable scores and thresholds
+sub ScoresAndThresholdsDiv {
+  my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
+
+  print "<p class=\"clear\"></p>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+  print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+  print "<p/><fieldset>\n";
+
+  &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
+
+  print "</fieldset><p/>";
+  print '</div></div><p class="clear"></p>';
+  print "<hr>";
+}
+
+################################################################
+## Display a table with checkboxes and thresholds for a set of
+## specified fields
+sub FieldsThresholdsTable {
+  my ($help_file, $field_ref, $field_descr_ref) = @_;
+  my @fields = @{$field_ref};
+  my %field_descr = %{$field_descr_ref};
+  print "<table align='center'>\n";
+  print $query->th([" <A HREF='".$help_file."'>Output<br>fields</A> ",
+		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
+		    " <A HREF='".$help_file."'>Upper<BR>Threshold</A> "]);
+  foreach my $field (@fields) {
+    my $lth = $default{'lth_'.$field} || "none";
+    my $uth = $default{'uth_'.$field} || "none";
+
+    print "<tr valign='middle'>";
+#    print "<td>", $field, "</td>\n";
+    print "<td>", $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>''), "&nbsp;", $field, "</td>\n";
+    print "<td>", $query->textfield(-name=>'lth_'.$field,
+				    -default=>$lth,
+				    -size=>5), "</td>\n";
+    print "<td>", $query->textfield(-name=>'uth_'.$field,
+				    -default=>$uth,
+				    -size=>5), "</td>\n";
+    print "<td>", $field_descr{$field}, "</td>\n";
+    print "</tr>\n";
+  }
+  print "</table>\n";
 }
 
 
@@ -1626,34 +1768,32 @@ sub ServerOutput {
 ##
 ## index=>$index_file  index generated by the called program (e.g. compare-matrices)
 sub EmailTheResult {
-    my ($command, $email_address, $tmp_file_path, %args) = @_;
+    my ($command, $recipient, $tmp_file_path, %args) = @_;
     my $delay = "72 hours";
-    my $mail_title = $args{title};
+    my $subject = $args{title};
     my $no_email = $args{no_email} || 0;
 
-    ## Run the task in nice mode
-    $command = "nice -n 19 ".$command;
-
-    my $clean_command = &RSAT::util::hide_RSAT_path($command);
-
-    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
-    $clean_command =~ s|\$|\\\$|;
-
-    my $script_name = $0;
-    ## Avoid providing the full path of the RSAT package
-    $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g;
+    my $script_name = &RSAT::util::hide_RSAT_path($0);
+#    my $script_name = $0;
+#    ## Avoid providing the full path of the RSAT package
+#    $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g;
 #    $script_name = &RSAT::util::hide_RSAT_path($script_name);
-    $script_name =~ s|\.cgi$||;
+    $script_name =~ s|.*public_html\/+||g; ## Suppress the public_html folder
+    $script_name =~ s|\.cgi$||; ## Suppress cgi extension
 
-    unless ($mail_title) {
-      $mail_title = join " ", "[RSAT]", $script_name, &AlphaDate();
+
+    ## Check the subject
+    if ($subject) {
+	$subject =~ s/'/\'/g;
+    } else {
+      $subject = join " ", "[RSAT]", $script_name, &AlphaDate();
     }
 
-    ## Avoid exposing the full RSAT path in the mail title
-    $mail_title = &RSAT::util::hide_RSAT_path($mail_title);
+    ## Avoid exposing the full RSAT path in the mail subject
+    $subject = &RSAT::util::hide_RSAT_path($subject);
 
     ## Check the email address
-    &CheckEmailAddress($email_address)  unless ($no_email);;
+    &RSAT::server::CheckEmailAddress($recipient)  unless ($no_email);;
 
     ## Temporary file for storing the result
     unless ($tmp_file_path) {
@@ -1667,12 +1807,19 @@ sub EmailTheResult {
     }
     $result_URL =~ s|//tmp|/tmp|g;
 
+    ## Run the task in nice mode
+    $command = "nice -n 19 ".$command;
+    my $clean_command = &RSAT::util::hide_RSAT_path($command);
 
-    #### Indicate the URL of the future result file
-    my $submission_message = $mail_title."\n";
+    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
+#    $clean_command =~ s|\$|\\\$|;
+
+
+    ## Indicate the URL of the future result file
+    my $submission_message = $subject."\n";
     $submission_message .= "\n\nCommand: ".$clean_command;
     $submission_message .= "\n\nYour task has been submitted to the RSAT server.";
-    $submission_message .= "\n\nAfter completion of the task, an email will be sent to ".$email_address unless ($no_email);
+    $submission_message .= "\n\nAfter completion of the task, an email will be sent to ".$recipient unless ($no_email);
     $submission_message .= "\n\nThe result will become available at\n";
     $submission_message .= "\t".${result_URL}."\n\n";
 
@@ -1682,45 +1829,26 @@ sub EmailTheResult {
     $html_submission_message =~ s|\\\$|\$|gm;
     &Info($html_submission_message);
 
-    ## Send an email for confirmation of task submission
-    unless ($no_email) {
-      my $submission_mail_command = "echo \"".$submission_message."\" ";
-      $submission_mail_command .= " | mail -s \'".$mail_title." submission\' ".$email_address;
-      print "<pre>Mail: $submission_mail_command</pre>" if ($ENV{rsat_echo} >= 2);
-      system($submission_mail_command);
-    }
-
+    &RSAT::server::sendmail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
 
     ## Concatenate the command with the email notification
-    my $completion_mail_command = "mail -s \'".$mail_title." completion\'";
     my $completion_message;
-    $completion_message .= $mail_title."\n";
+    $completion_message .= $subject."\n";
     $completion_message .= "\n\nCommand: ".$clean_command;
     $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
     $completion_message .= "\nThe result file will remain there for $delay.";
-#    print "<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 1);
 
     ## Run the command and send a notification mail if the user provided an email address
-    $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $tmp_file_path; ";
-    $command .= "echo \"$completion_message\" | $completion_mail_command $email_address &" unless ($no_email);
+    $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> ".$tmp_file_path;
+    $command .= "; echo \"$completion_message\" | ".$SCRIPTS."/send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
+    $command .= " &"; ## Run task in background
+    print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
     system $command;
 
-    #### prepare removal of the temporary file
+    ## Prepare removal of the temporary file
     &DelayedRemoval($tmp_file_path, $delay);
 }
 
-#### check email address format
-sub CheckEmailAddress {
-    my ($email_address) = @_;
-    if ($email_address eq "") {
-	&RSAT::error::FatalError ("You did not enter your e-mail address");
-    } if ($email_address =~ /http:\/\//) {
-	&RSAT::error::FatalError ("Invalid email address: $email_address<br>", "Submitting http links in Web form is a hacking practice. This attempt will be reported.");
-
-    } elsif ($email_address !~ /(\S+\@\S+)/) {
-	&RSAT::error::FatalError ("Invalid email address: $email_address<br>");
-    }
-}
 
 =pod
 
@@ -1748,7 +1876,7 @@ sub CheckWebInput {
   foreach my $field (@fields_to_check) {
     my $field_contents = $cgi->param($field);
 
-#    &RSAT::message::Debug("Field", $field, "contents", $field_contents) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("Field", $field, "contents", $field_contents) if ($main::verbose >= 10);
 
     ## Detect HTML tags
     $field_contents =~ s/\s+/ /g; ## make a single-line of the field content

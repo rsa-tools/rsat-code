@@ -260,11 +260,11 @@ package main;
     }
 
     ################################################################
-    ### open output stream
+    ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
-    ##### Read input
+    ### Read input
     $bg_model->load_from_file($main::infile{input}, $input_format);
 
     ################################################################
@@ -532,8 +532,6 @@ description below).
 				    "Supported: ", $main::supported_input_formats))
 	unless ($main::supported_input_format{$main::input_format});
 
-
-      ## Output format
 
 =pod
 

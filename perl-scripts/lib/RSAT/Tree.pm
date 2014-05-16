@@ -227,7 +227,7 @@ sub get_node_by_id {
     }
 #    &RSAT::message::Debug("&RSAT::Tree::get_node_by_id()",$current_id, "differs from", $node_id) if ($main::verbose >= 10);
   }
-  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with id", $id);
+  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with ID", $id);
   return(undef);
 }
 
@@ -609,7 +609,7 @@ sub as_indented_text{
   my $start_node=$self->get_node_by_id($start_node_id);
 
   if (! $start_node){
-    die("No node with this id in the tree : \"$start_node_id\" !");
+    die("No node with this ID in the tree : \"$start_node_id\" !");
   }
   my $initlevel = $start_node->get_level();
 
