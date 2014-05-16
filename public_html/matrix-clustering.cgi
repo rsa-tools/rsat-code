@@ -9,15 +9,16 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 ### redirect error log to a file
 BEGIN {
-    $ERR_LOG = "/dev/null";
+  $ERR_LOG = "/dev/null";
 #    $ERR_LOG = "/tmp/RSA_ERROR_LOG.txt";
-    use CGI::Carp qw(carpout);
-    open (LOG, ">> $ERR_LOG")
-	|| die "Unable to redirect log\n";
-    carpout(*LOG);
+  use CGI::Carp qw(carpout);
+  open (LOG, ">> $ERR_LOG")
+      || die "Unable to redirect log\n";
+  carpout(*LOG);
 }
 require "RSA.lib";
 require "RSA2.cgi.lib";
+require RSAT::util;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ################################################################
@@ -45,10 +46,12 @@ $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = 
 
 ## We need to create the output directory before starting
 ## matrix-clustering, since it will generate multiple output files.
+#&RSAT::util::CheckOutDir($output_dir);
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 
 ################################################################
 ## Command line paramters
+$parameters .= " -v 1";
 
 ## Read parameters
 local $parameters = " -v 1";
@@ -63,122 +66,27 @@ $parameters .= " -format ".$query_matrix_format;
 #### Query matrix file
 $matrix_file = $output_path."/".$output_prefix."_query_matrices.".$query_matrix_format;
 if ($query->param('matrix')) {
-    open MAT, "> $matrix_file";
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file);
-    $parameters .= " -i $matrix_file";
+  open MAT, "> $matrix_file";
+  print MAT $query->param('matrix');
+  close MAT;
+  &DelayedRemoval($matrix_file);
+  $parameters .= " -i $matrix_file";
 } else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
+  &RSAT::error::FatalError('You did not enter any data in the matrix box');
 }
 push @result_files, ("Input file",$matrix_file);
 push @result_files, ("Result file",$result_file);
 
 
-# ################################################################
-# ## Pseudo-counts CURRENTLY NOT SUPPORTED, SHOULD BE ADDED
-# if (&IsReal($query->param('pseudo_counts'))) {
-#   $parameters .= " -pseudo ".$query->param('pseudo_counts');
-# } else {
-#   &FatalError("Pseudo-count should be a real number");
-# }
-# if ($query->param('pseudo_distribution') eq "equi_pseudo") {
-#   $parameters .= " -equi_pseudo ";
-# }
-
 ################################################################
-## Background model method
-&SetBackgroundModel();
-
-################################################################
-## bg_pseudo
-if (&IsReal($query->param('bg_pseudo'))) {
-  $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+## Agglomeration rule for hierarchical clustering
+local $hclust_method  = lc($query->param('hclust_method'));
+if ($hclust_method) {
+  $parameters .= " -hclust_method ".$hclust_method;
 }
 
-=pod
 ################################################################
-## Reference motifs
-if ($query->param('db_choice') eq "custom") {
-  ## Upload custom reference motif file
-  local $custom_motif_file = $output_dir."custom_motif_file.txt";
-  local $upload_custom_motif_file = $query->param('upload_custom_motif_file');
-  if ($upload_custom_motif_file) {
-    if ($upload_custom_motif_file =~ /\.gz$/) {
-      $custom_motif_file .= ".gz";
-    }
-    local $type = $query->uploadInfo($upload_custom_motif_file)->{'Content-Type'};
-    open CUSTOM_MOTIF_FILE, ">$custom_motif_file" ||
-      &cgiError("Cannot store reference motif fie file in temp dir.");
-    while (<$upload_custom_motif_file>) {
-      print CUSTOM_MOTIF_FILE;
-    }
-    close CUSTOM_MOTIF_FILE;
-    $parameters .= " -file2 $custom_motif_file";
-    $parameters .= " -format2 transfac";
-  } else {
-    &RSAT::error::FatalError("You did not specify the custom matrix file (for this, you need to click on the Browse button)");
-  }
-} else {
-  my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
-  if (scalar(@selected_db) > 0) {
-    $parameters .= $mat_db_params;
-  }
-}
-=cut
-
-### other default parmaters
-$parameters .= " -strand DR";
-$parameters .= " -export newick";
-
-
-################################################################
-## Output fields and thresolds
-my @supported_output_fields = qw(cor
-				 Ncor
-				 logoDP
-				 logocor
-				 Nlogocor
-				 Icor
-				 NIcor
-				 cov
-				 dEucl
-				 NdEucl
-				 NsEucl
-				 SSD
-				 SW
-				 NSW
-				 all_metrics
-				 matrix_number
-				 matrix_id
-				 matrix_name
-				 matrix_ac
-				 width
-				 strand
-				 direction
-				 offset
-				 pos
-				 consensus
-				 match_rank
-				 alignments_pairwise
-				 alignments_1ton
-				);
-
-# my @selected_output_fields = qw(
-# 				cor
-# 				Ncor
-# 				NIcor
-# 				NsEucl
-# 				SSD
-# 				NSW
-# 				match_rank
-# 				matrix_id
-# 				matrix_ac
-# 				width
-# 				strand
-# 				offset
-# 				consensus
-# 				alignments_1ton);
+## Specify the thresholds on all parameters for compare-matrices
 my @selected_output_fields = ();
 my $thresholds = "";
 foreach my $field (@supported_output_fields) {
@@ -188,17 +96,20 @@ foreach my $field (@supported_output_fields) {
   }
 
   ## Lower threshold
-#  my $lth = $query->param('lth_'.$field);
-#  if (&IsReal($lth)) {
-#    $thresholds .= " -lth ".$field." ".$lth;
-#  }
+  my $lth = $query->param('lth_'.$field);
+  if (&IsReal($lth)) {
+    $thresholds .= " -lth ".$field." ".$lth;
+  }
 
   ## Upper threshold
-#  my $uth = $query->param('uth_'.$field);
-#  if (&IsReal($uth)) {
-#    $thresholds .= " -uth ".$field." ".$uth;
-#  }
+  my $uth = $query->param('uth_'.$field);
+  if (&IsReal($uth)) {
+    $thresholds .= " -uth ".$field." ".$uth;
+  }
 }
+$parameters .= $thresholds;
+
+## Add selected output fields
 push @selected_output_fields, qw(
 				 matrix_id
 				 matrix_name
@@ -207,35 +118,42 @@ push @selected_output_fields, qw(
 				 offset
 				 consensus
 				);
-#				 alignments_1ton
+
 my $selected_output_fields = join (",", @selected_output_fields);
 $parameters .= " -return ".$selected_output_fields;
-$parameters .= $thresholds;
 
 ################################################################
-### Output file
+## Output formats
+$parameters .= " -export newick";
+$parameters .= " -d3_base file";
+$parameters .= " -labels name,consensus";
+
+
+
+################################################################
+## Output file
 $parameters .= " -o ".$output_path."/".$output_prefix;
 
 ## Add an error-log file for matrix-clustering
-$err_file = $output_path."/".$output_prefix."_err.txt";
-$parameters .= " >& ".$err_file;
+  $err_file = $output_path."/".$output_prefix."_err.txt";
+  $parameters .= " >& ".$err_file;
 
 ## Report the full command before executing
-&ReportWebCommand($command." ".$parameters);
+  &ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Display or send result by email
-$index_file = $output_path."/".$output_prefix."_index.html";
-my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
-if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
-} else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
-}
+  $index_file = $output_path."/".$output_prefix."_index.html";
+  my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
+  if ($query->param('output') =~ /display/i) {
+    &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
+  } else {
+    &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
+  }
 
 ################################################################
 ## Result page footer
-print $query->end_html;
+  print $query->end_html;
 
-exit(0);
+  exit(0);
 

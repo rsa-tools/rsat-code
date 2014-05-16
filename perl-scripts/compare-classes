@@ -868,7 +868,7 @@ PROBABILITIES
 
     Sorensen similarity
 
-        A variant of Jaccard's simlarity.
+        A variant of Jaccard simlarity.
 
             sor_sim = 2* (Q and R) / (Q + R)
 
@@ -1359,17 +1359,37 @@ sub CompareClasses {
 	      $dp += $dp_element;
 	  }
 
-	  $current_compa{dotprod} = $dp;
+	  $current_compa{'dotprod'} = $dp;
 
 	  ## Check threshold on dot product
 	  if ((defined($lth{'dotprod'})) &&
 	      ($dp< $lth{'dotprod'})) {
-	      next;
+	    next;
 	  }
-	  if ((defined($uth{dotprod})) &&
-	      ($dp > $uth{dotprod})) {
-	      next;
+	  if ((defined($uth{'dotprod'})) &&
+	      ($dp > $uth{'dotprod'})) {
+	    next;
 	  }
+	  
+	  ## Compute DPbits
+	  if ($current_compa{dotprod} > 0) {
+	    $DPbits = log($current_compa{dotprod})/$log2;
+	  } else {
+	    $DPbits = -999999999;
+	  }
+	  $current_compa{'DPbits'} = $DPbits;
+	  
+	  ## Check threshold on DPbits
+	  if ((defined($lth{'DPbits'})) &&
+	      ($DPbits < $lth{'DPbits'})) {
+	    next;
+	  }
+	  if ((defined($uth{'DPbits'})) &&
+	      ($DPbits > $uth{'DPbits'})) {
+	    next;
+	  }
+
+	  undef $DPbits;
 	  undef $dp;
       }
 
@@ -1721,10 +1741,9 @@ sub PrintHeader {
 ## ##############################################################
 ## Print the result
 sub PrintResult {
-  &RSAT::message::TimeWarn("Printing the result") if ($main::verbose >= 2);
-
   ################################################################
   ## Print one row per association between a reference and a query class
+  &RSAT::message::TimeWarn("Sorting results by", $sort_key) if ($main::verbose >= 2);
   if (scalar(keys(%return_fields)) >= 1) {
     #### Sort the result
     if ($sort_key eq "name") {
@@ -1744,7 +1763,10 @@ sub PrintResult {
       @sorted_keys = sort (keys %compa);
     }
 
-    #### class combinations
+    
+  &RSAT::message::TimeWarn("Printing the result") if ($main::verbose >= 2);
+
+    ## Class combinations
     my $rank = 0;
     foreach my $compa_key (@sorted_keys) {
       &PrintOneComparison(%{$compa{$compa_key}});
@@ -1853,8 +1875,8 @@ sub PrintOneComparison {
 
     ## DPbits
     if ($current_compa{dotprod} > 0) {
-      printf $out "\t%.2f", log($current_compa{dotprod})/$log2;
-      printf $out "\t%d", log($current_compa{dotprod})/$log2;
+      printf $out "\t%.2f", $current_compa{DPbits};
+      printf $out "\t%d",  $current_compa{DPbits};
     } else {
       printf $out "\t-Inf";
       printf $out "\t-Inf";

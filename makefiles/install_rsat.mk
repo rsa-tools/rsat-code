@@ -40,7 +40,12 @@ UNIX_PACKAGES_COMMON= \
 	links \
 	finger \
 	zip \
-	unzip
+	unzip \
+	python3.2 \
+	python3-setuptools \
+	python2.7
+
+
 
 UNIX_PACKAGES_CENTOS= \
 	httpd \
@@ -51,8 +56,10 @@ UNIX_PACKAGES_CENTOS= \
 	gd gd gd-devel php-gd perl-GD.x86_64 \
 	tetex-latex tetex-doc tetex-fonts
 
+## gfortran required for python scipy
 UNIX_PACKAGES_MACOSX= \
-	gd
+	gd \
+	gfortran
 
 UNIX_PACKAGES_UBUNTU= \
 	make \
@@ -63,7 +70,9 @@ UNIX_PACKAGES_UBUNTU= \
 	php-elisp \
 	texlive-latex-base \
 	libgd2-xpm-dev \
-	libgd-gd2-perl
+	libgd-gd2-perl \
+	python3 \
+	python3-dev
 
 unix_packages_list:
 	@echo
@@ -108,7 +117,10 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
+	perl-doc \
+	YAML \
 	CGI \
+	MIME::Lite \
 	PostScript::Simple \
 	Statistics::Distributions \
 	Algorithm::Cluster \
@@ -197,19 +209,31 @@ perl_modules_check:
 
 ################################################################
 ## Install modules required for python
-PYTHON_MODULES=SUDS Rpy2 SOAPpy
+PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
 python_modules_install:
+	@echo
+	@echo "Installing modules for python"
 	@for module in ${PYTHON_MODULES} ; do \
 		${SUDO} easy_install $${module}; \
-	done
+	PYTHON3
 
+MODULES_done=numpy scipy soappy
+python3_modules_install:
+	@echo
+	@echo "Installing modules for python3"
+	@echo "${PYTHON3_MODULES}"
+	@echo
+	@for module in ${PY	THON3_MODULES} ; do \
+		${SUDO} pip install -U $${module}; \
+	done
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO reshape
+R_MODULES=RJSONIO reshape plyr dendroextras 
+## Note: package  ctc does not exist. To check with Jaime Castro
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 

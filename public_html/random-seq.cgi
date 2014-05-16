@@ -9,7 +9,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 #require "cgi-lib.pl";
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-#### redirect error log to a file
+
+## Redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
 #    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
@@ -45,7 +46,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &S
 $size_limit = 25e+6;
 
 ################################################################
-#### read parameters ####
+## Read parameters
 $parameters = "";
 
 ## template file (optional)
@@ -64,7 +65,7 @@ if ($template_file) {
   $seqlength_cmd .= " -o ".$length_file;
   system($seqlength_cmd);
 
-  ## Add the sequence length file as template for random-genome-fragments
+  ## Use the sequence length file as template
   $parameters .= " -template_format len -i ".$length_file;
 #  $parameters .= " -template_format fasta -i ".$template_file;
 
@@ -96,17 +97,17 @@ if ($template_file) {
 }
 
 
-#### line width
+## Line width
 if (&IsNatural($query->param('lw'))) {
     $parameters .= " -lw ".$query->param('lw');
 }
 
-#### output format
+## Output format
 $out_format = $query->param('format');
 &CheckOutputSeqFormat($out_format);
 $parameters .= " -format $out_format ";
 
-#### alphabet
+## Alphabet
 if ($query->param('bg_method') eq "alphabet") {
 
     $freq{A} = $query->param('Afreq');
@@ -189,18 +190,18 @@ if ($query->param('bg_method') eq "alphabet") {
 $sequence_file = $tmp_file_path.".".$out_format;
 push @result_files, ("sequence",$sequence_file);
 
-### execute the command ###
+## Execute the command
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 #if ($query->param('output') eq "display") {
 
     open RESULT, "$command $parameters |";
 
-    ### print the result ###
+    ## Print the result
     &PipingWarning();
     print '<H4>Result</H4>';
 
-    ### open the mirror file ###
+    ## Open the mirror file
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);
@@ -216,7 +217,7 @@ if (($query->param('output') =~ /display/i) ||
     close RESULT;
     close MIRROR if ($mirror);
 
-    ### prepare data for piping
+    ## Prepare data for piping
     &PrintURLTable(@result_files);
     &PipingFormForSequence();
     print "<HR SIZE = 3>";
