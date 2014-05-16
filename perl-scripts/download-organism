@@ -257,8 +257,10 @@ package main;
     next unless ($org_line); ## Skip empty line returned by RSAT Web service
     chomp($org_line);
     my ($org, $date, $source) = split /\t/, $org_line;
-    $last_update{$org} = $date || '<NA>';
-    $source{$org} = $source || '<NA>';
+    if ($org) {
+      $last_update{$org} = $date || '<NA>';
+      $source{$org} = $source || '<NA>';
+    }
     &RSAT::message::Debug("Server supported", $org_line, $org, $last_update{$org}, $source{$org}) if ($main::verbose >= 5);
   }
 

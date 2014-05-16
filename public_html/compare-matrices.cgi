@@ -196,6 +196,10 @@ foreach my $field (@supported_output_fields) {
     $thresholds .= " -uth ".$field." ".$uth;
   }
 }
+$parameters .= $thresholds;
+
+
+## Add some output fields
 push @selected_output_fields, qw(
 				 matrix_id
 				 matrix_name
@@ -207,7 +211,6 @@ push @selected_output_fields, qw(
 				);
 my $selected_output_fields = join (",", @selected_output_fields);
 $parameters .= " -return ".$selected_output_fields;
-$parameters .= $thresholds;
 
 ################################################################
 ### Output file

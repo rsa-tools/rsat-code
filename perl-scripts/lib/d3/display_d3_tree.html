@@ -20,7 +20,7 @@
 
 
 	.node {
-		font: 10px sans-serif;
+		font: 20px sans-serif;
 	}
 
 
@@ -32,7 +32,7 @@
 	
 	svg {
 		pointer-events: all;
-		background-color: #EEEEEE;
+		background-color: white;
 		overflow: scroll;
 	}
 	
@@ -44,7 +44,8 @@
 	<div id="viz"></div>
 	<script type="text/javascript">
 
-	var width = 2200,
+(function(){
+	var width = 2700,
 		height =,
 		m = [40, 240, 40, 240],
 		w = width ,//-m[0] -m[0],
@@ -54,7 +55,7 @@
 
 	var cluster = d3.layout.cluster()
 		.size([height, width - 1200])
-	        .separation(function(a, b) { return (a.parent == b.parent ? 0.3 : 0.3); });
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
 
 
 	var svg = d3.select("#viz").append("svg")
@@ -90,39 +91,30 @@
 	
 	
 	/*Insert consensus*/
-	
-/*
-	node.append("a")
-		.attr("xlink:href", function(d) { return d.url; })
+		node.append("a")
+		.attr("xlink:href", function(d) { return d.children ? d.url : ""; })
 		.append("text")
-		.text(function(d) { return d.children ? "" : d.name; })
-		.attr("dx", function(d) { return d.children ? -20 : 20; })
-		.attr("dy", function(d) { return d.children ? -6 : 3; })
+		.text(function(d) { return d.children ? d.name : ""; })
+		.attr("dx", function(d) { return d.children ? -20 : 0; })
+		.attr("dy", function(d) { return d.children ? -6 : 0; })
+		.attr("fill", function(d) { return d.children ? "red" : ""; })
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
-	
-	// Add the consensus
-	node.append("text")
-		.text(function(d){ return d.children ? d.name : d.consensus; })
-		.attr("x", function(d){ return d.children ? -23 : 20; })
-		.attr("dy", function(d){ return d.children ? -6 : 25; })
-		.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
-	;
-*/
+
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image; })  
 		.attr("width", function(d) { return (d.size + 2)  * 27; })
-		.attr("height", 120)
-		.attr("x", 250)    
-		.attr("y", -50) 
+		.attr("height", 80)
+		.attr("x", 325)    
+		.attr("y", -33) 
 		.attr("preserveAspectRatio", "none");	
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image_rc; })  
 		.attr("width", function(d) { return (d.size + 2)  * 27; })
-		.attr("height", 120)
+		.attr("height", 20)
 		.attr("x", 1100)    
-		.attr("y", -50) 
+		.attr("y", -30) 
 		.attr("preserveAspectRatio", "none");
 
 	d3.select("svg")
@@ -165,5 +157,5 @@
 		return "M" + d.source.y + "," + d.source.x
 		+ "V" + d.target.x + "H" + d.target.y;
 	}
-
+})();
 </script>

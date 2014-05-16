@@ -100,9 +100,11 @@ sub load_supported_organisms {
   $organism_table = $organism_table || $ENV{RSAT}."/public_html/data/".$organism_table_name;
 
   unless (-e $organism_table) {
+    if ($main::verbose >= 2) {
       &RSAT::message::Warning("The tabular file with the list of supported organism cannot be read");
       &RSAT::message::Warning("Missing file",  $organism_table);
-      return();
+    }
+    return();
   }
   my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
   my @fields = ();
@@ -287,8 +289,6 @@ sub supported_organism_table {
 
   ## Default fields
   if (scalar(@fields) == 0) {
-#    @fields = qw(name data last_update features genome seq_format taxonomy synonyms up_from up_to);
-#    @fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
     @fields = @supported_org_fields;
   }
 
@@ -337,8 +337,6 @@ sub supported_organism_table {
 	  $value =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|;
 	  $value =~ s|\/+|\/|g;
 	}
-#      } elsif ($field eq "nb") {
-#	$value = $n;
       } else {
 	$value = $null;
 	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
@@ -417,7 +415,7 @@ sub CheckOrganism {
 ################################################################
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
-  my ($taxon, $depth) = @_;
+  my ($taxon, $depth, $die_if_noorg) = @_;
   my @organisms = ();
   unless ($tree) {
     $tree = new RSAT::Tree();
@@ -433,8 +431,13 @@ sub GetOrganismsForTaxon {
     if (defined($depth) && ($depth != 0)) {
       @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
     }
-  }else{
-    &RSAT::error::FatalError("Taxon $taxon is not supported\n");
+  } else {
+    $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
+    if ($die_if_noorg) {
+      &RSAT::error::FatalError($message);
+    } else {
+      &RSAT::message::TimeWarn($message);
+    }
   }
   return @organisms;
 }
