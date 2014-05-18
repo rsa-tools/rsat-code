@@ -1369,7 +1369,7 @@ sub Add_empty_columns_to_logos(){
     	## Run the convert-matrix command to add the empty columns to the logos
     	if($strand eq "D"){
 	    #print "convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos\t\t$c\n";
-	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
     	}else{
 	    #print "convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos\t\t$c\n";
 	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
