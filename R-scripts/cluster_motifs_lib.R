@@ -990,7 +990,17 @@ add.empty.columns <- function(id){
   if(strand == "D"){
     system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
   } else{
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -rc -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+
+    ## First convert the matrix to reverse complement
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -return counts,consensus -rc -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = ""))
+
+    temp.mat <- paste(out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = "")
+
+    ## Then add the gaps
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", temp.mat, " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+
+    system(paste("rm ", temp.mat, sep = ""))
+    rm(temp.mat)    
   }
 }
 

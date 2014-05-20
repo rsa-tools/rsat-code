@@ -229,8 +229,6 @@ mar4 <- alignment.width - 18
 ## Export the tree with the aligment
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
-  #w.inches <- 10 ## width in inches
-  #h.inches <- 7 ## height in inches
   w.inches <- 15 ## width in inches
   h.inches <- round(0.7* length(motifs.info)) ## height in inches
   #h.inches <- 8 ## height in inches
@@ -283,7 +281,7 @@ if(forest.nb > 1){
   for(nb in 1:length(table(forest))){
 
     cluster.nb <<- nb 
-    verbose(paste("Exploring the cluster generated: ", nb ), 1)
+    #verbose(paste("Exploring the cluster generated: ", nb ), 1)
     rm(compare.matrices.table)
     rm(description.table)
     rm(tree)
@@ -377,21 +375,21 @@ if(forest.nb > 1){
     motifs.info <- fill.downstream.forest(motifs.info)
     
     ## Reset the labels
-    for(nb in 1:length(tree$labels)){
+    for(lab.nb in 1:length(tree$labels)){
 
       ## Add the aligned consensus
-      tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], sep = "   ")
+      tree$labels[lab.nb] <- paste(motifs.info[[get.id(lab.nb)]][["consensus"]], sep = "   ")
       
       ## Add the new labels
       for(label in labels){
         if(label == "consensus"){
           next
         } else if(label == "id"){
-          tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
+          tree$labels[lab.nb] <- paste(tree$labels[lab.nb], get.id(lab.nb), sep = " ")
         } else if(label == "number"){
-          tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
+          tree$labels[lab.nb] <- paste(tree$labels[lab.nb], lab.nb, sep = " ")
         } else if(label == "strand"){
-          tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
+          tree$labels[lab.nb] <- paste(tree$labels[lab.nb], motifs.info[[get.id(lab.nb)]][["strand"]], sep = " ")
         }
       }
     }
