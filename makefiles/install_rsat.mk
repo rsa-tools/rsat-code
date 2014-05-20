@@ -65,6 +65,7 @@ UNIX_PACKAGES_UBUNTU= \
 	make \
 	yum \
 	apache2 \
+	apache2-utils \
 	php5 \
 	libapache2-mod-php5 \
 	php-elisp \
