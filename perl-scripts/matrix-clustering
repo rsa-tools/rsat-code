@@ -1048,9 +1048,9 @@ sub Add_attributes_to_JSON(){
 
       ## The path of the aligned logo (in D or R) that will be displayed 
       if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
-	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo_rc};
+	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
       }else{
-	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo_rc}; 
+	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo}; 
       }
   }
   close(DATA);
@@ -1353,7 +1353,6 @@ sub Add_empty_columns_to_logos(){
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
-    #my $c = 0;
     foreach my $id (keys %alignment_info){
 
 	## Reset the variables
@@ -1362,16 +1361,21 @@ sub Add_empty_columns_to_logos(){
 	my $file_name = $alignment_info{$id}{file_name};
 	my $strand = $alignment_info{$id}{strand};
 
-	$c++;
-     	#<STDIN>;
-
     	## Run the convert-matrix command to add the empty columns to the logos
     	if($strand eq "D"){
-	    #print "convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos\t\t$c\n";
+
 	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
     	}else{
-	    #print "convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos\t\t$c\n";
-	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -rc -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+
+	    ## First convert the matrix to reverse complement
+	    system("convert-matrix -i ".$file_name." -from tf -to tf -rc -return counts,consensus -o ".$main::outfile{prefix}."_aligned_logos/temp.tf"); 
+	    my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
+	    
+	    ## Then add the gaps
+	    system("convert-matrix -i ".$temp_mat." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+
+	    system("rm ".$temp_mat);
+
 	}
 
     	system("rm ".$file_name);
