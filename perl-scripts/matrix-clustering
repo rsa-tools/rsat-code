@@ -1065,6 +1065,7 @@ sub Add_attributes_to_JSON(){
   $matrix_num = 0;
   my $file = $main::outfile{prefix}."_JSON_clusters_table.tab";
   chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
+  my @merged_cons_folders = keys(%merged_consensuses_files);
 
   ### Open the JSON file produced by R      
   open(JSON, $main::outfile{json_ori}) || &RSAT::error::FatalError($main::outfile{json_ori}, "Cannot open the JSON file");
@@ -1084,14 +1085,12 @@ sub Add_attributes_to_JSON(){
       	      if ($children > 2){
 
 		  my $folder = $levels_JSON[$children-2];
-		  my $consensus_link = &RSAT::util::RelativePath($main::outfile{json_ori}, $merged_consensuses_files{$folder}{logo});
-
-		  # print "### ".$consensus_link." ###\n";
-		  # <STDIN>;
-
-      		  $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{consensus}\", ";
-		  $Add_this .= " \"url\" : \"$consensus_link\", ";
-      		  push(@Parsed_JSON, $Add_this."\n");
+		  if($folder ~~ @merged_cons_folders){
+		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{json_ori}, $merged_consensuses_files{$folder}{logo});		      
+		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{consensus}\", ";
+		      $Add_this .= " \"url\" : \"$consensus_link\", ";
+		      push(@Parsed_JSON, $Add_this."\n");
+		  }
       	      }
       	  }
       #}
@@ -1104,21 +1103,10 @@ sub Add_attributes_to_JSON(){
 	  $M1 = $1;
 	  
 	  ## Define te URL of the logo file, relative to the location of the json file
-
-	  # my $logo_link = &RSAT::util::RelativePath($main::outfile{json_ori}, $matrix_info{$M1}{logo_file});
-	  # my $logo_url = $logo_link.".png";
-	  # my $logo_url_rc = &RSAT::util::RelativePath($main::outfile{json_ori}, $matrix_info{$M1}{logo_file_rc});
-	  # $logo_url_rc .= ".png";
-
 	  my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{json_ori}, $matrix_info{$M1}{logo_aligned_file});
 	  my $aligned_logo_url = $aligned_logo_link.".png";
 	  
 	  ### Create the line that will be added to JSON file
-
-	  # $Add_this = " \"image\" : \"${logo_url}\"";
-	  # $Add_this .= ",\n \"image_rc\" : \"${logo_url_rc}\"";
-	  # $Add_this .= ",\n \"url\" : \"${logo_url}\"";
-
 	  $Add_this .= "\n \"image\" : \"${aligned_logo_link}\"";
 	  $Add_this .= ",\n \"url\" : \"${aligned_logo_link}\"";
 	  
@@ -1171,24 +1159,11 @@ sub Create_html_tree_file(){
 	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
-	
-    # my $consensus_branch_label = 
-    # 	"\tnode.append(\"text\")
-    # 	\t\t.text(function(d){ return d.children ? d.name : \"\"; })
-    # 	\t\t.attr(\"x\", function(d){ return d.children ? -23 : 0; })
-    # 	\t\t.attr(\"dy\", function(d){ return d.children ? -6 : 0; })
-    # 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 
     $matrix_num += 2;
     system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_tree_html});
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
     open(TREE,$main::outfile{logo_tree_html}) || &RSAT::error::FatalError($main::outfile{logo_tree_html}, "Cannot found the HTML tree file");
-
-#    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-#	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-#      $d3_base_url = "http://d3js.org/";
-#	 $d3_base_url=$ENV{rsat_www}."/lib/d3/";
-#    }
 
     ## Select the D3 base
     if ($d3_base_format eq "link"){
@@ -1250,11 +1225,11 @@ sub Create_html_tree_file(){
 	    print TEMP $add_this."\n";
 	}
 
-	if ($show_consensus){
-	    if ($_ =~ /Insert consensus/){
-		print TEMP $consensus_branch_label."\n";
-	    }
-	}
+	# if ($show_consensus){
+	#     if ($_ =~ /Insert consensus/){
+	# 	print TEMP $consensus_branch_label."\n";
+	#     }
+	# }
 	print TEMP $_."\n";
     }
     close(TREE);
@@ -1324,8 +1299,6 @@ sub Add_empty_columns_to_logos(){
 
 	
     	my @split_line = split(/\s+/, $_);
-	#print "@split_line\n";
-	#print @split_line."\n";
     	$split_line[0] =~ s/\s+//g;
 
     	## Store the ID, strand and offset of each aligned motif
@@ -1334,22 +1307,8 @@ sub Add_empty_columns_to_logos(){
     	$alignment_info{$split_line[0]}{offset_right} =  $split_line[4];
 	$alignment_info{$split_line[0]}{width} = $split_line[5];
 
-	#print "\n###ID:".$split_line[0]."\tLEFT:".$alignment_info{$split_line[0]}{offset_left}."\tRIGHT:".$alignment_info{$split_line[0]}{offset_right}."\n";
-	#print "\n### ".$split_line[0]."\t".$split_line[2]."\t".$split_line[3]."\t".$split_line[4]."\n";
-	#print $_."\n";
-     	#<STDIN>;
     }
     close(ALIGNMENT_TABLE);
-
-    # foreach my $id (keys %alignment_info){
-    #  	print "\n### ".$id."\t".$alignment_info{$id}{file_name}."\t".$alignment_info{$id}{strand}."\t".$alignment_info{$id}{offset_left}."\t".$alignment_info{$id}{offset_right}."\n";
-    # 	<STDIN>;
-    # } 
-    
- 
-    ## Create the folder to store the aligned logos
-#    system("mkdir ".$main::outfile{prefix}."_aligned_logos -p");
-
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
@@ -1455,8 +1414,6 @@ sub Merge_matrices(){
 	chomp(my $cons = `more $mat_file | grep DE`);
 	$cons =~ s/^DE\s+//;
 	$merged_consensuses_files{$folder}{consensus} = $cons;
-	# print "### ".$merged_consensuses_files{$folder}{consensus}." ###\n";
-	# <STDIN>;
     }
 }
 
