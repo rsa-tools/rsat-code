@@ -94,7 +94,6 @@ check.param <- function() {
 
   ## Set the labels
   labels <<- unique(labels)
-  print(paste("### ", out.prefix, " ###"))
 }
 
 ################################################################
@@ -338,21 +337,21 @@ align.two.leaves <- function(child1, child2){
 
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
-  if(aligned.motif.flag == 0){
+  ## if(aligned.motif.flag == 0){
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
+  ##   internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
     
-    for(n in c(n1, n2)){
-      motifs.info[[get.id(n)]][["strand"]] <<- "D"
-      motifs.info[[get.id(n)]][["number"]] <<- n
-      motifs.info[[get.id(n)]][["spacer"]] <<- 0
-      motifs.info[[get.id(n)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n)]][["number"]]),"consensus"])
-    }
+  ##   for(n in c(n1, n2)){
+  ##     motifs.info[[get.id(n)]][["strand"]] <<- "D"
+  ##     motifs.info[[get.id(n)]][["number"]] <<- n
+  ##     motifs.info[[get.id(n)]][["spacer"]] <<- 0
+  ##     motifs.info[[get.id(n)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n)]][["number"]]),"consensus"])
+  ##   }
 
-    forest.nb <<- forest.nb + 1
+  ##   forest.nb <<- forest.nb + 1
 
-  ## Conversely align the motifs
-  }else{
+  ## ## Conversely align the motifs
+  ## }else{
     
     internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Aligned"
     
@@ -391,7 +390,7 @@ align.two.leaves <- function(child1, child2){
     
     motifs.info[[id1]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id1]][["consensus"]], "-")))-1
     motifs.info[[id2]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id2]][["consensus"]], "-")))-1
-  }
+  ## }
 }
 
 
@@ -441,6 +440,8 @@ align.leave.and.cluster <- function(child1, child2){
     internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
 
     forest.nb <<- forest.nb + 1
+
+    alignment.alignment.level <<- 1
     
   ## Conversely align the motifs
   } else{
@@ -606,20 +607,21 @@ align.clusters <- function(child1, child2){
     
     internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Aligned"
     
-    ## Get the previous orientation of the aligned motifs
-    prev.strand.1 <- motifs.info[[id1]][["strand"]]
-    prev.strand.2 <- motifs.info[[id2]][["strand"]]
-    change.offset <- 0
-    
     ## Get the offset
     offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
     
     ## Switch the ids
-    if(id1 %in% ids2 == TRUE){
-      temporal <- ids2
+    if(id1 %in% ids2){
+      temporal <- NULL
+      temporal <- ids1
       ids1 <- ids2
       ids2 <- temporal
     }
+
+    ## Get the previous orientation of the aligned motifs
+    prev.strand.1 <- motifs.info[[id1]][["strand"]]
+    prev.strand.2 <- motifs.info[[id2]][["strand"]]
+    change.offset <- 0
     
     ## Get the current spacer of both motifs
     cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
@@ -653,7 +655,11 @@ align.clusters <- function(child1, child2){
     if(case %in% c(2,3,8)){
       
       ## Get the ids of the aligment that will be inverted
-      ids <- get.id(n2)
+      if(case %in% c(3,8)){
+        ids <- ids2
+      } else if(case %in% c(2)){
+        ids <- ids1
+      }
       
       ## Invert the aligment and store the information in a list
       inverted.alignment.ids <- inverted.alignment(ids)
@@ -663,9 +669,14 @@ align.clusters <- function(child1, child2){
         motifs.info[[id]] <<- NULL 
         motifs.info[[id]] <<- inverted.alignment.ids[[id]]
       }
-      
-      cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
-      cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])  
+
+      if(id1 %in% ids2){
+        cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
+        cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
+      } else {
+        cluster.1.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
+        cluster.2.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
+      }
     }
     
     ## According to the cases, reset the offset
@@ -697,6 +708,7 @@ align.clusters <- function(child1, child2){
   }else {
     internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
     forest.nb <<- forest.nb + 1
+    alignment.alignment.level <<- 1
   }
 }
   
