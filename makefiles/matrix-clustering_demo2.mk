@@ -14,6 +14,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo2.mk
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 PEAKMO_NEG_CONTROL_PREFIX=peak-motifs_result_Chen_Oct4_permuted
+OCT4_PREFIX=peak-motifs_Oct4
 
 
 ## Choose a particular demo set
@@ -86,13 +87,19 @@ cluster_peakmo_no_threshold:
 cluster_peakmo_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0.3
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0.4 OPT="-lth Ncor 0.4 -lth cor 0.75"
 
 ## Cluster permuted motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_neg_control:
 	@echo
 	@echo "Running matrix-clustering on permuted motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} cluster DEMO_PREFIX=${PEAKMO_NEG_CONTROL_PREFIX} MIN_NCOR=0.3
+
+## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+cluster_peakmo_Oct4_threhsolds:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX} MIN_NCOR=0.625 OPT="-lth cor 0.875"
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
@@ -106,10 +113,11 @@ cluster_footprints:
 RDB_CLUSTER_DIR=results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2012-05
-RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
+#RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
+RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/regulonDB_2012-05_MOD2.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
-	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES}
+	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4
 
 
 cluster_jaspar_one_group:
