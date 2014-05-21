@@ -137,7 +137,7 @@ description.table <- global.description.table
 merge.levels.leaves <<- leaves.per.node(tree)
 
 ## Saves the attributes of the merge
-internal.nodes.attributes <<- list() 
+internal.nodes.attributes <<- list()
 
 #########################################
 ## Traversing the tree: read the merge of
@@ -145,6 +145,8 @@ internal.nodes.attributes <<- list()
 ## Bottom-up traversal of the tree to orientate the logos
 for (merge.level in 1:nrow(tree$merge)) {
 
+  alignment.alignment.level <<- 0 
+  
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
 
@@ -176,10 +178,14 @@ for (merge.level in 1:nrow(tree$merge)) {
 
   
   ## Create the files with the aligned matrices
-  single.mat.files <<- NULL
-  merge.consensus.info <<- NULL
-  verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
-  aligned.matrices.to.merge(merge.level)
+  ## Only if they were aligned
+  if(alignment.alignment.level == 0){
+    
+    single.mat.files <<- NULL
+    merge.consensus.info <<- NULL
+    verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
+    aligned.matrices.to.merge(merge.level)
+  }
 }
 
 ## Split the tree into forest
