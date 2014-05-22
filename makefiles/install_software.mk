@@ -280,6 +280,8 @@ _download_blast: _download_blast_${OS}
 #_install_blast: _install_blast_${OS}
 _install_blast:
 	@${SUDO} mkdir -p ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
