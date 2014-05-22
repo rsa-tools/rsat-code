@@ -360,6 +360,10 @@ package main;
   if ($warn_missing_blast_files) {
     my (@filtered_ref_org) = &FilterOrganismsHavingBlast();
     #      print "; List of filtered reference organisms\n\t".join("\n\t",@filtered_ref_org)."\n";
+
+    if (scalar(@main::filtered_ref_org) == 0) {
+	&RSAT::error::FatalError("BLAST files are missing for all selected organisms.");
+    }
     @main::ref_organisms = (@filtered_ref_org);
   }
   &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
