@@ -366,7 +366,7 @@ package main;
     }
     @main::ref_organisms = (@filtered_ref_org);
   }
-  &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
+  &RSAT::message::Info(scalar(@ref_organisms), "reference organisms with BLAST tables installed on this RSAT server") if ($main::verbose >= 2);
 
   ################################################################
   ## Get taxonomy for ordering results
