@@ -30,7 +30,7 @@ V=2
 ################################################################
 ## Compare all matrices from the input file, with specific parameters
 ## to ensure that all distances are computed.
-COMPA_DIR=results/${DEMO_PREFIX}/pairwise_comparisons
+COMPA_DIR=results/${DEMO_PREFIX}
 COMPA_FILE=${COMPA_DIR}/${DEMO_PREFIX}_compa.tab
 compa:
 	@echo
@@ -58,13 +58,17 @@ compa_footprint_discovery:
 ################################################################
 ## Run matrix-clusteringon one demo set (the particular cases will be
 ## specified below)
-MIN_NCOR=0.3
+MIN_NCOR=0.4
+MIN_COR=0.75
+#MIN_W=4
 CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters_Ncor${MIN_NCOR}
 CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
 HCLUST_METHOD=average
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
-		-lth Ncor ${MIN_NCOR} -cons \
+		-lth Ncor ${MIN_NCOR} \
+		-lth cor ${MIN_COR} \
+		-cons \
 		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-labels name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
@@ -81,25 +85,26 @@ cluster:
 cluster_peakmo_no_threshold:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1 MIN_COR=-1
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=0.4 OPT="-lth Ncor 0.4 -lth cor 0.75"
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_PREFIX}
 
 ## Cluster permuted motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_neg_control:
 	@echo
 	@echo "Running matrix-clustering on permuted motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${PEAKMO_NEG_CONTROL_PREFIX} MIN_NCOR=0.3
+	${MAKE} cluster DEMO_PREFIX=${PEAKMO_NEG_CONTROL_PREFIX}
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_Oct4_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX} MIN_NCOR=0.625 OPT="-lth cor 0.875"
+	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX} MIN_NCOR=0.4 MIN_COR=0.7 
+## We should add this option: OPT='-lth w 5'
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
@@ -112,9 +117,11 @@ cluster_footprints:
 ## Cluster all motifs from RegulonDB
 RDB_CLUSTER_DIR=results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
-RDB_PREFIX=regulonDB_2012-05
-#RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
-RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/regulonDB_2012-05_MOD2.tf
+#RDB_PREFIX=regulonDB_2012-05
+RDB_PREFIX=regulonDB_2014-04-11
+RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
+#RDB_PREFIX=regulonDB_2012-05_MOD2
+#RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/regulonDB_2012-05_MOD2.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4
