@@ -88,14 +88,13 @@ write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, 
 ### Build the tree by hierarchical clustering, and export it in Newick format
 tree <<- hclust(dist.matrix, method = hclust.method)
 tree$labels <- as.vector(global.description.table$label)
+system(paste("mkdir -p ",out.prefix, "_trees/", sep = ""))
 
-if (plot.tree) {
-  plot(tree) 
-}
+
 if (export == "newick") {
   temp.tree <- tree
   temp.tree[[2]] <- round(tree[[2]], digits = 3)
-  newick.file <- paste(sep='.', out.prefix, "newick")
+  newick.file <- paste(out.prefix, "_trees/tree.newick", sep = "")
   verbose(paste("Exporing newick file", newick.file), 1)
   write(hc2Newick(temp.tree, flat = TRUE), file=newick.file)
   rm(temp.tree)
@@ -114,7 +113,7 @@ jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
 
 #############################
 ### Prints the .json file 
-json.file <- paste(out.prefix, ".json", sep="")
+json.file <- paste(out.prefix, "_trees/tree.json", sep="")
 verbose(paste("JSON tree file", json.file), 1)
 writeLines(jsonTree, con=json.file)
 
@@ -298,11 +297,19 @@ if(forest.nb > 1){
     ids <- ids.forest[[paste("forest_", nb, sep = "")]]
     if(length(ids) < 2){
       forest.list[[nb]] <- NULL
-      forest.list[[paste("forest_", nb, sep = "")]][[ids]] <- global.motifs.info[[ids]]
-      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["consensus"]] <- gsub("-", "", forest.list[[paste("forest_", nb, sep = "")]][[ids]][["consensus"]])
-      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["number"]] <- as.numeric(1)
-      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["spacer"]] <- as.numeric(0)
-      forest.list[[paste("forest_", nb, sep = "")]][[ids]][["offset_down"]] <- as.numeric(0)
+      forest.list[[paste("cluster_", nb, sep = "")]][[ids]] <- global.motifs.info[[ids]]
+      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]] <- gsub("-", "", forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]])
+      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["number"]] <- as.numeric(1)
+      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer"]] <- as.numeric(0)
+      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["offset_down"]] <- as.numeric(0)
+
+      ## Crete a JSON file for a trees with a single node
+      ## This is required because the cannot be used the hclust to Josn function
+      label.single.node <- as.vector(global.description.table[global.description.table$id == ids, ]$label) 
+      JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", label.single.node, "\",\n}\n]\n}", sep = "")
+      json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+      verbose(paste("JSON tree file", json.file), 1)
+      writeLines(JSON.single.node, con=json.file)
       next
     }
     
@@ -333,12 +340,28 @@ if(forest.nb > 1){
     ## Runs and plot the hierarchical cluster
     tree <<- hclust(dist.matrix, method = hclust.method)
     tree$labels <- as.vector(description.table$label)
-    tree$labels <- paste(as.vector(description.table$consensus), 1:length(description.table$consensus))
+    #tree$labels <- paste(as.vector(description.table$consensus), 1:length(description.table$consensus))
+    
+    ######################################
+    ## Creates and parse the json file
+    halfway.tree <- hclustToTree(tree)
+    jsonTree <- toJSON(halfway.tree)
+
+    ## Fix some little technical issues for JSON compatibility with the tree display javascript
+    jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
+    jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
+    jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
+    ## jsonTree <- gsub(",\\s*\n\\s*}", "\n}", jsonTree, perl = TRUE)
+    
+    ############################
+    ## Prints the .json file 
+    json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+    verbose(paste("JSON tree file", json.file), 1)
+    writeLines(jsonTree, con=json.file)
 
     motifs.info <<- list()
 
-    ## Saves the nodes clustered on each level
-    ## of the merge
+    ## Saves the nodes clustered on each level of the merge
     merge.levels.leaves <<- leaves.per.node(tree)
   
 
@@ -432,7 +455,7 @@ if(forest.nb > 1){
       dev.off()
     }
     
-    forest.list[[paste("forest_", nb, sep = "")]] <- motifs.info
+    forest.list[[paste("cluster_", nb, sep = "")]] <- motifs.info
   }
 }
 
@@ -453,7 +476,7 @@ if(forest.nb > 1){
 alignment.table <- as.data.frame(t(data.frame(alignment.table)))
 
 ## Produce the column ID
-temp <- unlist(strsplit(rownames(alignment.table), "forest_\\d+."))
+temp <- unlist(strsplit(rownames(alignment.table), "cluster_\\d+."))
 alignment.table$id <- as.vector(temp[which(temp != "")])
 
 ## Produce the column Width
@@ -475,6 +498,6 @@ alignment.table$forest <- forest.id
 
 ##  Re-order the table and export it
 alignment.table <- alignment.table[,c(6, 8, 2:4, 7, 5)]
-colnames(alignment.table) <- c("#id", "forest", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
+colnames(alignment.table) <- c("#id", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
