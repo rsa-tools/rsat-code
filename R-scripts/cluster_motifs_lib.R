@@ -227,7 +227,7 @@ leaves.per.node <- function (tree) {
       nodes1 <- leave.lists[branch1]
     }
 
-    ## Dependingon whether the right branch points to a leave or an
+    ## Depending on whether the right branch points to a leave or an
     ## iternal nodes, collect a single leave or the pre-defined list
     ## of leaves from this internal node
     if (branch2 < 0) {
@@ -238,7 +238,13 @@ leaves.per.node <- function (tree) {
     
     leave.lists[i] <- paste(nodes1, nodes2)
   }
-  leave.lists <- sapply(leave.lists, function(x){ as.numeric(unlist(strsplit(x, " "))) })
+
+  ## Transform the list to export it
+  if(length(leave.lists) > 1){
+    leave.lists <- sapply(leave.lists, function(x){ as.numeric(unlist(strsplit(x, " "))) })
+  } else{
+    leave.lists <- list(as.numeric(unlist(strsplit(leave.lists[[1]], " "))))
+  }
   return (leave.lists)
 }
 
@@ -1002,16 +1008,16 @@ add.empty.columns <- function(id){
   strand <- motifs.info[[id]][["strand"]]
 
   if(strand == "D"){
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
   } else{
 
     ## First convert the matrix to reverse complement
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -return counts,consensus -rc -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = ""))
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -return counts,consensus -rc -o ", cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = ""))
 
-    temp.mat <- paste(out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = "")
+    temp.mat <- paste(cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = "")
 
     ## Then add the gaps
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", temp.mat, " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
+    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", temp.mat, " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
 
     system(paste("rm ", temp.mat, sep = ""))
     rm(temp.mat)    
@@ -1024,10 +1030,10 @@ add.empty.columns <- function(id){
 aligned.matrices.to.merge <- function(level){
 
   ## Create the folder with the merged consensuses
-  system(paste("mkdir -p ", out.prefix, "_merged_consensuses/merge_level_", merge.level, sep = ""))
-  flag <- system(paste("ls ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/ | wc -l", sep = ""), intern = TRUE)
+  system(paste("mkdir -p ", cluster.folder, "/merged_consensuses/merge_level_", level, sep = ""))
+  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses/merge_level_", level, "/ | wc -l", sep = ""), intern = TRUE)
   if(flag >= 1){
-    system(paste("rm -r ", out.prefix, "_merged_consensuses/merge_level_", merge.level, "/*", sep = ""))
+    system(paste("rm -r ", cluster.folder, "/merged_consensuses/merge_level_", level, "/*", sep = ""))
   }
   ids <- get.id(merge.levels.leaves[[level]])
   
@@ -1159,8 +1165,7 @@ JSON.clusters <- function(){
     } 
   }
   JSON.clusters.table$mergelevel <- cluster
-  
-  JSON.clusters.table.file <- paste(sep="", out.prefix, "_JSON_clusters_table.tab")
+  JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
   write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 }
 
