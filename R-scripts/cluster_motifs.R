@@ -142,9 +142,7 @@ internal.nodes.attributes <<- list()
 ## Traversing the tree: read the merge of
 ## the hclust tree and align the leaves.
 ## Bottom-up traversal of the tree to orientate the logos
-for (merge.level in 1:nrow(tree$merge)) {
-
-  alignment.alignment.level <<- 0 
+for (merge.level in 1:nrow(tree$merge)) { 
   
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
@@ -173,17 +171,6 @@ for (merge.level in 1:nrow(tree$merge)) {
   ##########################################
   if ((child1 > 0) && (child2 > 0)) {
     align.clusters(child1, child2)
-  }
-
-  
-  ## Create the files with the aligned matrices
-  ## Only if they were aligned
-  if(alignment.alignment.level == 0){
-    
-    single.mat.files <<- NULL
-    merge.consensus.info <<- NULL
-    verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
-    aligned.matrices.to.merge(merge.level)
   }
 }
 
@@ -251,10 +238,6 @@ for (plot.format in c("pdf", "png")) {
   dev.off()
 }
 
-##################
-## Produce the table to add the merged
-## consensuses into the logo tree
-JSON.clusters()
 
 #########################
 ##  Produce the internal nodes attributes table
@@ -273,6 +256,12 @@ verbose(paste("Exporting merge attributes table", attributes.file), 1)
 ## not aligned, it is splited and each part (forest)
 ## is realigned and printed in pdf and png
 if(forest.nb > 1){
+
+  ## Creates a folder with where the separated information
+  ## of each cluster will be stored
+  system(paste("mkdir -p ", out.prefix, "_clusters_information", sep = ""))
+  clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
+  
   global.motifs.info <<- motifs.info
   forest <<- cutree(tree, k = forest.nb)
   forest.list <- list()
@@ -284,17 +273,25 @@ if(forest.nb > 1){
   }
 
   for(nb in 1:length(table(forest))){
-
+    
     cluster.nb <<- nb 
     #verbose(paste("Exploring the cluster generated: ", nb ), 1)
     rm(compare.matrices.table)
     rm(description.table)
     rm(tree)
     rm(motifs.info)
+    rm(merge.level.leaves)
     rm(internal.nodes.attributes)
     internal.nodes.attributes <<- list()
+
+    ## Creates an individual folder for each cluster
+    system(paste("mkdir -p ", clusters.info.folder, "/cluster_", cluster.nb, sep = ""))
+    cluster.folder <<- paste(clusters.info.folder, "/cluster_", cluster.nb, sep = "")
     
     ids <- ids.forest[[paste("forest_", nb, sep = "")]]
+
+    ## Skips the hierarchical clustering step if the cluster
+    ## is a single node
     if(length(ids) < 2){
       forest.list[[nb]] <- NULL
       forest.list[[paste("cluster_", nb, sep = "")]][[ids]] <- global.motifs.info[[ids]]
@@ -310,8 +307,25 @@ if(forest.nb > 1){
       json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
       verbose(paste("JSON tree file", json.file), 1)
       writeLines(JSON.single.node, con=json.file)
+
+      ## For consistency, print the empty file
+      ## It will be erased later
+      JSON.empty <- ";Empty_file\n"
+      JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
+  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+
+      ## For consistency, Create the folder with the merged consensuses
+      system(paste("mkdir -p ", cluster.folder, "/merged_consensuses", sep = ""))
+      flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
+      if(flag >= 1){
+        system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
+      }
       next
     }
+
+    #############################################
+    ## Align the internal cluster of they have
+    ## more than a single node
     
     ## New comparison table
     compare.matrices.table <<- global.compare.matrices.table[which((global.compare.matrices.table[,"id1"] %in% ids & global.compare.matrices.table[,"id2"] %in% ids)),]
@@ -363,14 +377,18 @@ if(forest.nb > 1){
 
     ## Saves the nodes clustered on each level of the merge
     merge.levels.leaves <<- leaves.per.node(tree)
-  
+
+    ##################
+    ## Produce the table to add the merged
+    ## consensuses into the logo tree
+    JSON.clusters()
 
     #########################################
     ## Traversing the tree: read the merge of
     ## the hclust tree and align the leaves.
     ## Bottom-up traversal of the tree to orientate the logos
     for (merge.level in 1:nrow(tree$merge)) {
-      
+      alignment.alignment.level <<- 0
       child1 <- tree$merge[merge.level,1]
       child2 <- tree$merge[merge.level,2]
       
@@ -397,6 +415,14 @@ if(forest.nb > 1){
       if ((child1 > 0) && (child2 > 0)) {
         align.clusters(child1, child2)
       }
+
+      
+      ## Create the files with the aligned matrices
+      single.mat.files <<- NULL
+      merge.consensus.info <<- NULL
+      verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
+      aligned.matrices.to.merge(merge.level)
+
     }
   
   
