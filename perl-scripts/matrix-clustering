@@ -1060,6 +1060,7 @@ sub Add_attributes_to_JSON(){
   ## Get the cluster sizes
   chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
   foreach my $cluster (@clusters_to_HTML){
+
       $cluster =~ s/\s+//g;
       chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep $cluster | cut -f1`);
       $clusters_info{$cluster} = scalar(@nodes); 
@@ -1073,7 +1074,8 @@ sub Add_attributes_to_JSON(){
       my $children = 0;
       my ($M1, $M2, $Add_this, $Flag);
       my (@Split_line, @Parsed_JSON) = ();
-      my $file = $main::outfile{prefix}."_JSON_clusters_table.tab";
+      my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
+      #print $file."\n";<STDIN>;
       chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
       my @merged_cons_folders = keys(%merged_consensuses_files);
 
@@ -1087,24 +1089,26 @@ sub Add_attributes_to_JSON(){
 	  $line = $_;
 	  
 	  # # If the user select the option -cons 1
-	  # # Add the consensus to the json file to be displayed in the tree
-	  # #if ($show_consensus){
-	  # 	  if ($line =~ /(\s*\"children\":\s*\[)/){
+	  # Add the consensus to the json file to be displayed in the tree
+	  #if ($show_consensus){
+	  	  if ($line =~ /(\s*\"children\":\s*\[)/){
 	  
-	  # 	      $children++;
-	  # 	      $Add_this = "";
-	  # 	      if ($children > 2){
+	  	      $children++;
+	  	      $Add_this = "";
+	  	      if ($children >= 2){
 	  
-	  # 		  my $folder = $levels_JSON[$children-2];
-	  # 		  if($folder ~~ @merged_cons_folders){
-	  # 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{json_ori}, $merged_consensuses_files{$folder}{logo});
-	  # 		      $consensus_link =~ s/^\.\.\///g;
-	  # 		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{consensus}\", ";
-	  # 		      $Add_this .= " \"url\" : \"$consensus_link\", ";
-	  # 		      push(@Parsed_JSON, $Add_this."\n");
-	  # 		  }
-	  # 	      }
-	  # 	  }
+	  		  my $folder = $levels_JSON[$children-2];
+			  #print $folder."\n";<STDIN>;
+	  		  if($folder ~~ @merged_cons_folders){
+			      #print $cluster."\t".$folder."\n"; <STDIN>;
+	  		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo});
+	  		      $consensus_link =~ s/^\.\.\///g;
+	  		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
+	  		      $Add_this .= " \"url\" : \"$consensus_link\", ";
+	  		      push(@Parsed_JSON, $Add_this."\n");
+	  		  }
+	  	      }
+	  	  }
 	  # #}
 
 	  ### Search the pattern separating the matrices names
@@ -1360,9 +1364,7 @@ sub Add_empty_columns_to_logos(){
 	    system("convert-matrix -i ".$temp_mat." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
 
 	    system("rm ".$temp_mat);
-
 	}
-
     	system("rm ".$file_name);
 
 	## Store the path of the logos
@@ -1403,43 +1405,56 @@ sub Create_single_matrix_files(){
 ## hclust tree into a single matrix and consensus
 sub Merge_matrices(){
 
-    ## Folders with the aligned matrices
-    my @folder_merged_matrices = ();
-    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_merged_consensuses`);
+    ## Get the cluster sizes
+    chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
+    foreach my $cluster (@clusters_to_HTML){
 
-    foreach my $folder (@folder_merged_matrices){
-
-	## Get the names of the aligned matrices files
-	chomp(my @file_names = `ls $main::outfile{prefix}_merged_consensuses/$folder`);
-	foreach my $file(@file_names){
-	    $file = $main::outfile{prefix}."_merged_consensuses/".$folder."/".$file
-	}
-	my $files = join(" ", @file_names);
-
-	## Merge the matrices and create a single matrix
-	my $cat_file = $main::outfile{prefix}."_merged_consensuses/".$folder."/".$folder."_cat.tf";
-	my $merged_mat_file = $main::outfile{prefix}."_merged_consensuses/".$folder."/".$folder."_matrices.tf";
-	system("cat ".$files." >".$cat_file);
-	system("merge-matrices -i ".$cat_file." -in_format tf -out_format tf -o ".$merged_mat_file);
-
-	## Delete files
-	system(" rm ".$cat_file);
-	foreach my $file(@file_names){
-	    system(" rm ".$file);
-	}
-
-	## Create the logos
-	system("convert-matrix -i ".$merged_mat_file." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -o ".$main::outfile{prefix}."_merged_consensuses/".$folder."/".$folder.".png");
-
-	$merged_consensuses_files{$folder}{logo} = $main::outfile{prefix}."_merged_consensuses/".$folder."/merged_logo.png";
-	$merged_consensuses_files{$folder}{logo_RC} = $main::outfile{prefix}."_merged_consensuses/".$folder."/merged_logo_rc.png";
-
-	$merged_consensuses_files{$folder}{consensus} = $main::outfile{prefix}."_merged_consensuses/".$folder."/merged_logo_rc.png";
+	$cluster =~ s/\s+//g;
+	chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep $cluster | cut -f1`);
+	$clusters_info{$cluster} = scalar(@nodes); 
+	$clusters_info{$cluster} =~ s/\s+//g;
 	
-	my $mat_file = $main::outfile{prefix}."_merged_consensuses/".$folder."/".$folder."_matrices.tf";
-	chomp(my $cons = `more $mat_file | grep DE`);
-	$cons =~ s/^DE\s+//;
-	$merged_consensuses_files{$folder}{consensus} = $cons;
+	
+	## Folders with the aligned matrices
+	my @folder_merged_matrices = ();
+	chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
+	
+	foreach my $folder (@folder_merged_matrices){
+	    
+	    ## Get the names of the aligned matrices files
+	    chomp(my @file_names = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses/$folder`);
+	    foreach my $file(@file_names){
+		$file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$file
+	    }
+	    my $files = join(" ", @file_names);
+	    
+	    ## Merge the matrices and create a single matrix
+	    my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_cat.tf";
+	    my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+	    system("cat ".$files." >".$cat_file);
+	    system("merge-matrices -i ".$cat_file." -in_format tf -out_format tf -o ".$merged_mat_file);
+	    
+	    ## Delete files
+	    system(" rm ".$cat_file);
+	    foreach my $file(@file_names){
+	        system(" rm ".$file);
+	    }
+	    
+	    ## Create the logos
+	    system("convert-matrix -i ".$merged_mat_file." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png");
+	    
+	    $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
+	    $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+	    
+	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+	    
+	    my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+	    chomp(my $cons = `more $mat_file | grep DE`);
+	    $cons =~ s/^DE\s+//;
+	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
+
+	    #print $cluster."\t".$folder."\n"; <STDIN>;
+	}
     }
 }
 
