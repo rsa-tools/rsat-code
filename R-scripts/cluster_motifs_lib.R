@@ -630,11 +630,12 @@ align.clusters <- function(child1, child2){
     prev.strand.1 <- motifs.info[[id1]][["strand"]]
     prev.strand.2 <- motifs.info[[id2]][["strand"]]
     change.offset <- 0
-    
+
     ## Get the current spacer of both motifs
     cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
     cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
     case <- 0
+
     
     ## Assign the value for the cases
     if(strand == "D"){
@@ -661,13 +662,7 @@ align.clusters <- function(child1, child2){
     
     ## Cases in which is required invert the aligment
     if(case %in% c(2,3,8)){
-      
-      ## Get the ids of the aligment that will be inverted
-      if(case %in% c(3,8)){
-        ids <- ids2
-      } else if(case %in% c(2)){
-        ids <- ids1
-      }
+      ids <- ids2
       
       ## Invert the aligment and store the information in a list
       inverted.alignment.ids <- inverted.alignment(ids)
