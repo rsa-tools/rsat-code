@@ -817,7 +817,6 @@ sub CompareMatrices {
   ## motif.
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose; 
-  ## NOTE: WE STILL HAVE TO EVALUATE WHETHER WE WANT TO ACCEPT THRESHOLDS ON THE MATRIX COMPARISON
   $cmd .= " -mode scores";
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
@@ -1452,8 +1451,6 @@ sub Merge_matrices(){
 	    chomp(my $cons = `more $mat_file | grep DE`);
 	    $cons =~ s/^DE\s+//;
 	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
-
-	    #print $cluster."\t".$folder."\n"; <STDIN>;
 	}
     }
 }
