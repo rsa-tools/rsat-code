@@ -334,7 +334,7 @@ align.two.leaves <- function(child1, child2){
   internal.nodes.attributes[[paste("merge_level_", merge.level)]][["median_score"]] <<- attributes[3]
   
   ## Comparison number in the compare-matrices table
-  compa.nb <- get.comparison.number(id1,id2)
+  compa.nb <- get.comparison.number(id1,id2)[1]
   
   ## Check the threshold values for the corresponding
   ## metric used
@@ -426,7 +426,7 @@ align.leave.and.cluster <- function(child1, child2){
   ids.aligned <- get.id(n.aligned)
   
   ## Find the central motif of the cluster
-  central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)
+  central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)[1]
   id1 <- central.motifs[1]
   id2 <- central.motifs[2]
   
@@ -838,7 +838,7 @@ alignment.test.method.complete <- function(ids1, ids2){
 ##if so, align the two clusters
 alignment.test.method.average <- function(ids1, ids2){
 
-  compa.numbers <- get.comparison.number(ids1, ids2)
+  compa.numbers <- get.comparison.number(ids1, ids2)[1]
   
   ## Get the scores of the comparisons
   if (metric == "similarity"){
@@ -909,7 +909,7 @@ central.motifs.ids <- function(ids1, ids2){
 ## different clusters: return the min score
 attributes.among.clusters <- function(ids1, ids2){
 
-  compa.numbers <- get.comparison.number(ids1, ids2)
+  compa.numbers <- get.comparison.number(ids1, ids2)[1]
   scores <- compare.matrices.table[compa.numbers,score]
   min.score <- min(scores)
   max.score <- max(scores)
