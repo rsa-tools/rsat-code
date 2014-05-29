@@ -716,9 +716,9 @@ package main;
   ## Single input file (each matrix of the file will be compared to
   ## each other one).
   local $single_input_file = 0;
-#  if ($infile{file1} eq $infile{file2}) {
-#    $single_input_file = 1;
-#  }
+  if ($infile{file1} eq $infile{file2}) {
+    $single_input_file = 1;
+  }
 
   ## Check that the two input formats have been specified
   unless (($input_format1) && ($input_format2)) {
