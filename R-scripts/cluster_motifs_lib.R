@@ -426,7 +426,7 @@ align.leave.and.cluster <- function(child1, child2){
   ids.aligned <- get.id(n.aligned)
   
   ## Find the central motif of the cluster
-  central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)[1]
+  central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)
   id1 <- central.motifs[1]
   id2 <- central.motifs[2]
   
@@ -838,7 +838,7 @@ alignment.test.method.complete <- function(ids1, ids2){
 ##if so, align the two clusters
 alignment.test.method.average <- function(ids1, ids2){
 
-  compa.numbers <- get.comparison.number(ids1, ids2)[1]
+  compa.numbers <- get.comparison.number(ids1, ids2)
   
   ## Get the scores of the comparisons
   if (metric == "similarity"){
