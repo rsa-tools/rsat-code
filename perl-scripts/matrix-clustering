@@ -1050,8 +1050,10 @@ sub Add_attributes_to_JSON(){
       ## The path of the aligned logo (in D or R) that will be displayed 
       if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
 	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
+	  $matrix_info{$matrix_label}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
       }else{
 	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo}; 
+	  $matrix_info{$matrix_label}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
       }
   }
   close(DATA);
@@ -1120,9 +1122,15 @@ sub Add_attributes_to_JSON(){
 	      my $aligned_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file});
 	      $aligned_logo_link =~ s/^\.\.\///g;
 	      my $aligned_logo_url = $aligned_logo_link.".png";
+
+	      ## Define te URL of the logo file, relative to the location of the json file
+	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file_rc});
+	      $aligned_rc_logo_link =~ s/^\.\.\///g;
+	      my $aligned_rc_logo_url = $aligned_logo_link.".png";
 	      
 	      ### Create the line that will be added to JSON file
 	      $Add_this .= "\n \"image\" : \"${aligned_logo_link}\"";
+	      $Add_this .= ",\n \"image_rc\" : \"${aligned_rc_logo_link}\"";
 	      $Add_this .= ",\n \"url\" : \"${aligned_logo_link}\"";
 	      
 	      foreach my $field (@supported_label_fields) {
@@ -1352,6 +1360,7 @@ sub Add_empty_columns_to_logos(){
     	## Run the convert-matrix command to add the empty columns to the logos
     	if($strand eq "D"){
 
+	    ## Add the empty columns
 	    system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
     	}else{
 
@@ -1463,7 +1472,7 @@ sub Merge_matrices(){
 ## and modified
 sub paste_new_cluster_to_HTML(){
     my $d3_tree_base = "(function(){
-                var width = 2700,
+                var width = 4500,
 		height =,
 		m = [40, 240, 40, 240],
 		w = width ,//-m[0] -m[0],
@@ -1472,7 +1481,7 @@ sub paste_new_cluster_to_HTML(){
 
 
 	var cluster = d3.layout.cluster()
-		.size([height, width - 1200])
+		.size([height, width - 1700])
 	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
 
 
@@ -1530,9 +1539,9 @@ sub paste_new_cluster_to_HTML(){
 	node.append(\"svg:image\")
 		.attr(\"xlink:href\", function(d) { return d.image_rc; })  
 		.attr(\"width\", function(d) { return (d.size + 2)  * 27; })
-		.attr(\"height\", 20)
-		.attr(\"x\", 1100)    
-		.attr(\"y\", -30) 
+		.attr(\"height\", 80)
+		.attr(\"x\", 1000)    
+		.attr(\"y\", -33) 
 		.attr(\"preserveAspectRatio\", \"none\");
 
 	d3.select(\"svg\")
