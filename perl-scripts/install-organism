@@ -44,7 +44,7 @@ package main;
   $supported_for_installation{"fasta"} = 1;
   $supported_for_installation{"raw"} = 1;
   $supported_for_installation{"filelist"} = 1;
-  @supported_tasks = qw(
+  @default_tasks = qw(
 			parse
 			config
 			phylogeny
@@ -53,17 +53,21 @@ package main;
 			seq_len_distrib
 			genome_segments
 			upstream_freq
+			genome_freq
+			protein_freq
 			oligos
 			dyads
+		       );
+  @extra_tasks = qw(
 			distrib
 			ncf
-			protein_freq
-			genome_freq
 			intergenic_freq
 			ensembl_freq
-			clean
+                        clean
+                        default
 			all
-		       );
+      );
+  @supported_tasks = (@default_tasks, @extra_tasks);
   %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -102,6 +106,14 @@ package main;
   if ($#task == -1) {
     &RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
   }
+
+  ## Run all default tasks
+  if ($task{default}) {
+    foreach my $task (@default_tasks) {
+      $task{$task} = 1;
+    }
+  }
+
   if ($task{all}) {
     %task = %supported_task;
   }
@@ -121,6 +133,38 @@ package main;
   if (($task{protein_freq}) && !($task{oligos})) {
     &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
   }
+
+  ################################################################
+  ## Directory contianing the Genbank-formatted organisms (which can
+  ## be downloaded from NCBI).
+  if ($task{parse}) {
+    unless ($dir{genbank}) {
+      if ($ENV{GENBANK_DIR}) {
+	$dir{genbank} = $ENV{GENBANK_DIR};
+      } elsif ($GENBANK_DIR) {
+	$dir{genbank} = $GENBANK_DIR;
+      } else {
+	&RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
+      }
+    }
+    unless (-d $dir{genbank}) {
+      &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
+    }
+  }
+
+  if ($main::all_organisms) {
+    @organisms_dirs = glob($dir{genbank}."/*_*");
+    foreach my $dir (@organisms_dirs) {
+      next if ($dir =~ /^readme/i); ## Skip readme file
+      next if ($dir =~/^_/); ## The NCBI dir Bacteria contains some folders starting with "_", I guess these genomes are problematic
+      next unless ($dir =~ /[A-Z]/); ## The Bacteria dir contains some folders with fuzzy names, starting with a lowercase. I prefer to ignore these genomes (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
+      my $org = &RSAT::util::ShortFileName($dir);
+      push @organisms, $org;
+    }
+    &RSAT::message::Info("Installing",scalar(@organisms),"organisms found in the Genbank directory", $dir{genbank}) if ($main::verbose >= 1);
+    &RSAT::message::Info("Organisms", join(" ", @organisms)) if ($main::verbose >= 3);
+  }
+  
 
   ## If an organism file has been specified, read organism list
   if ($infile{organisms}) {
@@ -161,30 +205,13 @@ package main;
   &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
   ## Check that at least one organism has been specified
-  &RSAT::error::FatalError("At least one organism should be specified, with the option -org or -taxon") unless (scalar(@organisms) > 0);
+  &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") unless (scalar(@organisms) > 0);
 
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
     &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
     &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
     &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
-  }
-
-  ################################################################
-  ## Input directory
-  if ($task{parse}) {
-    unless ($dir{genbank}) {
-      if ($ENV{GENBANK_DIR}) {
-	$dir{genbank} = $ENV{GENBANK_DIR};
-      } elsif ($GENBANK_DIR) {
-	$dir{genbank} = $GENBANK_DIR;
-      } else {
-	&RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
-      }
-    }
-    unless (-d $dir{genbank}) {
-      &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
-    }
   }
 
   ################################################################
@@ -283,7 +310,7 @@ sub Verbose {
     print $out "; install-organism ";
     &PrintArguments($out);
     print $out ";\n; Tasks:\n";
-    foreach my $task (keys %task) {
+    foreach my $task (sort(keys(%task))) {
 	print $out ";\t$task\n";
     }
 
@@ -891,6 +918,7 @@ sub CalcOligoDistrib {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@oligo_lengths) {
 	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
+
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = $SCRIPTS."/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
@@ -1232,7 +1260,7 @@ install_organism options
 -help		(must be first argument) display options
 -v		verbose
 -n		dry run (print commands without executing them)
--org		organism name without spaces (e.g. Saccharomyces_cerevisiae);
+-org		organism name without spaces (e.g. Saccharomyces_cerevisiae); can be used iteratively
 -org_file	organism_file_name
 -taxon		iterate installation tasks over all the previously installed organisms of a taxon
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
@@ -1301,6 +1329,10 @@ sub ReadArguments {
       ## Input file with organism list
     } elsif ($arg eq "-org_file") {
       $infile{organisms} = shift(@arguments);
+
+      ## All organisms found in the Genbank dir
+    } elsif ($arg eq "-all_organisms") {
+      $main::all_organisms = 1;
 
       ## Taxon
     } elsif ($arg eq "-taxon") {
