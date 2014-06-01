@@ -136,10 +136,7 @@ package main;
 
   local $decimals = 13;		## Decimals for printing frequencies
   
-
-
-  
-  #### background models
+  ## Background models
   %supported_bg = ('upstream'=>1,
 		   'upstream-noorf'=>1,
 		   'intergenic'=>1,
