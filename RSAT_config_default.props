@@ -127,7 +127,7 @@ NODES=
 ##
 ## This will only be required if you intend to install yourself some
 ## organisms from tne NCBI genomes repository.
-GENBANK_DIR=[RSAT_PARENT_PATH]/databases/ftp.ncbi.nih.gov/genomes/
+GENBANK_DIR=[RSAT_PARENT_PATH]/downloads/ftp.ncbi.nih.gov/genomes/
 
 ################################################################
 ## Libraries required for direct access to the EnsEMBL genomes.
