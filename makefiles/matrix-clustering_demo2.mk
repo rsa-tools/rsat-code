@@ -70,7 +70,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth cor ${MIN_COR} \
 		-cons \
 		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
-		-labels name,consensus ${OPT} \
+		-label name,consensus ${OPT} \
 		-o ${CLUSTER_PREFIX}
 CLUSTER_TIME_FILE=${CLUSTER_PREFIX}_time_log.txt
 cluster:
