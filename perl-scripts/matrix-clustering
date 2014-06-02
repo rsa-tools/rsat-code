@@ -1470,9 +1470,10 @@ sub Merge_matrices(){
 ## each time a new cluster is added 
 ## to the file the next code is paste 
 ## and modified
+## 	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
 sub paste_new_cluster_to_HTML(){
     my $d3_tree_base = "(function(){
-                var width = 4500,
+                var width = 3500,
 		height =,
 		m = [40, 240, 40, 240],
 		w = width ,//-m[0] -m[0],
@@ -1481,7 +1482,7 @@ sub paste_new_cluster_to_HTML(){
 
 
 	var cluster = d3.layout.cluster()
-		.size([height, width - 1700])
+		.size([height, width - 2500])
 	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
 
 
@@ -1530,7 +1531,7 @@ sub paste_new_cluster_to_HTML(){
 		
 	node.append(\"svg:image\")
 		.attr(\"xlink:href\", function(d) { return d.image; })  
-		.attr(\"width\", function(d) { return (d.size + 2)  * 27; })
+		.attr(\"width\", function(d) { return (d.size + 2)  * 24; })
 		.attr(\"height\", 80)
 		.attr(\"x\", 325)    
 		.attr(\"y\", -33) 
@@ -1538,16 +1539,18 @@ sub paste_new_cluster_to_HTML(){
 		
 	node.append(\"svg:image\")
 		.attr(\"xlink:href\", function(d) { return d.image_rc; })  
-		.attr(\"width\", function(d) { return (d.size + 2)  * 27; })
+		.attr(\"width\", function(d) { return (d.size + 2)  * 24; })
 		.attr(\"height\", 80)
-		.attr(\"x\", 1000)    
+  		.attr(\"x\", function(d) { return (d.size + 2)  * 24 + 375; })  
 		.attr(\"y\", -33) 
 		.attr(\"preserveAspectRatio\", \"none\");
-
+/*
 	d3.select(\"svg\")
         .call(d3.behavior.zoom()
         .scaleExtent([0.5, 5])
         .on(\"zoom\", zoom));
+		.attr(\"x\", function(d) { (d.size + 2) * 24 + 450;})  
+*/
 			
 	});
 	
@@ -1581,7 +1584,7 @@ sub Add_div_to_HTML(){
 	if(/^\s*\/\/Divisions/){
 	    $line = "";
 	    foreach my $cluster (keys %clusters_info){
-		$line .= "<div id=\"".$cluster."\"><font size=\"30\">".$cluster."</font><\/div>\n";
+		$line .= "<div id=\"".$cluster."\"><h2>".$cluster."</h2><\/div>\n";
 	    }
 	}
 
