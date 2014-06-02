@@ -283,7 +283,7 @@ package main;
   }
 
   ## Check that at least one field is selected for the option
-  ## "-labels".
+  ## "-label".
   if (scalar(@label_fields_to_return) == 0) {
     $label_fields_to_return{id} = 1;
     $label_fields_to_return{name} = 1;
@@ -613,7 +613,7 @@ B<Supported d3 bases>
 
 =pod
 
-=item	B<-labels>
+=item	B<-label>
 
 Option to select the matrix label fields displayed in the html tree
     
@@ -622,7 +622,7 @@ B<Supported labels>
  (name, consensus, id)
 
 =cut
-    } elsif ($arg eq "-labels") {
+    } elsif ($arg eq "-label") {
       my $label_fields_to_return = shift(@arguments);
       my @new_label_fields_to_return = split (",", $label_fields_to_return);
       foreach $field (@new_label_fields_to_return) {
@@ -1583,7 +1583,7 @@ sub Add_div_to_HTML(){
 	## Add one <div> for each cluster
 	if(/^\s*\/\/Divisions/){
 	    $line = "";
-	    foreach my $cluster (keys %clusters_info){
+	    foreach my $cluster (sort keys %clusters_info){
 		$line .= "<div id=\"".$cluster."\"><h2>".$cluster."</h2><\/div>\n";
 	    }
 	}
@@ -1591,7 +1591,7 @@ sub Add_div_to_HTML(){
 	## 
 	if(/^\s*\/\/Body/){
 	    $line = "";
-	    foreach my $cluster (keys %clusters_info){
+	    foreach my $cluster (sort keys %clusters_info){
 		$line .= $temp."\n";
 	    }
 	}
