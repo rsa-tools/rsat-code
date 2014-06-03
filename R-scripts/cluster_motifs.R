@@ -530,3 +530,7 @@ alignment.table <- alignment.table[,c(6, 8, 2:4, 7, 5)]
 colnames(alignment.table) <- c("#id", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
+
+
+
+
