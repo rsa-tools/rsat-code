@@ -10,6 +10,15 @@
 include ${RSAT}/makefiles/compare-matrices_demo.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo2.mk
 
+################################################################
+## Parameters for the analysis
+MIN_NCOR=0.4
+MIN_COR=0.75
+HCLUST_METHOD=average
+#MIN_W=4
+## Verbosity
+V=2
+
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
@@ -24,8 +33,6 @@ DEMO_PREFIX=${PEAKMO_PREFIX}
 MATRIX_DIR=${RSAT}/public_html/demo_files/
 MATRIX_FILE=${MATRIX_DIR}/${DEMO_PREFIX}_matrices.tf
 
-## Verbosity
-V=2
 
 ################################################################
 ## Compare all matrices from the input file, with specific parameters
@@ -58,12 +65,9 @@ compa_footprint_discovery:
 ################################################################
 ## Run matrix-clusteringon one demo set (the particular cases will be
 ## specified below)
-MIN_NCOR=0.4
-MIN_COR=0.75
-#MIN_W=4
-CLUSTER_DIR=results/${DEMO_PREFIX}/motif_clusters_Ncor${MIN_NCOR}
-CLUSTER_PREFIX=${COMPA_DIR}/${DEMO_PREFIX}_clustering
-HCLUST_METHOD=average
+CLUSTER_PREFIX=${DEMO_PREFIX}_hclust${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
+CLUSTER_DIR=results/${DEMO_PREFIX}/hclust${HCLUST_METHOD}/Ncor${MIN_NCOR}_cor${MIN_COR}
+CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -format tf \
 		-lth Ncor ${MIN_NCOR} \
@@ -71,15 +75,15 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-cons \
 		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
-		-o ${CLUSTER_PREFIX}
-CLUSTER_TIME_FILE=${CLUSTER_PREFIX}_time_log.txt
+		-o ${CLUSTER_FILE_PREFIX}
+CLUSTER_TIME_FILE=${CLUSTER_FILE_PREFIX}_time_log.txt
 cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
 	@echo "	verbosity +time in file	${CLUSTER_TIME}"
 	${CLUSTER_CMD}
 #	(time ${CLUSTER_CMD}) >& ${CLUSTER_TIME_FILE}
-	@echo "		${CLUSTER_PREFIX}_index.html"
+	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_no_threshold:
