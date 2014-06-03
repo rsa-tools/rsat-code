@@ -799,7 +799,7 @@ alignment.test.method.single <- function(ids1, ids2){
   compa.numbers <- get.comparison.number (ids1, ids2)
 
   ## Get the scores of the comparisons
-  scores <- compare.matrices.table[compa.numbers,score]
+  scores <<- compare.matrices.table[compa.numbers,score]
 
   if(metric == "similarity"){
     if(pairs.satisfy.lth() > 0){
