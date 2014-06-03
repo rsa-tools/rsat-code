@@ -285,8 +285,10 @@ package main;
   ## Check that at least one field is selected for the option
   ## "-label".
   if (scalar(@label_fields_to_return) == 0) {
-    $label_fields_to_return{id} = 1;
-    $label_fields_to_return{name} = 1;
+    @label_fields_to_return = qw(id name);
+    for my $field (@label_fields_to_return) {
+      $label_fields_to_return{$field} = 1;
+    }
   }
   $label_fields_to_return = join ",", @label_fields_to_return;
   &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
@@ -620,7 +622,7 @@ Option to select the matrix label fields displayed in the html tree
 B<Supported labels>
     
  (name, consensus, id)
-
+ 
 =cut
     } elsif ($arg eq "-label") {
       my $label_fields_to_return = shift(@arguments);
@@ -628,11 +630,11 @@ B<Supported labels>
       foreach $field (@new_label_fields_to_return) {
 	if ($supported_label_fields{$field}) {
 	  $label_fields_to_return{$field} = 1;
+	  push @label_fields_to_return, $field;
 	} else {
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
 	}
       }
-      push @label_fields_to_return, @new_label_fields_to_return;
       
 =pod
 
