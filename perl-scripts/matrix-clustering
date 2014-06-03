@@ -52,9 +52,14 @@ RSAT makefile:
 
 =item Jacques van Helden
 
+The following collaborator contributed to the definition of
+requirements for this program.
+
 =item Carl Herrmann
 
 =item Denis Thieffry
+
+=item Morgane Thomas-Chollier
 
 =back
 
@@ -64,7 +69,7 @@ util
 
 =head1 USAGE
 
-cluster-matrices [-i inputfile] [-o outputfile] [-v #] [...]
+cluster-matrices [-i inputfile] [-o outputfile] [-v ] [...]
 
 
 =head1 OUTPUT FORMAT
@@ -85,11 +90,10 @@ strand) between each pair of matrices.
 
 =cut
 
-
-    BEGIN {
-      if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-      }
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
 }
 require "RSA.lib";
 require "RSA2.cgi.lib";
@@ -106,18 +110,17 @@ package main;
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-#    $program_version = "0.00";
 
+  ## Input / output files
   %main::infile = ();
   %main::outfile = ();
   %main::dir = ();
   @dirs = ();
 
   $main::verbose = 0;
-#    $main::in = STDIN;
   $main::out = STDOUT;
 
-  ## input formats: only accept formats supporting multiple matrices
+  ## Input formats: only accept formats supporting multiple matrices
   local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
   local %supported_matrix_format = ();
   foreach my $format (@supported_matrix_formats) {
@@ -125,7 +128,7 @@ package main;
   }
   local $supported_matrix_formats = join ",", @supported_matrix_formats;
 
-  ## output formats for hclust
+  ## Output formats for hclust
   local @supported_tree_formats = qw (json newick);
   local %supported_tree_formats = ();
   foreach my $format (@supported_tree_formats) {
@@ -135,6 +138,7 @@ package main;
   local $export_tree_format = "";
 
   ## Select d3 base
+  ## Note : option link requires internet connection
   local @d3_base_formats = qw (file link);
   local %d3_base_formats = ();
   foreach my $format (@d3_base_formats) {
@@ -311,7 +315,7 @@ package main;
   ################################################################
   ## Specify output file names and open output stream
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
-#    $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
+  $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
   $main::out = &OpenOutputFile($main::outfile{log});
 
 
