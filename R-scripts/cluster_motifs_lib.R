@@ -321,10 +321,24 @@ align.two.leaves <- function(child1, child2){
   ## Identify the two motifs
   n1 <- min(-child1,-child2) ## row number of the first motif in the description table
   n2 <- max(-child1,-child2) ## row number of the second motif in the description table
-  
-  id1 <- get.id(n1) ## Id of the first motif
-  id2 <- get.id(n2) ## Id of the second motif
 
+  id1.test <- get.id(n1)
+  id2.test <- get.id(n2)
+
+  ## Get the id of each node
+  central.motifs <- central.motifs.ids(get.id(n1), get.id(n2))
+  id1 <- central.motifs[1]
+  id2 <- central.motifs[2]
+
+  if(id1.test == id2){
+    temporal <- id1
+    id1 <- id2
+    id2 <- temporal
+    temporal <- n1
+    n1 <- n2
+    n2 <- temporal
+  }
+  
   ## Nodes attributes
   attributes <- attributes.among.clusters(id1, id2)
   internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_1"]] <<- paste(n1, collapse = " ")

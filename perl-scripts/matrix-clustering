@@ -1069,7 +1069,7 @@ sub Add_attributes_to_JSON(){
   foreach my $cluster (@clusters_to_HTML){
 
       $cluster =~ s/\s+//g;
-      chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep $cluster | cut -f1`);
+      chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep -w $cluster | cut -f1`);
       $clusters_info{$cluster} = scalar(@nodes); 
       $clusters_info{$cluster} =~ s/\s+//g;
   }
@@ -1082,7 +1082,6 @@ sub Add_attributes_to_JSON(){
       my ($M1, $M2, $Add_this, $Flag);
       my (@Split_line, @Parsed_JSON) = ();
       my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
-      #print $file."\n";<STDIN>;
       chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
       my @merged_cons_folders = keys(%merged_consensuses_files);
 
@@ -1103,11 +1102,8 @@ sub Add_attributes_to_JSON(){
 	  	      $children++;
 	  	      $Add_this = "";
 	  	      if ($children >= 2){
-	  
 	  		  my $folder = $levels_JSON[$children-2];
-			  #print $folder."\n";<STDIN>;
 	  		  if($folder ~~ @merged_cons_folders){
-			      #print $cluster."\t".$folder."\n"; <STDIN>;
 	  		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo});
 	  		      $consensus_link =~ s/^\.\.\///g;
 	  		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
@@ -1424,7 +1420,7 @@ sub Merge_matrices(){
     foreach my $cluster (@clusters_to_HTML){
 
 	$cluster =~ s/\s+//g;
-	chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep $cluster | cut -f1`);
+	chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep -P '$cluster\\s+' | cut -f1`);
 	$clusters_info{$cluster} = scalar(@nodes); 
 	$clusters_info{$cluster} =~ s/\s+//g;
 	
