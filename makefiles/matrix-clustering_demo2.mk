@@ -65,7 +65,7 @@ compa_footprint_discovery:
 ################################################################
 ## Run matrix-clusteringon one demo set (the particular cases will be
 ## specified below)
-CLUSTER_PREFIX=${DEMO_PREFIX}_hclust${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
+CLUSTER_PREFIX=${DEMO_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_DIR=results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
