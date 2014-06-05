@@ -33,7 +33,7 @@ source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 ## Options
 plot.tree <- FALSE
 export <- 'json'
-
+thresholds <<- list()
 
 ################################################################
 ## Read arguments from the command line.
@@ -150,8 +150,8 @@ for (merge.level in 1:nrow(tree$merge)) {
   child1 <- tree$merge[merge.level,1]
   child2 <- tree$merge[merge.level,2]
 
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["merge_level"]] <- merge.level
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["method"]] <- hclust.method
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merge_level"]] <- merge.level
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["method"]] <- hclust.method
 
   ########################################
   ## Case 1: merging between two leaves ##
@@ -395,8 +395,8 @@ if(forest.nb > 1){
       child1 <- tree$merge[merge.level,1]
       child2 <- tree$merge[merge.level,2]
       
-      internal.nodes.attributes[[paste("merge_level_", merge.level)]][["merge_level"]] <- merge.level
-      internal.nodes.attributes[[paste("merge_level_", merge.level)]][["method"]] <- hclust.method
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merge_level"]] <- merge.level
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["method"]] <- hclust.method
       
       ########################################
       ## Case 1: merging between two leaves ##
