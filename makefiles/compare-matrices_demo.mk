@@ -51,8 +51,8 @@ peakmo_vs_jaspar_param:
 ################################################################
 ## Case 2: compare all the motifs from a reference database
 ## (RegulonDB, Jaspar).
-DB_PREFIX=${REGULONDB_PREFIX}
-DB_DIR=${REGULONDB_DIR}
+DB_PREFIX=${JASPAR_PREFIX}
+DB_DIR=${JASPAR_DIR}
 DB_MATRICES=${DB_DIR}/${DB_PREFIX}.tf
 DB_COMPA_DIR=results/${DB_PREFIX}_vs_itself
 DB_COMPA_RESULT=${DB_COMPA_DIR}/${DB_PREFIX}_vs_itself_${COMPA_SUFFIX}
@@ -72,13 +72,14 @@ DB_COMPA_CMD=compare-matrices -v ${V} \
 		-sort Ncor ${OPT} \
 		-o ${DB_COMPA_RESULT}
 #TIME_FILE=${DB_COMPA_DIR}/time_${DB_PREFIX}_vs_itself.txt
-TIME_DIR=time_measurements
-TIME_FILE=${TIME_DIR}/time_${DB_PREFIX}_vs_itself.txt
+TIME_DIR=${DB_COMPA_DIR}
+TIME_FILE=${DB_COMPA_DIR}/time_${DB_PREFIX}_vs_itself.txt
 db_vs_itself:
 	@echo ""
 	@echo "Comparing DB with itself	${DB_PREFIX}"
 	@mkdir -p ${DB_COMPA_DIR}
 	@mkdir -p ${TIME_DIR}
+	@echo "Time and log file	${TIME_FILE}"
 	(time -p ${DB_COMPA_CMD}) >& ${TIME_FILE}
 	@echo "	${DB_COMPA_RESULT}_index.html"
 	@echo "	${TIME_FILE}"
@@ -101,7 +102,6 @@ graph_stats:
 ################################################################
 ## Generate a graph of motif similarity (nodes = motifs, edges =
 ## similarity between two motifs)
-
 WCOL=6
 db_vs_itself_graph:
 	@echo ""
@@ -117,10 +117,18 @@ db_vs_itself_graph:
 		| perl -pe 's|\.\dnt\S+||g' \
 		> ${DB_COMPA_RESULT}.dot
 	@echo "	${DB_COMPA_RESULT}.dot"
-	@neato -Tdot ${DB_COMPA_RESULT}.dot > ${DB_COMPA_RESULT}_neato.dot
-	@echo "	${DB_COMPA_RESULT}_neato.dot"
-	@neato -Tpdf ${DB_COMPA_RESULT}.dot > ${DB_COMPA_RESULT}.pdf
-	@echo "	${DB_COMPA_RESULT}.pdf"
+	${MAKE} db_vs_itself_layout
+
+## Choose a graph layout algorithm among those supported by GraphViz
+## (dot, neato, fdp, sfdp, twopi, circo) The layered out graph is
+## exported in dot format (which can be used to extract node
+## coordinates) and to pdf (for visualisation).
+LAYOUT=neato
+db_vs_itself_layout:
+	@${LAYOUT} -Tdot ${DB_COMPA_RESULT}.dot ${OPT} > ${DB_COMPA_RESULT}_${LAYOUT}.dot
+	@echo "	${DB_COMPA_RESULT}_${LAYOUT}.dot"
+	@${LAYOUT} -Tpdf ${DB_COMPA_RESULT}.dot ${OPT} > ${DB_COMPA_RESULT}_${LAYOUT}.pdf
+	@echo "	${DB_COMPA_RESULT}_${LAYOUT}.pdf"
 
 
 ## Display parameters for the matrix comparison
@@ -142,8 +150,9 @@ permute_db:
 	permute-matrix -i ${DB_MATRICES} -in_format tf -out_format tf -o ${DB_MATRICES_PERM}
 	@echo "	${DB_MATRICES_PERM}"
 
+################################################################
 ## RegulonDB
-REGULONDB_PREFIX=regulonDB_2012-05
+REGULONDB_PREFIX=regulonDB_2014-04-11
 REGULONDB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
 REGULONDB_MATRICES=${REGULONDB_DIR}/${REGULONDB_PREFIX}.tf
 regulondb_vs_itself:
@@ -153,10 +162,24 @@ permute_regulondb:
 	@${MAKE} permute_db  DB_PREFIX=${REGULONDB_PREFIX} DB_DIR=${REGULONDB_DIR}
 
 permuted_regulondb_vs_itself:
-	@${MAKE} db_vs_itself DB_PREFIX=${REGULONDB_PREFIX}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
+	@${MAKE} db_vs_itself DB_PREFIX=${REGULONDB_PREFIX}_perm DB_DIR=${REGULONDB_DIR}
 
+################################################################
+## footprintDB (database compiled by Bruno Contreras)
+FOOTPRINTDB_PREFIX=footprintDB.plants.motif
+FOOTPRINTDB_DIR=${RSAT}/public_html/data/motif_databases/footprintDB
+FOOTPRINTDB_MATRICES=${FOOTPRINTDB_DIR}/${FOOTPRINTDB_PREFIX}.tf
+footprintdb_vs_itself:
+	@${MAKE} db_vs_itself DB_PREFIX=${FOOTPRINTDB_PREFIX} DB_DIR=${FOOTPRINTDB_DIR}
 
-## JASPAR core insects
+permute_footprintdb:
+	@${MAKE} permute_db  DB_PREFIX=${FOOTPRINTDB_PREFIX} DB_DIR=${FOOTPRINTDB_DIR}
+
+permuted_footprintdb_vs_itself:
+	@${MAKE} db_vs_itself DB_PREFIX=${FOOTPRINTDB_PREFIX}_perm DB_DIR=${FOOTPRINTDB_DIR}
+
+################################################################
+## JASPAR
 JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
 JASPAR_GROUP=vertebrates
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
@@ -181,3 +204,5 @@ iterate_jaspar_perm:
 	@for g in ${JASPAR_GROUPS}; do \
 		${MAKE} DB_PREFIX=jaspar_core_$${g}_2013-11_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
 	done
+
+
