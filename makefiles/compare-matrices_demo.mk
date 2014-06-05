@@ -49,7 +49,8 @@ peakmo_vs_jaspar_param:
 	@echo "Result	${PEAKMO_VS_JASPAR}_index.html"
 
 ################################################################
-## Case 2: 
+## Case 2: compare all the motifs from a reference database
+## (RegulonDB, Jaspar).
 DB_PREFIX=${REGULONDB_PREFIX}
 DB_DIR=${REGULONDB_DIR}
 DB_MATRICES=${DB_DIR}/${DB_PREFIX}.tf
@@ -71,11 +72,13 @@ DB_COMPA_CMD=compare-matrices -v ${V} \
 		-sort Ncor ${OPT} \
 		-o ${DB_COMPA_RESULT}
 #TIME_FILE=${DB_COMPA_DIR}/time_${DB_PREFIX}_vs_itself.txt
-TIME_FILE=time_measurements/time_${DB_PREFIX}_vs_itself.txt
+TIME_DIR=time_measurements
+TIME_FILE=${TIME_DIR}/time_${DB_PREFIX}_vs_itself.txt
 db_vs_itself:
 	@echo ""
 	@echo "Comparing DB with itself	${DB_PREFIX}"
 	@mkdir -p ${DB_COMPA_DIR}
+	@mkdir -p ${TIME_DIR}
 	(time -p ${DB_COMPA_CMD}) >& ${TIME_FILE}
 	@echo "	${DB_COMPA_RESULT}_index.html"
 	@echo "	${TIME_FILE}"
@@ -95,7 +98,10 @@ graph_stats:
 	@echo "compa_time  	${DB_COMPA_TIME}" >> ${STATS_FILE}
 	@echo "	${STATS_FILE}"
 
-## Generate a graph of motif similarity (nodes = motifs, edges = similarity between two motifs)
+################################################################
+## Generate a graph of motif similarity (nodes = motifs, edges =
+## similarity between two motifs)
+
 WCOL=6
 db_vs_itself_graph:
 	@echo ""
