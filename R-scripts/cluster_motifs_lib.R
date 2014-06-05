@@ -82,8 +82,12 @@ check.param <- function() {
     lthsp <- unlist(strsplit(lthsp, "-"))
     lth.scores <<- lthsp[seq(1,length(lthsp), by = 2)]
     lth.values <<- as.numeric(lthsp[seq(2,length(lthsp), by = 2)])
+
+    for(i in 1:length(lth.scores)){
+      thresholds[[lth.scores[i]]] <<- lth.values[i]
+    }
     
-    supported <- c("Ncor", "cor")
+    supported <- c("cor", "Ncor")
     if(length(setdiff(supported, lth.scores)) > 0){
       for(add in setdiff(supported, lth.scores)){
         lth.scores <<- append(lth.scores, add)
@@ -341,27 +345,27 @@ align.two.leaves <- function(child1, child2){
   
   ## Nodes attributes
   attributes <- attributes.among.clusters(id1, id2)
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_1"]] <<- paste(n1, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_2"]] <<- paste(n2, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["min_score"]] <<- attributes[1]
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["max_score"]] <<- attributes[2]
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["median_score"]] <<- attributes[3]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
   
   ## Comparison number in the compare-matrices table
-  compa.nb <- get.comparison.number(id1,id2)[1]
+  compa.nb <- get.comparison.number(id1, id2)[1]
   
   ## Check the threshold values for the corresponding
   ## metric used
   aligned.motif.flag <- 0
-  aligned.motif.flag <- alignment.status(id1, id2, hclust.method)
-
+  aligned.motif.flag <- alignment.status(id1.test, id2.test, hclust.method)
+  print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
 
     alignment.alignment.level <<- 1
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
     
     for(n in c(n1, n2)){
       motifs.info[[get.id(n)]][["strand"]] <<- "D"
@@ -375,7 +379,7 @@ align.two.leaves <- function(child1, child2){
   ## Conversely align the motifs
   }else{
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Aligned"
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
     
     ## Choose the relative orientation of the two motifs
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -428,11 +432,11 @@ align.leave.and.cluster <- function(child1, child2){
 
   ## Nodes attributes
   attributes <- attributes.among.clusters(get.id(n1), get.id(n2))
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_1"]] <<- paste(n1, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_2"]] <<- paste(n2, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["min_score"]] <<- attributes[1]
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["max_score"]] <<- attributes[2]
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["median_score"]] <<- attributes[3]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
   
   ## Get ids
   motifs.info[[get.id(n1)]][["number"]] <<- as.numeric(n1)
@@ -450,8 +454,10 @@ align.leave.and.cluster <- function(child1, child2){
   ## Check the threshold values for the corresponding
   ## metric used
   aligned.motif.flag <- 0  
-  aligned.motif.flag <- alignment.status(id1, id2, hclust.method)
+  aligned.motif.flag <- alignment.status(get.id(n1), get.id(n2), hclust.method)
 
+  print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
+  
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
@@ -459,7 +465,7 @@ align.leave.and.cluster <- function(child1, child2){
     motifs.info[[get.id(n1)]][["strand"]] <<- "D"
     motifs.info[[get.id(n1)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n1)]][["number"]]),"consensus"])
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
 
     forest.nb <<- forest.nb + 1
 
@@ -468,7 +474,7 @@ align.leave.and.cluster <- function(child1, child2){
   ## Conversely align the motifs
   } else{
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Aligned"
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
     
     ## Get the strand
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -590,6 +596,8 @@ align.leave.and.cluster <- function(child1, child2){
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
 align.clusters <- function(child1, child2){
+
+  flag1 <- 0
   
   N1 <- abs(min(child1, child2))
   N2 <- abs(max(child1, child2))
@@ -603,11 +611,11 @@ align.clusters <- function(child1, child2){
 
   ## Nodes attributes
   attributes <- attributes.among.clusters(ids1, ids2)
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_1"]] <<- paste(n1, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["cluster_2"]] <<- paste(n2, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["min_score"]] <<- attributes[1]
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["max_score"]] <<- attributes[2]
-  internal.nodes.attributes[[paste("merge_level_", merge.level)]][["median_score"]] <<- attributes[3]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
+  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
   
   ## Find the central motif of the cluster
   central.motifs <- central.motifs.ids(ids1, ids2)
@@ -623,11 +631,13 @@ align.clusters <- function(child1, child2){
   ## Check the threshold values for the corresponding
   ## metric used
   aligned.motif.flag <- 0
-  score.val <- compare.matrices.table[compa.nb, score]
-  aligned.motif.flag <- alignment.status(id1, id2, hclust.method)
+  aligned.motif.flag <- alignment.status(ids1, ids2, hclust.method)
+
+  print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
+  
   if(aligned.motif.flag == 1){
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Aligned"
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
     
     ## Get the offset
     offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
@@ -723,10 +733,19 @@ align.clusters <- function(child1, child2){
       }
     }
   }else {
-    internal.nodes.attributes[[paste("merge_level_", merge.level)]][["alignment_status"]] <<- "Non-aligned"
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
     forest.nb <<- forest.nb + 1
     alignment.alignment.level <<- 1
+    flag1 <- 1
   }
+
+  ## print(paste("### N1: ", N1, " ### N2: ", N2, sep = ""))
+  ## if(flag1 == 1){
+  ##   if( (internal.nodes.attributes[[paste("merge_level_", N1, sep = "")]][["alignment_status"]] == "Non-aligned") | (internal.nodes.attributes[[paste("merge_level_", N2, sep = "")]][["alignment_status"]] == "Non-aligned") ){
+  ##     forest.nb <<- forest.nb + 1
+  ##     print(paste("### LEVEL AD: ", merge.level, sep = ""))
+  ##   }
+  ## }
 }
   
 
@@ -796,55 +815,86 @@ get.comparison.numbers.between.ids <- function(ids1, ids2){
 ## if so, align the two clusters
 alignment.test.method.single <- function(ids1, ids2){
 
-  compa.numbers <- get.comparison.number (ids1, ids2)
+  closest.motifs <- central.motifs.ids(ids1, ids2)
+  id1.close <- closest.motifs[1]
+  id2.close <- closest.motifs[2]
+  
+  compa.numbers <- get.comparison.number(id1.close, id2.close)
 
   ## Get the scores of the comparisons
-  scores <<- compare.matrices.table[compa.numbers,score]
+  closest.scores <- compare.matrices.table[compa.numbers, names(thresholds)]
 
-  if(metric == "similarity"){
-    if(pairs.satisfy.lth() > 0){
-      return(1)
-    }else{
-      return(0)
-    }
-  } else if (metric == "distance"){
-    if(pairs.satisfy.uth() > 0){
-      return(1)
-    }else{
-      return(0)
-    }
+  metrics.up.threshold <- NULL
+  for(i in 1:length(thresholds)){ 
+    metrics.up.threshold <- append(metrics.up.threshold,sum(closest.scores[,names(thresholds[i])] >= thresholds[[i]]))
   }
+
+  if(sum(metrics.up.threshold) == length(thresholds)){
+    return(1)
+  }else{
+   return(0)
+  }
+
+  ## TO DO: implement thresholds for distance metrics
+  ## else if (metric == "distance"){
+  ##   sat.cond <- pairs.satisfy.uth()
+  ## }
+
 }
 
 
 #####################################################################
 ## Evaluate if all pairs of leaves between the two clusters have an
 ## score upper/lower than the threshold,
-##if so, align the two clusters
+## if so, align the two clusters
 alignment.test.method.complete <- function(ids1, ids2){
 
-  compa.numbers <- get.comparison.number (ids1, ids2)
+  farthest.motifs <- farthest.motifs.ids(ids1, ids2)
+  id1.far <- farthest.motifs[1]
+  id2.far <- farthest.motifs[2]
+  
+  compa.numbers <- get.comparison.number(id1.far, id2.far)
 
   ## Get the scores of the comparisons
-  scores <<- compare.matrices.table[compa.numbers,score]
-  #scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
+  farthest.scores <- compare.matrices.table[compa.numbers, names(thresholds)]
 
-  ## Count the number of pairs which satisfied the condition
-  if(metric == "similarity"){
-    sat.cond <- pairs.satisfy.lth()
-  } else if(metric == "distances"){
-    sat.cond <- pairs.satisfy.uth
+  metrics.up.threshold <- NULL
+  for(i in 1:length(thresholds)){ 
+    metrics.up.threshold <- append(metrics.up.threshold,sum(farthest.scores[,names(thresholds[i])] >= thresholds[[i]]))
   }
 
-  ## If all the pairs satisfied the condition,
-  ## then align the clusters
-  if(sat.cond == length(scores)){
+  if(sum(metrics.up.threshold) == length(thresholds)){
     return(1)
-  } else{
-    return(0)
+  }else{
+   return(0)
   }
+
+  ## TO DO: implement thresholds for distance metrics
+  ## else if (metric == "distance"){
+  ##   sat.cond <- pairs.satisfy.uth()
+  ## }
+
 }
 
+
+################################################################
+## Identify the "farthest" leaf (motif) of a subtre (cluster),
+## i.e. the motif with the largest average distance to all
+## other motifs of this cluster.
+farthest.motifs.ids <- function(ids1, ids2){
+  
+  ## Get the comparison numbers
+  compa.numbers <- sapply(ids2, function(X){
+    sapply(ids1, function(Y){
+      get.comparison.number(X, Y)
+    })
+  })
+  compa.numbers <- as.vector(compa.numbers)
+
+  ## Get the ids of the less distant nodes
+  compa.info <- compare.matrices.table[compa.numbers,][which(compare.matrices.table[compa.numbers,score] == min(compare.matrices.table[compa.numbers,score])),c("id1","id2")][1,]
+  return(as.vector(unlist(compa.info)))
+}
 
 #####################################################################
 ## Evaluate if the mean of scores for all pairs of leaves between
@@ -856,25 +906,25 @@ alignment.test.method.average <- function(ids1, ids2){
   
   ## Get the scores of the comparisons
   if (metric == "similarity"){
-    scores <- compare.matrices.table[compa.numbers, lth.scores]
+    scores <- compare.matrices.table[compa.numbers, names(thresholds)]
   } else if(metric == "distance"){
-    scores <- compare.matrices.table[compa.numbers, uth.scores]
+    scores <- compare.matrices.table[compa.numbers, names(thresholds)]
   }
   #scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
   
   ## Calculate the median of the data
-  median.scores<- apply(scores, 2, median)
+  median.scores <- apply(scores, 2, mean)
 
   ## According to the kind of metric selected
   ## evaluates if the clusters will be aligned
   if(metric == "distance"){
-    if(sum(median.scores <= uth.values) == length(uth.values)){
+    if(sum(median.scores <= unlist(thresholds)) == length(unlist(thresholds))){
       return(1)
     }else{
       return(0)
     }
   } else if (metric == "similarity"){
-    if(sum(median.scores >= lth.values) == length(lth.values)){
+    if(sum(median.scores >= unlist(thresholds)) == length(unlist(thresholds))){
       return(1)
     }else{
       return(0)
@@ -985,27 +1035,6 @@ fill.downstream.forest <- function(motifs.list){
       motifs.list[[id]][["offset_down"]] <- spacer.length
     } 
   return(motifs.list)
-}
-
-
-###############################################################
-## Count the numbers of pairs which satisfied the thresholds
-pairs.satisfy.lth <- function(){
-  
-  values.list <- list()
-  for(i in 1:length(lth.scores)){
-    values.list[[lth.scores[i]]] <- which(scores >= lth.values[i])
-  }
-  return(length(Reduce(intersect, values.list)))
-}
-
-pairs.satisfy.uth <- function(){
-  
-  values.list <- list()
-  for(i in 1:length(lth.scores)){
-    values.list[[lth.scores[i]]] <- which(scores <= lth.values[i])
-  }
-  return(length(Reduce(intersect, values.list)))
 }
 
 
