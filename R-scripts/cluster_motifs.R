@@ -16,6 +16,7 @@
 library("RJSONIO")
 library("ctc")
 library("dendroextras")
+library("dendextend")
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -151,6 +152,8 @@ clusters <<- list()
 define.clusters.bottom.up()
 clusters.ids <- lapply(clusters, get.id)
 
+## Number of clusters
+forest.nb <<- length(clusters.ids) 
 
 ## ## Split the tree into forest
 ## forest <<- cutree(tree, k = forest.nb)
@@ -204,7 +207,7 @@ cluster.names.order <- apply(clusters.names.matrix,2, function(X){
 cluster.names.order.unique <- unique(cluster.names.order)
 color.code <- NULL
 counter <- 0
-for(i in 1:length(d)){
+for(i in 1:length(cluster.names.order.unique)){
   labels.rep <- length(which(cluster.names.order == cluster.names.order.unique[i]))
   counter <- counter + 1
   color.code <- append(color.code, rep(counter, times = labels.rep))
@@ -268,32 +271,41 @@ if(forest.nb > 1){
   clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
   
   global.motifs.info <<- motifs.info
-  forest <<- cutree(tree, k = forest.nb)
-  forest.list <- list()
-  ids.forest <<- list()
+  ## forest <<- cutree(tree, k = forest.nb)
+  ## forest.list <- list()
+  ## ids.forest <<- list()
   
-  ## Get IDs of the forest
-  for( lvl in 1:length(table(forest))){
-    ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
-  }
+  ## ## Get IDs of the forest
+  ## for( lvl in 1:length(table(forest))){
+  ##   ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
+  ## }
 
-  for(nb in 1:length(table(forest))){
+  for(nb in 1:length(clusters)){
     
     cluster.nb <<- nb 
     #verbose(paste("Exploring the cluster generated: ", nb ), 1)
-    rm(compare.matrices.table)
-    rm(description.table)
-    rm(tree)
-    rm(motifs.info)
-    rm(merge.level.leaves)
-    rm(internal.nodes.attributes)
+    
+    ## rm(compare.matrices.table)
+    ## rm(description.table)
+    ## rm(tree)
+    ## rm(motifs.info)
+    ## rm(merge.level.leaves)
+    ## rm(internal.nodes.attributes)
+    
+    forest.list <- list()
     internal.nodes.attributes <<- list()
+    motifs.info <<- list()
+    merge.level.leaves <<- list()
+    description.table <<- NULL
+    compare.matrices.table <<- NULL
+    tree <<- NULL
+    forest.list <- list()
 
     ## Creates an individual folder for each cluster
     system(paste("mkdir -p ", clusters.info.folder, "/cluster_", cluster.nb, sep = ""))
     cluster.folder <<- paste(clusters.info.folder, "/cluster_", cluster.nb, sep = "")
     
-    ids <- ids.forest[[paste("forest_", nb, sep = "")]]
+    ids <- clusters.ids[[paste("cluster_", nb, sep = "")]]
 
     ## Skips the hierarchical clustering step if the cluster
     ## is a single node
@@ -393,12 +405,9 @@ if(forest.nb > 1){
     ## the hclust tree and align the leaves.
     ## Bottom-up traversal of the tree to orientate the logos
     for (merge.level in 1:nrow(tree$merge)) {
-      alignment.alignment.level <<- 0
+
       child1 <- tree$merge[merge.level,1]
       child2 <- tree$merge[merge.level,2]
-      
-      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merge_level"]] <- merge.level
-      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["method"]] <- hclust.method
       
       ########################################
       ## Case 1: merging between two leaves ##
@@ -425,9 +434,8 @@ if(forest.nb > 1){
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
       merge.consensus.info <<- NULL
-      verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
+      #verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
       aligned.matrices.to.merge(merge.level)
-
     }
   
   
