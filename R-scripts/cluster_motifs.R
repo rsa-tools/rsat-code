@@ -128,7 +128,6 @@ tree$labels <- paste(as.vector(global.description.table$consensus), 1:length(glo
 merge.level <- 1
 motifs.info <<- list()
 internal.nodes.attributes <<- list()
-forest.nb <<- 1
 forest.list <- list()
 
 compare.matrices.table <- global.compare.matrices.table
@@ -138,44 +137,19 @@ description.table <- global.description.table
 ## of the merge
 merge.levels.leaves <<- leaves.per.node(tree)
 
-## Saves the attributes of the merge
+
+###################################################
+## Get the internal nodes attributes of the tree
 internal.nodes.attributes <<- list()
-
-#########################################
-## Traversing the tree: read the merge of
-## the hclust tree and align the leaves.
-## Bottom-up traversal of the tree to orientate the logos
-for (merge.level in 1:nrow(tree$merge)) { 
-  
-  child1 <- tree$merge[merge.level,1]
-  child2 <- tree$merge[merge.level,2]
-
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merge_level"]] <- merge.level
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["method"]] <- hclust.method
-
-  ########################################
-  ## Case 1: merging between two leaves ##
-  ########################################
-   if ((child1 < 0) && (child2 < 0)) {
-     align.two.leaves(child1, child2)
-   }
+fill.internal.nodes.attributes()
 
 
-  ############################################
-  ## Case 2: merging a motif with a cluster ##
-  ############################################
-  if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
-    align.leave.and.cluster(child1, child2)
-  }
+##########################
+## Define the clusters
+## Bottom-up approah
+clusters <<- list()
+define.clusters.bottom.up()
 
-
-  ##########################################
-  ## Case 3: merging between two clusters ##
-  ##########################################
-  if ((child1 > 0) && (child2 > 0)) {
-    align.clusters(child1, child2)
-  }
-}
 
 ## Split the tree into forest
 forest <<- cutree(tree, k = forest.nb)
