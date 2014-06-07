@@ -351,7 +351,6 @@ align.two.leaves <- function(child1, child2){
   ## metric used
   aligned.motif.flag <- 0
   aligned.motif.flag <- alignment.status(id1.test, id2.test, hclust.method)
-  print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
   
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
@@ -422,16 +421,10 @@ align.leave.and.cluster <- function(child1, child2){
   motifs.info[[get.id(n1)]][["spacer"]] <<- 0
   ids.aligned <- get.id(n.aligned)
 
-  
-  print(paste("##################### IDS:", paste(get.id(n2), collapse = ", "), "###", sep = ""))
-  print(paste("##################### IDS:", paste(ids.aligned, collapse = ", "), "###", sep = ""))
-  
   ## Check the threshold values for the corresponding
   ## metric used
   aligned.motif.flag <- 0  
   aligned.motif.flag <- alignment.status(get.id(n1), get.id(n2), hclust.method)
-
-  print(paste("### FLAG: ", aligned.motif.flag, " ### Aligned: ", ids.aligned," ###", sep = ""))
   
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
@@ -451,8 +444,6 @@ align.leave.and.cluster <- function(child1, child2){
     
     ## Get the comparison number in the compare-matrices table
     compa.nb <- get.comparison.number(id1,id2)
-    
-    print(paste("##################### COMPA:", compa.nb, " ###", sep = ""))
     
     ## Get the strand
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -546,9 +537,7 @@ align.leave.and.cluster <- function(child1, child2){
       spacer.diff <- (new.spacer - aligned.spacer)
     }
     offset <- offset + spacer.diff
-
-    ## print(paste("##################### OFFSET:", offset, "###", sep = ""))
-    
+     
     ## Create the spacer
     spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
     
@@ -605,8 +594,6 @@ align.clusters <- function(child1, child2){
   ## metric used
   aligned.motif.flag <- 0
   aligned.motif.flag <- alignment.status(ids1, ids2, hclust.method)
-
-  print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
   
   if(aligned.motif.flag == 1){
     
@@ -1207,7 +1194,6 @@ fill.internal.nodes.attributes <- function(){
   for (merge.level in 1:nrow(tree$merge)) {
     merge.level <<- merge.level 
   #for (merge.level in 1:2) {
-    print(paste("#### merge level: ", merge.level, " ####"))
     
     child1 <- tree$merge[merge.level,1]
     child2 <- tree$merge[merge.level,2]
@@ -1289,7 +1275,6 @@ fill.internal.nodes.attributes <- function(){
     }else{
       aligned.motif.flag <- alignment.status(id1, id2, hclust.method)
     }
-    print(paste("### INTERNAL-> FLAG: ", aligned.motif.flag, " ###", paste = ""))
     internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["flag"]] <<- aligned.motif.flag
     if(aligned.motif.flag == 0){
       internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
@@ -1309,7 +1294,6 @@ define.clusters.bottom.up <- function(){
   ## Define the clusters: bottom-up approach
   for(level in 1:length(internal.nodes.attributes)){
      #for(level in 1:2){
-    print(paste("### ", level, " ###", paste = ""))
     
     #####################################################
     ## When the merge level is between to single nodes
