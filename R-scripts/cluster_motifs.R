@@ -149,19 +149,21 @@ fill.internal.nodes.attributes()
 ## Bottom-up approah
 clusters <<- list()
 define.clusters.bottom.up()
+clusters.ids <- lapply(clusters, get.id)
 
 
-## Split the tree into forest
-forest <<- cutree(tree, k = forest.nb)
-ids.forest <<- list()
+## ## Split the tree into forest
+## forest <<- cutree(tree, k = forest.nb)
+## ids.forest <<- list()
 
-## Get IDs of the forest
-for( lvl in 1:length(table(forest))){
-  ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
-}
+## ## Get IDs of the forest
+## for( lvl in 1:length(table(forest))){
+##   ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
+## }
+
 
 ## Fill the downstream end 
-motifs.info <- fill.downstream(motifs.info, ids.forest)
+motifs.info <- fill.downstream(motifs.info, clusters.ids)
 forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 
 ## Reset the labels
@@ -184,10 +186,37 @@ for(nb in 1:length(tree$labels)){
   }
 }
 
-## Colour the branches
-tree.dendro <- as.dendrogram(tree)
-tree.dendro <- color_clusters(tree.dendro, k = forest.nb, col = rainbow, groupLabels = TRUE)
 
+########################################
+## Define the label color of the tree
+## according to the cluster
+tree.order <- tree$order
+
+clusters.names.matrix <- sapply(clusters, function(X){
+  tree.order %in% X
+})
+clusters.names.matrix <- t(clusters.names.matrix)
+
+cluster.names.order <- apply(clusters.names.matrix,2, function(X){
+  names(which(X > 0))
+})
+
+cluster.names.order.unique <- unique(cluster.names.order)
+color.code <- NULL
+counter <- 0
+for(i in 1:length(d)){
+  labels.rep <- length(which(cluster.names.order == cluster.names.order.unique[i]))
+  counter <- counter + 1
+  color.code <- append(color.code, rep(counter, times = labels.rep))
+  if(counter == 3){
+    counter <- 0
+  }
+}
+tree.dendro <- as.dendrogram(tree)
+labels_colors(tree.dendro) <- color.code
+
+#######################################
+## Export the tree with the aligment
 ## Get the aligment width, to calculate the limits of the plot
 alignment.width <- sapply(tree$labels, function(X){
   nchar(X)
@@ -195,7 +224,6 @@ alignment.width <- sapply(tree$labels, function(X){
 alignment.width <- max(alignment.width)
 mar4 <- alignment.width - 18
 
-## Export the tree with the aligment
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
   w.inches <- 10 ## width in inches
