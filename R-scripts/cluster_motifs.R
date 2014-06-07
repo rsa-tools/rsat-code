@@ -271,35 +271,19 @@ if(forest.nb > 1){
   clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
   
   global.motifs.info <<- motifs.info
-  ## forest <<- cutree(tree, k = forest.nb)
-  ## forest.list <- list()
-  ## ids.forest <<- list()
-  
-  ## ## Get IDs of the forest
-  ## for( lvl in 1:length(table(forest))){
-  ##   ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
-  ## }
+  forest.list <- list()
 
   for(nb in 1:length(clusters)){
     
     cluster.nb <<- nb 
-    #verbose(paste("Exploring the cluster generated: ", nb ), 1)
-    
-    ## rm(compare.matrices.table)
-    ## rm(description.table)
-    ## rm(tree)
-    ## rm(motifs.info)
-    ## rm(merge.level.leaves)
-    ## rm(internal.nodes.attributes)
-    
-    forest.list <- list()
+    verbose(paste("Exploring the cluster generated: ", nb ), 1)
+
     internal.nodes.attributes <<- list()
     motifs.info <<- list()
     merge.level.leaves <<- list()
     description.table <<- NULL
     compare.matrices.table <<- NULL
     tree <<- NULL
-    forest.list <- list()
 
     ## Creates an individual folder for each cluster
     system(paste("mkdir -p ", clusters.info.folder, "/cluster_", cluster.nb, sep = ""))
@@ -434,7 +418,7 @@ if(forest.nb > 1){
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
       merge.consensus.info <<- NULL
-      #verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
+      verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
       aligned.matrices.to.merge(merge.level)
     }
   
@@ -493,11 +477,9 @@ if(forest.nb > 1){
       plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
       dev.off()
     }
-    
     forest.list[[paste("cluster_", nb, sep = "")]] <- motifs.info
   }
 }
-
 
 #################################
 ## Produce the aligment table
@@ -512,19 +494,22 @@ if(forest.nb > 1){
     return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]]))
   })
 }
-alignment.table <- as.data.frame(t(data.frame(alignment.table)))
+alignment.table <- unlist(alignment.table)
+names(alignment.table) <- NULL
+alignment.table <- data.frame(matrix(alignment.table, ncol = 5, byrow = TRUE))
+colnames(alignment.table) <- c("number", "strand", "spacer", "offset_down", "consensus")
 
 ## Produce the column ID
-temp <- unlist(strsplit(rownames(alignment.table), "cluster_\\d+."))
-alignment.table$id <- as.vector(temp[which(temp != "")])
-
+ids.names <- unlist(as.vector(sapply(forest.list, function(x){names(x)})))
+names(ids.names) <- ids.names
+alignment.table$id <- ids.names
 ## Produce the column Width
 width.tmp <- unlist(sapply(forest.list, function(X){
   sapply(X, function(Y){
     return( nchar(Y[["consensus"]]))
   })
 }))
-names(width.tmp) <- NULL
+width.tmp <- as.vector(width.tmp)
 alignment.table$width <- width.tmp
 
 ## Produce the column Forest_ID
@@ -533,7 +518,7 @@ forest.id <- vector()
 for(name in forest.names){
   forest.id <- append(forest.id, rep(name, length(forest.list[[name]])))
 }
-alignment.table$forest <- forest.id
+alignment.table$cluster <- forest.id
 
 ##  Re-order the table and export it
 alignment.table <- alignment.table[,c(6, 8, 2:4, 7, 5)]
