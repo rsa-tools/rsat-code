@@ -356,8 +356,6 @@ align.two.leaves <- function(child1, child2){
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
-
-    alignment.alignment.level <<- 1
     
     for(n in c(n1, n2)){
       motifs.info[[get.id(n)]][["strand"]] <<- "D"
@@ -365,8 +363,6 @@ align.two.leaves <- function(child1, child2){
       motifs.info[[get.id(n)]][["spacer"]] <<- 0
       motifs.info[[get.id(n)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n)]][["number"]]),"consensus"])
     }
-
-    forest.nb <<- forest.nb + 1
 
   ## Conversely align the motifs
   }else{
@@ -443,10 +439,6 @@ align.leave.and.cluster <- function(child1, child2){
     
     motifs.info[[get.id(n1)]][["strand"]] <<- "D"
     motifs.info[[get.id(n1)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n1)]][["number"]]),"consensus"])
-
-    forest.nb <<- forest.nb + 1
-
-    alignment.alignment.level <<- 1
     
   ## Conversely align the motifs
   } else{
@@ -711,10 +703,6 @@ align.clusters <- function(child1, child2){
         tree$labels[as.numeric(motifs.info[[id]][["number"]])] <<- paste(motifs.info[[id]][["consensus"]], as.numeric(motifs.info[[id]][["number"]]))
       }
     }
-  }else {
-    forest.nb <<- forest.nb + 1
-    alignment.alignment.level <<- 1
-    flag1 <- 1
   }
   rm(N1, N2, n1, n2)
 }
