@@ -217,7 +217,7 @@ package main;
 
   ## Matrices
   local @matrices = ();
-  local @temp = ();
+#  local @temp = ();
   local $show_consensus = 0;
 
 
@@ -359,8 +359,8 @@ package main;
   }
 
   ## Some temporary files
-  $main::outfile{temp} = $main::outfile{prefix}."_temporal.html";
-  $main::outfile{temp_2} = $main::outfile{prefix}."_temporal_2.html";
+  $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
+  $main::outfile{temp_2} = $main::outfile{prefix}."_temporary_2.html";
 
   ## Open the HTML index file
   $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
@@ -397,6 +397,8 @@ package main;
   ################################################################
   ## Cluster the matrices
   &Hclustering();
+
+#  die "HELLO";
 
   ################################################################
   ## Create the merged matrices and consensuses
@@ -822,7 +824,7 @@ sub CompareMatrices {
   ## in the output graph even if they are not related to any other
   ## motif.
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$main::verbose; 
+  my $cmd = $SCRIPTS."/compare-matrices -v ".($main::verbose-1); 
   $cmd .= " -mode scores";
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
@@ -836,25 +838,43 @@ sub CompareMatrices {
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
 
-  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
 
-  ## Read the score column
-  open COMPA, $main::outfile{pairwise_compa};
+  ## Parse compare-matrix result file to read score columns
+#  open $compa, $main::outfile{pairwise_compa};
+  my ($compa) = &OpenInputFile($main::outfile{pairwise_compa});
   $main::param{score_column} = 0;
-  while (<COMPA>) {
+  while (<$compa>) {
     if (/;\t(\d+)\t$param{matrix_compa_score}/) {
       $main::param{score_column} = $1;
-      &RSAT::message::Info("Score", $param{matrix_compa_score}, "column", $main::param{score_column}, "file", $main::outfile{pairwise_compa}) if ($main::verbose >= 0);
+      &RSAT::message::Info("Score", $param{matrix_compa_score}, 
+			   "column", $main::param{score_column}, 
+			   "file", $main::outfile{pairwise_compa}) 
+	  if ($main::verbose >= 2);
       last;
     }
   }
-  close COMPA;
+  close $compa;
+
   if ($main::param{score_column} == 0) {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
 
-  ## Creates the files with single matrices' information (Temporal files)
+  ## Create temporary files with information about single matrices
   %alignment_info = &Create_single_matrix_files();
+
+  # ## JvH: for Debug
+  # foreach my $key (keys %alignment_info) {
+  #   my $value = $alignment_info{$key};
+  #   my %hash = %{$value};
+  #   print join ("\t", "alignment_info", $key , $value, "\n");
+  #   foreach my $key2 (keys %hash) {
+  #     my $attr = $hash{$key2};
+  #     print join ("\t", "field", $key , $value, $key2, $attr, "\n");
+  #   }
+  # }
+
+  return();
 }
 
 
@@ -1187,7 +1207,7 @@ sub Create_html_tree_file(){
 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 
     open(TREE, $main::outfile{logo_tree_html}) || &RSAT::error::FatalError($main::outfile{logo_tree_html}, "Cannot open HTML file");
-    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
+    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
 
     ## Select the D3 base
     if ($d3_base_format eq "link"){
@@ -1287,7 +1307,7 @@ sub Create_phylogram(){
     chomp(my $newick_tree = `more $main::outfile{consensus_tree_newick}`);
 
     system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
-    open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporal file");
+    open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
     open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
 
 
@@ -1390,23 +1410,28 @@ sub Add_empty_columns_to_logos(){
 ## will be used to add empty columns with 
 ## convert-matrices and to create the merged
 ## consensus
+##
+## JvH: we should come back to this procedure, and revise it to avoid
+## system calls, if possible. Matrix IDs could be collected at the
+## beginning of the script by properly reading all matrices, and
+## storing them in a vector.
 sub Create_single_matrix_files(){
+  &RSAT::message::TimeWarn("Creating single matrix files") if ($main::verbose >= 2);
+  my @ids = ();
+  my %matrix_files = ();
 
-    my @ids = ();
-    my %matrices_files = ();
+  ## Split the matrix file into single matrices file, 
+  ## in order to process individually each matrix
+  system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
+  
+  ## Get the ids of the matrices
+  chomp(@ids = `grep -v '#' $main::outfile{matrix_descriptions} | cut -f2`);
 
-    ## Split the matrix file into single matrices file, 
-    ## in order to process individually each matrix
-    system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
-   
-    ## Get the ids of the matrices
-    chomp(@ids = `more $main::outfile{matrix_descriptions} | grep -v '#' | cut -f2`);
-
-    ## Get the file name of each matrix and stores it in the hash
-    foreach my $id (@ids){
-    	chomp($matrices_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
-    }
-    return(%matrices_files);
+  ## Get the file name of each matrix and stores it in the hash
+  foreach my $id (@ids){
+    chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
+  }
+  return(%matrix_files);
 }
 
 
@@ -1576,7 +1601,7 @@ sub Add_div_to_HTML(){
     my $print = "";
     my $temp = paste_new_cluster_to_HTML();
     system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_tree_html});
-    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporal file");
+    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
     open(TREE,$main::outfile{logo_tree_html}) || &RSAT::error::FatalError($main::outfile{logo_tree_html}, "Cannot found the HTML tree file");
 
     while(<TREE>){
