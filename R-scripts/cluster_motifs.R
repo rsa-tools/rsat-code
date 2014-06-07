@@ -13,6 +13,7 @@
 ## -> this consensus could e used to display trees in R, without requiring the
 
 ## Load required libraries
+suppressPackageStartupMessages(library(dendextend))
 library("RJSONIO")
 library("ctc")
 library("dendroextras")
@@ -225,7 +226,7 @@ alignment.width <- sapply(tree$labels, function(X){
   nchar(X)
 })
 alignment.width <- max(alignment.width)
-mar4 <- alignment.width - 18
+mar4 <- alignment.width
 
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
