@@ -343,13 +343,6 @@ align.two.leaves <- function(child1, child2){
     n2 <- temporal
   }
   
-  ## Nodes attributes
-  attributes <- attributes.among.clusters(id1, id2)
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
   
   ## Comparison number in the compare-matrices table
   compa.nb <- get.comparison.number(id1, id2)[1]
@@ -359,13 +352,12 @@ align.two.leaves <- function(child1, child2){
   aligned.motif.flag <- 0
   aligned.motif.flag <- alignment.status(id1.test, id2.test, hclust.method)
   print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
+  
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
 
     alignment.alignment.level <<- 1
-    
-    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
     
     for(n in c(n1, n2)){
       motifs.info[[get.id(n)]][["strand"]] <<- "D"
@@ -378,8 +370,6 @@ align.two.leaves <- function(child1, child2){
 
   ## Conversely align the motifs
   }else{
-    
-    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
     
     ## Choose the relative orientation of the two motifs
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -416,7 +406,8 @@ align.two.leaves <- function(child1, child2){
     
     motifs.info[[id1]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id1]][["consensus"]], "-")))-1
     motifs.info[[id2]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id2]][["consensus"]], "-")))-1
-}
+  }
+  rm(n1, n2)
 }
 
 
@@ -429,34 +420,22 @@ align.leave.and.cluster <- function(child1, child2){
   n1 <- abs(min(child1, child2))
   n.aligned <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
   n2 <- n.aligned
-
-  ## Nodes attributes
-  attributes <- attributes.among.clusters(get.id(n1), get.id(n2))
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
   
   ## Get ids
   motifs.info[[get.id(n1)]][["number"]] <<- as.numeric(n1)
   motifs.info[[get.id(n1)]][["spacer"]] <<- 0
   ids.aligned <- get.id(n.aligned)
+
   
-  ## Find the central motif of the cluster
-  central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)
-  id1 <- central.motifs[1]
-  id2 <- central.motifs[2]
-  
-  ## Get the comparison number in the compare-matrices table
-  compa.nb <- get.comparison.number(id1,id2)
+  print(paste("##################### IDS:", paste(get.id(n2), collapse = ", "), "###", sep = ""))
+  print(paste("##################### IDS:", paste(ids.aligned, collapse = ", "), "###", sep = ""))
   
   ## Check the threshold values for the corresponding
   ## metric used
   aligned.motif.flag <- 0  
   aligned.motif.flag <- alignment.status(get.id(n1), get.id(n2), hclust.method)
 
-  print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
+  print(paste("### FLAG: ", aligned.motif.flag, " ### Aligned: ", ids.aligned," ###", sep = ""))
   
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
@@ -464,8 +443,6 @@ align.leave.and.cluster <- function(child1, child2){
     
     motifs.info[[get.id(n1)]][["strand"]] <<- "D"
     motifs.info[[get.id(n1)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n1)]][["number"]]),"consensus"])
-    
-    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
 
     forest.nb <<- forest.nb + 1
 
@@ -473,8 +450,17 @@ align.leave.and.cluster <- function(child1, child2){
     
   ## Conversely align the motifs
   } else{
+
+    ## Find the central motif of the cluster
+     central.motifs <- central.motifs.ids(get.id(n1), get.id(n2))
+    ##central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)
+    id1 <- central.motifs[1]
+    id2 <- central.motifs[2]
     
-    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
+    ## Get the comparison number in the compare-matrices table
+    compa.nb <- get.comparison.number(id1,id2)
+    
+    print(paste("##################### COMPA:", compa.nb, " ###", sep = ""))
     
     ## Get the strand
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -568,6 +554,8 @@ align.leave.and.cluster <- function(child1, child2){
       spacer.diff <- (new.spacer - aligned.spacer)
     }
     offset <- offset + spacer.diff
+
+    ## print(paste("##################### OFFSET:", offset, "###", sep = ""))
     
     ## Create the spacer
     spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
@@ -588,6 +576,7 @@ align.leave.and.cluster <- function(child1, child2){
       }
     }
   }
+    rm(n.aligned, n1, n2)
 }
 
 
@@ -608,14 +597,6 @@ align.clusters <- function(child1, child2){
   ## Get ids
   ids1 <- get.id(n1)
   ids2 <- get.id(n2)
-
-  ## Nodes attributes
-  attributes <- attributes.among.clusters(ids1, ids2)
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
-  internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
   
   ## Find the central motif of the cluster
   central.motifs <- central.motifs.ids(ids1, ids2)
@@ -636,8 +617,6 @@ align.clusters <- function(child1, child2){
   print(paste("### FLAG: ", aligned.motif.flag, " ### METHOD: ", hclust.method," ###", sep = ""))
   
   if(aligned.motif.flag == 1){
-    
-    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
     
     ## Get the offset
     offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
@@ -733,19 +712,11 @@ align.clusters <- function(child1, child2){
       }
     }
   }else {
-    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
     forest.nb <<- forest.nb + 1
     alignment.alignment.level <<- 1
     flag1 <- 1
   }
-
-  ## print(paste("### N1: ", N1, " ### N2: ", N2, sep = ""))
-  ## if(flag1 == 1){
-  ##   if( (internal.nodes.attributes[[paste("merge_level_", N1, sep = "")]][["alignment_status"]] == "Non-aligned") | (internal.nodes.attributes[[paste("merge_level_", N2, sep = "")]][["alignment_status"]] == "Non-aligned") ){
-  ##     forest.nb <<- forest.nb + 1
-  ##     print(paste("### LEVEL AD: ", merge.level, sep = ""))
-  ##   }
-  ## }
+  rm(N1, N2, n1, n2)
 }
   
 
@@ -766,7 +737,7 @@ fill.downstream <- function(motifs.list, forest.ids){
 
   ## Fill the spaces
   for(i in 1:length(max.width.forest)){
-    for(id in forest.ids[[paste("forest_", i, sep = "")]]){
+    for(id in forest.ids[[paste("cluster_", i, sep = "")]]){
       spacer.length <-  max.width.forest[i] - nchar(motifs.list[[id]][["consensus"]])
       spacer <- paste(rep("-", times = spacer.length), collapse = "")
       motifs.list[[id]][["consensus"]] <- paste( motifs.list[[id]][["consensus"]], spacer, sep = "")
@@ -1208,7 +1179,232 @@ JSON.clusters <- function(){
 }
 
 
+##########################################################
+## Return the name of the cluster, used to define
+## the clusters with the bottom-up approach
+return.cluster.name <- function(nodes, clusters.list){
 
+  matches <- sapply(clusters.list, function(X){
+    sum(nodes %in% X)
+  })
+  
+  if(sum(matches[matches == length(nodes)]) == 0){
+    return(0)
+  } else{
+    matches <- matches[matches == length(nodes)]
+    return(names(matches))
+  }
+}
+
+
+###########################################
+## Get the nodes number of a given level
+nodes.by.level <- function(level.nb){
+  level.nodes.string <- paste(internal.nodes.attributes[[paste("merge_level_", level.nb, sep = "")]][["cluster_1"]], internal.nodes.attributes[[paste("merge_level_", level.nb, sep = "")]][["cluster_2"]], collapse = "")
+  level.nodes.numbers <- as.numeric(unlist(strsplit(level.nodes.string, " ")))
+  return(level.nodes.numbers)
+}
+
+
+
+###################################################
+## Fill internal nodes attributes list. Traverse
+## the tree and evaluates the nodes in the branches
+## according to the clustering method. Flag = 1 if
+## the branch are aligned, Flag = 0, if don't.
+## NOTE: this is not the alignment step
+## After this step, the clusters are defined
+fill.internal.nodes.attributes <- function(){
+
+  for (merge.level in 1:nrow(tree$merge)) {
+    merge.level <<- merge.level 
+  #for (merge.level in 1:2) {
+    print(paste("#### merge level: ", merge.level, " ####"))
+    
+    child1 <- tree$merge[merge.level,1]
+    child2 <- tree$merge[merge.level,2]
+    
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merge_level"]] <<- merge.level
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["method"]] <<- hclust.method
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["node_1"]] <<- child1
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["node_2"]] <<- child2
+    
+    
+    ########################################
+    ## Case 1: merging between two leaves ##
+    ########################################
+    if ((child1 < 0) && (child2 < 0)) {
+
+      align.two.leaves(child1, child2)
+
+      ## Identify the nodes
+      n1 <- min(-child1,-child2) 
+      n2 <- max(-child1,-child2)
+      
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merging_type"]] <<- 1
+    }
+    
+    ############################################
+    ## Case 2: merging a motif with a cluster ##
+    ############################################  
+    if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
+
+      align.leave.and.cluster(child1, child2)
+
+      ## Identified the nodes
+      n1 <- abs(min(child1, child2))
+      n.aligned <- merge.levels.leaves[[merge.level]][which(merge.levels.leaves[[merge.level]] != n1)]
+      n2 <- n.aligned
+      
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merging_type"]] <<- 2
+    }
+    
+    
+    ##########################################
+    ## Case 3: merging between two clusters ##
+    ########################################## 
+    if ((child1 > 0) && (child2 > 0)) {
+      align.clusters(child1, child2)
+      
+      ## Identified the nodes
+      N1 <- abs(min(child1, child2))
+      N2 <- abs(max(child1, child2))
+      
+      n1 <- merge.levels.leaves[[N1]]
+      n2 <- merge.levels.leaves[[N2]]
+      
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merging_type"]] <<- 3
+    }
+    
+    
+    if(hclust.method == "single"){
+      ## Get the id of each node
+      central.motifs <- central.motifs.ids(get.id(n1), get.id(n2))
+      id1 <- central.motifs[1]
+      id2 <- central.motifs[2]
+    } else if(hclust.method == "complete"){
+      farthest.motifs <- farthest.motifs.ids(get.id(n1), get.id(n2))
+      id1 <- farthest.motifs[1]
+      id2 <- farthest.motifs[2]
+    }
+    
+    ## Nodes attributes
+    attributes <- attributes.among.clusters(get.id(n1), get.id(n2))
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["min_score"]] <<- attributes[1]
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["max_score"]] <<- attributes[2]
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["median_score"]] <<- attributes[3]
+    
+    if(hclust.method == "average"){
+      aligned.motif.flag <- alignment.status(get.id(n1), get.id(n2), hclust.method)
+    }else{
+      aligned.motif.flag <- alignment.status(id1, id2, hclust.method)
+    }
+    print(paste("### INTERNAL-> FLAG: ", aligned.motif.flag, " ###", paste = ""))
+    internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["flag"]] <<- aligned.motif.flag
+    if(aligned.motif.flag == 0){
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
+    }else{
+      internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
+    }
+  }
+}
+
+
+###########################################################
+## The clusters are selected by traversing the tree with
+## a bottom-up approach, rather than top-down as is used
+## with the R-defined  function cutree.
+define.clusters.bottom.up <- function(){
+  cluster.number <- 0
+  ## Define the clusters: bottom-up approach
+  for(level in 1:length(internal.nodes.attributes)){
+     #for(level in 1:2){
+    print(paste("### ", level, " ###", paste = ""))
+    
+    #####################################################
+    ## When the merge level is between to single nodes
+    ## (merging_type = 1) 
+    if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["merging_type"]]) == 1){
+      cluster.number <- cluster.number + 1
+      
+      if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]]) == 1){
+        
+        ## Get the numbers of the nodes
+        nodes.numbers <- nodes.by.level(level)
+        
+        ## Store the numbers in the list
+        clusters[[paste("cluster_", cluster.number, sep = "")]] <<- nodes.numbers
+        
+        ## Conversely, two clusters are created
+      }else{
+        clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[level]][["cluster_1"]])
+        cluster.number <- cluster.number + 1
+        clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_2"]])
+        internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
+      }
+      next
+    }
+    
+    ##############################################
+    ## When the merge level is between a single
+    ## nodes and a cluster(merging_type = 2)
+    if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["merging_type"]]) == 2){
+      
+      if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]]) == 1){
+        
+        ## Obtain the status of the cluster to merge
+        prev.cluster.nb <- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["node_2"]])
+        prev.status <- as.numeric(internal.nodes.attributes[[paste("merge_level_", prev.cluster.nb, sep = "")]][["flag"]])
+        
+        if(prev.status == 1){
+          cluster.name <- return.cluster.name(nodes.by.level(prev.cluster.nb), clusters)
+          clusters[[cluster.name]] <<- append(clusters[[cluster.name]], as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_1"]]))
+        }else{
+          cluster.number <- cluster.number + 1
+          clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_1"]])
+          internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
+        }
+        
+      }else{
+        cluster.number <- cluster.number + 1
+        clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_1"]])
+        internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
+      }
+      next
+    }
+    
+    ## ##############################################
+    ## ## When the merge level is between a two 
+    ## ## clusters (merging_type = 3)
+    if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["merging_type"]]) == 3){
+      
+      ## Obtain the status of the two clusters before merge them
+      prev.cluster.1.nb <- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["node_1"]])
+      prev.status.1 <- as.numeric(internal.nodes.attributes[[paste("merge_level_", prev.cluster.1.nb, sep = "")]][["flag"]])
+      
+      prev.cluster.2.nb <- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["node_2"]])
+      prev.status.2 <- as.numeric(internal.nodes.attributes[[paste("merge_level_", prev.cluster.2.nb, sep = "")]][["flag"]])
+      
+      if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]]) == 1){
+        if(prev.status.1 == 0 | prev.status.2 == 0){
+          internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
+        } else{
+          cluster.name <- return.cluster.name(nodes.by.level(prev.cluster.1.nb), clusters)
+          cluster.2.nodes <- as.numeric(unlist(strsplit(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_2"]], " ")))
+          cluster.name.erase <- return.cluster.name(cluster.2.nodes, clusters)
+          clusters[[cluster.name]] <<- append(clusters[[cluster.name]], cluster.2.nodes)
+          clusters[[cluster.name.erase]] <<- NULL
+        }
+      }else{
+        internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
+      }
+      next
+    }
+  }  
+  names(clusters) <<- paste("cluster_", seq(1:length(clusters)), sep = "")
+}
 
 ################
 ### Inefficient (but probably more robust) way to build a distance matrix, involving two loops
