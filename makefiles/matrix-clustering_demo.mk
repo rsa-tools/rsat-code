@@ -8,7 +8,7 @@
 #include ${RSAT}/makefiles/util.mk
 ## We include compare-matrices_demo.mk to get the parameters (matrix files)
 include ${RSAT}/makefiles/compare-matrices_demo.mk
-MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo2.mk
+MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
 ################################################################
 ## Parameters for the analysis
