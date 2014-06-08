@@ -212,9 +212,9 @@ for(i in 1:length(cluster.names.order.unique)){
   labels.rep <- length(which(cluster.names.order == cluster.names.order.unique[i]))
   counter <- counter + 1
   color.code <- append(color.code, rep(counter, times = labels.rep))
-  if(counter == 3){
-    counter <- 0
-  }
+  ## if(counter == 3){
+  ##   counter <- 0
+  ## }
 }
 tree.dendro <- as.dendrogram(tree)
 labels_colors(tree.dendro) <- color.code
@@ -226,12 +226,12 @@ alignment.width <- sapply(tree$labels, function(X){
   nchar(X)
 })
 alignment.width <- max(alignment.width)
-mar4 <- alignment.width
+mar4 <- alignment.width - 10
 
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
-  w.inches <- 10 ## width in inches
-  h.inches <- round(0.2* length(motifs.info)) ## height in inches
+  w.inches <- 14 ## width in inches
+  h.inches <- round(0.25* length(motifs.info)) ## height in inches
   #h.inches <- 8 ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)

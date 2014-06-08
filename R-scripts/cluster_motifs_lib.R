@@ -566,8 +566,6 @@ align.leave.and.cluster <- function(child1, child2){
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
 align.clusters <- function(child1, child2){
-
-  flag1 <- 0
   
   N1 <- abs(min(child1, child2))
   N2 <- abs(max(child1, child2))
@@ -644,7 +642,12 @@ align.clusters <- function(child1, child2){
     
     ## Cases in which is required invert the aligment
     if(case %in% c(2,3,8)){
-      ids <- ids2
+
+      if(case %in% c(3,8)){
+        ids <- ids2
+      } else if (case %in% 2){
+        ids <- ids1
+      }
       
       ## Invert the aligment and store the information in a list
       inverted.alignment.ids <- inverted.alignment(ids)
@@ -655,19 +658,15 @@ align.clusters <- function(child1, child2){
         motifs.info[[id]] <<- inverted.alignment.ids[[id]]
       }
 
-      if(id1 %in% ids2){
-        cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
-        cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
-      } else {
-        cluster.1.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
-        cluster.2.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
-      }
+      cluster.1.spacer <- as.numeric(motifs.info[[id1]][["spacer"]])
+      cluster.2.spacer <- as.numeric(motifs.info[[id2]][["spacer"]])
+      
     }
     
     ## According to the cases, reset the offset
-    if(case %in% c(1,2,5,6)){
+    if(case %in% c(1,5,6)){
       offset <- nchar(as.vector(description.table[as.numeric(motifs.info[[id1]][["number"]]), "consensus"])) - nchar(as.vector(description.table[as.numeric(motifs.info[[id2]][["number"]]), "consensus"]))  - offset + (cluster.1.spacer - cluster.2.spacer)
-    } else if(case %in% c(3,4,7,8)){
+    } else if(case %in% c(2,3,4,7,8)){
       offset <- offset + (cluster.1.spacer - cluster.2.spacer)
     }
     
@@ -1192,8 +1191,9 @@ nodes.by.level <- function(level.nb){
 fill.internal.nodes.attributes <- function(){
 
   for (merge.level in 1:nrow(tree$merge)) {
+    ##for (merge.level in 1:13) { 
     merge.level <<- merge.level 
-  #for (merge.level in 1:2) {
+
     
     child1 <- tree$merge[merge.level,1]
     child2 <- tree$merge[merge.level,2]
@@ -1275,6 +1275,7 @@ fill.internal.nodes.attributes <- function(){
     }else{
       aligned.motif.flag <- alignment.status(id1, id2, hclust.method)
     }
+    
     internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["flag"]] <<- aligned.motif.flag
     if(aligned.motif.flag == 0){
       internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
