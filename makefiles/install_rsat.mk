@@ -65,6 +65,7 @@ UNIX_PACKAGES_UBUNTU= \
 	make \
 	yum \
 	apache2 \
+	apache2-utils \
 	php5 \
 	libapache2-mod-php5 \
 	php-elisp \
@@ -232,7 +233,7 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO reshape plyr dendroextras 
+R_MODULES=RJSONIO reshape plyr dendroextras dendextend
 ## Note: package  ctc does not exist. To check with Jaime Castro
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'

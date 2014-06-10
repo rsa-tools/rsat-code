@@ -280,6 +280,8 @@ _download_blast: _download_blast_${OS}
 #_install_blast: _install_blast_${OS}
 _install_blast:
 	@${SUDO} mkdir -p ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
@@ -457,7 +459,8 @@ _download_biotoolbox:
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
 MEME_VERSION=4.9.1
-MEME_PATCH=_1
+MEME_PATCH=_2
+#http://ebi.edu.au/ftp/software/MEME/4.9.1/meme_4.9.1_2.tar.gz
 MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
 MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME

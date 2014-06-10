@@ -415,7 +415,7 @@ package main;
 					  str=>$strands,
 					  noov=>$noov,
 					  type=>"dyad",
-					  warn=>1,
+					  warn=>0,
 					  taxon=>1);
 
     ## If the required the taxon frequencies are not pre-installed,
@@ -432,6 +432,8 @@ package main;
       ## organisms, as far as the taxon is the same.
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
+
+      die "HELLO";
 
       &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
       my ($local_bg_file) = &ShortFileName($infile{bg_model});

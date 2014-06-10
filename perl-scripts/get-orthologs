@@ -25,7 +25,7 @@ Return orthologs or paralogs for a set of gene of a given organism
 
 =over
 
-=item Rekin' Janky <rekins@bigre.ulb.ac.be>
+=item Rekin's Janky <rekins@bigre.ulb.ac.be>
 
 =item Jacques van Helden <jvhelden@ulb.ac.be>
 
@@ -109,9 +109,9 @@ Rank of this query gene among all those matching the same reference
 
 
 BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-    }
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
 }
 
 require "RSA.lib";
@@ -123,23 +123,23 @@ use Data::Dumper; # added for debugging (print contents of hashes)
 ## Main package
 package main;
 {
-
+  
   ################################################################
   #### initialise parameters
   local $start_time = &RSAT::util::StartScript();
   $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
-
+  
   %main::infile = ();
   %main::outfile = ();
 
   $main::homology_type = "BBH";
-
+  
   $main::verbose = 0;
   $warn_missing_blast_files = 1;
   $main::return_all = 0;
   $main::in = STDIN;
   $main::out = STDOUT;
-
+  
   $main::query_organism = "";
   @main::query_genes = ();
   $main::ref_taxon = "";
@@ -282,9 +282,9 @@ package main;
 
   ## Reference taxon or org_list
   &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
-    unless ($main::ref_taxon || $main::orglist_file);
+      unless ($main::ref_taxon || $main::orglist_file);
   &RSAT::error::FatalError("Options -taxon and -org_list option are mutually exclusive")
-    if (($main::ref_taxon) && ($main::orglist_file));
+      if (($main::ref_taxon) && ($main::orglist_file));
 
   ## Open orglist
   if ($main::ref_taxon) {
@@ -293,7 +293,7 @@ package main;
     if (scalar(@main::ref_organisms) == 0) {
       &RSAT::error::FatalError("There is no  supported organism corresponding to the reference taxon", $main::ref_taxon,
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
-			      ) if ($main::ref_taxon);
+	  ) if ($main::ref_taxon);
     }
   } elsif ($main::orglist_file) {
     ($main::orglist) = &OpenInputFile($main::orglist_file);
@@ -314,12 +314,11 @@ package main;
     close $main::orglist;
     &RSAT::error::FatalError("The organism file", $main::orglist_file, "should contain at least one valid organism name.",
 			     "Use the command supported-organisms -format full to obtain the supported taxonomy.")
-      if (scalar(@main::ref_organisms) == 0) ;
+	if (scalar(@main::ref_organisms) == 0) ;
   } else {
     &RSAT::error::FatalError("You must either specify a reference taxon (option -taxon) or a list of reference organisms (option -org_list)");
   }
   &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
-
 
 
   ################################################################
@@ -360,9 +359,13 @@ package main;
   if ($warn_missing_blast_files) {
     my (@filtered_ref_org) = &FilterOrganismsHavingBlast();
     #      print "; List of filtered reference organisms\n\t".join("\n\t",@filtered_ref_org)."\n";
+
+    if (scalar(@filtered_ref_org) == 0) {
+	&RSAT::error::FatalError("BLAST files are missing for all selected organisms.");
+    }
     @main::ref_organisms = (@filtered_ref_org);
   }
-  &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
+  &RSAT::message::Info(scalar(@ref_organisms), "reference organisms with bidirectional BLAST tables installed on this RSAT server") if ($main::verbose >= 2);
 
   ################################################################
   ## Get taxonomy for ordering results
@@ -438,7 +441,7 @@ package main;
 	my $feature_id = $current_feature->get_attribute("id");
 	$is_query{$feature_id} = $query;
 	push @{$query_gene_id{$query}}, $feature_id;
-	&RSAT::message::Warning("query gene", $query, $feature_id) if ($main::verbose >= 3);
+	&RSAT::message::Warning("query gene", $query, $feature_id) if ($main::verbose >= 4);
       }
     } else {
       push @unknown_query_genes, $query;
@@ -447,7 +450,7 @@ package main;
     }
   }
 
-  &RSAT::message::Info("Query keys", join("; ", keys(%is_query))) if ($main::verbose >= 3);
+  &RSAT::message::Info("Query keys", join("; ", keys(%is_query))) if ($main::verbose >=4);
 
   ## ##############################################################
   ## Prepare a REGEXP filter for fast selection with grep
@@ -518,10 +521,10 @@ package main;
     ################################################################
     ## Get bidirectional hits
     foreach my $query_gene (keys (%is_query)) {
-      &RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 3);
+      &RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 4);
       if ($hits->{$query_gene}) {
 	foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
-	  &RSAT::message::Info("ref gene", $ref_gene) if ($main::verbose >= 3);
+	  &RSAT::message::Info("ref gene", $ref_gene) if ($main::verbose >= 4);
 	  if ($rev_hits->{$ref_gene}->{$query_gene}) {
 	    my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
 	    my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
@@ -560,14 +563,14 @@ package main;
 	    # put all hit info in a hash
 	    $bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
 
-	    &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 3);
+	    &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 4);
 	    push @bidirect_hits, $hit_info;
 	  } else {
-	    &RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
+	    &RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 4);
 	  }
 	}  
       } else {
-	&RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
+	&RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 4);
       }
     }
   }
@@ -741,29 +744,46 @@ sub FilterOrganismsHavingBlast{
   foreach my $ref_organism (@main::ref_organisms) {
     my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
     my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
-    ## Check if the BLAST file exists and read it
-    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
+
+    ## Check if the BLAST file exists
     my $miss = 0;
+
+    ## Find BLAST file from query to reference organism
+    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
     unless ((-e $blast_file) || (-e $blast_file.".gz")) {
-      $miss = 1;
-      push @main::missing_blast_files, $blast_file;
-      #       unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-      # 	      ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      &RSAT::message::Warning("Missing BLAST file", $blast_file) if ($main::verbose >= 3);
-      #      }
+	$miss = 1;
+	push @main::missing_blast_files, $blast_file;
+	if ($main::verbose >= 3) {
+	    unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+		    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+		&RSAT::message::Warning("Missing BLAST file", $blast_file);
+	    }
+	}
     }
+
+    ## Find BLAST file from reference to  query organism
     my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
     unless ((-e $rev_blast_file) || (-e $rev_blast_file.".gz")) {
-      $miss = 1;
-      push @main::missing_blast_files, $rev_blast_file;
-      #       unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-      # 	      ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      # 	&RSAT::message::Warning(join("\t", "Missing BLAST file", $rev_blast_file));
-      #      }
+	$miss = 1;
+	push @main::missing_blast_files, $rev_blast_file;
+	if ($main::verbose >= 3) {
+	    unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+		    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+		&RSAT::message::Warning(join("\t", "Missing reciprocal BLAST file", $rev_blast_file));
+	    }
+	}
     }
-    unless($miss){
+    
+    unless ($miss) {
       push @filtered_ref_org, $ref_organism;
+      &RSAT::message::Debug("Checked BLAST files for reference organism", $ref_organism) if ($main::verbose >= 3);
     }
+  }
+
+
+  if ($main::verbose >= 2) {
+    &RSAT::message::Info("Checked BLAST files for", scalar(@ref_organisms), "reference organisms");
+    &RSAT::message::Info("Organisms with both blast files", scalar(@filtered_ref_org));
   }
   return (@filtered_ref_org);
 }
@@ -784,8 +804,8 @@ sub select_hits{
     return(0);
   }
 
-  &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 3);
-  &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
+  &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 4);
+  &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 4);
 
   ## ##############################################################
   ## Prepare a specific file handle for the BLAST file, in order to apply
@@ -884,7 +904,7 @@ sub select_hits{
   }
   close HIT_HANDLE;
   #    close $hit_handle;
-  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 3);
+  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 4);
   return($hits);
 }
 
@@ -904,19 +924,15 @@ sub PrintOptions {
 ################################################################
 #### Read arguments 
 sub ReadArguments {
-#    foreach my $a (0..$#ARGV) {
-    my $arg = "";
-
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
-    while ($arg = shift (@arguments)) {
+  my $arg = "";
+  
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  
+  while ($arg = shift(@arguments)) {
 	
-#	&RSAT::message::Debug("Parsing argument", $arg);
-
-	## Verbosity
 =pod
 	    
-
+    
 =head1 OPTIONS
 
 =over 4
@@ -926,13 +942,14 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($arg eq "-v") {
-	    if (&IsNatural($arguments[0])) {
-		$main::verbose = shift(@arguments);
-	    } else {
-		$main::verbose = 1;
-	    }
-	    
+
+if ($arg eq "-v") {
+  if (&IsNatural($arguments[0])) {
+    $main::verbose = shift(@arguments);
+  } else {
+    $main::verbose = 1;
+  }
+    
 	    ## Help message
 =pod
 
@@ -944,7 +961,6 @@ Display full help message
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
 	    
-	    ## List of options
 =pod
 
 =item B<-help>
@@ -956,7 +972,7 @@ Same as -h
 	    &PrintOptions();
 	    
 
-	    ## Input file
+
 =pod
 
 =item B<-i inputfile>
@@ -970,7 +986,7 @@ allows to use the command within a pipe.
 		if (scalar(@main::query_genes) > 0);
 	    $main::infile{input} = shift(@arguments);
 	    
-	    ## Get orthologs for all genes
+
 =pod
 
 =item B<-all>
@@ -982,7 +998,7 @@ particularly convenient to extract phylogenetic profiles.
 	} elsif ($arg eq "-all") {
 	    $main::return_all = 1;
 	    
-	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -1116,7 +1132,7 @@ Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,
 		unless ($supported_threshold_field{$field});
             $uth{$field} = $value;
 
-              ## Return fields
+
 =pod
 
 =item B<-return output_fields>
