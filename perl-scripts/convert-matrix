@@ -517,15 +517,16 @@ package main;
 	## Permute the matrix
 	$matrix->permute_columns();
 	my $ID_perm = join("_", $ID, "perm".$i);
-	my $AC_perm = join("_", $AC, "perm".$i);
-	$matrix->force_attribute("name", $ID_perm);
 	$matrix->force_attribute("ID", $ID_perm);
 	$matrix->force_attribute("identifier", $ID_perm);
+	$matrix->force_attribute("name", $ID_perm);
+	my $AC_perm = join("_", $AC, "perm".$i);
+	$matrix->force_attribute("AC", $AC_perm);
+	$matrix->force_attribute("accession", $AC_perm);
 #      my $descr_perm = join ("_", $matrix->get_attribute("description", ), "perm".$i);
 	$matrix->calcConsensus();
 	my $descr_perm = join ($matrix->get_attribute("consensus.IUPAC"));
 	$matrix->force_attribute("description", $descr_perm);
-	$matrix->force_attribute("accession", $AC_perm);
 	&RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
 	## Print result

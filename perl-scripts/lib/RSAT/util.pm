@@ -986,6 +986,11 @@ sub doit {
     ## Define the shell
     my $shell = $ENV{CLUSTER_SHELL} || $ENV{SHELL};
 
+    unless ($ENV{CLUSTER_SHELL}) {
+      $shell = &RSAT::server::GetProgramPath($shell);
+#      die "HELLO\t", $shell;
+    }
+
     ## Store the command in a sh script (the job)
     my $job_dir = "jobs";
     $job_dir .= "/".`date +%Y%m%d`;

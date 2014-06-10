@@ -45,7 +45,7 @@ public_html/data/KEGG
 public_html/data/genomes
 public_html/data/genomes*
 public_html/data/metabolic_networks
-public_html/data/motif_databases/*/downloads
+public_html/data/motif_databases/uniprobe/downloads
 public_html/data/phylogeny
 public_html/data/supported_*
 public_html/data/taxon_frequencies
@@ -58,3 +58,4 @@ tmp
 ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
 install_ensembl*
 authorized_IP*
+python-scripts/lib/*.pyc
