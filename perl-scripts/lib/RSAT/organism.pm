@@ -103,7 +103,7 @@ Add a contig to the list.
 sub add_contig {
     my ($self, $contig_id, $contig_obj) = @_;
     $self->add_hash_attribute("contigs", $contig_id, $contig_obj);
-    &RSAT::message::Info(join("\t", "Added contig", $contig_id, $contig_obj)) if ($main::verbose >= 3);
+    &RSAT::message::Info(join("\t", "Added contig", $contig_id, $contig_obj)) if ($main::verbose >= 4);
 }
 
 
@@ -194,7 +194,7 @@ sub OpenContigs {
   my $genome_file;
   my $genome_file_format;
 
-  if ($main::verbose >= 3) {
+  if ($main::verbose >= 4) {
     &RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
     &RSAT::message::Info(join ("\t",
 			       "Manually specified input sequence file",
@@ -285,7 +285,7 @@ sub OpenContigs {
 				       "Using masked repeat version of contig",
 				       $contig_id,
 				       $seq_dir."/".$seq_file,
-				      )) if ($main::verbose >= 2);
+				      )) if ($main::verbose >= 3);
 	} else {
 	  &RSAT::message::Warning(join("\t",
 				       "There is no masked repeat version of contig",
@@ -296,7 +296,7 @@ sub OpenContigs {
       }
 
       &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular") )
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 4);
 
       $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir."/".$seq_file,
 							 id=>        $contig_id,
@@ -376,7 +376,7 @@ sub index_attribute_by_feature {
     } else {
       &RSAT::message::Warning("Attribute", $attribute,
 			      "is not defined for feature",
-			      $feature->get_attribute("id")) if ($main::verbose >= 3);
+			      $feature->get_attribute("id")) if ($main::verbose >= 4);
     }
   }
   #    &RSAT::message::Debug("Indexed values", $attribute, scalar(keys %index)) if ($main::verbose >= 10);
@@ -402,7 +402,7 @@ sub DefineAcceptedFeatureTypes {
 
 
   foreach my $feature_type (@accepted_feature_types) {
-    &RSAT::message::Info(join("\t", "Adding feature type", $feature_type)) if ($main::verbose >= 3);
+    &RSAT::message::Info(join("\t", "Adding feature type", $feature_type)) if ($main::verbose >= 4);
     $self->push_attribute("feature_types", $feature_type);
   }
 }
@@ -448,7 +448,7 @@ sub LoadFeatures {
   }
   &RSAT::message::Info (join("\t", "Accepted feature types",
 		 join( ",", keys %accepted_feature_types)))
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 4);
 
   ## Annotation table
   if ($annotation_table) {
@@ -460,7 +460,7 @@ sub LoadFeatures {
       if (-e $annotation_table) {
 	$self->push_attribute("annotation_tables", $annotation_table);
       } else {
-	&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table) if ($main::verbose >= 2);
+	&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table) if ($main::verbose >= 3);
       }
     }
   }
@@ -472,7 +472,7 @@ sub LoadFeatures {
 			       "Loading annotation table",
 			       $self->get_attribute("name"),
 			       $annotation_table)
-			) if ($main::verbose >= 3);
+			) if ($main::verbose >= 4);
 
     ## Default column order for genomic features
     ## Note that this order can be redefined by the header of the
@@ -495,7 +495,7 @@ sub LoadFeatures {
     while (my $line = <$annot>) {
       $linenb++;
 
-      if (($main::verbose >= 3) && ($linenb % 1000 == 1)) {
+      if (($main::verbose >= 4) && ($linenb % 1000 == 1)) {
 	&RSAT::message::psWarn("Loaded features", $linenb);
       }
 
@@ -513,7 +513,7 @@ sub LoadFeatures {
 	  $field =~ s/description/descr/;
 	  $field =~ s/chrom_position/location/;
 	  $col{$field} = $field_column - 1;
-	  &RSAT::message::Info(join("\t", "Column specification", $field_column, $field)) if ($main::verbose >= 3);
+	  &RSAT::message::Info(join("\t", "Column specification", $field_column, $field)) if ($main::verbose >= 4);
 	}
 	next;
       }
@@ -529,7 +529,7 @@ sub LoadFeatures {
       ## Check if the type of this feature is accepted
       unless ($accepted_feature_types{lc($type)}) {
 	&RSAT::message::Info(join( "\t","skipping feature", $id, "Non-selected feature type",$type))
-	  if ($main::verbose >= 3);
+	  if ($main::verbose >= 4);
 	next;
       }
 
@@ -538,44 +538,44 @@ sub LoadFeatures {
 
       ## Check ID
       unless ($id) {
-	&RSAT::message::Warning("invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
 
       ## Check contig
       unless ($ctg) {
-	&RSAT::message::Warning("invalid contig specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("invalid contig specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
 
       ## Check left
       unless ($left) {
-	&RSAT::message::Warning("left position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("left position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
       unless (&RSAT::util::IsNatural($left) ) {
 	if ($imp_pos) {
-	  &RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	  &RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  $left =~ s/\>//;
 	  $left =~ s/\<//;
 	} else {
-	  &RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	  &RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  next;
 	}
       }
 
       ## Check right
       unless ($right) {
-	&RSAT::message::Warning("Right position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Right position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
       unless (&RSAT::util::IsNatural($right) ) {
 	if ($imp_pos) {
-	  &RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	  &RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  $right =~ s/\>//;
 	  $right =~ s/\<//;
 	} else {
-	  &RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	  &RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  next;
 	}
       }
@@ -587,7 +587,7 @@ sub LoadFeatures {
       ## start and end positions rather than left and right
       ## or for a feature accross the replication origin on circular genomes.
       unless (($left < $right) || ($contig_seq{$ctg}->get_attribute("circular") == 1)) {
-	&RSAT::message::Warning("left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	my $tmp = $left;
 	$left = $right;
 	$right = $tmp;
@@ -596,7 +596,7 @@ sub LoadFeatures {
 
       ## Check strand
       unless ($strand) {
-	&RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+	&RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	next;
       }
 
@@ -634,7 +634,7 @@ sub LoadFeatures {
 
       ## Add the new feature to the contig
       unless (defined($contig{$ctg})) {
-	&RSAT::message::Info(join("\t", "Creating new contig", $ctg)) if ($main::verbose >= 3);
+	&RSAT::message::Info(join("\t", "Creating new contig", $ctg)) if ($main::verbose >= 4);
 	$contig{$ctg} = new RSAT::contig(id=>$ctg);
 	$contig{$ctg}->set_organism($organism_name);
       }
@@ -658,7 +658,7 @@ sub LoadFeatures {
   ## Check the number of features
   if (scalar($self->get_attribute("features")) < 1) {
     &RSAT::message::Warning("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
-  } elsif ($main::verbose >= 3) {
+  } elsif ($main::verbose >= 4) {
 
     ## Print stats on the features
     &RSAT::message::Info(join ("\t",
@@ -696,12 +696,12 @@ sub get_genes {
   my ($self) = @_;
   my @genes = ();
   my %contig = $self->get_contigs();
-  &RSAT::message::TimeWarn("Getting all genes") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Getting all genes") if ($main::verbose >= 3);
 
   foreach my $ctg (sort keys %contig) {
     my @ctg_genes = $contig{$ctg}->get_genes();
     push @genes, @ctg_genes;
-    &RSAT::message::TimeWarn("Got all  genes for contig", $ctg, "contig genes", scalar(@genes), "total", scalar(@genes)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Got all  genes for contig", $ctg, "contig genes", scalar(@genes), "total", scalar(@genes)) if ($main::verbose >= 3);
   }
 
   return (@genes);
@@ -722,7 +722,7 @@ sub CalcNeighbourLimits {
   my ($self) = @_;
   my %contig = $self->get_contigs();
 
-  #  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 2);
+  #  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 3);
 
   my %left = $self->index_attribute_by_feature("left");
   my %right = $self->index_attribute_by_feature("right");
@@ -731,7 +731,7 @@ sub CalcNeighbourLimits {
     local $contig_length = $contig{$ctg}->get_length();
 
     &RSAT::message::TimeWarn("Calculating neighbour limits for contig", $ctg, "features", scalar(@genes), "length", $contig_length)
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 3);
 
     ## Sort genes
     #    @gene_lefts = sort {$a <=> $b} @left{@genes};
@@ -765,7 +765,7 @@ sub CalcNeighbourLimits {
       }
 
       ## Check the process
-      if (($main::verbose >= 3) && ($g % 1000 == 1)) {
+      if (($main::verbose >= 4) && ($g % 1000 == 1)) {
 	&RSAT::message::psWarn("Calculated neighbours for", $g, "genes");
       }
       &RSAT::message::Debug("Calculating left neighbour for gene", $g, $gene->get_attribute("id"), $gene_id)
@@ -799,7 +799,7 @@ sub CalcNeighbourLimits {
 	    $left_candidate = $right_sorted_genes[$#right_sorted_genes];
 	    &RSAT::message::Info("Circular contig", $ctg,
 				 "leftmost feature", $g, $gene->get_attribute("id"),
-				 "left neighbour", $left_candidate->get_attribute("id")) if ($main::verbose >= 2);
+				 "left neighbour", $left_candidate->get_attribute("id")) if ($main::verbose >= 3);
 	    $gene->set_attribute("left_neighbour", $left_candidate);
 	    $gene->set_attribute("left_neighb_id", $left_candidate->get_attribute("id"));
 	    $gene->set_attribute("left_neighb_name", $left_candidate->get_attribute("name"));
@@ -812,7 +812,7 @@ sub CalcNeighbourLimits {
 	    ################################################################
 	    if ($right{$gene} < $left{$gene}) {
 	      ## gene overlaps chromosome start
-	      &RSAT::message::Debug("Gene overlaps chromosome start", $gene->get_attribute("name"), "right=".$right{$gene}, "left=".$left{$gene}) if ($main::verbose >= 3);
+	      &RSAT::message::Debug("Gene overlaps chromosome start", $gene->get_attribute("name"), "right=".$right{$gene}, "left=".$left{$gene}) if ($main::verbose >= 4);
 	      $neighb_left_dist =  $left{$gene} - $neighb_left_limit -1; ## Leftward distances can be negative, for overlapping genes
 	    } else {
 	      $neighb_left_dist = $left{$gene} -1 + $contig_length  - $left_candidate->get_attribute("right");
@@ -963,7 +963,7 @@ sub CalcNeighbourLimits {
       }
 
       ## Check the process
-      if (($main::verbose >= 3) && ($g % 1000 == 1)) {
+      if (($main::verbose >= 4) && ($g % 1000 == 1)) {
 	&RSAT::message::psWarn("Calculated right neighbours for", $g, "genes");
       }
       &RSAT::message::Debug("Calculating right neighbour for gene", $g, $gene->get_attribute("id"), $gene_id)
@@ -998,7 +998,7 @@ sub CalcNeighbourLimits {
 
 	    &RSAT::message::Info("Circular contig", $ctg,
 				 "rightmost feature", $g, $gene->get_attribute("id"),
-				 "right neighbour", $right_candidate->get_attribute("id")) if ($main::verbose >= 2);
+				 "right neighbour", $right_candidate->get_attribute("id")) if ($main::verbose >= 3);
 	    $gene->set_attribute("right_neighbour", $right_candidate);
 	    $gene->set_attribute("right_neighb_id", $right_candidate->get_attribute("id"));
 	    $gene->set_attribute("right_neighb_name", $right_candidate->get_attribute("name"));
@@ -1242,8 +1242,8 @@ sub CalcNeighbourLimits {
 
     }
   }
-  &RSAT::message::TimeWarn("Calculated neighbour limits") if ($main::verbose >= 2);
-  #  &RSAT::message::psWarn("Calculated neighbour limits") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Calculated neighbour limits") if ($main::verbose >= 3);
+  #  &RSAT::message::psWarn("Calculated neighbour limits") if ($main::verbose >= 3);
 }
 
 
@@ -1274,12 +1274,12 @@ sub LoadSynonyms {
     if (-e $synonym_file) {
 	$self->push_attribute("synonym_files", $synonym_file);
     } else {
-	&RSAT::message::Warning(join("\t", "synonym file does not exist", $synonym_file)) if ($main::verbose >= 2);
+	&RSAT::message::Warning(join("\t", "synonym file does not exist", $synonym_file)) if ($main::verbose >= 3);
     }
   }
 
   foreach my $synonym_file ($self->get_attribute("synonym_files")) {
-      &RSAT::message::TimeWarn(join("\t","Loading synonyms from file", $synonym_file)) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn(join("\t","Loading synonyms from file", $synonym_file)) if ($main::verbose >= 3);
 
     #    my $synonym_file = $main::supported_organism{$organism_name}->{'synonyms'};
 #    unless ($synonym_file) {
@@ -1346,7 +1346,7 @@ sub SelectRandomGenes {
   for my $i (1..$rand_gene_nb) {
       my $remaining_genes = scalar(@genes);
       my $selected = int(rand($remaining_genes));
-      warn ";", join ("\t", "Selected gene", $selected, $remaining_genes), "\n" if ($main::verbose >= 2);
+      warn ";", join ("\t", "Selected gene", $selected, $remaining_genes), "\n" if ($main::verbose >= 3);
       if ($replace) {
 	  push @random_genes, $genes[$selected];
       } else {
@@ -1451,7 +1451,7 @@ sub load_and_serialize {
   nstore $self, $serial_file;
   system ("chmod 777 $serial_file");
   &RSAT::message::TimeWarn("Serialized organism", $organism, $serial_file)
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 4);
 }
 
 ################################################################
@@ -1486,14 +1486,14 @@ sub is_serialized {
   ## Compare modification dates
   if (-e $serial_file) {
     if ($serial_mtime > $ctg_mtime) {
-      &RSAT::message::Info("Serialized file is up-to-date", $serial_file) if ($main::verbose >= 3);
+      &RSAT::message::Info("Serialized file is up-to-date", $serial_file) if ($main::verbose >= 4);
       return (1);
     } else {
-      &RSAT::message::Info("Serialized file is obsolete", $serial_file) if ($main::verbose >= 3);
+      &RSAT::message::Info("Serialized file is obsolete", $serial_file) if ($main::verbose >= 4);
       return (0);
     }
   } else {
-      &RSAT::message::Info("Serialized file does not exist", $serial_file) if ($main::verbose >= 3);
+      &RSAT::message::Info("Serialized file does not exist", $serial_file) if ($main::verbose >= 4);
       return (0);
   }
 }
