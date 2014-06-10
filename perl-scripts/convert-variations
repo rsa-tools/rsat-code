@@ -64,7 +64,8 @@ BEGIN {
   if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
   }
-  $ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
+  $ENV{'RSAT'} =$ENV{'RSAT'};
+  #print "$ENV{'RSAT'}";
   push (@INC, "$ENV{'RSAT'}/perl-scripts/lib");
 
 }
@@ -122,6 +123,11 @@ package	main;
     $validate_pattern{$_} = 1;
   }
 
+   if ($to eq "" || $from eq "") {
+      &RSAT::error::FatalError("Please specify input and/or output format ");
+    }
+
+  
 
   ################################################################
   ## Check argument values
@@ -163,7 +169,7 @@ package	main;
       $main::outfile{input} =~ s/\.tab$//;
       $main::outfile{input} =~ s/\.vcf$//;
       $main::outfile{input} =~ s/\.gvf$//;
-
+      
       ## Add extension to the input file, in order to recognize compressed files
       if ($main::infile{input_url} =~ /\.(\w+)$/) {
         my $extension = $1;
@@ -219,13 +225,13 @@ package	main;
 
     ## VCF file
     if ($from eq "vcf") {
-      my @token = split("\t",$_);
-      
-      if (scalar( @token ) < 8 ) {
-        &RSAT::message::WARNING("$_ skip. VCF line must be cointain at least 8 columns");
-        next;
-      }
-
+	my @token = split("\t",$_);
+	&RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
+	if (scalar( @token ) < 8 ) {
+	    &RSAT::message::Warning("$_ skip. VCF line must be at least 8 columns");
+	    next;
+	}
+	
       %variation = &Get_var_from_vcf(\@token);
     }
 
@@ -611,6 +617,7 @@ This option is mutually exclusive with option I<-i>.
 =item B<-from #>
 
 Format of the input file
+vcf,gvf,rsat-var
 
 =cut
     } elsif ($arg eq "-from") {
@@ -622,6 +629,7 @@ Format of the input file
 =item B<-to #>
 
 Format of the output file
+vcf,gvf,rsat-var
 
 =cut
     } elsif ($arg eq "-to") {
@@ -684,7 +692,7 @@ allows to use the command within a pipe.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print "; convert-variations ";
+  print $out "; convert-variations ";
   &PrintArguments($out);
 
   if (%main::outfile) {
