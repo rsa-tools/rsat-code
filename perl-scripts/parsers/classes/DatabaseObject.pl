@@ -118,20 +118,20 @@ sub init_attribute {
 ################################################################
 ## set the value for a SCALAR attribute
 sub set_attribute {
-    my ($self,$attr,$value) = @_;
-    my $class = ref($self);
-    if (($self->get_attribute($attr)) &&
-	($self->get_attribute($attr) ne $main::null)) {
-	die ("\n\tError: object ", $self->get_attribute("id"),
-	     "\n\talready has an attribute '$attr' with value ", $self->get_attribute($attr),
-	     "\n\tand can not be reset to value $value", 
-	     "\n\tto reset an attribute value, you should use the method force_attribute()", 
-	     "\n");
-    } else {
-	$self->_set_attribute_cardinality($attr, "SCALAR");
-	$self->_incr_attribute_count($attr);
-	$self->{$attr} = $value;
-    }
+  my ($self,$attr,$value) = @_;
+  my $class = ref($self);
+  if (($self->get_attribute($attr)) &&
+      ($self->get_attribute($attr) ne $main::null)) {
+    my $message = join ("\t", 
+			$self->get_attribute("type"), $self->get_attribute("id"),
+			"previous ".$attr, $self->get_attribute($attr),
+			"reset to", $value);
+#      &RSAT::error::FatalError($message);
+    &RSAT::message::Warning($message);
+  } 
+  $self->_set_attribute_cardinality($attr, "SCALAR");
+  $self->_incr_attribute_count($attr);
+  $self->{$attr} = $value;
 }
 
 ################################################################
