@@ -1,0 +1,291 @@
+perl /var/www/html/footprintdb/bin/extract_footprintdb.pl -g -o kkplants
+3
+1,2,3,8,11
+2,3,8,11,34,46,66,67,100,106,107,112,113,121,128,134,145,146,155,156,165,166,167,168,170,171,185,202,235,247,248
+
+# 232 motifs extracted
+
+cat kkplants.motif.transfac | grep -v -P "^BF  T\d+" | grep -v -P "^BS  R\d+" | grep -v "RL  TRANSFAC" | perl -lne 's/M\d+\(TRANSFAC 2012.1\)\|//g; print' > footprintDB.plants.motif.transfac
+rm kkplants.motif.transfac
+
+######################################################
+
+perl /var/www/html/footprintdb/bin/extract_footprintdb.pl -g -o kkall
+3
+1,2,3,4,5,6,7,8,9,11
+
+
+# 4196 motifs extracted
+
+cat kkall.motif.transfac | grep -v -P "^BF  T\d+" | grep -v -P "^BS  R\d+" | grep -v "RL  TRANSFAC" | grep -v "RL   Matrices from" | perl -lne 's/M\d+\(TRANSFAC 2012.1\)\|//g; print'  > footprintDB.motif.transfac
+rm kkall.motif.transfac
+
+########################################################
+
+
+0 - All libraries
+1 - 3D-footprint version 20130124
+2 - ArabidopsisPBM version 20140210
+3 - Athamap version 20091028
+4 - DBTBS version 1.0
+5 - DrosophilaTF version 1.1
+6 - HOCOMOCO version v9
+7 - HumanTF version 1.0
+8 - JASPAR CORE version 2009
+9 - RegulonDB version 7.5
+10 - TRANSFAC version 2012.1
+11 - UniPROBE version 20120919
+
+sort -n plant_tax_ids | cut -f 1 -d " "
+
+
+0 - All organisms
+1 - AEV
+2 - Agrobacterium tumefaciens
+3 - Alfalfa mosaic virus
+4 - Anas platyrhynchos
+5 - Anguilla japonica
+6 - Anopheles funestus
+7 - Anopheles gambiae
+8 - Antirrhinum majus
+9 - Aotus nancymaae
+10 - Aquifex aeolicus
+11 - Arabidopsis thaliana
+12 - AS42
+13 - Aspidoscelis uniparens
+14 - ASV 17
+15 - Avian erythroblastosis virus
+16 - Avian musculoaponeurotic fibrosarcoma virus AS42
+17 - Avian myeloblastosis virus
+18 - Avian myelocytomatosis virus
+19 - Avian myelocytomatosis virus 29
+20 - Avian myelocytomatosis virus CMII
+21 - Avian retrovirus
+22 - Avian sarcoma virus
+23 - Avian sarcoma virus 17
+24 - Bacillus licheniformis
+25 - Bacillus megaterium
+26 - Bacillus phage phi29
+27 - Bacillus subtilis
+28 - Bacillus thuringiensis
+29 - Beechey ground squirrel
+30 - Bombyx mori
+31 - Bos taurus
+32 - bovine papilloma virus type 1
+33 - Bovine papillomavirus type 1
+34 - Brassica napus
+35 - Brugia malayi
+36 - bull frog
+37 - Caenorhabditis elegans
+38 - Cairina moschata
+39 - Callithrix jacchus
+40 - Candida albicans (Yeast)
+41 - Candida albicans strain SC5314 (Yeast)
+42 - Candida glabrata
+43 - Canis familiaris (Canis canis)
+44 - Canis lupus familiaris
+45 - Carassius auratus
+46 - Catharanthus roseus
+47 - Cavia porcellus
+48 - Cavia sp.
+49 - Cercopithecidae
+50 - chick
+51 - Chinese hamster (Gray hamster)
+52 - chipmunk
+53 - Chlorocebus aethiops
+54 - Corynebacterium diphtheriae
+55 - Coturnix coturnix
+56 - Coturnix japonica
+57 - Cricetulus griseus
+58 - Cricetulus longicaudatus
+59 - Cricetulus sp.
+60 - Cricetus cricetus
+61 - Crocuta crocuta
+62 - Cryptosporidium parvum
+63 - Cryptosporidium parvum Iowa II
+64 - Cyprinus carpio
+65 - Danio rerio
+66 - Darnel ryegrass
+67 - Daucus carota
+68 - desert grassland whiptail lizard
+69 - Dictyostelium discoideum
+70 - Drosophila
+71 - Drosophila funebris
+72 - Drosophila melanogaster
+73 - Drosophila pseudoobscura
+74 - Drosophila virilis
+75 - E.coli
+76 - EBV
+77 - ECK12
+78 - Emericella nidulans
+79 - Emericella nidulans (strain FGSC A4 / ATCC 38163 / CBS 112.46 / NRRL 194 / M139)
+80 - Enterobacter sp.
+81 - Enterobacter sp. RFL1396
+82 - Enterobacteria phage lambda
+83 - Enterobacteria phage P22
+84 - Epstein-Barr virus (strain B95-8) (HHV-4)
+85 - Equus caballus
+86 - Escherichia coli
+87 - Escherichia coli K-12
+88 - Escherichia coli O157:H7
+89 - Eulemur fulvus collaris
+90 - Feline leukemia provirus ftt
+91 - Felis catus
+92 - Felis silvestris
+93 - Filarial nematode worm
+94 - Fundulus heteroclitus
+95 - Fundulus lima
+96 - Gallus gallus
+97 - gibbon ape
+98 - gilthead sea bream
+99 - Girella zebra
+100 - Glycine max
+101 - golden (Syrian) hamster
+102 - grasshopper
+103 - halibut
+104 - Halocynthia roretzi
+105 - HBI
+106 - Helianthus annuus
+107 - Helianthus anuus
+108 - Heterodontus francisci
+109 - Hippoglossus hippoglossus
+110 - Homo sapiens
+111 - Homo sapiens, Rattus rattus
+112 - Hordeum vulgare
+113 - Hordeum vulgare subsp. vulgare
+114 - Human adenovirus 5
+115 - Human herpesvirus 4
+116 - Human papillomavirus type 18
+117 - Human papillomavirus type 6a
+118 - Human T-lymphotropic virus 1
+119 - Hylobates lar
+120 - Ictalurus punctatus
+121 - Ipomoea batatas
+122 - isolate 3D7
+123 - Israeli tilapia
+124 - Japanese pufferfish
+125 - Kluyveromyces lactis
+126 - Lemur
+127 - Lissotriton vulgaris
+128 - Lolium temulentum
+129 - Macaca fascicularis
+130 - macaque
+131 - Mammalia
+132 - Marek's disease herpesvirus (strain RB-1B) (MDHV)
+133 - Marmota monax
+134 - Medicago sativa
+135 - Mesocricetus auratus
+136 - MH2E21
+137 - Micropogonias undulatus
+138 - Mus domesticus Torino strain
+139 - Mus musculus
+140 - Mus musculus, Saccharomyces cerevisiae
+141 - Mus spec.
+142 - Mycobacterium tuberculosis
+143 - Neovison vison
+144 - Neurospora crassa
+145 - Nicotiana sp.
+146 - Nicotiana tabacum
+147 - Notophthalmus viridescens
+148 - OK10
+149 - Oncorhynchus mykiss
+150 - Oncorhynchus tshawytscha
+151 - Oreochromis aureus
+152 - Oreochromis niloticus
+153 - Oreochromis niloticus (Tilapia nilotica)
+154 - Oryctolagus cuniculus
+155 - Oryza sativa
+156 - Oryza sativa Japonica Group
+157 - Oryzias latipes
+158 - Otospermophilus beecheyi
+159 - Ovis aries
+160 - Pagrus major (Chrysophrys major)
+161 - Pan troglodytes
+162 - Papio hamadryas
+163 - Papio papio
+164 - Paralichthys olivaceus
+165 - Petroselinum crispum
+166 - Petroselinum crispum (P. hortense)
+167 - Petunia
+168 - Petunia x hybrida
+169 - Phage 434
+170 - Phaseolus vulgaris
+171 - Pisum sativum
+172 - Plasmodium falciparum
+173 - Plasmodium falciparum 3D7
+174 - Poephila guttata (Taeniopygia guttata)
+175 - Pseudomonas aeruginosa
+176 - Pseudomonas putida
+177 - Pyrococcus horikoshii
+178 - Pyrococcus woesei
+179 - Rana catesbeiana
+180 - Rana rugosa
+181 - Rana temporaria
+182 - Rattus norvegicus
+183 - Rattus rattus
+184 - red sea bream
+185 - Rhizobium radiobacter (Agrobacterium tumefaciens)
+186 - Saccharomyces cerevisiae
+187 - Saccharomyces cerevisiae (strain ATCC 204508 / S288c)
+188 - Saccharomyces cerevisiae S288c
+189 - Saguinus oedipus
+190 - Saimiri boliviensis boliviensis
+191 - Saimiri sciureus
+192 - Salmo salar
+193 - Salmonella enterica
+194 - Salmonella enterica subsp. enterica serovar Typhimurium
+195 - Schistocerca americana
+196 - Schizosaccharomyces pombe
+197 - Schizosaccharomyces pombe (strain 972 / ATCC 24843)
+198 - Serinus canaria
+199 - slime mold
+200 - Sminthopsis macroura
+201 - Sminthopsis murina
+202 - Solanum lycopersicum
+203 - Sparus aurata
+204 - Staphylococcus aureus
+205 - Staphylococcus aureus subsp. aureus
+206 - strain 168
+207 - strain 17
+208 - strain ATCC 15692 / PAO1 / 1C / PRS 101 / LMG 12228
+209 - strain ATCC 25177 / H37Ra
+210 - strain ATCC 700860 / DSM 12428 / JCM 9974 / NBRC 100139 / OT-3
+211 - strain ATCC 700971 / NCTC 13129 / Biotype gravis
+212 - strain HB27 / ATCC BAA-163 / DSM 7039
+213 - strain K12
+214 - strain LT2 / SGSC1412 / ATCC 700720
+215 - strain N315
+216 - strain NEM316
+217 - strain VF5
+218 - strain YPIII
+219 - Streptococcus agalactiae
+220 - Streptococcus agalactiae serogroup III
+221 - Streptococcus agalactiae serotype III
+222 - Streptomyces antibioticus
+223 - Sturnus vulgaris
+224 - Sus scrofa
+225 - Sus scrofa domesticus
+226 - Taeniopygia guttata
+227 - Takifugu rubripes
+228 - Tamias asiaticus (sibiricus)
+229 - Thermobia domestica
+230 - Thermus aquaticus
+231 - Thermus thermophilus
+232 - Thermus thermophilus HB27
+233 - Trachemys scripta
+234 - Tribolium castaneum
+235 - Triticum aestivum
+236 - Tupaia belangeri
+237 - turtle
+238 - Vertebrata
+239 - Vibrio harveyi
+240 - Xenopus
+241 - Xenopus (Silurana) tropicalis
+242 - Xenopus borealis
+243 - Xenopus laevis
+244 - Xenopus sp.
+245 - Yersinia pseudotuberculosis
+246 - Yersinia pseudotuberculosis serotype O:3
+247 - Zea mays
+248 - Zea mays subsp. mays
+
