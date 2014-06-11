@@ -219,8 +219,7 @@ package	main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
-
-  our $data_dir = $ENV{'RSAT'}."/data/";
+  our $data_dir = $ENV{RSAT}."/data/";
   our $species = '';
   our $ensembl_version = "";
   our $assembly_version = "";
@@ -241,6 +240,7 @@ package	main;
       $supported_output_format{$format} = 1;
   }
   our $format = "";
+  &RSAT::message::Debug("Scripts path", $SCRIPTS ) if ($main::verbose >= 10);
 
 
   our $total_nb_variation = 0;
@@ -504,7 +504,7 @@ package	main;
       $total_nb_variation++;
 
       if ($chr ne $last_chr) {
-        $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
+        $ref_seq = qx($SCRIPTS/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
 	&RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 11); 
         $last_chr = $chr;
 	&RSAT::message::Debug("last_chr  value",  $last_chr) if ($main::verbose >= 10);
