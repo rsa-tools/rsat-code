@@ -58,4 +58,5 @@ tmp
 ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
 install_ensembl*
 authorized_IP*
+*.pyc
 python-scripts/lib/*.pyc
