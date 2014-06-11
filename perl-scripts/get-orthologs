@@ -280,6 +280,11 @@ package main;
   ################################################################
   ## Check argument values
 
+  ## Query organism
+  unless ($query_organism) {
+    &RSAT::error::FatalError("You must define a query organism (option -org)");
+  }
+
   ## Reference taxon or org_list
   &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
       unless ($main::ref_taxon || $main::orglist_file);
@@ -493,7 +498,7 @@ package main;
 
     my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
     my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
-    &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 4);
 
     ## Check if the BLAST file exists and read it
     my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
@@ -776,7 +781,7 @@ sub FilterOrganismsHavingBlast{
     
     unless ($miss) {
       push @filtered_ref_org, $ref_organism;
-      &RSAT::message::Debug("Checked BLAST files for reference organism", $ref_organism) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Checked BLAST files for reference organism", $ref_organism) if ($main::verbose >= 4);
     }
   }
 
@@ -820,7 +825,7 @@ sub select_hits{
   if ($main::query_filter) {
     $input_cmd .= "grep -E '".$main::query_filter."' |";
   }
-  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 3);
+  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 4);
 
   open HIT_HANDLE, $input_cmd;
   #    my ($hit_handle) = &OpenInputFile($blast_file);
@@ -904,7 +909,7 @@ sub select_hits{
   }
   close HIT_HANDLE;
   #    close $hit_handle;
-  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 4);
+  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found", $blast_file)) if ($main::verbose >= 3);
   return($hits);
 }
 
