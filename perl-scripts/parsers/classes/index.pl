@@ -29,7 +29,8 @@ package classes::Index;
   #### returns true if the index contains the specified key.
   sub contains {
       my ($index, $key) = @_;
-      if (defined(@{$index->{$key}})) {
+#      if (defined(@{$index->{$key}})) {
+      if (defined($index->{$key})) {
 	  return 1;
       } else {
 	  return 0;
@@ -39,7 +40,8 @@ package classes::Index;
   #### returns true if the index contain the specified key-value pair. 
   sub contains_pair {
       my ($index, $key, $value) = @_;
-      if (defined(@{$index->{$key}})) {
+#      if (defined(@{$index->{$key}})) {
+      if (defined($index->{$key})) {
 	  foreach my $indexed_value ($index->get_value($key)) {
 	      return 1 if ($value eq $indexed_value);
 	  }
