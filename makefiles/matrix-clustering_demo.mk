@@ -13,7 +13,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 ################################################################
 ## Parameters for the analysis
 MIN_NCOR=0.4
-MIN_COR=0.75
+MIN_COR=0.7
 HCLUST_METHOD=average
 #MIN_W=4
 ## Verbosity
@@ -24,7 +24,6 @@ PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 PEAKMO_NEG_CONTROL_PREFIX=peak-motifs_result_Chen_Oct4_permuted
 OCT4_PREFIX=peak-motifs_Oct4
-
 
 ## Choose a particular demo set
 DEMO_PREFIX=${PEAKMO_PREFIX}
@@ -115,7 +114,6 @@ cluster_footprints:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriales)"
 	${MAKE} cluster DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
-
 
 
 ## Cluster all motifs from RegulonDB
