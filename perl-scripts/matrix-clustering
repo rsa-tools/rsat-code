@@ -404,6 +404,49 @@ package main;
   ## Create the merged matrices and consensuses
   &Merge_matrices();
 
+
+  ## JvH: Jaime, esta parte es muy pesada para contar el numero de
+  ## motivos per cluster: tienes que correr un proceso en shell por
+  ## cada cluster ! Me parece mucho mas simple leerlo desde Perl. Lo
+  ## modifico. Podras verificar si funciona antes de borrar el texto
+  ## comentado ?
+
+#   ## Get the cluster sizes
+#   chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
+#   foreach my $cluster (@clusters_to_HTML){
+#       $cluster =~ s/\s+//g;
+#       chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep -w $cluster | cut -f1`);
+#       $clusters_info{$cluster} = scalar(@nodes); 
+#       $clusters_info{$cluster} =~ s/\s+//g;
+# #      &RSAT::message::Debug("Cluster", $cluster, '$clusters_info{$cluster}', $clusters_info{$cluster}) if ($main::verbose >= 10);
+#   }
+
+  ## Read cluster composition, and store it in a hash table where 
+  ##   keys = cluster names
+  ##   values = lists of nodes per cluster
+  &RSAT::message::TimeWarn("Reading cluster sizes from alignment table", $outfile{alignment_table}) if ($main::verbose >= 2);
+  my %cluster_nodes = (); 
+  my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
+  while (<$cluster_handle>) {
+    next if (/^#/); ## Skip header line
+    next if (/^;/); ## Skip comment lines
+    next unless (/\S/); ## Skip empty lines
+    my ($node, $cluster) = split ("\t");
+    push @{$cluster_nodes{$cluster}}, $node;
+  }
+  @clusters_to_HTML = sort keys %cluster_nodes;
+
+  &RSAT::message::Debug("Cluster names", join ";", @clusters_to_HTML) if ($main::verbose >= 2);
+  
+  ## Index the number of nodes per cluster
+  my %clusters_info = (); 
+  foreach my $cluster (@clusters_to_HTML){
+    my @nodes = @{$cluster_nodes{$cluster}};
+    $clusters_info{$cluster} = scalar(@nodes);
+    &RSAT::message::Debug("Cluster:", $cluster, 'nb of nodes:', $clusters_info{$cluster}) if ($main::verbose >= 2);
+  }
+  close $cluster_handle;
+
   ################################################################
   ## Parse the JSON file
   &Add_attributes_to_JSON();
@@ -1046,6 +1089,9 @@ sub ClusterMotifs {
 ## attributes
 sub Add_attributes_to_JSON(){
   my (%matrix_info) = ();
+
+  
+
   ## Create the logos with the empty columns, which will be displayed
   ## in the HTML5 file
   &Add_empty_columns_to_logos();
@@ -1055,7 +1101,7 @@ sub Add_attributes_to_JSON(){
   ##	key :  name
   ##	values : attribute (link, etc)
 
-  ### Open the file with the picture's data
+  ## Open the file with the picture's data
   open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
   while(<DATA>){
       next unless (/\S/); ## Skip empty rows
@@ -1084,18 +1130,10 @@ sub Add_attributes_to_JSON(){
   }
   close(DATA);
 
-  ## Get the cluster sizes
-  chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
-  foreach my $cluster (@clusters_to_HTML){
-
-      $cluster =~ s/\s+//g;
-      chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep -w $cluster | cut -f1`);
-      $clusters_info{$cluster} = scalar(@nodes); 
-      $clusters_info{$cluster} =~ s/\s+//g;
-  }
 
   ############################################################
   ## Read the JSON file and add the link data to each node
+  &RSAT::message::TimeWarn("Linking data to nodes in JSON files") if ($main::verbose >= 2);
   foreach my $cluster(@clusters_to_HTML){
       my $line = "";
       my $children = 0;
@@ -1107,6 +1145,7 @@ sub Add_attributes_to_JSON(){
 
       ## Open the JSON file produced by R   
       my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
+      &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
       open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
       while(<JSON>){
 	  
@@ -1235,7 +1274,7 @@ sub Create_html_tree_file(){
 	if(/\s+height =,/){
 	    my $clust = "cluster_".$cluster_nb;
 	    my $mat_number = $clusters_info{$clust} + 2;
-	    $_ =~ s/\s+height =,/\t\theight = 83 * $mat_number,/;
+	    $_ =~ s/\s+height =,/\t\theight = 100 + 120 * $mat_number,/;
 	}
 
 	### Add the JSON file name
@@ -1422,7 +1461,9 @@ sub Create_single_matrix_files(){
 
   ## Split the matrix file into single matrices file, 
   ## in order to process individually each matrix
-  system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
+  my $split_cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
+  &doit($split_cmd, 0, $die_on_error, $verbose);
+#  system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
   
   ## Get the ids of the matrices
   chomp(@ids = `grep -v '#' $main::outfile{matrix_descriptions} | cut -f2`);
@@ -1431,6 +1472,7 @@ sub Create_single_matrix_files(){
   foreach my $id (@ids){
     chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
   }
+
   return(%matrix_files);
 }
 
@@ -1441,6 +1483,8 @@ sub Create_single_matrix_files(){
 sub Merge_matrices(){
 
     ## Get the cluster sizes
+
+  ## JvH: I suppress this becaus ewe already read this list earlier (I mde it a global variabl)
     chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
     foreach my $cluster (@clusters_to_HTML){
 
