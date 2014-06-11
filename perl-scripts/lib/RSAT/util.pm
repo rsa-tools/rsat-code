@@ -988,7 +988,6 @@ sub doit {
 
     unless ($ENV{CLUSTER_SHELL}) {
       $shell = &RSAT::server::GetProgramPath($shell);
-#      die "HELLO\t", $shell;
     }
 
     ## Store the command in a sh script (the job)
