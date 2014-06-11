@@ -264,7 +264,7 @@ verbose(paste("Exporting merge attributes table", attributes.file), 1)
 ## Produce the forests: when a pair of clusters is
 ## not aligned, it is splited and each part (forest)
 ## is realigned and printed in pdf and png
-if(forest.nb > 1){
+if (forest.nb > 1){
 
   ## Creates a folder with where the separated information
   ## of each cluster will be stored
@@ -314,7 +314,7 @@ if(forest.nb > 1){
       ## It will be erased later
       JSON.empty <- ";Empty_file\n"
       JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
-  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+      write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
       ## For consistency, Create the folder with the merged consensuses
       system(paste("mkdir -p ", cluster.folder, "/merged_consensuses", sep = ""))
@@ -465,7 +465,8 @@ if(forest.nb > 1){
       ## w.inches <- 10 ## width in inches
       ## h.inches <- 7 ## height in inches
       w.inches <- 15 ## width in inches
-      h.inches <- 7 ## height in inches
+#      h.inches <- 7 ## height in inches
+      h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
       resol <- 72 ## Screen resolution
       tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
       if (plot.format == "pdf") {
@@ -473,6 +474,7 @@ if(forest.nb > 1){
       } else if (plot.format == "png") {
         png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
       }
+      
       ## dev.new(width=10, height=7)
       par(mar=c(3,2,2,mar4),family="mono")
       plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
