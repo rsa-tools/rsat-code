@@ -231,7 +231,7 @@ mar4 <- alignment.width - 10
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
   w.inches <- 14 ## width in inches
-  h.inches <- round(0.25* length(motifs.info)) ## height in inches
+  h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
   #h.inches <- 8 ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
@@ -419,7 +419,7 @@ if(forest.nb > 1){
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
       merge.consensus.info <<- NULL
-      verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
+      verbose(paste("Merging the matrices at tree level: ", merge.level ), 1)
       aligned.matrices.to.merge(merge.level)
     }
   
