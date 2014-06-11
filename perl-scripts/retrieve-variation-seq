@@ -493,17 +493,24 @@ package	main;
 
     while (<$file>) {
       next if (/^#/);
+      next if (/^;/);
+
       chomp();
 
       my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
       next if ($invar && !$validate);
+      &RSAT::message::Debug("Line content", join("*",$chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar)) if ($main::verbose >= 10);
 
       $total_nb_variation++;
 
       if ($chr ne $last_chr) {
         $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
+	&RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 11); 
         $last_chr = $chr;
+	&RSAT::message::Debug("last_chr  value",  $last_chr) if ($main::verbose >= 10);
       }
+      &RSAT::message::Debug("id  value",  $id) if ($main::verbose >= 10);
+      &RSAT::message::Debug("last_id  value",  $last_id) if ($main::verbose >= 10);
 
       if ($id ne $last_id && !$main::infile{'input'}) {
         $nb_var++;
