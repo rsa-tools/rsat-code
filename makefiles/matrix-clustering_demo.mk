@@ -106,7 +106,7 @@ cluster_peakmo_neg_control:
 cluster_peakmo_Oct4_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX} MIN_NCOR=0.4 MIN_COR=0.7 
+	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX}
 ## We should add this option: OPT='-lth w 5'
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
@@ -119,16 +119,20 @@ cluster_footprints:
 ## Cluster all motifs from RegulonDB
 RDB_CLUSTER_DIR=results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
-#RDB_PREFIX=regulonDB_2012-05
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
-#RDB_PREFIX=regulonDB_2012-05_MOD2
-#RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/regulonDB_2012-05_MOD2.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4
 
-
+################################################################
+## Clusterone jaspar group
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
 	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES}
+
+cluster_jaspar_vertebrates:
+	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=vertebrates
+
+cluster_jaspar_insects:
+	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=insects
