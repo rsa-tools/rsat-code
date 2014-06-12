@@ -93,14 +93,14 @@ write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, 
 ### Build the tree by hierarchical clustering, and export it in Newick format
 tree <<- hclust(dist.matrix, method = hclust.method)
 tree$labels <- as.vector(global.description.table$label)
-system(paste("mkdir -p ",out.prefix, "_trees/", sep = ""))
-
+dir.trees <- paste(out.prefix, "_trees", sep="")
+system(paste("mkdir -p ",dir.trees, sep = ""))
 
 if (export == "newick") {
   temp.tree <- tree
   temp.tree[[2]] <- round(tree[[2]], digits = 3)
-  newick.file <- paste(out.prefix, "_trees/tree.newick", sep = "")
-  verbose(paste("Exporing newick file", newick.file), 1)
+  newick.file <- file.path(dir.trees, "tree.newick")
+  verbose(paste("Exploring newick file", newick.file), 1)
   write(hc2Newick(temp.tree, flat = TRUE), file=newick.file)
   rm(temp.tree)
 }
