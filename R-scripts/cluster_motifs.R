@@ -277,6 +277,7 @@ if (forest.nb > 1){
   for(nb in 1:length(clusters)){
     
     cluster.nb <<- nb 
+
     verbose(paste("Exploring the cluster generated: ", nb ), 1)
 
     internal.nodes.attributes <<- list()
@@ -287,8 +288,8 @@ if (forest.nb > 1){
     tree <<- NULL
 
     ## Creates an individual folder for each cluster
-    system(paste("mkdir -p ", clusters.info.folder, "/cluster_", cluster.nb, sep = ""))
-    cluster.folder <<- paste(clusters.info.folder, "/cluster_", cluster.nb, sep = "")
+    cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", cluster.nb, sep = ""))
+    system(paste("mkdir -p ", cluster.folder, sep = ""))
     
     ids <- clusters.ids[[paste("cluster_", nb, sep = "")]]
 
@@ -465,7 +466,7 @@ if (forest.nb > 1){
       ## w.inches <- 10 ## width in inches
       ## h.inches <- 7 ## height in inches
       w.inches <- 15 ## width in inches
-#      h.inches <- 7 ## height in inches
+      h.inches <- 7 ## height in inches
       h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
       resol <- 72 ## Screen resolution
       tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
