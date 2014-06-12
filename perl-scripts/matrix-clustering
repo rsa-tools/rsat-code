@@ -266,13 +266,11 @@ package main;
 
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
 
-
   ## Non-recognized parameters are passed to compare-matrices
   if (scalar(@args_to_pass)) {
     $args_to_pass = join (" ", @args_to_pass);
     &RSAT::message::Info("Unrecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
   }
-
 
   ## Check that the  input file has been specified
   unless ($infile{matrices}) {
@@ -395,6 +393,7 @@ package main;
   ################################################################
   ## Cluster the matrices
   &CompareMatrices();
+
 
   ################################################################
   ## Cluster the matrices
@@ -805,23 +804,23 @@ Default: Ncor
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; cluster-matrices ";
-    &PrintArguments($main::out);
-    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
-    if (%main::infile) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-28s\t%s\n", $key, $value;
-	}
+  print $main::out "; cluster-matrices ";
+  &PrintArguments($main::out);
+  printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $main::out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $main::out ";\t%-28s\t%s\n", $key, $value;
     }
-    printf $main::out  "; %-28s\t%s\n", "Number of matrices", scalar(@matrices);
+  }
+  printf $main::out  "; %-28s\t%s\n", "Number of matrices", scalar(@matrices);
 
-    if (%main::outfile) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	  printf $main::out ";\t%-28s\t%s\n", $key, $value;
-	}
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $main::out ";\t%-28s\t%s\n", $key, $value;
     }
+  }
 }
 
 ################################################################
@@ -831,8 +830,10 @@ sub CompareMatrices {
   ## the option "distinct" in order to ensure that all the motifs are
   ## in the output graph even if they are not related to any other
   ## motif.
+  $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
+
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".($main::verbose-1); 
+  my $cmd = $SCRIPTS."/compare-matrices -v ".$matrix_compa_verbose; 
   $cmd .= " -mode scores";
   $cmd .= " -format ".$main::matrix_format;
   $cmd .=  " -file ".$main::infile{matrices};
@@ -951,8 +952,8 @@ sub Hclustering {
     }
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     if ($export_tree_format eq "newick"){
-	$cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
-	$cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_tree_newick}."'";
+      $cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
+      $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
     }
     #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
@@ -1374,7 +1375,7 @@ sub ConvertTabToHTML {
 sub Create_phylogram(){
 
   ### Save the newick tree in the variable
-  chomp(my $newick_tree = `more $main::outfile{consensus_tree_newick}`);
+  chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
 
 #  system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
   my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
@@ -1410,7 +1411,7 @@ sub Create_phylogram(){
   close(PHYLO);
   unlink($main::outfile{phylogram_html});
 #  system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
-  my $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
+  $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
   &doit($cmd, 0, $die_on_error, $verbose);
   return();
 }
@@ -1745,7 +1746,7 @@ sub Add_div_to_HTML(){
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
 #    system("mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html});
-    my $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
+    $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);    
 }
 
