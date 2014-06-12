@@ -328,7 +328,7 @@ package main;
   $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
 
   ## Individual matrix descriptions
-  $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &TabToConvert("matrix_descriptions");
+  $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
 
   ## Simliarity network between matrices
   if ($main::return_field{network}) {
@@ -339,7 +339,7 @@ package main;
   ## MCL clustering (by segmentation of the matrix network)
   if ($main::return_field{mcl_clusters}) {
     $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl"; push @outfiles, "clusters_mcl";
-    $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab"; push @outfiles, "clusters_tab"; &TabToConvert("clusters_tab");
+    $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab"; push @outfiles, "clusters_tab"; &AddTabToConvert("clusters_tab");
     $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab"; push @outfiles, "clusters_subgraph";
     $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml"; push @outfiles, "clusters_subgraph_gml";
     $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png"; push @outfiles, "clusters_subgraph_png";
@@ -347,19 +347,17 @@ package main;
   }
 
   ## Output files for the hierarchical clustering trees
-  $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table"; &TabToConvert("distance_table");
-  $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table"; &TabToConvert("alignment_table");
-  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table"; &TabToConvert("internal_nodes_attributes_table");
+  $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
+  $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
+  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table"; &AddTabToConvert("internal_nodes_attributes_table");
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
-#  $main::outfile{matrix_tree_json} = $main::outfile{prefix}."_trees/matrix_tree.json"; push @outfiles, "matrix_tree_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
   $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
   $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
   if ($export_tree_format eq "newick"){
-    $main::outfile{consensus_tree_newick} = $main::outfile{prefix}.".newick"; push @outfiles, "consensus_tree_newick";
-    $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";
-    
+    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
+    $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
   }
 
   ## Some temporary files
@@ -407,12 +405,9 @@ package main;
   ## several functions below.
   &ReadClusterComposition();
 
-#  die "HELLO";
-
   ################################################################
   ## Create the merged matrices and consensuses
   &Merge_matrices();
-
 
   ################################################################
   ## Parse the JSON file
@@ -433,7 +428,7 @@ package main;
 
   ################################################################
   ## Convert tab files to HTML files
-  &GenerateHtmlTables(@tab_to_convert);
+  &ConvertTabToHTML(@tab_to_convert);
 
   ################################################################
   ## Print verbose
@@ -979,21 +974,6 @@ sub Hclustering {
 ##
 ## Results are stored in global variables of the main memory space.
 sub ReadClusterComposition {
-  ## JvH: Jaime, esta parte es muy pesada para contar el numero de
-  ## motivos per cluster: tienes que correr un proceso en shell por
-  ## cada cluster ! Me parece mucho mas simple leerlo desde Perl. Lo
-  ## modifico. Podras verificar si funciona antes de borrar el texto
-  ## comentado ?
-
-#   ## Get the cluster sizes
-#   chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
-#   foreach my $cluster (@clusters_to_HTML){
-#       $cluster =~ s/\s+//g;
-#       chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep -w $cluster | cut -f1`);
-#       $clusters_info{$cluster} = scalar(@nodes); 
-#       $clusters_info{$cluster} =~ s/\s+//g;
-# #      &RSAT::message::Debug("Cluster", $cluster, '$clusters_info{$cluster}', $clusters_info{$cluster}) if ($main::verbose >= 10);
-#   }
 
   ## Read cluster composition, and store it in a hash table where 
   ##   keys = cluster names
@@ -1232,9 +1212,13 @@ sub Add_attributes_to_JSON(){
       open(PARSED_JSON, ">".$main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json") || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json");
       print PARSED_JSON @Parsed_JSON;
       close(PARSED_JSON);
-      system("rm ".$JSON);
+      unlink($JSON);
   }
-  system("rm -r ".$main::outfile{prefix}."_pairwise_compa_logos");
+
+#  system("rm -r ".$main::outfile{prefix}."_pairwise_compa_logos");
+  my $cmd = "rm -r ".$main::outfile{prefix}."_pairwise_compa_logos";
+  &doit($cmd, 0, $die_on_error, $verbose);
+
   return();
 }
 
@@ -1291,7 +1275,7 @@ sub Create_html_tree_file(){
 	if(/\s+height =,/){
 	    my $clust = "cluster_".$cluster_nb;
 	    my $mat_number = $clusters_info{$clust} + 2;
-	    $_ =~ s/\s+height =,/\t\theight = 100 + 120 * $mat_number,/;
+	    $_ =~ s/\s+height =,/\t\theight = 100 + 85 * $mat_number,/;
 	}
 
 	### Add the JSON file name
@@ -1349,14 +1333,15 @@ sub Create_html_tree_file(){
 	print TEMP $_."\n";
     }
     close(TEMP);
-    system("rm ".$main::outfile{logo_cladogram_html});
-    system("mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html});
+    unlink($main::outfile{logo_cladogram_html});
+    my $cmd = "mv -f ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose);
     return();
 }
 
 ################################################################
 ## Index a table to convert to HTML
-sub TabToConvert {
+sub AddTabToConvert {
   my ($key) = @_;
   my $tab = $main::outfile{$key};
   my $html_key = $key."_html";
@@ -1369,7 +1354,7 @@ sub TabToConvert {
 
 ################################################################
 ## Convert tab-delimited files in HTML
-sub GenerateHtmlTables {
+sub ConvertTabToHTML {
   my @tab_to_convert = @_;
   &RSAT::message::TimeWarn("Converting tab-delimited to HTML files") if ($main::verbose >= 2);
   for my $key (@tab_to_convert) {
@@ -1384,46 +1369,50 @@ sub GenerateHtmlTables {
   }
 }
 
-###################################
+################################################################
 ## Create the phylogram
 sub Create_phylogram(){
 
-    ### Save the newick tree in the variable
-    chomp(my $newick_tree = `more $main::outfile{consensus_tree_newick}`);
+  ### Save the newick tree in the variable
+  chomp(my $newick_tree = `more $main::outfile{consensus_tree_newick}`);
 
-    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
-    open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
-    open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
+#  system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
+  my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
+  &doit($cmd, 0, $die_on_error, $verbose);
+  open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
+  open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
 
 
-    ## Select the D3 base
-    if ($d3_base_format eq "link"){
-	$d3_base_url = "http://d3js.org";	
-    }
+  ## Select the D3 base
+  if ($d3_base_format eq "link"){
+    $d3_base_url = "http://d3js.org";	
+  }
 
-    while(<PHYLO>){
-	chomp;	
+  while(<PHYLO>){
+    chomp;	
 
 #	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 #	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 #	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 #	}
 
-	### Fix the d3 libraries path
-	$_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
-	$_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
-	$_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
+    ### Fix the d3 libraries path
+    $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
+    $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
+    $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
 
-	### Paste the newick tree in the HTML code
-	$_ =~ s/Paste_newick_here/$newick_tree/;
+    ### Paste the newick tree in the HTML code
+    $_ =~ s/Paste_newick_here/$newick_tree/;
 
-	print TEMP $_."\n";
-    }
-    close(TEMP);
-    close(PHYLO);
-    system("rm ".$main::outfile{phylogram_html});
-    system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
-    return();
+    print TEMP $_."\n";
+  }
+  close(TEMP);
+  close(PHYLO);
+  unlink($main::outfile{phylogram_html});
+#  system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
+  my $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
+  &doit($cmd, 0, $die_on_error, $verbose);
+  return();
 }
 
 
@@ -1468,19 +1457,36 @@ sub Add_empty_columns_to_logos(){
     if($strand eq "D"){
 
       ## Add the empty columns
-      system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+#      system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+      my $cmd = "convert-matrix -i ".$file_name;
+      $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
+      $cmd .= " -insert_col_left ".$offset_left;
+      $cmd .= " -insert_col_right ".$offset_right;
+      $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
+      &doit($cmd, 0, $die_on_error, $verbose);
+
     }else{
 
       ## First convert the matrix to reverse complement
-      system("convert-matrix -i ".$file_name." -from tf -to tf -rc -return counts,consensus -o ".$main::outfile{prefix}."_aligned_logos/temp.tf"); 
+#      system("convert-matrix -i ".$file_name." -from tf -to tf -rc -return counts,consensus -o ".$main::outfile{prefix}."_aligned_logos/temp.tf"); 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
+      $cmd = "convert-matrix -i ".$file_name;
+      $cmd .= " -from tf -to tf -rc -return counts,consensus";
+      $cmd .= " -o ".$temp_mat;
+      &doit($cmd, 0, $die_on_error, $verbose);
       
       ## Then add the gaps
-      system("convert-matrix -i ".$temp_mat." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+#      system("convert-matrix -i ".$temp_mat." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
+      $cmd = "convert-matrix -i ".$temp_mat;
+      $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
+      $cmd .= " -insert_col_left ".$offset_left;
+      $cmd .= " -insert_col_right ".$offset_right;
+      $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
+      &doit($cmd, 0, $die_on_error, $verbose);
 
-      system("rm ".$temp_mat);
+      unlink($temp_mat);
     }
-    system("rm ".$file_name);
+    unlink($file_name);
 
     ## Store the path of the logos
     $aligned_logos_path{$id}{strand} = $strand;
@@ -1507,9 +1513,9 @@ sub Create_single_matrix_files(){
 
   ## Split the matrix file into single matrices file, 
   ## in order to process individually each matrix
-  my $split_cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
-  &doit($split_cmd, 0, $die_on_error, $verbose);
 #  system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
+  my $cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
+  &doit($cmd, 0, $die_on_error, $verbose);
   
   ## Get the ids of the matrices
   chomp(@ids = `grep -v '#' $main::outfile{matrix_descriptions} | cut -f2`);
@@ -1524,18 +1530,19 @@ sub Create_single_matrix_files(){
 
 
 ################################################################
-## Merge the matrices on each merge level of the hclust tree into a
-## single matrix and consensus
+## Merge the matrices at each level of the hclust tree, and produce a
+## branch-wise matrix + logo + consensus.
 sub Merge_matrices(){
 
+  &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
   ## Get the cluster sizes
 
   ## JvH: I suppress this becaus ewe already read this list earlier (I mde it a global variabl)
 #  chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
   foreach my $cluster (@clusters_to_HTML){
+    my @nodes = @{$cluster_nodes{$cluster}};
+    &RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
 
-    $cluster =~ s/\s+//g;
-    chomp(my @nodes = `more $main::outfile{alignment_table} | grep -v '#' | grep -P '$cluster\\s+' | cut -f1`);
     $clusters_info{$cluster} = scalar(@nodes); 
     $clusters_info{$cluster} =~ s/\s+//g;
     
@@ -1556,29 +1563,43 @@ sub Merge_matrices(){
       ## Merge the matrices and create a single matrix
       my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_cat.tf";
       my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
-      system("cat ".$files." >".$cat_file);
-      system("merge-matrices -i ".$cat_file." -in_format tf -out_format tf -o ".$merged_mat_file);
+
+#      system("cat ".$files." >".$cat_file);
+#      system("merge-matrices -i ".$cat_file." -in_format tf -out_format tf -o ".$merged_mat_file);
+      my $cmd = "cat ".$files." >".$cat_file;
+      $cmd .= "; merge-matrices -i ".$cat_file;
+      $cmd .= " -in_format tf -out_format tf";
+      $cmd .= " -o ".$merged_mat_file;
+      &doit($cmd, 0, $die_on_error, $verbose);
       
       ## Delete files
-      system(" rm ".$cat_file);
+      unlink($cat_file);
       foreach my $file(@file_names){
-	system(" rm ".$file);
+	unlink($file);
       }
       
-      ## Create the logos
-      system("convert-matrix -i ".$merged_mat_file." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png");
+     ## Create branch-wise logos
+#      system("convert-matrix -i ".$merged_mat_file." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png");
+      $cmd = "convert-matrix -i ".$merged_mat_file;
+      $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
+      ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
+      $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png"; 
+      &doit($cmd, 0, $die_on_error, $verbose);
       
+
       $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
       $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
       
       $merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
       
       my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
-      chomp(my $cons = `more $mat_file | grep DE`);
+      my $cons = `more $mat_file | grep '^DE'`;
+      chomp($cons);
       $cons =~ s/^DE\s+//;
       $merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
     }
   }
+
 }
 
 
@@ -1690,7 +1711,11 @@ sub Add_div_to_HTML(){
     my $line = "";
     my $print = "";
     my $temp = paste_new_cluster_to_HTML();
-    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html});
+
+#    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html});
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose);
+
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
     open(TREE,$main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
 
@@ -1718,8 +1743,10 @@ sub Add_div_to_HTML(){
     print TEMP $print;
     close(TREE);
     close(TEMP);
-    system("rm ".$main::outfile{logo_cladogram_html});
-    system("mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html});
+    unlink($main::outfile{logo_cladogram_html});
+#    system("mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html});
+    my $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose);    
 }
 
 __END__
