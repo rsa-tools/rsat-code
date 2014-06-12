@@ -1013,7 +1013,7 @@ sub doit {
     open JOB, ">$job_file" || die "Cannot write job file ".$job_file;
     print JOB $job_script;
     close JOB;
-    &RSAT::message::TimeWarn(join("\t", "wd", $wd, "Job written in file", $job_file)) if ($verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "wd", $wd, "Job written in file", $job_file)) if ($verbose >= 3);
 
     my $job_name = $job_file;
     $job_name =~ s/\//_/g;
@@ -1032,7 +1032,7 @@ sub doit {
 
     } else {
       $ENV{QSUB_MANAGER} = "sge";
-      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($verbose >= 1);
+      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($verbose >= 2);
     }
 
     my $qsub_options="";
@@ -1088,12 +1088,9 @@ sub doit {
     &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
   } else {
-    ## Verbose
-#    if (($dry) || ($verbose >= 2)) {
-    if ($verbose >= 2) {
-      &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
-      &RSAT::message::TimeWarn(&hide_RSAT_path($command));
-    }
+    ## Verbose: report command
+    &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
+    &RSAT::message::TimeWarn(&hide_RSAT_path($command))  if ($verbose >= 3);
 
     ## Send the command to the queue
     unless ($dry) {
