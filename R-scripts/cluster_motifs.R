@@ -13,11 +13,10 @@
 ## -> this consensus could e used to display trees in R, without requiring the
 
 ## Load required libraries
-suppressPackageStartupMessages(library(dendextend))
-library("RJSONIO")
-library("ctc")
-library("dendroextras")
-library("dendextend")
+suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("dendroextras", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
