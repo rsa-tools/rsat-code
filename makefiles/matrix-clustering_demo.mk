@@ -13,7 +13,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 ################################################################
 ## Parameters for the analysis
 MIN_NCOR=0.4
-MIN_COR=0.7
+MIN_COR=0.6
 HCLUST_METHOD=average
 #MIN_W=4
 ## Verbosity
@@ -75,11 +75,11 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
-CLUSTER_TIME_FILE=${CLUSTER_FILE_PREFIX}_time_log.txt
+#CLUSTER_TIME_FILE=${CLUSTER_FILE_PREFIX}_time_log.txt
 cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
-	@echo "	verbosity +time in file	${CLUSTER_TIME}"
+#	@echo "	verbosity and time storeed in file	${CLUSTER_TIME_FILE}"
 	${CLUSTER_CMD}
 #	(time ${CLUSTER_CMD}) >& ${CLUSTER_TIME_FILE}
 	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
