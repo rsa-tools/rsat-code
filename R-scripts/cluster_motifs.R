@@ -45,10 +45,10 @@ thresholds <<- list()
 args = commandArgs(trailingOnly=TRUE);
 #print("Parsing command-line arguments")
 if (length(args >= 1)) {
-  print(args)
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
+  verbose(args, 1)
 }
 
 ## Check parameters
@@ -100,7 +100,7 @@ if (export == "newick") {
   temp.tree <- tree
   temp.tree[[2]] <- round(tree[[2]], digits = 3)
   newick.file <- file.path(dir.trees, "tree.newick")
-  verbose(paste("Exploring newick file", newick.file), 1)
+  verbose(paste("Exploring newick file", newick.file), 2)
   write(hc2Newick(temp.tree, flat = TRUE), file=newick.file)
   rm(temp.tree)
 }
@@ -235,7 +235,7 @@ for (plot.format in c("pdf", "png")) {
   #h.inches <- 8 ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
-  verbose(paste("Exporting hclust tree drawing", tree.drawing.file), 1)
+  verbose(paste("hclust tree drawing", tree.drawing.file), 1)
   if (plot.format == "pdf") {
     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
   } else if (plot.format == "png") {
@@ -257,7 +257,7 @@ internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table)
 colnames(internal.nodes.attributes.table) <- c("#merge_level", "method", "min_score", "max_score", "median_score", "alignment_status", "cluster_1", "cluster_2")
 attributes.file <- paste(sep="", out.prefix, "_internal_nodes_attributes.tab")
 write.table(internal.nodes.attributes.table, file = attributes.file, sep = "\t", quote = FALSE, row.names = FALSE)
-verbose(paste("Exporting merge attributes table", attributes.file), 1)
+verbose(paste("merge attributes table", attributes.file), 1)
 
 
 #####################################################
@@ -278,7 +278,7 @@ if (forest.nb > 1){
     
     cluster.nb <<- nb 
 
-    verbose(paste("Exploring the cluster generated: ", nb ), 1)
+    verbose(paste("Exploring the cluster generated: ", nb ), 2)
 
     internal.nodes.attributes <<- list()
     motifs.info <<- list()
@@ -420,7 +420,7 @@ if (forest.nb > 1){
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
       merge.consensus.info <<- NULL
-      verbose(paste("Merging the matrices at tree level: ", merge.level ), 1)
+      verbose(paste("Merging the matrices at tree level: ", merge.level ), 2)
       aligned.matrices.to.merge(merge.level)
     }
   

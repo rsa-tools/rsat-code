@@ -925,6 +925,7 @@ sub Hclustering {
     my $join_labels = join(",", @temp_consensus_fields);
     $arg_labels .= $join_labels." )"; 
 
+    $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
        
 #  my $pos_drawing_offset = -($pos_interval-1)/2;
     my $pos_drawing_offset = 0;
@@ -938,6 +939,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
+    $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
