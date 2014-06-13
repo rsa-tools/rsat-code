@@ -99,7 +99,9 @@ package main;
   our $species = "";
   our $assembly_version = "";
 
-  our $only_api = 0;
+
+#  our $only_api = 0;
+  our $query_mode = "sql";
   our $get_available_species = 0;
 
   our $max_genes = 0; ## For testing only
@@ -302,7 +304,6 @@ package main;
   print $outstream_organism $mca->get_scientific_name(),"\n";
 
 
-
   ## Get Organism Names
   &RSAT::message::TimeWarn("Getting Organism Names") if ($verbose >= 2);
 
@@ -314,25 +315,57 @@ package main;
 
   ################################################################
   ## By default, we collect features by SQL, much faster than via the
-  ## object-oriented API.
-  if (! $only_api) {
+  ## object-oriented API. However we maintain the API access, which is
+  ## supposed to be stable.
+  if ($query_mode eq "sql") {
 
-    ##Get Gene
+    ################################################################
+    ## Get genes
     &RSAT::message::TimeWarn("Getting Gene") if ($verbose >= 2);
 
+    my $sql_query; ## To spare electrons in the context of Kyoto agreements, we recycle the smae variable for all the sql queries
+
+    # ## Previous query, which makes problem due to changes in gene IDs, only returns a small subset of genes
+    # $sql_query = "select g.stable_id, g.status, g.biotype, xref.display_label, g.seq_region_start, g.seq_region_end, g.seq_region_strand, g.description, s.name";
+    # $sql_query .= " from gene g ";
+    # $sql_query .= " join xref on (g.display_xref_id = xref.xref_id)";
+    # $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    # $sql_query .= " join coord_system cs using (coord_system_id)";
+    # $sql_query .= " join meta using (species_id)";
+    # $sql_query .= " where meta.meta_key='species.production_name' and meta_value=?";
+
+    ## Corrected query sent by Dan Staines 2014-06-13
+    $sql_query = "select g.stable_id, g.status, g.biotype, xref.display_label, g.seq_region_start, g.seq_region_end, g.seq_region_strand, g.description, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " LEFT join xref on (g.display_xref_id = xref.xref_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system cs using (coord_system_id)";
+    $sql_query .= " join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+
     my $gene_list = $sql_helper->execute(
-      -SQL      => "select g.stable_id, g.status, g.biotype, xref.display_label, g.seq_region_start, g.seq_region_end, g.seq_region_strand, g.description, s.name from gene g join xref on (g.display_xref_id = xref.xref_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
-         return { 
-          gene_id => $row[0], gene_status => $row[1], gene_biotype => $row[2], gene_external_name => $row[3], 
-          gene_start => $row[4], gene_end => $row[5], gene_strand => $row[6], gene_description => $row[7],
+	return { 
+          gene_id => $row[0], 
+	  gene_status => $row[1], 
+	  gene_biotype => $row[2], 
+	  gene_external_name => $row[3] || $row[0], 
+          gene_start => $row[4], 
+	  gene_end => $row[5], 
+	  gene_strand => $row[6], 
+	  gene_description => $row[7],
           seq_name => $row[8]
         };
       },
       -PARAMS => [$species]
-    );
+	);
 
+    ## Report number of genes
+    my $gene_nb = scalar(@{$gene_list});
+    &RSAT::message::TimeWarn("\tgot", $gene_nb, "genes") if ($main::verbose >= 2);
+
+    ## Print gene information
     while ( my $row = shift @{$gene_list} ) {
       my %row = %{$row};
       next unless ( $slice_names{ $row{'seq_name'} });
@@ -344,18 +377,39 @@ package main;
     $gene_list = "";
 
 
-    ##Get gene names
-    &RSAT::message::TimeWarn("Getting Gene Names") if ($verbose >= 2);
+    ################################################################
+    ## Get gene names
+    &RSAT::message::TimeWarn("Getting Gene Names (direct SQL query)") if ($verbose >= 2);
 
+    $sql_query = "select g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " LEFT join object_xref ox1 on (g.gene_id=ox1.ensembl_id and ox1.ensembl_object_type='Gene')";
+    $sql_query .= " join xref x1 on (x1.xref_id=ox1.xref_id)";
+    $sql_query .= " join external_db e1 on (e1.external_db_id=x1.external_db_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system using (coord_system_id)";
+    $sql_query .= " join meta using (species_id)";
+    $sql_query .= " where meta.meta_key='species.production_name' and meta_value=?";
+    
     my $gene_names_list = $sql_helper->execute(
-      -SQL      => "select g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name from gene g join object_xref ox1 on (g.gene_id=ox1.ensembl_id and ox1.ensembl_object_type='Gene') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
-        return { gene_id => $row[0], source => $row[1], synonym1 => $row[2], synonym2 => $row[3], seq_name => $row[4]};
+        return { gene_id => $row[0], 
+		 source => $row[1], 
+		 synonym1 => $row[2], 
+		 synonym2 => $row[3], 
+		 seq_name => $row[4]
+	};
       },
       -PARAMS => [$species]
     );
 
+    ## Report number of gene names
+    my $gene_names_nb = scalar(@{$gene_names_list});
+    &RSAT::message::TimeWarn("\tgot", $gene_names_nb, "gene names") if ($main::verbose >= 2);
+
+    ## Print gene name information
     while ( my $row = shift @{$gene_names_list} ) {
       my %row = %{$row};
       my %printed_name = ();
@@ -379,43 +433,46 @@ package main;
     $gene_names_list = "";
 
 
-    ##Get gene_to_reaction
-    &RSAT::message::TimeWarn("Getting Gene_to_reaction") if ($verbose >= 2);
+    ################################################################
+    ## Get gene-reaction relationships
+    &RSAT::message::TimeWarn("Getting Gene-reaction relationships") if ($verbose >= 2);
 
-#     my $sql_query = "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label";
-#     $sql_query .= " from gene g";
-#     $sql_query .= "   join xref gx on (g.display_xref_id=gx.xref_id) join transcript tr using (gene_id) ";
-#     $sql_query .= "   join translation tl using (transcript_id)";
-#     $sql_query .= "   join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')";
-#     $sql_query .= "   join xref x1 on (x1.xref_id=ox1.xref_id)";
-#     $sql_query .= "    join external_db e1 on (e1.external_db_id=x1.external_db_id)";
-#     $sql_query .= "    join seq_region s on (g.seq_region_id=s.seq_region_id) ";
-#     $sql_query .= " coord_system using (coord_system_id) ";
-#     $sql_query .= " meta using (species_id) ";
-#     $sql_query .= " where meta.meta_key='species.production_name'";
-#     $sql_query .= "   and meta_value=? ";
-#     $sql_query .= "   and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')";
+    $sql_query = "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label";
+    $sql_query .= " from gene g";
+    $sql_query .= " LEFT join xref gx on (g.display_xref_id=gx.xref_id)";
+    $sql_query .= " join transcript tr using (gene_id)  join translation tl using (transcript_id)";
+    $sql_query .= " join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')";
+    $sql_query .= " join xref x1 on (x1.xref_id=ox1.xref_id)  join external_db e1 on (e1.external_db_id=x1.external_db_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system using (coord_system_id)";
+    $sql_query .= " join meta using (species_id)";
+    $sql_query .= " where meta.meta_key='species.production_name'";
+    $sql_query .= " and meta_value=?";
+    $sql_query .= " and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')",
 
-#     my $gene_reaction_list = $sql_helper->execute(-SQL      => $sql_query,
-# 						  -CALLBACK => sub {
-# 						    my @row = @{ shift @_ };
-# 						    return { gene_id => $row[0], gene_external_name => $row[1], gene_description => $row[2], db => $row[3], db_label => $row[4] };
-# 						  },
-# 						  -PARAMS => [$species]
-# 						 );
     my $gene_reaction_list = $sql_helper->execute(
-      -SQL      => "select  g.stable_id, gx.display_label, g.description, e1.db_display_name, x1.display_label from gene g  join xref gx on (g.display_xref_id=gx.xref_id) join transcript tr using (gene_id)  join translation tl using (transcript_id)  join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')  join xref x1 on (x1.xref_id=ox1.xref_id)  join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id)  join coord_system using (coord_system_id)  join meta using (species_id)  where meta.meta_key='species.production_name' and meta_value=? and e1.db_name in ('Uniprot/SWISSPROT','Uniprot/SPTREMBL','IntEnz','Rhea')",
-     -CALLBACK => sub {
+      -SQL      => $sql_query,
+      -CALLBACK => sub {
         my @row = @{ shift @_ };
-          return { gene_id => $row[0], gene_external_name => $row[1], gene_description => $row[2], db => $row[3], db_label => $row[4] };
-        },
-     -PARAMS => [$species]
-    );
-
-    while ( my $row = shift @{$gene_reaction_list} ) {
+	return { 
+	  gene_id => $row[0], 
+	  gene_external_name => $row[1] || $row[0],
+	  gene_description => $row[2], 
+	  db => $row[3], 
+	  db_label => $row[4] 
+	};
+      },
+      -PARAMS => [$species]
+	);
+    
+    ## Report number of gene-reaction relationships
+    my $gene_reaction_nb =  scalar(@{$gene_reaction_list});
+    &RSAT::message::TimeWarn("got", $gene_reaction_nb, "gene-reaction relationships") if ($main::verbose >= 2);
+    
+    ## Print gene-reaction relationships
+    while (my $row = shift @{$gene_reaction_list}) {
       my %row = %{$row};
       #      next unless ( $row{'db_label'} =~ /\./);
-
       print $outstream_gene_to_reaction join ("\t",  $row{'gene_id'},
 					      $row{'gene_external_name'},
 					      &PrintDescription($row{'gene_description'}),
@@ -423,22 +480,43 @@ package main;
 					      $row{'db_label'}),"\n";
     }
 
-	##Get transcripts
-	&RSAT::message::TimeWarn("Getting Transcript") if ($verbose >= 2);
+    ################################################################
+    ## Get transcripts
+    &RSAT::message::TimeWarn("Getting Transcript") if ($verbose >= 2);
 
+    $sql_query = "select g.stable_id, g.description, tr.stable_id,tr.status, tr.biotype, xref.display_label, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " join transcript tr using (gene_id)";
+    $sql_query .= " LEFT join xref on (g.display_xref_id = xref.xref_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system cs using (coord_system_id)";
+    $sql_query .= " join meta using (species_id)";
+    $sql_query .= " where meta.meta_key='species.production_name'";
+    $sql_query .= " and meta_value=?";
     my $transcript_list = $sql_helper->execute(
-      -SQL      => "select g.stable_id, g.description,  tr.stable_id,tr.status, tr.biotype, xref.display_label, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, s.name from gene g join transcript tr using (gene_id) join xref on (g.display_xref_id = xref.xref_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
         return {
-          gene_id => $row[0], gene_description => $row[1],
-          transcript_id => $row[2], transcript_status => $row[3], transcript_biotype => $row[4], transcript_external_name => $row[5], 
-          transcript_start => $row[6], transcript_end => $row[7], transcript_strand => $row[8],
+          gene_id => $row[0], 
+	  gene_description => $row[1],
+          transcript_id => $row[2],
+	  transcript_status => $row[3],
+	  transcript_biotype => $row[4],
+	  transcript_external_name => $row[5] || $row[2], 
+          transcript_start => $row[6],
+	  transcript_end => $row[7],
+	  transcript_strand => $row[8],
           seq_name => $row[9] };
       },
       -PARAMS => [$species]
     );
 
+    ## Report number of transcripts
+    my $transcript_nb = scalar(@{$transcript_list});
+    &RSAT::message::TimeWarn("\tgot", $transcript_nb, "transcripts") if ($main::verbose >= 2);
+
+    ## Print transcript information
     while ( my $row = shift @{$transcript_list} ) {
       my %row = %{$row};
       next unless ( $slice_names{ $row{'seq_name'} });
@@ -453,17 +531,38 @@ package main;
     }
     $transcript_list = ();
 
-
+    ################################################################
     ## Transcript names
     &RSAT::message::TimeWarn("Getting Transcript Names") if ($verbose >= 2);
+
+    $sql_query = "select tr.stable_id,tr.biotype, g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " LEFT join transcript tr using (gene_id)";
+    $sql_query .= " join object_xref ox1 on (tr.transcript_id=ox1.ensembl_id and ox1.ensembl_object_type='Transcript')";
+    $sql_query .= " join xref x1 on (x1.xref_id=ox1.xref_id)";
+    $sql_query .= " join external_db e1 on (e1.external_db_id=x1.external_db_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system using (coord_system_id)";
+    $sql_query .= " join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?";
     my $transcript_names_list = $sql_helper->execute(
-      -SQL      => "select tr.stable_id,tr.biotype, g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name from gene g join transcript tr using (gene_id) join object_xref ox1 on (tr.transcript_id=ox1.ensembl_id and ox1.ensembl_object_type='Transcript') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
-        return { transcript_id => $row[0], transcript_biotype => $row[1], gene_id => $row[2], source => $row[3], synonym1 => $row[4], synonym2 => $row[5], seq_name => $row[6] };
+        return { transcript_id => $row[0],
+		 transcript_biotype => $row[1],
+		 gene_id => $row[2],
+		 source => $row[3],
+		 synonym1 => $row[4],
+		 synonym2 => $row[5],
+		 seq_name => $row[6] };
       },
       -PARAMS => [$species] );
 
+    ## Report number of transcript names
+    my $transcript_names_nb = scalar(@{$transcript_names_list});
+    &RSAT::message::TimeWarn("\tgot", $transcript_names_nb, "transcript names") if ($main::verbose >= 2);
+
+    ## Print transcript name information
     while ( my $row = shift @{$transcript_names_list} ) {
       my %row = %{$row};
       my %printed_name = ();
@@ -496,23 +595,44 @@ package main;
     $transcript_names_list = ();
 
 
-
-    ## Getting Exon and intron
+    ################################################################
+    ## Getting exons and introns
     &RSAT::message::TimeWarn("Getting exons and introns") if ($verbose >= 2);
+
+    $sql_query = "select g.stable_id, tr.stable_id, tr.biotype, ex.stable_id, ex.seq_region_start, ex.seq_region_end, ex.seq_region_strand, s.name, xref.display_label";
+    $sql_query .= " from gene g";
+    $sql_query .= " join transcript tr using (gene_id)";
+    $sql_query .= " join exon_transcript cod_ex on (tr.transcript_id=cod_ex.transcript_id)";
+    $sql_query .= " join exon ex on (ex.exon_id=cod_ex.exon_id)";
+    $sql_query .= " LEFT join xref on (g.display_xref_id = xref.xref_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system cs using (coord_system_id)";
+    $sql_query .= " join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?";
+
     my $exon_list = $sql_helper->execute(
-      -SQL      => "select g.stable_id, tr.stable_id, tr.biotype, ex.stable_id, ex.seq_region_start, ex.seq_region_end, ex.seq_region_strand, s.name, xref.display_label from gene g join transcript tr using (gene_id) join exon_transcript cod_ex on (tr.transcript_id=cod_ex.transcript_id) join exon ex on (ex.exon_id=cod_ex.exon_id) join xref on (g.display_xref_id = xref.xref_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
         return { 
           gene_id => $row[0],
-          transcript_id => $row[1], transcript_biotype => $row[2], transcript_external_name => $row[8], 
-          exon_id => $row[3], exon_start => $row[4], exon_end => $row[5], exon_strand => $row[6], 
+          transcript_id => $row[1],
+	  transcript_biotype => $row[2],
+	  transcript_external_name => $row[8] || $row[1], 
+          exon_id => $row[3],
+	  exon_start => $row[4],
+	  exon_end => $row[5],
+	  exon_strand => $row[6], 
           seq_name => $row[7]
         };
       },
       -PARAMS => [$species]
-    );
+	);
 
+    ## Report number of exons
+    my $exon_nb =  scalar(@{$exon_list});
+    &RSAT::message::TimeWarn("got", $exon_nb, "exons") if ($main::verbose >= 2);
+    
+    ## Print exons
     my $last_row = "";
     my %last_row = ();
     while (1) {
@@ -553,23 +673,43 @@ package main;
     $exon_list = ();
 
 
-
-    ## Getting Coding Exon
+    ################################################################
+    ## Getting coding exons
     &RSAT::message::TimeWarn("Getting coding exons") if ($verbose >= 2);
+
+    $sql_query = "select g.stable_id, tr.stable_id, tr.biotype, ex.stable_id, ex.seq_region_start, ex.seq_region_end, ex.seq_region_strand, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " LEFT join transcript tr using (gene_id)";
+    $sql_query .= " join translation tl using (transcript_id)";
+    $sql_query .= " join exon_transcript ex_tran on (tr.transcript_id=ex_tran.transcript_id) ";
+    $sql_query .= " join exon ex on (ex.exon_id=ex_tran.exon_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system cs using (coord_system_id)";
+    $sql_query .= " join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?";
+
     my $coding_exon_list = $sql_helper->execute(
-      -SQL      => "select g.stable_id, tr.stable_id, tr.biotype, ex.stable_id, ex.seq_region_start, ex.seq_region_end, ex.seq_region_strand, s.name from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join exon_transcript ex_tran on (tr.transcript_id=ex_tran.transcript_id)  join exon ex on (ex.exon_id=ex_tran.exon_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
         return {
-		gene_id => $row[0],
-		transcript_id => $row[1], transcript_biotype => $row[2],
-		exon_id => $row[3], exon_start => $row[4], exon_end => $row[5], exon_strand => $row[6], 
-		seq_name => $row[7]
-	       };
+	  gene_id => $row[0],
+	  transcript_id => $row[1],
+	  transcript_biotype => $row[2],
+	  exon_id => $row[3],
+	  exon_start => $row[4],
+	  exon_end => $row[5],
+	  exon_strand => $row[6], 
+	  seq_name => $row[7]
+	};
       },
-						-PARAMS => [$species]
-					       );
+      -PARAMS => [$species]
+	);
 
+    ## Report number of coding exons
+    my $coding_exon_nb =  scalar(@{$coding_exon_list});
+    &RSAT::message::TimeWarn("got", $coding_exon_nb, "coding exons") if ($main::verbose >= 2);
+    
+    ## Print coding exons
     while ( my $row = shift @{$coding_exon_list} ) {
       my %row = %{$row};
       next unless ( $slice_names{ $row{'seq_name'} });
@@ -583,26 +723,49 @@ package main;
     $coding_exon_list = ();
 
 
-
-    ##Get CDS and UTR
+    ################################################################
+    ## Get CDS and UTR
     &RSAT::message::TimeWarn("Getting CDS and UTR") if ($verbose >= 2);
 
+    $sql_query = "select g.stable_id, g.description, tr.stable_id, tr.status, xref.display_label, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, tl.stable_id, tl.seq_start, tl.seq_end, ex.seq_region_start, ex.seq_region_end, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " join transcript tr using (gene_id)";
+    $sql_query .= " join translation tl using (transcript_id)";
+    $sql_query .= " join exon ex on (ex.exon_id=tl.end_exon_id)";
+    $sql_query .= " LEFT join xref on (g.display_xref_id = xref.xref_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system cs using (coord_system_id)";
+    $sql_query .= " join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?";
+
     my $cds_utr_list = $sql_helper->execute(
-      -SQL      => "select g.stable_id, g.description, tr.stable_id, tr.status, xref.display_label, tr.seq_region_start, tr.seq_region_end, tr.seq_region_strand, tl.stable_id, tl.seq_start, tl.seq_end, ex.seq_region_start, ex.seq_region_end, s.name from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join exon ex on (ex.exon_id=tl.end_exon_id) join xref on (g.display_xref_id = xref.xref_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system cs using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
-       my @row = @{ shift @_ };
+	my @row = @{ shift @_ };
         return { 
-          gene_id => $row[0], gene_description => $row[1], 
-          transcript_id => $row[2], transcript_status => $row[3], transcript_external_name => $row[4], 
-          transcript_start => $row[5], transcript_end => $row[6], transcript_strand => $row[7], 
-          translate_id => $row[8], translate_start => $row[9], translate_end => $row[10], 
-          exon_start => $row[11], exon_end => $row[12], 
+          gene_id => $row[0],
+	  gene_description => $row[1],
+          transcript_id => $row[2],
+	  transcript_status => $row[3],
+	  transcript_external_name => $row[4] || $row[2],
+          transcript_start => $row[5],
+	  transcript_end => $row[6],
+	  transcript_strand => $row[7],
+          translate_id => $row[8],
+	  translate_start => $row[9],
+	  translate_end => $row[10],
+          exon_start => $row[11],
+	  exon_end => $row[12], 
           seq_name => $row[13]
-          };
+	};
       },
       -PARAMS => [$species]
-    );
+	);
 
+    ## Report number of CDS UTRs
+    my $cds_utr_nb =  scalar(@{$cds_utr_list});
+    &RSAT::message::TimeWarn("got", $cds_utr_nb, "CDS UTRs") if ($main::verbose >= 2);
+    
+    ## Print CDS UTRs
     while ( my $row = shift @{$cds_utr_list} ) {
       my %row = %{$row};
       next unless ( $slice_names{ $row{'seq_name'} });
@@ -667,18 +830,40 @@ package main;
     $cds_utr_list = ();
 
 
-
+    ################################################################
     ## CDS names
     &RSAT::message::TimeWarn("Getting CDS names") if ($verbose >= 2);
 
+    $sql_query = "select tl.stable_id,tr.stable_id,g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= " LEFT join transcript tr using (gene_id)";
+    $sql_query .= " join translation tl using (transcript_id)";
+    $sql_query .= " join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation')";
+    $sql_query .= " join xref x1 on (x1.xref_id=ox1.xref_id)";
+    $sql_query .= " join external_db e1 on (e1.external_db_id=x1.external_db_id)";
+    $sql_query .= " join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= " join coord_system using (coord_system_id)";
+    $sql_query .= " join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?";
+
     my $cds_names_list = $sql_helper->execute(
-      -SQL      => "select tl.stable_id,tr.stable_id,g.stable_id, e1.db_name, x1.dbprimary_acc, x1.display_label, s.name from gene g join transcript tr using (gene_id) join translation tl using (transcript_id) join object_xref ox1 on (tl.translation_id=ox1.ensembl_id and ox1.ensembl_object_type='Translation') join xref x1 on (x1.xref_id=ox1.xref_id) join external_db e1 on (e1.external_db_id=x1.external_db_id) join seq_region s on (g.seq_region_id=s.seq_region_id) join coord_system using (coord_system_id) join meta using (species_id) where meta.meta_key='species.production_name' and meta_value=?",
+      -SQL      => $sql_query,
       -CALLBACK => sub {
         my @row = @{ shift @_ };
-        return { translate_id => $row[0], transcript_id => $row[1], gene_id => $row[2], source => $row[3], synonym1 => $row[4], synonym2 => $row[5], seq_name => $row[6] };
+        return { translate_id => $row[0], 
+		 transcript_id => $row[1], 
+		 gene_id => $row[2], 
+		 source => $row[3], 
+		 synonym1 => $row[4], 
+		 synonym2 => $row[5], 
+		 seq_name => $row[6] };
       },
       -PARAMS => [$species] );
 
+    ## Report number of CDS names
+    my $cds_names_nb =  scalar(@{$cds_names_list});
+    &RSAT::message::TimeWarn("got", $cds_names_nb, "CDS names") if ($main::verbose >= 2);
+    
+    ## Print CDS names
     while ( my $row = shift @{$cds_names_list} ) {
       my %row = %{$row};
       my %printed_name = ();
@@ -726,7 +911,7 @@ package main;
     system("gzip -df $aa_file");
   }
 
-  ##################
+  ################################################################
   ## Via API ONLY
   else {
 
@@ -1096,9 +1281,9 @@ mRNA, ...) initially relied on Ensembl Perl Application Programmatic
 Interface (API). However, this required a lot of time, because the API
 required to treat objects sequentially in order to get the dependent
 objects (e.g. several thousands of queries to collect the gene
-synonyms). 
+synonyms).
 
-In the current versio, we replaced this by a direct extraction of all
+In the current version, we replaced this by a direct extraction of all
 the required information by SQL queries. This however assumes that the
 schema of the relational database is unchanged. In case of trouble
 with changes of the SQL structure, the API should in principle still
@@ -1106,7 +1291,17 @@ allow to download the data.
 
 =cut
     } elsif ($arg eq "-only_api") {
-      $main::only_api = 1;
+      $main::query_mode = "api";
+
+
+=pod
+
+=item B<-query_mode>
+
+=cut
+
+    } elsif ($arg eq "-query_mode") {
+      $main::query_mode = lc(shift(@arguments));
 
 =pod
 
@@ -1324,11 +1519,11 @@ sub OpenOutputStreams {
 
   ## mRNA files
   $outfile{'mrna'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'mrna');
-  &doit("ln -s ".$outfile{'protein_coding'}." ".$outfile{'mrna'}, 0, 0, 0);
+  &doit("ln -fs ".$outfile{'protein_coding'}." ".$outfile{'mrna'}, 0, 0, 0);
 
   ## mRNA Names files
   $outfile{'mrna_names'} = &Get_feature_file($data_dir, $species, $assembly_version,$ensembl_version,'mrna_names');
-  &doit("ln -s ".$outfile{'protein_coding_names'}." ".$outfile{'mrna_names'}, 0, 0, 0);
+  &doit("ln -fs ".$outfile{'protein_coding_names'}." ".$outfile{'mrna_names'}, 0, 0, 0);
 
   ## Exon File
   $file_name = 'exon';
@@ -1366,8 +1561,8 @@ sub OpenOutputStreams {
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, 'cds', $file_name, 'lateral', qw(id names status source) );
 
-  ## AA seeq
-  if ($only_api) {
+  ## AA seq
+  if ($query_mode eq "api") {
     $file_name = 'aa_seq';
     $outfile{$file_name} = &Get_feature_file($data_dir,$species, $assembly_version,$ensembl_version,$file_name);
     $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
