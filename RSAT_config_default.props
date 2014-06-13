@@ -130,7 +130,16 @@ NODES=
 GENBANK_DIR=[RSAT_PARENT_PATH]/downloads/ftp.ncbi.nih.gov/genomes/
 
 ################################################################
-## Libraries required for direct access to the EnsEMBL genomes.
+## Libraries required for direct access to the Ensembl and
+## EnsemblGenomes databases.
+##
+## These variables should in principle be updated according to the
+## relases of the two databases:
+##     Ensembl: http://www.ensembl.org/
+##     EnsemblGenomes: http://ensemblgenomes.org/
+
+## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
+ensembl_version_safe=75
 
 ## EnsEMBL host
 ## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
@@ -146,9 +155,9 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ensembl_version_safe=74
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
-ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-21-74/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-21-74/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-21-74/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl-variation/modules
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
