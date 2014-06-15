@@ -872,61 +872,86 @@ package main;
      #  print $row{'transcript_end'}-($row{'transcript_start'}-($row{'transcript_start'}+$row{'translate_start'}-1)),"\n";
      # }
 
-      my $translate_start = $row{'transcript_start'} + $row{'translate_start'} - 1;
-      my $translate_end = $row{'transcript_end'} - $row{'translate_end'} + 1;
+      # Excel: =SI(strand=1,tr_start+tl_start-1,tr_end-tl_start+1)
 
-#      if ( $row{'transcript_strand'} == -1 ) {
-#        my $translate_start_tmp = $row{'transcript_start'}+($row{'transcript_end'}-$translate_end);
-#        $translate_end = $row{'transcript_end'}-($translate_start-$row{'transcript_start'});
-#        $translate_start = $translate_start_tmp;
-#	my $tmp = $translate_start;
-#	$translate_start = $translate_end;
-#	$translate_end = $tmp;
-#      }
+      my ($cds_start, $cds_end, $cds_left, $cds_right);
 
-      &RSAT::message::Debug("row=".$r, "cds=".$c, 
-			    "gene_id=".$row{'gene_id'},
-			    "transcript_id=".$row{'transcript_id'},
-			    "translate_id=".$row{'translate_id'},
-			    "tr_start=".$row{'transcript_start'},
-			    "tr_end=".$row{'transcript_end'},
-			    "tr_strand=".$row{'transcript_strand'},
-			    "tl_start=".$row{'translate_start'},
-			    "tl_end=".$row{'translate_end'},
-			    "translate_start", $translate_start,
-			    "translate_end", $translate_end,
-	  ) if ($main::verbose >= 0);
+      if ($row{'transcript_strand'} == -1 ) {
+	$cds_start = $cds_right = $row{'transcript_end'} - $row{'translate_start'} + 1;
+	$cds_end = $cds_left = $row{'transcript_start'} + $row{'translate_end'} - 1;
+      } else {
+	$cds_start = $cds_left = $row{'transcript_start'} + $row{'translate_start'} - 1;
+	$cds_end = $cds_right = $row{'transcript_end'} - $row{'translate_end'} + 1;
+      }
+
+      ## DEBUG
+      if ($main::verbose >= 0) {
+	if ($c==1) {
+	  &RSAT::message::Debug("row", 
+				"cds",
+				"gene_id",
+				"transcript_id",
+				"translate_id",
+				"tr_start",
+				"tr_end",
+				"tr_strand",
+				"tl_start",
+				"tl_end",
+				"exon_start",
+				"exon_end",
+				"cds_start",
+				"cds_end",
+	      ) if ($main::verbose >= 0);
+	}
+	&RSAT::message::Debug($r,
+			      $c, 
+			      $row{'gene_id'},
+			      $row{'transcript_id'},
+			      $row{'translate_id'},
+			      $row{'transcript_start'},
+			      $row{'transcript_end'},
+			      $row{'transcript_strand'},
+			      $row{'translate_start'},
+			      $row{'translate_end'},
+			      $row{'exon_start'},
+			      $row{'exon_end'},
+			      $cds_start,
+			      $cds_end,
+	    );
+      }
 
 
-      ### CDS
+      ## Print CDS
       print $outstream_cds (join("\t",  
 				 $row{'translate_id'}, # translate id, 
 				 $row{'transcript_status'}, # status, 
 				 'CDS', # external name
 				 $row{'translate_id'}, 
 				 $slice_names{ $row{'seq_name'} }, #slice name
-				 $translate_start,
-				 $translate_end,
+				 $cds_left,
+				 $cds_right,
 				 &PrintStrand($row{'transcript_strand'}), # translate coordinates
 				 &PrintDescription($row{'gene_description'}),# description 
 				 $row{'transcript_id'}, # transcript_id, 
 				 $row{'gene_id'}), # gene_id
 			    "\n"); 
 
+      ## JvH: THE UTR COORDINATES ARE PROBABLY FALSE I HAVE TO DEBUG THEM
+
       ### UTR
       my $left_utr = "5'UTR";
       my $left_start = $row{'transcript_start'};  #$row{'transcript_start'};
-      my $left_end = $translate_start;          #$row{'transcript_start'} + $row{'translate_start'}-2;
+      my $left_end = $cds_start;          #$row{'transcript_start'} + $row{'translate_start'}-2;
       my $right_utr = "3'UTR";
-      my $right_start = $translate_end;         #$row{'exon_start'} + $row{'translate_end'};
+      my $right_start = $cds_end;         #$row{'exon_start'} + $row{'translate_end'};
       my $right_end = $row{'transcript_end'};     #$row{'transcript_end'};
 
       if ( $row{'transcript_strand'} == -1 ) {
         $left_utr = "3'UTR";
 #        $right_start = $row{'transcript_start'};  #$row{'transcript_start'} ;
-#        $right_end = $translate_start-1;          #$row{'exon_end'} - $row{'translate_end'};
+#        $right_end = $cds_start-1;          #$row{'exon_end'} - $row{'translate_end'};
         $right_utr = "5'UTR";
-#        $left_start = $translate_end+1;           #$row{'transcript_end'} - $row{'translate_start'}+2;
+#        $left_start = $cds_end+1;           #$row{'transcript_end'} - $row{'translate_start'}+2;
 #       $left_end = $row{'transcript_end'};       #$row{'transcript_end'};
       }
 
@@ -1026,16 +1051,16 @@ package main;
     $cds_names_list = ();
 
 
-    ##Get AA_seq
+    ## Get protein sequences (file [Organism_name]_aa.fasta)
     &RSAT::message::TimeWarn("Getting protein sequences (FTP)") if ($verbose >= 2);
 
     my $prot_seq_ftp = &Get_pep_fasta_ftp($db,$species,$ftp_ensembl_version);
-    system("wget -NL -nv $prot_seq_ftp -P $genome_dir");
+    &RSAT::util::doit("wget -NL -nv $prot_seq_ftp -P $genome_dir");
 
     @token = split(/\//, $prot_seq_ftp);
     my $aa_file = $genome_dir."/".&Get_species_dir_name($species, $assembly_version,$ensembl_version)."_aa.fasta".".gz";
-    system("mv $genome_dir/$token[-1] $aa_file");
-    system("gzip -df $aa_file");
+    &RSAT::util::doit("mv $genome_dir/$token[-1] $aa_file");
+    &RSAT::util::doit("gzip -df $aa_file");
   }
 
   ################################################################
