@@ -192,7 +192,7 @@ perl_modules_install_one_by_one:
 
 ## Some Perl modules cannot be installed without force
 perl_modules_install_by_force:
-	@sudo ${PERL} -MCPAN -e 'force install SOAP::SWDL'
+	@sudo ${PERL} -MCPAN -e 'force install SOAP::WSDL'
 	@sudo ${PERL} -MCPAN -e 'force install SOAP::Transport::HTTP'
 
 ## Install a single Perl module
