@@ -138,9 +138,6 @@ GENBANK_DIR=[RSAT_PARENT_PATH]/downloads/ftp.ncbi.nih.gov/genomes/
 ##     Ensembl: http://www.ensembl.org/
 ##     EnsemblGenomes: http://ensemblgenomes.org/
 
-## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
-ensembl_version_safe=75
-
 ## EnsEMBL host
 ## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
 ## get-ensembl-genome).
@@ -152,7 +149,7 @@ ensembl_host=ensembldb.ensembl.org
 ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 
 ## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
-ensembl_version_safe=74
+ensembl_version_safe=75
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
 ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl/modules
