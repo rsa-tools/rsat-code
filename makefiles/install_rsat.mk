@@ -118,7 +118,6 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
-	perl-doc \
 	YAML \
 	CGI \
 	MIME::Lite \
@@ -189,6 +188,11 @@ perl_modules_install_one_by_one:
 	@for module in ${PERL_MODULES} ; do \
 		${MAKE} _install_one_perl_module PERL_MODULE=$${module}; \
 	done
+	${MAKE} perl_modules_install_by_force
+
+## Some Perl modules cannot be installed without force
+perl_modules_install_by_force:
+	@sudo ${PERL} -MCPAN -e 'force install SOAP::SWDL'
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
