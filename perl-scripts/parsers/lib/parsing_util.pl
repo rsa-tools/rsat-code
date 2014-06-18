@@ -40,7 +40,7 @@ sub CheckOutputDir {
 	$dir{output} .= "_test";
     }
     unless (-d $dir{output}) {
-	warn "; Creating output dir $dir{output}\n" if ($main::verbose >= 1);
+	&RSAT::message::Info("Creating output dir $dir{output}") if ($main::verbose >= 2);
 	`mkdir -p $dir{output}`;
 #	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
 	unless (-d $dir{output}) {
@@ -78,9 +78,9 @@ sub deliver {
 	return;
     }
 
-    warn "; Delivering parsed data to directory\n;\t$delivery_target.\n" if ($verbose >=1); 
+    &RSAT::message::Info("Delivering parsed data to directory\n;\t$delivery_target.") if ($verbose >=1);
     $command = "rsync -e ssh -ruptvl $delivery_source $delivery_target";
-    warn "; $command\n" if ($verbose >=1);
+    &RSAT::message::Info($command) if ($verbose >=3);
     system $command;
 }
 
@@ -102,14 +102,14 @@ sub ExportClasses {
     open STDOUT, ">$output_file"  || die "Error : cannot write file $output_file\n"; 
   }
   foreach $class (@classes) {
-    warn (";\n; ", &RSAT::util::AlphaDate, " exporting class ", $class, " to file '$output_file'\n") 
-      if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Exporting class", $class, "to file", $output_file) 
+      if ($verbose >= 3);
     local @selected = @{$out_fields{$class}};
     foreach $object ($class->get_objects()) {
       $object->print_attributes($out_format, @selected);
     }
-    warn ("; ", &RSAT::util::AlphaDate, " class ", $class, " exported\n") 
-      if ($verbose >= 1);
+    &RSAT::message::Info(&RSAT::util::AlphaDate, "class", $class, "exported") 
+      if ($verbose >= 3);
   }
   close STDOUT if ($output_file);
   return 1;
@@ -501,7 +501,8 @@ sub ParsePositions {
 		$start_pos = $1;
 		$end_pos = $4;
 
-		warn (join ("\t", "DEBUG", "ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord, $start_pos, $end_pos, "\n")) if ($main::verbose >= 1);
+		&RSAT::message::Debug("ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord, $start_pos, $end_pos)
+		    if ($main::verbose >= 5);
 
 	    #### exons
 	    } else {
@@ -541,7 +542,7 @@ sub ParsePositions {
 	    ($start_pos, $end_pos) = &segment_limits($coord);
 	}
 
-	warn (join ("\t", "DEBUG", "ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord, "\n")) if ($main::verbose >= 10);
+	&RSAT::message::Debug("ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord) if ($main::verbose >= 10);
 
 
 	#### a single segment
@@ -605,7 +606,7 @@ sub ParsePositions {
 # 			      $feature->get_attribute("end_pos"),
 # 			      $feature->get_attribute("start_pos"),
 # 			      $feature->get_attribute("strand"),
-# 			      ) if ($main::verbose >= 0);
+# 			      ) if ($main::verbose >= 10);
 
 
     }
@@ -627,7 +628,7 @@ sub segment_limits {
     my $segment_start = $null;
     my $segment_end = $null;
 
-    warn "; Segment limits $segment\n" if ($main::verbose >= 10);
+    &RSAT::message::Debug("Segment limits", $segment) if ($main::verbose >= 10);
 
     #### start and end positions are different
     if ($segment =~ /^([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+)$/) {
