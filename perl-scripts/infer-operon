@@ -29,12 +29,13 @@ Given a list of input genes, infer the operon to which each of these
 genes belong.
 
 The inferrence is based on a B<very> simplistic distance-based method,
-inspired from the Salgao-Moreno method (Proc Natl Acad Sci U S
-A. 2000;97:6652-7). The Salgado-Moreno method classifies intergenic
-distances as TUB (transcription unit border) or OP (inside operon),
-and infers operons by iteratively collecting genes until a TUB is
-found. In the original method, the TUB or OP assignation relies on a
-log-likelihood score calculated from a training set.
+inspired from the method developed by Salgado, Moreno et al. (Proc
+Natl Acad Sci U S A. 2000;97:6652-7). The Salgado-Moreno method
+classifies intergenic distances as TUB (transcription unit border) or
+OP (inside operon), and infers operons by iteratively collecting genes
+until a TUB is found. In the original method, the TUB or OP
+assignation relies on a log-likelihood score calculated from a
+training set.
 
 The difference is that we do not use the log-likelihood (which
 presents risks of over-fitting), but a simple threshold on
@@ -45,10 +46,19 @@ unpublished results) show that a simple threshold on distance raises a
 similar accuracy as the log-likelihood score (Acc ~ 78% for a
 threshold t=55).
 
-=head1 ALGORITHM
+=head1 AUTHORS
 
-The algorithm is based on three simple rules, depending on the
-relative orientation of the adjacent genes.
+jvanheld@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+genomics
+
+
+=head1 METHOD
+
+The method relies on three simple rules, depending on the relative
+orientation of the adjacent genes.
 
 =over
 
@@ -78,14 +88,6 @@ as operon trailer, and the downstream gene as leader of the next
 operon.
 
 =back
-
-=head1 AUTHORS
-
-jvanheld@bigre.ulb.ac.be
-
-=head1 CATEGORY
-
-genomics
 
 =head1 USAGE
 
@@ -142,6 +144,16 @@ Each row of the input file specifies one query gene. The first word of
 a gene is the query, the rest of the row is ignored.
 
 =head1 OUTPUT FORMAT
+
+Tab-delimited text file, with one row per query gene, and one column
+per selected output field.
+
+=head1 RELATED REFERENCES
+
+Salgado, H., Moreno-Hagelsieb, G., Smith, T., and Collado-Vides,
+J. (2000). Operons in Escherichia coli: genomic analyses and
+predictions. Proc Natl Acad Sci USA 97, 6652-6657.
+
 
 =cut
 

@@ -256,7 +256,6 @@ leaves.per.node <- function (tree) {
 ########################################################
 ## Given the number of leaf, get the id of the motif
 get.id <- function(num){
-  
   return(as.vector(sapply(num, function(X){
     description.table[X,"id"]
   })))
