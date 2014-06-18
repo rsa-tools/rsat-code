@@ -135,8 +135,8 @@ package main;
   }
 
   ################################################################
-  ## Directory contianing the Genbank-formatted organisms (which can
-  ## be downloaded from NCBI).
+  ## Check the directory contianing the Genbank-formatted organisms
+  ## (which can be downloaded from NCBI).
   if ($task{parse}) {
     unless ($dir{genbank}) {
       if ($ENV{GENBANK_DIR}) {
@@ -155,16 +155,28 @@ package main;
   if ($main::all_organisms) {
     @organisms_dirs = glob($dir{genbank}."/*_*");
     foreach my $dir (@organisms_dirs) {
-      next if ($dir =~ /^readme/i); ## Skip readme file
-      next if ($dir =~/^_/); ## The NCBI dir Bacteria contains some folders starting with "_", I guess these genomes are problematic
-      next unless ($dir =~ /[A-Z]/); ## The Bacteria dir contains some folders with fuzzy names, starting with a lowercase. I prefer to ignore these genomes (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
       my $org = &RSAT::util::ShortFileName($dir);
+      next if ($org =~ /^readme/i); ## Skip readme file
+
+      ## The NCBI dir Bacteria contains some folders starting with
+      ## "_", I guess these genomes are problematic.
+      next if ($org =~ /^_/); 
+
+      ## The Bacteria dir contains some folders with fuzzy names,
+      ## starting with a lowercase. I prefer to ignore these genomes
+      ## (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
+      next unless ($org =~ /^[A-Z]/); 
       push @organisms, $org;
     }
-    &RSAT::message::Info("Installing",scalar(@organisms),"organisms found in the Genbank directory", $dir{genbank}) if ($main::verbose >= 1);
-    &RSAT::message::Info("Organisms", join(" ", @organisms)) if ($main::verbose >= 3);
+    &RSAT::message::Info("Installing",scalar(@organisms),
+			 "organisms found in the Genbank directory", 
+			 $dir{genbank}) if ($main::verbose >= 1);
+    if ($main::verbose >= 3) {
+      for my $i (1..scalar(@organisms)) {
+	&RSAT::message::Info("", $i, $organisms[$i-1]);
+      }
+    }
   }
-  
 
   ## If an organism file has been specified, read organism list
   if ($infile{organisms}) {
@@ -192,7 +204,7 @@ package main;
     foreach my $taxon (@taxa) {
       my $taxon_node = $tree->get_node_by_id($taxon);
       my @taxon_organisms = $taxon_node->get_all_descendents("DFS","leaf",undef,undef);
-      &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 1);
       foreach my $org_node (@taxon_organisms) {
 	my $short_organism_name = $org_node->getid();
 	push @organisms, $short_organism_name;
@@ -270,7 +282,6 @@ package main;
     &ParseGenome() if ($task{parse});
 
     &UpdateConfig() if ($task{config});
-
 
     &CreatePhylogeny() if ($task{phylogeny});
 
@@ -571,7 +582,7 @@ sub CreatePhylogeny {
 	}
 	&doit("cd $dir{taxonomy}; rm $org_dir; ln -s $dir{install} .",0,0,$verbose);
     } else {
-	&RSAT::error::FatalError("Cannot identify taxonomy in table ".$organism_table);
+	&RSAT::message::Warning("Cannot identify taxonomy in table ".$organism_table);
     }
 
 }
@@ -643,7 +654,7 @@ sub AllUpstream {
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
 	&doit($command, $dry_run, $die_on_error, $verbose);
-	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 0);
+	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 2);
       }
 
       ## Compute sequence length distributions and generate a frequency plot
@@ -699,7 +710,7 @@ sub SeqLengthDistribution {
 ## purge sequences
 sub PurgeSequences {
   my ($seq_file, $format) = @_;
-  &RSAT::message::Warning("Purging sequence", $seq_file, $format) if ($main::verbose >= 0);
+  &RSAT::message::Warning("Purging sequence", $seq_file, $format) if ($main::verbose >= 2);
   $format = "fasta" unless ($format);
   my $purged_seq_file = `basename $seq_file $format`;
   $purged_seq_file .= "_purged.$format";
@@ -718,7 +729,7 @@ sub PurgeSequences {
 ### 
 sub CalcFrequencies { 
   #    my ($seq_file, $seq_format, $seq_type) = ();
-  &RSAT::message::TimeWarn("&CalcFrequencies()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&CalcFrequencies()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 2);
   chdir $dir{oligos};
 
   ################################################################
@@ -848,7 +859,7 @@ sub CalcFrequencies {
 ## file
 sub CalcOligoFreq {
   my ($seq_file,$seq_format,$seq_type) = @_;
-  &RSAT::message::TimeWarn("&CalcOligoFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&CalcOligoFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 2);
 
   my @current_oligo_lengths = @oligo_lengths;
 #  my @current_oligo_lengths = (6);
@@ -871,7 +882,7 @@ sub CalcOligoFreq {
   ## currently does not support compressed files
   my $uncompressed = 0;
   if (!(-e $seq_file) && (-e $seq_file.".gz")) {
-      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
+      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_compress";
       $uncompressed = 1;
@@ -900,7 +911,7 @@ sub CalcOligoFreq {
 
   ## Recompress the sequence file if required
   if ($uncompressed) {
-      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
+      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
       my $job_prefix = ${organism_short_name}."_uncompress";
       &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
@@ -912,7 +923,7 @@ sub CalcOligoFreq {
 ## file
 sub CalcOligoDistrib {
   my ($seq_file,$seq_format,$seq_type) = @_;
-  &RSAT::message::TimeWarn("&CalcOligoDistrib()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&CalcOligoDistrib()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 2);
   @strands = ("-1str", "-2str");
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
@@ -950,7 +961,7 @@ sub CalcOligoDistrib {
 ## file
 sub CalcDyadFreq {
   my ($seq_file,$seq_format,$seq_type) = @_;
-  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 2);
   $min_spacing = 0;
   $max_spacing = 20;
   @monad_lengths = (3,2,1);
@@ -964,7 +975,7 @@ sub CalcDyadFreq {
   ## currently does not support compressed files
   my $uncompressed = 0;
   if (!(-e $seq_file) && (-e $seq_file.".gz")) {
-      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 0);
+      &RSAT::message::Warning("Uncompressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_uncompress";
       $uncompressed = 1;
@@ -997,7 +1008,7 @@ sub CalcDyadFreq {
 
   ## Recompress the sequence file if required
   if ($uncompressed) {
-      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 0);
+      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
       my $job_prefix = ${organism_short_name}."_compress";
       &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
@@ -1487,7 +1498,7 @@ sub StartAndStopCodons {
 ################################################################
 ## Parse the genome from Genbank files
 sub ParseGenome {
-  &RSAT::message::TimeWarn("&ParseGenome()") if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&ParseGenome()") if ($main::verbose >= 2);
   if ($dir{ensembl}) {
     $dir{source} = $dir{ensembl};
   } elsif (-d "$dir{genbank}/$organism_short_name") {
@@ -1514,7 +1525,7 @@ sub ParseGenome {
 ################################################################
 ## Clean up unnecessary files to save disk space
 sub CleanUp {
-  &RSAT::message::TimeWarn("&CleanUp()") if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&CleanUp()") if ($main::verbose >= 2);
   chdir $dir{genome};
 
   ## delete files with intergenic and gene segment sequences
