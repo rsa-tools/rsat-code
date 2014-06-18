@@ -13,11 +13,10 @@
 ## -> this consensus could e used to display trees in R, without requiring the
 
 ## Load required libraries
-suppressPackageStartupMessages(library(dendextend))
-library("RJSONIO")
-library("ctc")
-library("dendroextras")
-library("dendextend")
+suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("dendroextras", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -45,10 +44,10 @@ thresholds <<- list()
 args = commandArgs(trailingOnly=TRUE);
 #print("Parsing command-line arguments")
 if (length(args >= 1)) {
-  print(args)
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
+  verbose(args, 1)
 }
 
 ## Check parameters
@@ -93,14 +92,14 @@ write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, 
 ### Build the tree by hierarchical clustering, and export it in Newick format
 tree <<- hclust(dist.matrix, method = hclust.method)
 tree$labels <- as.vector(global.description.table$label)
-system(paste("mkdir -p ",out.prefix, "_trees/", sep = ""))
-
+dir.trees <- paste(out.prefix, "_trees", sep="")
+system(paste("mkdir -p ",dir.trees, sep = ""))
 
 if (export == "newick") {
   temp.tree <- tree
   temp.tree[[2]] <- round(tree[[2]], digits = 3)
-  newick.file <- paste(out.prefix, "_trees/tree.newick", sep = "")
-  verbose(paste("Exporing newick file", newick.file), 1)
+  newick.file <- file.path(dir.trees, "tree.newick")
+  verbose(paste("Exploring newick file", newick.file), 2)
   write(hc2Newick(temp.tree, flat = TRUE), file=newick.file)
   rm(temp.tree)
 }
@@ -231,11 +230,11 @@ mar4 <- alignment.width - 10
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
   w.inches <- 14 ## width in inches
-  h.inches <- round(0.25* length(motifs.info)) ## height in inches
+  h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
   #h.inches <- 8 ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
-  verbose(paste("Exporting hclust tree drawing", tree.drawing.file), 1)
+  verbose(paste("hclust tree drawing", tree.drawing.file), 1)
   if (plot.format == "pdf") {
     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
   } else if (plot.format == "png") {
@@ -257,14 +256,14 @@ internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table)
 colnames(internal.nodes.attributes.table) <- c("#merge_level", "method", "min_score", "max_score", "median_score", "alignment_status", "cluster_1", "cluster_2")
 attributes.file <- paste(sep="", out.prefix, "_internal_nodes_attributes.tab")
 write.table(internal.nodes.attributes.table, file = attributes.file, sep = "\t", quote = FALSE, row.names = FALSE)
-verbose(paste("Exporting merge attributes table", attributes.file), 1)
+verbose(paste("merge attributes table", attributes.file), 1)
 
 
 #####################################################
 ## Produce the forests: when a pair of clusters is
 ## not aligned, it is splited and each part (forest)
 ## is realigned and printed in pdf and png
-if(forest.nb > 1){
+if (forest.nb > 1){
 
   ## Creates a folder with where the separated information
   ## of each cluster will be stored
@@ -277,7 +276,8 @@ if(forest.nb > 1){
   for(nb in 1:length(clusters)){
     
     cluster.nb <<- nb 
-    verbose(paste("Exploring the cluster generated: ", nb ), 1)
+
+    verbose(paste("Exploring the cluster generated: ", nb ), 2)
 
     internal.nodes.attributes <<- list()
     motifs.info <<- list()
@@ -287,8 +287,8 @@ if(forest.nb > 1){
     tree <<- NULL
 
     ## Creates an individual folder for each cluster
-    system(paste("mkdir -p ", clusters.info.folder, "/cluster_", cluster.nb, sep = ""))
-    cluster.folder <<- paste(clusters.info.folder, "/cluster_", cluster.nb, sep = "")
+    cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", cluster.nb, sep = ""))
+    system(paste("mkdir -p ", cluster.folder, sep = ""))
     
     ids <- clusters.ids[[paste("cluster_", nb, sep = "")]]
 
@@ -314,7 +314,7 @@ if(forest.nb > 1){
       ## It will be erased later
       JSON.empty <- ";Empty_file\n"
       JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
-  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+      write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
       ## For consistency, Create the folder with the merged consensuses
       system(paste("mkdir -p ", cluster.folder, "/merged_consensuses", sep = ""))
@@ -419,7 +419,7 @@ if(forest.nb > 1){
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
       merge.consensus.info <<- NULL
-      verbose(paste("Merging the matrices of merge level: ", merge.level ), 1)
+      verbose(paste("Merging the matrices at tree level: ", merge.level ), 2)
       aligned.matrices.to.merge(merge.level)
     }
   
@@ -466,6 +466,7 @@ if(forest.nb > 1){
       ## h.inches <- 7 ## height in inches
       w.inches <- 15 ## width in inches
       h.inches <- 7 ## height in inches
+      h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
       resol <- 72 ## Screen resolution
       tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
       if (plot.format == "pdf") {
@@ -473,6 +474,7 @@ if(forest.nb > 1){
       } else if (plot.format == "png") {
         png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
       }
+      
       ## dev.new(width=10, height=7)
       par(mar=c(3,2,2,mar4),family="mono")
       plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))

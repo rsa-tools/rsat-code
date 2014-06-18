@@ -162,8 +162,6 @@ BIOPERL_DIR=${PERLLIB_DIR}/bioperl-release-${BIOPERL_VERSION}
 ## Note: In some cases, there are delays between Ensembl and
 ## EnsemblGenome releases. To ensure compatibility, please check the
 ## versions of both distributions on http://ensemblgenomes.org/.
-ENSEMBL_VERSION=74
-ENSEMBL_BRANCH=ensemblgenomes-21
 ENSEMBL_API_DIR=${PERLLIB_DIR}/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"

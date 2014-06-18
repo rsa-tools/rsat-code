@@ -144,7 +144,7 @@ package main;
       } elsif ($GENBANK_DIR) {
 	$dir{genbank} = $GENBANK_DIR;
       } else {
-	&RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
+	&RSAT::error::FatalError("Please set the GENBANK_DIR variable in RSAT configuration file", ${RSAT}."/RSAT_config.props");
       }
     }
     unless (-d $dir{genbank}) {

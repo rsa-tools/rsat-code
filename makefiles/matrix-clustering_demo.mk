@@ -13,7 +13,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 ################################################################
 ## Parameters for the analysis
 MIN_NCOR=0.4
-MIN_COR=0.75
+MIN_COR=0.6
 HCLUST_METHOD=average
 #MIN_W=4
 ## Verbosity
@@ -24,7 +24,6 @@ PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 PEAKMO_NEG_CONTROL_PREFIX=peak-motifs_result_Chen_Oct4_permuted
 OCT4_PREFIX=peak-motifs_Oct4
-
 
 ## Choose a particular demo set
 DEMO_PREFIX=${PEAKMO_PREFIX}
@@ -76,11 +75,11 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
-CLUSTER_TIME_FILE=${CLUSTER_FILE_PREFIX}_time_log.txt
+#CLUSTER_TIME_FILE=${CLUSTER_FILE_PREFIX}_time_log.txt
 cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
-	@echo "	verbosity +time in file	${CLUSTER_TIME}"
+#	@echo "	verbosity and time storeed in file	${CLUSTER_TIME_FILE}"
 	${CLUSTER_CMD}
 #	(time ${CLUSTER_CMD}) >& ${CLUSTER_TIME_FILE}
 	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
@@ -107,7 +106,7 @@ cluster_peakmo_neg_control:
 cluster_peakmo_Oct4_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX} MIN_NCOR=0.4 MIN_COR=0.7 
+	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX}
 ## We should add this option: OPT='-lth w 5'
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
@@ -117,20 +116,23 @@ cluster_footprints:
 	${MAKE} cluster DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
 
 
-
 ## Cluster all motifs from RegulonDB
 RDB_CLUSTER_DIR=results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
-#RDB_PREFIX=regulonDB_2012-05
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
-#RDB_PREFIX=regulonDB_2012-05_MOD2
-#RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/regulonDB_2012-05_MOD2.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4
 
-
+################################################################
+## Clusterone jaspar group
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
 	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES}
+
+cluster_jaspar_vertebrates:
+	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=vertebrates
+
+cluster_jaspar_insects:
+	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=insects
