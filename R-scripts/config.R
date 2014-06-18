@@ -15,7 +15,6 @@ if (dir.rsat == "") {
 
 ## Directory with the R scripts for the course
 dir.R.files <- file.path(dir.rsat, "R-scripts")
-print(paste("R scripts", dir.R.files))
 dir.util <- file.path(dir.R.files, 'util')
 
 ################################################################

@@ -670,13 +670,9 @@ sub Analyse_scanning {
 	chomp($line);
 
 	my %line_info = &getLineInfo($line);
-#<<<<<<< variation-scan
 
-#	my $same_variation = 0;
-#	$same_variation = 1 if (!$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'});
-#=======
 	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
-#>>>>>>> 1.14
+
 
 	$same_variant_len = 0 if ( length($line_info{'variant_alt'}) != length($line_info{'variant_ref'}) );
 	$same_variant_len = 0 if ( $line_info{'variant_alt'} eq '-' || $line_info{'variant_ref'} eq '-' );
@@ -723,9 +719,11 @@ sub Analyse_variation {
     my %scanning_score_var = %{ $scanning_score_var };
 
     # Compare all position
-    if ($no_offset && $scanning_info{'same_len'}) {
+    if (($no_offset && $scanning_info{'same_len'})) {
+	&RSAT::message::Debug("Comparing all offset positions") if ($main::verbose >= 10);
 	foreach my $offset (keys( %scanning_score_pos )) {
-	    foreach my $site_strand (keys (%{ $scanning_score_pos{$offset} })) {
+	    &RSAT::message::Debug("Offset",$offset) if ($main::verbose >= 10);
+ 	    foreach my $site_strand (keys (%{ $scanning_score_pos{$offset} })) {
 		my %scanning_score =  %{ $scanning_score_pos{$offset}{$site_strand} };
 		my @scores =  keys ( %scanning_score );
 		foreach $score ( @scores ) {
@@ -738,12 +736,13 @@ sub Analyse_variation {
 		    push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);
 		}
 
-		&Compare(\%scanning_info,\%scanning_score);
+		&Compare(\%scanning_info,\%scanning_score) ;
 	    }
 	}
 
     # Compare best score for each variant
     } else {
+	&RSAT::message::Debug("Comparing best score for each variant") if ($main::verbose >= 10);
 	my %scanning_score  = ();
 	foreach my $variant ( keys (%scanning_score_var ) ) {
 	    $score = $scanning_score_var{$variant}{'score'};
@@ -760,12 +759,19 @@ sub Analyse_variation {
 ## Compare best and worst score
 sub Compare {
     my ($scanning_info,$scanning_score) = @_;
+
     my %scanning_info = %{ $scanning_info };
     my %scanning_score = %{ $scanning_score };
 
+    &RSAT::message::Debug("Comparing scores" ) if ($main::verbose >= 10);
+
     my @sorted_score = sort {$b <=> $a} ( keys( %scanning_score ) );
-    
+    #die scalar(@sorted_score)."++";
+    my $l_count=0;
+
     foreach my $score (@sorted_score) {
+	$l_count++;
+	&RSAT::message::Debug("In score loop", $l_count ) if ($main::verbose >= 10);
 	next if ($score == $sorted_score[-1] && scalar(@sorted_score) > 1);
 	my $best_score = $sorted_score[0];
 	my $best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
@@ -844,8 +850,14 @@ sub Compare {
 	    $scanning_info{'best_seq'} = join(";", @{ $scanning_score{$score}{'seq'} });
 	    &Printline(&GetMinOff(%scanning_info));
 	}
-	last if ($only_biggest);
+	if ($only_biggest){
+	    &RSAT::message::Debug("Reporting only biggest score difference", $only_biggest) if ($main::verbose >= 10);
+	    print (&GetMinOff(%scanning_info));<STDIN>;
+	    last();
+	}
+	
    }
+    return();
 }
 
 ################################################################
@@ -1089,7 +1101,7 @@ The HTML file has the same name as the output file, but the extension (.tab, .tx
 
 =item B<-calc_distrib>
 
-Calcul and save distribution of matrices
+Calculate and save distribution of matrices
 
 =cut
     } elsif ($arg eq "-calc_distrib") {
@@ -1100,7 +1112,8 @@ Calcul and save distribution of matrices
 
 =item B<-distrib_dir #>
 
-Directory of the distribution file 
+Directory to store the distribution files.
+Mandatory if -calc_distrib is being used.
 
 =cut
     } elsif ($arg eq "-distrib_dir") {
@@ -1110,7 +1123,7 @@ Directory of the distribution file
 
 =item B<-distrib_list #>
 
-Name of the file contening the list of matrix distrib file name
+Name of the file containing the list of matrix distrib file name
 
 /!\ This file must be in the same directory as the distrib file
 
@@ -1123,7 +1136,7 @@ Name of the file contening the list of matrix distrib file name
 
 =item B<-only_biggest>
 
-Only return the biggest difference of score between two variant of a variation
+Only return the biggest difference of score between two alleles of a variation
 
 =cut
     } elsif ($arg eq "-only_biggest") {
