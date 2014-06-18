@@ -60,3 +60,5 @@ install_ensembl*
 authorized_IP*
 *.pyc
 python-scripts/lib/*.pyc
+formatdb.log
+share
