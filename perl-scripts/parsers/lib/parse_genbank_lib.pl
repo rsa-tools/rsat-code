@@ -298,7 +298,6 @@ The option no_seq=>1 prevents from parsing the sequence.
 		    "MEDLINE"=>1,
 		   );
 
-
     my $l = 0;
     while (my $line = &ReadNextLine()) {
       $l++;
@@ -350,6 +349,8 @@ The option no_seq=>1 prevents from parsing the sequence.
 	    }
 	  }
 	}
+
+
 	if ($line =~ /^([A-Z]+)\s+/) {
 	  $current_contig_key = $1;
 	  $current_contig_value = "$'";
@@ -506,7 +507,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  }
 	}
 
-	#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 0);
+	#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 10);
 
 	#### create an object for the new feature
 	if ($features_to_parse{$feature_type}) {
@@ -524,7 +525,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	    $holder = $rRNAs;
 	  } elsif ($feature_type eq "repeat_region") {
 	    $holder = $repeat_regions;
-	    #		    &RSAT::message::Debug("repeat region", $feature_type) if ($main::verbose >= 0);
+	    #		    &RSAT::message::Debug("repeat region", $feature_type) if ($main::verbose >= 10);
 	    #		    die "HELLO";
 	  } elsif ($feature_type eq "misc_RNA") {
 	    $holder = $misc_RNAs;

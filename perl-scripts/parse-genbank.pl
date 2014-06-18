@@ -265,6 +265,7 @@ package main;
 
     ## Parse the genbank files
 #    chdir $dir{input};
+
     &ParseAllGenbankFiles(@genbank_files);
 
     ## Export masked sequences

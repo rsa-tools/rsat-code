@@ -97,3 +97,13 @@ QUEUE_MANAGER=torque
 ## Name of the queue where the jobs have to be sent
 QUEUE=
 
+################################################################
+## Ensembl and EnsemblGenomes releases. 
+##
+## These variables should in principle be updated according to the
+## relases of the two databases:
+##
+##  Ensembl: http://www.ensembl.org/
+##  EnsemblGenomes: http://ensemblgenomes.org/
+ENSEMBL_VERSION=75
+ENSEMBL_BRANCH=ensemblgenomes-22
