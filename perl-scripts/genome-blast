@@ -262,7 +262,6 @@ local @db_taxons = ();
 local $reciprocal = 0;
 
 local $blast_dir = $ENV{blast_dir};
-local $rsat_dir = $ENV{RSAT};
 
 ## Options for the command &doit()
 local $dry = 0;
@@ -500,31 +499,34 @@ sub iterate_blast {
 	    }
 
 	    if ($batch) {
-		$batch_command .= "$rsat_dir/perl-scripts/genome-blast";
+		$batch_command .= $SCRIPTS."/genome-blast";
 		$batch_command .= " -q ".$query_organism;
 		$batch_command .= " -db ".$db_organism;
 
 		## pass the other arguments to the batch command
 		my @args_to_pass = @ARGV; ## Arguments to pass for the batch genome-blast
 		while ($arg = shift(@args_to_pass)) {
-		    if (($arg eq "-dbtaxon") ||
+		    if (($arg eq "-q") ||
 			($arg eq "-db") ||
-			($arg eq "-q") ||
-			($arg eq "-qtaxon")) {
+			($arg eq "-qtaxon") || 
+			($arg eq "-dbtaxon") ||
+			($arg eq "-query_org_file") || 
+			($arg eq "-db_org_file")
+			) {
 			shift @args_to_pass;
 			next;
 		    } elsif ($arg eq "-batch") {
-			if ((scalar(@args_to_pass) > 0) &&
-			    (&IsNatural($args_to_pass[0]))) {
-			    shift @args_to_pass;
-			}
-			next;
+		      if ((scalar(@args_to_pass) > 0) &&
+			  (&IsNatural($args_to_pass[0]))) {
+			shift @args_to_pass;
+		      }
+		      next;
 		    } else {
-			if ($arg =~ /\s/) {
-			    $batch_command .= " '".$arg."'"; ## quote argument if it contains quotes
-			} else {
-			    $batch_command .= " ".$arg; 
-			}
+		      if ($arg =~ /\s/) {
+			$batch_command .= " '".$arg."'"; ## quote argument if it contains quotes
+		      } else {
+			$batch_command .= " ".$arg; 
+		      }
 		    }
 		}
 		$job_prefix="q_".$query_organism."_db_".$db_organism;
