@@ -330,6 +330,42 @@ foreach my $db_taxon (@db_taxons) {
     }
 }
 
+## DB organism file
+if ($main::db_org_file) {
+    ($main::orglist) = &OpenInputFile($main::db_org_file);
+    &RSAT::message::Info ("Reading list of db organisms form file", $main::db_org_file ) if ($main::verbose > 1);
+    while (<$main::orglist>) {
+      chomp();
+      s/\r/\n/g;	  ## Suppress Windows-specific carriage return
+      next if /^;/;		## Comment line
+      next if /^\#/;		## Header line
+      next if /^\--/;		## SQL comment line
+      next unless /\S/;		## Empty line
+      my ($org) = split /\s/;
+      $org = &trim($org); ## Remove leading and trailing spaces
+      &RSAT::OrganismManager::check_name($org);
+      push @main::db_organisms, $org;
+    }
+}
+
+## Query organism file
+if ($main::query_org_file) {
+  ($main::orglist) = &OpenInputFile($main::query_org_file);
+  &RSAT::message::Info ("Reading list of query organisms form file", $main::query_org_file ) if ($main::verbose > 1);
+  while (<$main::orglist>) {
+    chomp();
+    s/\r/\n/g;	  ## Suppress Windows-specific carriage return
+    next if /^;/;		## Comment line
+    next if /^\#/;		## Header line
+    next if /^\--/;		## SQL comment line
+    next unless /\S/;		## Empty line
+    my ($org) = split /\s/;
+    $org = &trim($org); ## Remove leading and trailing spaces
+    &RSAT::OrganismManager::check_name($org);
+    push @main::query_organisms, $org;
+  }
+}
+
 ## Query organisms
 unless (scalar(@query_organisms) >= 1) {
     &RSAT::error::FatalError("You should define at least one query organism");
@@ -626,7 +662,6 @@ specify several taxons.
 	    push @query_taxons, $ARGV[$a+1];
 	    
 	    
-	    ## Db taxon
 =pod
 
 =item	B<-dbtaxon db_taxon>
@@ -639,6 +674,26 @@ several taxons.
 =cut
 	} elsif ($ARGV[$a] eq "-dbtaxon") {
 	    push @db_taxons, $ARGV[$a+1];
+	    
+=pod
+
+=item	B<-db_org_file>
+
+File containing a list of database organisms.
+
+=cut
+	} elsif ($ARGV[$a] eq "-db_org_file") {
+	  $main::db_org_file = $ARGV[$a+1];
+	    
+=pod
+
+=item	B<-query_org_file>
+
+File containing a list of database organisms.
+
+=cut
+	} elsif ($ARGV[$a] eq "-query_org_file") {
+	  $main::query_org_file = $ARGV[$a+1];
 	    
 =pod
 
