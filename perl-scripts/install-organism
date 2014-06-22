@@ -83,7 +83,8 @@ package main;
   our %infile = ();
   $infile{organisms} = "";
   @organisms = ();
-
+  $skip = 0; 
+  $last = 0;
   our $backup_org_table = 0;
 
 
@@ -162,6 +163,9 @@ package main;
       ## "_", I guess these genomes are problematic.
       next if ($org =~ /^_/); 
 
+      ## The NCBI dir Bacteria contains some gzip archives. 
+      next if ($org =~ /\.gz$/); 
+
       ## The Bacteria dir contains some folders with fuzzy names,
       ## starting with a lowercase. I prefer to ignore these genomes
       ## (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
@@ -231,6 +235,14 @@ package main;
   $i = 0;
   foreach our $organism_short_name (@organisms) {
     $i++;
+    if (($skip > 0) && ($i <= $skip)) {
+      &RSAT::message::TimeWarn("Skipping organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+      next;
+    }
+    if (($last > 0) && ($i > $last)) {
+      &RSAT::message::TimeWarn("Stopping after organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+      last;
+    }
     &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
 
     $backup_org_table = 0 if ($i > 1); ## When we treat multiple organisms, we don't want to store a backup for each one
@@ -1055,6 +1067,11 @@ OPTIONS
 	-v	verbose
 
     MANDATORY ARGUMENTS
+
+    	The only mandatory option is to specify one or more
+    	organism(s) to be installed. This can be done with any of the
+    	following options: -org, -org_file, -all_organisms, -taxon.
+
 	-org	organism name without spaces 
 	        (e.g. Saccharomyces_cerevisiae)
 
@@ -1067,6 +1084,10 @@ OPTIONS
 		The first word of each row is taken as a query
 		orgnanism. Further information of the same row is
 		ignored.
+
+	-all_organisms
+		Install all the organisms found in the Genbank
+		directory (see option -genbank).
 
       	-taxon  taxon name (mutually exclusive with -org)
 
@@ -1082,8 +1103,19 @@ OPTIONS
 		command line to iterate the installation over multiple
 		taxa.
 
-
     OPTIONAL ARGUMENTS
+	-skip #	Skip the first # organismsof the list.
+
+	        This option is convenient to resume the installation
+	        of a list of organisms, when it has been interrupted.
+
+		It also allows to organize the installation by chunks
+		of organisms.
+
+	-last #	Stop after the first # organisms of the list.
+		This option can be used to organize the installation
+		by chunks of organisms.
+
 	-organism
 		Full name of the organism 
 		(e.g. 'Saccharomyces cerevisiae').
@@ -1272,9 +1304,12 @@ install_organism options
 -v		verbose
 -n		dry run (print commands without executing them)
 -org		organism name without spaces (e.g. Saccharomyces_cerevisiae); can be used iteratively
--org_file	organism_file_name
--taxon		iterate installation tasks over all the previously installed organisms of a taxon
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
+-taxon		iterate installation tasks over all the previously installed organisms of a taxon
+-org_file	organism_file_name
+-all_organisms  install all organisms found in the Genbank/NCBI directory
+-skip #         Skip the # first organisms (convenient to resume interrupted list) 
+-last #         Stop after the # first organisms (convenient to install by chunks) 
 -source		data source (e.g. ncbi);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
@@ -1341,13 +1376,28 @@ sub ReadArguments {
     } elsif ($arg eq "-org_file") {
       $infile{organisms} = shift(@arguments);
 
+      ## Taxon
+    } elsif ($arg eq "-taxon") {
+      push @taxa, shift(@arguments);
+
       ## All organisms found in the Genbank dir
     } elsif ($arg eq "-all_organisms") {
       $main::all_organisms = 1;
 
-      ## Taxon
-    } elsif ($arg eq "-taxon") {
-      push @taxa, shift(@arguments);
+      ## Skip the N first organisms of the list (can be useful if the
+      ## task was interrupted).
+    } elsif ($arg eq "-skip") {
+      $main::skip = shift(@arguments);
+      &RSAT::error::FatalError($main::skip, "Invalid value for option -skip, should be a Natural number") 
+	  unless (&IsNatural($main::skip));
+
+      ## Stop after the N first organisms of the list (can be useful
+      ## for tests on a subset of the list of oganisms).
+    } elsif ($arg eq "-last") {
+      $main::last = shift(@arguments);
+      &RSAT::error::FatalError($main::last, "Invalid value for option -last, should be a Natural number") 
+	  unless (&IsNatural($main::last));
+
 
       ## Full organism name (may include spaces)
     } elsif ($arg eq "-organism") {
