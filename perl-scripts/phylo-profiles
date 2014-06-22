@@ -192,6 +192,7 @@ package main;
 			    species
 			    bbh
 			    profiles
+                            network
 			    index
 			    all
 			   );
@@ -211,7 +212,7 @@ package main;
   ################################################################
   ## Check argument values
 
-  if (scalar(keys(%task)) == 0) {
+  if ((scalar(keys(%task)) == 0) || ($task{all})){
     %task = %supported_task;
   }
 
@@ -226,6 +227,9 @@ package main;
 
   unless ($dir{output}) {
     $dir{output} = "results/phylo_profiles/".${organism}."_vs_".${taxon};
+    if ($taxonomic_depth != 0) {
+	$dir{output} .= "_depth".${taxonomic_depth};
+    }
 #    &RSAT::error::FatalError("You must define an output directory (option I<-o>)");
   }
 
@@ -238,14 +242,25 @@ package main;
   $outfile{species_html}=$prefix{output}."_selected_species.html"; push @outfiles, "species_html";
   $outfile{species_names}=$prefix{output}."_selected_species_names.tab"; push @outfiles, "species_names";
   $outfile{bbh} = $prefix{output}."_bbh_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
-  $outfile{profiles_ids}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_ids.tab"; push @outfiles, "profiles_ids";
-  $outfile{profiles_boolean}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_boolean.tab"; push @outfiles, "profiles_boolean";
-  $outfile{profiles_boolean_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_boolean_names.tab"; push @outfiles, "profiles_boolean_names";
-  $outfile{profiles_evalues}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_evalues.tab"; push @outfiles, "profiles_evalues";
-  $outfile{profiles_evalues_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_evalues_names.tab"; push @outfiles, "profiles_evalues_names";
-  $outfile{profiles_sig}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_sig.tab"; push @outfiles, "profiles_sig";
-  $outfile{profiles_sig_names}= $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}."_sig_names.tab"; push @outfiles, "profiles_sig_names";
 
+  ## Output file names for phylogenetic profiles
+  $prefix{profiles} = $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect};
+  $outfile{profiles_ids}= $prefix{profiles}."_ids.tab"; push @outfiles, "profiles_ids";
+  $outfile{profiles_boolean}= $prefix{profiles}."_boolean.tab"; push @outfiles, "profiles_boolean";
+  $outfile{profiles_boolean_names}= $prefix{profiles}."_boolean_names.tab"; push @outfiles, "profiles_boolean_names";
+  $outfile{profiles_evalues}= $prefix{profiles}."_evalues.tab"; push @outfiles, "profiles_evalues";
+  $outfile{profiles_evalues_names}= $prefix{profiles}."_evalues_names.tab"; push @outfiles, "profiles_evalues_names";
+  $outfile{profiles_sig}= $prefix{profiles}."_sig.tab"; push @outfiles, "profiles_sig";
+  $outfile{profiles_sig_names}= $prefix{profiles}."_sig_names.tab"; push @outfiles, "profiles_sig_names";
+
+  ## Output file names for co-occurrence network
+  $outfile{gene_names}= $prefix{output}."_gene_names.tab"; push @outfiles, "gene_names";
+  $prefix{cooccurrence} = $prefix{profiles}."_network";
+  $outfile{cooccurrence_table}= $prefix{cooccurrence}.".tab"; push @outfiles, "cooccurrence_table";
+  $outfile{cooccurrence_table_html}= $prefix{cooccurrence}.".html"; push @outfiles, "cooccurrence_table_html";
+  $outfile{cooccurrence_graph_dot}= $prefix{cooccurrence}.".dot"; push @outfiles, "cooccurrence_graph_dot";
+  $outfile{cooccurrence_graph_gml}= $prefix{cooccurrence}.".gml"; push @outfiles, "cooccurrence_graph_gml";
+  
   ################################################################
   ## Open output stream
   local $out = &OpenOutputFile($outfile{output});
@@ -382,6 +397,56 @@ package main;
 
   } else {
     &RSAT::message::TimeWarn("Skipping conversion from bbh tables to profiles") if ($main::verbose >= 2);
+  }
+
+  ################################################################
+  ## Compute the co-occurrence network
+  if ($task{network}) {
+      &RSAT::message::TimeWarn("Getting gene names") if ($main::verbose >= 2);
+      my $cds_table = $ENV{RSAT}."/public_html/data/genomes/".$organism."/genome/cds.tab";
+      $command = "grep -v '^--' ".$cds_table;
+      $command .= " | cut -f 1 ";
+      $command .= " | add-gene-info  -info name -org ".$organism;
+      $command .= " -o ".$outfile{gene_names};
+#	@echo "	${GENE_NAMES}"
+      &RSAT::message::TimeWarn("Gene names", $outfile{gene_names}) if ($main::verbose >= 2);
+      &one_command($command, 1, 0, task=>"network");
+
+      ## Compare profiles using compare-classes
+      #      my $sig_col=`grep -P '^;\t\d+\tsig' ${COMPA}.tab | cut -f 2`
+      # MIN_SPEC=5
+      &RSAT::message::TimeWarn("Extracting co-occurrence network from phylogenetic profiles") if ($main::verbose >= 2);
+      $min_species = 5;
+      $command = "grep -v '^;' ".$outfile{bbh};
+      $command .= " | grep -v '^#'";
+      $command .= " | awk '{print \$2\"\t\"\$3\"\t\"\$4}'";
+      $command .= " | compare-classes -v 2 -i /dev/stdin -sc 3";
+      $command .= " -return occ,freq,proba,entropy,jac_sim,rank -sort sig ";
+      $command .= " -triangle -distinct ";
+      $command .= " -lth sig 0 -lth Q ".$min_species." -lth R ".$min_species." -lth QR ".$min_species;
+      $command .= " -rnames ".$outfile{gene_names};
+      $command .= " -qnames ".$outfile{gene_names};
+      $command .= " -o ".$outfile{cooccurrence_table};
+#      &one_command($command, 1, 0, task=>"network");
+      &RSAT::message::Info("Co-occurrence table", $outfile{cooccurrence_table}) if ($main::verbose >= 2);
+
+      ## Convert tab-delimited file in HTML file
+      $command = "text-to-html -i ".$outfile{cooccurrence_table};
+      $command .= " -o ".$outfile{cooccurrence_table_html};
+      &one_command($command, 1, 0, task=>"network");
+      &RSAT::message::Info("Co-occurrence table", $outfile{cooccurrence_table_html}) if ($main::verbose >= 2);
+
+      ## Identify the significance column in the comparison table
+#      my $sig_col =`grep -P '^;\t\d+\tsig' $outfile{cooccurrence_table} | cut -f 2`;
+      $sig_col = 24;
+
+      &RSAT::message::TimeWarn("Generating network graph	SIG_COL=".$sig_col) if ($main::verbose >= 2);
+      $command = "convert-graph -i ".$outfile{cooccurrence_table};
+      $command .= " -from tab -to gml -scol 3 -tcol 4";
+      $command .= " -wcol $sig_col -ewidth -ecolors fire ";
+      $command .= " -o ".$outfile{cooccurrence_graph_gml}; 
+      &one_command($command, 1, 0, task=>"network");
+      &RSAT::message::Info("Co-occurrence graph (gml)", $outfile{cooccurrence_graph_gml}) if ($main::verbose >= 2);
   }
 
   ################################################################
@@ -534,6 +599,10 @@ Supported tasks:
 
 =over
 
+=item I<all>
+
+Run all tasks. This is the default usage mode of I<phylo-profiles>.
+
 =item I<species>
 
 Select the list of species at a given depth of the taxonomic tree.
@@ -552,6 +621,10 @@ profile table contains 1 row per protein-coding gene of the query
 oranism, and one column per genome of the reference taxon. This
 program exports a series of separate phylogenetic profiles whose cell
 values indicate various statistics.
+
+=item I<index>
+
+Generate the HTML index file.
 
 =back
 
