@@ -186,6 +186,7 @@ package main;
   our $organism;
   our $taxonomic_depth = 5;
   our $null = "<NA>"; ## String for null/undefined/not assigned values
+  our $inf = "320"; ## String to display for infinite values in the sig table
 
   ## Supported tasks
   our @supported_tasks = qw(
@@ -304,17 +305,16 @@ package main;
     &one_command($species_cmd, 1, 0, task=>"species");
     &RSAT::message::Info("species file (tab)", $outfile{species}) if ($main::verbose >= 2);
     &RSAT::message::Info("species file (html)", $outfile{species_html}) if ($main::verbose >= 2);
-#   my $species_cmd = $SCRIPTS."/supported-organisms -return ID,taxonomy";
-#   $species_cmd .= " | awk '$$1 == \"".$organism."\"' > ".$outfile{species};
-#   $species_cmd .= "; ".$SCRIPTS."/supported-organisms -return ID,taxonomy -taxon ".$taxon;
-#   $species_cmd .= " | perl -pe 's|; |\t|g'";
-#   $species_cmd .= " | cut -f 1-".$taxonomic_depth." | sort -k 2 -u | perl -pe 's|\t|; |g' | perl -pe 's|; |\t|'";
-#   $species_cmd .= " >> ${SPECIES}";
-#   &RSAT::message::Info("BBH file", $outfile{species}) if ($main::verbose >= 2);
   } else {
     &RSAT::message::TimeWarn("Skipping species selection task") if ($main::verbose >= 2);
   }
 
+
+  ## Report the number of selected species
+  $species_nb = `grep -v '^;' $outfile{species_names} | grep -v '^#' | wc -l`;
+  chomp $species_nb;
+  &RSAT::message::Info("Selected", $species_nb, "species") if ($main::verbose >= 1);
+  
   ################################################################
   ## Identify all the putative orthologs (BBH)
   if ($task{bbh}) {
@@ -330,10 +330,15 @@ package main;
     $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
     $ortho_cmd .= " -o ".$outfile{bbh};
     &one_command($ortho_cmd, 1, 0, task=>"bbh");
-    &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
   } else {
     &RSAT::message::TimeWarn("Skipping detection of all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
   }
+
+  ## Report the number of BBH relationships (across all reference species)
+  &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
+  $bbh_nb = `grep -v '^;' $outfile{bbh} | grep -v '^#' | wc -l`;
+  chomp $bbh_nb;
+  &RSAT::message::Info("Selected", $bbh_nb, "BBH across", $species_nb, "species") if ($main::verbose >= 1);
 
   ################################################################
   ## Convert ortholog table into a profile table 
@@ -356,7 +361,7 @@ package main;
     &RSAT::message::TimeWarn("Computing Boolean phylogenetic profiles from BBH") if ($main::verbose >= 2);
     $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
     $command .= " -from tab -to profiles";
-    $command .= " -ccol 2 -mcol 3  -null 0";
+    $command .= " -ccol 2 -mcol 3  -null 0"; ## For Boolean profiles, we want to have 0 for null values
     $command .= " | grep -v '^;'";
     $command .= " > ".$outfile{profiles_boolean};
     $command .= " ; add-gene-info -org ".${organism};
@@ -371,6 +376,7 @@ package main;
     $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
     $command .= " -from tab -to profiles";
     $command .= " -ccol 2 -mcol 3 -scol 4 -null 0";
+    $command .= " -inf ".$inf;
     $command .= " | grep -v '^;'";
     $command .= " > ".$outfile{profiles_evalues};
     $command .= " ; add-gene-info -org ".${organism};
@@ -386,6 +392,7 @@ package main;
     $command .= " | ".$SCRIPTS."/convert-classes -v 2";
     $command .= " -from tab -to profiles";
     $command .= " -ccol 2 -mcol 3 -scol 5 -null 0";
+    $command .= " -inf ".$inf;
     $command .= " | grep -v '^;'";
     $command .= " > ".$outfile{profiles_sig};
     $command .= " ; add-gene-info -org ".${organism};
@@ -639,6 +646,27 @@ Generate the HTML index file.
 	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
 	}
       }
+=pod
+
+=item B<-null>
+
+Null string used as score in the profile output for the undefined class
+memberships (default 0).
+
+=cut
+    } elsif ($arg eq "-null") {
+	$main::null = shift (@arguments);
+
+=pod
+
+=item B<-ing>
+
+Value to display as replacement for the infinite values (obtained
+e.g. from log(0)).
+
+=cut
+    } elsif ($arg eq "-inf") {
+	$main::inf = shift (@arguments);
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
