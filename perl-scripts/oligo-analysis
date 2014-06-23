@@ -2208,7 +2208,7 @@ sub ReadArguments {
 	    ################################################################
 	    ## Thresholds
 
-	    ### Upper threshold
+	    ### Lower threshold
 	} elsif ($arg eq "-lth") {
 	    my $thr_field = shift(@arguments);
 	    my $thr_value =  shift(@arguments);
@@ -2217,7 +2217,7 @@ sub ReadArguments {
 	    }
 	    $lth{$thr_field} = $thr_value;
 
-	    ### Lower threshold
+	    ### Upper threshold
 	} elsif ($arg eq "-uth") {
 	    my $thr_field = shift(@arguments);
 	    unless ($supported_threshold{$thr_field}) {
