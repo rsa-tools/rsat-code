@@ -499,7 +499,7 @@ sub iterate_blast {
 	    }
 
 	    if ($batch) {
-		$batch_command .= $SCRIPTS."/genome-blast";
+		$batch_command .= $ENV{RSAT}."/perl-scripts/genome-blast";
 		$batch_command .= " -q ".$query_organism;
 		$batch_command .= " -db ".$db_organism;
 
