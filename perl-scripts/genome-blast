@@ -284,6 +284,9 @@ foreach my $task (@supported_tasks) {
 $supported_tasks = join ",", @supported_tasks;
 %task = ();
 
+## Blast parameters
+$expect_threshold = 1e-5;
+
 &ReadArguments();
 
 
@@ -915,7 +918,7 @@ sub BlastAndRank {
 
     ## Run the blastall command
     my $blastall_cmd = &RSAT::server::GetProgramPath("blastall", 1, $blast_dir);
-    my $blast_command = $blastall_cmd." -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001";
+    my $blast_command = $blastall_cmd." -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e ".$expect_threshold;
     &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
 
     # Print the blast output table (useful for debugging)
