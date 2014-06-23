@@ -454,7 +454,7 @@ sub read_profiles {
 		  &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
 						"class file", $class_file,  
 						"line", $line,
-						  "member", $member_name,
+						"member", $member_name,
 						"class", $class_name,
 					   ));
 	      }
@@ -675,7 +675,7 @@ sub to_profiles {
 	$null = $args{null};
     }
 
-    my $inf = 0;
+    my $inf = "Inf";
     if (defined($args{inf})) {
 	$inf = $args{inf};
     }
@@ -714,6 +714,8 @@ sub to_profiles {
 		my $value = $cross_tab{$member}{$class_name};
 		if (lc($value) eq "inf") {
 		    $string .= $inf;
+		} elsif (lc($value) eq "-inf") {
+		    $string .= "-".$inf;
 		} else {
 		    $string .= $value;
 		}
