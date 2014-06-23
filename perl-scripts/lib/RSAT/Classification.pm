@@ -378,6 +378,12 @@ sub read_profiles {
 	$null = $args{null};
     }
 
+    ## String for infinite values
+    my $inf = "Inf";
+    if (defined($args{inf})) {
+	$inf = $args{inf};
+    }
+
     my %class = (); ## classes indexed by name
     my $got_header = 0;
 
@@ -434,31 +440,31 @@ sub read_profiles {
 	my @fields = split /\t/;
 	### class members
 	$member_name = shift @fields;
-	&RSAT::message::Info(join("\t", "Treating row", $line, $member_name)) if ($main::verbose >= 5);
-	unless ($member_name =~ /\S/) {
-	    &RSAT::message::Warning(join ("\t", "Error class file", 
-					  $class_file,  "line", 
-					  $line, "member not specified")) if ($main::verbose >= 1);
-	    next;
-	}
-	foreach my $class_name (@class_names) {
-	    my $score = shift (@fields);
-	    if (($score) && ($score ne $null)) {
-		unless (&RSAT::util::IsReal($score)) {
-		    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
-						  "class file", $class_file,  
-						  "line", $line,
+      &RSAT::message::Info(join("\t", "Treating row", $line, $member_name)) if ($main::verbose >= 5);
+      unless ($member_name =~ /\S/) {
+	  &RSAT::message::Warning(join ("\t", "Error class file", 
+					$class_file,  "line", 
+					$line, "member not specified")) if ($main::verbose >= 1);
+	  next;
+      }
+      foreach my $class_name (@class_names) {
+	  my $score = shift (@fields);
+	  if (($score) && ($score ne $null)) {
+	      unless (&RSAT::util::IsReal($score)) {
+		  &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+						"class file", $class_file,  
+						"line", $line,
 						  "member", $member_name,
-						  "class", $class_name,
-						 ));
-		}
-		## Check threshold on score
-		next if ((defined($args{min_score})) && ($score < $args{min_score}));
-		&RSAT::message::Info(join("\t", "New member", $line, $class_name, $member_name, $score)) if ($main::verbose >= 4);
+						"class", $class_name,
+					   ));
+	      }
+	      ## Check threshold on score
+	      next if ((defined($args{min_score})) && ($score < $args{min_score}));
+	      &RSAT::message::Info(join("\t", "New member", $line, $class_name, $member_name, $score)) if ($main::verbose >= 4);
 		$class{$class_name}->new_member($member_name, 0, score=>$score);
-	    }
-	}
-	
+	  }
+      }
+      
     }
     close $in if ($input_file);
 
@@ -663,9 +669,15 @@ One column per class.
 sub to_profiles {
     my ($self, %args) = @_;
     my @classes = $self->get_attribute("classes");
+
     my $null = 0;
     if (defined($args{null})) {
 	$null = $args{null};
+    }
+
+    my $inf = 0;
+    if (defined($args{inf})) {
+	$inf = $args{inf};
     }
 
     ## Index class-member associations
@@ -699,7 +711,12 @@ sub to_profiles {
 	foreach $class_name (@class_names) {
 	    $string .= "\t";
 	    if ($cross_tab{$member}{$class_name}) {
-		$string .= $cross_tab{$member}{$class_name};
+		my $value = $cross_tab{$member}{$class_name};
+		if (lc($value) eq "inf") {
+		    $string .= $inf;
+		} else {
+		    $string .= $value;
+		}
 	    } else {
 		$string .= $null;
 	    }
