@@ -415,7 +415,6 @@ package main;
       $command .= " | cut -f 1 ";
       $command .= " | add-gene-info  -info name -org ".$organism;
       $command .= " -o ".$outfile{gene_names};
-#	@echo "	${GENE_NAMES}"
       &RSAT::message::TimeWarn("Gene names", $outfile{gene_names}) if ($main::verbose >= 2);
       &one_command($command, 1, 0, task=>"network");
 
@@ -434,7 +433,7 @@ package main;
       $command .= " -rnames ".$outfile{gene_names};
       $command .= " -qnames ".$outfile{gene_names};
       $command .= " -o ".$outfile{cooccurrence_table};
-#      &one_command($command, 1, 0, task=>"network");
+      &one_command($command, 1, 0, task=>"network");
       &RSAT::message::Info("Co-occurrence table", $outfile{cooccurrence_table}) if ($main::verbose >= 2);
 
       ## Convert tab-delimited file in HTML file
@@ -444,8 +443,13 @@ package main;
       &RSAT::message::Info("Co-occurrence table", $outfile{cooccurrence_table_html}) if ($main::verbose >= 2);
 
       ## Identify the significance column in the comparison table
-#      my $sig_col =`grep -P '^;\t\d+\tsig' $outfile{cooccurrence_table} | cut -f 2`;
-      $sig_col = 24;
+      my $sig_col_cmd = "grep -P '^;\\s+\\d+\\s+sig' $outfile{cooccurrence_table} | cut -f 2";
+      my $sig_col =`$sig_col_cmd`;
+      ## For the sake of safety: if not found in the output file, take
+      ## the column supposed to contain sig values
+      unless ((&IsNatural($sig_col) && ($sig_col > 0)) {
+	  $sig_col = 24;
+      }
 
       &RSAT::message::TimeWarn("Generating network graph	SIG_COL=".$sig_col) if ($main::verbose >= 2);
       $command = "convert-graph -i ".$outfile{cooccurrence_table};
