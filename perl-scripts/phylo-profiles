@@ -447,7 +447,7 @@ package main;
       my $sig_col =`$sig_col_cmd`;
       ## For the sake of safety: if not found in the output file, take
       ## the column supposed to contain sig values
-      unless ((&IsNatural($sig_col) && ($sig_col > 0)) {
+      unless ((&IsNatural($sig_col)) && ($sig_col > 0)) {
 	  $sig_col = 24;
       }
 
