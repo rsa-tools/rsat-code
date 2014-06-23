@@ -845,6 +845,10 @@ sub select_hits{
 
     ## Check if the query matches the appropriate ccolumn
     my $query_id = $fields[$match_col_index];
+    unless ($query_id) {
+	&RSAT::message::Warning("Line", $l, "blast file", $blast_file, "problematic row",  $_);
+	next;
+    }
     #    &RSAT::message::Debug("Query ID", $l, $query_id) if ($main::verbose >= 5);
     unless ($is_query{$query_id}) {
       #    unless ($is_query{uc($query_id)}) {
@@ -858,9 +862,16 @@ sub select_hits{
     my $hit = {};
     my $discarded =0;
     foreach my $field (@{$blast_columns}) {
-      # get hit
-      $hit->{$field} = shift @fields;
 
+	my $value = shift @fields;
+	if ((!defined($value)) || ($value eq "")) {
+	    &RSAT::message::Warning("Missing field", $field, "line", $l, "blast table", $blast_file);
+	    last;
+	}
+
+	# get hit
+	$hit->{$field} = $value;
+	
       # check lower threshold
       if (defined($lth{$field})) {
 	if ($hit->{$field} < $lth{$field}) {
