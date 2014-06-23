@@ -668,6 +668,14 @@ oranism, and one column per genome of the reference taxon. This
 program exports a series of separate phylogenetic profiles whose cell
 values indicate various statistics.
 
+=item I<network>
+
+Generate a co-occurrence network from the phylogenetic profiles. The
+network is built by computing the similarity between profiles of each
+gene pair. the network contains one node per gene, and one edge is
+instantiated for each gene pair passing a threshold on the selected
+similarity metrics.
+
 =item I<index>
 
 Generate the HTML index file.
