@@ -48,7 +48,8 @@ elements, separated by tabulations.
 =head2 mcode
 
 The output format of the MCODE algorithm. MCODE is a graph-based
-clustering algorithm developed by Bader and Hogue (Bader and Hogue, BMC Bioinformatics, 2003)
+clustering algorithm developed by Bader and Hogue (Bader and Hogue,
+BMC Bioinformatics, 2003)
 
 http://baderlab.org/Software/MCODE
 
@@ -143,9 +144,11 @@ package main;
 
     %args = (); ## arguments for reading the classification
     $args{null} = "NA";
+    $args{inf} = "Inf";
 
     %output_args = (); ## Arguments for printing the classification
     $output_args{null} = "NA";
+    $output_args{inf} = "Inf";
 
     &ReadArguments();
 
@@ -360,6 +363,7 @@ specified, scores are not defined.
 	    ## Assign each node to each cluster with the ERMG
 	    ## format, using the posterior probability as score
 	    ## Score column
+
 =pod
 
 =item B<-null>
@@ -370,6 +374,17 @@ memberships (default 0).
 =cut
 	} elsif ($arg eq "-null") {
 	    $args{null} = $output_args{null} = shift (@arguments);
+
+=pod
+
+=item B<-ing>
+
+Value to display as replacement for the infinite values (obtained
+e.g. from log(0)).
+
+=cut
+	} elsif ($arg eq "-inf") {
+	    $args{inf} = $output_args{inf} = shift (@arguments);
 
 =pod
 
