@@ -171,13 +171,6 @@ package main;
 
   our @outfiles = ();
 
-  ## Thresholds
-  our %lth = ();
-  our %uth = ();
-  $lth{identity}=30; ## Threshold on BLAST identity percentage
-  $lth{len}=50; ## Threshold on BLAST alignment length
-  $uth{expect}=1e-10; ## Threshold on BLAST expect (e-value)
-
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
@@ -204,6 +197,26 @@ package main;
   }
   our %task = ();
 
+
+  ## lower and upper thresholds
+  @supported_threshold_fields = qw(
+				   ident
+				   ali_len
+				   e_value
+				   bit_sc
+				  );
+  foreach my $field (@supported_threshold_fields) {
+    $supported_threshold_field{$field} = 1;
+  }
+  $supported_threshold_fields = join (",", @supported_threshold_fields);
+
+  ## Thresholds
+  our %lth = ();
+  our %uth = ();
+  $lth{ident}=30; ## Threshold on BLAST identity percentage
+  $lth{ali_len}=50; ## Threshold on BLAST alignment length
+  $lth{bit_sc}=50; ## Threshold on BLAST bit score
+  $uth{expect}=1e-10; ## Threshold on BLAST expect (e-value)
 
 
   ################################################################
@@ -242,10 +255,10 @@ package main;
   $outfile{species}=$prefix{output}."_selected_species.tab"; push @outfiles, "species";
   $outfile{species_html}=$prefix{output}."_selected_species.html"; push @outfiles, "species_html";
   $outfile{species_names}=$prefix{output}."_selected_species_names.tab"; push @outfiles, "species_names";
-  $outfile{bbh} = $prefix{output}."_bbh_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
+  $outfile{bbh} = $prefix{output}."_bbh_len".$lth{ali_len}."_id".$lth{ident}."_bits".$uth{bit_sc}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
 
   ## Output file names for phylogenetic profiles
-  $prefix{profiles} = $prefix{output}."_profiles_len".$lth{len}."_id".$lth{identity}."_e".$uth{expect};
+  $prefix{profiles} = $prefix{output}."_profiles_len".$lth{ali_len}."_id".$lth{ident}."_e".$uth{expect};
   $outfile{profiles_ids}= $prefix{profiles}."_ids.tab"; push @outfiles, "profiles_ids";
   $outfile{profiles_boolean}= $prefix{profiles}."_boolean.tab"; push @outfiles, "profiles_boolean";
   $outfile{profiles_boolean_names}= $prefix{profiles}."_boolean_names.tab"; push @outfiles, "profiles_boolean_names";
@@ -261,6 +274,12 @@ package main;
   $outfile{cooccurrence_table_html}= $prefix{cooccurrence}.".html"; push @outfiles, "cooccurrence_table_html";
   $outfile{cooccurrence_graph_dot}= $prefix{cooccurrence}.".dot"; push @outfiles, "cooccurrence_graph_dot";
   $outfile{cooccurrence_graph_gml}= $prefix{cooccurrence}.".gml"; push @outfiles, "cooccurrence_graph_gml";
+
+  my @sig_threshold = (1,2,5,10);
+  foreach my $threshold (@sig_thresholds) {
+      my $key = 'cooccurrence_graph_sig'.$threshold.'_gml';
+     $outfile{$key}= $prefix{cooccurrence}."_sig".$threshold.".gml"; push @outfiles, $key;
+  }
   
   ################################################################
   ## Open output stream
@@ -324,9 +343,10 @@ package main;
     $ortho_cmd .= " -org ".$organism;
 #  $ortho_cmd .= " -taxon ".${taxon};
     $ortho_cmd .= " -org_list ".$outfile{species_names};
-    $ortho_cmd .= " -uth rank 1 -lth ali_len ".$lth{len};
-    $ortho_cmd .= " -lth ident ".$lth{identity};
-    $ortho_cmd .= "  -uth e_value ".$uth{expect};
+    $ortho_cmd .= " -uth rank 1 -lth ali_len ".$lth{ali_len};
+    $ortho_cmd .= " -lth bit_sc ".$lth{bit_sc};
+    $ortho_cmd .= " -lth ident ".$lth{ident};
+    $ortho_cmd .= " -uth e_value ".$uth{expect};
     $ortho_cmd .= " -return e_value,bit_sc,ident,ali_len";
     $ortho_cmd .= " -o ".$outfile{bbh};
     &one_command($ortho_cmd, 1, 0, task=>"bbh");
@@ -433,7 +453,7 @@ package main;
       $command .= " -rnames ".$outfile{gene_names};
       $command .= " -qnames ".$outfile{gene_names};
       $command .= " -o ".$outfile{cooccurrence_table};
-      &one_command($command, 1, 0, task=>"network");
+#      &one_command($command, 1, 0, task=>"network");
       &RSAT::message::Info("Co-occurrence table", $outfile{cooccurrence_table}) if ($main::verbose >= 2);
 
       ## Convert tab-delimited file in HTML file
@@ -445,19 +465,34 @@ package main;
       ## Identify the significance column in the comparison table
       my $sig_col_cmd = "grep -P '^;\\s+\\d+\\s+sig' $outfile{cooccurrence_table} | cut -f 2";
       my $sig_col =`$sig_col_cmd`;
+      chomp($sig_col);
       ## For the sake of safety: if not found in the output file, take
       ## the column supposed to contain sig values
       unless ((&IsNatural($sig_col)) && ($sig_col > 0)) {
 	  $sig_col = 24;
       }
 
+      my $convert_graph_options = " -from tab -to gml -scol 3 -tcol 4";
+      $convert_graph_options .= " -wcol $sig_col -ewidth -ecolors fire ";
+
       &RSAT::message::TimeWarn("Generating network graph	SIG_COL=".$sig_col) if ($main::verbose >= 2);
-      $command = "convert-graph -i ".$outfile{cooccurrence_table};
-      $command .= " -from tab -to gml -scol 3 -tcol 4";
-      $command .= " -wcol $sig_col -ewidth -ecolors fire ";
+      $command = "convert-graph ".$compare_graph_options;
+      $command .= " -i ".$outfile{cooccurrence_table};
       $command .= " -o ".$outfile{cooccurrence_graph_gml}; 
       &one_command($command, 1, 0, task=>"network");
       &RSAT::message::Info("Co-occurrence graph (gml)", $outfile{cooccurrence_graph_gml}) if ($main::verbose >= 2);
+
+      ## Select thresholds with different thresholds on co-occurrence
+      ## significance.
+      foreach my $threshold (@sig_thresholds) {
+	  &RSAT::message::TimeWarn("Selecting sub-network  with co-occurrence significance >= ".$threshold) if ($main::verbose >= 2);
+	  my $key = 'cooccurrence_graph_sig'.$threshold.'_gml';
+
+	  my $cmd = "awk '\$".sig_column." >= ".$threshold."'";
+	  $cmd .= " ".$outfile{cooccurrence_table};
+	  $cmd .= " | convert-graph ".$compare_graph_options;
+	  $cmd .= " -o ".$outfile{$key};
+      }
   }
 
   ################################################################
@@ -586,8 +621,8 @@ tree in order to select "non-redundant" species.
 
 	} elsif ($arg eq "-depth") {
 	    $main::taxonomic_depth = shift (@arguments);
-	    &RSAT::error::FatalError($main::taxonomic_depth, "Invalid value for depth:  must be n Integer number") 
-	      unless (&IsNatural($taxonomic_depth) && ($taxonomic_depth > 0));
+	    &RSAT::error::FatalError($main::taxonomic_depth, "Invalid value for depth:  must be a Natural number.")
+	      unless (&IsNatural($taxonomic_depth));
 
 
 =pod
@@ -650,6 +685,38 @@ Generate the HTML index file.
 	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
 	}
       }
+
+
+=pod
+
+=item B<-lth field lower_threshold>
+
+Lower threshold value on the specified field.
+
+=item B<-uth field upper_threshold>
+
+Upper threshold value on the specified field.
+
+Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,e_value,bit_sc,rank,s_rank
+
+=cut
+
+            #### threshold values
+        } elsif ($arg eq "-lth") {
+            my $field = shift(@arguments);
+            my $value = shift(@arguments);
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $lth{$field} = $value;
+
+        } elsif ($arg eq "-uth") {
+            my $field = shift(@arguments);
+            my $value = shift(@arguments);
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $uth{$field} = $value;
+
+
 =pod
 
 =item B<-null>
