@@ -227,11 +227,14 @@ package main;
   foreach my $taxon (@taxa) {
     &RSAT::message::TimeWarn("Getting list of organisms from RSAT server for taxon", $taxon);
     my $orgs_for_taxa;
-    if ($get_command eq "rsync") {
-      &RSAT::message::Info("Getting list of organisms for taxon", $taxon, "by ssh connection", $ssh_login);
+    if ($upload) {
+      &RSAT::message::Info("Getting list of organisms to upload for taxon", $taxon, "on local host", $ENV{HOSTNAME}, "");
+      $cmd = "supported-organisms -return ID -taxon $taxon | grep -v '^#'";
+    } elsif ($get_command eq "rsync") {
+      &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, "by ssh connection", $ssh_login);
       $cmd = "ssh $ssh_login 'supported-organisms -return ID -taxon $taxon | grep -v \"^#\"'";
     } else {
-      &RSAT::message::Info("Getting list of organisms for taxon", $taxon, " by web services");
+      &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, " by web services");
       $cmd = "supported-organisms-server -return ID -taxon $taxon | grep -v '^#'";
     }
     &RSAT::message::TimeWarn("\n; ", $cmd) if ($main::verbose >= 0);
@@ -301,7 +304,7 @@ package main;
 	  $RSAT_SERVER_ROOT = '/'.$'; #'
       }
 
-      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, "RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
       $cmd .= " --reject jobs --reject 'index.html*'";
       $cmd .= " -X".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
       if ($main::verbose <= 3) {
@@ -327,7 +330,7 @@ package main;
       if ($main::upload) {
 #	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/*";
 	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/";
-	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "from the RSAT server\n", $remote_genome) 
+	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome)
 	    if ($main::verbose >= 1);
 	$cmd .= " -e ssh -ruptvl -z ";
 	$cmd .= " --exclude jobs --exclude '*~'";
@@ -339,7 +342,7 @@ package main;
       } else {
 #	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/'*'";
 	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org;
-	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "from the RSAT server\n", $remote_genome) 
+	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome) 
 	    if ($main::verbose >= 1);
 	$cmd .= " -e ssh -ruptvl -z ";
 	$cmd .= " --exclude jobs --exclude '*~'";
