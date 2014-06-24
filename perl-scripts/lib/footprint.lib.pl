@@ -88,7 +88,7 @@ sub SelectReferenceOrganisms {
     @ref_organisms = &ReadOrganismsFromFile($main::orglist_file);
   } else {
     #check if there is is at least one organism for that Taxon
-    @ref_organisms = &CheckTaxon($taxon) if $main::taxon;
+    @ref_organisms = &RSAT::OrganismManager::CheckTaxon($taxon) if $main::taxon;
 
     ## Check option -no_purge and -org_list
     if ($main::no_purge) {
