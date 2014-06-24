@@ -415,16 +415,18 @@ package main;
 					  str=>$strands,
 					  noov=>$noov,
 					  type=>"dyad",
-					  warn=>0,
+					  warn=>1,
 					  taxon=>1);
 
     ## If the required the taxon frequencies are not pre-installed,
     ## compute them before porocessing and store them in the result
     ## directory.
-    if ((!$task{bg_model}) && ((-e $infile{bg_model}) || (-e $infile{bg_model}.".gz"))) {
+    if ((-e $infile{bg_model}) || (-e $infile{bg_model}.".gz")) {
       &RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
 
     } else {
+
+	$task{bg_model} = 1; ## Force the computation of the bg model
 
       ## Store the background model in the parent directory of the
       ## query sub-directories. The background directory is different from the
@@ -433,17 +435,18 @@ package main;
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
 
-      die "HELLO";
+#      die "HELLO";
 
       &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
-      if ($task{bg_model}) {
-	my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
-	$cmd .= " -taxon ".$taxon;
-	$cmd .= " > ".$infile{bg_model};
-	&one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
-     }
+      unless (-e $infile{bg_model}) {
+#	  if ($task{bg_model}) {
+	  my $cmd = "taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+	  $cmd .= " -taxon ".$taxon;
+	  $cmd .= " > ".$infile{bg_model};
+	  &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+      }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
     }
   } else {
@@ -454,7 +457,7 @@ package main;
   if ($infile{bg_model}) {
     &RSAT::message::TimeWarn("Checking background model file", $infile{bg_model}) if ($main::verbose >= 2);
     unless (-e $infile{bg_model}) {
-      &RSAT::message::Warning("Background model file does not exist", $infile{bg_model}) if ($main::verbose >= 2);
+      &RSAT::error::FatalError("Background model file does not exist", $infile{bg_model}) if ($main::verbose >= 2);
     }
   }
 
