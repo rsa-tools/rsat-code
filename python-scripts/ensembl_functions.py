@@ -30,6 +30,7 @@ def connection_server_species(v, dump, division):
     """
 
     url = "http://beta.rest.ensemblgenomes.org/info/species?"
+#    url = "http://test.rest.ensemblgenomes.org/info/species?"
     url = url + "content-type=application/json"
     if (division != None):
         url = url + ";division="+division
@@ -71,6 +72,11 @@ def parsing_content_species(org_supported, v):
 
     out_columns = ['division', 'display_name', 'name', 'common_name', 'assembly', 'groups', 'taxon_id', 'release', 'aliases']
 
+    ## Print the header
+    file_content += "#"
+    file_content += "\t".join(out_columns)
+    file_content += '\n'
+
     if v >= 3:
         print('Parsing the server response (Json file)')
 
@@ -80,30 +86,40 @@ def parsing_content_species(org_supported, v):
     if v >= 3:
         print('Retrieving data, this may take a while...')
 
+
     for value in org_supported.values():
-    ## Value contained in the dictionary is a list of dictionaries containing the species informations
+        ## Value contained in the dictionary is a list of dictionaries containing the species informations
         list_species_dict = value
 
+
         for i in range(len(list_species_dict)):
-    ## Dictionary containing informations about a given species
+            ## Dictionary containing informations about a given species
             current_species_dict = list_species_dict[i]
 
-    ## The value of current_species_dict[u'groups'] is a list : the for loop allows to display each element of this list without brackets and separated by commas
+            ## The value of current_species_dict[u'groups'] is a list:
+            ## the for loop allows to display each element of this list without
+            ## brackets and separated by commas
             the_groups = ""
             for group in current_species_dict[u"groups"]:
                 the_groups = the_groups + group + ',' + ' '
                 current_species_dict[u'groups'] = the_groups
 
-    ## The value of current_species_dict[u'aliases'] is a list : the for loop allows to display each element of this list without brackets and separated by commas
+            ## The value of current_species_dict[u'aliases'] is a list:
+            ## the for loop allows to display each element of this
+            ## list without brackets and separated by commas
             the_aliases = ""
             for alias in current_species_dict[u'aliases']:
                 the_aliases = the_aliases + alias + ',' + ' '
                 current_species_dict[u'aliases'] = the_aliases
 
-    ## Feeding of file_content variable
+            ## Feeding of file_content variable
+            values = []
             for j in range(len(out_columns)):
                 if out_columns[j] in current_species_dict.keys():
-                    file_content += str(current_species_dict[out_columns[j]]) + '\t'
+                    value = str(current_species_dict[out_columns[j]])
+                    values.append(value)
+#                    file_content += str(current_species_dict[out_columns[j]]) + '\t'
+            file_content += "\t".join(values)
             file_content += '\n'
 
     if v >= 2:
@@ -114,11 +130,16 @@ def parsing_content_species(org_supported, v):
 
 def create_file_species(ff, o, v):
 
-    """
-    This function will create a file filled with the informations about all the species collected on ensemblGenomes
-    @param ff: String containing all of the informations about the species
+    """This function will create a file filled with the informations
+    about all the species collected on ensemblGenomes
+
+    @param ff: String containing all of the informations about the
+    species
+
     @param o: output file name
+
     @param v: verbosity index
+
     """
 
     ## Default directory to store species list in case the -o option
@@ -212,7 +233,7 @@ def retrieve_species(o, v, f, dump, null, division):
     """
 
     if v >= 1:
-        print("Trying to connect server... ")
+        print("Connecting server ...")
     org_supported_json = connection_server_species(v, dump, division)
 
     if v >= 1:
@@ -364,7 +385,7 @@ def parsing_content_genes(decoded_json, v, null):
 
         ## Append the line for the parsed gene
         gene_content += "\t".join(gene_attributes)
-        gene_content += '\n'
+        gene_content += "\n"
 
         transcript_list = current_gene_dict['transcripts']
         for t_value in transcript_list:
