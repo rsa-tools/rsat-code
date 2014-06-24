@@ -722,8 +722,9 @@ Alternatively, reference organisms can be specified with the option
 	  push @main::taxa, shift(@arguments);
     &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::orglist_file);
 
+=pod
 
-=head2 -org_list
+=item B<-org_list>
 
 Build background models from a user-specified file containing a list
 of organisms.
