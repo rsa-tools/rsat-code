@@ -689,7 +689,7 @@ sub is_serialized {
 
   #### check oligo length
   unless ($oligo_length) {
-    &FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
+    &RSAT::error::FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
   }
 
   unless (&RSAT::util::IsNatural($oligo_length)) {
@@ -722,7 +722,7 @@ sub is_serialized {
 
   $supported_bg = join ",", sort keys %supported_bg;
   unless ($supported_bg{$background}) {
-    &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
+    &RSAT::error::FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
   }
 
   ## Residue type
