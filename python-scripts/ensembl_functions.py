@@ -288,7 +288,7 @@ def connection_server_genes(line, v):
 
     try:
         if v == 3:
-            print("Trying to reach server...")
+            print("Trying to reach server at url " + url)
         response = urlopen(url)
         data = response.read()
         decoded_data = data.decode('utf-8')
