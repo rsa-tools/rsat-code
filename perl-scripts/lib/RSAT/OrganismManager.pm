@@ -494,7 +494,7 @@ sub CheckTaxon {
     $tree = new RSAT::Tree();
   }
 
-  &RSAT::message::Info("CheckTaxon()", $query_taxon, $tree) if ($main::verbose >= 3);
+  &RSAT::message::Info("RSAT::OrganismManager::CheckTaxon()", $query_taxon) if ($main::verbose >= 3);
 
   unless ($tree->get_attribute("is_loaded")) {
     my @supported_organisms = sort keys (%supported_organism);
@@ -659,6 +659,7 @@ sub is_serialized {
 ##                              taxon=>1);
  sub ExpectedFreqFile {
   my ($org_or_taxon, $oligo_length, $background, %args) = @_;
+  &RSAT::message::Info("RSAT::OrganismManager::ExpectedFreqFile()", $org_or_taxon) if ($main::verbose >= 3);
   my $exp_freq_file = "";
 
   my $type = $args{type} || "oligo";
