@@ -175,14 +175,29 @@ def create_name_only_file(o, v, f):
     @param v: verbosity index
     @param f: name of the file containing species name only
     """
+
+    ## Default directory to store species list in case the -o option
+    ## is not specified  
     parent_folder = 'species_results'
     file_name = o
+    out_parent_folder = 'species_results'
+    outfile_name = f
 
     ## If output is not a filename but a path:
     if not os.path.dirname(o) == '':
         parent_folder = os.path.dirname(o)
         file_name = o[len(parent_folder)+1:]
+    if not os.path.dirname(f) == '':
+        out_parent_folder = os.path.dirname(f)
+        outfile_name = f[len(out_parent_folder)+1:]
+        if v >= 2:
+            print("Creation of a new folder named {}".format(out_parent_folder))
+    if not os.path.exists(parent_folder):
+        os.makedirs(parent_folder)
+    if not os.path.exists(out_parent_folder):
+        os.makedirs(out_parent_folder)
 
+    ## Parsing existing file
     i = 0
     stri = ""
     content = ""
@@ -209,9 +224,9 @@ def create_name_only_file(o, v, f):
                 content += stri + '\n'
                 stri = ""
         if v >= 3:
-            print("Parsing done.`\nCreating the file {}".format(f))
-        with open(os.path.join(parent_folder, f), 'w') as fi:
-            fi.write(content)
+            print("Parsing done.`\nCreating the file {}".format(os.path.join(os.getcwd(), out_parent_folder, outfile_name)))
+        with open(os.path.join(os.getcwd(),out_parent_folder, outfile_name), 'w') as newfile:
+            newfile.write(content)
 
         if v >= 2:
             print("File created\n")
@@ -233,7 +248,7 @@ def retrieve_species(o, v, f, dump, null, division):
     """
 
     if v >= 1:
-        print("Connecting server ...")
+        print("Connecting to the server... ")
     org_supported_json = connection_server_species(v, dump, division)
 
     if v >= 1:
