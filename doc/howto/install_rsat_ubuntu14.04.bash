@@ -131,8 +131,10 @@ pip3 install numpy
 pip3 install scipy
 pip3 install matplotlib
 pip3 install python-suds
-pip3 install wsdl
-pip3 install wstools
+
+## Problems: 
+# pip3 install wsdl
+# pip3 install wstools
 pip3 install fisher
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
