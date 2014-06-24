@@ -212,10 +212,10 @@ package main;
   ## Thresholds
   our %lth = ();
   our %uth = ();
-  $lth{ident} = 30; ## Threshold on BLAST identity percentage
+  $lth{ident} = 10; ## Threshold on BLAST identity percentage
   $lth{ali_len} = 50; ## Threshold on BLAST alignment length
-  $lth{bit_sc} = 50; ## Threshold on BLAST bit score
-  $uth{expect} = 1e-10; ## Threshold on BLAST expect (e-value)
+  $lth{bit_sc} = 30; ## Threshold on BLAST bit score
+  $uth{expect} = 1e-5; ## Threshold on BLAST expect (e-value)
 
   our @cooc_sig_thresholds = (1,2,3,5,10,20,30);
 
