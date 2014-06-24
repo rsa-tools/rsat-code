@@ -1135,6 +1135,8 @@ sub one_command {
 #  my ($cmd, $print_out, $time_file, $err_file) = @_;
   my ($cmd, $print_out, $time_file, %args) = @_;
 
+  &RSAT::message::Debug("RSAT::util::one_command()", $cmd) if ($main::verbose >= 3);
+
   ## Check dependency on a specific task
   my $local_dry = $main::dry;
   if ($args{task}) {
