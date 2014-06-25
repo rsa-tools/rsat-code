@@ -1,7 +1,7 @@
 ################################################################
 ## Tester for the python script nsemblgenome;py
 
-#include ${RSAT}/makefiles/util.mk ## better to avoid this include (Denis)
+include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/ensemblgenome_tester.mk
 PYTHON=python2.7
 #PYTHON=python3
@@ -12,12 +12,6 @@ SCRIPT=${RSAT}/python-scripts/ensembl_genomes
 NULL=NA
 DIVISION=EnsemblBacteria
 DIVISION_OPT=--division ${DIVISION}
-
-################################################################
-## First make target (help)
-usage:
-	@perl -ne 'print "\t",$$_ if(/^\w+:/)' ${MAKEFILE} | sed 's/:.*//'
-
 
 ################################################################
 ## Get help messages
@@ -60,7 +54,8 @@ species_list:
 ################################################################
 ## Get features (genes, transcripts, proteins) from EnsemblGenomes for
 ## one species
-ORG_TASK=get_features_one_species gene2go_one_species
+ORG_TASK=get_features_one_species
+#ORG_TASK=gene2go_one_species
 
 #ORG=campylobacter_jejuni_subsp_jejuni_bh_01_0142
 ORG=mycoplasma_genitalium_g37
