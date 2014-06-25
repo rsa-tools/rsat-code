@@ -91,10 +91,10 @@ coli:
 ## Get features (genes, transcripts, proteins) for a list of selected
 ## organisms specified in a text file (one organism per line).
 ORG_FILE=data/genoscope_tests/organism_selection_genoscope.txt
-get_features_selected_species:
+get_features_species_list:
 	@echo "Collecting features for organisms specified in file ${ORG_FILE}"
 	${PYTHON} ${SCRIPT} retrieve_features -v ${V} --outputdir ${GENOMES_DIR}  -d ${PARSING_DEPTH} -f ${ORG_FILE}
 	@echo "	${GENOMES_DIR}"
 
 
-## NOTE: GO in separate makefile in the same folder
+## NOTE: GO in separate makefile go_analysis.mk
