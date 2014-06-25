@@ -72,17 +72,16 @@ def parsing_content_species(org_supported, v):
 
     out_columns = ['division', 'display_name', 'name', 'common_name', 'assembly', 'groups', 'taxon_id', 'release', 'aliases']
 
-    ## Print the header
-    file_content += "#"
-    file_content += "\t".join(out_columns)
-    file_content += '\n'
-
     if v >= 3:
         print('Parsing the server response (Json file)')
 
     #org_supported = json.loads(org_supported_json)
 
     file_content = ""
+
+    ## Print the header
+    file_content += "#" + "\t".join(out_columns) + '\n'
+
     if v >= 3:
         print('Retrieving data, this may take a while...')
 
