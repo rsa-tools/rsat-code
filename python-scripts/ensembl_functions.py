@@ -297,7 +297,7 @@ def connection_server_genes(line, v):
         print("Can't reach server at %s" % url)
         print(sys.exc_info()[1])
         if os.path.exists('org'):
-            remove('org')
+            os.remove('org')
         sys.exit()
 
     return decoded_data
