@@ -48,7 +48,7 @@ ORG_DESC=${GENOMES_DIR}/species_descriptions${DIVISION}_${DATE}.tab
 species_list:
 	@echo "Collecting species descriptions from EnsembLGenomes"
 	@mkdir -p ${GENOMES_DIR}
-	${PYTHON} ${SCRIPT} retrieve_species -v ${V} -f ${SPECIES_LIST} -o ${ORG_DESC} --null ${NULL} ${DIVISION_OPT}
+	time ${PYTHON} ${SCRIPT} retrieve_species -v ${V} -f ${SPECIES_LIST} -o ${ORG_DESC} --null ${NULL} ${DIVISION_OPT}
 	@echo "	description table	${ORG_DESC}"
 	@echo "	species_list    	${GENOMES_DIR}/${SPECIES_LIST}"
 
