@@ -61,7 +61,8 @@ ORG_TASK=get_features_one_species
 #ORG=campylobacter_jejuni_subsp_jejuni_bh_01_0142
 #ORG=mycoplasma_genitalium_g37
 ORG=escherichia_coli_str_k_12_substr_mg1655
-RSAT_ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
+RSAT_ORG=Escherichia_coli_K_12_substr__MG1655
+#RSAT_ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 
 PARSING_DEPTH=5
 ORG_DIR=${GENOMES_DIR}/${ORG}
@@ -111,7 +112,8 @@ gene2go_one_species:
 	@echo "	${ORG_DIR}/gene2GO_full.tab"
 
 it:
-	add-gene-info -before -col 1 -org ${RSAT_ORG} -i ${ORG_DIR}/gene2GO_full.tab -o ${ORG_DIR}/gene2GO_full_rsatIDs.tab
+	add-gene-info -before -col 1 -org ${RSAT_ORG} -i ${ORG_DIR}/gene2GO_full.tab | cut -f 1,3 > ${ORG_DIR}/gene2GO_full_rsatIDs.tab
+	@echo "	${ORG_DIR}/gene2GO_full_rsatIDs.tab"
 
 ## Retrieve features for Mycoplasma genitalium (convenient for quick
 ## testing, because this is a very small bacterial genome)
@@ -124,7 +126,8 @@ bsub:
 
 ## Retrieve features for Escherichia coli
 coli:
-	${MAKE} ${ORG_TASK} ORG=escherichia_coli_str_k_12_substr_mg1655 RSAT_ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
+	${MAKE} ${ORG_TASK} ORG=escherichia_coli_str_k_12_substr_mg1655 RSAT_ORG=Escherichia_coli_K_12_substr__MG1655
+#	${MAKE} ${ORG_TASK} ORG=escherichia_coli_str_k_12_substr_mg1655 RSAT_ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 
 
 
