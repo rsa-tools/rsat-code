@@ -159,6 +159,7 @@ while ($current_line = <$in>) {
       $query = &RSAT::util::trim($query);
 
       my $feature = $organism->get_feature_for_name($query);
+
       &RSAT::message::Debug("identified feature", $query, $feature) if ($main::verbose >= 3);
       if ($feature) {
 	foreach my $type (@info_types) {
