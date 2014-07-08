@@ -97,6 +97,12 @@ echo "" | apt-get install libcairo2-dev
 echo "" | apt-get install mysql-client
 echo "" | apt-get install libmysqlclient-dev
 
+
+## TO RUN Virtualbox on Mac OSX
+#    Go into your Ubuntu Settings
+#    Navigate to Keyboard → Keyboard Layout Settings
+#    add English (Macintosh)
+
 ################################################################
 ## Python modules
 
@@ -152,7 +158,7 @@ pip3 install pysimplesoap
 sudo adduser rsat
 ## Name: Regulatory Sequence Analysis Tools user
 
-## Grant sudo privileges to the rsat user (will be more convenient for
+## Grant sudoer privileges to the rsat user (will be more convenient for
 ## installing Perl modules, software tools, etc)
 visudo
 ## then add the following line below "User privilege specification"
