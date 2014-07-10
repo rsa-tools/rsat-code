@@ -205,7 +205,7 @@ install_ensembl_api_env:
 	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
 	@echo
 	@echo "BEWARE !"
-	@echo "You need to paste the following lines in your bash profile"
+	@echo "You need to paste the following lines in the bash profile ${RSAT}/RSAT_config.bashrc"
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
