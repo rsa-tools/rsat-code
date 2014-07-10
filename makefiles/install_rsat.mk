@@ -170,6 +170,7 @@ perl_modules_list:
 perl_modules_cmd:
 	@echo "${CPAN_CMD} -i ${PERL_MODULES}"
 
+## Do not test the modules, simply install them
 CPAN_OPT=-T 
 CPAN_CMD=cpan ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
@@ -191,9 +192,11 @@ perl_modules_install_one_by_one:
 	${MAKE} perl_modules_install_by_force
 
 ## Some Perl modules cannot be installed without force
+## About SOAP::Transport::HTTP, I think that there is no doc but the
+## module is installed correctly.
 perl_modules_install_by_force:
-	@sudo ${PERL} -MCPAN -e 'force install SOAP::WSDL'
-	@sudo ${PERL} -MCPAN -e 'force install SOAP::Transport::HTTP'
+	@sudo ${CMAN_CMD} -f -i 'SOAP::WSDL'
+	@sudo ${CMAN_CMD} -f -i 'SOAP::Transport::HTTP'
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
@@ -252,7 +255,9 @@ r_modules_install_all:
 
 R_MODULE=RJSONIO
 r_modules_install_one:
-	${SUDO} R CMD INSTALL ${R_MODULE}
+	${SUDO} echo "install.packages('${R_MODULE}')" \
+		| R --slave --no-save --no-restore --no-environ ; 
+#	${SUDO} R CMD INSTALL ${R_MODULE}
 
 BIOCONDUCTOR_MODULES=ctc
 r_bioconductor_modules:
