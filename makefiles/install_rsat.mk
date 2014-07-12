@@ -207,14 +207,22 @@ _install_one_perl_module:
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ## Check which modules are installed
+PERL_MODULE_TEST=version
 perl_modules_check:
 	@echo
-	@echo "Checking perl modules"
-	@echo `hostname` > perl_modules_check.txt
+	@echo "Checking perl modules ${PERL_MODULE_TEST}"
+	@echo "; Checking perl modules ${PERL_MODULE_TEST}" > check_perl_modules.txt
+	@echo "; Host: `hostname`" >> check_perl_modules.txt
 	@for module in ${PERL_MODULES} ; do \
-		 perldoc -l $${module} >> check_perl_modules.txt; \
+		 ${MAKE} perl_module_test_${PERL_MODULE_TEST} PERL_MODULE=$${module}; \
 	done
 	@echo "	check_perl_modules.txt"
+
+perl_module_test_version:
+	${PERL} -M${PERL_MODULE} -le 'print ${PERL_MODULE}->VERSION."\t".${PERL_MODULE};' >> check_perl_modules.txt
+
+perl_module_test_doc:
+	perldoc -l ${PERL_MODULE} >> check_perl_modules.txt
 
 ################################################################
 ## Install modules required for python
@@ -283,17 +291,6 @@ install_latex:
 LATEX_PACKAGES=pst-pdf ifplatform 
 install_latex_packages:
 	sudo tlmgr install ${LATEX_PACKAGES}
-
-# ## Some modules must be upgraded befinre installing required ones
-# upgrade_perl_modules:
-# 	@for module in ${PERLMOD_TO_UPGRADE}; do \
-# 		${MAKE} _upgrade_one_perl_module PERL_MODULE=$${module}; \
-# 	done
-
-# ## Upgrade a single Perl module
-# _upgrade_one_perl_module:
-# 	@echo "Upgrading Perl module ${PERL_MODULE}"
-# 	@sudo ${PERL} -MCPAN -e 'upgrade ${PERL_MODULE}'
 
 
 ################################################################
