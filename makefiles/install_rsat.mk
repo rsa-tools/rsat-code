@@ -252,7 +252,10 @@ r_modules_install_all:
 
 R_MODULE=RJSONIO
 r_modules_install_one:
-	${SUDO} R CMD INSTALL ${R_MODULE}
+	${SUDO} echo "install.packages('${R_MODULE}')" \
+		| R --slave --no-save --no-restore --no-environ ; 
+#	${SUDO} R CMD INSTALL ${R_MODULE}
+#	${SUDO} R CMD INSTALL ${R_MODULE}
 
 BIOCONDUCTOR_MODULES=ctc
 r_bioconductor_modules:
