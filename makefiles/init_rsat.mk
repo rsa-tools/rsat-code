@@ -130,7 +130,7 @@ ws_stubb:
 ws_stubb_test:
 	@echo
 	@echo "Testing Web services at ${RSAT_WS}"
-	(cd ${RSAT}/ws_clients/perl_clients/; make test_stubb SERVER=${RSAT_WS})
+	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test SERVER=${RSAT_WS})
 
 
 ################################################################
