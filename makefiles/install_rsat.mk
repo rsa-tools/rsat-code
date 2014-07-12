@@ -208,21 +208,29 @@ _install_one_perl_module:
 
 ## Check which modules are installed
 PERL_MODULE_TEST=version
+PERL_MODULES_CHECK_FILE=check_perl_modules_${PERL_MODULE_TEST}.txt
 perl_modules_check:
 	@echo
 	@echo "Checking perl modules ${PERL_MODULE_TEST}"
-	@echo "; Checking perl modules ${PERL_MODULE_TEST}" > check_perl_modules.txt
-	@echo "; Host: `hostname`" >> check_perl_modules.txt
+	@echo "; Checking perl modules ${PERL_MODULE_TEST}" > ${PERL_MODULES_CHECK_FILE}
+	@echo "; Host: `hostname`" >> ${PERL_MODULES_CHECK_FILE}
 	@for module in ${PERL_MODULES} ; do \
 		 ${MAKE} perl_module_test_${PERL_MODULE_TEST} PERL_MODULE=$${module}; \
 	done
-	@echo "	check_perl_modules.txt"
+	@echo "	${PERL_MODULES_CHECK_FILE}"
+
+perl_modules_check_version:
+	@${MAKE} perl_modules_check PERL_MODULE_TEST=version
+
+perl_modules_check_doc:
+	@${MAKE} perl_modules_check PERL_MODULE_TEST=doc
+
 
 perl_module_test_version:
-	${PERL} -M${PERL_MODULE} -le 'print ${PERL_MODULE}->VERSION."\t".${PERL_MODULE};' >> check_perl_modules.txt
+	${PERL} -M${PERL_MODULE} -le 'print ${PERL_MODULE}->VERSION."\t".${PERL_MODULE};' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_doc:
-	perldoc -l ${PERL_MODULE} >> check_perl_modules.txt
+	perldoc -l ${PERL_MODULE} >> ${PERL_MODULES_CHECK_FILE}
 
 ################################################################
 ## Install modules required for python
