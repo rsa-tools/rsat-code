@@ -5,6 +5,8 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefile
 
+# SERVER=http://192.54.201.87/rsat
+# SERVER=http://192.168.56.101/rsat
 SERVER=http://www.rsat.eu
 #SERVER=http://rsat.ulb.ac.be/rsat
 #SERVER=http://139.124.66.4/rsat
@@ -40,5 +42,5 @@ stubb:
 	perl ./wsdl2perl.pl -b RSATWS ${WSDL_URL}
 	@echo "Generated stubb for server	${SERVER}"
 
-test_stubb:
+stubb_test:
 	perl ./convert_matrix_soap_wsdl_2.pl 
