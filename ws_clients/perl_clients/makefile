@@ -8,13 +8,14 @@ MAKEFILE=makefile
 # SERVER=http://192.54.201.87/rsat
 # SERVER=http://192.168.56.101/rsat
 SERVER=http://www.rsat.eu
-#SERVER=http://rsat.ulb.ac.be/rsat
-#SERVER=http://139.124.66.4/rsat
-#SERVER=http://liv.bmc.uu.se/rsa-tools
-#SERVER=http://bongcam1.hgen.slu.se/rsat
-#SERVER=http://tagc.univ-mrs.fr/rsa-tools
-#SERVER=http://embnet.ccg.unam.mx/rsa-tools
-#SERVER=http://localhost/rsat
+# SERVER=http://rsat-tagc.univ-mrs.fr/rsat
+# SERVER=http://rsat.ulb.ac.be/rsat
+# SERVER=http://139.124.66.4/rsat
+# SERVER=http://liv.bmc.uu.se/rsa-tools
+# SERVER=http://bongcam1.hgen.slu.se/rsat
+# SERVER=http://tagc.univ-mrs.fr/rsa-tools
+# SERVER=http://embnet.ccg.unam.mx/rsa-tools
+# SERVER=http://localhost/rsat
 SERVERS= \
 	http://www.rsat.eu \
 	http://rsat.ulb.ac.be/rsat \
