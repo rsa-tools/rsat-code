@@ -130,7 +130,6 @@ PERL_MODULES= \
 	Digest::MD5::File \
 	IO::All \
 	LockFile::Simple \
-	Object::InsideOut \
 	Util::Properties \
 	Class::Std::Fast  \
 	GD \
@@ -155,6 +154,9 @@ PERL_MODULES= \
 	LWP::Simple \
 	Bio::Perl \
 	Bio::Das
+
+## Why was this library required ???
+##	Object::InsideOut \
 
 ## This module is problematic (not maintained anymore), and I am not
 ## sure it is required anymore. To be checked
@@ -227,9 +229,11 @@ perl_modules_check_doc:
 
 
 perl_module_test_version:
+	@echo "	Checking perl module version	${PERL_MODULE}"
 	${PERL} -M${PERL_MODULE} -le 'print ${PERL_MODULE}->VERSION."\t".${PERL_MODULE};' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_doc:
+	@echo "	Checking perl module doc	${PERL_MODULE}"
 	perldoc -l ${PERL_MODULE} >> ${PERL_MODULES_CHECK_FILE}
 
 ################################################################
