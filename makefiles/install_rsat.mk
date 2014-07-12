@@ -145,6 +145,7 @@ PERL_MODULES= \
 	XML::Parser::Expat \
 	XML::Compile::Transport::SOAPHTTP \
 	SOAP::WSDL \
+	SOAP::Packager::Mime \
 	SOAP::Lite \
 	SOAP::Transport::HTTP \
 	Module::Build::Compat \
@@ -154,6 +155,16 @@ PERL_MODULES= \
 	LWP::Simple \
 	Bio::Perl \
 	Bio::Das
+
+
+
+
+## To fix problem with SOAP::WSDL.
+## Found at http://www.perlmonks.org/?node_id=823801
+## But is apparently not sufficient
+#	Module::Build \
+#	Devel::Loaded \
+#	File::Basename \
 
 ## Why was this library required ???
 ##	Object::InsideOut \
