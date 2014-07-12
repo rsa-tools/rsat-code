@@ -1,9 +1,11 @@
 ################################################################
 ## Instructions used to install a Virtual Machine on the IFB cloud
-## (Institut Francais de Bioinformatique).
-##
-##
+## (Institut Francais de Bioinformatique), and on a VirtualBox VM.
 
+
+## THIS IS NOT REALLY A bahsrc FILE, IT IS A SUCCESSION OF
+## INSTRUCTIONS AND COMMENTS, THAT SHOULD BE DONE MANUALLY. I (JvH)
+## SHOULD IMPROVE THIS WHEN I CAN.
 
 ## TO RUN Virtualbox on Mac OSX
 #    Go into your Ubuntu Settings
@@ -135,7 +137,9 @@ pip3 install numpy
 ## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
 pip3 install scipy
 pip3 install matplotlib
-pip3 install python-suds
+
+## Problem : No distributions at all found for python-suds
+## pip3 install python-suds
 
 ## Problems: 
 # pip3 install wsdl
@@ -155,7 +159,7 @@ pip3 install pysimplesoap
 
 ## Create a specific user for RSAT. The user is named rsat
 sudo adduser rsat
-## Name: Regulatory Sequence Analysis Tools user
+## Full Name: Regulatory Sequence Analysis Tools admin
 
 ## Grant sudoer privileges to the rsat user (will be more convenient for
 ## installing Perl modules, software tools, etc)
@@ -167,7 +171,15 @@ visudo
 ## The installation is done under the rsat login
 su - rsat
 
-## Get the RSAT package
+## Get the RSAT package.
+rsync -rutpvl rsat@rsat.ulb.ac.be:.ssh .
+ssh-agent > agent
+source agent
+ssh-add
+
+## Note: this is only possible for regular RSAT admin. It requires to
+## have specified te RSAT ssh key and sent it to the git server at
+## ENS.
 git clone git@depot.biologie.ens.fr:rsat
 
 ## Run the configuration script, to specify the environment variables.
