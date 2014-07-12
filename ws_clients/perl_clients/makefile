@@ -40,5 +40,5 @@ stubb:
 	perl ./wsdl2perl.pl -b RSATWS ${WSDL_URL}
 	@echo "Generated stubb for server	${SERVER}"
 
-test:
+test_stubb:
 	perl ./convert_matrix_soap_wsdl_2.pl 
