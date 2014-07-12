@@ -27,7 +27,7 @@ unless ((-e $vmatch_dir."/vmatch") && (-e $vmatch_dir."/mkvtree")) {
 
 ## Check that the vmatch license file is installed
 unless (-e $vmatch_dir."/vmatch.lic") {
-  $vmatch_installed = 0;
+  $vmatch_license_installed = 0;
   &RSAT::message::Warning("Skipping sequence purging because vmatch license file is missing (see http://www.vmatch.de/).");
 }
 
