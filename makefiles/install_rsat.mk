@@ -219,6 +219,7 @@ perl_modules_check:
 	@for module in ${PERL_MODULES} ; do \
 		 ${MAKE} perl_module_test_${PERL_MODULE_TEST} PERL_MODULE=$${module}; \
 	done
+	@echo "Report file for Perl modules test"
 	@echo "	${PERL_MODULES_CHECK_FILE}"
 
 perl_modules_check_version:
