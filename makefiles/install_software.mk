@@ -47,7 +47,7 @@ list_versions:
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
-EXT_APP_TARGETS=install_vmatch\
+EXT_APP_TARGETS=install_vmatch \
 	install_seqlogo \
 	install_gnuplot \
 	install_ghostscript \
