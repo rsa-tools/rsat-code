@@ -13,9 +13,11 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 my $vmatch_installed = 0;
-my $skdir = "$ENV{RSAT}/bin";
+my $vmatch_dir = "$ENV{RSAT}/bin";
 
-if ((-e $skdir."/vmatch") && (-e $skdir."/mkvtree")) {
+$ENV{ZLM_LICENSE}=$vmatch_dir."/vmatch.lic";
+
+if ((-e $vmatch_dir."/vmatch") && (-e $vmatch_dir."/mkvtree")) {
     $vmatch_installed = 1;
 } else {
     &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed on server (see http://www.vmatch.de/).");
@@ -111,7 +113,7 @@ if ($vmatch_installed) {
     $mkvtree_options .= " -ois"; # output the parsed input string to a file
     $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
     $mkvtree_options .= " -db ".$tmp_file_name; # sequence file
-    $command = "cd $tmp_file_dir; $skdir/mkvtree $mkvtree_options";
+    $command = "cd $tmp_file_dir; $vmatch_dir/mkvtree $mkvtree_options";
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     ## options to locate duplications
@@ -136,7 +138,7 @@ if ($vmatch_installed) {
     ## $vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
     $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
     $vmatch_options .= "> $dir{output}/$basename{out}" if ($output_file);
-    $command = "cd $tmp_file_dir ; $skdir/vmatch $vmatch_options";
+    $command = "cd $tmp_file_dir ; $vmatch_dir/vmatch $vmatch_options";
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     ## Remove temporary files
