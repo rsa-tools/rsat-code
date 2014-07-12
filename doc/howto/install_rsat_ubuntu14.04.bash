@@ -1,27 +1,25 @@
 ################################################################
 ## Instructions used to install a Virtual Machine on the IFB cloud
-## (Institut Francais de Bioinformatique).
-##
-##
+## (Institut Francais de Bioinformatique), and on a VirtualBox VM.
+
+
+## THIS IS NOT REALLY A bahsrc FILE, IT IS A SUCCESSION OF
+## INSTRUCTIONS AND COMMENTS, THAT SHOULD BE DONE MANUALLY. I (JvH)
+## SHOULD IMPROVE THIS WHEN I CAN.
+
+## TO RUN Virtualbox on Mac OSX
+#    Go into your Ubuntu Settings
+#    Navigate to Keyboard → Keyboard Layout Settings
+#    add English (Macintosh)
 
 ## Must be executed as root
 sudo bash
 
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-echo "" | apt-get update
+apt-get update
 echo "" | apt-get upgrade
-echo "" | apt-get install python-setuptools 
-echo "" | apt-get install python
-echo "" | apt-get install python-virtualenv
-echo "" | apt-get install python-pip
-echo "" | apt-get install python-dev
-
-echo "" | apt-get install python3
-echo "" | apt-get install python3-pip
-
-echo "" | apt-get install ipython
-echo "" | apt-get install ipython-notebook
+echo "" | apt-get install ssh
 
 ## Concurrent versioning systems
 echo "" | apt-get install git
@@ -35,6 +33,7 @@ echo "" | apt-get install curl
 echo "" | apt-get install zip
 echo "" | apt-get install unzip
 echo "" | apt-get install finger
+echo "" | apt-get install screen
 
 ## Cannot survive without emacs
 echo "" | apt-get install emacs
@@ -43,8 +42,10 @@ echo "" | apt-get install make
 echo "" | apt-get install g++
 echo "" | apt-get install yum
 
-## Problem : unable to locate package perldoc
-## apt-get install perldoc 
+## Perl packages
+echo "" | apt-get install perl-doc
+#echo "" | apt-get install pmtools
+
 
 ## Apache and utilities
 echo "" | apt-get install apache2
@@ -98,20 +99,20 @@ echo "" | apt-get install mysql-client
 echo "" | apt-get install libmysqlclient-dev
 
 
-## TO RUN Virtualbox on Mac OSX
-#    Go into your Ubuntu Settings
-#    Navigate to Keyboard → Keyboard Layout Settings
-#    add English (Macintosh)
-
 ################################################################
-## Python modules
-
+## Python and modules
+echo "" | apt-get install python-setuptools 
 echo "" | apt-get install python
-echo "" | apt-get install python-pip
-echo "" | apt-get install python-dev
 echo "" | apt-get install python-virtualenv
 echo "" | apt-get install python-pip
+echo "" | apt-get install python-dev
 echo "" | apt-get install python-suds
+
+echo "" | apt-get install python3
+echo "" | apt-get install python3-pip
+
+echo "" | apt-get install ipython
+echo "" | apt-get install ipython-notebook
 
 ## A fix for a problem to install scipy with pip: use apt-get build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
@@ -136,7 +137,9 @@ pip3 install numpy
 ## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
 pip3 install scipy
 pip3 install matplotlib
-pip3 install python-suds
+
+## Problem : No distributions at all found for python-suds
+## pip3 install python-suds
 
 ## Problems: 
 # pip3 install wsdl
@@ -156,7 +159,7 @@ pip3 install pysimplesoap
 
 ## Create a specific user for RSAT. The user is named rsat
 sudo adduser rsat
-## Name: Regulatory Sequence Analysis Tools user
+## Full Name: Regulatory Sequence Analysis Tools admin
 
 ## Grant sudoer privileges to the rsat user (will be more convenient for
 ## installing Perl modules, software tools, etc)
@@ -168,16 +171,23 @@ visudo
 ## The installation is done under the rsat login
 su - rsat
 
-## Get the RSAT package
+## Get the RSAT package.
+rsync -rutpvl rsat@rsat.ulb.ac.be:.ssh .
+ssh-agent > agent
+source agent
+ssh-add
+
+## Note: this is only possible for regular RSAT admin. It requires to
+## have specified te RSAT ssh key and sent it to the git server at
+## ENS.
 git clone git@depot.biologie.ens.fr:rsat
 
 ## Run the configuration script, to specify the environment variables.
 cd rsat
 perl perl-scripts/configure_rsat.pl 
 
-
-## Come back to the rsat identify
-source RSAT_config.bash
+## Load the (updated) RSAT environment variables
+source RSAT_config.bashrc
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
@@ -218,9 +228,6 @@ echo $RSAT
 ## Set working directory to RSAT
 cd $RSAT
 
-## Install perl-doc package
-echo "" | apt-get install perl-doc
-
 ## Get the list of Perl modules to be installed
 make -f makefiles/install_rsat.mk  perl_modules_list
 
@@ -237,6 +244,9 @@ make -f makefiles/install_rsat.mk perl_modules_install_noprompt
 ## Check if all required Perl modules have been correctly installed
 make -f makefiles/install_rsat.mk perl_modules_check
 
+## Note: I had to force installation for the two following modules
+make -f makefiles/install_rsat.mk perl_modules_install_by_force
+
 ## Some modules are not installed with the installation procedure,
 ## due to problems with their cpan declaration.
 
@@ -244,12 +254,9 @@ make -f makefiles/install_rsat.mk perl_modules_check
 exit
 
 
-
-
 ## compile RSAT programs written in C
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
@@ -305,33 +312,42 @@ apache2ctl restart
 
 
 ################################################################
-## Configure the Web services
+## Configure RSAT web server
 
+## Edit the file to replace [RSAT_PARENT_FOLDER] byt the parent directory
+## of the rsat directory.
+sudo bash 
+cd ${RSAT}; cp rsat_apache_default.conf rsat.conf; emacs -nw rsat.conf
+rsync -ruptvl rsat.conf /etc/apache2/sites-enabled/rsat.conf
+apache2ctl restart
+exit
+
+################################################################
+## Configure the Web services
 
 emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
 
 ## At the bottom of the file, locate the following line.
 ##  <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 
-Adapt the URL to your local configuration.
+## Adapt the URL to your local configuration.
 
-After this, you should re-generate the web services stubb, with the
-following command.
+## After this, you should re-generate the web services stubb, with the
+## following command.
 
-  \begin{lstlisting}
 cd $RSAT; 
 make -f makefiles/init_rsat.mk ws_stubb
-  \end{lstlisting}
 
-
-
+## test the Web services
+make -f makefiles/init_rsat.mk ws_stubb_test
 
 
 
 ################################################################
 ## R installation
 
-## I edited the file /etc/apt/sources.list 
+
+## As sudo, I edited the file /etc/apt/sources.list 
 ## and added the following line 
 ## (see instructions on http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu/)
 ##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty
@@ -340,8 +356,8 @@ make -f makefiles/init_rsat.mk ws_stubb
 sudo apt-get update
 
 ## .. and installed the R base package
-sudo apt-get install r-base
-sudo apt-get install r-base-dev
+echo "" | sudo apt-get install r-base
+echo "" | sudo apt-get install r-base-dev
 
 ## Installation of R packages
 
@@ -352,7 +368,7 @@ sudo apt-get install r-base-dev
 
 cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
 
-## In install them from the R interface
+### In install them from the R interface
 sudo R
 
 ## At the R prompt
@@ -361,11 +377,11 @@ source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
 
 
-
 ################################################################
 ##
-## ATTENTION: to ensure persistence, you imperatively have to run the
-## following command in the VM before any shutdown onthe Web site
+## ATTENTION: for the IFB or IDB clouds, to ensure persistence, you
+## imperatively have to run the following command in the VM before any
+## shutdown onthe Web site
 ##
 ################################################################
 

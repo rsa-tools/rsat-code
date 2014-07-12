@@ -130,7 +130,6 @@ PERL_MODULES= \
 	Digest::MD5::File \
 	IO::All \
 	LockFile::Simple \
-	Object::InsideOut \
 	Util::Properties \
 	Class::Std::Fast  \
 	GD \
@@ -156,6 +155,9 @@ PERL_MODULES= \
 	Bio::Perl \
 	Bio::Das
 
+## Why was this library required ???
+##	Object::InsideOut \
+
 ## This module is problematic (not maintained anymore), and I am not
 ## sure it is required anymore. To be checked
 PERL_MODULES_EXTRA = SOAP
@@ -170,6 +172,7 @@ perl_modules_list:
 perl_modules_cmd:
 	@echo "${CPAN_CMD} -i ${PERL_MODULES}"
 
+## Do not test the modules, simply install them
 CPAN_OPT=-T 
 CPAN_CMD=cpan ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
@@ -191,9 +194,11 @@ perl_modules_install_one_by_one:
 	${MAKE} perl_modules_install_by_force
 
 ## Some Perl modules cannot be installed without force
+## About SOAP::Transport::HTTP, I think that there is no doc but the
+## module is installed correctly.
 perl_modules_install_by_force:
-	@sudo ${PERL} -MCPAN -e 'force install SOAP::WSDL'
-	@sudo ${PERL} -MCPAN -e 'force install SOAP::Transport::HTTP'
+	@sudo ${CPAN_CMD} -f -i 'SOAP::WSDL'
+	@sudo ${CPAN_CMD} -f -i 'SOAP::Transport::HTTP'
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
@@ -204,14 +209,33 @@ _install_one_perl_module:
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ## Check which modules are installed
+PERL_MODULE_TEST=version
+PERL_MODULES_CHECK_FILE=check_perl_modules_${PERL_MODULE_TEST}.txt
 perl_modules_check:
 	@echo
-	@echo "Checking perl modules"
-	@echo `hostname` > perl_modules_check.txt
+	@echo "Checking perl modules ${PERL_MODULE_TEST}"
+	@echo "; Checking perl modules ${PERL_MODULE_TEST}" > ${PERL_MODULES_CHECK_FILE}
+	@echo "; Host: `hostname`" >> ${PERL_MODULES_CHECK_FILE}
 	@for module in ${PERL_MODULES} ; do \
-		 perldoc -l $${module} >> check_perl_modules.txt; \
+		 ${MAKE} perl_module_test_${PERL_MODULE_TEST} PERL_MODULE=$${module}; \
 	done
-	@echo "	check_perl_modules.txt"
+	@echo "Report file for Perl modules test"
+	@echo "	${PERL_MODULES_CHECK_FILE}"
+
+perl_modules_check_version:
+	@${MAKE} perl_modules_check PERL_MODULE_TEST=version
+
+perl_modules_check_doc:
+	@${MAKE} perl_modules_check PERL_MODULE_TEST=doc
+
+
+perl_module_test_version:
+	@echo "	Checking perl module version	${PERL_MODULE}"
+	${PERL} -M${PERL_MODULE} -le 'print ${PERL_MODULE}->VERSION."\t".${PERL_MODULE};' >> ${PERL_MODULES_CHECK_FILE}
+
+perl_module_test_doc:
+	@echo "	Checking perl module doc	${PERL_MODULE}"
+	perldoc -l ${PERL_MODULE} >> ${PERL_MODULES_CHECK_FILE}
 
 ################################################################
 ## Install modules required for python
@@ -255,7 +279,6 @@ r_modules_install_one:
 	${SUDO} echo "install.packages('${R_MODULE}')" \
 		| R --slave --no-save --no-restore --no-environ ; 
 #	${SUDO} R CMD INSTALL ${R_MODULE}
-#	${SUDO} R CMD INSTALL ${R_MODULE}
 
 BIOCONDUCTOR_MODULES=ctc
 r_bioconductor_modules:
@@ -281,17 +304,6 @@ install_latex:
 LATEX_PACKAGES=pst-pdf ifplatform 
 install_latex_packages:
 	sudo tlmgr install ${LATEX_PACKAGES}
-
-# ## Some modules must be upgraded befinre installing required ones
-# upgrade_perl_modules:
-# 	@for module in ${PERLMOD_TO_UPGRADE}; do \
-# 		${MAKE} _upgrade_one_perl_module PERL_MODULE=$${module}; \
-# 	done
-
-# ## Upgrade a single Perl module
-# _upgrade_one_perl_module:
-# 	@echo "Upgrading Perl module ${PERL_MODULE}"
-# 	@sudo ${PERL} -MCPAN -e 'upgrade ${PERL_MODULE}'
 
 
 ################################################################

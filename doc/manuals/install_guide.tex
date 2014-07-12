@@ -245,6 +245,29 @@ random-seq -l 1000 -n 100  | count-words -v 1 -1str
 
 \subsubsection{Testing external programs}
 
+\program{vmatch}
+
+The program \program{vmatch} is an precious companion to \RSAT
+discovery tools (\program{oligo-analysis}, \program{dyad-analysis},
+\program{position-analysis}, \program{local-word-analysis}).
+
+It requires a freeware license (\url{http://www.vmatch.de/}).
+
+\begin{lstlisting}
+random-seq -l 100 -n 1  | purge-sequence
+\end{lstlisting}
+
+If you get an error message, see section \ref{sect:install_vmatch} of
+this manual.
+
+
+\program{seqllogo}
+
+The program \program{seqlogo} is used to draw logos from
+position-specific scoring matrices. It is required for several \RSAT
+tools (\program{convert-matrix}, \program{peak-motifs},
+\program{matrix-clustering}, \program{footprint-discovery}, \ldots).
+
 \begin{lstlisting}
 ## Locate the path of seqlogo
 which seqlogo
@@ -306,6 +329,7 @@ following functionalities:
 \section{Installing third-party programs}
 
 \subsection{vmatch and mkvtree}
+\label{sect:install_vmatch}
 
 The programs \program{vmatch} and \program{mkvtree} are required by
 the \RSAT progam \program{purge-sequence}, which plays an important
