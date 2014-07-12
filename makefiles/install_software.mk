@@ -108,7 +108,7 @@ _download_vmatch:
 	@echo "Downloading vmatch in folder"
 	@echo "	${VMATCH_BASE_DIR}"
 	@mkdir -p ${VMATCH_BASE_DIR}
-	wget --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} -rNL ${VMATCH_URL} -A "${VMATCH_ARCHIVE}"
+	wget --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
 	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
 
 VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
