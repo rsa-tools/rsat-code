@@ -147,9 +147,8 @@ PERL_MODULES= \
 	XML::Compile::WSDL11 \
 	XML::Compile::Transport::SOAPHTTP \
 	SOAP::Lite \
-	SOAP::WSDL::XSD\
+	SOAP::Packager \
 	SOAP::WSDL \
-	SOAP::Packager::Mime \
 	SOAP::Transport::HTTP \
 	Module::Build::Compat \
 	DBI \
