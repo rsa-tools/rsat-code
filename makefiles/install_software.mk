@@ -47,7 +47,8 @@ list_versions:
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
-EXT_APP_TARGETS=install_seqlogo \
+EXT_APP_TARGETS=install_vmatch \
+	install_seqlogo \
 	install_gnuplot \
 	install_ghostscript \
 	install_d3 \
@@ -77,6 +78,60 @@ EXT_APP_TARGETS_OPTIONAL=install_gibbs \
 install_ext_apps_optional:
 	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
 
+################################################################
+## Download the vmatch program
+##
+## IMPORTANT: this program is an indispensable companion for the motif
+## discovery tools in RSAT. If is used to purge sequences from
+## redundant fragments. The program requires a license, which can be
+## obtained (free of charge for academics) at http://www.vmatch.de/
+install_vmatch:
+	${MAKE} _install_vmatch_${OS}
+	${MAKE} _vmatch_warning
+
+VMATCH_VERSION_MACOSX=vmatch-2.2.2-Darwin_i386-64bit
+_install_vmatch_macosx:
+	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
+
+VMATCH_VERSION_LINUX=vmatch-2.2.2-Linux_x86_64-64bit
+_install_vmatch_linux:
+	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
+
+
+VMATCH_BASE_DIR=${SRC_DIR}/vmatch
+VMATCH_URL=ftp://lscsa.de/pub/lscsa/
+VMATCH_VERSION=${VMATCH_VERSION_LINUX}
+VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
+#VMATCH_SOURCE_DIR=vmatch_latest
+_download_vmatch: 
+	@echo ""
+	@echo "Downloading vmatch in folder"
+	@echo "	${VMATCH_BASE_DIR}"
+	@mkdir -p ${VMATCH_BASE_DIR}
+	wget --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
+	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
+
+VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
+_install_vmatch:
+	@echo ""
+	@echo "VMATCH_SOURCE_DIR	${VMATCH_SOURCE_DIR}"
+	@echo "Uncompressing vmatch tar archive"
+	@echo "	${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}"
+	@tar -xzf  ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE} -C ${VMATCH_BASE_DIR}
+	@echo "Synchronizing vmatch and mkvtree in BIN_DIR"
+	@echo "	${BIN_DIR}"
+	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/vmatch ${BIN_DIR}/
+	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/mkvtree ${BIN_DIR}/
+
+_vmatch_warning:
+	@echo ""
+	@echo ""
+	@echo "vmatch has been installed in bin folder ${BIN_DIR}"
+	@echo "IN ORDER TO GET A FUNCTIONAL COPY, YOU NEED TO REQUEST A LICENSE"
+	@echo "	http://www.vmatch.de/"
+	@echo "AND PLACE THE FILE vmatch.lic IN THIS FOLDER"
+	@echo ""
+	@echo ""
 
 ################################################################
 ## Get and install the program seqlogo
@@ -205,7 +260,7 @@ install_ensembl_api_env:
 	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
 	@echo
 	@echo "BEWARE !"
-	@echo "You need to paste the following lines in your bash profile"
+	@echo "You need to paste the following lines in the bash profile ${RSAT}/RSAT_config.bashrc"
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
@@ -310,7 +365,7 @@ BLAST_SOURCE_DIR=blast_latest
 _download_blast_linux:
 	@mkdir -p ${BLAST_BASE_DIR}
 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; \
+	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_LINUX_ARCHIVE}; \
 		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
 		${SUDO} mv -f ${BLAST_LINUX_ARCHIVE} ..; \
 		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR} \
@@ -333,7 +388,7 @@ BLAST_SOURCE_DIR=blast_latest
 _download_blast_macosx:
 	@mkdir -p ${BLAST_BASE_DIR}
 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_MAC_ARCHIVE}; \
+	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_MAC_ARCHIVE}; \
 		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
 		${SUDO} mv -f ${BLAST_MAC_ARCHIVE} ..; \
 		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR})
@@ -1059,7 +1114,7 @@ CLUSTALW_SOURCE_DIR=clustalw_latest
 _download_clustalw:
 	@mkdir -p ${CLUSTALW_BASE_DIR}
 	wget --no-directories  --directory-prefix ${CLUSTALW_BASE_DIR} -rNL ${CLUSTALW_URL} -A "${CLUSTALW_ARCHIVE}"
-	(cd ${CLUSTALW_BASE_DIR}; tar -xvzf ${CLUSTALW_ARCHIVE})
+	(cd ${CLUSTALW_BASE_DIR}; tar -xzf ${CLUSTALW_ARCHIVE})
 	@echo ${CLUSTALW_BASE_DIR}
 
 _compile_clustalw:

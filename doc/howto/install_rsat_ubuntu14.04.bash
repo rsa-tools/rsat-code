@@ -1,27 +1,25 @@
 ################################################################
 ## Instructions used to install a Virtual Machine on the IFB cloud
-## (Institut Francais de Bioinformatique).
-##
-##
+## (Institut Francais de Bioinformatique), and on a VirtualBox VM.
+
+
+## THIS IS NOT REALLY A bahsrc FILE, IT IS A SUCCESSION OF
+## INSTRUCTIONS AND COMMENTS, THAT SHOULD BE DONE MANUALLY. I (JvH)
+## SHOULD IMPROVE THIS WHEN I CAN.
+
+## TO RUN Virtualbox on Mac OSX
+#    Go into your Ubuntu Settings
+#    Navigate to Keyboard → Keyboard Layout Settings
+#    add English (Macintosh)
 
 ## Must be executed as root
 sudo bash
 
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-echo "" | apt-get update
+apt-get update
 echo "" | apt-get upgrade
-echo "" | apt-get install python-setuptools 
-echo "" | apt-get install python
-echo "" | apt-get install python-virtualenv
-echo "" | apt-get install python-pip
-echo "" | apt-get install python-dev
-
-echo "" | apt-get install python3
-echo "" | apt-get install python3-pip
-
-echo "" | apt-get install ipython
-echo "" | apt-get install ipython-notebook
+echo "" | apt-get install ssh
 
 ## Concurrent versioning systems
 echo "" | apt-get install git
@@ -35,16 +33,17 @@ echo "" | apt-get install curl
 echo "" | apt-get install zip
 echo "" | apt-get install unzip
 echo "" | apt-get install finger
-
-## Cannot survive without emacs
-echo "" | apt-get install emacs
-
+echo "" | apt-get install screen
 echo "" | apt-get install make
 echo "" | apt-get install g++
 echo "" | apt-get install yum
 
-## Problem : unable to locate package perldoc
-## apt-get install perldoc 
+## Cannot survive without emacs
+echo "" | apt-get install emacs
+
+## Perl packages
+echo "" | apt-get install perl-doc
+echo "" | apt-get install pmtools
 
 ## Apache and utilities
 echo "" | apt-get install apache2
@@ -52,13 +51,13 @@ echo "" | apt-get install php5
 echo "" | apt-get install libapache2-mod-php5
 echo "" | apt-get install php-elisp
 
-## Latex is required for other packages. Note that it takes a some time to install
-echo "" | apt-get install texlive-latex-base
-
 ## Graphic libraries and software tools
-echo "" | apt-get install libgd2-xpm-dev
+echo "" | apt-get install libgdbm-dev
+echo "" | apt-get install libgd-tools
 echo "" | apt-get install libgd-gd2-perl
+echo "" | apt-get install libgd2-xpm-dev
 echo "" | apt-get install libxml2-dev
+
 echo "" | apt-get install libnet-ssleay-perl
 echo "" | apt-get install libcrypt-ssleay-perl
 echo "" | apt-get install libssl-dev
@@ -69,11 +68,10 @@ echo "" | apt-get install lib32z1
 echo "" | apt-get install lib32ncurses5
 echo "" | apt-get install lib32bz2-1.0
 
-## Text-mode Web browser
+## Text-mode Web browser, used by some packages
 echo "" | apt-get install links
 
 ## Some linux packages required for R BioConductor
-echo "" | apt-get install -y make
 echo "" | apt-get install libc6-dev
 echo "" | apt-get install gfortran
 echo "" | apt-get install build-essential
@@ -97,15 +95,30 @@ echo "" | apt-get install libcairo2-dev
 echo "" | apt-get install mysql-client
 echo "" | apt-get install libmysqlclient-dev
 
-################################################################
-## Python modules
+## Java 
+## seems to be required for SOAP::WSDL Perl module
+echo "" | apt-get install default-jre
+## echo "" | apt-get install default-jdk
 
+## Latex is required for RSAT doc + other applications (e.g. R). Note
+## that it takes a some time to install
+echo "" | apt-get install texlive-latex-base
+
+
+################################################################
+## Python and modules
 echo "" | apt-get install python
-echo "" | apt-get install python-pip
-echo "" | apt-get install python-dev
+echo "" | apt-get install python-setuptools 
 echo "" | apt-get install python-virtualenv
 echo "" | apt-get install python-pip
+echo "" | apt-get install python-dev
 echo "" | apt-get install python-suds
+
+echo "" | apt-get install ipython
+echo "" | apt-get install ipython-notebook
+
+echo "" | apt-get install python3
+echo "" | apt-get install python3-pip
 
 ## A fix for a problem to install scipy with pip: use apt-get build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
@@ -130,7 +143,9 @@ pip3 install numpy
 ## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
 pip3 install scipy
 pip3 install matplotlib
-pip3 install python-suds
+
+## Problem : No distributions at all found for python-suds
+## pip3 install python-suds
 
 ## Problems: 
 # pip3 install wsdl
@@ -144,44 +159,89 @@ pip3 install fisher
 pip3 install suds-jurko
 pip3 install pysimplesoap
 
+
+################################################################
+## Perl modules
+
+## The installation of SOAP:WSDL under cpan is particularly tricky. 
+## In Ubuntu, there is a way to install it with apt-get. 
+## http://www.installion.co.uk/ubuntu/trusty/universe/l/libsoap-wsdl-perl/fr/install.html
+emacs -nw /etc/apt/sources.list
+
+## Ensure that the following line is set to "universe"
+deb http://us.archive.ubuntu.com/ubuntu trusty main universe
+## You can now quit emacs
+
+apt-get update
+
+echo "" | apt-get install libmodule-build-perl
+echo "" | apt-get install libsoap-wsdl-perl
+
+## We first need to fix some problem with CPAN, which prevents a
+## correct treatment of dependencies for the SOAP::WSDL module
+##
+## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan-modules
+## Not sure it works by its own, but cannot harm.
+cpan
+## At the cpan prompt, type the following
+install Module::Build
+install Module::Build::Compat
+install CPAN ## This takesa HUGE time. I answer all questions by the default answer (simply type the Enter key)
+upgrade ## Takes a HUGE time, since all packages are apparently re-tested
+quit
+
 ################################################################
 ################       RSAT installation        ################
 ################################################################
 
 ## Create a specific user for RSAT. The user is named rsat
 sudo adduser rsat
-## Name: Regulatory Sequence Analysis Tools user
+## Full Name: Regulatory Sequence Analysis Tools admin
 
-## Grant sudo privileges to the rsat user (will be more convenient for
+## Grant sudoer privileges to the rsat user (will be more convenient for
 ## installing Perl modules, software tools, etc)
 visudo
 ## then add the following line below "User privilege specification"
 # rsat    ALL=(ALL:ALL) ALL
 
-
 ## The installation is done under the rsat login
 su - rsat
 
-## Get the RSAT package
+## I first recuperatemy .ssh folder from some other server (by ssh).
+## Then I start an agent to manage my passphrase for ssh
+## transfers. This is more convenient, I only provide my password
+## once.
+ssh-agent > agent
+source agent
+ssh-add
+
+## Note: this is only possible for regular RSAT admin. It requires to
+## have specified te RSAT ssh key and sent it to the git server at
+## ENS.
 git clone git@depot.biologie.ens.fr:rsat
 
 ## Run the configuration script, to specify the environment variables.
 cd rsat
 perl perl-scripts/configure_rsat.pl 
 
-
-## Come back to the rsat identify
-source RSAT_config.bash
+## Load the (updated) RSAT environment variables
+source RSAT_config.bashrc
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
+
+## Exit from the rsat session (and become root again)
+exit
+
+################################################################
+## For the next operations, we need to be su
 
 ################################################################
 ## Link the RSAT bash configuration file to a directory where files
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
-sudo (cd /home/rsat/rsat/;  rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/)
+rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 
 ################################################################
 ## Installation of Perl modules required for RSAT
@@ -203,17 +263,13 @@ sudo (cd /home/rsat/rsat/;  rsync -ruptvl RSAT_config.bashrc /etc/bash_completio
 ##	sudo apt-get install libcrypt-ssleay-perl
 ##	sudo apt-get install libssl-dev
 
-## The following commands should be executed with admin rights.
-sudo bash
+
 
 ## Check that RSAT path has been defined
 echo $RSAT
 
 ## Set working directory to RSAT
 cd $RSAT
-
-## Install perl-doc package
-echo "" | apt-get install perl-doc
 
 ## Get the list of Perl modules to be installed
 make -f makefiles/install_rsat.mk  perl_modules_list
@@ -228,22 +284,29 @@ make -f makefiles/install_rsat.mk perl_modules_check
 ## overlooked.
 make -f makefiles/install_rsat.mk perl_modules_install_noprompt
 
+## Note: I had to force installation for the some modules, because
+## there seem to be some circular dependencies.
+make -f makefiles/install_rsat.mk perl_modules_install_by_force
+
 ## Check if all required Perl modules have been correctly installed
 make -f makefiles/install_rsat.mk perl_modules_check
 
-## Some modules are not installed with the installation procedure,
-## due to problems with their cpan declaration.
+## Ensure that all files belong to rsat user
+chown -R rsat.rsat .
 
 ## Exit from the root shell, and become rsat user again
 exit
 
+################################################################
+## Next steps require to be done as rsat administrator user
 
-
+whoami 
+## Should return "rsat"
+## If it returns "root", exit and check again
 
 ## compile RSAT programs written in C
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
@@ -252,6 +315,15 @@ make -f makefiles/install_software.mk install_ext_apps
 download-organism -v 1 -org Saccharomyces_cerevisiae
 download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
+## Optionally, install some pluricellular model organisms
+download-organism -v 1 -org Drosophila_melanogaster
+download-organism -v 1 -org Caenorhabditis_elegans
+download-organism -v 1 -org Arabidopsis_thaliana
+
+################################################################
+## IMPORTANT: request a vmatch license from http://www.vmatch.de/, and
+## place the license file (vmatch.lic) in the bin folder $RSAT/bin
+make -f makefiles/install_software.mk install_vmatch
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 
@@ -265,7 +337,11 @@ random-seq -l 100
 ## installed.
 random-motif -l 10 -c 0.90
 
+
 ## Test some external programs
+
+## vmatch (used in purge-sequence)
+random-seq -l 100 | purge-sequence
 
 ## get the help for seqlogo
 which seqlogo
@@ -294,48 +370,52 @@ sudo emacs -nw /etc/apache2/sites-available/000-default.conf
 ## From http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
 sudo chmod 755 /usr/lib/cgi-bin
 sudo chown root.root /usr/lib/cgi-bin
-sudo a2enmod cgi ## this is supposed to enable cgi , but apparently not sufficient
+sudo a2enmod cgi ## this is apparently required to enable cgi
 apache2ctl restart
 
+################################################################
+## Configure RSAT web server
+
+## Edit the file to replace [RSAT_PARENT_FOLDER] byt the parent directory
+## of the rsat directory.
+sudo bash 
+cd ${RSAT}
+rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
+apache2ctl restart
+exit
 
 ################################################################
 ## Configure the Web services
-
 
 emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
 
 ## At the bottom of the file, locate the following line.
 ##  <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 
-Adapt the URL to your local configuration.
+## Adapt the URL to your local configuration.
 
-After this, you should re-generate the web services stubb, with the
-following command.
-
-  \begin{lstlisting}
+## After this, you should re-generate the web services stubb, with the
+## following command.
 cd $RSAT; 
 make -f makefiles/init_rsat.mk ws_stubb
-  \end{lstlisting}
 
-
-
-
+## test the Web services
+make -f makefiles/init_rsat.mk ws_stubb_test
 
 
 ################################################################
 ## R installation
 
-## I edited the file /etc/apt/sources.list 
+## As sudo, I edited the file /etc/apt/sources.list 
 ## and added the following line 
 ## (see instructions on http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu/)
-##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty
-
+##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty/
 ## I then updated the apt-get packages
 sudo apt-get update
 
 ## .. and installed the R base package
-sudo apt-get install r-base
-sudo apt-get install r-base-dev
+yes | sudo apt-get install r-base
+echo "" | sudo apt-get install r-base-dev
 
 ## Installation of R packages
 
@@ -346,7 +426,7 @@ sudo apt-get install r-base-dev
 
 cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
 
-## In install them from the R interface
+### In install them from the R interface
 sudo R
 
 ## At the R prompt
@@ -355,12 +435,39 @@ source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
 
 
+################################################################
+## Configure the SOAP/WSDL Web services
+
+## Edit the WSDL file 
+emacs -nw public_html/web_services/RSATWS.wsdl
+
+## a few lines before the file end, I wriote the following
+##   <soap:address location="http://192.54.201.87/rsat/web_services/RSATWS.cgi"/>
+
+## Then I regenerate the stubb, to take the new address into account
+cd $RSAT; 
+make -f makefiles/init_rsat.mk ws_stubb
+
+## Test the local web services
+
+
+
+################################################################
+## Install the cluster management system (torque, qsub, ...)
+
+## Check the number of core (processors)
+grep ^processor /proc/cpuinfo
+
+## Check RAM
+grep MemTotal /proc/meminfo
+
 
 ################################################################
 ##
-## ATTENTION: to ensure persistence, you imperatively have to run the
-## following command in the VM before any shutdown onthe Web site
+## ATTENTION: for the IDB cloud, to ensure persistence, you
+## imperatively have to run the following command in the VM before any
+## shutdown onthe Web site
 ##
 ################################################################
 
-cd; bash cleaner.sh ; history -c && history -w && logout
+## cd; bash cleaner.sh ; history -c && history -w && logout
