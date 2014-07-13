@@ -134,7 +134,7 @@ PERL_MODULES= \
 	Digest::MD5::File \
 	IO::All \
 	LockFile::Simple \
-	Util::Properties \
+	Object::InsideOut Util::Properties \
 	Class::Std::Fast  \
 	GD \
 	DBI \
@@ -151,6 +151,7 @@ PERL_MODULES= \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
 	XML::Compile::Transport::SOAPHTTP \
+	SOAP \
 	SOAP::Lite \
 	SOAP::Packager \
 	SOAP::Transport::HTTP \
@@ -170,7 +171,6 @@ PERL_MODULES= \
 #	File::Basename \
 
 ## Why was this library required ???
-##	Object::InsideOut \
 
 ## This module is problematic (not maintained anymore), and I am not
 ## sure it is required anymore. To be checked

@@ -177,8 +177,20 @@ apt-get update
 echo "" | apt-get install libmodule-build-perl
 echo "" | apt-get install libsoap-wsdl-perl
 
-## We first need to fix some problem with CPAN, which prevents a
-## correct treatment of dependencies for the SOAP::WSDL module
+## Note: this is still not sufficient to get SOAP::WSDL to run the two
+## following targets
+##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
+##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb_test
+
+## We first need to fix some problem with CPAN : on Ubuntu, I cannot
+## install the SOAP::WSDL module, which is required for several
+## functionalities. More precisely, after fiddling around for a few
+## hours, the server is able to answer to web services requests, but I
+## cannot run clients on it. Since NeAT relies on WSDL clients, it is
+## impossible to have neat running on and Ubuntu server. The
+## installation is however possible, since the stubb can be generated
+## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
+## SOAP::WSDL there. In any case, the 
 ##
 ## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan-modules
 ## Not sure it works by its own, but cannot harm.
@@ -189,6 +201,12 @@ install Module::Build::Compat
 install CPAN ## This takesa HUGE time. I answer all questions by the default answer (simply type the Enter key)
 upgrade ## Takes a HUGE time, since all packages are apparently re-tested
 quit
+
+
+
+################################################################
+## To free space, remove apt-get packages that are no longer required.
+apt-get autoremove
 
 ################################################################
 ################       RSAT installation        ################
@@ -276,7 +294,7 @@ make -f makefiles/install_rsat.mk  perl_modules_list
 
 ## Check which Perl modules are already installed
 make -f makefiles/install_rsat.mk perl_modules_check
-## The locations of installed modules are stored in perl_modules_check.txt
+## The result file name will be displayed at the end of the tests
 
 ## Install these modules Beware: the _noprompt suffix is optional. It
 ## has the advantage to avoid for the admin to confirm each
@@ -294,70 +312,9 @@ make -f makefiles/install_rsat.mk perl_modules_check
 ## Ensure that all files belong to rsat user
 chown -R rsat.rsat .
 
-## Exit from the root shell, and become rsat user again
-exit
-
-################################################################
-## Next steps require to be done as rsat administrator user
-
-whoami 
-## Should return "rsat"
-## If it returns "root", exit and check again
-
-## compile RSAT programs written in C
-cd ${RSAT}
-make -f makefiles/init_rsat.mk compile_all
-
-## Install some third-party programs required by some RSAT scripts.
-make -f makefiles/install_software.mk install_ext_apps
-
-## Install two model organisms, required for some of the Web tools.
-download-organism -v 1 -org Saccharomyces_cerevisiae
-download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
-
-## Optionally, install some pluricellular model organisms
-download-organism -v 1 -org Drosophila_melanogaster
-download-organism -v 1 -org Caenorhabditis_elegans
-download-organism -v 1 -org Arabidopsis_thaliana
-
-################################################################
-## IMPORTANT: request a vmatch license from http://www.vmatch.de/, and
-## place the license file (vmatch.lic) in the bin folder $RSAT/bin
-make -f makefiles/install_software.mk install_vmatch
-
-################################################################
-## At this stage you can already check some simple RSAT command 
-
-## Test a simple Perl script that does not require for organisms to be
-## installed.
-which random-seq
-random-seq -l 100
-
-## Test a simple python script that does not require organisms to be
-## installed.
-random-motif -l 10 -c 0.90
-
-
-## Test some external programs
-
-## vmatch (used in purge-sequence)
-random-seq -l 100 | purge-sequence
-
-## get the help for seqlogo
-which seqlogo
-seqlogo
-
-## ghostscript
-which gs
-gs --version
-
-## Get the list of organisms supported on your computer.
-supported-organisms
-
 
 ################################################################
 ## Activate the Apache Web server and RSAT configuration
-
 sudo emacs -nw /etc/apache2/sites-available/000-default.conf
 
 ## Activate the following line:
@@ -378,14 +335,71 @@ apache2ctl restart
 
 ## Edit the file to replace [RSAT_PARENT_FOLDER] byt the parent directory
 ## of the rsat directory.
-sudo bash 
 cd ${RSAT}
 rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
 apache2ctl restart
-exit
 
 ################################################################
-## Configure the Web services
+## Next steps require to be done as rsat administrator user
+
+su - rsat
+
+whoami 
+## Should return "rsat"
+
+## compile RSAT programs written in C
+cd ${RSAT}
+make -f makefiles/init_rsat.mk compile_all
+
+## Install some third-party programs required by some RSAT scripts.
+make -f makefiles/install_software.mk install_ext_apps
+
+## Install two model organisms, required for some of the Web tools.
+download-organism -v 1 -org Saccharomyces_cerevisiae
+download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
+
+## Optionally, install some pluricellular model organisms
+download-organism -v 1 -org Drosophila_melanogaster
+download-organism -v 1 -org Caenorhabditis_elegans
+download-organism -v 1 -org Arabidopsis_thaliana
+
+## Get the list of organisms supported on your computer.
+supported-organisms
+
+################################################################
+## IMPORTANT: request a vmatch license from http://www.vmatch.de/, and
+## place the license file (vmatch.lic) in the bin folder $RSAT/bin
+make -f makefiles/install_software.mk install_vmatch
+
+################################################################
+## At this stage you can already check some simple RSAT command 
+
+## Test a simple Perl script that does not require for organisms to be
+## installed.
+which random-seq
+random-seq -l 100
+
+## Test a simple python script that does not require organisms to be
+## installed.
+random-motif -l 10 -c 0.90
+
+################
+## Test some external programs
+
+## vmatch (used in purge-sequence)
+random-seq -l 100 | purge-sequence
+
+## get the help for seqlogo
+which seqlogo
+seqlogo
+
+## ghostscript
+which gs
+gs --version
+
+
+################################################################
+## Configure the SOAP/WSDL Web services
 
 emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
 
@@ -396,12 +410,15 @@ emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
 
 ## After this, you should re-generate the web services stubb, with the
 ## following command.
-cd $RSAT; 
+cd $RSAT
 make -f makefiles/init_rsat.mk ws_stubb
 
-## test the Web services
+## Test the local web services
 make -f makefiles/init_rsat.mk ws_stubb_test
 
+## Test RSAT Web services (local and remote) without using the SOAP/WSDL stubb
+## (direct parsing of the remote WSDL file)
+make -f makefiles/init_rsat.mk ws_nostubb_test
 
 ################################################################
 ## R installation
@@ -414,8 +431,8 @@ make -f makefiles/init_rsat.mk ws_stubb_test
 sudo apt-get update
 
 ## .. and installed the R base package
-yes | sudo apt-get install r-base
-echo "" | sudo apt-get install r-base-dev
+sudo apt-get -y install r-base
+sudo apt-get install -y r-base-dev
 
 ## Installation of R packages
 
@@ -426,30 +443,17 @@ echo "" | sudo apt-get install r-base-dev
 
 cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
 
-### In install them from the R interface
+### I install them from the R interface. This should be revised to
+### make it from the bash, but I need to see how to specify the CRAN
+### server from the command line (for the time being, I run R and the
+### programm asks me to specify my preferred CRAN repository the first
+### time I install packages).
 sudo R
 
 ## At the R prompt
 install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras"))
 source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
-
-
-################################################################
-## Configure the SOAP/WSDL Web services
-
-## Edit the WSDL file 
-emacs -nw public_html/web_services/RSATWS.wsdl
-
-## a few lines before the file end, I wriote the following
-##   <soap:address location="http://192.54.201.87/rsat/web_services/RSATWS.cgi"/>
-
-## Then I regenerate the stubb, to take the new address into account
-cd $RSAT; 
-make -f makefiles/init_rsat.mk ws_stubb
-
-## Test the local web services
-
 
 
 ################################################################
@@ -460,7 +464,6 @@ grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
-
 
 ################################################################
 ##
