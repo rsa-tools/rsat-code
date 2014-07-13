@@ -310,7 +310,6 @@ wc -l  supported_on_rsat_fr.tab
 \end{lstlisting}
 
 
-
 \chapter{Full installation}
 
 The full installation of \RSAT sowftare suite includes some additional steps.
@@ -409,7 +408,11 @@ cd $RSAT;
 make -f makefiles/init_rsat.mk ws_stubb
   \end{lstlisting}
 
+You can test if the web services are working.
 
+  \begin{lstlisting}
+make -f makefiles/init_rsat.mk ws_stubb_test
+  \end{lstlisting}
 
 \chapter{Description and requirements}
 

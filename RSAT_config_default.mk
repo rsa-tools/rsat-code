@@ -26,10 +26,10 @@ ARCHITECTURE=x64
 ## Manager for installing Unix packages
 ##
 ## Options:
-##   PACKAGE_MANAGER=brew install
-##   PACKAGE_MANAGER=yum install
-##   PACKAGE_MANAGER=get-apt
-PACKAGE_MANAGER=
+##   PACKAGE_MANAGER=brew
+##   PACKAGE_MANAGER=yum
+##   PACKAGE_MANAGER=apt-get
+PACKAGE_MANAGER=apt-get
 
 #UCSC_OS=macOSX.i386
 UCSC_OS=linux.x86_64
@@ -50,7 +50,7 @@ PERLLIB_DIR=${RSAT}/lib
 ## Supported: sudo (or empty if you are not administrator)
 ##
 ## If you are not sudoer of your server, you should let this variable
-## empty, and make sure that the BIN_DIR defined below is set toa
+## empty, and make sure that the RSAT_BIN defined below is set toa
 ## directory of your ownership. 
 ##
 ## Your non-admin status might cause problems for the "install" step
@@ -65,8 +65,10 @@ SUDO=
 ## however requires admin rights. If you don't dispose of admin
 ## rights, an alternative is to set this directory in the RSAT fodler.
 ##
-BIN_DIR=${RSAT}/bin
-#BIN_DIR=/usr/local/bin
+## Typical values:
+##   RSAT_BIN=/usr/local/bin
+##   RSAT_BIN=\${RSAT}/bin
+RSAT_BIN=${RSAT}/bin
 
 ################################################################
 ## Web services
