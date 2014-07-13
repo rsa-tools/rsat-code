@@ -26,20 +26,29 @@
 our %prev_param = ();
 our %new_param = ();
 
-if (scalar(@ARGV)) {
+
+################################################################
+## List of file extensions for config files. 
+our @props_extensions = ("props", "mk", "bashrc", "conf");
+
+## Indicate, for each extension of config file, whether the user
+## should be prompted for variable values.
+our %auto_extension = ();
+$auto_extension{props} =0;
+$auto_extension{mk} =0;
+$auto_extension{bashrc} =1;
+$auto_extension{conf} =1;
+
+## Print the help message
+if (scalar(@ARGV) > 0) {
   &PrintHelp();
 }
 
 package main;
 {
 
-  my @props_extensions =  ("props", "mk", "bashrc", "conf");
-#  my @props_extensions =  ("conf"); ## TEMPORARY
-
-  ## Check if the RSAT environment variable has been specified
-#  $rsat_path = $ENV{RSAT};
-
-  ## Try to guess RSAT path if not specified in the environment variable
+  ## BEWARE: this script MUST be executed from the rsat directory,
+  ## because the RSAT path is guessed from the current directory.
   unless ($rsat_path) {
     my $pwd = `pwd`;
     chomp($pwd);
@@ -98,8 +107,9 @@ package main;
 
     ## Prompt for the new value
     warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
-    print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
+    print "\nReady to update config file\t", $config_file, " [y/n] (y): ";
     chomp($answer = <>);
+    $answer = "y" unless ($answer);
     unless ($answer eq "y") {
       warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
       die ("Good bye\n\n");
@@ -152,18 +162,24 @@ package main;
 	  }
 	  $prev_param{$key} = $value;
 
-	  ## If a new value has been specified for the previous
-	  ## extension, propose if for this extension as well
-	  if (defined($new_param{$key})) {
-	    $value = $new_param{$key};
+	  ## If a new value has been specified for the props file,
+	  ## propose if for mk as well.
+	  if ($extension eq "mk") {
+	      if (defined($new_param{$key})) {
+		  $value = $new_param{$key};
+	      }
 	  }
 
 	  ## Prompt for the new value
-	  print "\n", $key, " [", $value, "] : ";
-	  chomp(my $new_value = <>);
-	  if ($new_value) {
-	    $value = $new_value;
+	  unless ($auto_extension{$extension}) {
+	      print "\n", $key, " [", $value, "] : ";
+	      chomp(my $new_value = <>);
+	      if ($new_value) {
+		  $value = $new_value;
+	      }
 	  }
+
+	  ## Export the line in the new config file
 	  if ($extension eq "bashrc") {
 	    print NEW_CONF "export ", $key, "=", $value, "\n";
 	  } else {
