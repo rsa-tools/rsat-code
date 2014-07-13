@@ -39,9 +39,35 @@ $auto_extension{mk} =0;
 $auto_extension{bashrc} =1;
 $auto_extension{conf} =1;
 
+## Variables that should be the same for all extensions
+our %cross_ext_variable = ();
+$cross_ext_variable{rsat} = 1;
+$cross_ext_variable{rsat_server_admin} = 1;
+$cross_ext_variable{rsat_admin_email} = 1;
+$cross_ext_variable{rsat_site} = 1;
+$cross_ext_variable{rsat_bin} = 1;
+$cross_ext_variable{rsat_tmp} = 1;
+$cross_ext_variable{rsat_www} = 1;
+$cross_ext_variable{rsat_ws} = 1;
+$cross_ext_variable{rsat_ws_tmp} = 1;
+$cross_ext_variable{ensembl_version} = 1;
+$cross_ext_variable{ensembl_branch} = 1;
+$cross_ext_variable{rsat_bin} = 1;
+$cross_ext_variable{qsub_manager} = 1;
+$cross_ext_variable{qsub_options} = 1;
+$cross_ext_variable{cluster_queue} = 1;
+$cross_ext_variable{cluster_sell} = 1;
+
+## First argument
+if ($ARGV[0] eq "auto") {
+    foreach my $extension (@props_extensions) {
+	$auto_extension{$extension} = 1;
+    }
+    
 ## Print the help message
-if (scalar(@ARGV) > 0) {
-  &PrintHelp();
+} elsif (scalar(@ARGV) > 0) {
+    warn join ("\t", "\n", "!!!!  Invalid argument  !!!!", $ARGV[0]), "\n";
+    &PrintHelp();
 }
 
 package main;
@@ -157,9 +183,9 @@ package main;
 	  }
 	  $prev_param{lc($key)} = $value;
 
-	  ## If a new value has been specified for the props file,
-	  ## propose if for mk as well.
-	  if ($extension eq "mk") {
+	  ## Transmit appropriate variables across extensions, if
+	  ## already specified.
+	  if (($extension eq "mk") || ($cross_ext_variable{lc($key)})) {
 	      if (defined($new_param{lc($key)})) {
 		  $value = $new_param{lc($key)};
 	      }
@@ -213,7 +239,11 @@ has to be changed (example: change of the IP address of the server).
 
 Author: Jacques.van-Helden\@univ-amu.fr
 
-usage: perl update_rsat_config.pl
+Usage: 
+  cd \$RSAT; perl perl-scripts/configure_rsat.pl [auto]
+
+The option "auto" suppresses the interactive control of parameter
+values.
 
 End_of_help
   exit(0);
