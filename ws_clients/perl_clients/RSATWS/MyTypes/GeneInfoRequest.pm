@@ -28,6 +28,7 @@ my %full_of :ATTR(:get<full>);
 my %noquery_of :ATTR(:get<noquery>);
 my %descr_of :ATTR(:get<descr>);
 my %feattype_of :ATTR(:get<feattype>);
+my %all_genes_of :ATTR(:get<all_genes>);
 
 __PACKAGE__->_factory(
     [ qw(        output
@@ -37,6 +38,7 @@ __PACKAGE__->_factory(
         noquery
         descr
         feattype
+        all_genes
 
     ) ],
     {
@@ -47,6 +49,7 @@ __PACKAGE__->_factory(
         'noquery' => \%noquery_of,
         'descr' => \%descr_of,
         'feattype' => \%feattype_of,
+        'all_genes' => \%all_genes_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -56,6 +59,7 @@ __PACKAGE__->_factory(
         'noquery' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'descr' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'feattype' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'all_genes' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
     },
     {
 
@@ -66,6 +70,7 @@ __PACKAGE__->_factory(
         'noquery' => 'noquery',
         'descr' => 'descr',
         'feattype' => 'feattype',
+        'all_genes' => 'all_genes',
     }
 );
 
@@ -124,6 +129,9 @@ methods:
 =item * feattype
 
 
+=item * all_genes
+
+
 
 
 =back
@@ -143,6 +151,7 @@ Constructor. The following data structure may be passed to new():
    noquery =>  $some_value, # int
    descr =>  $some_value, # int
    feattype =>  $some_value, # string
+   all_genes =>  $some_value, # int
  },
 
 

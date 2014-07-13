@@ -268,7 +268,7 @@ print <<EndText;
 EndText
 
 @orgs =  &RSAT::OrganismManager::get_supported_organisms();
-print "<h4 align ='center'>", scalar(@orgs) ," organisms supported on <a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a></h4>\n";
+print "<h4 align ='center'>", scalar(@orgs) ," organisms supported on $ENV{rsat_site} (<a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a>)</h4>\n";
 # print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile();

@@ -206,10 +206,10 @@ JOB_DIR=`pwd`/jobs/${DAY}
 JOB_PREFIX=job
 <<<<<<< HEAD
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
-QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}
+QSUB_CMD=qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}
 =======
 JOB=`mktemp -u ${JOB_PREFIX}.XXXXXX`
-QSUB_CMD=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
+QSUB_CMD=qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
 >>>>>>> f17865da33e9d5dd413c2eed109d6640f4fc2a7b
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
