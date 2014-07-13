@@ -6,6 +6,9 @@
 ################################################################ 
 ## Configuration for Regulatory Sequence Analysis Tools (RSAT)
 export RSAT=[RSAT_PARENT_PATH]/rsat
+export RSAT_SITE=localhost
+export RSAT_WWW=http://localhost/rsat
+export RSAT_WS=http://localhost/rsat
 export PATH=${RSAT}/bin:${PATH}
 export PATH=${RSAT}/perl-scripts:${PATH}
 export PATH=${RSAT}/perl-scripts/parsers:${PATH}
