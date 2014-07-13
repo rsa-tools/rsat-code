@@ -62,3 +62,5 @@ authorized_IP*
 python-scripts/lib/*.pyc
 formatdb.log
 share
+check_perl_modules_*.txt
+RSAT_config.conf
