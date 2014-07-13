@@ -63,3 +63,5 @@ python-scripts/lib/*.pyc
 formatdb.log
 share
 public_html/web_services/RSATWS.wsdl
+check_perl_modules_*.txt
+RSAT_config.conf
