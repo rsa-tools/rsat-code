@@ -150,12 +150,12 @@ package main;
 		   && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
 	    $value =~ s|$prev_param{rsat_www}|$new_param{rsat_www}|;
 	  }
-	  $prev_param{$key} = $value;
+	  $prev_param{lc($key)} = $value;
 
 	  ## If a new value has been specified for the previous
 	  ## extension, propose if for this extension as well
-	  if (defined($new_param{$key})) {
-	    $value = $new_param{$key};
+	  if (defined($new_param{lc($key)})) {
+	    $value = $new_param{lc($key)};
 	  }
 
 	  ## Prompt for the new value
@@ -169,9 +169,9 @@ package main;
 	  } else {
 	    print NEW_CONF $key, "=", $value, "\n";
 	  }
-	  $new_param{$key} = $value;
+	  $new_param{lc($key)} = $value;
 
-#	warn join ("\t", "key=".$key, "value=".$value, "param=".$new_param{$key}, "previous=".$prev_param{$key}), "\n";
+#	warn join ("\t", "key=".$key, "value=".$value, "param=".$new_param{lc($key)}, "previous=".$prev_param{lc($key)}), "\n";
 
 	} else {
 	  print;			## Display comments
