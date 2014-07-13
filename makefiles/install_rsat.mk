@@ -119,6 +119,7 @@ unix_packages_install_ubuntu:
 ## rights.
 PERL_MODULES= \
 	YAML \
+	Module::Build::Compat \
 	CGI \
 	MIME::Lite \
 	MIME::Tools \
@@ -136,6 +137,10 @@ PERL_MODULES= \
 	Util::Properties \
 	Class::Std::Fast  \
 	GD \
+	DBI \
+	DBD::mysql \
+	DB_File \
+	LWP::Simple \
 	REST::Client \
 	JSON \
 	XML::LibXML \
@@ -148,13 +153,8 @@ PERL_MODULES= \
 	XML::Compile::Transport::SOAPHTTP \
 	SOAP::Lite \
 	SOAP::Packager \
-	SOAP::WSDL \
 	SOAP::Transport::HTTP \
-	Module::Build::Compat \
-	DBI \
-	DBD::mysql \
-	DB_File \
-	LWP::Simple \
+	SOAP::WSDL \
 	Bio::Perl \
 	Bio::Das
 
