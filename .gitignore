@@ -62,3 +62,4 @@ authorized_IP*
 python-scripts/lib/*.pyc
 formatdb.log
 share
+public_html/web_services/RSATWS.wsdl
