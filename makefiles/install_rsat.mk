@@ -119,9 +119,13 @@ unix_packages_install_ubuntu:
 ## rights.
 PERL_MODULES= \
 	YAML \
+	Module::Build::Compat \
 	CGI \
 	MIME::Lite \
-	PostScript::Simple \
+	MIME::Tools \
+	MIME::Parser \
+	MIME::Base64 \
+	PostScript::Simple	 \
 	Statistics::Distributions \
 	Algorithm::Cluster \
 	File::Spec \
@@ -130,32 +134,32 @@ PERL_MODULES= \
 	Digest::MD5::File \
 	IO::All \
 	LockFile::Simple \
-	Util::Properties \
+	Object::InsideOut Util::Properties \
 	Class::Std::Fast  \
 	GD \
-	REST::Client \
-	JSON \
-	MIME::Base64 \
-	XML::LibXML \
-	XML::LibXML::Simple \
-	XML::Compile \
-	XML::Compile::Cache \
-	XML::Compile::SOAP11 \
-	XML::Compile::WSDL11 \
-	XML::Parser::Expat \
-	XML::Compile::Transport::SOAPHTTP \
-	SOAP::WSDL \
-	SOAP::Packager::Mime \
-	SOAP::Lite \
-	SOAP::Transport::HTTP \
-	Module::Build::Compat \
 	DBI \
 	DBD::mysql \
 	DB_File \
 	LWP::Simple \
+	REST::Client \
+	JSON \
+	XML::LibXML \
+	XML::LibXML::Simple \
+	XML::Parser::Expat \
+	XML::Compile \
+	XML::Compile::Cache \
+	XML::Compile::SOAP11 \
+	XML::Compile::WSDL11 \
+	XML::Compile::Transport::SOAPHTTP \
+	SOAP \
+	SOAP::Lite \
+	SOAP::Packager \
+	SOAP::Transport::HTTP \
+	SOAP::WSDL \
 	Bio::Perl \
 	Bio::Das
 
+#t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
 
 
@@ -167,7 +171,6 @@ PERL_MODULES= \
 #	File::Basename \
 
 ## Why was this library required ???
-##	Object::InsideOut \
 
 ## This module is problematic (not maintained anymore), and I am not
 ## sure it is required anymore. To be checked
@@ -220,7 +223,7 @@ _install_one_perl_module:
 	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ## Check which modules are installed
-PERL_MODULE_TEST=version
+PERL_MODULE_TEST=eval
 PERL_MODULES_CHECK_FILE=check_perl_modules_${PERL_MODULE_TEST}.txt
 perl_modules_check:
 	@echo
@@ -239,6 +242,9 @@ perl_modules_check_version:
 perl_modules_check_doc:
 	@${MAKE} perl_modules_check PERL_MODULE_TEST=doc
 
+perl_module_test_eval:
+	@echo "	Checking perl module	${PERL_MODULE}"
+	@echo "${PERL_MODULE}" | xargs -I MODULE perl -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_version:
 	@echo "	Checking perl module version	${PERL_MODULE}"
