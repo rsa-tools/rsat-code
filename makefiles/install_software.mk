@@ -47,7 +47,7 @@ list_versions:
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
-EXT_APP_TARGETS=install_vmatch \
+EXT_APP_TARGETS=\
 	install_seqlogo \
 	install_gnuplot \
 	install_ghostscript \
@@ -55,7 +55,8 @@ EXT_APP_TARGETS=install_vmatch \
 	install_mcl \
 	install_rnsc \
 	install_blast \
-	install_ensembl_api
+	install_ensembl_api \
+	install_vmatch 
 #	install_ensembl_bioperl ## does not work anymore.  Not sure it is required since bioperl is installed with cpan
 list_ext_apps:
 	@echo
