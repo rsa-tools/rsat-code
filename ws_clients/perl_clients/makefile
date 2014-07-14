@@ -38,10 +38,13 @@ stubb_param:
 WSDL_URL=${SERVER}/web_services/RSATWS.wsdl
 stubb:
 	@echo
-	@echo "Generating stubb for server	${SERVER}"
-	@echo "WSDL URL				${WSDL_URL}"
+	@echo "Generating stubb for server"
+	@echo "	SERVER=${SERVER}"
+	@echo "	WSDL_URL=${WSDL_URL}"
 	perl ./wsdl2perl.pl -b RSATWS ${WSDL_URL}
-	@echo "Generated stubb for server	${SERVER}"
+	@echo "Generated stubb for server"
+	@echo "	SERVER=${SERVER}"
+	@echo "	WSDL_URL=${WSDL_URL}"
 
 stubb_test:
 	perl ./convert_matrix_soap_wsdl_2.pl 
