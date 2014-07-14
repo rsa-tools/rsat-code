@@ -124,12 +124,12 @@ _create_download_dir:
 ## Init Web services
 ws_stubb:
 	@echo
-	@echo "Initiating Web services at ${RSAT_WS}"
+	@echo "Initiating Web services with RSAT_WS=${RSAT_WS}"
 	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stubb SERVER=${RSAT_WS})
 
 ws_stubb_test:
 	@echo
-	@echo "Testing Web services at ${RSAT_WS}"
+	@echo "Testing Web services with RSAT_WS=${RSAT_WS}"
 	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test SERVER=${RSAT_WS})
 
 
