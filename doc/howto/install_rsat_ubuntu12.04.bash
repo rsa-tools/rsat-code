@@ -41,7 +41,7 @@ sudo bash
 
 
 ## Before anything else, I need emacs to edit config files
-apt-get -y install emacs23
+apt-get --quiet --assume-yes install emacs23
 
 ################################################################
 ## Network specification
@@ -57,7 +57,7 @@ broadcast 192.168.56.255
 
 ## I install openssh, in order to do the rest via an external ssh
 ## connection (more convenient for keyboard shortcuts, copy-paste etc).
-apt-get -y install openssh-server
+apt-get --quiet --assume-yes install openssh-server
 
 ## Done network specification
 reboot
@@ -69,154 +69,182 @@ sudo bash
 
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-apt-get update
-apt-get -y upgrade ## This takes a while
-apt-get -y install ssh
+apt-get update ;
+apt-get --quiet --assume-yes upgrade ## This takes a while ;
+apt-get --quiet --assume-yes install ssh ;
+
 
 ## Concurrent versioning systems
-apt-get -y install git
-apt-get -y install cvs
+apt-get --quiet --assume-yes install git ;
+apt-get --quiet --assume-yes install cvs ;
 
 ## Web aspirators
-apt-get -y install wget
-apt-get -y install curl
+apt-get --quiet --assume-yes install wget ;
+apt-get --quiet --assume-yes install curl ;
 
 ## Compilation tools
-apt-get -y install g++
-apt-get -y install make
+apt-get --quiet --assume-yes install g++ ;
+apt-get --quiet --assume-yes install make ;
 
 ## Utilities
-apt-get -y install zip
-apt-get -y install unzip
-apt-get -y install finger
-apt-get -y install screen
-apt-get -y install yum
+apt-get --quiet --assume-yes install zip ;
+apt-get --quiet --assume-yes install unzip ;
+apt-get --quiet --assume-yes install finger ;
+apt-get --quiet --assume-yes install screen ;
+apt-get --quiet --assume-yes install yum ;
 
 ## Perl packages
-apt-get -y install perl-doc
-apt-get -y install pmtools
+apt-get --quiet --assume-yes install perl-doc ;
+apt-get --quiet --assume-yes install pmtools ;
 
 ## Apache and utilities
-apt-get -y install apache2
-apt-get -y install php5
-apt-get -y install libapache2-mod-php5
-apt-get -y install php-elisp
+apt-get --quiet --assume-yes install apache2 ;
+apt-get --quiet --assume-yes install php5 ;
+apt-get --quiet --assume-yes install libapache2-mod-php5 ;
+apt-get --quiet --assume-yes install php-elisp ;
 
 ## Graphic libraries and software tools
-apt-get -y install lib32z1
-apt-get -y install lib32ncurses5
-apt-get -y install lib32bz2-1.0
+apt-get --quiet --assume-yes install lib32z1 ;
+apt-get --quiet --assume-yes install lib32ncurses5 ;
+apt-get --quiet --assume-yes install lib32bz2-1.0 ;
 
-apt-get -y install libgdbm-dev
-apt-get -y install libgd-tools
+apt-get --quiet --assume-yes install libgdbm-dev ;
+apt-get --quiet --assume-yes install libgd-tools ;
 
-apt-get -y install libgd-gd2-perl
-apt-get -y install libgd2-xpm-dev
-apt-get -y install libxml2-dev
+apt-get --quiet --assume-yes install libgd-gd2-perl ;
+apt-get --quiet --assume-yes install libgd2-xpm-dev ;
+apt-get --quiet --assume-yes install libxml2-dev ;
 
-apt-get -y install libnet-ssleay-perl
-apt-get -y install libcrypt-ssleay-perl
-apt-get -y install libssl-dev
+apt-get --quiet --assume-yes install libnet-ssleay-perl ;
+apt-get --quiet --assume-yes install libcrypt-ssleay-perl ;
+apt-get --quiet --assume-yes install libssl-dev ;
 
-apt-get -y install ghostscript
-apt-get -y install gnuplot
-apt-get -y install graphviz
+apt-get --quiet --assume-yes install ghostscript ;
+apt-get --quiet --assume-yes install gnuplot ;
+apt-get --quiet --assume-yes install graphviz ;
 
 ## Text-mode Web browser, used by some packages
-apt-get -y install links
+apt-get --quiet --assume-yes install links ;
 
 ## Some linux packages required for R BioConductor
-apt-get -y install libc6-dev
-apt-get -y install gfortran
-apt-get -y install build-essential
+apt-get --quiet --assume-yes install libc6-dev ;
+apt-get --quiet --assume-yes install gfortran ;
+apt-get --quiet --assume-yes install build-essential ;
 
-apt-get -y install libreadline-gplv2-dev:i386
-apt-get -y install lib64readline-gplv2-dev:i386
-apt-get -y install libreadline-gplv2-dev
+apt-get --quiet --assume-yes install libreadline-gplv2-dev:i386 ;
+apt-get --quiet --assume-yes install lib64readline-gplv2-dev:i386 ;
+apt-get --quiet --assume-yes install libreadline-gplv2-dev ;
 
-apt-get -y install libx11-dev
-apt-get -y install libxt-dev
-apt-get -y install libcurl4-openssl-dev
+apt-get --quiet --assume-yes install libx11-dev ;
+apt-get --quiet --assume-yes install libxt-dev ;
+apt-get --quiet --assume-yes install libcurl4-openssl-dev ;
 
-apt-get -y install libxml2-dev
+apt-get --quiet --assume-yes install libxml2-dev ;
 ## BEWARE: texlive-full occupies a lot of disk space. I should check if this is really required (for R ?)
-## apt-get install texlive-full
-apt-get -y install tcl8.5-dev
+## apt-get install texlive-full ;
+apt-get --quiet --assume-yes install tcl8.5-dev ;
 
-apt-get -y install tk8.5-dev
-apt-get -y install libxss-dev
-apt-get -y install libpng12-dev
+apt-get --quiet --assume-yes install tk8.5-dev ;
+apt-get --quiet --assume-yes install libxss-dev ;
+apt-get --quiet --assume-yes install libpng12-dev ;
 
-apt-get -y install libjpeg62-dev
-apt-get -y install libcairo2-dev
+apt-get --quiet --assume-yes install libjpeg62-dev ;
+apt-get --quiet --assume-yes install libcairo2-dev ;
 
 ## mysql client is required for ensembl client scripts
-apt-get -y install mysql-client
-apt-get -y install libmysqlclient-dev
+apt-get --quiet --assume-yes install mysql-client ;
+apt-get --quiet --assume-yes install libmysqlclient-dev ;
 
 ## Java 
 ## seems to be required for SOAP::WSDL Perl module
-apt-get -y install default-jre
-## apt-get -y install default-jdk
+apt-get --quiet --assume-yes install default-jre ;
+## apt-get --quiet --assume-yes install default-jdk ;
 
 ## Latex is required for RSAT doc + other applications (e.g. R). Note
-## that it takes a some time to install
-apt-get -y install texlive-latex-base
+## that it takes a some time to install ;
+apt-get --quiet --assume-yes install texlive-latex-base ;
 
 
 ################################################################
 ## Python and modules
-apt-get -y install python
-apt-get -y install python-setuptools 
-apt-get -y install python-virtualenv
-apt-get -y install python-pip
-apt-get -y install python-dev
-apt-get -y install python-suds
+apt-get --quiet --assume-yes install python ;
+apt-get --quiet --assume-yes install python-setuptools  ;
+apt-get --quiet --assume-yes install python-virtualenv ;
+apt-get --quiet --assume-yes install python-pip ;
+apt-get --quiet --assume-yes install python-dev ;
+apt-get --quiet --assume-yes install python-suds ;
 
-apt-get -y install ipython
-apt-get -y install ipython-notebook
+apt-get --quiet --assume-yes install ipython ;
+apt-get --quiet --assume-yes install ipython-notebook ;
 
-apt-get -y install python3
-apt-get -y install python3-pip
 
-## A fix for a problem to install scipy with pip: use apt-get build-dep 
-## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
-apt-get -y build-dep python-numpy python-scipy
+## Problem: "pip install matplotlib ;" ## Does not work. matplotlib
+## can be installed with easy_install, but for Ubuntu it is probably
+## better to use apt-get. I install what I can with 
+##
+## A fix for a problem to install scipy (does not work with pip): in
+## Ubuntu, we can use apt-get build-dep taken from here:
+## http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
+apt-get --quiet --assume-yes build-dep python-numpy ;
+apt-get --quiet --assume-yes build-dep python-scipy ;
+apt-get --quiet --assume-yes build-dep python-matplotlib ;
+apt-get --quiet --assume-yes build-dep python-soappy ; ## For web services
+apt-get --quiet --assume-yes install libgvc6 ; ## Required for pygraphviz
+apt-get --quiet --assume-yes build-dep python-pygraphviz ;
 
-pip install numpy
-## Note: the installation of scipy and matplotlib takes some time and issues
-## a lot of warning messages, but finally it works
-pip install scipy 
-pip install matplotlib
-pip install soappy
-pip install fisher
-## pip install pygraphviz ## OSError: Error locating graphviz.
+## On other systems, the install may work with pip (to be
+## checked). Alternatively, can the python librarires can be installed
+## wit easy_install (commented lines below).
+# easy_install -U distribute numpy ;
+# easy_install -U distribute scipy  ;
+# easy_install -U distribute matplotlib
+#easy_install -U distribute soappy ;
+#easy_install -U distribute pygraphviz ;
+
+## For some python packages there is no apt-get package
+easy_install -U distribute fisher ;
+
+
+################
+## Redo (more or less) the same for python3
+apt-get --quiet --assume-yes install python3 ;
+
+## This differs from Ubuntun 14.04
+apt-get --quiet --assume-yes install python3-setuptools; 
+easy_install3 pip ;
 
 ## We need both python2.7 and python3 (for different scripts)
-apt-get -y install python3-setuptools 
-apt-get -y install python3
-apt-get -y install python3-pip 
-apt-get -y install python3-dev
-#apt-get install python3-suds
-pip3 install numpy
-## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
-pip3 install scipy
-pip3 install matplotlib
+apt-get --quiet --assume-yes install python3 ;
+apt-get --quiet --assume-yes build-dep python3-setuptools  ;
+apt-get --quiet --assume-yes build-dep python3-pip  ;
+apt-get --quiet --assume-yes build-dep python3-dev ;
+apt-get --quiet --assume-yes build-dep python3-numpy ;
+apt-get --quiet --assume-yes build-dep python3-scipy ;
+apt-get --quiet --assume-yes build-dep python3-matplotlib ; ## Picking 'matplotlib' as source package instead of 'python3-matplotlib'
+## apt-get --quiet --assume-yes build-dep python3-pygraphviz ; ## E: Unable to find a source package for python3-pygraphviz
+## apt-get --quiet --assume-yes install python3-soappy ; ## E: Unable to locate package python3-soappy
+## apt-get --quiet --assume-yes install python3-suds ; ## E: Unable to locate package python3-suds
+
 
 ## Problem : No distributions at all found for python-suds
-## pip3 install python-suds
+## pip3 install python-suds ;
+## easy_install -U distribute python-suds ; ## error: Could not find suitable distribution for Requirement.parse('python-suds')
+
+
+easy_install3 -U distribute pygraphviz ## SyntaxError: invalid syntax
+easy_install3 -U distribute fisher
 
 ## Problems: 
-# pip3 install wsdl
-# pip3 install wstools
-pip3 install fisher
+# pip3 install wsdl ;
+# pip3 install wstools ;
+# pip3 install fisher ;
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
 ## soappy seems to be discontnued for python3 !
-# pip3 install soappy
+# pip3 install soappy ;
 ## I should test one of the following SOAP packages
-pip3 install suds-jurko
-pip3 install pysimplesoap
+pip3 install suds-jurko ;
+pip3 install pysimplesoap ;
 
 
 ################################################################
@@ -233,8 +261,8 @@ deb http://us.archive.ubuntu.com/ubuntu trusty main universe
 
 apt-get update
 
-apt-get -y install libmodule-build-perl
-apt-get -y install libsoap-wsdl-perl
+apt-get --quiet --assume-yes install libmodule-build-perl
+apt-get --quiet --assume-yes install libsoap-wsdl-perl
 
 ## Note: this is still not sufficient to get SOAP::WSDL to run the two
 ## following targets
@@ -260,8 +288,6 @@ install Module::Build::Compat
 install CPAN ## This takesa HUGE time. I answer all questions by the default answer (simply type the Enter key)
 upgrade ## Takes a HUGE time, since all packages are apparently re-tested
 quit
-
-
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.
@@ -318,6 +344,8 @@ exit
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
+cd /home/rsat/rsat
+source RSAT_config.bashrc
 rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 
 ################################################################
@@ -354,6 +382,7 @@ make -f makefiles/install_rsat.mk  perl_modules_list
 ## Check which Perl modules are already installed
 make -f makefiles/install_rsat.mk perl_modules_check
 ## The result file name will be displayed at the end of the tests
+cat check_perl_modules_eval.txt
 
 ## Install these modules Beware: the _noprompt suffix is optional. It
 ## has the advantage to avoid for the admin to confirm each
@@ -374,12 +403,13 @@ chown -R rsat.rsat .
 
 ################################################################
 ## Activate the Apache Web server and RSAT configuration
-sudo emacs -nw /etc/apache2/sites-available/000-default.conf
 
+
+## sudo emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Activate the following line:
 # Include conf-available/serve-cgi-bin.conf
 
-## In the file /etc/apache2/mods-available/mime.conf
+sudo emacs -nw /etc/apache2/mods-available/mime.conf
 ## uncomment the line
 ##  AddHandler cgi-script .cgi
 
@@ -490,7 +520,7 @@ make -f makefiles/init_rsat.mk ws_nostubb_test
 sudo apt-get update
 
 ## .. and installed the R base package
-sudo apt-get -y install r-base
+sudo apt-get --quiet --assume-yes install r-base
 sudo apt-get install -y r-base-dev
 
 ## Installation of R packages
