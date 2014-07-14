@@ -396,6 +396,10 @@ make -f makefiles/install_rsat.mk perl_modules_install_by_force
 
 ## Check if all required Perl modules have been correctly installed
 make -f makefiles/install_rsat.mk perl_modules_check
+## Check if all modules are OK
+cat check_perl_modules_eval.txt
+
+## I still have problems with InsideOut, SOAP::Transport, SOAP and SOAP::WSDL
 
 ## Ensure that all files belong to rsat user
 chown -R rsat.rsat .
@@ -414,9 +418,9 @@ sudo emacs -nw /etc/apache2/mods-available/mime.conf
 ##  AddHandler cgi-script .cgi
 
 ## From http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
-sudo chmod 755 /usr/lib/cgi-bin
-sudo chown root.root /usr/lib/cgi-bin
-sudo a2enmod cgi ## this is apparently required to enable cgi
+# sudo chmod 755 /usr/lib/cgi-bin
+# sudo chown root.root /usr/lib/cgi-bin
+# sudo a2enmod cgi ## this is apparently required to enable cgi
 apache2ctl restart
 
 ################################################################
