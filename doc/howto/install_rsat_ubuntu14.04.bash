@@ -18,111 +18,109 @@ sudo bash
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
 apt-get update
-echo "" | apt-get upgrade
-echo "" | apt-get install ssh
+apt-get --quiet --assume-yes upgrade
+
+## Enable shell connection from the host
+apt-get --quiet --assume-yes install ssh
 
 ## Concurrent versioning systems
-echo "" | apt-get install git
-echo "" | apt-get install cvs
+apt-get --quiet --assume-yes install git
+apt-get --quiet --assume-yes install cvs
 
 ## Web aspirators
-echo "" | apt-get install wget
-echo "" | apt-get install curl
+apt-get --quiet --assume-yes install wget
+apt-get --quiet --assume-yes install curl
 
 ## Utilities
-echo "" | apt-get install zip
-echo "" | apt-get install unzip
-echo "" | apt-get install finger
-echo "" | apt-get install screen
-echo "" | apt-get install make
-echo "" | apt-get install g++
-echo "" | apt-get install yum
+apt-get --quiet --assume-yes install zip
+apt-get --quiet --assume-yes install unzip
+apt-get --quiet --assume-yes install finger
+apt-get --quiet --assume-yes install screen
+apt-get --quiet --assume-yes install make
+apt-get --quiet --assume-yes install g++
+apt-get --quiet --assume-yes install yum
 
 ## Cannot survive without emacs
-echo "" | apt-get install emacs
+apt-get --quiet --assume-yes install emacs
 
 ## Perl packages
-echo "" | apt-get install perl-doc
-echo "" | apt-get install pmtools
+apt-get --quiet --assume-yes install perl-doc
+apt-get --quiet --assume-yes install pmtools
 
 ## Apache and utilities
-echo "" | apt-get install apache2
-echo "" | apt-get install php5
-echo "" | apt-get install libapache2-mod-php5
-echo "" | apt-get install php-elisp
+apt-get --quiet --assume-yes install apache2
+apt-get --quiet --assume-yes install php5
+apt-get --quiet --assume-yes install libapache2-mod-php5
+apt-get --quiet --assume-yes install php-elisp
 
 ## Graphic libraries and software tools
-echo "" | apt-get install libgdbm-dev
-echo "" | apt-get install libgd-tools
-echo "" | apt-get install libgd-gd2-perl
-echo "" | apt-get install libgd2-xpm-dev
-echo "" | apt-get install libxml2-dev
+apt-get --quiet --assume-yes install libgdbm-dev
+apt-get --quiet --assume-yes install libgd-tools
+apt-get --quiet --assume-yes install libgd-gd2-perl
+apt-get --quiet --assume-yes install libgd2-xpm-dev
+apt-get --quiet --assume-yes install libxml2-dev
 
-echo "" | apt-get install libnet-ssleay-perl
-echo "" | apt-get install libcrypt-ssleay-perl
-echo "" | apt-get install libssl-dev
-echo "" | apt-get install ghostscript
-echo "" | apt-get install gnuplot
-echo "" | apt-get install graphviz
-echo "" | apt-get install lib32z1
-echo "" | apt-get install lib32ncurses5
-echo "" | apt-get install lib32bz2-1.0
+apt-get --quiet --assume-yes install libnet-ssleay-perl
+apt-get --quiet --assume-yes install libcrypt-ssleay-perl
+apt-get --quiet --assume-yes install libssl-dev
+apt-get --quiet --assume-yes install ghostscript
+apt-get --quiet --assume-yes install gnuplot
+apt-get --quiet --assume-yes install graphviz
+apt-get --quiet --assume-yes install lib32z1
+apt-get --quiet --assume-yes install lib32ncurses5
+apt-get --quiet --assume-yes install lib32bz2-1.0
 
 ## Text-mode Web browser, used by some packages
-echo "" | apt-get install links
+apt-get --quiet --assume-yes install links
 
 ## Some linux packages required for R BioConductor
-echo "" | apt-get install libc6-dev
-echo "" | apt-get install gfortran
-echo "" | apt-get install build-essential
-echo "" | apt-get install libreadline-gplv2-dev:i386
-echo "" | apt-get install lib64readline-gplv2-dev:i386
-echo "" | apt-get install libreadline-gplv2-dev
-echo "" | apt-get install libx11-dev
-echo "" | apt-get install libxt-dev
-echo "" | apt-get install libcurl4-openssl-dev
-echo "" | apt-get install libxml2-dev
+apt-get --quiet --assume-yes install libc6-dev
+apt-get --quiet --assume-yes install gfortran
+apt-get --quiet --assume-yes install build-essential
+apt-get --quiet --assume-yes install libreadline-gplv2-dev:i386
+apt-get --quiet --assume-yes install lib64readline-gplv2-dev:i386
+apt-get --quiet --assume-yes install libreadline-gplv2-dev
+apt-get --quiet --assume-yes install libx11-dev
+apt-get --quiet --assume-yes install libxt-dev
+apt-get --quiet --assume-yes install libcurl4-openssl-dev
+apt-get --quiet --assume-yes install libxml2-dev
 ## BEWARE: texlive-full occupies a lot of disk space. I should check if this is really required (for R ?)
 ## apt-get install texlive-full
-echo "" | apt-get install tcl8.5-dev
-echo "" | apt-get install tk8.5-dev
-echo "" | apt-get install libxss-dev
-echo "" | apt-get install libpng12-dev
-echo "" | apt-get install libjpeg62-dev
-echo "" | apt-get install libcairo2-dev
+apt-get --quiet --assume-yes install tcl8.5-dev
+apt-get --quiet --assume-yes install tk8.5-dev
+apt-get --quiet --assume-yes install libxss-dev
+apt-get --quiet --assume-yes install libpng12-dev
+apt-get --quiet --assume-yes install libjpeg62-dev
+apt-get --quiet --assume-yes install libcairo2-dev
 
 ## mysql client is required for ensembl client scripts
-echo "" | apt-get install mysql-client
-echo "" | apt-get install libmysqlclient-dev
+apt-get --quiet --assume-yes install mysql-client
+apt-get --quiet --assume-yes install libmysqlclient-dev
 
 ## Java 
 ## seems to be required for SOAP::WSDL Perl module
-echo "" | apt-get install default-jre
-## echo "" | apt-get install default-jdk
+apt-get --quiet --assume-yes install default-jre
+## apt-get --quiet --assume-yes install default-jdk
 
 ## Latex is required for RSAT doc + other applications (e.g. R). Note
 ## that it takes a some time to install
-echo "" | apt-get install texlive-latex-base
-
+apt-get --quiet --assume-yes install texlive-latex-base
 
 ################################################################
 ## Python and modules
-echo "" | apt-get install python
-echo "" | apt-get install python-setuptools 
-echo "" | apt-get install python-virtualenv
-echo "" | apt-get install python-pip
-echo "" | apt-get install python-dev
-echo "" | apt-get install python-suds
+apt-get --quiet --assume-yes install python
+apt-get --quiet --assume-yes install python-setuptools 
+apt-get --quiet --assume-yes install python-virtualenv
+apt-get --quiet --assume-yes install python-pip
+apt-get --quiet --assume-yes install python-dev
+apt-get --quiet --assume-yes install python-suds
 
-echo "" | apt-get install ipython
-echo "" | apt-get install ipython-notebook
-
-echo "" | apt-get install python3
-echo "" | apt-get install python3-pip
+apt-get --quiet --assume-yes install ipython
+apt-get --quiet --assume-yes install ipython-notebook
 
 ## A fix for a problem to install scipy with pip: use apt-get build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
-echo "" | apt-get build-dep python-numpy python-scipy
+apt-get --quiet --assume-yes build-dep python-numpy python-scipy
 
 pip install numpy
 ## Note: the installation of scipy and matplotlib takes some time and issues
@@ -133,16 +131,19 @@ pip install soappy
 pip install fisher
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
+
 ## We need both python2.7 and python3 (for different scripts)
-echo "" | apt-get install python3-setuptools 
-echo "" | apt-get install python3
-echo "" | apt-get install python3-pip 
-echo "" | apt-get install python3-dev
+apt-get --quiet --assume-yes install python3
+apt-get --quiet --assume-yes install python3-pip
+apt-get --quiet --assume-yes install python3-setuptools 
+apt-get --quiet --assume-yes install python3
+apt-get --quiet --assume-yes install python3-pip 
+apt-get --quiet --assume-yes install python3-dev
+apt-get --quiet --assume-yes install python3-numpy
+apt-get --quiet --assume-yes install python3-scipy
+apt-get --quiet --assume-yes install python3-matplotlib
 #apt-get install python3-suds
-pip3 install numpy
 ## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
-pip3 install scipy
-pip3 install matplotlib
 
 ## Problem : No distributions at all found for python-suds
 ## pip3 install python-suds
@@ -153,8 +154,15 @@ pip3 install matplotlib
 pip3 install fisher
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
-## soappy seems to be discontnued for python3 !
-# pip3 install soappy
+## PROBLEM: soappy seems to be discontnued for python3 !
+#      pip3 install soappy
+## Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/wstools
+## Storing debug log for failure in /home/rsat/.pip/pip.log
+##
+## I also tried with easy_install3
+#       easy_install3 soappy
+## SAME ERROR: ImportError: No module named 'WSDLTools'
+
 ## I should test one of the following SOAP packages
 pip3 install suds-jurko
 pip3 install pysimplesoap
@@ -174,8 +182,8 @@ deb http://us.archive.ubuntu.com/ubuntu trusty main universe
 
 apt-get update
 
-echo "" | apt-get install libmodule-build-perl
-echo "" | apt-get install libsoap-wsdl-perl
+apt-get --quiet --assume-yes install libmodule-build-perl
+apt-get --quiet --assume-yes install libsoap-wsdl-perl
 
 ## Note: this is still not sufficient to get SOAP::WSDL to run the two
 ## following targets
@@ -207,6 +215,7 @@ quit
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.
 apt-get autoremove
+apt-get clean
 
 ################################################################
 ################       RSAT installation        ################
