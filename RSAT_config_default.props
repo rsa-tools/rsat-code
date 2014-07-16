@@ -83,7 +83,7 @@ exec_time=0
 ##
 ## This URL may be distinct from rsat_www because some web servers
 ## might delegate the web services to another server.
-rsat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
+rsat_ws=http://localhost/rsat
 
 ## URL used by the RSAT Web services to give Web access to temporary files
 rsat_ws_tmp=http://localhost/rsat/tmp
@@ -168,11 +168,11 @@ neat_www_root=http://localhost/rsat/
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
 ## on the new neat_ws server
-neat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
+neat_ws=http://localhost/rsat
 
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
-neat_ws_tmp=http://localhost/rsat/tmp/
+neat_ws_tmp=http://localhost/rsat/tmp
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
