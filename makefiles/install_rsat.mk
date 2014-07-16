@@ -134,7 +134,7 @@ PERL_MODULES= \
 	Digest::MD5::File \
 	IO::All \
 	LockFile::Simple \
-	Util::Properties \
+	Object::InsideOut Util::Properties \
 	Class::Std::Fast  \
 	GD \
 	DBI \
@@ -151,8 +151,10 @@ PERL_MODULES= \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
 	XML::Compile::Transport::SOAPHTTP \
+	SOAP \
 	SOAP::Lite \
 	SOAP::Packager \
+	SOAP::Transport \
 	SOAP::Transport::HTTP \
 	SOAP::WSDL \
 	Bio::Perl \
@@ -170,7 +172,6 @@ PERL_MODULES= \
 #	File::Basename \
 
 ## Why was this library required ???
-##	Object::InsideOut \
 
 ## This module is problematic (not maintained anymore), and I am not
 ## sure it is required anymore. To be checked
@@ -211,8 +212,10 @@ perl_modules_install_one_by_one:
 ## About SOAP::Transport::HTTP, I think that there is no doc but the
 ## module is installed correctly.
 perl_modules_install_by_force:
+	@sudo ${CPAN_CMD} -f -i 'SOAP'
+	@sudo ${CPAN_CMD} -f -i 'SOAP::Transport'
 	@sudo ${CPAN_CMD} -f -i 'SOAP::WSDL'
-	@sudo ${CPAN_CMD} -f -i 'SOAP::Transport::HTTP'
+#	@sudo ${CPAN_CMD} -f -i 'Object::InsideOut'
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
