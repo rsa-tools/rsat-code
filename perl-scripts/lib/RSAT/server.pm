@@ -5,7 +5,6 @@ require RSAT::message;
 require RSAT::error;
 # use MIME::Lite;
 #use Mail::Sendmail;
-
 use Email::Sender::Simple qw(sendmail);
 use Email::Simple;
 use Email::Simple::Creator;
@@ -673,7 +672,7 @@ sub sendmail {
       header => [
 	To      => $recipient,
 	From    => $from,
-	Subject => $subject." [Email::Sender]",
+	Subject => $subject,
       ],
       body => $message,
 	);
