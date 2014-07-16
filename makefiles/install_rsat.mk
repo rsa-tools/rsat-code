@@ -121,10 +121,9 @@ PERL_MODULES= \
 	YAML \
 	Module::Build::Compat \
 	CGI \
-	MIME::Lite \
-	MIME::Tools \
-	MIME::Parser \
-	MIME::Base64 \
+	Email::Sender \
+	Email::Simple \
+	Email::Simple::Creator \
 	PostScript::Simple	 \
 	Statistics::Distributions \
 	Algorithm::Cluster \
@@ -151,14 +150,13 @@ PERL_MODULES= \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
 	XML::Compile::Transport::SOAPHTTP \
-	SOAP \
 	SOAP::Lite \
 	SOAP::Packager \
-	SOAP::Transport \
 	SOAP::Transport::HTTP \
 	SOAP::WSDL \
 	Bio::Perl \
 	Bio::Das
+
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
