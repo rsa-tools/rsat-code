@@ -3,8 +3,13 @@ package RSAT::server;
 require RSAT::util;
 require RSAT::message;
 require RSAT::error;
-use MIME::Lite;
+# use MIME::Lite;
 #use Mail::Sendmail;
+
+use Email::Sender::Simple qw(sendmail);
+use Email::Simple;
+use Email::Simple::Creator;
+use Email::Sender::Transport::SMTP;
 
 
 ################################################################
@@ -649,17 +654,38 @@ sub sendmail {
 	$from = $ENV{smtp_sender};
     }
 
-    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") if ($ENV{rsat_echo} >= 2);
+    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") 
+	if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0));
 
-    ## Send the message using MIME::Lite
-    my $msg = MIME::Lite->new(
-	From    => $from,
+    # ## Send the message using MIME::Lite    
+    # my $msg = MIME::Lite->new(
+    # 	From    => $from,
+    # 	To      => $recipient,
+    # 	Subject => $subject." [MIME::Lite]",
+    # 	Type    => 'text/plain',
+    # 	Data    => $message,
+    # 	);
+    # $msg->send('smtp', $smtp_server);
+
+
+    ## Sent message using Email::Sender
+    my $email = Email::Simple->create(
+      header => [
 	To      => $recipient,
-	Subject => $subject,
-	Type    => 'text/plain',
-	Data    => $message,
+	From    => $from,
+	Subject => $subject." [Email::Sender]",
+      ],
+      body => $message,
 	);
-    $msg->send('smtp', $smtp_server);
+    &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
+
+
+#    my $transport = Email::Sender::Transport::SMTP->new({
+#      host => $smtp_server,
+#      port => 25,
+#							});
+#    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);
+    Email::Sender::Simple->send($email, {transport => $transport});
 
 }
 
