@@ -121,16 +121,30 @@ _create_download_dir:
 	(cd downloads; ln -fs $RSAT/makefiles/downloads.mk ./makefile)
 
 
+## Adapt the IP address in the RSATWS.wsdl file
+ws_init:
+	@echo
+	@echo "Initializing RSATWS.wsdl file with SERVEER=$$RSAT_WS=${RSAT_WS}"
+	@perl -pe 's|\[RSAT_WS\]|${RSAT_WS}|g' \
+		${RSAT}/public_html/web_services/RSATWS_default.wsdl \
+		> ${RSAT}/public_html/web_services/RSATWS.wsdl
+	@echo "WSDL file"
+	@echo "	${RSAT}/public_html/web_services/RSATWS.wsdl"
+	@echo "WSDL access"
+	@echo "	${RSAT_WS}/web_services/RSATWS.wsdl"
+	@echo "WS location"
+	@grep location ${RSAT}/public_html/web_services/RSATWS.wsdl
+
 ## Init Web services
 ws_stubb:
 	@echo
-	@echo "Initiating Web services at ${RSAT_WS}"
+	@echo "Initiating Web services at SERVER=$$RSAT_WS=${RSAT_WS}"
 	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stubb SERVER=${RSAT_WS})
 
 ws_stubb_test:
 	@echo
-	@echo "Testing Web services at ${RSAT_WS}"
-	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test SERVER=${RSAT_WS})
+	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS}"
+	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test)
 
 
 ################################################################
