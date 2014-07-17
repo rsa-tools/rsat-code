@@ -628,7 +628,7 @@ sub CheckEmailAddress {
 =item B<Send an email message>
 
 =cut
-sub sendmail {
+sub send_mail {
     my ($message, $recipient, $subject) = @_;
 
     ## Check if recipient argument contains a valid email address
