@@ -108,7 +108,7 @@ package main;
 
   ################################################################
   ## Execute the command
-  &RSAT::server::sendmail($message, $recipient, $subject);
+  &RSAT::server::send_mail($message, $recipient, $subject);
 
   ################################################################
   ## Report execution time and close output stream
