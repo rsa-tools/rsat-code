@@ -120,15 +120,16 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 
 
 #### check patterns
-if ($main::verbose >= 2) {
-    warn "Patterns\n";
-    foreach my $pattern (@patterns) {
-	warn join ("\t",
-		   $pattern->get_attribute("sequence"),
-		   $pattern->get_attribute("id"),
-		   $pattern->get_attribute("score"),
-		   ), "\n";
-    }
+if ($main::verbose >= 3) {
+  &RSAT::message::TimeWarn("Patterns");
+  foreach my $pattern (@patterns) {
+    warn join ("\t",
+	       ";",
+	       $pattern->get_attribute("sequence"),
+	       $pattern->get_attribute("id"),
+	       $pattern->get_attribute("score"),
+	), "\n";
+  }
 }
 
 ### no pattern specified
@@ -193,20 +194,28 @@ $out = &OpenOutputFile($outputfile);
 ### open sequence file ###
 ($in, $input_dir) = &OpenInputFile($inputfile);
 
-### read input sequences
+## Scan input sequences
+&RSAT::message::TimeWarn("Scanning sequences") if ($verbose >= 2);
 while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
        (($current_seq) || ($sequence_id))) {
     push @sequence_ids, $sequence_id;
 
+    $s++;
     #### remove tabs and blank spaces ####
     $current_seq = &FoldSequence($current_seq, 0);
 
     $sequence_length = length($current_seq);
 
+    ## Top sequences
+    if (($top_seq > 0) && ($sequence_number > $top_seq)) {
+      &RSAT::message::Info("Stopped after $top_seq sequences") if ($main::verbose >= 2);
+      last;
+    }
 
     #### verbose
-    $s++;
-    &RSAT::message::Info(join ("\t", "; Scanning sequence", $s, $sequence_id, $sequence_length)) if ($verbose >= 2);
+    &RSAT::message::Info("Scanning sequence", $s, $sequence_id, $sequence_length) 
+	if (($main::verbose >= 4) || (($main::verbose >= 3) && ($s % 1000 ==1)));
+
 
 #    &RSAT::message::Debug($sequence_id, $current_seq) if ($main::verbose >= 10);
 
@@ -502,16 +511,15 @@ sub TreatMatch {
   ################################################################
   ## Store or print depending on the merge option
   if ($merge_matches) {
-    warn join ("\t",
-	       "Storing new match",
-	       $match->get_attribute("sequence_id"),
-	       $match->get_attribute("pattern_id"),
-	       $match->get_attribute("strand"),
-	       $match->get_attribute("start_pos"),
-	       $match->get_attribute("end_pos"),
-	       $match->get_attribute("matching_seq"),
-	       $score,
-	      ), "\n" if ($main::verbose >= 5);
+    &RSAT::message::Debug("Storing new match",
+			  $match->get_attribute("sequence_id"),
+			  $match->get_attribute("pattern_id"),
+			  $match->get_attribute("strand"),
+			  $match->get_attribute("start_pos"),
+			  $match->get_attribute("end_pos"),
+			  $match->get_attribute("matching_seq"),
+			  $score,
+	) if ($main::verbose >= 10);
     push @matches, $match;
   } else {
     &PrintMatchLocation($match);
@@ -777,7 +785,7 @@ sub ReadArguments {
 
 	} elsif ($arg eq "-IUPAC") {
 	    $search_method = "IUPAC";
-	    warn "; Seach method: IUPAC\n" if ($verbose >=1);
+	    &RSAT::message::Info("Seach method: IUPAC") if ($verbose >=1);
 
 	    ################################################################
 	    #### pattern specification
@@ -1033,7 +1041,6 @@ sub SlidingWindowSearch {
 	push @scores, $current_score;
 	$score_sum += $current_score;
 
-#	warn join( "\t", $sliding_window_size, $last_pos, $subseq, $current_score, $score_sum, $threshold), "\n" if ($current_score);
 	if ($score_sum >= $threshold) {
 	    $pattern->force_attribute("score", $score_sum);
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
@@ -1062,7 +1069,7 @@ sub MatchProfiles {
 
     ################################################################
     #### calculate min and max positions
-    warn "; Calculating min and max position\n" if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating min and max position") if ($verbose >= 2);
     for my $id  (@sequence_ids) {
 	my %matches = %{$profile_score{$id}};
 	$min_pos = &min($min_pos, keys %matches);
@@ -1075,7 +1082,7 @@ sub MatchProfiles {
 		     ($min_pos..$max_pos)
 		     ), "\n";
 
-    warn "; Printing matching profiles\n" if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Printing matching profiles") if ($verbose >= 2);
     #### print profiles
     for my $id  (@sequence_ids) {
 	my %matches = %{$profile_score{$id}};
