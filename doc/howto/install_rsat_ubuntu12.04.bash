@@ -38,20 +38,6 @@ sudo bash
 ## Before anything else, I need emacs to edit config files
 apt-get --quiet --assume-yes install emacs23
 
-################################################################
-## Network specification
-
-emacs -nw /etc/network/interfaces
-
-## I edit the file /etc/network/interfaces
-# The host-only network interface
-auto eth1
-iface eth1 inet static
-address 192.168.56.112
-netmask 255.255.255.0
-network 192.168.56.0
-broadcast 192.168.56.255
-
 ## I install openssh, in order to do the rest via an external ssh
 ## connection (more convenient for keyboard shortcuts, copy-paste etc).
 apt-get --quiet --assume-yes install openssh-server
