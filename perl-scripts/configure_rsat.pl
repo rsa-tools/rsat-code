@@ -59,15 +59,18 @@ $cross_ext_variable{cluster_queue} = 1;
 $cross_ext_variable{cluster_sell} = 1;
 
 ## First argument
-if ($ARGV[0] eq "auto") {
+if (exists($ARGV[0])) {
+  if ($ARGV[0] eq "auto") {
     foreach my $extension (@props_extensions) {
 	$auto_extension{$extension} = 1;
     }
-    
-## Print the help message
-} elsif (scalar(@ARGV) > 0) {
+  ## Print the help message
+  } elsif (scalar(@ARGV) > 0) {
     warn join ("\t", "\n", "!!!!  Invalid argument  !!!!", $ARGV[0]), "\n";
     &PrintHelp();
+  }
+} else {
+  warn "Entering manual mode...\n";
 }
 
 package main;
