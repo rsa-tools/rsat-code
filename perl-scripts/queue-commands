@@ -93,7 +93,7 @@ package main;
   ## Print the cluster parameters in the output
   if ($main::verbose >= 1) {
     print $main::out "; CLUSTER PARAMETERS:\n";
-    foreach my $param qw (CLUSTER_QUEUE BATCH_MAIL QSUB_MANAGER NODES) {
+    foreach my $param (qw (CLUSTER_QUEUE BATCH_MAIL QSUB_MANAGER NODES)) {
       printf $main::out ";\t%-15s\t%s\n", $param,  $ENV{$param};
     }
   }

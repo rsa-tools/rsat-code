@@ -141,7 +141,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 
 ## Return fields
 local @return_fields = ();
-foreach my $stat qw (counts frequencies weights info consensus parameters profile header margins logo links) {
+foreach my $stat (qw (counts frequencies weights info consensus parameters profile header margins logo links)) {
   if ($query->param($stat)) {
     push @return_fields, $stat;
     if ($stat eq "logo"){
