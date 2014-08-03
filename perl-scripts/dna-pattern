@@ -208,12 +208,12 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
     ## Top sequences
     if (($top_seq > 0) && ($sequence_number > $top_seq)) {
-      &RSAT::message::Info("Stopped after $top_seq sequences") if ($main::verbose >= 2);
+      &RSAT::message::Info("Stopped after", $top_seq, "sequences") if ($main::verbose >= 2);
       last;
     }
 
     #### verbose
-    &RSAT::message::Info("Scanning sequence", $s, $sequence_id, $sequence_length) 
+    &RSAT::message::TimeWarn("Scanning sequence", $s, $sequence_id, $sequence_length) 
 	if (($main::verbose >= 4) || (($main::verbose >= 3) && ($s % 1000 ==1)));
 
 
