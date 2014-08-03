@@ -11,7 +11,6 @@
 ## This makefile manages the installation of bioinformatics software
 ## and the configuration of the paths and environment variables for
 ## the users.
-
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/install_software.mk
 MAKE=make -f ${MAKEFILE}
@@ -154,6 +153,13 @@ _compile_seqlogo:
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT_BIN}/
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT_BIN}/
 
+################################################################
+## Get and install the program weblogo.  Weblogo is an upgrade from
+## seqlogo. Seqlogo required sequences in input, whereas weblogo takes
+## either sequences or matrices.
+install_weblogo:
+	@echo "Installing weblogo in dir	${RSAT_BIN}"
+	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
 
 ################################################################
 ## Get and install the program gnuplot
