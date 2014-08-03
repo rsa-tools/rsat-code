@@ -4601,7 +4601,7 @@ sub ExportSQL {
     }
 
     #### Matrices
-    for my $program qw (consensus gibbs AlignACE infogibbs meme MotifSampler) {
+    for my $program (qw (consensus gibbs AlignACE infogibbs meme MotifSampler)) {
       my $matrix_file = $family{$family_name}->{$program."_file"};
       if (-e $matrix_file) {
 	&ReadMatrices($family_name, $matrix_file, program=>$program);
