@@ -188,6 +188,7 @@ compile_compare_matrices_quick:
 ## Install external tools useful for RSAT
 install_rsat_extra:
 	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_seqlogo
+	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_weblogo
 
 ################################################################
 ## Compile the NeAT tools (network analysis + pathway analysis)
