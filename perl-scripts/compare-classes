@@ -107,7 +107,7 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 ## Field descriptions
 local %field_description = &DescribeFields();
 local $field_description_text = join ("\t", "", "group", "field", "description")."\n";
-foreach my $group qw(rank occ freq proba  jac_sim sor_sim dotprod entropy members) {
+foreach my $group (qw(rank occ freq proba  jac_sim sor_sim dotprod entropy members)) {
     foreach my $field (sort @calc_keys) {
 	if ($calc_groups{$field} eq $group) {
 	    $field_description_text .= join("\t", "", $group, $field, $field_description{$field});
