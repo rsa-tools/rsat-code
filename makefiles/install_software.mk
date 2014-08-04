@@ -55,8 +55,8 @@ EXT_APP_TARGETS=\
 	install_rnsc \
 	install_blast \
 	install_ensembl_api \
-	install_vmatch 
-#	install_ensembl_bioperl ## does not work anymore.  Not sure it is required since bioperl is installed with cpan
+	install_vmatch \
+	install_ensembl_bioperl
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -221,6 +221,8 @@ _install_gs:
 BIOPERL_VERSION=1-2-3
 BIOPERL_DIR=${PERLLIB_DIR}/bioperl-release-${BIOPERL_VERSION}
 
+install_ensembl_api: install_ensembl_api_git
+
 ## Note: In some cases, there are delays between Ensembl and
 ## EnsemblGenome releases. To ensure compatibility, please check the
 ## versions of both distributions on http://ensemblgenomes.org/.
@@ -233,7 +235,7 @@ install_ensembl_api_param:
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 
 ## Install the required modules for Ensembl API
-install_ensembl_api:
+install_ensembl_api_cvs:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
 		echo "Installing ensembl branch ${ENSEMBL_BRANCH} version ${ENSEMBL_VERSION}"; \
@@ -246,20 +248,34 @@ install_ensembl_api:
 	@echo
 	@${MAKE} install_ensembl_api_env
 
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+install_ensembl_api_git:
+	@echo ""
+	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
+	@mkdir -p "${ENSEMBL_API_DIR}"
+	@echo "Getting git clone for ensembl API release ${ENSEMBL_VERSION}"
+	@(cd ${ENSEMBL_API_DIR}; \
+		git clone https://github.com/Ensembl/ensembl-git-tools.git; \
+		export PATH=${ENSEMBL_API_DIR}/ensembl-git-tools/bin:${PATH}; \
+		git ensembl --clone api; \
+		git ensembl --checkout --branch release/${ENSEMBL_VERSION} api)
+
+################################################################
+## Ensembl API requires Bioperl version 1-2-3, as quoted in their
+## installation page:
+## 	http://www.ensembl.org/info/docs/api/api_git.html
 ##
-## NOT WORKING ANYMORE ?
-##
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## "Important note: you must install version 1.2.3, not a more recent
+## version. Starting with 1.2.4, major changes were made to the
+## BioPerl API which have made it incompatible with Ensembl."
 install_ensembl_bioperl:
-	@(cd ${BIOPERL_DIR}; \
-		echo "" ; \
-		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
-		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
-		mkdir -p "${BIOPERL_DIR}" ; \
-		echo  "Password is 'cvs'" ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live )
+	@echo ""
+	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
+	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
+	@mkdir -p "${BIOPERL_DIR}"
+	@(cd ${BIOPERL_DIR}; git clone https://github.com/bioperl/bioperl-live.git)
+	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-1-2-3)
+	@echo "bioperl-release-1-2-3 installed in ${BIOPERL_DIR}"
+
 
 ## Print the settings for including ensembl in the PERL5LIB environment variable
 install_ensembl_api_env:
@@ -268,6 +284,11 @@ install_ensembl_api_env:
 	@echo
 	@echo "BEWARE !"
 	@echo "You need to paste the following lines in the bash profile ${RSAT}/RSAT_config.bashrc"
+	@echo
+	@echo '## Path for ensembl software tools (bin)'
+	@echo 'export PATH=${ENSEMBL_API_DIR}/ensembl-git-tools/bin:$${PATH}'
+	@echo
+	@echo '## Path for ensembl Perl library (the API)'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
 	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
@@ -350,9 +371,9 @@ _install_blast:
 	@echo
 	@echo "You can also add the BLAST bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=${RSAT_BIN}:\$$PATH"
+	@echo "	export PATH=${RSAT_BIN}:$${PATH}"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${RSAT_BIN}:\$$PATH"
+	@echo "	setenv PATH ${RSAT_BIN}:$${PATH}"
 
 _list_blast_param:
 	@echo "Downloading blast"
@@ -448,7 +469,7 @@ _download_fastqc:
 	@echo "	fastqc script    	${FASTQC}"
 	@echo
 	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
-	@echo "export PATH=\$$PATH:${FASTQC_EXEC_DIR}"
+	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
 
 ################################################################
 ## Install BEDTools
@@ -563,7 +584,7 @@ _after_meme:
 	cd ${RSAT_BIN}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
-	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
+	@echo "	export PATH=${MEME_BIN_DIR}:$${PATH}"
 
 ################################################################
 ## Install a clustering algorithm "cluster"
@@ -1065,7 +1086,7 @@ _compile_igv:
 	(cd ${IGV_BASE_DIR}; unzip ${IGV_ARCHIVE})
 	@echo ${IGV_DISTRIB_DIR}
 	@echo "Please add IGVTools folder to your path"
-	@echo 'export PATH=$$PATH:${IGV_DISTRIB_DIR}'
+	@echo 'export PATH=$${PATH}:${IGV_DISTRIB_DIR}'
 
 
 
@@ -1088,9 +1109,9 @@ _install_homer:
 	(cd ${HOMER_BASE_DIR}; perl ./configureHomer.pl -install)
 	@echo "HOMER installed in dir	${HOMER_BASE_DIR}"
 	@echo "Please add the three following lines to your .bashrc file in order to include HOMER programs in your path"
-#	@echo 'export PATH=$$PATH:${HOMER_BASE_DIR}/bin'
+#	@echo 'export PATH=$${PATH}:${HOMER_BASE_DIR}/bin'
 	@echo 'export HOMER=${HOMER_BASE_DIR}'
-	@echo 'export PATH=$$PATH:$$HOMER/bin'
+	@echo 'export PATH=$${PATH}:\$$HOMER/bin'
 	@echo 'export PERL5LIB=$${PERL5LIB}:$$HOMER/bin'
 
 
