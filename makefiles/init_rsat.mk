@@ -124,11 +124,18 @@ _create_download_dir:
 ## Adapt the IP address in the RSATWS.wsdl file
 ws_init:
 	@echo
-	@echo "Initializing RSATWS.wsdl file with SERVEER=$$RSAT_WS=${RSAT_WS}"
+	@echo "Initializing RSATWS.wsdl file with SERVER=$$RSAT_WS=${RSAT_WS}"
 	@perl -pe 's|\[RSAT_WS\]|${RSAT_WS}|g' \
 		${RSAT}/public_html/web_services/RSATWS_default.wsdl \
 		> ${RSAT}/public_html/web_services/RSATWS.wsdl
-	@echo "WSDL file"
+	@${MAKE} ws_param
+
+## List the parameters for the WS stubb
+ws_param:
+	@echo ""
+	@echo "Web services parameters"
+	@echo "	RSAT_WS		${RSAT_WS}"
+	@echo "Local WSDL file"
 	@echo "	${RSAT}/public_html/web_services/RSATWS.wsdl"
 	@echo "WSDL access"
 	@echo "	${RSAT_WS}/web_services/RSATWS.wsdl"
