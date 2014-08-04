@@ -118,7 +118,7 @@ _install_vmatch:
 	@echo "Uncompressing vmatch tar archive"
 	@echo "	${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}"
 	@tar -xzf  ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE} -C ${VMATCH_BASE_DIR}
-	@echo "Synchronizing vmatch and mkvtree in RSAT_BIN"
+	@echo "Synchronizing vmatch and mkvtree in RSAT_BIN	${RSAT_BIN}"
 	@echo "	${RSAT_BIN}"
 	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/vmatch ${RSAT_BIN}/
 	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/mkvtree ${RSAT_BIN}/
@@ -148,7 +148,7 @@ _download_seqlogo:
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 _compile_seqlogo:
-	@echo "Installing seqlogo in dir	${RSAT_BIN}"
+	@echo "Installing seqlogo in RSAT_BIN	${RSAT_BIN}"
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${RSAT_BIN}/
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT_BIN}/
 	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT_BIN}/
@@ -158,7 +158,7 @@ _compile_seqlogo:
 ## seqlogo. Seqlogo required sequences in input, whereas weblogo takes
 ## either sequences or matrices.
 install_weblogo:
-	@echo "Installing weblogo in dir	${RSAT_BIN}"
+	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
 	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
 
 ################################################################
@@ -202,7 +202,7 @@ _download_gs:
 	@echo "gs dir	${GS_DIR}"
 
 _install_gs:
-	@echo "Installing gs in ${RSAT_BIN}"
+	@echo "Installing gs in RSAT_BIN	${RSAT_BIN}"
 	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
 
 #_compile_gs:
@@ -321,14 +321,12 @@ _download_rnsc:
 
 _compile_rnsc:
 	@echo
-	@echo "Installing RNSC in dir ${RSAT_BIN}"
+	@echo "Installing RNSC in RSAT_BIN	${RSAT_BIN}"
 	@${SUDO} mkdir -p ${RSAT_BIN}
 	(cd ${RNSC_BASE_DIR}; make ;  \
 	${SUDO} rsync -ruptvl rnsc ${RSAT_BIN}; \
 	${SUDO} rsync -ruptvl rnscfilter ${RSAT_BIN}; \
 	)
-	@echo "Please check that RNSC bin directory in your path."
-	@echo "	${RSAT_BIN}"
 #	${SUDO} rsync -ruptvl rnscconvert ${RSAT_BIN}/; \
 
 ################################################################
@@ -361,7 +359,7 @@ _list_blast_param:
 	@echo "	BLAST_URL		${BLAST_URL}"
 	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
 	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
-	@echo "	RSAT_BIN			${RSAT_BIN}"
+	@echo "	RSAT_BIN		${RSAT_BIN}"
 
 ################################################################
 ## Install the BLAST on linux
@@ -493,7 +491,7 @@ _compile_bedtools:
 
 _install_bedtools:
 	@echo
-	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${RSAT_BIN}"
+	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} in RSAT_BIN	${RSAT_BIN}"
 	@echo
 	@mkdir -p ${RSAT_BIN}
 	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${RSAT_BIN}/
@@ -559,7 +557,7 @@ _after_meme:
 	@echo "Creating links to meme"
 	@echo "	MEME_BIN_DIR	${MEME_BIN_DIR}"
 	@echo "	MEME_VERSION	${MEME_VERSION}"
-	@echo "	RSAT_BIN		${RSAT_BIN}"
+	@echo "	RSAT_BIN	${RSAT_BIN}"
 	cd ${RSAT_BIN}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
@@ -638,7 +636,7 @@ _download_patser:
 	@echo "patser dir	${PATSER_DIR}"
 
 _compile_patser:
-	@echo "Installing patser in dir	${RSAT_BIN}"
+	@echo "Installing patser in RSAT_BIN	${RSAT_BIN}"
 	(cd ${PATSER_DIR}; rm *.o; make)
 	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT_BIN}
 	(cd ${RSAT_BIN}; ${SUDO} ln -fs ${PATSER_APP} patser)
