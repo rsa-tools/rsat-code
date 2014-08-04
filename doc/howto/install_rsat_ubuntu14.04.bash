@@ -18,109 +18,105 @@ sudo bash
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
 apt-get update
-apt-get --quiet --assume-yes upgrade
+aptitude --quiet --assume-yes upgrade
 
 ## Enable shell connection from the host
-apt-get --quiet --assume-yes install ssh
+aptitude --quiet --assume-yes install ssh
 
 ## Concurrent versioning systems
-apt-get --quiet --assume-yes install git
-apt-get --quiet --assume-yes install cvs
+aptitude --quiet --assume-yes install git
+aptitude --quiet --assume-yes install cvs
 
 ## Web aspirators
-apt-get --quiet --assume-yes install wget
-apt-get --quiet --assume-yes install curl
+aptitude --quiet --assume-yes install wget
+aptitude --quiet --assume-yes install curl
 
 ## Utilities
-apt-get --quiet --assume-yes install zip
-apt-get --quiet --assume-yes install unzip
-apt-get --quiet --assume-yes install finger
-apt-get --quiet --assume-yes install screen
-apt-get --quiet --assume-yes install make
-apt-get --quiet --assume-yes install g++
-apt-get --quiet --assume-yes install yum
+aptitude --quiet --assume-yes install zip
+aptitude --quiet --assume-yes install unzip
+aptitude --quiet --assume-yes install finger
+aptitude --quiet --assume-yes install screen
+aptitude --quiet --assume-yes install make
+aptitude --quiet --assume-yes install g++
+aptitude --quiet --assume-yes install yum
 
 ## Cannot survive without emacs
-apt-get --quiet --assume-yes install emacs
-
-## Perl packages
-apt-get --quiet --assume-yes install perl-doc
-apt-get --quiet --assume-yes install pmtools
+aptitude --quiet --assume-yes install emacs
 
 ## Apache and utilities
-apt-get --quiet --assume-yes install apache2
-apt-get --quiet --assume-yes install php5
-apt-get --quiet --assume-yes install libapache2-mod-php5
-apt-get --quiet --assume-yes install php-elisp
+aptitude --quiet --assume-yes install apache2
+aptitude --quiet --assume-yes install php5
+aptitude --quiet --assume-yes install libapache2-mod-php5
+aptitude --quiet --assume-yes install php-elisp
 
 ## Graphic libraries and software tools
-apt-get --quiet --assume-yes install libgdbm-dev
-apt-get --quiet --assume-yes install libgd-tools
-apt-get --quiet --assume-yes install libgd-gd2-perl
-apt-get --quiet --assume-yes install libgd2-xpm-dev
-apt-get --quiet --assume-yes install libxml2-dev
+aptitude --quiet --assume-yes install libgdbm-dev
+aptitude --quiet --assume-yes install libgd-tools
+aptitude --quiet --assume-yes install libgd-gd2-perl
+aptitude --quiet --assume-yes install libgd2-xpm-dev
+aptitude --quiet --assume-yes install libxml2-dev
 
-apt-get --quiet --assume-yes install libnet-ssleay-perl
-apt-get --quiet --assume-yes install libcrypt-ssleay-perl
-apt-get --quiet --assume-yes install libssl-dev
-apt-get --quiet --assume-yes install ghostscript
-apt-get --quiet --assume-yes install gnuplot
-apt-get --quiet --assume-yes install graphviz
-apt-get --quiet --assume-yes install lib32z1
-apt-get --quiet --assume-yes install lib32ncurses5
-apt-get --quiet --assume-yes install lib32bz2-1.0
+aptitude --quiet --assume-yes install libnet-ssleay-perl
+aptitude --quiet --assume-yes install libcrypt-ssleay-perl
+aptitude --quiet --assume-yes install libssl-dev
+aptitude --quiet --assume-yes install ghostscript
+aptitude --quiet --assume-yes install gnuplot
+aptitude --quiet --assume-yes install graphviz
+aptitude --quiet --assume-yes install lib32z1
+aptitude --quiet --assume-yes install lib32ncurses5
+aptitude --quiet --assume-yes install lib32bz2-1.0
 
 ## Text-mode Web browser, used by some packages
-apt-get --quiet --assume-yes install links
+aptitude --quiet --assume-yes install links
 
 ## Some linux packages required for R BioConductor
-apt-get --quiet --assume-yes install libc6-dev
-apt-get --quiet --assume-yes install gfortran
-apt-get --quiet --assume-yes install build-essential
-apt-get --quiet --assume-yes install libreadline-gplv2-dev:i386
-apt-get --quiet --assume-yes install lib64readline-gplv2-dev:i386
-apt-get --quiet --assume-yes install libreadline-gplv2-dev
-apt-get --quiet --assume-yes install libx11-dev
-apt-get --quiet --assume-yes install libxt-dev
-apt-get --quiet --assume-yes install libcurl4-openssl-dev
-apt-get --quiet --assume-yes install libxml2-dev
+aptitude --quiet --assume-yes install libc6-dev
+aptitude --quiet --assume-yes install gfortran
+aptitude --quiet --assume-yes install build-essential
+aptitude --quiet --assume-yes install libreadline-gplv2-dev:i386
+aptitude --quiet --assume-yes install lib64readline-gplv2-dev:i386
+aptitude --quiet --assume-yes install libreadline-gplv2-dev
+aptitude --quiet --assume-yes install libx11-dev
+aptitude --quiet --assume-yes install libxt-dev
+aptitude --quiet --assume-yes install libcurl4-openssl-dev
+aptitude --quiet --assume-yes install libxml2-dev
 ## BEWARE: texlive-full occupies a lot of disk space. I should check if this is really required (for R ?)
-## apt-get install texlive-full
-apt-get --quiet --assume-yes install tcl8.5-dev
-apt-get --quiet --assume-yes install tk8.5-dev
-apt-get --quiet --assume-yes install libxss-dev
-apt-get --quiet --assume-yes install libpng12-dev
-apt-get --quiet --assume-yes install libjpeg62-dev
-apt-get --quiet --assume-yes install libcairo2-dev
+## aptitude install texlive-full
+aptitude --quiet --assume-yes install tcl8.5-dev
+aptitude --quiet --assume-yes install tk8.5-dev
+aptitude --quiet --assume-yes install libxss-dev
+aptitude --quiet --assume-yes install libpng12-dev
+aptitude --quiet --assume-yes install libjpeg62-dev
+aptitude --quiet --assume-yes install libcairo2-dev
 
 ## mysql client is required for ensembl client scripts
-apt-get --quiet --assume-yes install mysql-client
-apt-get --quiet --assume-yes install libmysqlclient-dev
+aptitude --quiet --assume-yes install mysql-client
+aptitude --quiet --assume-yes install libmysqlclient-dev
 
 ## Java 
 ## seems to be required for SOAP::WSDL Perl module
-apt-get --quiet --assume-yes install default-jre
-## apt-get --quiet --assume-yes install default-jdk
+aptitude --quiet --assume-yes install default-jre
+## aptitude --quiet --assume-yes install default-jdk
 
 ## Latex is required for RSAT doc + other applications (e.g. R). Note
 ## that it takes a some time to install
-apt-get --quiet --assume-yes install texlive-latex-base
+aptitude --quiet --assume-yes install texlive-latex-base
 
 ################################################################
 ## Python and modules
-apt-get --quiet --assume-yes install python
-apt-get --quiet --assume-yes install python-setuptools 
-apt-get --quiet --assume-yes install python-virtualenv
-apt-get --quiet --assume-yes install python-pip
-apt-get --quiet --assume-yes install python-dev
-apt-get --quiet --assume-yes install python-suds
+aptitude --quiet --assume-yes install python
+aptitude --quiet --assume-yes install python-setuptools 
+aptitude --quiet --assume-yes install python-virtualenv
+aptitude --quiet --assume-yes install python-pip
+aptitude --quiet --assume-yes install python-dev
+aptitude --quiet --assume-yes install python-suds
 
-apt-get --quiet --assume-yes install ipython
-apt-get --quiet --assume-yes install ipython-notebook
+aptitude --quiet --assume-yes install ipython
+aptitude --quiet --assume-yes install ipython-notebook
 
-## A fix for a problem to install scipy with pip: use apt-get build-dep 
+## A fix for a problem to install scipy with pip: use aptitude build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
-apt-get --quiet --assume-yes build-dep python-numpy python-scipy
+aptitude --quiet --assume-yes build-dep python-numpy python-scipy
 
 pip install numpy
 ## Note: the installation of scipy and matplotlib takes some time and issues
@@ -133,16 +129,16 @@ pip install fisher
 
 
 ## We need both python2.7 and python3 (for different scripts)
-apt-get --quiet --assume-yes install python3
-apt-get --quiet --assume-yes install python3-pip
-apt-get --quiet --assume-yes install python3-setuptools 
-apt-get --quiet --assume-yes install python3
-apt-get --quiet --assume-yes install python3-pip 
-apt-get --quiet --assume-yes install python3-dev
-apt-get --quiet --assume-yes install python3-numpy
-apt-get --quiet --assume-yes install python3-scipy
-apt-get --quiet --assume-yes install python3-matplotlib
-#apt-get install python3-suds
+aptitude --quiet --assume-yes install python3
+aptitude --quiet --assume-yes install python3-pip
+aptitude --quiet --assume-yes install python3-setuptools 
+aptitude --quiet --assume-yes install python3
+aptitude --quiet --assume-yes install python3-pip 
+aptitude --quiet --assume-yes install python3-dev
+aptitude --quiet --assume-yes install python3-numpy
+aptitude --quiet --assume-yes install python3-scipy
+aptitude --quiet --assume-yes install python3-matplotlib
+#aptitude install python3-suds
 ## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
 
 ## Problem : No distributions at all found for python-suds
@@ -171,8 +167,39 @@ pip3 install pysimplesoap
 ################################################################
 ## Perl modules
 
+aptitude --quiet --assume-yes install perl-doc
+aptitude --quiet --assume-yes install pmtools
+
+aptitude install --quiet --assume-yes \
+	libyaml-perl \
+	libemail-simple-perl \
+	libemail-sender-perl \
+	libemail-simple-creator-perl \
+	libpostscript-simple-perl \
+	libstatistics-distributions-perl \
+	libalgorithm-cluster-perl \
+	digest-md5-file-perl \
+	libio-all-perl \
+	liblockfile-simple \
+	libobject-insideout-perl \
+	libutil-properties-perl \
+	libobject-insideout-perl \
+	libsoap-lite-perl \
+	libsoap-wsdl-perl \
+	libxml-perl \
+	libxml-simple-perl \
+	libxml-compile-cache-perl \
+	libdbi-perl \
+	liblockfile-simple-perl \
+	libobject-insideout-perl \
+	libgd-perl \
+	libdbd-mysql-perl \
+	libjson-perl \
+	libbio-perl-perl \
+	libdigest-md5-file-perl
+
 ## The installation of SOAP:WSDL under cpan is particularly tricky. 
-## In Ubuntu, there is a way to install it with apt-get. 
+## In Ubuntu, there is a way to install it with aptitude. 
 ## http://www.installion.co.uk/ubuntu/trusty/universe/l/libsoap-wsdl-perl/fr/install.html
 emacs -nw /etc/apt/sources.list
 
