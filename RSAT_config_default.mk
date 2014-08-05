@@ -38,9 +38,6 @@ UCSC_OS=linux.x86_64
 ## compilation)
 SRC_DIR=${RSAT}/app_sources
 
-## Directory to store libraries
-PERLLIB_DIR=${RSAT}/lib
-
 ################################################################
 ## Your sudoer status
 ##
@@ -107,5 +104,5 @@ QUEUE=
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_VERSION=75
-ENSEMBL_BRANCH=ensemblgenomes-22
+ENSEMBL_RELEASE=75
+ENSEMBLGENOMES_BRANCH=22
