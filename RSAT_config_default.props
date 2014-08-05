@@ -115,15 +115,12 @@ CLUSTER_SHELL=bash
 ## Additional options for the cluster
 QSUB_OPTIONS=
 
-## Restrict the cluster to a subset of the nodes
-NODES=
-
 ################################################################
 ## Mirror of the NCBI genomes (which are parsed to install genomes in RSAT)
 ##
 ## This will only be required if you intend to install yourself some
 ## organisms from tne NCBI genomes repository.
-GENBANK_DIR=[RSAT_PARENT_PATH]/downloads/ftp.ncbi.nih.gov/genomes/
+GENBANK_DIR=[RSAT_PARENT_PATH]/rsat/downloads/ftp.ncbi.nih.gov/genomes/
 
 ################################################################
 ## Libraries required for direct access to the Ensembl and
