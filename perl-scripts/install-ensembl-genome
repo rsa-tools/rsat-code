@@ -682,6 +682,7 @@ sub Verbose {
   print $out "; install-ensembl-genome ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  printf $out "; %-22s\t%s\n", "Ensembl release", $ensembl_version;
   if (%main::infile) {
     print $out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
