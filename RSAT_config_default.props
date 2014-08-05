@@ -45,10 +45,6 @@ smtp_sender=rsat@localhost
 ## This is necessary only if you want to install a local Web server
 rsat_www=http://localhost/rsat/
 
-## Obsolete version of the web server, for backwards compatibility
-## This is necessary only if you want to install a local Web server
-www_rsa=http://localhost/rsat//
-
 ## Echo level of the web server (default 0, set to 1 or 2 for debugging).
 ## This option should usually be left to 0, because it exposes all
 ## parameters of the Web forms, which can be confising for the users.
@@ -83,7 +79,7 @@ exec_time=0
 ##
 ## This URL may be distinct from rsat_www because some web servers
 ## might delegate the web services to another server.
-rsat_ws=http://localhost/rsat
+rsat_ws=http://localhost/rsat/
 
 ## URL used by the RSAT Web services to give Web access to temporary files
 rsat_ws_tmp=http://localhost/rsat/tmp
@@ -168,7 +164,7 @@ neat_www_root=http://localhost/rsat/
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
 ## on the new neat_ws server
-neat_ws=http://localhost/rsat
+neat_ws=http://localhost/rsat/
 
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
@@ -187,28 +183,9 @@ neat_java_host=http://localhost/rsat/
 tomcat_port=
 
 ################################################################
-## Directories for programs developed by third parties
-##
-## Those programs are not necessary for running RSAT commands, but
-## provide useful complements.
-
-## seqlogo, program to draw sequence logos used by convert-matrix
-seqlogo_dir=[RSAT_PARENT_PATH]/app_sources/seqlogo/weblogo/
-
-## MEME, motif discovery program developed by Tim Bailey
-# meme_dir=[RSAT_PARENT_DIR]/rsat/app_sources/MEME/meme_4.9.1
-
-## MCL , graph-based clustering algorithm developed by Stijn Van Dongen, and
-## integrated in the NeAT suite.
-mcl_dir=[RSAT_PARENT_PATH]/rsat/bin
-
-## RNSC , graph-based clustering algorithm developed by Andrew King and Igor
-## Jurisica, and integrated in the NeAT suite.
-rnsc_dir=[RSAT_PARENT_PATH]/rsat/bin
-
-## BLAST
-blast_dir=[RSAT_PARENT_PATH]/rsat/bin
-
+## Directories for programs developed by third parties, necessary for
+## the metabolic pathway analysis tools (part of Network Analysis
+## Tools, NeAT).
 
 ## REA, k-shortest path finding program by Jimenez and Marzal. 
 ## Used for the path finding algorithms in the NeAT suite.
