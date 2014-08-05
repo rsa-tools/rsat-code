@@ -48,3 +48,8 @@ stubb:
 
 stubb_test:
 	perl ./convert_matrix_soap_wsdl_2.pl 
+
+nostubb_test:
+	@echo "Testing web services without stub"
+	perl ./supported-organisms_client_nostubb_wsdl.pl ${RSAT_WS}
+#	@ls -ltr organisms_*.txt
