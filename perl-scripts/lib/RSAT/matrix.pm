@@ -3940,7 +3940,7 @@ sub makeLogo{
   my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
-  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{seqlogo_dir});
+  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{RSAT_BIN});
   foreach my $logo_format (@logo_formats){
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
