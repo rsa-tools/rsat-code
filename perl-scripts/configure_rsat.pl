@@ -178,7 +178,7 @@ package main;
 	  ## Replace the RSAT web server path if required (at first installation)
 	  if ($key eq "rsat_www") {
 	    $value .= "/";
-	    $value =~ s|//$|/|;
+	    $value =~ s|\/\/$|/|;
 	  } elsif (($prev_param{rsat_www}) && ($new_param{rsat_www})
 		   && ($value =~ /$prev_param{rsat_www}/)
 		   && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
