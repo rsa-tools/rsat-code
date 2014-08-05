@@ -5931,16 +5931,6 @@ Generate the MCL command.
 sub mcl_cmd {
   my ($self, %args) =@_;
 
-  ## In principle, the mcl directory must have been defined in the
-  ## file ${RSAT}/RSAT_config.props
-#  my $command = "mcl";
-#  if (defined($ENV{mcl_dir})) {
-#    $command = $ENV{mcl_dir}.'/mcl',
-#  } elsif (-e $ENV{RSAT}.'/bin/mcl') {
-#    $command = $ENV{RSAT}.'/bin/mcl'
-#  } elsif (-e '/usr/local/bin/mcl') {
-#    $command = '/usr/local/bin/mcl';
-#  }
   my $command = &RSAT::server::GetProgramPath("mcl");
 
   ## Check that the mcl command file exists
