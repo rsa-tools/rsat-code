@@ -397,27 +397,23 @@ separately each target listed by \option{list\_ext\_apps}.
 
 By default, Web services requests are redirected towards the main
 \RSAT server. To configure your \RSAT instance as a Web services
-provider, you need to edit the WSDL file.
+provider, you first need to update the WSDL file, which provides all
+technical information about supported web services.
 
-Open this file withb a text editor.
+  \begin{lstlisting}
+cd $RSAT ;
+make -f makefiles/init_rsat.mk ws_init
+  \end{lstlisting}
 
-\file{public\_html/web\_services/RSATWS.wsdl}
+This will also display the parameters of your local web services,
+which depend on the variable RSAT\_WWW when you ran the \RSAT
+configuration script (\file{perl-scripts/configure\_rsat.pl}). Check
+that these parameters are correct.
 
-At the bottom of the file, locate the following line.
-
-\begin{footnotesize}
-\begin{verbatim}
-<soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-\end{verbatim}
-\end{footnotesize}
-
-Adapt the URL to your local configuration.
-
-After this, you should re-generate the web services stubb, with the
+After this, you should generate the web services stubb, with the
 following command.
 
   \begin{lstlisting}
-cd $RSAT; 
 make -f makefiles/init_rsat.mk ws_stubb
   \end{lstlisting}
 
