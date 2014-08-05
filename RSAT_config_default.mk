@@ -72,7 +72,7 @@ RSAT_BIN=${RSAT}/bin
 ##
 ## This may differ from the RSAT site, because some tasks may be
 ## delegated to remote RSAT web services.
-RSAT_WS=http://localhost/rsat
+RSAT_WS=http://localhost/rsat/
 
 ## URL used by the RSAT Web services to give Web access to temporary
 ## files
