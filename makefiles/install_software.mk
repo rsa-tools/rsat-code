@@ -54,9 +54,9 @@ EXT_APP_TARGETS=\
 	install_mcl \
 	install_rnsc \
 	install_blast \
+	install_ensembl_bioperl \
 	install_ensembl_api \
-	install_vmatch \
-	install_ensembl_bioperl
+	install_vmatch
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -219,32 +219,32 @@ _install_gs:
 ## 1.2.4, major changes were made to the BioPerl API which have made
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
-BIOPERL_DIR=${PERLLIB_DIR}/bioperl-release-${BIOPERL_VERSION}
+BIOPERL_DIR=${RSAT}/lib/bioperl-release-${BIOPERL_VERSION}
 
 install_ensembl_api: install_ensembl_api_git
 
 ## Note: In some cases, there are delays between Ensembl and
 ## EnsemblGenome releases. To ensure compatibility, please check the
 ## versions of both distributions on http://ensemblgenomes.org/.
-ENSEMBL_API_DIR=${PERLLIB_DIR}/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
+ENSEMBL_API_DIR=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
-	@echo "	ENSEMBL_VERSION		${ENSEMBL_VERSION}"
-	@echo "	ENSEMBL_BRANCH		${ENSEMBL_BRANCH}"
+	@echo "	ENSEMBL_RELEASE		${ENSEMBL_RELEASE}"
+	@echo "	ENSEMBLGENOMES_BRANCH	${ENSEMBLGENOMES_BRANCH}"
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 
 ## Install the required modules for Ensembl API
 install_ensembl_api_cvs:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
-		echo "Installing ensembl branch ${ENSEMBL_BRANCH} version ${ENSEMBL_VERSION}"; \
+		echo "Installing ensembl branch ${ENSEMBLGENOMES_BRANCH} version ${ENSEMBL_RELEASE}"; \
 		echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}" ; \
 		mkdir -p "${ENSEMBL_API_DIR}"; \
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE} ensembl-api)
 	@echo
 	@${MAKE} install_ensembl_api_env
 
@@ -252,12 +252,17 @@ install_ensembl_api_git:
 	@echo ""
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 	@mkdir -p "${ENSEMBL_API_DIR}"
-	@echo "Getting git clone for ensembl API release ${ENSEMBL_VERSION}"
+	@echo "Getting git clone for ensembl API release ${ENSEMBL_RELEASE}"
 	@(cd ${ENSEMBL_API_DIR}; \
 		git clone https://github.com/Ensembl/ensembl-git-tools.git; \
 		export PATH=${ENSEMBL_API_DIR}/ensembl-git-tools/bin:${PATH}; \
 		git ensembl --clone api; \
-		git ensembl --checkout --branch release/${ENSEMBL_VERSION} api)
+		git ensembl --checkout --branch release/${ENSEMBL_RELEASE} api)
+	@echo ""
+	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_BRANCH}"
+	@(cd ${ENSEMBL_API_DIR}; git clone https://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
+		cd ensemblgenomes-api/ ; \
+		git checkout release/eg/${ENSEMBLGENOMES_BRANCH} )
 
 ################################################################
 ## Ensembl API requires Bioperl version 1-2-3, as quoted in their
@@ -273,8 +278,8 @@ install_ensembl_bioperl:
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
 	@mkdir -p "${BIOPERL_DIR}"
 	@(cd ${BIOPERL_DIR}; git clone https://github.com/bioperl/bioperl-live.git)
-	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-1-2-3)
-	@echo "bioperl-release-1-2-3 installed in ${BIOPERL_DIR}"
+	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-${BIOPERL_VERSION})
+	@echo "bioperl-release-${BIOPERL_VERSION} installed in ${BIOPERL_DIR}"
 
 
 ## Print the settings for including ensembl in the PERL5LIB environment variable
@@ -285,17 +290,18 @@ install_ensembl_api_env:
 	@echo "BEWARE !"
 	@echo "You need to paste the following lines in the bash profile ${RSAT}/RSAT_config.bashrc"
 	@echo
-	@echo '## Path for ensembl software tools (bin)'
-	@echo 'export PATH=${ENSEMBL_API_DIR}/ensembl-git-tools/bin:$${PATH}'
-	@echo
-	@echo '## Path for ensembl Perl library (the API)'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-functgenomics/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-tools/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-variation/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
+	@echo '################################################################'
+	@echo '## Default path for the Ensembl Perl modules and sofwtare tools'
+	@echo 'export ENSEMBL_RELEASE=${ENSEMBL_RELEASE}'
+	@echo 'export ENSEMBLGENOMES_BRANCH=${ENSEMBLGENOMES_BRANCH}'
+	@echo 'export PATH=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-git-tools/bin:$${PATH}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/bioperl-release-$${BIOPERL_VERSION}/bioperl-live::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-compara/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-external/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-tools/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
 ## Install the graph-based clustering algorithm MCL
