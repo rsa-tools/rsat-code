@@ -375,9 +375,9 @@ _install_blast:
 	@echo
 	@echo "You can also add the BLAST bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=${RSAT_BIN}:$${PATH}"
+	@echo "	export PATH=$${RSAT_BIN}:$${PATH}"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${RSAT_BIN}:$${PATH}"
+	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
 
 _list_blast_param:
 	@echo "Downloading blast"
