@@ -150,8 +150,13 @@ ws_stubb:
 
 ws_stubb_test:
 	@echo
-	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS}"
+	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} using the stubb"
 	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test)
+
+ws_nostubb_test:
+	@echo
+	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} without stubb"
+	(cd ${RSAT}/ws_clients/perl_clients/; make nostubb_test)
 
 
 ################################################################
