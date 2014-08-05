@@ -25,10 +25,11 @@ ARCHITECTURE=x64
 ################################################################
 ## Manager for installing Unix packages
 ##
-## Options:
+## Examples:
 ##   PACKAGE_MANAGER=brew
 ##   PACKAGE_MANAGER=yum
 ##   PACKAGE_MANAGER=apt-get
+##   PACKAGE_MANAGER=aptitude
 PACKAGE_MANAGER=apt-get
 
 #UCSC_OS=macOSX.i386
