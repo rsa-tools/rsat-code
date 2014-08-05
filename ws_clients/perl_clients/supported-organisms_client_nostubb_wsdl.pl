@@ -34,7 +34,7 @@ my @servers =  $ARGV[0] || qw(
 # 			    http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## Query parameters
-my $taxon = 'Bacteria';
+my $taxon = 'Fungi';
 my $return = 'ID,taxonomy';
 my $format = "tab";
 my $depth = 5;
