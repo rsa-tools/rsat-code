@@ -267,12 +267,18 @@ discovery tools (\program{oligo-analysis}, \program{dyad-analysis},
 It requires a freeware license (\url{http://www.vmatch.de/}).
 
 \begin{lstlisting}
+## Quick test with a random sequence
 random-seq -l 100 -n 1  | purge-sequence
+
+## Realistic application: retrieve two overlapping promoters ->
+## contain redundant sequences (on opposite strands). After purging,
+## the second sequence should contain 'n' characters over the last
+## ~600 base pairs.
+retrieve-seq -org Saccharomyces_cerevisiae -q GAL1 -q GAL10  | purge-sequence
 \end{lstlisting}
 
 If you get an error message, see section \ref{sect:install_vmatch} of
 this manual.
-
 
 \program{seqllogo}
 
@@ -310,7 +316,12 @@ use \RSAT Web services.
 \begin{lstlisting}
 supported-organisms-server -v 2 -server http://rsat.eu/ \
    -o supported_on_rsat_eu.tab ; 
+
+## Count the number of supported organisms on the remote server
 wc -l  supported_on_rsat_eu.tab
+
+## Check the list of supported organisms on the remote server
+more   supported_on_rsat_eu.tab
 \end{lstlisting}
 
 Get the list of organisms supported on another server
@@ -427,6 +438,15 @@ make -f makefiles/init_rsat.mk ws_stubb_test
 
 \section{Description}
 
+The Regulatory Sequence Analysis Tools (\RSAT) is a software suite
+specialized for the detection of cis-regulatory elements in genomic
+sequences. It also contains a series of complementary tools for genome
+management, statistics, and other related analyses. 
+
+The \RSAT package comes along with the Network Analysis Tools (NeAT),
+a software suite combining a variety of tools for the analysis of
+biomolecular networks (interactome, regulatory networks, metabolic
+pathways).
 
 \section{Requirements}
 
@@ -559,9 +579,17 @@ tar -xpzf rsat_yyyymmdd.tar.gz
 RSAT requires to specify a set of parameters, which will be stored in
 three property files:
 \begin{enumerate}
-\item  \file{RSAT\_config.props}
-\item  \file{RSAT\_config.mk}
-\item  \file{RSAT\_config.bashrc}
+\item \file{RSAT\_config.props}: this file describes site-specific
+  parameters. The same property file is loaded by the Perl, python and
+  java programs, thereby ensuring the consistency of site-specific
+  configuration.
+\item \file{RSAT\_config.mk}: a subset of parameters from the props
+  file, which are required to run the makefiles (in particular during
+  RSAT installation).
+\item \file{RSAT\_config.bashrc}: definiton of environment variables,
+  paths and Perl library paths required to run the RSAT/NeAT tools.
+\item \file{RSAT\_config.conf}: configuration of the web site (for
+  Apache servers).
 \end{enumerate}
 
 In particular, \emph{it is crucial to specify the full path of the
@@ -717,6 +745,7 @@ The Perl module \program{GD.pm} requires prior installation of the
   package manager of the distribution. for example:
   \begin{itemize}
   \item \program{apt-get} for Ubuntu
+  \item \program{aptitude} for Ubuntu (better treatment of dependencies than apt-get)
   \item  \program{yum} for Centos
   \item \program{yast} for Suze
   \item \ldots
