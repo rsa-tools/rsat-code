@@ -18,6 +18,11 @@ sudo bash
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
 apt-get update
+
+## Install aptitude, more efficient than apt-get to treat dependencies
+## when installing and uninstalling packages.
+apt-get install aptitude
+
 aptitude --quiet --assume-yes upgrade
 
 ## Enable shell connection from the host
@@ -163,10 +168,8 @@ pip3 install fisher
 pip3 install suds-jurko
 pip3 install pysimplesoap
 
-
 ################################################################
 ## Perl modules
-
 aptitude --quiet --assume-yes install perl-doc
 aptitude --quiet --assume-yes install pmtools
 
@@ -197,6 +200,9 @@ aptitude install --quiet --assume-yes \
 	libjson-perl \
 	libbio-perl-perl \
 	libdigest-md5-file-perl
+
+################################################################
+## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
 
 ## The installation of SOAP:WSDL under cpan is particularly tricky. 
 ## In Ubuntu, there is a way to install it with aptitude. 
@@ -452,8 +458,8 @@ make -f makefiles/init_rsat.mk ws_stubb
 ## Test the local web services
 make -f makefiles/init_rsat.mk ws_stubb_test
 
-## Test RSAT Web services (local and remote) without using the SOAP/WSDL stubb
-## (direct parsing of the remote WSDL file)
+## Test RSAT Web services (local and remote) without using the
+## SOAP/WSDL stubb (direct parsing of the remote WSDL file)
 make -f makefiles/init_rsat.mk ws_nostubb_test
 
 ################################################################
