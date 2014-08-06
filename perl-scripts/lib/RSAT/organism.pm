@@ -1405,8 +1405,6 @@ sub get_feature_for_name {
 }
 
 
-################################################################
-
 =pod
 
 =item serial_file_name()
@@ -1431,6 +1429,32 @@ sub serial_file_name {
   return ($serial_dir."/".$serial_file);
 }
 
+
+=pod
+
+Delete the file containing the serialized organism (cleaning procedure
+before re-installation and updates).
+
+We delete all the serialized files for the current organism. The
+parameters "imp_pos" and "synonyms" are thus not required for this
+method.
+
+=cut
+
+sub delete_serial_files {
+  my ($self) = @_;
+  for my $imp_pos (0,1) {
+    for my $synonyms (0,1) {
+      my $serial_file = $self->serial_file_name($imp_pos, $synonyms);
+      if (@files = glob($serial_file)) {
+	&RSAT::message::Info("Deleting serialized files", join (" ", @files)) if ($main::verbose >= 0);
+	unlink @files;
+      } else {
+	&RSAT::message::Info("Serialized file not found", $serial_file) if ($main::verbose >= 0);
+      }
+    }
+  }
+}
 
 ################################################################
 
