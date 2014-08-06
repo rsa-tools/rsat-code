@@ -223,14 +223,14 @@ package	main;
   &RSAT::message::TimeWarn("Getting species slice from Ensembl") if ($main::verbose >= 2);
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
   if ($slice_adaptor) {
-    &RSAT::message::Debug("Slice adaptor", $slice_adaptor) if ($main::verbose >= 0);
+    &RSAT::message::Debug("Slice adaptor", $slice_adaptor) if ($main::verbose >= 2);
   } else {
     &RSAT::error::FatalError("Cannot get slice adaptor for species", $species);
   }
 
   my $mca = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "metacontainer" );
   if ($mca) {
-      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 2);
   } else {
       &RSAT::error::FatalError("Cannot get coordinate system adaptor (mca) for species", $species);
   }
