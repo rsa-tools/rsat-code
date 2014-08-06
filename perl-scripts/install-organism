@@ -18,6 +18,7 @@ require "RSA.lib";
 require RSAT::util;
 use RSAT::Tree;
 use RSAT::TreeNode;
+use RSAT::organism;
 
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
@@ -255,6 +256,17 @@ package main;
 	$organism_full_name =~ s/\_/ /g;
       }
     }
+
+
+    ################################################################
+    ## If the organism was previously supported, ensure that the
+    ## serialized files are suppressed.
+    $organism = new RSAT::organism();
+    $organism->check_name($organism_short_name);
+    $organism->set_attribute("name", $organism_short_name);
+    $organism->set_attribute("feature_types", '*');
+    $organism->delete_serial_files();
+    
 
     ################################################################
     ## Installation directories
