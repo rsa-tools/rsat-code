@@ -130,7 +130,7 @@ ws_init:
 		> ${RSAT}/public_html/web_services/RSATWS.wsdl
 	@${MAKE} ws_param
 
-## List the parameters for the WS stubb
+## List the parameters for the WS stub
 ws_param:
 	@echo ""
 	@echo "Web services parameters"
@@ -143,20 +143,20 @@ ws_param:
 	@grep location ${RSAT}/public_html/web_services/RSATWS.wsdl
 
 ## Init Web services
-ws_stubb:
+ws_stub:
 	@echo
 	@echo "Initiating Web services at SERVER=$$RSAT_WS=${RSAT_WS}"
-	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stubb SERVER=${RSAT_WS})
+	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
 
-ws_stubb_test:
+ws_stub_test:
 	@echo
-	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} using the stubb"
-	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test)
+	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} using the stub"
+	(cd ${RSAT}/ws_clients/perl_clients/; make stub_test)
 
-ws_nostubb_test:
+ws_nostub_test:
 	@echo
-	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} without stubb"
-	(cd ${RSAT}/ws_clients/perl_clients/; make nostubb_test)
+	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} without stub"
+	(cd ${RSAT}/ws_clients/perl_clients/; make nostub_test)
 
 
 ################################################################
