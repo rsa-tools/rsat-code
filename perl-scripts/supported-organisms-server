@@ -110,10 +110,12 @@ package main;
       if ($answer->{output}) {
 	&RSAT::message::Info("Server command : ".$answer->{output}->{response}->{command}) if ($main::verbose >= 2);
 	&RSAT::message::TimeWarn("Printing out the result") if ($main::verbose >= 2);
-	print $out "; Server : ", $server_url, "\n";
-	print $out "; WSDL URL : ", $wsdl_url, "\n";
-	print $out "; Server command : ".$answer->{output}->{response}->{command}."\n";
-	print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
+	if ($main::verbose >= 1) {
+	  print $out "; Server : ", $server_url, "\n";
+	  print $out "; WSDL URL : ", $wsdl_url, "\n";
+	  print $out "; Server command : ".$answer->{output}->{response}->{command}."\n";
+	  print $out "; Server file : ".$answer->{output}->{response}->{server}."\n";
+	}
 	print $out $answer->{output}->{response}->{client}."\n";
 	&RSAT::message::Info("Output file", $outfile{output}) if (($outfile{output}) && ($main::verbose >= 2));
       }
