@@ -1447,11 +1447,14 @@ sub delete_serial_files {
   for my $imp_pos (0,1) {
     for my $synonyms (0,1) {
       my $serial_file = $self->serial_file_name($imp_pos, $synonyms);
-      if (@files = glob($serial_file)) {
-	&RSAT::message::Info("Deleting serialized files", join (" ", @files)) if ($main::verbose >= 4);
-	unlink @files;
-      } else {
-	&RSAT::message::Info("No serialized files", $serial_file) if ($main::verbose >= 5);
+      if ($serial_file) {
+	my @files = &main::glob($serial_file); ## BEWARE: I had to explicitly call main::glob because glob causes a bug with Web services !!! 
+	if (scalar(@files) > 0) {
+	  &RSAT::message::Info("Deleting serialized files", join (" ", @files)) if ($main::verbose >= 4);
+	  unlink @files;
+	} else {
+	  &RSAT::message::Info("No serialized files", $serial_file) if ($main::verbose >= 5);
+	}
       }
     }
   }
