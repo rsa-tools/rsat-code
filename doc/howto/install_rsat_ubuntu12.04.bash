@@ -35,28 +35,30 @@
 ## Must be executed as root
 sudo bash
 
-## Before anything else, I need emacs to edit config files
-apt-get --quiet --assume-yes install emacs23
+## Aptitude is more convenient than apt-get to treat dependencies when
+## installing and uninstalling packages.
+apt-get --quiet --assume-yes install aptitude
 
 ## I install openssh, in order to do the rest via an external ssh
 ## connection (more convenient for keyboard shortcuts, copy-paste etc).
-apt-get --quiet --assume-yes install openssh-server
+aptitude --quiet --assume-yes install openssh-server
 
 ## Done network specification
 reboot
 
 ## I run the next installation steps from the host terminal, because I
-## feel more confortable in my usual environment.
+## feel more confortable in my usual environment (in particular the keyboard).
 ssh rsat@192.168.56.112
 sudo bash
 ## Enter rsat password
 
 ## We need to update apt-ge, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-apt-get update ;
-apt-get --quiet --assume-yes upgrade ## This takes a while ;
+aptitude update
+aptitude --quiet --assume-yes upgrade ## This takes a while
 
-APTGET_LIBRARIES="ia32-libs
+APTGET_LIBRARIES="emacs23
+        ia32-libs
 	ssh
 	git
 	cvs
@@ -132,6 +134,42 @@ APTGET_LIBRARIES="ia32-libs
 	libsoap-lite-perl
 "
 
+
+################################################################
+## Perl modules
+APTGET_PERLMOD="perl-doc \
+        pmtools \
+	libyaml-perl \
+	libemail-simple-perl \
+	libemail-sender-perl \
+	libemail-simple-creator-perl \
+	libpostscript-simple-perl \
+	libstatistics-distributions-perl \
+	libalgorithm-cluster-perl \
+	libio-all-perl \
+	libobject-insideout-perl \
+	libobject-insideout-perl \
+	libsoap-lite-perl \
+	libsoap-wsdl-perl \
+	libxml-perl \
+	libxml-simple-perl \
+	libdbi-perl \
+	liblockfile-simple-perl \
+	libobject-insideout-perl \
+	libgd-perl \
+	libdbd-mysql-perl \
+	libjson-perl \
+	libbio-perl-perl \
+	libdigest-md5-file-perl
+"
+
+## The following modules exist in Ubuntu 14.04 but not in Ubuntu 12.04
+##	digest-md5-file-perl \
+## 	liblockfile-simple \
+##	libutil-properties-perl \
+##	libxml-compile-cache-perl \
+
+
 ## This library is not found in Ubuntun 12.04
 ##     libgvc6
 ## I should ceck if it is OK (required for graphviz)
@@ -139,124 +177,124 @@ APTGET_LIBRARIES="ia32-libs
 ## Install the apt-get libraries
 mkdir -p install_logs
 echo "Installing apt-get libraries"
-for LIB in $APTGET_LIBRARIES
+for LIB in $APTGET_LIBRARIES $APTGET_PERLMOD
 do
    echo "`date`        installing apt-get library $LIB"
-   apt-get --quiet --assume-yes install $LIB > install_logs/apt-get_install_$LIB
+   aptitude --quiet --assume-yes install $LIB > install_logs/aptitude_install_$LIB
 done
 echo "Log files are in folder install_logs"
 
 
 # ## 32-bit compatibility libraries are required for some packages
-# apt-get --quiet --assume-yes install ia32-libs
+# aptitude --quiet --assume-yes install ia32-libs
 
 # ## Enable incoming ssh
-# apt-get --quiet --assume-yes install ssh
+# aptitude --quiet --assume-yes install ssh
 
 # ## Concurrent versioning systems
-# apt-get --quiet --assume-yes install git
-# apt-get --quiet --assume-yes install cvs
+# aptitude --quiet --assume-yes install git
+# aptitude --quiet --assume-yes install cvs
 
 # ## Web aspirators
-# apt-get --quiet --assume-yes install wget
-# apt-get --quiet --assume-yes install curl
+# aptitude --quiet --assume-yes install wget
+# aptitude --quiet --assume-yes install curl
 
 # ## Compilation tools
-# apt-get --quiet --assume-yes install g++
-# apt-get --quiet --assume-yes install make
+# aptitude --quiet --assume-yes install g++
+# aptitude --quiet --assume-yes install make
 
 # ## Utilities
-# apt-get --quiet --assume-yes install zip
-# apt-get --quiet --assume-yes install unzip
-# apt-get --quiet --assume-yes install finger
-# apt-get --quiet --assume-yes install screen
-# apt-get --quiet --assume-yes install yum
+# aptitude --quiet --assume-yes install zip
+# aptitude --quiet --assume-yes install unzip
+# aptitude --quiet --assume-yes install finger
+# aptitude --quiet --assume-yes install screen
+# aptitude --quiet --assume-yes install yum
 
 # ## Perl packages
-# apt-get --quiet --assume-yes install perl-doc
-# apt-get --quiet --assume-yes install pmtools
+# aptitude --quiet --assume-yes install perl-doc
+# aptitude --quiet --assume-yes install pmtools
 
 # ## Apache and utilities
-# apt-get --quiet --assume-yes install apache2
-# apt-get --quiet --assume-yes install php5
-# apt-get --quiet --assume-yes install libapache2-mod-php5
-# apt-get --quiet --assume-yes install php-elisp
+# aptitude --quiet --assume-yes install apache2
+# aptitude --quiet --assume-yes install php5
+# aptitude --quiet --assume-yes install libapache2-mod-php5
+# aptitude --quiet --assume-yes install php-elisp
 
 # ## Graphic libraries
-# apt-get --quiet --assume-yes install lib32z1
-# apt-get --quiet --assume-yes install lib32ncurses5
-# apt-get --quiet --assume-yes install lib32bz2-1.0
+# aptitude --quiet --assume-yes install lib32z1
+# aptitude --quiet --assume-yes install lib32ncurses5
+# aptitude --quiet --assume-yes install lib32bz2-1.0
 
-# apt-get --quiet --assume-yes install libgdbm-dev
-# apt-get --quiet --assume-yes install libgd-tools
+# aptitude --quiet --assume-yes install libgdbm-dev
+# aptitude --quiet --assume-yes install libgd-tools
 
-# apt-get --quiet --assume-yes install libgd-gd2-perl
-# apt-get --quiet --assume-yes install libgd2-xpm-dev
-# apt-get --quiet --assume-yes install libxml2-dev
+# aptitude --quiet --assume-yes install libgd-gd2-perl
+# aptitude --quiet --assume-yes install libgd2-xpm-dev
+# aptitude --quiet --assume-yes install libxml2-dev
 
-# apt-get --quiet --assume-yes install libnet-ssleay-perl
-# apt-get --quiet --assume-yes install libcrypt-ssleay-perl
-# apt-get --quiet --assume-yes install libssl-dev
+# aptitude --quiet --assume-yes install libnet-ssleay-perl
+# aptitude --quiet --assume-yes install libcrypt-ssleay-perl
+# aptitude --quiet --assume-yes install libssl-dev
 
 # ## Graphic libraries and software tools
-# apt-get --quiet --assume-yes install ghostscript
-# apt-get --quiet --assume-yes install gnuplot
-# apt-get --quiet --assume-yes install graphviz
+# aptitude --quiet --assume-yes install ghostscript
+# aptitude --quiet --assume-yes install gnuplot
+# aptitude --quiet --assume-yes install graphviz
 
 # ## Text-mode Web browser, used by some packages
-# apt-get --quiet --assume-yes install links
+# aptitude --quiet --assume-yes install links
 
 # ## Some linux packages required for R BioConductor
-# apt-get --quiet --assume-yes install libc6-dev
-# apt-get --quiet --assume-yes install gfortran
-# apt-get --quiet --assume-yes install build-essential
+# aptitude --quiet --assume-yes install libc6-dev
+# aptitude --quiet --assume-yes install gfortran
+# aptitude --quiet --assume-yes install build-essential
 
-# apt-get --quiet --assume-yes install libreadline-gplv2-dev:i386
-# apt-get --quiet --assume-yes install lib64readline-gplv2-dev:i386
-# apt-get --quiet --assume-yes install libreadline-gplv2-dev
+# aptitude --quiet --assume-yes install libreadline-gplv2-dev:i386
+# aptitude --quiet --assume-yes install lib64readline-gplv2-dev:i386
+# aptitude --quiet --assume-yes install libreadline-gplv2-dev
 
-# apt-get --quiet --assume-yes install libx11-dev
-# apt-get --quiet --assume-yes install libxt-dev
-# apt-get --quiet --assume-yes install libcurl4-openssl-dev
+# aptitude --quiet --assume-yes install libx11-dev
+# aptitude --quiet --assume-yes install libxt-dev
+# aptitude --quiet --assume-yes install libcurl4-openssl-dev
 
-# apt-get --quiet --assume-yes install libxml2-dev
+# aptitude --quiet --assume-yes install libxml2-dev
 # ## BEWARE: texlive-full occupies a lot of disk space. I should check if this is really required (for R ?)
-# ## apt-get install texlive-full
-# apt-get --quiet --assume-yes install tcl8.5-dev
+# ## aptitude install texlive-full
+# aptitude --quiet --assume-yes install tcl8.5-dev
 
-# apt-get --quiet --assume-yes install tk8.5-dev
-# apt-get --quiet --assume-yes install libxss-dev
-# apt-get --quiet --assume-yes install libpng12-dev
+# aptitude --quiet --assume-yes install tk8.5-dev
+# aptitude --quiet --assume-yes install libxss-dev
+# aptitude --quiet --assume-yes install libpng12-dev
 
-# apt-get --quiet --assume-yes install libjpeg62-dev
-# apt-get --quiet --assume-yes install libcairo2-dev
+# aptitude --quiet --assume-yes install libjpeg62-dev
+# aptitude --quiet --assume-yes install libcairo2-dev
 
 # ## mysql client is required for ensembl client scripts
-# apt-get --quiet --assume-yes install mysql-client
-# apt-get --quiet --assume-yes install libmysqlclient-dev
+# aptitude --quiet --assume-yes install mysql-client
+# aptitude --quiet --assume-yes install libmysqlclient-dev
 
 # ## Java
 # ## seems to be required for SOAP::WSDL Perl module
-# apt-get --quiet --assume-yes install default-jre
-# ## apt-get --quiet --assume-yes install default-jdk
+# aptitude --quiet --assume-yes install default-jre
+# ## aptitude --quiet --assume-yes install default-jdk
 
 # ## Latex is required for RSAT doc + other applications (e.g. R). Note
 # ## that it takes a some time to install
-# apt-get --quiet --assume-yes install texlive-latex-base
+# aptitude --quiet --assume-yes install texlive-latex-base
 
 
 # ################################################################
 # ## Python and modules
-# apt-get --quiet --assume-yes install python
-# apt-get --quiet --assume-yes install python-setuptools
-# apt-get --quiet --assume-yes install python-virtualenv
-# apt-get --quiet --assume-yes install python-pip
-# apt-get --quiet --assume-yes install python-dev
-# apt-get --quiet --assume-yes install python-suds
+# aptitude --quiet --assume-yes install python
+# aptitude --quiet --assume-yes install python-setuptools
+# aptitude --quiet --assume-yes install python-virtualenv
+# aptitude --quiet --assume-yes install python-pip
+# aptitude --quiet --assume-yes install python-dev
+# aptitude --quiet --assume-yes install python-suds
 
 # ## iPython
-# apt-get --quiet --assume-yes install ipython
-# apt-get --quiet --assume-yes install ipython-notebook
+# aptitude --quiet --assume-yes install ipython
+# aptitude --quiet --assume-yes install ipython-notebook
 
 
 ## Problem: "pip install matplotlib ;" ## Does not work. matplotlib
@@ -285,22 +323,20 @@ echo "Log files are in folder install_logs"
 ## For some python packages there is no apt-get package
 easy_install -U distribute fisher
 
-apt-get --quiet --assume-yes install python3
-
 ################
 ## We need both python2.7 and python3 (for different scripts)
 ##
 ## Attention, I use "build-dep" rather than "install".
 ##
-## apt-get --quiet --assume-yes build-dep python3-pip ## Did no exist yet in Ubuntu 12.04, has to be installed with easy_install (see below)
-apt-get --quiet --assume-yes build-dep python3-setuptools
-apt-get --quiet --assume-yes build-dep python3-dev
-apt-get --quiet --assume-yes build-dep python3-numpy
-apt-get --quiet --assume-yes build-dep python3-scipy
-apt-get --quiet --assume-yes build-dep python3-matplotlib ; ## Picking 'matplotlib' as source package instead of 'python3-matplotlib'
-## apt-get --quiet --assume-yes build-dep python3-pygraphviz ; ## E: Unable to find a source package for python3-pygraphviz
-## apt-get --quiet --assume-yes install python3-soappy ; ## E: Unable to locate package python3-soappy
-## apt-get --quiet --assume-yes install python3-suds ; ## E: Unable to locate package python3-suds
+## aptitude --quiet --assume-yes build-dep python3-pip ## Did no exist yet in Ubuntu 12.04, has to be installed with easy_install (see below)
+aptitude --quiet --assume-yes build-dep python3-setuptools
+aptitude --quiet --assume-yes build-dep python3-dev
+aptitude --quiet --assume-yes build-dep python3-numpy
+aptitude --quiet --assume-yes build-dep python3-scipy
+aptitude --quiet --assume-yes build-dep python3-matplotlib ; ## Picking 'matplotlib' as source package instead of 'python3-matplotlib'
+## aptitude --quiet --assume-yes build-dep python3-pygraphviz ; ## E: Unable to find a source package for python3-pygraphviz
+## aptitude --quiet --assume-yes install python3-soappy ; ## E: Unable to locate package python3-soappy
+## aptitude --quiet --assume-yes install python3-suds ; ## E: Unable to locate package python3-suds
 
 ## This differs from Ubuntun 14.04: pip3 must be installed with easy_install ?
 easy_install3 pip
@@ -473,17 +509,14 @@ make -f makefiles/install_rsat.mk perl_modules_install_noprompt
 
 ## Note: I had to force installation for the some modules, because
 ## there seem to be some circular dependencies.
-make -f makefiles/install_rsat.mk perl_modules_install_by_force
+#make -f makefiles/install_rsat.mk perl_modules_install_by_force
 
 ## Check if all required Perl modules have been correctly installed
 make -f makefiles/install_rsat.mk perl_modules_check
 ## Check if all modules are OK
 cat check_perl_modules_eval.txt
 
-## I still have problems with InsideOut, SOAP::Transport, SOAP and SOAP::WSDL
-
-## Ensure that all files belong to rsat user
-chown -R rsat.rsat .
+## I still have problems with InsideOut, SOAP::Transport
 
 
 ################################################################
@@ -493,8 +526,7 @@ chown -R rsat.rsat .
 ## sudo emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Activate the following line:
 # Include conf-available/serve-cgi-bin.conf
-
-sudo emacs -nw /etc/apache2/mods-available/mime.conf
+emacs -nw /etc/apache2/mods-available/mime.conf
 ## uncomment the line
 ##  AddHandler cgi-script .cgi
 

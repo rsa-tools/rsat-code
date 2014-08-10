@@ -170,10 +170,8 @@ pip3 install pysimplesoap
 
 ################################################################
 ## Perl modules
-aptitude --quiet --assume-yes install perl-doc
-aptitude --quiet --assume-yes install pmtools
-
-aptitude install --quiet --assume-yes \
+APTGET_PERLMOD="perl-doc \
+        pmtools \
 	libyaml-perl \
 	libemail-simple-perl \
 	libemail-sender-perl \
@@ -200,6 +198,17 @@ aptitude install --quiet --assume-yes \
 	libjson-perl \
 	libbio-perl-perl \
 	libdigest-md5-file-perl
+"
+## Install the apt-get libraries
+mkdir -p install_logs
+echo "Installing apt-get libraries"
+for LIB in $APTGET_LIBRARIES $APTGET_PERLMOD
+do
+   echo "`date`        installing apt-get library $LIB"
+   aptitude --quiet --assume-yes install $LIB > install_logs/aptitude_install_$LIB
+done
+echo "Log files are in folder install_logs"
+
 
 ################################################################
 ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
