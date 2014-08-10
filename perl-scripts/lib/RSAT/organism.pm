@@ -1443,14 +1443,15 @@ method.
 
 sub delete_serial_files {
   my ($self) = @_;
+  &RSAT::message::Info("RSAT::organism::delete_serial_file", join (" ", @files)) if ($main::verbose >= 3);
   for my $imp_pos (0,1) {
     for my $synonyms (0,1) {
       my $serial_file = $self->serial_file_name($imp_pos, $synonyms);
       if (@files = glob($serial_file)) {
-	&RSAT::message::Info("Deleting serialized files", join (" ", @files)) if ($main::verbose >= 0);
+	&RSAT::message::Info("Deleting serialized files", join (" ", @files)) if ($main::verbose >= 4);
 	unlink @files;
       } else {
-	&RSAT::message::Info("Serialized file not found", $serial_file) if ($main::verbose >= 0);
+	&RSAT::message::Info("No serialized files", $serial_file) if ($main::verbose >= 5);
       }
     }
   }
