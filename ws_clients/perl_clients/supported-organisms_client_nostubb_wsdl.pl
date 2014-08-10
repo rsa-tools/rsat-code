@@ -30,19 +30,18 @@ my @servers =  $ARGV[0] || qw(
 			    http://localhost/rsat
 			    );
 
-#			    http://mamaze.ulb.ac.be/rsat
 # 			    http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## Query parameters
-my $taxon = 'Fungi';
+#my $taxon = 'Fungi';
 my $return = 'ID,taxonomy';
 my $format = "tab";
-my $depth = 5;
+#my $depth = 5;
 my %args = (
   'return'=>$return,
   'format'=>$format,
-  'taxon' => $taxon,
-  'depth'=>$depth,
+#  'taxon' => $taxon,
+#  'depth'=>$depth,
     );
 
 
