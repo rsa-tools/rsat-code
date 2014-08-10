@@ -4,7 +4,7 @@
 ## Connect a RSAT server and get a  list of supported organisms
 ##
 ## Usage:
-##   perl supported-organisms_client_nostubb.wsdl [server_URL]
+##   perl supported-organisms_client_nostub.wsdl [server_URL]
 
 use strict;
 

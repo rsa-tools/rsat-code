@@ -1,5 +1,5 @@
 ################################################################ The
-## command necessary to (re-)generate the Stubb for ensuring
+## command necessary to (re-)generate the Stub for ensuring
 ## compatibility with the Web services
 
 include ${RSAT}/makefiles/util.mk
@@ -29,27 +29,27 @@ list_servers:
 	@echo "SERVER	${SERVER}"
 	@echo "WSDL_URL	${WSDL_URL}"
 
-stubb_param:
-	@echo "Parameters for generating the stubb"
+stub_param:
+	@echo "Parameters for generating the stub"
 	@echo "SERVERS	${SERVERS}"
 	@echo "SERVER	${SERVER}"
 	@echo "WSDL_URL	${WSDL_URL}"
 
 WSDL_URL=${SERVER}/web_services/RSATWS.wsdl
-stubb:
+stub:
 	@echo
-	@echo "Generating stubb for server"
+	@echo "Generating stub for server"
 	@echo "	SERVER=${SERVER}"
 	@echo "	WSDL_URL=${WSDL_URL}"
 	perl ./wsdl2perl.pl -b RSATWS ${WSDL_URL}
-	@echo "Generated stubb for server"
+	@echo "Generated stub for server"
 	@echo "	SERVER=${SERVER}"
 	@echo "	WSDL_URL=${WSDL_URL}"
 
-stubb_test:
+stub_test:
 	perl ./convert_matrix_soap_wsdl_2.pl 
 
-nostubb_test:
+nostub_test:
 	@echo "Testing web services without stub"
-	perl ./supported-organisms_client_nostubb_wsdl.pl ${RSAT_WS}
+	perl ./supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
 #	@ls -ltr organisms_*.txt
