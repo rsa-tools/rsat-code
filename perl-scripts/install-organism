@@ -261,8 +261,9 @@ package main;
     ################################################################
     ## If the organism was previously supported, ensure that the
     ## serialized files are suppressed.
+    &RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 2);
     $organism = new RSAT::organism();
-    $organism->check_name($organism_short_name);
+#    $organism->check_name($organism_short_name, 1);
     $organism->set_attribute("name", $organism_short_name);
     $organism->set_attribute("feature_types", '*');
     $organism->delete_serial_files();
