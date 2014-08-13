@@ -143,7 +143,7 @@ ws_param:
 	@grep location ${RSAT}/public_html/web_services/RSATWS.wsdl
 
 ## Init Web services
-ws_stub:
+ws_stub: ws_init
 	@echo
 	@echo "Initiating Web services at SERVER=$$RSAT_WS=${RSAT_WS}"
 	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
