@@ -564,7 +564,8 @@ make -f makefiles/install_software.mk install_ext_apps
 download-organism -v 1 -org Saccharomyces_cerevisiae
 download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
-## Optionally, install some pluricellular model organisms
+## Optionally, install some pluricellular model organisms (requires
+## more space)
 download-organism -v 1 -org Drosophila_melanogaster
 download-organism -v 1 -org Caenorhabditis_elegans
 download-organism -v 1 -org Arabidopsis_thaliana
@@ -607,16 +608,12 @@ gs --version
 ################################################################
 ## Configure the SOAP/WSDL Web services
 
-emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
-
-## At the bottom of the file, locate the following line.
-##  <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-
 ## Adapt the URL to your local configuration.
+cd $RSAT
+make -f makefiles/init_rsat.mk ws_init
 
 ## After this, you should re-generate the web services stubb, with the
 ## following command.
-cd $RSAT
 make -f makefiles/init_rsat.mk ws_stubb
 
 ## Test the local web services
