@@ -255,6 +255,45 @@ quit
 
 
 ################################################################
+## R installation + some libraries
+################################################################
+
+sudo bash
+
+## As sudo, I edited the file /etc/apt/sources.list 
+## and added the following line 
+## (see instructions on http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu/)
+##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty/
+## I then updated the apt-get packages
+aptitude update
+
+## .. and installed the R base package
+aptitude --quiet --assume-yes install r-base
+#aptitude --quiet --assume-yes installr-base-dev
+
+## Installation of R packages
+
+## The command R CMD INSTALL apparently does not work at this stage.
+##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
+##	Warning: invalid package 'reshape'
+##	Error: ERROR: no packages specified
+
+cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
+
+### I install them from the R interface. This should be revised to
+### make it from the bash, but I need to see how to specify the CRAN
+### server from the command line (for the time being, I run R and the
+### programm asks me to specify my preferred CRAN repository the first
+### time I install packages).
+R
+
+## At the R prompt
+install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras"))
+source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
+quit()
+
+
+################################################################
 ## To free space, remove apt-get packages that are no longer required.
 apt-get autoremove
 apt-get clean
@@ -452,16 +491,13 @@ gs --version
 ################################################################
 ## Configure the SOAP/WSDL Web services
 
-emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
-
-## At the bottom of the file, locate the following line.
-##  <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 
 ## Adapt the URL to your local configuration.
+cd $RSAT
+make -f makefiles/init_rsat.mk ws_init
 
 ## After this, you should re-generate the web services stubb, with the
 ## following command.
-cd $RSAT
 make -f makefiles/init_rsat.mk ws_stubb
 
 ## Test the local web services
@@ -470,42 +506,6 @@ make -f makefiles/init_rsat.mk ws_stubb_test
 ## Test RSAT Web services (local and remote) without using the
 ## SOAP/WSDL stubb (direct parsing of the remote WSDL file)
 make -f makefiles/init_rsat.mk ws_nostubb_test
-
-################################################################
-## R installation
-
-## As sudo, I edited the file /etc/apt/sources.list 
-## and added the following line 
-## (see instructions on http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu/)
-##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty/
-## I then updated the apt-get packages
-sudo apt-get update
-
-## .. and installed the R base package
-sudo apt-get -y install r-base
-sudo apt-get install -y r-base-dev
-
-## Installation of R packages
-
-## The command R CMD INSTALL apparently does not work at this stage.
-##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
-##	Warning: invalid package 'reshape'
-##	Error: ERROR: no packages specified
-
-cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
-
-### I install them from the R interface. This should be revised to
-### make it from the bash, but I need to see how to specify the CRAN
-### server from the command line (for the time being, I run R and the
-### programm asks me to specify my preferred CRAN repository the first
-### time I install packages).
-sudo R
-
-## At the R prompt
-install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras"))
-source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
-quit()
-
 
 ################################################################
 ## Install the cluster management system (torque, qsub, ...)
