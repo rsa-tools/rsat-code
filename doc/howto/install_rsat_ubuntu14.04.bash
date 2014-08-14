@@ -12,117 +12,176 @@
 #    Navigate to Keyboard → Keyboard Layout Settings
 #    add English (Macintosh)
 
-## Must be executed as root
-sudo bash
 
-## We need to update apt-ge, to avoid trouble with python
+################################################################
+## Must be executed as root. If you are non-root but sudoer user, you
+## can become it withn "sudo bash"
+
+
+INSTALLER=apt-get
+INSTALLER_OPT="--quiet --assume-yes"
+## alternative: INSTALLER=aptitude
+
+## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
+mkdir -p install_logs
+df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
+df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
-apt-get install aptitude
+## ECONOMY apt-get install aptitude
 
-aptitude --quiet --assume-yes upgrade
+${INSTALLER} ${INSTALLER_OPT} upgrade
+df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
 
-## Enable shell connection from the host
-aptitude --quiet --assume-yes install ssh
+## Packages to be checked: to I really need this ?
+PACKAGES_OPT="
+	curl
+	yum
+	php-elisp
+	libgdbm-dev
+	libgd2-xpm-dev
+	libxml2-dev
+	links
+	gfortran
+	libmysqlclient-dev
+	texlive-latex-base
+	python-virtualenv
+	ipython
+	ipython-notebook
+	libssl-dev
+	libreadline-gplv2-dev:i386
+	lib64readline-gplv2-dev:i386
+	libreadline-gplv2-dev
+	libx11-dev
+	libxt-dev
+	libcurl4-openssl-dev
+	libxml2-dev
+	tcl8.5-dev
+	tk8.5-dev
+	libxss-dev
+	libpng12-dev
+	libjpeg62-dev
+	libcairo2-dev
+	lib32z1
+	lib32ncurses5
+	lib32bz2-1.0
+	libc6-dev
+	build-essential
+	python-dev
+	python3-dev
+	libnet-ssleay-perl \
+	libcrypt-ssleay-perl \
+"
 
-## Concurrent versioning systems
-aptitude --quiet --assume-yes install git
-aptitude --quiet --assume-yes install cvs
-
-## Web aspirators
-aptitude --quiet --assume-yes install wget
-aptitude --quiet --assume-yes install curl
-
-## Utilities
-aptitude --quiet --assume-yes install zip
-aptitude --quiet --assume-yes install unzip
-aptitude --quiet --assume-yes install finger
-aptitude --quiet --assume-yes install screen
-aptitude --quiet --assume-yes install make
-aptitude --quiet --assume-yes install g++
-aptitude --quiet --assume-yes install yum
-
-## Cannot survive without emacs
-aptitude --quiet --assume-yes install emacs
-
-## Apache and utilities
-aptitude --quiet --assume-yes install apache2
-aptitude --quiet --assume-yes install php5
-aptitude --quiet --assume-yes install libapache2-mod-php5
-aptitude --quiet --assume-yes install php-elisp
-
-## Graphic libraries and software tools
-aptitude --quiet --assume-yes install libgdbm-dev
-aptitude --quiet --assume-yes install libgd-tools
-aptitude --quiet --assume-yes install libgd-gd2-perl
-aptitude --quiet --assume-yes install libgd2-xpm-dev
-aptitude --quiet --assume-yes install libxml2-dev
-
-aptitude --quiet --assume-yes install libnet-ssleay-perl
-aptitude --quiet --assume-yes install libcrypt-ssleay-perl
-aptitude --quiet --assume-yes install libssl-dev
-aptitude --quiet --assume-yes install ghostscript
-aptitude --quiet --assume-yes install gnuplot
-aptitude --quiet --assume-yes install graphviz
-aptitude --quiet --assume-yes install lib32z1
-aptitude --quiet --assume-yes install lib32ncurses5
-aptitude --quiet --assume-yes install lib32bz2-1.0
-
-## Text-mode Web browser, used by some packages
-aptitude --quiet --assume-yes install links
-
-## Some linux packages required for R BioConductor
-aptitude --quiet --assume-yes install libc6-dev
-aptitude --quiet --assume-yes install gfortran
-aptitude --quiet --assume-yes install build-essential
-aptitude --quiet --assume-yes install libreadline-gplv2-dev:i386
-aptitude --quiet --assume-yes install lib64readline-gplv2-dev:i386
-aptitude --quiet --assume-yes install libreadline-gplv2-dev
-aptitude --quiet --assume-yes install libx11-dev
-aptitude --quiet --assume-yes install libxt-dev
-aptitude --quiet --assume-yes install libcurl4-openssl-dev
-aptitude --quiet --assume-yes install libxml2-dev
-## BEWARE: texlive-full occupies a lot of disk space. I should check if this is really required (for R ?)
-## aptitude install texlive-full
-aptitude --quiet --assume-yes install tcl8.5-dev
-aptitude --quiet --assume-yes install tk8.5-dev
-aptitude --quiet --assume-yes install libxss-dev
-aptitude --quiet --assume-yes install libpng12-dev
-aptitude --quiet --assume-yes install libjpeg62-dev
-aptitude --quiet --assume-yes install libcairo2-dev
-
-## mysql client is required for ensembl client scripts
-aptitude --quiet --assume-yes install mysql-client
-aptitude --quiet --assume-yes install libmysqlclient-dev
-
-## Java 
-## seems to be required for SOAP::WSDL Perl module
-aptitude --quiet --assume-yes install default-jre
-## aptitude --quiet --assume-yes install default-jdk
-
-## Latex is required for RSAT doc + other applications (e.g. R). Note
-## that it takes a some time to install
-aptitude --quiet --assume-yes install texlive-latex-base
+PACKAGES="
+	ssh
+	git
+	cvs
+	wget
+	zip
+	unzip
+	finger
+	screen
+	make
+	g++
+	apache2
+	php5
+	libapache2-mod-php5
+	libgd-tools
+	libgd-gd2-perl
+	ghostscript
+	gnuplot
+	graphviz
+	mysql-client
+	default-jre
+	python
+	python-setuptools 
+	python-pip
+	python-suds
+	python3
+	python3-pip
+	python3-setuptools 
+	python3
+	python3-pip 
+	python3-numpy
+	python3-scipy
+	python3-matplotlib
+	r-base
+	emacs
+"
 
 ################################################################
-## Python and modules
-aptitude --quiet --assume-yes install python
-aptitude --quiet --assume-yes install python-setuptools 
-aptitude --quiet --assume-yes install python-virtualenv
-aptitude --quiet --assume-yes install python-pip
-aptitude --quiet --assume-yes install python-dev
-aptitude --quiet --assume-yes install python-suds
+## apt-get packages to install Perl modules (not properly speaking
+## necessary, could be done with cpan, but ensure consistency with
+## ubuntu OS)
 
-aptitude --quiet --assume-yes install ipython
-aptitude --quiet --assume-yes install ipython-notebook
+PACKAGES_PERL="perl-doc
+	pmtools
+	libyaml-perl
+	libemail-simple-perl
+	libemail-sender-perl
+	libemail-simple-creator-perl
+	libpostscript-simple-perl
+	libstatistics-distributions-perl
+	libalgorithm-cluster-perl
+	digest-md5-file-perl
+	libio-all-perl
+	liblockfile-simple
+	libobject-insideout-perl
+	libutil-properties-perl
+	libobject-insideout-perl
+	libsoap-lite-perl
+	libsoap-wsdl-perl
+	libxml-perl
+	libxml-simple-perl
+	libxml-compile-cache-perl
+	libdbi-perl
+	liblockfile-simple-perl
+	libobject-insideout-perl
+	libgd-perl
+	libdbd-mysql-perl
+	libjson-perl
+	libbio-perl-perl
+	libdigest-md5-file-perl
+"
 
-## A fix for a problem to install scipy with pip: use aptitude build-dep 
+## Install the apt-get libraries
+echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
+echo "${PACKAGES}"
+echo "Perl module packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
+echo "${PACKAGES_PERL}"
+for LIB in ${PACKAGES} ${PACKAGES_PERL}
+do
+   echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}"
+   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > install_logs/${INSTALLER}_install_${LIB}.txt
+   df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt
+done
+echo "Log files are in folder install_logs"
+
+
+## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
-aptitude --quiet --assume-yes build-dep python-numpy python-scipy
+## Note that these dependencies cost 400Mb ! To be checked
+${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
+df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
 
+################################################################
+## To free space, remove apt-get packages that are no longer required.a
+${INSTALLER} ${INSTALLER_OPT}  autoremove
+df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+${INSTALLER} ${INSTALLER_OPT}  clean
+df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+## This really helps: it saves several hundreds Mb
+
+
+## DONE: installation of Ubuntu packages
+################################################################
+
+################################################################
+## Install some python libraries with pip
 pip install numpy
 ## Note: the installation of scipy and matplotlib takes some time and issues
 ## a lot of warning messages, but finally it works
@@ -133,17 +192,7 @@ pip install fisher
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 
-## We need both python2.7 and python3 (for different scripts)
-aptitude --quiet --assume-yes install python3
-aptitude --quiet --assume-yes install python3-pip
-aptitude --quiet --assume-yes install python3-setuptools 
-aptitude --quiet --assume-yes install python3
-aptitude --quiet --assume-yes install python3-pip 
-aptitude --quiet --assume-yes install python3-dev
-aptitude --quiet --assume-yes install python3-numpy
-aptitude --quiet --assume-yes install python3-scipy
-aptitude --quiet --assume-yes install python3-matplotlib
-#aptitude install python3-suds
+#${INSTALLER} install python3-suds
 ## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
 
 ## Problem : No distributions at all found for python-suds
@@ -168,53 +217,12 @@ pip3 install fisher
 pip3 install suds-jurko
 pip3 install pysimplesoap
 
-################################################################
-## Perl modules
-APTGET_PERLMOD="perl-doc \
-        pmtools \
-	libyaml-perl \
-	libemail-simple-perl \
-	libemail-sender-perl \
-	libemail-simple-creator-perl \
-	libpostscript-simple-perl \
-	libstatistics-distributions-perl \
-	libalgorithm-cluster-perl \
-	digest-md5-file-perl \
-	libio-all-perl \
-	liblockfile-simple \
-	libobject-insideout-perl \
-	libutil-properties-perl \
-	libobject-insideout-perl \
-	libsoap-lite-perl \
-	libsoap-wsdl-perl \
-	libxml-perl \
-	libxml-simple-perl \
-	libxml-compile-cache-perl \
-	libdbi-perl \
-	liblockfile-simple-perl \
-	libobject-insideout-perl \
-	libgd-perl \
-	libdbd-mysql-perl \
-	libjson-perl \
-	libbio-perl-perl \
-	libdigest-md5-file-perl
-"
-## Install the apt-get libraries
-mkdir -p install_logs
-echo "Installing apt-get libraries"
-for LIB in $APTGET_LIBRARIES $APTGET_PERLMOD
-do
-   echo "`date`        installing apt-get library $LIB"
-   aptitude --quiet --assume-yes install $LIB > install_logs/aptitude_install_$LIB
-done
-echo "Log files are in folder install_logs"
-
 
 ################################################################
 ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
 
 ## The installation of SOAP:WSDL under cpan is particularly tricky. 
-## In Ubuntu, there is a way to install it with aptitude. 
+## In Ubuntu, there is a way to install it with ${INSTALLER}. 
 ## http://www.installion.co.uk/ubuntu/trusty/universe/l/libsoap-wsdl-perl/fr/install.html
 emacs -nw /etc/apt/sources.list
 
@@ -265,11 +273,11 @@ sudo bash
 ## (see instructions on http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu/)
 ##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty/
 ## I then updated the apt-get packages
-aptitude update
+${INSTALLER} update
 
 ## .. and installed the R base package
-aptitude --quiet --assume-yes install r-base
-#aptitude --quiet --assume-yes installr-base-dev
+# ${INSTALLER} --quiet --assume-yes install r-base
+#${INSTALLER} --quiet --assume-yes installr-base-dev
 
 ## Installation of R packages
 
@@ -292,11 +300,6 @@ install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras"))
 source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
 
-
-################################################################
-## To free space, remove apt-get packages that are no longer required.
-apt-get autoremove
-apt-get clean
 
 ################################################################
 ################       RSAT installation        ################
