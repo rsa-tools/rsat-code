@@ -32,8 +32,8 @@
 
 
 ################################################################
-## Must be executed as root
-sudo bash
+## Must be executed as root. If you are non-root but sudoer user, you
+## can become it withn "sudo bash"
 
 ## Aptitude is more convenient than apt-get to treat dependencies when
 ## installing and uninstalling packages.
@@ -180,7 +180,8 @@ echo "Installing apt-get libraries"
 for LIB in $APTGET_LIBRARIES $APTGET_PERLMOD
 do
    echo "`date`        installing apt-get library $LIB"
-   aptitude --quiet --assume-yes install $LIB > install_logs/aptitude_install_$LIB
+   aptitude --quiet --assume-yes install ${LIB} > install_logs/aptitude_install_${LIB}.txt
+   df -h > install_logs/aptitude_install_${LIB}_df.txt
 done
 echo "Log files are in folder install_logs"
 
@@ -381,8 +382,8 @@ apt-get update
 
 ## Note: this is still not sufficient to get SOAP::WSDL to run the two
 ## following targets
-##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
-##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb_test
+##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stub
+##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stub_test
 
 ## We first need to fix some problem with CPAN : on Ubuntu, I cannot
 ## install the SOAP::WSDL module, which is required for several
@@ -390,7 +391,7 @@ apt-get update
 ## hours, the server is able to answer to web services requests, but I
 ## cannot run clients on it. Since NeAT relies on WSDL clients, it is
 ## impossible to have neat running on and Ubuntu server. The
-## installation is however possible, since the stubb can be generated
+## installation is however possible, since the stub can be generated
 ## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
 ## SOAP::WSDL there. In any case, the
 ##
@@ -612,16 +613,16 @@ gs --version
 cd $RSAT
 make -f makefiles/init_rsat.mk ws_init
 
-## After this, you should re-generate the web services stubb, with the
+## After this, you should re-generate the web services stub, with the
 ## following command.
-make -f makefiles/init_rsat.mk ws_stubb
+make -f makefiles/init_rsat.mk ws_stub
 
 ## Test the local web services
-make -f makefiles/init_rsat.mk ws_stubb_test
+make -f makefiles/init_rsat.mk ws_stub_test
 
-## Test RSAT Web services (local and remote) without using the SOAP/WSDL stubb
+## Test RSAT Web services (local and remote) without using the SOAP/WSDL stub
 ## (direct parsing of the remote WSDL file)
-make -f makefiles/init_rsat.mk ws_nostubb_test
+make -f makefiles/init_rsat.mk ws_nostub_test
 
 ################################################################
 ## R installation
