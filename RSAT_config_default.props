@@ -43,7 +43,16 @@ smtp_sender=rsat@localhost
 ################################################################
 ## URL of the web server (important for the links).
 ## This is necessary only if you want to install a local Web server
-rsat_www=http://localhost/rsat/
+##
+## Possible values.
+##
+## RSAT server only accessible from your own computer:
+##   rsat_www=http://localhost/rsat/
+## Fixed IP address
+##   rsat_www=http://[you.ip.address.here]/rsat/
+## Server automatcally gets the IP address at each request
+##   rsat_www=auto
+rsat_www=auto
 
 ## Echo level of the web server (default 0, set to 1 or 2 for debugging).
 ## This option should usually be left to 0, because it exposes all
