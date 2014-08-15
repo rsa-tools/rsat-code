@@ -552,6 +552,15 @@ sub InitRSAT {
   &LoadLocalOrganisms();
 
 
+  ## Make sure that the variable RSAT_WWW is defined
+  if ((!defined($ENV{rsat_www})) || ($ENV{rsat_www} eq "auto")) {
+    use Sys::Hostname;
+    use Socket;
+    my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
+    $ENV{rsat_www} = "http://".$addr."/rsat/";
+    $ENV{rsat_ws} = "http://".$addr."/rsat/";
+  }
+
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
