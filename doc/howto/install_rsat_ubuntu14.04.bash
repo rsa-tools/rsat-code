@@ -24,17 +24,17 @@ INSTALLER_OPT="--quiet --assume-yes"
 
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-mkdir -p install_logs
-df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
+mkdir -p ~/install_logs
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
-df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
 ## ECONOMY apt-get install aptitude
 
 ${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
@@ -98,18 +98,19 @@ PACKAGES="
 	mysql-client
 	default-jre
 	python
-	python-setuptools 
 	python-pip
+	python-setuptools 
+	python-numpy
+	python-scipy
+	python-matplotlib
 	python-suds
 	python3
 	python3-pip
 	python3-setuptools 
-	python3
-	python3-pip 
 	python3-numpy
 	python3-scipy
 	python3-matplotlib
-	r-base
+	r-base-core
 	emacs
 "
 
@@ -153,52 +154,72 @@ echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
 echo "Perl module packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES_PERL}"
-for LIB in ${PACKAGES} ${PACKAGES_PERL}
-do
-   echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}"
-   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > install_logs/${INSTALLER}_install_${LIB}.txt
-   df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt
+for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
+do \
+   echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
+   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ~/install_logs/${INSTALLER}_install_${LIB}.txt ; \
+   df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
-echo "Log files are in folder install_logs"
+echo "Log files are in folder ~/install_logs"
 
 
 ## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 ## Note that these dependencies cost 400Mb ! To be checked
 ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
 ${INSTALLER} ${INSTALLER_OPT}  autoremove
-df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
 ${INSTALLER} ${INSTALLER_OPT}  clean
-df -m > install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
-
 
 ## DONE: installation of Ubuntu packages
 ################################################################
 
+
+
+################################################################
+## Activate the Apache Web server and RSAT configuration
+sudo emacs -nw /etc/apache2/sites-available/000-default.conf
+
+## Activate the following line:
+# Include conf-available/serve-cgi-bin.conf
+
+## In the file /etc/apache2/mods-available/mime.conf
+## uncomment the line
+##  AddHandler cgi-script .cgi
+
+## The following lines are required to activate cgi scripts.  Found at
+## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
+sudo chmod 755 /usr/lib/cgi-bin
+sudo chown root.root /usr/lib/cgi-bin
+sudo a2enmod cgi ## this is apparently required to enable cgi
+
+## Restart the apache server to take the new config into account
+apache2ctl restart
+
+## DONE: apache server configured and started
+################################################################
+
 ################################################################
 ## Install some python libraries with pip
-pip install numpy
-## Note: the installation of scipy and matplotlib takes some time and issues
-## a lot of warning messages, but finally it works
-pip install scipy 
-pip install matplotlib
+##
+## Note: at this stage, numpy, scipy and matplotlib have already been
+## installed with apt-get under Ubuntu. For other OS, they should be
+## added to the pip installation
 pip install soappy
 pip install fisher
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
-
 #${INSTALLER} install python3-suds
-## For pip3 also, scipy and matplotlib return a lot of verbosity, but the installation finally works
-
-## Problem : No distributions at all found for python-suds
+## PROBLEM : No distributions at all found for python-suds
 ## pip3 install python-suds
 
-## Problems: 
+## Failures: no distributions at all found
 # pip3 install wsdl
 # pip3 install wstools
 pip3 install fisher
@@ -217,56 +238,58 @@ pip3 install fisher
 pip3 install suds-jurko
 pip3 install pysimplesoap
 
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 
-################################################################
-## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
-
-## The installation of SOAP:WSDL under cpan is particularly tricky. 
-## In Ubuntu, there is a way to install it with ${INSTALLER}. 
-## http://www.installion.co.uk/ubuntu/trusty/universe/l/libsoap-wsdl-perl/fr/install.html
-emacs -nw /etc/apt/sources.list
-
-## Ensure that the following line is set to "universe"
-deb http://us.archive.ubuntu.com/ubuntu trusty main universe
-## You can now quit emacs
-
-apt-get update
-
-apt-get --quiet --assume-yes install libmodule-build-perl
-apt-get --quiet --assume-yes install libsoap-wsdl-perl
-
-## Note: this is still not sufficient to get SOAP::WSDL to run the two
-## following targets
-##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
-##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb_test
-
-## We first need to fix some problem with CPAN : on Ubuntu, I cannot
-## install the SOAP::WSDL module, which is required for several
-## functionalities. More precisely, after fiddling around for a few
-## hours, the server is able to answer to web services requests, but I
-## cannot run clients on it. Since NeAT relies on WSDL clients, it is
-## impossible to have neat running on and Ubuntu server. The
-## installation is however possible, since the stubb can be generated
-## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
-## SOAP::WSDL there. In any case, the 
+# ################################################################
+# ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
+# ## NOT SURE: on 2014/08/15 Jv installed a VM on IFB cloud, and the
+# ## SOAP/WSDL Web services seem to work without this.
+#
+# ## The installation of SOAP:WSDL under cpan is particularly tricky. 
+# ## In Ubuntu, there is a way to install it with ${INSTALLER}. 
+# ## http://www.installion.co.uk/ubuntu/trusty/universe/l/libsoap-wsdl-perl/fr/install.html
+# emacs -nw /etc/apt/sources.list
+#
+# ## Ensure that the following line is set to "universe"
+# deb http://us.archive.ubuntu.com/ubuntu trusty main universe
+# ## You can now quit emacs
+#
+# apt-get update
+#
+# apt-get --quiet --assume-yes install libmodule-build-perl
+# apt-get --quiet --assume-yes install libsoap-wsdl-perl
+#
+# ## Note: this is still not sufficient to get SOAP::WSDL to run the two
+# ## following targets
+# ##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
+# ##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb_test
+#
+# ## We first need to fix some problem with CPAN : on Ubuntu, I cannot
+# ## install the SOAP::WSDL module, which is required for several
+# ## functionalities. More precisely, after fiddling around for a few
+# ## hours, the server is able to answer to web services requests, but I
+# ## cannot run clients on it. Since NeAT relies on WSDL clients, it is
+# ## impossible to have neat running on and Ubuntu server. The
+# ## installation is however possible, since the stubb can be generated
+# ## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
+# ## SOAP::WSDL there. In any case, the 
+# ##
+# ## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan-modules
+# ## Not sure it works by its own, but cannot harm.
+# cpan
+# ## At the cpan prompt, type the following
+# install Module::Build
+# install Module::Build::Compat
+# install CPAN ## This takesa HUGE time. I answer all questions by the default answer (simply type the Enter key)
+# upgrade ## Takes a HUGE time, since all packages are apparently re-tested
+# quit
 ##
-## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan-modules
-## Not sure it works by its own, but cannot harm.
-cpan
-## At the cpan prompt, type the following
-install Module::Build
-install Module::Build::Compat
-install CPAN ## This takesa HUGE time. I answer all questions by the default answer (simply type the Enter key)
-upgrade ## Takes a HUGE time, since all packages are apparently re-tested
-quit
-
-
+## DONE: tricky stuff
+################################################################
 
 ################################################################
 ## R installation + some libraries
 ################################################################
-
-sudo bash
 
 ## As sudo, I edited the file /etc/apt/sources.list 
 ## and added the following line 
@@ -300,36 +323,61 @@ install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras"))
 source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
 
+## Checkn remaining disk space
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
 
 ################################################################
 ################       RSAT installation        ################
 ################################################################
 
-## Create a specific user for RSAT. The user is named rsat
-sudo adduser rsat
-## Full Name: Regulatory Sequence Analysis Tools admin
+## Simplified protocol: get RSAT as tar archive rather than git
+mkdir /bio
+cd /bio
+wget http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/rsat_2014-08-14.tar.gz
+tar -xpzf rsat_2014-08-14.tar.gz
+rm -f  rsat_2014-08-14.tar.gz
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
 
-## Grant sudoer privileges to the rsat user (will be more convenient for
-## installing Perl modules, software tools, etc)
-visudo
-## then add the following line below "User privilege specification"
-# rsat    ALL=(ALL:ALL) ALL
 
-## The installation is done under the rsat login
-su - rsat
-
-## I first recuperatemy .ssh folder from some other server (by ssh).
-## Then I start an agent to manage my passphrase for ssh
-## transfers. This is more convenient, I only provide my password
-## once.
-ssh-agent > agent
-source agent
-ssh-add
-
-## Note: this is only possible for regular RSAT admin. It requires to
-## have specified te RSAT ssh key and sent it to the git server at
-## ENS.
-git clone git@depot.biologie.ens.fr:rsat
+# ################################################################
+# ## Download RSAT distribution
+# ## Note: this is too complicated, I will simplify it: 
+# ##
+# ##  1) RSAT will become freely available without password -> download
+# ##     from the HTTP site
+# ##
+# ##  2) For the IFB cloud, install RSAT as root rather than creating a
+# ##     specific RSAT user. Indeed, each user will create new instances
+# ##     where she/he will be root.
+#
+# ## Create a specific user for RSAT. The user is named rsat
+# sudo adduser rsat
+# ## Full Name: Regulatory Sequence Analysis Tools admin
+#
+# ## Grant sudoer privileges to the rsat user (will be more convenient for
+# ## installing Perl modules, software tools, etc)
+# visudo
+# ## then add the following line below "User privilege specification"
+# # rsat    ALL=(ALL:ALL) ALL
+#
+# ## The installation is done under the rsat login
+# su - rsat
+#
+# ## I first recuperatemy .ssh folder from some other server (by ssh).
+# ## Then I start an agent to manage my passphrase for ssh
+# ## transfers. This is more convenient, I only provide my password
+# ## once.
+# ssh-agent > agent
+# source agent
+# ssh-add
+#
+# ## Note: this is only possible for regular RSAT admin. It requires to
+# ## have specified te RSAT ssh key and sent it to the git server at
+# ## ENS.
+# git clone git@depot.biologie.ens.fr:rsat
+#
+# ## DONE : obtained RSAT distribution
+# ################################################################
 
 ## Run the configuration script, to specify the environment variables.
 cd rsat
@@ -340,9 +388,6 @@ source RSAT_config.bashrc
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
-
-## Exit from the rsat session (and become root again)
-exit
 
 ################################################################
 ## For the next operations, we need to be su
@@ -389,11 +434,16 @@ make -f makefiles/install_rsat.mk  perl_modules_list
 make -f makefiles/install_rsat.mk perl_modules_check
 ## The result file name will be displayed at the end of the tests
 
+## Check the result of perl modules test
+more check_perl_modules_eval.txt
+## On Ubuntu 14.04, Object::InsideOut has status "Fail" but there is
+## apparently no problem
+
 ## Install these modules Beware: the _noprompt suffix is optional. It
 ## has the advantage to avoid for the admin to confirm each
 ## installation step, but the counterpart is that errors may be
 ## overlooked.
-make -f makefiles/install_rsat.mk perl_modules_install_noprompt
+make -f makefiles/install_rsat.mk perl_modules_install
 
 ## Note: I had to force installation for the some modules, because
 ## there seem to be some circular dependencies.
@@ -402,26 +452,8 @@ make -f makefiles/install_rsat.mk perl_modules_install_by_force
 ## Check if all required Perl modules have been correctly installed
 make -f makefiles/install_rsat.mk perl_modules_check
 
-## Ensure that all files belong to rsat user
-chown -R rsat.rsat .
-
-
-################################################################
-## Activate the Apache Web server and RSAT configuration
-sudo emacs -nw /etc/apache2/sites-available/000-default.conf
-
-## Activate the following line:
-# Include conf-available/serve-cgi-bin.conf
-
-## In the file /etc/apache2/mods-available/mime.conf
-## uncomment the line
-##  AddHandler cgi-script .cgi
-
-## From http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
-sudo chmod 755 /usr/lib/cgi-bin
-sudo chown root.root /usr/lib/cgi-bin
-sudo a2enmod cgi ## this is apparently required to enable cgi
-apache2ctl restart
+## Measure remaining disk space
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
 
 ################################################################
 ## Configure RSAT web server
@@ -432,32 +464,38 @@ cd ${RSAT}
 rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
 apache2ctl restart
 
+## You should now test the access to the RSAT Web server, whose URL is
+## in the environment variable RSAT_WWW
+echo $RSAT_WWW
+
 ################################################################
 ## Next steps require to be done as rsat administrator user
-
-su - rsat
-
-whoami 
-## Should return "rsat"
 
 ## compile RSAT programs written in C
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
 
+################          BUG         ################ 
+## I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED
+################
+
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
 ## Install two model organisms, required for some of the Web tools.
 download-organism -v 1 -org Saccharomyces_cerevisiae
 download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
 ## Optionally, install some pluricellular model organisms
-download-organism -v 1 -org Drosophila_melanogaster
-download-organism -v 1 -org Caenorhabditis_elegans
-download-organism -v 1 -org Arabidopsis_thaliana
+# download-organism -v 1 -org Drosophila_melanogaster
+# download-organism -v 1 -org Caenorhabditis_elegans
+# download-organism -v 1 -org Arabidopsis_thaliana
 
 ## Get the list of organisms supported on your computer.
 supported-organisms
+
+df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
 ################################################################
 ## IMPORTANT: request a vmatch license from http://www.vmatch.de/, and
@@ -501,14 +539,19 @@ make -f makefiles/init_rsat.mk ws_init
 
 ## After this, you should re-generate the web services stubb, with the
 ## following command.
-make -f makefiles/init_rsat.mk ws_stubb
+make -f makefiles/init_rsat.mk ws_stub
 
 ## Test the local web services
-make -f makefiles/init_rsat.mk ws_stubb_test
+make -f makefiles/init_rsat.mk ws_stub_test
 
 ## Test RSAT Web services (local and remote) without using the
 ## SOAP/WSDL stubb (direct parsing of the remote WSDL file)
-make -f makefiles/init_rsat.mk ws_nostubb_test
+make -f makefiles/init_rsat.mk ws_nostub_test
+
+## Test the program supported-organisms-server, which relies on Web
+## services without stub
+supported-organisms-server -url http://localhost/rsat/
+supported-organisms-server -url http://rsat.eu/
 
 ################################################################
 ## Install the cluster management system (torque, qsub, ...)
