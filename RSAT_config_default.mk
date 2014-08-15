@@ -75,10 +75,6 @@ RSAT_BIN=${RSAT}/bin
 ## delegated to remote RSAT web services.
 RSAT_WS=http://localhost/rsat/
 
-## URL used by the RSAT Web services to give Web access to temporary
-## files
-RSAT_WS_TMP=http://localhost/rsat/tmp
-
 ################################################################
 ##
 ## Configuration of a PC cluster
