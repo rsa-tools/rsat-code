@@ -22,9 +22,12 @@ $query = new CGI;
 print $query->header;
 print $query->start_html(-class => "info",
 			 -author=>'jacques.van.helden@ulb.ac.be',
-			 -style => { 	-src => "$ENV{rsat_www}/main.css",
-                             	       	-type => 'text/css',
-                             		-media => 'screen' });
+			 -style => { 	
+#			   -src => "$ENV{rsat_www}/main.css",
+			   -src => "main.css",
+			   -type => 'text/css',
+			   -media => 'screen' 
+			 });
 
 print "<blockquote>";
 
