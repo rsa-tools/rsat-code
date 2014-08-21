@@ -554,38 +554,18 @@ sub InitRSAT {
 
   ## Make sure that the variable RSAT_WWW is defined
   if ((!defined($ENV{rsat_www})) || ($ENV{rsat_www} eq "auto")) {
-#    use Sys::Hostname;
-#    use Socket;
-#    my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
-#    my $hostname = hostname();
-#    my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
+    use Sys::Hostname;
+    use Socket;
+    my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
+    my $hostname = hostname();
+    my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
 
-    use Net::Address::IP::Local;
-    my @addresses = Net::Address::IP::Local->public;
+    # ## Net::Address::IP::Local seems simpler, but does not work on pedagogix
+    # use Net::Address::IP::Local;
+    # my @addresses = Net::Address::IP::Local->public;
+
+
     my $address = $addresses[0];
-
-################################################################
-## TESTING
-#print get_interface_address('eth0');
-
-
-    ## Net::Interface seems to be Linux-specific. I could not install
-    ## it on Mac OSX, even with "force install".
-    # use Net::Interface;
-    # my %addresses = map { 
-    #   ($_ => [
-    # 	 map { Net::Interface::inet_ntoa($_) } # make addresses readable
-    # 	 $_->address,                      # all addresses
-    #    ]);
-    # } Net::Interface->interfaces;                   # all interfaces
-
-    # my @addresses = values(%addresses);
-
-    # my @ips = (`ifconfig -a` =~ /inet addr:(\S+)/g);
-
-##  END OF TESTING
-################################################################
-
 
     &RSAT::message::Debug("Host IP addresses", scalar(@addresses), "\n", join ("\n", '@addresses', @addresses)) if ($main::verbose >= 4);
     $ENV{rsat_www} = "http://".$address."/rsat/";
