@@ -554,15 +554,14 @@ sub InitRSAT {
 
   ## Make sure that the variable RSAT_WWW is defined
   if ((!defined($ENV{rsat_www})) || ($ENV{rsat_www} eq "auto")) {
-    use Sys::Hostname;
-    use Socket;
-    my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
-    my $hostname = hostname();
-    my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
+    # use Sys::Hostname;
+    # use Socket;
+    # my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
+    # my $hostname = hostname();
+    # my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
 
-    # ## Net::Address::IP::Local seems simpler, but does not work on pedagogix
-    # use Net::Address::IP::Local;
-    # my @addresses = Net::Address::IP::Local->public;
+    use Net::Address::IP::Local;
+    my @addresses = Net::Address::IP::Local->public;
 
 
     my $address = $addresses[0];
