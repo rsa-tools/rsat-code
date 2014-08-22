@@ -18,23 +18,35 @@
 ## can become it withn "sudo bash"
 
 
-INSTALLER=apt-get
-INSTALLER_OPT="--quiet --assume-yes"
+## Configuration for the installation
+export INSTALLER=apt-get
+export INSTALLER_OPT="--quiet --assume-yes"
 ## alternative: INSTALLER=aptitude
+export INSTALL_ROOT_DIR=/bio/
+export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
+export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
+export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
+export RSAT_DATA_DIR=/root/mydisk/data
 
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-mkdir -p ~/install_logs
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
+
+## Create a separate directory for RSAT, which must be readable by all
+## users (in particular by the apache user)
+mkdir -p ${INSTALL_ROOT_DIR}
+cd ${INSTALL_ROOT_DIR}
+mkdir -p ${INSTALL_ROOT_DIR}/install_logs
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
-## ECONOMY apt-get install aptitude
+## TO SAVE SPACE, I SUPPRESS aptitude
+## apt-get install aptitude
 
 ${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
@@ -127,12 +139,8 @@ PACKAGES_PERL="perl-doc
 	libemail-simple-creator-perl
 	libpostscript-simple-perl
 	libstatistics-distributions-perl
-	libalgorithm-cluster-perl
-	digest-md5-file-perl
 	libio-all-perl
-	liblockfile-simple
 	libobject-insideout-perl
-	libutil-properties-perl
 	libobject-insideout-perl
 	libsoap-lite-perl
 	libsoap-wsdl-perl
@@ -149,6 +157,18 @@ PACKAGES_PERL="perl-doc
 	libdigest-md5-file-perl
 "
 
+
+PACKAGES_PERL_PROBLEM="
+	libalgorithm-cluster-perl
+	digest-md5-file-perl
+	liblockfile-simple
+	libutil-properties-perl
+"
+#E: Unable to locate package libalgorithm-cluster-perl
+#E: Unable to locate package digest-md5-file-perl
+#E: Unable to locate package liblockfile-simple
+#E: Unable to locate package libutil-properties-perl
+
 ## Install the apt-get libraries
 echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
@@ -157,24 +177,26 @@ echo "${PACKAGES_PERL}"
 for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
 do \
    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
-   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ~/install_logs/${INSTALLER}_install_${LIB}.txt ; \
-   df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
+   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${INSTALL_ROOT_DIR}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
+   df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
-echo "Log files are in folder ~/install_logs"
+echo "Log files are in folder ${INSTALL_ROOT_DIR}/install_logs"
 
-
+################################################################
+## Specific treatment for some Python libraries
+##
 ## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 ## Note that these dependencies cost 400Mb ! To be checked
 ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
 ${INSTALLER} ${INSTALLER_OPT}  autoremove
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
 ${INSTALLER} ${INSTALLER_OPT}  clean
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
 
 ## DONE: installation of Ubuntu packages
@@ -183,26 +205,32 @@ df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 
 
 ################################################################
-## Activate the Apache Web server and RSAT configuration
-sudo emacs -nw /etc/apache2/sites-available/000-default.conf
+## Activate the Apache Web server
+##
+## !!!!!!!! SOME MANUAL INTERVENTION IS REQUIRED HERE  !!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+emacs -nw /etc/apache2/sites-available/000-default.conf
 
-## Activate the following line:
+## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
 
+emacs -nw /etc/apache2/mods-available/mime.conf
 ## In the file /etc/apache2/mods-available/mime.conf
 ## uncomment the line
 ##  AddHandler cgi-script .cgi
 
 ## The following lines are required to activate cgi scripts.  Found at
 ## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
-sudo chmod 755 /usr/lib/cgi-bin
-sudo chown root.root /usr/lib/cgi-bin
-sudo a2enmod cgi ## this is apparently required to enable cgi
+chmod 755 /usr/lib/cgi-bin
+chown root.root /usr/lib/cgi-bin
+a2enmod cgi ## this is apparently required to enable cgi
 
 ## Restart the apache server to take the new config into account
-apache2ctl restart
+service apache2 restart
 
 ## DONE: apache server configured and started
+## You can check it by opening a Web connection to 
+## http://[IP]
 ################################################################
 
 ################################################################
@@ -238,7 +266,7 @@ pip3 install fisher
 pip3 install suds-jurko
 pip3 install pysimplesoap
 
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 
 # ################################################################
 # ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
@@ -288,103 +316,48 @@ df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 ################################################################
 
 ################################################################
-## R installation + some libraries
-################################################################
-
-## As sudo, I edited the file /etc/apt/sources.list 
-## and added the following line 
-## (see instructions on http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu/)
-##   deb http://mirror.ibcp.fr/pub/CRAN/bin/linux/ubuntu trusty/
-## I then updated the apt-get packages
-${INSTALLER} update
-
-## .. and installed the R base package
-# ${INSTALLER} --quiet --assume-yes install r-base
-#${INSTALLER} --quiet --assume-yes installr-base-dev
-
-## Installation of R packages
-
-## The command R CMD INSTALL apparently does not work at this stage.
-##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
-##	Warning: invalid package 'reshape'
-##	Error: ERROR: no packages specified
-
-cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
-
-### I install them from the R interface. This should be revised to
-### make it from the bash, but I need to see how to specify the CRAN
-### server from the command line (for the time being, I run R and the
-### programm asks me to specify my preferred CRAN repository the first
-### time I install packages).
-R
-
-## At the R prompt
-install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras"))
-source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
-quit()
-
-## Checkn remaining disk space
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
-
-################################################################
 ################       RSAT installation        ################
 ################################################################
 
 ## Simplified protocol: get RSAT as tar archive rather than git
-mkdir /bio
-cd /bio
-wget http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/rsat_2014-08-14.tar.gz
-tar -xpzf rsat_2014-08-14.tar.gz
-rm -f  rsat_2014-08-14.tar.gz
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
+mkdir -p ${RSAT_HOME}
+cd ~; ln -fs ${RSAT_HOME} rsat
+cd ${INSTALL_ROOT_DIR}
 
 
-# ################################################################
-# ## Download RSAT distribution
-# ## Note: this is too complicated, I will simplify it: 
-# ##
-# ##  1) RSAT will become freely available without password -> download
-# ##     from the HTTP site
-# ##
-# ##  2) For the IFB cloud, install RSAT as root rather than creating a
-# ##     specific RSAT user. Indeed, each user will create new instances
-# ##     where she/he will be root.
-#
-# ## Create a specific user for RSAT. The user is named rsat
-# sudo adduser rsat
-# ## Full Name: Regulatory Sequence Analysis Tools admin
-#
-# ## Grant sudoer privileges to the rsat user (will be more convenient for
-# ## installing Perl modules, software tools, etc)
-# visudo
-# ## then add the following line below "User privilege specification"
-# # rsat    ALL=(ALL:ALL) ALL
-#
-# ## The installation is done under the rsat login
-# su - rsat
-#
-# ## I first recuperatemy .ssh folder from some other server (by ssh).
-# ## Then I start an agent to manage my passphrase for ssh
-# ## transfers. This is more convenient, I only provide my password
-# ## once.
-# ssh-agent > agent
-# source agent
-# ssh-add
-#
-# ## Note: this is only possible for regular RSAT admin. It requires to
-# ## have specified te RSAT ssh key and sent it to the git server at
-# ## ENS.
-# git clone git@depot.biologie.ens.fr:rsat
-#
+################################################################
+## Download RSAT distribution
+
+## Note: the git distribution requires an account at the ENS git
+## server, which is currently only possible for RSAT developing team.
+## In the near future, I envisage to use git also for the end-user
+## distribution.
+git clone git@depot.biologie.ens.fr:rsat
+
+## For users who don't have an account on the RSAT git server, the
+## code can be downloaded as a tar archive from the Web site.
+# wget ${RSAT_DISTRIB_URL}
+# tar -xpzf ${RSAT_DISTRIB}
+# rm -f   ${RSAT_DISTRIB} ## To free space
+# df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
+
+## Metabolic pathway tools installation
+##
+## TO BE DONE LATER
+## wget http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/metabolic-tools_20110408.tar.gz
+
 # ## DONE : obtained RSAT distribution
 # ################################################################
 
 ## Run the configuration script, to specify the environment variables.
-cd rsat
-perl perl-scripts/configure_rsat.pl 
+cd ${RSAT_HOME}
+perl perl-scripts/configure_rsat.pl
 
 ## Load the (updated) RSAT environment variables
 source RSAT_config.bashrc
+
+## Check that the RSAT environment variable has been properly configured
+echo ${RSAT}
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
@@ -420,10 +393,6 @@ rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ##	sudo apt-get install libssl-dev
 
 
-
-## Check that RSAT path has been defined
-echo $RSAT
-
 ## Set working directory to RSAT
 cd $RSAT
 
@@ -439,21 +408,65 @@ more check_perl_modules_eval.txt
 ## On Ubuntu 14.04, Object::InsideOut has status "Fail" but there is
 ## apparently no problem
 
-## Install these modules Beware: the _noprompt suffix is optional. It
-## has the advantage to avoid for the admin to confirm each
-## installation step, but the counterpart is that errors may be
+## Identify Perl modules that were not OK after the ubuntu package installation
+grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
+MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
+
+## Beware: the _noprompt suffix is
+## optional. It has the advantage to avoid for the admin to confirm
+## each installation step, but the counterpart is that errors may be
 ## overlooked.
-make -f makefiles/install_rsat.mk perl_modules_install
+make -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_PERL_MODULES}"
+
+## Check if all required Perl modules have now been correctly installed
+make -f makefiles/install_rsat.mk perl_modules_check
+more check_perl_modules_eval.txt
 
 ## Note: I had to force installation for the some modules, because
 ## there seem to be some circular dependencies.
-make -f makefiles/install_rsat.mk perl_modules_install_by_force
+grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v "Object::InsideOut"
+make -f makefiles/install_rsat.mk perl_modules_install_by_force PERL_MODULES_TO_FORCE="`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v Object::InsideOut| cut -f 2 | xargs`"
 
-## Check if all required Perl modules have been correctly installed
+
+## Last check for Perl modules. 
+## If some of them still fail (except Object::InsideOut), manual intervention will be required.
 make -f makefiles/install_rsat.mk perl_modules_check
+more check_perl_modules_eval.txt
 
 ## Measure remaining disk space
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
+
+
+################################################################
+## Install selected R librairies, required for some RSAT scripts
+################################################################
+
+## Installation of R packages
+
+## The command R CMD INSTALL apparently does not work at this stage.
+##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
+##	Warning: invalid package 'reshape'
+##	Error: ERROR: no packages specified
+
+cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
+
+### I install them from the R interface. This should be revised to
+### make it from the bash, but I need to see how to specify the CRAN
+### server from the command line (for the time being, I run R and the
+### programm asks me to specify my preferred CRAN repository the first
+### time I install packages).
+R
+
+## At the R prompt, type the following R commands.
+## Beware, the first installation of bioconductor may take a while, because there are many packages to install
+install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras", "dentextend"))
+source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
+quit()
+## At prompt "Save workspace image? [y/n/c]:", answer "n"
+
+
+## Check remaining disk space
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
 
 ################################################################
 ## Configure RSAT web server
@@ -468,12 +481,18 @@ apache2ctl restart
 ## in the environment variable RSAT_WWW
 echo $RSAT_WWW
 
+## If the value is "auto", get the URL as follows
+export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+export RSAT_WWW=http://${IP}/rsat/
+echo $RSAT_WWW
+
 ################################################################
 ## Next steps require to be done as rsat administrator user
 
 ## compile RSAT programs written in C
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
 ################          BUG         ################ 
 ## I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED
@@ -481,7 +500,13 @@ make -f makefiles/init_rsat.mk compile_all
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+
+## Replace the data directory by a link to a separate disk containing 
+## all RSAT data.
+cd ${RSAT}/public_html
+mv data ${RSAT_DATA_DIR}
+ln -s ${RSAT_DATA_DIR} data
 
 ## Install two model organisms, required for some of the Web tools.
 download-organism -v 1 -org Saccharomyces_cerevisiae
@@ -495,7 +520,7 @@ download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 ## Get the list of organisms supported on your computer.
 supported-organisms
 
-df -m > ~/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
 ################################################################
 ## IMPORTANT: request a vmatch license from http://www.vmatch.de/, and
