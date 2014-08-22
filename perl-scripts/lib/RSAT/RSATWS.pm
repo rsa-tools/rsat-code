@@ -17,7 +17,6 @@ unshift (@INC, "../../perl-scripts/lib/");
 
 require RSAT::util;
 require RSAT::server;
-## require RSAT::TaskManager;## JvH 2014-05-03: The TaskManager was actually not called from RSATWS.pm
 require RSAT::OrganismManager;
 
 &RSAT::server::InitRSAT();
