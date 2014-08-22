@@ -118,6 +118,7 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
+	Net::Address::IP::Local \
 	Sys::Hostname \
 	Socket \
 	YAML \
