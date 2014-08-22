@@ -26,7 +26,7 @@ export INSTALL_ROOT_DIR=/bio/
 export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
 export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
-export RSAT_DATA_DIR=/root/mydisk/data
+export RSAT_DATA_DIR=/root/mydisk/rsat_data
 
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
@@ -361,7 +361,7 @@ echo ${RSAT}
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
-
+    
 ################################################################
 ## For the next operations, we need to be su
 
@@ -411,6 +411,7 @@ more check_perl_modules_eval.txt
 ## Identify Perl modules that were not OK after the ubuntu package installation
 grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
 MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
+echo ${MISSING_PERL_MODULES}
 
 ## Beware: the _noprompt suffix is
 ## optional. It has the advantage to avoid for the admin to confirm
@@ -494,9 +495,10 @@ cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
-################          BUG         ################ 
-## I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED
-################
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!! I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED !!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
@@ -505,8 +507,11 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_exta
 ## Replace the data directory by a link to a separate disk containing 
 ## all RSAT data.
 cd ${RSAT}/public_html
-mv data ${RSAT_DATA_DIR}
+mv data/* ${RSAT_DATA_DIR}/
+mv data/.htaccess ${RSAT_DATA_DIR}/
+rmdir data
 ln -s ${RSAT_DATA_DIR} data
+cd $RSAT
 
 ## Install two model organisms, required for some of the Web tools.
 download-organism -v 1 -org Saccharomyces_cerevisiae
@@ -575,8 +580,10 @@ make -f makefiles/init_rsat.mk ws_nostub_test
 
 ## Test the program supported-organisms-server, which relies on Web
 ## services without stub
-supported-organisms-server -url http://localhost/rsat/
-supported-organisms-server -url http://rsat.eu/
+supported-organisms-server -url ${RSAT_WS}
+supported-organisms-server -url ${RSAT_WS} | wc
+supported-organisms-server -url http://localhost/rsat/ | wc
+supported-organisms-server -url http://rsat.eu/ | wc
 
 ################################################################
 ## Install the cluster management system (torque, qsub, ...)
