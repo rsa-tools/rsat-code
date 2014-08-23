@@ -124,7 +124,7 @@ _create_download_dir:
 ## Adapt the IP address in the RSATWS.wsdl file
 ws_init:
 	@echo
-	@echo "Initializing RSATWS.wsdl file with SERVER=$$RSAT_WS=${RSAT_WS}"
+	@echo "Initializing RSATWS.wsdl file with SERVER=RSAT_WS=${RSAT_WS}"
 	@perl -pe 's|\[RSAT_WS\]|${RSAT_WS}|g' \
 		${RSAT}/public_html/web_services/RSATWS_default.wsdl \
 		> ${RSAT}/public_html/web_services/RSATWS.wsdl
@@ -145,17 +145,17 @@ ws_param:
 ## Init Web services
 ws_stub: ws_init
 	@echo
-	@echo "Initiating Web services at SERVER=$$RSAT_WS=${RSAT_WS}"
+	@echo "Initiating Web services at SERVER=RSAT_WS=${RSAT_WS}"
 	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
 
 ws_stub_test:
 	@echo
-	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} using the stub"
+	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} using the stub"
 	(cd ${RSAT}/ws_clients/perl_clients/; make stub_test)
 
 ws_nostub_test:
 	@echo
-	@echo "Testing Web services at SERVER=$$RSAT_WS=${RSAT_WS} without stub"
+	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} without stub"
 	perl ${RSAT}/ws_clients/perl_clients/supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
 
 ################################################################
