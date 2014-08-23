@@ -552,6 +552,26 @@ sub InitRSAT {
   &LoadLocalOrganisms();
 
 
+  ## Make sure that the variable RSAT_WWW is defined
+  if ((!defined($ENV{rsat_www})) || ($ENV{rsat_www} eq "auto")) {
+    # use Sys::Hostname;
+    # use Socket;
+    # my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
+    # my $hostname = hostname();
+    # my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
+
+    use Net::Address::IP::Local;
+    my @addresses = Net::Address::IP::Local->public;
+
+
+    my $address = $addresses[0];
+
+    &RSAT::message::Debug("Host IP addresses", scalar(@addresses), "\n", join ("\n", '@addresses', @addresses)) if ($main::verbose >= 4);
+    $ENV{rsat_www} = "http://".$address."/rsat/";
+    $ENV{rsat_ws} = "http://".$address."/rsat/";
+    &RSAT::message::Debug("RSAT_WWW", $ENV{rsat_www}) if ($main::verbose >= 4);
+  }
+
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";

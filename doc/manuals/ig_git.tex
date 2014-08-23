@@ -18,21 +18,24 @@ login name you received when signing the \RSAT license).
 git clone git@depot.biologie.ens.fr:rsat
 \end{lstlisting}
 
+This will create a directory \file{rsat} on your computer, and store
+the programs in it. Note that at this stage the programs are not yet
+functional, because you still need to configure \RSAT and install
+genomes.
 
-This will create a directory \file{rsat} on your computer, and
-store the programs in it. Note that at this stage the programs are not
-yet functional, because you still need to install genomes, which are
-not included in the CVS distribution.
+Beware: the git distribution takes some space (>700Mb in August 2014),
+and the majority of this disk space is mobilized by the .git file
+(469Mb in August 2014). 
 
 \subsection{Updating \RSAT programs}
 
-Once the tools have been retrieved, you can obtain updates very
+Once the package has been cloned, you can obtain updates very
 easily. For this, you need to change your directory to the rsat
-directory, and use the \texttt{cvs} command in the following way.
+directory, and use the command \texttt{git pull}.
 
 \begin{lstlisting}
 cd rsat
-cvs -q update -d
+git pull
 \end{lstlisting}
 
 
