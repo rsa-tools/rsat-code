@@ -118,6 +118,9 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
+	Net::Address::IP::Local \
+	Sys::Hostname \
+	Socket \
 	YAML \
 	Module::Build::Compat \
 	CGI \
@@ -209,11 +212,11 @@ perl_modules_install_one_by_one:
 ## Some Perl modules cannot be installed without force
 ## About SOAP::Transport::HTTP, I think that there is no doc but the
 ## module is installed correctly.
+PERL_MODULES_TO_FORCE=Object::InsideOut SOAP SOAP::Transport SOAP::WSDL
 perl_modules_install_by_force:
-	@sudo ${CPAN_CMD} -f -i 'SOAP'
-	@sudo ${CPAN_CMD} -f -i 'SOAP::Transport'
-	@sudo ${CPAN_CMD} -f -i 'SOAP::WSDL'
-#	@sudo ${CPAN_CMD} -f -i 'Object::InsideOut'
+	@for module in ${PERL_MODULES_TO_FORCE} ; do \
+		sudo ${CPAN_CMD} -f -i $${module}; \
+	done
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple

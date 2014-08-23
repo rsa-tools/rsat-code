@@ -49,7 +49,7 @@ $cross_ext_variable{rsat_bin} = 1;
 $cross_ext_variable{rsat_tmp} = 1;
 $cross_ext_variable{rsat_www} = 1;
 $cross_ext_variable{rsat_ws} = 1;
-$cross_ext_variable{rsat_ws_tmp} = 1;
+#$cross_ext_variable{rsat_ws_tmp} = 1;
 $cross_ext_variable{ensembl_version} = 1;
 $cross_ext_variable{ensembl_branch} = 1;
 $cross_ext_variable{rsat_bin} = 1;
@@ -177,7 +177,7 @@ package main;
 
 	  ## Replace the RSAT web server path if required (at first installation)
 	  if ($key eq "rsat_www") {
-	    $value .= "/";
+	    $value .= "/" if ($value =~/^http/);
 	    $value =~ s|\/\/$|/|;
 	  } elsif (($prev_param{rsat_www}) && ($new_param{rsat_www})
 		   && ($value =~ /$prev_param{rsat_www}/)
