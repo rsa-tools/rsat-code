@@ -144,7 +144,7 @@ _download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
 	@echo
 	@echo "Downloading seqlogo	${SEQLOGO_URL}"
-	(cd ${SEQLOGO_DIR}; wget -nv -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	(cd ${SEQLOGO_DIR}; wget --timestamping --no-verbose --no-directories  ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 _compile_seqlogo:
@@ -1256,3 +1256,36 @@ _compile_python_suds:
 	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
 
 
+################################################################
+## Install STAMP (zip archive kindly sent by email by Shaun Mahony)
+install_stamp:
+
+################################################################
+## Install MATLIGN
+
+################################################################
+## Get and install the program matlign
+MATLIGN_ARCHIVE=matlign.tgz
+MATLIGN_URL=http://ekhidna.biocenter.helsinki.fi/poxo/download_folder
+MATLIGN_DOWNLOAD_DIR=${SRC_DIR}/matlign/
+MATLIGN_COMPILE_DIR=${MATLIGN_DOWNLOAD_DIR}data/backup/zope_data/poxo/MATLIGN
+install_matlign: _download_matlign _compile_matlign _install_matlign
+
+_download_matlign:
+	@mkdir -p ${MATLIGN_DOWNLOAD_DIR}
+	@echo
+	@echo "Downloading matlign	${MATLIGN_URL}"
+	(cd ${MATLIGN_DOWNLOAD_DIR}; wget --timestamping ${MATLIGN_URL}/${MATLIGN_ARCHIVE}; tar -xpzf ${MATLIGN_ARCHIVE})
+	@echo "MATLING_DOWNLOAD_DIR	${MATLIGN_DOWNLOAD_DIR}"
+	@echo "MATLING_COMPILE_DIR	${MATLIGN_COMPILE_DIR}"
+
+_compile_matlign:
+	@echo
+	@echo "Compiling matlign in MATLIGN_DIR	${MATLIGN_DIR}"
+	(cd ${MATLIGN_COMPILE_DIR}; ./compile1)
+
+
+_install_matlign:
+	@echo
+	@echo "Installing matlign in RSAT_BIN	${RSAT_BIN}"
+	@${SUDO} rsync -ruptl ${MATLIGN_COMPILE_DIR}/matlign ${RSAT_BIN}/

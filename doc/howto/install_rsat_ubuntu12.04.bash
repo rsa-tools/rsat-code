@@ -32,8 +32,8 @@
 
 
 ################################################################
-## Must be executed as root
-sudo bash
+## Must be executed as root. If you are non-root but sudoer user, you
+## can become it withn "sudo bash"
 
 ## Aptitude is more convenient than apt-get to treat dependencies when
 ## installing and uninstalling packages.
@@ -180,7 +180,8 @@ echo "Installing apt-get libraries"
 for LIB in $APTGET_LIBRARIES $APTGET_PERLMOD
 do
    echo "`date`        installing apt-get library $LIB"
-   aptitude --quiet --assume-yes install $LIB > install_logs/aptitude_install_$LIB
+   aptitude --quiet --assume-yes install ${LIB} > install_logs/aptitude_install_${LIB}.txt
+   df -h > install_logs/aptitude_install_${LIB}_df.txt
 done
 echo "Log files are in folder install_logs"
 
@@ -381,8 +382,8 @@ apt-get update
 
 ## Note: this is still not sufficient to get SOAP::WSDL to run the two
 ## following targets
-##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
-##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb_test
+##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stub
+##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stub_test
 
 ## We first need to fix some problem with CPAN : on Ubuntu, I cannot
 ## install the SOAP::WSDL module, which is required for several
@@ -390,7 +391,7 @@ apt-get update
 ## hours, the server is able to answer to web services requests, but I
 ## cannot run clients on it. Since NeAT relies on WSDL clients, it is
 ## impossible to have neat running on and Ubuntu server. The
-## installation is however possible, since the stubb can be generated
+## installation is however possible, since the stub can be generated
 ## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
 ## SOAP::WSDL there. In any case, the
 ##
@@ -564,7 +565,8 @@ make -f makefiles/install_software.mk install_ext_apps
 download-organism -v 1 -org Saccharomyces_cerevisiae
 download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
-## Optionally, install some pluricellular model organisms
+## Optionally, install some pluricellular model organisms (requires
+## more space)
 download-organism -v 1 -org Drosophila_melanogaster
 download-organism -v 1 -org Caenorhabditis_elegans
 download-organism -v 1 -org Arabidopsis_thaliana
@@ -607,24 +609,20 @@ gs --version
 ################################################################
 ## Configure the SOAP/WSDL Web services
 
-emacs -nw ${RSAT}/public_html/web_services/RSATWS.wsdl
-
-## At the bottom of the file, locate the following line.
-##  <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-
 ## Adapt the URL to your local configuration.
-
-## After this, you should re-generate the web services stubb, with the
-## following command.
 cd $RSAT
-make -f makefiles/init_rsat.mk ws_stubb
+make -f makefiles/init_rsat.mk ws_init
+
+## After this, you should re-generate the web services stub, with the
+## following command.
+make -f makefiles/init_rsat.mk ws_stub
 
 ## Test the local web services
-make -f makefiles/init_rsat.mk ws_stubb_test
+make -f makefiles/init_rsat.mk ws_stub_test
 
-## Test RSAT Web services (local and remote) without using the SOAP/WSDL stubb
+## Test RSAT Web services (local and remote) without using the SOAP/WSDL stub
 ## (direct parsing of the remote WSDL file)
-make -f makefiles/init_rsat.mk ws_nostubb_test
+make -f makefiles/init_rsat.mk ws_nostub_test
 
 ################################################################
 ## R installation

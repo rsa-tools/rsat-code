@@ -142,7 +142,7 @@ package main;
   $die_on_error = 0;
 
   ## Remote server from which genomes should be downloaded
-  $RSAT_SERVER="rsat.ulb.ac.be/rsat";
+  $RSAT_SERVER="rsat.eu";
 
   ## List of organisms to install
   @organisms = ();
