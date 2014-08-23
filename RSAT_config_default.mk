@@ -9,10 +9,10 @@
 RSAT_SITE=your_server_name
 
 ## Web server URL
-RSAT_WWW=http://localhost/rsat/
+# RSAT_WWW=http://localhost/rsat/
 
 ## Email address of RSAT administrator
-RSAT_ADMIN_EMAIL=your.mail@your.mail.server
+RSAT_SERVER_ADMIN=your.mail@your.mail.server
 
 ## Operating system
 ## Supported: linux  | macosx
@@ -73,11 +73,13 @@ RSAT_BIN=${RSAT}/bin
 ##
 ## This may differ from the RSAT site, because some tasks may be
 ## delegated to remote RSAT web services.
-RSAT_WS=http://localhost/rsat/
-
-## URL used by the RSAT Web services to give Web access to temporary
-## files
-RSAT_WS_TMP=http://localhost/rsat/tmp
+##
+## Previous value: RSAT_WS=http://localhost/rsat/
+##
+## By default, we use an automatic configuration, but in some cases it
+## would be safer to use a fixed address.
+IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+RSAT_WS=http://${IP}/rsat/
 
 ################################################################
 ##
