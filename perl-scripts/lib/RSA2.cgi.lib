@@ -295,25 +295,36 @@ sub LinkOneFile {
 ## on the server, or display on the browser.
 sub SelectOutput {
     my ($default_output, %args) = @_;
-    $default_output = "display" unless ($default_output);
+
+    ## Check and adapt default output if necessary
+    if (($ENV{mail_supported} eq "no") && ($default_output eq "email")) {
+	$default_output = "display";
+    } elsif ($args{email_only}) {
+	$default{output} = 'email';
+    } elsif ($default_output eq "") {
+	$default_output = "display";
+    }
+    
+    ## Collect the possible output types to be displayed
     my @values = ();
     if ($args{email_only}) {
-      push @values, 'email';
-      $default{output} = 'email';
+	push @values, 'email';
     } else {
-      if ($default_output eq 'server') {
-	push @values, 'server'
-      }
-      push @values, ('display','email');
+	if ($default_output eq 'server') {
+	    push @values, 'server';
+	}
+	push @values, ('display');
+	push @values, ('email') unless ($ENV{mail_supported} eq "no");
     }
+    
+    ## Display the output choice
     print "<B>Output</B>&nbsp;";
     print $query->radio_group(-name=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
     print $query->textfield(-name=>'user_email',
 			    -size=>30,
-	);
-    print "<BR>\n";
+	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
 }
 
