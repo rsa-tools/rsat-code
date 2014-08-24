@@ -30,6 +30,16 @@ rsat_tmp=[RSAT_PARENT_PATH]/rsat/public_html/tmp
 ################################################################
 ## Sending mail parameters
 
+## Indicate by "yes" or "no" if mail sending is supported on this RSAT
+## server. The answer may depend on the security policy of your
+## institution, which may refuse to send mail issuing from the Apache
+## user.
+##
+## Possible value
+## mail_supported=yes
+## mail_supported=no
+mail_supported=no
+
 ## Server for sending mail (SMTP). If not provided, mail messages will
 ## be sent via the sendmail program, which may be either allowed or
 ## not depending on the server configuration.
