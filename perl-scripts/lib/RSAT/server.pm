@@ -679,9 +679,9 @@ sub send_mail {
 
     if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0)) {
 	my $mail_warn = "Sending mail";
-	$mail_warn .= " from ".$from if ($from);
-	$mail_warn .= " to ".$recipient if ($recipient);
-	$mail_warn .= " ; Subject: ".$subject;
+	$mail_warn .= " from \"".$from."\"" if ($from);
+	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
+	$mail_warn .= " ; Subject: \"".$subject."\"";
 	$mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
 	&RSAT::message::TimeWarn($mail_warn);
     }
