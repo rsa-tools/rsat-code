@@ -2,7 +2,6 @@
 ## Instructions used to install a Virtual Machine on the IFB cloud
 ## (Institut Francais de Bioinformatique), and on a VirtualBox VM.
 
-
 ## THIS IS NOT REALLY A bahsrc FILE, IT IS A SUCCESSION OF
 ## INSTRUCTIONS AND COMMENTS, THAT SHOULD BE DONE MANUALLY. I (JvH)
 ## SHOULD IMPROVE THIS WHEN I CAN.
@@ -24,9 +23,8 @@ export INSTALLER_OPT="--quiet --assume-yes"
 ## alternative: INSTALLER=aptitude
 export INSTALL_ROOT_DIR=/bio/
 export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
-export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
-export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
-export RSAT_DATA_DIR=/root/mydisk/rsat_data
+#export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
+#export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
@@ -460,7 +458,7 @@ R
 
 ## At the R prompt, type the following R commands.
 ## Beware, the first installation of bioconductor may take a while, because there are many packages to install
-install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras", "dentextend"))
+install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras", "dendextend"))
 source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
 ## At prompt "Save workspace image? [y/n/c]:", answer "n"
@@ -483,9 +481,9 @@ apache2ctl restart
 echo $RSAT_WWW
 
 ## If the value is "auto", get the URL as follows
-export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
-export RSAT_WWW=http://${IP}/rsat/
-echo $RSAT_WWW
+# export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'
+# export RSAT_WWW=http://${IP}/rsat/
+# echo $RSAT_WWW
 
 ################################################################
 ## Next steps require to be done as rsat administrator user
@@ -504,8 +502,11 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_
 make -f makefiles/install_software.mk install_ext_apps
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
-## Replace the data directory by a link to a separate disk containing 
-## all RSAT data.
+## ONLY FOR THE IFB CLOUD: 
+##
+## replace the data directory by a link to
+## a separate disk containing all RSAT data.
+export RSAT_DATA_DIR=/root/mydisk/rsat_data
 cd ${RSAT}/public_html
 mv data/* ${RSAT_DATA_DIR}/
 mv data/.htaccess ${RSAT_DATA_DIR}/
@@ -526,11 +527,6 @@ download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 supported-organisms
 
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
-
-################################################################
-## IMPORTANT: request a vmatch license from http://www.vmatch.de/, and
-## place the license file (vmatch.lic) in the bin folder $RSAT/bin
-make -f makefiles/install_software.mk install_vmatch
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 
@@ -593,13 +589,3 @@ grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
-
-################################################################
-##
-## ATTENTION: for the IDB cloud, to ensure persistence, you
-## imperatively have to run the following command in the VM before any
-## shutdown onthe Web site
-##
-################################################################
-
-## cd; bash cleaner.sh ; history -c && history -w && logout
