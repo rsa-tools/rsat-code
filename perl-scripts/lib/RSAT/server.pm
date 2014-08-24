@@ -650,6 +650,10 @@ sub CheckEmailAddress {
 sub send_mail {
     my ($message, $recipient, $subject) = @_;
 
+    if ($ENV{mail_supported} eq "no") {
+	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    } else {
+
     ## Check if recipient argument contains a valid email address
     &CheckEmailAddress($recipient);
 
@@ -672,8 +676,14 @@ sub send_mail {
 	$from = $ENV{smtp_sender};
     }
 
-    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") 
-	if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0));
+    if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0)) {
+	my $mail_warn = "Sending mail";
+	$mail_warn .= " from \"".$from."\"" if ($from);
+	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
+	$mail_warn .= " ; Subject: \"".$subject."\"";
+	$mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+	&RSAT::message::TimeWarn($mail_warn);
+    }
 
     # ## Send the message using MIME::Lite    
     # my $msg = MIME::Lite->new(
@@ -688,22 +698,23 @@ sub send_mail {
 
     ## Sent message using Email::Sender
     my $email = Email::Simple->create(
-      header => [
-	To      => $recipient,
-	From    => $from,
-	Subject => $subject,
-      ],
-      body => $message,
+	header => [
+	    To      => $recipient,
+	    From    => $from,
+	    Subject => $subject,
+	],
+	body => $message,
 	);
     &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
-
 
 #    my $transport = Email::Sender::Transport::SMTP->new({
 #      host => $smtp_server,
 #      port => 25,
 #							});
-#    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);
-    Email::Sender::Simple->send($email, {transport => $transport});
+    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);
+
+	Email::Sender::Simple->send($email, {transport => $transport});
+    }
 
 }
 
