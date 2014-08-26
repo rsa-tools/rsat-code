@@ -159,13 +159,26 @@ ensembl_host=ensembldb.ensembl.org
 ## rsync site to download the ensembl data
 ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 
-## Safe version of the ensembl database (for download-ensembl-genome, download-ensembl-variations, ...)
-ensembl_version_safe=75
+## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
+##   (retrieve-ensembl-seq, get-ensembl-genome)
+ensembl=/no_backup/rsat/lib/ensemblgenomes-23-76/ensembl/modules
+compara=/no_backup/rsat/lib/ensemblgenomes-23-76/ensembl-compara/modules
+variation=/no_backup/rsat/lib/ensemblgenomes-23-76/ensembl-variation/modules
 
-## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome)
-ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-22-75/ensembl-variation/modules
+## Preferred version of the databases
+## ensembl  (http://www.ensembl.org/) and
+## ensemblgenomes (http://ensemblgenomes.org/).
+##
+## These parameters are used by the tools to install genomes from
+## these two sources.
+ensembl_version=76
+ensemblgenomes_version=23
+
+## Safe version of the ensembl database (for download-ensembl-genome,
+## download-ensembl-variations, ...). The database structures and API
+## change from version to version, and the installation should thus
+## not be done with earlier versions than indicated here.
+ensembl_version_safe=75
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
