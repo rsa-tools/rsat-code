@@ -107,5 +107,5 @@ QUEUE=
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_RELEASE=75
-ENSEMBLGENOMES_BRANCH=22
+ENSEMBL_RELEASE=76
+ENSEMBLGENOMES_BRANCH=23
