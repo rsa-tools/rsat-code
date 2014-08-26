@@ -153,19 +153,24 @@ PACKAGES_PERL="perl-doc
 	libjson-perl
 	libbio-perl-perl
 	libdigest-md5-file-perl
+        libnet-address-ip-local-perl
+
 "
 
 
-PACKAGES_PERL_PROBLEM="
+## We did not find apt-get packages for some required Perl
+## libraries. These will have to be installed with cpan.
+PACKAGES_PERL_MISSING="
 	libalgorithm-cluster-perl
 	digest-md5-file-perl
 	liblockfile-simple
 	libutil-properties-perl
+        librest-client-perl
+        libxml-compile-soap11-perl
+        libxml-compile-wsdl11-perl
+        libxml-compile-transport-soaphttp-perl
+        libbio-das-perl        
 "
-#E: Unable to locate package libalgorithm-cluster-perl
-#E: Unable to locate package digest-md5-file-perl
-#E: Unable to locate package liblockfile-simple
-#E: Unable to locate package libutil-properties-perl
 
 ## Install the apt-get libraries
 echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
@@ -317,11 +322,6 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libra
 ################       RSAT installation        ################
 ################################################################
 
-## Simplified protocol: get RSAT as tar archive rather than git
-mkdir -p ${RSAT_HOME}
-cd ~; ln -fs ${RSAT_HOME} rsat
-cd ${INSTALL_ROOT_DIR}
-
 
 ################################################################
 ## Download RSAT distribution
@@ -330,10 +330,18 @@ cd ${INSTALL_ROOT_DIR}
 ## server, which is currently only possible for RSAT developing team.
 ## In the near future, I envisage to use git also for the end-user
 ## distribution.
+cd ${INSTALL_ROOT_DIR}
 git clone git@depot.biologie.ens.fr:rsat
 
 ## For users who don't have an account on the RSAT git server, the
 ## code can be downloaded as a tar archive from the Web site.
+##
+## This is however less convenient than using the git clone, which
+## greatly facilitates updates.
+#
+# cd ${INSTALL_ROOT_DIR}
+# mkdir -p ${RSAT_HOME}
+# cd ~; ln -fs ${RSAT_HOME} rsat
 # wget ${RSAT_DISTRIB_URL}
 # tar -xpzf ${RSAT_DISTRIB}
 # rm -f   ${RSAT_DISTRIB} ## To free space
@@ -409,7 +417,7 @@ more check_perl_modules_eval.txt
 ## Identify Perl modules that were not OK after the ubuntu package installation
 grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
 MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
-echo ${MISSING_PERL_MODULES}
+echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
 
 ## Beware: the _noprompt suffix is
 ## optional. It has the advantage to avoid for the admin to confirm
@@ -420,6 +428,8 @@ make -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_P
 ## Check if all required Perl modules have now been correctly installed
 make -f makefiles/install_rsat.mk perl_modules_check
 more check_perl_modules_eval.txt
+## Note: Object::InsideOut should be ignored for this test, because it
+## always display "Fail", whereas it is OK during installation.
 
 ## Note: I had to force installation for the some modules, because
 ## there seem to be some circular dependencies.
@@ -457,7 +467,12 @@ cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list
 R
 
 ## At the R prompt, type the following R commands.
-## Beware, the first installation of bioconductor may take a while, because there are many packages to install
+##
+## Beware, the first installation of bioconductor may take a while,
+## because there are many packages to install
+##
+## Note: since this is the first time you install R packages on this
+## VM, you need to choose a RCRAN server nearby to your site.
 install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras", "dendextend"))
 source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
 quit()
@@ -589,3 +604,8 @@ grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
+
+
+################################################################
+## For the Virtualbox VM: mount the virtual disk rsat_data
+
