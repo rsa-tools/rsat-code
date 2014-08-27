@@ -116,7 +116,7 @@ package main;
   for my $extension (@props_extensions) {
 
     ## Check that the config file exists in the RSAT path
-    my $config_file = $rsat_path."/RSAT_config.${extension}";
+    my $config_file = $rsat_path."/RSAT_config.".$extension;
     warn("\n\n\n", "################################################################\n", 
 	 "## Editing \".${extension}\" configuration file\t", $config_file,"\n\n");
 
@@ -148,7 +148,9 @@ package main;
 
     ## Create a copy of the config file
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    my $config_file_bk = $config_file.".bk.".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec;
+    my $backup_dir = $rsat_path."/backups";
+    mkdir($backup_dir) unless (-d $backup_dir);
+    my $config_file_bk = $backup_dir."/RSAT_config_bk_".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec.".".$extension;
     warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
     system("cp ".$config_file." ".$config_file_bk);
 
