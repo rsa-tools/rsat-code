@@ -4,17 +4,17 @@
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    </head>
    <body class="results"> 
+
 <?php
 // Load RSAT configuration
    require('functions.php');
-
 // print_r($properties);
 UpdateLogFile("rsat","","");
 
-// Import variables with prefix fs_ from form
-import_request_variables('P','fs_');
+// FOR DEBUG
+print_r($_REQUEST);
 
-//print_r($_POST);
+// print_r($_POST);
 // print_r($_FILES);
 
 // Initialize variables
@@ -34,16 +34,21 @@ echo "<H3><a href='".$properties['rsat_www']."'>RSAT</a> - fetch-sequences - res
 $errors = false;
 
 // Check that genome has been specified
-if ($fs_genome == "none" or $fs_genome == "" ) {
+$genome = $_REQUEST['genome'];
+
+if ($genome == "none" or $genome == "" ) {
   error( "You forgot to specify the genome.");
   $errors = true;
  } else {
-  $argument .= " -genome $fs_genome";
+  $argument .= " -genome $genome";
  }
 
+
 //Check syntax of email address (ensure the texte netered in email box was an email address)
-if($fs_output =="email") {
-  if (!preg_match("#^[^@\.]+(\.[^@]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$#", $fs_user_email)) {
+$output = $_REQUEST['output'];
+$user_email = $_REQUEST['user_email'];
+if($output =="email") {
+  if (!preg_match("#^[^@\.]+(\.[^@]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$#", $user_email)) {
      error( "Email not valid");
      $errors=true;
   }
@@ -54,7 +59,8 @@ if($fs_output =="email") {
 $bed_specifications = 0;
 
 // Bed data pasted in text area
-if ($fs_bed != "") {
+$bed = $_REQUEST['bed'];
+if ($bed != "") {
   $bed_specifications++;
  }
 // Local bed file on client machine
@@ -62,7 +68,8 @@ if ($_FILES["bedfile"]['name'] != "") {
   $bed_specifications++;
  }
 // Bed specified by URL of remote server
-if ( $fs_sequence_url != "") {
+$sequence_url = $_REQUEST['sequence_url'];
+if ( $sequence_url != "") {
   $bed_specifications++;
  }
 
@@ -76,35 +83,39 @@ if ($bed_specifications == 0) {
  }
 
 // Header format
-if ($fs_header == "galaxy") {
+$header = $_REQUEST['header'];
+if ($header == "galaxy") {
   $argument .= " -header_format galaxy";
  }
 
 // Downstream extension
-if (($fs_downstr_ext !="") &&
-    ($fs_downstr_ext != '0')) {
-  if (!is_numeric($fs_downstr_ext)) {
-    error ($fs_downstr_extr." Invalid value for downstream extension: should be an Integrer.");
+$downstr_ext = $_REQUEST['downstr_ext'];
+if (($downstr_ext !="") &&
+    ($downstr_ext != '0')) {
+  if (!is_numeric($downstr_ext)) {
+    error ($downstr_extr." Invalid value for downstream extension: should be an Integrer.");
     $errors = true;
   } else {
-     $argument .= " -downstr_ext $fs_downstr_ext";
+     $argument .= " -downstr_ext $downstr_ext";
   }
 }
 
 // Upstream extension
-if (($fs_upstr_ext !="") &&
-    ($fs_upstr_ext != '0')) {
-  if (!is_numeric($fs_upstr_ext)) {
-    error($fs_upstr_ext." is not valid value for upstream extension : should be an Integrer.");
+$upstr_ext = $_REQUEST['upstr_ext'];
+if (($upstr_ext !="") &&
+    ($upstr_ext != '0')) {
+  if (!is_numeric($upstr_ext)) {
+    error($upstr_ext." is not valid value for upstream extension : should be an Integrer.");
     $errors = true;
   }  else {
-		$argument .= " -upstr_ext $fs_upstr_ext";
+    $argument .= " -upstr_ext $upstr_ext";
   }
 }
 
 // Reference coordinates
-if ($fs_reference != "segment") {
-  $argument .= " -reference $fs_reference";
+$reference = $_REQUEST['reference'];
+if ($reference != "segment") {
+  $argument .= " -reference $reference";
 } 
 
 //////////////////////////////////////////////////
@@ -135,8 +146,8 @@ if (!$errors) {
   }
   
   // Bed data provided in text area
-  if ($fs_bed != "") {
-  	$array_line = explode("\n",$fs_bed);
+  if ($bed != "") {
+  	$array_line = explode("\n",$bed);
   	$bed_file = $properties['rsat_tmp']."/"."userbed".$suffix;
   	$file = fopen ($bed_file, "w");
   	$no_bed_line = true;
@@ -165,12 +176,12 @@ if (!$errors) {
   }
 
   // Check URL
-  if ($fs_sequence_url != "") {
-    $url = explode("/",$fs_sequence_url);
+  if ($sequence_url != "") {
+    $url = explode("/",$sequence_url);
     $bed_file = end($url);
 
     if ($url[0]=="http:" or $url[0]=='ftp:') {
-      $argument .= " -u $fs_sequence_url";
+      $argument .= " -u $sequence_url";
 	  		
       //Add randum value to $bedfile for the outputfile
       $bed_file = $properties['rsat_tmp']."/".$bed_file;
@@ -184,7 +195,7 @@ if (!$errors) {
       }
 	    
     } else {
-      error($fs_sequence_url." is not a valid URL (should start with http: or ftp:.");
+      error($sequence_url." is not a valid URL (should start with http: or ftp:.");
       $errors = true;
     }
   }
@@ -216,8 +227,8 @@ if (!$errors) {
   /* TEMPORARILY INACTIVATE BECAUSE IT DOES NOT WORK 
   // Announce job starting
   $msg = "Starting job.";
-  if ($fs_output =="email")  {
-    $msg .= " After job completion, email will be sent to ".$fs_user_email;
+  if ($output =="email")  {
+    $msg .= " After job completion, email will be sent to ".$user_email;
   }
 
   // Printing starting job
@@ -228,9 +239,9 @@ if (!$errors) {
 
   ################################################################
   // Send email with notification of starting task
-  if ($fs_output =="email")  {
+  if ($output =="email")  {
   	// Parammeters for sending the mail
-  	$to = $fs_user_email;
+  	$to = $user_email;
   	$subject = "[RSAT] fetch-sequences start ".$now."_".$suffix;
   
   	// Store the URL table in a variable
@@ -314,10 +325,10 @@ if (!$errors) {
 
   ################################################################
   // Send email with notification of task completion 
-  if ($fs_output =="email")  {
+  if ($output =="email")  {
     //    echo "Email outpout not available for now";
     // Parammeters for sending the mail
-    $to = $fs_user_email;
+    $to = $user_email;
     $subject = "[RSAT] fetch-sequences result ".$now."_".$suffix;
     
     // Store the URL table in a variable
