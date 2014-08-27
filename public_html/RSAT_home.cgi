@@ -37,6 +37,18 @@ print <<EndText;
 
 <table class="title" cellpadding="10" width="100%">
   <tr>
+
+    <td align=center>
+      <h1>Regulatory Sequence Analysis Tools</h1>
+    </td>
+    
+    <td>
+      <a href='images/RSAT_logo.png'>
+	<img src="images/RSAT_logo_w150.png" alt="RSAT">
+      </a>
+    </td>
+
+<!--    
     <td align=center valign = top>
       <a href="http://www.bigre.ulb.ac.be" target=_blank>
 	<img src="images/bigre_logo.png" alt="BiGRE lab" border=1 height=75>
@@ -45,19 +57,15 @@ print <<EndText;
 	  BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
       </font>
     </td>
-    
-    <td align=center>
-      <h1>Regulatory Sequence Analysis Tools</h1>
-    </td>
-    
-    
+
     <td align=center valign = top width="160">
       <a target=_blank href="http://embnet.ccg.unam.mx/">
 	<img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
       <br>
       <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG</font>
     </td>
-    
+    -->
+
   </TR>
 </table>
 
