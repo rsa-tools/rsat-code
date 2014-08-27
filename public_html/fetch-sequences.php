@@ -11,9 +11,6 @@
 // print_r($properties);
 UpdateLogFile("rsat","","");
 
-// FOR DEBUG
-print_r($_REQUEST);
-
 // print_r($_POST);
 // print_r($_FILES);
 
@@ -121,81 +118,84 @@ if ($reference != "segment") {
 //////////////////////////////////////////////////
 // Write bed file in temporary directory
 if (!$errors) {
-	$suffix = "_".date("Ymd_His")."_".randchar(3).".bed";
+
+  // Should be replaced by getTempFileName()
+  $suffix = "_".date("Ymd_His")."_".randchar(3).".bed";
 	  
   // Upload file from client machine
   if ($_FILES["bedfile"]['name'] != "") {
     $bed_file_name = basename($_FILES['bedfile']['name']);
-    
-    // Move uploaded bed file in tmp
-    $bed_file = $properties['rsat_tmp']."/".$bed_file_name;
-    $extension = end( explode( ".", $bed_file));
-    
+
+    // We need to keep the original extension in order to support
+    // uncompression of .gz files
+    $extension = end(explode( ".", $bed_file_name));
     if ($extension == "bed") {
-    	$bed_file = str_replace(".bed",$suffix,$bed_file);
-    } else {
-    	$bed_file = $bed_file.$suffix.".".$extension; ## We hold the original extension in order to support uncompression of .gz files
+      $bed_file_name = str_replace(".bed", "", $bed_file_name);
     }
     
-    if(move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
-			$argument .= " -i $bed_file";
+    // Move uploaded bed file in tmp
+    $bed_file = getTempFileName($bed_file_name, ".".$extension);
+    
+    if (move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
+      $argument .= " -i $bed_file";
     } else {
-			error('File upload failed');
-			$errors = true;
+      error('File upload failed');
+      $errors = true;
     }
   }
   
   // Bed data provided in text area
   if ($bed != "") {
-  	$array_line = explode("\n",$bed);
-  	$bed_file = $properties['rsat_tmp']."/"."userbed".$suffix;
-  	$file = fopen ($bed_file, "w");
-  	$no_bed_line = true;
-  	$warnings = "";
-  
-  	foreach($array_line as $line) {
-  		if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
-  			$no_bed_line = false;
-  			fwrite($file, $line."\n");
-  		} else {
-  			$warnings .= htmlspecialchars($line)."<br/>\n";
-  		}
-  	}
-  	fclose($file);
-  
-  	if ($warnings != "") {
-  		warning("Not bed line :<br/>\n".$warnings);
-  	}
-  
-  	if ($no_bed_line) {
-  		error("All your line are not bed format");
-  		$errors = true;
-  	} else {
-  		$argument .= " -i $bed_file";
-  	}
+    $array_line = explode("\n",$bed);
+    // $bed_file = $properties['rsat_tmp']."/"."userbed".$suffix;
+    $bed_file = getTempFileName("userbed", ".bed");
+    $file = fopen ($bed_file, "w");
+    $no_bed_line = true;
+    $warnings = "";
+    
+    foreach($array_line as $line) {
+      if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
+	$no_bed_line = false;
+	fwrite($file, $line."\n");
+      } else {
+	$warnings .= htmlspecialchars($line)."<br/>\n";
+      }
+    }
+    fclose($file);
+    
+    if ($warnings != "") {
+      warning("Not bed line :<br/>\n".$warnings);
+    }
+    
+    if ($no_bed_line) {
+      error("All your line are not bed format");
+      $errors = true;
+    } else {
+      $argument .= " -i $bed_file";
+    }
   }
 
-  // Check URL
+  // Bed data provided as an URL
   if ($sequence_url != "") {
     $url = explode("/",$sequence_url);
-    $bed_file = end($url);
+    $bed_file_name = end($url);
+
+    // We need to keep the original extension in order to support
+    // uncompression of .gz files
+    $extension = end(explode( ".", $bed_file_name));
+    if ($extension == "bed") {
+      $bed_file_name = str_replace(".bed", "", $bed_file_name);
+    }
 
     if ($url[0]=="http:" or $url[0]=='ftp:') {
       $argument .= " -u $sequence_url";
-	  		
+      
       //Add randum value to $bedfile for the outputfile
-      $bed_file = $properties['rsat_tmp']."/".$bed_file;
-      $extension = end( explode( ".", $bed_file));
-    
-      if ($extension == "bed") {
-	$bed_file = str_replace(".bed",$suffix,$bed_file);
-      } else {
-	//	$bed_file = $bed_file.$suffix;
-    	$bed_file = $bed_file.$suffix.".".$extension; ## We hold the original extension in order to support uncompression of .gz files
-      }
-	    
+      //      $bed_file = $properties['rsat_tmp']."/".$bed_file;
+      $bed_file = getTempFileName($bed_file_name, ".".$extension);
+      
     } else {
-      error($sequence_url." is not a valid URL (should start with http: or ftp:.");
+      error($sequence_url."<p>Invalid URL (should start with http:// or ftp://)");
       $errors = true;
     }
   }
@@ -217,7 +217,11 @@ if (!$errors) {
   $error_file = str_replace(".gz_log.txt","_log.txt",$error_file);
   
   $argument .= " -o $output_file";	  	
-  $URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
+  if ($sequence_url == "") {
+      $URL['Genomic coordinates (bed)'] = rsat_path_to_url($bed_file);
+    } else {
+      $URL['Genomic coordinates (bed)'] = $sequence_url;
+    }
   $URL['Fetched sequences (fasta)'] = rsat_path_to_url($output_file);
   $URL['Log file (txt)'] = rsat_path_to_url($error_file);
 
@@ -237,57 +241,57 @@ if (!$errors) {
   flush(); 
   */
 
-  ################################################################
+  ////////////////////////////////////////////////////////////////
   // Send email with notification of starting task
   if ($output =="email")  {
-  	// Parammeters for sending the mail
-  	$to = $user_email;
-  	$subject = "[RSAT] fetch-sequences start ".$now."_".$suffix;
-  
-  	// Store the URL table in a variable
-  	$html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
-  	$headers = ""; // Header (specifying Mime types)
-  	if ($html_mail) {
-  		$msg = "<table class='resultlink'>\n";
-  		$msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
-  		foreach ($URL as $key => $value) {
-  			$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n";
-  		}
-  		$msg .= "</table>\n";
-  
-  		$headers .= 'Mime-Version: 1.0'."\r\n";
-  		$headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
-  		$headers .= "\r\n";
-  	} else {
-  		$msg = "fetch-sequences starting\n";
-  		$msg .= "Result files :\n";
-  		foreach ($URL as $key => $value) {
-  			$msg .= "\t".$key."\t".$value."\n";
-  		}
-  	}
-  
-  
-  	// Sending mail
-  	$smtp = $properties["smtp"];
-  
-  	// Check that the SMTP was specificed in the property file of the server
-  	if ($smtp == "") {
-  		error("SMTP server is not specified in the RSAT config file. Please contact system administrator.");
-  	} else {
-  		info("Sending mail via SMTP ".$smtp);
-  		ini_set ( "SMTP", $smtp);
-  		$mail_sent = mail($to, $subject." ; Job submitted", $msg, $headers);
-  		if ($mail_sent) {
-  			info("Job started, submission mail sent to ".$to);
-  		} else {
-  			error("Notification mail could not be sent.\n\n.".$msg);
-  		}
-  	}
+    // Parammeters for sending the mail
+    $to = $user_email;
+    $subject = "[RSAT] fetch-sequences start ".$now."_".$suffix;
+    
+    // Store the URL table in a variable
+    $html_mail = 0; // Boolean variable indicating whether HTML format is supported in email
+    $headers = ""; // Header (specifying Mime types)
+    if ($html_mail) {
+      $msg = "<table class='resultlink'>\n";
+      $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
+      foreach ($URL as $key => $value) {
+	$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n";
+      }
+      $msg .= "</table>\n";
+      
+      $headers .= 'Mime-Version: 1.0'."\r\n";
+      $headers .= 'Content-type: text/html; charset=utf-8'."\r\n";
+      $headers .= "\r\n";
+    } else {
+      $msg = "fetch-sequences starting\n";
+      $msg .= "Result files :\n";
+      foreach ($URL as $key => $value) {
+	$msg .= "\t".$key."\t".$value."\n";
+      }
+    }
+    
+    
+    // Sending mail
+    $smtp = $properties["smtp"];
+    
+    // Check that the SMTP was specificed in the property file of the server
+    if ($smtp == "") {
+      error("SMTP server is not specified in the RSAT config file. Please contact system administrator.");
+    } else {
+      info("Sending mail via SMTP ".$smtp);
+      ini_set ( "SMTP", $smtp);
+      $mail_sent = mail($to, $subject." ; Job submitted", $msg, $headers);
+      if ($mail_sent) {
+	info("Job started, submission mail sent to ".$to);
+      } else {
+	error("Notification mail could not be sent.\n\n.".$msg);
+      }
+    }
   }
   
   // Run the command
   exec("$cmd >/dev/null", $error);
-
+  
   /*
   // Display the command
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
@@ -295,7 +299,7 @@ if (!$errors) {
   echo "<hr>";
   
   //display log file
-
+  
   $info = "";
   $warning = "";
   $logs = file_get_contents(rsat_path_to_url($error_file));
@@ -323,7 +327,7 @@ if (!$errors) {
   // Display the result
   print_url_table($URL);
 
-  ################################################################
+  ////////////////////////////////////////////////////////////////
   // Send email with notification of task completion 
   if ($output =="email")  {
     //    echo "Email outpout not available for now";
@@ -338,7 +342,7 @@ if (!$errors) {
       $msg = "<table class='resultlink'>\n";
       $msg .= "<tr><th colspan='2'>Result file(s)</th></tr>\n";
       foreach ($URL as $key => $value) {
-				$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
+	$msg .= "<tr><td>".$key."</td><td><a href = '".$value."'>".$value."</a></td></tr>\n"; 
       }
       $msg .= "</table>\n";
       
@@ -353,7 +357,6 @@ if (!$errors) {
       }
     }
 
-    
     // Sending mail
     $smtp = $properties["smtp"];
 
