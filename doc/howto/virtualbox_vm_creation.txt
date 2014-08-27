@@ -1,18 +1,62 @@
+
+================================================================
 Installing Ubuntu under Virtualbox
+================================================================
 
 
-## Ram: 4Gb
-## Hard Drive: 25Gb
-## Install disk: ubuntu-12.04.4-desktop-amd64.iso
+================================================================
+Creation of the virtual machine (with VirtualBox)
+================================================================
+
+Name and operating system
+	Name: 
+	      rsat-vb-ub14d for the "desktop" version of Ubuntu
+	      rsat-vb-ub14s for the "server" version of Ubuntu
+	Type: Linux
+	Version: Ubuntu (64 bits)
+
+Memory size:	4096 Mb
+
+Hard drive:	Create a virtual hard drive now
+Hard drive file type: VMDK (Virtual Machine Disk)
+     	   I chose this option because it ensures a wider
+	   compatibility with other OS and Virtual Machine 
+	   management systems
+
+	   Another (important) advantage of VMDK is that it enables to
+	   split virtualdisks in files <=2Gb, which is convenient to
+	   store them on FAT partitions.
+
+Storage on physical hard drive: 
+	Dynamically allocated
+
+File location and size: 
+     name of virtual hard drive file:    rsat-vb-ub14c
+     max size of virtual hard drive:	 18GB
+
+	    Beware: the size has be larger than you real needs,
+	    because Ubuntu will automatically create some big
+	    partitions (/dev and /run/shm). Since I allow dyanmical
+	    memory allocation, I set the max size to 18Gb, which will
+	    be grossly assigned as
+	       14Gb for /
+	       2Gb for /dev
+	       2Gb for /run/user
+
+   v Split into files less than 2Gb
+	  -> this option allows to store the VM on FAT partitions for
+             Windows host machines
 
 
 
-################################################################
-## Network configuration
 
-We want for the RAST server to be usable from the host system(
-e.g. run the RSAT Web server from the Firefox application on my Mac
-OSX system. 
+================================================================
+Network configuration
+================================================================
+
+We want for the RAST server to be usable from the host system
+(e.g. run the RSAT Web server from the Firefox application on my Mac
+OSX system.
 
 Celine found an excellent guide for setting the newtork:
   http://christophermaier.name/blog/2010/09/01/host-only-networking-with-virtualbox
@@ -27,64 +71,226 @@ Step2:  in the VirtualBox window, right-click on the Ubuntu14.04 machine, and se
 	-> Network -> Adater 1
 	   -> select "Attached to Host-only Adapter" 
 
+Enable fixed address in VirtualBox
+
+In VirtualBox Preferences
+ - open the tab "Network" > "Host-only Networks"
+ - click on the "+" icon
+ - this creates a network vboxnet0, and set the following options:
+      IPv4 Address: 192.168.56.1
+      IPv4 Network Mask: 255.255.255.0
+      IPv6 Adress: blank
+      IPv6 Network Mask Lengt: 0
+
+After having created the VM, open its network settings.
+We will activate several adapters:
+   - at
+
+- click on the tab "Adapter 1",
+      - check "Enable Network Adapter"
+      - Attached to : "Bridged Adapter"
+      - Name: choose an option  (e.g. en0: Wi-Fi (Airport) according
+              your local network environment (wi-fi or ethernet cable)
+
+	For this access, we use the bridged adapter, which means that
+	the VM will be visible from external computers in the same
+	network as the host machine.
+	https://www.virtualbox.org/manual/ch06.html#network_bridged
+
+- click on the tab "Adapter 2",
+      - check "Enable Network Adapter"
+      - Attached to: "Host-only Adapter"
+      - Name: "vboxnet0" (this network must have been created
+      - beforehand)
+
+      This ensures that the VM can be reached from the host machine
+      via the fixed IP address (192.168.56.114) that will be specified
+      manually after having installed the operating system (see
+      below).
+
+- click on the tab "Adapter 3"
+      - Attached to : NAT (leave the default)
+
+      For this adapter, we will leave the default mode supported by
+      VirtualBox: Network Address Translation (NAT). The VM receives
+      an IP address from the VirtualBox-specific network (for details
+      see https://www.virtualbox.org/manual/ch06.html#network_nat)
 
 
-## Enable fixed address in VirtualBox
-##
-## In VirtualBox Preferences
-##  - open the tab "Network" > "Host-only Networks"
-##  - click on the "+" icon
-##  - this creates a network vboxnet0, and set the following options:
-##       IPv4 Address: 192.168.56.1
-##       IPv4 Network Mask: 255.255.255.0
-##       IPv6 Adress: blank
-##       IPv6 Network Mask Lengt: 0
-##
-## After having created the VM, I
-## - open its network settings,
-## - click on the tab "Adapter 2",
-## - check "Enable Network Adapter"
-## - Attached to: "Host-only Adapter"
-## - Name: "vboxnet0" (this network must have been created beforehand)
+================================================================
+Mounting of the virtual disk rsat_data
+================================================================
 
+I created a separate virtual disk named rsat_data (Dynamical
+allocation, 40.35Gb) to store the genomes.
+
+================================================================
+Ubuntu operating system installation
+================================================================
+
+Desktop version
+---------------
+
+The desktop version of Ubuntu presents the advantage of letting users
+work directly in the graphical environment of the Ubuntu virtual
+machine, which is convenient to open non-text result files for
+visualization (web pages, images) and to analyze the results in other
+graphical packages (R, openOffice, CytoScape, ...).
 
 Ubuntu install disk downloaded from
   http://releases.ubuntu.com/14.04/ubuntu-14.04-desktop-amd64+mac.iso
 
-Started the default installation. 
-Activated package updates.
+Started the default installation. Steps:
+	- click the button: install Ubuntu
+	- check "Download updates while installing"
+	- (leave the default) Erase disk and install Ubuntu, click "Install Ubuntu"
 
-################################################################
-## Screen resolution
+Who are you ?
+    Your name			RSAT admin
+    Your computer's name	rsat-vb-ub14b
+    Pick a username 		rsat
+    activate "Log in automatically"
+
+
+Server version
+--------------
+
+The server version is less comfortable than the desktop version, but
+it should be more economic in terms of hard drive (and CPU/RAM for
+graphical resources ?).
+
+Language  English
+
+Home page: choose "Install Ubuntu Server"
+
+Language (again): English
+
+Country, territory or area: other > Europe > France
+
+Country to base the default locale setting: United Kingdom 
+	(there is apparently no setting for France !)
+
+Detect keyboard layout: No > French > French - French (Macintosh)
+
+Your system has multiple network interfaces (I guess this corresponds
+tothe 3 adapters specified in VirtualBox preferences).
+      Primary network interface: eth0
+
+host name: rsat-vb-ub14s
+
+Full name of new user:	RSAT admin
+
+Username for your account: rsat
+
+Password for new user: the classical (only for RSAT team members)
+
+Encrypt home directory ? No
+
+Time: Europe/Paris
+
+Partitioning method: (default) Guided - use entire disk and set up LVM
+
+     Next partitioning options: I say "continue" to all with default values
+
+ ... Installing the sysem ... (takes some time)
+
+Configure the package manager
+	  Leave the HTTP proxy blank
+  -> ... configuring apt (takes some time)
+
+Configuration taskse1
+   Install security updates automatically
+
+Software selection : I just install the OpenSSH server, in order to be
+able connecting, but I don't install anything else since I want to use
+the RSAT bash file with apt-get packages etc.
+    -> ... Select and install software (takes some time)
+
+Install the GRUB boot loader
+	Yes
+
+================================================================
+Screen resolution (for the Desktop version)
+================================================================
 
 At first log in, screen resolution is restricted to 640x480 pixels. 
+
 I found the solution here:
-  http://www.juanrubio.me/2014/02/ubuntu-trusty-virtualbox-guest-additions/
+
+http://www.juanrubio.me/2014/02/ubuntu-trusty-virtualbox-guest-additions/
 
 I run the following commands: 
 
-  sudo apt-get install virtualbox-guest-additions-iso
+  sudo bash
+  apt-get install virtualbox-guest-additions-iso
   software-properties-gtk --open-tab=4
 
 In the dialog box, I check the option "Using x86 Virtualization ..."
 and click "Apply changes" and reboot.
 
-################################################################
-## Network specification
+
+================================================================
+Login in in the VM
+================================================================
+
+At this tage, the machine is able to boot and get a dynamic IP from
+the network. I login as rsat user and type
+    ifconfig
+to get the IP address. I then open a terminal on the host machine, and run
+   ssh rsat@[IP_OF_MY_VM]
+so I can run the rest of the installation in my familiar environment
+(terminal, keyboard, ...)
+
+
+ssh rsat[myvm]
+
+## Transfer my screenrc preferences
+rsync -ruptvl rsat@rsat.ulb.ac.be:.screenrc .
+
+## Transfer RSAT ssh parameters + open an agent that will manage my
+## password for future ssh communications.
+rsync -ruptvl rsat@rsat.ulb.ac.be:.ssh .
+ssh-agent > ~/agent
+source ~/agent
+ssh-add
+
+================================================================
+Network specification
+================================================================
+
+## I need emacs to edit the network configuration file
+sudo bash
+df -h
+apt-get install  --quiet --assume-yes  emacs
+## Since this is the first installation of an apt-get package, it
+## takes some time to install dependencies.
+df -h
 
 emacs -nw /etc/network/interfaces
 
 ## I edit the file /etc/network/interfaces
-# The host-only network interface
+
+## Host-only network interface for the VirtualBox VM
 auto eth1
 iface eth1 inet static
-address 192.168.56.112
+address 192.168.56.114
 netmask 255.255.255.0
 network 192.168.56.0
 broadcast 192.168.56.255
 
-################################################################
-## Install ubuntu packages
+## we need to install the ssh package in order to enable connection
+## from the host terminal
+apt-get install --quiet --assume-yes ssh
+
+## We  then need to reboot
+reboot
+
+## We can now access the VM by ssh to its static IP address
+ssh rsat@192.168.56.114
+
+================================================================
+Install ubuntu packages
+================================================================
 
 ## cf script
 ##   $RSAT/doc/howto/install_rsat_ubuntu14.04.bash
@@ -93,5 +299,10 @@ broadcast 192.168.56.255
 
 
 
+================================================================
+PROBLEMS TO BE FIXED
+================================================================
 
-
+Problem of disk occupancy: Ubuntu shared memory occupies 2Gb
+This can be modified as explained here.
+	http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
