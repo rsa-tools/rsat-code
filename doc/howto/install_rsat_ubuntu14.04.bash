@@ -221,6 +221,11 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 ## In the file /etc/apache2/mods-available/mime.conf
 ## uncomment the line
 ##  AddHandler cgi-script .cgi
+##
+## optional : also associate a plain/text mime type to .fasta
+## extension:
+##   AddType text/plain .fasta
+
 
 ## The following lines are required to activate cgi scripts.  Found at
 ## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
@@ -367,7 +372,7 @@ echo ${RSAT}
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
-    
+
 ################################################################
 ## For the next operations, we need to be su
 
@@ -496,7 +501,9 @@ apache2ctl restart
 echo $RSAT_WWW
 
 ## If the value is "auto", get the URL as follows
-# export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'
+# export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+# export IP=192.168.56.114
+# echo ${IP}
 # export RSAT_WWW=http://${IP}/rsat/
 # echo $RSAT_WWW
 
