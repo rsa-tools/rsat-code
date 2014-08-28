@@ -71,11 +71,12 @@ NCBI_EXCLUDE=	\
 		--exclude '*.tar.gz'						
 
 
+BIOMIRROR=rsync://bio-mirror.net/biomirror
 one_ncbi_dir_from_mirror:
 	@echo "DOWNLOAD_DIR	${DOWNLOAD_DIR}"
 	@mkdir -p ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
 	rsync ${NCBI_EXCLUDE}						\
-		-av ${OPT} rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}/*	\
+		-av ${OPT} ${BIOMIRROR}/ncbigenomes/${NCBI_DIR}/*	\
 		${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
 	@echo "NCBI directory downloaded to ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/"
 
@@ -84,7 +85,7 @@ one_ncbi_dir:
 
 ncbi:
 	rsync --delete	${NCBI_EXCLUDE}						\
-		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/*	\
+		-avz rsync://${BIOMIRROR}/ncbigenomes/*	\
 		ftp.ncbi.nih.gov/genomes/
 
 NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes
