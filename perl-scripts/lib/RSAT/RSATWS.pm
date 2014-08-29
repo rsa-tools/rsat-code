@@ -6220,6 +6220,10 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
+  ## Report start time in the log file (depends on the satus of
+  ## start_time property)
+  local $start_time = &RSAT::util::StartScript();
+
   ## Define temporary output file and open it for writing
   my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
   $tmp_outfile .= ".".$out_format if ($out_format);
@@ -6295,6 +6299,10 @@ sub run_WS_command {
   close HIS_ERR;
 
   $stderr = &error_handling($stderr, 1);
+
+  ## Report execution time in the log file (depends on the satus of
+  ## exec_time property)
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: &RSAT::util::hide_RSAT_path($command)");
