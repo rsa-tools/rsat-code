@@ -99,8 +99,7 @@ exec_time=0
 ## another server.
 ##
 ## Example of values:
-# rsat_ws=http://localhost/rsat/
-rsat_ws=auto
+rsat_ws=http://localhost/rsat/
 
 ## Default image format
 rsat_img_format=png
