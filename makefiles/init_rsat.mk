@@ -118,7 +118,7 @@ init:
 _create_download_dir:
 	cd ${RSAT}
 	mkdir -p downloads
-	(cd downloads; ln -fs $RSAT/makefiles/downloads.mk ./makefile)
+	(cd downloads; ln -fs ${RSAT}/makefiles/downloads.mk ./makefile)
 
 
 ## Adapt the IP address in the RSATWS.wsdl file
