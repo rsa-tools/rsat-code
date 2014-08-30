@@ -160,9 +160,9 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
 ##   (retrieve-ensembl-seq, get-ensembl-genome)
-ensembl=/no_backup/rsat/lib/ensemblgenomes-23-76/ensembl/modules
-compara=/no_backup/rsat/lib/ensemblgenomes-23-76/ensembl-compara/modules
-variation=/no_backup/rsat/lib/ensemblgenomes-23-76/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-23-76/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-23-76/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-23-76/ensembl-variation/modules
 
 ## Preferred version of the databases
 ## ensembl  (http://www.ensembl.org/) and
