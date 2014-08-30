@@ -6302,7 +6302,7 @@ sub run_WS_command {
 
   ## Report execution time in the log file (depends on the satus of
   ## exec_time property)
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be done for all the commands sent to WS
 
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: &RSAT::util::hide_RSAT_path($command)");
