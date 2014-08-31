@@ -185,31 +185,26 @@ neat_supported=1
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
-#neat_www_root=http://localhost/rsat/
 neat_www_root=auto
 
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
 ## on the new neat_ws server
-#neat_ws=http://localhost/rsat/
-neat_ws=auto
+neat_ws=http://localhost/rsat/
 
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
-#neat_ws_tmp=http://localhost/rsat/tmp
-neat_ws_tmp=auto
+neat_ws_tmp=http://localhost/rsat/tmp
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
 ## programs before changing this variable.
-#neat_java_ws=http://localhost/rsat/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
-neat_java_ws=auto
+neat_java_ws=http://localhost/rsat/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
 
 ## The java programs on the Web interface are currently supported only at the
 ## ULB server.
-#neat_java_host=http://localhost/rsat/
-neat_java_host=auto
+neat_java_host=http://localhost/rsat/
 
 # if forwarding to apache is not activated, indicate the tomcat port
 tomcat_port=
