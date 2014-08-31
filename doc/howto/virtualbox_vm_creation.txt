@@ -47,14 +47,20 @@ File location and size:
 	  -> this option allows to store the VM on FAT partitions for
              Windows host machines
 
-
-
-
 ================================================================
 Network configuration
 ================================================================
 
-We want for the RAST server to be usable from the host system
+VirtualBox offers many alternative ways to configure network
+communications between the virtual machine, the host machine, and the
+external network (see manual page
+https://www.virtualbox.org/manual/ch06.html).
+
+We present here one possible way to configure your Virtual machine,
+but this should be adapted to your particular security / flexibility
+requirements, and the configuration of your local network.
+
+We want for the RSAT server to be usable from the host system
 (e.g. run the RSAT Web server from the Firefox application on my Mac
 OSX system.
 
@@ -88,33 +94,28 @@ We will activate several adapters:
 
 - click on the tab "Adapter 1",
       - check "Enable Network Adapter"
-      - Attached to : "Bridged Adapter"
-      - Name: choose an option  (e.g. en0: Wi-Fi (Airport) according
-              your local network environment (wi-fi or ethernet cable)
-
-	For this access, we use the bridged adapter, which means that
-	the VM will be visible from external computers in the same
-	network as the host machine.
-	https://www.virtualbox.org/manual/ch06.html#network_bridged
-
-- click on the tab "Adapter 2",
-      - check "Enable Network Adapter"
       - Attached to: "Host-only Adapter"
       - Name: "vboxnet0" (this network must have been created
       - beforehand)
 
       This ensures that the VM can be reached from the host machine
-      via the fixed IP address (192.168.56.114) that will be specified
-      manually after having installed the operating system (see
-      below).
+      via the fixed IP address (e.g. 192.168.56.114) that will be
+      specified manually after having installed the operating system
+      (see below).
 
-- click on the tab "Adapter 3"
-      - Attached to : NAT (leave the default)
+OPTIONAL
+--------
 
-      For this adapter, we will leave the default mode supported by
-      VirtualBox: Network Address Translation (NAT). The VM receives
-      an IP address from the VirtualBox-specific network (for details
-      see https://www.virtualbox.org/manual/ch06.html#network_nat)
+- click on the tab "Adapter 2",
+      - check "Enable Network Adapter"
+      - Attached to : "Bridged Adapter"
+      - Name: choose an option  (e.g. en0: Wi-Fi (Airport) according
+              your local network environment (wi-fi or ethernet cable)
+
+	BEWARE ! If you activate his adaptor your VM will be visible
+	from external computers in the same network as the host
+	machine.
+	https://www.virtualbox.org/manual/ch06.html#network_bridged
 
 
 ================================================================
@@ -123,6 +124,8 @@ Mounting of the virtual disk rsat_data
 
 I created a separate virtual disk named rsat_data (Dynamical
 allocation, 40.35Gb) to store the genomes.
+
+I STILL HAVE TO SEE HOW TO MOUNT THIS VIRTUAL DISK.
 
 ================================================================
 Ubuntu operating system installation
@@ -142,15 +145,22 @@ Ubuntu install disk downloaded from
 
 Started the default installation. Steps:
 	- click the button: install Ubuntu
-	- check "Download updates while installing"
+
+	- I checked "Download updates while installing", but this was
+          probably not a good idea, since it took a while to download
+          many packages that I don't actually need (e.g. "Language
+          packs")
+
 	- (leave the default) Erase disk and install Ubuntu, click "Install Ubuntu"
 
 Who are you ?
     Your name			RSAT admin
-    Your computer's name	rsat-vb-ub14b
+    Your computer's name	rsat-vb-ub14d
     Pick a username 		rsat
-    activate "Log in automatically"
 
+# I should think about the possibility to activate "Log in
+# automatically", in order to facilitate the distribution without
+# providing a password to the users.
 
 Server version
 --------------
@@ -225,8 +235,11 @@ I run the following commands:
   apt-get install virtualbox-guest-additions-iso
   software-properties-gtk --open-tab=4
 
-In the dialog box, I check the option "Using x86 Virtualization ..."
-and click "Apply changes" and reboot.
+In the dialog box, 
+   - check the option "Using x86 Virtualization ..."
+   - click "Apply changes" 
+   - click "Close"
+Reboot
 
 
 ================================================================
@@ -262,6 +275,7 @@ Network specification
 sudo bash
 df -h
 apt-get install  --quiet --assume-yes  emacs
+
 ## Since this is the first installation of an apt-get package, it
 ## takes some time to install dependencies.
 df -h
@@ -271,19 +285,38 @@ emacs -nw /etc/network/interfaces
 ## I edit the file /etc/network/interfaces
 
 ## Host-only network interface for the VirtualBox VM
-auto eth1
-iface eth1 inet static
+auto eth0
+iface eth0 inet static
 address 192.168.56.114
 netmask 255.255.255.0
 network 192.168.56.0
 broadcast 192.168.56.255
+gateway 192.168.56.1
 
-## we need to install the ssh package in order to enable connection
+## Let the second interface automatically ask an IP address to the
+## DHCP server (this was by default the first interface eth0, but we
+## want to impose the static address as first interface).
+autho eth1
+iface eth1 inet dhcp
+
+## Re-activate the interface, this seems to be the best way withb ubuntu 14.04
+ifdown eth1 ## Stop the eth1 interface
+ifup eth1 ## Start the eth1 interface with its new configuration
+ifconfig ## Check that eth1 is specified as expected
+
+## This should display something like this
+## ...
+## eth1      Link encap:Ethernet  HWaddr 08:00:27:9e:3d:cd  
+##           inet addr:192.168.56.114  Bcast:192.168.56.255  Mask:255.255.255.0
+## ...
+
+
+## We need to install the ssh package in order to enable connection
 ## from the host terminal
 apt-get install --quiet --assume-yes ssh
 
-## We  then need to reboot
-reboot
+## reboot
+## (Note: I am not sure if we still need to reboot here, to be checked)
 
 ## We can now access the VM by ssh to its static IP address
 ssh rsat@192.168.56.114
@@ -296,13 +329,58 @@ Install ubuntu packages
 ##   $RSAT/doc/howto/install_rsat_ubuntu14.04.bash
 
 
+================================================================
+Useful commands to manage VirtualBox
+================================================================
 
+List running VMs
+  VBoxManage list runningvms
+
+Get the IDs of the virtual machines
+  VBoxManage list runningvms | awk -F"[{}]" '{print $2}'
+
+For convenience, we store the IP of the machine of interest in an
+environment variable VMID.
+  VMID=`VBoxManage list runningvms | awk -F"[{}]" '{print $2}'`
+
+Get properties of the VM
+  VBoxManage guestproperty enumerate ${VMID}
+
+List information about a given virtual machine
+  VBoxManage showvminfo ${VMID}
+
+Note: that command fives the MAC address, but no IP address.
+  VBoxManage showvminfo ${VMID} | grep '^NIC'
+
+================================================================
+Convenient settings (not necessary)
+================================================================
+
+
+1) Clipboard sharing between guest and host
+-------------------------------------------
+For the desktop version of Ubuntu, it is convenient to enable
+copy-paste between the guest and the host.
+
+- select the VM
+- In the VirtualBox menu, select "Machine -> Settings"
+- In panel "General", select the tab "Advanced".
+     set "Shared clipboard" to "Bidirectional"
 
 
 ================================================================
 PROBLEMS TO BE FIXED
 ================================================================
 
-Problem of disk occupancy: Ubuntu shared memory occupies 2Gb
+1) Ethernet: optimize solution for a simple setting in the classroom.
+
+2) Problem of disk occupancy: Ubuntu shared memory occupies 2Gb
 This can be modified as explained here.
 	http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
+
+
+4) For the desktop version, I should try to use the "Advanced
+installation" in order to use less disk without loosing too much
+confort. For example, I could inactivate the support for all the
+languages that are installed by default (downloading language packs).
+

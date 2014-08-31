@@ -202,6 +202,10 @@ ${INSTALLER} ${INSTALLER_OPT}  clean
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
 
+## Check the evolution of disk usage during package installation
+grep sda1 install_logs/df_*
+
+
 ## DONE: installation of Ubuntu packages
 ################################################################
 
@@ -212,10 +216,21 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.t
 ##
 ## !!!!!!!! SOME MANUAL INTERVENTION IS REQUIRED HERE  !!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-emacs -nw /etc/apache2/sites-available/000-default.conf
 
+emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
+
+## To avoid puzzling warning at apache start, set ServerName globally.
+emacs -nw /etc/apache2/apache2.conf
+## Add the following line at the end of the file (or somewhere else)
+##     ServerName localhost
+
+                                           
+## And write the following line:
+##        DocumentRoot /bio/rsat/public_html
+## The server will now immediately display RSAT home page when you
+## type its IP address.
 
 emacs -nw /etc/apache2/mods-available/mime.conf
 ## In the file /etc/apache2/mods-available/mime.conf
@@ -232,6 +247,7 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 chmod 755 /usr/lib/cgi-bin
 chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
+
 
 ## Restart the apache server to take the new config into account
 service apache2 restart
@@ -250,6 +266,10 @@ service apache2 restart
 pip install soappy
 pip install fisher
 ## pip install pygraphviz ## OSError: Error locating graphviz.
+
+## optional: an utility to measure internet bandwidth
+pip install speedtest-cli
+
 
 #${INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
@@ -327,6 +347,18 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libra
 ################       RSAT installation        ################
 ################################################################
 
+## Create a specific user for RSAT. The user is named rsat
+sudo adduser rsat
+## Full Name: Regulatory Sequence Analysis Tools admin
+
+## Grant sudoer privileges to the rsat user (will be more convenient for
+## installing Perl modules, software tools, etc)
+visudo
+## then add the following line below "User privilege specification"
+# rsat    ALL=(ALL:ALL) ALL
+
+## RSAT installation is done under the rsat login
+su - rsat
 
 ################################################################
 ## Download RSAT distribution
@@ -335,8 +367,17 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libra
 ## server, which is currently only possible for RSAT developing team.
 ## In the near future, I envisage to use git also for the end-user
 ## distribution.
-cd ${INSTALL_ROOT_DIR}
+cd ${HOME}
 git clone git@depot.biologie.ens.fr:rsat
+
+## Define an environment variable with the RSAT_HOME directory
+## (will be used later to configure RSAT)
+export INSTALL_ROOT_DIR=/bio
+export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
+
+## Move the rsat distribution to the RSAT_HOME directory
+sudo mv rsat ${RSAT_HOME}
+ln -fs ${RSAT_HOME} rsat
 
 ## For users who don't have an account on the RSAT git server, the
 ## code can be downloaded as a tar archive from the Web site.
@@ -346,11 +387,11 @@ git clone git@depot.biologie.ens.fr:rsat
 #
 # cd ${INSTALL_ROOT_DIR}
 # mkdir -p ${RSAT_HOME}
-# cd ~; ln -fs ${RSAT_HOME} rsat
 # wget ${RSAT_DISTRIB_URL}
 # tar -xpzf ${RSAT_DISTRIB}
 # rm -f   ${RSAT_DISTRIB} ## To free space
 # df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
+# cd ~; ln -fs ${RSAT_HOME} rsat
 
 ## Metabolic pathway tools installation
 ##
@@ -376,12 +417,18 @@ make -f makefiles/init_rsat.mk init
 ################################################################
 ## For the next operations, we need to be su
 
+## Since we became rsat user with "sudo", a simple exit brings us back
+## to the root user
+exit
+
 ################################################################
 ## Link the RSAT bash configuration file to a directory where files
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
-rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
+#rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
+ln -s ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
+source ${RSAT_HOME}/RSAT_config.bashrc
 
 ################################################################
 ## Installation of Perl modules required for RSAT
@@ -494,7 +541,18 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_package
 ## of the rsat directory.
 cd ${RSAT}
 rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
+
+## OPTIONAL: since I am using this to install a virtual machine whose
+## only function will be to host the RSAT server, I replace the normal
+## default web folder by RSAT web folder. 
+##
+emacs -nw /etc/apache2/sites-available/000-default.conf
+## Comment the line with the default document root (should appear as
+## such in the original config):
+##        DocumentRoot /var/www/html                                                                            
+
 apache2ctl restart
+
 
 ## You should now test the access to the RSAT Web server, whose URL is
 ## in the environment variable RSAT_WWW
@@ -537,8 +595,8 @@ ln -s ${RSAT_DATA_DIR} data
 cd $RSAT
 
 ## Install two model organisms, required for some of the Web tools.
-download-organism -v 1 -org Saccharomyces_cerevisiae
-download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
+download-organism -v 1 -org Saccharomyces_cerevisiae \
+ -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
 ## Optionally, install some pluricellular model organisms
 # download-organism -v 1 -org Drosophila_melanogaster
@@ -576,17 +634,28 @@ seqlogo
 which gs
 gs --version
 
+## Check tat the model genomes have been correctly installed
+## A simple and quick test: retrieve all the start codons and count
+## oligonucleotide frequencies (most should be ATG).
+retrieve-seq -org Saccharomyces_cerevisiae -all -from 0 -to +2 \
+    | oligo-analysis -l 3 -1str -return occ,freq -sort
 
 ################################################################
 ## Configure the SOAP/WSDL Web services
 
 
-## Adapt the URL to your local configuration.
+## Check the URL of the web services (RSAT_WS). By default, the server
+## addresses the WS requests to itself (http://localhost/rsat) because
+## web services are used for multi-tierd architecture of some Web
+## tools (retrieve-ensembl-seq, NeAT).
 cd $RSAT
+echo $RSAT_WS
+
+## Initialize the Web services stub. 
 make -f makefiles/init_rsat.mk ws_init
 
-## After this, you should re-generate the web services stubb, with the
-## following command.
+## After this, re-generate the web services stubb, with the following
+## command.
 make -f makefiles/init_rsat.mk ws_stub
 
 ## Test the local web services
@@ -598,7 +667,6 @@ make -f makefiles/init_rsat.mk ws_nostub_test
 
 ## Test the program supported-organisms-server, which relies on Web
 ## services without stub
-supported-organisms-server -url ${RSAT_WS}
 supported-organisms-server -url ${RSAT_WS} | wc
 supported-organisms-server -url http://localhost/rsat/ | wc
 supported-organisms-server -url http://rsat.eu/ | wc
