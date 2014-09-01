@@ -206,10 +206,20 @@ $properties = load_props($rsat_main."/RSAT_config.props");
 // Check if the property rsat_www has been set to "auto", and, if so,
 // set it automatically
 if ($properties['rsat_www'] == "auto") {
-  $ip = gethostbyname(trim(`hostname`));
-  //print_r('IP = '.$ip);
+  $ip = $_SERVER['HTTP_HOST'];
+  // print_r('IP = '.$ip."<p>\n");
   $properties['rsat_www'] =  'http://'.$ip.'/rsat/';
 }
+
+// Check if the property neat_www_root has been set to "auto", and, if so,
+// set it automatically
+if ($properties['neat_www_root'] == "auto") {
+  $ip = $_SERVER['HTTP_HOST'];
+  //print_r('IP = '.$ip);
+  $properties['neat_www_root'] =  'http://'.$ip.'/rsat/';
+}
+
+@ $neat_www_root = $properties['neat_www_root'];
 
 // Some particular properties are defined as global variables, for convenience
 $tmp = $properties['rsat_tmp'];
@@ -217,8 +227,7 @@ $RSAT = $properties['RSAT'];
 $WWW_RSA = $properties['rsat_www'];
 $log_name = $properties['rsat_site'];
 date_default_timezone_set("Europe/Paris");
-$neat_wsdl = $properties['neat_ws'];
-$neat_www_root = $properties['neat_www_root'];
+$neat_wsdl = $properties['neat_ws']."/web_services/RSATWS.wsdl";
 
 // Karoline: property neat_java_host not required for me, just need the host name here
 // in future: obtain host from url address
@@ -230,8 +239,8 @@ $neat_java_host = $properties['neat_java_host'];
 // host may include tomcat port
 $tomcat_port = $properties['tomcat_port'];
 if (strcmp($tomcat_port,"") != 0){
-  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
- }
+    $neat_java_host = $neat_java_host . ":" . $tomcat_port;
+}
 $neat_java_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl";
 $neat_java_remote_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
 
