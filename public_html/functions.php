@@ -218,6 +218,9 @@ $WWW_RSA = $properties['rsat_www'];
 $log_name = $properties['rsat_site'];
 date_default_timezone_set("Europe/Paris");
 $neat_wsdl = $properties['neat_ws'];
+if ($properties['neat_www_root'] == "auto") {
+  $properties['neat_www_root'] = $properties['rsat_www'];
+}
 $neat_www_root = $properties['neat_www_root'];
 
 // Karoline: property neat_java_host not required for me, just need the host name here
