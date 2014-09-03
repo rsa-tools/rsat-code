@@ -117,12 +117,17 @@ sub GetResult {
 	print "Command used on the server: ".$command, "\n";
 
 	## Report the result
+
+	## PROBLEM: THIS PIECE OF CODE IS TRICKY: 
+	##  - ULB address is hard-coded
+	##  - files are placed at the root of rsat_tmp, instead of user-specific folder
 	$result = $results -> get_client();
-	if ($ENV{rsat_ws_tmp} =~ /ulb\.ac\.be/) {
+	if ($ENV{rsat_ws} =~ /ulb\.ac\.be/) {
 #	    $server_file = $results -> get_server();
-	    $sequence_file = $results -> get_server();     ## variable name has to be '$sequence_file' for PipingFormForSequence subroutine
+	    $sequence_file = $results->get_server();     ## variable name has to be '$sequence_file' for PipingFormForSequence subroutine
 	} else {
 	    $sequence_file = `mktemp $ENV{rsat_tmp}/retrieve-ensembl-seq.XXXXXXXXXX`;
+## WE SHOULD TRY THIS:	  $tmp_file_path = &RSAT::util::make_temp_file("","retrieve-ensembl-seq", 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path); $sequence_file = $tmp_file_name.".fasta";
 	    open TMP_IN, ">".$sequence_file or die "cannot open temp file ".$sequence_file."\n";
 	    print TMP_IN $result;
 	    close TMP_IN;
