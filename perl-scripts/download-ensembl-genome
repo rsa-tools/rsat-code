@@ -111,8 +111,8 @@ package	main;
   our $species = "";
   our $taxid = "";
   our $assembly_version = "";  
-  our $safe_ensembl_version = &Get_ensembl_version_safe($db);
-  our $latest_ensembl_version = &Get_ensembl_version($db);
+  our $safe_ensembl_version = &get_ensembl_version_safe($db);
+  our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = $safe_ensembl_version;
 
   our $rm = 1;
@@ -124,22 +124,7 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
-  &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version) if ($main::verbose >= 2);
-  &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version) if ($main::verbose >= 2);
-  &RSAT::message::Info("Selected ensembl version", $ensembl_version) if ($main::verbose >= 2);
-
-  if ($ensembl_version eq "safe") {
-      $ensembl_version = $safe_ensembl_version;
-
-  } elsif ($ensembl_version eq "latest") {
-      $ensembl_version = $latest_ensembl_version;
-
-  } else {
-    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
-    &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
-  }
-
-  &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 2);
+  &check_ensembl_version($db, $ensembl_version);
 
   my ($host,$port) = &Get_host_port($db);
 
@@ -165,7 +150,7 @@ package	main;
     my %species_taxon = ();
 
     if ($db eq "ensembl_genomes") {
-      my $ens_version = &Get_ensembl_version_safe($db);
+      my $ens_version = &get_ensembl_version_safe($db);
       %species_taxon = &Get_species_taxon($db,$ens_version);
     }
 
@@ -615,6 +600,6 @@ sub Verbose {
     }
   }
 
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&Get_ensembl_version_safe($db);
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&get_ensembl_version_safe($db);
   printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
 }

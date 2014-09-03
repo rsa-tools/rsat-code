@@ -15,7 +15,7 @@ Name and operating system
 	Type: Linux
 	Version: Ubuntu (64 bits)
 
-Memory size:	4096 Mb
+Memory size:	2048 Mb
 
 Hard drive:	Create a virtual hard drive now
 Hard drive file type: VMDK (Virtual Machine Disk)
@@ -372,15 +372,51 @@ copy-paste between the guest and the host.
 PROBLEMS TO BE FIXED
 ================================================================
 
+0) User login: how will the users log in their machines ? Ask to
+   Pierre Vincens.
+
 1) Ethernet: optimize solution for a simple setting in the classroom.
 
-2) Problem of disk occupancy: Ubuntu shared memory occupies 2Gb
-This can be modified as explained here.
+2) Problem of disk occupancy: Ubuntu shared memory occupies 2Gb. This
+   can be modified as explained here.
+
 	http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
 
+3) Keyboard: I create the VM on a Macintosh with French keyboard. How
+   will the users adapt the appliance to their own keyboard ?
+   	- for the Ubuntu desktop version
+	- for the Ubuntu server version
 
 4) For the desktop version, I should try to use the "Advanced
-installation" in order to use less disk without loosing too much
-confort. For example, I could inactivate the support for all the
-languages that are installed by default (downloading language packs).
+   installation" in order to use less disk without loosing too much
+   confort. For example, I could inactivate the support for all the
+   languages that are installed by default (downloading language
+   packs).
 
+
+================================================================
+Export appliance
+================================================================
+
+Once the Virtual Machine is working fine, it can be exported to an
+appliance.
+
+In VirtualBox, open "File -> Export Appliance ...", and select the VM.
+
+   Save as: rsat-vb-ub14d_[YYYY-MM-DD].ova
+   Files of Type: Open Virtualization Format Archive (.ova)
+
+Storage Settings
+	Format: OVF 1.0
+	v Write Manifest File
+
+
+Appliance Settings
+	Name		rsat-vb-ub14s ***OR***  rsat-vb-ub14d
+	Product		Regulatory Sequences Analysis Tools
+	Product-URL	http://rsat.eu/
+	Vendor		Jacques van Helden
+	Vendor URL	http://jacques.van-helden.perso.luminy.univ-amu.fr/
+	Version		2014-09-01
+	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 server Virtual Machine. 
+	License		Free of use for academic users, non-commercial and non-military applications. 

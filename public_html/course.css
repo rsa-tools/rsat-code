@@ -355,3 +355,21 @@ table td {
            background-color: #DDEEFF;
            }
 
+table.simple 
+{
+  margin: 10px 20px 20px;
+  color: #000000;
+  }
+
+table.simple td,table.list th 
+{
+  font-size: 70%;
+  padding: 2px 10px;
+  background-color: #FFFFFF;
+  }
+
+table.simple th 
+{
+  font-size: 70%;
+  background-color: #F6E6CA;
+  }
