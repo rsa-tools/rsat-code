@@ -16,7 +16,6 @@
 ## Must be executed as root. If you are non-root but sudoer user, you
 ## can become it withn "sudo bash"
 
-
 ## Configuration for the installation
 export INSTALLER=apt-get
 export INSTALLER_OPT="--quiet --assume-yes"
@@ -26,12 +25,22 @@ export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 #export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
 #export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
+################################################################
+## Before anything else, check that the date, time and time zone are
+## correctly specified
+date
+
+## If not, set up the time zone, date and time with this command
+## (source: https://help.ubuntu.com/community/UbuntuTime).
+dpkg-reconfigure tzdata
+
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
 
 ## Create a separate directory for RSAT, which must be readable by all
 ## users (in particular by the apache user)
 mkdir -p ${INSTALL_ROOT_DIR}
+chmod 755 ${INSTALL_ROOT_DIR}
 cd ${INSTALL_ROOT_DIR}
 mkdir -p ${INSTALL_ROOT_DIR}/install_logs
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
@@ -122,6 +131,7 @@ PACKAGES="
 	python3-matplotlib
 	r-base-core
 	emacs
+        console-data
 "
 
 ################################################################
@@ -221,25 +231,27 @@ emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
 
-## To avoid puzzling warning at apache start, set ServerName globally.
-emacs -nw /etc/apache2/apache2.conf
-## Add the following line at the end of the file (or somewhere else)
-##     ServerName localhost
-
-                                           
 ## And write the following line:
 ##        DocumentRoot /bio/rsat/public_html
 ## The server will now immediately display RSAT home page when you
 ## type its IP address.
+
+
+## To avoid puzzling warning at apache start, set ServerName globally.
+emacs -nw /etc/apache2/apache2.conf
+## Add the following line at the end of the file (or somewhere else)
+##     ServerName localhost
+                                           
 
 emacs -nw /etc/apache2/mods-available/mime.conf
 ## In the file /etc/apache2/mods-available/mime.conf
 ## uncomment the line
 ##  AddHandler cgi-script .cgi
 ##
-## optional : also associate a plain/text mime type to .fasta
-## extension:
+## Optional : also associate a plain/text mime type to extensions for
+## some classical bioinformatics files.
 ##   AddType text/plain .fasta
+##   AddType text/plain .bed
 
 
 ## The following lines are required to activate cgi scripts.  Found at
@@ -427,8 +439,8 @@ exit
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 #rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
-ln -s ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
-source ${RSAT_HOME}/RSAT_config.bashrc
+ln -s ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
+source ${RSAT}/RSAT_config.bashrc
 
 ################################################################
 ## Installation of Perl modules required for RSAT
@@ -540,7 +552,7 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_package
 ## Edit the file to replace [RSAT_PARENT_FOLDER] byt the parent directory
 ## of the rsat directory.
 cd ${RSAT}
-rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
+sudo rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
 
 ## OPTIONAL: since I am using this to install a virtual machine whose
 ## only function will be to host the RSAT server, I replace the normal
@@ -552,7 +564,6 @@ emacs -nw /etc/apache2/sites-available/000-default.conf
 ##        DocumentRoot /var/www/html                                                                            
 
 apache2ctl restart
-
 
 ## You should now test the access to the RSAT Web server, whose URL is
 ## in the environment variable RSAT_WWW
@@ -671,6 +682,30 @@ supported-organisms-server -url ${RSAT_WS} | wc
 supported-organisms-server -url http://localhost/rsat/ | wc
 supported-organisms-server -url http://rsat.eu/ | wc
 
+
+################################################################
+## tests on the Web site
+
+## Run the demo of the following tools
+##
+## - retrieve-seq to check the access to local genomes (at least
+##   Saccharomyces cerevisiae)
+##
+## - feature-map to check the GD library
+##
+## - retrieve-ensembl-seq to check the interface to Ensembl
+##
+## - fetch-sequences to ceck the interface to UCSC
+##
+## - some NeAT tools (they rely on web services)
+##
+## - peak-motifs because it mobilises half of the RSAT tools -> a good
+##   control for the overall installation.
+##
+## - footprint-discovery to check the tools depending on homology
+##   tables (blast tables).
+
+
 ################################################################
 ## Install the cluster management system (torque, qsub, ...)
 
@@ -679,6 +714,28 @@ grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
+
+################################################################
+##
+## Customizing your instance of the VM
+##
+################################################################
+
+## Set up time zone, date and time (source:
+## https://help.ubuntu.com/community/UbuntuTime).
+dpkg-reconfigure tzdata
+
+## To set up the leyboard (may vary between users who download the
+## VirtualBox VM)
+sudo dpkg-reconfigure console-data
+
+
+
+
+################################################################
+################      TO DO           ################
+
+## Auto-login ????????????????????????????????????????????????????????????????
 
 
 ################################################################
