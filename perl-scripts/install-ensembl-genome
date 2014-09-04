@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+
 ############################################################
 #
 # $Id: install-ensembl-genome,v 1.32 2013/10/13 12:25:26 rsat Exp $
@@ -8,7 +9,7 @@
 ## use strict;
 
 =pod
-
+    
 =head1 NAME
 
 install-ensembl-genome
@@ -134,9 +135,10 @@ package main;
 
   our $db = "ensembl";
   our $data_dir;
-  our $safe_ensembl_version = &Get_ensembl_version_safe($db);
-  our $latest_ensembl_version = &Get_ensembl_version($db);
+  our $safe_ensembl_version = &get_ensembl_version_safe($db);
+  our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = $safe_ensembl_version;
+
   #  our $safe_ensembl_version;
   #  our $latest_ensembl_version;
   #  our $ensembl_version;
@@ -163,13 +165,14 @@ package main;
   ################################################################
   ## Check argument values
 
+  &check_ensembl_version($db, $ensembl_version);
 
   ## Set default tasks if no task has been specified
   if (scalar(@tasks) < 1) {
     @tasks= @default_tasks;
   }
-    #    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
-  
+  #    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
+
   ## Check the requested tasks
   &RSAT::message::Info("Requested tasks:", join(",", @tasks)) if ($main::verbose >= 2);
   foreach my $task (@tasks) {
@@ -205,18 +208,6 @@ package main;
       &RSAT::error::FatalError("You must specify at least one species (option -species).");
     }
 
-  }
-
-  ## Define the version of Ensembl database to be used
-  if ($ensembl_version eq "safe") {
-    $ensembl_version = $safe_ensembl_version;
-
-  } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = $latest_ensembl_version;
-
-  } else {
-    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
-    #      &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can not be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
   }
 
   ################################################################
@@ -299,7 +290,7 @@ package main;
 	  || ($arg eq "-species_file")) { 
 	shift(@arguments);
       } elsif ($arg eq "-batch") {
-	  ## Skip batch to avoid multiplying the jobs
+	## Skip batch to avoid multiplying the jobs
       } else {
 	if ($arg =~ /\s/) {
 	  $passed_arguments .= " '".$arg."'";
@@ -312,7 +303,7 @@ package main;
     ## Run one install command per species
     foreach my $species (@species_names) {
       my $cmd = $ENV{RSAT}."/perl-scripts/install-ensembl-genome";
-	$cmd .= " ".$passed_arguments;
+      $cmd .= " ".$passed_arguments;
       $cmd .= " -species ".$species;
       my $job_prefix = "install-ensembl-genome_".$species;
       &RSAT::message::TimeWarn("Installing species", $species, $job_prefix, $cmd) if ($main::verbose >= 0);
@@ -354,7 +345,7 @@ package main;
       my $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
       $org =~ s|/+$||;
       $org =~ s|.*\/||;
-      
+
       ## Declare the organism in RSAT
       if ($task{"config"}) {
 	&RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
@@ -421,9 +412,9 @@ Level of verbosity (detail in the warning messages during execution)
 =cut
     if ($arg eq "-v") {
       if (&IsNatural($arguments[0])) {
-	$main::verbose = shift(@arguments);
+	 $main::verbose = shift(@arguments);
       } else {
-	$main::verbose = 1;
+	 $main::verbose = 1;
       }
 
 =pod
@@ -567,8 +558,8 @@ This task is executed by running I<install-organism>.
 
 =cut
     } elsif ($arg eq "-task") {
-	my $task = shift(@arguments);
-	push (@main::tasks, split(",",$task));
+	 my $task = shift(@arguments);
+	 push (@main::tasks, split(",",$task));
 
 =pod 
 
@@ -591,7 +582,7 @@ Default : $RSAT/data/
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-    } elsif ($arg eq "-ensembl_genomes") {
+   } elsif ($arg eq "-ensembl_genomes") {
 	$main::db = "ensembl_genomes";
 
 =pod
@@ -602,7 +593,7 @@ If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
 =cut
-    } elsif ($arg eq "-o") {
+   } elsif ($arg eq "-o") {
 	$outfile{output} = shift(@arguments);
 
 =pod
@@ -613,8 +604,8 @@ Only use API to download. This argument is passed to
 I<download-ensembl-features>.
 
 =cut
-    } elsif ($arg eq "-only_api") {
-      $main::only_api = 1;
+   } elsif ($arg eq "-only_api") {
+     $main::only_api = 1;
 
 =pod
 
@@ -623,7 +614,7 @@ I<download-ensembl-features>.
 Dry run: print the commands but do not execute them.
 
 =cut
-    } elsif ($arg eq "-dry") {
+   } elsif ($arg eq "-dry") {
 	$main::dry_run = 1;;
 
 =pod
@@ -638,7 +629,7 @@ incomplete.
 
 =cut
 
-      } elsif ($arg eq "-nodie") {
+     } elsif ($arg eq "-nodie") {
 	$main::die_on_error = 0;
 
 =pod
@@ -650,7 +641,7 @@ option requires to dispose of a PC cluster, and to configure it
 properly in the configuration file $RSAT/RSAT_config.props.
 
 =cut
-      } elsif ($arg eq "-batch") {
+     } elsif ($arg eq "-batch") {
 	$batch = 1;
 
 =pod
@@ -660,13 +651,13 @@ properly in the configuration file $RSAT/RSAT_config.props.
 Generate the commands without running them (for testing and debugging)
 
 =cut
-      } elsif ($arg eq "-dry") {
+     } elsif ($arg eq "-dry") {
 	$dry_run = 1;
 
-      } else {
+     } else {
 	&FatalError(join("\t", "Invalid option", $arg));
-      }
-  }
+     }
+ }
 
 =pod
 
@@ -682,6 +673,7 @@ sub Verbose {
   print $out "; install-ensembl-genome ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  printf $out "; %-22s\t%s\n", "Ensembl release", $ensembl_version;
   if (%main::infile) {
     print $out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {

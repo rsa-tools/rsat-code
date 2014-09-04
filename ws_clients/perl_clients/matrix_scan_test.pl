@@ -14,7 +14,8 @@ use Data::Dumper;
 eval
 {
     # Retriving and processing the WSDL
-    my $wsdl  = XML::LibXML->new->parse_file('http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl');
+#    my $wsdl  = XML::LibXML->new->parse_file('http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl');
+    my $wsdl  = XML::LibXML->new->parse_file('http://rsat-tagc.univ-mrs.fr/rsat/web_services/RSATWS.wsdl');
     my $proxy = XML::Compile::WSDL11->new($wsdl);
     
     # Generating a request message based on the WSDL

@@ -3,9 +3,12 @@ package RSAT::server;
 require RSAT::util;
 require RSAT::message;
 require RSAT::error;
-use MIME::Lite;
-#use Mail::Sendmail;
-
+# use MIME::Lite;
+# use Mail::Sendmail;
+use Email::Sender::Simple qw(sendmail);
+use Email::Simple;
+use Email::Simple::Creator;
+use Email::Sender::Transport::SMTP;
 
 ################################################################
 ## Check that the environment variable RSAT has been defined
@@ -548,6 +551,26 @@ sub InitRSAT {
   &LoadLocalOrganisms();
 
 
+  ## Make sure that the variable RSAT_WWW is defined
+  if ((!defined($ENV{rsat_www})) || ($ENV{rsat_www} eq "auto")) {
+    # use Sys::Hostname;
+    # use Socket;
+    # my($addr)=inet_ntoa((gethostbyname(hostname))[4]);
+    # my $hostname = hostname();
+    # my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
+
+#    use Net::Address::IP::Local;
+#    my @addresses = Net::Address::IP::Local->public;
+#    my $ip_address = $addresses[0];
+
+    my $ip_address = $ENV{HTTP_HOST} || "localhost";
+
+    &RSAT::message::Debug("Host IP addresses", scalar(@addresses), "\n", join ("\n", '@addresses', @addresses)) if ($main::verbose >= 4);
+    $ENV{rsat_www} = "http://".$ip_address."/rsat/";
+    $ENV{rsat_ws} = "http://".$ip_address."/rsat/";
+    &RSAT::message::Debug("RSAT_WWW", $ENV{rsat_www}) if ($main::verbose >= 4);
+  }
+
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
   $main::LIB = "$ENV{RSAT}/lib";
@@ -624,8 +647,12 @@ sub CheckEmailAddress {
 =item B<Send an email message>
 
 =cut
-sub sendmail {
+sub send_mail {
     my ($message, $recipient, $subject) = @_;
+
+    if ($ENV{mail_supported} eq "no") {
+	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    } else {
 
     ## Check if recipient argument contains a valid email address
     &CheckEmailAddress($recipient);
@@ -649,17 +676,45 @@ sub sendmail {
 	$from = $ENV{smtp_sender};
     }
 
-    &RSAT::message::TimeWarn("Sending mail from", $from, "to", $recipient, " (smtp server: ".$smtp_server.")") if ($ENV{rsat_echo} >= 2);
+    if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0)) {
+	my $mail_warn = "Sending mail";
+	$mail_warn .= " from \"".$from."\"" if ($from);
+	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
+	$mail_warn .= " ; Subject: \"".$subject."\"";
+	$mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+	&RSAT::message::TimeWarn($mail_warn);
+    }
 
-    ## Send the message using MIME::Lite
-    my $msg = MIME::Lite->new(
-	From    => $from,
-	To      => $recipient,
-	Subject => $subject,
-	Type    => 'text/plain',
-	Data    => $message,
+    # ## Send the message using MIME::Lite    
+    # my $msg = MIME::Lite->new(
+    # 	From    => $from,
+    # 	To      => $recipient,
+    # 	Subject => $subject." [MIME::Lite]",
+    # 	Type    => 'text/plain',
+    # 	Data    => $message,
+    # 	);
+    # $msg->send('smtp', $smtp_server);
+
+
+    ## Sent message using Email::Sender
+    my $email = Email::Simple->create(
+	header => [
+	    To      => $recipient,
+	    From    => $from,
+	    Subject => $subject,
+	],
+	body => $message,
 	);
-    $msg->send('smtp', $smtp_server);
+    &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
+
+#    my $transport = Email::Sender::Transport::SMTP->new({
+#      host => $smtp_server,
+#      port => 25,
+#							});
+    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);
+
+	Email::Sender::Simple->send($email, {transport => $transport});
+    }
 
 }
 
