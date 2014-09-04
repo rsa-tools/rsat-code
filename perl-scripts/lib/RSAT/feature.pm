@@ -1192,7 +1192,7 @@ sub header {
     } elsif ($output_format eq "bed") {
       my $track_name =  "RSAT_features";
       if (defined($main::infile{input})) {
-	$track_name = $main::infile{input};
+	$track_name = basename($main::infile{input});
       }
       $header .= "track name='".$track_name."' description='".$track_name."' visibility=3 itemRgb='On' use_score=".$use_scores."\n";
       $header .= "browser dense ".$track_name."\n";
