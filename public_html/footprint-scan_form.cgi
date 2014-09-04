@@ -85,9 +85,6 @@ print "<p>In the search of new putative Transcription Factor Binding Sites one c
 print "</BLOCKQUOTE>\n";
 print "</div></p>\n";
 
-
-
-
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
 &ReadMatrixFromFile() ;
@@ -113,11 +110,10 @@ print $query->start_multipart_form(-action=>"footprint-scan.cgi");
 
 
 ################################################################
-### send results by email only
+## Select output mode. Email is preferred since footprint discovery
+## may take a while.
 print "<p>\n";
-&SelectOutput('email', email_only=>1);
-#&SelectOutput();
-#print "<i>Note: email output is preferred</i>\n";
+&SelectOutput('email');
 
 ################################################################
 ### action buttons

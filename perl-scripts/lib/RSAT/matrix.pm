@@ -874,7 +874,12 @@ sub to_TRANSFAC {
     $to_print .= "DE  ".$desc."\n";
 
     ## Header
-    my $header = "PO  "; ## fixed bug in previous version, where I used P0 instead of PO
+
+    ## Note (JvH) Some day I replaced P0 by PO, and commented "fixed
+    ## bug in previous version, where I used P0 instead of PO"
+    ## However, the official symbol is P0, not PO. I don't know why I
+    ## did believe it was PO. Corrected on 2014-06-27.
+    my $header = "P0  "; 
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
       $header .= sprintf "%6s", uc($letter);
@@ -947,7 +952,7 @@ sub to_TRANSFAC {
 Converts the matrix into a string in STAMP format.
 STAMP is a dialect of the TRANSFAC format, with important differences:
 - the fields ID and AC are absent, and the matrix ID comes in the field DE
-- the header row (PO) is not supported
+- the header row (P0) is not supported
 - the positions start at 0 instead of 1
 - there is no matrix delimiter (the double slash)
 
@@ -3935,7 +3940,7 @@ sub makeLogo{
   my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
-  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{seqlogo_dir});
+  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{RSAT_BIN});
   foreach my $logo_format (@logo_formats){
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {

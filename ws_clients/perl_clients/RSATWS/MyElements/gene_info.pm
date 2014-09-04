@@ -117,6 +117,7 @@ Constructor. The following data structure may be passed to new():
      noquery =>  $some_value, # int
      descr =>  $some_value, # int
      feattype =>  $some_value, # string
+     all_genes =>  $some_value, # int
    },
  },
 
