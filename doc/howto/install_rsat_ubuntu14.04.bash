@@ -164,7 +164,6 @@ PACKAGES_PERL="perl-doc
 	libbio-perl-perl
 	libdigest-md5-file-perl
         libnet-address-ip-local-perl
-
 "
 
 
@@ -715,29 +714,4 @@ grep ^processor /proc/cpuinfo
 ## Check RAM
 grep MemTotal /proc/meminfo
 
-################################################################
-##
-## Customizing your instance of the VM
-##
-################################################################
-
-## Set up time zone, date and time (source:
-## https://help.ubuntu.com/community/UbuntuTime).
-dpkg-reconfigure tzdata
-
-## To set up the leyboard (may vary between users who download the
-## VirtualBox VM)
-sudo dpkg-reconfigure console-data
-
-
-
-
-################################################################
-################      TO DO           ################
-
-## Auto-login ????????????????????????????????????????????????????????????????
-
-
-################################################################
-## For the Virtualbox VM: mount the virtual disk rsat_data
 
