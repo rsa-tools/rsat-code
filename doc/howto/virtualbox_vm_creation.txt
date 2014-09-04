@@ -367,31 +367,83 @@ copy-paste between the guest and the host.
 - In panel "General", select the tab "Advanced".
      set "Shared clipboard" to "Bidirectional"
 
+================================================================
+Create a generic user for the virtual machine
+================================================================
+
+
+################################################################
+## Create a user for the virtual machine
+##
+## This VM user is separate from the rsat user, which only serves to
+## manage the RSAT software suite and related packages.
+##
+## For the sake of security, we force this user to change password at
+## first login
+
+sudo useradd --password `openssl passwd -1 -salt xyz to_change`\
+    --home /home/vmuser \
+    --create-home \
+    --shell /bin/bash \
+    --comment "Generic user for the Virtual Machine" \
+    vmuser
+## For info, the antidote is: userdel --remove vmuser
+
+## Add sudoer rights to vmuser
+sudo chmod 644 /etc/sudoers
+sudo emacs -nw /etc/sudoers
+## Under 
+##     # User privilege specification
+##     root    ALL=(ALL:ALL) ALL
+## Add the following linre:
+##     rsat  ALL=(ALL:ALL) ALL
+##     vmuser  ALL=(ALL:ALL) ALL
+
+
+## Force vmuser to change password at first login
+chage -d 0 vmuser
+
+
 
 ================================================================
 PROBLEMS TO BE FIXED
 ================================================================
 
-0) User login: how will the users log in their machines ? Ask to
-   Pierre Vincens.
-
 1) Ethernet: optimize solution for a simple setting in the classroom.
 
 2) Problem of disk occupancy: Ubuntu shared memory occupies 2Gb. This
    can be modified as explained here.
-
 	http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
-
-3) Keyboard: I create the VM on a Macintosh with French keyboard. How
-   will the users adapt the appliance to their own keyboard ?
-   	- for the Ubuntu desktop version
-	- for the Ubuntu server version
 
 4) For the desktop version, I should try to use the "Advanced
    installation" in order to use less disk without loosing too much
    confort. For example, I could inactivate the support for all the
    languages that are installed by default (downloading language
    packs).
+
+
+################################################################
+##
+## Customizing your instance of the VM
+##
+################################################################
+
+
+## Set up time zone, date and time (source:
+## https://help.ubuntu.com/community/UbuntuTime).
+sudo dpkg-reconfigure tzdata
+
+
+################################################################
+## To set up the leyboard (may vary between users who download the
+## VirtualBox VM)
+sudo dpkg-reconfigure console-data
+## (for my laptop, mac / Unknown / French /Standard / New)
+
+
+################################################################
+## For the Virtualbox VM: mount the virtual disk rsat_data
+
 
 
 ================================================================
@@ -417,6 +469,10 @@ Appliance Settings
 	Product-URL	http://rsat.eu/
 	Vendor		Jacques van Helden
 	Vendor URL	http://jacques.van-helden.perso.luminy.univ-amu.fr/
-	Version		2014-09-01
+	Version		2014-09-04
 	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 server Virtual Machine. 
 	License		Free of use for academic users, non-commercial and non-military applications. 
+
+Optional: to facilitate transfer, split hte .ova file into 500Mb files.
+
+split -b 512m ../rsat-vb-ub14s_2014-09-04.ova
