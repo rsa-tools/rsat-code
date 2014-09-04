@@ -11,7 +11,6 @@
 ## This makefile manages the installation of bioinformatics software
 ## and the configuration of the paths and environment variables for
 ## the users.
-
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/install_software.mk
 MAKE=make -f ${MAKEFILE}
@@ -47,15 +46,17 @@ list_versions:
 ################################################################
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
-EXT_APP_TARGETS=install_seqlogo \
+EXT_APP_TARGETS=\
+	install_seqlogo \
 	install_gnuplot \
 	install_ghostscript \
 	install_d3 \
 	install_mcl \
 	install_rnsc \
 	install_blast \
-	install_ensembl_api
-#	install_ensembl_bioperl ## does not work anymore.  Not sure it is required since bioperl is installed with cpan
+	install_ensembl_bioperl \
+	install_ensembl_api \
+	install_vmatch
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -77,6 +78,60 @@ EXT_APP_TARGETS_OPTIONAL=install_gibbs \
 install_ext_apps_optional:
 	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
 
+################################################################
+## Download the vmatch program
+##
+## IMPORTANT: this program is an indispensable companion for the motif
+## discovery tools in RSAT. If is used to purge sequences from
+## redundant fragments. The program requires a license, which can be
+## obtained (free of charge for academics) at http://www.vmatch.de/
+install_vmatch:
+	${MAKE} _install_vmatch_${OS}
+	${MAKE} _vmatch_warning
+
+VMATCH_VERSION_MACOSX=vmatch-2.2.2-Darwin_i386-64bit
+_install_vmatch_macosx:
+	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
+
+VMATCH_VERSION_LINUX=vmatch-2.2.2-Linux_x86_64-64bit
+_install_vmatch_linux:
+	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
+
+
+VMATCH_BASE_DIR=${SRC_DIR}/vmatch
+VMATCH_URL=ftp://lscsa.de/pub/lscsa/
+VMATCH_VERSION=${VMATCH_VERSION_LINUX}
+VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
+#VMATCH_SOURCE_DIR=vmatch_latest
+_download_vmatch: 
+	@echo ""
+	@echo "Downloading vmatch in folder"
+	@echo "	${VMATCH_BASE_DIR}"
+	@mkdir -p ${VMATCH_BASE_DIR}
+	wget --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
+	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
+
+VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
+_install_vmatch:
+	@echo ""
+	@echo "VMATCH_SOURCE_DIR	${VMATCH_SOURCE_DIR}"
+	@echo "Uncompressing vmatch tar archive"
+	@echo "	${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}"
+	@tar -xzf  ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE} -C ${VMATCH_BASE_DIR}
+	@echo "Synchronizing vmatch and mkvtree in RSAT_BIN	${RSAT_BIN}"
+	@echo "	${RSAT_BIN}"
+	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/vmatch ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/mkvtree ${RSAT_BIN}/
+
+_vmatch_warning:
+	@echo ""
+	@echo ""
+	@echo "vmatch has been installed in bin folder ${RSAT_BIN}"
+	@echo "IN ORDER TO GET A FUNCTIONAL COPY, YOU NEED TO REQUEST A LICENSE"
+	@echo "	http://www.vmatch.de/"
+	@echo "AND PLACE THE FILE vmatch.lic IN THIS FOLDER"
+	@echo ""
+	@echo ""
 
 ################################################################
 ## Get and install the program seqlogo
@@ -89,15 +144,22 @@ _download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
 	@echo
 	@echo "Downloading seqlogo	${SEQLOGO_URL}"
-	(cd ${SEQLOGO_DIR}; wget -nv -nd ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	(cd ${SEQLOGO_DIR}; wget --timestamping --no-verbose --no-directories  ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 _compile_seqlogo:
-	@echo "Installing seqlogo in dir	${BIN_DIR}"
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${BIN_DIR}/
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${BIN_DIR}/
-	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${BIN_DIR}/
+	@echo "Installing seqlogo in RSAT_BIN	${RSAT_BIN}"
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT_BIN}/
 
+################################################################
+## Get and install the program weblogo.  Weblogo is an upgrade from
+## seqlogo. Seqlogo required sequences in input, whereas weblogo takes
+## either sequences or matrices.
+install_weblogo:
+	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
+	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
 
 ################################################################
 ## Get and install the program gnuplot
@@ -116,7 +178,7 @@ _download_gnuplot:
 _compile_gnuplot:
 	@echo "Compiling and installing gnuplot"
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; \
-	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER} --bindir ${BIN_DIR}  && make; ${SUDO} make install)
+	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER} --bindir ${RSAT_BIN}  && make; ${SUDO} make install)
 
 ################################################################
 ## Get and install the program ghostscript
@@ -140,8 +202,8 @@ _download_gs:
 	@echo "gs dir	${GS_DIR}"
 
 _install_gs:
-	@echo "Installing gs in ${BIN_DIR}"
-	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${BIN_DIR}/; cd ${BIN_DIR}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
+	@echo "Installing gs in RSAT_BIN	${RSAT_BIN}"
+	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
 
 #_compile_gs:
 #	@echo "Compiling gs"
@@ -157,47 +219,68 @@ _install_gs:
 ## 1.2.4, major changes were made to the BioPerl API which have made
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
-BIOPERL_DIR=${PERLLIB_DIR}/bioperl-release-${BIOPERL_VERSION}
+BIOPERL_DIR=${RSAT}/lib/bioperl-release-${BIOPERL_VERSION}
+
+install_ensembl_api: install_ensembl_api_git
 
 ## Note: In some cases, there are delays between Ensembl and
 ## EnsemblGenome releases. To ensure compatibility, please check the
 ## versions of both distributions on http://ensemblgenomes.org/.
-ENSEMBL_API_DIR=${PERLLIB_DIR}/${ENSEMBL_BRANCH}-${ENSEMBL_VERSION}
+ENSEMBL_API_DIR=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
-	@echo "	ENSEMBL_VERSION		${ENSEMBL_VERSION}"
-	@echo "	ENSEMBL_BRANCH		${ENSEMBL_BRANCH}"
+	@echo "	ENSEMBL_RELEASE		${ENSEMBL_RELEASE}"
+	@echo "	ENSEMBLGENOMES_BRANCH	${ENSEMBLGENOMES_BRANCH}"
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 
 ## Install the required modules for Ensembl API
-install_ensembl_api:
+install_ensembl_api_cvs:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
-		echo "Installing ensembl branch ${ENSEMBL_BRANCH} version ${ENSEMBL_VERSION}"; \
+		echo "Installing ensembl branch ${ENSEMBLGENOMES_BRANCH} version ${ENSEMBL_RELEASE}"; \
 		echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}" ; \
 		mkdir -p "${ENSEMBL_API_DIR}"; \
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-${ENSEMBL_BRANCH}-${ENSEMBL_VERSION} ensembl-api)
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE} ensembl-api)
 	@echo
 	@${MAKE} install_ensembl_api_env
 
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+install_ensembl_api_git:
+	@echo ""
+	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
+	@mkdir -p "${ENSEMBL_API_DIR}"
+	@echo "Getting git clone for ensembl API release ${ENSEMBL_RELEASE}"
+	@(cd ${ENSEMBL_API_DIR}; \
+		git clone https://github.com/Ensembl/ensembl-git-tools.git; \
+		export PATH=${ENSEMBL_API_DIR}/ensembl-git-tools/bin:${PATH}; \
+		git ensembl --clone api; \
+		git ensembl --checkout --branch release/${ENSEMBL_RELEASE} api)
+	@echo ""
+	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_BRANCH}"
+	@(cd ${ENSEMBL_API_DIR}; git clone https://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
+		cd ensemblgenomes-api/ ; \
+		git checkout release/eg/${ENSEMBLGENOMES_BRANCH} )
+
+################################################################
+## Ensembl API requires Bioperl version 1-2-3, as quoted in their
+## installation page:
+## 	http://www.ensembl.org/info/docs/api/api_git.html
 ##
-## NOT WORKING ANYMORE ?
-##
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## "Important note: you must install version 1.2.3, not a more recent
+## version. Starting with 1.2.4, major changes were made to the
+## BioPerl API which have made it incompatible with Ensembl."
 install_ensembl_bioperl:
-	@(cd ${BIOPERL_DIR}; \
-		echo "" ; \
-		echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"; \
-		echo "	BIOPERL_DIR		${BIOPERL_DIR}" ; \
-		mkdir -p "${BIOPERL_DIR}" ; \
-		echo  "Password is 'cvs'" ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login ; \
-		cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-3 bioperl-live )
+	@echo ""
+	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
+	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
+	@mkdir -p "${BIOPERL_DIR}"
+	@(cd ${BIOPERL_DIR}; git clone https://github.com/bioperl/bioperl-live.git)
+	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-${BIOPERL_VERSION})
+	@echo "bioperl-release-${BIOPERL_VERSION} installed in ${BIOPERL_DIR}"
+
 
 ## Print the settings for including ensembl in the PERL5LIB environment variable
 install_ensembl_api_env:
@@ -205,14 +288,20 @@ install_ensembl_api_env:
 	@echo "ENSEMBL Perl modules are installed in directory ${ENSEMBL_API_DIR}"
 	@echo
 	@echo "BEWARE !"
-	@echo "You need to paste the following lines in your bash profile"
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-compara/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-external/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-functgenomics/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-tools/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${ENSEMBL_API_DIR}/ensembl-variation/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=${BIOPERL_DIR}/bioperl-live::$${PERL5LIB}'
+	@echo "You need to paste the following lines in the bash profile ${RSAT}/RSAT_config.bashrc"
+	@echo
+	@echo '################################################################'
+	@echo '## Default path for the Ensembl Perl modules and sofwtare tools'
+	@echo 'export ENSEMBL_RELEASE=${ENSEMBL_RELEASE}'
+	@echo 'export ENSEMBLGENOMES_BRANCH=${ENSEMBLGENOMES_BRANCH}'
+	@echo 'export PATH=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-git-tools/bin:$${PATH}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/bioperl-release-$${BIOPERL_VERSION}/bioperl-live::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-compara/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-external/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-tools/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
 ## Install the graph-based clustering algorithm MCL
@@ -231,8 +320,8 @@ _download_mcl:
 	(cd ${MCL_BASE_DIR}; tar -xpzf ${MCL_ARCHIVE})
 	@echo ${MCL_DISTRIB_DIR}
 
-MCL_COMPILE_DIR=`dirname ${BIN_DIR}`
-MCL_BIN_DIR=${BIN_DIR}
+MCL_COMPILE_DIR=`dirname ${RSAT_BIN}`
+MCL_BIN_DIR=${RSAT_BIN}
 _compile_mcl:
 	@echo
 	@echo "Installing MCL in dir ${MCL_BIN_DIR}"
@@ -259,15 +348,13 @@ _download_rnsc:
 
 _compile_rnsc:
 	@echo
-	@echo "Installing RNSC in dir ${BIN_DIR}"
-	@${SUDO} mkdir -p ${BIN_DIR}
+	@echo "Installing RNSC in RSAT_BIN	${RSAT_BIN}"
+	@${SUDO} mkdir -p ${RSAT_BIN}
 	(cd ${RNSC_BASE_DIR}; make ;  \
-	${SUDO} rsync -ruptvl rnsc ${BIN_DIR}; \
-	${SUDO} rsync -ruptvl rnscfilter ${BIN_DIR}; \
+	${SUDO} rsync -ruptvl rnsc ${RSAT_BIN}; \
+	${SUDO} rsync -ruptvl rnscfilter ${RSAT_BIN}; \
 	)
-	@echo "Please check that RNSC bin directory in your path."
-	@echo "	${BIN_DIR}"
-#	${SUDO} rsync -ruptvl rnscconvert ${BIN_DIR}/; \
+#	${SUDO} rsync -ruptvl rnscconvert ${RSAT_BIN}/; \
 
 ################################################################
 ## Install BLAST
@@ -277,20 +364,20 @@ _download_blast: _download_blast_${OS}
 
 #_install_blast: _install_blast_${OS}
 _install_blast:
-	@${SUDO} mkdir -p ${BIN_DIR}
-	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
-	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
+	@${SUDO} mkdir -p ${RSAT_BIN}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
+	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
-	@echo "	blast_dir=${BIN_DIR}"
+	@echo "	blast_dir=${RSAT_BIN}"
 	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
 	@echo
 	@echo "You can also add the BLAST bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=${BIN_DIR}:\$$PATH"
+	@echo "	export PATH=$${RSAT_BIN}:$${PATH}"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH ${BIN_DIR}:\$$PATH"
+	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
 
 _list_blast_param:
 	@echo "Downloading blast"
@@ -299,7 +386,7 @@ _list_blast_param:
 	@echo "	BLAST_URL		${BLAST_URL}"
 	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
 	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
-	@echo "	BIN_DIR			${BIN_DIR}"
+	@echo "	RSAT_BIN		${RSAT_BIN}"
 
 ################################################################
 ## Install the BLAST on linux
@@ -310,7 +397,7 @@ BLAST_SOURCE_DIR=blast_latest
 _download_blast_linux:
 	@mkdir -p ${BLAST_BASE_DIR}
 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_LINUX_ARCHIVE}; \
+	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_LINUX_ARCHIVE}; \
 		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
 		${SUDO} mv -f ${BLAST_LINUX_ARCHIVE} ..; \
 		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR} \
@@ -318,11 +405,11 @@ _download_blast_linux:
 	@echo ${BLAST_BASE_DIR}
 
 #_install_blast_linux:
-#	@${SUDO} mkdir -p ${BIN_DIR}
-#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
-#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
+#	@${SUDO} mkdir -p ${RSAT_BIN}
+#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
+#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
 #	@echo "Please check that the BLAST install directory is in your path"
-#	@echo "	${BIN_DIR}"
+#	@echo "	${RSAT_BIN}"
 
 ################################################################
 ## Install the BLAST on MAC
@@ -333,16 +420,16 @@ BLAST_SOURCE_DIR=blast_latest
 _download_blast_macosx:
 	@mkdir -p ${BLAST_BASE_DIR}
 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xvzf ${BLAST_MAC_ARCHIVE}; \
+	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_MAC_ARCHIVE}; \
 		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
 		${SUDO} mv -f ${BLAST_MAC_ARCHIVE} ..; \
 		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR})
 	@echo ${BLAST_BASE_DIR}
 
 # _install_blast_macosx:
-# 	@${SUDO} mkdir -p ${BIN_DIR}
-# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${BIN_DIR}
-# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${BIN_DIR}
+# 	@${SUDO} mkdir -p ${RSAT_BIN}
+# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
+# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
 
 
 ################################################################
@@ -386,7 +473,7 @@ _download_fastqc:
 	@echo "	fastqc script    	${FASTQC}"
 	@echo
 	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
-	@echo "export PATH=\$$PATH:${FASTQC_EXEC_DIR}"
+	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
 
 ################################################################
 ## Install BEDTools
@@ -431,10 +518,10 @@ _compile_bedtools:
 
 _install_bedtools:
 	@echo
-	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} to ${BIN_DIR}"
+	@echo "Installing bedtools binaries from ${BEN_BIN_DIR} in RSAT_BIN	${RSAT_BIN}"
 	@echo
-	@mkdir -p ${BIN_DIR}
-	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${BIN_DIR}/
+	@mkdir -p ${RSAT_BIN}
+	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${RSAT_BIN}/
 
 ################################################################
 ## Install Biotoolbox
@@ -497,11 +584,11 @@ _after_meme:
 	@echo "Creating links to meme"
 	@echo "	MEME_BIN_DIR	${MEME_BIN_DIR}"
 	@echo "	MEME_VERSION	${MEME_VERSION}"
-	@echo "	BIN_DIR		${BIN_DIR}"
-	cd ${BIN_DIR}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
+	@echo "	RSAT_BIN	${RSAT_BIN}"
+	cd ${RSAT_BIN}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
-	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
+	@echo "	export PATH=${MEME_BIN_DIR}:$${PATH}"
 
 ################################################################
 ## Install a clustering algorithm "cluster"
@@ -520,7 +607,7 @@ _download_cluster:
 	(cd ${CLUSTER_BASE_DIR}; tar -xpzf ${CLUSTER_ARCHIVE})
 	@echo ${CLUSTER_DISTRIB_DIR}
 
-CLUSTER_COMPILE_DIR=`dirname ${BIN_DIR}`
+CLUSTER_COMPILE_DIR=`dirname ${RSAT_BIN}`
 CLUSTER_BIN_DIR=${CLUSTER_COMPILE_DIR}/bin
 _compile_cluster:
 	@echo
@@ -576,11 +663,11 @@ _download_patser:
 	@echo "patser dir	${PATSER_DIR}"
 
 _compile_patser:
-	@echo "Installing patser in dir	${BIN_DIR}"
+	@echo "Installing patser in RSAT_BIN	${RSAT_BIN}"
 	(cd ${PATSER_DIR}; rm *.o; make)
-	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${BIN_DIR}
-	(cd ${BIN_DIR}; ${SUDO} ln -fs ${PATSER_APP} patser)
-	@echo "ls -ltr ${BIN_DIR}/patser*"
+	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT_BIN}
+	(cd ${RSAT_BIN}; ${SUDO} ln -fs ${PATSER_APP} patser)
+	@echo "ls -ltr ${RSAT_BIN}/patser*"
 
 
 ################################################################
@@ -637,7 +724,7 @@ _download_tophat:
 
 
 ## COMPILATION DOES NOT WORK - TO CHECK
-TOPHAT_COMPILE_DIR=`dirname ${BIN_DIR}`
+TOPHAT_COMPILE_DIR=`dirname ${RSAT_BIN}`
 TOPHAT_BIN_DIR=${TOPHAT_COMPILE_DIR}/bin
 _compile_tophat:
 	@echo
@@ -703,7 +790,7 @@ _compile_peaksplitter_linux:
 	${MAKE} __compile_peaksplitter OS=Linux64
 
 __compile_peaksplitter:
-	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${BIN_DIR}/)
+	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${RSAT_BIN}/)
 
 ################################################################
 ## FindPeaks
@@ -795,8 +882,8 @@ _link_sissrs:
 	@echo "Installing SISSRS in dir	${SISSRS_BASE_DIR}"
 	(cd ${SISSRS_BASE_DIR}; tar -xpzf ${SISSRS_ARCHIVE})
 	@echo ${SISSRS_BASE_DIR}
-	@echo "Linking sissrs in binary dir ${BIN_DIR}"
-	(cd ${BIN_DIR}; ln -fs ${SISSRS_BASE_DIR}/sissrs.pl sissrs)
+	@echo "Linking sissrs in binary dir ${RSAT_BIN}"
+	(cd ${RSAT_BIN}; ln -fs ${SISSRS_BASE_DIR}/sissrs.pl sissrs)
 
 
 ################################################################
@@ -869,7 +956,7 @@ _compile_bowtie_os:
 	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
 	(cd ${BOWTIE_BASE_DIR}; unzip ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
-	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
+	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
 
 ################################################################
 ## Install  Cis-regulatory Element Annotation System  (CEAS)
@@ -886,17 +973,17 @@ _download_ceas:
 	@mkdir -p ${CEAS_BASE_DIR}
 	wget -nd  --directory-prefix ${CEAS_BASE_DIR} -rNL ${CEAS_URL}
 
-CEAS_COMPILE_DIR=`dirname ${BIN_DIR}`
+CEAS_COMPILE_DIR=`dirname ${RSAT_BIN}`
 _compile_ceas:
 	@echo
 	@echo "Installing CEAS in dir	${CEAS_DISTRIB_DIR}"
 	(cd ${CEAS_BASE_DIR}; tar -xpzf ${CEAS_ARCHIVE})
 	@echo ${CEAS_DISTRIB_DIR}
 	(cd  ${CEAS_DISTRIB_DIR}; ${SUDO} python setup.py install --prefix=${CEAS_COMPILE_DIR})
-	@echo "CEAS was installed in dir ${BIN_DIR}"
+	@echo "CEAS was installed in dir ${RSAT_BIN}"
 	@echo "Before using CEAS, you need to add a line to the log-in shell script (i.e. .bashrc in case of bash shell)"
 	@echo "Adapt the python version in the path below"
-	@echo 'export PYTHONPATH=$$PYTHONPATH:${BIN_DIR}/lib/python2.7/site-packages'
+	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
 
 
 ################################################################
@@ -920,7 +1007,7 @@ _compile_samtools:
 	(cd ${SAMTOOLS_BASE_DIR}; tar --bzip2 -xpf ${SAMTOOLS_ARCHIVE})
 	@echo ${SAMTOOLS_DISTRIB_DIR}
 	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
-	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
+	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
 
 ################################################################
 ## Install  SRA toolkit
@@ -944,7 +1031,7 @@ _compile_sra:
 	(cd ${SRA_BASE_DIR}; tar --bzip2 -xpf ${SRA_ARCHIVE})
 	@echo ${SRA_DISTRIB_DIR}
 	(cd ${SRA_DISTRIB_DIR}; make)
-	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${BIN_DIR}/ \;
+	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
 
 ################################################################
 ## Install  SWEMBL
@@ -966,7 +1053,7 @@ _compile_swembl:
 	@echo "Installing SWEMBL in dir	${SWEMBL_DISTRIB_DIR}"
 	(cd ${SWEMBL_BASE_DIR}; tar --bzip2 -xpf ${SWEMBL_ARCHIVE})
 	@echo ${SWEMBL_DISTRIB_DIR}
-	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${BIN_DIR}/)
+	(cd ${SWEMBL_DISTRIB_DIR}; make; ${SUDO} rsync -ruptvl ${SWEMBL_DISTRIB_DIR}/SWEMBL ${RSAT_BIN}/)
 
 ################################################################
 ## Internet Genome Browser
@@ -1003,7 +1090,7 @@ _compile_igv:
 	(cd ${IGV_BASE_DIR}; unzip ${IGV_ARCHIVE})
 	@echo ${IGV_DISTRIB_DIR}
 	@echo "Please add IGVTools folder to your path"
-	@echo 'export PATH=$$PATH:${IGV_DISTRIB_DIR}'
+	@echo 'export PATH=$${PATH}:${IGV_DISTRIB_DIR}'
 
 
 
@@ -1026,9 +1113,9 @@ _install_homer:
 	(cd ${HOMER_BASE_DIR}; perl ./configureHomer.pl -install)
 	@echo "HOMER installed in dir	${HOMER_BASE_DIR}"
 	@echo "Please add the three following lines to your .bashrc file in order to include HOMER programs in your path"
-#	@echo 'export PATH=$$PATH:${HOMER_BASE_DIR}/bin'
+#	@echo 'export PATH=$${PATH}:${HOMER_BASE_DIR}/bin'
 	@echo 'export HOMER=${HOMER_BASE_DIR}'
-	@echo 'export PATH=$$PATH:$$HOMER/bin'
+	@echo 'export PATH=$${PATH}:\$$HOMER/bin'
 	@echo 'export PERL5LIB=$${PERL5LIB}:$$HOMER/bin'
 
 
@@ -1059,13 +1146,13 @@ CLUSTALW_SOURCE_DIR=clustalw_latest
 _download_clustalw:
 	@mkdir -p ${CLUSTALW_BASE_DIR}
 	wget --no-directories  --directory-prefix ${CLUSTALW_BASE_DIR} -rNL ${CLUSTALW_URL} -A "${CLUSTALW_ARCHIVE}"
-	(cd ${CLUSTALW_BASE_DIR}; tar -xvzf ${CLUSTALW_ARCHIVE})
+	(cd ${CLUSTALW_BASE_DIR}; tar -xzf ${CLUSTALW_ARCHIVE})
 	@echo ${CLUSTALW_BASE_DIR}
 
 _compile_clustalw:
 	(cd ${CLUSTALW_BASE_DIR}/${CLUSTALW_SOURCE_DIR}; ./configure; make clean ; make ; \
-	${SUDO} rsync -ruptvl src/clustalw2 ${BIN_DIR}/)
-	@echo "	clustalw2 should now be executable from ${BIN_DIR}";
+	${SUDO} rsync -ruptvl src/clustalw2 ${RSAT_BIN}/)
+	@echo "	clustalw2 should now be executable from ${RSAT_BIN}";
 
 
 ################################################################
@@ -1169,3 +1256,36 @@ _compile_python_suds:
 	(cd ${SUDS_INSTALL_DIR}; python2.7 setup.py build; ${SUDO} python2.7 setup.py install)
 
 
+################################################################
+## Install STAMP (zip archive kindly sent by email by Shaun Mahony)
+install_stamp:
+
+################################################################
+## Install MATLIGN
+
+################################################################
+## Get and install the program matlign
+MATLIGN_ARCHIVE=matlign.tgz
+MATLIGN_URL=http://ekhidna.biocenter.helsinki.fi/poxo/download_folder
+MATLIGN_DOWNLOAD_DIR=${SRC_DIR}/matlign/
+MATLIGN_COMPILE_DIR=${MATLIGN_DOWNLOAD_DIR}data/backup/zope_data/poxo/MATLIGN
+install_matlign: _download_matlign _compile_matlign _install_matlign
+
+_download_matlign:
+	@mkdir -p ${MATLIGN_DOWNLOAD_DIR}
+	@echo
+	@echo "Downloading matlign	${MATLIGN_URL}"
+	(cd ${MATLIGN_DOWNLOAD_DIR}; wget --timestamping ${MATLIGN_URL}/${MATLIGN_ARCHIVE}; tar -xpzf ${MATLIGN_ARCHIVE})
+	@echo "MATLING_DOWNLOAD_DIR	${MATLIGN_DOWNLOAD_DIR}"
+	@echo "MATLING_COMPILE_DIR	${MATLIGN_COMPILE_DIR}"
+
+_compile_matlign:
+	@echo
+	@echo "Compiling matlign in MATLIGN_DIR	${MATLIGN_DIR}"
+	(cd ${MATLIGN_COMPILE_DIR}; ./compile1)
+
+
+_install_matlign:
+	@echo
+	@echo "Installing matlign in RSAT_BIN	${RSAT_BIN}"
+	@${SUDO} rsync -ruptl ${MATLIGN_COMPILE_DIR}/matlign ${RSAT_BIN}/

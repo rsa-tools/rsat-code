@@ -1,24 +1,83 @@
 #!/usr/bin/perl -w
 
 ################################################################
+## This script permits to interactively define the environment
+## variables and parameters that will be used by the RSAT progams.
+## 
+## These parameters are stored in different files for different
+## purposes:
 ##
+## RSAT_config.props
+##    config file read by RSAT programs in various languages: Perl,
+##    python, java
+##
+## RSAT_config.mk
+##    environment variables for the makefiles
+##
+## RSAT_config.bashrc
+##    environment variables that should be loaded in the (bash) shell
+##    of RSAT users. There is currently no support for csh or tcsh,
+##    but the file can easily be convered to obtain a non-bash cshrc
+##    file.
+##
+## RSAT_config.conf
+##    RSAT configuration for the Apache web server.
 
-our %param = ();
+our %prev_param = ();
+our %new_param = ();
 
-if (scalar(@ARGV)) {
-  &PrintHelp();
+
+################################################################
+## List of file extensions for config files. 
+our @props_extensions = ("props", "mk", "bashrc", "conf");
+
+## Indicate, for each extension of config file, whether the user
+## should be prompted for variable values.
+our %auto_extension = ();
+$auto_extension{props} =0;
+$auto_extension{mk} =0;
+$auto_extension{bashrc} =1;
+$auto_extension{conf} =1;
+
+## Variables that should be the same for all extensions
+our %cross_ext_variable = ();
+$cross_ext_variable{rsat} = 1;
+$cross_ext_variable{rsat_server_admin} = 1;
+$cross_ext_variable{rsat_admin_email} = 1;
+$cross_ext_variable{rsat_site} = 1;
+$cross_ext_variable{rsat_bin} = 1;
+$cross_ext_variable{rsat_tmp} = 1;
+$cross_ext_variable{rsat_www} = 1;
+$cross_ext_variable{rsat_ws} = 1;
+#$cross_ext_variable{rsat_ws_tmp} = 1;
+$cross_ext_variable{ensembl_version} = 1;
+$cross_ext_variable{ensembl_branch} = 1;
+$cross_ext_variable{rsat_bin} = 1;
+$cross_ext_variable{qsub_manager} = 1;
+$cross_ext_variable{qsub_options} = 1;
+$cross_ext_variable{cluster_queue} = 1;
+$cross_ext_variable{cluster_sell} = 1;
+
+## First argument
+if (exists($ARGV[0])) {
+  if ($ARGV[0] eq "auto") {
+    foreach my $extension (@props_extensions) {
+	$auto_extension{$extension} = 1;
+    }
+  ## Print the help message
+  } elsif (scalar(@ARGV) > 0) {
+    warn join ("\t", "\n", "!!!!  Invalid argument  !!!!", $ARGV[0]), "\n";
+    &PrintHelp();
+  }
+} else {
+  warn "Entering manual mode...\n";
 }
 
 package main;
 {
 
-
-  my @extensions =  ("props", "mk", "bashrc");
-
-  ## Check if the RSAT environment variable has been specified
-#  $rsat_path = $ENV{RSAT};
-
-  ## Try to guess RSAT path if not specified in the environment variable
+  ## BEWARE: this script MUST be executed from the rsat directory,
+  ## because the RSAT path is guessed from the current directory.
   unless ($rsat_path) {
     my $pwd = `pwd`;
     chomp($pwd);
@@ -52,12 +111,12 @@ package main;
   ## Treat successively the two configuration files: .props (for Perl
   ## and php scripts) and .mk (for make scripts).
   warn("\n", "We will now edit configuration files in interactive mode, for the ", 
-       scalar(@extensions), " following extensions: ", join(", ", @extensions), "\n");
+       scalar(@props_extensions), " following extensions: ", join(", ", @props_extensions), "\n");
 
-  for my $extension (@extensions) {
+  for my $extension (@props_extensions) {
 
     ## Check that the config file exists in the RSAT path
-    my $config_file = $rsat_path."/RSAT_config.${extension}";
+    my $config_file = $rsat_path."/RSAT_config.".$extension;
     warn("\n\n\n", "################################################################\n", 
 	 "## Editing \".${extension}\" configuration file\t", $config_file,"\n\n");
 
@@ -77,8 +136,9 @@ package main;
 
     ## Prompt for the new value
     warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
-    print "\nReady to update config file\t", $config_file, " [y/n] (n): ";
+    print "\nReady to update config file\t", $config_file, " [y/n] (y): ";
     chomp($answer = <>);
+    $answer = "y" unless ($answer);
     unless ($answer eq "y") {
       warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
       die ("Good bye\n\n");
@@ -88,7 +148,9 @@ package main;
 
     ## Create a copy of the config file
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    my $config_file_bk = $config_file.".bk.".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec;
+    my $backup_dir = $rsat_path."/backups";
+    mkdir($backup_dir) unless (-d $backup_dir);
+    my $config_file_bk = $backup_dir."/RSAT_config_bk_".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec.".".$extension;
     warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
     system("cp ".$config_file." ".$config_file_bk);
 
@@ -98,49 +160,65 @@ package main;
 
     ## Load the RSAT config file
     while (<CONFIG>) {
-      if ((/(\S+)=(.*)/) && !(/^#/)) {
-	my $key = $1;
-	my $value = $2;
 
-	## Replace the RSAT parent path if required (at first installation)
-	$value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
-
-#	if ($key eq "rsat_www") {
-#	    $param{rsat_www_ori} = $value;
-#	    warn "rsat_www_ori\t", $param{rsat_www_ori}, "\n";
-#	}
-
-	## Replace the RSAT web server path if required (at first installation)
-	if ($key eq "rsat_www") {
-	    $value .= "/";
-	    $value =~ s|//$|/|;
-	} elsif (($prev_param{rsat_www}) && ($new_param{rsat_www})
-		 && ($value =~ /$prev_param{rsat_www}/)
-		 && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
-	    $value =~ s|$prev_param{rsat_www}|$new_param{rsat_www}|;
-	}
-
-	$prev_param{$key} = $value;
-
-	## Prompt for the new value
-	print "\n", $key, " [", $value, "] : ";
-	chomp(my $new_value = <>);
-	if ($new_value) {
-	  $value = $new_value;
-	}
-	if ($extension eq "bashrc") {
-	    print NEW_CONF "export ", $key, "=", $value, "\n";
-	} else {
-	    print NEW_CONF $key, "=", $value, "\n";
-	}
-	$new_param{$key} = $value;
-
-#	warn join ("\t", "key=".$key, "value=".$value, "param=".$new_param{$key}, "previous=".$prev_param{$key}), "\n";
-
+      ## Treat the Apache config file
+      if ($extension eq "conf") {
+	## For apache, the only change is to replace[RSAT_PARENT_PATH]
+	## by the actual path
+	s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
+	print NEW_CONF;
 
       } else {
-	print;			## Display comments
-	print NEW_CONF;
+
+	if ((/(\S+)=(.*)/) && !(/^#/)) {
+	  my $key = $1;
+	  my $value = $2;
+
+	  ## Replace the RSAT parent path if required (at first installation)
+	  $value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
+
+	  ## Replace the RSAT web server path if required (at first installation)
+	  if ($key eq "rsat_www") {
+	    $value .= "/" if ($value =~/^http/);
+	    $value =~ s|\/\/$|/|;
+	  } elsif (($prev_param{rsat_www}) && ($new_param{rsat_www})
+		   && ($value =~ /$prev_param{rsat_www}/)
+		   && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
+	    $value =~ s|$prev_param{rsat_www}|$new_param{rsat_www}|;
+	  }
+	  $prev_param{lc($key)} = $value;
+
+	  ## Transmit appropriate variables across extensions, if
+	  ## already specified.
+	  if (($extension eq "mk") || ($cross_ext_variable{lc($key)})) {
+	      if (defined($new_param{lc($key)})) {
+		  $value = $new_param{lc($key)};
+	      }
+	  }
+
+	  ## Prompt for the new value
+	  unless ($auto_extension{$extension}) {
+	      print "\n", $key, " [", $value, "] : ";
+	      chomp(my $new_value = <>);
+	      if ($new_value) {
+		  $value = $new_value;
+	      }
+	  }
+
+	  ## Export the line in the new config file
+	  if ($extension eq "bashrc") {
+	    print NEW_CONF "export ", $key, "=", $value, "\n";
+	  } else {
+	    print NEW_CONF $key, "=", $value, "\n";
+	  }
+	  $new_param{lc($key)} = $value;
+
+#	warn join ("\t", "key=".$key, "value=".$value, "param=".$new_param{lc($key)}, "previous=".$prev_param{lc($key)}), "\n";
+
+	} else {
+	  print;			## Display comments
+	  print NEW_CONF;
+	}
       }
     }
 
@@ -151,6 +229,7 @@ package main;
     warn ("\n\nBackup of previous config file\n\t", $config_file_bk, "\n");
     warn ("Updated config file\n\t", $config_file."\n\n");
   }
+
 
   exit(0);
 }
@@ -165,7 +244,11 @@ has to be changed (example: change of the IP address of the server).
 
 Author: Jacques.van-Helden\@univ-amu.fr
 
-usage: perl update_rsat_config.pl
+Usage: 
+  cd \$RSAT; perl perl-scripts/configure_rsat.pl [auto]
+
+The option "auto" suppresses the interactive control of parameter
+values.
 
 End_of_help
   exit(0);

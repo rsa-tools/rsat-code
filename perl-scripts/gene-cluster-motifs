@@ -3097,14 +3097,8 @@ sub compute_bg_dyads {
 ################################################################
 ## Check MEME path
 sub check_meme_path {
-  my $meme_dir = $ENV{MEME_DIRECTORY};
-  unless ($meme_dir) {
-    &RSAT::error::FatalError("The variable MEME_DIRECTORY is not defined. Please check the RSAT config file ".$ENV{RSAT}."/RSAT_config.props");
-  }
-  #   $fasta_get_markov = $meme_dir."/fasta-get-markov";
-  #  $meme_cmd = $meme_dir."/meme";
-  $fasta_get_markov = &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error, $meme_dir);
-  $meme_cmd = &RSAT::server::GetProgramPath("meme", $die_on_error, $meme_dir);
+  $fasta_get_markov = &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
+  $meme_cmd = &RSAT::server::GetProgramPath("meme", $die_on_error);
 }
 
 ################################################################
@@ -4601,7 +4595,7 @@ sub ExportSQL {
     }
 
     #### Matrices
-    for my $program qw (consensus gibbs AlignACE infogibbs meme MotifSampler) {
+    for my $program (qw (consensus gibbs AlignACE infogibbs meme MotifSampler)) {
       my $matrix_file = $family{$family_name}->{$program."_file"};
       if (-e $matrix_file) {
 	&ReadMatrices($family_name, $matrix_file, program=>$program);

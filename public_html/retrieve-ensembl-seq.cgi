@@ -343,7 +343,8 @@ print $query->end_html . "\n";
 
 exit(0);
 
-
+################################################################
+## Send the request to the SOAP/WSDL server, and collect the result
 sub Retrieve {
     my %args = @_;
 
@@ -386,23 +387,23 @@ sub Retrieve {
 # sub JobStatus {
 #     my $ticket = shift;
 #     my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
-
+#
 #     my %args = (
 # 	'ticket' => $ticket
 # 	);
-
+#
 #     my $som = $soap->monitor({'request' => \%args});
-
+#
 # #    print "<h1>SOM= $som</h1>";
-
+#
 #     unless ($som) {
 # 	printf "A fault (%s) occured: %s\n", $som->get_faultcode(), $som->get_faultstring();
 #     } else {
 # 	my $response = $som->get_response();
-
+#
 # 	## Report the status
 # 	my $status = $response -> get_status();
-
+#
 # 	return $status;
 #     }
 # }

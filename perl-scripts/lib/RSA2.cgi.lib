@@ -295,25 +295,36 @@ sub LinkOneFile {
 ## on the server, or display on the browser.
 sub SelectOutput {
     my ($default_output, %args) = @_;
-    $default_output = "display" unless ($default_output);
+
+    ## Check and adapt default output if necessary
+    if (($ENV{mail_supported} eq "no") && ($default_output eq "email")) {
+	$default_output = "display";
+    } elsif ($args{email_only}) {
+	$default{output} = 'email';
+    } elsif ($default_output eq "") {
+	$default_output = "display";
+    }
+    
+    ## Collect the possible output types to be displayed
     my @values = ();
     if ($args{email_only}) {
-      push @values, 'email';
-      $default{output} = 'email';
+	push @values, 'email';
     } else {
-      if ($default_output eq 'server') {
-	push @values, 'server'
-      }
-      push @values, ('display','email');
+	if ($default_output eq 'server') {
+	    push @values, 'server';
+	}
+	push @values, ('display');
+	push @values, ('email') unless ($ENV{mail_supported} eq "no");
     }
+    
+    ## Display the output choice
     print "<B>Output</B>&nbsp;";
     print $query->radio_group(-name=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
     print $query->textfield(-name=>'user_email',
 			    -size=>30,
-	);
-    print "<BR>\n";
+	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
 }
 
@@ -837,18 +848,26 @@ sub TaxonPopUpString {
   } else {
     $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
   }
-  $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
+  $taxonomyPopup .=  "<select name='taxon'>\n";
   foreach my $taxon (@taxa) {
     my $name = $taxon;
     $label =~ s/_/ /g;
     if ((lc($taxon) eq lc($main::default{taxon})) ||
 	(lc($name) eq lc($main::default{taxon}))) {
-      $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
+      $taxonomyPopup .=  "<option selected value='$taxon'>$name\n";
     } else {
-      $taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
+      $taxonomyPopup .=  "<option value='$taxon'>$name\n";
     }
   }
-  $taxonomyPopup .=  "</SELECT>";
+  $taxonomyPopup .=  "</select>";
+
+  ## NOT SUPPORTED YET: TO BE ADDED TO get-orghologs, footprint-discovery, footprint-scan
+  # $taxonomyPopup .=  "&nbsp;"x5;
+  # $taxonomyPopup .=  "<B>Taxonomic depth</B>&nbsp;";
+  # $taxonomyPopup .= $query->popup_menu(-name=>'depth',
+  # 				       -Values=>[0,1,2,3,4,5],
+  # 				       -default=>$default{depth}||4);
+
   $taxonomyPopup .=  "<BR>\n";
   return $taxonomyPopup;
 }
@@ -1223,6 +1242,7 @@ sub GetBackgroundModel {
     print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
     print "<input type='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
     print &TaxonPopUp();
+
   } else {
     print  &OrganismPopUpString();
   }
@@ -1829,7 +1849,7 @@ sub EmailTheResult {
     $html_submission_message =~ s|\\\$|\$|gm;
     &Info($html_submission_message);
 
-    &RSAT::server::sendmail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
+    &RSAT::server::send_mail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
 
     ## Concatenate the command with the email notification
     my $completion_message;
