@@ -1027,12 +1027,13 @@ sub ClusterMotifs {
   &RSAT::util::one_command($cmd, 1);
 
   ## Use MCL to partition the motif graph into clusters
-  &RSAT::message::TimeWarn("Matrix clustering.") if ($main::verbose >= 2);
-  my $mcl_dir = $ENV{mcl_dir};
-  unless ($mcl_dir) {
-    &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
-  }
-  my $mcl = $mcl_dir."/mcl";
+  &RSAT::message::TimeWarn("Matrix clustering by running MCL on th matrix-to-matrix network.") if ($main::verbose >= 2);
+  my $mcl = &RSAT::server::GetProgramPath("mcl");  
+  # my $mcl_dir = $ENV{mcl_dir};
+  # unless ($mcl_dir) {
+  #   &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
+  # }
+  # my $mcl = $mcl_dir."/mcl";
   $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
   $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";

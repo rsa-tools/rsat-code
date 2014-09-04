@@ -261,8 +261,6 @@ local @db_taxons = ();
 
 local $reciprocal = 0;
 
-local $blast_dir = $ENV{blast_dir};
-
 ## Options for the command &doit()
 local $dry = 0;
 local $no_self = 0;
@@ -897,7 +895,7 @@ sub Verbose {
 sub FormatDB {
     &RSAT::message::TimeWarn(join ("\t","Formatting DB for organism", $db_organism)) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{blast_db}); 
-    my $formatdb_cmd = &RSAT::server::GetProgramPath("formatdb", 1, $blast_dir);
+    my $formatdb_cmd = &RSAT::server::GetProgramPath("formatdb", 1, $ENV{RSAT_BIN});
     my $command = $formatdb_cmd." -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
     &doit($command, $dry, $die_on_error, $main::verbose);
     &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*")) if ($main::verbose >= 2);
@@ -917,7 +915,7 @@ sub BlastAndRank {
     &RSAT::util::CheckOutDir($dir{blast_result}); 
 
     ## Run the blastall command
-    my $blastall_cmd = &RSAT::server::GetProgramPath("blastall", 1, $blast_dir);
+    my $blastall_cmd = &RSAT::server::GetProgramPath("blastall", 1, $ENV{RSAT_BIN});
     my $blast_command = $blastall_cmd." -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e ".$expect_threshold;
     &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
 

@@ -1775,6 +1775,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Feature type (CDS, mRNA, tRNA, rRNA, scRNA).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="all_genes" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Get info for all genes if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 

@@ -30,6 +30,7 @@ def connection_server_species(v, dump, division):
     """
 
     url = "http://beta.rest.ensemblgenomes.org/info/species?"
+#    url = "http://test.rest.ensemblgenomes.org/info/species?"
     url = url + "content-type=application/json"
     if (division != None):
         url = url + ";division="+division
@@ -77,33 +78,47 @@ def parsing_content_species(org_supported, v):
     #org_supported = json.loads(org_supported_json)
 
     file_content = ""
+
+    ## Print the header
+    file_content += "#" + "\t".join(out_columns) + '\n'
+
     if v >= 3:
         print('Retrieving data, this may take a while...')
 
+
     for value in org_supported.values():
-    ## Value contained in the dictionary is a list of dictionaries containing the species informations
+        ## Value contained in the dictionary is a list of dictionaries containing the species informations
         list_species_dict = value
 
+
         for i in range(len(list_species_dict)):
-    ## Dictionary containing informations about a given species
+            ## Dictionary containing informations about a given species
             current_species_dict = list_species_dict[i]
 
-    ## The value of current_species_dict[u'groups'] is a list : the for loop allows to display each element of this list without brackets and separated by commas
+            ## The value of current_species_dict[u'groups'] is a list:
+            ## the for loop allows to display each element of this list without
+            ## brackets and separated by commas
             the_groups = ""
             for group in current_species_dict[u"groups"]:
                 the_groups = the_groups + group + ',' + ' '
                 current_species_dict[u'groups'] = the_groups
 
-    ## The value of current_species_dict[u'aliases'] is a list : the for loop allows to display each element of this list without brackets and separated by commas
+            ## The value of current_species_dict[u'aliases'] is a list:
+            ## the for loop allows to display each element of this
+            ## list without brackets and separated by commas
             the_aliases = ""
             for alias in current_species_dict[u'aliases']:
                 the_aliases = the_aliases + alias + ',' + ' '
                 current_species_dict[u'aliases'] = the_aliases
 
-    ## Feeding of file_content variable
+            ## Feeding of file_content variable
+            values = []
             for j in range(len(out_columns)):
                 if out_columns[j] in current_species_dict.keys():
-                    file_content += str(current_species_dict[out_columns[j]]) + '\t'
+                    value = str(current_species_dict[out_columns[j]])
+                    values.append(value)
+#                    file_content += str(current_species_dict[out_columns[j]]) + '\t'
+            file_content += "\t".join(values)
             file_content += '\n'
 
     if v >= 2:
@@ -114,11 +129,16 @@ def parsing_content_species(org_supported, v):
 
 def create_file_species(ff, o, v):
 
-    """
-    This function will create a file filled with the informations about all the species collected on ensemblGenomes
-    @param ff: String containing all of the informations about the species
+    """This function will create a file filled with the informations
+    about all the species collected on ensemblGenomes
+
+    @param ff: String containing all of the informations about the
+    species
+
     @param o: output file name
+
     @param v: verbosity index
+
     """
 
     ## Default directory to store species list in case the -o option
@@ -154,14 +174,29 @@ def create_name_only_file(o, v, f):
     @param v: verbosity index
     @param f: name of the file containing species name only
     """
+
+    ## Default directory to store species list in case the -o option
+    ## is not specified  
     parent_folder = 'species_results'
     file_name = o
+    out_parent_folder = 'species_results'
+    outfile_name = f
 
     ## If output is not a filename but a path:
     if not os.path.dirname(o) == '':
         parent_folder = os.path.dirname(o)
         file_name = o[len(parent_folder)+1:]
+    if not os.path.dirname(f) == '':
+        out_parent_folder = os.path.dirname(f)
+        outfile_name = f[len(out_parent_folder)+1:]
+        if v >= 2:
+            print("Creation of a new folder named {}".format(out_parent_folder))
+    if not os.path.exists(parent_folder):
+        os.makedirs(parent_folder)
+    if not os.path.exists(out_parent_folder):
+        os.makedirs(out_parent_folder)
 
+    ## Parsing existing file
     i = 0
     stri = ""
     content = ""
@@ -188,9 +223,9 @@ def create_name_only_file(o, v, f):
                 content += stri + '\n'
                 stri = ""
         if v >= 3:
-            print("Parsing done.`\nCreating the file {}".format(f))
-        with open(os.path.join(parent_folder, f), 'w') as fi:
-            fi.write(content)
+            print("Parsing done.`\nCreating the file {}".format(os.path.join(os.getcwd(), out_parent_folder, outfile_name)))
+        with open(os.path.join(os.getcwd(),out_parent_folder, outfile_name), 'w') as newfile:
+            newfile.write(content)
 
         if v >= 2:
             print("File created\n")
@@ -212,7 +247,7 @@ def retrieve_species(o, v, f, dump, null, division):
     """
 
     if v >= 1:
-        print("Trying to connect server... ")
+        print("Connecting to the server... ")
     org_supported_json = connection_server_species(v, dump, division)
 
     if v >= 1:
@@ -252,7 +287,7 @@ def connection_server_genes(line, v):
 
     try:
         if v == 3:
-            print("Trying to reach server...")
+            print("Trying to reach server at url " + url)
         response = urlopen(url)
         data = response.read()
         decoded_data = data.decode('utf-8')
@@ -262,7 +297,7 @@ def connection_server_genes(line, v):
         print("Can't reach server at %s" % url)
         print(sys.exc_info()[1])
         if os.path.exists('org'):
-            remove('org')
+            os.remove('org')
         sys.exit()
 
     return decoded_data
@@ -364,7 +399,7 @@ def parsing_content_genes(decoded_json, v, null):
 
         ## Append the line for the parsed gene
         gene_content += "\t".join(gene_attributes)
-        gene_content += '\n'
+        gene_content += "\n"
 
         transcript_list = current_gene_dict['transcripts']
         for t_value in transcript_list:

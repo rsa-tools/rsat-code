@@ -73,6 +73,13 @@ unless ($taxon = $query->param('taxon')) {
 }
 $parameters .= " -taxon $taxon";
 
+## Taxonomic depth (NOT WORKING YET)
+# if ($depth = $query->param('depth')) {
+#     if ((&IsNatural($depth) && ($depth > 0))) {
+# 	$parameters .= " -depth ".$depth;
+#     }
+# }
+
 
 ## ##############################################################
 ## Thresholds

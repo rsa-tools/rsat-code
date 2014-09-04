@@ -51,7 +51,7 @@ JOB_DIR=`pwd`/jobs/${DAY}
 JOB_PREFIX=job
 JOB=`mktemp -u ${JOB_PREFIX}.XXXXXX`
 command_queue:
-	${MAKE} command_queue_${QUEUE_MANAGER}
+	${MAKE} command_queue_${QSUB_MANAGER}
 
 ## Send a jobs to a cluster using the torque quee management system
 ##
@@ -61,7 +61,7 @@ command_queue:
 ## element (JOB). Without this script, mktemp would be called once for
 ## creating the script, and another time when sending it to the queue
 ## (it would thus have a different name, and the task would fail).
-QSUB_CMD_TORQUE=qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
+QSUB_CMD_TORQUE=qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do	\
@@ -87,7 +87,7 @@ _command_queue_torque_prev:
 		echo "hostname" >> ${JOB_DIR}/$${job}; \
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
 		chmod u+x ${JOB_DIR}/$${job} ;	\
-		qsub -m a -q ${QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
+		qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
 		rm $${job} ;\
 	done
 
@@ -113,7 +113,7 @@ command_queue_sge:
 		echo "echo Job done" >> ${JOB_DIR}/$${job}; \
 		echo "date" >> ${JOB_DIR}/$${job}; \
 		chmod u+x ${JOB_DIR}/$${job} ;	\
-		qsub -m a -q ${QUEUE} -N $${job} -cwd -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
+		qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -cwd -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
 		rm $${job} ;\
 	done
 
@@ -123,7 +123,7 @@ command_now:
 
 ################################################################
 ## Watch the number of jobs in the cluster queue
-watch_jobs: watch_jobs_${QUEUE_MANAGER}
+watch_jobs: watch_jobs_${QSUB_MANAGER}
 
 watch_jobs_torque:
 	@hostname
