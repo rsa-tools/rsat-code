@@ -1424,7 +1424,7 @@ sub Create_phylogram(){
 ## to get multiple alignment on the logo cladogram.
 sub Add_empty_columns_to_logos(){
 
-  ## Open the alignment_table daata
+  ## Open the alignment_table data
   open(ALIGNMENT_TABLE, $main::outfile{alignment_table}) || &RSAT::error::FatalError( "Cannot open ALIGNMENT_TABLE file", $main::outfile{alignment_table});
 
   while(<ALIGNMENT_TABLE>){
@@ -1432,7 +1432,6 @@ sub Add_empty_columns_to_logos(){
     next if (/^;/); ## Skip comment rows
     next if (/^#/); ## Skip header rows
     chomp();
-
     
     my @split_line = split(/\s+/, $_);
     $split_line[0] =~ s/\s+//g;
@@ -1441,8 +1440,7 @@ sub Add_empty_columns_to_logos(){
     $alignment_info{$split_line[0]}{strand} =  $split_line[2];
     $alignment_info{$split_line[0]}{offset_left} =  $split_line[3];
     $alignment_info{$split_line[0]}{offset_right} =  $split_line[4];
-    $alignment_info{$split_line[0]}{width} = $split_line[5];
-
+    $alignment_info{$split_line[0]}{width} = $split_line[5];    
   }
   close(ALIGNMENT_TABLE);
 
