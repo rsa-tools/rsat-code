@@ -123,6 +123,8 @@ if (!$errors) {
   $suffix = "_".date("Ymd_His")."_".randchar(3).".bed";
 	  
   // Upload file from client machine
+
+
   if ($_FILES["bedfile"]['name'] != "") {
     $bed_file_name = basename($_FILES['bedfile']['name']);
 
@@ -135,7 +137,7 @@ if (!$errors) {
     
     // Move uploaded bed file in tmp
     $bed_file = getTempFileName($bed_file_name, ".".$extension);
-    
+
     if (move_uploaded_file($_FILES['bedfile']['tmp_name'], $bed_file)) {
       $argument .= " -i $bed_file";
     } else {
