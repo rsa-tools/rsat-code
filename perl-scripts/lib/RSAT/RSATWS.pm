@@ -1893,8 +1893,10 @@ sub convert_features {
       $command .= " -to '".$to."'";
     }
 
-    if ($coord == 1) {
-      $command .= " -coord";
+    if ($coord) {
+      $coord =~ s/\'//g;
+      $coord =~ s/\"//g;
+      $command .= " -coord '".$coord."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
