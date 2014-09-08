@@ -1308,6 +1308,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Output format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="coord" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Bedfile with absolute coordinate of the sequence fragment.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 
