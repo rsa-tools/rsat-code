@@ -1877,6 +1877,8 @@ sub convert_features {
     my $from = $args{"from"};
     my $to = $args{"to"};
 
+    my $coord = $args{"coord"};
+
     my $command = "$SCRIPTS/convert-features";
 
     if ($from) {
@@ -1889,6 +1891,12 @@ sub convert_features {
       $to =~ s/\'//g;
       $to =~ s/\"//g;
       $command .= " -to '".$to."'";
+    }
+
+    if ($coord) {
+      $coord =~ s/\'//g;
+      $coord =~ s/\"//g;
+      $command .= " -coord '".$coord."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
