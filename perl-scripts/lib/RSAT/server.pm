@@ -5,10 +5,10 @@ require RSAT::message;
 require RSAT::error;
 # use MIME::Lite;
 # use Mail::Sendmail;
-use Email::Sender::Simple qw(sendmail);
-use Email::Simple;
-use Email::Simple::Creator;
-use Email::Sender::Transport::SMTP;
+# use Email::Sender::Simple qw(sendmail);
+# use Email::Simple;
+# use Email::Simple::Creator;
+# use Email::Sender::Transport::SMTP;
 
 ################################################################
 ## Check that the environment variable RSAT has been defined
