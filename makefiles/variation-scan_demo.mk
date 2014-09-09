@@ -24,8 +24,8 @@ retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
 	@${RETRIEVE_VAR_CMD}
 
-PVAL=1e-3
-PVAL_RATIO=10
+PVAL=1e-2
+PVAL_RATIO=1
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VAR_SCAN_CMD=variation-scan -i ${VARIANTS}_rsat_var.seq -m ${MATRIX} -bg ${BG_MODEL} -uth pval ${PVAL} -lth pval_ratio ${PVAL_RATIO} -o ${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}.tab
 
