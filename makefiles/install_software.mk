@@ -134,6 +134,28 @@ _vmatch_warning:
 	@echo ""
 
 ################################################################
+## LOGOL
+LOGOL_ARCHIVE=logol_1.7.1.orig.tar.bz2
+LOGOL_URL=https://gforge.inria.fr/frs/download.php/file/33588
+LOGOL_DIR=${SRC_DIR}/logol
+install_logol: _download_logol _compile_logol
+
+_download_logol:
+	@mkdir -p ${LOGOL_DIR}
+	@echo
+	@echo "Downloading logol	${LOGOL_URL}"
+	(cd ${LOGOL_DIR}; \
+		wget --timestamping --no-directories  ${LOGOL_URL}/${LOGOL_ARCHIVE}; \
+		tar -xpzf ${LOGOL_ARCHIVE})
+	@echo "logol dir	${LOGOL_DIR}"
+
+_compile_logol:
+	@echo "Installing logol in RSAT_BIN	${RSAT_BIN}"
+	@${SUDO} rsync -ruptl ${LOGOL_DIR}/weblogo/logol ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${LOGOL_DIR}/weblogo/template.* ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${LOGOL_DIR}/weblogo/logo.pm ${RSAT_BIN}/
+
+################################################################
 ## Get and install the program seqlogo
 SEQLOGO_URL=http://weblogo.berkeley.edu/release
 SEQLOGO_TAR=weblogo.2.8.2.tar.gz
