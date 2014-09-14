@@ -54,6 +54,7 @@ $cross_ext_variable{ensembl_version} = 1;
 $cross_ext_variable{ensembl_branch} = 1;
 $cross_ext_variable{rsat_bin} = 1;
 $cross_ext_variable{qsub_manager} = 1;
+$cross_ext_variable{queue_manager} = 1;
 $cross_ext_variable{qsub_options} = 1;
 $cross_ext_variable{cluster_queue} = 1;
 $cross_ext_variable{cluster_sell} = 1;

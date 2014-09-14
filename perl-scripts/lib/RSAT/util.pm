@@ -1025,13 +1025,18 @@ sub doit {
 
     ## Cluster queue manager
 
-    my $qsub_manager="";
-    if (defined($ENV{QSUB_MANAGER})) {
-      $qsub_manager=$ENV{QSUB_MANAGER};
+    my $queue_manager="";
+    if (defined($ENV{QUEUE_MANAGER})) {
+      $queue_manager=$ENV{QUEUE_MANAGER};
+
+    } elsif (defined($ENV{QSUB_MANAGER})) {
+      $queue_manager=$ENV{QSUB_MANAGER};
+      &RSAT::message::Warning("Parameter QSUB_MANAGER is obsolete.\nPlease rename if to QUEUE_MANAGER in ".$RSAT."/RSAT_config.props") if ($main::verbose >= 1);
 
     } else {
-      $ENV{QSUB_MANAGER} = "sge";
-      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($verbose >= 2);
+      $ENV{QUEUE_MANAGER} = "torque";
+      $queue_manager=$ENV{QUEUE_MANAGER};
+      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'torque'.") if ($verbose >= 2);
     }
 
     my $qsub_options="";
@@ -1057,7 +1062,7 @@ sub doit {
 
     ################################################################
     ## Choose the queue manager depending on the local configuration
-    if (lc($qsub_manager) eq "torque") {
+    if (lc($queue_manager) eq "torque") {
       $wd = `pwd`;
       chomp($wd);
 
