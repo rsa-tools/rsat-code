@@ -743,10 +743,12 @@ memberships (default 0).
 
 =pod
 
-=item B<-ing>
+=item B<-inf>
 
-Value to display as replacement for the infinite values (obtained
-e.g. from log(0)).
+Value to display in the significance table as replacement for the
+infinite values (obtained e.g. from log(0)).
+
+Default: 320.
 
 =cut
     } elsif ($arg eq "-inf") {
