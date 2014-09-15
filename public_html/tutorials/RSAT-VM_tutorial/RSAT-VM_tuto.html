@@ -33,7 +33,12 @@
       <li><a href='#intro'>Introduction</a></li>
       <li><a href='#prerequisite'>Prerequisite</a></li>
       <li><a href='#import'>Importing the virtual machine archive (ova file)</a></li>
-      <li><a href='#configuration'>Configuration</a></li>
+      <li><a href='#configuration'>Configuration</a>
+	<ul>
+	  <li><a href='#config_vb'>VirtualBox host-only adapter</a></li>
+	  <li><a href='#config_vm'>Network settings for the guest machine</a></li>
+	</ul>
+      </li>
       <li><a href='#running'>Running RSAT-VM</a>
 	<ul>
 	  <li><a href='#rsat-vm_start'>Starting RSAT-VM</a></li>
@@ -80,7 +85,7 @@
 	  interface).</p>
       </li>
     </ul>
-      
+    
     
     <table border="1" cellpadding="5" cellspacing="0">
 
@@ -102,9 +107,9 @@
     <h2>Configuration</h2>
     
 
-    <h3>Activate the host-only adapter in VirtualBox preferences</h3>
+    <a name="config_vb"></a>
+    <h3>VirtualBox host-only adapter</h3>
     
-
     <div class="protocol">
       <ol>
 	<li>Open the <span class="program">VirtualBox</span> program.</li>
@@ -112,10 +117,10 @@
 	  <br>Click on the <span class="option">Network</span> option.
 	  <br>Click on the tab <span class="option">Host-only
 	    Networks</span>. Check if a host-only adapter is already
-	    installed. If not, create a new one by clicking
-	    the <span class="option"><b>+</b></span> icon on the right
-	    side
-	    (<a href="images/vb_prefs_host-only_network.png">snapshot</a>).
+	  installed. If not, create a new one by clicking
+	  the <span class="option"><b>+</b></span> icon on the right
+	  side
+	  (<a href="images/vb_prefs_host-only_network.png">snapshot</a>).
 	  <p align="center"><a href="images/vb_prefs_host-only_network.png"><img width="400" border="1" src="images/vb_prefs_host-only_network.png"></a></p>
 	</li>
 	<li>Double-click on the host-only adapter to change its parameters.</li>
@@ -143,6 +148,7 @@
     </div>
 
 
+    <a name="config_vm"></a>
     <h3>Network settings for the guest machine</h3>
 
 
@@ -159,14 +165,14 @@
     <div class="protocol">
       <ol>
 	<li>In the panel showing the available virtual machines,
-	    right-click on the RSAT-VM (rsat-vb-ub14d), open
-	    the <span class="option">Settings ...</span> dialog
-	    box.</li>
+	  right-click on the RSAT-VM (rsat-vb-ub14d), open
+	  the <span class="option">Settings ...</span> dialog
+	  box.</li>
 	<li>In the tab <span class="option">Network</span>,
 	  select <span class="option">Adapter 1</span>,
 	  check <span class="option">Enable Network Adapter</span>,
 	  select <span class="option">Attached to: <b>Host-only
-	  Adapter</b></span> (<a href="images/vm_settings_network_host-only.png">snapshot</a>).</li>
+	      Adapter</b></span> (<a href="images/vm_settings_network_host-only.png">snapshot</a>).</li>
 	<li>In the pop-up menu besides the
 	  option <span class="option">Name</span>,
 	  select <span class="option">vboxnet0</span>.
@@ -176,6 +182,17 @@
 	</li>
     </div>
     
+    <h4>NAT</h4>
+
+    <p><b>Note:</b> the host-only adapter will enable you to establish
+      a connection (Web browsing, ssh connection) from the hosting
+      operating system (the usual environment of your computer) to the
+      guest system (the virtual machine). however, this adapter does
+      not allow to connect the external world from the guest. </p>
+
+    <p>In parallel to the host-only adapter, we thus recommend to
+      enable the second adapter and
+      select <span class="option">NAT</span>.</p>
 
     <h4>Bridged network</h4>
 
@@ -199,14 +216,14 @@
     <div class="protocol">
       <ol>
 	<li>In the panel showing the available virtual machines,
-	    right-click on the RSAT-VM (rsat-vb-ub14d), open
-	    the <span class="option">Settings ...</span> dialog
-	    box.</li>
+	  right-click on the RSAT-VM (rsat-vb-ub14d), open
+	  the <span class="option">Settings ...</span> dialog
+	  box.</li>
 	<li>In the tab <span class="option">Network</span>,
 	  select <span class="option">Adapter 1</span>,
 	  check <span class="option">Enable Network Adapter</span>,
 	  select <span class="option">Attached to: Bridge
-	  adapter</span>.</li>
+	    adapter</span>.</li>
 	<li>In the pop-up menu besides the
 	  option <span class="option">Name</span>, select an adapter
 	  depending on your local network configuration,
@@ -216,14 +233,14 @@
 	  </p>
 	</li>
     </div>
-    
-    
+
+
     <hr><a name="running"></a>
     <a href="#contents"><font size=-2>[back to contents]</font></a>
     <h2>Running RSAT-VM</h2>
 
 
-    
+
     <a name="rsat-vm_start"></a>
     <h3>Starting the RSAT virtual machine</h3>
 
@@ -234,17 +251,17 @@
 	    virual machine (rsat-vb-ub14d), and click on
 	    the <span class="option">Start</span> icon.</p></li>
 	<p class="tips">At this stage, your RSAT VM should now be
-	    ready to be used from the Web interface. Assuming that you
-	    activated the host-only network as described abve, and
-	    that you only started one virtual machine), VirtualBox
-	    hould have assigned the first IP address of the range
-	    defined in the settings above: 192.168.56.101.</p>
+	  ready to be used from the Web interface. Assuming that you
+	  activated the host-only network as described abve, and
+	  that you only started one virtual machine), VirtualBox
+	  hould have assigned the first IP address of the range
+	  defined in the settings above: 192.168.56.101.</p>
       </ol>
     </div>
 
     <a name="rsat-vm_web"></a>
     <h3>Using RSAT-VM as Web server</h3>
-    
+
     <div class="protocol">
       <ol>
 	<li>
@@ -267,30 +284,60 @@
 
     <a name="rsat-vm_login"></a>
     <h3>RSAT-VM log-in</h3>
-    
+
     <p>You can log with the following parameters: 
       <ul>
 	<li>Username: vmuser</li>
-	<li>Password: 2bchanged</li>
+	<li>Password: tochng</li>
       </ul>
     </p>
 
-    <p class="attention">
+    <p class="tips">We intently chose an overly simple temporary
+      password to ensure compatibility with AZERTY as well as QUERTY
+      keyboards, but we recommend to use a safer password.</p>
+
+    <div class="attention">
       <ol>
 	<li>At your first login, you will be prompted to change your
-	  password before anything else.</li>
+	  password before anything else. </li>
+
 	<li>The user vmuser is sudoer. After login, you can thus
 	  become the master of your Virtual Machine, create new users,
 	  install packages, etc.</li>
+      </ol>
+    </div>
+
+    <a name="rsat-vm_keyboard"></a>
+    <h3>Chosing the adequate keyboard for your computer</h3>
+
+    <p>A small difficulty when distributing a VM is the large variety
+      of keybords expected to be found on the users' computers. By
+      default, we selected the standard British QWERTY keyboard. 
     </p>
 
-    <a name="rsat-vm_ssh"></a>
-    <h3>Connecting RSAT-VM in ssh</h3>
-
+    <p>On Ubuntu 14.04 server version, keybord configuration can be
+      modified with following command.</p>
+    
     <pre class="brush:bash;">
-      ssh vmuser@192.168.56.101
+      sudo dpkg-reconfigure console-data
     </pre>
 
+    <p>For the desktop version, click on
+      the <span class="option">Settings</span>
+      icon <a href="images/icon_settings.png"><img width="40" border=1
+      src="images/icon_settings.png"></a>, then on
+      the <a href="images/text-entry_options.png"><img width="50"
+      src="images/icon_text-entry.png" border=1>, and check the
+      keyboard.</a>.
+    </p>
+    
+    <a name="rsat-vm_ssh"></a>
+    <h3>Connecting RSAT-VM in ssh</h3>
+    
+    <pre class="brush:bash;">
+	ssh vmuser@192.168.56.101
+    </pre>
+    
     <hr>
   </body>
 </html>
