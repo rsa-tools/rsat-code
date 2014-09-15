@@ -309,6 +309,7 @@ package main;
     &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
     my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
     $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
+    $species_cmd .= " -taxon ".$taxon;
     $species_cmd .= " -depth ".$taxonomic_depth;
     $species_cmd .= " -o ".$outfile{species};
     $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
