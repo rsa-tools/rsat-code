@@ -334,9 +334,6 @@ align.two.leaves <- function(child1, child2){
   id2 <- central.motifs[2]
 
   if(id1.test == id2){
-    temporal <- id1
-    id1 <- id2
-    id2 <- temporal
     temporal <- n1
     n1 <- n2
     n2 <- temporal
@@ -640,11 +637,11 @@ align.clusters <- function(child1, child2){
     }
     
     ## Cases in which is required invert the aligment
-    if(case %in% c(2,3,8)){
+    if(case %in% c(2,3,5,8)){
 
       if(case %in% c(3,8)){
         ids <- ids2
-      } else if (case %in% 2){
+      } else if (case %in% c(2,5)){
         ids <- ids1
       }
       
@@ -663,9 +660,9 @@ align.clusters <- function(child1, child2){
     }
     
     ## According to the cases, reset the offset
-    if(case %in% c(1,5,6)){
+    if(case %in% c(1,6)){
       offset <- nchar(as.vector(description.table[as.numeric(motifs.info[[id1]][["number"]]), "consensus"])) - nchar(as.vector(description.table[as.numeric(motifs.info[[id2]][["number"]]), "consensus"]))  - offset + (cluster.1.spacer - cluster.2.spacer)
-    } else if(case %in% c(2,3,4,7,8)){
+    } else if(case %in% c(2,3,4,5,7,8)){
       offset <- offset + (cluster.1.spacer - cluster.2.spacer)
     }
     
@@ -943,7 +940,8 @@ build.distance.matrix <- function(comparison.table){
   ## be used to generate a cross-table
   comparison.table$score.dist <- score.dist
   
-  dist.table <- t(xtabs(score.dist ~ name1+name2, comparison.table) )
+  dist.table <- t(xtabs(score.dist ~ id1+id2, comparison.table) )
+  ## dist.table <- t(xtabs(score.dist ~ name1+name2, comparison.table) )
   ## Ensure that symmetrical distances are defined
   for (i in 1:nrow(dist.table)) {
     for (j in i:ncol(dist.table)) {
@@ -955,7 +953,6 @@ build.distance.matrix <- function(comparison.table){
     }
   }
   
-  dist.table <- dist.table
   dist.matrix <- as.dist(dist.table)
 
   return(list(dist.table, dist.matrix))
@@ -1117,7 +1114,7 @@ JSON.clusters <- function(){
         down.pos <- i
         
         ## Print the number of the clusters members
-                                        #print(paste(" ### ", up.pos, "   ", down.pos, " ###"))
+        ## print(paste(" ### ", up.pos, "   ", down.pos, " ###"))
         temp <- NULL
         temp <- gsub("[^\\d+ \\|]", "" ,copy.Json.vector[up.pos:down.pos], perl = TRUE)
         numb <- NULL
@@ -1190,7 +1187,7 @@ nodes.by.level <- function(level.nb){
 fill.internal.nodes.attributes <- function(){
 
   for (merge.level in 1:nrow(tree$merge)) {
-    ##for (merge.level in 1:13) { 
+    ##for (merge.level in 1:5) { 
     merge.level <<- merge.level 
 
     
