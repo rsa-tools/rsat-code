@@ -382,19 +382,19 @@ Create a generic user for the virtual machine
 ## first login
 
 ## First delete this user (in case it was previously defined)
-##  sudo userdel --remove vmuser
+##  sudo userdel --remove vuser
 
-sudo useradd --password `openssl passwd -1 -salt xyz 2bchanged`\
-    --home /home/vmuser \
+sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
+    --home /home/vuser \
     --create-home \
     --shell /bin/bash \
     --comment "VM-user" \
-    vmuser
+    vuser
 
-## Force vmuser to change password at first login
-sudo chage -d 0 vmuser
+## Force vuser to change password at first login
+sudo chage -d 0 vuser
 
-## Add sudoer rights to vmuser
+## Add sudoer rights to vuser
 sudo chmod 644 /etc/sudoers
 sudo emacs -nw /etc/sudoers
 ## Find the following line
@@ -402,7 +402,7 @@ sudo emacs -nw /etc/sudoers
 ##     root    ALL=(ALL:ALL) ALL
 ## Below it, add the following line:
 ##     rsat  ALL=(ALL:ALL) ALL
-##     vmuser  ALL=(ALL:ALL) ALL
+##     vuser  ALL=(ALL:ALL) ALL
 
 
 
@@ -436,7 +436,7 @@ sudo dpkg-reconfigure tzdata
 
 
 ################################################################
-## To set up the leyboard (may vary between users who download the
+## To set up the keyboard (may vary between users who download the
 ## VirtualBox VM)
 sudo dpkg-reconfigure console-data
 ## (for my laptop, mac / Unknown / French /Standard / New)
@@ -470,8 +470,8 @@ Appliance Settings
 	Product-URL	http://rsat.eu/
 	Vendor		Jacques van Helden
 	Vendor URL	http://jacques.van-helden.perso.luminy.univ-amu.fr/
-	Version		2014-09-05
-	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 server Virtual Machine. 
+	Version		2014-09-06
+	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. 
 	License		Free of use for academic users, non-commercial and non-military usage. 
 
 
