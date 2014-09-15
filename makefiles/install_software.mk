@@ -58,6 +58,7 @@ EXT_APP_TARGETS=\
 	install_ensembl_api \
 	install_vmatch 
 #	install_ensembl_bioperl ## does not work anymore.  Not sure it is required since bioperl is installed with cpan
+
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
