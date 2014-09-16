@@ -221,14 +221,14 @@ pre,tt {
 }
 
 .attention {
-             color: #6B0909;
-             font-size: larger;
-             padding:10px;
-             background-color: #FFEEEE;
-             border: 2px solid #B40404;
-             margin-right: 5%;
-             margin-left: 5%;
-             }  
+    color: #6B0909;
+/*    font-size: larger;*/
+    padding:10px;
+    background-color: #FFEEEE;
+    border: 2px solid #B40404;
+    margin-right: 5%;
+    margin-left: 5%;
+}  
 
 
 p.attention

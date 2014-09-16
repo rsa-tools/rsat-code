@@ -7,6 +7,10 @@ package main;
 require RSAT::OrganismManager;
 require RSAT::server;
 require RSAT::error;
+use Email::Sender::Simple qw(sendmail);
+use Email::Simple;
+use Email::Simple::Creator;
+use Email::Sender::Transport::SMTP;
 
 =pod
 
