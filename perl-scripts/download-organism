@@ -143,7 +143,7 @@ package main;
 
   ## Remote server from which genomes should be downloaded
 #  $RSAT_SERVER="rsat.eu/";
-  $RSAT_SERVER="rsat.ulb.ac.be/rsat";
+  $RSAT_SERVER="http://rsat.ulb.ac.be/rsat";
 
   ## List of organisms to install
   @organisms = ();
@@ -230,13 +230,13 @@ package main;
     my $orgs_for_taxa;
     if ($upload) {
       &RSAT::message::Info("Getting list of organisms to upload for taxon", $taxon, "on local host", $ENV{HOSTNAME}, "");
-      $cmd = "supported-organisms -return ID -taxon $taxon | grep -v '^#'";
+      $cmd = "supported-organisms -return ID -taxon ".$taxon." | grep -v '^#'";
     } elsif ($get_command eq "rsync") {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, "by ssh connection", $ssh_login);
-      $cmd = "ssh $ssh_login 'supported-organisms -return ID -taxon $taxon | grep -v \"^#\"'";
+      $cmd = "ssh $ssh_login 'supported-organisms -return ID -taxon ".$taxon." | grep -v \"^#\"'";
     } else {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, " by web services");
-      $cmd = "supported-organisms-server -return ID -taxon $taxon | grep -v '^#'";
+      $cmd = "supported-organisms-server -url ".$RSAT_SERVER." -return ID -taxon ".$taxon." | grep -v '^#'";
     }
     &RSAT::message::TimeWarn("\n; ", $cmd) if ($main::verbose >= 3);
     $orgs_for_taxa = `$cmd`;
@@ -296,10 +296,12 @@ package main;
   } elsif ($ssh_login) {
     $cmd = "ssh $ssh_login 'supported-organisms -v 0 -return ID,last_update,source | grep -v \"^#\"'";
   } else {
-    $cmd = "supported-organisms-server -v 0 -return ID,last_update,source | grep -v '^#'";
+    $cmd = "supported-organisms-server -url ".$RSAT_SERVER." -v 0 -return ID,last_update,source | grep -v '^#'";
   }
   &RSAT::message::TimeWarn("Getting list of supported organisms from remote server\n; ", $cmd) if ($main::verbose >= 2);
   @all_organisms = `$cmd`;
+
+  &RSAT::message::Info(scalar(@all_organisms), "supported organisms on server", $RSAT_SERVER) if ($main::verbose >= 2);
 
   foreach my $org_line (@all_organisms) {
     next unless ($org_line); ## Skip empty line returned by RSAT Web service
@@ -326,14 +328,17 @@ package main;
     ## download one genome
     $cmd = $which_aspirator;
     if ($get_command eq "wget") {
-      my $RSAT_SERVER_ROOT;
-      if ($RSAT_SERVER =~ /\//) {
+      my $RSAT_SERVER_ROOT = $RSAT_SERVER;
+      $RSAT_SERVER_ROOT =~ s|http://||;
+      if ($RSAT_SERVER_ROOT =~ /\//) {
 	  $RSAT_SERVER_ROOT = '/'.$'; #'
       }
 
-      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, 
+			       "RSAT server", $RSAT_SERVEE) if (main::verbose >= $1);
+      &RSAT::message::Debug("RSAT server root", $RSAT_SERVER_ROOT) if ($main::verbose >= 3);
       $cmd .= " --reject jobs --reject 'index.html*'";
-      $cmd .= " -X".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
+      $cmd .= " -X ".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
       if ($main::verbose <= 3) {
 	## quiet mode for wget
 	$cmd .= " -q"; 
@@ -351,7 +356,7 @@ package main;
       $cmd .= " --convert-links";
       $cmd .= " -P ".$local_genomes_dir;
       $cmd .= " -nH  --cut-dirs=3";
-      $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
+      $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
 
     } elsif ($get_command eq "rsync") {
       if ($main::upload) {
@@ -583,6 +588,18 @@ allows to use the command within a pipe.
     } elsif ($arg eq "-o") {
       $main::outfile{output} = shift(@arguments);
 
+=pod
+
+=item B<-server server/path>
+
+Specify an alternative server.
+
+Default: http://rsat.ulb.ac.be/rsat/
+
+=cut
+
+    } elsif ($arg eq "-server") {
+      $main::RSAT_SERVER = shift(@arguments);
 
 =pod
 

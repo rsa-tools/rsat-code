@@ -381,27 +381,28 @@ Create a generic user for the virtual machine
 ## For the sake of security, we force this user to change password at
 ## first login
 
-sudo useradd --password `openssl passwd -1 -salt xyz to_change`\
-    --home /home/vmuser \
+## First delete this user (in case it was previously defined)
+##  sudo userdel --remove vuser
+
+sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
+    --home /home/vuser \
     --create-home \
     --shell /bin/bash \
-    --comment "Generic user for the Virtual Machine" \
-    vmuser
-## For info, the antidote is: userdel --remove vmuser
+    --comment "VM-user" \
+    vuser
 
-## Add sudoer rights to vmuser
+## Force vuser to change password at first login
+sudo chage -d 0 vuser
+
+## Add sudoer rights to vuser
 sudo chmod 644 /etc/sudoers
 sudo emacs -nw /etc/sudoers
-## Under 
+## Find the following line
 ##     # User privilege specification
 ##     root    ALL=(ALL:ALL) ALL
-## Add the following linre:
+## Below it, add the following line:
 ##     rsat  ALL=(ALL:ALL) ALL
-##     vmuser  ALL=(ALL:ALL) ALL
-
-
-## Force vmuser to change password at first login
-chage -d 0 vmuser
+##     vuser  ALL=(ALL:ALL) ALL
 
 
 
@@ -435,7 +436,7 @@ sudo dpkg-reconfigure tzdata
 
 
 ################################################################
-## To set up the leyboard (may vary between users who download the
+## To set up the keyboard (may vary between users who download the
 ## VirtualBox VM)
 sudo dpkg-reconfigure console-data
 ## (for my laptop, mac / Unknown / French /Standard / New)
@@ -469,10 +470,38 @@ Appliance Settings
 	Product-URL	http://rsat.eu/
 	Vendor		Jacques van Helden
 	Vendor URL	http://jacques.van-helden.perso.luminy.univ-amu.fr/
-	Version		2014-09-04
-	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 server Virtual Machine. 
-	License		Free of use for academic users, non-commercial and non-military applications. 
+	Version		2014-09-06
+	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. 
+	License		Free of use for academic users, non-commercial and non-military usage. 
 
-Optional: to facilitate transfer, split hte .ova file into 500Mb files.
 
-split -b 512m ../rsat-vb-ub14s_2014-09-04.ova
+
+################################################################
+## Prepare the VM + accompanying material on a USB key, to ensure
+## distribution in the teaching room.
+##
+## We use ScanDisk 64Gb USB3.0 keys, which have a high transfer rate
+## (190Mbps write / 250Mbps read)
+
+SOURCE_DIR=/no_backup/VirtualBox_VMs/appliances
+VERSION=2014-09-05a
+
+## Specification of the target location
+KEY_NB=02
+TARGET_DIR=/Volumes/RSAT-VM_${KEY_NB}/
+time rsync -ruptvl ${SOURCE_DIR} ${TARGET_DIR}
+
+################
+# OPTIONAL: split the VM into smaller files. This can be useful for two purposes.
+#
+# 1) To transfer files to a FAT-formatted drive for distribution (FAT
+#    cannot hold files >4Gb). Note that the final installation drive
+#    will have to support files >4Gb for the server version of the VM.
+# 2) To facilitate synchronization between local and remote machines.
+
+SPLIT_SIZE=3999m
+mkdir -p ${TARGET_DIR}/appliances
+time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vb-ub14d_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vb-ub14d_${VERSION}.ova.split${SPLIT_SIZE}_
+################
+
+
