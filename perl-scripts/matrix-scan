@@ -3766,11 +3766,11 @@ sub QuickScan {
     ## solution : impose a hard thresold -t 0.1
 
       ## commented out by Carl (04/09/2014)
-      # ## threshold
-      # if (defined($uth_matrix->{$matrix_name}->{pval})) {
-      # 	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
-      # }
-     $quick_cmd .= " -t 0.1";
+      ## threshold
+       if (defined($uth_matrix->{$matrix_name}->{pval})) {
+       	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
+       }
+     #$quick_cmd .= " -t 0.1";
     ## ========================================================================================================
 
     }
