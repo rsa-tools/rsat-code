@@ -128,6 +128,7 @@ ws_init:
 	@perl -pe 's|\[RSAT_WS\]|${RSAT_WS}|g' \
 		${RSAT}/public_html/web_services/RSATWS_default.wsdl \
 		> ${RSAT}/public_html/web_services/RSATWS.wsdl
+	@cp ${RSAT}/public_html/web_services/RSATWS.wsdl ${RSAT}/public_html/web_services/RSATWS_documentation.xml
 	@${MAKE} ws_param
 
 ## List the parameters for the WS stub

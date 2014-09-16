@@ -91,8 +91,10 @@ PACKAGES_OPT="
 	build-essential
 	python-dev
 	python3-dev
-	libnet-ssleay-perl \
-	libcrypt-ssleay-perl \
+	libnet-ssleay-perl
+	libcrypt-ssleay-perl
+        exfat-fuse
+        exfat-utils 
 "
 
 PACKAGES="
@@ -132,6 +134,9 @@ PACKAGES="
 	r-base-core
 	emacs
         console-data
+        x11-apps
+        firefox
+        eog
 "
 
 ################################################################
@@ -259,6 +264,11 @@ chmod 755 /usr/lib/cgi-bin
 chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
 
+## Adapt the PHP parameters
+emacs -nw /etc/php5/apache2/php.ini
+## Modify the following parameters
+##      upload_max_size=100M
+##      post_max_size = 100M
 
 ## Restart the apache server to take the new config into account
 service apache2 restart
@@ -438,7 +448,7 @@ exit
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 #rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
-ln -s ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
+ln -fs ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
 source ${RSAT}/RSAT_config.bashrc
 
 ################################################################
