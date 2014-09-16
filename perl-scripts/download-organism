@@ -335,8 +335,8 @@ package main;
       }
 
       &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, 
-			       "RSAT server", $RSAT_SERVER, 
-			       "RSAT server root", $RSAT_SERVER_ROOT) if ($main::verbose >= 1);
+			       "RSAT server", $RSAT_SERVEE) if (main::verbose >= $1);
+      &RSAT::message::Debug("RSAT server root", $RSAT_SERVER_ROOT) if ($main::verbose >= 3);
       $cmd .= " --reject jobs --reject 'index.html*'";
       $cmd .= " -X ".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
       if ($main::verbose <= 3) {
