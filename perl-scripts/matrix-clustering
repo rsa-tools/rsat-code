@@ -1111,6 +1111,7 @@ sub Add_attributes_to_JSON(){
       chomp();
       @split_line = split(/\s+/, $_);
       my $matrix_label = $split_line[6];
+
       $matrix_info{$matrix_label}{id} = $split_line[1];
       $matrix_info{$matrix_label}{name} = $split_line[2];
       $matrix_info{$matrix_label}{width} = $alignment_info{$matrix_info{$matrix_label}{id}}{width};

@@ -396,3 +396,25 @@ result_summary:
 	@echo "GRAPH		${COMPA}.gml" >> ${SUMMARY}
 	@echo "NODE DESCR	${COMPA}_node_descr.tab" >> ${SUMMARY}
 	@echo "	${SUMMARY}"
+
+################################################################
+## Run the whole analysis with phylo-profiles, a Perl script that
+## integrates all the above steps.
+TASK=all
+phylo_profiles:
+	@echo
+	@echo "Running phylo-profiles"
+	@echo "	ORG	${ORG}"
+	@echo "	TAXON	${TAXON}"
+	@echo "	DEPTH	${DEPTH}"
+	@echo "	TASK	${TASK}"
+	@echo "	RES_DIR	${RES_DIR}"
+	phylo-profiles -v ${V} \
+		-org ${ORG} \
+		-taxon ${TAXON} \
+		-depth ${DEPTH} \
+		-task ${TASK} \
+		-o ${RES_DIR}
+	@echo "Done phylo-profiles"
+	@echo "Result directory"
+	@echo "	${RES_DIR}"
