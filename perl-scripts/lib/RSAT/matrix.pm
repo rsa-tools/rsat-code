@@ -1270,7 +1270,7 @@ sub to_tab {
       }
 
       ################################################################
-      ##Print column statistics
+      ## Print column statistics
       if (($self->get_attribute("margins"))
 	  && (!$args{no_comment})) {
 	$prefix_letter = substr($type, 0, 1);
@@ -1290,6 +1290,12 @@ sub to_tab {
 	my @col_min = &RSAT::matrix::col_min($nrow, $ncol, @matrix);
 	push @col_min, &main::min(@col_min);
 	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
+
+
+	## Range per column
+	my @col_range = &RSAT::matrix::col_range($nrow, $ncol, @matrix);
+	push @col_range, &main::max(@col_range);
+	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".rng", @col_range);
       }
       $to_print .=  $matrix_terminator{$output_format}."\n";
     }
@@ -2819,6 +2825,33 @@ sub col_min {
     return(@col_min);
 }
 
+=pod
+
+=item col_range($nrow, $ncol, @table)
+
+Calculates the range of each column of a table (is applied to the
+different types of table used in this class).
+
+Returns a vector of the same length as the table width.
+
+In practice, this is computed as the difference between vectors
+col_max and col_min.
+
+=cut
+sub col_range {
+    my ($nrow, $ncol, @table) = @_;
+
+    &RSAT::message::Info("Calculating range per column",$nrow, $ncol)
+	if ($main::verbose >= 5);
+    my @col_min = &col_min(@_);
+    my @col_max = &col_max(@_);
+    my @col_range = ();
+    for my $c (0..($ncol-1)) {
+	push @col_range, $col_max[$c] - $col_min[$c];
+    }
+    return(@col_range);
+}
+
 
 =pod
 
@@ -3940,7 +3973,7 @@ sub makeLogo{
   my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
-  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{seqlogo_dir});
+  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{RSAT_BIN});
   foreach my $logo_format (@logo_formats){
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {

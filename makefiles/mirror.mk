@@ -187,7 +187,7 @@ clean_tmp:
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Measuring disk usage after cleaning"
 	@echo "After cleaning	" `du -sh public_html/tmp`
-	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' ${RSAT_ADMIN_EMAIL}
+	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' ${RSAT_SERVER_ADMIN}
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Free disk after cleaning" 

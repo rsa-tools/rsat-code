@@ -7,13 +7,23 @@ package main;
 ########################## FTP ENSEMBL FONCTION ############################
 #  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
 
+################################################################
 ## Define global variables
-our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
+## 
+## Note: this is not very clean. I (JvH) should pass these variables
+## in the appropriate methods and check that everything still works
+## fine.
+our $ensembl_version_safe = $ENV{ensembl_version_safe} || 75;
+our $ensembl_genomes_version_safe = $ENV{ensembl_genomes_version_safe} || 22;
 
+################################################################
 ## Functions
+################################################################
 
-# get $ensembl_version_safe
-sub Get_ensembl_version_safe {
+################################################################
+## Return the safe version of ensembl or ensembl_genomes
+## (this version should be defined in RSAT_config.props).
+sub get_ensembl_version_safe {
   my ($db) = @_;
 
   if ($db eq "ensembl") {
@@ -21,29 +31,132 @@ sub Get_ensembl_version_safe {
   }
 
   elsif ($db eq "ensembl_genomes") {
-   return 18;
+    return $ensembl_genomes_version_safe;
   }
 }
 
-# get $ensembl_ftp
+################################################################
+## Return the ensembl version to be used.
+sub get_ensembl_version {
+
+  ## TEMPORARY: for the time being, the version is only used by
+  ##  reference to ensembl, not ensemblgenomes, even if the queried db is
+  ##  ensembl_genomes. I (JvH) should cliarify this.  
+  my $db = "ensembl";
+  # my ($db) = @_;
+
+  my $ensembl_version = $ENV{ensembl_version} || 76;
+  my $ensembl_genomes_version = $ENV{ensembl_genomes_version} || 23;  
+  ## By preference, return the version defined in the property file
+  ## (RSAT_config.props) for this database)
+  $prop_name = $db."_version";
+  if (defined($ENV{$prop_name})) {
+    return ($ENV{$prop_name});
+  } else {
+    return &get_ensembl_version_latest($db);
+  }
+}
+
+
+################################################################
+## Get the latest ensembl version for a species from Ensembl ftp site.
+##
+## THIS IS REALLY TRICKY, I (JvH) should see with Ensembl if their API
+## includes a way to get the current release.
+sub get_ensembl_version_latest {
+  my ($db) = @_;
+  my $latest_ensembl_release = 0;
+  my $ftp = &Get_ftp($db);
+
+  &RSAT::message::TimeWarn("Getting ensembl version from FTP site", $ftp) 
+      if ($main::verbose >= 2);
+
+  my @available_releases = qx{wget -S --spider $ftp 2>&1};
+
+#  &RSAT::message::Debug("Available releases", join ("\n\t", @available_releases)) if ($main::verbose >= 10);
+
+  foreach my $release (@available_releases) {
+    next if ($release =~ /current/);
+    next unless ($release =~ /^[dl].*[^\.]release/);
+    chomp($release);
+    my @token = split("release-",$release);
+    $latest_ensembl_release = $token[-1] if ($latest_ensembl_release < $token[-1]);
+  }
+
+  &RSAT::message::Info("Latest ensembl release", $latest_ensembl_release) if ($main::verbose >= 0);
+
+  return ($latest_ensembl_release);
+}
+
+################################################################
+## Check that the user-selected version is correct.  This version can
+## neither be lower than the safe version, nor higher than the latest
+## version.
+sub check_ensembl_version {
+  my ($db, $ensembl_version) = @_;
+
+  ## TEMPORARY: for the time being, the version is only used by
+  ##  reference to ensembl, not ensemblgenomes, even if the queried db is
+  ##  ensembl_genomes. I (JvH) should cliarify this.  
+  $db = "ensembl";
+
+  my $safe_ensembl_version = &get_ensembl_version_safe($db);
+  my $latest_ensembl_version = &get_ensembl_version_latest($db);
+
+  ## Report checking parameters
+  if ($main::verbose >= 0) {
+    &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version);
+    &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version);
+    &RSAT::message::Info("Selected ensembl version", $ensembl_version);
+  }
+
+  if ($ensembl_version eq "safe") {
+    ## Automatic selection of the safe version
+    $ensembl_version = $safe_ensembl_version;
+    
+  } elsif ($ensembl_version eq "latest") {
+    ## Automatic selection of the latest version
+    $ensembl_version = $latest_ensembl_version;
+    
+  } else {
+
+    ## Check that selected version is not smaller than safest one (defined in RSAT_config.props)
+    &RSAT::error::FatalError($ensembl_version, 
+			     "Invalid  version for", $db, 
+			     "Minimun safe version: ".$safe_ensembl_version) 
+	if ($ensembl_version < $safe_ensembl_version);
+
+    ## Check that selected version is not higher than the latest supported version
+    &RSAT::error::FatalError($ensembl_version, 
+			     "Invalid  version for", $db, 
+			     "Latest version: ".$latest_ensembl_version) 
+	if ($ensembl_version > $latest_ensembl_version);
+  }
+
+  return(1);
+}
+
+################################################################
+## Get the Ensembl FTP site, according to the selected DB
 sub Get_ftp {
   my ($db) = @_;
-
   if ($db eq "ensembl") {
     return "ftp://ftp.ensembl.org/pub/";
-  }
-
-  elsif ($db eq "ensembl_genomes") {
+  } elsif ($db eq "ensembl_genomes") {
     return "ftp://ftp.ensemblgenomes.org/pub/";
+  } else {
+    &RSAT::error::FatalError($db, "Is not a valid name for Ensembl databases. Supported: ensembl, ensembl_genomes.");
   }
 }
 
-## Get ftp fasta url
+################################################################
+## Get the URL of the ftp site to download the genome fasta files.
+## This is really tricky, but it is the simplest way we found to
+## download genome sequences.
 sub Get_fasta_ftp {
   my ($db,$ensembl_version) = @_;
-
+  
   if ($db eq "ensembl") {                                                    ## Ensembl
-
     if ($ensembl_version < 47) {                                             # Version  1 to 46
       return ();
     } else {                                                                 # Version 47 to ??
@@ -53,7 +166,6 @@ sub Get_fasta_ftp {
 
   elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
     my @sites = ("fungi","bacteria","metazoa","plants","protists");
-
     if ($ensembl_version < 3) {                                              # Version  1 to 3
       return ();
     } else {                                                                 # Version 3 to ??
@@ -211,30 +323,6 @@ sub Get_gvf_ftp {
 }
 
 
-## Get the latest ensembl version for a species
-sub Get_ensembl_version {
-  my ($db) = @_;
-
-  my $ftp = &Get_ftp($db);
-
-  my $current_release = 0;
-
-  &RSAT::message::TimeWarn("Getting ensembl version", $ftp) if ($main::verbose >= 2);
-  my @available_release = qx{wget -S --spider $ftp 2>&1};
-
-
-  foreach (@available_release) {
-    next if (/current/);
-    next unless (/^[dl].*[^\.]release/);
-    chomp();
-    my @token = split("release-",$_);
-    $current_release = $token[-1] if ($current_release < $token[-1]);
-  }
-
-  return $current_release;
-}
-
-
 ################################################################
 ## Get an the main taxon (bacteria, fungi, metazoa, ...) for each
 ## species supported in an ansembl database. The result is returned as
@@ -269,6 +357,8 @@ sub Get_species_taxon {
 sub Get_host_port {
   my ($db) = @_;
 
+  &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 2);
+
   if ($db eq "ensembl") {
     return ('ensembldb.ensembl.org','5306');
   } elsif ($db eq "ensembl_genomes") {
@@ -281,10 +371,19 @@ sub Get_host_port {
 #### Specification of local directories for installing Ensembl on RSAT #####
 ############################################################################ 
 
+## Compute the directory name for a given species, assembly version
 sub Get_species_dir_name {
   my ($species,$assembly_version,$ensemb_version) = @_;
-  $species = ucfirst($species);
-  return $species."_ensembl_".$ensembl_version."_".$assembly_version;
+  my $dir_name = ucfirst($species);
+  $dir_name .= "_".$main::db;
+  if ($main::db eq "ensembl_genomes") {
+    $dir_name .= "-".$ensembl_version;
+  } else {
+    $dir_name .= "-".$ensembl_version;
+  }
+  $dir_name .= "_".$assembly_version;
+#  return $species."_".$main::db."-".$ensembl_version."_".$assembly_version;
+  return($dir_name);
 }
 
 sub Get_assembly_version {
@@ -315,6 +414,7 @@ sub Get_genomes_dir {
   my ($data_dir) = @_;
   return $data_dir."/genomes/";
 }
+
 
 sub Get_species_dir {
   my ($data_dir,$species,$assembly_version,$ensembl_version) = @_;
