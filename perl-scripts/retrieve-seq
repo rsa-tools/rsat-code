@@ -72,7 +72,7 @@ $organism = new RSAT::organism();
 
 #### Check organism name
 if ($organism_name) {
-    $organism->check_name($organism_name);
+  $organism->check_name($organism_name);
 } elsif ($input_sequence_file) {
     $organism_name = "input sequence";
 } else {
