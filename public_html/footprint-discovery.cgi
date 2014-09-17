@@ -178,7 +178,12 @@ $index_file .= (&MainIndexFileName())[0];
 #$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
 my $log_file = $result_subdir."/server_log.txt";
-&EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
+my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
+if ($query->param('output') =~ /display/i) {
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $log_file, index=>$index_file, title=>"$mail_title",no_email=>1);
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
+}
 
 print $query->end_html();
 

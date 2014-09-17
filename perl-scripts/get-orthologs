@@ -291,7 +291,7 @@ package main;
   &RSAT::error::FatalError("Options -taxon and -org_list option are mutually exclusive")
       if (($main::ref_taxon) && ($main::orglist_file));
 
-  ## Open orglist
+  ## Get all organisms for a taxon
   if ($main::ref_taxon) {
     &RSAT::message::TimeWarn("Selecting reference organisms in taxon", $ref_taxon) if ($main::verbose >= 2);
     @main::ref_organisms = &GetOrganismsForTaxon($ref_taxon);
@@ -300,6 +300,8 @@ package main;
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
 	  ) if ($main::ref_taxon);
     }
+
+    ## Get organisms from a file
   } elsif ($main::orglist_file) {
     ($main::orglist) = &OpenInputFile($main::orglist_file);
     &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose > 1);
@@ -318,7 +320,7 @@ package main;
     }
     close $main::orglist;
     &RSAT::error::FatalError("The organism file", $main::orglist_file, "should contain at least one valid organism name.",
-			     "Use the command supported-organisms -format full to obtain the supported taxonomy.")
+			     "Use the command supported-organisms to obtain the listv of supported organisms.")
 	if (scalar(@main::ref_organisms) == 0) ;
   } else {
     &RSAT::error::FatalError("You must either specify a reference taxon (option -taxon) or a list of reference organisms (option -org_list)");

@@ -15,7 +15,7 @@ RM=rm -f
 LATEX=latex
 
 TEX_FILES = \
-	install_guide.tex \
+	RSAT_install_guide.tex \
 	tutorial_shell_rsat.tex \
 	rsat_web_server.tex \
 	neat_tutorial.tex \
@@ -57,9 +57,9 @@ rsat_tutorial:
 	@echo tutorial_shell_rsat.pdf
 
 install_guide:
-	@${MAKE} install_guide.pdf
+	@${MAKE} RSAT_install_guide.pdf
 #	@${MAKE} tex_clean
-	@echo install_guide.pdf
+	@echo RSAT_install_guide.pdf
 
 rsat_web_server:
 	@${MAKE} rsat_web_server.pdf

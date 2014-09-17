@@ -18,7 +18,8 @@
     <div id="content" class="rsat">
 
       <h2>
-	<a href="RSAT_home.cgi" target="tools"><img src="images/RSAT_icon.jpg" alt='RSAT server' height='50'  border='0'> 
+	<a href="RSAT_home.cgi" target="tools">
+	  <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0"> 
 	  <!--<a href="RSAT_home.cgi" target="tools"><img src="images/RSAT_logo.png" width='65'> -->
 	  <span class='brown_text'>R</span>egulatory <br/>
 	  <span class='brown_text'>S</span>equence <br/>
@@ -26,8 +27,14 @@
 	  <span class='brown_text'>T</span>ools </a>
       </h2>
 
-	  <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;"><a href="http://www.eccb14.org/program/tutorials/cis-r" target="_blank">RSAT tutorial<br>at ECCB'14</a></h2></p>
-      <p align='right'><b>New programs&nbsp;</b><img src="images/onebit_49.png"  class="new"/></p>
+<!--      <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;"><a href="http://www.eccb14.org/program/tutorials/cis-r" target="_blank">RSAT tutorial<br>at ECCB'14</a></h2></p>-->
+
+      <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;">
+	  <a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" target="tools">RSAT tutorial<br>at ECCB'14</a>
+      </h2></p>
+
+
+      <p align='right'><b>New items</b><img src="images/onebit_49.png"  class="new"/></p>
 
       <div class="menu">
 	<div class="menu_heading_open"
@@ -35,7 +42,8 @@
 	<div id="menu100">
 	  <a class="menu_item" href="retrieve-seq_form.cgi"
 	     target="tools">retrieve sequence</a>
-	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq</a>
+	  <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq</a>
+<!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq</a>-->
 	  <a class="menu_item" href="oligo-analysis_form.cgi" target="tools">oligo-analysis (words)</a>
 	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick)</a>
 	</div>
@@ -59,7 +67,8 @@
 	     onclick="toggleMenu('2')" id="heading2">Sequence tools</div>
 	<div id="menu2" class="menu_collapsible">
 	  <a class="menu_item" href="retrieve-seq_form.cgi" target="tools">retrieve sequence</a>
-	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq. </a>
+	  <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq. </a>
+<!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq. </a>-->
 	  <a class="menu_item" href="purge-sequence_form.cgi" target="tools">purge sequence</a>
 	  <a class="menu_item" href="convert-seq_form.cgi" target="tools">convert sequence</a>
 	  <a class="menu_item" href="random-seq_form.cgi" target="tools">random sequences</a>
@@ -67,26 +76,26 @@
 
       
       	<div class="menu_heading_closed"
-	     onclick="toggleMenu('12')" id="heading12">Matrix tools <img src="images/onebit_49.png"  class="new"/></div>
+	     onclick="toggleMenu('12')" id="heading12">Matrix tools</div>
 	<div id="menu12" class="menu_collapsible">
 	  <a class="menu_item" href="convert-matrix_form.cgi" target="tools">convert matrix</a>
-	  <a class="menu_item" href="compare-matrices_form.cgi" target="tools">compare matrices <img src="images/onebit_49.png"  class="new"/></a>
+	  <a class="menu_item" href="compare-matrices_form.cgi" target="tools">compare matrices</a>
 	  <a class="menu_item" href="matrix-distrib_form.cgi" target="tools">matrix distrib</a>
-	  <a class="menu_item" href="matrix-quality_form.cgi" target="tools">matrix quality <img src="images/onebit_49.png"  class="new"/></a>
+	  <a class="menu_item" href="matrix-quality_form.cgi" target="tools">matrix quality</a>
 	</div>
 	
 
 	<div class="menu_heading_closed"
-	     onclick="toggleMenu('11')" id="heading11">Build control sets <img src="images/onebit_49.png"  class="new"/></div>
+	     onclick="toggleMenu('11')" id="heading11">Build control sets</div>
 	<div id="menu11" class="menu_collapsible">
 	  <a class="menu_item" href="random-genes_form.cgi" target="tools">random gene selection</a>
 	  <a class="menu_item" href="random-seq_form.cgi" target="tools">random sequence</a>
-	  <a class="menu_item" href="random-genome-fragments_form.cgi" target="tools">random genome fragments <img src="images/onebit_49.png" class="new"/></a>
-<!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/random-genome-fragments_form.cgi" target="tools">random genome fragments <img src="images/onebit_49.png" class="new"/></a>-->
-	  <a class="menu_item" href="random-motif_form.cgi" target="tools">random-motif <img src="images/onebit_49.png" class="new"/></a>
-	  <a class="menu_item" href="permute-matrix_form.cgi" target="tools">permute-matrix <img src="images/onebit_49.png" class="new"/></a>
-	  <a class="menu_item" href="random-sites_form.cgi" target="tools">random-sites <img src="images/onebit_49.png" class="new"/></a>
-	  <a class="menu_item" href="implant-sites_form.cgi" target="tools">implant-sites <img src="images/onebit_49.png" class="new"/></a>
+	  <a class="menu_item" href="random-genome-fragments_form.cgi" target="tools">random genome fragments</a>
+<!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/random-genome-fragments_form.cgi" target="tools">random genome fragments</a>-->
+	  <a class="menu_item" href="random-motif_form.cgi" target="tools">random-motif</a>
+	  <a class="menu_item" href="permute-matrix_form.cgi" target="tools">permute-matrix</a>
+	  <a class="menu_item" href="random-sites_form.cgi" target="tools">random-sites</a>
+	  <a class="menu_item" href="implant-sites_form.cgi" target="tools">implant-sites</a>
 	</div>
       </div>
 
@@ -110,11 +119,11 @@
 
 
 	<div class="menu_heading_closed"
-	     onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png"  class="new"/></div>
+	     onclick="toggleMenu('4')" id="heading4">Pattern matching</div>
 	<div id="menu4" class="menu_collapsible">
 	  <a class="menu_separator">matrices</a>
 	  <a class="menu_item" href="matrix-scan_form.cgi" target="tools">matrix-scan (full options)</a>
-	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick) <img src="images/onebit_49.png" class="new"/></a>
+	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick)</a>
 <!--	  <a class="menu_item" href="patser_form.cgi" target="tools">patser [discontinued]</a>-->
 <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" target="tools">genome-scale patser [discontinued]</a>-->
 	  <a class="menu_separator">strings</a>
@@ -133,12 +142,13 @@
  
 
 	<div class="menu_heading_closed"
-	     onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq <img src="images/onebit_49.png" height="30" class="new"></img></div>
+	     onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq</div>
 	<div id="menu13" class="menu_collapsible">
 	  <!--<a class="menu_item" href="http://rsat.ulb.ac.be/rsat/peak-motifs_form.cgi" target="tools">peak-motifs (ChIP-seq analysis)</a>-->
 	  <a class="menu_item" href="peak-motifs_form.cgi" target="tools">peak-motifs (ChIP-seq analysis)</a>
 	  <a class="menu_item" href="fetch-sequences_form.php" target="tools">fetch-sequences from UCSC</a>
-	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/random-genome-fragments_form.cgi" target="tools">random genome fragments <img src="images/onebit_49.png" class="new"/></a>
+	  <a class="menu_item" href="random-genome-fragments_form.cgi" target="tools">random genome fragments</a>
+<!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/random-genome-fragments_form.cgi" target="tools">random genome fragments</a>-->
 	</div>
       </div>
 	
@@ -156,9 +166,9 @@
 	  <a class="menu_separator">matrices</a>
 	  <a class="menu_item_last" href="convert-matrix_form.cgi" target="tools">convert matrix</a>
 	  <a class="menu_separator">background models</a>
+	  <a class="menu_item_last" href="create-background-model_form.cgi" target="tools">create background</a>
 	  <a class="menu_item" href="convert-background-model_form.cgi" target="tools">convert background</a>
 	  <a class="menu_item" href="seq-proba_form.cgi" target="tools">sequence probability</a>
-	  <a class="menu_item_last" href="create-background-model_form.cgi" target="tools">create background <img src="images/onebit_49.png" class="new"/></a>
 	  <a class="menu_separator">features</a>
 	  <a class="menu_item" href="convert-features_form.cgi" target="tools">convert features</a>
 	  <a class="menu_item_last" href="compare-features_form.cgi" target="tools">compare features</a>
@@ -203,6 +213,7 @@ onclick="toggleMenu('7')" id="heading7">Other tools</div>
 	  <a class="menu_item" href="tool_map.html" target="tools">Map of the tools</a>
 	  <a class="menu_item" href="intro.html" target="tools">Introduction</a>
 	  <a class="menu_item" href="tutorials/tutorials.html" target="tools">Tutorials</a>
+	  <a class="menu_item" href="tutorials/eccb_2014_tutorial/index.html" target="tools">ECCB'14 Tutorial <img src="images/onebit_49.png" height="30" class="new"></img></a>
 	  <a class="menu_item" href="course/index.html" target="_top">Course</a>
 	  <a class="menu_item_last" href="http://www.bigre.ulb.ac.be/forums/" target="tools"><font color=#FFCCCC>Contact & Forum</font></a>
 	</div>
