@@ -3759,10 +3759,20 @@ sub QuickScan {
       ## load the distrib file as option to matrix-scan-quick
       $quick_cmd .= " -distrib ".$tmp_distrib_file;
 
+    ## ========================================================================================================
+    ## DIRTY HACK BY CARL (04/09/2014)
+    ## -t options needs to be specified otherwise the output is empty (when pval calculation is on)
+    ## for some reason, ($uth_matrix->{$matrix_name}->{pval} is sometimes not defined, and the output is empty
+    ## solution : impose a hard thresold -t 0.1
+
+      ## commented out by Carl (04/09/2014)
       ## threshold
-      if (defined($uth_matrix->{$matrix_name}->{pval})) {
-	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
-      }
+       if (defined($uth_matrix->{$matrix_name}->{pval})) {
+       	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
+       }
+     #$quick_cmd .= " -t 0.1";
+    ## ========================================================================================================
+
     }
 
     #################################

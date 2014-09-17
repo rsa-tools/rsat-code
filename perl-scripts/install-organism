@@ -18,6 +18,7 @@ require "RSA.lib";
 require RSAT::util;
 use RSAT::Tree;
 use RSAT::TreeNode;
+use RSAT::organism;
 
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
@@ -256,18 +257,30 @@ package main;
       }
     }
 
+
+    ################################################################
+    ## If the organism was previously supported, ensure that the
+    ## serialized files are suppressed.
+    &RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 2);
+    $organism = new RSAT::organism();
+#    $organism->check_name($organism_short_name, 1);
+    $organism->set_attribute("name", $organism_short_name);
+    $organism->set_attribute("feature_types", '*');
+    $organism->delete_serial_files();
+    
+
     ################################################################
     ## Installation directories
     umask 0002;
     if ($install_dir) {
       $dir{install} = $install_dir;
-      &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 1);
+      &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 3);
     } elsif ($supported_organism{$organism_short_name}->{'data'}) {
       $dir{install} = $supported_organism{$organism_short_name}->{'data'};
-      &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
+      &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 3);
     } else {
       $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
-      &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
+      &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
     }
 
     &RSAT::util::CheckOutDir($dir{install});

@@ -138,9 +138,10 @@ print $query->popup_menu(-name=>'bg_model',
 print "</ul>";
 
 ################################################################
-### send results by email or display on the browser
+## Select output mode. Email is preferred since footprint discovery
+## may take a while.
 print "<hr>";
-&SelectOutput('email', email_only=>1);
+&SelectOutput('email');
 
 ################################################################
 ### action buttons
@@ -158,7 +159,7 @@ $demo_queries = "lexA\n";
 #$demo_queries .= "uvrB\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K12");
+print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
 print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";

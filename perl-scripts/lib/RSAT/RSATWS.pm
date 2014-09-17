@@ -17,7 +17,6 @@ unshift (@INC, "../../perl-scripts/lib/");
 
 require RSAT::util;
 require RSAT::server;
-## require RSAT::TaskManager;## JvH 2014-05-03: The TaskManager was actually not called from RSATWS.pm
 require RSAT::OrganismManager;
 
 &RSAT::server::InitRSAT();
@@ -1878,6 +1877,8 @@ sub convert_features {
     my $from = $args{"from"};
     my $to = $args{"to"};
 
+    my $coord = $args{"coord"};
+
     my $command = "$SCRIPTS/convert-features";
 
     if ($from) {
@@ -1890,6 +1891,12 @@ sub convert_features {
       $to =~ s/\'//g;
       $to =~ s/\"//g;
       $command .= " -to '".$to."'";
+    }
+
+    if ($coord) {
+      $coord =~ s/\'//g;
+      $coord =~ s/\"//g;
+      $command .= " -coord '".$coord."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
@@ -5931,16 +5938,6 @@ Generate the MCL command.
 sub mcl_cmd {
   my ($self, %args) =@_;
 
-  ## In principle, the mcl directory must have been defined in the
-  ## file ${RSAT}/RSAT_config.props
-#  my $command = "mcl";
-#  if (defined($ENV{mcl_dir})) {
-#    $command = $ENV{mcl_dir}.'/mcl',
-#  } elsif (-e $ENV{RSAT}.'/bin/mcl') {
-#    $command = $ENV{RSAT}.'/bin/mcl'
-#  } elsif (-e '/usr/local/bin/mcl') {
-#    $command = '/usr/local/bin/mcl';
-#  }
   my $command = &RSAT::server::GetProgramPath("mcl");
 
   ## Check that the mcl command file exists
@@ -6231,6 +6228,10 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
+  ## Report start time in the log file (depends on the satus of
+  ## start_time property)
+  local $start_time = &RSAT::util::StartScript();
+
   ## Define temporary output file and open it for writing
   my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
   $tmp_outfile .= ".".$out_format if ($out_format);
@@ -6306,6 +6307,10 @@ sub run_WS_command {
   close HIS_ERR;
 
   $stderr = &error_handling($stderr, 1);
+
+  ## Report execution time in the log file (depends on the satus of
+  ## exec_time property)
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be done for all the commands sent to WS
 
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: &RSAT::util::hide_RSAT_path($command)");
