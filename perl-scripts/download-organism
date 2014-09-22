@@ -173,7 +173,7 @@ package main;
   $which_aspirator = &RSAT::server::GetProgramPath($get_command);
   &RSAT::message::Debug($which_aspirator) if ($main::verbose >= 4);
   unless ($which_aspirator) {
-    &RSAT::error::FatalError("The program ".$get_command." is not found in your path. This program is required for downloading data from the server. ");
+    &RSAT::error::FatalError("The program ".$get_command." is not found in your path. This program is required for ".$action." data from the server. ");
   }
 
   ################################################################
