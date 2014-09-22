@@ -1719,6 +1719,15 @@ sub Add_div_to_HTML(){
     my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);
 
+    my %clusters_info_sorted = ();
+    my %clusters_info_cp = %clusters_info;
+    my @sorted_keys = keys %clusters_info;
+    foreach my $k (@sorted_keys){
+	$k =~ s/cluster_//;
+	$clusters_info_sorted{$k} = delete $clusters_info_cp{"cluster_".$k};
+    }
+    
+
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
     open(TREE,$main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
 
@@ -1728,15 +1737,18 @@ sub Add_div_to_HTML(){
 	## Add one <div> for each cluster
 	if(/^\s*\/\/Divisions/){
 	    $line = "";
-	    foreach my $cluster (sort keys %clusters_info){
-		$line .= "<div id=\"".$cluster."\"><h2>".$cluster."</h2><\/div>\n";
+	    ##foreach my $cluster (sort keys %clusters_info_sorted){ 
+	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted){             
+		$line .= "<div id=\"cluster_".$cluster."\"><h2>cluster_".$cluster."</h2><\/div>\n";
 	    }
 	}
 
 	## 
 	if(/^\s*\/\/Body/){
 	    $line = "";
-	    foreach my $cluster (sort keys %clusters_info){
+	    #foreach my $cluster (sort keys %clusters_info sort keys { $a cmp $b } %clusters_info ){	
+	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted){      
+	    ##foreach my $cluster (sort keys %clusters_info_sorted ){
 		$line .= $temp."\n";
 	    }
 	}
