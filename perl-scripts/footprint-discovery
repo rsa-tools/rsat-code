@@ -456,7 +456,7 @@ package main;
   ## Check if background model file exists
   if ($infile{bg_model}) {
     &RSAT::message::TimeWarn("Checking background model file", $infile{bg_model}) if ($main::verbose >= 2);
-    unless (-e $infile{bg_model}) {
+    unless ((-e $infile{bg_model}) || (-e $infile{bg_model}.".gz")) {
       &RSAT::error::FatalError("Background model file does not exist", $infile{bg_model}) if ($main::verbose >= 2);
     }
   }
