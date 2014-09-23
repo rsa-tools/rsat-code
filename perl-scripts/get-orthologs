@@ -457,10 +457,11 @@ package main;
     }
   }
 
-  &RSAT::message::Info("Query keys", join("; ", keys(%is_query))) if ($main::verbose >=4);
+  &RSAT::message::Info("Query keys", join("; ", keys(%is_query))) if ($main::verbose >=2);
 
   ## ##############################################################
   ## Prepare a REGEXP filter for fast selection with grep
+  &RSAT::message::TimeWarn("Preparing REGEXP filter") if ($main::verbose >= 2);
   if (scalar(keys(%is_query)) > $max_filter_queries) {
     $main::grep_filtering = 0;
   }
@@ -485,7 +486,7 @@ package main;
   my $r = 0;
   foreach my $ref_organism (@main::ref_organisms) {
     $r++;
-    &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Reference organism", $r."/".scalar(@main::ref_organisms), $ref_organism) if ($main::verbose >= 2);
 
     ## Load the ref organism only if required for the reference gene names
     my $ref_org_object = new RSAT::organism();
@@ -1079,7 +1080,9 @@ to the reference taxon.
 
 =item B<-type homology_type>
 
-Supported homology types: BBH,BH,all
+Supported homology types: BBH,BH,all.
+
+Default: BBH
 
 =over
 
