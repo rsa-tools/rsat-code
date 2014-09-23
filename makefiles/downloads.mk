@@ -15,7 +15,7 @@ MAKE = make -sk -f ${MAKEFILE}
 
 DATE = `date +%Y%m%d_%H%M%S`
 LOGFILE=-o logs/wget_${DATE}_log.txt
-WGET=wget --passive-ftp -np -rNL ${LOGFILE}
+WGET=wget --passive-ftp --no-parent --recursive --timestamping --relative --dont-remove-listing --convert-links  ${LOGFILE}
 # #WGET = wget -rNL -o logs/wget_${DATE}_log.txt
 RSYNC = rsync -ruptvl -e ssh
 
