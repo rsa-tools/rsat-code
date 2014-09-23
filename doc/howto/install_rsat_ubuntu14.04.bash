@@ -137,7 +137,6 @@ PACKAGES="
 	python3-matplotlib
 	r-base-core
 	emacs
-        console-data
         x11-apps
         firefox
         eog
@@ -202,6 +201,10 @@ do \
    df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${INSTALL_ROOT_DIR}/install_logs"
+
+## This package has to be installed in an interactive mode (dialog
+## box)
+${INSTALLER} install ${INSTALLER_OPT} console-data
 
 ################################################################
 ## Specific treatment for some Python libraries
