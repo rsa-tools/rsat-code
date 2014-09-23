@@ -347,7 +347,7 @@ align.two.leaves <- function(child1, child2){
   ## metric used
   aligned.motif.flag <- 0
   aligned.motif.flag <- alignment.status(id1.test, id2.test, hclust.method)
-  
+
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
@@ -850,8 +850,7 @@ alignment.test.method.average <- function(ids1, ids2){
     scores <- compare.matrices.table[compa.numbers, names(thresholds)]
   } else if(metric == "distance"){
     scores <- compare.matrices.table[compa.numbers, names(thresholds)]
-  }
-  #scores <- sapply(scores, function(X){ if(X == 0){X <- NA}else {X <- X}})  
+  } 
   
   ## Calculate the median of the data
   median.scores <- apply(scores, 2, mean)
@@ -941,7 +940,7 @@ build.distance.matrix <- function(comparison.table){
   comparison.table$score.dist <- score.dist
   
   dist.table <- t(xtabs(score.dist ~ id1+id2, comparison.table) )
-  ## dist.table <- t(xtabs(score.dist ~ name1+name2, comparison.table) )
+  #dist.table2 <- t(xtabs(score.dist ~ name1+name2, comparison.table) )
   ## Ensure that symmetrical distances are defined
   for (i in 1:nrow(dist.table)) {
     for (j in i:ncol(dist.table)) {
@@ -1112,15 +1111,11 @@ JSON.clusters <- function(){
         
         ## Position down
         down.pos <- i
-        
-        ## Print the number of the clusters members
-        ## print(paste(" ### ", up.pos, "   ", down.pos, " ###"))
         temp <- NULL
         temp <- gsub("[^\\d+ \\|]", "" ,copy.Json.vector[up.pos:down.pos], perl = TRUE)
         numb <- NULL
         numb <- as.integer(unlist((strsplit(paste(temp, collapse = ""), "\\|"))))
         numb <- numb[which(numb != "NA")]
-                                        #print(paste(" ### ", paste(numb, collapse = " "), " ###"))
         col2 <- append(col2, paste(numb, collapse = " "))
         break
       }
@@ -1189,7 +1184,6 @@ fill.internal.nodes.attributes <- function(){
   for (merge.level in 1:nrow(tree$merge)) {
     ##for (merge.level in 1:5) { 
     merge.level <<- merge.level 
-
     
     child1 <- tree$merge[merge.level,1]
     child2 <- tree$merge[merge.level,2]
@@ -1282,6 +1276,7 @@ fill.internal.nodes.attributes <- function(){
 }
 
 
+
 ###########################################################
 ## The clusters are selected by traversing the tree with
 ## a bottom-up approach, rather than top-down as is used
@@ -1296,8 +1291,8 @@ define.clusters.bottom.up <- function(){
     ## When the merge level is between to single nodes
     ## (merging_type = 1) 
     if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["merging_type"]]) == 1){
-      cluster.number <- cluster.number + 1
-      
+      cluster.number <- cluster.number + 1      
+  
       if(as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]]) == 1){
         
         ## Get the numbers of the nodes
@@ -1310,6 +1305,8 @@ define.clusters.bottom.up <- function(){
       }else{
         clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[level]][["cluster_1"]])
         cluster.number <- cluster.number + 1
+ 
+        
         clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_2"]])
         internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
       }
@@ -1331,13 +1328,14 @@ define.clusters.bottom.up <- function(){
           cluster.name <- return.cluster.name(nodes.by.level(prev.cluster.nb), clusters)
           clusters[[cluster.name]] <<- append(clusters[[cluster.name]], as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_1"]]))
         }else{
-          cluster.number <- cluster.number + 1
+          cluster.number <- cluster.number + 1     
           clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_1"]])
           internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
         }
         
       }else{
-        cluster.number <- cluster.number + 1
+        
+        cluster.number <- cluster.number + 1        
         clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["cluster_1"]])
         internal.nodes.attributes[[paste("merge_level_", level, sep = "")]][["flag"]] <<- 0
       }
@@ -1371,7 +1369,7 @@ define.clusters.bottom.up <- function(){
       }
       next
     }
-  }  
+  } 
   names(clusters) <<- paste("cluster_", seq(1:length(clusters)), sep = "")
 }
 
