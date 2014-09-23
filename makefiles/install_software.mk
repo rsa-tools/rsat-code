@@ -89,11 +89,11 @@ install_vmatch:
 	${MAKE} _install_vmatch_${OS}
 	${MAKE} _vmatch_warning
 
-VMATCH_VERSION_MACOSX=vmatch-2.2.2-Darwin_i386-64bit
+VMATCH_VERSION_MACOSX=vmatch-2.2.3-Darwin_i386-64bit
 _install_vmatch_macosx:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
 
-VMATCH_VERSION_LINUX=vmatch-2.2.2-Linux_x86_64-64bit
+VMATCH_VERSION_LINUX=vmatch-2.2.3-Linux_x86_64-64bit
 _install_vmatch_linux:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
 

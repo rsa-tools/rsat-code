@@ -28,3 +28,5 @@ regulonDB	tf	REGULONDB/regulonDB_2014-04-11.tf	RegulonDB prokaryotes	2014-04
 Uniprobe_worm	tf	uniprobe/uniprobe_worm_Cell09.tf	Uniprobe worm from Groves (Cell09)	2009	http://thebrain.bwh.harvard.edu/uniprobe/downloads/Cell09/worm_pwm_all.zip
 footprintDB-plants	tf	footprintDB/footprintDB.plants.motif.tf	footprintDB-plants [only plant DNA motifs]	2014-04	http://floresta.eead.csic.es/footprintdb
 footprintDB	tf	footprintDB/footprintDB.motif.tf	footprintDB	2014-04	http://floresta.eead.csic.es/footprintdb
+cisBP_human		tf	cisBP/human_motifs_cisBP2013.tf	cisBP human	2013-12_v0.9	http://cisbp.ccbr.utoronto.ca/ 
+cisBP_mouse		tf	cisBP/mouse_motifs_cisBP2013.tf	cisBP mouse	2013-12_v0.9	http://cisbp.ccbr.utoronto.ca/

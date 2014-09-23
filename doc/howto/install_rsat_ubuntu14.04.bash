@@ -40,12 +40,16 @@ dpkg-reconfigure tzdata
 ## Create a separate directory for RSAT, which must be readable by all
 ## users (in particular by the apache user)
 mkdir -p ${INSTALL_ROOT_DIR}
-chmod 755 ${INSTALL_ROOT_DIR}
 cd ${INSTALL_ROOT_DIR}
 mkdir -p ${INSTALL_ROOT_DIR}/install_logs
+chmod 777 ${INSTALL_ROOT_DIR}/install_logs
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+
+## We can then check the increase of disk usage during the different
+## steps of the installation
+grep sda1 ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
@@ -219,26 +223,20 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.t
 ## Check the evolution of disk usage during package installation
 grep sda1 install_logs/df_*
 
-
 ## DONE: installation of Ubuntu packages
 ################################################################
-
 
 
 ################################################################
 ## Activate the Apache Web server
 ##
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!! SOME MANUAL INTERVENTION IS REQUIRED HERE  !!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
-
-## And write the following line:
-##        DocumentRoot /bio/rsat/public_html
-## The server will now immediately display RSAT home page when you
-## type its IP address.
 
 
 ## To avoid puzzling warning at apache start, set ServerName globally.
@@ -257,6 +255,12 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 ##   AddType text/plain .fasta
 ##   AddType text/plain .bed
 
+## Adapt the PHP parameters
+emacs -nw /etc/php5/apache2/php.ini
+## Modify the following parameters
+##      upload_max_size=100M
+##      post_max_size = 100M
+
 
 ## The following lines are required to activate cgi scripts.  Found at
 ## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
@@ -264,14 +268,6 @@ chmod 755 /usr/lib/cgi-bin
 chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
 
-## Adapt the PHP parameters
-emacs -nw /etc/php5/apache2/php.ini
-## Modify the following parameters
-##      upload_max_size=100M
-##      post_max_size = 100M
-
-## Restart the apache server to take the new config into account
-service apache2 restart
 
 ## DONE: apache server configured and started
 ## You can check it by opening a Web connection to 
@@ -378,9 +374,6 @@ visudo
 ## then add the following line below "User privilege specification"
 # rsat    ALL=(ALL:ALL) ALL
 
-## RSAT installation is done under the rsat login
-su - rsat
-
 ################################################################
 ## Download RSAT distribution
 
@@ -388,6 +381,9 @@ su - rsat
 ## server, which is currently only possible for RSAT developing team.
 ## In the near future, I envisage to use git also for the end-user
 ## distribution.
+
+## RSAT installation is done under the rsat login
+su - rsat
 cd ${HOME}
 git clone git@depot.biologie.ens.fr:rsat
 
@@ -397,8 +393,8 @@ export INSTALL_ROOT_DIR=/bio
 export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 
 ## Move the rsat distribution to the RSAT_HOME directory
-sudo mv rsat ${RSAT_HOME}
-ln -fs ${RSAT_HOME} rsat
+sudo mv ${HOME}/rsat ${RSAT_HOME}
+ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## For users who don't have an account on the RSAT git server, the
 ## code can be downloaded as a tar archive from the Web site.
@@ -448,8 +444,12 @@ exit
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 #rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
-ln -fs ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
-source ${RSAT}/RSAT_config.bashrc
+ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
+source ${RSAT_HOME}/RSAT_config.bashrc
+
+## Check that the root has well loaded the RSAT configuration
+echo $RSAT
+
 
 ################################################################
 ## Installation of Perl modules required for RSAT
@@ -571,6 +571,10 @@ emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Comment the line with the default document root (should appear as
 ## such in the original config):
 ##        DocumentRoot /var/www/html                                                                            
+## And write the following line:
+##        DocumentRoot /bio/rsat/public_html
+## The server will now immediately display RSAT home page when you
+## type its IP address.
 
 apache2ctl restart
 
@@ -580,7 +584,7 @@ echo $RSAT_WWW
 
 ## If the value is "auto", get the URL as follows
 # export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
-# export IP=192.168.56.114
+# export IP=192.168.56.101
 # echo ${IP}
 # export RSAT_WWW=http://${IP}/rsat/
 # echo $RSAT_WWW
@@ -589,9 +593,11 @@ echo $RSAT_WWW
 ## Next steps require to be done as rsat administrator user
 
 ## compile RSAT programs written in C
+su - rsat
+export INSTALL_ROOT_DIR=/bio/
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
+sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -600,9 +606,11 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
-## ONLY FOR THE IFB CLOUD: 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!      ONLY FOR THE IFB CLOUD    !!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ##
 ## replace the data directory by a link to
 ## a separate disk containing all RSAT data.
@@ -626,7 +634,7 @@ download-organism -v 1 -org Saccharomyces_cerevisiae \
 ## Get the list of organisms supported on your computer.
 supported-organisms
 
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
+sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 
