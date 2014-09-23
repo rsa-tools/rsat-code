@@ -16,7 +16,6 @@ MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
 #MIN_W=4
-## Verbosity
 V=2
 
 ## Define a set of demo files
@@ -49,12 +48,6 @@ compa:
 		-o ${COMPA_FILE}
 	@echo "	${COMPA_FILE}"
 
-_cluster_old:
-	cat cluster_motifs.R | \
-		R  --slave --no-save --no-restore --no-environ \
-		--args "infile='${COMPA_FILE}';outfile='results/peak-motifs_7nt_merged_oligos_positions_compa.json';score='Ncor'" \
-		> cluster_log.txt
-
 compa_peak_motifs:
 	${MAKE} compa DEMO_PREFIX=${PEAKMO_PREFIX}
 
@@ -62,7 +55,7 @@ compa_footprint_discovery:
 	${MAKE} compa DEMO_PREFIX=${FOOTPRINT_DISCO_PREFIX}
 
 ################################################################
-## Run matrix-clusteringon one demo set (the particular cases will be
+## Run matrix-clustering on one demo set (the particular cases will be
 ## specified below)
 CLUSTER_PREFIX=${DEMO_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_DIR=results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
@@ -75,13 +68,11 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
-#CLUSTER_TIME_FILE=${CLUSTER_FILE_PREFIX}_time_log.txt
+
 cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
-#	@echo "	verbosity and time storeed in file	${CLUSTER_TIME_FILE}"
 	${CLUSTER_CMD}
-#	(time ${CLUSTER_CMD}) >& ${CLUSTER_TIME_FILE}
 	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
@@ -126,13 +117,19 @@ cluster_rdb:
 	${MAKE} cluster DEMO_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4
 
 ################################################################
-## Clusterone jaspar group
+## Cluster one jaspar group
+JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
+JASPAR_GROUP=vertebrates
+JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
+JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
-	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES}
+	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.75 MIN_NCOR=0.4
 
-cluster_jaspar_vertebrates:
-	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=vertebrates
+# cluster_jaspar_vertebrates:
+# 	@echo
+# 	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=vertebrates
 
-cluster_jaspar_insects:
-	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=insects
+# cluster_jaspar_insects:
+# 	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=insects 
