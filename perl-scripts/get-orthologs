@@ -264,7 +264,7 @@ package main;
   } elsif (lc($main::homology_type) eq "all") {
     &RSAT::message::Info("Homology criterion: all") if ($main::verbose >= 2);
   } else {
-    &RSAT::error::FatalError($homology_type, "Invalid homology type");
+    &RSAT::error::FatalError($main::homology_type, "Invalid homology type");
   }
 
   ################################################################
@@ -514,10 +514,13 @@ package main;
     my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
 
     ################################################################
-    # Let us define Reciprocal Best hits (RBH) as a relationship inferred
-    # from a single blast file, in contrast with Bidirectionnal Bests Hits
-    # (BBH), which is inferred from blast files in both direction (genome
-    # A against genome B, and B against A).
+    ## OBSOLETE comment
+    ##
+    ## Let us define Reciprocal Best hits (RBH) as a relationship
+    ## inferred from a single blast file, in contrast with
+    ## Bidirectionnal Bests Hits (BBH), which is inferred from blast
+    ## files in both direction (genome A against genome B, and B
+    ## against A).
     ################################################################
 
     ## my (%rbh) = &GetReciprocalBestHits(\%hits);
@@ -533,32 +536,31 @@ package main;
       if ($hits->{$query_gene}) {
 	foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
 	  &RSAT::message::Info("ref gene", $ref_gene) if ($main::verbose >= 4);
-	  if ($rev_hits->{$ref_gene}->{$query_gene}) {
-	    my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
-	    my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
-	    my $hit_info = join("\t",
-				$fwd_hit->{ref_id},
-				$ref_organism,
-				$fwd_hit->{query_id},
-				#				  $main::query_organism,
-			       );
+	  my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
 
-	    ## Additional output fields (specified with the option -return)
-	    if (scalar(@output_fields) > 0) {
-	      ## add fields for the fwd hit
-	      #			  $hit_info .= "\tFWD";
-	      foreach my $field (@output_fields) {
-		$hit_info .= "\t";
-		if ($field eq "query_name") {
-		  $hit_info .= $is_query{$query_gene};
-		} elsif ($field eq "ref_name") {
-		  $hit_info .= &getName($ref_gene,$ref_org_object); ## TEMP
+	  my $hit_info = join("\t",
+			      $fwd_hit->{ref_id},
+			      $ref_organism,
+			      $fwd_hit->{query_id},
+	      );
+	  ## Additional output fields (specified with the option -return)
+	  if (scalar(@output_fields) > 0) {
+	    ## add fields for the fwd hit
+	    #			  $hit_info .= "\tFWD";
+	    foreach my $field (@output_fields) {
+	      $hit_info .= "\t";
+	      if ($field eq "query_name") {
+		$hit_info .= $is_query{$query_gene};
+	      } elsif ($field eq "ref_name") {
+		$hit_info .= &getName($ref_gene,$ref_org_object); ## TEMP
 		} else {
 		  $hit_info .= $fwd_hit->{$field};
 		}
-		#		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
-	      }
+	      #		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
+	    }
 
+	    if ($rev_hits->{$ref_gene}->{$query_gene}) {
+	      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
 	      ## add fields for the rev hit
 	      #			  $hit_info .= "\tREV";
 	      #			  foreach my $field (@output_fields) {
@@ -567,8 +569,9 @@ package main;
 	      #		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
 	      #			  }
 	    }
-	    ################
-	    # put all hit info in a hash
+	    
+	    ################################################################
+	    ## Store hit info in a hash
 	    $bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
 
 	    &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 4);
@@ -606,12 +609,6 @@ package main;
 	$header .= "\t";
 	$header .= $field;
       }
-      #	## add fields for the rev hit
-      #	$header .= "\tREV";
-      #	foreach $field (@output_fields) {
-      #	    $header .= "\t";
-      #	    $header .= $field;
-      #	}
     }
     print $out "#", $header, "\n";
 
@@ -653,31 +650,6 @@ package main;
     print $out $nb_hits_info if ($return_format{stats});
   }
 
-  #     ## Return a  table with one row per quey gnee and one column per target organism
-  #     if ($return_format{table}) {
-  #       print $out "; Hit table", "\n" if ($main::verbose >= 1);
-
-  #       ## Header line
-  #       my $header =  join("\t", "query", @ordered_ref_organisms);
-  #       print $out "#", $header, "\n";
-  #       foreach my $query_gene (keys (%is_query)) {
-  # 	my $nb_hits=0;
-  # 	my @hits = ();
-  # 	foreach my $org (@ordered_ref_organisms) {
-  # 	  if ($bbh->{$query_gene}->{$org}) {
-  # 	    my @current_hits = ();
-  # 	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
-  # 	      push @current_hits, $bbh->{$query_gene}->{$org}->{$hit};
-  # 	    }
-  # 	    push @hits, join ";", @current_hits;
-  # 	  } else {
-  # 	    push @hits, $null;
-  # 	  }
-  # 	}
-  # 	print $out join ("\t", $query_gene, @hits), "\n";
-  #       }
-  #     }
-
 
   ## Report missing BLAST files (useful for RSAT Admin)
   if ($warn_missing_blast_files) {
@@ -696,7 +668,7 @@ package main;
     }
   }
   if (scalar(@genome_no_hits) > 0) {
-    print $out "; No hits found in the following genomes :\n";
+    print $out "; No hit found in the following genomes :\n";
     my $i = 0;
     foreach my $org (sort {$a cmp $b} @genome_no_hits) {
       $i++;
@@ -769,19 +741,22 @@ sub FilterOrganismsHavingBlast{
 	}
     }
 
-    ## Find BLAST file from reference to  query organism
-    my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
-    unless ((-e $rev_blast_file) || (-e $rev_blast_file.".gz")) {
+    ## Check the existence of the BLAST file from reference to query organism for
+    ## the bidirectional best hit (BBH)
+    if ($homology_type eq "BBH") {
+      $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
+      unless ((-e $rev_blast_file) || (-e $rev_blast_file.".gz")) {
 	$miss = 1;
 	push @main::missing_blast_files, $rev_blast_file;
 	if ($main::verbose >= 3) {
-	    unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-		    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-		&RSAT::message::Warning(join("\t", "Missing reciprocal BLAST file", $rev_blast_file));
-	    }
+	  unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+		  ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	    &RSAT::message::Warning(join("\t", "Missing reciprocal BLAST file", $rev_blast_file));
+	  }
 	}
+      }
     }
-    
+
     unless ($miss) {
       push @filtered_ref_org, $ref_organism;
       &RSAT::message::Debug("Checked BLAST files for reference organism", $ref_organism) if ($main::verbose >= 4);
@@ -831,7 +806,6 @@ sub select_hits{
   &RSAT::message::Debug($input_cmd) if ($main::verbose >= 4);
 
   open HIT_HANDLE, $input_cmd;
-  #    my ($hit_handle) = &OpenInputFile($blast_file);
   my $l =0;			# line counter
   my $hits = {};
   my $match_col_index = $blast_col_index{$query_matching_column};
@@ -865,17 +839,17 @@ sub select_hits{
     my $hit = {};
     my $discarded =0;
     foreach my $field (@{$blast_columns}) {
-
-	my $value = shift @fields;
-	if ((!defined($value)) || ($value eq "")) {
-	    &RSAT::message::Warning("Missing field", $field, "line", $l, "blast table", $blast_file);
-	    last;
-	}
-
-	# get hit
-	$hit->{$field} = $value;
-	
-      # check lower threshold
+      
+      my $value = shift @fields;
+      if ((!defined($value)) || ($value eq "")) {
+	&RSAT::message::Warning("Missing field", $field, "line", $l, "blast table", $blast_file);
+	last;
+      }
+      
+      ## get the value (score) for current field
+      $hit->{$field} = $value;
+      
+      ## check lower threshold
       if (defined($lth{$field})) {
 	if ($hit->{$field} < $lth{$field}) {
 	  &RSAT::message::Warning(join("\t","query",
@@ -890,7 +864,7 @@ sub select_hits{
       }
       last if ($discarded);
 
-      # check upper threshold
+      ## check upper threshold
       if (defined($uth{$field})) {
 	if ($hit->{$field} > $uth{$field}) {
 	  &RSAT::message::Warning(join("\t","query",
@@ -922,8 +896,7 @@ sub select_hits{
     }
   }
   close HIT_HANDLE;
-  #    close $hit_handle;
-  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found", $blast_file)) if ($main::verbose >= 3);
+  &RSAT::message::TimeWarn(scalar(keys %{$hits}), "hits found", $blast_file) if ($main::verbose >= 3);
   return($hits);
 }
 
