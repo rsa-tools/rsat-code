@@ -711,57 +711,57 @@ sub Analyse_scanning {
 }
 
 ################################################################
-## analyse score for each variant of a variation
+## Analyse score for each variant of a variation
 sub Analyse_variation {
-    my ($scanning_info,$scanning_score_pos,$scanning_score_var) = @_;
-    my %scanning_info = %{ $scanning_info };
-    my %scanning_score_pos = %{ $scanning_score_pos };
-    my %scanning_score_var = %{ $scanning_score_var };
+  my ($scanning_info,$scanning_score_pos,$scanning_score_var) = @_;
+  my %scanning_info = %{ $scanning_info };
+  my %scanning_score_pos = %{ $scanning_score_pos };
+  my %scanning_score_var = %{ $scanning_score_var };
 
-    # Compare all position
-    if (($no_offset && $scanning_info{'same_len'})) {
-	&RSAT::message::Debug("Comparing all offset positions") if ($main::verbose >= 10);
-	foreach my $offset (keys( %scanning_score_pos )) {
-	    &RSAT::message::Debug("Offset",$offset) if ($main::verbose >= 10);
- 	    foreach my $site_strand (keys (%{ $scanning_score_pos{$offset} })) {
-		my %scanning_score =  %{ $scanning_score_pos{$offset}{$site_strand} };
-		my @scores =  keys ( %scanning_score );
-		foreach $score ( @scores ) {
-		    push (@{$scanning_score{$score}{'site_offset_start'}}, $offset);
-		    push (@{$scanning_score{$score}{'site_strand'}}, $site_strand);
-		}
-
-		if  (scalar( @scores ) == 1 ) {
-		    push (@{$scanning_score{$scores[0]}{'site_offset_start'}}, $offset);
-		    push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);
-		}
-
-		&Compare(\%scanning_info,\%scanning_score) ;
-	    }
+  ## Compare all positions
+  if (($no_offset && $scanning_info{'same_len'})) {
+    &RSAT::message::Debug("Comparing all offset positions") if ($main::verbose >= 10);
+    foreach my $offset (keys( %scanning_score_pos )) {
+      &RSAT::message::Debug("Offset",$offset) if ($main::verbose >= 10);
+      foreach my $site_strand (keys (%{ $scanning_score_pos{$offset} })) {
+	my %scanning_score =  %{ $scanning_score_pos{$offset}{$site_strand} };
+	my @scores =  keys ( %scanning_score );
+	foreach $score ( @scores ) {
+	  push (@{$scanning_score{$score}{'site_offset_start'}}, $offset);
+	  push (@{$scanning_score{$score}{'site_strand'}}, $site_strand);
 	}
-
-    # Compare best score for each variant
-    } else {
-	&RSAT::message::Debug("Comparing best score for each variant") if ($main::verbose >= 10);
-	my %scanning_score  = ();
-	foreach my $variant ( keys (%scanning_score_var ) ) {
-	    $score = $scanning_score_var{$variant}{'score'};
-	    push (@{ $scanning_score{$score}{'variant_alt'} }, $variant);
-	    push (@{ $scanning_score{$score}{'site_offset_start'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
-	    push (@{ $scanning_score{$score}{'site_strand'} }, join(",",@{$scanning_score_var{$variant}{'site_strand'}}) );
-	    push (@{ $scanning_score{$score}{'seq'} }, join(",",@{$scanning_score_var{$variant}{'seq'}}) );
+	
+	if  (scalar( @scores ) == 1 ) {
+	  push (@{$scanning_score{$scores[0]}{'site_offset_start'}}, $offset);
+	  push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);
 	}
-	&Compare(\%scanning_info,\%scanning_score);
+	
+	&Compare(\%scanning_info,\%scanning_score) ;
+      }
     }
+    
+    ## Compare best score for each variant.
+  } else {
+    &RSAT::message::Debug("Comparing best score for each variant") if ($main::verbose >= 10);
+    my %scanning_score  = ();
+    foreach my $variant ( keys (%scanning_score_var ) ) {
+      $score = $scanning_score_var{$variant}{'score'};
+      push (@{ $scanning_score{$score}{'variant_alt'} }, $variant);
+      push (@{ $scanning_score{$score}{'site_offset_start'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
+      push (@{ $scanning_score{$score}{'site_strand'} }, join(",",@{$scanning_score_var{$variant}{'site_strand'}}) );
+      push (@{ $scanning_score{$score}{'seq'} }, join(",",@{$scanning_score_var{$variant}{'seq'}}) );
+    }
+    &Compare(\%scanning_info,\%scanning_score);
+  }
 }
 
 ################################################################
-## Compare best and worst score
+## Compare best and worst scores
 sub Compare {
     my ($scanning_info,$scanning_score) = @_;
 
-    my %scanning_info = %{ $scanning_info };
-    my %scanning_score = %{ $scanning_score };
+    my %scanning_info = %{$scanning_info };
+    my %scanning_score = %{$scanning_score };
 
     &RSAT::message::Debug("Comparing scores" ) if ($main::verbose >= 10);
 
@@ -1136,7 +1136,8 @@ Name of the file containing the list of matrix distrib file name
 
 =item B<-only_biggest>
 
-Only return the biggest difference of score between two alleles of a variation
+Only return the biggest difference of score between two alleles of a
+variation.
 
 =cut
     } elsif ($arg eq "-only_biggest") {
