@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-cluster-matrices
+matrix-clustering
 
 =head1 VERSION
 
@@ -683,6 +683,15 @@ Compute inter-cluster distances based on the closest nodes.
 	&RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
       }
 
+
+=pod
+
+=item B<-top1 X>
+
+Only analyze the first X motifs of the input file. This options is
+convenient for quick testing before starting the full analysis.
+
+=cut
 
 =pod
 
@@ -1369,7 +1378,6 @@ sub ConvertTabToHTML {
     my $cmd = $SCRIPTS."/text-to-html ";
     $cmd .= " -i ".$tab;
     $cmd .= " -o ".$html;
-#    die join "\t",  "HELLO", $key, $html_key, $html, $cmd, "\n";
     &doit($cmd, 0, $die_on_error, $verbose);
   }
 }
@@ -1567,8 +1575,6 @@ sub Merge_matrices(){
       my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_cat.tf";
       my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
 
-#      system("cat ".$files." >".$cat_file);
-#      system("merge-matrices -i ".$cat_file." -in_format tf -out_format tf -o ".$merged_mat_file);
       my $cmd = "cat ".$files." >".$cat_file;
       $cmd .= "; merge-matrices -i ".$cat_file;
       $cmd .= " -in_format tf -out_format tf";
@@ -1759,9 +1765,13 @@ sub Add_div_to_HTML(){
     close(TREE);
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
-#    system("mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html});
     $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);    
 }
 
+########################################
+## Delete the .tf files 
+sub Delete_tf_files(){
+
+}
 __END__
