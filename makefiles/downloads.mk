@@ -50,7 +50,7 @@ GENBANK_DIRS =					\
 	genbank/genomes				\
 	refseq 
 
-NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
+NCBI_DIR=bacteria
 NCBI_EXCLUDE=	\
 		--exclude '*_alt_*'							\
 		--exclude 'lproks*_*'							\
@@ -88,7 +88,8 @@ ncbi:
 		-avz rsync://${BIOMIRROR}/ncbigenomes/*	\
 		ftp.ncbi.nih.gov/genomes/
 
-NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes
+NCBI_GENOMES_FTP_OLD=ftp://ftp.ncbi.nih.gov/genomes
+NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes/refseq/
 #NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
 one_ncbi_dir_wget:
 	@mkdir -p logs
