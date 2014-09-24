@@ -14,7 +14,7 @@ package main;
 ## in the appropriate methods and check that everything still works
 ## fine.
 our $ensembl_version_safe = $ENV{ensembl_version_safe} || 75;
-our $ensembl_genomes_version_safe = $ENV{ensembl_genomes_version_safe} || 22;
+our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 22;
 
 ################################################################
 ## Functions
@@ -31,7 +31,7 @@ sub get_ensembl_version_safe {
   }
 
   elsif ($db eq "ensembl_genomes") {
-    return $ensembl_genomes_version_safe;
+    return $ensemblgenomes_version_safe;
   }
 }
 
@@ -46,7 +46,7 @@ sub get_ensembl_version {
   # my ($db) = @_;
 
   my $ensembl_version = $ENV{ensembl_version} || 76;
-  my $ensembl_genomes_version = $ENV{ensembl_genomes_version} || 23;  
+  my $ensemblgenomes_version = $ENV{ensemblgenomes_version} || 23;  
   ## By preference, return the version defined in the property file
   ## (RSAT_config.props) for this database)
   $prop_name = $db."_version";
@@ -104,7 +104,7 @@ sub check_ensembl_version {
   my $latest_ensembl_version = &get_ensembl_version_latest($db);
 
   ## Report checking parameters
-  if ($main::verbose >= 0) {
+  if ($main::verbose >= 2) {
     &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version);
     &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version);
     &RSAT::message::Info("Selected ensembl version", $ensembl_version);
