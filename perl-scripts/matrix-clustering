@@ -1768,10 +1768,4 @@ sub Add_div_to_HTML(){
     $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);    
 }
-
-########################################
-## Delete the .tf files 
-sub Delete_tf_files(){
-
-}
 __END__
