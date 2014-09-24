@@ -83,16 +83,16 @@ def help_message():
 def microscope_parser():
 
     ##### ---------- Parsing Arguments ---------- #####
-    parser = argparse.ArgumentParser(description="This program fetches species-related data from MicroScope DataBase, "
-                                                 "such as the list of supported species, and their annotations "
-                                                 "(genes, transcripts, proteins), metabolic networks.")
+    parser = argparse.ArgumentParser(description="This program fetches data from MicroScope database "
+                                     "(http://www.genoscope.cns.fr/agc/microscope/), "
+                                     "such as the list of supported organisms, and their annotations "
+                                     "(genes, transcripts, proteins, reactions), metabolic networks.")
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
     subparsers = parser.add_subparsers(dest='sp')
 
     #Sub parser 1 :
     parser_organisms = subparsers.add_parser("organisms",
-                                                    help="Use this command to obtain a file with informations"
-                                                         " about the whole species of MicroScope\n ",
+                                                    help="Get information about organisms supported at MicroScope\n ",
                                                     formatter_class=SmartFormatter)
     parser_organisms.required = False
     #Args of the subparser 1
@@ -115,8 +115,7 @@ def microscope_parser():
 
     #Sub parser 2 :
     parser_gpr = subparsers.add_parser("gpr",
-                                                     help="Use this command to obtain the gene informations related to one "
-                                                          "input species",
+                                                     help="Collect gene-EC-protein-reaction table for a selected species.",
                                                      formatter_class=SmartFormatter)
     parser_gpr.required = False
     #Args of the subparser 2
@@ -167,8 +166,7 @@ def microscope_parser():
 
     #Sub parser 3 :
     parser_reactionInfo = subparsers.add_parser("reactionInfo",
-                                                     help="Use this command to obtain the reaction information related to one "
-                                                          "input reaction",
+                                                     help="Get detailed information about a given reaction",
                                                      formatter_class=SmartFormatter)
     parser_reactionInfo.required = False
     #Args of the subparser 3
@@ -187,9 +185,9 @@ def microscope_parser():
                                          help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
 
     #Sub parser 4 :
-    parser_reactionList = subparsers.add_parser("reactionList",
-							  help="Use this command to obtain the reaction list related to one input species",
-                                                     formatter_class=SmartFormatter)
+    parser_reactionList = subparsers.add_parser("reactionList", 
+                                                help="Get reaction list for a given species",
+                                                formatter_class=SmartFormatter)
     parser_reactionList.required = False
     #Args of the subparser 4
     exclusiv_group = parser_reactionList.add_mutually_exclusive_group(required=True)
@@ -209,8 +207,8 @@ def microscope_parser():
                                 
     #Sub parser 5 :
     parser_reactions = subparsers.add_parser("reactions",
-							  help="Use this command to obtain the reaction list",
-                                                     formatter_class=SmartFormatter)
+                                             help="Get the list of reactions supported at Microscope (all species).",
+                                             formatter_class=SmartFormatter)
     parser_reactions.required = False
     #Args of the subparser 4
    # exclusiv_group = parser_reactions.add_mutually_exclusive_group(required=True)
