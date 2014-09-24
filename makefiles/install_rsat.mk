@@ -257,7 +257,7 @@ perl_module_test_doc:
 
 ################################################################
 ## Install modules required for python
-PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy
+PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy httplib2
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
