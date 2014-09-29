@@ -143,7 +143,7 @@ Function trim_text($text) {
 
 
 /**
- * Echo a command by suppress the full path to rsa-tools.
+ * Echo a command by suppress the full path to RSAT
  */
 Function store_command($command, $name, $cmd_handle) {
   $clean_command = preg_replace('/(\')*\S+rsa\-tools/', '\\1\$RSAT', $command);
