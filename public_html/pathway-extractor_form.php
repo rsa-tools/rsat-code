@@ -35,7 +35,7 @@
 
    <body class="form">
    <div>
-   <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSA-tools</a>
+   <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a>
    - Pathway Extractor</h3>
    <br />
    <form method='post' action='pathway-extractor_seeds.php'
