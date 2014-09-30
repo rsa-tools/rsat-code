@@ -285,6 +285,7 @@ a2enmod cgi ## this is apparently required to enable cgi
 ## added to the pip installation
 pip install soappy
 pip install fisher
+pip install httplib2
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 ## optional: an utility to measure internet bandwidth
@@ -442,13 +443,21 @@ make -f makefiles/init_rsat.mk init
 exit
 
 ################################################################
+## Previous way to specify bashrc parameters, via
+## /etc/bash_completion.d/. I change it (2014-09-23) because it does
+## not allow to run remote commands via ssh (/etc/bash_completion.d is
+## apparently only loaded in interactive mode).
+## 
 ## Link the RSAT bash configuration file to a directory where files
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 #rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
-ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
+## ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
 source ${RSAT_HOME}/RSAT_config.bashrc
+
+emacs -nw /etc/bash.bashrc
+
 
 ## Check that the root has well loaded the RSAT configuration
 echo $RSAT
