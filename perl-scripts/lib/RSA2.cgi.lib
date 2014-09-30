@@ -252,7 +252,7 @@ sub RSA_header {
 
 
   ### print the header of the result page
-  print $query->start_html(-title=>"RSA-tools : $title",
+  print $query->start_html(-title=>"RSAT : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -script=>[
@@ -266,7 +266,7 @@ sub RSA_header {
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
-  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</a> - $title</h3>";
+  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSAT</a> - $title</h3>";
 
   ################################################################
   ## Check if client IP is blacklisted on this server.
@@ -1604,9 +1604,9 @@ sub PrintHtmlResultHeader {
   ## Start HTML body
   $header .=  "<body>\n";
   if (defined($ENV{rsat_www})) {
-    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSAT</a> - ".$program." result</h1>\n";
   } else {
-    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSAT</a> - ".$program." result</h1>\n";
   }
   $header .=  "<h3 style='text-align:center;'>Analysis: ";
   $header .=  $title." (";
