@@ -715,7 +715,32 @@ sub send_mail {
 
 	Email::Sender::Simple->send($email, {transport => $transport});
     }
+}
 
+
+=pod
+
+=item MessageToAdmin
+
+Report an error by sending an email to RSAT administrator
+
+=cut
+sub MessageToAdmin {
+    my ($message) = @_;
+
+    ## Check if server admin has been specified
+    unless (defined( $ENV{SERVER_ADMIN})) {
+      &RSAT::message::Warning("Cannot send mail to server admin. Variable SERVER_ADMIN should be defined in RSAT_config.props");
+      return();
+    }
+
+    ## Define title based on script name
+    my $script_name = &RSAT::util::ShortFileName($0);
+    my $title = join(" - " , "RSAT", $script_name, $date);
+#    $mail_command = "mail -s \'".$title."\'";
+#    $mail_command = "mail -s \'RSAT - $script_name - $date\'";
+#    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
+    &send_mail($message, $ENV{SERVER_ADMIN}, $title);
 }
 
 
