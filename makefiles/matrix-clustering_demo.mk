@@ -5,7 +5,7 @@
 ## Date: Jan-April 2014
 
 
-#include ${RSAT}/makefiles/util.mk
+## include ${RSAT}/makefiles/util.mk
 ## We include compare-matrices_demo.mk to get the parameters (matrix files)
 include ${RSAT}/makefiles/compare-matrices_demo.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
@@ -45,7 +45,7 @@ compa:
 		-file ${MATRIX_FILE} -format tf \
 		-lth w 1 -lth cor -1 -lth Ncor -1 \
 		-return Ncor,strand,offset,width,consensus \
-		-o ${COMPA_FILE}
+		-o ${COMPA_FILE} 
 	@echo "	${COMPA_FILE}"
 
 compa_peak_motifs:
@@ -127,9 +127,13 @@ cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
 	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.75 MIN_NCOR=0.4
 
-# cluster_jaspar_vertebrates:
-# 	@echo
-# 	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=vertebrates
-
-# cluster_jaspar_insects:
-# 	${MAKE} cluster_jaspar_one_group JASPAR_GROUP=insects 
+#############################
+## Cluster one cisBP group
+CISBP_GROUPS=human mouse
+CISBP_GROUP=mouse
+CISBP_PREFIX=${CISBP_GROUP}_motifs_cisBP2013
+CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
+CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
+cluster_cisbp_one_group:
+	@echo "Clustering all matrices from cisBP ${CISBP_GROUP}"
+	${MAKE} cluster DEMO_PREFIX=${CISBP_PREFIX} MATRIX_FILE=${CISBP_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
