@@ -945,7 +945,8 @@ package main;
 	    $matrix->force_attribute("name", $consensus);
 	  }
 	} elsif ($id_as_name) {
-	  my $id = $matrix->get_attribute("identifier");
+	  my $id = $matrix->get_attribute("name");
+	  #die $id."BOOM"."\n";
 	  if ($id) {
 	    $matrix->force_attribute("name", $id);
 	  } else {
