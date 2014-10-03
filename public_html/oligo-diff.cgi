@@ -130,7 +130,7 @@ if ($query->param('noov')) {
 }
 
 ### Thresholds
-foreach my $field qw(occ occ_sig occ_Pval occ_Eval) {
+foreach my $field (qw(occ occ_sig occ_Pval occ_Eval)) {
   if (&IsReal($query->param('lth_'.$field))) {
     $parameters .= " -lth ".$field;
     $parameters .= " ".$query->param('lth_'.$field);

@@ -46,7 +46,7 @@ sites). This program supports a variety of background models
 
 =over
 
-=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+=item Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
 =item Jean Valery Turatsinze <jturatsi@bigre.ulb.ac.be>
 
@@ -945,7 +945,8 @@ package main;
 	    $matrix->force_attribute("name", $consensus);
 	  }
 	} elsif ($id_as_name) {
-	  my $id = $matrix->get_attribute("identifier");
+	  my $id = $matrix->get_attribute("name");
+	  #die $id."BOOM"."\n";
 	  if ($id) {
 	    $matrix->force_attribute("name", $id);
 	  } else {
@@ -3759,10 +3760,20 @@ sub QuickScan {
       ## load the distrib file as option to matrix-scan-quick
       $quick_cmd .= " -distrib ".$tmp_distrib_file;
 
+    ## ========================================================================================================
+    ## DIRTY HACK BY CARL (04/09/2014)
+    ## -t options needs to be specified otherwise the output is empty (when pval calculation is on)
+    ## for some reason, ($uth_matrix->{$matrix_name}->{pval} is sometimes not defined, and the output is empty
+    ## solution : impose a hard thresold -t 0.1
+
+      ## commented out by Carl (04/09/2014)
       ## threshold
-      if (defined($uth_matrix->{$matrix_name}->{pval})) {
-	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
-      }
+       if (defined($uth_matrix->{$matrix_name}->{pval})) {
+       	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
+       }
+     #$quick_cmd .= " -t 0.1";
+    ## ========================================================================================================
+
     }
 
     #################################

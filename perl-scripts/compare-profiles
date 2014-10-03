@@ -490,7 +490,7 @@ foreach my $field (keys %return_fields) {
     $calc_fields{$field} = 1;
 }
 
-foreach my $field qw (A B AB jac_sim jac_dis) {
+foreach my $field (qw (A B AB jac_sim jac_dis)) {
     if ((defined($lth{$field})) ||
 	(defined($uth{$field}))) {
 	$calc_fields{counts} = 1;

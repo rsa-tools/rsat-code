@@ -22,6 +22,7 @@
   title('compare-graphs - results');
   # Error status
   $error = 0;
+
   # Get parameters
   $in_formatQ = $_REQUEST['in_formatQ'];
   $in_formatR = $_REQUEST['in_formatR'];

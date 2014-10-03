@@ -29,8 +29,9 @@ for the removed variations.
 
 /!\
 
-Sequences need to be installed in raw format for the species of
-interest before using download-ensembl-variations.
+Before using I<download-ensembl-variations>, genomic sequences need to
+be installed in raw format for the species of interest. To download
+genomic sequences, run the command I<download-ensembl-genome>.
 
 =head1 AUTHORS
 
@@ -175,9 +176,9 @@ package	main;
   our $out_var = "";
   our $db = "ensembl";
   our $data_dir = &Get_data_dir();
-  our $ensembl_version_safe = &Get_ensembl_version_safe($db);
-  our $ensembl_version_latest = &Get_ensembl_version($db);
-  our $ensembl_version = $ensembl_version_safe;
+  our $ensembl_version_safe = &get_ensembl_version_safe($db);
+  our $ensembl_version_latest = &get_ensembl_version_latest($db);
+  our $ensembl_version = &get_ensembl_version($db);
 
   our $species = "";
   our $get_available_species = 0;
@@ -187,16 +188,12 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
-  our $genomes_dir = &Get_genomes_dir($data_dir);
 
-  if ($ensembl_version eq "safe") {
-    $ensembl_version = $ensembl_version_safe;
-  } elsif ($ensembl_version eq "latest") {
-    $ensembl_version = $ensembl_version_latest;
-  } else {
-    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
-    &RSAT::error::FatalError("$db version : $ensembl_version not supported. Can't be superior to latest ensembl version",$ensembl_version_safe) if ($ensembl_version > $ensembl_version_safe);
-  }
+  &check_ensembl_version($db, $ensembl_version);
+
+#  my ($host,$port) = &Get_host_port($db);
+
+  our $genomes_dir = &Get_genomes_dir($data_dir);
 
   # Change Ensembl version to Ensembl Genomes version                                                                                                                                           
   if ($db eq "ensembl_genomes") {
@@ -743,9 +740,13 @@ Same as -h
 
 =item B<-species species_name>
 
-Species that you want download variation (Homo_sapiens, Mus_musculus).
+Name of the species for which you want to download the variations (e.g
+Homo_sapiens, Mus_musculus).
 
-Help : Use I<> to get avalaible species
+Help: to get the list of species available at Ensembl, run the
+command:
+
+   I<download-ensembl-variations -available_species> 
 
 =cut
     } elsif (($arg eq "-species") || ($arg eq "-org")) {
@@ -859,7 +860,7 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
 
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", &Get_ensembl_version_safe();
+  printf $out "; %-22s\t%s\n", "Ensembl safe version", &get_ensembl_version_safe();
   printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
   }
 }

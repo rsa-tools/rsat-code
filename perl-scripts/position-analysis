@@ -2304,7 +2304,7 @@ sub GenerateGraphs {
 	$graphs_done++;
 
 	if (($max_graphs > 0) && ($graphs_done > $max_graphs)) {
-	    &RSAT::message::Warning("Exported $graphs_done graphs");
+	    &RSAT::message::Warning("Exported $graphs_done graphs") if ($main::verbose >= 2);
 	    last;
 	}
 

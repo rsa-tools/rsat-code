@@ -31,12 +31,12 @@ def help_message():
           "\tand metabolic netwoks (reactions, pathways.)")
 
     print("\n\nUsage: microscope_get <command> [<args>]")
-    print("\n\nCommand list:")
-    print("\torganisms\tCollect informations on all species of MicroScope")
-    print("\tgpr\t\tCollect genes informations for one specie")
-    print("\treactionInfo\tCollect a reaction information")
-    print("\treactionList\tCollect reaction-gene list for one specie")
-    print("\treactions\tCollect all reactions informations (for all species)")   
+    print("\n\nTask list:")
+    print("\torganisms\tCollect informations on all species from MicroScope")
+    print("\tgpr\t\tCollect gene-EC-protein-reaction table for one species")
+    print("\treactionInfo\tCollect detailed information about one reaction")
+    print("\treactionList\tCollect reaction-gene list for one species")
+    print("\treactions\tCollect all reactions (for all species)")   
     
     print("\nGetting help:")
     print("\t-h\t\tDisplay overall help message")
@@ -44,12 +44,14 @@ def help_message():
 
     print("\norganisms args:")
     print("\t-o --output\tChoose the output file name containing the informations about all species")
-#    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
+    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
 #    print("\t-f --file\t-f <name> create a file with only the species name, one per line")
 
     print("\ngpr args:")
     print("\t-org\t\t-org <name> to collect gene informations related to <name> (ex: 'Escherichia_coli_K-12_DH10B')")
-    print("\t-o --output\tChoose the output file name containing the informations about gene information for one specie")
+    print("\t-o --output\tChoose the output file name containing the informations about gene information for one species")
+    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
+
 #    print("\t-f\t\t-f <file> to collect genes infos related to species into <file>")
 #    print("\t-d --depth\tChoose the parsing depth level (each include the previous ones) :\n"
 #          "\t\t\t\t1: genes\n"
@@ -58,18 +60,22 @@ def help_message():
 #          "\t\t\t\t4: cross-refs of proteins\n"
 #          "\t\t\t\t5: linkage types")
 #    print("\t-v --verbosity\tChoose the verbosity level")
-#    print("\t--outputdir\tCreate a folder tree where one folder stands for one specie.\n"
-#          "\t\t\tWorks well when a specie list is given\n")
+#    print("\t--outputdir\tCreate a folder tree where one folder stands for one species.\n"
+#          "\t\t\tWorks well when a species list is given\n")
     print("\nreactionInfo args:")
     print("\t-mrId\t\t-mrId <name> to collect reaction information related to <name> (ex: '6-ACETYLGLUCOSE-DEACETYLASE-RXN')")
     print("\t-o --output\tChoose the output file name containing the informations about a reaction")
+    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
 
     print("\nreactionList args:")
     print("\t-org\t\t-org <name> to collect reactions list related to <name> (ex: 'Escherichia_coli_K-12_DH10B')")
-    print("\t-o --output\tChoose the output file name containing the informations about all reactions for a specie")
+    print("\t-o --output\tChoose the output file name containing the informations about all reactions for a species")
+    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
     
     print("\nreactions args:")
     print("\t-o --output\tChoose the output file name containing the reaction informations about all reactions")
+    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
+
 #    print("\t-v --verbosity\tChoose the verbosity level\n\t\t\t\tdefault: None \n\t\t\t\t1: few informations\n\t\t\t\t2: detailed informations\n\t\t\t\t3: complete")
 #    print("\t-f --file\t-f <name> create a file with only the species name, one per line")
 
@@ -77,16 +83,16 @@ def help_message():
 def microscope_parser():
 
     ##### ---------- Parsing Arguments ---------- #####
-    parser = argparse.ArgumentParser(description="This program fetches species-related data from MicroScope DataBase, "
-                                                 "such as the list of supported species, and their annotations "
-                                                 "(genes, transcripts, proteins), metabolic networks.")
+    parser = argparse.ArgumentParser(description="This program fetches data from MicroScope database "
+                                     "(http://www.genoscope.cns.fr/agc/microscope/), "
+                                     "such as the list of supported organisms, and their annotations "
+                                     "(genes, transcripts, proteins, reactions), metabolic networks.")
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
     subparsers = parser.add_subparsers(dest='sp')
 
     #Sub parser 1 :
     parser_organisms = subparsers.add_parser("organisms",
-                                                    help="Use this command to obtain a file with informations"
-                                                         " about the whole species of MicroScope\n ",
+                                                    help="Get information about organisms supported at MicroScope\n ",
                                                     formatter_class=SmartFormatter)
     parser_organisms.required = False
     #Args of the subparser 1
@@ -95,11 +101,11 @@ def microscope_parser():
                                          default=None,
                                          help="Choose the output file name containing the informations about all species\n ")
 
-#    parser_organisms.add_argument('-v', '--verbosity',
-#                                         type=int,
-#                                         default=0,
-#                                         choices=[1, 2, 3],
-#                                         help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
+    parser_organisms.add_argument('-v', '--verbosity',
+                                         type=int,
+                                         default=0,
+                                         choices=[1, 2, 3],
+                                         help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
 
 #    parser_organisms.add_argument('-f', '--file',
 #                                         type=str,
@@ -109,8 +115,7 @@ def microscope_parser():
 
     #Sub parser 2 :
     parser_gpr = subparsers.add_parser("gpr",
-                                                     help="Use this command to obtain the gene informations related to one "
-                                                          "input species",
+                                                     help="Collect gene-EC-protein-reaction table for a selected species.",
                                                      formatter_class=SmartFormatter)
     parser_gpr.required = False
     #Args of the subparser 2
@@ -122,6 +127,13 @@ def microscope_parser():
                                  type=str, 
                                  default=None, 
                                  help="Choose the output file name containing the informations about all gpr\n ")
+
+    parser_gpr.add_argument('-v', '--verbosity',
+                                 type=int,
+                                 default=0,
+                                 choices=[1, 2, 3],
+                                 help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
+
 
 #    exclusiv_group.add_argument('-f',
 #                                type=str,
@@ -149,13 +161,12 @@ def microscope_parser():
 #    parser_retrieve_features.add_argument('--outputdir',
 #                                          type=str,
 #                                          default=None,
-#                                          help="Create a folder tree where one folder stands for one specie.\n")
+#                                          help="Create a folder tree where one folder stands for one species.\n")
 
 
     #Sub parser 3 :
     parser_reactionInfo = subparsers.add_parser("reactionInfo",
-                                                     help="Use this command to obtain the reaction information related to one "
-                                                          "input reaction",
+                                                     help="Get detailed information about a given reaction",
                                                      formatter_class=SmartFormatter)
     parser_reactionInfo.required = False
     #Args of the subparser 3
@@ -167,11 +178,16 @@ def microscope_parser():
                                          type=str,
                                          default=None,
                                          help="Choose the output file name containing the informations about all species\n ")
+    parser_reactionInfo.add_argument('-v', '--verbosity',
+                                         type=int,
+                                         default=0,
+                                         choices=[1, 2, 3],
+                                         help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
 
     #Sub parser 4 :
-    parser_reactionList = subparsers.add_parser("reactionList",
-							  help="Use this command to obtain the reaction list related to one input specie",
-                                                     formatter_class=SmartFormatter)
+    parser_reactionList = subparsers.add_parser("reactionList", 
+                                                help="Get reaction list for a given species",
+                                                formatter_class=SmartFormatter)
     parser_reactionList.required = False
     #Args of the subparser 4
     exclusiv_group = parser_reactionList.add_mutually_exclusive_group(required=True)
@@ -182,12 +198,17 @@ def microscope_parser():
                                          type=str,
                                          default=None,
                                          help="Choose the output file name containing the informations about all species\n ")
+    parser_reactionList.add_argument('-v', '--verbosity',
+                                         type=int,
+                                         default=0,
+                                         choices=[1, 2, 3],
+                                         help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
 
                                 
     #Sub parser 5 :
     parser_reactions = subparsers.add_parser("reactions",
-							  help="Use this command to obtain the reaction list",
-                                                     formatter_class=SmartFormatter)
+                                             help="Get the list of reactions supported at Microscope (all species).",
+                                             formatter_class=SmartFormatter)
     parser_reactions.required = False
     #Args of the subparser 4
    # exclusiv_group = parser_reactions.add_mutually_exclusive_group(required=True)
@@ -196,6 +217,11 @@ def microscope_parser():
                                          default=None,
                                          help="Choose the output file name containing the reaction informations about all species\n ")
 
+    parser_reactions.add_argument('-v', '--verbosity',
+                                         type=int,
+                                         default=0,
+                                         choices=[1, 2, 3],
+                                         help="R|Choose the verbosity level\ndefault: None \n1: few informations\n2: detailed informations\n3: complete\n ")
 
 
 

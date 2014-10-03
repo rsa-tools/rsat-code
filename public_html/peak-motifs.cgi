@@ -320,7 +320,6 @@ $parameters .= " -outdir ".$output_dir_full_path;
 ################################################################
 ## Display or send result
 $index_file = $output_dir_full_path."/".$output_prefix."_synthesis.html";
-#$index_file = $output_dir."/".$output_prefix."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "peak-motifs", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>"$mail_title",no_email=>1);
