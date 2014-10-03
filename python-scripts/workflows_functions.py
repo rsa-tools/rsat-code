@@ -1,21 +1,24 @@
 #!/usr/bin/python
 #-*-coding: utf-8-*-
 
-"""This program contains all repeated and useful functions for all REST client programs. 
-	Ensembl, Ensembl Genomes, Genoscope and MICROME are the servers providing a response to a request.
-	Currently, the concerned programs using workflows_functions are :
-		- supported_organisms_ensembl.py
-		- supported_organisms_ensemblgenomes.py
-		- supported_organisms_genoscope.py
-		- supported_organisms_microme.py
-		- gene2reaction_from_genoscope.py
+"""This program contains shared functions for a series of REST client
+programs enabling to collect data from various bioinformatics
+resources (Ensembl, Ensembl Genomes, Genoscope and MICROME
+
+Currently, the concerned programs using workflows_functions are :
+ - supported_organisms_ensembl.py
+ - supported_organisms_ensemblgenomes.py
+ - supported_organisms_genoscope.py
+ - supported_organisms_microme.py
+ - gene2reaction_from_genoscope.py
+
 """
 
 import httplib2 #To send the request using the http protocol
 import sys #To quit the program or display a error message on the standard error
 
 def RequestGeneric(url_root,url_extension):
-	"""This function send a request to a server. 
+	"""The function RequestGeneric() sends a request to a server. 
 	
 	@type	url_root : string
 	@param	url_root : server URL
@@ -41,7 +44,7 @@ def RequestGeneric(url_root,url_extension):
 
 
 def RequestGenoscope(url_extension):
-	"""This function send a request to a server. 
+	"""The function RequestGenoscope() sends a request to the Genoscope server. 
 	
 	@type	url_extension : string
 	@param	url_extension : extension of server URL, specifying the request
@@ -53,7 +56,7 @@ def RequestGenoscope(url_extension):
 
 
 def RequestMicrome(url_extension):
-	"""This function send a request to the MICROME server. 
+	"""The function RequestMicrome() sends a request to the MICROME server. 
 	
 	@type	url_extension : string
 	@param	url_extension : extension of server URL, specifying the request
@@ -64,7 +67,7 @@ def RequestMicrome(url_extension):
 	
 
 def RequestEnsembl(url_extension):
-	"""This function send a request to the Ensembl server. 
+	"""The function RequestEnsembl sends a request to the Ensembl server. 
 	
 	@type	url_extension : string
 	@param	url_extension : extension of server URL, specifying the request
@@ -108,7 +111,8 @@ def Test_Of_Chosen_Out_Columns(arg_list,dict_keys):
 		
 
 def Creation_Of_The_Tabulated_File(arg_list,file_name,file_content):
-	"""This function creates a tabulated file containing informations got from the used server
+	"""This function creates a tabulated file containing informations got
+        from the used server.
 	
 	@type	arg_list : list
 	@param	arg_list : list of columns arguments available 
@@ -117,7 +121,8 @@ def Creation_Of_The_Tabulated_File(arg_list,file_name,file_content):
 	@type	file_content : string
 	@param	file_content : informations presented as a tabulated text. Refer to Complete_Output_Content
 	@returns : this function creates the tabulated file
-	"""
+
+        """
 	
 	f = open(file_name,'w')
 	f.write('#' + arg_list[0] + '\t' + '\t'.join(arg_list[1:]) + '\n')

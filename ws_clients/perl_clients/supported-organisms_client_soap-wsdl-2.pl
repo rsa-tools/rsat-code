@@ -19,7 +19,7 @@ warn "\nThis demo script gets the list of supported organisms from the remote RS
 ## WSDL location
 ##
 ## Actually, the server location is not affected by the variable
-## $server, it depends on the stubb, which has to be configured
+## $server, it depends on the stub, which has to be configured
 ## separately (comment by JvH, 2012-01-30) -> I suppress this misleading message
 ##
 #my $server = $ARGV[0] || 'http://rsat.ulb.ac.be/rsat/web_services';

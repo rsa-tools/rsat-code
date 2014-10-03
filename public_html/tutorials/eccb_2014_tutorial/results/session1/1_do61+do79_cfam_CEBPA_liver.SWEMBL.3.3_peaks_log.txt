@@ -1,0 +1,26 @@
+; fetch-sequences  -v 1 -genome canFam2 -header_format galaxy -i $RSAT/public_html/tmp/wwwrun/2014/09/03/do61+do79_cfam_CEBPA_liver.SWEMBL.3.3_tesj_20140903_093347.bed -o $RSAT/public_html/tmp/wwwrun/2014/09/03/do61+do79_cfam_CEBPA_liver.SWEMBL.3.3_tesj_20140903_093347.fasta
+; Program version       	1.34
+; Genome                	canFam2
+; DAS server URL        	http://genome.cse.ucsc.edu/cgi-bin/das/canFam2
+; Reference             	segment
+; Upstream extension    	0
+; Downstream extension  	0
+; Invalid rows in query file	2
+; Input files
+;	input        	/home/rsat/rsat/public_html/tmp/wwwrun/2014/09/03/do61+do79_cfam_CEBPA_liver.SWEMBL.3.3_tesj_20140903_093347.bed
+; Output files
+;	log          	/home/rsat/rsat/public_html/tmp/wwwrun/2014/09/03/do61+do79_cfam_CEBPA_liver.SWEMBL.3.3_tesj_20140903_093347_log.txt
+;	output       	/home/rsat/rsat/public_html/tmp/wwwrun/2014/09/03/do61+do79_cfam_CEBPA_liver.SWEMBL.3.3_tesj_20140903_093347.fasta
+; Skipped	2	rows in query file
+;	line 6480	chr12	75515450	75515499	36	50	9	35.426378	0	74.000000	75515474.5	right > chromosome end (75515492).
+;	line 29237	chr33	34424434	34424486	48	53	12	34.562279	9	76.000000	34424478	right > chromosome end (34424479).
+; sequences           	43038
+; length sum          	11001060
+; Host name	rsat
+; Job started	2014-09-03.093348
+; Job done	2014-09-03.093452
+; Seconds	4.44
+;	user	4.44
+;	system	0.12
+;	cuser	0
+;	csystem	0

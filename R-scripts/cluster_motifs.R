@@ -42,7 +42,6 @@ thresholds <<- list()
 ## Arguments passed on the command line will over-write the default
 ## arguments specified above.
 args = commandArgs(trailingOnly=TRUE);
-#print("Parsing command-line arguments")
 if (length(args >= 1)) {
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
@@ -67,8 +66,8 @@ if(length(global.description.table$id) == 2*length(unique(global.description.tab
   global.description.table <- global.description.table[1:length(unique(global.description.table$id)),]
 }
 ## In reference to the names, order alphabetically the description table
-global.description.table <- global.description.table[order(global.description.table$name),]
-global.description.table$n <- 1:length(global.description.table$n)
+global.description.table <- global.description.table[order(global.description.table$id),]
+global.description.table$n <- 1:length(global.description.table$id)
 
 matrix.labels <-  as.vector(global.description.table$label)
 names(matrix.labels) <- as.vector(global.description.table$id)
@@ -109,6 +108,7 @@ if (export == "newick") {
 halfway.tree <- hclustToTree(tree)
 jsonTree <- toJSON(halfway.tree)
 
+
 ## Fix some little technical issues for JSON compatibility with the tree display javascript
 jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
 jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
@@ -144,7 +144,6 @@ merge.levels.leaves <<- leaves.per.node(tree)
 internal.nodes.attributes <<- list()
 fill.internal.nodes.attributes()
 
-
 ##########################
 ## Define the clusters
 ## Bottom-up approah
@@ -153,17 +152,7 @@ define.clusters.bottom.up()
 clusters.ids <- lapply(clusters, get.id)
 
 ## Number of clusters
-forest.nb <<- length(clusters.ids) 
-
-## ## Split the tree into forest
-## forest <<- cutree(tree, k = forest.nb)
-## ids.forest <<- list()
-
-## ## Get IDs of the forest
-## for( lvl in 1:length(table(forest))){
-##   ids.forest[[paste("forest_", lvl, sep = "")]] <- get.id(as.numeric(which(forest == lvl)))
-## }
-
+forest.nb <<- length(clusters.ids)
 
 ## Fill the downstream end 
 motifs.info <- fill.downstream(motifs.info, clusters.ids)
@@ -171,7 +160,7 @@ forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 
 ## Reset the labels
 for(nb in 1:length(tree$labels)){
-
+  
   ## Add the aligned consensus
   tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], sep = "   ")
   
@@ -264,7 +253,7 @@ verbose(paste("merge attributes table", attributes.file), 1)
 ## not aligned, it is splited and each part (forest)
 ## is realigned and printed in pdf and png
 if (forest.nb > 1){
-
+  
   ## Creates a folder with where the separated information
   ## of each cluster will be stored
   system(paste("mkdir -p ", out.prefix, "_clusters_information", sep = ""))
@@ -303,7 +292,7 @@ if (forest.nb > 1){
       forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["offset_down"]] <- as.numeric(0)
 
       ## Crete a JSON file for a trees with a single node
-      ## This is required because the cannot be used the hclust to Josn function
+      ## In this situation this step is required because it is not possible to use the hclustToJson function
       label.single.node <- as.vector(global.description.table[global.description.table$id == ids, ]$label) 
       JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", label.single.node, "\",\n}\n]\n}", sep = "")
       json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
@@ -332,14 +321,14 @@ if (forest.nb > 1){
     ## New comparison table
     compare.matrices.table <<- global.compare.matrices.table[which((global.compare.matrices.table[,"id1"] %in% ids & global.compare.matrices.table[,"id2"] %in% ids)),]
     
-    compare.matrices.table$name1 <- as.vector(compare.matrices.table$name1)
-    compare.matrices.table$name2 <- as.vector(compare.matrices.table$name2)
+    compare.matrices.table$id1 <- as.vector(compare.matrices.table$id1)
+    compare.matrices.table$id2 <- as.vector(compare.matrices.table$id2)
     
     ## New description table
     description.table <<- global.description.table[global.description.table[,"id"] %in% ids, ]
     ## names(description.table)[1] <- sub("^X.", "", names(description.table)[1])
     ## In reference to the names, order alphabetically the description table
-    description.table <- description.table[order(as.vector(description.table$name)),]
+    description.table <- description.table[order(as.vector(description.table$id)),]
     description.table$n <- 1:length(description.table$n)
     matrix.labels <-  as.vector(description.table$label)
     names(matrix.labels) <- as.vector(description.table$id)
@@ -356,7 +345,6 @@ if (forest.nb > 1){
     ## Runs and plot the hierarchical cluster
     tree <<- hclust(dist.matrix, method = hclust.method)
     tree$labels <- as.vector(description.table$label)
-    #tree$labels <- paste(as.vector(description.table$consensus), 1:length(description.table$consensus))
     
     ######################################
     ## Creates and parse the json file
@@ -457,29 +445,29 @@ if (forest.nb > 1){
       nchar(X)
     })
     alignment.width <- max(alignment.width)
-    mar4 <- alignment.width - 20
+    ## mar4 <- alignment.width - 20
 
-    ## Export the tree with the aligment
-    plot.format <- "pdf" ## Default for testing inside the loop
-    for (plot.format in c("pdf", "png")) {
-      ## w.inches <- 10 ## width in inches
-      ## h.inches <- 7 ## height in inches
-      w.inches <- 15 ## width in inches
-      h.inches <- 7 ## height in inches
-      h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
-      resol <- 72 ## Screen resolution
-      tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
-      if (plot.format == "pdf") {
-        pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
-      } else if (plot.format == "png") {
-        png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
-      }
+    ## ## Export the tree with the aligment
+    ## plot.format <- "pdf" ## Default for testing inside the loop
+    ## for (plot.format in c("pdf", "png")) {
+    ##   ## w.inches <- 10 ## width in inches
+    ##   ## h.inches <- 7 ## height in inches
+    ##   w.inches <- 15 ## width in inches
+    ##   h.inches <- 7 ## height in inches
+    ##   h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
+    ##   resol <- 72 ## Screen resolution
+    ##   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
+    ##   if (plot.format == "pdf") {
+    ##     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
+    ##   } else if (plot.format == "png") {
+    ##     png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+    ##   }
       
-      ## dev.new(width=10, height=7)
-      par(mar=c(3,2,2,mar4),family="mono")
-      plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
-      dev.off()
-    }
+    ##   ## dev.new(width=10, height=7)
+    ##   par(mar=c(3,2,2,mar4),family="mono")
+    ##   plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
+    ##   dev.off()
+    ## }
     forest.list[[paste("cluster_", nb, sep = "")]] <- motifs.info
   }
 }

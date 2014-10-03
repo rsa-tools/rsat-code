@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr">
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+	<meta name="description" content=""/>
+	<meta name="keywords" content="" />
+	<meta name="author" content="" />
+	<title>ECCB 2014 T01</title>
+	<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+<style type="text/css">
+
+#wrapper{
+  margin:0 auto;
+  #padding:15px 15% 8em;
+  text-align:left
+}
+#content {
+  max-width:70em;
+  width:100%;
+  margin:0 auto;
+  padding-bottom:20px;
+  overflow:hidden
+}
+.demo {
+  margin:1.5em 0;
+  padding:1.5em 1.5em 0.75em;
+  border:1px solid #ccc;
+  position:relative;
+  overflow:hidden
+}
+
+.post {
+  position:relative;
+  overflow:hidden
+}
+.collapse p {padding:0 10px 1em}
+
+.switch {position:absolute; top:1.5em; right: 1.5em; padding:3px}
+
+#.post .switch {position:static; text-align:right}
+
+.post .main{margin-bottom:0; padding-bottom:0}
+
+.other li, .summary {margin-bottom:.3em; padding:1em; border:1px solid #e8e7e8; background-color:#f8f7f8}
+
+.other ul {list-style-type:none; text-align:center}
+
+
+.expand{padding-bottom:.75em}
+
+/* --- Links  --- */
+
+#download {
+  border-style:none;
+  background:white;
+}
+
+.expand a {
+  display:block;
+  padding:3px 10px
+}
+.expand a:link, .expand a:visited {
+  border-width:1px;
+  background-image:url(img/arrow-down.gif);
+  background-repeat:no-repeat;
+  background-position:98% 50%;
+}
+.expand a:hover, .expand a:active, .expand a:focus {
+}
+.expand a.open:link, .expand a.open:visited {
+  #border-style:solid;
+  #background:#eee url(img/arrow-up.gif) no-repeat 98% 50%
+  color:black;
+}
+</style>
+<!--[if lte IE 6]>
+<style type="text/css">
+h3 a, .demo {position:relative; height:1%}
+</style>
+<![endif]-->
+
+<!--[if lte IE 6]>
+<script type="text/javascript">
+   try { document.execCommand( "BackgroundImageCache", false, true); } catch(e) {};
+</script>
+<![endif]-->
+<!--[if !lt IE 6]><!-->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="scripts/expand.js"></script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+$(function() {
+    $("#content h3.expand").toggler();
+    $("#content h2.expand").toggler();
+    $("#content div.demo").expandAll({trigger: "h3.expand", ref: "h3.expand"});
+    $("#content div.other").expandAll({
+      expTxt : "[Show]", 
+      cllpsTxt : "[Hide]",
+      ref : "ul.collapse",
+      showMethod : "show",
+      hideMethod : "hide"
+    });
+    $("#content div.post").expandAll({
+      expTxt : "[Show tip]", 
+      cllpsTxt : "[Hide tip]",
+      ref : "div.collapse", 
+      localLinks: "p.top a"    
+    });    
+});
+//--><!]]>
+</script>
+<!--<![endif]-->
+</head>
+
+<body>
+
+<div id="site-wrapper">
+
+	<div id="header">
+
+		<div id="top">
+
+			<div class="left" id="logo">
+				<a href="#"><h2 class="label label-green">Analysis of Cis-Regulatory Motifs from High-Throughput Sequence Sets</h2></a>
+			</div>
+
+
+
+			<div class="clearer">&nbsp;</div>
+
+		</div>
+
+		<div class="navigation" id="sub-nav">
+
+			<ul class="tabbed">
+				<li class="current-tab"><a href="index.html">Home</a></li>
+				<li ><a href="session1.html">Session1:Web site</a></li>
+				<li><a href="session2.html">Session2:Command line</a></li>
+				<li><a href="session3.html">Session3:SOAP Web services</a></li>
+				<li><a href="http://jacques.van-helden.perso.luminy.univ-amu.fr" target='_blank' class="label label-blue right"> Jacques van Helden</a> & <a href="http://morgane.bardiaux.fr" target='_blank' class=" label-blue right"> Morgane Thomas-Chollier</a></li>
+			</ul>
+
+			<div class="clearer">&nbsp;</div>
+
+			<div class="clearer">&nbsp;</div>
+
+		</div>
+
+	</div>
+
+	<div class="main" id="main-two-columns">
+
+		<div class="left" id="main-content">
+
+			<h2 id="contents"> Introduction </h2>
+			<b>Goal</b><br/>
+
+<u>The aim is to :</u>
+<ul>
+<li></li>
+<li></li>
+</ul>
+<b>Summary</b><br/>
+
+<p>This training gives an introduction to ChIP-seq data analysis, covering the processing steps starting from the reads to the peaks. Among all possible downstream analyses, the practical aspect will focus on motif analyses. A particular emphasis will be put on deciding which downstream analyses to perform depending on the biological question.
+
+This training does not cover all methods available today. It does not aim at bringing users to a professional NGS analyst level but provides enough information to allow biologists understand what DNA sequencing practically is and to communicate with NGS experts for more in-depth needs.
+</p>
+<b>Dataset description</b><br/>
+<p>
+For this training, we will use a dataset produced by Myers et al (see on the right of the page for details on the publication) involved in the regulation of gene expression under anaerobic conditions in bacteria. We will focus on one factor: <b>FNR</b>.
+</p>			
+
+</div>	    	    	
+	
+<!-- SIDE BAR -->		
+
+		<div class="right sidebar" id="sidebar">
+
+			<h5>Slides:</h5>
+			<ul>
+			<li><a href="booklet/booklet_chip-seq.pdf" target='_blank'>Presentation</a></li>
+			</ul>
+			<h5>Dataset:</h5>
+			Myers et al. <i>Genome-scale analysis of escherichia coli FNR reveals complex features of transcription factor binding.</i> PLOS Genetics 9(6):e1003565 (2013). <a href="http://www.ncbi.nlm.nih.gov/pubmed/23818864" target='_blank'>Pubmed</a>
+			<a href="articles/2013_Myers_PLoS Genet.pdf" target='_blank'> [PDF] </a><br/>
+			<u>all experiments:</u><a href="http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE41187" target='_blank'>GEO GSE41187</a><br/>
+			<u>experiment:</u><a href="http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1010219" target='_blank'>FNR IP ChIP-seq Anaerobic A</a> SRX189773 - SRR576933 <br/>
+			<u>control:</u><a href="http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1010224" target='_blank'>anaerobic INPUT DNA</a> <br/>SRX189778 - SRR576938 
+			
+			<p/>
+			<h5>Links:</h5>
+			<ul>
+			<li><a href ="http://www.ncbi.nlm.nih.gov/geo/" target='_blank'>GEO database</a></li>
+			<li><a href ="http://www.ebi.ac.uk/ena/" target='_blank'>EBI ENA</a></li>
+			<li><a href ="http://bowtie-bio.sourceforge.net/manual.shtml" target='_blank'>Bowtie manual</a></li>
+			<li><a href ="https://github.com/taoliu/MACS/blob/macs_v1/README.rst" target='_blank'>MACS manual</a></li>
+			<li><a href ="http://rsat.eu" target='_blank'>RSAT</a></li>
+			</ul>
+			
+			<h5>Suggested Reading:</h5>
+			<ul>
+			<li>Bailey et al. <i>Practical Guidelines for the Comprehensive Analysis of ChIP-seq Data.</i> PLoS Comput Biol 9, e1003326 (2013).<a href="articles/2013_Bailey_PLoS Comput Biol.pdf" target='_blank'> [PDF] </a><br/>
+			</li>
+			<li>Thomas-Chollier et al. <i>A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs.</i> Nature Protocols 7, 1551–1568 (2012).<a href="articles/2012_Thomas-Chollier_Nature Protocols.pdf" target='_blank'> [PDF] </a><br/>
+			</li>
+			</ul>
+			<p/>
+			<h5>Formats:</h5>
+			<ul>
+			<li>FASTQ</li>
+			<li>SAM</li>
+			<li>BED</li>
+			<li>BEDGRAPH</li>
+			</ul>
+			
+
+		</div>
+
+		<div class="clearer">&nbsp;</div>
+
+	</div>
+
+	<div id="footer">
+
+		<div class="left" id="footer-left">
+			
+		
+			
+			<p>&copy; 2014 Morgane Thomas-Chollier. All rights Reserved</p>
+
+			<p class="quiet"><a href="http://templates.arcsin.se/">Website template</a> by <a href="http://arcsin.se/">Arcsin</a></p>
+			
+			<div class="clearer">&nbsp;</div>
+
+		</div>
+
+		<div class="right" id="footer-right">
+
+		</div>
+
+		<div class="clearer">&nbsp;</div>
+
+	</div>
+
+</div>
+
+</body>
+</html>

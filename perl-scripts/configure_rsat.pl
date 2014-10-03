@@ -49,25 +49,29 @@ $cross_ext_variable{rsat_bin} = 1;
 $cross_ext_variable{rsat_tmp} = 1;
 $cross_ext_variable{rsat_www} = 1;
 $cross_ext_variable{rsat_ws} = 1;
-$cross_ext_variable{rsat_ws_tmp} = 1;
+#$cross_ext_variable{rsat_ws_tmp} = 1;
 $cross_ext_variable{ensembl_version} = 1;
 $cross_ext_variable{ensembl_branch} = 1;
 $cross_ext_variable{rsat_bin} = 1;
 $cross_ext_variable{qsub_manager} = 1;
+$cross_ext_variable{queue_manager} = 1;
 $cross_ext_variable{qsub_options} = 1;
 $cross_ext_variable{cluster_queue} = 1;
 $cross_ext_variable{cluster_sell} = 1;
 
 ## First argument
-if ($ARGV[0] eq "auto") {
+if (exists($ARGV[0])) {
+  if ($ARGV[0] eq "auto") {
     foreach my $extension (@props_extensions) {
 	$auto_extension{$extension} = 1;
     }
-    
-## Print the help message
-} elsif (scalar(@ARGV) > 0) {
+  ## Print the help message
+  } elsif (scalar(@ARGV) > 0) {
     warn join ("\t", "\n", "!!!!  Invalid argument  !!!!", $ARGV[0]), "\n";
     &PrintHelp();
+  }
+} else {
+  warn "Entering manual mode...\n";
 }
 
 package main;
@@ -113,7 +117,7 @@ package main;
   for my $extension (@props_extensions) {
 
     ## Check that the config file exists in the RSAT path
-    my $config_file = $rsat_path."/RSAT_config.${extension}";
+    my $config_file = $rsat_path."/RSAT_config.".$extension;
     warn("\n\n\n", "################################################################\n", 
 	 "## Editing \".${extension}\" configuration file\t", $config_file,"\n\n");
 
@@ -145,7 +149,9 @@ package main;
 
     ## Create a copy of the config file
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    my $config_file_bk = $config_file.".bk.".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec;
+    my $backup_dir = $rsat_path."/backups";
+    mkdir($backup_dir) unless (-d $backup_dir);
+    my $config_file_bk = $backup_dir."/RSAT_config_bk_".($year+1900)."-".($mon+1)."-".$mday."_".$hour."-".$min."-".$sec.".".$extension;
     warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
     system("cp ".$config_file." ".$config_file_bk);
 
@@ -174,8 +180,8 @@ package main;
 
 	  ## Replace the RSAT web server path if required (at first installation)
 	  if ($key eq "rsat_www") {
-	    $value .= "/";
-	    $value =~ s|//$|/|;
+	    $value .= "/" if ($value =~/^http/);
+	    $value =~ s|\/\/$|/|;
 	  } elsif (($prev_param{rsat_www}) && ($new_param{rsat_www})
 		   && ($value =~ /$prev_param{rsat_www}/)
 		   && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
