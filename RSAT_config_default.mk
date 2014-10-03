@@ -9,10 +9,10 @@
 RSAT_SITE=your_server_name
 
 ## Web server URL
-RSAT_WWW=http://localhost/rsat/
+# RSAT_WWW=http://localhost/rsat/
 
 ## Email address of RSAT administrator
-RSAT_ADMIN_EMAIL=your.mail@your.mail.server
+RSAT_SERVER_ADMIN=your.mail@your.mail.server
 
 ## Operating system
 ## Supported: linux  | macosx
@@ -25,10 +25,11 @@ ARCHITECTURE=x64
 ################################################################
 ## Manager for installing Unix packages
 ##
-## Options:
+## Examples:
 ##   PACKAGE_MANAGER=brew
 ##   PACKAGE_MANAGER=yum
 ##   PACKAGE_MANAGER=apt-get
+##   PACKAGE_MANAGER=aptitude
 PACKAGE_MANAGER=apt-get
 
 #UCSC_OS=macOSX.i386
@@ -37,9 +38,6 @@ UCSC_OS=linux.x86_64
 ## Directory to store the downloaded software (sources, before
 ## compilation)
 SRC_DIR=${RSAT}/app_sources
-
-## Directory to store libraries
-PERLLIB_DIR=${RSAT}/lib
 
 ################################################################
 ## Your sudoer status
@@ -70,16 +68,25 @@ SUDO=
 ##   RSAT_BIN=\${RSAT}/bin
 RSAT_BIN=${RSAT}/bin
 
+
 ################################################################
 ## Web services
 ##
-## This may differ from the RSAT site, because some tasks may be
-## delegated to remote RSAT web services.
-RSAT_WS=http://localhost/rsat
-
-## URL used by the RSAT Web services to give Web access to temporary
-## files
-RSAT_WS_TMP=http://localhost/rsat/tmp
+## This variable defines the address of the Web services, which will
+## be used to generate a stub. This stub will be used (under others)
+## by the Web interface of retrieve-ensembl-seq, and by the NeAT
+## tools. It is thus important to specify it correctly and test it.
+##
+## By default, the web services are running on the host machine
+## itself. We thus set it to http://localhost/rsat/. This means that
+## the Web site and Web services will run on the same
+## machine. However, in some cases it might be useful to use a static
+## IP address. In principle, this would allow to redirect the Web
+## services towards a separate RSAT server. However, this is somewhat
+## tricky and might have side effects that we did not test. 
+##
+## We recommend to leave this value to its default (localhost).
+RSAT_WS=http://localhost/rsat/
 
 ################################################################
 ##
@@ -107,5 +114,5 @@ CLUSTER_QUEUE=rsat
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_VERSION=75
-ENSEMBL_BRANCH=ensemblgenomes-22
+ENSEMBL_RELEASE=76
+ENSEMBLGENOMES_BRANCH=23

@@ -19,4 +19,4 @@ if ($result) {
 	</head>
 
 	<body class="<?php echo $class; ?>">
-		<h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSA-tools</a> - <?php echo $prog_name, $res; ?></h3><br/>
+		<h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - <?php echo $prog_name, $res; ?></h3><br/>

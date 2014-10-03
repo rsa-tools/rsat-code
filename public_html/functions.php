@@ -60,7 +60,7 @@ Function uploadFile($file) {
 
 
 Function getTempFileName($prefix, $ext) {
-  ## Main directory
+  // Main directory
   global $tmp;
   if (isset($tmp)) {
     $tmpDir = $tmp."/";
@@ -68,23 +68,23 @@ Function getTempFileName($prefix, $ext) {
     $tmpDir = "tmp/";
   }
 
-  ## Append user name
-  global $_ENV; ## ceci ne marche pas
-#  $user = $_ENV["USER"]; ## ceci ne marche pas
-#  $user = getenv('REMOTE_USER'); ## ceci ne marche pas
-#  $user = getenv('USER'); ## ceci ne marche pas
-#  $processUser = posix_getpwuid(posix_geteuid()); ## ceci ne marche pas sur
+  // Append user name
+  global $_ENV; // ceci ne marche pas
+#  $user = $_ENV["USER"]; // BUG: ceci ne marche pas
+#  $user = getenv('REMOTE_USER'); // ceci ne marche pas
+#  $user = getenv('USER'); // ceci ne marche pas
+#  $processUser = posix_getpwuid(posix_geteuid()); // ceci ne marche pas sur
                #  RSAT mais bien sur mon portable, je suppose qu''il faut
                #  installer posix, mais je prefere eviter car je devrais le
                #  faire sur tous les miroirs
 #  $user = $processUser['name'];
-  $user = `whoami`; ## THIS WORKS BY IT IS TOO TRICKY TO CLAL A SYSTEM COMMAND.I should check why all the solutions above do not work
+  $user = `whoami`; // THIS WORKS BY IT IS TOO TRICKY TO CLAL A SYSTEM COMMAND.I should check why all the solutions above do not work
   $user = rtrim($user); ##remove space at the end of username ADDED By Didier Croes 11/04/2014
   $tmpDir .= $user."/";
 
-  ## Append
+  // Append
   $tmpDir .=  date("Y/m/d/");
-  mkdir($tmpDir, 0777, TRUE); ## Create temporary subdir if it does not exist
+  mkdir($tmpDir, 0777, TRUE); // Create temporary subdir if it does not exist
 #  $tmpFile = $_FILES[$file]["name"];
 #  $tmpFile = $tmpFile.$prefix;
   $now = date("Ymd_His");
@@ -94,7 +94,8 @@ Function getTempFileName($prefix, $ext) {
   if (isset($ext)) {
     $tmpFile .= $ext;
   }
-#  print "HELLo\t".$tmpDir."\t".$tmpFile;
+  //  print_r("<br>tmpDir = ".$tmpDir."</br>");
+  //  print_r("<br>tmpFile = ".$tmpFile."</br>");
 
   return $tmpDir.$tmpFile;
 }
@@ -142,7 +143,7 @@ Function trim_text($text) {
 
 
 /**
- * Echo a command by suppress the full path to rsa-tools.
+ * Echo a command by suppress the full path to RSAT
  */
 Function store_command($command, $name, $cmd_handle) {
   $clean_command = preg_replace('/(\')*\S+rsa\-tools/', '\\1\$RSAT', $command);
@@ -189,40 +190,77 @@ Function load_props($props) {
 }
 
 
-# SET OF OPERATION DONE WHEN LOADING EACH PHP PAGE
+////////////////////////////////////////////////////////////////
+// Operations done when loading each php page
+
+// Guess the main RSAT directory
 $rsat_main = getcwd()."/..";
+
+// log file
 $rsat_logs = $rsat_main."/public_html/logs";
-# LOAD PROPERTIES
+
+
+// Load properties from the site-specific configuration file RSAT_config.props
 $properties = load_props($rsat_main."/RSAT_config.props");
+
+// Check if the property rsat_www has been set to "auto", and, if so,
+// set it automatically
+if ($properties['rsat_www'] == "auto") {
+  $ip = $_SERVER['HTTP_HOST'];
+  // print_r('IP = '.$ip."<p>\n");
+  $properties['rsat_www'] =  'http://'.$ip.'/rsat/';
+}
+
+// Check if the property neat_www_root has been set to "auto", and, if so,
+// set it automatically
+if ($properties['neat_www_root'] == "auto") {
+  $ip = $_SERVER['HTTP_HOST'];
+  //print_r('IP = '.$ip);
+  $properties['neat_www_root'] =  'http://'.$ip.'/rsat/';
+}
+
+@ $neat_www_root = $properties['neat_www_root'];
+
+// Some particular properties are defined as global variables, for convenience
 $tmp = $properties['rsat_tmp'];
-$WWW_RSA = $properties['rsat_www'];
 $RSAT = $properties['RSAT'];
+$WWW_RSA = $properties['rsat_www'];
 $log_name = $properties['rsat_site'];
 date_default_timezone_set("Europe/Paris");
-$neat_wsdl = $properties['neat_ws'];
+
+// automatic definition of property neat_www_root
+if ($properties['neat_www_root'] == "auto") {
+  $properties['neat_www_root'] = $properties['rsat_www'];
+}
 $neat_www_root = $properties['neat_www_root'];
-# Karoline: property neat_java_host not required for me, just need the host name here
-# in future: obtain host from url address
-# $scheme = parse_url($WWW_RSA,PHP_URL_SCHEME);
-# $host = parse_url($WWW_RSA,PHP_URL_HOST);
-# $neat_java_host = $scheme."://".$host;
-# for the moment: java tools run only on ulb host
+
+// address of the WSDL document
+$neat_wsdl = $properties['neat_ws']."/web_services/RSATWS.wsdl";
+
+
+// Karoline: property neat_java_host not required for me, just need the host name here
+// in future: obtain host from url address
+// $scheme = parse_url($WWW_RSA,PHP_URL_SCHEME);
+// $host = parse_url($WWW_RSA,PHP_URL_HOST);
+// $neat_java_host = $scheme."://".$host;
+// for the moment: java tools run only on ulb host
 $neat_java_host = $properties['neat_java_host'];
-# host may include tomcat port
+// host may include tomcat port
 $tomcat_port = $properties['tomcat_port'];
 if (strcmp($tomcat_port,"") != 0){
-  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
- }
+    $neat_java_host = $neat_java_host . ":" . $tomcat_port;
+}
 $neat_java_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl";
 $neat_java_remote_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
-# LOG
+
+// LOG
 $year = date("Y");
 $month = date("m");
 $neat_log_file = sprintf ("$rsat_logs/log-file_$log_name"."_neat_%04d_%02d", $year,$month);
 $rsat_log_file = sprintf ("$rsat_logs/log-file_$log_name"."_%04d_%02d", $year,$month);
 
 
-## This function returns the name of the script executing it
+// This function returns the name of the script executing it
 Function getCurrentScriptName() {
   $currentFile = $_SERVER["SCRIPT_NAME"];
   $parts = Explode('/', $currentFile);
@@ -231,8 +269,8 @@ Function getCurrentScriptName() {
 }
 
 
-## This function replaces all spaces of a string by tabulation
-## If the line starts with a ';' or a '#' it is skipped.
+// This function replaces all spaces of a string by tabulation
+// If the line starts with a ';' or a '#' it is skipped.
 Function space_to_tab($string) {
   $result = "";
   $lines = explode("\n",$string);
@@ -250,9 +288,9 @@ Function space_to_tab($string) {
 }
 
 
-## This function replaces the given number of spaces in a row inside a string by tabulation
-## If the line starts with a ';' or a '#' it is skipped.
-## This function allows to handle input where identifiers may contain less than the given
+// This function replaces the given number of spaces in a row inside a string by tabulation
+// If the line starts with a ';' or a '#' it is skipped.
+// This function allows to handle input where identifiers may contain less than the given
 # number of spaces in a row.
 Function spaces_to_tab($string, $num) {
   $result = "";
@@ -296,7 +334,7 @@ Function rsat_path_to_url ($file_name) {
 }
 
 
-## This function returns the name of the script executing it
+// This function returns the name of the script executing it
 Function AlphaDate() {
   $my_date = exec("date +%Y_%m_%d.%H%M%S", $my_date);
   trim($my_date);
@@ -304,33 +342,39 @@ Function AlphaDate() {
 }
 
 
-## This function returns the name of the script executing it
+// This function returns the name of the script executing it
 Function check_integer($string) {
   return (preg_match("/[0-9]*/", $string));
 }
 
 
-################################################################
-### store info into a log file in a conveninent way for
-### subsequent login statistics
-### Usage:
-###     UpdateLogFile();
-###     UpdateLogFile($script_name);
-###     UpdateLogFile($script_name, $message);
-### If script name is empty or null... the program determine
-### the name of the file
+////////////////////////////////////////////////////////////////
+/* 
+
+Store info into a log file in a conveninent way for subsequent login
+statistics.
+
+Usage:
+     UpdateLogFile();
+     UpdateLogFile($script_name);
+     UpdateLogFile($script_name, $message);
+
+If script name is empty or null, the program determines the name of
+the file.
+*/
 Function UpdateLogFile($suite ,$script_name, $message) {
   if ($script_name == "") {
     $script_name = getCurrentScriptName();
   }
-# LOAD GLOBAL VARIABLES
+
+  // LOAD GLOBAL VARIABLES
   global $log_file, $log_name, $rsat_log_file, $neat_log_file;
   if ($suite == "rsat") {
     $log_file = $rsat_log_file;
   } else {
     $log_file = $neat_log_file;
   }
-# LOAD OTHER VARIABLES
+  // LOAD OTHER VARIABLES
   $my_date = AlphaDate();
   $user = getenv('REMOTE_USER');
   $address = getenv('REMOTE_ADDR');
@@ -338,7 +382,8 @@ Function UpdateLogFile($suite ,$script_name, $message) {
   $e_mail = "";
   $user_address_at_host = $user."@".$address." (".$host.")";
   $to_write = $my_date."\t".$log_name."\t".$user_address_at_host."\t".$script_name."\t".$e_mail."\t".$message."\n";
-# Write to the file
+
+  // Write to the file
   $log_handle = fopen($log_file, 'a');
   fwrite($log_handle, $to_write);
   fclose($log_handle);

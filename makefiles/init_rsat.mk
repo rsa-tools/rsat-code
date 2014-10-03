@@ -118,17 +118,25 @@ init:
 _create_download_dir:
 	cd ${RSAT}
 	mkdir -p downloads
-	(cd downloads; ln -fs $RSAT/makefiles/downloads.mk ./makefile)
+	(cd downloads; ln -fs ${RSAT}/makefiles/downloads.mk ./makefile)
 
 
 ## Adapt the IP address in the RSATWS.wsdl file
 ws_init:
 	@echo
-	@echo "Initializing RSATWS.wsdl file with SERVEER=\$RSAT_WS=${RSAT_WS}"
+	@echo "Initializing RSATWS.wsdl file with SERVER=RSAT_WS=${RSAT_WS}"
 	@perl -pe 's|\[RSAT_WS\]|${RSAT_WS}|g' \
 		${RSAT}/public_html/web_services/RSATWS_default.wsdl \
 		> ${RSAT}/public_html/web_services/RSATWS.wsdl
-	@echo "WSDL file"
+	@cp ${RSAT}/public_html/web_services/RSATWS.wsdl ${RSAT}/public_html/web_services/RSATWS_documentation.xml
+	@${MAKE} ws_param
+
+## List the parameters for the WS stub
+ws_param:
+	@echo ""
+	@echo "Web services parameters"
+	@echo "	RSAT_WS		${RSAT_WS}"
+	@echo "Local WSDL file"
 	@echo "	${RSAT}/public_html/web_services/RSATWS.wsdl"
 	@echo "WSDL access"
 	@echo "	${RSAT_WS}/web_services/RSATWS.wsdl"
@@ -136,16 +144,20 @@ ws_init:
 	@grep location ${RSAT}/public_html/web_services/RSATWS.wsdl
 
 ## Init Web services
-ws_stubb:
+ws_stub: ws_init
 	@echo
-	@echo "Initiating Web services at SERVER=\$RSAT_WS=${RSAT_WS}"
-	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stubb SERVER=${RSAT_WS})
+	@echo "Initiating Web services at SERVER=RSAT_WS=${RSAT_WS}"
+	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
 
-ws_stubb_test:
+ws_stub_test:
 	@echo
-	@echo "Testing Web services at SERVER=\$RSAT_WS=${RSAT_WS}"
-	(cd ${RSAT}/ws_clients/perl_clients/; make stubb_test)
+	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} using the stub"
+	(cd ${RSAT}/ws_clients/perl_clients/; make stub_test)
 
+ws_nostub_test:
+	@echo
+	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} without stub"
+	perl ${RSAT}/ws_clients/perl_clients/supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
 
 ################################################################
 ## Compile and install C/C++ programs that are part of the RSAT
@@ -188,6 +200,7 @@ compile_compare_matrices_quick:
 ## Install external tools useful for RSAT
 install_rsat_extra:
 	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_seqlogo
+	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_weblogo
 
 ################################################################
 ## Compile the NeAT tools (network analysis + pathway analysis)

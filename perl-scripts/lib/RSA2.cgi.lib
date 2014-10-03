@@ -7,6 +7,10 @@ package main;
 require RSAT::OrganismManager;
 require RSAT::server;
 require RSAT::error;
+use Email::Sender::Simple qw(sendmail);
+use Email::Simple;
+use Email::Simple::Creator;
+use Email::Sender::Transport::SMTP;
 
 =pod
 
@@ -248,7 +252,7 @@ sub RSA_header {
 
 
   ### print the header of the result page
-  print $query->start_html(-title=>"RSA-tools : $title",
+  print $query->start_html(-title=>"RSAT : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -script=>[
@@ -262,7 +266,7 @@ sub RSA_header {
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
-  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</a> - $title</h3>";
+  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSAT</a> - $title</h3>";
 
   ################################################################
   ## Check if client IP is blacklisted on this server.
@@ -295,25 +299,36 @@ sub LinkOneFile {
 ## on the server, or display on the browser.
 sub SelectOutput {
     my ($default_output, %args) = @_;
-    $default_output = "display" unless ($default_output);
+
+    ## Check and adapt default output if necessary
+    if (($ENV{mail_supported} eq "no") && ($default_output eq "email")) {
+	$default_output = "display";
+    } elsif ($args{email_only}) {
+	$default{output} = 'email';
+    } elsif ($default_output eq "") {
+	$default_output = "display";
+    }
+    
+    ## Collect the possible output types to be displayed
     my @values = ();
     if ($args{email_only}) {
-      push @values, 'email';
-      $default{output} = 'email';
+	push @values, 'email';
     } else {
-      if ($default_output eq 'server') {
-	push @values, 'server'
-      }
-      push @values, ('display','email');
+	if ($default_output eq 'server') {
+	    push @values, 'server';
+	}
+	push @values, ('display');
+	push @values, ('email') unless ($ENV{mail_supported} eq "no");
     }
+    
+    ## Display the output choice
     print "<B>Output</B>&nbsp;";
     print $query->radio_group(-name=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
     print $query->textfield(-name=>'user_email',
 			    -size=>30,
-	);
-    print "<BR>\n";
+	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
 }
 
@@ -1589,9 +1604,9 @@ sub PrintHtmlResultHeader {
   ## Start HTML body
   $header .=  "<body>\n";
   if (defined($ENV{rsat_www})) {
-    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSAT</a> - ".$program." result</h1>\n";
   } else {
-    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSAT</a> - ".$program." result</h1>\n";
   }
   $header .=  "<h3 style='text-align:center;'>Analysis: ";
   $header .=  $title." (";
@@ -1838,7 +1853,7 @@ sub EmailTheResult {
     $html_submission_message =~ s|\\\$|\$|gm;
     &Info($html_submission_message);
 
-    &RSAT::server::sendmail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
+    &RSAT::server::send_mail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
 
     ## Concatenate the command with the email notification
     my $completion_message;

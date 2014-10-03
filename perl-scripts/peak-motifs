@@ -2153,11 +2153,7 @@ sub MotifsVersusMotifs {
 sub ClusterMotifs {
 
   ## Use MCL to partition the motif graph into clusters
-  my $mcl_dir = $ENV{mcl_dir};
-  unless ($mcl_dir) {
-    &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
-  }
-  my $mcl = $mcl_dir."/mcl";
+  my $mcl = &RSAT::server::GetProgramPath("mcl");
   $cmd = "grep -v '^;' ".$main::outfile{"motifs_disco_compa"}.">".$main::outfile{"motifs_disco_compa"}.".mcl";
   $cmd .= "; ".$mcl."/mcl ".$main::outfile{"motifs_disco_compa"}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";
@@ -3078,12 +3074,6 @@ sub SynthesisByMotif {
       if ((defined($main::outfile{$motif_id.'_pssm_sites_genomic'})) && (-e $main::outfile{$motif_id.'_pssm_sites_genomic'})) {
 	## UCSC link to genomic location of predicted sites
 	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$motif_id.'_pssm_sites_genomic'});
-	#	my $BED_URL = join ("/", 
-	#			    $ENV{rsat_www},
-	#			    "tmp",
-	#			    &RSAT::util::ShortFileName($main::dir{output}),
-	#			    &RSAT::util::RelativePath($main::dir{output}, $main::outfile{$motif_id.'_pssm_sites_genomic'}));
-	#	$BED_URL =~ s|/+|/|g;
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
