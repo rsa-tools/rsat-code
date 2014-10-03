@@ -51,7 +51,7 @@ JOB_DIR=`pwd`/jobs/${DAY}
 JOB_PREFIX=job
 JOB=`mktemp -u ${JOB_PREFIX}.XXXXXX`
 command_queue:
-	${MAKE} command_queue_${QSUB_MANAGER}
+	${MAKE} command_queue_${QUEUE_MANAGER}
 
 ## Send a jobs to a cluster using the torque quee management system
 ##
@@ -123,7 +123,7 @@ command_now:
 
 ################################################################
 ## Watch the number of jobs in the cluster queue
-watch_jobs: watch_jobs_${QSUB_MANAGER}
+watch_jobs: watch_jobs_${QUEUE_MANAGER}
 
 watch_jobs_torque:
 	@hostname

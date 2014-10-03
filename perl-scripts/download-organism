@@ -88,7 +88,7 @@ rather than install-genomes.
 =over
 
 
-=item <-taxfreq>
+=item B<-taxfreq>
 
 Download the taxon-wise oligo and dyad frequencies. Those are required for
 comparative genomics approaches (footprint-discovery, footprint-scan).
@@ -137,12 +137,16 @@ package main;
   ## Parameters for downloading with rsync
   $rsat_server_dir = "";
 
+  $ssh_login = "";
+  $ssh_bashrc = "";
+
   $verbose = 0;
   $dry = 0; ## Print the commands without executing them
   $die_on_error = 0;
 
   ## Remote server from which genomes should be downloaded
-  $RSAT_SERVER="rsat.ulb.ac.be/rsat";
+#  $RSAT_SERVER="rsat.eu/";
+  $RSAT_SERVER="http://rsat.ulb.ac.be/rsat";
 
   ## List of organisms to install
   @organisms = ();
@@ -152,9 +156,6 @@ package main;
 
   ## Local genomes directory
   $local_genomes_dir = $ENV{RSAT}."/public_html/data/genomes/";
-
-  ## Output stream for verbosity
-  $main::out = STDOUT; 
 
   ## Indexes for organism attributes
   %last_update = ();
@@ -169,20 +170,19 @@ package main;
   ## Read argument values
   &ReadArguments();
 
-
   ################################################################
   ## Check that the web aspirator is working
 #  $which_aspirator = `which $get_command`;
   $which_aspirator = &RSAT::server::GetProgramPath($get_command);
   &RSAT::message::Debug($which_aspirator) if ($main::verbose >= 4);
   unless ($which_aspirator) {
-    &RSAT::error::FatalError("The program ".$get_command." is not found in your path. This program is required for downloading data from the server. ");
+    &RSAT::error::FatalError("The program ".$get_command." is not found in your path. This program is required for ".$action." data from the server. ");
   }
 
   ################################################################
   ## Check argument values
-  if ((scalar(@organisms) == 0) && (scalar(@taxa) == 0)) {
-    &FatalError("You must specify at least one organism (-org) or taxon (-taxon).");
+  if ((scalar(@organisms) == 0) && (scalar(@taxa) == 0) && ($orglist_file eq "")) {
+    &FatalError("You must specify at least one organism (-org) or taxon (-taxon), or a file containing organism names (-org_list).");
   }
 
   ## Upload option requires ssh login
@@ -193,9 +193,13 @@ package main;
   
 
   ## Output directory
-  &RSAT::message::Info("Local genome directory", $local_genomes_dir) if ($main::verbose >= 1);
+  &RSAT::message::Info("Local genome directory", $local_genomes_dir) if ($main::verbose >= 2);
   &RSAT::util::CheckOutDir($local_genomes_dir);
 #  chdir($local_genomes_dir);
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
 
 
   ## Get RSAT path for rsync
@@ -207,15 +211,30 @@ package main;
       $rsat_server_dir = $2;
     }
     
-    ## Obtain the remote RSAT path by ssh if required
-    unless ($rsat_server_dir) {
-      $rsat_server_dir_cmd = "ssh $ssh_login 'echo \$RSAT'";
+    ## If RSAT server dir is provided with the option -ssh,
+    ## automatically load the RSAT_config.bashrc file in this
+    ## directory
+    if ($rsat_server_dir) {
+      unless ($ssh_bashrc) {
+	$ssh_bashrc = $rsat_server_dir."/RSAT_config.bashrc";
+      }
+      $source_bashrc_cmd = "source ".$ssh_bashrc."; ";
+      
+    } else {
+      ## Obtain the remote RSAT path by ssh if required
+      if ($ssh_bashrc) {
+	$source_bashrc_cmd = "source ".$ssh_bashrc."; ";
+      }
+      $rsat_server_dir_cmd = "ssh $ssh_login '";
+      $rsat_server_dir_cmd .= $source_bashrc_cmd;
+      $rsat_server_dir_cmd .= " echo \$RSAT'";
       &RSAT::message::TimeWarn("Getting RSAT dir on server\n\t", $rsat_server_dir_cmd) if ($main::verbose >= 3);
       $rsat_server_dir = `$rsat_server_dir_cmd`;
       chomp($rsat_server_dir);
+      &RSAT::message::Info("RSAT dir on remote server", $rsat_server_dir) if ($main::verbose >= 2);
       &RSAT::error::FatalError("Cannot get RSAT path on remote server", $ssh_login) unless ($rsat_server_dir);
     }
-    &RSAT::message::Info("Remote server", $ssh_login, "RSAT env",  $rsat_server_dir) if ($main::verbose >= 0);
+    &RSAT::message::Info("Remote server", $ssh_login, "RSAT env",  $rsat_server_dir) if ($main::verbose >= 2);
   }
   
   ################################################################
@@ -229,15 +248,15 @@ package main;
     my $orgs_for_taxa;
     if ($upload) {
       &RSAT::message::Info("Getting list of organisms to upload for taxon", $taxon, "on local host", $ENV{HOSTNAME}, "");
-      $cmd = "supported-organisms -return ID -taxon $taxon | grep -v '^#'";
+      $cmd = "supported-organisms -return ID -taxon ".$taxon." | grep -v '^#'";
     } elsif ($get_command eq "rsync") {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, "by ssh connection", $ssh_login);
-      $cmd = "ssh $ssh_login 'supported-organisms -return ID -taxon $taxon | grep -v \"^#\"'";
+      $cmd = "ssh $ssh_login '".$source_bashrc_cmd."supported-organisms -return ID -taxon ".$taxon." | grep -v \"^#\"'";
     } else {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, " by web services");
-      $cmd = "supported-organisms-server -return ID -taxon $taxon | grep -v '^#'";
+      $cmd = "supported-organisms-server -url ".$RSAT_SERVER." -return ID -taxon ".$taxon." | grep -v '^#'";
     }
-    &RSAT::message::TimeWarn("\n; ", $cmd) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("\n; ", $cmd) if ($main::verbose >= 3);
     $orgs_for_taxa = `$cmd`;
 
     chomp ($orgs_for_taxa);
@@ -245,6 +264,32 @@ package main;
     push @organisms, @orgs_for_taxa;
   }
 
+  ## Read list of organisms from a file
+  if ($main::orglist_file) {
+      &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose >= 1);
+      my @orgs_from_file = ();
+      ($main::orglist) = &OpenInputFile($main::orglist_file);
+      while (<$main::orglist>) {
+	  chomp();
+	  s/\r/\n/g;	  ## Suppress Windows-specific carriage return
+	  next if /^;/;		## Comment line
+	  next if /^\#/;		## Header line
+	  next if /^\--/;		## SQL comment line
+	  next unless /\S/;		## Empty line
+	  my ($org) = split /\s/;
+	  $org = &trim($org); ## Remove leading and trailing spaces
+	  push @orgs_from_file, $org;
+      }
+      close $main::orglist;
+      if (scalar(@orgs_from_file) == 0) {
+	  &RSAT::error::FatalError("The organism file", $main::orglist_file, "should contain at least one valid organism name.\n",
+				   "Use the command supported-organisms-server to obtain the list of organisms supported on the server.");
+      } else {
+	  &RSAT::message::Info(scalar(@orgs_from_file), "organisms in file", $main::orglist_file) if ($main::verbose >= 1);
+	  push @organisms, @orgs_from_file;
+      }
+  }
+  
   &RSAT::message::Info($action, scalar(@organisms), "organisms");
   my $i = 0;
   foreach my $org (@organisms) {
@@ -257,22 +302,24 @@ package main;
   ## Get the update dates + source from the server (in order to restrict the
   ## number of queries, get dates for all organisms and store them for
   ## the selected organisms only)
-  &RSAT::message::TimeWarn("Getting information about supported organisms from server") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Getting information about supported organisms from server") if ($main::verbose >= 2);
 
 
   ################################################################
   ## Get organism-specific parameters (data source, last update date).
   my @all_organisms;
   if ($upload) {
-    ## For upload, update date and data sources are read locally
+    ## For upload, the update date and data sources are read locally
     $cmd = "supported-organisms -v 0 -return ID,last_update,source | grep -v '^#'";
   } elsif ($ssh_login) {
-    $cmd = "ssh $ssh_login 'supported-organisms -v 0 -return ID,last_update,source | grep -v \"^#\"'";
+    $cmd = "ssh $ssh_login '".$source_bashrc_cmd."supported-organisms -v 0 -return ID,last_update,source | grep -v \"^#\"'";
   } else {
-    $cmd = "supported-organisms-server -v 0 -return ID,last_update,source | grep -v '^#'";
+    $cmd = "supported-organisms-server -url ".$RSAT_SERVER." -v 0 -return ID,last_update,source | grep -v '^#'";
   }
-  &RSAT::message::TimeWarn("Getting list of supported organisms from remote server\n; ", $cmd) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Getting list of supported organisms from remote server\n; ", $cmd) if ($main::verbose >= 2);
   @all_organisms = `$cmd`;
+
+  &RSAT::message::Info(scalar(@all_organisms), "supported organisms on server", $RSAT_SERVER) if ($main::verbose >= 2);
 
   foreach my $org_line (@all_organisms) {
     next unless ($org_line); ## Skip empty line returned by RSAT Web service
@@ -299,17 +346,20 @@ package main;
     ## download one genome
     $cmd = $which_aspirator;
     if ($get_command eq "wget") {
-      my $RSAT_SERVER_ROOT;
-      if ($RSAT_SERVER =~ /\//) {
+      my $RSAT_SERVER_ROOT = $RSAT_SERVER;
+      $RSAT_SERVER_ROOT =~ s|http://||;
+      if ($RSAT_SERVER_ROOT =~ /\//) {
 	  $RSAT_SERVER_ROOT = '/'.$'; #'
       }
 
-      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, "RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, 
+			       "RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+      &RSAT::message::Debug("RSAT server root", $RSAT_SERVER_ROOT) if ($main::verbose >= 3);
       $cmd .= " --reject jobs --reject 'index.html*'";
-      $cmd .= " -X".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
+      $cmd .= " -X ".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
       if ($main::verbose <= 3) {
 	## quiet mode for wget
-	$cmd .= " -q"; 
+	$cmd .= " --quiet"; 
       } else {
 	## "low-verbosity" mode for wget (the default mode is VERY
 	## verbosy, the "low-verbosity" mode is still quite verbosy)
@@ -322,19 +372,23 @@ package main;
       $cmd .= " --relative";
       $cmd .= " --dont-remove-listing";
       $cmd .= " --convert-links";
-      $cmd .= " -P ".$local_genomes_dir;
-      $cmd .= " -nH  --cut-dirs=3";
-      $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
+      $cmd .= " --exclude-directories=jobs";
+      $cmd .= " --directory-prefix=".$local_genomes_dir;
+      $cmd .= " --no-host-directories --cut-dirs=3";
+      $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
 
     } elsif ($get_command eq "rsync") {
+      my $rsync_opt = " -e ssh -ruptl -z ";
+      $rsync_opt .= " -v" if ($main::verbose >= 4);
+      $rsync_opt .= " --exclude jobs --exclude '*~'";
+      $rsync_opt .= " --exclude blast_hits --exclude blastdb" if ($no_blast);
+
       if ($main::upload) {
 #	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/*";
 	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/";
 	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome)
 	    if ($main::verbose >= 1);
-	$cmd .= " -e ssh -ruptvl -z ";
-	$cmd .= " --exclude jobs --exclude '*~'";
-	$cmd .= " --exclude blast_hits --exclude blastdb" if ($no_blast);
+	$cmd .= $rsync_opt;
 	$cmd .= " ".$local_genomes_dir."/".$org;
 	$cmd .= " ".$remote_genome;
 	$cmd =~ s/\/\//\//g;
@@ -344,9 +398,7 @@ package main;
 	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org;
 	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome) 
 	    if ($main::verbose >= 1);
-	$cmd .= " -e ssh -ruptvl -z ";
-	$cmd .= " --exclude jobs --exclude '*~'";
-	$cmd .= " --exclude blast_hits --exclude blastdb" if ($no_blast);
+	$cmd .= $rsync_opt;
 	$cmd .= " ".$remote_genome;
 	$cmd .= " ".$local_genomes_dir."/";
 	$cmd =~ s/\/\//\//g;
@@ -356,18 +408,20 @@ package main;
 
 
     ## update the organism in the RSAT configuration tables
-    my $source = $source{$org} || '<NA>';
-    my $date = $last_update{$org} || '<NA>';
-    &RSAT::message::TimeWarn("Updating organism",$org) if ($main::verbose >= 1);
-    $cmd = "install-organism -v 1 -task config,phylogeny -org ".$org;
-    $cmd .= " -date \"".$date."\"";
-    $cmd .= " -source \"".$source."\"";
+    unless ($no_config) {
+      my $source = $source{$org} || '<NA>';
+      my $date = $last_update{$org} || '<NA>';
+      &RSAT::message::TimeWarn("Updating organism",$org) if ($main::verbose >= 2);
+      $cmd = "install-organism -v 1 -task config,phylogeny -org ".$org;
+      $cmd .= " -date \"".$date."\"";
+      $cmd .= " -source \"".$source."\"";
 #    $cmd .= " >>& install-organisms_log.txt";
-    if ($main::upload) {
-      $cmd = "ssh $ssh_login '$cmd'";
+      if ($main::upload) {
+	$cmd = "ssh $ssh_login '".$source_bashrc_cmd."$cmd'";
+      }
+      &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
+      &RSAT::message::TimeWarn("Updating config and phylogeny\n", $cmd) if ($main::verbose >= 2);
     }
-    &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
-    &RSAT::message::Debug("Updating config and phylogeny\n", $cmd) if ($main::verbose >= 2);
   }
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
@@ -464,6 +518,22 @@ multiple organisms.
 } elsif ($arg eq "-org") {
 	  push @organisms,  shift(@arguments);
 
+=pod
+
+=item B<-org_list>
+
+This option gives the posibility to specify a set of reference
+organisms rather than a taxon. Orthologs will only be searched in the
+organisms belonging to the given list.
+
+File format: each row should contain the identifier of one
+organism. Lines starting with a semicolumn are ignored.
+
+=cut
+
+} elsif ($arg eq "-org_list") {
+    $main::orglist_file= shift(@arguments);
+
 	    ## Selected taxon (or taxa)
 =pod
 
@@ -528,6 +598,33 @@ requires the writing permission in the RSAT directory).
 
 =pod
 
+=item	B<-o outputfile>
+
+The output file contains timing and information about downloaded
+organisms (installation directories, ...).
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-server server/path>
+
+Specify an alternative server.
+
+Default: http://rsat.ulb.ac.be/rsat/
+
+=cut
+
+    } elsif ($arg eq "-server") {
+      $RSAT_SERVER = shift(@arguments);
+
+=pod
+
 =item B<-rsync>
 
 This option requires a ssh login on the main RSAT server, it is
@@ -580,6 +677,23 @@ Examples:
 
 =pod
 
+=item B<-bashrc bahrc_file>
+
+This option is only used with the option -ssh.
+
+Specify the path of the RSAT bashrc file.  The ssh synchronization
+mode requires for the client to load the RSAT_config.bashrc file.
+Depending on server configuration, this file might not be loaded in
+non-interactive secure shell mode. The file specified with the option
+-bashrc will be sourced as the first instruction of the remote ssh
+commands.
+
+=cut
+    } elsif ($arg eq "-bashrc") {
+      $main::ssh_bashrc = shift(@arguments);
+
+=pod
+
 =item B<-upload>
 
 This option is only possible with the ssh option.
@@ -613,6 +727,17 @@ for testing the options with taxon-wise queries.
 
 =pod
 
+=item B<-no_config>
+
+Download (or upload) the files but do not run the configuration task
+(install-organisms -task config).
+
+=cut
+	} elsif ($arg eq "-no_config") {
+	    $main::no_config = 1;
+
+=pod
+
 =item B<-dry>
 
 Dry run: print the commands but do not execute them (just for
@@ -620,7 +745,7 @@ testing).
 
 =cut
 	} elsif ($arg eq "-dry") {
-	    $main::dry = 1;;
+	    $main::dry = 1;
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));

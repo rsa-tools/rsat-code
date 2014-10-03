@@ -121,10 +121,9 @@ PERL_MODULES= \
 	YAML \
 	Module::Build::Compat \
 	CGI \
-	MIME::Lite \
-	MIME::Tools \
-	MIME::Parser \
-	MIME::Base64 \
+	Email::Sender \
+	Email::Simple \
+	Email::Simple::Creator \
 	PostScript::Simple	 \
 	Statistics::Distributions \
 	Algorithm::Cluster \
@@ -151,14 +150,13 @@ PERL_MODULES= \
 	XML::Compile::SOAP11 \
 	XML::Compile::WSDL11 \
 	XML::Compile::Transport::SOAPHTTP \
-	SOAP \
 	SOAP::Lite \
 	SOAP::Packager \
-	SOAP::Transport \
 	SOAP::Transport::HTTP \
 	SOAP::WSDL \
 	Bio::Perl \
 	Bio::Das
+
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
@@ -211,11 +209,11 @@ perl_modules_install_one_by_one:
 ## Some Perl modules cannot be installed without force
 ## About SOAP::Transport::HTTP, I think that there is no doc but the
 ## module is installed correctly.
+PERL_MODULES_TO_FORCE=Object::InsideOut SOAP SOAP::Transport SOAP::WSDL
 perl_modules_install_by_force:
-	@sudo ${CPAN_CMD} -f -i 'SOAP'
-	@sudo ${CPAN_CMD} -f -i 'SOAP::Transport'
-	@sudo ${CPAN_CMD} -f -i 'SOAP::WSDL'
-#	@sudo ${CPAN_CMD} -f -i 'Object::InsideOut'
+	@for module in ${PERL_MODULES_TO_FORCE} ; do \
+		sudo ${CPAN_CMD} -f -i $${module}; \
+	done
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
@@ -259,7 +257,7 @@ perl_module_test_doc:
 
 ################################################################
 ## Install modules required for python
-PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy
+PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy httplib2
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 

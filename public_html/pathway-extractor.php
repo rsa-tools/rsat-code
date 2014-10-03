@@ -55,7 +55,7 @@ $argumenta .= " -prefix ". $groupdescriptor;
 #$exp_bed_file = "/^[\w\-\+\s,\.\#; \/]+$/";
 
 ////////////////////////////////////////////////////////////////
-//Print <h3>
+// Print <h3>
 echo "<H3><a href='".$properties['rsat_www']."'>RSAT</a> - Pathway-Extractor - results</H3>";
 
 ////////////////////////////////////////////////////////////////

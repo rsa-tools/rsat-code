@@ -286,7 +286,7 @@ package main;
 
     ## Compute the sum of occurrences
     $status_occ{total} = 0;
-    for my $status qw(pos neg) {
+    for my $status (qw(pos neg)) {
 #      my $status = $status_label{$label};
       unless (defined($status_occ{$status})) {
 	$status_occ{$status} = 0;
@@ -406,7 +406,7 @@ package main;
       local $F_icum = $N_icum/$status_occ{total};
 
       ## Print one result line
-      foreach $stat qw(Sn PPV FPR Acc_g Acc_a F_icum) {
+      foreach $stat (qw(Sn PPV FPR Acc_g Acc_a F_icum)) {
 	if ($$stat < 1e-2) {
 	  $$stat = sprintf("%5.2g", $$stat);
 	} else {
