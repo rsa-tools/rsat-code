@@ -526,7 +526,7 @@ package	main;
     $scan_cmd .= " -bgfile $bg_file";
     $scan_cmd .= " -name $matrix_ac";
 
-    &RSAT::message::TimeWarn("\tScan matrix") if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("\tScan matrix", $matrix_ac) if ($main::verbose >= 3);
     my $out_fas = &OpenOutputFile($fasta_file);
 
     my ($var_seq) = &OpenInputFile($main::infile{input});
