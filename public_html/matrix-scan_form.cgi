@@ -255,7 +255,7 @@ $demo_sequence_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_eve_up50
 $demo_sequence = `cat $demo_sequence_file`;
 
 ## Load demo matrices
-$demo_matrix_file = $ENV{RSAT}."/public_html/demo_files/matrix_scan_demo_matrices.tf";
+$demo_matrix_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_segmentation_12matrices.tf";
 $demo_matrix = `cat $demo_matrix_file`;
 
 
