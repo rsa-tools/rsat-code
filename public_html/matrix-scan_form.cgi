@@ -251,7 +251,7 @@ print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 
 
 ## Load demo sequences
-$demo_sequence_file = $ENV{RSAT}."/public_html/demo_files/matrix_scan_demo_sequences.fasta";
+$demo_sequence_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_eve_up5000.fasta";
 $demo_sequence = `cat $demo_sequence_file`;
 
 ## Load demo matrices
