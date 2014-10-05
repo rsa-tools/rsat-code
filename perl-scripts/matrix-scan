@@ -301,8 +301,10 @@ package main;
 
   ################################################################
   #### initialize parameters
-  local $top_matrices = 0;
-  local $top_seq = 0;
+  local $first_matrix = 0;
+  local $last_matrix = 0;
+  local $first_seq = 0;
+  local $last_seq = 0;
   local $start_time = &RSAT::util::StartScript();
   local $decimals=1;
   local $base = exp(1);
@@ -919,114 +921,128 @@ package main;
 
     my $new_matrix_nb = scalar(@new_matrices);
     foreach my $m (1..$new_matrix_nb) {
-      unless (($top_matrices > 0) && ($m > $top_matrices)) {
-	my $matrix = $new_matrices[$m-1];
-	$matrix->force_attribute("decimals", $decimals);
-	$matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
-	$matrix->set_attribute("matches", 0); ## Initialize the match counter
-	$matrix->set_parameter("pseudo", $pseudo_counts);
-	#	$matrix->push_attribute("parameters", "pseudo");
-	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
-	$matrix->set_attribute("file", $matrix_file);
-	$matrix->set_attribute("n_treatment", $n_treatment);
-	$matrix->index_alphabet();
+      my $matrix = $new_matrices[$m-1];
+      if ($first_matrix > 0) {
+	  if ($m < $first_matrix) {
+	      &RSAT::message::Info("Skipping matrix", $m, $matrix->get_attribute("name")) if ($main::verbose >= 3);
+	      next;
+	  } elsif ($m == $first_matrix) {
+	      &RSAT::message::Info("Starting with matrix", $m) if ($main::verbose >= 2);	      
+	  }
+      }
 
-	&RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
-				 $m."/".$new_matrix_nb, 
-				 $matrix->get_attribute("name")) if ($main::verbose >= 3);
+      if (($last_matrix > 0) && ($m > $last_matrix)) {
+	  &RSAT::message::Info("Stopping after", $last_matrix, "matrices") if ($main::verbose >= 2);
+	  last;
+      }
 
-	## Use the matrix consensus as name
-	if ($consensus_name) {
+#      unless (($last_matrix > 0) && ($m > $last_matrix)) {
+      $matrix->force_attribute("decimals", $decimals);
+      $matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
+      $matrix->set_attribute("matches", 0); ## Initialize the match counter
+      $matrix->set_parameter("pseudo", $pseudo_counts);
+      #	$matrix->push_attribute("parameters", "pseudo");
+      $matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
+      $matrix->set_attribute("file", $matrix_file);
+      $matrix->set_attribute("n_treatment", $n_treatment);
+      $matrix->index_alphabet();
+      
+      &RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
+			       $m."/".$new_matrix_nb, 
+			       $matrix->get_attribute("name")) if ($main::verbose >= 3);
+
+      ## Use the matrix consensus as name
+      if ($consensus_name) {
 	  $matrix->calcConsensus();
 	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
 	  if ($consensus) {
-	    &RSAT::message::Warning("Using consensus as name", $consensus)
-	      if ($main::verbose >= 4);
-	    $matrix->force_attribute("name", $consensus);
+	      &RSAT::message::Warning("Using consensus as name", $consensus)
+		  if ($main::verbose >= 4);
+	      $matrix->force_attribute("name", $consensus);
 	  }
-	} elsif ($id_as_name) {
+      } elsif ($id_as_name) {
 	  my $id = $matrix->get_attribute("name");
 	  #die $id."BOOM"."\n";
 	  if ($id) {
-	    $matrix->force_attribute("name", $id);
+	      $matrix->force_attribute("name", $id);
 	  } else {
-	    &RSAT::message::Warning("Matrix",$matrix->get_attribute("accession"), "has no identifier");
-	    $matrix->force_attribute("name", $matrix->get_attribute("accession"));
+	      &RSAT::message::Warning("Matrix",$matrix->get_attribute("accession"), "has no identifier");
+	      $matrix->force_attribute("name", $matrix->get_attribute("accession"));
 	  }
-	} elsif (($ac_as_name) && ($matrix->get_attribute("accession"))) {
+      } elsif (($ac_as_name) && ($matrix->get_attribute("accession"))) {
 	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
-	} elsif (!$matrix->get_attribute("name")) {
+      } elsif (!$matrix->get_attribute("name")) {
 	  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 	  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
 	  if (scalar(@new_matrices) > 1) {
-	    $matrix_name .= ".".($m+1);
+	      $matrix_name .= ".".($m+1);
 	  }
 	  $matrix->force_attribute("name", $matrix_name);
-	}
-
-	## Check matrix name with thresholds
-	foreach my $thr_matrix_name (keys (%matrices_mth)) {
+      }
+      
+      ## Check matrix name with thresholds
+      foreach my $thr_matrix_name (keys (%matrices_mth)) {
 	  if ($matrix->get_attribute("name") eq $thr_matrix_name) {
-	    delete $matrices_mth{$thr_matrix_name};
+	      delete $matrices_mth{$thr_matrix_name};
 	  }
-	}
+      }
 
 	## Check that the matrix width is smaller than markov order + 1
-	my $matrix_width = $matrix->ncol();
-	my $markov_order = $bg_model->get_attribute("order");
-	if ($matrix_width < $markov_order + 1) {
+      my $matrix_width = $matrix->ncol();
+      my $markov_order = $bg_model->get_attribute("order");
+      if ($matrix_width < $markov_order + 1) {
 	  &RSAT::error::FatalError(join (" ",
 					 "Markov order (".$markov_order.")",
 					 "is too large for matrix",
 					 $matrix->get_attribute("name"),
 					 "of width ".$matrix_width."."));
-	}
-
-	## Calculate min and max values for P(S|M)
- 	$matrix->proba_range();
-
-	## Calculate weight range
-	$matrix->weight_range();
-
-	# 	unless ($bg_method eq "window") {
-	# 		## Set the matrix prior
-	# 		$matrix->setPrior(%prior);
-	# 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
-	# 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 5);
-	# 		## Calculate min and max weight values
-	# 		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-	# 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
-	# 					      $matrix->get_attribute("name"),
-	# 					      $Wmin, $Wmax, $Wrange,
-	# 					     )) if ($main::verbose >= 5);
-	# 	}
-
-	unless ($bg_method eq "window") {
+      }
+      
+      ## Calculate min and max values for P(S|M)
+      $matrix->proba_range();
+      
+      ## Calculate weight range
+      $matrix->weight_range();
+      
+      # 	unless ($bg_method eq "window") {
+      # 		## Set the matrix prior
+      # 		$matrix->setPrior(%prior);
+      # 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"),
+      # 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 5);
+      # 		## Calculate min and max weight values
+      # 		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+      # 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
+      # 					      $matrix->get_attribute("name"),
+      # 					      $Wmin, $Wmax, $Wrange,
+      # 					     )) if ($main::verbose >= 5);
+      # 	}
+      
+      unless ($bg_method eq "window") {
 	  ## Set the matrix prior
 	  $matrix->setMarkovModel($bg_model);
 	  &RSAT::message::TimeWarn("Setting matrix priors for matrix", $matrix->get_attribute("name"),
-					%prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
+				   %prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
 	  ## Calculate min and max weight values
 	  my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
 	  &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
 					$matrix->get_attribute("name"),
 					$Wmin, $Wmax, $Wrange,
-				       )) if ($main::verbose >= 4);
-	}
-
-
-
-	push @matrices, $matrix;
-	$matrix_nb = scalar(@matrices);
-	$matrix_sizes{$matrix->get_attribute("name")} = $matrix->get_attribute("ncol");
-	&RSAT::message::TimeWarn("Read matrix",
-				 $matrix_nb,
-				 $matrix->get_attribute("name"),
-				 $matrix->get_attribute("file")
-				) if ($main::verbose >= 4);
+				   )) if ($main::verbose >= 4);
       }
+      
+      
+      
+      push @matrices, $matrix;
+      $matrix_nb = scalar(@matrices);
+      $matrix_sizes{$matrix->get_attribute("name")} = $matrix->get_attribute("ncol");
+      &RSAT::message::TimeWarn("Read matrix",
+			       $matrix_nb,
+			       $matrix->get_attribute("name"),
+			       $matrix->get_attribute("file")
+	  ) if ($main::verbose >= 4);
     }
   }
+  ### HELLO }
 
 
   ################################################################
@@ -1245,9 +1261,19 @@ package main;
     ## Update sequence number
     $sequence_number++;
 
-    ## Top sequences
-    if (($top_seq > 0) && ($sequence_number > $top_seq)) {
-      &RSAT::message::Info("Stopped after $top_seq sequences") if ($main::verbose >= 2);
+    ## Skip first sequences if required
+    if ($first_seq > 0) {
+	if ($sequence_number < $first_seq) {
+	    &RSAT::message::Info("Skipping sequence", $sequence_number) if ($main::verbose >= 4);
+	    next;
+	} elsif ($first_seq == $sequence_number) {
+	    &RSAT::message::Info("Starting scanning at sequence",  $first_seq) if ($main::verbose >= 2);
+	}
+    }
+
+    ## last sequence
+    if (($last_seq > 0) && ($sequence_number > $last_seq)) {
+      &RSAT::message::Info("Stopped after $last_seq sequences") if ($main::verbose >= 2);
       last;
     }
 
@@ -2475,8 +2501,10 @@ matrix-scan options
 -m		matrix file
 -mlist		list of matrices
 -matrix_format  format of the matrix (supported: tab(default), meme,transfa)
--top_matrices #	only scan with the top # matrices per matrix file
--top_seq #	only scan the top # sequences
+-first_matrix N	start scanning with the Nth matrix (skip N-1 first matrices)
+-last_matrix N	stop scanning after N matrices
+-first_seq N	start scanning at the Nth sequence (stkip N-1 first sequences)
+-last_seq N	stop scanning after N sequences
 -consensus_name use the motif (degenerate) consensus as matrix name.
 -id_as_name     use the matrix identifier as matrix name (for TRANSFAC format).
 -ac_as_name     use the matrix accession number as matrix name (for TRANSFAC format).
@@ -2682,7 +2710,25 @@ multiple matrices.
 
 =pod
 
-=item B<-top_matrices #>
+=item B<-first_matrix N>
+
+Start scanning with the Nth matrix (kip the N-1 first matrices of the
+matrix file).
+
+This option is valid for some file formats containing multiple
+matrices (e.g. consensus, meme, MotifSampler), where the top matrix is
+generally the most informative.
+
+=cut
+    } elsif ($arg eq "-first_matrix")  {
+      $main::first_matrix = shift(@arguments);
+      &RSAT::error::FatalError("$main::first_matrix. Invalid first_matrix, should be an Integer number.")
+	unless (&RSAT::util::IsInteger($main::first_matrix));
+      #	    $main::infile{matrix} = shift(@arguments);
+
+=pod
+
+=item B<-last_matrix #>
 
 Only scan with the top # matrices per matrix file. This option is
 valid for some file formats containing multiple matrices
@@ -2693,27 +2739,39 @@ If several matrix files are specified, the # top matrices of each file
 are used for scanning the sequences.
 
 =cut
-    } elsif ($arg eq "-top_matrices") {
-      $main::top_matrices = shift(@arguments);
-      &RSAT::error::FatalError("$main::top_matrices. Invalid top_matrices, should be an Integer number.")
-	unless (&RSAT::util::IsInteger($main::top_matrices));
+    } elsif (($arg eq "-last_matrix") || ($arg eq "-top_matrices")) {
+      $main::last_matrix = shift(@arguments);
+      &RSAT::error::FatalError("$main::last_matrix. Invalid last_matrix, should be an Integer number.")
+	unless (&RSAT::util::IsInteger($main::last_matrix));
       #	    $main::infile{matrix} = shift(@arguments);
 
 =pod
 
-=item B<-top_seq #>
+=item B<-first_seq N>
+
+Start scanning at the Nth sequence. This option can be combined with
+-last_seq in order to select a subset of sequences for quick testing,
+or for distributing the computation on several CPUs.
+
+=cut
+    } elsif ($arg eq "-first_seq") {
+      $main::first_seq = shift(@arguments);
+      &RSAT::error::FatalError("$main::first_seq. Invalid first_seq, should be a Natural number.")
+	unless (&RSAT::util::IsNatural($main::first_seq));
+
+=pod
+
+=item B<-last_seq #>
 
 Only scan with the top # sequences. This option allows to perform
 quick tests or to scan only a given number of sequences at the top of
 the input file (e.g. for collection of ChIP-seq peaks).
 
 =cut
-    } elsif ($arg eq "-top_seq") {
-      $main::top_seq = shift(@arguments);
-      &RSAT::error::FatalError("$main::top_seq. Invalid top_seq, should be an Integer number.")
-	unless (&RSAT::util::IsInteger($main::top_seq));
-
-      ## Use consensus as matrix name
+    } elsif ($arg eq "-last_seq") {
+      $main::last_seq = shift(@arguments);
+      &RSAT::error::FatalError("$main::last_seq. Invalid last_seq, should be a Natural number.")
+	unless (&RSAT::util::IsNatural($main::last_seq));
 
 =pod
 
@@ -3669,11 +3727,12 @@ sub QuickScan {
   #  }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
   my $quick_cmd = "";
-  if ($top_seq > 0) {
+  if ($last_seq > 0) {
     $quick_cmd = $SCRIPTS."/convert-seq";
     $quick_cmd .= " -i ".$main::infile{input};
     $quick_cmd .= " -from fasta -to fasta";
-    $quick_cmd .= " -top ".$top_seq;
+    $quick_cmd .= " -first ".$first_seq;
+    $quick_cmd .= " -last ".$last_seq;
     $quick_cmd .= " | $quick_path";
   } else {
     $quick_cmd = $quick_path;
