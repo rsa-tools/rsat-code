@@ -15,7 +15,7 @@
 ## Load required libraries
 suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("dendroextras", warn.conflicts=FALSE))
+## suppressPackageStartupMessages(library("dendroextras", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 
 ## Redefine the main directory (this should be adapted to local configuration)
@@ -277,7 +277,7 @@ if (forest.nb > 1){
 
     ## Creates an individual folder for each cluster
     cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", cluster.nb, sep = ""))
-    system(paste("mkdir -p ", cluster.folder, sep = ""))
+    dir.create(cluster.folder, recursive = TRUE)
     
     ids <- clusters.ids[[paste("cluster_", nb, sep = "")]]
 
@@ -326,8 +326,7 @@ if (forest.nb > 1){
     
     ## New description table
     description.table <<- global.description.table[global.description.table[,"id"] %in% ids, ]
-    ## names(description.table)[1] <- sub("^X.", "", names(description.table)[1])
-    ## In reference to the names, order alphabetically the description table
+    ## In reference to the ids, order alphabetically the description table
     description.table <- description.table[order(as.vector(description.table$id)),]
     description.table$n <- 1:length(description.table$n)
     matrix.labels <-  as.vector(description.table$label)

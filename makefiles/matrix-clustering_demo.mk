@@ -61,11 +61,11 @@ CLUSTER_PREFIX=${DEMO_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_C
 CLUSTER_DIR=results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
-		-i ${MATRIX_FILE} -format tf \
+		-i ${MATRIX_FILE} -matrix_format tf \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-cons \
-		-export newick -d3_base file -hclust_method ${HCLUST_METHOD} \
+		-export json -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
 
