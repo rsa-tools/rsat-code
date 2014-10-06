@@ -15,7 +15,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require RSAT::util;
+use RSAT::util;
 use RSAT::Tree;
 use RSAT::TreeNode;
 use RSAT::organism;
@@ -155,7 +155,7 @@ package main;
   }
 
   if ($main::all_organisms) {
-    @organisms_dirs = glob($dir{genbank}."/*_*");
+    @organisms_dirs = &glob($dir{genbank}."/*_*");
     foreach my $dir (@organisms_dirs) {
       my $org = &RSAT::util::ShortFileName($dir);
       next if ($org =~ /^readme/i); ## Skip readme file
