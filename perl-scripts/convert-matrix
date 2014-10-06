@@ -953,9 +953,10 @@ INPUT/OUTPUT FORMATS
         (http://www.gene-regulation.com/pub/databases.html)
 
     CIS-BP (input)
-        Format used in the CIS-BP database;
-        Similar to transfac, but without the AC/ID lines, and Position line labeled with Pos instead of PO.
+        Format used in the CIS-BP database.
 
+        Similar to transfac, but without the AC/ID lines, and Position
+        line labeled with Pos instead of PO.
 
     STAMP (input/output)
 	Converts the matrix from/to a string in STAMP format
