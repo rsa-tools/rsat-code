@@ -21,7 +21,7 @@ $line_width = 60;
 $check_id = 1;
 $dotmask = 0;
 
-$top = 0;
+$last_seq = 0;
 
 $accepted_input_string = join "\n\t\t\t", "", sort(keys %accepted_input_seq);
 $accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq);
@@ -77,10 +77,10 @@ if ($verbose) {
 }
 
 if ($skip) {
-    &RSAT::message::Info("Skipping the $top top sequences.") if ($main::verbose >= 1);
-    if ($top) {
-	if ($skip >= $top) {
-	    &RSAT::error::FatalError("Number of sequences to skip ($skip) cannot be larger than the selected number of top sequences ($top).");
+    &RSAT::message::Info("Skipping the $skip top sequences.") if ($main::verbose >= 1);
+    if ($last_seq) {
+	if ($skip >= $last_seq) {
+	    &RSAT::error::FatalError("Number of sequences to skip ($skip) cannot be larger than the last selected sequences ($last_seq).");
 	}
     }
 }
@@ -92,8 +92,8 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
        (($current_seq ne "") || ($current_id ne ""))) {
     $seq_nb++;
     my $seq_len = length($current_seq);
-    if (($top > 0) && ($seq_nb > $top)) {
-      &RSAT::message::Info("Exported the $top top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
+    if (($last_seq > 0) && ($seq_nb > $last_seq)) {
+      &RSAT::message::Info("Exported the $last_seq top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
       last;
     }
     if (($skip) && ($seq_nb <= $skip)) {
@@ -303,18 +303,25 @@ OPTIONS
 		Skip sequences longer than the specified length. These
 		sequences are not returned at all in the output.
 
-	-top #
-		Export the # top sequences only.
+	-last N
+	        Stop after the Nth sequence.
+	-top N
+		Same as -last N
+		 (maintained for backward compatibility)
+	-first N
+		Start at the Nth sequence (skip the N-1 first
+		sequences).
+	-skip N
+		Skip the N first sequences (start at sequence N+1).
 
-	-skip #
-		Skip the # top sequences.
-
-		Options -skip and -top can be combined to extract a
-		subset from the i^th to the j^th sequence (a "slice"
-		of the sequence file).
+		Options -first (or -skip) and -top can be combined to
+		extract a subset from the i^th to the j^th sequence (a
+		"slice" of the sequence file).
 
 		Example: 
-			 convert-seq -skip 100 -top 200
+			 convert-seq -skip 100 -last 200
+		equivalent to
+			 convert-seq -first 101 -last 200
 
 		will extract the sequences 101 to 200 from the input
 		file.
@@ -453,8 +460,9 @@ consvert-seq options
 -mask_short min_seq_len	Mask sequences shorter than the specified length
 -skip_short min_seq_len	Skip sequences shorter than the specified length
 -skip_long max_seq_len	Skip sequences longer than the specified length
--top #	   		Export the # top sequences only.
--skip #			Skip the # first sequences of the file. 
+-last N	   		Stop after the Nth sequence
+-first N		Start at the Nth sequence.
+-skip N			Skip the # first sequences of the file. 
 -noempty		Remove empty sequences from the set (same as -skip_short 1)
 -o			outputfile
 -from			input format (see below for accepted formats)
@@ -538,16 +546,24 @@ sub ReadArguments {
 	unless &IsNatural($skip_long) && ($skip_long > 0);
 
       ## Only export the N top sequences of the input file
-    } elsif ($ARGV[$a] eq "-top") {
-      $top = $ARGV[$a+1];
-      &RSAT::error::FatalError($top,
-			       "Invalid value for number of top sequences. ".
+    } elsif (($ARGV[$a] eq "-top") || ($ARGV[$a] eq "-last")){
+      $last_seq = $ARGV[$a+1];
+      &RSAT::error::FatalError($last_seq,
+			       "Invalid value for option -last. ".
 			       "Must be a Natural number")
-	unless (&IsNatural($top));
+	unless (&IsNatural($last_seq));
 
       ## Skip the N first sequences of the file
     } elsif ($ARGV[$a] eq "-skip") {
       $skip = $ARGV[$a+1];
+      &RSAT::error::FatalError($skip,
+			       "Invalid value for number of skip sequences. ".
+			       "Must be a Natural number")
+	unless (&IsNatural($skip));
+
+      ## Start at the Nth sequence
+    } elsif ($ARGV[$a] eq "-start") {
+      $skip = $ARGV[$a+1]-1;
       &RSAT::error::FatalError($skip,
 			       "Invalid value for number of skip sequences. ".
 			       "Must be a Natural number")

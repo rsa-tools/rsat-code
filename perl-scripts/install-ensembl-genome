@@ -137,7 +137,7 @@ package main;
   our $data_dir;
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
-  our $ensembl_version = $safe_ensembl_version;
+  our $ensembl_version = &get_ensembl_version($db);
 
   #  our $safe_ensembl_version;
   #  our $latest_ensembl_version;
