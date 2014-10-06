@@ -387,22 +387,6 @@ number of sequences (several hundreds/thousands), and its background
 model is more stringent than for programs computing the global
 over-representation (oligo-analysis, dyad-analysis).</p>
 </dd>
-<dt><strong><a name="merge_words" class="item"><em>merge_words</em></a></strong></dt>
-
-<dd>
-<p>Merge the words (oligos-dyads) discovered by the different
-algorithms. Those words will then be used as seeds for extracting
-over-represented position-specific scoring matrices from the sequences
-(using the program <em>matrix-from-patterns</em>).</p>
-<p>The table of merged words has one row per word (oligo or dyad) and one
-column per motif discovery program. This allows to analyze the
-consistency between the words detected by different approaches,
-e.g. show that a word is both over-represented (oligo-analysis,
-dyad-analysis) and positionally biased (position-analysis,
-local-words). A heatmap is also exported to provide a graphical
-representation of the significance of each word (row) for each
-algorthm (column).</p>
-</dd>
 <dt><strong><a name="motifs_vs_ref" class="item"><em>motifs_vs_ref</em></a></strong></dt>
 
 <dd>

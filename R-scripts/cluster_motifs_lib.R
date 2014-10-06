@@ -1008,19 +1008,23 @@ add.empty.columns <- function(id){
 aligned.matrices.to.merge <- function(level){
 
   ## Create the folder with the merged consensuses
-  system(paste("mkdir -p ", cluster.folder, "/merged_consensuses/merge_level_", level, sep = ""))
-  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses/merge_level_", level, "/ | wc -l", sep = ""), intern = TRUE)
+  merge.dir <- paste("merged_consensuses/merge_level_", level, sep = "")
+  dir.create(file.path(cluster.folder, merge.dir), showWarnings = FALSE, recursive = TRUE)
+  new.dir <- file.path(cluster.folder, merge.dir)
+  
+  flag <- system(paste("ls ", new.dir, "/ | wc -l", sep = ""), intern = TRUE)
   if(flag >= 1){
-    system(paste("rm -r ", cluster.folder, "/merged_consensuses/merge_level_", level, "/*", sep = ""))
+    system(paste("rm -r ", new.dir, "/*", sep = ""))
   }
   ids <- get.id(merge.levels.leaves[[level]])
   
   ## Add the spacer to the consensuses
   merge.consensus.info <<- consensus.internal.merge(motifs.info, ids)
 
+
   ## Get the single matrices file names
   single.mat.files <<- sapply(ids, function(X){
-    system(paste("ls ", out.prefix, "* | grep ", X, "| grep -v 'merged' | grep '.tf'", sep = ""), intern = TRUE)
+    paste(out.prefix, "_single_matrices_", X, ".tf", sep = "")
   })
   single.mat.files <<- as.list(single.mat.files)
 

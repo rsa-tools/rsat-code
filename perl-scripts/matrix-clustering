@@ -34,6 +34,22 @@ RSAT makefile:
   cd $RSAT
   make -f makefiles/install_software.mk install_mcl
 
+
+Many R packages are required in I<matrix-clustering> to convert the 
+hierarchical tree into different output formats and to manipulate the
+dendrogram which is exported.
+
+  RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
+  ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
+  dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
+
+
+For visualize the logo forest it is required the JavaScript I<D3> 
+(Data Driven Documents) library, the user can select an option to connect
+ directly with the server to load the functions of this library (see option I<-d3_base>). 
+
+   D3 : http://d3js.org/
+
 =head1 AUTHORS
 
 =head2 Implementation
@@ -151,7 +167,7 @@ package main;
   local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
 
   ## Select phylo and newick d3 bases
-  local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
+  ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
   local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
 
 
@@ -245,6 +261,20 @@ package main;
   local %merged_consensuses_files = ();
   local @levels_JSON = ();
 
+  ## Supported taks
+  local @supported_tasks = qw(
+			all
+		        cluster
+                     );
+  local @task = qw (all);
+  local $supported_tasks = join ",", @supported_tasks;
+  local %supported_tasks = ();
+  foreach my $task (@supported_tasks) {
+    $supported_tasks{$task} = 1;
+  }
+  %selected_tasks = ();
+  $selected_tasks{all} = 1;
+
   ################################################################
   ## Options used for motif comparison
   local %param = ();
@@ -279,7 +309,7 @@ package main;
 
   ## Check that the  input format has been specified
   unless ($matrix_format) {
-    &RSAT::error::FatalError("You must define the input matrix format (option -format).");
+    &RSAT::error::FatalError("You must define the input matrix format (option -matrix_format).");
   }
 
 
@@ -351,11 +381,11 @@ package main;
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
-  $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
-  $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
+  # $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
+  # $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
   if ($export_tree_format eq "newick"){
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
-    $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
+    ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
   }
 
   ## Some temporary files
@@ -375,64 +405,67 @@ package main;
   &PrintArguments($main::html_index, 1);
   print $html_index "</tt></p>\n";
 
+ 
 
   ################################################################
   ## Read input matrices
   if ($infile{matrices}){
-    @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
-    &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
-	if ($main::verbose >= 2);
+      @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
+      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
+	  if ($main::verbose >= 2);
   }
-  
-  ## The metric for alignment always must be the same as the metric 
-  ## for the threshold
-#  if ($main::param{matrix_compa_score} ne $main::thr_field){
-#    &RSAT::error::FatalError("The metric for alignment always must be the same as the metric for the threshold. Metric for alignment: $main::param{matrix_compa_score}#; Metric for threshold: $thr_field");
-#  }
 
-  ################################################################
-  ## Cluster the matrices
-  &CompareMatrices();
+  ## According to the task selected by the user, execute or skip some functions
+  if($selected_tasks{all}){
+      ################################################################
+      ## Cluster the matrices
+      &CompareMatrices();
+  }
 
 
-  ################################################################
-  ## Cluster the matrices
-  &Hclustering();
-
-  ################################################################
-  ## Read the motif to clustr assignation, which will be required for
-  ## several functions below.
-  &ReadClusterComposition();
-
-  ################################################################
-  ## Create the merged matrices and consensuses
-  &Merge_matrices();
-
-  ################################################################
-  ## Parse the JSON file
-  &Add_attributes_to_JSON();
-
-  ################################################################
-  ## Creates the body of html to display
-  ## each cluster separately
-  &Add_div_to_HTML();
-
-  ################################################################
-  ## Creates the html template to display the tree
-  &Create_html_tree_file();
-
-  ################################################################
-  ## Creates the html template to display the pylogram
-  &Create_phylogram();
-
-  ################################################################
-  ## Convert tab files to HTML files
-  &ConvertTabToHTML(@tab_to_convert);
+  if($selected_tasks{all} || $selected_tasks{cluster}){
+      ################################################################
+      ## Cluster the matrices
+      &Hclustering();
+      
+      ################################################################
+      ## Read the motif to cluster assignation, which will be required for
+      ## several functions below.
+      &ReadClusterComposition();
+      
+      ################################################################
+      ## Create the merged matrices and consensuses
+      &Merge_matrices();
+      
+      ################################################################
+      ## Parse the JSON file
+      &Add_attributes_to_JSON();
+      
+      ################################################################
+      ## Creates the body of html to display
+      ## each cluster separately
+      &Add_div_to_HTML();
+      
+      ################################################################
+      ## Creates the html template to display the tree
+      &Create_html_tree_file();
+      
+      ################################################################
+      ## Creates the html template to display the pylogram
+      ##
+      ## !! Temporary disabled
+      ##
+      ## &Create_phylogram();
+      
+      ################################################################
+      ## Convert tab files to HTML files
+      &ConvertTabToHTML(@tab_to_convert);
+  }
 
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose);
-
+  
   ################################################################
   ## Generate the HMTL index of input/output files
   &IndexFiles() if ($main::outfile{html_index});
@@ -531,7 +564,7 @@ matrices.
       
 =pod
 
-=item B<-format matrix_format>
+=item B<-matrix_format matrix_format>
 
 Specify the input matrix format.
 
@@ -545,7 +578,7 @@ tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
-    } elsif ($arg eq "-format") {
+    } elsif ($arg eq "-matrix_format") {
       $main::matrix_format = shift(@arguments);
       unless ($supported_matrix_format{$matrix_format}) {
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
@@ -581,19 +614,20 @@ tree.
 
 Specify format for the output tree.
 
-The JSON format is always producted, since it is required to display
+The hierarchical tree in JSON format is always exported, since it is required to display
 the logo tree with the d3 library. Additional formats are proposed in
 option to enable visualization with classical phylogeny analysis
 tools.
 
 B<Supported trees formats>
 
+(JSON, newick)
+
 =over
 
-=item I<json> (default)
+=item I<JSON> (default)
 
-JSON (JavaScript Object Notation). Javascrpt format supported by the
-d3 library.
+File format used for D3 library to visualize the logo forest in HTML.
 
 =item I<newick> (optional)
 
@@ -612,12 +646,15 @@ Widely used textual format to describe phylogenetic trees.
 =pod
 
 =item	B<-d3_base>
-
-Option to specify any type of URL (file://, http://, ...) as base for the d3 library.
+ 
+Option to specify any type of URL (file://, http://, ...) as base to load the d3 library. 
+I<D3> is a JavaScript library to visualize data, it is required to visualize the logo forest in HTML.
     
 B<Supported d3 bases>
     
  (Default: file, optional: link )
+
+Note: I<-d3_base link> requires internet connection to work. 
 
 =cut
     } elsif ($arg eq "-d3_base") {
@@ -625,6 +662,57 @@ B<Supported d3 bases>
       unless ($d3_base_formats{$d3_base_format}) {
 	&RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
       }
+
+
+=pod
+
+=item B<-task tasks>
+
+Specify one or several tasks to be run. If this option is not
+specified, all the tasks are run.
+
+Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.
+
+Supported tasks: (all, comparison, clustering)
+
+=over
+
+=item B<all>
+
+Execute all the parts of the program (default)
+
+=item B<comparison>
+
+Compares each other the matrices in the input file. The clustering
+step is skipped. 
+
+=item B<clustering>
+
+Skip the matrix comparison step and only executes the clustering step.
+
+Assumes the users already have the description table and comparison table 
+exported from the program I<compare-matrices>.
+
+This option is ideal to saving time once all comparison beteen the input motifs had been done. 
+
+=back
+
+=cut
+
+       } elsif ($arg eq "-task") {
+	 $arg = shift (@arguments);
+	 chomp($arg);
+	 my @tasks = split ",", $arg;
+         %selected_tasks = ();
+	 foreach my $task (@tasks) {
+	   $task = lc($task);
+	   if ($supported_tasks{$task}) {
+	     $selected_tasks{$task} = 1;
+	   } else {
+	     &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	   }
+	 }
 
 =pod
 
@@ -950,6 +1038,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
+
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
@@ -966,9 +1055,9 @@ sub Hclustering {
       $cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
       $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
     }
-    #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
     #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
+
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
     } else {
@@ -1384,49 +1473,43 @@ sub ConvertTabToHTML {
 
 ################################################################
 ## Create the phylogram
-sub Create_phylogram(){
+## Given the phylogram is not well displayed, this option is temporaly disabled
+# sub Create_phylogram(){
 
-  ### Save the newick tree in the variable
-  chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
+#   ### Save the newick tree in the variable
+#   chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
 
-#  system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
-  my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
-  &doit($cmd, 0, $die_on_error, $verbose);
-  open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
-  open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
+#   my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
+#   &doit($cmd, 0, $die_on_error, $verbose);
+#   open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
+#   open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
 
 
-  ## Select the D3 base
-  if ($d3_base_format eq "link"){
-    $d3_base_url = "http://d3js.org";	
-  }
+#   ## Select the D3 base
+#   if ($d3_base_format eq "link"){
+#     $d3_base_url = "http://d3js.org";	
+#   }
 
-  while(<PHYLO>){
-    chomp;	
+#   while(<PHYLO>){
+#     chomp;	
 
-#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-#	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
-#	}
+#     ### Fix the d3 libraries path
+#     $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
+#     $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
+#     $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
 
-    ### Fix the d3 libraries path
-    $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
-    $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
-    $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
+#     ### Paste the newick tree in the HTML code
+#     $_ =~ s/Paste_newick_here/$newick_tree/;
 
-    ### Paste the newick tree in the HTML code
-    $_ =~ s/Paste_newick_here/$newick_tree/;
-
-    print TEMP $_."\n";
-  }
-  close(TEMP);
-  close(PHYLO);
-  unlink($main::outfile{phylogram_html});
-#  system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
-  $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
-  &doit($cmd, 0, $die_on_error, $verbose);
-  return();
-}
+#     print TEMP $_."\n";
+#   }
+#   close(TEMP);
+#   close(PHYLO);
+#   unlink($main::outfile{phylogram_html});
+#   $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
+#   &doit($cmd, 0, $die_on_error, $verbose);
+#   return();
+# }
 
 
 ################################################################
@@ -1468,7 +1551,6 @@ sub Add_empty_columns_to_logos(){
     if($strand eq "D"){
 
       ## Add the empty columns
-#      system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
       my $cmd = "convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
@@ -1478,8 +1560,7 @@ sub Add_empty_columns_to_logos(){
 
     }else{
 
-      ## First convert the matrix to reverse complement
-#      system("convert-matrix -i ".$file_name." -from tf -to tf -rc -return counts,consensus -o ".$main::outfile{prefix}."_aligned_logos/temp.tf"); 
+      ## First convert the matrix to reverse complement 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
       $cmd = "convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -rc -return counts,consensus";
@@ -1487,7 +1568,6 @@ sub Add_empty_columns_to_logos(){
       &doit($cmd, 0, $die_on_error, $verbose);
       
       ## Then add the gaps
-#      system("convert-matrix -i ".$temp_mat." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
       $cmd = "convert-matrix -i ".$temp_mat;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
@@ -1524,7 +1604,6 @@ sub Create_single_matrix_files(){
 
   ## Split the matrix file into single matrices file, 
   ## in order to process individually each matrix
-#  system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
   my $cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
   &doit($cmd, 0, $die_on_error, $verbose);
   
@@ -1533,7 +1612,7 @@ sub Create_single_matrix_files(){
 
   ## Get the file name of each matrix and stores it in the hash
   foreach my $id (@ids){
-    chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
+      chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
   }
 
   return(%matrix_files);
@@ -1548,8 +1627,6 @@ sub Merge_matrices(){
   &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
   ## Get the cluster sizes
 
-  ## JvH: I suppress this becaus ewe already read this list earlier (I mde it a global variabl)
-#  chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
   foreach my $cluster (@clusters_to_HTML){
     my @nodes = @{$cluster_nodes{$cluster}};
     &RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
