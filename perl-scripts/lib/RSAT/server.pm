@@ -396,19 +396,19 @@ sub DelayedRemoval {
     my ($file_to_remove, $delay) = @_;
     $delay = $delay || "24 hours";
     unless (-e $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
 	return();
     }
     unless (-r $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
 	return();
     }
     unless (-w $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
 	return();
     }
 
-    &RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
 
     #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
     return();
