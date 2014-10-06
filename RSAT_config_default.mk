@@ -101,10 +101,10 @@ RSAT_WS=http://localhost/rsat/
 ## consequently.
 ##
 ## supported: torque | sge
-QUEUE_MANAGER=torque
+QSUB_MANAGER=torque
 
 ## Name of the queue where the jobs have to be sent
-QUEUE=
+CLUSTER_QUEUE=rsat
 
 ################################################################
 ## Ensembl and EnsemblGenomes releases. 
