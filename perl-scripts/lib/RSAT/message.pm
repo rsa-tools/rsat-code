@@ -182,20 +182,6 @@ sub psWarn {
 }
 
 
-=pod
-
-=item MessageToAdmin
-
-Report an error by sending an email to RSAT administrator
-
-=cut
-sub MessageToAdmin {
-    my ($message) = @_;
-    my $script_name = &RSAT::util::ShortFileName($0);
-    $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
-    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
-}
-
 return 1;
 
 
