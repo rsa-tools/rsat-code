@@ -1019,9 +1019,8 @@ aligned.matrices.to.merge <- function(level){
   ids <- get.id(merge.levels.leaves[[level]])
   
   ## Add the spacer to the consensuses
-  print("-------------------------L'america ----------------------------")
   merge.consensus.info <<- consensus.internal.merge(motifs.info, ids)
-  print("----------------------un pueblo sin piernas pero que camina -----------------------")
+
 
   ## Get the single matrices file names
   single.mat.files <<- sapply(ids, function(X){
