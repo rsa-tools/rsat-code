@@ -12,7 +12,7 @@ Authors :
     - Melanie COLOMBIER    mel.colombier@free.fr
     - Aurélie BERGON       aurelie.bergon@inserm.fr
 Usage :
-     microscope_get_MetaCycReactionsFromOrg.py -org organism_name  [-o outfile_name] [--output_file outfile_name]
+     microscope_get_microscope_get_MetaCycReactions.py -org organism_name  [-o outfile_name] [--output_file outfile_name]
 
 Options :
     -h | -help
@@ -59,12 +59,12 @@ if __name__=='__main__':
 
     ## Declaration of arguments to argparse
     parser = argparse.ArgumentParser(add_help = True)
-    parser.add_argument('-org', action = 'store' , dest = 'organism', default = None, help = 'Selected organism (mandatory)')
+    parser.add_argument('-org', action = 'store' , dest = 'organismID', default = None, help = 'Select a reaction (mandatory; ex: "Escherichia_coli_K-12_DH10B")')
     parser.add_argument('-o','--output_file', action = 'store', dest = 'outfilen', default = False, help = 'The user can choose the outfile name (optional)')
     args = parser.parse_args()
 
     ## Variable containing organism chosen by the user : it's the mandatory argument
-    organism = args.organism
+    organism = args.organismID
 
     ## Variable containing the file name chosen by the user : if not specified, the output will be displayed on the STDOUT
     outfilen = args.outfilen
@@ -76,7 +76,7 @@ if __name__=='__main__':
 
     ## The user has to enter an organism name to launch the program else we quit it
     if organism == None:
-        print "Error: organism name is mandatory. \nUse the option:\n\t-org My_Organism_Name (ex : Escherichia_coli_K12_MG1655)"
+        print "Error: organism name is mandatory. \nUse the option:\n\t-org My_Organism_Name"
         sys.exit()
 
     ## The job can start here
@@ -84,11 +84,11 @@ if __name__=='__main__':
         print "; Job started", Job_started
 
         # Send the request to the Genoscope server and get a Json object
-        print 'Sending the request to the server and checking the request status'
+        print '; Sending the request to the server and checking the request status'
         supported_org_json = RequestGenoscope("/organisms/list")
 
         # From the JSON object we get a Python object : a list containing dictionaries containing dictionaries
-        print 'Treatment of the server response'
+        print '; Treatment of the server response'
         supported_org = json.loads(supported_org_json)
 
     # This variable is initialized in order to get the organism Genoscope ID (oid)
@@ -106,38 +106,73 @@ if __name__=='__main__':
     if org_id == '' :
         print "Organism" + ' ' + organism + ' ' + "is not supported at Genoscope server. \nTo get the list of supported organisms, use the command : supported_organisms_genoscope.py"
         sys.exit()
+    
+    print("organism:",org_id,organism)
 
     ## New request to get informations about organism genes and get a new Json object
-    print "titi"
-    org_genes_json = RequestGenoscope("/networks/microcyc/pathways/list/" + org_id)
-    print org_genes_json
-
+    mpId_genes_json = RequestGenoscope("/networks/microcyc/pathways/list/" + org_id)
+    
     ## Get a Python object from a JSON object : here it is an array/lis containing dictionaries
-    org_genes = json.loads(org_genes_json)
+    org_genes = json.loads(mpId_genes_json)
 
     ## Variable containing all strings matching to interesting values from dict_gene_val for a given gene separated by tabulations
     file_content = ''
     print 'Obtention of the response data'
 
+   
 
     ## Column headers list
-    list_columnHeaders = ['pathwaysId']
-
+    #list_columnHeaders = ['refSeq','uniprot','trembl','goOriId','evidence','protId']
+    list_columnHeaders = ['mpIdE','mpNameE','mpTypeE','mpHasReactionE','mrIdE','mrNameE','mrEcE','mrOfficialEcE','mrSpontaneousE','coefficientE','natureE','compartmentE','cidE']
     ## From the Python object (array) we get the dictionary containing informations about a given gene
     print 'Data analysis...'
 
-    print org_genes
+    ## This dictionary contains column headers as keys and (in this
+    ## worder) the list of data matching with the column header, the
+    ## counter of Non Null data, the counter of Null data and the
+    ## counter of Unique data as values
+#    for i in range(len(org_genes)):
 
-    for i in range(len(org_genes)):
+        ## dict_gene is a dictionary containing informations about a
+        ## given gene. dict_gene key is u'genomicObject' and its value
+        ## is a dictionary containing the given gene characteristics
+    
 
-           ## Feeding of file_content variable
-        
-             file_content += org_genes[i]+'\n'
+    for p in range(len(org_genes)):
+        dict_pways = org_genes[p]
+        for r in range(len(dict_pways)):
+            dict_react=dict_pways[u'metaCycReactionExtensions']
+            for e in range(len(dict_react)):
+                dict_react_val=dict_react[e]
+                dict_equat = dict_react_val[u'mcrEs']
+                for j in range(len(dict_equat)):
+                    dict_equat_val = dict_equat[j]
+                    ## Feeding of file_content variable
+                    file_content += '\t'.join([unicode(dict_pways[u'mpIdE']),
+                                           unicode(dict_pways[u'mpNameE']),
+                                           unicode(dict_pways[u'mpTypeE']),
+                                           unicode(dict_pways[u'mpHasReactionE']),
+                                           unicode(dict_react_val[u'mrIdE']),
+                                           unicode(dict_react_val[u'mrNameE']),
+                                           unicode(dict_react_val[u'mrEcE']),
+                                           unicode(dict_react_val[u'mrOfficialEcE']),
+                                           unicode(dict_react_val[u'mrSpontaneousE']),
+                                           unicode(dict_equat_val[u'coefficientE']),
+                                           unicode(dict_equat_val[u'natureE']),
+                                           unicode(dict_equat_val[u'compartmentE']),
+                                           unicode(dict_equat_val[u'cidE'])])
+                    file_content += '\n'
 
     ## Column headers dictionary
-    dict_columnHeaders = dict([(1,"reaction\treaction ID")])
-                               
-
+    dict_columnHeaders = dict([(1,"mrIdE"),
+                               (2,"mrNameE"),
+                               (3,"mrEcE"),
+                               (4,"mrOfficialEcE"),
+                               (5,"mrSpontaneaousE"),
+                               (6,"coefficientE"),
+                               (7,"natureE"),
+                               (8,"compartmentE"),
+                               (9,"cidE")])
 
 
     # The user uses the -o | --output_file option
@@ -152,33 +187,9 @@ if __name__=='__main__':
 
         # Tabulated file written
         f = open(outfile,'w')
-        f.write(command_args + '\n' + ';\tOutput file\t' + os.path.abspath(outfile) + '\n')
-        f.write(';\tErrors report\t' + os.path.abspath(error_file_name) + '\n')
-        f.write(";\tOutput format\ttab\n")
-        f.write(";\tErrors report format\ttxt\n")
-        f.write(";\tOrganism\t" + organism + '\n;\n')
-
-        ## Write the column content (number of values for each field)
-        f.write(";\tColumn contents\n")
-        f.write('\t'.join([';','col_nb','col_head','nonull','uniq','null']) + '\n')
-        for header in list_columnHeaders:
-            f.write(';\t' 
-                    + '\t'.join([str(list_columnHeaders.index(header) + 1), 
-                                 "%-14s" % header, str(dict_counters[header][1]), 
-                                 str(dict_counters[header][3]), 
-                                 str(dict_counters[header][2])]) 
-                    + '\n')
-
-        ## Write column headers
-        f.write(";\t\n;\tColumn headers\n")
-        for key in sorted(dict_columnHeaders.iterkeys()):
-            f.write(";\t%d\t%s" % (key, dict_columnHeaders[key]) + '\n')
-        f.write('#' + list_columnHeaders[0] + '\t' + '\t'.join(list_columnHeaders[1:]) + '\n')
         f.write(file_content.encode('utf-8'))
-        f.write(';\tHost name\t' + socket.gethostname() + '\n' + ';\tJob started\t' + Job_started + '\n;\tJob done\t' + Job_done)
         f.close()
 
-        print "; Output names :", os.path.abspath(outfile) + '\n' + os.path.abspath(error_file_name)
         print "; Job done", time.strftime("%Y-%m-%d %H:%M:%S")
 
     # The user doesn't use the -o | --output_file option : result is displayed on the standard output

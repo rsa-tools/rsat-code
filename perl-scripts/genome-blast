@@ -397,8 +397,8 @@ $out = &OpenOutputFile($outfile{output});
 &iterate_blast(\@db_organisms, \@query_organisms);
 
 if ($reciprocal) {
-    &RSAT::message::TimeWarn("Running reciprocal BLAST tasks");
-    &iterate_blast(\@query_organisms, \@db_organisms);
+  &RSAT::message::TimeWarn("Running reciprocal BLAST tasks");
+  &iterate_blast(\@query_organisms, \@db_organisms);
 }
 
 
@@ -432,9 +432,9 @@ sub iterate_blast {
     my $d = 0; ## counter of database organisms
     my $batch_command = "";
     foreach $db_organism (@db_organisms) {
-	$d++;
+      $d++;
 #    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
-
+      
 	## DB organism
 	$dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
 	$dir{db_org_genome} = $dir{db_org_dir}."/genome";
@@ -512,7 +512,8 @@ sub iterate_blast {
 			($arg eq "-qtaxon") || 
 			($arg eq "-dbtaxon") ||
 			($arg eq "-query_org_file") || 
-			($arg eq "-db_org_file")
+			($arg eq "-db_org_file") ||
+			($arg eq "-reciprocal") ## Reciprocal is treated by swapping query and reference org lists (required fro formatdb)
 			) {
 			shift @args_to_pass;
 			next;
