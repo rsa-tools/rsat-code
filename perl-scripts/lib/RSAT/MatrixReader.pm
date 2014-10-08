@@ -228,9 +228,10 @@ sub readFromFile {
     }
 
     ## Only retain the N top matrices if requested
+    my $top = 0;
     if (defined($args{top})) {
-      my $top = $args{top};
-      if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
+      $top = $args{top};
+      if ((&RSAT::util::IsNatural($top)) && ($top > 0)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
 	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
@@ -241,6 +242,54 @@ sub readFromFile {
       }
     }
 
+
+    ## Skip the N first matrices if requested
+    my $skip = 0;
+    if (defined($args{skip})) {
+      $skip = $args{skip};
+      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+      if ((&RSAT::util::IsNatural($skip)) && ($skip > 0)) {
+	for my $m (1..$skip) {
+	  shift(@matrices);
+	}
+      }
+    }
+
+
+
+    ## Select matrices specified as an ID list
+    if (defined($args{selected_ids})) {
+      my @selected_ids = @{$args{selected_ids}};
+      &RSAT::message::Info("Selected IDs", join (",", @selected_ids)) if ($main::verbose >= 2);
+      if (scalar(@selected_ids) > 0) {
+	## Index selected IDs in a hash table
+	my %selected_id = ();
+	foreach my $id (@selected_ids) {
+	  $selected_id{lc($id)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_id = $matrix->get_attribute("id");
+	  push @retained_matrices, $matrix if ($selected_id{lc($matrix_id)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+
+    ## Report number of remaining matrices after selection
+    if (($skip + $top) > 0) {
+      &RSAT::message::Info("Number of matrices after selection",  scalar(@matrices)) if ($main::verbose >= 1);
+      if ($main::verbose >= 2) {
+	my @selected_ids = ();
+	foreach my $matrix (@matrices) {
+	  push @selected_ids, $matrix->get_attribute("id");
+	}
+	&RSAT::message::Info("Selected matrices",  join ",", (@selected_ids));
+      }
+    }
 
     ## Return the matrices
     return @matrices;
