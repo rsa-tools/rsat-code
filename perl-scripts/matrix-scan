@@ -303,6 +303,8 @@ package main;
   #### initialize parameters
   local $first_matrix = 0;
   local $last_matrix = 0;
+  local @selected_ids = ();
+
   local $first_seq = 0;
   local $last_seq = 0;
   local $start_time = &RSAT::util::StartScript();
@@ -505,7 +507,7 @@ package main;
   &ReadArguments();
 
   ################################################################
-  #### check argument values
+  ## Check argument values
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
   &RSAT::error::FatalError("Options -consensus_name, -id_as_name aned -ac_as_name are mutually exclusive")
@@ -519,7 +521,7 @@ package main;
     local @temp_fasta_files;
     local @temp_output_files;
 
-    ### open output stream
+    ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     &Verbose() if ($main::verbose);
@@ -588,19 +590,19 @@ package main;
   %matrices_mth = %matrix_thr;
 
   ################################################################
+  ## Check paramater values
+
   ## Check if quick counting mode is possible
   if ($quick_scan_if_possible) {
     $quick_scan = &CheckQuickScan();
   }
 
-  #########################################
-
-  ## eval incompatible with slow mode
+  ## E-value is incompatible with slow mode
   if (($return_fields{eval})&&(!$quick_scan)) {
     &RSAT::error::FatalError("Computation of Evalue is only possible with the -quick mode");
   }
 
-  ## normw is incompatible with sliding windows
+  ## Normw is incompatible with sliding windows
   if (($return_fields{normw}) && ($bg_method eq "window")) {
     &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.");
     delete($return_fields{normw});
@@ -612,7 +614,7 @@ package main;
     delete($return_fields{weight_matrix});
   }
 
-  ## calculation of p_score requires a threshold on Pval, LogPval or sig
+  ## Calculation of p_score requires a threshold on Pval, LogPval or sig
   if ($return_fields{p_score}) {
     unless ((defined($uth{pval}) || (defined($uth_file{pval}))) ||
 	    (defined($lth{pval}) || (defined($lth_file{pval})))) {
@@ -626,7 +628,7 @@ package main;
     &RSAT::error::FatalError("Option -return crer_details requires to specify an output file (option -o).") unless ($main::outfile{output});
   }
 
-  ## calculation of CRER requires a threshold on Pval, LogPval or sig
+  ## Calculation of CRER requires a threshold on Pval, LogPval or sig
   if (($return_fields{crer}) || ($return_fields{crer0})) {
     unless ((defined($uth{pval})) || (defined($lth{pval}))) {
       &RSAT::error::FatalError("Detection of CRER requires a pval threshold defined with option -uth pval");
@@ -642,7 +644,7 @@ package main;
     }
   }
 
-  ## calculation of pval with adaptative model requires a threhold to limit computing time
+  ## Calculation of pval with adaptative model requires a threhold to limit computing time
   if ($bg_method eq "window") {
     if (($return_fields{crer}) || ($return_fields{crer0})) {
       &RSAT::error::FatalError("Detection of CRER is not compatible with -window option");
@@ -662,7 +664,7 @@ package main;
   }
 
 
-  ## Calculate only once the denominator for the logarithms
+  ## Calculate log denominator only once
   local $log_base = log($base);
 
   ## Return fields
@@ -734,7 +736,7 @@ package main;
     }
   }
 
-  ## Fields to calculate
+  ## Fields to compute
   if ($return_fields{sites}) {
     $calc_fields{sites} = 1;
   }
@@ -771,13 +773,17 @@ package main;
     $calc_fields{$field} = 1;
   }
 
-  ## to keep as last to be sure it is not overriden
+  ## Do not calculate sites if option "-quick" is active, since sites
+  ## will be reported by matrix-scan-quick.
+  ##
+  ## Note: this check as to be kept as last to be sure it is not
+  ## overriden
   if ($quick_scan) {
-    $calc_fields{sites} = 0; #do not calculate sites if matrix-scan-quick is supported
+    $calc_fields{sites} = 0; 
   }
 
   ## ##############################################################
-  ## Create a new object for each match
+  ## Create a new object for each match.
   ##
   ## BEWARE: this can consume a lot of memory if the options are to
   ## return all the matches. A memory-saving possibility was to print
@@ -905,6 +911,21 @@ package main;
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
   }
 
+  ## Arguments to select a subset of matrices will be passed to
+  ## MatrixReader
+  if ($last_matrix > 0) {
+    $args{top} = $last_matrix;
+  }
+
+  if ($first_matrix > 0) {
+    $args{skip} = $first_matrix-1;
+  }
+
+  if (scalar(@selected_ids) > 0) {
+    $args{selected_ids} = \@selected_ids; 
+  }
+
+
   ################################################################
   ## Read the position-specific scoring matrices
   ################################################################
@@ -917,24 +938,29 @@ package main;
 
   local $matrix_nb = 0;
   foreach my $matrix_file (@matrix_files) {
-    my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+    my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format, %args);
 
     my $new_matrix_nb = scalar(@new_matrices);
     foreach my $m (1..$new_matrix_nb) {
       my $matrix = $new_matrices[$m-1];
-      if ($first_matrix > 0) {
-	  if ($m < $first_matrix) {
-	      &RSAT::message::Info("Skipping matrix", $m, $matrix->get_attribute("name")) if ($main::verbose >= 3);
-	      next;
-	  } elsif ($m == $first_matrix) {
-	      &RSAT::message::Info("Starting with matrix", $m) if ($main::verbose >= 2);	      
-	  }
-      }
 
-      if (($last_matrix > 0) && ($m > $last_matrix)) {
-	  &RSAT::message::Info("Stopping after", $last_matrix, "matrices") if ($main::verbose >= 2);
-	  last;
-      }
+
+      # ## Skip some of the first matrices if required
+      # if ($first_matrix > 0) {
+      # 	  if ($m < $first_matrix) {
+      # 	      &RSAT::message::Info("Skipping matrix", $m, $matrix->get_attribute("name")) if ($main::verbose >= 3);
+      # 	      next;
+      # 	  } elsif ($m == $first_matrix) {
+      # 	      &RSAT::message::Info("Starting with matrix", $m) if ($main::verbose >= 2);	      
+      # 	  }
+      # }
+
+      # ## Ignore last matrices if required
+      # if (($last_matrix > 0) && ($m > $last_matrix)) {
+      # 	  &RSAT::message::Info("Stopping after", $last_matrix, "matrices") if ($main::verbose >= 2);
+      # 	  last;
+      # }
+
 
 #      unless (($last_matrix > 0) && ($m > $last_matrix)) {
       $matrix->force_attribute("decimals", $decimals);
@@ -2503,6 +2529,7 @@ matrix-scan options
 -matrix_format  format of the matrix (supported: tab(default), meme,transfa)
 -first_matrix N	start scanning with the Nth matrix (skip N-1 first matrices)
 -last_matrix N	stop scanning after N matrices
+-matrix_id      select one or several matrices specified by their IDs
 -first_seq N	start scanning at the Nth sequence (stkip N-1 first sequences)
 -last_seq N	stop scanning after N sequences
 -consensus_name use the motif (degenerate) consensus as matrix name.
@@ -2550,23 +2577,15 @@ End_short_help
 
 
 ################################################################
-#### display short help message
-# sub PrintOptions {
-#     &PrintHelp();
-# }
-
-################################################################
-#### Read arguments
+## Read arguments
 sub ReadArguments {
   my $arg = "";
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-
+  
   while ($arg = shift (@arguments)) {
-
-	## Verbosity
-
+    
 =pod
-
+	
 =head1 OPTIONS
 
 =over 4
@@ -2576,15 +2595,14 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
+
     if ($arg eq "-v") {
       if (&IsNatural($arguments[0])) {
 	$main::verbose = shift(@arguments);
       } else {
 	$main::verbose = 1;
       }
-
-	    ## Help message
-
+  
 =pod
 
 =item B<-h>
@@ -2592,10 +2610,8 @@ Level of verbosity (detail in the warning messages during execution)
 Display full help message.
 
 =cut
-    } elsif ($arg eq "-h") {
-      &PrintHelp();
-
-      ## List of options
+} elsif ($arg eq "-h") {
+  &PrintHelp();
 
 =pod
 
@@ -2604,10 +2620,8 @@ Display full help message.
 Display only program options.
 
 =cut
-    } elsif ($arg eq "-help") {
-      &PrintOptions();
-
-      ## Background model file
+} elsif ($arg eq "-help") {
+  &PrintOptions();
 
 =pod
 
@@ -2616,13 +2630,11 @@ Display only program options.
 Background model file.
 
 =cut
-    } elsif ($arg eq "-bgfile") {
-      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
-      $main::bg_method = "file";
-      $main::infile{bg} = shift(@arguments);
-
-      ## Background model format
-
+} elsif ($arg eq "-bgfile") {
+  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "file"));
+  $main::bg_method = "file";
+  $main::infile{bg} = shift(@arguments);
+  
 =pod
 
 =item B<-bg_format format>
@@ -2642,8 +2654,6 @@ list of supported background model formats.
 			       "Supported: ", $RSAT::MarkovModel::supported_input_formats)
 	unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
 
-      ## Background calculated from the input sequence set
-
 =pod
 
 =item B<-bginput>
@@ -2654,8 +2664,6 @@ Calculate background model from the input sequence set.
     } elsif ($arg eq "-bginput") {
       &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if (($main::bg_method) && ($main::bg_method ne "input"));
       $main::bg_method = "input";
-
-      ## Calculate background model from the input sequence
 
 =pod
 
@@ -2690,8 +2698,6 @@ When this option is specified, the matrix pseudo-count is equally distributed.
       &RSAT::error::FatalError("Window size must be a natural number.")
 	unless &RSAT::util::IsNatural($main::window);
 
-      ## Matrix file
-
 =pod
 
 =item B<-m matrixfile>
@@ -2704,9 +2710,6 @@ multiple matrices.
 =cut
     } elsif ($arg eq "-m") {
       push @matrix_files, shift(@arguments);
-      #	    $main::infile{matrix} = shift(@arguments);
-
-      ## Only scan with the top matrices
 
 =pod
 
@@ -2724,7 +2727,6 @@ generally the most informative.
       $main::first_matrix = shift(@arguments);
       &RSAT::error::FatalError("$main::first_matrix. Invalid first_matrix, should be an Integer number.")
 	unless (&RSAT::util::IsInteger($main::first_matrix));
-      #	    $main::infile{matrix} = shift(@arguments);
 
 =pod
 
@@ -2743,7 +2745,29 @@ are used for scanning the sequences.
       $main::last_matrix = shift(@arguments);
       &RSAT::error::FatalError("$main::last_matrix. Invalid last_matrix, should be an Integer number.")
 	unless (&RSAT::util::IsInteger($main::last_matrix));
-      #	    $main::infile{matrix} = shift(@arguments);
+
+=pod
+
+=item B<-matrix_id matrix_id1[,matrix_id2,...]>
+
+Select one or more matrices specified by their ID.
+
+Multiple matrices can be specified as a coma-separated list, or by
+calling the argument iteratively.
+
+Examples:
+  matrix-scan [...] -matrix_id M00010,M00271
+
+is equivalent to
+  matrix-scan [...] -matrix_id M00010 -matrix_id M00271
+
+=cut
+    } elsif ($arg eq "-matrix_id") {
+      my @new_selected_ids = split(",", shift(@arguments));
+      if (scalar(@new_selected_ids) > 0) {
+	push @main::selected_ids,@new_selected_ids;
+      }
+
 
 =pod
 
