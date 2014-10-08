@@ -304,6 +304,8 @@ package main;
   local $first_matrix = 0;
   local $last_matrix = 0;
   local @selected_ids = ();
+  local @selected_acs = ();
+  local @selected_names = ();
 
   local $first_seq = 0;
   local $last_seq = 0;
@@ -923,6 +925,14 @@ package main;
 
   if (scalar(@selected_ids) > 0) {
     $args{selected_ids} = \@selected_ids; 
+  }
+
+  if (scalar(@selected_acs) > 0) {
+    $args{selected_acs} = \@selected_acs; 
+  }
+
+  if (scalar(@selected_names) > 0) {
+    $args{selected_names} = \@selected_names; 
   }
 
 
@@ -2529,7 +2539,9 @@ matrix-scan options
 -matrix_format  format of the matrix (supported: tab(default), meme,transfa)
 -first_matrix N	start scanning with the Nth matrix (skip N-1 first matrices)
 -last_matrix N	stop scanning after N matrices
--matrix_id      select one or several matrices specified by their IDs
+-matrix_id      select one or several matrices specified by ID
+-matrix_ac      select one or several matrices specified by AC
+-matrix_name      select one or several matrices specified by name
 -first_seq N	start scanning at the Nth sequence (stkip N-1 first sequences)
 -last_seq N	stop scanning after N sequences
 -consensus_name use the motif (degenerate) consensus as matrix name.
@@ -2745,6 +2757,50 @@ are used for scanning the sequences.
       $main::last_matrix = shift(@arguments);
       &RSAT::error::FatalError("$main::last_matrix. Invalid last_matrix, should be an Integer number.")
 	unless (&RSAT::util::IsInteger($main::last_matrix));
+
+=pod
+
+=item B<-matrix_ac matrix_ac1[,matrix_ac2,...]>
+
+Select one or more matrices specified by their ID.
+
+Multiple matrices can be specified as a coma-separated list, or by
+calling the argument iteratively.
+
+Examples:
+  matrix-scan [...] -matrix_ac MA0049.1,MA0221.1
+
+is equivalent to
+  matrix-scan [...] -matrix_ac MA0049.1 -matrix_ac MA0221.1
+
+=cut
+    } elsif ($arg eq "-matrix_ac") {
+      my @new_selected_acs = split(",", shift(@arguments));
+      if (scalar(@new_selected_acs) > 0) {
+	push @main::selected_acs,@new_selected_acs;
+      }
+
+=pod
+
+=item B<-matrix_name matrix_name1[,matrix_name2,...]>
+
+Select one or more matrices specified by their ID.
+
+Multiple matrices can be specified as a coma-separated list, or by
+calling the argument iteratively.
+
+Examples:
+  matrix-scan [...] -matrix_name eve,hb
+
+is equivalent to
+  matrix-scan [...] -matrix_name eve -matrix_name hb
+
+=cut
+    } elsif ($arg eq "-matrix_name") {
+      my @new_selected_names = split(",", shift(@arguments));
+      if (scalar(@new_selected_names) > 0) {
+	push @main::selected_names,@new_selected_names;
+      }
 
 =pod
 
