@@ -1193,7 +1193,7 @@ package main;
   ################################################################
   ## Calculate pval distribution
   if (($calc_fields{pval})&&($bg_method ne "window")) {
-    &RSAT::message::TimeWarn("Computing matrix P-value distributions.") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Computing P-value distributions for", scalar(@matrices), "matrices") if ($main::verbose >= 2);
     my $m=0;
     foreach my $matrix (@matrices) {
       $m++;
