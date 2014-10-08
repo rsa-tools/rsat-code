@@ -15,7 +15,7 @@ SUFFIX=
 scan_eve:
 	@echo
 	@echo "SEQ		${SEQ}"
-	@echo "MATRIX_FILE	${SEQ}"
+	@echo "MATRIX_FILE	${MATRIX_FILE}"
 	@echo "Scanning"
 	@mkdir -p ${RES_DIR}
 	matrix-scan -v ${V} \
