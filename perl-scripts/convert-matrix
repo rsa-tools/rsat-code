@@ -65,7 +65,7 @@ package main;
 
   local $insert_col_left = 0;
   local $insert_col_right = 0;
-
+  $matrix_list_name=0;
   ## Return type(s)
   @return_fields = ();
   %supported_return_type = (
@@ -155,9 +155,11 @@ package main;
       next unless (/\S/);	# skip empty lines
       my @fields = split /\s+/;
       my $matrix_file = $fields[0];
-      my $matrix_id = $fields[1];
       push @matrix_files, $matrix_file;
-      push @tf_name_in_file, $matrix_id ;
+      if($matrix_list_name==1){
+	  my $matrix_id = $fields[1];
+	  push @tf_name_in_file, $matrix_id ;
+      }
 
     }
     close $mlist;
@@ -1287,7 +1289,7 @@ sub ReadArguments {
 	    ### list of input files contains also tf name
 	
 	} elsif ($ARGV[$a] eq "-mlist_name") {
-	    $infile{matrix_list_name} = 1;;
+	    $matrix_list_name = 1;;
 	    
 	    ### Maximal number of matrices to return
 	} elsif ($ARGV[$a] eq "-top") {
