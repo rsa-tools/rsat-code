@@ -388,6 +388,10 @@ package main;
     ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
   }
 
+  ## Files required for the summary
+  $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
+  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html";
+
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
   $main::outfile{temp_2} = $main::outfile{prefix}."_temporary_2.html";
@@ -460,6 +464,10 @@ package main;
       ################################################################
       ## Convert tab files to HTML files
       &ConvertTabToHTML(@tab_to_convert);
+
+      ################################################################
+      ## Creates the website
+      &Creates_website();
   }
 
   ################################################################
@@ -1844,5 +1852,443 @@ sub Add_div_to_HTML(){
     unlink($main::outfile{logo_cladogram_html});
     $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);    
+}
+
+
+########################################
+## Creates the summary file in HTML
+sub Creates_website(){
+
+    ## Stores the jquery script, some patches of code are added through 
+    ## the function. The <script> tag is closed ad the end of the function.
+    my $script_jquery = 
+'
+<script>
+
+  // Change the color of the selected cluster header
+   $(document).ready(function() {
+    
+      $(\'.cluster_division\').mouseenter(function(){
+         $(this).fadeTo(\'fast\',1); 
+      });
+
+      $(\'.cluster_division\').mouseleave(function(){
+         $(this).fadeTo(\'fast\',0.5); 
+      });
+   });
+
+  /*
+  // Slide the alignment table
+  $(document).ready(function(){
+    $(\'#alignment_table\').click(function(){
+       $(\'#alignment_table_1\').slideToggle(\'slow\');
+     }); 
+  });
+
+
+  // Slide the logo tree
+  $(document).ready(function(){
+    $(\'#logo_tree\').click(function(){
+       $(\'#cluster_1\').slideToggle(\'slow\');
+     }); 
+  });
+
+  */
+';
+    
+    my %alignment_table_data = ();
+    my @split_line = ();
+
+
+    ## First read the alignment table and save the results in a hash
+    my ($line, $id, $cluster_id);
+    my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
+    while (<$cluster_handle>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	chomp;
+	$line = $_;
+	@split_line = split("\t", $line);
+	$id = $split_line[0];
+	$cluster_id = $split_line[1];
+	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[2];
+	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[3];
+	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[4];
+	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[5];
+	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[6];
+    }
+    close $cluster_handle;
+ 
+
+    ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
+    my $labels = join(",", @cons_labels);
+    my $method = $hclust_method;
+    my $ncor_val = $lth{Ncor};
+    my $cor_val = $lth{cor};
+    my @summary = ();
+
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
+    &doit($cmd, 0, $die_on_error, $verbose);
+
+    my ($summary_temp) = &RSAT::util::OpenInputFile($outfile{summary_temp});
+    while (<$summary_temp>) {
+	chomp;
+	$line = $_;
+
+	## Fill the summary table
+	my $number_of_clusters = scalar(keys %alignment_table_data);
+	$line =~ s/--nb--/$number_of_clusters/;
+	$line =~ s/--lb--/$labels/;
+	$line =~ s/--hmethod--/$method/;
+	$line =~ s/--Ncor--/$ncor_val/;
+	$line =~ s/--cor--/$cor_val/;
+
+        ## Search the tag where the clusters will be inserted
+	if($line =~ m/Paste\scluster\sdelim/){
+	
+	    ## The next procces is repeated for each cluster
+	    foreach my $num (1..scalar(keys %alignment_table_data)){
+		
+		## Insert the header of the cluster
+		my $head_insert = &cluster_delim();
+		my $cl_id = "cluster_".$num;
+		$head_insert =~ s/--Cluster_id--/$cl_id/g;
+		$head_insert =~ s/--Cluster_id_head--/head_$cl_id/g;
+		$head_insert =~ s/--nb--/$num/g;
+		$line .= "\n".$head_insert."\n\n";
+		
+		## Make dynamics the buttons of the cluster header
+		my $buttons = &cluster_head_buttons();
+		$buttons =~ s/--Cluster_id--/$cl_id/g;
+		$buttons =~ s/--Cluster_id_head--/head_$cl_id/g;
+		$buttons =~ s/--nb--/$num/g;
+		$script_jquery .= $buttons."\n";
+		
+		## Draw the alignment table
+		my $alignment_table = &alignment_table();
+		my $tab = "";
+		foreach my $id (keys $alignment_table_data{$cl_id}){
+		    my $tr = "";
+		    $tr .= "\n\t\t\t\t<tr>\n";
+		    $tr .= "\t\t\t\t\t".'<td>'.$id.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td>'.$cl_id.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{strand}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{offset_up}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{offset_down}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{width}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="seq">'.&DNA_string_to_HTML($alignment_table_data{$cl_id}{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
+		    $tab .= $tr;
+		}
+		$alignment_table =~ s/HERE/$tab/g;
+		$alignment_table =~ s/--nb--/$num/g;
+		$line .= "\n".$alignment_table."\n\n";
+		
+		## Add the code to hide/show the alignment table
+		my $toogle_table = &toogle_table();
+		$toogle_table =~ s/--nb--/$num/g;
+		$script_jquery .= $toogle_table."\n";
+		
+		## Draw the logo tree
+		my $d3_logo_tree = &logo_tree();
+		my $factor_height = scalar(keys $alignment_table_data{$cl_id}) ;
+		$d3_logo_tree =~ s/--nb--/$num/g;
+		$d3_logo_tree =~ s/--nb_motifs--/$factor_height/g;
+		$line .= "\n".$d3_logo_tree."\n\n";
+		
+		## Add the code to hide/show the logo tree
+		my $toogle_tree = &toogle_tree();
+		$toogle_tree =~ s/--nb--/$num/g;
+		$script_jquery .= $toogle_tree."\n";
+	    }
+	}
+	
+	if($line =~ m/Paste\sjquery/){
+	    $line .= "\n".$script_jquery."</script>\n\n";
+	}
+	
+	push(@summary, $line."\n");
+    }
+    close $summary_temp;
+    unlink($summary_temp);
+    open(SUMMARY, ">".$main::outfile{summary}) || die "Cannot open SUMMARY: $!\n";
+    print SUMMARY @summary;
+    close(SUMMARY);
+}
+
+
+###################################################
+## Converts a DNA string (consensus) input into  
+## an HTML code painting the conserved nucleotide
+sub DNA_string_to_HTML{
+    
+    my $DNA_string = shift;
+
+    ## Convert the string into an array
+    my @DNA_string = split //, $DNA_string;
+
+    ## Substitutes the ACGT for the HTML code
+    foreach my $pos (@DNA_string){
+
+	next if $pos eq '-';
+    
+	if($pos eq 'A'){
+	    $pos = '<span style="color: green">A</span>';
+	} elsif ($pos eq 'a'){
+	    $pos = '<span style="color: green">a</span>';
+	} elsif ($pos eq 'C'){
+	    $pos = '<span style="color: blue">C</span>';
+	} elsif ($pos eq 'c'){
+	    $pos = '<span style="color: blue">c</span>';
+	} elsif ($pos eq 'G'){
+	    $pos = '<span style="color: yellow">G</span>';
+	} elsif ($pos eq 'g'){
+	    $pos = '<span style="color: yellow">g</span>';
+	} elsif ($pos eq 'T'){
+	    $pos = '<span style="color: red">T</span>';
+	} elsif ($pos eq 't'){
+	    $pos = '<span style="color: red">t</span>';
+	} 
+    }
+
+    ## Join the DNA array into a string
+    my $HTML_string = join("",@DNA_string);
+
+    return($HTML_string);
+}
+
+##########################################
+## Store in a string the cluster header
+sub cluster_delim {
+
+    my $cluster_delim = 
+"	
+        <!--Div with cluster 1 delimitation and buttons to display results-->
+	<div class=\"cluster_division --Cluster_id_head--\">
+		<strong>--Cluster_id--</strong>
+	</div>
+	<div class=\"Cluster_results --Cluster_id--\" id=\"button_alignment_table_--nb--\">Alignment table</div>
+	<div class=\"Cluster_results --Cluster_id--\" id=\"button_logo_tree_--nb--\">Logo tree</div>
+";
+    
+    return($cluster_delim);
+}
+
+
+###########################
+## Slide buttons cluster header
+sub cluster_head_buttons{
+
+    my $jquey_toggle_buttons = '
+
+  // Slide the buttons to show the results
+  $(document).ready(function(){
+    $(\'.--Cluster_id_head--\', this).click(function(){
+       $(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
+       $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
+       $(\'#alignment_table_--nb--\').hide();  
+       $(\'#cluster_--nb--\').hide(); 
+     }); 
+  });
+
+    ';
+    # //$('--.Cluster_id--').hide();
+    return($jquey_toggle_buttons);
+}
+
+
+############################################
+## Stores in a string the Alignment table
+sub alignment_table{
+
+    my $align_table = '
+    <div class="tab alignment_tab" id="alignment_table_--nb--">
+		<table>
+			<thead>
+				<tr>
+					<th colspan="7">Cluster information and consensus alignment</th>
+				</tr>
+				<tr>
+					<th class="tab_col">Motif id</th>
+					<th class="tab_col">Cluster number</th>
+					<th class="tab_col">Strand</th>
+					<th class="tab_col">Offset upstream</th>
+					<th class="tab_col">Offset downstream</th>
+					<th class="tab_col">Alignment width</th>
+					<th class="tab_col">Consensus Alignment</th>
+				</tr>
+			</thead>
+                        <tbody>
+                        <!-- Insert rows-->
+                        HERE
+                        </tbody>
+                </table>
+     </div>
+    ';
+
+    return($align_table);
+}
+
+
+###################################
+## Hide/show the alignment table
+sub toogle_table{
+
+    my $toogle_align_tab  = 
+'
+// Slide the alignment table
+  $(document).ready(function(){
+    $(\'#button_alignment_table_--nb--\').click(function(){
+       $(\'#alignment_table_--nb--\').slideToggle(\'slow\');
+     }); 
+  $(\'#alignment_table_--nb--\').css(\'display\', \'none\');
+  });
+';
+    return($toogle_align_tab);
+}
+
+
+###################################
+## Hide/show the alignment table
+sub toogle_tree{
+
+    my $toogle_align_tab  = 
+'
+// Slide the logo tree
+  $(document).ready(function(){
+    $(\'#button_logo_tree_--nb--\').click(function(){
+       $(\'#cluster_--nb--\').slideToggle(\'slow\');
+     }); 
+  $(\'#cluster_--nb--\').css(\'display\', \'none\');
+  });
+';
+    return($toogle_align_tab);
+}
+
+
+#########################
+## Insert D3 logo tree 
+sub logo_tree{
+
+    my $logo_tree = 
+	'
+	<!--Div containing D3 logo tree-->
+	<div id="cluster_--nb--" class="logo">
+		<div id="hclust_tree_head">
+                   <ul type="square">
+                      <li>
+                         <strong>Logo tree and alignment. </strong>This results shows the hierarchical tree with all the motifs of the corresponding cluster and the logo alignment in F (left logo) and R (rigth logo) orientation.
+                      </li>
+                      <li>
+                         <strong>Branch consensus. </strong>Each branch show the <em>branch-consensus</em> which summarizes all the descendant motifs. Click on it to see the corresponding logo. 
+                      </li>
+                   </ul>
+                </div>
+		<script type="text/javascript">
+		(function(){
+                var width = 3500,
+		height = 100 + 30 * --nb_motifs--,
+		m = [40, 240, 40, 240],
+		w = width ,//-m[0] -m[0],
+		h = height //-m[0] -m[2];
+	;
+
+
+	var cluster = d3.layout.cluster()
+		.size([height, 400])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
+
+
+	var svg = d3.select("#cluster_--nb--").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("class","drawarea")
+		.attr("transform", "translate(40,0)");
+		
+
+d3.json("peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_trees/parsed_tree_cluster_--nb--.json", function(json) {
+				
+	var nodes = cluster.nodes(json);
+
+	var link = svg.selectAll("path.link")
+		.data(cluster.links(nodes))
+		.enter().append("path")
+		.attr("class", "link")
+		.attr("d", elbow);
+
+
+	var node = svg.selectAll("g.node")
+		.data(nodes)
+		.enter().append("g")
+		.attr("class", "node")
+		.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+	
+	node.append("circle")
+		.attr("r", 6.5);
+
+	node.append("a")
+			.attr("xlink:href", function(d) { return d.url; })
+			.append("text")
+			.text(function(d) { return d.children ? "" :  d.name; })
+			.attr("dx", function(d) { return d.children ? 0 : 20; })
+			.attr("dy", function(d) { return d.children ? 0 : 3; })
+			.attr("font-size", "8px")
+			.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+/*
+	node.append("text")
+			.text(function(d){ return d.children ? "" :  d.consensus; })
+			.attr("x", function(d){ return d.children ? 0 : 20; })
+			.attr("dy", function(d){ return d.children ? 0 : 23; })
+			.attr("font-size", "8px")
+			.attr("text-anchor", function(d){ return d.children ? "end" : "start"; });
+*/
+	/*Insert labels*/
+	
+	
+	/*Insert consensus*/
+		node.append("a")
+		.attr("xlink:href", function(d) { return d.children ? d.url : ""; })
+		.append("text")
+		.text(function(d) { return d.children ? d.name : ""; })
+		.attr("dx", function(d) { return d.children ? -20 : 0; })
+		.attr("dy", function(d) { return d.children ? -6 : 0; })
+		.attr("fill", function(d) { return d.children ? "blue" : ""; })
+		.attr("font-size", "10px")
+		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+		
+	node.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image; })  
+		.attr("width", function(d) { return (d.size + 2)  * 8.5; })
+		.attr("height", 35)
+		.attr("x", 160)    
+		.attr("y", -15) 
+		.attr("preserveAspectRatio", "none");	
+		
+	node.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * 8.5; })
+		.attr("height", 35)
+  		.attr("x", function(d) { return (d.size + 2)  * 12 + 110; })  
+		.attr("y", -15) 
+		.attr("preserveAspectRatio", "none");
+			
+	});
+	
+
+	function elbow(d, i) {
+		
+		return "M" + d.source.y + "," + d.source.x
+		+ "V" + d.target.x + "H" + d.target.y;
+	}
+})();
+	</script>
+	</div>	
+';
+
+    return($logo_tree);
 }
 __END__
