@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<style>
+
+	#header {
+		z-index: 1;
+		position: fixed;
+		width: 97.5%;
+		margin-top: -20px;
+		height: 60px;
+		background-color: #2377D2;
+		margin-bottom: 10px;
+		display: block;
+	}
+	
+	
+	#head_text {
+		text-align: center;
+		color: #FFFFFF;
+		font-family: Arial;
+		text-decoration: none;
+	}
+	
+	
+	h3 a:hover {
+		font-weight: bold;
+		text-decoration: none;
+	}
+	
+	
+	#command {
+		background-color: #DCE4EC;
+		float: left;
+		margin-top: 45px;
+		width: 99%;
+		height: 20px;
+		position: relative;
+		display: block;
+		text-align: left;
+		color: #34373B;
+		font-size: 15px;
+		padding: 6px;
+	        clear: both;
+	}
+
+
+	.cluster_division {
+		background-color: #DCE4EC;
+		float: left;
+		margin-top: 10px;
+		width: 200px;
+		height: 20px;
+		position: relative;
+		display: block;
+		text-align: center;
+		color: #34373B;
+		font-size: 15px;
+		padding: 4px;
+	    cursor: pointer;
+        clear: both;
+        border-radius:5px;
+	}
+	
+	
+	.tab{
+		margin-top: 20px;
+		text-align: center;
+		color: #000000;
+		font-family: Arial;
+		text-decoration: none;
+		display: block;
+		float: left;
+		background-color: #E6E6E6;
+		font-size: 15px;
+        clear: both;
+	    position: relative;
+	    border-radius:5px;
+		padding: 5px 12px 5px 12px;
+	}
+	
+	
+	.tab_header {
+		border-bottom: 1px solid black;
+		width: 175px;
+		padding: 7px;
+	}
+
+	
+	.tab_col {
+		padding: 7px;
+		background-color: #B1D4F9;
+	}
+	
+	
+	.seq {
+		font-family: Monospace;
+		font-size: 15px;
+	}
+
+	
+	.Cluster_results {
+	        margin-top: 3px;
+			width: 130px;
+			heigth: 100px;
+	        border: 1px;
+			position: relative;
+	        padding: 1px;
+	        font-size:14px;
+	        color: #ffffff;
+            background:#cc0000;
+            border-radius:5px;
+	        cursor: pointer;
+	        float: left;
+	        clear: both;
+	        display: none;
+	}
+	
+	
+	#File_list {
+		background-color: #DCE4EC;
+		float: left;
+		margin-top: 10px;
+		width: 200px;
+		height: 20px;
+		position: relative;
+		display: block;
+		text-align: center;
+		color: #34373B;
+		font-size: 15px;
+		padding: 4px;
+	    cursor: pointer;
+        clear: both;
+        border-radius:5px;
+	}
+	
+	
+	#hclust_tree_head {
+		width: 950px;
+		heigth: 500px;
+		margin-top: 15px;
+		margin-bottom: 5px;
+	    display: inline-block;
+		position: relative;
+		padding: 3px;
+		background-color: #B1D4F9;
+		float: left;
+		border-radius:5px;
+		font-size: 12px;
+		clear: both;
+	}	
+
+
+	/****************/
+	/* D3 CSS sytle */
+	/****************/
+		
+	div {
+		border-radius: 0.5px;
+	}
+	
+	
+	table {
+		border: #2377D2;
+	}
+	
+	
+	.node circle {
+		fill: #fff;
+		stroke: steelblue;
+		stroke-width: 0.5px;
+	}
+
+
+	.node {
+		font: 10px sans-serif;
+	}
+
+
+	.link {
+		fill: none;
+		stroke: #0D86D7;
+		stroke-width: 1px;
+	}
+	
+	svg {
+		pointer-events: all;
+		background-color: white;
+		overflow: scroll;
+	}
+
+</style>
+
+
+<head>
+	<script type="text/javascript"
+    src="/home/jaimecm/rsat/public_html/lib/d3//d3.v3.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <meta charset=utf-8 />
+    <title> matrix-clustering summary </title>
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+</head>
+
+
+<body>
+	
+	<!-- Header with link to RSAT-->
+	<div id="header">
+		<h3 id="head_text"><a href="http://rsat.ulb.ac.be/">RSA-tools</a> - matrix-clustering results</h3>
+	</div>
+	
+	
+	<!--Div with the command executed-->
+	<div id="command">
+		<strong>Command:</strong> make -f $RSAT/makefiles/matrix-clustering_demo.mk cluster_peakmo_Oct4_threhsolds
+	</div>
+	
+
+	<!-- Div with the table of selected parameters-->
+	<div class="tab">
+		<table>		
+			<thead>
+				<tr>
+					<th colspan="5"><strong>Summary</strong></th>
+				</tr>
+				<tr>
+					<th class="tab_col">Number of clusters</th>
+					<th class="tab_col">Labels</th>
+					<th class="tab_col">Clustering method</th>
+					<th class="tab_col">Ncor value</th>
+					<th class="tab_col">cor value</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>--nb--</td>
+					<td>--lb--</td>
+					<td>--hmethod--</td>
+					<td>--Ncor--</td>
+					<td>--cor--</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+
+
+	<!--Paste cluster delim-->
+
+
+	<div id="File_list">List of files</div>
+	
+	
+</body>
+
+<!--Paste jquery-->
+
+
+</html>
+
+
