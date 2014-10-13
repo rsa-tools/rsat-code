@@ -81,6 +81,23 @@
 	}
 	
 	
+	.tab_list{
+		margin-top: 20px;
+		text-align: left;
+		color: #000000;
+		font-family: Arial;
+		text-decoration: none;
+		display: none;
+		float: left;
+		background-color: #E6E6E6;
+		font-size: 15px;
+        clear: both;
+	    position: relative;
+	    border-radius:5px;
+		padding: 5px 12px 5px 12px;
+	}
+	
+	
 	.tab_header {
 		border-bottom: 1px solid black;
 		width: 175px;
@@ -130,9 +147,20 @@
 		color: #34373B;
 		font-size: 15px;
 		padding: 4px;
-	    cursor: pointer;
         clear: both;
         border-radius:5px;
+        cursor: pointer;
+	}
+
+	
+	.file_link {
+		cursor: pointer;
+		text-decoration: none;
+	}
+	
+	
+	.file_link:hover {
+		text-decoration: underline;
 	}
 	
 	
@@ -150,6 +178,16 @@
 		font-size: 12px;
 		clear: both;
 	}	
+	
+	
+	.logo {		
+		clear: both;
+		position: relative;
+		max-width: 100%;
+		max-height: 13%;
+		width: 120px;
+		height: 65px;
+	}
 
 
 	/****************/
@@ -207,7 +245,7 @@
 	
 	<!-- Header with link to RSAT-->
 	<div id="header">
-		<h3 id="head_text"><a href="http://rsat.ulb.ac.be/">RSA-tools</a> - matrix-clustering results</h3>
+		<h3 id="head_text"><a href="http://rsat.ulb.ac.be/"><strong><span style="color: white">RSA-tools</span></strong></a> - matrix-clustering results</h3>
 	</div>
 	
 	
@@ -249,7 +287,29 @@
 	<!--Paste cluster delim-->
 
 
-	<div id="File_list">List of files</div>
+	<div id="File_list"><strong>List of files</strong></div>
+	<div class="tab_list">
+		<table>		
+			<thead>
+				<tr>
+					<th colspan="2"><strong>Exported files</strong></th>
+				</tr>
+				<tr>
+					<th class="tab_col">File</th>
+					<th class="tab_col">Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				Additional_files
+			</tbody>
+		</table>
+	</div>
+
+
+
+
+			
+
 	
 	
 </body>
