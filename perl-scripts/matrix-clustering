@@ -1906,6 +1906,8 @@ sub Creates_website(){
 
     ## First read the alignment table and save the results in a hash
     my ($line, $id, $cluster_id);
+    my $general_tab = "";
+    my $number_of_motifs = 0;
     my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
     while (<$cluster_handle>) {
 	next if (/^#/); ## Skip header line
@@ -1921,19 +1923,28 @@ sub Creates_website(){
 	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[4];
 	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[5];
 	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[6];
+	$number_of_motifs++;
+
+	$general_tab .= "
+				<tr>					
+					<td>$id</td>
+					<td>$cluster_id</td>
+					<td class=\"seq\">".&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus})."</td>
+				</tr>
+        ";
+
     }
     close $cluster_handle;
  
 
     ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
-    my $labels = join(",", @cons_labels);
     my $method = $hclust_method;
     my $ncor_val = $lth{Ncor};
     my $cor_val = $lth{cor};
     my @summary = ();
     my @pref = split("/", $main::outfile{prefix});
     my $prefix = pop(@pref);
-
+    my $number_of_clusters = scalar(keys %alignment_table_data);
     my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
     &doit($cmd, 0, $die_on_error, $verbose);
 
@@ -1943,12 +1954,12 @@ sub Creates_website(){
 	$line = $_;
 
 	## Fill the summary table
-	my $number_of_clusters = scalar(keys %alignment_table_data);
+	$line =~ s/--motifs--/$number_of_motifs/;
 	$line =~ s/--nb--/$number_of_clusters/;
-	$line =~ s/--lb--/$labels/;
 	$line =~ s/--hmethod--/$method/;
 	$line =~ s/--Ncor--/$ncor_val/;
 	$line =~ s/--cor--/$cor_val/;
+	$line =~ s/COL_HERE/$general_tab/;
 
         ## Search the tag where the clusters will be inserted
 	if($line =~ m/Paste\scluster\sdelim/){
@@ -1986,6 +1997,7 @@ sub Creates_website(){
 		    $tr .= "\t\t\t\t\t".'<td class="seq">'.&DNA_string_to_HTML($alignment_table_data{$cl_id}{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
 		    $tab .= $tr;
 		}
+		$alignment_table =~ s/--Cluster_id--/$cl_id/g;
 		$alignment_table =~ s/HERE/$tab/g;
 		$alignment_table =~ s/--nb--/$num/g;
 		$line .= "\n".$alignment_table."\n\n";
@@ -2002,6 +2014,7 @@ sub Creates_website(){
 		$d3_logo_tree =~ s/--folder_tree--/$folder_tree/g;
 		$d3_logo_tree =~ s/--nb--/$num/g;
 		$d3_logo_tree =~ s/--nb_motifs--/$factor_height/g;
+		$d3_logo_tree =~ s/--Cluster_id--/$cl_id/g;
 		$line .= "\n".$d3_logo_tree."\n\n";
 		
 		## Add the code to hide/show the logo tree
@@ -2146,8 +2159,7 @@ sub cluster_delim {
 		<strong>--Cluster_id--</strong>
 	</div>
 	<div class=\"Cluster_results --Cluster_id--\" id=\"button_alignment_table_--nb--\">Alignment table</div>
-	<div class=\"Cluster_results --Cluster_id--\" id=\"button_logo_tree_--nb--\">Logo tree</div>
-        <div class=\"Cluster_results --Cluster_id--\" id=\"button_branch_consensus_cluster_--nb--\">Branch motifs</div>
+
 ";
     
     return($cluster_delim);
@@ -2159,10 +2171,10 @@ sub cluster_delim {
 sub cluster_head_buttons{
     
     my $size = shift;
-    my $jquey_toggle_buttons = "";
+    my $jquery_toggle_buttons = "";
 
     if($size > 1){
-	$jquey_toggle_buttons = '
+	$jquery_toggle_buttons = '
 
   // Slide the buttons to show the results
   $(document).ready(function(){
@@ -2172,14 +2184,14 @@ sub cluster_head_buttons{
        $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
        $(\'#alignment_table_--nb--\').hide();  
        $(\'#cluster_--nb--\').hide(); 
-       $(\'#branch_consensus_cluster_--nb--\').hide();  
+       $(\'.branch_consensus_cluster_--nb--\').hide();  
      }); 
   });
 
     ';
     } else{
 
-         $jquey_toggle_buttons = '
+         $jquery_toggle_buttons = '
 
   // Slide the buttons to show the results
   $(document).ready(function(){
@@ -2194,7 +2206,7 @@ sub cluster_head_buttons{
     ';
 
     }
-    return($jquey_toggle_buttons);
+    return($jquery_toggle_buttons);
 }
 
 
@@ -2250,10 +2262,10 @@ sub toogle_table{
 
 
 ###################################
-## Hide/show the alignment table
+## Hide/show the logo tree
 sub toogle_tree{
 
-    my $toogle_align_tab  = 
+    my $toogle_tree  = 
 '
 // Slide the logo tree
   $(document).ready(function(){
@@ -2263,7 +2275,7 @@ sub toogle_tree{
   $(\'#cluster_--nb--\').css(\'display\', \'none\');
   });
 ';
-    return($toogle_align_tab);
+    return($toogle_tree);
 }
 
 
@@ -2273,12 +2285,12 @@ sub toogle_branch_consensus_table{
 
     my $toogle_branch_consensus_tab  = 
 '
-// Slide the logo tree
+// Slide the branch-motif table
   $(document).ready(function(){
     $(\'#button_branch_consensus_cluster_--nb--\').click(function(){
-       $(\'#branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
+       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
      }); 
-  $(\'#branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+  $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
   });
 ';
     return($toogle_branch_consensus_tab);
@@ -2292,8 +2304,9 @@ sub logo_tree{
     my $logo_tree = 
 	'
 
+        <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
 	<!--Div containing D3 logo tree-->
-	<div id="cluster_--nb--" class="logo">
+	<div id="cluster_--nb--" class="logo_tree">
 		<div id="hclust_tree_head">
                    <ul type="square">
                       <li>
@@ -2412,10 +2425,7 @@ d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 
     return($logo_tree);
 }
-
-
-# $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
-# $(\'#branch_consensus_cluster_--nb--\').hide();  
+ 
 
 #########################
 ## Insert D3 logo tree 
@@ -2423,7 +2433,15 @@ sub branch_consensus_table{
 
     my $branch_consensus_table = 
 	'
-    <div class="tab" id="branch_consensus_cluster_--nb--">
+    <div class="Cluster_results --Cluster_id--" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
+    <div class="branch_motifs_head branch_consensus_cluster_--nb--">
+       <ul type="square">
+          <li>
+             <strong>Branch-motifs. </strong>On the logo tree, is displayed the the branch-consensus which summarizes all the descendant motif of each branch. This table shows more detailed information: the logo in both orientation and a file in TRANSFAC format corresponding to the branch-motif.   
+          </li>
+       </ul>
+    </div>
+    <div class="tab branch_consensus_cluster_--nb--">
 		<table>
 			<thead>
 				<tr>
@@ -2443,9 +2461,9 @@ sub branch_consensus_table{
                         </tbody>
                 </table>
      </div>
-
 ';
 
     return($branch_consensus_table);
 }
+
 __END__
