@@ -49,6 +49,12 @@ peakmo_vs_jaspar_param:
 	@echo "Result	${PEAKMO_VS_JASPAR}_index.html"
 
 ################################################################
+## Use compare-matrices-quick (less options than compare-matrices, but
+## 100 times faster)
+peakmo_vs_jaspar_quick:
+	compare-matrices-quick -h
+
+################################################################
 ## Case 2: compare all the motifs from a reference database
 ## (RegulonDB, Jaspar).
 DB_PREFIX=${JASPAR_PREFIX}
