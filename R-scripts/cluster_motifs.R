@@ -402,6 +402,8 @@ if (forest.nb > 1){
         align.clusters(child1, child2)
       }
 
+      ## ## Produce the column NAMES
+      ##print(get.name(1))
       
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
@@ -476,23 +478,24 @@ if (forest.nb > 1){
 if(forest.nb > 1){
   alignment.table <- sapply(forest.list, function(X){
     sapply(X, function(Y){
-      return(c(Y[["number"]], Y[["strand"]], Y[["spacer"]], Y[["offset_down"]], Y[["consensus"]]))
+      return(c(Y[["number"]], Y[["strand"]], Y[["spacer"]], Y[["offset_down"]], Y[["consensus"]], Y[["name"]]))
     })
   })
 } else{
   alignment.table <- lapply(forest.list[[1]], function(X){
-    return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]]))
+    return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]], X[["name"]]))
   })
 }
 alignment.table <- unlist(alignment.table)
 names(alignment.table) <- NULL
-alignment.table <- data.frame(matrix(alignment.table, ncol = 5, byrow = TRUE))
-colnames(alignment.table) <- c("number", "strand", "spacer", "offset_down", "consensus")
+alignment.table <- data.frame(matrix(alignment.table, ncol = 6, byrow = TRUE))
+colnames(alignment.table) <- c("number", "strand", "spacer", "offset_down", "consensus", "name")
 
 ## Produce the column ID
 ids.names <- unlist(as.vector(sapply(forest.list, function(x){names(x)})))
 names(ids.names) <- ids.names
 alignment.table$id <- ids.names
+
 ## Produce the column Width
 width.tmp <- unlist(sapply(forest.list, function(X){
   sapply(X, function(Y){
@@ -511,8 +514,8 @@ for(name in forest.names){
 alignment.table$cluster <- forest.id
 
 ##  Re-order the table and export it
-alignment.table <- alignment.table[,c(6, 8, 2:4, 7, 5)]
-colnames(alignment.table) <- c("#id", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
+alignment.table <- alignment.table[,c(7, 6, 9, 2:4, 8, 5)]
+colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
