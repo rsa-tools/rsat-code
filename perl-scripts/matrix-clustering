@@ -1943,14 +1943,14 @@ sub Creates_website(){
 	}
 
 	## Add the sequences
-	$general_tab .= "
+	$general_tab .= '
 				<tr>					
-					<td>$id</td>
-                                        <td>$alignment_table_data{$cluster_id}{$id}{name}</td>
-					<td>$cluster_id</td>
-					<td class=\"seq\">".&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus})."</td>
+					<td class="tab_spacer_1">'.$id.'</td>
+                                        <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
+					<td class="tab_spacer_2">'.$cluster_id.'</td>
+					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
 				</tr>
-        ";
+        ';
 	$cluster_id_prev = $cluster_id_cur;
 
     }
@@ -2008,14 +2008,14 @@ sub Creates_website(){
 		foreach my $id (keys $alignment_table_data{$cl_id}){
 		    my $tr = "";
 		    $tr .= "\n\t\t\t\t<tr>\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$id.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{name}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$cl_id.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{strand}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{offset_up}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{offset_down}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td>'.$alignment_table_data{$cl_id}{$id}{width}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="seq">'.&DNA_string_to_HTML($alignment_table_data{$cl_id}{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$id.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$alignment_table_data{$cl_id}{$id}{name}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$cl_id.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{strand}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{offset_up}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{offset_down}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{width}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cl_id}{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
 		    $tab .= $tr;
 		}
 		$alignment_table =~ s/--Cluster_id--/$cl_id/g;
@@ -2058,11 +2058,11 @@ sub Creates_website(){
 			$cons =~ s/DE\s+//gi;
 			
 			$consensus_table_columns .= "\n<tr>\n";
-			$consensus_table_columns .= '   <th>Merge level '.$level.'</th>'."\n";
-			$consensus_table_columns .= '   <th class="seq">'.&DNA_string_to_HTML($cons).'</th>'."\n";
-			$consensus_table_columns .= '   <th><a href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
-			$consensus_table_columns .= '   <th><a href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-			$consensus_table_columns .= '   <th><a href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
+			$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&DNA_string_to_HTML($cons).'</th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
 			$consensus_table_columns .= "</tr>\n";
 		    }
 		    $consensus_table =~ s/--nb--/$num/g;
@@ -2084,28 +2084,28 @@ sub Creates_website(){
 	    my $add_files = 
 		'
 		   <tr>
-		      <td "><a class="file_link" href="'.$prefix.'_distance_table.html"><strong>Distance table</strong></a></td>
-		      <td>This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_distance_table.html"><strong>Distance table</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
 		   <tr>
-		      <td><a class="file_link" href="'.$prefix.'_internal_nodes_attributes.html"><strong>Internal nodes attributes</strong></a></td>
-		      <td>This table shows the grouping steps of the hierarchical tree.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_internal_nodes_attributes.html"><strong>Internal nodes attributes</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
 		   </tr>
 		   <tr>
-		      <td><a class="file_link" href="'.$prefix.'_logo_tree.html"><strong>Logo Forest</strong></a></td>
-		      <td>This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_logo_tree.html"><strong>Logo Forest</strong></a></td>
+		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
 		   <tr>
-		      <td><a class="file_link" href="'.$prefix.'_pairwise_compa.html"><strong>Pairwise comparison</strong></a></td>
-		      <td>This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_pairwise_compa.html"><strong>Pairwise comparison</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
 		   </tr>
 		   <tr>
-		      <td><a class="file_link" href="'.$prefix.'_pairwise_compa_matrix_descriptions.html"><strong>Matrix description</strong></a></td>
-		      <td>This table shows information of each input motif.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_pairwise_compa_matrix_descriptions.html"><strong>Matrix description</strong></a></td>
+		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
 		   <tr>
-		      <td><a class="file_link" href="'.$prefix.'_consensus_tree.pdf"><strong>Consensus tree</strong></a></td>
-		      <td>A PDF file showing the consensus alignment. Each cluster is represented with a different color.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_consensus_tree.pdf"><strong>Consensus tree</strong></a></td>
+		      <td class="tab_spacer_2">A PDF file showing the consensus alignment. Each cluster is represented with a different color.</td>
 		   </tr>
                 ';
 
@@ -2121,7 +2121,7 @@ sub Creates_website(){
 	push(@summary, $line."\n");
     }
     close $summary_temp;
-    unlink($summary_temp);
+    unlink($outfile{summary_temp});
     open(SUMMARY, ">".$main::outfile{summary}) || die "Cannot open SUMMARY: $!\n";
     print SUMMARY @summary;
     close(SUMMARY);
@@ -2244,11 +2244,11 @@ sub alignment_table{
 				<tr>
 					<th class="tab_col">Motif id</th>
                                         <th class="tab_col">Motif name</th>
-					<th class="tab_col">Cluster number</th>
-					<th class="tab_col">Strand</th>
-					<th class="tab_col">Offset upstream</th>
-					<th class="tab_col">Offset downstream</th>
-					<th class="tab_col">Alignment width</th>
+					<th class="tab_col tab_spacer_2">Cluster number</th>
+					<th class="tab_col tab_spacer_2">Strand</th>
+					<th class="tab_col tab_spacer_2">Offset<br>upstream</th>
+					<th class="tab_col tab_spacer_2">Offset<br>downstream</th>
+					<th class="tab_col tab_spacer_2">Alignment<br>width</th>
 					<th class="tab_col">Consensus Alignment</th>
 				</tr>
 			</thead>
