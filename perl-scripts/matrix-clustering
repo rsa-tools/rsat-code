@@ -198,6 +198,7 @@ package main;
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
+                                     w
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
   local %supported_threshold = ();
@@ -944,7 +945,7 @@ sub CompareMatrices {
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
   $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
-  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,matrix_desc";
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width,matrix_desc";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
@@ -1636,6 +1637,7 @@ sub Merge_matrices(){
   ## Get the cluster sizes
 
   foreach my $cluster (@clusters_to_HTML){
+
     my @nodes = @{$cluster_nodes{$cluster}};
     &RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
 
@@ -1655,6 +1657,8 @@ sub Merge_matrices(){
 	$file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$file
       }
       my $files = join(" ", @file_names);
+
+      
       
       ## Merge the matrices and create a single matrix
       my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_cat.tf";
@@ -1673,7 +1677,6 @@ sub Merge_matrices(){
       }
       
      ## Create branch-wise logos
-#      system("convert-matrix -i ".$merged_mat_file." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png");
       $cmd = "convert-matrix -i ".$merged_mat_file;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
@@ -1961,6 +1964,7 @@ sub Creates_website(){
     my $method = $hclust_method;
     my $ncor_val = $lth{Ncor};
     my $cor_val = $lth{cor};
+    my $w_val = $lth{w};
     my @summary = ();
     my @pref = split("/", $main::outfile{prefix});
     my $prefix = pop(@pref);
@@ -1979,6 +1983,7 @@ sub Creates_website(){
 	$line =~ s/--hmethod--/$method/;
 	$line =~ s/--Ncor--/$ncor_val/;
 	$line =~ s/--cor--/$cor_val/;
+	$line =~ s/--width--/$w_val/;
 	$line =~ s/COL_HERE/$general_tab/;
 
         ## Search the tag where the clusters will be inserted
