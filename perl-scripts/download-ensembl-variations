@@ -58,7 +58,7 @@ Jeremy.Delerce@univ-amu.fr
 
 A tab delimited file with the following column content.
 
-=head 2 GOOD VARIATION
+=head2 VARIATIONS PASSING QC
 
 =over
 
@@ -110,7 +110,7 @@ If the variation is in a super-variation
 
 =back
 
-=head 2 Failed VARIATION
+=head2 VARIATIONS FAILING QC
 
 =over
 
@@ -310,45 +310,54 @@ package	main;
   my $out_rm = &OpenOutputFile($variation_dir."Failed.tab");
   my %out_vars = ();
 
+  ################
+  ## Intialize output file per chromosome
   foreach my $chr (keys(%chr_file)) {
     $out_vars{$chr} = &OpenOutputFile($variation_dir.$chr.".tab");
     $out_var = $out_vars{$chr};
     print $out_var "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\n";
+    #print $out_var "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\tminor_allele_freq\n";
   }
 
+  ################################################################
+  ## Process/Open GVF file
   my $gvf_file = $species_gvf_ftp;
   $gvf_file =~ s/\.gz//;
   $gvf_file =~ s/$species_variation_ftp/$variation_dir/;
 
-
+  ## Intialize variables 
   my @super_variation = ();
   my $last_chr = "";
   my $last_end = 0;
   my $last_id = "";
 
+  ## Open GVF
   my ($file) = &OpenInputFile($gvf_file);
   while (<$file>) {
-    next if (/^#/);
+    next if (/^#/); ## Skip comments
     chomp();
 
     ##Get variation info
     my ($chr,$source,$so_term,$start,$end,$score,$strand,$phase,$attributes) = split("\t");
     my %info = ();
-    foreach my $token (split(";",$attributes)) {
-      my ($cle,$value) = split("=",$token);
-      $info{$cle} = $value;
+    foreach my $token (split(";",$attributes)) { ## Split and stor attribute values
+      my ($attributeID,$value) = split("=",$token);
+      $info{$attributeID} = $value;
     }
 
+    ## Skip Variants that lack of these attributes: Reference sequence, variant sequence and ID
     next unless ($info{'Reference_seq'} && $info{'Variant_seq'} && $info{'ID'});
 
-    my $id = "";
+    ## Retrive ID for the variant stored in attribute Dbxref Ej:Dbxref=dbSNP_137:rs186434315
+    my $id = ""; 
     if ($info{'Dbxref'}) {
       my @token = split(":",$info{'Dbxref'});
       $id = $token[-1];
     } else {
-      $id = $info{'ID'};
+      $id = $info{'ID'}; ## If information is not avialable use ID attribute (variant number in the table)
     }
 
+    ## Retrive validation status from either validation_status or eviden attributes
     if ($info{'validation_status'} || $info{'evidence'}) {
       $info{'validate'} = 1;
     } elsif ($info{'validation_states'}) {
@@ -358,7 +367,16 @@ package	main;
         $info{'validate'} = 1;
       }
     } else {
-      $info{'validate'} = 0;
+      $info{'validate'} = 0; ## If information is not abailable store 0
+    }
+
+    ## Retrive global minor allele frequency if available. Ej:global_minor_allele_frequency=1|0.000915751|2
+    my $m_allele_freq; 
+    if ($info{'global_minor_allele_frequency'}) {
+      my @gmaf = split("|",$info{'global_minor_allele_frequency'});
+      $m_allele_freq = $gmaf[1];
+    } else {
+       $m_allele_freq ="NA"; ## If minor allele freq is not avialable mark as NA
     }
 
     ##Get reference sequence and change output file
