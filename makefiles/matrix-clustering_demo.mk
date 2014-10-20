@@ -15,7 +15,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
-#MIN_W=4
+MIN_W=5
 V=2
 
 ## Define a set of demo files
@@ -64,6 +64,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -matrix_format tf \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
+		-lth w ${MIN_W} \
 		-cons \
 		-export json -d3_base file -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
@@ -125,7 +126,7 @@ JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
-	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.75 MIN_NCOR=0.4
+	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
 
 #############################
 ## Cluster one cisBP group
