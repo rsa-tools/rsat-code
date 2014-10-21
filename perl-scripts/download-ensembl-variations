@@ -183,6 +183,18 @@ package	main;
   our $species = "";
   our $get_available_species = 0;
   our $ref_seq = "";
+   ## Tasks
+  local @supported_tasks = ("all", ## Run all other tasks
+			    "download_gvf", ## Fetch gvf file from ensembl 
+			    "report_snps", ## Read downloaded file from ensembl and report the processed data 
+
+      );
+  $supported_tasks = join (",", @supported_tasks);
+  local %supported_tasks = ();
+  foreach my $task (@supported_tasks) {
+      $supported_tasks{$task} = 1;
+  }
+  %tasks = ();
 
   ################################################################
   ## Read argument values
@@ -282,27 +294,34 @@ package	main;
     }
   }
 
-  # Get url
+  ## If no tasks has been specified, execute them all
+  if (($tasks{all}) || (scalar(keys(%tasks))==0)) {
+      %tasks = %supported_tasks;
+      $tasks{all} = 0;
+  }
+  ################################################################
+  ## Retrieve GVF file from ensemble
+
+  ## Get url
   my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_version);
   my $species_gvf_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
   &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
   &RSAT::message::Info("Species gvf URL --> $species_gvf_ftp") if ($main::verbose >= 2);
 
-
-  ################################################################
-  ###Dowload variation file
-  &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
   my $variation_dir = &Get_variation_dir($data_dir,$species, $assembly_version,$ensembl_version);
-  &RSAT::util::CheckOutDir($variation_dir);
-
-  system("wget -NL -nv $species_gvf_ftp -P $variation_dir");
-
-
-  ################################################################
-  ## Decompress variation file
-  &RSAT::message::TimeWarn("Decompress gvf file") if ($main::verbose >= 2);
-  system ("gzip -dv $variation_dir/*.gz");
-
+  if ($tasks{download_gvf}){
+      
+      ###Dowload variation file
+      &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
+      &RSAT::util::CheckOutDir($variation_dir);
+      
+      system("wget -NL -nv $species_gvf_ftp -P $variation_dir");
+      
+      ################################################################
+      ## Decompress variation file
+      &RSAT::message::TimeWarn("Decompress gvf file") if ($main::verbose >= 2);
+      system ("gzip -dv $variation_dir/*.gz");
+  }
 
   ################################################################
   ## Execute the command
@@ -315,158 +334,172 @@ package	main;
   foreach my $chr (keys(%chr_file)) {
     $out_vars{$chr} = &OpenOutputFile($variation_dir.$chr.".tab");
     $out_var = $out_vars{$chr};
-    print $out_var "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\n";
+    print $out_var join("\t","#chr","start","end","strand","id","ref",
+			"alt","so_term","validate","minor_allele_freq",
+			"is_supvar","in_supvar")."\n";
     #print $out_var "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\tminor_allele_freq\n";
   }
 
   ################################################################
   ## Process/Open GVF file
-  my $gvf_file = $species_gvf_ftp;
-  $gvf_file =~ s/\.gz//;
-  $gvf_file =~ s/$species_variation_ftp/$variation_dir/;
+  if ($tasks{report_snps}){
+      my $gvf_file = $species_gvf_ftp;
+      $gvf_file =~ s/\.gz//;
+      $gvf_file =~ s/$species_variation_ftp/$variation_dir/;
+      
+      ## Intialize variables 
+      my @super_variation = ();
+      my $last_chr = "";
+      my $last_end = 0;
+      my $last_id = "";
+      &RSAT::message::Info("Analyzing GVF file ",$gvf_file, ", only SNPs with accurate information will be reported") if ($main::verbose >= 2);
 
-  ## Intialize variables 
-  my @super_variation = ();
-  my $last_chr = "";
-  my $last_end = 0;
-  my $last_id = "";
+      ## Open GVF file and report SNP information and sequence to be used by retrieve-variation
+      my ($file) = &OpenInputFile($gvf_file);
+      while (<$file>) {
+	  next if (/^#/); ## Skip comments
+	  chomp();
+	  
+	  ##Get variation info
+	  my ($chr,$source,$so_term,$start,$end,$score,$strand,$phase,$attributes) = split("\t");
+	  my %info = ();
+	  foreach my $token (split(";",$attributes)) { ## Split and stor attribute values
+	      my ($attributeID,$value) = split("=",$token);
+	      $info{$attributeID} = $value;
+	  }
+	  
+	  ## Skip Variants that lack of these attributes: Reference sequence, variant sequence and ID
+	  next unless ($info{'Reference_seq'} && $info{'Variant_seq'} && $info{'ID'});
+	  
+	  ## Retrive ID for the variant stored in attribute Dbxref Ej:Dbxref=dbSNP_137:rs186434315
+	  my $id = ""; 
+	  if ($info{'Dbxref'}) {
+	      my @token = split(":",$info{'Dbxref'});
+	      $id = $token[-1];
+	  } else {
+	      $id = $info{'ID'}; ## If information is not avialable use ID attribute (variant number in the table)
+	  }
+	  
+	  ## Retrive validation status from either validation_status or eviden attributes
+	  if ($info{'validation_status'} || $info{'evidence'}) {
+	      $info{'validate'} = 1;
+	  } elsif ($info{'validation_states'}) {
+	      if ($info{'validation_states'} eq "-") {
+		  $info{'validate'} = 0;
+	      } else {
+		  $info{'validate'} = 1;
+	      }
+	  } else {
+	      $info{'validate'} = 0; ## If information is not abailable store 0
+	  }
+	  
+	  ## Retrive global minor allele frequency if available. Ej:global_minor_allele_frequency=1|0.000915751|2
+	  my $m_allele_freq; 
+	  if ($info{'global_minor_allele_frequency'}) {
+	      my @gmaf = split("\\|",$info{'global_minor_allele_frequency'});
+	      $m_allele_freq = $gmaf[1];
+	  } else {
+	      $m_allele_freq ="NA"; ## If minor allele freq is not avialable mark as NA
+	  }
+	  
+	  ##Get reference sequence and change output file
+	  if ($last_chr ne $chr) {
+	      
+	      &Get_super_variation($last_chr, $last_end,@super_variation) unless ( scalar(@super_variation) == 0);
+	      @super_variation = (); ## Empty super_variations array
+	      $last_end = 0;
+	      $last_id = "";
+	      
+	      &RSAT::message::TimeWarn("Analyse variation on chromosome : $chr","\n\tOutfile:",$variation_dir.$chr.".tab") if ($main::verbose >= 2);
 
-  ## Open GVF
-  my ($file) = &OpenInputFile($gvf_file);
-  while (<$file>) {
-    next if (/^#/); ## Skip comments
-    chomp();
+	      $last_chr = $chr;
+	      
+	      my $raw_file = $genome_dir.$chr_file{$chr};
+	      $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
+	      
+	      $out_var = $out_vars{$chr};
+	  }
+	  
 
-    ##Get variation info
-    my ($chr,$source,$so_term,$start,$end,$score,$strand,$phase,$attributes) = split("\t");
-    my %info = ();
-    foreach my $token (split(";",$attributes)) { ## Split and stor attribute values
-      my ($attributeID,$value) = split("=",$token);
-      $info{$attributeID} = $value;
-    }
-
-    ## Skip Variants that lack of these attributes: Reference sequence, variant sequence and ID
-    next unless ($info{'Reference_seq'} && $info{'Variant_seq'} && $info{'ID'});
-
-    ## Retrive ID for the variant stored in attribute Dbxref Ej:Dbxref=dbSNP_137:rs186434315
-    my $id = ""; 
-    if ($info{'Dbxref'}) {
-      my @token = split(":",$info{'Dbxref'});
-      $id = $token[-1];
-    } else {
-      $id = $info{'ID'}; ## If information is not avialable use ID attribute (variant number in the table)
-    }
-
-    ## Retrive validation status from either validation_status or eviden attributes
-    if ($info{'validation_status'} || $info{'evidence'}) {
-      $info{'validate'} = 1;
-    } elsif ($info{'validation_states'}) {
-      if ($info{'validation_states'} eq "-") {
-        $info{'validate'} = 0;
-      } else {
-        $info{'validate'} = 1;
+	  ################################################################
+	  ##Remove bug line QUESTION_FROM_ALE=Are there repeat lines in the gvf file? not sure what this line is supposed to do
+	  next if ($end < $last_end);
+	  next if ($last_id eq $id);
+	  
+	  
+	  ################################################################
+	  ## Remove variations that don't compy the information quality expectation
+	  
+	  ##Remove viariations whith unkonw strand, the strand is required to get the sequence correctly
+	  if ( $strand eq "-" ) {
+	      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
+	      print $out_rm "\tVariation must be indicate on '+' strand\n";
+	      next;
+	  }
+	  
+	  ##Remove viatiations where Reference sequence is unkown 
+	  if ( $info{'Reference_seq'} =~ /[^ACGT\-]/) {
+	      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
+	      print $out_rm "\tReference variant $info{'Reference_seq'} does not only contain A,C,G,T,-\n";
+	      next;
+	  }
+	  
+	  ## Remove variatns which alternative variation sequence is unkown
+	  if ( $info{'Variant_seq'} =~ /[^ACGT\-,]/) {
+	      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
+	      print $out_rm "\tAlternative variant $info{'Variant_seq'} does not only contain A,C,G,T,-\n";
+	      next;
+	  }
+	  
+	  ##Length of variation does not match correctrly the end start information in the table
+	  if ( $end-$start+1 != length($info{'Reference_seq'}) ) {
+	      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
+	      print $out_rm "\tLength of the variation ".($end-$start+1)." ($start-$end) not identical to the length of reference seq ".(length($info{'Reference_seq'}))." ($info{'Reference_seq'})\n";
+	      next;
+	  }
+	  
+	  ## Sequence given as reference does not match the sequence in the genome at that possition
+	  if ( $info{'Reference_seq'} ne "-" && ($info{'Reference_seq'} ne substr($ref_seq,$start-1,$end-$start+1))) {
+	      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
+	      print $out_rm "\tReference sequence $info{'Reference_seq'} do not match Sequence file ".substr($ref_seq,$start-1,$end-$start+1)."\n";
+	      next;
+	  }
+	  
+	  
+	  ########################
+	  #Check if the variation is not a part of a super_variation
+	  if ( $start <= $last_end ) {
+	      $last_end=$end if ($last_end < $end);
+	  } else {
+	      
+	      &Get_super_variation($chr, $last_end,@super_variation) unless ( scalar(@super_variation) == 0);
+	      @super_variation = ();
+	      $last_end = $end;
+	      $last_id = "";
+	  }
+	  
+	  $start ++ if ($info{'Reference_seq'} eq "-");
+	  push (@super_variation,join("\t",$chr,$start,$end,$strand,$id,$info{'Reference_seq'},$info{'Variant_seq'},$so_term,$info{'validate'},$m_allele_freq));
+	  ##push (@super_variation,$chr."\t".$start."\t".$end."\t".$strand."\t".$id."\t".$info{'Reference_seq'}."\t".$info{'Variant_seq'}."\t".$so_term."\t".$info{'validate'}."t");
+	  $last_id = $id;
       }
-    } else {
-      $info{'validate'} = 0; ## If information is not abailable store 0
-    }
+      
+      &Get_super_variation($last_chr, $last_end,@super_variation);
+      
+      
+      close $file;
+  } ## close task{report_snps}
 
-    ## Retrive global minor allele frequency if available. Ej:global_minor_allele_frequency=1|0.000915751|2
-    my $m_allele_freq; 
-    if ($info{'global_minor_allele_frequency'}) {
-      my @gmaf = split("|",$info{'global_minor_allele_frequency'});
-      $m_allele_freq = $gmaf[1];
-    } else {
-       $m_allele_freq ="NA"; ## If minor allele freq is not avialable mark as NA
-    }
-
-    ##Get reference sequence and change output file
-    if ($last_chr ne $chr) {
-
-      &Get_super_variation($last_chr, $last_end,@super_variation) unless ( scalar(@super_variation) == 0);
-      @super_variation = ();
-      $last_end = 0;
-      $last_id = "";
-
-      &RSAT::message::TimeWarn("Analyse variation on chromosome : $chr") if ($main::verbose >= 2);
-      $last_chr = $chr;
-
-      my $raw_file = $genome_dir.$chr_file{$chr};
-      $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
-
-      $out_var = $out_vars{$chr};
-    }
-
-
-    ################################################################
-    ##Remove bug line
-    next if ($end < $last_end);
-    next if ($last_id eq $id);
-
-
-    ################################################################
-    ##Remove non-analysable variation
-    if ( $strand eq "-" ) {
-      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
-      print $out_rm "\tVariation must be indicate on '+' strand\n";
-      next;
-    }
-
-    if ( $info{'Reference_seq'} =~ /[^ACGT\-]/) {
-      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
-      print $out_rm "\tReference variant $info{'Reference_seq'} does not only contain A,C,G,T,-\n";
-      next;
-    }
-
-    if ( $info{'Variant_seq'} =~ /[^ACGT\-,]/) {
-      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
-      print $out_rm "\tAlternative variant $info{'Variant_seq'} does not only contain A,C,G,T,-\n";
-      next;
-    }
-
-    if ( $end-$start+1 != length($info{'Reference_seq'}) ) {
-      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
-      print $out_rm "\tLength of the variation ".($end-$start+1)." ($start-$end) not identical to the length of reference seq ".(length($info{'Reference_seq'}))." ($info{'Reference_seq'})\n";
-      next;
-    }
-
-    if ( $info{'Reference_seq'} ne "-" && ($info{'Reference_seq'} ne substr($ref_seq,$start-1,$end-$start+1))) {
-      print $out_rm $chr."\t".$start."\t".$end."\t".$strand."\t".$id;
-      print $out_rm "\tReference sequence $info{'Reference_seq'} do not match Sequence file ".substr($ref_seq,$start-1,$end-$start+1)."\n";
-      next;
-    }
-
-
-    ########################
-    #Check if the variation is not a part of a super_variation
-    if ( $start <= $last_end ) {
-      $last_end=$end if ($last_end < $end);
-    } else {
-
-      &Get_super_variation($chr, $last_end,@super_variation) unless ( scalar(@super_variation) == 0);
-      @super_variation = ();
-      $last_end = $end;
-      $last_id = "";
-    }
-
-    $start ++ if ($info{'Reference_seq'} eq "-");
-    push (@super_variation,$chr."\t".$start."\t".$end."\t".$strand."\t".$id."\t".$info{'Reference_seq'}."\t".$info{'Variant_seq'}."\t".$so_term."\t".$info{'validate'});
-    $last_id = $id;
-  }
-
-  &Get_super_variation($last_chr, $last_end,@super_variation);
-
-
-  close $file;
   unlink($variation_dir."/".ucfirst($species).".gvf");
-
+  
   &RSAT::message::Info("Variations installed in dir", $variation_dir) if ($main::verbose >= 1);
-
+  
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $out;
-
+  
   exit(0);
 }
 
@@ -492,7 +525,7 @@ sub PrintOptions {
 ## Get super variation
 sub Get_super_variation() {
   my ($chr, $last_end, @super_variation) = @_;
-
+  &RSAT::message::Debug("Super variation array content\n", join("\n",@super_variation)) if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));
   ####################
   ## Group variation
   # Groups are All var, All validate var, All outside insert, All outside valide insert
@@ -535,29 +568,41 @@ sub Get_super_variation() {
     push (@super_variation_validate, \@super_validate) unless ( @super_validate );
   }
 
+  #&RSAT::message::Debug("PFFFFFF\n", join("\n",@super_variation)) if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));
 
   ####################
   ##Make output line
   %output_line = ();
 
   if ( scalar(@super_variation) == 1) {
-    my @info = split("\t",$super_variation[0]);
+    my @info = split("\t",$super_variation[0]); ## output line hash based on chr and start
     push (@{$output_line{$info[1]}{$info[2]}}, $super_variation[0]."\t0\t0\n");
   }
 
   elsif ( scalar(@super_variation) > 1) {
+      
+      ##ORIGINAL CODE: Possible error in $super_variation[0] definition causes 
+      ##repeating the first variant several times while ignoring all others, possibly this is not the desired behavior
+      ##Variation in the super variation
+      ##foreach my $line (@super_variation) {
+	##  my @info = split("\t",$line);
+	 ## push (@{$output_line{$info[1]}{$info[2]}}, $super_variation[0]."\t0\t1\n");
+     ## }
 
-    # Variation in the super variation
-    foreach my $line (@super_variation) {
-      my @info = split("\t",$line);
-      push (@{$output_line{$info[1]}{$info[2]}}, $super_variation[0]."\t0\t1\n");
-    }
+      ## ALEJANDRA'S SUGGESTION
+      ## Variation in the super variation
+      ## in_supvar attribute is defined here
+      foreach my $line (@super_variation) {
+	  my @info = split("\t",$line);
+	  #print      $line."\t0\t1"."BOOM"."\n";
+	  push (@{$output_line{$info[1]}{$info[2]}}, $line."\t0\t1\n");
+      }
 
     # Super variation
 
     if ( scalar(@super_variation_validate) == 1 && $nb_validate == scalar(@super_variation) ) {
 
-      # If all variation are validate
+      # If all variations are valid
       my @info = split("\t", &MakeSuperVar(@{$super_variation_validate[0]} ));
       push (@{$output_line{$info[0]}{$info[1]}}, "$chr\t".join("\t",@info)."\t1\t1\t0\n");
 
@@ -609,14 +654,18 @@ sub Get_super_variation() {
 
   ####################
   ## Print
+  &RSAT::message::Debug("Output variations") if (($main::verbose >= 10) && (scalar(@super_variation)>1));
 
   my @sorted_start = sort{$a<=>$b} ( keys( %output_line ) );
   foreach my $start ( @sorted_start ) {
     my @sorted_end = sort{$a<=>$b} ( keys( %{$output_line{$start}} ) );
     foreach my $end ( @sorted_end ) {
       print $out_var @{$output_line{$start}{$end}};
+      print @{$output_line{$start}{$end}} if (($main::verbose >= 10) && (scalar(@super_variation)>1));
     }
   }
+  <STDIN> if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));
+  
 }
 
 ################################################################
@@ -807,6 +856,40 @@ Download genome from ensembl genomes (Protist, fungi ...);
     } elsif ($arg eq "-ensembl_genomes") {
       $main::db = "ensembl_genomes";
 
+=pod
+
+=item B<-task>
+
+Tasks to be performed by download-ensembl-variations
+
+Supported tasks:
+
+=over
+
+=item B<download_gvf>
+
+Scan sequences with matrix-scan
+
+=item B<report_snps>
+
+Calculate the theoretical distribution
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+	$arg = shift (@arguments);
+	chomp($arg);
+	my @tasks = split ",", $arg;
+	foreach my $task (@tasks) {
+	    $task = lc($task);
+	    if ($supported_tasks{$task}) {
+		$tasks{$task} = 1;
+	    } else {
+		&RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	    }
+	}
+	
 =pod
 
 =item B<-available_species>
