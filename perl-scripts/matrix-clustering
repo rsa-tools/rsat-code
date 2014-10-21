@@ -168,7 +168,7 @@ package main;
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
-  local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
+  ## local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
 
 
   ## Supported label fields
