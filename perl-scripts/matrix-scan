@@ -2541,7 +2541,7 @@ matrix-scan options
 -last_matrix N	stop scanning after N matrices
 -matrix_id      select one or several matrices specified by ID
 -matrix_ac      select one or several matrices specified by AC
--matrix_name      select one or several matrices specified by name
+-matrix_name    select one or several matrices specified by name
 -first_seq N	start scanning at the Nth sequence (stkip N-1 first sequences)
 -last_seq N	stop scanning after N sequences
 -consensus_name use the motif (degenerate) consensus as matrix name.
