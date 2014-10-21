@@ -158,20 +158,20 @@ forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 for(nb in 1:length(tree$labels)){
   
   ## Add the aligned consensus
-  tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], sep = "   ")
+  tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], motifs.info[[get.id(nb)]][["name"]], sep = "   ")
   
-  ## Add the new labels
-  for(label in labels){
-    if(label == "consensus"){
-      next
-    } else if(label == "id"){
-      tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
-    } else if(label == "number"){
-      tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
-    } else if(label == "strand"){
-      tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
-    }
-  }
+  ## ## Add the new labels
+  ## for(label in labels){
+  ##   if(label == "consensus"){
+  ##     next
+  ##   } else if(label == "id"){
+  ##     tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
+  ##   } else if(label == "number"){
+  ##     tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
+  ##   } else if(label == "strand"){
+  ##     tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
+  ##   }
+  ## }
 }
 
 
@@ -228,7 +228,7 @@ for (plot.format in c("pdf", "png")) {
   }
 
   par(mar=c(3,2,1,mar4),family="mono")
-  plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(labels, collapse = ","), sep = " "))
+  plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(c("consensus", "name"), collapse = ","), sep = " "))
   dev.off()
 }
 
