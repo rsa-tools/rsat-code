@@ -100,11 +100,15 @@ If the variation is validate.
 Go to the following link to see all validation state :
 http://www.ncbi.nlm.nih.gov/projects/SNP/snp_legend.cgi?legend=validation
 
-=item 10. isSpVar
+=item 10. minor_allele_freq
+
+Minor allele frequency
+
+=item 11. isSpVar
 
 If the variation is a super-variation
 
-=item 11. inSpVar
+=item 12. inSpVar
 
 If the variation is in a super-variation
 
