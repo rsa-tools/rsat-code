@@ -28,7 +28,7 @@ local @supported_output_formats = ("tab","transitions","tables","patser","oligo-
 ### default values for filling the form
 $default{output}="server";
 $default{output_format} = "oligo-analysis";
-$default{markov_order} = "5";
+$default{markov_order} = "2";
 $default{noov} = "CHECKED";
 $default{sequence} = "";
 $default{sequence_url} = "";
@@ -75,7 +75,7 @@ print "<fieldset>
 ## markov order
 print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
 print $query->popup_menu(-name=>'markov_order',
-			       -Values=>[0..5],
+			       -Values=>[0..7],
 			       -default=>$default{markov_order});
 
 print "&nbsp;"x2, "<i>Markov order =  k-mer size of your subsequent analysis - 1. ie: markov order 5 for 6-mers</i>";
