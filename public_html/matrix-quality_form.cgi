@@ -146,9 +146,7 @@ print "</fieldset><p/>";
 ################################################################
 ### send results by email or display on the browser
 print "<p>\n";
-&SelectOutput("email", email_only=>1);
-
-
+&SelectOutput("email");
 
 ################################################################
 ### action buttons
