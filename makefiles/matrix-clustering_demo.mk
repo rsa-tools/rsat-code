@@ -74,7 +74,8 @@ cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
 	${CLUSTER_CMD}
-	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
+	@echo "		${CLUSTER_CMD}"
+	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_no_threshold:
@@ -99,7 +100,7 @@ cluster_peakmo_Oct4_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX}
-## We should add this option: OPT='-lth w 5'
+
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
