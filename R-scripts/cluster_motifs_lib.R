@@ -50,6 +50,7 @@ check.param <- function() {
       lth <<- list()
       lth[["Ncor"]] <<- 0;
       lth[["cor"]] <<- 0;
+      lth[["w"]] <<- 0;
 
       lth.values <<- unlist(lth)
       lth.scores <<- names(lth.values)
@@ -66,20 +67,13 @@ check.param <- function() {
   } else if(score %in% supported.distances){
     metric <<- "distances"
 
-    ## ## Default lower and upper thresholds equals to zero
-    ## if (!exists("lth")) {
-    ##   lth <<- 1;
-    ## }
-    ## if (!exists("uth")) {
-    ##   uth <<- 0;
-    ## }
   }
 
   
   #####################
   ##
   if(exists("lthsp")){
-    lthsp <- unlist(strsplit(lthsp, "-"))
+    lthsp <- unlist(strsplit(lthsp, "_"))
     lth.scores <<- lthsp[seq(1,length(lthsp), by = 2)]
     lth.values <<- as.numeric(lthsp[seq(2,length(lthsp), by = 2)])
 
@@ -87,7 +81,7 @@ check.param <- function() {
       thresholds[[lth.scores[i]]] <<- lth.values[i]
     }
     
-    supported <- c("cor", "Ncor")
+    supported <- c("cor", "Ncor", "w")
     if(length(setdiff(supported, lth.scores)) > 0){
       for(add in setdiff(supported, lth.scores)){
         lth.scores <<- append(lth.scores, add)
