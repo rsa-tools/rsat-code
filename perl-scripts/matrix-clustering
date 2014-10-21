@@ -1052,7 +1052,7 @@ sub Hclustering {
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
 	foreach my $par (keys %lth){
-	    $lthsp.= $par."-".$lth{$par}."-";
+	    $lthsp.= $par."_".$lth{$par}."_";
 	}
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
