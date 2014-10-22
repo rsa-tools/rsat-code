@@ -168,7 +168,7 @@ package main;
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
-  local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
+  ## local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
 
 
   ## Supported label fields
@@ -1052,7 +1052,7 @@ sub Hclustering {
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
 	foreach my $par (keys %lth){
-	    $lthsp.= $par."-".$lth{$par}."-";
+	    $lthsp.= $par."_".$lth{$par}."_";
 	}
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
@@ -2333,16 +2333,6 @@ sub logo_tree{
         <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
 	<!--Div containing D3 logo tree-->
 	<div id="cluster_--nb--" class="logo_tree">
-		<div id="hclust_tree_head">
-                   <ul type="square">
-                      <li>
-                         <strong>Logo tree and alignment. </strong>This results shows the hierarchical tree with all the motifs of the corresponding cluster and the logo alignment in F (left logo) and R (rigth logo) orientation.
-                      </li>
-                      <li>
-                         <strong>Branch consensus. </strong>Each branch show the <em>branch-consensus</em> which summarizes all the descendant motifs. Click on it to see the corresponding logo. 
-                      </li>
-                   </ul>
-                </div>
 		<script type="text/javascript">
 		(function(){
                 var width = 3500,
@@ -2460,13 +2450,7 @@ sub branch_consensus_table{
     my $branch_consensus_table = 
 	'
     <div class="Cluster_results --Cluster_id--" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
-    <div class="branch_motifs_head branch_consensus_cluster_--nb--">
-       <ul type="square">
-          <li>
-             <strong>Branch-motifs. </strong>On the logo tree, is displayed the the branch-consensus which summarizes all the descendant motif of each branch. This table shows more detailed information: the logo in both orientation and a file in TRANSFAC format corresponding to the branch-motif.   
-          </li>
-       </ul>
-    </div>
+
     <div class="tab branch_consensus_cluster_--nb--">
 		<table>
 			<thead>

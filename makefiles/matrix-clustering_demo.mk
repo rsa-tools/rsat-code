@@ -58,7 +58,7 @@ compa_footprint_discovery:
 ## Run matrix-clustering on one demo set (the particular cases will be
 ## specified below)
 CLUSTER_PREFIX=${DEMO_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
-CLUSTER_DIR=results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
+CLUSTER_DIR=results/matrix-clustering_results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -matrix_format tf \
@@ -74,7 +74,8 @@ cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
 	${CLUSTER_CMD}
-	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
+	@echo "		${CLUSTER_CMD}"
+	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_no_threshold:
@@ -99,7 +100,7 @@ cluster_peakmo_Oct4_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX}
-## We should add this option: OPT='-lth w 5'
+
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
