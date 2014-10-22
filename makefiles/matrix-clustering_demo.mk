@@ -66,7 +66,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
 		-cons \
-		-export json -d3_base file -hclust_method ${HCLUST_METHOD} \
+		-export json -d3_base link -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
 
