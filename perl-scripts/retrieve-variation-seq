@@ -170,6 +170,10 @@ Variant of the variation in the sequence
 
 Sequence of lenght L center on the variation
 
+=item 10. minor_allele_frequency
+
+Sequence of lenght L center on the variation
+
 =back
 
 =head1 SEE ALSO
@@ -284,7 +288,7 @@ package	main;
   ## Print verbose
   $out = &OpenOutputFile($main::outfile{output});
   &Verbose() if ($main::verbose >= 1);
-  print $out "#",join("\t",qw(chr start end strand id soterm ref_var alt_var seq)),"\n";
+  print $out "#",join("\t",qw(chr start end strand id soterm ref_var alt_var seq minor_allele_freq)),"\n";
 
   ################################################################
   ## Get the list of variation files installed in the RSAT data
@@ -302,7 +306,7 @@ package	main;
     if ($main::infile{'input'}) {
       $main::infile{'input_variation'} = $main::infile{'input'};
 
-    } else {
+    } else { ## Read in STDIN and write it to a file
       $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
       my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'});
 
@@ -323,6 +327,7 @@ package	main;
   ## Retrieve variations from one or several ID(s)
   elsif ($format eq "id") {
     &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
+    ## Retrieved variation information in rsat format will be writen in a temporary file
     $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
     my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'} );
 
@@ -332,23 +337,24 @@ package	main;
     if ($main::infile{'input'}) {
       ($main::in) = &OpenInputFile($main::infile{'input'});
     }
-
+    ## Get SNP ids from the input list 
     while (<$main::in>) {
       next if (/^#/);
       next if (/^;/);
       chomp();
       my @token = split("\t");
-      $variation_id{$token[$col-1]} = 1;
+      $variation_id{$token[$col-1]} = 1; ## $col=1, definied above
     }
 
     &RSAT::message::TimeWarn("Number of variations to find:",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
 
     ## Try to idenfity the variations in each chromosome separately.
-    ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are
+    ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are 
+    ## ALE'S NOTE: THIS NOTE IS INCOMPLETE
 
     ## Create a regular expression to select the rows containing query
     ## IDs with grep
-    my $grep_id = "'".join('\|',keys(%variation_id))."'";
+    my $grep_id = "'".join('\|',keys(%variation_id))."'"; ## 
 
     ## Grep each variation file to collect the selected IDs
 
@@ -361,11 +367,11 @@ package	main;
       foreach (@result) {
         chomp();
         my @token = split("\t");
-        next if ( $token[9] == 1 );               ##Remove super-variation
+        next if ( $token[10] == 1 );               ##Remove super-variation ## Ale's note: colum number changed after adding minor allele frequency
         next unless ($variation_id{$token[4]});
-        delete($variation_id{$token[4]});       	##Remove find variation from the list
-        $token[10] = 0;                           ##Remove info about in_super_variation
-        print $out_v join("\t",@token),"\n";
+        delete($variation_id{$token[4]});       	##Remove found variation from the variations list 
+        $token[11] = 0;                           ##Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
+        print $out_v join("\t",@token),"\n"; ## Reporte variation information in outfile
         $i++;
       }
 
@@ -398,14 +404,14 @@ package	main;
   ## Get variation from coordinates
 
   elsif ($format eq "bed") {
-    &RSAT::message::TimeWarn("Get coordinate") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Processing bed file",$main::infile{'input'}) if ($main::verbose >= 2);
     my %chr_coord = ();
 
     if ($main::infile{'input'}) {
       ($main::in) = &OpenInputFile($main::infile{'input'});
     }
 
-    ## Get coordinates
+    ## Get coordinates from bed file and store them in a hash %chr_coord
     while (<$main::in>) {
 
       next if (/^#/);
@@ -436,28 +442,29 @@ package	main;
     &RSAT::message::TimeWarn("Retrieve variation from coordinate") if ($main::verbose >= 2);
     $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
     my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'} );
-
+    
+    ## For each chromosome reported in the bed file
     foreach $chr (keys(%chr_coord)) {
-      my @lefts = sort {$a <=> $b} (keys(%{$chr_coord{$chr}}));
+      my @lefts = sort {$a <=> $b} (keys(%{$chr_coord{$chr}})); ## sort coordinates per chromosome based on left side 
       my $nb_coord = scalar(@lefts);
       my $i = 0;
       my $nb_variation = 0;
-      my ($var_file) = &OpenInputFile($variation_dir.$chr.".tab");
+      my ($var_file) = &OpenInputFile($variation_dir.$chr.".tab"); ## Variation file in RSAT corresponding to the chromosome
 
       my $left = $lefts[$i];
       my $right = $chr_coord{$chr}{$left};
 
-      while (<$var_file>) {
+      while (<$var_file>) {  ## Open RSAT variation file for the current chromosome
         next if (/^#/);
         next if (/^;/);
         next unless (/\t/);
-        my @token = split("\t");
+        my @token = split("\t"); ## One variation 
   
-        if ($token[1] <= $right && $token[2] >= $left) {
+        if ($token[1] <= $right && $token[2] >= $left) { ## If variant is inside the coordinate print variant in variation file
           $nb_variation++;
           print $out_v $_ ;
-        } elsif ($token[2] > $right) {
-          $i++;
+        } elsif ($token[2] > $right) { ## Get the next coordinate if the current variant is out of bounds for the current coordinate
+          $i++; 
           last if ($i >= $nb_coord);
          $left = $lefts[$i];
          $right = $chr_coord{$chr}{$left};
@@ -479,7 +486,9 @@ package	main;
   }
 
   ################################################################
-  ##Get sequence
+  ## Get sequence
+  ## For all input options variants were selected and reported in a temporary file
+  ## sequences need to be retrieved for each variant for further scanning
   &RSAT::message::TimeWarn("Retrieving sequence for each variant of a variation") if ($main::verbose >= 2);
   my $last_id ="";
   my $nb_var = 0;
