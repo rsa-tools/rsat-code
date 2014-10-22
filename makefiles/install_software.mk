@@ -987,6 +987,7 @@ CEAS_VERSION=1.0.2
 CEAS_ARCHIVE=CEAS-Package-${CEAS_VERSION}.tar.gz
 CEAS_URL=http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_ARCHIVE}
 CEAS_DISTRIB_DIR=${CEAS_BASE_DIR}/CEAS-Package-${CEAS_VERSION}
+		make -f makefiles/install_software.mk RSAT_BIN=/usr/local/bin install_ceas
 install_ceas: _download_ceas _compile_ceas 
 
 _download_ceas:
@@ -996,16 +997,27 @@ _download_ceas:
 	wget -nd  --directory-prefix ${CEAS_BASE_DIR} -rNL ${CEAS_URL}
 
 CEAS_COMPILE_DIR=`dirname ${RSAT_BIN}`
+#CEAS_COMPILE_DIR=/usr/local
 _compile_ceas:
 	@echo
 	@echo "Installing CEAS in dir	${CEAS_DISTRIB_DIR}"
+	@echo "CEAS_BASE_DIR	${CEAS_BASE_DIR}"
+	@echo "CEAS_DISTRIB_DIR	${CEAS_DISTRIB_DIR}"
+	@echo "CEAS_COMPILE_DIR	${CEAS_COMPILE_DIR}"
 	(cd ${CEAS_BASE_DIR}; tar -xpzf ${CEAS_ARCHIVE})
 	@echo ${CEAS_DISTRIB_DIR}
 	(cd  ${CEAS_DISTRIB_DIR}; ${SUDO} python setup.py install --prefix=${CEAS_COMPILE_DIR})
-	@echo "CEAS was installed in dir ${RSAT_BIN}"
-	@echo "Before using CEAS, you need to add a line to the log-in shell script (i.e. .bashrc in case of bash shell)"
-	@echo "Adapt the python version in the path below"
-	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+	@echo "CEAS has been installed in dir ${CEAS_COMPILE_DIR}/bin"
+#	@echo "Before using CEAS, you need to add a line to the log-in shell script"
+#	@echo "(i.e. .bashrc in case of bash shell)"
+#	@echo "Adapt the python version in the path below"
+#	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+
+CEAS_DATA_DIR=${RSAT}/data/ceas
+download_ceas_data:
+		mkdir -p ${CEAS_DATA_DIR}/hg19
+		(cd ${CEAS_DATA_DIR}/hg19; 
+		wget http://liulab.dfci.harvard.edu/CEAS/src/hg19.refGene.gz)
 
 
 ################################################################
