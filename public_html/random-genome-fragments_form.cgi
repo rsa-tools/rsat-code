@@ -25,6 +25,8 @@ $default{frag_nb} = 20;
 $default{frag_length} = 100;
 $default{org_select}="rsat_org";
 $default{outputformat}="outputcoord";
+$default{coord_format} = "bed";
+$default{'sequence_url'.1} = "";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -121,7 +123,10 @@ print "<INPUT TYPE='radio' NAME='outputformat' VALUE='outputcoord' $checked{'out
 print "<b>Genomic coordinates. <a href='help.random-genome-fragments.html#output_format'>Output format</a> </B>&nbsp;\n";
 print $query->popup_menu(-name=>'coord_format',
 			 -Values=>['ft',
-				   'bed'],
+				   'bed',
+				   'bed3col',
+				   'great'
+			 ],
 			 -default=>$default{coord_format});
 
 
@@ -140,7 +145,7 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo rsat
+## data for the demo with RSAT organism
 my $descr1="<H4>Comment on the demonstration example for RSAT organism : </H4><blockquote class ='demo'>
 In this demonstration, we calculate random fragments in the genome sequence of Saccharomyces cerevisiae.
 We use a set of template sequences, to produce the same number of random fragments, of the same lengths as in the template.<p/>
@@ -162,7 +167,7 @@ print "</B></TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo ensembl
+## data for the demo with Ensembl organism
 my $descr2="<H4>Comment on the demonstration example for Ensembl organism : </H4><blockquote class ='demo'>
 In this demonstration, we calculate the coordinates of randomly-chosen fragments in the genome sequence of Homo sapiens. We would like 10 fragments of 100bp. <p/>
 The program will return the coordinates of these fragments, in BED format, that can be then used to extract the sequences with tools of
