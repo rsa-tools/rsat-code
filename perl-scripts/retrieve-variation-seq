@@ -160,11 +160,11 @@ SO Term of the the variation
 
 =item 7. ref variant
 
-Variant of the variation in the reference sequence
+Allele of the variation in the reference sequence
 
 =item 8. variant
 
-Variant of the variation in the sequence
+Allele of the variation in the sequence
 
 =item 9. sequence
 
@@ -489,7 +489,7 @@ package	main;
   ## Get sequence
   ## For all input options variants were selected and reported in a temporary file afterwards
   ## sequences need to be retrieved for each variant for further scanning
-  &RSAT::message::TimeWarn("Retrieving sequence for each variant of a variation") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Retrieving sequence for each allele of a variation") if ($main::verbose >= 2);
   my $last_id ="";
   my $nb_var = 0;
   my $last_nb = 1000000;
