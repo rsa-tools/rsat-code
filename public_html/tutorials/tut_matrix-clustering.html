@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-
+<html>
+	
 	<style>
 		
 		
@@ -67,11 +68,73 @@
 		}
 		
 		
+		.fig_button {
+	        margin-top: 3px;
+			width: 80px;
+			heigth: 60px;
+	        border: 1px;
+			position: relative;
+	        padding: 1px;
+	        font-size:14px;
+	        color: #ffffff;
+            background:#cc0000;
+            border-radius:5px;
+	        cursor: pointer;
+	        display: inline-block;
+	        text-align: center;
+		}
+		
+		
+		.all_buttons {
+	        margin-top: 3px;
+			width: 80px;
+			heigth: 60px;
+	        border: 1px;
+			position: relative;
+	        padding: 1px;
+	        font-size:14px;
+	        color: #ffffff;
+            background:#000000;
+            border-radius:5px;
+	        cursor: pointer;
+	        display: inline-block;
+	        text-align: center;
+		}
+		
+		
+		.fig {
+			display:none;
+		}
+		
+		.fig p {
+			clear:both;
+		}
+		
+		
+		.soct {
+		    width: 40%;
+			height: auto;
+		}
+		
+		.branch_motifs {
+			width: 75%;
+			height: auto;
+		}
+		
+		
+		.cons_tree {
+			width: 80%;
+			height: auto;
+			
+		}
+		
 	</style>
-	
+		
   <head>
     <title>RSA-tools - tutorials - peak-motifs</title>
-    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen">
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen"/>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<meta charset=utf-8 />
   </head>
   <body>
     
@@ -276,7 +339,7 @@ threshold.</li>
       
 		<div class='protocol'>
 			<p><b>NOTE:</b> This section will be done using the command line</p>
-		
+			
 			<ol>
 				<li>
 					<p>Open a terminal.<p>
@@ -371,25 +434,23 @@ threshold.</li>
 				</li>
 				<li>
 					Click on <i>cluster_1</i> button and display the <i>logo tree</i>. 
-					<ul>
-						<p>In this logo tree you can see the logo aligment in direct and reverse orientation. 
+					<p>In this logo tree you can see the logo aligment in direct an reverse orientation. 
 						It must be noted that the middle motifs in the logo are aligned relative to the positions <b>ATGCAAT</b>,<br>
 						however the motifs at the top of the logo tree are C-rich and they are not matching well with the rest of the alignment,  
 						whilst the same case occurs with the bottom motifs at the logo tree, the A-rich motifs. <b>(Figure 1)</b></p>
-						<br>
-					</ul>
-				</li>
-				<div class="pic">
-					<img id="logo_tree_no_threshold" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_logo_tree.png"/>
-				</div>
-				<p><b>Figure 1.</b> Logo tree with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. As there is not a set threshold, all motifs are forced to be aligned in a single alignment.</p>
+					<br>
+				</li>			
 			</ol>
 		<br>	
 		<h3><i>Running matrix-clustering with thresholds</i></h3>
+		<p>In this example we will study a set of motifs dicovered in a ChIP-seq experiment done for the TF Oct4 (Pou5f1).<br>Oct4 is an   essential   TF   in   cell   fate   decision,   ES   cells   and   early   embryonic
+        development,   it  binds  the   canonical  sequence  <i><b>5'-­ATGCAAAT­-3'</i></b>.  In  ES   cells,  Oct4  often interacts   with   another   TF,   Sox2,   which   binds   to   an   adjacent   Sox   motif   <b><i>5'-­CATTGTA­-3'</i></b>.
+        <br>Together, both TFs co­regulate specific genes. During the analysis of Oct4 or Sox2 binding peaks, the so­ called <b><i>SOCT</i></b> motif is usually found, which is a composite motif encompassing both Oct and Sox motifs. <b>(Figure 2)</b> 
+		</p>
 		<ol>
 			<li>Go to the results folder: results/peak-motifs_Oct4</li>
 			<li>Open in a web browser (Firefox is recommended) the file: Oct4_analysis_SUMMARY.html</li>
-			<li>Compare the <i>Summary</i> and <i>Alignment</i> table between Oct4 analysis with and without thresholds. <b>(Figure 2)</b>
+			<li>Compare the <i>Summary</i> and <i>Alignment</i> table between Oct4 analysis with and without thresholds. <b>(Figure 3)</b>
 				<ul>
 					<li>Observe how the number of clusters changes when you set threshold values.</li>
 					<li>In the aligment table you can observe how the motifs are separated in different clusters, observe that each aligment has a different width.</li>
@@ -398,47 +459,130 @@ threshold.</li>
 				</ul>
 			</li>
 			<li>Click the cluster buttons and display the aligment tables and logo trees.</li>
-			<li>In the logo trees you can observe (for cluster with 2 or more motifs) that each branch has in blue a consensus, we called it <i>branch-consensus</i> which summarizes all the descendant motifs. <b>(Figure 3)</b></li>
-			<li>Display the branch-motifs table. Ypu can donwload the motifs corresponding to these branch-motifs by clicking on the links in this table. <b>(Figure 4)</b></li>
-			<li>Go to the list of additional files and display the <i>Logo forest</i>. Observe how the tree displayed in the example when we are not using threshold is partitioned in many trees (Forest). <b>(Figure 5)</b></li>
-
+			<li>In the logo trees you can observe (for cluster with 2 or more motifs) that each branch has in blue a consensus, we called it <i>branch-consensus</i> which summarizes all the descendant motifs. <b>(Figure 4)</b></li>
+			<li>Display the branch-motifs table. Ypu can donwload the motifs corresponding to these branch-motifs by clicking on the links in this table. <b>(Figure 5)</b></li>
+			<li>
+				Go to the list of additional files and display the <i>Logo forest</i>. Observe how the tree displayed in the example when we are not using threshold is partitioned in many trees (Forest). <b>(Figure 6)</b>
+				<ul>
+					<li>Some motifs are not grouped and are considered as a cluster wit a single member.</li>
+					<li>Let's focus on cluster 1. We can see two groups within this cluster.<br>One group with 6 members sharing the motif <b><i>ATGCAAAT</i></b> (which actually corresponds to Oct4 motif) and the second group with five members sharing the bigger motif <b><i>TTGATATGCAAAT</i></b> (corresponding to the <i>SOCT</i> motif).</li>
+					<li>By clicking on the branch-consensuses for these groups you can observe the logo. We use the program <i>compare-matrices</i> to compare these branch-motifs against the JASPAR vertebrates motifs,<br>the short motif in fact correspond to Oct4 and the other to Sox2::Pou5f1 (SOCT). <b>(Figure 7)</b></li>
+					<li>This means some peaks only contain Oct4 bound, however others have Oct4+Sox2, for these reason were founded the SOCT motif.</li>
+				</ul>
+			</li>
+			<br>
+			<li>Now we are going to show the differences of the trees when we change the hierarchical clustering agglomeration rule.</li> 
+				<ul>
+					<li>By default the rule used in <i>matrix-clustering</i> is the <i>average</i> method, but also can be used the <i>single</i> and <i>complete</i> methods.</li>
+					<li>Remember you can change this option with the parameter <i>-hclust_method</i> .</li>
+					<li>Run <i>matrix-clustering</i> with the same data for each hclustering agglomeration rule.</li>
+					<li>In the <i>List of file</i> menu display the file <i>consensus tree</i> for each analysis.</li>
+					<li>See <b>Figure 8</b> to observe the differences in the tree topologies using the same 21 motifs as input data depending on the rulse selected. </li>
+				</ul>
+		</ol>
 <!-- ######################################################################## -->
 
+			<br>
+			<div class="all_buttons" id="button">Figures: </div>
+			<div class="fig_button" id="button_fig_1">Figure 1</div>
+			<div class="fig_button" id="button_fig_2">Figure 2</div>
+			<div class="fig_button" id="button_fig_3">Figure 3</div>
+			<div class="fig_button" id="button_fig_4">Figure 4</div>
+			<div class="fig_button" id="button_fig_5">Figure 5</div>
+			<div class="fig_button" id="button_fig_6">Figure 6</div>
+			<div class="fig_button" id="button_fig_7">Figure 7</div>
+			<div class="fig_button" id="button_fig_8">Figure 8</div>
 			<br><br>
-			<div class="div_tab">
-				<ul><p><b>Oct4 ChIP-seq discovered motifs table WITHOUT thresholds</b></p></ul>
-				<img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_tab.jpeg"/>
-			</div>
-			<div class="div_tab">
-				<ul><p><b>Oct4 ChIP-seq discovered motifs table WITH thresholds</b></p></ul>
-				<img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_tab.jpeg"/>
-			</div>
-			<p><b>Figure 2.</b> Tables with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks andalized with <i>matrix-clustering</i> with and without setting threshold values.</p>
 			
 			
-			<br><br>
-			<div class="div_tab">
+			<!-- Figure 1 -->
+			<div class="pic fig" id="fig_1">
+				<img id="logo_tree_no_threshold" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_logo_tree.png"/>
+				<p><b>Figure 1.</b> Logo tree with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. As there is not a set threshold, all motifs are forced to be aligned in a single alignment.</p>
+			</div>
+			
+			
+			<!-- Figure 2 -->
+			<div class="fig soct" id="fig_2">
+				<img src="../images/matrix-clustering_tutorial/soct.png"/>
+				<p><b>Figure 2.</b> 3D model showing the cooperative binding between Sox2 and Oct4 TFs whose closely interact to bind DNA. Their recognize a composite motif called the SOCT motif (SOx+OCT).</p>
+			</div>
+
+			
+			<!-- Figure 3 -->
+			<div id="fig_3" class="fig">
+				<div class="div_tab" >
+					<ul><p><b>Oct4 ChIP-seq discovered motifs table WITHOUT thresholds</b></p></ul>
+					<img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_tab.jpeg"/>
+				</div>
+			
+				<div class="div_tab">
+					<ul><p><b>Oct4 ChIP-seq discovered motifs table WITH thresholds</b></p></ul>
+					<img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_tab.jpeg"/>
+				</div>
+				<p><b>Figure 3.</b> Tables with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks andalized with <i>matrix-clustering</i> with and without setting threshold values.</p>
+			</div>
+
+
+			<!-- Figure 4 -->
+			<div class="div_tab fig" id="fig_4">
 				<ul><p><b>Cluster 1 logo tree</b></p></ul>
 				<img id="logo_tree" src="../images/matrix-clustering_tutorial/logo_tree_cluster1.jpeg"/>
+				<p><b>Figure 4.</b> Logo tree of the cluster 1 found in the Oct4 ChIP-seq motifs. The hierarchical tree displays the logo aligment in both orientations. For each branch is calculated a branchwise-motif. </p>
 			</div>
-			<p><b>Figure 3.</b> Logo tree of the cluster 1 found in the Oct4 ChIP-seq motifs. The hierarchical tree displays the logo aligment in both orientations. For each branch is calculated a branchwise-motif. </p>
 			
 			
-			<div class="div_tab">
-				<br><br>
+			<!-- Figure 5 -->
+			<div class="div_tab fig" id="fig_5">
 				<ul><p><b>Cluster 1 branch-motifs table</b></p></ul>
 				<img id="branch_cons_tab" src="../images/matrix-clustering_tutorial/Oct4_cluster1_branch_tab.jpeg"/>
+				<p><b>Figure 5.</b> Branch-motif table for cluster 1. You can download the motif in TRANSFAC format or the logo in both orientations by clicking on them.</p>
 			</div>
-			<p><b>Figure 4.</b> Branch-motif table for cluster 1. You can download the motif in TRANSFAC format or the logo in both orientations by clicking on them.</p>
 			
 			
-			<div class="div_tab">
-				<br><br>
+			<!-- Figure 6 -->
+			<div class="div_tab fig" id="fig_6">
 				<ul><p><b>Logo Forest</b></p></ul>
 				<img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/logo_forest_oct4_peak-motifs.png"/>
+				<p><b>Figure 6.</b> Logo Forest with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. Using a combination of values as threshold (cor = 0.6; Ncor = 0.4) these motif were separated in 6 different clusters and Each one is displayed in a tree (We called <i>Forest</i> to one set of trees).</p>
 			</div>
-			<p><b>Figure 5.</b> Logo Forest with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. Using a combination of values as threshold (cor = 0.6; Ncor = 0.4) these motif were separated in 6 different clusters and Each one is displayed in a tree (We called <i>Forest</i> to one set of trees).</p>
-		</ol>
+			
+			
+			<!-- Figure 7 -->
+			<div class="div_tab fig branch_motifs" id="fig_7">
+				<ul><p><b>Branch-motif analysis</b></p></ul>
+				<img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/branch_consensus_analysis.jpeg"/>
+				<p><b>Figure 7.</b> The logo tree of cluster one showing the branch-motifs </p>
+			</div>
+			
+			
+			<!-- Figure 8 -->
+			<div class="div_tab fig branch_motifs" id="fig_8">
+				<table>
+					<tbody>
+						<tr>
+							<br><br>
+							<ul><p><b>Consensus tree - Average method</b></p></ul>
+							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_average_consensus_tree.png"/>
+							<br><br>
+						</tr>
+
+						<tr>
+							<br><br>
+							<ul><p><b>Consensus tree - Complete method</b></p></ul>
+							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_complete_consensus_tree.png"/>
+						</tr>
+						<tr>
+							<br><br>
+							<ul><p><b>Consensus tree - Single method</b></p></ul>
+							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_single_consensus_tree.png"/>
+						</tr>
+					</tbody>
+				</table>
+				<p><b>Figure 8.</b> Three examples of consensus tree when we are using the same data (21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq) and the same threslhold values (cor >= 0.4; Ncor >= 0.6).<br>
+				In this picture we only change the hierarchical clustering agglomeration rule. Top to down: average, complete, single linkage.<br>Each cluster is represented with a different color. Observe how the number of clusters and the tree topology change depending on the selected method.
+				</p>
+			</div>
 	</li>
 </ul>
 
@@ -486,4 +630,80 @@ For suggestions or information request, please contact
 </address>
 
 </body>
+
+
+	<script>
+	
+		// Slide the Figures
+		$(document).ready(function(){
+			$('#button_fig_1').click(function(){
+			$('#fig_1').slideToggle('slow');
+			}); 
+		});
+		
+
+		$(document).ready(function(){
+			$('#button_fig_2').click(function(){
+			$('#fig_2').slideToggle('slow');
+			}); 
+		});
+		
+
+		$(document).ready(function(){
+			$('#button_fig_3').click(function(){
+			$('#fig_3').slideToggle('slow');
+			}); 
+		});
+		
+
+		$(document).ready(function(){
+			$('#button_fig_4').click(function(){
+			$('#fig_4').slideToggle('slow');
+			}); 
+		});
+		
+
+		$(document).ready(function(){
+			$('#button_fig_5').click(function(){
+			$('#fig_5').slideToggle('slow');
+			}); 
+		});
+		
+		
+		$(document).ready(function(){
+			$('#button_fig_6').click(function(){
+			$('#fig_6').slideToggle('slow');
+			}); 
+		});
+		
+		
+		$(document).ready(function(){
+			$('#button_fig_7').click(function(){
+			$('#fig_7').slideToggle('slow');
+			}); 
+		});
+		
+		
+		$(document).ready(function(){
+			$('#button_fig_8').click(function(){
+			$('#fig_8').slideToggle('slow');
+			}); 
+		});
+		
+		
+		$(document).ready(function(){
+			$('.all_buttons').click(function(){
+				$('#fig_1').hide();
+				$('#fig_2').hide();
+				$('#fig_3').hide();
+				$('#fig_4').hide();
+				$('#fig_5').hide();
+				$('#fig_6').hide();
+				$('#fig_7').hide();
+				$('#fig_8').hide();
+			}); 
+		});
+	
+	</script>
+
 </html>
