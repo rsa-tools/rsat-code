@@ -288,7 +288,7 @@ package	main;
   ## Print verbose
   $out = &OpenOutputFile($main::outfile{output});
   &Verbose() if ($main::verbose >= 1);
-  print $out "#",join("\t",qw(chr start end strand id soterm ref_var alt_var seq minor_allele_freq)),"\n";
+  print $out "#",join("\t",qw(chr start end strand id soterm ref_var alt_var minor_allele_freq seq)),"\n";
 
   ################################################################
   ## Get the list of variation files installed in the RSAT data
@@ -487,7 +487,7 @@ package	main;
 
   ################################################################
   ## Get sequence
-  ## For all input options variants were selected and reported in a temporary file
+  ## For all input options variants were selected and reported in a temporary file afterwards
   ## sequences need to be retrieved for each variant for further scanning
   &RSAT::message::TimeWarn("Retrieving sequence for each variant of a variation") if ($main::verbose >= 2);
   my $last_id ="";
@@ -497,6 +497,8 @@ package	main;
   foreach my $var_file (@variation_file) {
     my $last_chr = "";
     my $ref_seq = "";
+    
+    &RSAT::message::Debug("Reading in variation information file ", $var_file) if ($main::verbose >= 10); 
 
     ($file) = &OpenInputFile($var_file);
 
@@ -506,24 +508,23 @@ package	main;
 
       chomp();
 
-      my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar) = split("\t");
+      my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$minor_allele_freq,$suvar,$invar) = split("\t");
       next if ($invar && !$validate);
-      &RSAT::message::Debug("Line content", join("*",$chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$suvar,$invar)) if ($main::verbose >= 10);
+      &RSAT::message::Debug("Line content", join("*",$chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$minor_allele_freq,$suvar,$invar)) if ($main::verbose >= 10);
 
       $total_nb_variation++;
 
-      if ($chr ne $last_chr) {
+      if ($chr ne $last_chr) { ## get the raw sequence for the given chromosome 
         $ref_seq = qx($SCRIPTS/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
-	&RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 11); 
+	&RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 10); 
         $last_chr = $chr;
-	&RSAT::message::Debug("last_chr  value",  $last_chr) if ($main::verbose >= 10);
+	&RSAT::message::Debug("last_chr value",  $last_chr) if ($main::verbose >= 10);
       }
       &RSAT::message::Debug("id  value",  $id) if ($main::verbose >= 10);
       &RSAT::message::Debug("last_id  value",  $last_id) if ($main::verbose >= 10);
 
-      if ($id ne $last_id && !$main::infile{'input'}) {
+      if ($id ne $last_id && !$main::infile{'input'}) {  ## ALE'S NOTE: I DONT UNDERSTAND THIS SEGMENT SPECIALLY THE NO INPUT INSTATEMENT IN THE IF
         $nb_var++;
-
         if ($nb_var >= $last_nb + 1000000) {
           &RSAT::message::TimeWarn("Getting sequence for the variation",$nb_var,"to",$last_nb) if ($main::verbose >= 2);
           $last_nb += 1000000;
@@ -535,10 +536,11 @@ package	main;
       @variants = split(",",$var);
 
       foreach (@variants) {
-        print $out "$chr\t$start\t$end\t$strand\t$id\t$type\t$ref\t$_\t";
-        $_ =~ s/-//g;
-        print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
-        $total_nb_variant++;
+	  my $variant_aux=$_;
+	  print $out join("\t","$chr","$start","$end","$strand","$id","$type","$ref","$minor_allele_freq","$variant_aux");
+	  $_ =~ s/-//g;
+	  print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
+	  $total_nb_variant++;
       }
     }
   }
