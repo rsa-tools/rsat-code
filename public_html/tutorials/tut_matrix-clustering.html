@@ -5,23 +5,6 @@
 	<style>
 		
 		
-		#logo_tree_no_threshold {
-			height: 17%;
-			width: 70%;
-			clear: both;
-			float: left;
-			display: block;
-			border: 1px solid blue;
-		}
-		
-		
-		.pic {
-			clear: both;
-			float: left;
-			display: block;	
-		}
-		
-		
 		.pic_tab {
 			height: 500px;
 			width: 400px;
@@ -103,6 +86,8 @@
 		
 		
 		.fig {
+			clear: both;
+			float: left;
 			display:none;
 		}
 		
@@ -110,11 +95,25 @@
 			clear:both;
 		}
 		
+
+		#logo_tree_no_threshold {
+			height: 17%;
+			width: 70%;
+			clear: both;
+			float: left;
+			display: block;
+			border: 1px solid blue;
+		}
 		
-		.soct {
+		
+		#soct {
 		    width: 40%;
 			height: auto;
+			float: left;
+			clear: both;
+			display: block;
 		}
+		
 		
 		.branch_motifs {
 			width: 75%;
@@ -126,6 +125,39 @@
 			width: 80%;
 			height: auto;
 			
+		}
+		
+		
+		.network_insects {
+			width: 65%;
+			height: auto;		
+		}		
+
+
+		.network_vertebrates {
+			width: 100%;
+			height: auto;	
+				
+		}	
+		
+
+		#insect_logo_tree {
+			width: 95%;
+			height: auto;	
+				
+		}	
+	
+	
+		#vertebrate_logo_tree {
+			width: 75%;
+			height: auto;	
+				
+		}
+		
+
+		.sc_2{
+			display: block;
+			clear: both;
 		}
 		
 	</style>
@@ -222,11 +254,7 @@ threshold.</li>
       <ol>	
 		  
 		<li><b>Motif redundancy</b> examples in motif-discovery results and in motif databases.</li>
-
-		<li><b>Metrics</b> to measure motif simlarity.</li>
-
-		<li><b>Hierarchical clustering</b></li>
-
+		
 		<li><b>Thresholds</b>: setting a combination of similarity measures values as a threshold to define the gruops of similarities.</li>
 		
 		<li><b>Impact of parameters</b>: some example showing how changing the values of the parameters can affect cluster composition or tree topology.</li>
@@ -480,10 +508,9 @@ threshold.</li>
 					<li>See <b>Figure 8</b> to observe the differences in the tree topologies using the same 21 motifs as input data depending on the rulse selected. </li>
 				</ul>
 		</ol>
-<!-- ######################################################################## -->
 
 			<br>
-			<div class="all_buttons" id="button">Figures: </div>
+			<div class="case1 all_buttons" id="button">Fig case 1:</div>
 			<div class="fig_button" id="button_fig_1">Figure 1</div>
 			<div class="fig_button" id="button_fig_2">Figure 2</div>
 			<div class="fig_button" id="button_fig_3">Figure 3</div>
@@ -496,15 +523,15 @@ threshold.</li>
 			
 			
 			<!-- Figure 1 -->
-			<div class="pic fig" id="fig_1">
+			<div class="fig" id="fig_1">
 				<img id="logo_tree_no_threshold" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_logo_tree.png"/>
 				<p><b>Figure 1.</b> Logo tree with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. As there is not a set threshold, all motifs are forced to be aligned in a single alignment.</p>
 			</div>
 			
 			
 			<!-- Figure 2 -->
-			<div class="fig soct" id="fig_2">
-				<img src="../images/matrix-clustering_tutorial/soct.png"/>
+			<div class="fig" id="fig_2">
+				<img id="soct" src="../images/matrix-clustering_tutorial/soct.png"/>
 				<p><b>Figure 2.</b> 3D model showing the cooperative binding between Sox2 and Oct4 TFs whose closely interact to bind DNA. Their recognize a composite motif called the SOCT motif (SOx+OCT).</p>
 			</div>
 
@@ -576,6 +603,7 @@ threshold.</li>
 							<br><br>
 							<ul><p><b>Consensus tree - Single method</b></p></ul>
 							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_single_consensus_tree.png"/>
+							
 						</tr>
 					</tbody>
 				</table>
@@ -583,22 +611,100 @@ threshold.</li>
 				In this picture we only change the hierarchical clustering agglomeration rule. Top to down: average, complete, single linkage.<br>Each cluster is represented with a different color. Observe how the number of clusters and the tree topology change depending on the selected method.
 				</p>
 			</div>
+
 	</li>
+	<li class="sc_2">
+	
+
+		<h2><br><br><br>Study case 2</h2>
+		<h3>Identifying groups of motifs belonging to the same TF Family with <i>matrix-clustering</i></h3>
+		<p><i>matrix-clustering</i> can be used to group motifs bound by TF belonging to the same TF family because usually they share a common DNA binding 
+			domain. This study case shows how <i>matrix-clustering</i> results can simplify the interpretation of motifs networks.<br> 
+			We will analyze separately two sections of the non-redundant “core” Jaspar database, corresponding to insect and vertebrate motifs.
+			For both cases, all the motifs of the collection where compared to each other, using RSAT <i>compare-matrices</i>,<br>the resulting motif-to-motif 
+			similarities were converted to a motif-to-motif network using <i>Cytoscape</i> where each motif is represented as a vertex and the edges denote pairs of similar motif,
+			 with color and thickness reflecting the similarity scores.<b>(Figures 9 and 10). </b><br>This network representation allows a 
+            visualization of the groups, however this visualization does not provide a partition in the data into proper clusters, so let's run 
+            <i>matrix-clustering</i> to study the similar motifs.
+         </p>
+		<ol>
+			<li>Go to the results folder
+				<ul>
+					<p>results/JASPAR_insects<br>results/JASPAR_vertebrates</p>
+				</ul>
+			</li>
+			<li>For each analysis open the Summary file (We recommend to use Firefox)</li>
+			<li>
+				<b>Insects motifs:</b>
+				<ul>
+					<li>In the motif-to-motif network <i>(Figure 9)</i> you can see a big group of motifs encompassing most motif in this database, 
+					as they are highly connected in the network this means they are very similar to each other.</li>
+					<li>
+						To visualize the high similarity you can observe either:
+						<ul>
+							<li>Alignment table</li>
+							<li>Logo Forest</li>
+							<li>Consensus tree</li>
+							<li>Cluster 4 results <b>(Figure 11)</b></li>
+							<br>
+						</ul>
+					</li>
+					<li>Observe that the motifs in this big cluster have the sequence <b>5'-TTAATT-3'</b> which correspond to Hox family TFs.<br>
+						We could think most insect TFs correspond to Hox family, however the topology observed in the motif-to-motif network can be 
+						explained because there is a high enrichment of motifs belonging to this TF family in JASPAR,<br>many research groups study these TFs and upload
+						to this database the motifs they found.
+						<br>
+					</li>
+				</ul>
+			</li>
+			<li>
+				<b>Vertebrate motifs:</b>
+				<ul>
+					<li>In the motif-to-motif network <i>(Figure 10)</i> you can see a many groups of motifs (i.e. GATA, SOX, FOX).</li>
+					<li>Open the Logo Forest file note that in many clusters the motifs grouped belong to the same Family. <b>(Figure 12)</b></li>
+				</ul>
+			</li>
+		</ol>
+		
+		<br>
+		<div class="case2 all_buttons" id="button">Fig case 2:</div>
+		<div class="fig_button" id="button_fig_9">Figure 9</div>
+		<div class="fig_button" id="button_fig_10">Figure 10</div>
+		<div class="fig_button" id="button_fig_11">Figure 11</div>
+		<div class="fig_button" id="button_fig_12">Figure 12</div>
+		<br><br>
+		
+		
+		<!-- Figure 9 -->
+		<div class="fig" id="fig_9">
+			<img class="network_insects" src="../images/matrix-clustering_tutorial/insects_JASPAR.jpeg"/>
+			<p><b>Figure 9.</b> Motif-to-motif network done with <i>Cytoscape</i> for all the JASPAR insect motifs. Notice the big group encompassing most of the motifs of the network.</p>
+		</div>
+			
+			
+		<!-- Figure 10 -->
+		<div class="fig" id="fig_10">
+			<img class="network_vertebrates" src="../images/matrix-clustering_tutorial/vertebrates_JASPAR.jpeg"/>
+			<p><b>Figure 10.</b> Motif-to-motif network done with <i>Cytoscape</i> for all the JASPAR vertebrate motifs.</p>
+		</div>
+			
+			
+		<!-- Figure 11 -->
+		<div class="fig" id="fig_11">
+			<img id="insect_logo_tree" src="../images/matrix-clustering_tutorial/insects_motifs_logo_tree.jpeg"/>
+			<p><b>Figure 11.</b> Logo tree showing the highly similar motif visualized in the motif-to-motif insects network.</p>
+		</div>
+			
+			
+		<!-- Figure 12 -->
+		<div class="fig" id="fig_12">
+			<img id="vertebrate_logo_tree" src="../images/matrix-clustering_tutorial/vertebrate_clusters.png"/>
+			<p><b>Figure 12.</b> Some clusters resulting from <i>matrix-clustering</i> are signaled in the motif-to-motif network of vertebrate motifs.</p>
+		</div>
+		
+	</li>
+
 </ul>
-
-				
-
-<hr><a name='exercises'></a><h2>Additional exercises</h2>
-<ul>
-  <li><a href='#seq'>Retrieving peak sequences with Galaxy</a></li>
-
-  <!--
-      <li>Upload your own collection of motifs</li>
-<li>Upload a reference motif</li>
-<li>Change motif-discovery parameters by clicking "dyad-analysis"</li>
--->
-</ul>
-
 
 <hr><a name='references'></a><h2>References</h2>
 
@@ -619,6 +725,17 @@ href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a>].
   doi:10.1093/nar/gkr1104, 9.
   [<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open access</a>]
 </li>
+
+
+<li>Mathelier, A., Zhao, X., Zhang, A. W., Parcy, F., Worsley-Hunt, R., 
+Arenillas, D. J., Buchman, S., Chen, C.-y., Chou, A., Ienasescu, H., Lim, 
+J., Shyr, C., Tan, G., Zhou, M., Lenhard, B., Sandelin, A. and Wasserman, 
+W. W. JASPAR 2014: an extensively expanded and updated open-access 
+database of transcription factor binding profiles 
+Nucleic Acids Research, 2013
+  [<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2013/11/04/nar.gkt997.full'>Open access</a>]
+</li>
+
 </ol>
 
 <hr width="100%">
@@ -692,7 +809,35 @@ For suggestions or information request, please contact
 		
 		
 		$(document).ready(function(){
-			$('.all_buttons').click(function(){
+			$('#button_fig_9').click(function(){
+			$('#fig_9').slideToggle('slow');
+			}); 
+		});
+
+
+		$(document).ready(function(){
+			$('#button_fig_10').click(function(){
+			$('#fig_10').slideToggle('slow');
+			}); 
+		});		
+
+
+		$(document).ready(function(){
+			$('#button_fig_11').click(function(){
+			$('#fig_11').slideToggle('slow');
+			}); 
+		});
+		
+
+		$(document).ready(function(){
+			$('#button_fig_12').click(function(){
+			$('#fig_12').slideToggle('slow');
+			}); 
+		});				
+		
+		
+		$(document).ready(function(){
+			$('.case1').click(function(){
 				$('#fig_1').hide();
 				$('#fig_2').hide();
 				$('#fig_3').hide();
@@ -701,6 +846,16 @@ For suggestions or information request, please contact
 				$('#fig_6').hide();
 				$('#fig_7').hide();
 				$('#fig_8').hide();
+			}); 
+		});
+
+
+		$(document).ready(function(){
+			$('.case2').click(function(){
+				$('#fig_9').hide();
+				$('#fig_10').hide();
+				$('#fig_11').hide();
+				$('#fig_12').hide();
 			}); 
 		});
 	
