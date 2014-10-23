@@ -118,7 +118,10 @@ while (<$in>) {
   next if (/^#/);
   next unless (/\S/);
   ## other lines to discard
-  if (($input_format eq "bed") || ($input_format eq "bed3col")) {
+  if (($input_format eq "bed") 
+      || ($input_format eq "bed3col")
+      || ($input_format eq "great")
+      ) {
       next if (/track name=/);
       next if (/^browser/);
   }
