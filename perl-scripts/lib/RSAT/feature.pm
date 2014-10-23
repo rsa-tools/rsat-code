@@ -153,7 +153,7 @@ $header_char{bed} = "## ";
 		       start
 		       end
 		      );
-@{$strands{bed3col}} = ("+", "-", ".");
+#@{$strands{bed3col}} = ("+", "-", ".");
 $comment_char{bed3col} = "## ";
 $header_char{bed3col} = "## ";
 
@@ -1006,7 +1006,10 @@ sub to_text {
 
 
   ## For the BED format
-  if (($output_format eq "bed") || ($output_format eq "great")) {
+  if (($output_format eq "bed") || 
+      ($output_format eq "bed3col") || 
+      ($output_format eq "great")
+      ) {
 
     ## Suppress sequence start and end features (temporary fix for
     ## UCSC genome browser)
@@ -1132,7 +1135,7 @@ sub to_text {
   }
 
   ## Format-specific treatment for the strand
-  if (@{$strands{$output_format}}) {
+  if (defined($strands{$output_format})) {
     my @strands = @{$strands{$output_format}};
     my $strand = $self->get_attribute("strand") || $default{strand};
     my $f = $col_index{"strand"};
