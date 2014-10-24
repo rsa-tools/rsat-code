@@ -291,7 +291,8 @@ sub ReadExpectedFrequencies {
 	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
     }
     if ($freq_sum <= 0) {
-	&RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+	&RSAT::error::FatalError("Error with the expected frequency file",$exp_freq_file,
+				 "\nSum must be strictly positive", $freq_sum);
     }
 
     #### rescale expected frequencies to have a sum of 1
