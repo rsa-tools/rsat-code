@@ -1094,6 +1094,34 @@ sub CountDyads {
       $sum_oligo_count += $oligo{$oligo_seq}->{occ};
     }
 
+
+    ## count-words does not inform us about te number and length of
+    ## the sequences, we do it separately
+    if (($main::verbose >= 1) && ($infile{input})) {
+      my $cmd = $SCRIPTS."/sequence-lengths -i ".$infile{input};
+      open SEQLEN,  "$cmd |";
+      while (<SEQLEN>) {
+	next unless (/\S/);
+	next if (/^;/);
+	next if (/^#/);
+	$sequence_number++;
+	chomp;
+	my ($current_id, $seq_length) = split("\t");
+	$id_list[$sequence_number] = $current_id;
+	$seq_length[$sequence_number] = $seq_length;
+	$sum_seq_length += $seq_length[$sequence_number];
+	&RSAT::message::Debug( $sequence_number, $current_id, $seq_length, $sum_seq_length) if ($main::verbose >= 5);
+      }
+      close(SEQLEN);
+
+    } else {
+      $sequence_number = "NA (quick mode)";
+      $sum_seq_length = "NA (quick mode)";
+    }
+    $discarded_occurrences = "NA (quick mode)";
+    $discarded_residues = "NA (quick mode)";
+    $nb_possible_pos = "NA (quick mode)";
+
     ## Count dyad occurrences
     &RSAT::message::TimeWarn("Counting dyad occurrences") if ($main::verbose >= 2);
     %patterns = &CountWords();
@@ -1377,9 +1405,11 @@ sub PrintVerbose {
 	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_patterns));
     }
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
-    printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
+    if ($quick_count) {
+      printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
+      printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
+    }
     printf $out "; %-29s\t%s\n", "Masked characters", $mask if ($mask);
-    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
     printf $out "; %-29s\t%s\n", "Output file", &RSAT::util::hide_RSAT_path($outputfile) if ($outputfile);
     printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return_fields));
     printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return_fields));
