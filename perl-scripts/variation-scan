@@ -228,6 +228,24 @@ package	main;
   &ReadArguments();
   $out = &OpenOutputFile($outfile{output});
 
+  ## If input was not given by user, die
+  &RSAT::error::FatalError("No sequences were given as input use -i or STDIN ") unless ($main::infile{input});
+
+  ## check the matrix-scan-quick executable is present
+  my $quick_cmd_test = &RSAT::server::GetProgramPath("matrix-scan-quick");
+
+  ## In addition, we want to check if the command actually works before any calculation is done
+  if ($quick_cmd_test) {
+    `$quick_cmd_test -h`;
+    if ($?) {
+       &RSAT::error::FatalError("matrix-scan-quick is installed but not working. variation-scan requires matrix-scan-quick to be fully functional");
+      return(0);
+    }
+  } else {
+    &RSAT::error::FatalError("matrix-scan-quick is not installed. variation-scan requires matrix-scan-quick.");
+    return(0);
+  }
+
   ###############################################################
   ## Check arguments
   &RSAT::error::FatalError("Background file is mandatory. Use -bg option to specify it") unless ($infile{'bg'});
@@ -526,9 +544,9 @@ package	main;
       my %legend_col = ();
       ## matrix-distrib command
       my $mtx_distrob_cmd=" $ENV{'RSAT'}/perl-scripts/matrix-distrib " ;
-      $mtx_distrob_cmd .= "-m ".$matrix_file_tab ." -matrix_format tab";
+      $mtx_distrob_cmd .= " -m ".$matrix_file_tab ." -matrix_format tab";
       $mtx_distrob_cmd .= " -decimals 1 -pseudo 1";
-      $mtx_distrob_cmd .= " -bgfile ."$main::infile{'bg'}." -bg_format oligos";
+      $mtx_distrob_cmd .= " -bgfile ".$main::infile{'bg'}." -bg_format oligos";
       $mtx_distrob_cmd .= " -bg_pseudo 0.01";
 
       ## Excute matrix-distrib command and store it in an array
@@ -566,7 +584,7 @@ package	main;
     my $last_nb = 2000; ## Note from Alejandra: I don't understand this number
 
     ## Scan command 
-    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    my $scan_cmd = $quick_cmd_test ;
     $scan_cmd .= " -i $fasta_file";
     $scan_cmd .= " -m $matrix_file_tab";
     $scan_cmd .= " -pseudo 1 -decimals 1 -2str -origin start";
@@ -579,10 +597,10 @@ package	main;
 
     ################
     ## Open rsat variable input file and change it to fasta format to be used with matrix-scan-quick
+    ## One fasta file will be created per variant with all alleles to be scanned with the current matrix
+    ## ALE'S NOTE: not sure this should be here, maybe this should be done outside the matrix loop and stored to be used inside it?
 
-    &RSAT::error::FatalError("No sequences were given as input use -i or STDIN ") unless ($main::infile{input});
     &RSAT::message::Info("Open Sequence File", $main::infile{input} ) if ($main::verbose >= 3);
-
     &RSAT::message::Debug("Open Empty fasta file to store sequences", $fasta_file) if ($main::verbose >= 3);
     my $out_fas = &OpenOutputFile($fasta_file);
 
