@@ -10,10 +10,10 @@ MATRIX=${RSAT}/public_html/demo_files/do798+do735_mmus_hnf6_liver.transfac
 
 ## Variants selected to illustate the typology of cases, including
 ## non-trivial cases with >2 variants.
-VARIANTS=${RSAT}/public_html/demo_files/test_complex_tab
+VARIANTS=${RSAT}/public_html/demo_files/variation_demo_set
 
 E_VERSION=72
-V=3
+V=2
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
 ## format supported as input by RSAT retrieve-var.
@@ -25,7 +25,7 @@ CONVERT_VAR_CMD=convert-variations \
 	-o ${VARIANTS}.${TO}
 convert_var:
 	@echo ""
-	@echo "Converting variations from VCF to rsat_var"
+	@echo "Converting variations from VCF to ${TO}"
 	@echo "${CONVERT_VAR_CMD}"
 	@${CONVERT_VAR_CMD}
 
@@ -36,7 +36,7 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${ORG} \
 	-e_version ${E_VERSION} \
-	-i ${VARIANTS}.rsat_var \
+	-i ${VARIANTS}.rsat-var \
 	-mml 30 -format rsat-var \
 	-o ${VARIANTS}_rsat_var.seq
 retrieve_var:
