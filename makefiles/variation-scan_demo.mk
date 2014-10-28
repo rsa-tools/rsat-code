@@ -17,11 +17,12 @@ V=3
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
 ## format supported as input by RSAT retrieve-var.
+TO=rsat-var
 CONVERT_VAR_CMD=convert-variations \
 	-i ${VARIANTS}.vcf  \
 	-e_version ${E_VERSION} \
-	-v ${V} -from vcf -to rsat-var \
-	-o ${VARIANTS}.rsat_var
+	-v ${V} -from vcf -to ${TO} \
+	-o ${VARIANTS}.${TO}
 convert_var:
 	@echo ""
 	@echo "Converting variations from VCF to rsat_var"
