@@ -20,9 +20,10 @@ $program_version
 
 =head1 DESCRIPTION
 
-Convert a variation file in different format
+Convert a variation file between different formats.
 
-/!\ To convert to VCF format, raw genomic sequence must be install
+/!\ To convert to VCF format, raw genomic sequence must be installed
+(I<download-ensembl-genome>).
 
 =head1 AUTHORS
 
@@ -43,6 +44,28 @@ Jeremy.Delerce@univ-amu.fr
 =head1 SUPPORTED FORMAT
 
 VCF, GVF, rsat-var
+
+=head2 Variant Call Format (VCF)
+
+http://en.wikipedia.org/wiki/Variant_Call_Format
+
+=head2 Genome Variant Format (GVF)
+
+"The Genome Variant Format (GVF) is a type of GFF3 file with additional
+pragmas and attributes specified. The GVF format has the same nine
+column tab delimited format as GFF3 and all of the requirements and
+restrictions specified for GFF3 apply to the GVF specification as
+well." (quoted from the Sequence Ontology)
+
+http://www.sequenceontology.org/resources/gvf_1.00.html
+
+=head2 RSAT variation format (rsat-var)
+
+Tab-delimited format with a specific column order, used as input by
+I<retrieve-variation-seq>. 
+
+B<Note>: in a close future, we should adapt I<retrieve-variation-seq>
+to support the alternative input formats.
 
 =head1 OUTPUT FORMAT
 
@@ -156,7 +179,9 @@ package	main;
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  &Verbose() if ($main::verbose >= 1);
+  if ($main::to eq "rsat-var") {
+      &Verbose() if ($main::verbose >= 1);
+  }
 
   ################################################################
   ## Download input from remote URL
@@ -202,39 +227,42 @@ package	main;
   ($main::in) = &OpenInputFile($main::infile{input});
 
 
+  my $l = 0; ## Line counter for the input file
   while (<$main::in>) {
-    next if (/^;/); ## Skip RSAT-like comment lines
-    next unless (/\S/); ## Skip empty lines
+      $l++;
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      
 
-
-    while (/^#/) {
-      print $out $_ unless (/^##fileformat/ || /^#[^#]/);
-      $_ = <$main::in>;
-    }
-
-    chomp();
-    if ($legend) {
-      print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
-      print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
-      print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'rsat-var');
-      $legend = 0;
-    }
-
-    ### Read input files acording to the defined formart -from
-    my %variation =  ();
-
-    ## VCF file
-    if ($from eq "vcf") {
-	my @token = split("\t",$_);
-	&RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
-	if (scalar( @token ) < 8 ) {
-	    &RSAT::message::Warning("$_ skip. VCF line must be at least 8 columns");
-	    next;
-	}
-	
-      %variation = &Get_var_from_vcf(\@token);
-    }
-
+      while (/^#/) {
+	  print $out $_ unless ((/^##fileformat/) || (/^#[^#]/));
+	  $_ = <$main::in>;
+      }
+      
+      chomp();
+      if ($legend) {
+	  print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
+	  print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
+	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'rsat-var');
+	  $legend = 0;
+      }
+      
+      ### Read input files acording to the defined formart -from
+      my %variation =  ();
+      
+      ## VCF file
+      if ($from eq "vcf") {
+	  my @token = split("\t",$_);
+	  &RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
+	  if (scalar( @token ) < 8 ) {
+	      &RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 8 columns", "Skipped");
+	      print $_ if ($main::verbose >= 3);
+	      next;
+	  }
+	  
+	  %variation = &Get_var_from_vcf(\@token);
+      }
+      
 
     ## RSAT file
     if ($from eq 'rsat-var') {
