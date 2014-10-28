@@ -166,11 +166,11 @@ Allele of the variation in the reference sequence
 
 Allele of the variation in the sequence
 
-=item 9. sequence
+=item 10. allele_frequency
 
-Sequence of lenght L center on the variation
+Allele frequency
 
-=item 10. minor_allele_frequency
+=item 10. sequence
 
 Sequence of lenght L center on the variation
 
@@ -288,7 +288,31 @@ package	main;
   ## Print verbose
   $out = &OpenOutputFile($main::outfile{output});
   &Verbose() if ($main::verbose >= 1);
-  print $out "#",join("\t",qw(chr start end strand id soterm ref_var alt_var minor_allele_freq seq)),"\n";
+
+  @header_fields = qw(chr start end strand id soterm ref_var alt_var allele_freq seq);
+  %field_description = ();
+  $field_description{chr} = "Chromosome";
+  $field_description{start} = "Start position";
+  $field_description{end} = "End position";
+  $field_description{strand} = "Strand";
+  $field_description{id} = "identifier";
+  $field_description{soterm} = "Sequence ontology (SO) term describing variation type.";
+  $field_description{ref_var} = "Reference variant";
+  $field_description{alt_var} = "Alternative variant";
+  $field_description{allele_freq} = "Frequency of the current allele";
+  $field_description{seq} = "Sequence of the current variant, flanked by a user-specified neighbouring region";
+  
+  ## ##############################################################
+  ## Print field descriptions
+  if ($main::verbose >= 1) {
+      print $out "; Column contents\n";
+      foreach my $f (1..scalar(@header_fields)) {
+	  my $field = $header_fields[$f-1];
+	  printf $out ";\t%d\t%-14s\t%s\n", $f, $field, $field_description{$field};
+      }
+  }
+  
+  print $out "#",join("\t",@header_fields),"\n";
 
   ################################################################
   ## Get the list of variation files installed in the RSAT data
@@ -535,11 +559,19 @@ package	main;
       $var .= ",$ref";
       @variants = split(",",$var);
 
-      foreach (@variants) {
-	  my $variant_aux=$_;
-	  print $out join("\t","$chr","$start","$end","$strand","$id","$type","$ref","$minor_allele_freq","$variant_aux");
-	  $_ =~ s/-//g;
-	  print $out substr($ref_seq,$start-$flank_len-1,$flank_len),"$_".substr($ref_seq,$end,$flank_len),"\n";
+      foreach my $variant_aux (@variants) {
+	  ## Suppress the "-" symbol, which is used to denote
+	  ## deletions, but would not make sense in the sequence of
+	  ## the variant extended on both flanks.
+	  $variant_aux =~ s/-//g; 
+	  my $left_flank = substr($ref_seq,$start-$flank_len-1,$flank_len);
+	  my $right_flank = substr($ref_seq,$end,$flank_len);
+	  my $variant_seq = $left_flank.$variant_aux.$right_flank;
+
+	  ## Select the output fields
+	  my @out_fields = ($chr, $start, $end, $strand, $id, $type, $ref, $minor_allele_freq, $variant_aux, $variant_seq);
+
+	  print $out join("\t", @out_fields), "\n";
 	  $total_nb_variant++;
       }
     }
