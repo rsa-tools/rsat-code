@@ -424,11 +424,15 @@ package main;
   if($selected_tasks{all}){
       ################################################################
       ## Cluster the matrices
-      &CompareMatrices();
+      #&CompareMatrices();
   }
 
-
   if($selected_tasks{all} || $selected_tasks{cluster}){
+      
+      ################################################################
+      ## Create temporary files with information about single matrices
+      %alignment_info = &Create_single_matrix_files();
+
       ################################################################
       ## Cluster the matrices
       &Hclustering();
@@ -691,11 +695,6 @@ Supported tasks: (all, comparison, clustering)
 
 Execute all the parts of the program (default)
 
-=item B<comparison>
-
-Compares each other the matrices in the input file. The clustering
-step is skipped. 
-
 =item B<clustering>
 
 Skip the matrix comparison step and only executes the clustering step.
@@ -956,7 +955,6 @@ sub CompareMatrices {
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
 
   ## Parse compare-matrix result file to read score columns
-#  open $compa, $main::outfile{pairwise_compa};
   my ($compa) = &OpenInputFile($main::outfile{pairwise_compa});
   $main::param{score_column} = 0;
   while (<$compa>) {
@@ -974,9 +972,6 @@ sub CompareMatrices {
   if ($main::param{score_column} == 0) {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
-
-  ## Create temporary files with information about single matrices
-  %alignment_info = &Create_single_matrix_files();
 
   # ## JvH: for Debug
   # foreach my $key (keys %alignment_info) {
