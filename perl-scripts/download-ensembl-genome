@@ -185,7 +185,6 @@ package	main;
 #     }
 #     my $dba = shift @dbas;
 #     &RSAT::message::Debug("DBA", $dba);
-#     die "HELLO";
 #   }
 
   ## Check that the species has been specified
