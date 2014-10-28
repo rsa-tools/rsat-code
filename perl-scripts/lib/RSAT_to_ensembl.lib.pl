@@ -371,123 +371,225 @@ sub Get_host_port {
 #### Specification of local directories for installing Ensembl on RSAT #####
 ############################################################################ 
 
-## Compute the directory name for a given species, assembly version
+=pod
+
+=item B<Get_species_dir_name()>
+
+Compute the directory name for a given species, assembly version.
+
+Parameters:
+    species            mandatory
+    assembly_version   mandatory
+    ensembl_version    mandatory
+=cut
+
 sub Get_species_dir_name {
-  my ($species,$assembly_version,$ensemb_version) = @_;
+  my ($species, $assembly_version, $ensemb_version) = @_;
   my $dir_name = ucfirst($species);
-  $dir_name .= "_".$main::db;
-  if ($main::db eq "ensembl_genomes") {
-    $dir_name .= "-".$ensembl_version;
+
+  ## Previous directory naming convention, temporarily maintained for
+  ## backward compatibility.
+  $old_naming = 0;
+  if ($old_naming) {
+      $dir_name .= "_".$main::db;
+      if ($main::db eq "ensembl_genomes") {
+	  $dir_name .= "-".$ensembl_version;
+      } else {
+	  $dir_name .= "-".$ensembl_version;
+      }
+      $dir_name .= "_".$assembly_version;
   } else {
-    $dir_name .= "-".$ensembl_version;
+      ## New directory naming convention (2014-10-28, JvH  AMR)
+      $dir_name .= "_".$assembly_version;
+      $dir_name .= "_".$main::db.$ensembl_version;
   }
-  $dir_name .= "_".$assembly_version;
-#  return $species."_".$main::db."-".$ensembl_version."_".$assembly_version;
+
+  &RSAT::message::Info("&Get_species_dir_name() result", $dir_name) if ($main::verbose >= 0);
   return($dir_name);
 }
 
+
+=pod
+
+=item B<Get_assembly_vesion()>
+
+Return the genome assembly that corresponds to a specific Ensembl
+version for a given species.
+
+=cut
 sub Get_assembly_version {
-  my ($data_dir,$species,$ensembl_version) = @_;
+  my ($species,$ensembl_version) = @_;
   $species = ucfirst($species);
-  $supported_file = &Get_supported_file($data_dir);
+  $supported_file = &Get_supported_file();
 
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
 
     while (<$file>) {
-      chomp();
-      my ($id,$name,$dir) = split("\t");
-      my ($species_f,$assembly_version_f,$ensembl_version_f) = split(" ",$name);
-      return $assembly_version_f if ($species_f eq $species && $ensembl_version_f eq $ensembl_version);
+	chomp();
+	my ($id,$name,$dir) = split("\t");
+	my ($species_f,$assembly_version_f,$ensembl_version_f) = split(" ",$name);
+	return $assembly_version_f if ($species_f eq $species && $ensembl_version_f eq $ensembl_version);
     }
   }
   return "";
 }
 
-############################ Fct local dir
+=pod
 
+=item B<Get_data_dir()>
+
+Return the main data directory for this RSAT server.
+
+=cut
 sub Get_data_dir {
-  return $ENV{'RSAT'}."/data/";
+  return $ENV{'RSAT'}."/data";
 }
 
+=pod
+
+=item B<Get_genomes_dir()>
+
+Return the directory where genomes are stored on this RSAT server.
+
+=cut 
 sub Get_genomes_dir {
-  my ($data_dir) = @_;
-  return $data_dir."/genomes/";
+    my $data_dir = &Get_data_dir();
+    return $data_dir."/genomes";
 }
 
+=pod
 
+=item B<Get_species_dir()>
+
+Return the directory where the current species (downloaded from
+Ensembl) is installed on this RSAT server.
+
+=cut
 sub Get_species_dir {
-  my ($data_dir,$species,$assembly_version,$ensembl_version) = @_;
+  my ($species,$assembly_version,$ensembl_version) = @_;
   $species = ucfirst($species);
-  $supported_file = &Get_supported_file($data_dir);
-  
+  $supported_file = &Get_supported_file();
+
   my %assembly_directory = ();
 
-  ## Open the file containing the list of supported Ensembl species
-  if (-f $supported_file ) {
-    my ($file) = &OpenInputFile($supported_file);
 
-    foreach (<$file>) {
-      chomp();
-      my ($id,$name,$dir) = split("\t");
-      $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
-      my ($spe,$ass,$ens) = split(" ",$name);
-
-      if ($ensembl_version && $assembly_version) {
-        return $dir if ($spe eq $species && $ass eq $assembly_version && $ens eq $ensembl_version);
-      } elsif ($ensembl_version) {
-        return $dir if ($spe eq $species && $ens eq $ensembl_version);
-      } else {
-        $assembly_directory{$ens} = $dir if ($spe eq $species && $ass eq $assembly_version);
-      }
-    }
-
-    foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
-      return $assembly_directory{$_};
-    }
-  }
-
-  return &Get_genomes_dir($data_dir).&Get_species_dir_name($species,$assembly_version,$ensembl_version)."/";
+  my $species_dir = join("/", &Get_genomes_dir(),
+			 &Get_species_dir_name($species,$assembly_version,$ensembl_version));
+  &RSAT::message::Info("&Get_species_dir() result", $species_dir) if ($main::verbose >= 0);
+  return($species_dir);
 }
 
+=pod
 
+=item B<Get_assembly_from_ensembl_version()>
+
+Given a user-specified ensembl version, return the corresponding
+genome assembly. The information is read from the file
+supported_organisms.tab.
+
+=cut
+sub Get_assembly_from_ensembl_version {  
+  ## Temporarily inactivate the previous options, which were searching
+  ## for a compatible genome already installed in the table describing
+  ## ensembl supported organisms. We now impose the directory to be
+  ## always specified inthe same way. Modif by Jacques van Helden and
+  ## Alejandra medina-Rivera, 2014-10-28.
+    if (-f $supported_file ) {
+	## Open the file containing the list of supported Ensembl species
+	my ($file) = &OpenInputFile($supported_file);
+	
+	foreach (<$file>) {
+	    chomp();
+	    my ($id,$name,$dir) = split("\t");
+	    $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
+	    my ($spe,$ass,$ens) = split(" ",$name);
+	    
+	    if ($ensembl_version && $assembly_version) {
+		  ## If the directory has already been defined in the
+		## supported organisms file, return it from there
+		return $dir if (($spe eq $species) && ($ass eq $assembly_version) && ($ens eq $ensembl_version));
+	    } elsif ($ensembl_version) {
+		return $dir if (($spe eq $species) && ($ens eq $ensembl_version));
+	    } else {
+		$assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly_version));
+	    }
+	}
+	foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
+	    return $assembly_directory{$_};
+	}
+    }
+}
+
+=pod
+
+=item B<Get_genome_dir()>
+
+Return the directory in which the genome data (sequences + features)
+will be installed for a given ensembl species.
+
+=cut
 sub Get_genome_dir {
-  my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
- 
-  return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."genome/";
+  my ($species, $assembly_version,$ensembl_version) = @_;
+
+  my $genome_dir = &Get_species_dir($species, $assembly_version,$ensembl_version);
+  $genome_dir .= "/genome";
+  &RSAT::message::Info("&Get_genome_dir() result", $genome_dir) if ($main::verbose >= 0);
+
+  return($genome_dir);
 }
 
+
+=pod
+
+=item B<Get_variation_dir()>
+
+Return the directory in which the variations will be installed for a
+given ensembl species.
+
+=cut
 sub Get_variation_dir {
-  my ($data_dir,$species, $assembly_version,$ensembl_version) = @_;
-  return &Get_species_dir($data_dir, $species, $assembly_version,$ensembl_version)."variations/";
+  my ($species, $assembly_version,$ensembl_version) = @_;
+
+  my $variation_dir = &Get_species_dir($species, $assembly_version,$ensembl_version);
+  $variation_dir .= "/variations";
+  &RSAT::message::Info("&Get_variation_dir() result", $variation_dir) if ($main::verbose >= 0);
+  return ($variation_dir);
 }
 
-############################ Fct get file
 
-## supported_organims_ensembl.tab
+=pod
+
+=item B<Get_supported_file()>
+
+Return the path to the tab-delimited file describing all species
+installed from Ensembl.
+
+=cut
 sub Get_supported_file {
   my ($data_dir) = @_;
+  $data_dir = &Get_data_dir unless ($data_dir);
   return $data_dir."/supported_organisms_ensembl.tab";
 }
 
 ## Contigs.txt
 sub Get_contigs_file {
   my ($genome_dir) = @_;
-  return $genome_dir."contigs.txt";
+  return $genome_dir."/contigs.txt";
 }
 
 ## Contig.tab
 sub Get_contig_file {
   my ($genome_dir) = @_;
-  return $genome_dir."contig.tab";
+  return $genome_dir."/contig.tab";
 }
 
 ## Feature.tab
 sub Get_feature_file {
-  my ($data_dir,$species, $assembly_version,$ensembl_version,$name) = @_;
+  my ($species, $assembly_version,$ensembl_version,$name) = @_;
   $name =~ s/ /_/g;
   $name = lc($name);
-  return &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version).$name.".tab";
+  return &Get_genome_dir($species, $assembly_version,$ensembl_version).$name.".tab";
 }
 
 
