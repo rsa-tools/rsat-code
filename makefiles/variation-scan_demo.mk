@@ -15,19 +15,29 @@ VARIANTS=${RSAT}/public_html/demo_files/test_complex_tab
 E_VERSION=72
 V=3
 ################################################################
-## Convert variations in VCF (variation X file) format into the format
-## supported as input by RSAT retrieve-var.
-CONVERT_VAR_CMD=convert-variations -i ${VARIANTS}.vcf  -e_version ${E_VERSION} -v ${V} -from vcf -to rsat-var -o ${VARIANTS}.rsat_var
+## Convert variations from VCF (variation X file) format into the
+## format supported as input by RSAT retrieve-var.
+CONVERT_VAR_CMD=convert-variations \
+	-i ${VARIANTS}.vcf  \
+	-e_version ${E_VERSION} \
+	-v ${V} -from vcf -to rsat-var \
+	-o ${VARIANTS}.rsat_var
 convert_var:
 	@echo ""
-	@echo "Converting variations"
+	@echo "Converting variations from VCF to rsat_var"
 	@echo "${CONVERT_VAR_CMD}"
 	@${CONVERT_VAR_CMD}
 
 ################################################################
 ## Retrieve the sequences surrounding a set of input variations
 ORG=Homo_sapiens
-RETRIEVE_VAR_CMD=retrieve-variation-seq  -v ${V} -species ${ORG}  -e_version ${E_VERSION} -i ${VARIANTS}.rsat_var  -mml 30 -o ${VARIANTS}_rsat_var.seq -format rsat-var
+RETRIEVE_VAR_CMD=retrieve-variation-seq  \
+	-v ${V} \
+	-species ${ORG} \
+	-e_version ${E_VERSION} \
+	-i ${VARIANTS}.rsat_var \
+	-mml 30 -format rsat-var \
+	-o ${VARIANTS}_rsat_var.seq
 retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
 	@${RETRIEVE_VAR_CMD}
