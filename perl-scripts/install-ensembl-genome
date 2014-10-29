@@ -44,7 +44,7 @@ Jacques.van-Helden\@univ-amu.fr
 
 =head1 USAGE
 
-install-ensembl-genome [-version #] [-task #] [-dir #] [-o outputfile] [-v #] [...]
+install-ensembl-genome [-version #] [-task #] [-o outputfile] [-v #] [...]
 
 =head2 Example
 
@@ -134,7 +134,6 @@ package main;
   our $out = STDOUT;
 
   our $db = "ensembl";
-  our $data_dir;
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
@@ -185,7 +184,6 @@ package main;
 
   ## Data directory
   &RSAT::message::TimeWarn("Getting data directory") if ($main::verbose >= 2);
-  $data_dir = &Get_data_dir() unless ($data_dir);
 
   ## Read list of species from a file
   if ($infile{input}) {
@@ -223,7 +221,7 @@ package main;
     my $arg = "-v ".$verbose;
     $arg .= " -available_species";
     $arg .= " -version $ensembl_version";
-    $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
+    $arg .= " -EnsemblGenomes" unless ($db eq "ensembl");
 
     my %species_taxon = ();
 
@@ -317,8 +315,7 @@ package main;
       my $arg = " -v ".$verbose;
       $arg .= " -species ".$species;
       $arg .= " -version ".$ensembl_version;
-      $arg .= " -dir ".$data_dir;
-      $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
+      $arg .= " -EnsemblGenomes" unless ($db eq "ensembl");
 
       if ($task{"genome"}) {
 	&RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
@@ -342,7 +339,7 @@ package main;
       ## differs from the Ensembl species name, because we add a
       ## suffix with the data source (ensembl), assembly and ensembl
       ## version.
-      my $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
+      my $org = &Get_species_dir($species,"",$ensembl_version);
       $org =~ s|/+$||;
       $org =~ s|.*\/||;
 
@@ -458,7 +455,7 @@ genomes. Alternatively, a file contianing a list of species names can
 be entered with the option I<-species_file>.
 
 Use the option I<-available_species> to print a list of available
-species at Ensembl, or options I<-available_species -ensembl_genomes>
+species at Ensembl, or options I<-available_species -EnsemblGenomes>
 to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
@@ -561,29 +558,29 @@ This task is executed by running I<install-organism>.
 	 my $task = shift(@arguments);
 	 push (@main::tasks, split(",",$task));
 
-=pod 
-
-=item B<-dir #>
-
-The directory in wich RSAT data must be installed. The selected
-species will be installed in a sub-directory composed of Species name
-and Ensembl genome version.
-
-Default : $RSAT/data/
-
-=cut
-    } elsif ($arg eq "-dir") {
-      $main::data_dir = shift(@arguments);
+# =pod 
+#
+# =item B<-dir #>
+#
+# The directory in wich RSAT data must be installed. The selected
+# species will be installed in a sub-directory composed of Species name
+# and Ensembl genome version.
+#
+# Default : $RSAT/data/
+#
+# =cut
+#     } elsif ($arg eq "-dir") {
+#       $main::data_dir = shift(@arguments);
 
 =pod
 
-=item B<-ensembl_genomes>
+=item B<-EnsemblGenomes>
 
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-   } elsif ($arg eq "-ensembl_genomes") {
-	$main::db = "ensembl_genomes";
+   } elsif ($arg eq "-EnsemblGenomes") {
+	$main::db = "EnsemblGenomes";
 
 =pod
 
