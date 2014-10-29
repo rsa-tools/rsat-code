@@ -34,13 +34,15 @@ I<download-ensembl-genome>.
 
 =head1 AUTHORS
 
-Jeremy.Delerce@univ-amu.fr
+=over
 
-Revised by 
+=item I<Jeremy Delerce> (Master 2 thesis 2013)
 
-Alejandra Medina-Rivera <amedina@lcg.unam.mx>
+=item I<Alejandra Medina-Rivera> (amedina@lcg.unam.mx)
 
-Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
+=item I<Jacques van Helden> (Jacques.van-Helden@univ-amu.fr)
+
+=back
 
 =head1 CATEGORY
 
@@ -219,7 +221,7 @@ package	main;
   our $genomes_dir = &Get_genomes_dir();
 
   # Change Ensembl version to Ensembl Genomes version                                                                                                                                           
-  if ($db eq "ensembl_genomes") {
+  if ($db eq "EnsemblGenomes") {
     use Bio::EnsEMBL::Registry;
     my $registry = 'Bio::EnsEMBL::Registry';
     my ($host,$port) = &Get_host_port($db);
@@ -862,13 +864,13 @@ If no output file is specified, the standard output is used.
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
 
-=item B<-ensembl_genomes>
+=item B<-EnsemblGenomes>
 
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-    } elsif ($arg eq "-ensembl_genomes") {
-      $main::db = "ensembl_genomes";
+    } elsif ($arg eq "-EnsemblGenomes") {
+      $main::db = "EnsemblGenomes";
 
 =pod
 

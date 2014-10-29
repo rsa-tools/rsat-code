@@ -1164,7 +1164,9 @@ sub SequenceLengths {
     my $bed_header= "track name=\"".$seq_type."_peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=".$bed_color;
     $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
     $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
-    &one_command($cmd,1);
+    print $cmd, "\n";
+    die "HELLO";
+#    &one_command($cmd,1);
   }
 }
 
@@ -2413,8 +2415,8 @@ sub MatrixFromPatterns {
 
 
 ################################################################
-## Compute the profile of enrichment of the test peaks in hits
-## for a given matrix (reference or discovered motif)
+## Compute profile of enrichment of the test peaks in hits for a given
+## matrix (reference or discovered motif).
 sub MotifEnrichment {
   my ($seq_file, $matrix_file, $out_file, $graph_file) = @_;
 
@@ -2469,7 +2471,6 @@ sub ScanSequences {
 
     ################################################################
     ## Predict site positions
-
 
     ## Site prediction with matrix-scan (option -quick)
     my $cmd = $SCRIPTS."/matrix-scan -quick -v 1";
@@ -3503,8 +3504,9 @@ sub SynthesisSequenceComposition {
       $genome_assembly = $main::param{coord_assembly};
     }
 
-    if ((($main::infile{coord})&&(-e $main::infile{coord}))
-      	||(($main::outfile{"test_seq_coord"})&&(-e $main::outfile{"test_seq_coord"}))) {
+    if ((($main::infile{coord}) && (-e $main::infile{coord}))
+      	|| (($main::outfile{"test_seq_coord"}) && (-e $main::outfile{"test_seq_coord"}))
+	) {
 
       ## UCSC link
       my $BED_UR = "";
