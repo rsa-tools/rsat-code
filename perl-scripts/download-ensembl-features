@@ -347,6 +347,27 @@ package main;
     $sql_query .= " where  meta.meta_key='species.production_name'";
     $sql_query .= "    and meta_value=?",
 
+
+    ## New correction from Dan, sent 2014-10-28
+    $sql_query = "select";
+    $sql_query .= "    g.stable_id,";
+    $sql_query .= "    g.status,";
+    $sql_query .= "    g.biotype,";
+    $sql_query .= "    xref.display_label,";
+    $sql_query .= "    g.seq_region_start,";
+    $sql_query .= "    g.seq_region_end,";
+    $sql_query .= "    g.seq_region_strand,";
+    $sql_query .= "    g.description,";
+    $sql_query .= "    s.name";
+    $sql_query .= " from gene g";
+    $sql_query .= "    LEFT join xref on (g.display_xref_id = xref.xref_id)";
+    $sql_query .= "    join seq_region s on (g.seq_region_id=s.seq_region_id)";
+    $sql_query .= "    join coord_system cs using (coord_system_id)";
+    $sql_query .= "    join meta using (species_id)";
+    $sql_query .= " where";
+    $sql_query .= "    meta.meta_key='species.production_name'";
+    $sql_query .= "    and meta.meta_value=?";
+
     &RSAT::message::Info("\tSQL query", $sql_query) if (($dry_run) || ($verbose >= 3)); ## Report SQL query for info
 
     unless ($dry_run) {
