@@ -588,12 +588,26 @@ sub Get_contig_file {
   return $genome_dir."/contig.tab";
 }
 
-## Feature.tab
+=pod
+
+=item B<Get_feature_file()>
+
+Returns the full path for a tab-delimited file containing features of
+a given type.
+
+Usage: 
+
+ my $feature_file = ($species, $assembly_version,$ensembl_version,$type);
+
+Where $type is the feature type (e.g. CDS, gene, mrna).
+
+=cut
 sub Get_feature_file {
-  my ($species, $assembly_version,$ensembl_version,$name) = @_;
-  $name =~ s/ /_/g;
-  $name = lc($name);
-  return &Get_genome_dir($species, $assembly_version,$ensembl_version).$name.".tab";
+  my ($species, $assembly_version,$ensembl_version,$type) = @_;
+  $type =~ s/ /_/g;
+  $type = lc($type);
+  my $file = &Get_genome_dir($species, $assembly_version,$ensembl_version)."/".$type.".tab";
+  return ($file);
 }
 
 
