@@ -52,28 +52,36 @@ Get raw genome sequences for the human genome (Homo sapiens)
 
  download-ensembl-genome -species Homo_sapiens
 
-Get repeat-masked versio of the mouse genome (Mus musculus)
+Get repeat-masked version of the mouse genome (Mus musculus)
 
  download-ensembl-genome -species Mus_musculus -rm
 
 =head1 OUTPUT FORMAT
 
-Sequence file in raw format
+The program returns a list of sequence files (one file per
+chromosome/contig) in raw format, and tab-delimited files indicating
+which sequence file corresponds to which chromosome.
 
 =head1 SEE ALSO
 
+=head2 install-ensembl-genome
+
+A wrapper managing all the tasks required to install genome from
+Ensembl on RSAT (including I<download-ensembl-genome>.
+
 =head2 download-ensembl-variations
 
-Downloads variation for a species
+Downloads tab-delimited files providing the positions and descriptions
+of the genomic features (genes, transcripts, CDS, ...).
+
+=head2 download-ensembl-variations
+
+Downloads variation for a species.
 
 =head2 retrieve-variation-seq
 
 I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
 to make all the sequence of a variation.
-
-=head2 install-ensembl-genome
-
-Install genome from Ensembl on RSAT.
 
 =head1 WISH LIST
 
@@ -104,7 +112,6 @@ package	main;
   our %outfile = ();
 
   our $verbose = 0;
-  our $data_dir = &Get_data_dir();
   our $registry = 'Bio::EnsEMBL::Registry';
 
   our $db = "ensembl";
@@ -239,7 +246,7 @@ package	main;
   ## Get genome_dir
   my @token = split(":",$slices[0]->name());
   $assembly_version = $token[1];
-  $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
+  $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
   &RSAT::util::CheckOutDir($genome_dir);
 
 
@@ -332,7 +339,7 @@ package	main;
 
   ################################################################
   ## Write last genome install
-  $supported_organism_file = &Get_supported_file($data_dir);
+  $supported_organism_file = &Get_supported_file();
   &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
 
   @other_species = ();
@@ -351,7 +358,7 @@ package	main;
   my $new_org_config = join ("\t", 
     &Get_species_dir_name($species,$assembly_version,$ensembl_version),
     ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
-    &Get_species_dir($data_dir,$species,$assembly_version,$ensembl_version)
+    &Get_species_dir($species,$assembly_version,$ensembl_version)
   );
 
   ## Replace absolute paths by relative paths
@@ -543,17 +550,19 @@ Force installation even if the genome is already installed.
     } elsif ($arg eq "-force") {
       $force = 1;
 
-=item B<-dir #>
-
-The directory in wich RSAT data must be installed. The selected
-species will be installed in a sub-directory composed of Species name
-and Ensembl genome version.
-
-Default : $RSAT/data/
-
-=cut
-    } elsif ($arg eq "-dir") {
-      $main::data_dir = shift(@arguments);
+# = pod
+#
+# =item B<-dir #>
+#
+# The directory in wich RSAT data must be installed. The selected
+# species will be installed in a sub-directory composed of Species name
+# and Ensembl genome version.
+#
+# Default : $RSAT/data/
+#
+# =cut
+#     } elsif ($arg eq "-dir") {
+#       $main::data_dir = shift(@arguments);
 
 =pod
 
