@@ -26,9 +26,13 @@ required for RSAT sequence retrieval.
 
 =head1 AUTHORS
 
-Jeremy.Delerce@univ-amu.fr
+=over
 
-Revised by Jacques.van-Helden@univ-amu.fr
+=item I<Jeremy Delerce> (Master 2 thesis 2013)
+
+=item I<Jacques van Helden> (Jacques.van-Helden@univ-amu.fr)
+
+=back
 
 =head1 CATEGORY
 
@@ -40,7 +44,7 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-genome -species # [-ensembl_genomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
+ download-ensembl-genome -species # [-EnsemblGenomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
 
 =head2 Examples
 
@@ -58,9 +62,16 @@ Get repeat-masked version of the mouse genome (Mus musculus)
 
 =head1 OUTPUT FORMAT
 
-The program returns a list of sequence files (one file per
-chromosome/contig) in raw format, and tab-delimited files indicating
-which sequence file corresponds to which chromosome.
+The program returns 
+
+Several sequence files (one file per chromosome/contig) in raw
+format.
+
+A tab-delimited file (contig.tab) providing the attributes of each
+contig.
+
+A text file (contigs.txt) indicating which sequence file corresponds
+to which chromosome.
 
 =head1 SEE ALSO
 
@@ -156,7 +167,7 @@ package	main;
     my @db_adaptors = @{ $registry->get_all_DBAdaptors(-group => 'core') };
     my %species_taxon = ();
 
-    if ($db eq "ensembl_genomes") {
+    if ($db eq "EnsemblGenomes") {
       my $ens_version = &get_ensembl_version_safe($db);
       %species_taxon = &Get_species_taxon($db,$ens_version);
     }
@@ -284,7 +295,7 @@ package	main;
       &RSAT::message::TimeWarn("\tDownloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       my $filename = $slice->name().".raw";
       $filename =~ s/:/_/g;
-      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      my $out_seq_file = &OpenOutputFile($genome_dir."/".$filename);
       print $out_seq_file $slice->seq();
       close ($out_seq_file);
     }
@@ -295,7 +306,7 @@ package	main;
       &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
       my $filename = $slice->name()."_repeatmasked.raw";
       $filename =~ s/:/_/g;
-      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      my $out_seq_file = &OpenOutputFile($genome_dir."/".$filename);
       print $out_seq_file $slice->get_repeatmasked_seq()->seq();
       close ($out_seq_file);
     }
@@ -452,7 +463,7 @@ Same as -h
 Species that you want download variation (homo_sapiens, mus_musculus).
 
 Use the option I<-available_species> to print a list of available
-species at Ensembl, or options I<-available_species -ensembl_genomes>
+species at Ensembl, or options I<-available_species -EnsemblGenomes>
 to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
@@ -486,13 +497,13 @@ by replacing repeats with 'N's.
 
 =pod
 
-=item B<-ensembl_genomes>
+=item B<-EnsemblGenomes>
 
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-    } elsif ($arg eq "-ensembl_genomes") {
-      $main::db = "ensembl_genomes";
+    } elsif ($arg eq "-EnsemblGenomes") {
+      $main::db = "EnsemblGenomes";
 
 =pod
 
