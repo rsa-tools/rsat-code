@@ -66,3 +66,4 @@ public_html/web_services/RSATWS.wsdl
 check_perl_modules_*.txt
 RSAT_config.conf
 backups
+results
