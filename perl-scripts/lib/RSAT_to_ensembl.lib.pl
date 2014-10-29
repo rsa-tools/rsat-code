@@ -21,7 +21,7 @@ our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 22;
 ################################################################
 
 ################################################################
-## Return the safe version of ensembl or ensembl_genomes
+## Return the safe version of ensembl or EnsemblGenomes
 ## (this version should be defined in RSAT_config.props).
 sub get_ensembl_version_safe {
   my ($db) = @_;
@@ -30,7 +30,7 @@ sub get_ensembl_version_safe {
     return $ensembl_version_safe;
   }
 
-  elsif ($db eq "ensembl_genomes") {
+  elsif ($db eq "EnsemblGenomes") {
     return $ensemblgenomes_version_safe;
   }
 }
@@ -41,7 +41,7 @@ sub get_ensembl_version {
 
   ## TEMPORARY: for the time being, the version is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
-  ##  ensembl_genomes. I (JvH) should cliarify this.  
+  ##  EnsemblGenomes. I (JvH) should cliarify this.  
   my $db = "ensembl";
   # my ($db) = @_;
 
@@ -97,7 +97,7 @@ sub check_ensembl_version {
 
   ## TEMPORARY: for the time being, the version is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
-  ##  ensembl_genomes. I (JvH) should cliarify this.  
+  ##  EnsemblGenomes. I (JvH) should cliarify this.  
   $db = "ensembl";
 
   my $safe_ensembl_version = &get_ensembl_version_safe($db);
@@ -142,10 +142,10 @@ sub Get_ftp {
   my ($db) = @_;
   if ($db eq "ensembl") {
     return "ftp://ftp.ensembl.org/pub/";
-  } elsif ($db eq "ensembl_genomes") {
+  } elsif ($db eq "EnsemblGenomes") {
     return "ftp://ftp.ensemblgenomes.org/pub/";
   } else {
-    &RSAT::error::FatalError($db, "Is not a valid name for Ensembl databases. Supported: ensembl, ensembl_genomes.");
+    &RSAT::error::FatalError($db, "Is not a valid name for Ensembl databases. Supported: ensembl, EnsemblGenomes.");
   }
 }
 
@@ -164,7 +164,7 @@ sub Get_fasta_ftp {
     }
   }
 
-  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+  elsif ($db eq "EnsemblGenomes") {                                         ## Ensembl genomes
     my @sites = ("fungi","bacteria","metazoa","plants","protists");
     if ($ensembl_version < 3) {                                              # Version  1 to 3
       return ();
@@ -215,7 +215,7 @@ sub Get_pep_fasta_ftp {
       my @token = split(" ",$fasta);
       return $pep_fasta_ftp.$token[-1] if ( $fasta =~ 'all' );
     }
-  } elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+  } elsif ($db eq "EnsemblGenomes") {                                         ## Ensembl genomes
     foreach my $fasta_ftp (@fasta_ftps) {
       my @available_species = qx{wget -S --spider $fasta_ftp 2>&1};
       foreach my $spe (@available_species) {
@@ -249,7 +249,7 @@ sub Get_variation_ftp {
     }
   }
 
-  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+  elsif ($db eq "EnsemblGenomes") {                                         ## Ensembl genomes
     my @sites = ("fungi","bacteria","metazoa","plants","protists");
 
     if ($ensembl_version < 17) {                                             # Version  1 to 16
@@ -286,7 +286,7 @@ sub Get_variation_species_ftp {
     }
   }
 
-  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+  elsif ($db eq "EnsemblGenomes") {                                         ## Ensembl genomes
 
                                                                              # Version 17 to ??
     foreach my $variation_ftp (@variation_ftps) {
@@ -315,7 +315,7 @@ sub Get_gvf_ftp {
     }
   }
 
-  elsif ($db eq "ensembl_genomes") {                                         ## Ensembl genomes
+  elsif ($db eq "EnsemblGenomes") {                                         ## Ensembl genomes
 
                                                                              # Version 17 to ??
     return &Get_variation_species_ftp($db,$species,$ensembl_version).$species.".gvf.gz";
@@ -361,7 +361,7 @@ sub Get_host_port {
 
   if ($db eq "ensembl") {
     return ('ensembldb.ensembl.org','5306');
-  } elsif ($db eq "ensembl_genomes") {
+  } elsif ($db eq "EnsemblGenomes") {
     return ("mysql.ebi.ac.uk","4157");
   }
 }
@@ -392,7 +392,7 @@ sub Get_species_dir_name {
   $old_naming = 0;
   if ($old_naming) {
       $dir_name .= "_".$main::db;
-      if ($main::db eq "ensembl_genomes") {
+      if ($main::db eq "EnsemblGenomes") {
 	  $dir_name .= "-".$ensembl_version;
       } else {
 	  $dir_name .= "-".$ensembl_version;
@@ -443,7 +443,9 @@ Return the main data directory for this RSAT server.
 
 =cut
 sub Get_data_dir {
-  return $ENV{'RSAT'}."/data";
+    my $data_dir = $ENV{'RSAT'}."/data";
+    &RSAT::message::Info("&Get_data_dir() result", $data_dir) if ($main::verbose >= 0);
+    return $data_dir;
 }
 
 =pod
@@ -455,7 +457,9 @@ Return the directory where genomes are stored on this RSAT server.
 =cut 
 sub Get_genomes_dir {
     my $data_dir = &Get_data_dir();
-    return $data_dir."/genomes";
+    my $genomes_dir = $data_dir."/genomes";
+    &RSAT::message::Info("&Get_genomes_dir() result", $genomes_dir) if ($main::verbose >= 0);
+    return $genomes_dir;
 }
 
 =pod
