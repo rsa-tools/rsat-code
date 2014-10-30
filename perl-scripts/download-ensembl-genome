@@ -252,7 +252,8 @@ package	main;
   }
 
   ################################################################
-  ## Get available sequence on Ensembl and compare with sequence already install
+  ## Get available sequence on Ensembl and compare with sequence
+  ## already install
 
   ## Get genome_dir
   my @token = split(":",$slices[0]->name());
@@ -361,13 +362,13 @@ package	main;
 
     while (<$s_o_file>) {
       my @token = split("\t");
-      push (@other_species, $_) unless ($token[0] eq &Get_species_dir_name($species,$assembly_version,$ensembl_version) );
+      push (@other_species, $_) unless ($token[0] eq &Get_full_species_ID($species,$assembly_version,$ensembl_version) );
     }
     close $s_o_file;
   }
 
   my $new_org_config = join ("\t", 
-    &Get_species_dir_name($species,$assembly_version,$ensembl_version),
+    &Get_full_species_ID($species,$assembly_version,$ensembl_version),
     ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
     &Get_species_dir($species,$assembly_version,$ensembl_version)
   );
