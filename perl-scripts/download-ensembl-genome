@@ -256,8 +256,8 @@ package	main;
   ## already install
 
   ## Get genome_dir
-  my @token = split(":",$slices[0]->name());
-  $assembly_version = $token[1];
+  my @fields = split(":",$slices[0]->name());
+  $assembly_version = $fields[1];
   $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
   &RSAT::util::CheckOutDir($genome_dir);
 
@@ -341,49 +341,14 @@ package	main;
 
 
     ## contig.tab
-    @token = split(":",$slice->name());
-    print $out_contig $slice->seq_region_name(),"\t",$slice->name(),"\t",$assembly_version,"\t",$token[0],"\t",$slice->length(),"\t",$token[0]," ",$slice->seq_region_name(),"\n";
+    @fields = split(":",$slice->name());
+    print $out_contig $slice->seq_region_name(),"\t",$slice->name(),"\t",$assembly_version,"\t",$fields[0],"\t",$slice->length(),"\t",$fields[0]," ",$slice->seq_region_name(),"\n";
   }
 
   close $out_contig;
   close $out_contigs;  
 
-
-  ################################################################
-  ## Write last genome install
-  $supported_organism_file = &Get_supported_file();
-  &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
-
-  @other_species = ();
-
-  if (-f $supported_organism_file) {
-
-    my ($s_o_file) = &OpenInputFile($supported_organism_file);
-
-    while (<$s_o_file>) {
-      my @token = split("\t");
-      push (@other_species, $_) unless ($token[0] eq &Get_full_species_ID($species,$assembly_version,$ensembl_version) );
-    }
-    close $s_o_file;
-  }
-
-  my $new_org_config = join ("\t", 
-    &Get_full_species_ID($species,$assembly_version,$ensembl_version),
-    ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
-    &Get_species_dir($species,$assembly_version,$ensembl_version)
-  );
-
-  ## Replace absolute paths by relative paths
-  $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
-  $new_org_config =~ s|\/\/|/|g;
-
-  push (@other_species, $new_org_config."\n");
-
-  my $s_o_file = &OpenOutputFile($supported_organism_file);
-  print $s_o_file join("",@other_species);
-  close $s_o_file;
-
-  &RSAT::message::Info("Genome installed in folder", $genome_dir) if ($main::verbose >= 1);
+  &UpdateEnsemblSupported();
 
   ################################################################
   ## Report execution time and close output stream
