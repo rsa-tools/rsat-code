@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## DEBUGGING NODES (Jacques van Helden, 2014-10-29)
+## DEBUGGING NOTES (Jacques van Helden, 2014-10-29)
 ##
-## I should check the difference between Get_species_dir and
-## Get_genome_dir.
+## I should check the difference between &Get_species_dir() and
+## &Get_genome_dir().
 ##
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -91,7 +91,7 @@ sub get_ensembl_version_latest {
     $latest_ensembl_release = $token[-1] if ($latest_ensembl_release < $token[-1]);
   }
 
-  &RSAT::message::Info("Latest ensembl release", $latest_ensembl_release) if ($main::verbose >= 0);
+  &RSAT::message::Info("&get_ensembl_version_latest() result", $latest_ensembl_release) if ($main::verbose >= 5);
 
   return ($latest_ensembl_release);
 }
@@ -395,34 +395,50 @@ If the assembly version is not provided, it can
 =cut
 
 sub Get_full_species_ID {
-  my ($species, $assembly_version, $ensemb_version) = @_;
-  my $dir_name = ucfirst($species);
+  my ($species, $assembly_version, $ensembl_version) = @_;
+  my $full_species_id = ucfirst($species);
+
+  ## Check that Ensembl version has been provided. If not, take
+  ## default one.
+  unless ($ensembl_version) {
+      $ensembl_version = &Get_ensembl_version();
+      &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_version argument",
+			    "Using default", $ensembl_version) if ($main::verbose >= 5);
+  }
+
+  ## Check that the assembly version has been provided. If not, guess
+  ## it.
+  unless ($assembly_version) {
+      $assembly_version = &Get_assembly_version($species, $ensembl_version);
+      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument",
+			    "Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
+  }
 
   ## Previous directory naming convention, temporarily maintained for
   ## backward compatibility.
   $old_naming = 0;
   if ($old_naming) {
-      $dir_name .= "_".$main::db;
+      $full_species_id .= "_".$main::db;
       if ($main::db eq "EnsemblGenomes") {
-	  $dir_name .= "-".$ensembl_version;
+	  $full_species_id .= "-".$ensembl_version;
       } else {
-	  $dir_name .= "-".$ensembl_version;
+	  $full_species_id .= "-".$ensembl_version;
       }
-      $dir_name .= "_".$assembly_version;
+      $full_species_id .= "_".$assembly_version;
   } else {
       ## New directory naming convention (2014-10-28, JvH  AMR)
-      $dir_name .= "_".$assembly_version;
-      $dir_name .= "_".$main::db.$ensembl_version;
+      $full_species_id .= "_".$assembly_version;
+      $full_species_id .= "_".$main::db.$ensembl_version;
   }
 
-  &RSAT::message::Info("&Get_full_species_ID() result", $dir_name) if ($main::verbose >= 0);
-  return($dir_name);
+  &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
+  return($full_species_id);
 }
 
 
 =pod
 
-=item B<Get_assembly_vesion()>
+=item B<Get_assembly_version()>
 
 Return the genome assembly that corresponds to a specific Ensembl
 version for a given species.
@@ -439,8 +455,10 @@ sub Get_assembly_version {
     while (<$file>) {
 	chomp();
 	my ($id,$name,$dir) = split("\t");
-	my ($species_f,$assembly_version_f,$ensembl_version_f) = split(" ",$name);
-	return $assembly_version_f if ($species_f eq $species && $ensembl_version_f eq $ensembl_version);
+	if ($name) {
+	    my ($species_f,$assembly_version_f,$ensembl_version_f) = split(" ",$name);
+	    return $assembly_version_f if ($species_f eq $species && $ensembl_version_f eq $ensembl_version);
+	}
     }
   }
   return "";
@@ -455,7 +473,7 @@ Return the main data directory for this RSAT server.
 =cut
 sub Get_data_dir {
     my $data_dir = $ENV{'RSAT'}."/public_html/data";
-    &RSAT::message::Info("&Get_data_dir() result", $data_dir) if ($main::verbose >= 0);
+    &RSAT::message::Info("&Get_data_dir() result", $data_dir) if ($main::verbose >= 5);
     return $data_dir;
 }
 
@@ -469,7 +487,7 @@ Return the directory where genomes are stored on this RSAT server.
 sub Get_genomes_dir {
     my $data_dir = &Get_data_dir();
     my $genomes_dir = $data_dir."/genomes";
-    &RSAT::message::Info("&Get_genomes_dir() result", $genomes_dir) if ($main::verbose >= 0);
+    &RSAT::message::Info("&Get_genomes_dir() result", $genomes_dir) if ($main::verbose >= 5);
     return $genomes_dir;
 }
 
@@ -489,13 +507,13 @@ sub Get_species_dir {
   my %assembly_directory = ();
 
   my $species_dir = &Get_species_dir_from_supported_file();
-  
+
   ## Define species directory based on species name, assembly and ensembl_version
   unless ($species_dir) {
       $species_dir = join("/", &Get_genomes_dir(),
 			  &Get_full_species_ID($species,$assembly_version,$ensembl_version));
   }
-  &RSAT::message::Info("&Get_species_dir() result", $species_dir) if ($main::verbose >= 0);
+  &RSAT::message::Info("&Get_species_dir() result", $species_dir) if ($main::verbose >= 5);
   return($species_dir);
 }
 
@@ -504,36 +522,49 @@ sub Get_species_dir {
 =item B<Get_species_dir_from_supported_file()>
 
 Given a user-specified ensembl version, identify the corresponding
-directory. The information is read from the file
-${RSAT}/public_html/data/supported_organisms_ensembl.tab.
+assembly version, and the full species ID (species name + assembly +
+ensembl version). The information is read from the table of
+ensembl-specific organisms
+(${RSAT}/public_html/data/supported_organisms_ensembl.tab).
 
 =cut
 sub Get_species_dir_from_supported_file {  
-  ## Temporarily inactivate the previous options, which were searching
-  ## for a compatible genome already installed in the table describing
-  ## ensembl supported organisms. We now impose the directory to be
-  ## always specified inthe same way. Modif by Jacques van Helden and
-  ## Alejandra medina-Rivera, 2014-10-28.
     if (-f $supported_file ) {
 	## Open the file containing the list of supported Ensembl species
 	my ($file) = &OpenInputFile($supported_file);
 	
 	while (my $line = <$file>) {
-	    chomp();
+	    chomp($line);
 	    my ($id,$name,$dir) = split("\t", $line);
-	    $dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
-	    my ($spe,$ass,$ens) = split(" ",$name); ## Not very clean, a species name might include spaces
-	    
-	    if ($ensembl_version && $assembly_version) {
-		## If the directory has already been defined in the
-		## supported organisms file, return it from there
-		return $dir if (($spe eq $species) && ($ass eq $assembly_version) && ($ens eq $ensembl_version));
-	    } elsif ($ensembl_version) {
-		return $dir if (($spe eq $species) && ($ens eq $ensembl_version));
-	    } else {
-		$assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly_version));
+
+	    ## The full RSAT path should not be writen explicitly in
+	    ## the files.
+	    if ($dir) {
+		$dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
+	    }
+
+	    if ($name) {
+		## Note (JvH, 2014-10-30): the "species name" actually
+		## includes the species name (with _ to separate substrain
+		## etc), the assembly, and the ensembl version. This is
+		## not very clean. We should have a file with the
+		## different information types in separated fields.
+		my ($spe,$ass,$ens) = split(" ",$name); 
+		
+		if ($ensembl_version && $assembly_version) {
+		    ## If the directory has already been defined in the
+		    ## supported organisms file, return it from there
+		    return $dir if (($spe eq $species) && ($ass eq $assembly_version) && ($ens eq $ensembl_version));
+		} elsif ($ensembl_version) {
+		    return $dir if (($spe eq $species) && ($ens eq $ensembl_version));
+		} else {
+		    $assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly_version));
+		}
 	    }
 	}
+
+	## ??? THIS SHOULD NOT WORK: the return cannot be included in
+	## a loop ! (Note by JvH, 2014-10-30)
 	foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
 	    return $assembly_directory{$_};
 	}
@@ -553,7 +584,7 @@ sub Get_genome_dir {
 
   my $genome_dir = &Get_species_dir($species, $assembly_version,$ensembl_version);
   $genome_dir .= "/genome";
-  &RSAT::message::Info("&Get_genome_dir() result", $genome_dir) if ($main::verbose >= 0);
+  &RSAT::message::Info("&Get_genome_dir() result", $genome_dir) if ($main::verbose >= 5);
 
   return($genome_dir);
 }
@@ -572,7 +603,7 @@ sub Get_variation_dir {
 
   my $variation_dir = &Get_species_dir($species, $assembly_version,$ensembl_version);
   $variation_dir .= "/variations";
-  &RSAT::message::Info("&Get_variation_dir() result", $variation_dir) if ($main::verbose >= 0);
+  &RSAT::message::Info("&Get_variation_dir() result", $variation_dir) if ($main::verbose >= 5);
   return ($variation_dir);
 }
 
@@ -664,6 +695,85 @@ sub Get_file_seq_name {
   }
 
   return %chr_file;
+}
+
+=pod
+
+    Update the tab-delimited file with the description of supported
+    genomes downloaded from Ensembl.
+
+=cut
+sub UpdateEnsemblSupported {
+    my	$supported_organism_file = &Get_supported_file();
+    &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
+    
+    ## Hash table to store previous species description lines
+    my %species_description = ();
+
+    ## Find the current species ID
+    my $current_species_id = &Get_full_species_ID($species,$assembly_version,$ensembl_version);
+	
+    ## Read the list of previously installed organisms if it exists.
+    if (-f $supported_organism_file) {
+	my ($s_o_file) = &OpenInputFile($supported_organism_file);
+	
+	## Read the whole file of supported organisms from ensembl,
+	## and store species description lines in a hash indexed by
+	## full species ID, in order to sort them after having changed
+	## the current species fields.
+	my $l = 0;
+	while ($line = <$s_o_file>) {
+	    $l++;
+	    chomp($line);
+	    my @fields = split("\t", $line);
+	    my $full_species_id = $fields[0];
+	    $species_description{$full_species_id} = $line;
+	}
+	close $s_o_file;
+    }
+    
+
+    ## Build the line for the currently installed species
+    my $id = &Get_full_species_ID($species,$assembly_version,$ensembl_version);
+    my $name = $id; $name =~ s/_/ /g;
+
+    my $new_org_config = join ("\t", 
+			       $id,
+			       $name, 
+			       $assembly_version,
+			       "ensembl".&get_ensembl_version,
+			       &AlphaDate(),
+			       &Get_species_dir($species,$assembly_version,$ensembl_version),
+	);
+
+    ## Avoid to expose the full RSAT path
+    $new_org_config =~ s|$ENV{RSAT}|\$\{RSAT\}\/|g;
+    $new_org_config =~ s|\/\/|/|g;
+
+    ## Index the new species description
+    $species_description{$current_species_id} = $new_org_config;
+       
+    ## Write the updated table of supported organisms from Ensembl
+    my $s_o_file = &OpenOutputFile($supported_organism_file);
+
+    ## Print the header with column descriptions
+    my @header_fields = ("id",
+			 "name", 
+			 "assembly_version",
+			 "ensembl_version",
+			 "update_date",
+			 "species_directory",
+	);
+    print $s_o_file "#", join ("\t", @header_fields), "\n";
+
+    ## Print the table of supported organisms
+    foreach my $id (sort keys %species_description) {
+	print $s_o_file $species_description{$id}, "\n";
+    }
+#    print $s_o_file join("",@other_species);
+    close $s_o_file;
+    
+    &RSAT::message::Info("Genome installed in folder", $genome_dir) if ($main::verbose >= 1);
 }
 
 return 1;
