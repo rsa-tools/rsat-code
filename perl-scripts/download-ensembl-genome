@@ -262,10 +262,11 @@ package	main;
   &RSAT::util::CheckOutDir($genome_dir);
 
 
-  ## Get local install sequence
+  ## Get local sequences that have already been installed in the local server
   &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
   my %seq_installed = ();
-  foreach ( glob($genome_dir."/*") ) {
+  my @genome_dir_content =glob($genome_dir."/*");
+  foreach ( @genome_dir_content ) {
     next unless (/\.raw/);
 
     $len = -s $_;
@@ -278,6 +279,7 @@ package	main;
 
     $seq_installed{$type.$assembly_version.$slice} = $len;
   }
+  
 
 
 

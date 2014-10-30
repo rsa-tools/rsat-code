@@ -347,7 +347,7 @@ package	main;
   ################
   ## Intialize output file per chromosome
   foreach my $chr (keys(%chr_file)) {
-    $out_vars{$chr} = &OpenOutputFile($variation_dir.$chr.".tab");
+    $out_vars{$chr} = &OpenOutputFile($variation_dir."/".$chr.".tab");
     $out_var = $out_vars{$chr};
     print $out_var join("\t","#chr","start","end","strand","id","ref",
 			"alt","so_term","validate","minor_allele_freq",
@@ -360,7 +360,7 @@ package	main;
   if ($tasks{report_snps}){
       my $gvf_file = $species_gvf_ftp;
       $gvf_file =~ s/\.gz//;
-      $gvf_file =~ s/$species_variation_ftp/$variation_dir/;
+      $gvf_file =~ s/$species_variation_ftp/$variation_dir\//;
       
       ## Intialize variables 
       my @super_variation = ();
