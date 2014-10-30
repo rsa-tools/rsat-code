@@ -1198,7 +1198,7 @@ package main;
     &RSAT::util::doit("wget -NL -nv $prot_seq_ftp -P $genome_dir");
 
     @token = split(/\//, $prot_seq_ftp);
-    my $aa_file = $genome_dir."/".&Get_species_dir_name($species, $assembly_version,$ensembl_version)."_aa.fasta".".gz";
+    my $aa_file = $genome_dir."/".&Get_full_species_ID($species, $assembly_version,$ensembl_version)."_aa.fasta".".gz";
     &RSAT::util::doit("mv $genome_dir/$token[-1] $aa_file");
     &RSAT::util::doit("gzip -df $aa_file");
   }
