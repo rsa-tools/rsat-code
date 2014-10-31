@@ -506,7 +506,7 @@ sub Get_species_dir {
 
   my %assembly_directory = ();
 
-  my $species_dir = &Get_species_dir_from_supported_file();
+  my $species_dir = &Get_species_dir_from_supported_file($species);
 
   ## Define species directory based on species name, assembly and ensembl_version
   unless ($species_dir) {
@@ -529,6 +529,7 @@ ensembl-specific organisms
 
 =cut
 sub Get_species_dir_from_supported_file {  
+  my ($species) =  @_;
     if (-f $supported_file ) {
 	## Open the file containing the list of supported Ensembl species
 	my ($file) = &OpenInputFile($supported_file);
@@ -556,7 +557,7 @@ sub Get_species_dir_from_supported_file {
 		    ## supported organisms file, return it from there
 		    return $dir if (($spe eq $species) && ($ass eq $assembly_version) && ($ens eq $ensembl_version));
 		} elsif ($ensembl_version) {
-		    return $dir if (($spe eq $species) && ($ens eq $ensembl_version));
+		  return $dir if (($spe eq $species) && ($ens eq $ensembl_version));
 		} else {
 		    $assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly_version));
 		}
@@ -773,7 +774,7 @@ sub UpdateEnsemblSupported {
 #    print $s_o_file join("",@other_species);
     close $s_o_file;
     
-    &RSAT::message::Info("Genome installed in folder", $genome_dir) if ($main::verbose >= 1);
+    &RSAT::message::Info("Ensembl genome installed in folder", $genome_dir) if ($main::verbose >= 1);
 }
 
 return 1;
