@@ -30,6 +30,8 @@ required for RSAT sequence retrieval.
 
 =item I<Jeremy Delerce> (Master 2 thesis 2013)
 
+=item I<Alejandra Medina-Rivera> (amedina@lcg.unam.mx)
+
 =item I<Jacques van Helden> (Jacques.van-Helden@univ-amu.fr)
 
 =back
@@ -44,21 +46,21 @@ required for RSAT sequence retrieval.
 
 =head1 USAGE
 
- download-ensembl-genome -species # [-EnsemblGenomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
+C<download-ensembl-genome -species # [-EnsemblGenomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]>
 
 =head2 Examples
 
 Get a list of species available at Ensembl
 
- download-ensembl-genome -available_species
+C<download-ensembl-genome -available_species>
 
 Get raw genome sequences for the human genome (Homo sapiens)
 
- download-ensembl-genome -species Homo_sapiens
+C<download-ensembl-genome -species Homo_sapiens>
 
 Get repeat-masked version of the mouse genome (Mus musculus)
 
- download-ensembl-genome -species Mus_musculus -rm
+C<download-ensembl-genome -species Mus_musculus -rm>
 
 =head1 OUTPUT FORMAT
 
@@ -142,6 +144,7 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
+  ## Check that the user-selected Ensembl version is supported.
   &check_ensembl_version($db, $ensembl_version);
 
   my ($host,$port) = &Get_host_port($db);
@@ -470,7 +473,7 @@ by replacing repeats with 'N's.
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-    } elsif ($arg eq "-EnsemblGenomes") {
+    } elsif (lc($arg) eq "-ensemblgenomes") {
       $main::db = "EnsemblGenomes";
 
 =pod

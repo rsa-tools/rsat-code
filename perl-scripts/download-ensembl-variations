@@ -869,7 +869,7 @@ If no output file is specified, the standard output is used.
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-    } elsif ($arg eq "-EnsemblGenomes") {
+    } elsif (lc($arg) eq "-ensemblgenomes") {
       $main::db = "EnsemblGenomes";
 
 =pod
