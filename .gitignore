@@ -67,3 +67,4 @@ check_perl_modules_*.txt
 RSAT_config.conf
 backups
 results
+rsat_*.tar.gz
