@@ -160,7 +160,7 @@ package main;
     my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
     my %species_taxon = ();
 
-    if ($db eq "EnsemblGenomes") {
+    if (lc($db) eq "ensemblgenomes") {
       my $ens_version = &get_ensembl_version_safe($db);
       %species_taxon = &Get_species_taxon($db,$ens_version);
     }
@@ -242,8 +242,8 @@ package main;
 
   ################################################################
   ## Get genome_dir
-  my @token = split(":",$slices[0]->name());
-  $assembly_version = $token[1];
+  my @fields = split(":",$slices[0]->name());
+  $assembly_version = $fields[1];
   my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
 
   &RSAT::util::CheckOutDir($genome_dir);
@@ -277,21 +277,21 @@ package main;
   ################################################################
   # Change Ensembl version to Ensembl Genomes version
   my $ftp_ensembl_version = $ensembl_version;
-  if ($db eq "EnsemblGenomes") {
+  if (lc($db) eq "ensemblgenomes") {
     &RSAT::message::TimeWarn("Converting Ensembl version to EnsemblGenomes version") if ($main::verbose >= 2);
     $registry->load_registry_from_db(
         -host => $host,
         -port => $port,
         -user => 'anonymous',
-	      -species => 'multi',
+	-species => 'multi',
         -db_version => $ensembl_version
     );
 
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
       if ($dba->species() eq "multi") {
-        @token = split("_",$dba->dbc()->dbname());
-        $ftp_ensembl_version = $token[-2];
+        @fields = split("_",$dba->dbc()->dbname());
+        $ftp_ensembl_version = $fields[-2];
       }
     }
   }
@@ -1207,9 +1207,9 @@ package main;
     my $prot_seq_ftp = &Get_pep_fasta_ftp($db,$species,$ftp_ensembl_version);
     &RSAT::util::doit("wget -NL -nv $prot_seq_ftp -P $genome_dir");
 
-    @token = split(/\//, $prot_seq_ftp);
+    @fields = split(/\//, $prot_seq_ftp);
     my $aa_file = $genome_dir."/".&Get_full_species_ID($species, $assembly_version,$ensembl_version)."_aa.fasta".".gz";
-    &RSAT::util::doit("mv $genome_dir/$token[-1] $aa_file");
+    &RSAT::util::doit("mv $genome_dir/$fields[-1] $aa_file");
     &RSAT::util::doit("gzip -df $aa_file");
   }
 
