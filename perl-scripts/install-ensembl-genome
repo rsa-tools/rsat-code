@@ -339,7 +339,9 @@ package main;
       ## differs from the Ensembl species name, because we add a
       ## suffix with the data source (ensembl), assembly and ensembl
       ## version.
-      my $org = &Get_species_dir($species,"",$ensembl_version);
+      my $assembly_version = &Get_assembly_version($species, $ensembl_version);
+
+      my $org = &Get_species_dir($species,$assembly_version,$ensembl_version);
       $org =~ s|/+$||;
       $org =~ s|.*\/||;
 
