@@ -170,7 +170,7 @@ package	main;
     my @db_adaptors = @{ $registry->get_all_DBAdaptors(-group => 'core') };
     my %species_taxon = ();
 
-    if ($db eq "EnsemblGenomes") {
+    if (lc($db) eq "ensemblgenomes") {
       my $ens_version = &get_ensembl_version_safe($db);
       %species_taxon = &Get_species_taxon($db,$ens_version);
     }

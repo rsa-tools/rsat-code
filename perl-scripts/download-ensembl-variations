@@ -221,7 +221,7 @@ package	main;
   our $genomes_dir = &Get_genomes_dir();
 
   # Change Ensembl version to Ensembl Genomes version                                                                                                                                           
-  if ($db eq "EnsemblGenomes") {
+  if (lc($db) eq "ensemblgenomes") {
     use Bio::EnsEMBL::Registry;
     my $registry = 'Bio::EnsEMBL::Registry';
     my ($host,$port) = &Get_host_port($db);
