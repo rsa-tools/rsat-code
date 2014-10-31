@@ -142,7 +142,7 @@ package main;
   our $batch = 0;
   our $out = STDOUT;
 
-  our $db = "ensembl";
+  our $db = "ensembl"; ## Alternative: ensemblgenomes
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
@@ -268,7 +268,7 @@ package main;
       my $arg = " -v ".$verbose;
       $arg .= " -species ".$species;
       $arg .= " -version ".$ensembl_version;
-      $arg .= " -EnsemblGenomes" unless ($db eq "ensembl");
+      $arg .= " -db ".$db;
 
       if ($task{"genome"}) {
 	&RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
@@ -412,7 +412,7 @@ genomes. Alternatively, a file contianing a list of species names can
 be entered with the option I<-species_file>.
 
 Use the option I<-available_species> to print a list of available
-species at Ensembl, or options I<-available_species -EnsemblGenomes>
+species at Ensembl, or options I<-available_species -db ensemblgenomes>
 to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
@@ -531,13 +531,37 @@ This task is executed by running I<install-organism>.
 
 =pod
 
-=item B<-EnsemblGenomes>
+=item B<-db ensembl|ensemblgenomes>
 
-Download genome from ensembl genomes (Protist, fungi ...);
+Default: Ensembl
+
+Select the source database. 
+
+=over
+
+=item I<ensembl>
+
+The "historical" Ensembl database (L<http://ensembl.org/>), restricted
+to a series of genomes from model organisms (69 supported species on
+Oct 30, 2014).
+
+=item I<ensemblgenomes>
+
+The exended EnsemblGenomes database (L<http://ensemblgenomes.org/>),
+which comprises repositories for the following taxa: Bacteria
+(actually includes Archaea), Fungi, Metazoa, Plants, Protists.
+
+In Oct 2014, EnsemblGenomes supports >15,000 species.
+
+=back
 
 =cut
-   } elsif (lc($arg) eq "-ensemblgenomes") {
-	$main::db = "EnsemblGenomes";
+   } elsif ($arg eq "-db") {
+    $main::db = lc(shift(@arguments));
+    unless (($main::db eq "ensembl")
+	    || ($main::db eq "ensemblgenomes")) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+    }
 
 =pod
 
@@ -561,15 +585,6 @@ I<download-ensembl-features>.
    } elsif ($arg eq "-only_api") {
      $main::only_api = 1;
 
-=pod
-
-=item B<-dry>
-
-Dry run: print the commands but do not execute them.
-
-=cut
-   } elsif ($arg eq "-dry") {
-	$main::dry_run = 1;;
 
 =pod
 
@@ -588,6 +603,17 @@ incomplete.
 
 =pod
 
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands without running them (for testing and
+debugging).
+
+=cut
+     } elsif ($arg eq "-dry") {
+	$dry_run = 1;
+
 =item B<-batch>
 
 Run the last installation tasks (I<install-organism>) in batch. This
@@ -597,16 +623,6 @@ properly in the configuration file $RSAT/RSAT_config.props.
 =cut
      } elsif ($arg eq "-batch") {
 	$batch = 1;
-
-=pod
-
-=item B<-dry>
-
-Generate the commands without running them (for testing and debugging)
-
-=cut
-     } elsif ($arg eq "-dry") {
-	$dry_run = 1;
 
      } else {
 	&FatalError(join("\t", "Invalid option", $arg));
@@ -652,7 +668,7 @@ sub GetAvailableSpecies {
     my $arg = "-v ".$verbose;
     $arg .= " -available_species";
     $arg .= " -version $ensembl_version";
-    $arg .= " -EnsemblGenomes" unless ($db eq "ensembl");
+    $arg .= " -db ".$db;
 
     my %species_taxon = ();
 
