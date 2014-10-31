@@ -30,6 +30,8 @@ required for RSAT use.
 
 =item I<Jeremy Delerce> (Master 2 thesis 2013)
 
+=item I<Alejandra Medina-Rivera> (amedina@lcg.unam.mx)
+
 =item I<Jacques van Helden> (Jacques.van-Helden@univ-amu.fr)
 
 =back
@@ -44,27 +46,34 @@ required for RSAT use.
 
 =head1 USAGE
 
- download-ensembl-features -species # [-version #] [-no_name] [-o #] [-dir genomesDirectory] [-available_species] [-v #]
+C<download-ensembl-features -species # [-version #] [-no_name] [-o #] [-dir genomesDirectory] [-available_species] [-v #]>
 
 =head2 Examples
 
-Get a list of species with feature available at Ensembl
+Get the list of species available at Ensembl (L<http://ensembl.org/>).
 
- download-ensembl-features -available_species
+C<download-ensembl-features -available_species>
 
-Get genomic feature coordinate for the human genome (Homo sapiens)
+Get the list of species available at EnsemblGenomes
+(L<http://ensemblgenomes.org/>).
 
- download-ensembl-features -species Homo_sapiens
+C<download-ensembl-features -available_species -EnsemblGenomes>
+
+Get genomic feature coordinates for the human genome (Homo sapiens).
+
+C<download-ensembl-features -species Homo_sapiens>
 
 =head1 OUTPUT FORMAT
 
-Multiple tab formatted file (gene,CDS,mRNA,lincRNA..).
+The output consists in a series of tab-delimited text files providing
+the genomic location and description of the different feature types
+(gene, transcript, CDS, mRNA, lincRNA, ..).
 
 =head1 SEE ALSO
 
-=head2 download-ensembl-genome.pl
+=head2 download-ensembl-genome
 
-Downloads genome for a species
+Downloads genome for a species.
 
 =head1 WISH LIST
 
@@ -127,6 +136,7 @@ package main;
   ## Read argument values
   &ReadArguments();
 
+  ## Check that the user-selected Ensembl version is supported.
   &check_ensembl_version($db, $ensembl_version);
 
   my ($host,$port) = &Get_host_port($db);
@@ -1681,7 +1691,7 @@ If no output file is specified, the standard output is used.
 Download genome from ensembl genomes (Protist, fungi ...);
 
 =cut
-    } elsif ($arg eq "-EnsemblGenomes") {
+    } elsif (lc($arg) eq "-ensemblgenomes") {
       $main::db = "EnsemblGenomes";
 
 =pod
