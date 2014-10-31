@@ -7,15 +7,27 @@
 ############################################################
 
 include ${RSAT}/makefiles/util.mk
+MAKEFILE=${RSAT}/makefiles/install_ensembl_genomes.mk
 
-DATE = `date +%Y%m%d_%H%M%S`
+DESCRIPTION="This script shows how to install genomes from Ensembl in RSAT
 
-MAKEFILE=${RSAT}/makefiles/install_EnsemblGenomes.mk
+${MAKE} available_species
+	Get the list of species available at Ensembl
 
-V=1
+${MAKE} available_species
+"
+descr:
+	@echo
+	@echo ${DESCRIPTION}
+	@echo
 
-VERSION=41
+param:
+	@echo
+	@echo "Default parameters"
+	@echo "------------------"
+	@echo "SPECIES	${SPECIES}"
 
+available_species:
 
 
 ################################################################
