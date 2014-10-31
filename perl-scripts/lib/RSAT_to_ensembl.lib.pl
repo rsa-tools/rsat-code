@@ -448,16 +448,31 @@ sub Get_assembly_version {
   my ($species,$ensembl_version) = @_;
   $species = ucfirst($species);
   $supported_file = &Get_supported_file();
-
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
-
+    &RSAT::message::Debug("&Get_assembly_version",
+			  "reading supported organims files",$supported_file)if ($main::verbose >= 10);
     while (<$file>) {
+	next if ($_=~/^\#/);
 	chomp();
-	my ($id,$name,$dir) = split("\t");
+	my ($id,$name,$assembly) = split("\t");
+	&RSAT::message::Debug("&Get_assembly_version","id=".$id,
+			      "name=".$name,
+			      "assembly=".$assembly)if ($main::verbose >= 10);
 	if ($name) {
-	    my ($species_f,$assembly_version_f,$ensembl_version_f) = split(" ",$name);
-	    return $assembly_version_f if ($species_f eq $species && $ensembl_version_f eq $ensembl_version);
+	    my ($species_f,$species_f2,$assembly_version_f,$ensembl_version_f) = split(" +",$name);
+	    my $species_aux=join("_",$species_f,$species_f2);
+	    &RSAT::message::Debug("&Get_assembly_version",
+				  "organims name",$name)if ($main::verbose >= 10);
+	    &RSAT::message::Debug("&Get_assembly_version",
+				  "species=".$species_aux,
+				  "assembly=".$assembly_version_f,
+				  "ensembl=".$ensembl_version_f)if ($main::verbose >= 10);
+	    &RSAT::message::Debug("&Get_assembly_version",
+				  "query_species=".$species,
+				  "query_ensembl=".$ensembl_version)if ($main::verbose >= 10);
+	    
+	    return $assembly_version_f if ($species_aux eq $species && $ensembl_version_f eq "ensembl".$ensembl_version);
 	}
     }
   }
