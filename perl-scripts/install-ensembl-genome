@@ -293,12 +293,9 @@ package main;
       ## suffix with the data source (ensembl), assembly and ensembl
       ## version.
       my $full_species_id = &Get_full_species_ID($species,"",$ensembl_version);
-#      my $full_species_id = &Get_species_dir($species,"",$ensembl_version);
-#      $full_species_id =~ s|/+$||;
-#      $full_species_id =~ s|.*\/||;
+      
       &RSAT::message::Info("Species", $species) if ($main::verbose >= 0);
       &RSAT::message::Info("Full species ID", $full_species_id) if ($main::verbose >= 0);
-#      die "HELLO";
 
       ## Declare the organism in RSAT
       if ($task{"config"}) {
