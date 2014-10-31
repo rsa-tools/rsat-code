@@ -864,13 +864,39 @@ If no output file is specified, the standard output is used.
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
 
-=item B<-EnsemblGenomes>
+=pod
 
-Download genome from ensembl genomes (Protist, fungi ...);
+=item B<-db ensembl|ensemblgenomes>
+
+Default: Ensembl
+
+Select the source database. 
+
+=over
+
+=item I<ensembl>
+
+The "historical" Ensembl database (L<http://ensembl.org/>), restricted
+to a series of genomes from model organisms (69 supported species on
+Oct 30, 2014).
+
+=item I<ensemblgenomes>
+
+The exended EnsemblGenomes database (L<http://ensemblgenomes.org/>),
+which comprises repositories for the following taxa: Bacteria
+(actually includes Archaea), Fungi, Metazoa, Plants, Protists.
+
+In Oct 2014, EnsemblGenomes supports >15,000 species.
+
+=back
 
 =cut
-    } elsif (lc($arg) eq "-ensemblgenomes") {
-      $main::db = "EnsemblGenomes";
+   } elsif ($arg eq "-db") {
+    $main::db = lc(shift(@arguments));
+    unless (($main::db eq "ensembl")
+	    || ($main::db eq "ensemblgenomes")) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+    }
 
 =pod
 
