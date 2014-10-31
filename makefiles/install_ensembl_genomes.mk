@@ -6,15 +6,11 @@
 #
 ############################################################
 
-## THIS MAKEFILE IS INCOMPLETE. BESIDES, IT SHOULD BE UPDATED TO TAKE
-## INTO ACCOUNT THE NEW SCRIPTS DEVELOPED BY J. DELERCE ET
-## AL. (2013-2014).
-
 include ${RSAT}/makefiles/util.mk
 
 DATE = `date +%Y%m%d_%H%M%S`
 
-MAKEFILE=${RSAT}/makefiles/install_ensembl_genomes.mk
+MAKEFILE=${RSAT}/makefiles/install_EnsemblGenomes.mk
 
 V=1
 
