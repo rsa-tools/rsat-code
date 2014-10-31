@@ -462,34 +462,43 @@ version for a given species.
 
 =cut
 sub Get_assembly_version {
-  my ($query_species,$ensembl_version) = @_;
-  $supported_file = &Get_supported_file();
-
-  if (-f $supported_file ) {
-    my ($file) = &OpenInputFile($supported_file);
-
-    while (<$file>) {
-	chomp();
-	my (@fields) = split("\t");
-	foreach my $field  (@supported_header_fields) {
-	  ## Automatically fill attributes corresponding to the column header
-	  $$field = shift(@fields); 
-	}
-	if (lc($species) eq lc($query_species)) {
-	  return($assembly_version);
-#	my ($id,$name,$dir) = split("\t");
-#	if ($name) {
-#	    my ($species_f,$assembly_version_f,$ensembl_version_f) = split(" ",$name);
-#	    return $assembly_version_f if ($species_f eq $species && $ensembl_version_f eq $ensembl_version);
-#	}
+    my ($query_species,$ensembl_version) = @_;
+    $supported_file = &Get_supported_file();
+    if (-f $supported_file ) {
+	my ($file) = &OpenInputFile($supported_file);
+	&RSAT::message::Debug("&Get_assembly_version",
+			      "reading supported organims files",$supported_file)if ($main::verbose >= 0);
+	while (<$file>) {
+	    next if ($_=~/^\#/);
+	    chomp();
+	    my ($id,$name,$assembly) = split("\t");
+	    &RSAT::message::Debug("&Get_assembly_version","id=".$id,
+				  "name=".$name,
+				  "assembly=".$assembly)if ($main::verbose >= 10);
+	    if ($name) {
+		
+		my ($species_f,$species_f2,$assembly_version_f,$ensembl_version_f) = split(" +",$name);
+		my $species_aux=join("_",$species_f,$species_f2);
+		&RSAT::message::Debug("&Get_assembly_version",
+				      "organims name",$name)if ($main::verbose >= 10);
+		&RSAT::message::Debug("&Get_assembly_version",
+				      "species=".$species_aux,
+				      "assembly=".$assembly_version_f,
+				      "ensembl=".$ensembl_version_f)if ($main::verbose >= 10);
+		&RSAT::message::Debug("&Get_assembly_version",
+				      "query_species=".$query_species,
+				      "query_ensembl=".$ensembl_version)if ($main::verbose >= 10);
+		
+		return $assembly_version_f if (lc($species_aux) eq lc($query_species) && $ensembl_version_f eq "ensembl".$ensembl_version);
+		
+	    }
 	}
     }
-  }
-
-  ## If nto found, return a warning
-  &RSAT::message::Warning("&Get_assembly_version() could not identify ensembl version", $ensembl_version, 
-			  "for species", $species);
-  return();
+    
+    ## If nto found, return a warning
+    &RSAT::message::Warning("&Get_assembly_version() could not identify ensembl version", $ensembl_version, 
+			    "for species", $species);
+    return();
 }
 
 =pod
