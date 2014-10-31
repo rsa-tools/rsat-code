@@ -110,7 +110,7 @@ cluster_footprints:
 
 
 ## Cluster all motifs from RegulonDB
-RDB_CLUSTER_DIR=results/regulondDB_clusters
+RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
