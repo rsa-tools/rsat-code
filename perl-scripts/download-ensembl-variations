@@ -323,7 +323,7 @@ package	main;
   if ($tasks{download_gvf}){
       
       ###Dowload variation file
-      &RSAT::message::TimeWarn("Download gvf file") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Downloading gvf file") if ($main::verbose >= 2);
       &RSAT::util::CheckOutDir($variation_dir);
       
       system("wget -NL -nv $species_gvf_ftp -P $variation_dir");
@@ -363,7 +363,8 @@ package	main;
       my $last_chr = "";
       my $last_end = 0;
       my $last_id = "";
-      &RSAT::message::Info("Analyzing GVF file ",$gvf_file, ", only SNPs with accurate information will be reported") if ($main::verbose >= 2);
+      &RSAT::message::Info("Analysing GVF file", $gvf_file, "Only SNPs with accurate information will be kept.") 
+	  if ($main::verbose >= 2);
 
       ## Open GVF file and report SNP information and sequence to be used by retrieve-variation
       my ($file) = &OpenInputFile($gvf_file);
@@ -421,7 +422,7 @@ package	main;
 	      $last_end = 0;
 	      $last_id = "";
 	      
-	      &RSAT::message::TimeWarn("Analyse variation on chromosome : $chr","\n\tOutfile:",$variation_dir.$chr.".tab") if ($main::verbose >= 2);
+	      &RSAT::message::TimeWarn("Analysing variation on chromosome : $chr","\n\tOutfile:",$variation_dir.$chr.".tab") if ($main::verbose >= 2);
 
 	      $last_chr = $chr;
 	      
