@@ -216,11 +216,7 @@ package	main;
 
   &check_ensembl_version($db, $ensembl_version);
 
-#  my ($host,$port) = &Get_host_port($db);
-
-  our $genomes_dir = &Get_genomes_dir();
-
-  # Change Ensembl version to Ensembl Genomes version                                                                                                                                           
+  # Change Ensembl version to EnsemblGenomes version
   if (lc($db) eq "ensemblgenomes") {
     use Bio::EnsEMBL::Registry;
     my $registry = 'Bio::EnsEMBL::Registry';
@@ -237,8 +233,8 @@ package	main;
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
       if ($dba->species() eq "multi") {
-        @token = split("_",$dba->dbc()->dbname());
-        $ensembl_version = $token[-2];
+        @fields = split("_",$dba->dbc()->dbname());
+        $ensembl_version = $fields[-2];
       }
     }
   }
@@ -248,10 +244,9 @@ package	main;
   $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
 
-
   ################################################################
   ## Get available species
-  my @variation_ftp = &Get_variation_ftp($db,$ensembl_version);
+  my @variation_ftp = &Get_variation_ftp($db, $ensembl_version);
   &RSAT::error::FatalError("$db version : $ensembl_version not supported. No variation available for this version.") if (scalar(@variation_ftp) == 0);
   foreach (@variation_ftp) {
     &RSAT::message::Info("Variation URL",$_) if ($main::verbose >= 2);
@@ -266,9 +261,9 @@ package	main;
 
   foreach (@available_species_dir) {
     next unless (/^d/);
-    my @token = split(" ");
-    next if ($token[-1] =~ /\./);
-    push (@available_species, $token[-1]);
+    my @fields = split(" ");
+    next if ($fields[-1] =~ /\./);
+    push (@available_species, $fields[-1]);
   }
 
   ################################################################
@@ -294,6 +289,7 @@ package	main;
   # Get genome version
   my $assembly_version = &Get_assembly_version($species,$ensembl_version);
   &RSAT::error::FatalError("No assembly version found for $species and $db version $ensembl_version. Use download-ensembl-genome before download-ensembl-variations.") unless ($assembly_version);
+
 
   # Check if genome version install
   my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
@@ -378,8 +374,8 @@ package	main;
 	  ##Get variation info
 	  my ($chr,$source,$so_term,$start,$end,$score,$strand,$phase,$attributes) = split("\t");
 	  my %info = ();
-	  foreach my $token (split(";",$attributes)) { ## Split and stor attribute values
-	      my ($attributeID,$value) = split("=",$token);
+	  foreach my $fields (split(";",$attributes)) { ## Split and stor attribute values
+	      my ($attributeID,$value) = split("=",$fields);
 	      $info{$attributeID} = $value;
 	  }
 	  
@@ -389,8 +385,8 @@ package	main;
 	  ## Retrive ID for the variant stored in attribute Dbxref Ej:Dbxref=dbSNP_137:rs186434315
 	  my $id = ""; 
 	  if ($info{'Dbxref'}) {
-	      my @token = split(":",$info{'Dbxref'});
-	      $id = $token[-1];
+	      my @fields = split(":",$info{'Dbxref'});
+	      $id = $fields[-1];
 	  } else {
 	      $id = $info{'ID'}; ## If information is not avialable use ID attribute (variant number in the table)
 	  }
@@ -554,8 +550,8 @@ sub Get_super_variation() {
   if ( scalar(@super_variation) >1 ) {
     my @super_validate = ();
 
-    my @token = split("\t",$super_variation[0]);
-    my $super_validate_end = $token[2];
+    my @fields = split("\t",$super_variation[0]);
+    my $super_validate_end = $fields[2];
 
     for (my $i=0; $i<scalar(@super_variation) ; $i++) {
       my @var_info = split("\t",$super_variation[$i]);
