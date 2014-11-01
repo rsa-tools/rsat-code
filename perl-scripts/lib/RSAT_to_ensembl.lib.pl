@@ -23,6 +23,7 @@ our @supported_header_fields = ("id",
 #			 "name", 
 			 "species",
 			 "assembly_version",
+			 "db",
 			 "ensembl_version",
 			 "update_date",
 			 "species_directory",
@@ -403,7 +404,6 @@ If the assembly version is not provided, it can
 
 sub Get_full_species_ID {
   my ($species, $assembly_version, $ensembl_version) = @_;
-  my $full_species_id = ucfirst($species);
 
   ## Check that Ensembl version has been provided. If not, take
   ## default one.
@@ -421,22 +421,11 @@ sub Get_full_species_ID {
       &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
   }
 
-  ## Previous directory naming convention, temporarily maintained for
-  ## backward compatibility.
-  $old_naming = 0;
-  if ($old_naming) {
-      $full_species_id .= "_".$main::db;
-      if (lc($db) eq "ensemblgenomes") {
-	  $full_species_id .= "-".$ensembl_version;
-      } else {
-	  $full_species_id .= "-".$ensembl_version;
-      }
-      $full_species_id .= "_".$assembly_version;
-  } else {
-      ## New directory naming convention (2014-10-28, JvH  AMR)
-      $full_species_id .= "_".$assembly_version;
-      $full_species_id .= "_".$main::db.$ensembl_version;
-  }
+  ## Full ID convention (2014-10, JvH  AMR)
+  ## [Species]_[assembly_version]_[db][ensembl_version]
+  my $full_species_id = ucfirst($species);
+  $full_species_id .= "_".$assembly_version;
+  $full_species_id .= "_".$main::db.$ensembl_version;
 
   &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
   return($full_species_id);
@@ -455,10 +444,11 @@ sub Get_assembly_version {
   my ($species,$ensembl_version) = @_;
   &RSAT::message::Debug("&Get_assembly_version()", 
 			"species=".$species, 
-			"ensembl_version=".$ensembl_version) 
-      if ($main::verbose >= 5);
+			"ensembl_version=".$ensembl_version,
+			"main::db=".$main::db,
+      ) 
+      if ($main::verbose >= 0);
   $supported_file = &Get_supported_file();
-
 
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
@@ -466,6 +456,9 @@ sub Get_assembly_version {
     my $l=0;
     while (<$file>) {
 	$l++;
+	next if (/^;/); ## Skip comment lines
+	next if (/^#/); ## Skip header line
+	next unless (/\S/); ## Skip empty lines
 	chomp();
 	my (@fields) = split("\t");
 	foreach my $field  (@supported_header_fields) {
@@ -475,12 +468,13 @@ sub Get_assembly_version {
 	}
 	
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
-			      "query", $species, $db, $ensembl_version,
-			      "db", $db_species, $db_ensembl_version,
-	    ) if (main::verbose >= 10);
+			      "\n\tquery", $species, $main::db, $ensembl_version,
+			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
+	    ) if ($main::verbose >= 0);
 	if ((lc($species) eq lc($db_species)) 
-	    && ($main::db.$ensembl_version) eq ($db_ensembl_version)
-	    ){
+	    && ($db_db eq $main::db)
+	    && ($ensembl_version eq $db_ensembl_version)
+	    ) {
 	    $assembly_version = $db_assembly_version;
 	    &RSAT::message::Info("&Get_assembly_version() result", $assembly_version) if ($main::verbose >= 4);
 	    return($assembly_version);
@@ -781,7 +775,8 @@ sub UpdateEnsemblSupported {
 #			       $name, 
 			       $species,
 			       $assembly_version,
-			       "ensembl".&get_ensembl_version,
+			       $main::db,
+			       &get_ensembl_version,
 			       &AlphaDate(),
 			       &Get_species_dir($species,$assembly_version,$ensembl_version),
 	);
