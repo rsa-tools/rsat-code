@@ -344,13 +344,13 @@ package	main;
       system("wget -NL -nv $species_gvf_ftp -P $variation_dir");
       
       ## Decompress variation file
-      &RSAT::message::TimeWarn("Decompress gvf file") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Decompressing GVF file") if ($main::verbose >= 2);
       system("gzip -dvf $variation_dir/*.gz");
   }
 
   ################################################################
   ## Treat the variations
-  &RSAT::message::TimeWarn("Filter variation and make combinatory variation") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Filtering variation and computing combinatorial variation") if ($main::verbose >= 2);
   my $out_rm = &OpenOutputFile($variation_dir."/Failed.tab");
   my %out_vars = ();
 
@@ -358,14 +358,25 @@ package	main;
   foreach my $chr (keys(%chr_file)) {
     $out_vars{$chr} = &OpenOutputFile($variation_dir."/".$chr.".tab");
     $out_var = $out_vars{$chr};
-    print $out_var join("\t","#chr","start","end","strand","id","ref",
-			"alt","so_term","validate","minor_allele_freq",
-			"is_supvar","in_supvar")."\n";
-    #print $out_var "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\tminor_allele_freq\n";
+
+    ## Print header (field names)
+    print $out_var "#", join("\t",
+			     "chr",
+			     "start",
+			     "end",
+			     "strand",
+			     "id",
+			     "ref",
+			     "alt",
+			     "so_term",
+			     "validate",
+			     "minor_allele_freq",
+			     "is_supvar",
+			     "in_supvar"), "\n";
   }
 
   ################################################################
-  ## Process/Open GVF file
+  ## Process/open GVF file
   if ($tasks{report_snps}){
       my $gvf_file = $species_gvf_ftp;
       $gvf_file =~ s/\.gz//;
@@ -431,7 +442,9 @@ package	main;
 	      $m_allele_freq ="NA"; ## If minor allele freq is not avialable mark as NA
 	  }
 	  
-	  ## Get reference sequence and change output file
+	  ## Get reference sequence and change output file.  Note: the
+	  ## whole script assumes that variations are sorted by
+	  ## chromosome.
 	  if ($last_chr ne $chr) {
 	      
 	      &Get_super_variation($last_chr, $last_end,@super_variation) unless ( scalar(@super_variation) == 0);
@@ -450,6 +463,7 @@ package	main;
 	      ## order to check all the reference sequences.
 	      if ($check_ref_seq) {
 		  my $raw_file = $genome_dir."/".$chr_file{$chr};
+		  &RSAT::message::TimeWarn("Reading sequence for chromosome", $chr, $raw_file) if ($main::verbose >= 0);
 		  $ref_seq = qx(cat $raw_file);
 #		  $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
 	      }
@@ -458,13 +472,12 @@ package	main;
 	  ################################################################
 	  ## Remove bug line 
 	  ##
-	  ## !!!!!!!!!!!!!!!! 
-	  ## QUESTION_FROM_ALE=Are there repeat lines
-	  ## in the gvf file ? Not sure what this line is supposed to
-	  ## do.
+	  ## !!!!!!!!!!!!!!!!
+	  ##
+	  ## QUESTION_FROM_ALE=Are there repeat lines in the gvf file?
+	  ## Not sure what this line is supposed to do.
 	  next if ($end < $last_end);
 	  next if ($last_id eq $id);
-	  
 	  
 	  ################################################################
 	  ## Remove variations that do not compy the information
@@ -606,15 +619,18 @@ sub PrintOptions {
 
 ################################################################
 ## Get super variation
-sub Get_super_variation() {
+sub Get_super_variation {
   my ($chr, $last_end, @super_variation) = @_;
-  &RSAT::message::Debug("Super variation array content\n", join("\n",@super_variation)) if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));
+  &RSAT::message::Debug("Super variation array content\n", join("\n",@super_variation)) 
+      if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));
 
 
   ################################################################
-  ## Group variation
-  ## Groups are All var, All validate var, All outside insert, All outside valide insert
-  ## Outside insert are insert juste after the end of the combinatory variation
+  ## Group variations.
+  ##
+  ## Groups are All var, All validate var, All outside insert, All
+  ## outside valide insert.  Outside insert are insert just after the
+  ## end of the combinatory variation.
 
   my @super_variation_validate = ();
   my @super_insert = ();
@@ -630,14 +646,14 @@ sub Get_super_variation() {
     for (my $i=0; $i<scalar(@super_variation) ; $i++) {
       my @var_info = split("\t",$super_variation[$i]);
 
-      # Group outside insert and outside valide insert
+      ## Group outside insert and outside valide insert
       if ( $var_info[5] eq "-" && $var_info[1] > $last_end) {
          push (@super_insert, $super_variation[$i]);
          push (@super_insert_validate, $super_variation[$i]) if ($var_info[8]==1);
          splice(@super_variation, $i, 1);
          $i--;
 
-      #Group validate variation
+      ## Group validate variation
       } elsif ($var_info[8] == 1) {
         my $nb_validate ++;
 
