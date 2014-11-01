@@ -447,7 +447,7 @@ sub Get_assembly_version {
 			"ensembl_version=".$ensembl_version,
 			"main::db=".$main::db,
       ) 
-      if ($main::verbose >= 0);
+      if ($main::verbose >= 5);
   $supported_file = &Get_supported_file();
 
   if (-f $supported_file ) {
@@ -470,7 +470,7 @@ sub Get_assembly_version {
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
 			      "\n\tquery", $species, $main::db, $ensembl_version,
 			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
-	    ) if ($main::verbose >= 0);
+	    ) if ($main::verbose >= 5);
 	if ((lc($species) eq lc($db_species)) 
 	    && ($db_db eq $main::db)
 	    && ($ensembl_version eq $db_ensembl_version)
@@ -482,10 +482,12 @@ sub Get_assembly_version {
     }
   }
 
-  ## If not found, return a warning
-  &RSAT::message::Warning("&Get_assembly_version() could not identify ensembl version", $ensembl_version, 
-			  "for species", $species);
-  return("");
+  ## If not found, issue a warning then die
+  &RSAT::message::Warning("&Get_assembly_version() could not identify species", $species, 
+			  "from", $main::db.$ensembl_version, "in the organism table\n", $supported_file);
+  &RSAT::error::FatalError($species, "genome does not seem to be installed in version ".$ensembl_version." of ".$main::db, 
+			   "\nTry the following command:\n\t", 
+			   "install-ensembl-genome -v 2 -species ".$species);
 }
 
 =pod
@@ -526,7 +528,7 @@ Ensembl) is installed on this RSAT server.
 sub Get_species_dir {
   my ($species,$assembly_version,$ensembl_version) = @_;
   &RSAT::message::Debug("&Get_species_dir()", "species=".$species, "assembly_version=".$assembly_version, "ensembl_version=".$ensembl_version) 
-      if ($main::verbose >= 0);
+      if ($main::verbose >= 5);
 
   $species = ucfirst($species);
   $supported_file = &Get_supported_file();
