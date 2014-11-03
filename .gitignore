@@ -68,3 +68,4 @@ RSAT_config.conf
 backups
 results
 rsat_*.tar.gz
+available*
