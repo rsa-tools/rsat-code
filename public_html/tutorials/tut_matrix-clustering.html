@@ -1,9 +1,24 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<html>
-	
+
+<html>		
+  <head>
+    <title>RSA-tools - tutorials - peak-motifs</title>
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="syntaxhighlight/shCore.js"></script>
+    <script type="text/javascript" src="syntaxhighlight/shBrushBash.js"></script>
+    <link type="text/css" rel="stylesheet" href="syntaxhighlight/shCore.css"/>
+    <link type="text/css" rel="stylesheet" href="syntaxhighlight/Shthemedefault.css"/>
+    <script type="text/javascript">
+      SyntaxHighlighter.config.clipboardSwf = 'syntaxhighlight/clipboard.swf';
+      SyntaxHighlighter.all();
+    </script>
+    <meta charset=utf-8 />
+  </head>
+
+<!-- Define some additional styles for the dynamic elements of this Web page -->
 	<style>
-		
 		
 		.pic_tab {
 			height: 500px;
@@ -53,15 +68,15 @@
 		
 		.fig_button {
 	        margin-top: 3px;
-			width: 80px;
-			heigth: 60px;
+		width: 80px;
+		heigth: 60px;
 	        border: 1px;
-			position: relative;
+		position: relative;
 	        padding: 1px;
 	        font-size:14px;
 	        color: #ffffff;
-            background:#cc0000;
-            border-radius:5px;
+		background:#cc0000;
+		border-radius:5px;
 	        cursor: pointer;
 	        display: inline-block;
 	        text-align: center;
@@ -77,8 +92,8 @@
 	        padding: 1px;
 	        font-size:14px;
 	        color: #ffffff;
-            background:#000000;
-            border-radius:5px;
+		background:#000000;
+		border-radius:5px;
 	        cursor: pointer;
 	        display: inline-block;
 	        text-align: center;
@@ -161,13 +176,7 @@
 		}
 		
 	</style>
-		
-  <head>
-    <title>RSA-tools - tutorials - peak-motifs</title>
-    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen"/>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-	<meta charset=utf-8 />
-  </head>
+
   <body>
     
     <center>
@@ -212,157 +221,228 @@
     <hr><a name='intro'></a><h2>Introduction</h2>
 
     <p>The
-      program <a href='../matrix-clustering_form.cgi'><i>matrix-clustering</i></a>
-      enable to discover and align groups of similarities among motif collections
-      displaying the results with different motif-representation formats. 
+      program <a href='../matrix-clustering_form.cgi'><span class="program">matrix-clustering</span></a>
+      enables to discover and align groups of similarities among motif
+      collections displaying the results with different
+      motif-representation formats.
+    </p>
       
-		<p>Transcription factors binding motifs (TFBM) are classically represented either as consensus
-		strings (IUPAC, regular expressions), or as position-specific scoring matrices (PSSM). <br>
-		Thousands of curated TFBM are available in specialized databases (JASPAR, RegulonDB,
-		TRANSFAC, etc), built from collections of transcription factor binding sites (TFBS) <br>obtained
-		from various experimental methods (e.g. EMSA, DNAse footprinting, SELEX). <br>
-		TFBMs can also be discovered ab initio from genome-scale data sets: promoters of co-expressed genes,
-		ChIP-seq peaks, phylogenetic footprints, etc. <br>
-		Motif collections sometimes contain groups of similar motifs, for different reasons: curation
-		of alternative motifs for a same TF; homologous proteins sharing a particular DNA binding
-		domain,<br>motifs discovered with analytic workflows combining several algorithms (e.g. RSAT
-		peak-motifs, or MEME-chip). In order to address the increasing need for efficient tools
-		enabling to discover groups<br>of similarities among motif collections, we developed
-		matrix-clustering, which presents significant advantages over existing solutions.
-		</p>
-      
-      <ul>
-		<li>Segmentation of the input set of motifs into separated clusters, displayed as a motif forest
-rather than a single motif tree (alternative software tools force all motifs to be aligned).</li>
-		<li>Multiple alignment of all motifs belonging to a same cluster.</li>
-		<li>User-friendly display of motif trees with aligned logos and consensuses.</li>
-		<li>At each level of the hierarchical tree, computation of a merged motif (matrix and
-consensus) summarizing all the descendant motifs.</li>
-		<li>Support for a large series of alternative metrics (Pearson correlation, Euclidian distance, SSD,
-Sandelin-Wasserman, logo dot product, and length-normalized version of these scores).</li>
-		<li>Possibility to select a custom combination between different similarity measures to compute an integrative
-threshold.</li>
-      </ul>
+    <p>Transcription factor binding motifs
+      (<span class="concept">TFBM</span>) are classically represented
+      either as consensus strings (stric consensus, IUPAC or regular
+      expressions), or as position-specific scoring matrices
+      (<span class="concept">PSSM</span>). </p>
+
+    <p> Thousands of curated TFBM are available in specialized
+      databases (<a target="_blank"
+      href="http://jaspar.genereg.net/">JASPAR</a>, <a target="_blank"
+      href="http://regulondb.ccg.unam.mx/">RegulonDB</a>, <a target="_blank"
+      href="http://www.gene-regulation.com/pub/databases.html">TRANSFAC</a>,
+      etc). These PSSMs were traditionally built from collections of
+      transcription factor binding sites (TFBS) obtained by various
+      experimental methods (e.g. EMSA, DNAse footprinting, SELEX).</p>
+
+    <p>TFBMs can also be discovered <i>ab initio</i> from genome-scale
+      datasets: promoters of co-expressed genes, ChIP-seq peaks,
+      phylogenetic footprints, etc. 
     </p>
 
+    <p>Motif collections (databases as well as ab initio motif
+      discovery results) sometimes contain groups of similar motifs,
+      for different reasons: curation of alternative motifs for a same
+      TF; homologous proteins sharing a particular DNA binding domain,
+      motifs discovered with analytic workflows combining several
+      algorithms
+      (e.g. RSAT <span class="program"><a href="../peak-motifs_form.cgi">peak-motifs</a></span>,
+      or <span class="program"><a target="_blank"
+      href="http://meme.nbcr.net/meme/cgi-bin/meme-chip.cgi">MEME-chip</a></span>).</p>
+
+    <p>The RSAT
+      tool <span class="program"><a href="../matrix-clustering_form.cgi">matrix-clustering</a></span>
+      addresses these needs, and includes several interesting features
+      which will be illustrated in this tutorial.
+    </p>
+    
+    <p>
+      <ol>
+	<li>For the computation of inter-matrices distances, support
+	  for a large series of alternative metrics (Pearson
+	  correlation, Euclidian distance, SSD, Sandelin-Wasserman,
+	  logo dot product, and length-normalized version of these
+	  scores).</li>
+
+	<li>Possibility to select a custom combination between several
+	  of these similarity metrics, in order to compute an
+	  integrative threshold.</li>
+
+	<li>The set of input motifs is split into separate clusters,
+	  each of which canbe displayed in user-interactive ways.</li>
+
+	<li>User-friendly display of motif trees with aligned logos
+	  and consensuses.</li>
+
+	<li>At each level of the hierarchical tree, all the descendent
+	  matrices are aligned (multiple alignement), and a merged
+	  motif is computed (<span class="concept">branch
+	  motif</span>), which can be represented schematically as
+	  a <span class="concept">branch logo</span> or
+	  a <span class="concept">branch consensus</span>.</li>
+      </ol>
+    </p>
 
     <p>In this tutorial, we explain how to tune the parameters and
       interpret of results of the
-      <i>matrix-clustering</i> in addition we explain how the selection of
-      parameters can affect the results:
-      
+      <span class="program">matrix-clustering</span>. 
       <ol>	
-		  
-		<li><b>Motif redundancy</b> examples in motif-discovery results and in motif databases.</li>
-		
-		<li><b>Thresholds</b>: setting a combination of similarity measures values as a threshold to define the gruops of similarities.</li>
-		
-		<li><b>Impact of parameters</b>: some example showing how changing the values of the parameters can affect cluster composition or tree topology.</li>
-	
+	<li><b>Motif redundancy</b>: examples in motif-discovery
+	  results and in motif databases.</li>
+	<li><b>Thresholds</b>: setting a combination of similarity
+	  measures values as a threshold to define the gruops of
+	  similarities.</li>
+	<li><b>Impact of parameters</b>: some example showing how
+	  changing the values of the parameters can affect cluster
+	  composition or tree topology.</li>
       </ol>
-
     </p>
-
+    
     <hr><a name='study_case'></a><h2>Study cases</h2>
     
-    <ul>
-		
-		<li>
-			<h2>Study case 1</h2>
-			<p>Clustering a collection of motifs discovered in a Oct4 ChIP-seq</p>
-			<p>
-				In this example, first we will run <i>matrix-clustering</i> without set thresholds and after setting threshold values in order to compare
-				the resulting clusters and how the selection of parameters affect the results. 
-				<br><br>
-				We will analyze a set of motifs discovered with the tool <i>peak-motifs</i> from a set of 
-				peak sequences that were obtained by pulling down genomic regions bound by the transcription 
-				factor Oct4 in the mouse. <br>
-				The experiment was performed in the context of a wider study, where Chen and colleagues 
-				characterized the binding location of 12 transcription factors involved in mouse
-                embryonic stem cell differentiation.
-                
-                (<a href='#ref_chen_2010'>Chen et al., 2008</a>)
-			</p>
-		</li>
-		
-		<li>
-			<h2>Study case 2</h2>
-			<p>Clustering a full motif database and finding groups of motifs belonging to the same TF family.</p>
-			<p>
-				In this example we analize a collection of Vertebrates and Insects motifs stored in <a href="">JASPAR</a> which 
-				is a database specialized in eukaryote motifs. <br>
-				We will observe the redundancy of motif stored in these database and 
-				how we can find groups of motif corresponding to TF of the same TF family.  
-				
-				(<a href=''>Sandelin et al., 2004</a>)
-			</p>
-		</li>
-		
-    </ul>
+    <h3>Study case 1</h3>
+    
+    <p><b>Goal:</b> clustering a set of partly redundant motifs
+      discovered by various algorithms.</p>
+    
+    <p><b>Data set:</b> To illustrate the use of motif clustering
+      to filter out redundancy, we will analyze a set of motifs
+      discovered with the
+      workflow <span class="program"><a href="../peak-motifs_form.cgi">peak-motifs</span></a>,
+      which combines several motif discovery approaches:
+      <ol>
+	<li><a href="../oligo-analysis_form.cgi"><span class="program">oligo-analysis</span></a></li>
+	<li><a href="../position-analysis_form.cgi"><span class="program">position-analysis</span></a></li>
+	<li><a href="../local-word-analysis_form.cgi"><span class="program">local-word-analysis</span></a></li>
+	<li><a href="../dyad-analysis_form.cgi"><span class="program">dyad-analysis</span></a></li>
+      </ol>
 
+    <p>We ran these algorithms on a set of peak sequences obtained
+      by pulling down genomic regions bound by the transcription
+      factor Oct4 in mouse ES cells.  This experiment had been
+      performed in the context of a wider study, where Chen and
+      colleagues characterized the binding location of 12
+      transcription factors involved in mouse embryonic stem cell
+      differentiation (<a href='#ref_chen_2010'>Chen et al.,
+	2008</a>).
+    </p>
+    
+    <p>In this example, 
+      <ol>
+	<li>We will run <a href="../matrix-clustering_form.cgi"><span class="program">matrix-clustering</span></a>
+	  with its default parameters, which were tuned to generally
+	  provide a suitable result; </li>
+	<li>We will then run the same analysis without any
+	      threshold on matrix similarity, and with alternative
+	  threshold values, in order to analyze the impact of this
+	  crucial parameter on the result.</li>
+	<li>Finally, we will run a <span class="concept">negative
+	    control</span> by randomizing the motifs (random
+	  permutations of the columns for each matrix) and
+	  running the clustering. In principle, the clustering
+	  algorithm should assign each matrix to a singleton
+	  (cluster containing only one element).</li>
+      </ol>
+    </p>
 
+    <h3>Study case 2</h3>
+
+    <p class="attention"><b>Beware</b>: this tutorial requires to let
+      the program running for a while, and mobilize important computer
+      resources. It is thus only available for the command line
+      version of the tools.</p>
+
+    <p><b>Goal:</b> cluster all motifs from specific sections
+      (Vertebtrates, Insects) of the JASPAR database
+      (<a href=''>Sandelin et al., 2004</a>), in order to identify
+      groups of similar motifs, which may be bound by TFs of the same
+      family (e.g. several factors of the Hox family).</p>
+
+    <p>Note that in some cases factors with unrelated DNA-binding
+      domain may recognize partly similar motifs (e.g. yeast Pho4p and
+      Met4p recognize a motif centered on CACGTG, but differing by the
+      flanking residues).
+    </p>	
+    
     <hr><a name='test_sets'></a><h2>Test sets</h2>
     
     <ul>
-		
-		<li>
-			<h2>Test set 1</h2>
-			<p>The set of 21 motifs discovered with <i>peak-motifs</i> in Oct4 ChIP-seq is available on the section <i>data</i> of RSAT.</p>
-			<p><a href='http://rsat.ulb.ac.be/rsat/data/published_data/peak-motifs_NAR_2012/results/motifs/Chen_2008_motifs/peaks_from_peaksplitter_maxseqlen0_motifs_toppeaks0/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted/reports/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted_links.html'>Discovered motifs in Oct4 ChIP-seq peaks</a></p>
-		</li>
-		
-		<li>
-			<h2>Test set 2</h2>
-			<p>JASPAR vertebrate and insect motifs are available on the section <i>data</i> of RSAT.</p>
-			<p><a href='http://rsat.ulb.ac.be/rsat/data/motif_databases/JASPAR'>JASPAR motifs</a></p>
-		</li>
-		
+      
+      <li>
+	<h2>Test set 1</h2>
+	<p>The set of 21 motifs discovered with <i>peak-motifs</i> in
+	  Oct4 ChIP-seq is available on the section <i>data</i> of
+	  RSAT.</p>
+	
+	<p><a href="../demo_files/demo_files//peak-motifs_Oct4_matrices.tf">Discovered
+	    motifs in Oct4 ChIP-seq peaks</a></p>
+      </li>
+      
+      <li>
+	<h2>Test set 2</h2>
+	<p>JASPAR vertebrate and insect motifs are available on the section <i>data</i> of RSAT.</p>
+	<p><a target="_blank" href="../data/motif_databases/JASPAR">JASPAR motifs</a></p>
+      </li>
+      
     </ul>
 
 
     <hr><a name='parameters'></a><h2>Tuning <i>matrix-clustering</i> parameters</h2>
     
     <ul>
-		<br>
+      <br>
+      <li>
+	
+	<h2>Study case 1</h2>
+	<br>
+	
+	<h3><i>Running matrix-clustering without thresholds</i></h3>
+	
+	<div class='protocol'>
+	  <p><b>NOTE:</b> This section will be done using the command line</p>
+	  
+	  <ol>
+	    <li>
+	      <p>Open a terminal.<p>
+	    </li>
+	    <li>
+	      <p>Move to a directory where the result will be saved.</p>
+	    </li>
+	    <li>
+	      <p>Execute this command: </p>
+      <pre class="brush:bash;">
+matrix-clustering -v 2 \
+  -i $RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf \
+  -matrix_format tf -cons -hclust_method average \
+  -label name,consensus \
+  -o results/peak-motifs_Oct4_No_thresholds/Oct4_analysis_No_thresholds
+</pre>
+	      <p>You can read the help of the parameters used in matrix-clustering typing: <i>matrix-clustering -h</i></p>
+	      <ul>
 		<li>
-			
-			<h2>Study case 1</h2>
-			<br>
-			
-			<h3><i>Running matrix-clustering without thresholds</i></h3>
+		  <p><b>Note:</b> You can change the input motif with the parameter -i.  Example: <i> -i folder/motif_file.tf -format tf</i></p>
+		</li>
+		<li>
+		  <p><b>Note:</b> You can change the output folder name with the parameter -o. Example: <i> -o folder/prefix </i></p>
+		</li>
+		<li>
+		  <p><b>Note:</b> You can change the clustering method with the parameter -hclust_method [average|complete|single]. Example: <i> -hclust_method single </i></p>
+		</li>
+	      </ul>	
+	    </li>
+	  </ol>
+	</div>  
+      </li>  
       
-			<div class='protocol'>
-				<p><b>NOTE:</b> This section will be done using the command line</p>
-		
-				<ol>
-					<li>
-						<p>Open a terminal.<p>
-					</li>
-					<li>
-						<p>Move to a directory where the result will be saved.</p>
-					</li>
-					<li>
-						<p>Execute this command: </p>
-						<p><b>matrix-clustering -v 2 -i $RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf -matrix_format tf -cons -hclust_method average -label name,consensus -o results/peak-motifs_Oct4_No_thresholds/Oct4_analysis_No_thresholds</b></p>
-						<p>You can read the help of the parameters used in matrix-clustering typing: <i>matrix-clustering -h</i></p>
-						<ul>
-							<li>
-								<p><b>Note:</b> You can change the input motif with the parameter -i.  Example: <i> -i folder/motif_file.tf -format tf</i></p>
-							</li>
-							<li>
-								<p><b>Note:</b> You can change the output folder name with the parameter -o. Example: <i> -o folder/prefix </i></p>
-							</li>
-							<li>
-								<p><b>Note:</b> You can change the clustering method with the parameter -hclust_method [average|complete|single]. Example: <i> -hclust_method single </i></p>
-							</li>
-						</ul>	
-					</li>
-				</ol>
-			</div>  
-		</li>  
-		
-		<br>
-
+      <br>
+      
 		<h3><i>Running matrix-clustering with thresholds</i></h3>
       
 		<div class='protocol'>
