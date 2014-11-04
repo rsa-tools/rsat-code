@@ -412,7 +412,6 @@ package main;
   print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
   &PrintArguments($main::html_index, 1);
   print $html_index "</tt></p>\n";
-
  
 
   ################################################################
@@ -481,6 +480,10 @@ package main;
       ################################################################
       ## Convert tab files to HTML files
       &ConvertTabToHTML(@tab_to_convert);
+
+      ###################################
+      ## Delete .tf files
+      &Delete_single_motif_files();
 
       ################################################################
       ## Creates the website
@@ -2543,6 +2546,28 @@ sub branch_consensus_table{
 ';
 
     return($branch_consensus_table);
+}
+
+
+##############################################################
+## When the option -top1 is used the analysis is restricted 
+## to the first X motifs, however the input motif file is 
+## splitted on individual files, although not all of them 
+## are not. This functions will delete those files
+sub Delete_single_motif_files {
+
+    my @pref = split("/", $main::outfile{prefix});
+    my $prefix = pop(@pref);
+    my $folder_pref = join("/", @pref);
+    my $cmd = "ls ".$folder_pref." | grep ".$prefix." | grep .tf ";
+    my @files_tf = `$cmd`;
+
+    if(scalar(@files_tf) > 0){
+	foreach my $f_name (@files_tf){
+	    my $file_to_delete = $folder_pref."/".$f_name;
+	    system("rm ".$file_to_delete);
+	}
+    }
 }
 
 __END__
