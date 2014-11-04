@@ -13,8 +13,8 @@ package main;
 ## Note: this is not very clean. I (JvH) should pass these variables
 ## in the appropriate methods and check that everything still works
 ## fine.
-our $ensembl_version_safe = $ENV{ensembl_version_safe} || 75;
-our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 22;
+our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
+our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 19;
 
 
 ## Fields of the table describing the supported organisms obtained
@@ -46,8 +46,16 @@ sub get_ensembl_version_safe {
   }
 }
 
-################################################################
-## Return the ensembl version to be used.
+=pod
+
+=item B<&get_ensembl_version()>
+
+Return the ensembl release to be installed.  The default ensembl
+release is specified in the local property file
+$RSAT/RSAT_config.props. This default value can be overwritten with
+the option -version.
+
+=cut
 sub get_ensembl_version {
 
   ## TEMPORARY: for the time being, the version is only used by
@@ -56,16 +64,24 @@ sub get_ensembl_version {
   my $db = "ensembl";
   # my ($db) = @_;
 
-  my $ensembl_version = $ENV{ensembl_version} || 76;
-  my $ensemblgenomes_version = $ENV{ensemblgenomes_version} || 23;  
   ## By preference, return the version defined in the property file
-  ## (RSAT_config.props) for this database)
-  $prop_name = $db."_version";
-  if (defined($ENV{$prop_name})) {
-    return ($ENV{$prop_name});
+  ## (RSAT_config.props) for this database). If not defined, get the
+  ## latest version available on the Ensembl or EnsemblGenomes server.
+  if ($db eq "ensemblgenomes") {
+      ## Note: currently ignored, see TEMPORARY above.
+      my $ensemblgenomes_version = $ENV{ensemblgenomes_version} || &get_ensembl_version_latest("ensemblgenomes");
+      return($ensemblgenomes_version);
   } else {
-    return &get_ensembl_version_latest($db);
+      $ensembl_version = $ENV{ensembl_version} || &get_ensembl_version_latest("ensembl");
+      return ($ensembl_version);
   }
+
+#  $prop_name = $db."_version";
+#  if (defined($ENV{$prop_name})) {
+#    return ($ENV{$prop_name});
+#  } else {
+#    return &get_ensembl_version_latest($db);
+#  }
 }
 
 
@@ -391,19 +407,51 @@ sub Get_host_port {
 
 =item B<Get_full_species_ID()>
 
-Compute the directory name for a given species, assembly version.
+Compute the directory name for a given species and assembly version.
 
-Parameters:
-    species            mandatory
-    assembly_version   mandatory
-    ensembl_version    mandatory
+I<Parameters>
 
-If the assembly version is not provided, it can 
+=over
+
+=item I<species>
+
+Mandatory argument.
+
+E.g.: Homo_sapiens, Escherichia_coli_str_k_12_substr_mg1655
+
+Species should correspond to species names supported by ensembl, with
+underscores to replace the spaces.
+
+=item i<assembly_version>
+
+Ex: 
+  GRCh38 (for Homo sapiens), 
+   GCA_000005845.2 (for Escherichia_coli_str_k_12_substr_mg1655).
+
+Optional. If not specified, the program attempts to find get
+assembly version in the table of organisms previously installed from
+Ensembl.
+
+=item I<ensembl_version>
+
+Optional. If not specified, the program uses the default Ensembl
+version, which is specified in the file $RSAT/RSAT_config.props.
+
+=back
+
+The full ID will be used to select the organism in the RSAT tools. It
+also servers as name for the directory in which the genome has to be
+installed.
+
+By default, the full species ID is built by concatenating species and
+assembly, separated by an underscore character.
+
+Ex: 
 
 =cut
 
 sub Get_full_species_ID {
-  my ($species, $assembly_version, $ensembl_version) = @_;
+  my ($species, $assembly_version, $ensembl_version, $species_suffix) = @_;
 
   ## Check that Ensembl version has been provided. If not, take
   ## default one.
@@ -425,7 +473,8 @@ sub Get_full_species_ID {
   ## [Species]_[assembly_version]_[db][ensembl_version]
   my $full_species_id = ucfirst($species);
   $full_species_id .= "_".$assembly_version;
-  $full_species_id .= "_".$main::db.$ensembl_version;
+#  $full_species_id .= "_".$main::db.$ensembl_version; ## We prefer to avoid creating one folder for each new release of ensembl
+  $full_species_id .= "_".$species_suffix if ($species_suffix);
 
   &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
   return($full_species_id);
@@ -526,7 +575,7 @@ Ensembl) is installed on this RSAT server.
 
 =cut
 sub Get_species_dir {
-  my ($species,$assembly_version,$ensembl_version) = @_;
+  my ($species,$assembly_version,$ensembl_version,$species_suffix) = @_;
   &RSAT::message::Debug("&Get_species_dir()", "species=".$species, "assembly_version=".$assembly_version, "ensembl_version=".$ensembl_version) 
       if ($main::verbose >= 5);
 
@@ -540,7 +589,7 @@ sub Get_species_dir {
   ## Define species directory based on species name, assembly and ensembl_version
   unless ($species_dir) {
       $species_dir = join("/", &Get_genomes_dir(),
-			  &Get_full_species_ID($species,$assembly_version,$ensembl_version));
+			  &Get_full_species_ID($species,$assembly_version,$ensembl_version,$species_suffix));
   }
   &RSAT::message::Info("&Get_species_dir() result", $species_dir) if ($main::verbose >= 5);
   return($species_dir);
@@ -610,11 +659,11 @@ will be installed for a given ensembl species.
 
 =cut
 sub Get_genome_dir {
-  my ($species, $assembly_version,$ensembl_version) = @_;
+  my ($species, $assembly_version,$ensembl_version,$species_suffix) = @_;
   &RSAT::message::Debug("&Get_genome_dir()", "species=".$species, "assembly_version=".$assembly_version, "ensembl_version=".$ensembl_version) 
       if ($main::verbose >= 5);
 
-  my $genome_dir = &Get_species_dir($species, $assembly_version,$ensembl_version);
+  my $genome_dir = &Get_species_dir($species, $assembly_version,$ensembl_version,$species_suffix);
   $genome_dir .= "/genome";
   &RSAT::message::Info("&Get_genome_dir() result", $genome_dir) if ($main::verbose >= 5);
 
@@ -633,7 +682,7 @@ given ensembl species.
 sub Get_variation_dir {
   my ($species, $assembly_version,$ensembl_version) = @_;
 
-  my $variation_dir = &Get_species_dir($species, $assembly_version,$ensembl_version);
+  my $variation_dir = &Get_species_dir($species, $assembly_version,$ensembl_version,$species_suffix);
   $variation_dir .= "/variations";
   &RSAT::message::Info("&Get_variation_dir() result", $variation_dir) if ($main::verbose >= 5);
   return ($variation_dir);
@@ -675,16 +724,16 @@ a given type.
 
 Usage: 
 
- my $feature_file = ($species, $assembly_version,$ensembl_version,$type);
+ my $feature_file = ($species, $assembly_version,$ensembl_version,$species_suffix,$type);
 
 Where $type is the feature type (e.g. CDS, gene, mrna).
 
 =cut
 sub Get_feature_file {
-  my ($species, $assembly_version,$ensembl_version,$type) = @_;
+  my ($species, $assembly_version,$ensembl_version,$species_suffix,$type) = @_;
   $type =~ s/ /_/g;
   $type = lc($type);
-  my $file = &Get_genome_dir($species, $assembly_version,$ensembl_version)."/".$type.".tab";
+  my $file = &Get_genome_dir($species, $assembly_version,$ensembl_version,$species_suffix)."/".$type.".tab";
   return ($file);
 }
 
@@ -743,7 +792,7 @@ sub UpdateEnsemblSupported {
     my %species_description = ();
 
     ## Find the current species ID
-    my $current_species_id = &Get_full_species_ID($species,$assembly_version,$ensembl_version);
+    my $current_species_id = &Get_full_species_ID($species,$assembly_version,$ensembl_version,$species_suffix);
 	
     ## Read the list of previously installed organisms if it exists.
     if (-f $supported_organism_file) {
@@ -769,7 +818,7 @@ sub UpdateEnsemblSupported {
     
 
     ## Build the line for the currently installed species
-    my $id = &Get_full_species_ID($species,$assembly_version,$ensembl_version);
+    my $id = &Get_full_species_ID($species,$assembly_version,$ensembl_version,$species_suffix);
     my $name = $id; $name =~ s/_/ /g;
 
     my $new_org_config = join ("\t", 
@@ -780,7 +829,7 @@ sub UpdateEnsemblSupported {
 			       $main::db,
 			       &get_ensembl_version,
 			       &AlphaDate(),
-			       &Get_species_dir($species,$assembly_version,$ensembl_version),
+			       &Get_species_dir($species,$assembly_version,$ensembl_version,$species_suffix),
 	);
 
     ## Avoid to expose the full RSAT path
