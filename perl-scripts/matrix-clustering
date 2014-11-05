@@ -85,7 +85,7 @@ util
 
 =head1 USAGE
 
-cluster-matrices [-i inputfile] [-o outputfile] [-v ] [...]
+matrix-clustering [-i inputfile] [-o outputfile] [-v ] [...]
 
 
 =head1 OUTPUT FORMAT
@@ -164,7 +164,8 @@ package main;
   }
   local $d3_base_formats = join ",", @d3_base_formats;
   local $d3_base_format = "";
-  local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+  #local $d3_base_url= $ENV{RSAT}."/public_html/lib/d3/";
+  local $d3_base_url= "http://d3js.org/d3.v3.min.js";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -236,7 +237,6 @@ package main;
 
   ## Matrices
   local @matrices = ();
-#  local @temp = ();
   local $show_consensus = 0;
 
 
@@ -278,6 +278,13 @@ package main;
 
   ## Use compare-matrices-quick
   local $quick_flag = 0;
+
+  ## Limit the number of input motifs
+  local $mat_nb_flag = 0;
+  local $mat_nb = 0;
+  
+  ## Limit the number of input motifs
+  local $clone_input_flag = 0;
 
   ################################################################
   ## Options used for motif comparison
@@ -392,6 +399,11 @@ package main;
     ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
   }
 
+  ## Clone input (only if the user selects this option)
+  if($clone_input_flag == 1){
+      $main::outfile{motif_file} = $main::outfile{prefix}."_input_motifs.tf";
+  }
+
   ## Files required for the summary
   $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
   $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html";
@@ -420,6 +432,12 @@ package main;
       @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
 	  if ($main::verbose >= 2);
+
+      if($mat_nb_flag == 1){
+	  if(scalar(@matrices) > $mat_nb){
+	  &RSAT::error::FatalError($mat_nb, "Matrices loaded from file", $infile{matrices}, "The number of input matrices is limted to", $mat_nb);
+	  }
+      }
   }
 
   # ## According to the task selected by the user, execute or skip some functions
@@ -484,6 +502,12 @@ package main;
       ###################################
       ## Delete .tf files
       &Delete_single_motif_files();
+
+      ######################
+      ## Clone input file
+      if($clone_input_flag == 1){
+	  &Clone_input();
+      }
 
       ################################################################
       ## Creates the website
@@ -776,6 +800,34 @@ B<NOTE:> By the moment the only threshold used in quick version is Ncor.
 =cut
     } elsif ($arg eq "-quick") {
     $quick_flag = 1;
+
+
+=pod
+
+=item	B<-clone_input>
+
+If this option is selected, the input motif database is exported
+in the results folder.
+
+NOTE: take into account the input file size. 
+
+=cut
+    } elsif ($arg eq "-clone_input") {
+    $clone_input_flag = 1;
+
+=pod
+
+=item	B<-max_matrix>
+
+This option specify how many matrices can be clustered in the same analysis. If there are more matrices than
+the specified number, the program reports an error.
+
+This parameter can be useful when the user analyse a big dataset of matrices.
+
+=cut
+    } elsif ($arg eq "-max_matrix") {
+    $mat_nb_flag = 1;
+    $mat_nb = shift(@arguments);
     
       
 =pod
@@ -1098,7 +1150,6 @@ sub Hclustering {
 
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
        
-#  my $pos_drawing_offset = -($pos_interval-1)/2;
     my $pos_drawing_offset = 0;
     my  $cluster_motifs_cmd = "cat ".$cluster_motifs_script;
     $cluster_motifs_cmd .= " | ".$r_path;
@@ -1144,8 +1195,6 @@ sub Hclustering {
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
-
-
     return();
 }
 
@@ -1453,7 +1502,7 @@ sub Create_html_tree_file(){
 	}
 	
 	### Fix the d3 library path
-	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
+	$_ =~ s|src=\"\"|src=\"$d3_base_url/d3.v3.js\"|;
 
 	### Set the height 
 	if(/\s+height =,/){
@@ -1881,7 +1930,6 @@ sub Add_div_to_HTML(){
     my $print = "";
     my $temp = paste_new_cluster_to_HTML();
 
-#    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html});
     my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);
 
@@ -2049,7 +2097,10 @@ sub Creates_website(){
 	chomp;
 	$line = $_;
 
+	my $print_cmd = "matrix-clustering ".&PrintArguments();
+
 	## Fill the summary table
+	$line =~ s/--cmd--/$print_cmd/;
 	$line =~ s/--motifs--/$number_of_motifs/;
 	$line =~ s/--nb--/$number_of_clusters/;
 	$line =~ s/--hmethod--/$method/;
@@ -2185,6 +2236,17 @@ sub Creates_website(){
 		      <td class="tab_spacer_2">A PDF file showing the consensus alignment. Each cluster is represented with a different color.</td>
 		   </tr>
                 ';
+
+	    if($clone_input_flag == 1){
+		$add_files .= 
+		    '
+
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_input_motifs.tf"><strong>Input motifs</strong></a></td>
+		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
+		   </tr>
+                     ';
+	    }
 
 	    $line =~ s/Additional_files/$add_files/;
 	}
@@ -2568,6 +2630,17 @@ sub Delete_single_motif_files {
 	    system("rm ".$file_to_delete);
 	}
     }
+}
+
+##############################################
+## When the option -clone_input is selected
+## the input file is exported in the result 
+## folder
+sub Clone_input{
+    
+    my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
+    &RSAT::util::one_command($cmd, 1,"");
+    &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
 }
 
 __END__
