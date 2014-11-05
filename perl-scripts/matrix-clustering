@@ -164,7 +164,7 @@ package main;
   }
   local $d3_base_formats = join ",", @d3_base_formats;
   local $d3_base_format = "";
-  local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+  local $d3_base_url= $ENV{RSAT}."/public_html/lib/d3/";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -1475,7 +1475,7 @@ sub Create_html_tree_file(){
 	}
 	
 	### Fix the d3 library path
-	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
+	$_ =~ s|src=\"\"|src=\"$d3_base_url/d3.v3.js\"|;
 
 	### Set the height 
 	if(/\s+height =,/){
@@ -1903,7 +1903,6 @@ sub Add_div_to_HTML(){
     my $print = "";
     my $temp = paste_new_cluster_to_HTML();
 
-#    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html});
     my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);
 
