@@ -253,7 +253,7 @@ verbose(paste("merge attributes table", attributes.file), 1)
 ## Creates a folder with where the separated information
 ## of each cluster will be stored
 clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
-dir.create(clusters.info.folder, recursive = TRUE)
+dir.create(clusters.info.folder, recursive = TRUE, showWarnings = FALSE)
 
 global.motifs.info <<- motifs.info
 forest.list <- list()
@@ -273,7 +273,7 @@ for(nb in 1:length(clusters)){
     
     ## Creates an individual folder for each cluster
     cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", cluster.nb, sep = ""))
-    dir.create(cluster.folder, recursive = TRUE)
+    dir.create(cluster.folder, recursive = TRUE, showWarnings = FALSE)
     
     ids <- clusters.ids[[paste("cluster_", nb, sep = "")]]
     
