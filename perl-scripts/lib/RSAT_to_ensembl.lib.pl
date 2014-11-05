@@ -120,7 +120,7 @@ sub get_ensembl_version_latest {
 ## neither be lower than the safe version, nor higher than the latest
 ## version.
 sub check_ensembl_version {
-  my ($db, $ensembl_version) = @_;
+  my ($db,$ensembl_version) = @_;
 
   ## TEMPORARY: for the time being, the version is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
@@ -134,7 +134,7 @@ sub check_ensembl_version {
   if ($main::verbose >= 2) {
     &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version);
     &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version);
-    &RSAT::message::Info("Selected ensembl version", $ensembl_version);
+    &RSAT::message::Info("Selected ensembl version",$ensembl_version);
   }
 
   if ($ensembl_version eq "safe") {
@@ -360,7 +360,7 @@ sub Get_gvf_ftp {
 ## species supported in an ansembl database. The result is returned as
 ## a has table, with species names as keys and taxa as values.
 sub Get_species_taxon {
-  my ($db, $ensembl_version) = @_;
+  my ($db,$ensembl_version) = @_;
   my %species_taxon = ();
 
   my @fasta_url = &Get_fasta_ftp($db,$ensembl_version);
@@ -451,21 +451,21 @@ Ex:
 =cut
 
 sub Get_full_species_ID {
-  my ($species, $assembly_version, $ensembl_version, $species_suffix) = @_;
+  my ($species, $assembly_version,$ensembl_version, $species_suffix) = @_;
 
   ## Check that Ensembl version has been provided. If not, take
   ## default one.
   unless ($ensembl_version) {
       $ensembl_version = &get_ensembl_version();
       &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_version argument",
-			    "Using default", $ensembl_version) if ($main::verbose >= 5);
+			    "Using default",$ensembl_version) if ($main::verbose >= 5);
   }
 
   ## Check that the assembly version has been provided. If not, guess
   ## it.
   unless ($assembly_version) {
       &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 5);
-      $assembly_version = &Get_assembly_version($species, $ensembl_version);
+      $assembly_version = &Get_assembly_version($species,$ensembl_version);
       &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
   }
 
@@ -517,7 +517,7 @@ sub Get_assembly_version {
 	}
 	
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
-			      "\n\tquery", $species, $main::db, $ensembl_version,
+			      "\n\tquery", $species, $main::db,$ensembl_version,
 			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
 	    ) if ($main::verbose >= 5);
 	if ((lc($species) eq lc($db_species)) 
@@ -680,7 +680,7 @@ given ensembl species.
 
 =cut
 sub Get_variation_dir {
-  my ($species, $assembly_version,$ensembl_version) = @_;
+  my ($species, $assembly_version,$ensembl_version, $species_suffix) = @_;
 
   my $variation_dir = &Get_species_dir($species, $assembly_version,$ensembl_version,$species_suffix);
   $variation_dir .= "/variations";
