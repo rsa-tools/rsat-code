@@ -128,9 +128,10 @@ package	main;
   our $registry = 'Bio::EnsEMBL::Registry';
 
   our $db = "ensembl";
-  our $species = "";
   our $taxid = "";
-  our $assembly_version = "";  
+  our $species = "";
+  our $assembly_version = "";
+  our $species_suffix = "";
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
@@ -145,7 +146,7 @@ package	main;
   &ReadArguments();
 
   ## Check that the user-selected Ensembl version is supported.
-  &check_ensembl_version($db, $ensembl_version);
+  &check_ensembl_version($db,$ensembl_version);
 
   my ($host,$port) = &Get_host_port($db);
 
@@ -235,7 +236,7 @@ package	main;
 
   my $mca = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "metacontainer" );
   if ($mca) {
-      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 2);
+      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 5);
   } else {
       &RSAT::error::FatalError("Cannot get coordinate system adaptor (mca) for species", $species);
   }
@@ -244,7 +245,9 @@ package	main;
   # Get all Top Level slice
   my @slices = @{$slice_adaptor->fetch_all('toplevel')};
 
-  ## Correct Ensembl error with the two Y human chr
+  ## Correct Ensembl error with the two Y human chromosomes 
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ## TO BE CHECKED (JvH): is this still required ?
   if ($species eq "homo_sapiens") {
     my @slice_tmp = ();
     foreach my $slice (@slices) {
@@ -255,18 +258,22 @@ package	main;
   }
 
   ################################################################
-  ## Get available sequence on Ensembl and compare with sequence
-  ## already install
+  ## Get the list of sequences available at Ensembl and compare with
+  ## those already installed on local server.
 
   ## Get genome_dir
   my @fields = split(":",$slices[0]->name());
   $assembly_version = $fields[1];
-  $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix)
+  &RSAT::message::Info("Full species ID", $full_species_ID) if ($main::verbose >= 2);
+  $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version, $species_suffix);
+  &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 2);
+  printf $out ("; %-22s\t%s\n", "Full species ID", $full_species_ID);
+  printf $out ("; %-22s\t%s\n", "Genome directory", $genome_dir);
   &RSAT::util::CheckOutDir($genome_dir);
 
-
-  ## Get local sequences that have already been installed in the local server
-  &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
+  ## Get the list of sequences already installed in the local server
+  &RSAT::message::TimeWarn("Checking local versions of genomic sequences") if ($main::verbose >= 2);
   my %seq_installed = ();
   my @genome_dir_content =glob($genome_dir."/*");
   foreach ( @genome_dir_content ) {
@@ -287,7 +294,7 @@ package	main;
 
 
   ################################################################
-  ##Download
+  ## Download
   &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);
   foreach my $slice (@slices) {
     &RSAT::message::TimeWarn("\tTreating slice",$slice->name()) if ($main::verbose >= 2);
@@ -547,6 +554,22 @@ would change their file formats or locations.
 
 =pod
 
+=item B<-species_suffix>
+
+Suffix to append to the full species ID.
+
+By default, the full species ID is composed by concatenating the
+Ensembl species and assembly version. The option I<-species_suffix>
+allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
+will be appended to the full species ID.
+
+=cut
+    } elsif ($arg eq "-species_suffix") {
+    $species_suffix = shift(@arguments);
+
+
+=pod
+
 =item B<-force>
 
 Force installation even if the genome is already installed.
@@ -614,6 +637,7 @@ sub Verbose {
     }
   }
 
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&get_ensembl_version_safe($db);
-  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
+    printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&get_ensembl_version_safe($db);
+    printf $out "; %-22s\t%s\n", "Ensembl version",$ensembl_version;
+    printf $out ("; %-22s\t%s\n", "Species suffix", $species_suffix) if ($species_suffix);
 }
