@@ -1034,8 +1034,9 @@ __END__
 
 =head2 supported-organisms
 
-To get a list of supported organisms + their respective taxa, type
-I<supported-organisms -format full>.
+To get a list of supported organisms + their respective taxa, type:
+
+I<supported-organisms -format tab -return ID,taxonomy>
 
 =head2 oligo-analysis
 
