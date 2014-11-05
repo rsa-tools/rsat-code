@@ -85,7 +85,7 @@ util
 
 =head1 USAGE
 
-cluster-matrices [-i inputfile] [-o outputfile] [-v ] [...]
+matrix-clustering [-i inputfile] [-o outputfile] [-v ] [...]
 
 
 =head1 OUTPUT FORMAT
@@ -279,6 +279,10 @@ package main;
   ## Use compare-matrices-quick
   local $quick_flag = 0;
 
+  ##
+  local $mat_nb_flag = 0;
+  local $mat_nb = 0;
+
   ################################################################
   ## Options used for motif comparison
   local %param = ();
@@ -420,6 +424,12 @@ package main;
       @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
 	  if ($main::verbose >= 2);
+
+      if($mat_nb_flag == 1){
+	  if(scalar(@matrices) > $mat_nb){
+	  &RSAT::error::FatalError($mat_nb, "Matrices loaded from file", $infile{matrices}, "The number of input matrices is limted to", $mat_nb);
+	  }
+      }
   }
 
   # ## According to the task selected by the user, execute or skip some functions
@@ -776,6 +786,21 @@ B<NOTE:> By the moment the only threshold used in quick version is Ncor.
 =cut
     } elsif ($arg eq "-quick") {
     $quick_flag = 1;
+
+
+=pod
+
+=item	B<-max_matrix>
+
+This option specify how many matrices can be clustered in the same analysis. If there are more matrices than
+the specified number, the program reports an error.
+
+This parameter can be useful when the user analyse a big dataset of matrices.
+
+=cut
+    } elsif ($arg eq "-max_matrix") {
+    $mat_nb_flag = 1;
+    $mat_nb = shift(@arguments);
     
       
 =pod
@@ -1098,7 +1123,6 @@ sub Hclustering {
 
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
        
-#  my $pos_drawing_offset = -($pos_interval-1)/2;
     my $pos_drawing_offset = 0;
     my  $cluster_motifs_cmd = "cat ".$cluster_motifs_script;
     $cluster_motifs_cmd .= " | ".$r_path;
@@ -1144,8 +1168,6 @@ sub Hclustering {
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
-
-
     return();
 }
 
@@ -2048,6 +2070,9 @@ sub Creates_website(){
     while (<$summary_temp>) {
 	chomp;
 	$line = $_;
+
+	### Fix the d3 library path
+	$line =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
 
 	## Fill the summary table
 	$line =~ s/--motifs--/$number_of_motifs/;
