@@ -27,6 +27,10 @@ def RequestGeneric(url_root,url_extension):
 	@returns : this function returns the JSON object obtained from a server
 	"""
 	
+	## Note by JvH (2014-09-31): this cache directory should be
+	## cleaned after download, because it can take a large space
+	## (I realized it occupied 3.6Gb after having downloaded some
+	## bacteria).
 	url_root = url_root
 	http = httplib2.Http(".cache")
 	
