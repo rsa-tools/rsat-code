@@ -110,7 +110,7 @@ cluster_footprints:
 
 
 ## Cluster all motifs from RegulonDB
-RDB_CLUSTER_DIR=results/regulondDB_clusters
+RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
@@ -131,9 +131,10 @@ cluster_jaspar_one_group:
 
 #############################
 ## Cluster one cisBP group
-CISBP_GROUPS=human mouse
-CISBP_GROUP=mouse
-CISBP_PREFIX=${CISBP_GROUP}_motifs_cisBP2013
+## Default: Mus_musculus
+CISBP_GROUPS=Homo_sapiens Mus_musculus
+CISBP_GROUP=Mus_musculus
+CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
 CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
 CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
 cluster_cisbp_one_group:

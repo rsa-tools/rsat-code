@@ -12,9 +12,9 @@
 
 ## use strict;
 BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-    }
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
 }
 require "RSA.lib";
 require "RSA.seq.lib";
@@ -296,7 +296,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 
 ################################################################
 ## Main package
-package main;
+    package main;
 {
 
   ################################################################
@@ -322,7 +322,8 @@ package main;
   ## delegate calculation to matrix-scan-quick
   local $quick_scan = 0;
   local $quick_scan_if_possible = 0;
-  local $bg_quick_file = "";	# calculates only once the bgmodel
+  local $quick_bg_file = "";	## Temporary file to store the bg model for matrix-scan-quick
+  local $quick_coord_file = ""; ## Temporary file to store genomic coordinates of input sequences, for conversion of sites to genomic coordinates in quick mode
 
   %main::infile = ();
   %main::outfile = ();
@@ -443,32 +444,32 @@ package main;
 
   ## Return fields
   local %supported_return_fields = (
-				    sites=>1, ## location of the detectes sites
-				    pval=>1,  ## site-wie P-value
-				    rank=>1,  ## site-wise ranking
-				    normw=>1, ## Normalized weight
+    sites=>1, ## location of the detectes sites
+    pval=>1,  ## site-wie P-value
+    rank=>1,  ## site-wise ranking
+    normw=>1, ## Normalized weight
 
-				    proba_bm =>1, ## individual P_M and P_B proba
-				    eval=>1, ## pval * nb tests, only possible with matrix-scan-quick
+    proba_bm =>1, ## individual P_M and P_B proba
+    eval=>1, ## pval * nb tests, only possible with matrix-scan-quick
 
-				    limits=>1, ## Sequence limits (for drawing feature maps)
-				    seq_scores=>1, ## sequence-wise scores
-				    p_score=>1,	## score as defenined in Bailey 2003
-				    bg_residues=>1, ## composition in ATGC of the background model (useful for bg_window)
-				    weight_limits=>1, ## lower and upper limits of the weight for each matrix
-				    crer0=>1, ## Cis Regulatory element Enriched Region => CRER) with the first version of the algorithm
-				    crer=>1, ## Cis Regulatory element Enriched Region => CRER)
-				    crer_details=>1, ## Table with detailed information about the CRERs
+    limits=>1, ## Sequence limits (for drawing feature maps)
+    seq_scores=>1, ## sequence-wise scores
+    p_score=>1,	## score as defenined in Bailey 2003
+    bg_residues=>1, ## composition in ATGC of the background model (useful for bg_window)
+    weight_limits=>1, ## lower and upper limits of the weight for each matrix
+    crer0=>1, ## Cis Regulatory element Enriched Region => CRER) with the first version of the algorithm
+    crer=>1, ## Cis Regulatory element Enriched Region => CRER)
+    crer_details=>1, ## Table with detailed information about the CRERs
 
-				    distrib=>1,	## Dataset-wise distribution of scores
-				    occ_proba=>1, ## Probability of the number of occurrences o predicted sites
+    distrib=>1,	## Dataset-wise distribution of scores
+    occ_proba=>1, ## Probability of the number of occurrences o predicted sites
 
-				    matrix=>1,	## count matrices
-				    freq_matrix=>1, ## Frequency matrices
-				    weight_matrix=>1, ## Weight matrices
+    matrix=>1,	## count matrices
+    freq_matrix=>1, ## Frequency matrices
+    weight_matrix=>1, ## Weight matrices
 
-				    bg_model=>1, ## background model
-				   );
+    bg_model=>1, ## background model
+      );
   $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
   local %return_fields = ();		## Fields to return
   local %calc_fields = ();		## Fields to calculate
@@ -476,21 +477,21 @@ package main;
 
   ## Return field not supported by the quick scan mode
   local %quick_forbidden_field = (
-				  'rank'=>1,
-				  'normw'=>1,
-				  'proba_bm' => 1,
-				  'seq_scores'=>1,
-				  'p_score'=>1,
-				  'bg_residues'=>1,
-				  'weight_limits'=>1,
-				  'crer'=>1,
-				  'crer_details'=>1,
-				  # 'occ_proba'=>1,
-				  'matrix'=>1,
-				  'freq_matrix'=>1,
-				  'weight_matrix'=>1,
-				  'bg_model'=>1,
-				 );
+    'rank'=>1,
+    'normw'=>1,
+    'proba_bm' => 1,
+    'seq_scores'=>1,
+    'p_score'=>1,
+    'bg_residues'=>1,
+    'weight_limits'=>1,
+    'crer'=>1,
+    'crer_details'=>1,
+    # 'occ_proba'=>1,
+    'matrix'=>1,
+    'freq_matrix'=>1,
+    'weight_matrix'=>1,
+    'bg_model'=>1,
+      );
   $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
 
   local %sequence_scores = ();
@@ -513,7 +514,7 @@ package main;
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
   &RSAT::error::FatalError("Options -consensus_name, -id_as_name aned -ac_as_name are mutually exclusive")
-    if ($consensus_name + $id_as_name + $ac_as_name > 1);
+      if ($consensus_name + $id_as_name + $ac_as_name > 1);
 
   #################################################################
   ## Batch option
@@ -572,7 +573,7 @@ package main;
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
       &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
-	unless (&RSAT::util::IsReal($thr_value));
+	  unless (&RSAT::util::IsReal($thr_value));
       $matrix_thr{$matrix_name} = 1;
       $matrix_thr_val->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value;	## For the verbosity
       if ($thr_param eq 'lth') {
@@ -720,7 +721,7 @@ package main;
       my ($in, $input_dir) = &OpenInputFile($infile{bg_distrib});
       my $l = 0;
       &RSAT::message::TimeWarn("Loading background score distribution from file", $infile{bg_distrib})
-	if ($main::verbose >= 2);
+	  if ($main::verbose >= 2);
       while (<$in>) {
 	$l++;
 	next if (/^--/);       	# skip comment lines
@@ -854,7 +855,7 @@ package main;
   if ($infile{bg}) {
     ## Read background model from a file
     &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg}))
-      if ($main::verbose >= 2);
+	if ($main::verbose >= 2);
     $bg_model->load_from_file($infile{bg}, $bg_in_format);
     $bg_model->check_missing_transitions();
 
@@ -880,6 +881,8 @@ package main;
     ## TO DO: read the sequences once to determine prior frequencies, in
     ## order to set the pseudo-weight distribution
 
+
+
     ################################################################
     ## If the model is taken from the whole set of input sequences, read them
     ## first without scanning, just to calculate the model
@@ -903,7 +906,7 @@ package main;
       $bg_cmd .= " -bg_pseudo ".$bg_model->get_attribute("bg_pseudo");
       &doit($bg_cmd, $dry, $die_on_error, $verbose-1,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_bg_file);
-      $bg_quick_file = $tmp_bg_file;
+      $quick_bg_file = $tmp_bg_file;
 
       $bg_model->load_from_file($tmp_bg_file, "motifsampler");
       $bg_model->check_missing_transitions();
@@ -911,6 +914,30 @@ package main;
     }
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
+  }
+
+
+  ################################################################
+  ## For quick scan mode, compute genomic coordinates of input
+  ## sequences if user has requested to return sites in genomic
+  ## coordinates.
+  $quick_coord_file  = &RSAT::util::make_temp_file("", "seq_coordinates");
+  if (($quick_scan) && ($origin eq "genomic")) {
+    my $seq_source = "ucsc2";
+    &RSAT::message::TimeWarn("Extracting genomic coordinates (BED) from sequence headers (fasta)") if ($main::verbose >= 2);
+    $cmd = $SCRIPTS."/convert-features";
+    $cmd .= " -i ".$main::infile{input};
+    $cmd .= " -from ".$seq_source."_seq"; ## e.g. galaxy_seq
+    $cmd .= " -to bed ";
+    my $bed_prefix = "matrix-scan-quick";
+    $bed_color = "13,115,67";
+    my $bed_header= "track name=\"matrix-scan_seq\" description=\"RSAT matrix-scan input sequences\" visibility=2 use_score=1 color=".$bed_color;
+    $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
+    $cmd .= " > ".$quick_coord_file;
+    &one_command($cmd,1);
+    &RSAT::message::TimeWarn("Genomic coordinates of input sequences", $quick_coord_file) if ($main::verbose >= 2);
+#    print $cmd;
+#    die "\n\nBOUM\tDEBUGGING\n\n";
   }
 
   ## Arguments to select a subset of matrices will be passed to
@@ -989,49 +1016,49 @@ package main;
 
       ## Use the matrix consensus as name
       if ($consensus_name) {
-	  $matrix->calcConsensus();
-	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
-	  if ($consensus) {
-	      &RSAT::message::Warning("Using consensus as name", $consensus)
-		  if ($main::verbose >= 4);
-	      $matrix->force_attribute("name", $consensus);
-	  }
+	$matrix->calcConsensus();
+	my $consensus = $matrix->get_attribute("consensus.IUPAC");
+	if ($consensus) {
+	  &RSAT::message::Warning("Using consensus as name", $consensus)
+	      if ($main::verbose >= 4);
+	  $matrix->force_attribute("name", $consensus);
+	}
       } elsif ($id_as_name) {
-	  my $id = $matrix->get_attribute("name");
-	  #die $id."BOOM"."\n";
-	  if ($id) {
-	      $matrix->force_attribute("name", $id);
-	  } else {
-	      &RSAT::message::Warning("Matrix",$matrix->get_attribute("accession"), "has no identifier");
-	      $matrix->force_attribute("name", $matrix->get_attribute("accession"));
-	  }
-      } elsif (($ac_as_name) && ($matrix->get_attribute("accession"))) {
+	my $id = $matrix->get_attribute("name");
+	#die $id."BOOM"."\n";
+	if ($id) {
+	  $matrix->force_attribute("name", $id);
+	} else {
+	  &RSAT::message::Warning("Matrix",$matrix->get_attribute("accession"), "has no identifier");
 	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
+	}
+      } elsif (($ac_as_name) && ($matrix->get_attribute("accession"))) {
+	$matrix->force_attribute("name", $matrix->get_attribute("accession"));
       } elsif (!$matrix->get_attribute("name")) {
-	  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-	  if (scalar(@new_matrices) > 1) {
-	      $matrix_name .= ".".($m+1);
-	  }
-	  $matrix->force_attribute("name", $matrix_name);
+	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	if (scalar(@new_matrices) > 1) {
+	  $matrix_name .= ".".($m+1);
+	}
+	$matrix->force_attribute("name", $matrix_name);
       }
       
       ## Check matrix name with thresholds
       foreach my $thr_matrix_name (keys (%matrices_mth)) {
-	  if ($matrix->get_attribute("name") eq $thr_matrix_name) {
-	      delete $matrices_mth{$thr_matrix_name};
-	  }
+	if ($matrix->get_attribute("name") eq $thr_matrix_name) {
+	  delete $matrices_mth{$thr_matrix_name};
+	}
       }
 
-	## Check that the matrix width is smaller than markov order + 1
+      ## Check that the matrix width is smaller than markov order + 1
       my $matrix_width = $matrix->ncol();
       my $markov_order = $bg_model->get_attribute("order");
       if ($matrix_width < $markov_order + 1) {
-	  &RSAT::error::FatalError(join (" ",
-					 "Markov order (".$markov_order.")",
-					 "is too large for matrix",
-					 $matrix->get_attribute("name"),
-					 "of width ".$matrix_width."."));
+	&RSAT::error::FatalError(join (" ",
+				       "Markov order (".$markov_order.")",
+				       "is too large for matrix",
+				       $matrix->get_attribute("name"),
+				       "of width ".$matrix_width."."));
       }
       
       ## Calculate min and max values for P(S|M)
@@ -1054,16 +1081,16 @@ package main;
       # 	}
       
       unless ($bg_method eq "window") {
-	  ## Set the matrix prior
-	  $matrix->setMarkovModel($bg_model);
-	  &RSAT::message::TimeWarn("Setting matrix priors for matrix", $matrix->get_attribute("name"),
-				   %prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
-	  ## Calculate min and max weight values
-	  my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
-	  &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
-					$matrix->get_attribute("name"),
-					$Wmin, $Wmax, $Wrange,
-				   )) if ($main::verbose >= 4);
+	## Set the matrix prior
+	$matrix->setMarkovModel($bg_model);
+	&RSAT::message::TimeWarn("Setting matrix priors for matrix", $matrix->get_attribute("name"),
+				 %prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
+	## Calculate min and max weight values
+	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
+	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
+				      $matrix->get_attribute("name"),
+				      $Wmin, $Wmax, $Wrange,
+				 )) if ($main::verbose >= 4);
       }
       
       
@@ -1078,7 +1105,6 @@ package main;
 	  ) if ($main::verbose >= 4);
     }
   }
-  ### HELLO }
 
 
   ################################################################
@@ -1161,11 +1187,11 @@ package main;
     push @crer_detail_fields, "normw_sum" if ($return_fields{normw});
     push @crer_detail_fields, "rank" if ($return_fields{rank});
     %field_format = ("discarded"=>"%d",
-		    "density"=>"%.5f",
-		    "crer_pval"=>"%.2e",
-		    "pval_prod"=>"%.2e",
-		    "crer_sig"=>"%.2f",
-		    );
+		     "density"=>"%.5f",
+		     "crer_pval"=>"%.2e",
+		     "pval_prod"=>"%.2e",
+		     "crer_sig"=>"%.2f",
+	);
 
     ################################################################
     ## Add hits per matrix as CRER attributes
@@ -1274,7 +1300,7 @@ package main;
 			  "hit_pval_product",
 			  "weight_sum",
 			  "crer_size"
-			 );
+	);
     print $out "\tnormw_sum" if ($return_fields{normw});
     print $out "\n";
   }
@@ -1299,12 +1325,12 @@ package main;
 
     ## Skip first sequences if required
     if ($first_seq > 0) {
-	if ($sequence_number < $first_seq) {
-	    &RSAT::message::Info("Skipping sequence", $sequence_number) if ($main::verbose >= 4);
-	    next;
-	} elsif ($first_seq == $sequence_number) {
-	    &RSAT::message::Info("Starting scanning at sequence",  $first_seq) if ($main::verbose >= 2);
-	}
+      if ($sequence_number < $first_seq) {
+	&RSAT::message::Info("Skipping sequence", $sequence_number) if ($main::verbose >= 4);
+	next;
+      } elsif ($first_seq == $sequence_number) {
+	&RSAT::message::Info("Starting scanning at sequence",  $first_seq) if ($main::verbose >= 2);
+      }
     }
 
     ## last sequence
@@ -1339,9 +1365,9 @@ package main;
     ## Calculate the offset
     local $orig_pos = 0; ## $orig_pos is local because it has to be passed to subroutines for CRER positions
     local $ref_strand = "D"; ## Strand of the sequence relative to the
-			     ## reference (chromosome) for genomic
-			     ## coordinates. if this strand is R, all
-			     ## matches have to be reversed.
+    ## reference (chromosome) for genomic
+    ## coordinates. if this strand is R, all
+    ## matches have to be reversed.
     if ($origin eq "end") {
       $orig_pos = $seq_len + $main::offset + 1;
     } elsif ($origin eq "center") {
@@ -1389,7 +1415,7 @@ package main;
 			    "end=".$ref_end,
 			    "strand=".$ref_strand,
 			    "orig_pos=".$orig_pos,
-			   ) if ($main::verbose >= 10);
+	  ) if ($main::verbose >= 10);
     }
 
     ################################################################
@@ -1415,7 +1441,7 @@ package main;
 					 $seq_len,
 					 "smaller than sliding window size",
 					 $main::window,
-					)) if ($main::verbose >= 2);
+				    )) if ($main::verbose >= 2);
 	    $bg_model->calc_from_seq($current_seq);
 	  } else {
 	    ## initialize the model with the first window
@@ -1466,12 +1492,12 @@ package main;
 			       $seq_id,"len=".$seq_len,
 			       "orig=".$origin, "offset=".$offset,
 			       "with ".$matrix_nb." PSSM")
-	if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 50) == 1)));
+	  if (($main::verbose >= 3) || (($main::verbose >= 2) && (($sequence_number % 50) == 1)));
       &RSAT::message::psWarn("Scanning sequence with ".$matrix_nb." PSSM", $sequence_number,
 			     $seq_id,"len=".$seq_len, 
 			     "orig=".$origin, "offset=".$offset,
 			     $seq_id) 
-	if (($main::verbose >= 4) && (($sequence_number % 100) == 1));
+	  if (($main::verbose >= 4) && (($sequence_number % 100) == 1));
     }
 
     if ($calc_fields{sites}) {
@@ -1560,7 +1586,7 @@ package main;
 	    unless ($n_containing_region) {
 	      ## Start of an N-containing region
 	      &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
-		if ($main::verbose >= 4);
+		  if ($main::verbose >= 4);
 	    }
 	    $n_containing_region = 1;
 	    #		$n_containing_regions ++;
@@ -1570,7 +1596,7 @@ package main;
 	  ## Report the end of the N-containing region
 	  if (($n_treatment eq "skip") && ($n_containing_region)) {
 	    &RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
-	      if ($main::verbose >= 4);
+		if ($main::verbose >= 4);
 	    $n_containing_region = 0;
 	  }
 
@@ -1688,21 +1714,21 @@ package main;
     if (($return_fields{crer0})  && 
 	(defined($crer_per_seq{$seq_id}))) {
       &RSAT::message::TimeWarn( "Returning individual CRER for sequence", $seq_id)
-	if ($main::verbose >= 4);
+	  if ($main::verbose >= 4);
 
       my @ranked_crers = @{$crer_per_seq{$seq_id}};
       if (scalar(@ranked_crers) <= 0) {
 	&RSAT::message::Info("No CRER in sequence",
 			     $seq_id,
-			    ) if ($main::verbose >= 4);
+	    ) if ($main::verbose >= 4);
 	next;
       }
       if ($calc_fields{rank}) {
 	&RSAT::message::TimeWarn("Sorting CRER for sequence", $seq_id) if ($main::verbose >= 5);
 	## Sort CRERs by crer_sig
 	@ranked_crers =
-	  sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
-	    @ranked_crers;
+	    sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
+	@ranked_crers;
       }
 
 
@@ -1738,8 +1764,8 @@ package main;
       ## Sort predicted sites (matches) per position
       if (defined($matches_per_seq{$seq_id})) {
 	my @matches_sorted_per_position =
-	  sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
-	    @{$matches_per_seq{$seq_id}};
+	    sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
+	@{$matches_per_seq{$seq_id}};
 	&RSAT::message::Info("Sorted", scalar(@matches_sorted_per_position), "predicted sites in sequence", $seq_id) if ($main::verbose >= 5);
 
 
@@ -1765,7 +1791,7 @@ package main;
 	  $hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,2*$m,1)
 	} else {
 	  $hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,$m,1)
-	}
+    }
 	#        &RSAT::message::Debug("m=".$m,
 	#  			    "hit_p=".$hit_p,
 	#  			    "1 - hit_p=".(1 - $hit_p),
@@ -1795,8 +1821,8 @@ package main;
 				$seq_id,
 				"i=".$i,
 				"start_match_start=".$start_match_start,
-			       )
-	    if ($main::verbose >= 5);
+	      )
+	      if ($main::verbose >= 5);
 
 
 	  ## Initialize cumulative scores
@@ -1829,8 +1855,8 @@ package main;
 				  "end_match_start=".$end_match_start,
 				  "crer_size=".$crer_size,
 				  "site_distance=".$site_distance,
-				 )
-	      if ($main::verbose >= 5);
+		)
+		if ($main::verbose >= 5);
 
 	    ## Check thresholds on site distance
 	    if ($site_distance < $lth{crer_site_distance}) {
@@ -1840,7 +1866,7 @@ package main;
 				    "last_match_start:".$last_match_start,
 				    "site_distance:".$site_distance, "< ".$lth{crer_site_distance},
 				    "discarded", $discarded_sites,
-				   ) if ($main::verbose >= 5);
+		  ) if ($main::verbose >= 5);
 	      $discarded_sites++;
 	      $j++;
 	      next;
@@ -1851,7 +1877,7 @@ package main;
 				    "start=".$end_match_start,
 				    "last_match_start:".$last_match_start,
 				    "site_distance:".$site_distance, "> ".$uth{crer_site_distance}
-				   ) if ($main::verbose >= 5);
+		  ) if ($main::verbose >= 5);
 	      last;
 
 	    } else {
@@ -1940,13 +1966,13 @@ package main;
 				  "n=".$n,
 				  "sites=".$crer_site_nb,
 				  "discarded=".$discarded_sites,
-				 ) if ($main::verbose >= 5);
+		) if ($main::verbose >= 5);
 
 	    my $crer_pval = &sum_of_binomials($hit_proba_any_matrix, ## Proba of success at each trial i.e. the proba to observe a hit for at least one matrix at that sequence position
 					      $n,
 					      $crer_site_nb, ## Number of sites in the CRER
 					      $n,
-					     );
+		);
 	    $nb_of_binom_tests{$seq_id}++;
 	    $sum_binom_tests++;
 
@@ -2002,7 +2028,7 @@ package main;
 					"pval_prod:".sprintf("%.3g", $pval_prod),
 					"weight_sum:".sprintf("%.2f", $weight_sum),
 					#				      "sig:".sprintf("%.3g", $crer_sig),
-				       ));
+				   ));
 
 	    ## Set hits per matrix for the current crer
 	    my $hit_sum = 0;
@@ -2035,17 +2061,17 @@ package main;
     ## Print sorted matches
     if (($return_fields{sites})  && (defined($matches_per_seq{$seq_id}))) {
       &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id)
-	if ($main::verbose >= 4);
+	  if ($main::verbose >= 4);
 
       ################################################################
       ## Sort the matches
       my @ranked_matches = @{$matches_per_seq{$seq_id}};
       &RSAT::message::Debug(scalar(@ranked_matches), "sites were predicted in sequence", $seq_id)
-	if ($main::verbose >= 5);
+	  if ($main::verbose >= 5);
       if (scalar(@ranked_matches) <= 0) {
 	&RSAT::message::Info("No match in sequence",
 			     $seq_id,
-			    ) if ($main::verbose >= 4);
+	    ) if ($main::verbose >= 4);
 
 	next;
       }
@@ -2054,13 +2080,13 @@ package main;
 	if ($calc_fields{pval}) {
 	  ## Sort matches by significance
 	  @ranked_matches =
-	    sort {$b->get_attribute('sig') <=> $a->get_attribute('sig')}
-	      @ranked_matches;
+	      sort {$b->get_attribute('sig') <=> $a->get_attribute('sig')}
+	  @ranked_matches;
 	} else {
 	  ## Sort matches by weight score
 	  @ranked_matches =
-	    sort {$b->get_attribute('score') <=> $a->get_attribute('score')}
-	      @ranked_matches;
+	      sort {$b->get_attribute('score') <=> $a->get_attribute('score')}
+	  @ranked_matches;
 	}
       }
 
@@ -2103,7 +2129,8 @@ package main;
   ################################################################
   ## QUICK SCAN
   if (($return_fields{sites}) && ($quick_scan)) {
-    ## approximate the number of scored segments for eval calculation
+
+    ## Approximate the number of scored segments for eval calculation
     my $total_scored = 0;
     if ($return_fields{eval}) {
       foreach my $matrix_size (values(%matrix_sizes)) {
@@ -2119,7 +2146,7 @@ package main;
     foreach my $matrix (@matrices) {
       $m++;
       &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".$matrix_nb, $matrix->get_attribute("id"))
-	if ($main::verbose >= 2);
+	  if ($main::verbose >= 2);
       &QuickScan($matrix,"sites",$total_scored);
     }
   }
@@ -2142,11 +2169,9 @@ package main;
 		       $sequence_scores->{$seq_id}->{weight_sum},
 		       $sequence_scores->{$seq_id}->{sig_sum},
 		       $rank,
-		      ), "\n";
+	  ), "\n";
     }
   }
-
-
   close $in if ($main::infile{input});
 
 
@@ -2179,7 +2204,7 @@ package main;
 		     "Wmax",
 		     "Wrange",
 		     #		     "prior",
-		    ), "\n";
+	), "\n";
 
     my $m = 0;
     foreach my $matrix (@matrices) {
@@ -2195,7 +2220,7 @@ package main;
 		       sprintf("%.3f", $matrix->get_attribute("Wmin")),
 		       sprintf("%.3f", $matrix->get_attribute("Wmax")),
 		       sprintf("%.3f", $matrix->get_attribute("Wrange")),
-		      );
+	  );
       #      my %prior = $matrix->getPrior();
       print $out "\t";
       foreach my $letter (sort keys %prior) {
@@ -2311,7 +2336,7 @@ package main;
 
       ## Calculate expected number of occurrences with a score >= x
       &RSAT::message::TimeWarn("Calculating expected inverse cumulative distribution.")
-	if ($main::verbose >= 2);
+	  if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
@@ -2346,7 +2371,7 @@ package main;
 
       ## Calculate significance of the number of motif occurrences
       &RSAT::message::TimeWarn("Calculating probabilities for the score distribution.")
-	if ($main::verbose >= 2);
+	  if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
@@ -2378,13 +2403,13 @@ package main;
 
 	    ## Calcualte the binomial P-value
 	    &RSAT::message::Debug("Calculating pval", $matrix_name, $score, $x, $n, $hit_p)
-	      if ($main::verbose >= 5);
+		if ($main::verbose >= 5);
 	    $score_distrib->{$matrix_name}->{$score}->{occ_pval} =
-	      &RSAT::stats::sum_of_binomials($hit_p, ## prior probabilty
-					     $n, ## Number of trials
-					     $x, ## Min number of successes
-					     $n, ## Max number of successes
-					    );
+		&RSAT::stats::sum_of_binomials($hit_p, ## prior probabilty
+					       $n, ## Number of trials
+					       $x, ## Min number of successes
+					       $n, ## Max number of successes
+		);
 	    $nb_of_tests++;
 	  }
 	  if ($main::verbose >= 4) {
@@ -2438,7 +2463,7 @@ package main;
   ################################################################
   ###### Finish verbose
   if ($main::verbose >= 1) {
-	
+    
     ## Sequence statistics
     printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
     if ($origin eq "genomic") {
@@ -2459,7 +2484,7 @@ package main;
 			  sprintf("%-${max_name_len}s", "name"),
 			  "matches",
 			  "scored",
-			 ), "\n";
+	), "\n";
 
     my $total_scored = 0;
     my $total_matches = 0;
@@ -2473,14 +2498,14 @@ package main;
 			     sprintf("%-15s", $matrix->get_attribute("name")),
 			     sprintf("%d", $matrix->get_attribute("matches")),
 			     sprintf("%d", $matrix->get_attribute("scored")),
-			    ), "\n";
+	  ), "\n";
     }
     print $main::out join ("\t", ";",
 			   "",
 			   sprintf("%-15s", "TOTAL"),
 			   $total_matches,
 			   $total_scored,
-			  ), "\n";
+	), "\n";
     if (($return_fields{crer}) || ($return_fields{crer0})) {
       print $main::out $main::warnings;
       printf $main::out "; %-21s\n","Number of Binomial tests per sequence (can be used for multi-testing correction)";
@@ -3738,17 +3763,16 @@ sub CheckQuickScan {
 ## Use matrix-scan-quick (developed by Matthieu Defrance) to scan the sequences
 sub QuickScan {
   my ($matrix, $scan_mode, $total_scored) = @_;
-
-
-  &RSAT::message::TimeWarn("Scanning with matrix-scan-quick", "mode=".$scan_mode) if ($main::verbose >= 2);
-
+  
+  &RSAT::message::TimeWarn("Scanning with matrix-scan-quick", "mode=".$scan_mode."") if ($main::verbose >= 2);
+  
   ################################
   ## Matrix
   my $matrix_name = $matrix->get_attribute("name");
   $matrix->force_attribute("pseudo","0"); ##pseudocounts not added here
-
-  ## extract each matrix into a separate file
-  ## (matrix-scan-quick works with one matrix at a time, in tab format)
+  
+  ## Extract each matrix into a separate file (matrix-scan-quick works
+  ## with one matrix at a time, in tab format)
   my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-scan-single-matrix_".&AlphaDate());
   my $tmp_matrix_file =  $tmp_file_name.".tab";
   my $matrix_handle = &OpenOutputFile($tmp_matrix_file);
@@ -3763,8 +3787,10 @@ sub QuickScan {
 
   ################################
   ## Background
-  if ($main::bg_quick_file eq '') {
-    ## background format should be Inclusive (=motifsampler)
+  if ($main::quick_bg_file eq '') {
+
+    ## For matrix-scan-quick, background model file should be in
+    ## Inclusive format (=motifsampler)
     if (defined($main::infile{bg})) {
       if ($bg_in_format ne "motifsampler") {
   	my $tmp_file_name = &RSAT::util::make_temp_file("","convert-background-model_".&AlphaDate());
@@ -3774,10 +3800,12 @@ sub QuickScan {
 	&RSAT::message::Debug("Converting background to motifsampler format:", $convert_bg_cmd) if ($main::verbose >= 3);
 	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
 	&RSAT::server::DelayedRemoval($tmp_bg_file);
-	$bg_quick_file = $tmp_bg_file;
+	$quick_bg_file = $tmp_bg_file;
       } else {
-	$bg_quick_file = $main::infile{bg};
+	$quick_bg_file = $main::infile{bg};
       }
+
+
     } elsif ($main::markov > -1) {
       ## matrix-scan-quick does not compute Markov models from the
       ## input set -> we have to create a Markov model in a
@@ -3796,7 +3824,7 @@ sub QuickScan {
       &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_file) if ($main::verbose >= 3);
       &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_bg_file);
-      $bg_quick_file = $tmp_bg_file;
+      $quick_bg_file = $tmp_bg_file;
     }
   }
 
@@ -3807,7 +3835,9 @@ sub QuickScan {
   #  }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
   my $quick_cmd = "";
+
   if ($last_seq > 0) {
+    ## Use convert-seq to select the top sequences if requested
     $quick_cmd = $SCRIPTS."/convert-seq";
     $quick_cmd .= " -i ".$main::infile{input};
     $quick_cmd .= " -from fasta -to fasta";
@@ -3822,14 +3852,13 @@ sub QuickScan {
   $quick_cmd .= " -m ".$matrix_quick_file;
   $quick_cmd .= " -pseudo ".$pseudo_counts; ## pseudocounts are added here
   $quick_cmd .= " -name ".$matrix_name;
-  $quick_cmd .= " -bgfile ".$bg_quick_file;
+  $quick_cmd .= " -bgfile ".$quick_bg_file;
   if ($main::both_strands) {
     $quick_cmd .= " -2str";
   } else {
     $quick_cmd .= " -1str";
   }
 
-#  die "HELLO\t", $quick_cmd;
 
   ## Run matrix-scan-quick and parse the result
   ## Different for each scan mode
@@ -3837,7 +3866,9 @@ sub QuickScan {
     $quick_cmd .= " -return distrib";
 
     &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 2);
-    open QUICK, "$quick_cmd 2>/dev/null |";
+#    open QUICK, "$quick_cmd 2>/dev/null |"; ## I suppress the redirection of errors from matrix-scan-quick to /dev/null (JvH, 2014-10-27)
+    open QUICK, "$quick_cmd |";
+
     ## columns are:
     ## score	occ	co	cco	ccdf
     my $l=0;
@@ -3870,7 +3901,7 @@ sub QuickScan {
     ## Scan mode = sites
   } elsif ($scan_mode eq "sites") {
     $quick_cmd .= " -return sites";
-    $quick_cmd .= " -origin ".$main::origin;
+    $quick_cmd .= " -origin ".$main::origin unless ($main::origin eq "genomic");
     $quick_cmd .= " -v ".$quick_verbose if ($main::verbose >= 1);
     if (defined($lth_matrix->{$matrix_name}->{score})) {
       $quick_cmd .= " -t ".$lth_matrix->{$matrix_name}->{score};
@@ -3886,13 +3917,13 @@ sub QuickScan {
       $matrix_distrib_cmd .= " -m ".$matrix_quick_file;
       $matrix_distrib_cmd .= " -matrix_format tab";
       $matrix_distrib_cmd .= " -pseudo ".$pseudo_counts;
-      $matrix_distrib_cmd .= " -bgfile ".$bg_quick_file;
+      $matrix_distrib_cmd .= " -bgfile ".$quick_bg_file;
       $matrix_distrib_cmd .= " -bg_pseudo 0"; ## bg_pseudo already included in the bgfile
       $matrix_distrib_cmd .= " -bg_format MotifSampler";
       $matrix_distrib_cmd .= " -decimals ".$decimals;
       $matrix_distrib_cmd .= " -o ".$tmp_distrib_file;
 
-      &RSAT::message::Debug("Calculating matrix distribution",$matrix_distrib_cmd) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Calculating matrix distribution",$matrix_distrib_cmd) if ($main::verbose >= 2);
       &doit($matrix_distrib_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
       &RSAT::server::DelayedRemoval($tmp_distrib_file);
 
@@ -3916,9 +3947,11 @@ sub QuickScan {
     }
 
     #################################
-    ## run matrix-scan-quick
+    ## Run matrix-scan-quick
     &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 2);
-    open QUICK, "$quick_cmd 2>/dev/null |";
+    
+##    open QUICK, "$quick_cmd 2>/dev/null |"; ## I suppress the redirection of errors from matrix-scan-quick to /dev/null (JvH, 2014-10-27)
+    open QUICK, "$quick_cmd |"; 
     my $l=0;
     my $comments="";
     while (<QUICK>) {
