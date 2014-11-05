@@ -164,7 +164,8 @@ package main;
   }
   local $d3_base_formats = join ",", @d3_base_formats;
   local $d3_base_format = "";
-  local $d3_base_url= $ENV{RSAT}."/public_html/lib/d3/";
+  #local $d3_base_url= $ENV{RSAT}."/public_html/lib/d3/";
+  local $d3_base_url= "http://d3js.org/d3.v3.min.js";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -236,7 +237,6 @@ package main;
 
   ## Matrices
   local @matrices = ();
-#  local @temp = ();
   local $show_consensus = 0;
 
 
@@ -2070,8 +2070,8 @@ sub Creates_website(){
 	chomp;
 	$line = $_;
 
-	### Fix the d3 library path
-	$line =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
+##	### Fix the d3 library path
+##	$line =~ s|src=\"\"|src=\"$d3_base_url/d3.v3.js\"|;
 
 	## Fill the summary table
 	$line =~ s/--motifs--/$number_of_motifs/;
