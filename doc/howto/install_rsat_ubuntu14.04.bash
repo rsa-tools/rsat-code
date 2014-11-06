@@ -753,3 +753,13 @@ grep ^processor /proc/cpuinfo
 grep MemTotal /proc/meminfo
 
 
+################################################################
+## OPTIONAL
+## Install some software tools for NGS analysis
+cd ${RSAT}
+
+make -f makefiles/install_software.mk install_weblogo
+make -f makefiles/install_software.mk install_d3
+make -f makefiles/install_software.mk install_meme
+
+
