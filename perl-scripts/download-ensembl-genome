@@ -264,7 +264,7 @@ package	main;
   ## Get genome_dir
   my @fields = split(":",$slices[0]->name());
   $assembly_version = $fields[1];
-  $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix)
+  $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix);
   &RSAT::message::Info("Full species ID", $full_species_ID) if ($main::verbose >= 2);
   $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version, $species_suffix);
   &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 2);
