@@ -188,12 +188,16 @@ package	main;
   our $out = STDOUT;
   our $out_var = "";
   our $db = "ensembl";
+  our $taxid = "";
+  our $species = "";
+  our $assembly_version = "";
+  our $species_suffix = "";
+  our $full_species_ID = "";
 #  our $data_dir = &Get_data_dir();
   our $ensembl_version_safe = &get_ensembl_version_safe($db);
   our $ensembl_version_latest = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
 
-  our $species = "";
   our $get_available_species = 0;
   our $ref_seq = "";
    ## Tasks
@@ -306,8 +310,13 @@ package	main;
   &RSAT::error::FatalError("No assembly version found for $species and $db version $ensembl_version. Use download-ensembl-genome before download-ensembl-variations.") unless ($assembly_version);
 
 
-  # Check if genome version install
-  my $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version);
+  # Check if genome version has been installed
+  $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix);
+  &RSAT::message::Info("Full species ID", $full_species_ID) if ($main::verbose >= 2);
+  $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version, $species_suffix);
+  &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 2);
+  printf $out ("; %-22s\t%s\n", "Full species ID", $full_species_ID);
+  printf $out ("; %-22s\t%s\n", "Genome directory", $genome_dir);
   &RSAT::error::FatalError($genome_dir, "does not exist. Use download-ensembl-genome before download-ensembl-variations.") 
       unless (-d $genome_dir);
 
@@ -334,7 +343,7 @@ package	main;
   &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
   &RSAT::message::Info("Species gvf URL --> $species_gvf_ftp") if ($main::verbose >= 2);
 
-  my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version);
+  my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version, $species_suffix);
   my $gvf_file = $variation_dir."/".ucfirst($species).".gvf";
   if ($tasks{download_gvf}){
       
@@ -996,7 +1005,7 @@ Supported tasks:
 
 =item B<download_gvf>
 
-Scan sequences with matrix-scan
+Download the GVF (Genome variant file) from Ensembl.
 
 =item B<report_snps>
 
@@ -1073,6 +1082,21 @@ Ensembl would change their file formats or locations.
       } else {
         &RSAT::error::FatalError($version, "Invalid value for Ensembl version.");
       }
+=pod
+
+=item B<-species_suffix>
+
+Suffix to append to the full species ID.
+
+By default, the full species ID is composed by concatenating the
+Ensembl species and assembly version. The option I<-species_suffix>
+allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
+will be appended to the full species ID.
+
+=cut
+    } elsif ($arg eq "-species_suffix") {
+    $species_suffix = shift(@arguments);
+
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -1094,12 +1118,13 @@ sub Verbose {
   &PrintArguments($out);
 
   if (%main::outfile) {
-    print $out "; Output files\n";
-    while (my ($key,$value) = each %main::outfile) {
-      printf $out ";\t%-13s\t%s\n", $key, $value;
-    }
-
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", &get_ensembl_version_safe();
-  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
+      print $out "; Output files\n";
+      while (my ($key,$value) = each %main::outfile) {
+	printf $out ";\t%-13s\t%s\n", $key, $value;
+      }
+      
+      printf $out ("; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version);
+      printf $out ("; %-22s\t%s\n", "Ensembl version",$ensembl_version);
+      printf $out ("; %-22s\t%s\n", "Species suffix", $species_suffix) if ($species_suffix);
   }
 }
