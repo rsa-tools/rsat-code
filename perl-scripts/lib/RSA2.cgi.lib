@@ -1211,7 +1211,7 @@ sub GetBackgroundModel {
 			       -default=>$default{markov_order});
     }
     if ($params{markov_message}) {
-      print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-consuming.</font>");
+      print ("&nbsp;&nbsp;&nbsp;<font color='orange'>High orders can be time-consuming, but order 0 is generally not representative</font>. We recommend orders 1 or 2.");
     }
   }
 

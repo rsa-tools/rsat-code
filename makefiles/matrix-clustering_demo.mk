@@ -15,7 +15,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
-#MIN_W=4
+MIN_W=5
 V=2
 
 ## Define a set of demo files
@@ -58,14 +58,15 @@ compa_footprint_discovery:
 ## Run matrix-clustering on one demo set (the particular cases will be
 ## specified below)
 CLUSTER_PREFIX=${DEMO_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
-CLUSTER_DIR=results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
+CLUSTER_DIR=results/matrix-clustering_results/${DEMO_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-i ${MATRIX_FILE} -matrix_format tf \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
+		-lth w ${MIN_W} \
 		-cons \
-		-export json -d3_base file -hclust_method ${HCLUST_METHOD} \
+		-export json -d3_base link -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
 
@@ -73,7 +74,8 @@ cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
 	${CLUSTER_CMD}
-	@echo "		${CLUSTER_FILE_PREFIX}_index.html"
+	@echo "		${CLUSTER_CMD}"
+	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 cluster_peakmo_no_threshold:
@@ -98,7 +100,7 @@ cluster_peakmo_Oct4_threhsolds:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} cluster DEMO_PREFIX=${OCT4_PREFIX}
-## We should add this option: OPT='-lth w 5'
+
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
@@ -108,7 +110,7 @@ cluster_footprints:
 
 
 ## Cluster all motifs from RegulonDB
-RDB_CLUSTER_DIR=results/regulondDB_clusters
+RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
@@ -125,13 +127,14 @@ JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
-	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.75 MIN_NCOR=0.4
+	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
 
 #############################
 ## Cluster one cisBP group
-CISBP_GROUPS=human mouse
-CISBP_GROUP=mouse
-CISBP_PREFIX=${CISBP_GROUP}_motifs_cisBP2013
+## Default: Mus_musculus
+CISBP_GROUPS=Homo_sapiens Mus_musculus
+CISBP_GROUP=Mus_musculus
+CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
 CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
 CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
 cluster_cisbp_one_group:

@@ -445,6 +445,7 @@ sub CountOligos {
   if ($quick_count) {
     %patterns = &CountWords();
 
+
     ## count-words does not inform us about te number and length of
     ## the sequences, we do it separately
     if (($main::verbose >= 1) && ($infile{input})) {
@@ -463,6 +464,7 @@ sub CountOligos {
 	&RSAT::message::Debug( $sequence_number, $current_id, $seq_length, $sum_seq_length) if ($main::verbose >= 5);
       }
       close(SEQLEN);
+
     } else {
       $sequence_number = "NA (quick mode)";
       $sum_seq_length = "NA (quick mode)";

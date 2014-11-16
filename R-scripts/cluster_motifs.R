@@ -8,14 +8,9 @@
 ## It returns the resulting tree in json format, which can be loaded
 ## by the d3 library for display purposes.
 
-## TO DO
-## - Define an argument infile.consensus, providing a 3-columns file with the logo ID + its consensus in direct and reverse complementary strands. This consensus file should be exported by comapre-matrices.
-## -> this consensus could e used to display trees in R, without requiring the
-
 ## Load required libraries
 suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
-## suppressPackageStartupMessages(library("dendroextras", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 
 ## Redefine the main directory (this should be adapted to local configuration)
@@ -103,6 +98,7 @@ if (export == "newick") {
   rm(temp.tree)
 }
 
+
 #######################################
 ### Creates and parse the json file
 halfway.tree <- hclustToTree(tree)
@@ -113,7 +109,7 @@ jsonTree <- toJSON(halfway.tree)
 jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
 jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
 jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
-#jsonTree <- gsub(",\\s*\n\\s*}", "\n}", jsonTree, perl = TRUE)
+
 
 #############################
 ### Prints the .json file 
@@ -162,20 +158,20 @@ forest.list[[paste("forest_", 1, sep = "")]] <- motifs.info
 for(nb in 1:length(tree$labels)){
   
   ## Add the aligned consensus
-  tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], sep = "   ")
+  tree$labels[nb] <- paste(motifs.info[[get.id(nb)]][["consensus"]], motifs.info[[get.id(nb)]][["name"]], sep = "   ")
   
-  ## Add the new labels
-  for(label in labels){
-    if(label == "consensus"){
-      next
-    } else if(label == "id"){
-      tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
-    } else if(label == "number"){
-      tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
-    } else if(label == "strand"){
-      tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
-    }
-  }
+  ## ## Add the new labels
+  ## for(label in labels){
+  ##   if(label == "consensus"){
+  ##     next
+  ##   } else if(label == "id"){
+  ##     tree$labels[nb] <- paste(tree$labels[nb], get.id(nb), sep = " ")
+  ##   } else if(label == "number"){
+  ##     tree$labels[nb] <- paste(tree$labels[nb], nb, sep = " ")
+  ##   } else if(label == "strand"){
+  ##     tree$labels[nb] <- paste(tree$labels[nb], motifs.info[[get.id(nb)]][["strand"]], sep = " ")
+  ##   }
+  ## }
 }
 
 
@@ -200,9 +196,10 @@ for(i in 1:length(cluster.names.order.unique)){
   labels.rep <- length(which(cluster.names.order == cluster.names.order.unique[i]))
   counter <- counter + 1
   color.code <- append(color.code, rep(counter, times = labels.rep))
-  ## if(counter == 3){
-  ##   counter <- 0
-  ## }
+  ## Reset the counter to include only black, red, gree and blue colors
+  if(counter == 4){
+      counter <- 0
+  }
 }
 tree.dendro <- as.dendrogram(tree)
 labels_colors(tree.dendro) <- color.code
@@ -231,7 +228,7 @@ for (plot.format in c("pdf", "png")) {
   }
 
   par(mar=c(3,2,1,mar4),family="mono")
-  plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(labels, collapse = ","), sep = " "))
+  plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(c("consensus", "name"), collapse = ","), sep = " "))
   dev.off()
 }
 
@@ -252,68 +249,67 @@ verbose(paste("merge attributes table", attributes.file), 1)
 ## Produce the forests: when a pair of clusters is
 ## not aligned, it is splited and each part (forest)
 ## is realigned and printed in pdf and png
-if (forest.nb > 1){
   
-  ## Creates a folder with where the separated information
-  ## of each cluster will be stored
-  system(paste("mkdir -p ", out.prefix, "_clusters_information", sep = ""))
-  clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
-  
-  global.motifs.info <<- motifs.info
-  forest.list <- list()
+## Creates a folder with where the separated information
+## of each cluster will be stored
+clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
+dir.create(clusters.info.folder, recursive = TRUE, showWarnings = FALSE)
 
-  for(nb in 1:length(clusters)){
+global.motifs.info <<- motifs.info
+forest.list <- list()
+
+for(nb in 1:length(clusters)){
     
     cluster.nb <<- nb 
-
+    
     verbose(paste("Exploring the cluster generated: ", nb ), 2)
-
+    
     internal.nodes.attributes <<- list()
     motifs.info <<- list()
     merge.level.leaves <<- list()
     description.table <<- NULL
     compare.matrices.table <<- NULL
     tree <<- NULL
-
+    
     ## Creates an individual folder for each cluster
     cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", cluster.nb, sep = ""))
-    dir.create(cluster.folder, recursive = TRUE)
+    dir.create(cluster.folder, recursive = TRUE, showWarnings = FALSE)
     
     ids <- clusters.ids[[paste("cluster_", nb, sep = "")]]
-
+    
     ## Skips the hierarchical clustering step if the cluster
     ## is a single node
     if(length(ids) < 2){
-      forest.list[[nb]] <- NULL
-      forest.list[[paste("cluster_", nb, sep = "")]][[ids]] <- global.motifs.info[[ids]]
-      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]] <- gsub("-", "", forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]])
-      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["number"]] <- as.numeric(1)
-      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer"]] <- as.numeric(0)
-      forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["offset_down"]] <- as.numeric(0)
-
-      ## Crete a JSON file for a trees with a single node
-      ## In this situation this step is required because it is not possible to use the hclustToJson function
-      label.single.node <- as.vector(global.description.table[global.description.table$id == ids, ]$label) 
-      JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", label.single.node, "\",\n}\n]\n}", sep = "")
-      json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
-      verbose(paste("JSON tree file", json.file), 1)
-      writeLines(JSON.single.node, con=json.file)
-
-      ## For consistency, print the empty file
-      ## It will be erased later
-      JSON.empty <- ";Empty_file\n"
-      JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
-      write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-
-      ## For consistency, Create the folder with the merged consensuses
-      system(paste("mkdir -p ", cluster.folder, "/merged_consensuses", sep = ""))
-      flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
-      if(flag >= 1){
-        system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
-      }
-      next
+        forest.list[[nb]] <- NULL
+        forest.list[[paste("cluster_", nb, sep = "")]][[ids]] <- global.motifs.info[[ids]]
+        forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]] <- gsub("-", "", forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]])
+        forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["number"]] <- as.numeric(1)
+        forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer"]] <- as.numeric(0)
+        forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["offset_down"]] <- as.numeric(0)
+        
+        ## Crete a JSON file for a trees with a single node
+        ## In this situation this step is required because it is not possible to use the hclustToJson function
+        label.single.node <- as.vector(global.description.table[global.description.table$id == ids, ]$label) 
+        JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", label.single.node, "\",\n}\n]\n}", sep = "")
+        json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+        verbose(paste("JSON tree file", json.file), 1)
+        writeLines(JSON.single.node, con=json.file)
+        
+        ## For consistency, print the empty file
+        ## It will be erased later
+        JSON.empty <- ";Empty_file\n"
+        JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
+        write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+        
+        ## For consistency, Create the folder with the merged consensuses
+        system(paste("mkdir -p ", cluster.folder, "/merged_consensuses", sep = ""))
+        flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
+        if(flag >= 1){
+            system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
+        }
+        next
     }
-
+    
     #############################################
     ## Align the internal cluster of they have
     ## more than a single node
@@ -339,7 +335,7 @@ if (forest.nb > 1){
     dist.table <- distances.objects[[1]]
     dist.matrix <- distances.objects[[2]]
     
-
+    
     #############################################
     ## Runs and plot the hierarchical cluster
     tree <<- hclust(dist.matrix, method = hclust.method)
@@ -349,24 +345,23 @@ if (forest.nb > 1){
     ## Creates and parse the json file
     halfway.tree <- hclustToTree(tree)
     jsonTree <- toJSON(halfway.tree)
-
+    
     ## Fix some little technical issues for JSON compatibility with the tree display javascript
     jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
     jsonTree <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree, "}", sep = "")
     jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
-    ## jsonTree <- gsub(",\\s*\n\\s*}", "\n}", jsonTree, perl = TRUE)
     
     ############################
     ## Prints the .json file 
     json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
     verbose(paste("JSON tree file", json.file), 1)
     writeLines(jsonTree, con=json.file)
-
+    
     motifs.info <<- list()
-
+    
     ## Saves the nodes clustered on each level of the merge
     merge.levels.leaves <<- leaves.per.node(tree)
-
+    
     ##################
     ## Produce the table to add the merged
     ## consensuses into the logo tree
@@ -401,7 +396,6 @@ if (forest.nb > 1){
       if ((child1 > 0) && (child2 > 0)) {
         align.clusters(child1, child2)
       }
-
       
       ## Create the files with the aligned matrices
       single.mat.files <<- NULL
@@ -434,11 +428,6 @@ if (forest.nb > 1){
       }
     }
     
-    ## for(x in 1:length(tree$labels)){
-    ##   tree$labels[x] <- paste(motifs.info[[get.id(x)]][["consensus"]], x, sep = " ")
-    ## }
-
-    
     ## Get the aligment width, to calculate the limits of the plot
     alignment.width <- sapply(tree$labels, function(X){
       nchar(X)
@@ -469,30 +458,31 @@ if (forest.nb > 1){
     ## }
     forest.list[[paste("cluster_", nb, sep = "")]] <- motifs.info
   }
-}
+
 
 #################################
 ## Produce the aligment table
 if(forest.nb > 1){
   alignment.table <- sapply(forest.list, function(X){
     sapply(X, function(Y){
-      return(c(Y[["number"]], Y[["strand"]], Y[["spacer"]], Y[["offset_down"]], Y[["consensus"]]))
+      return(c(Y[["number"]], Y[["strand"]], Y[["spacer"]], Y[["offset_down"]], Y[["consensus"]], Y[["name"]]))
     })
   })
 } else{
   alignment.table <- lapply(forest.list[[1]], function(X){
-    return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]]))
+    return(c(X[["number"]], X[["strand"]], X[["spacer"]], X[["offset_down"]], X[["consensus"]], X[["name"]]))
   })
 }
 alignment.table <- unlist(alignment.table)
 names(alignment.table) <- NULL
-alignment.table <- data.frame(matrix(alignment.table, ncol = 5, byrow = TRUE))
-colnames(alignment.table) <- c("number", "strand", "spacer", "offset_down", "consensus")
+alignment.table <- data.frame(matrix(alignment.table, ncol = 6, byrow = TRUE))
+colnames(alignment.table) <- c("number", "strand", "spacer", "offset_down", "consensus", "name")
 
 ## Produce the column ID
 ids.names <- unlist(as.vector(sapply(forest.list, function(x){names(x)})))
 names(ids.names) <- ids.names
 alignment.table$id <- ids.names
+
 ## Produce the column Width
 width.tmp <- unlist(sapply(forest.list, function(X){
   sapply(X, function(Y){
@@ -511,8 +501,8 @@ for(name in forest.names){
 alignment.table$cluster <- forest.id
 
 ##  Re-order the table and export it
-alignment.table <- alignment.table[,c(6, 8, 2:4, 7, 5)]
-colnames(alignment.table) <- c("#id", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
+alignment.table <- alignment.table[,c(7, 6, 9, 2:4, 8, 5)]
+colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
 alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
 

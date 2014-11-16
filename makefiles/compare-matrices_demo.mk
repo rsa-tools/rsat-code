@@ -49,6 +49,23 @@ peakmo_vs_jaspar_param:
 	@echo "Result	${PEAKMO_VS_JASPAR}_index.html"
 
 ################################################################
+## Use compare-matrices-quick (less options than compare-matrices, but
+## 100 times faster)
+COMPA_SUFFIX_QUICK=w${MIN_W}_Ncor${MIN_NCOR}
+PEAKMO_VS_JASPAR_QUICK_DIR=results/peakmo_vs_jaspar_quick
+PEAKMO_VS_JASPAR_QUICK=${PEAKMO_VS_JASPAR_QUICK_DIR}/${PEAKMO_PREFIX}__vs__${JASPAR_PREFIX}_${COMPA_SUFFIX_QUICK}_quick
+peakmo_vs_jaspar_quick:
+	@mkdir -p ${PEAKMO_VS_JASPAR_QUICK_DIR}
+	compare-matrices-quick -v ${V} \
+	-file1 ${PEAKMO_MATRICES} \
+	-file2 ${JASPAR_MATRICES} \
+	-lth_w ${MIN_W} \
+	-lth_ncor ${MIN_NCOR} \
+	-o ${PEAKMO_VS_JASPAR_QUICK}
+	@echo ${PEAKMO_VS_JASPAR_QUICK}
+
+
+################################################################
 ## Case 2: compare all the motifs from a reference database
 ## (RegulonDB, Jaspar).
 DB_PREFIX=${JASPAR_PREFIX}

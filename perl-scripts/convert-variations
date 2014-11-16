@@ -20,9 +20,10 @@ $program_version
 
 =head1 DESCRIPTION
 
-Convert a variation file in different format
+Convert a variation file between different formats.
 
-/!\ To convert to VCF format, raw genomic sequence must be install
+/!\ To convert to VCF format, raw genomic sequence must be installed
+(I<download-ensembl-genome>).
 
 =head1 AUTHORS
 
@@ -44,17 +45,66 @@ Jeremy.Delerce@univ-amu.fr
 
 VCF, GVF, rsat-var
 
+=head2 Variant Call Format (VCF)
+
+http://en.wikipedia.org/wiki/Variant_Call_Format
+
+This format was defined for the 1000 genomes project. It is no longer
+maintained. The converter supports it merely for the sake of backwards
+compatibility.
+
+=head2 Genome Variant Format (GVF)
+
+"The Genome Variant Format (GVF) is a type of GFF3 file with additional
+pragmas and attributes specified. The GVF format has the same nine
+column tab delimited format as GFF3 and all of the requirements and
+restrictions specified for GFF3 apply to the GVF specification as
+well." (quoted from the Sequence Ontology)
+
+http://www.sequenceontology.org/resources/gvf_1.00.html
+
+=head2 RSAT variation format (rsat-var)
+
+Tab-delimited format with a specific column order, used as input by
+I<retrieve-variation-seq>. 
+
+This format presents several advantages for scanning variations with
+matrices.
+
+=over
+
+=item tab-delimited organization
+
+Each field comes in a separate column -> the parsing does not require
+to further parse the last column of the GVF file.
+
+=item File separated per chromosome
+
+This is a matter of organization rather than an intrinsic property of
+the format (we could have chromosome-separated GVF files, or
+whole-genomes RSAT variant files), but it speeds up the search for
+variants.
+
+=item Combined variations
+
+When several variants are mutually overlapping (for example one SNP
+and one insertion), I<install-ensembl-variations> computes all
+possible combinations variations (for instance apply the substitions
+on the insertion).
+
+=back
+
 =head1 OUTPUT FORMAT
 
-A tab delimited on wanted format
+A tab delimited on selected output format
 
 
 =head1 SEE ALSO
 
-=head2 retrieve-snp-seq
+=head2 retrieve-variation-seq
 
-I<retrieve-snp-seq> uses files product by I<install-ensembl-variation>
-to make all the sequence of a variation.
+I<retrieve-variation-seq> retrieves variant information and sequences using ensembl variation 
+files obtained with the program I<download-ensembl-variations>.
 
 =head1 WISH LIST
 
@@ -156,7 +206,9 @@ package	main;
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  &Verbose() if ($main::verbose >= 1);
+  if ($main::to eq "rsat-var") {
+      &Verbose() if ($main::verbose >= 1);
+  }
 
   ################################################################
   ## Download input from remote URL
@@ -202,39 +254,42 @@ package	main;
   ($main::in) = &OpenInputFile($main::infile{input});
 
 
+  my $l = 0; ## Line counter for the input file
   while (<$main::in>) {
-    next if (/^;/); ## Skip RSAT-like comment lines
-    next unless (/\S/); ## Skip empty lines
+      $l++;
+      next if (/^;/); ## Skip RSAT-like comment lines
+      next unless (/\S/); ## Skip empty lines
+      
 
-
-    while (/^#/) {
-      print $out $_ unless (/^##fileformat/ || /^#[^#]/);
-      $_ = <$main::in>;
-    }
-
-    chomp();
-    if ($legend) {
-      print $out "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" if ($to eq 'vcf');
-      print $out "#seqid\tsource\ttype\tstart\tend\tscore\tstrand\tphase\tattribute\n" if ($to eq 'gvf');
-      print $out "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tis_supvar\tin_supvar\n" if ($to eq 'rsat-var');
-      $legend = 0;
-    }
-
-    ### Input variation
-    my %variation =  ();
-
-    ## VCF file
-    if ($from eq "vcf") {
-	my @token = split("\t",$_);
-	&RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
-	if (scalar( @token ) < 8 ) {
-	    &RSAT::message::Warning("$_ skip. VCF line must be at least 8 columns");
-	    next;
-	}
-	
-      %variation = &Get_var_from_vcf(\@token);
-    }
-
+      while (/^#/) {
+	  print $out $_ unless ((/^##fileformat/) || (/^#[^#]/));
+	  $_ = <$main::in>;
+      }
+      
+      chomp();
+      if ($legend) {
+	  print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
+	  print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
+	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'rsat-var');
+	  $legend = 0;
+      }
+      
+      ### Read input files acording to the defined formart -from
+      my %variation =  ();
+      
+      ## VCF file
+      if ($from eq "vcf") {
+	  my @token = split("\t",$_);
+	  &RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
+	  if (scalar( @token ) < 8 ) {
+	      &RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 8 columns", "Skipped");
+	      print $_ if ($main::verbose >= 3);
+	      next;
+	  }
+	  
+	  %variation = &Get_var_from_vcf(\@token);
+      }
+      
 
     ## RSAT file
     if ($from eq 'rsat-var') {
@@ -313,12 +368,20 @@ sub Get_var_from_vcf {
   $variation{'alt'} = $token[4];
   $variation{'SO'} = "sequence_alteration";
   $variation{'validate'} = 0;
+  $variation{'m_allele_freq'}="NA";
   $variation{'attribute'} = ();
 
-  # Check validate value and attribute
+  ## Check validate value and attribute
+  ## Split attribuites and store values in a hash
   foreach (split(";",$token[7])) {
     my ($key,$value) = split("=",$_);
     $value = 1 unless ($value);
+    if($key eq "CAF"){ ## Retrieve minor allele frequency information from vcf entry
+	my ($major_freq,$minor_freq)=split(",",$value);
+	$minor_freq=~s/\]//;
+	$variation{'m_allele_freq'}=$minor_freq;
+	next; ## do not store the CAF information in attributes,include it manually on the gvf and rsat outfiles with the correct naming
+    }
     push(@{$variation{'attribute'}},$key.'='.$value);
     $variation{'validate'} = 1 if ($validate_pattern{$key});
   }
@@ -385,6 +448,7 @@ sub Get_var_from_rsat {
   $variation{'alt'} = $token[6];
   $variation{'SO'} = $token[7];
   $variation{'validate'} = $token[8];
+  $variation{'m_allele_freq'} = $token[9];
   $variation{'attribute'} = ();
   push (@{$variation{'attribute'}}, "validate=1") if ($variation{'validate'});
 
@@ -407,6 +471,7 @@ sub Get_var_from_gvf {
   $variation{'alt'} = "";
   $variation{'SO'} = $token[2];
   $variation{'validate'} = 0;
+  $variation{'m_allele_freq'}="NA";
   $variation{'attribute'} = ();
 
   foreach (split(";",$token[8])) {
@@ -424,12 +489,18 @@ sub Get_var_from_gvf {
       $variation{'ref'} = $value;
 
     } elsif ($key eq "Variant_seq") {
-      $variation{'alt'} = $value;
-
+	$variation{'alt'} = $value;
+	
+    } elsif ($key eq "global_minor_allele_frequency") { ## Recover value for minor allele frequency from gvf file
+	my @gmaf = split("\\|",$value);
+	$variation{'m_allele_freq'}=$gmaf[1];
+	#print $variation{'id'}.$variation{'m_allele_freq'};
+	#die "BOOM";
+    
     } elsif ($validate_pattern{$key}) {
-      $variation{'validate'} = 1;
-      push(@{$variation{'attribute'}},$key.'='.$value);
-
+	$variation{'validate'} = 1;
+	push(@{$variation{'attribute'}},$key.'='.$value);
+	
     } elsif ($key eq 'validation_states' && $value ne "-") {
       $variation{'validate'} = 1;
       push(@{$variation{'attribute'}},$key.'='.$value);
@@ -456,6 +527,7 @@ sub Convert_var_to_rsat {
   $line .= $variation{'alt'}."\t";
   $line .= $variation{'SO'}."\t";
   $line .= $variation{'validate'}."\t";
+  $line .= $variation{'m_allele_freq'}."\t";
   $line .= "0"."\t";
   $line .= "0";
 
@@ -478,7 +550,7 @@ sub Convert_var_to_gvf {
   $line .= $variation{'strand'}."\t";
   $line .= '.'."\t";
   $line .= join(";",@{$variation{'attribute'}});
-
+  $line .=";global_minor_allele_frequency=NA|".$variation{'m_allele_freq'}."|NA" if $variation{'m_allele_freq'} ne "NA";
   return  $line;
 }
 
@@ -517,7 +589,10 @@ sub Convert_var_to_vcf {
   $line .= '.'."\t";
   $line .= '.'."\t";
   $line .= join(";",@{$variation{'attribute'}});
-
+  if ($variation{'m_allele_freq'} ne "NA"){
+      my $major_allele=1-$variation{'m_allele_freq'};
+      $line .=";CAF=[". $major_allele.",".$variation{'m_allele_freq'}."]" ;
+  }
   return  $line;
 }
 
