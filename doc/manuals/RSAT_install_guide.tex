@@ -126,6 +126,7 @@ sudo ln -s $RSAT/RSAT_config.bashrc /etc/profile.d/rsat.sh
 \item \textbf{Initialize \RSAT folders}
 
   \begin{lstlisting}
+cd $RSAT
 make -f makefiles/init_rsat.mk init
   \end{lstlisting}
   
@@ -136,11 +137,15 @@ make -f makefiles/init_rsat.mk init
 ## The following commands should be executed with admin rights.
 sudo bash
 
+
 ## Check that RSAT path has been defined
 echo $RSAT
 
-## If not, try this and check again
-##   source /etc/profile.d/rsat.sh
+## If RSAT is not specified, 
+## try this and check again
+##     source /etc/profile.d/rsat.sh
+## Alternatively: 
+##     source [RSAT_FULL_PATH]/RSAT_config.bashrc
 
 ## Set working directory to RSAT
 cd $RSAT
@@ -151,6 +156,7 @@ make -f makefiles/install_rsat.mk  perl_modules_list
 ## Check which Perl modules are already installed
 make -f makefiles/install_rsat.mk perl_modules_check
 ## The locations of installed modules are stored in perl_modules_check.txt
+more check_perl_modules_eval.txt
 
 ## Install these modules
 make -f makefiles/install_rsat.mk perl_modules_install
@@ -194,7 +200,7 @@ make -f makefiles/install_software.mk install_ext_apps
 \item Install two model organisms, required for some of the Web tools.
 
   \begin{lstlisting}
-download-organism -v 1 -org Saccharomyces_cerevisiae
+download-organism -v 1 -org Saccharomyces_cerevisiae ; \
 download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
   \end{lstlisting}
   

@@ -1,5 +1,6 @@
 ############################################################
-## RSATWS.pm - rsa-tools web services module
+## RSATWS.pm - Perl module to manage web services for the Regulatory
+## Sequence Analysis Tools (RSAT).
 
 package RSATWS;
 

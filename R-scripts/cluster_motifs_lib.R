@@ -50,6 +50,7 @@ check.param <- function() {
       lth <<- list()
       lth[["Ncor"]] <<- 0;
       lth[["cor"]] <<- 0;
+      lth[["w"]] <<- 0;
 
       lth.values <<- unlist(lth)
       lth.scores <<- names(lth.values)
@@ -66,20 +67,13 @@ check.param <- function() {
   } else if(score %in% supported.distances){
     metric <<- "distances"
 
-    ## ## Default lower and upper thresholds equals to zero
-    ## if (!exists("lth")) {
-    ##   lth <<- 1;
-    ## }
-    ## if (!exists("uth")) {
-    ##   uth <<- 0;
-    ## }
   }
 
   
   #####################
   ##
   if(exists("lthsp")){
-    lthsp <- unlist(strsplit(lthsp, "-"))
+    lthsp <- unlist(strsplit(lthsp, "_"))
     lth.scores <<- lthsp[seq(1,length(lthsp), by = 2)]
     lth.values <<- as.numeric(lthsp[seq(2,length(lthsp), by = 2)])
 
@@ -87,7 +81,7 @@ check.param <- function() {
       thresholds[[lth.scores[i]]] <<- lth.values[i]
     }
     
-    supported <- c("cor", "Ncor")
+    supported <- c("cor", "Ncor", "w")
     if(length(setdiff(supported, lth.scores)) > 0){
       for(add in setdiff(supported, lth.scores)){
         lth.scores <<- append(lth.scores, add)
@@ -263,6 +257,15 @@ get.id <- function(num){
 
 
 ########################################################
+## Given the id of a motif, return its name
+get.name <- function(id){
+  return(as.vector(sapply(id, function(X){
+      description.table[which(description.table$id == X),][,"name"]
+  })))
+}
+
+
+########################################################
 ## Given a vector with IDs, return a list with the 
 ## information (consensus, number, id, strand, spacer)
 ## of the inverted alignment
@@ -305,6 +308,7 @@ inverted.alignment <- function(ids){
     ## Fill the new list
     inverted.aligment.list[[X]][["consensus"]] <- new.consensus
     inverted.aligment.list[[X]][["number"]] <- as.numeric(motifs.info[[X]][["number"]])
+    inverted.aligment.list[[X]][["name"]] <- motifs.info[[X]][["name"]]
     inverted.aligment.list[[X]][["spacer"]] <- length(unlist(strsplit(new.consensus, "-")))-1
 
     return(inverted.aligment.list)        
@@ -353,6 +357,7 @@ align.two.leaves <- function(child1, child2){
   if(aligned.motif.flag == 0){
     
     for(n in c(n1, n2)){
+      motifs.info[[get.id(n)]][["name"]] <<- get.name(get.id(n))  
       motifs.info[[get.id(n)]][["strand"]] <<- "D"
       motifs.info[[get.id(n)]][["number"]] <<- n
       motifs.info[[get.id(n)]][["spacer"]] <<- 0
@@ -360,7 +365,7 @@ align.two.leaves <- function(child1, child2){
     }
 
   ## Conversely align the motifs
-  }else{
+  }else{ 
     
     ## Choose the relative orientation of the two motifs
     strand <- as.vector(compare.matrices.table[compa.nb, "strand"])
@@ -389,6 +394,9 @@ align.two.leaves <- function(child1, child2){
     tree$labels[n2] <<- paste(consensus2, n2)
     
     ## Store the strand of the cluster, the consensuses and numbers
+    motifs.info[[id1]][["name"]] <<- get.name(id1)
+    motifs.info[[id2]][["name"]] <<- get.name(id2)
+    
     motifs.info[[id1]][["consensus"]] <<- consensus1
     motifs.info[[id1]][["number"]] <<- n1
     
@@ -425,18 +433,19 @@ align.leave.and.cluster <- function(child1, child2){
   ## In case the motifs should not be aligned
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
-    
+      
+    motifs.info[[get.id(n1)]][["name"]] <<- get.name(get.id(n1)) 
     motifs.info[[get.id(n1)]][["strand"]] <<- "D"
     motifs.info[[get.id(n1)]][["consensus"]] <<- as.vector(description.table[as.numeric(motifs.info[[get.id(n1)]][["number"]]),"consensus"])
     
   ## Conversely align the motifs
   } else{
-
-    ## Find the central motif of the cluster
-     central.motifs <- central.motifs.ids(get.id(n1), get.id(n2))
-    ##central.motifs <- central.motifs.ids(get.id(n1), ids.aligned)
-    id1 <- central.motifs[1]
-    id2 <- central.motifs[2]
+      
+      ## Find the central motif of the cluster
+      central.motifs <- central.motifs.ids(get.id(n1), get.id(n2))
+ 
+      id1 <- central.motifs[1]
+      id2 <- central.motifs[2]
     
     ## Get the comparison number in the compare-matrices table
     compa.nb <- get.comparison.number(id1,id2)
@@ -515,17 +524,18 @@ align.leave.and.cluster <- function(child1, child2){
     
     ## Choose the consensus for the new motif
     if(case %in% c(1,2,5,6,7,8)){
-      consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
-      motifs.info[[new]][["strand"]] <<- "D"
-      motifs.info[[new]][["consensus"]] <<- consensus.new
+        consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"consensus"])
+        motifs.info[[new]][["strand"]] <<- "D"
+        motifs.info[[new]][["consensus"]] <<- consensus.new
       
     } else if(case %in% c(3,4)){
-      consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"rc_consensus"])
-      motifs.info[[new]][["strand"]] <<- "R"
-      motifs.info[[new]][["consensus"]] <<- consensus.new
+        consensus.new <- as.vector(description.table[as.numeric(motifs.info[[new]][["number"]]),"rc_consensus"])
+        motifs.info[[new]][["strand"]] <<- "R"
+        motifs.info[[new]][["consensus"]] <<- consensus.new
     }
-    tree$labels[as.numeric(motifs.info[[new]][["number"]])] <<- paste(motifs.info[[new]][["consensus"]], as.numeric(motifs.info[[new]][["number"]]))
-    
+      tree$labels[as.numeric(motifs.info[[new]][["number"]])] <<- paste(motifs.info[[new]][["consensus"]], as.numeric(motifs.info[[new]][["number"]]))
+      motifs.info[[new]][["name"]] <<- get.name(new)
+      
     ## Reset the offset
     if(case %in% c(1:4)){
       spacer.diff <- (aligned.spacer - new.spacer)
@@ -590,7 +600,7 @@ align.clusters <- function(child1, child2){
   aligned.motif.flag <- alignment.status(ids1, ids2, hclust.method)
   
   if(aligned.motif.flag == 1){
-    
+      
     ## Get the offset
     offset <- as.vector(compare.matrices.table[compa.nb, "offset"])
     
@@ -1008,19 +1018,23 @@ add.empty.columns <- function(id){
 aligned.matrices.to.merge <- function(level){
 
   ## Create the folder with the merged consensuses
-  system(paste("mkdir -p ", cluster.folder, "/merged_consensuses/merge_level_", level, sep = ""))
-  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses/merge_level_", level, "/ | wc -l", sep = ""), intern = TRUE)
+  merge.dir <- paste("merged_consensuses/merge_level_", level, sep = "")
+  dir.create(file.path(cluster.folder, merge.dir), showWarnings = FALSE, recursive = TRUE)
+  new.dir <- file.path(cluster.folder, merge.dir)
+  
+  flag <- system(paste("ls ", new.dir, "/ | wc -l", sep = ""), intern = TRUE)
   if(flag >= 1){
-    system(paste("rm -r ", cluster.folder, "/merged_consensuses/merge_level_", level, "/*", sep = ""))
+    system(paste("rm -r ", new.dir, "/*", sep = ""))
   }
   ids <- get.id(merge.levels.leaves[[level]])
   
   ## Add the spacer to the consensuses
   merge.consensus.info <<- consensus.internal.merge(motifs.info, ids)
 
+
   ## Get the single matrices file names
   single.mat.files <<- sapply(ids, function(X){
-    system(paste("ls ", out.prefix, "* | grep ", X, "| grep -v 'merged' | grep '.tf'", sep = ""), intern = TRUE)
+    paste(out.prefix, "_single_matrices_", X, ".tf", sep = "")
   })
   single.mat.files <<- as.list(single.mat.files)
 

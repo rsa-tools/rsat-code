@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_EnsEMBL_genomes.mk,v 1.3 2011/04/10 13:29:22 rsat Exp $
+# $Id: install_EnsemblGenomes.mk,v 1.3 2011/04/10 13:29:22 rsat Exp $
 #
 # Time-stamp: <>
 #
@@ -10,7 +10,7 @@ include ${RSAT}/makefiles/util.mk
 
 DATE = `date +%Y%m%d_%H%M%S`
 
-MAKEFILE=${RSAT}/makefiles/install_EnsEMBL_genomes.mk
+MAKEFILE=${RSAT}/makefiles/install_EnsemblGenomes.mk
 
 V=1
 
