@@ -34,6 +34,22 @@ RSAT makefile:
   cd $RSAT
   make -f makefiles/install_software.mk install_mcl
 
+
+Many R packages are required in I<matrix-clustering> to convert the 
+hierarchical tree into different output formats and to manipulate the
+dendrogram which is exported.
+
+  RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
+  ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
+  dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
+
+
+For visualize the logo forest it is required the JavaScript I<D3> 
+(Data Driven Documents) library, the user can select an option to connect
+ directly with the server to load the functions of this library (see option I<-d3_base>). 
+
+   D3 : http://d3js.org/
+
 =head1 AUTHORS
 
 =head2 Implementation
@@ -69,7 +85,7 @@ util
 
 =head1 USAGE
 
-cluster-matrices [-i inputfile] [-o outputfile] [-v ] [...]
+matrix-clustering [-i inputfile] [-o outputfile] [-v ] [...]
 
 
 =head1 OUTPUT FORMAT
@@ -148,11 +164,12 @@ package main;
   }
   local $d3_base_formats = join ",", @d3_base_formats;
   local $d3_base_format = "";
-  local $d3_base_url=$ENV{RSAT}."/public_html/lib/d3/";
+  #local $d3_base_url= $ENV{RSAT}."/public_html/lib/d3/";
+  local $d3_base_url= "http://d3js.org/d3.v3.min.js";
 
   ## Select phylo and newick d3 bases
-  local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
-  local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
+  ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
+  ## local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
 
 
   ## Supported label fields
@@ -182,6 +199,7 @@ package main;
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
+                                     w
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
   local %supported_threshold = ();
@@ -219,7 +237,6 @@ package main;
 
   ## Matrices
   local @matrices = ();
-#  local @temp = ();
   local $show_consensus = 0;
 
 
@@ -244,6 +261,30 @@ package main;
   ## Merged consensuses logos
   local %merged_consensuses_files = ();
   local @levels_JSON = ();
+
+  ## Supported taks
+  local @supported_tasks = qw(
+			all
+		        cluster
+                     );
+  local @task = qw (all);
+  local $supported_tasks = join ",", @supported_tasks;
+  local %supported_tasks = ();
+  foreach my $task (@supported_tasks) {
+    $supported_tasks{$task} = 1;
+  }
+  %selected_tasks = ();
+  $selected_tasks{all} = 1;
+
+  ## Use compare-matrices-quick
+  local $quick_flag = 0;
+
+  ## Limit the number of input motifs
+  local $mat_nb_flag = 0;
+  local $mat_nb = 0;
+  
+  ## Limit the number of input motifs
+  local $clone_input_flag = 0;
 
   ################################################################
   ## Options used for motif comparison
@@ -279,7 +320,7 @@ package main;
 
   ## Check that the  input format has been specified
   unless ($matrix_format) {
-    &RSAT::error::FatalError("You must define the input matrix format (option -format).");
+    &RSAT::error::FatalError("You must define the input matrix format (option -matrix_format).");
   }
 
 
@@ -351,12 +392,21 @@ package main;
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
-  $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
-  $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
+  # $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
+  # $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
   if ($export_tree_format eq "newick"){
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
-    $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
+    ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
   }
+
+  ## Clone input (only if the user selects this option)
+  if($clone_input_flag == 1){
+      $main::outfile{motif_file} = $main::outfile{prefix}."_input_motifs.tf";
+  }
+
+  ## Files required for the summary
+  $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
+  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html";
 
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
@@ -374,65 +424,100 @@ package main;
   print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
   &PrintArguments($main::html_index, 1);
   print $html_index "</tt></p>\n";
-
+ 
 
   ################################################################
   ## Read input matrices
   if ($infile{matrices}){
-    @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
-    &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
-	if ($main::verbose >= 2);
+      @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
+      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
+	  if ($main::verbose >= 2);
+
+      if($mat_nb_flag == 1){
+	  if(scalar(@matrices) > $mat_nb){
+	  &RSAT::error::FatalError($mat_nb, "Matrices loaded from file", $infile{matrices}, "The number of input matrices is limted to", $mat_nb);
+	  }
+      }
   }
-  
-  ## The metric for alignment always must be the same as the metric 
-  ## for the threshold
-#  if ($main::param{matrix_compa_score} ne $main::thr_field){
-#    &RSAT::error::FatalError("The metric for alignment always must be the same as the metric for the threshold. Metric for alignment: $main::param{matrix_compa_score}#; Metric for threshold: $thr_field");
-#  }
 
-  ################################################################
-  ## Cluster the matrices
-  &CompareMatrices();
+  # ## According to the task selected by the user, execute or skip some functions
+  if($selected_tasks{all}){
 
+      if($quick_flag == 0){
 
-  ################################################################
-  ## Cluster the matrices
-  &Hclustering();
+  	  ################################################################
+  	  ## Compare the matrices with compare-matrices
+  	  &CompareMatrices();
 
-  ################################################################
-  ## Read the motif to clustr assignation, which will be required for
-  ## several functions below.
-  &ReadClusterComposition();
+      } elsif ($quick_flag == 1){
+  	  ################################################################
+  	  ## Compare the matrices with compare-matrices-quick
+  	  &CompareMatricesQuick();
+      }
+  }
 
-  ################################################################
-  ## Create the merged matrices and consensuses
-  &Merge_matrices();
+  if($selected_tasks{all} || $selected_tasks{cluster}){
+      
+      ################################################################
+      ## Create temporary files with information about single matrices
+      %alignment_info = &Create_single_matrix_files();
 
-  ################################################################
-  ## Parse the JSON file
-  &Add_attributes_to_JSON();
+      ################################################################
+      ## Cluster the matrices
+      &Hclustering();
+      
+      ################################################################
+      ## Read the motif to cluster assignation, which will be required for
+      ## several functions below.
+      &ReadClusterComposition();
+      
+      ################################################################
+      ## Create the merged matrices and consensuses
+      &Merge_matrices();
+      
+      ################################################################
+      ## Parse the JSON file
+      &Add_attributes_to_JSON();
+      
+      ################################################################
+      ## Creates the body of html to display
+      ## each cluster separately
+      &Add_div_to_HTML();
+      
+      ################################################################
+      ## Creates the html template to display the tree
+      &Create_html_tree_file();
+      
+      ################################################################
+      ## Creates the html template to display the pylogram
+      ##
+      ## !! Temporary disabled
+      ##
+      ## &Create_phylogram();
+      
+      ################################################################
+      ## Convert tab files to HTML files
+      &ConvertTabToHTML(@tab_to_convert);
 
-  ################################################################
-  ## Creates the body of html to display
-  ## each cluster separately
-  &Add_div_to_HTML();
+      ###################################
+      ## Delete .tf files
+      &Delete_single_motif_files();
 
-  ################################################################
-  ## Creates the html template to display the tree
-  &Create_html_tree_file();
+      ######################
+      ## Clone input file
+      if($clone_input_flag == 1){
+	  &Clone_input();
+      }
 
-  ################################################################
-  ## Creates the html template to display the pylogram
-  &Create_phylogram();
-
-  ################################################################
-  ## Convert tab files to HTML files
-  &ConvertTabToHTML(@tab_to_convert);
+      ################################################################
+      ## Creates the website
+      &Creates_website();
+  }
 
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose);
-
+  
   ################################################################
   ## Generate the HMTL index of input/output files
   &IndexFiles() if ($main::outfile{html_index});
@@ -531,7 +616,7 @@ matrices.
       
 =pod
 
-=item B<-format matrix_format>
+=item B<-matrix_format matrix_format>
 
 Specify the input matrix format.
 
@@ -545,7 +630,7 @@ tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
-    } elsif ($arg eq "-format") {
+    } elsif ($arg eq "-matrix_format") {
       $main::matrix_format = shift(@arguments);
       unless ($supported_matrix_format{$matrix_format}) {
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
@@ -581,19 +666,20 @@ tree.
 
 Specify format for the output tree.
 
-The JSON format is always producted, since it is required to display
+The hierarchical tree in JSON format is always exported, since it is required to display
 the logo tree with the d3 library. Additional formats are proposed in
 option to enable visualization with classical phylogeny analysis
 tools.
 
 B<Supported trees formats>
 
+(JSON, newick)
+
 =over
 
-=item I<json> (default)
+=item I<JSON> (default)
 
-JSON (JavaScript Object Notation). Javascrpt format supported by the
-d3 library.
+File format used for D3 library to visualize the logo forest in HTML.
 
 =item I<newick> (optional)
 
@@ -612,12 +698,15 @@ Widely used textual format to describe phylogenetic trees.
 =pod
 
 =item	B<-d3_base>
-
-Option to specify any type of URL (file://, http://, ...) as base for the d3 library.
+ 
+Option to specify any type of URL (file://, http://, ...) as base to load the d3 library. 
+I<D3> is a JavaScript library to visualize data, it is required to visualize the logo forest in HTML.
     
 B<Supported d3 bases>
     
  (Default: file, optional: link )
+
+Note: I<-d3_base link> requires internet connection to work. 
 
 =cut
     } elsif ($arg eq "-d3_base") {
@@ -625,6 +714,52 @@ B<Supported d3 bases>
       unless ($d3_base_formats{$d3_base_format}) {
 	&RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
       }
+
+
+=pod
+
+=item B<-task tasks>
+
+Specify one or several tasks to be run. If this option is not
+specified, all the tasks are run.
+
+Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.
+
+Supported tasks: (all, comparison, clustering)
+
+=over
+
+=item B<all>
+
+Execute all the parts of the program (default)
+
+=item B<clustering>
+
+Skip the matrix comparison step and only executes the clustering step.
+
+Assumes the users already have the description table and comparison table 
+exported from the program I<compare-matrices>.
+
+This option is ideal to saving time once all comparison beteen the input motifs had been done. 
+
+=back
+
+=cut
+
+       } elsif ($arg eq "-task") {
+	 $arg = shift (@arguments);
+	 chomp($arg);
+	 my @tasks = split ",", $arg;
+         %selected_tasks = ();
+	 foreach my $task (@tasks) {
+	   $task = lc($task);
+	   if ($supported_tasks{$task}) {
+	     $selected_tasks{$task} = 1;
+	   } else {
+	     &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	   }
+	 }
 
 =pod
 
@@ -648,6 +783,52 @@ B<Supported labels>
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
 	}
       }
+
+
+=pod
+
+=item	B<-quick>
+
+With this option the motif comparison step is done with  the program I<compare-matrices-quick> 
+(implemented in C) rather than the classic version compare-matrices (implemented in Perl).
+The quick version runs x100 times faster, but has not all implemented options as in the Perl version.
+
+We suggest use this option for a big set of input motifs > 300 motifs. 
+
+B<NOTE:> By the moment the only threshold used in quick version is Ncor. 
+
+=cut
+    } elsif ($arg eq "-quick") {
+    $quick_flag = 1;
+
+
+=pod
+
+=item	B<-clone_input>
+
+If this option is selected, the input motif database is exported
+in the results folder.
+
+NOTE: take into account the input file size. 
+
+=cut
+    } elsif ($arg eq "-clone_input") {
+    $clone_input_flag = 1;
+
+=pod
+
+=item	B<-max_matrix>
+
+This option specify how many matrices can be clustered in the same analysis. If there are more matrices than
+the specified number, the program reports an error.
+
+This parameter can be useful when the user analyse a big dataset of matrices.
+
+=cut
+    } elsif ($arg eq "-max_matrix") {
+    $mat_nb_flag = 1;
+    $mat_nb = shift(@arguments);
+    
       
 =pod
 
@@ -676,7 +857,7 @@ Compute inter-cluster distances based on the closest nodes.
 =back
 
 =cut
-
+    
     } elsif ($arg eq "-hclust_method") {
       $hclust_method = shift(@arguments);
       unless(exists($supported_hclust_methods{$hclust_method})){
@@ -848,7 +1029,7 @@ sub CompareMatrices {
   $cmd .=  " -file ".$main::infile{matrices};
   $cmd .= " -DR";
   $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
-  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,matrix_desc";
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width,matrix_desc";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
@@ -859,7 +1040,6 @@ sub CompareMatrices {
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
 
   ## Parse compare-matrix result file to read score columns
-#  open $compa, $main::outfile{pairwise_compa};
   my ($compa) = &OpenInputFile($main::outfile{pairwise_compa});
   $main::param{score_column} = 0;
   while (<$compa>) {
@@ -878,9 +1058,6 @@ sub CompareMatrices {
     &RSAT::error::FatalError("Cannot identify score column (".$param{matrix_compa_score}.") in matrix comparison file (".$main::outfile{pairwise_compa}.").");
   }
 
-  ## Create temporary files with information about single matrices
-  %alignment_info = &Create_single_matrix_files();
-
   # ## JvH: for Debug
   # foreach my $key (keys %alignment_info) {
   #   my $value = $alignment_info{$key};
@@ -891,6 +1068,43 @@ sub CompareMatrices {
   #     print join ("\t", "field", $key , $value, $key2, $attr, "\n");
   #   }
   # }
+
+  return();
+}
+
+
+################################################################
+## Compare each discovered motifs to each other.
+sub CompareMatricesQuick {
+
+  ## Pariwise comparisons between discovered matrices.  We don't
+  ## the option "distinct" in order to ensure that all the motifs are
+  ## in the output graph even if they are not related to any other
+  ## motif.
+  ## This is the faster C implemented version of compare-matrices
+
+  $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
+  my $BIN=$ENV{RSAT}."/bin";
+
+  ## Create the description table
+  $cmd = "";
+  $cmd .= "compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc  -o ".$main::outfile{pairwise_compa};
+  &RSAT::util::one_command($cmd, 1,"");
+  &RSAT::message::TimeWarn("Matrix description table", $main::outfile{matrix_descriptions}) if ($main::verbose >= 2);
+  $cmd = "";
+  $cmd .= $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
+  $cmd .= " -o ".$main::outfile{matrix_descriptions_html};
+  &RSAT::util::one_command($cmd, 1,"");
+
+  &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
+  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
+  $cmd .=  " -file1 ".$main::infile{matrices};
+  $cmd .=  " -file2 ".$main::infile{matrices};
+  $cmd .= " -o ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= " -o ".$main::outfile{pairwise_compa_html};
+  &RSAT::util::one_command($cmd, 1,"");
+  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
 
   return();
 }
@@ -936,7 +1150,6 @@ sub Hclustering {
 
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
        
-#  my $pos_drawing_offset = -($pos_interval-1)/2;
     my $pos_drawing_offset = 0;
     my  $cluster_motifs_cmd = "cat ".$cluster_motifs_script;
     $cluster_motifs_cmd .= " | ".$r_path;
@@ -950,11 +1163,19 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
+
+    if($quick_flag == 1){
+	my $param = "Ncor";
+	my $val = $lth{$param};
+	%lth = ();
+	$lth{$param} = $val;
+    }
+
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
 	foreach my $par (keys %lth){
-	    $lthsp.= $par."-".$lth{$par}."-";
+	    $lthsp.= $par."_".$lth{$par}."_";
 	}
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
@@ -966,16 +1187,14 @@ sub Hclustering {
       $cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
       $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
     }
-    #$cluster_motifs_cmd .= ";score='Ncor'";
     $cluster_motifs_cmd .= "; \"";
     #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
+
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
-
-
     return();
 }
 
@@ -996,7 +1215,7 @@ sub ReadClusterComposition {
     next if (/^#/); ## Skip header line
     next if (/^;/); ## Skip comment lines
     next unless (/\S/); ## Skip empty lines
-    my ($node, $cluster) = split ("\t");
+    my ($node, $name, $cluster) = split ("\t");
     push @{$cluster_nodes{$cluster}}, $node;
   }
   @clusters_to_HTML = sort keys %cluster_nodes;
@@ -1283,7 +1502,7 @@ sub Create_html_tree_file(){
 	}
 	
 	### Fix the d3 library path
-	$_ =~ s|src=\"\"|src=\"${d3_base_url}/d3.v3.js\"|;
+	$_ =~ s|src=\"\"|src=\"$d3_base_url/d3.v3.js\"|;
 
 	### Set the height 
 	if(/\s+height =,/){
@@ -1384,49 +1603,43 @@ sub ConvertTabToHTML {
 
 ################################################################
 ## Create the phylogram
-sub Create_phylogram(){
+## Given the phylogram is not well displayed, this option is temporaly disabled
+# sub Create_phylogram(){
 
-  ### Save the newick tree in the variable
-  chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
+#   ### Save the newick tree in the variable
+#   chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
 
-#  system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html});
-  my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
-  &doit($cmd, 0, $die_on_error, $verbose);
-  open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
-  open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
+#   my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
+#   &doit($cmd, 0, $die_on_error, $verbose);
+#   open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
+#   open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
 
 
-  ## Select the D3 base
-  if ($d3_base_format eq "link"){
-    $d3_base_url = "http://d3js.org";	
-  }
+#   ## Select the D3 base
+#   if ($d3_base_format eq "link"){
+#     $d3_base_url = "http://d3js.org";	
+#   }
 
-  while(<PHYLO>){
-    chomp;	
+#   while(<PHYLO>){
+#     chomp;	
 
-#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-#	    $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
-#	}
+#     ### Fix the d3 libraries path
+#     $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
+#     $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
+#     $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
 
-    ### Fix the d3 libraries path
-    $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
-    $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
-    $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
+#     ### Paste the newick tree in the HTML code
+#     $_ =~ s/Paste_newick_here/$newick_tree/;
 
-    ### Paste the newick tree in the HTML code
-    $_ =~ s/Paste_newick_here/$newick_tree/;
-
-    print TEMP $_."\n";
-  }
-  close(TEMP);
-  close(PHYLO);
-  unlink($main::outfile{phylogram_html});
-#  system("mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html});
-  $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
-  &doit($cmd, 0, $die_on_error, $verbose);
-  return();
-}
+#     print TEMP $_."\n";
+#   }
+#   close(TEMP);
+#   close(PHYLO);
+#   unlink($main::outfile{phylogram_html});
+#   $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
+#   &doit($cmd, 0, $die_on_error, $verbose);
+#   return();
+# }
 
 
 ################################################################
@@ -1445,12 +1658,12 @@ sub Add_empty_columns_to_logos(){
     
     my @split_line = split(/\s+/, $_);
     $split_line[0] =~ s/\s+//g;
-
     ## Store the ID, strand and offset of each aligned motif
-    $alignment_info{$split_line[0]}{strand} =  $split_line[2];
-    $alignment_info{$split_line[0]}{offset_left} =  $split_line[3];
-    $alignment_info{$split_line[0]}{offset_right} =  $split_line[4];
-    $alignment_info{$split_line[0]}{width} = $split_line[5];    
+    $alignment_info{$split_line[0]}{name} =  $split_line[1];
+    $alignment_info{$split_line[0]}{strand} =  $split_line[3];
+    $alignment_info{$split_line[0]}{offset_left} =  $split_line[4];
+    $alignment_info{$split_line[0]}{offset_right} =  $split_line[5];
+    $alignment_info{$split_line[0]}{width} = $split_line[6];    
   }
   close(ALIGNMENT_TABLE);
 
@@ -1468,7 +1681,6 @@ sub Add_empty_columns_to_logos(){
     if($strand eq "D"){
 
       ## Add the empty columns
-#      system("convert-matrix -i ".$file_name." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
       my $cmd = "convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
@@ -1478,8 +1690,7 @@ sub Add_empty_columns_to_logos(){
 
     }else{
 
-      ## First convert the matrix to reverse complement
-#      system("convert-matrix -i ".$file_name." -from tf -to tf -rc -return counts,consensus -o ".$main::outfile{prefix}."_aligned_logos/temp.tf"); 
+      ## First convert the matrix to reverse complement 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
       $cmd = "convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -rc -return counts,consensus";
@@ -1487,7 +1698,6 @@ sub Add_empty_columns_to_logos(){
       &doit($cmd, 0, $die_on_error, $verbose);
       
       ## Then add the gaps
-#      system("convert-matrix -i ".$temp_mat." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -insert_col_left ".$offset_left." -insert_col_right ".$offset_right." -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos");
       $cmd = "convert-matrix -i ".$temp_mat;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
@@ -1524,7 +1734,6 @@ sub Create_single_matrix_files(){
 
   ## Split the matrix file into single matrices file, 
   ## in order to process individually each matrix
-#  system("convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices-");
   my $cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
   &doit($cmd, 0, $die_on_error, $verbose);
   
@@ -1533,7 +1742,7 @@ sub Create_single_matrix_files(){
 
   ## Get the file name of each matrix and stores it in the hash
   foreach my $id (@ids){
-    chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
+      chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
   }
 
   return(%matrix_files);
@@ -1548,9 +1757,8 @@ sub Merge_matrices(){
   &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
   ## Get the cluster sizes
 
-  ## JvH: I suppress this becaus ewe already read this list earlier (I mde it a global variabl)
-#  chomp(my @clusters_to_HTML = `more $main::outfile{alignment_table} | grep -v '#' | cut -f2 | uniq`);
   foreach my $cluster (@clusters_to_HTML){
+
     my @nodes = @{$cluster_nodes{$cluster}};
     &RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
 
@@ -1570,6 +1778,8 @@ sub Merge_matrices(){
 	$file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$file
       }
       my $files = join(" ", @file_names);
+
+      
       
       ## Merge the matrices and create a single matrix
       my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_cat.tf";
@@ -1588,7 +1798,6 @@ sub Merge_matrices(){
       }
       
      ## Create branch-wise logos
-#      system("convert-matrix -i ".$merged_mat_file." -from tf -to tf -logo_format png -return counts,consensus,parameters,logo -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png");
       $cmd = "convert-matrix -i ".$merged_mat_file;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
@@ -1721,7 +1930,6 @@ sub Add_div_to_HTML(){
     my $print = "";
     my $temp = paste_new_cluster_to_HTML();
 
-#    system("cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html});
     my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);
 
@@ -1768,4 +1976,671 @@ sub Add_div_to_HTML(){
     $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);    
 }
+
+
+########################################
+## Creates the summary file in HTML
+sub Creates_website(){
+
+    ## Stores the jquery script, some patches of code are added through 
+    ## the function. The <script> tag is closed ad the end of the function.
+    my $script_jquery = 
+'
+<script>
+
+  // Change the color of the selected cluster header
+   $(document).ready(function() {
+    
+      $(\'.cluster_division\').mouseenter(function(){
+         $(this).fadeTo(\'fast\',1); 
+      });
+
+      $(\'.cluster_division\').mouseleave(function(){
+         $(this).fadeTo(\'fast\',0.5); 
+      });
+   });
+
+
+  // Change the color of the selected cluster header
+   $(document).ready(function() {
+    
+      $(\'#File_list\').mouseenter(function(){
+         $(this).fadeTo(\'fast\',1); 
+      });
+
+      $(\'#File_list\').mouseleave(function(){
+         $(this).fadeTo(\'fast\',0.5); 
+      });
+   });
+
+
+  // Slide the alignment table
+  $(document).ready(function(){
+    $(\'#File_list\').click(function(){
+       $(\'.tab_list\').slideToggle(\'slow\');
+     }); 
+  });
+
+';
+    
+    my %alignment_table_data = ();
+    my @split_line = ();
+
+
+    ## First read the alignment table and save the results in a hash
+    my ($line, $id, $cluster_id);
+    my $general_tab = "";
+    my $number_of_motifs = 0;
+    my $cluster_id_prev = 'cluster_1';
+    my $cluster_id_cur = 'cluster_1';
+    my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
+    while (<$cluster_handle>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	chomp;
+	$line = $_;
+	@split_line = split("\t", $line);
+	$id = $split_line[0];
+	$cluster_id = $split_line[2];
+	$cluster_id_cur = $cluster_id;
+	$alignment_table_data{$cluster_id}{$id}{name} = $split_line[1];
+	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[3];
+	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[4];
+	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[5];
+	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
+	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
+	$number_of_motifs++;
+
+	## Add the spacer in the aligment table
+	if($cluster_id_cur ne $cluster_id_prev){
+	    	$general_tab .= '
+
+				<tr>					
+					<td class="sep"></td>
+					<td class="sep"></td>
+					<td class="sep"></td>
+                                        <td class="sep"></td>
+				</tr>   
+        ';
+	}
+
+	## Add the sequences
+	$general_tab .= '
+				<tr>					
+					<td class="tab_spacer_1">'.$id.'</td>
+                                        <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
+					<td class="tab_spacer_2">'.$cluster_id.'</td>
+					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
+				</tr>
+        ';
+	$cluster_id_prev = $cluster_id_cur;
+
+    }
+    close $cluster_handle;
+ 
+
+    ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
+    my $method = $hclust_method;
+    my $ncor_val = $lth{Ncor};
+    my $cor_val = $lth{cor};
+    my $w_val = $lth{w};
+    my @summary = ();
+    my @pref = split("/", $main::outfile{prefix});
+    my $prefix = pop(@pref);
+    my $number_of_clusters = scalar(keys %alignment_table_data);
+
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
+    &doit($cmd, 0, $die_on_error, $verbose);
+    my ($summary_temp) = &RSAT::util::OpenInputFile($outfile{summary_temp});
+    while (<$summary_temp>) {
+	chomp;
+	$line = $_;
+
+	my $print_cmd = "matrix-clustering ".&PrintArguments();
+
+	## Fill the summary table
+	$line =~ s/--cmd--/$print_cmd/;
+	$line =~ s/--motifs--/$number_of_motifs/;
+	$line =~ s/--nb--/$number_of_clusters/;
+	$line =~ s/--hmethod--/$method/;
+	$line =~ s/--Ncor--/$ncor_val/;
+	$line =~ s/--cor--/$cor_val/;
+	$line =~ s/--width--/$w_val/;
+	$line =~ s/COL_HERE/$general_tab/;
+
+        ## Search the tag where the clusters will be inserted
+	if($line =~ m/Paste\scluster\sdelim/){
+	
+	    ## The next procces is repeated for each cluster
+	    foreach my $num (1..scalar(keys %alignment_table_data)){
+		
+		## Insert the header of the cluster
+		my $head_insert = &cluster_delim();
+		my $cl_id = "cluster_".$num;
+		$head_insert =~ s/--Cluster_id--/$cl_id/g;
+		$head_insert =~ s/--Cluster_id_head--/head_$cl_id/g;
+		$head_insert =~ s/--nb--/$num/g;
+		$line .= "\n".$head_insert."\n\n";
+		
+		## Make dynamics the buttons of the cluster header
+		my $buttons = &cluster_head_buttons(scalar(keys $alignment_table_data{$cl_id}));
+		$buttons =~ s/--Cluster_id--/$cl_id/g;
+		$buttons =~ s/--Cluster_id_head--/head_$cl_id/g;
+		$buttons =~ s/--nb--/$num/g;
+		$script_jquery .= $buttons."\n";
+		
+		## Draw the alignment table
+		my $alignment_table = &alignment_table();
+		my $tab = "";
+		foreach my $id (keys $alignment_table_data{$cl_id}){
+		    my $tr = "";
+		    $tr .= "\n\t\t\t\t<tr>\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$id.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$alignment_table_data{$cl_id}{$id}{name}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$cl_id.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{strand}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{offset_up}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{offset_down}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{width}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cl_id}{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
+		    $tab .= $tr;
+		}
+		$alignment_table =~ s/--Cluster_id--/$cl_id/g;
+		$alignment_table =~ s/HERE/$tab/g;
+		$alignment_table =~ s/--nb--/$num/g;
+		$line .= "\n".$alignment_table."\n\n";
+		
+		## Add the code to hide/show the alignment table
+		my $toogle_table = &toogle_table();
+		$toogle_table =~ s/--nb--/$num/g;
+		$script_jquery .= $toogle_table."\n";
+		
+		## Draw the logo tree
+		my $d3_logo_tree = &logo_tree();
+		my $factor_height = scalar(keys $alignment_table_data{$cl_id});
+		my $folder_tree = $prefix."_trees";
+		$d3_logo_tree =~ s/--folder_tree--/$folder_tree/g;
+		$d3_logo_tree =~ s/--nb--/$num/g;
+		$d3_logo_tree =~ s/--nb_motifs--/$factor_height/g;
+		$d3_logo_tree =~ s/--Cluster_id--/$cl_id/g;
+		$line .= "\n".$d3_logo_tree."\n\n";
+		
+		## Add the code to hide/show the logo tree
+		my $toogle_tree = &toogle_tree();
+		$toogle_tree =~ s/--nb--/$num/g;
+		$script_jquery .= $toogle_tree."\n";
+		
+		## Draw the branch-consensus table
+		if(scalar(keys $alignment_table_data{$cl_id}) > 1){
+		    my $consensus_table = &branch_consensus_table();
+		    my $consensus_table_columns = "";
+		    foreach my $level (1..scalar(keys $alignment_table_data{$cl_id})-1){
+			
+			my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
+			$logo_D = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo.png";
+			$logo_R = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo_rc.png";
+			$transfac_file = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
+			$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
+			$cons = `more $transfac_file_2 | grep DE`;
+			$cons =~ s/DE\s+//gi;
+			
+			$consensus_table_columns .= "\n<tr>\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
+			$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&DNA_string_to_HTML($cons).'</th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
+			$consensus_table_columns .= "</tr>\n";
+		    }
+		    $consensus_table =~ s/--nb--/$num/g;
+		    $consensus_table =~ s/HERE/$consensus_table_columns/g;
+		    $line .= "\n".$consensus_table."\n\n";
+		}
+
+		## Add the code to hide/show the branch-consensus table
+		my $cons_tab = &toogle_branch_consensus_table();
+		$cons_tab =~ s/--nb--/$num/g;
+		$script_jquery .= $cons_tab."\n";
+	    }
+	}
+	    
+	    
+	## Fill the 'additional files' menu
+	if($line =~ m/Additional_files/){
+
+	    my $add_files = 
+		'
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_distance_table.html"><strong>Distance table</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_internal_nodes_attributes.html"><strong>Internal nodes attributes</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_logo_tree.html"><strong>Logo Forest</strong></a></td>
+		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_pairwise_compa.html"><strong>Pairwise comparison</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_pairwise_compa_matrix_descriptions.html"><strong>Matrix description</strong></a></td>
+		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_consensus_tree.pdf"><strong>Consensus tree</strong></a></td>
+		      <td class="tab_spacer_2">A PDF file showing the consensus alignment. Each cluster is represented with a different color.</td>
+		   </tr>
+                ';
+
+	    if($clone_input_flag == 1){
+		$add_files .= 
+		    '
+
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_input_motifs.tf"><strong>Input motifs</strong></a></td>
+		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
+		   </tr>
+                     ';
+	    }
+
+	    $line =~ s/Additional_files/$add_files/;
+	}
+
+
+	## Close the 'script' tag
+	if($line =~ m/Paste\sjquery/){
+	    $line .= "\n".$script_jquery."</script>\n\n";
+	}
+	
+	push(@summary, $line."\n");
+    }
+    close $summary_temp;
+    unlink($outfile{summary_temp});
+    open(SUMMARY, ">".$main::outfile{summary}) || die "Cannot open SUMMARY: $!\n";
+    print SUMMARY @summary;
+    close(SUMMARY);
+}
+
+
+###################################################
+## Converts a DNA string (consensus) input into  
+## an HTML code painting the conserved nucleotide
+sub DNA_string_to_HTML{
+    
+    my $DNA_string = shift;
+
+    ## Convert the string into an array
+    my @DNA_string = split //, $DNA_string;
+
+    ## Substitutes the ACGT for the HTML code
+    foreach my $pos (@DNA_string){
+
+	next if $pos eq '-';
+    
+	if($pos eq 'A'){
+	    $pos = '<span style="color: green">A</span>';
+	} elsif ($pos eq 'a'){
+	    $pos = '<span style="color: green">a</span>';
+	} elsif ($pos eq 'C'){
+	    $pos = '<span style="color: blue">C</span>';
+	} elsif ($pos eq 'c'){
+	    $pos = '<span style="color: blue">c</span>';
+	} elsif ($pos eq 'G'){
+	    $pos = '<span style="color: yellow">G</span>';
+	} elsif ($pos eq 'g'){
+	    $pos = '<span style="color: yellow">g</span>';
+	} elsif ($pos eq 'T'){
+	    $pos = '<span style="color: red">T</span>';
+	} elsif ($pos eq 't'){
+	    $pos = '<span style="color: red">t</span>';
+	} 
+    }
+
+    ## Join the DNA array into a string
+    my $HTML_string = join("",@DNA_string);
+
+    return($HTML_string);
+}
+
+##########################################
+## Store in a string the cluster header
+sub cluster_delim {
+
+    my $cluster_delim = 
+"	
+        <!--Div with cluster 1 delimitation and buttons to display results-->
+	<div class=\"cluster_division --Cluster_id_head--\">
+		<strong>--Cluster_id--</strong>
+	</div>
+	<div class=\"Cluster_results --Cluster_id--\" id=\"button_alignment_table_--nb--\">Alignment table</div>
+
+";
+    
+    return($cluster_delim);
+}
+
+
+###########################
+## Slide buttons cluster header
+sub cluster_head_buttons{
+    
+    my $size = shift;
+    my $jquery_toggle_buttons = "";
+
+    if($size > 1){
+	$jquery_toggle_buttons = '
+
+  // Slide the buttons to show the results
+  $(document).ready(function(){
+    $(\'.--Cluster_id_head--\', this).click(function(){
+       $(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
+       $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
+       $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
+       $(\'#alignment_table_--nb--\').hide();  
+       $(\'#cluster_--nb--\').hide(); 
+       $(\'.branch_consensus_cluster_--nb--\').hide();  
+     }); 
+  });
+
+    ';
+    } else{
+
+         $jquery_toggle_buttons = '
+
+  // Slide the buttons to show the results
+  $(document).ready(function(){
+    $(\'.--Cluster_id_head--\', this).click(function(){
+       $(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
+       $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
+       $(\'#alignment_table_--nb--\').hide();  
+       $(\'#cluster_--nb--\').hide(); 
+     }); 
+  });
+
+    ';
+
+    }
+    return($jquery_toggle_buttons);
+}
+
+
+############################################
+## Stores in a string the Alignment table
+sub alignment_table{
+
+    my $align_table = '
+    <div class="tab alignment_tab" id="alignment_table_--nb--">
+		<table>
+			<thead>
+				<tr>
+					<th colspan="8">Cluster information and consensus alignment</th>
+				</tr>
+				<tr>
+					<th class="tab_col">Motif id</th>
+                                        <th class="tab_col">Motif name</th>
+					<th class="tab_col tab_spacer_2">Cluster number</th>
+					<th class="tab_col tab_spacer_2">Strand</th>
+					<th class="tab_col tab_spacer_2">Offset<br>upstream</th>
+					<th class="tab_col tab_spacer_2">Offset<br>downstream</th>
+					<th class="tab_col tab_spacer_2">Alignment<br>width</th>
+					<th class="tab_col">Consensus Alignment</th>
+				</tr>
+			</thead>
+                        <tbody>
+                        <!-- Insert rows-->
+                        HERE
+                        </tbody>
+                </table>
+     </div>
+    ';
+
+    return($align_table);
+}
+
+
+###################################
+## Hide/show the alignment table
+sub toogle_table{
+
+    my $toogle_align_tab  = 
+'
+// Slide the alignment table
+  $(document).ready(function(){
+    $(\'#button_alignment_table_--nb--\').click(function(){
+       $(\'#alignment_table_--nb--\').slideToggle(\'slow\');
+     }); 
+  $(\'#alignment_table_--nb--\').css(\'display\', \'none\');
+  });
+';
+    return($toogle_align_tab);
+}
+
+
+###################################
+## Hide/show the logo tree
+sub toogle_tree{
+
+    my $toogle_tree  = 
+'
+// Slide the logo tree
+  $(document).ready(function(){
+    $(\'#button_logo_tree_--nb--\').click(function(){
+       $(\'#cluster_--nb--\').slideToggle(\'slow\');
+     }); 
+  $(\'#cluster_--nb--\').css(\'display\', \'none\');
+  });
+';
+    return($toogle_tree);
+}
+
+
+###################################
+## Hide/show the alignment table
+sub toogle_branch_consensus_table{
+
+    my $toogle_branch_consensus_tab  = 
+'
+// Slide the branch-motif table
+  $(document).ready(function(){
+    $(\'#button_branch_consensus_cluster_--nb--\').click(function(){
+       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
+     }); 
+  $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+  });
+';
+    return($toogle_branch_consensus_tab);
+}
+
+
+#########################
+## Insert D3 logo tree 
+sub logo_tree{
+
+    my $logo_tree = 
+	'
+
+        <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
+	<!--Div containing D3 logo tree-->
+	<div id="cluster_--nb--" class="logo_tree">
+		<script type="text/javascript">
+		(function(){
+                var width = 3500,
+		height = 100 + 30 * --nb_motifs--,
+		m = [40, 240, 40, 240],
+		w = width ,//-m[0] -m[0],
+		h = height //-m[0] -m[2];
+	;
+
+
+	var cluster = d3.layout.cluster()
+		.size([height, 400])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
+
+
+	var svg = d3.select("#cluster_--nb--").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("class","drawarea")
+		.attr("transform", "translate(40,0)");
+		
+
+d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
+				
+	var nodes = cluster.nodes(json);
+
+	var link = svg.selectAll("path.link")
+		.data(cluster.links(nodes))
+		.enter().append("path")
+		.attr("class", "link")
+		.attr("d", elbow);
+
+
+	var node = svg.selectAll("g.node")
+		.data(nodes)
+		.enter().append("g")
+		.attr("class", "node")
+		.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+	
+	node.append("circle")
+		.attr("r", 6.5);
+
+	node.append("a")
+			.attr("xlink:href", function(d) { return d.url; })
+			.append("text")
+			.text(function(d) { return d.children ? "" :  d.name; })
+			.attr("dx", function(d) { return d.children ? 0 : 20; })
+			.attr("dy", function(d) { return d.children ? 0 : 3; })
+			.attr("font-size", "8px")
+			.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+/*
+	node.append("text")
+			.text(function(d){ return d.children ? "" :  d.consensus; })
+			.attr("x", function(d){ return d.children ? 0 : 20; })
+			.attr("dy", function(d){ return d.children ? 0 : 23; })
+			.attr("font-size", "8px")
+			.attr("text-anchor", function(d){ return d.children ? "end" : "start"; });
+*/
+	/*Insert labels*/
+	
+	
+	/*Insert consensus*/
+		node.append("a")
+		.attr("xlink:href", function(d) { return d.children ? d.url : ""; })
+		.append("text")
+		.text(function(d) { return d.children ? d.name : ""; })
+		.attr("dx", function(d) { return d.children ? -20 : 0; })
+		.attr("dy", function(d) { return d.children ? -6 : 0; })
+		.attr("fill", function(d) { return d.children ? "blue" : ""; })
+		.attr("font-size", "10px")
+		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+		
+	node.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image; })  
+		.attr("width", function(d) { return (d.size + 2)  * 8.5; })
+		.attr("height", 35)
+		.attr("x", 160)    
+		.attr("y", -15) 
+		.attr("preserveAspectRatio", "none");	
+		
+	node.append("svg:image")
+		.attr("xlink:href", function(d) { return d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * 8.5; })
+		.attr("height", 35)
+  		.attr("x", function(d) { return (d.size + 2)  * 12 + 110; })  
+		.attr("y", -15) 
+		.attr("preserveAspectRatio", "none");
+			
+	});
+	
+
+	function elbow(d, i) {
+		
+		return "M" + d.source.y + "," + d.source.x
+		+ "V" + d.target.x + "H" + d.target.y;
+	}
+})();
+	</script>
+	</div>	
+
+';
+
+    return($logo_tree);
+}
+ 
+
+#########################
+## Insert D3 logo tree 
+sub branch_consensus_table{
+
+    my $branch_consensus_table = 
+	'
+    <div class="Cluster_results --Cluster_id--" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
+
+    <div class="tab branch_consensus_cluster_--nb--">
+		<table>
+			<thead>
+				<tr>
+					<th colspan="5">Branch-consensus and branch-motifs</th>
+				</tr>
+				<tr>
+					<th class="tab_col">Consensus id</th>
+					<th class="tab_col">Consensus</th>
+					<th class="tab_col">Logo Direct (link)</th>
+                                        <th class="tab_col">Logo Reverse (link)</th>
+					<th class="tab_col">Matrix (Transfac format; link)</th>
+				</tr>
+			</thead>
+                        <tbody>
+                        <!-- Insert rows-->
+                        HERE
+                        </tbody>
+                </table>
+     </div>
+';
+
+    return($branch_consensus_table);
+}
+
+
+##############################################################
+## When the option -top1 is used the analysis is restricted 
+## to the first X motifs, however the input motif file is 
+## splitted on individual files, although not all of them 
+## are not. This functions will delete those files
+sub Delete_single_motif_files {
+
+    my @pref = split("/", $main::outfile{prefix});
+    my $prefix = pop(@pref);
+    my $folder_pref = join("/", @pref);
+    my $cmd = "ls ".$folder_pref." | grep ".$prefix." | grep .tf ";
+    my @files_tf = `$cmd`;
+
+    if(scalar(@files_tf) > 0){
+	foreach my $f_name (@files_tf){
+	    my $file_to_delete = $folder_pref."/".$f_name;
+	    system("rm ".$file_to_delete);
+	}
+    }
+}
+
+##############################################
+## When the option -clone_input is selected
+## the input file is exported in the result 
+## folder
+sub Clone_input{
+    
+    my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
+    &RSAT::util::one_command($cmd, 1,"");
+    &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
+}
+
 __END__

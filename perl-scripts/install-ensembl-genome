@@ -22,7 +22,7 @@ $program_version
 
 Install on RSAT genome sequence, genomic features and (optionally)
 variation features for a genome form Ensembl
-(http://www.ensembl.org/).
+(L<http://www.ensembl.org/>).
 
 The connection to ensembl is ensured by a combination of their Perl
 API and their ftp site (some information can not be obtained directly
@@ -30,9 +30,15 @@ from the API, e.g. the taxonomy).
 
 =head1 AUTHORS
 
-Jeremy.Delerce\@etu.univ-amu.fr
+=over
 
-Jacques.van-Helden\@univ-amu.fr
+=item I<Jeremy Delerce> (Master 2 thesis 2013)
+
+=item I<Alejandra Medina-Rivera> (amedina@lcg.unam.mx)
+
+=item I<Jacques van Helden> (Jacques.van-Helden@univ-amu.fr)
+
+=back
 
 =head1 CATEGORY
 
@@ -44,11 +50,11 @@ Jacques.van-Helden\@univ-amu.fr
 
 =head1 USAGE
 
-install-ensembl-genome [-version #] [-task #] [-dir #] [-o outputfile] [-v #] [...]
+C<install-ensembl-genome [-version #] [-task #] [-o outputfile] [-v #] [...]>
 
 =head2 Example
 
- install-ensembl-genome -v 1 -species Homo_sapiens
+C<install-ensembl-genome -v 1 -species Saccharomyces_cerevisiae>
 
 =head1 OUTPUT FORMAT
 
@@ -67,16 +73,19 @@ Genomic features (genes, CDS, mRNAs, ...) are exported in gft format
 (the RSAT specification of genomic features). For a description, of
 this format and conversions from/to other formats, type
 
-  convert-features -h
+C<convert-features -h>
 
 =head2 Variation features
 
 Variation features are exported in a tab-delimited format specific to
-RSAT.
+RSAT. This format can be generated from files in classical formats
+(VCF, GVF) with the tool I<convert-variations>.
 
-For a description, of this format
+For a description, of variation formats
 
-  download-ensembl-variations -h
+C<download-ensembl-variations -h>
+
+C<convert-variations -h>
 
 =head1 SEE ALSO
 
@@ -133,11 +142,11 @@ package main;
   our $batch = 0;
   our $out = STDOUT;
 
-  our $db = "ensembl";
-  our $data_dir;
+  our $db = "ensembl"; ## Alternative: ensemblgenomes
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
+  our $species_suffix = "";
 
   #  our $safe_ensembl_version;
   #  our $latest_ensembl_version;
@@ -157,7 +166,6 @@ package main;
   our @species_names = ();
   our $only_api = 0;
 
-
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -165,15 +173,15 @@ package main;
   ################################################################
   ## Check argument values
 
+  ## Check that the user-selected Ensembl version is supported.
   &check_ensembl_version($db, $ensembl_version);
 
   ## Set default tasks if no task has been specified
   if (scalar(@tasks) < 1) {
     @tasks= @default_tasks;
   }
-  #    @tasks = ("genome","features") if ( scalar(@tasks) < 1);
 
-  ## Check the requested tasks
+  ## Check that all requested tasks are supported
   &RSAT::message::Info("Requested tasks:", join(",", @tasks)) if ($main::verbose >= 2);
   foreach my $task (@tasks) {
     next unless ($task);
@@ -183,12 +191,9 @@ package main;
     $task{$task} = 1;
   }
 
-  ## Data directory
-  &RSAT::message::TimeWarn("Getting data directory") if ($main::verbose >= 2);
-  $data_dir = &Get_data_dir() unless ($data_dir);
-
   ## Read list of species from a file
   if ($infile{input}) {
+    &RSAT::message::TimeWarn("Reading species list from file", $infile{input}) if ($main::verbose >= 2);
     my ($file) = &OpenInputFile($infile{input});
     while (<$file>) {
       next unless (/\S/);	## Skip empty rows
@@ -202,75 +207,22 @@ package main;
     }
   }
 
+  ## Check that at least one species name has been specified
   unless ($get_available_species) {
-    ## Check that at least one species name has been specified
     if (scalar(@species_names) < 1) {
       &RSAT::error::FatalError("You must specify at least one species (option -species).");
     }
-
   }
 
   ################################################################
-  ## Print verbose
+  ## Open output stream and print verbose
   $out = &OpenOutputFile($outfile{output});
   &Verbose() if ($main::verbose >= 1);
 
   ################################################################
-  ## Return the list of available species on the Ensembl server.
-  if ($get_available_species) {
-    my %available_species = ();
-
-    my $arg = "-v ".$verbose;
-    $arg .= " -available_species";
-    $arg .= " -version $ensembl_version";
-    $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
-
-    my %species_taxon = ();
-
-    ## Get the list of available species from Ensembl via download-ensembl-genome
-    &RSAT::message::TimeWarn("Getting the list of available genomes in", $db) if ($main::verbose >= 2);
-    my @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-genome  $arg};
-    foreach (@species) {
-      chomp();
-      my ($species,$taxon) = split("\t");
-      $species_taxon{$species} = $taxon unless ($db eq "ensembl");
-      push (@{$available_species{$species}}, "genome");
-    }
-
-    ## Get the list of genomes for which features are available
-    &RSAT::message::TimeWarn("Getting the list of available features in ", $db) if ($main::verbose >= 2);
-    if ($only_api) {
-      $arg .= " -only_api";
-    }
-    my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features -available_species ".$arg;
-    @species = qx{$command};
-    foreach (@species) {
-      chomp();
-      my ($species,$taxon) = split("\t");
-      $species_taxon{$species} = $taxon unless ($db eq "ensembl");
-      push (@{$available_species{$species}}, "features");
-    }
-
-    ## Get the list of genomes for which variations are available
-    &RSAT::message::TimeWarn("Getting the list of available variations in", $db) if ($main::verbose >= 2);
-    @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-variations -available_species $arg};
-    foreach (@species) {
-      chomp();
-      push (@{$available_species{$_}}, "variations");
-    }
-
-    ## Print out the result
-    foreach my $species ( sort {$a cmp $b} keys(%available_species) ) {
-      print $out $species,"\t",join(", ",@{$available_species{$species}});
-      print $out "\t", $species_taxon{$species} if ($species_taxon{$species});
-      print $out "\n";
-    }
-
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
-    close $out;
-    exit(0);
-  }
+  ## If requested, get the list of available species on the Ensembl
+  ## server.
+  &GetAvailableSpecies();
 
   ################################################################
   ## Run the download and installation tasks
@@ -317,24 +269,24 @@ package main;
       my $arg = " -v ".$verbose;
       $arg .= " -species ".$species;
       $arg .= " -version ".$ensembl_version;
-      $arg .= " -dir ".$data_dir;
-      $arg .= " -ensembl_genomes" unless ($db eq "ensembl");
+      $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
+      $arg .= " -db ".$db;
 
       if ($task{"genome"}) {
 	&RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome $arg";
+	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome ".$arg;
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
 
       if ($task{"features"}) {
 	&RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features $arg";
+	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features ".$arg;
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
 
       if ($task{"variations"}) {
 	&RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations $arg";
+	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations ".$arg;
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
 
@@ -342,14 +294,15 @@ package main;
       ## differs from the Ensembl species name, because we add a
       ## suffix with the data source (ensembl), assembly and ensembl
       ## version.
-      my $org = &Get_species_dir($data_dir,$species,"",$ensembl_version);
-      $org =~ s|/+$||;
-      $org =~ s|.*\/||;
+      my $full_species_id = &Get_full_species_ID($species,"",$ensembl_version, $species_suffix);
+
+      &RSAT::message::Info("Species", $species) if ($main::verbose >= 0);
+      &RSAT::message::Info("Full species ID", $full_species_id) if ($main::verbose >= 0);
 
       ## Declare the organism in RSAT
       if ($task{"config"}) {
 	&RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $org -task config";
+	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $full_species_id -task config";
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
 
@@ -357,8 +310,8 @@ package main;
       ## stop codon, compute oligo and dyad frequencies in upstream
       ## sequences, compute aa frequencies in protein sequences, ...)
       if ($task{"install"}) {
-	&RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $org -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
+	&RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species, $full_species_id) if ($main::verbose >= 1);
+	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $full_species_id -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
 	$command .= " -batch" if ($batch);
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
@@ -458,7 +411,7 @@ genomes. Alternatively, a file contianing a list of species names can
 be entered with the option I<-species_file>.
 
 Use the option I<-available_species> to print a list of available
-species at Ensembl, or options I<-available_species -ensembl_genomes>
+species at Ensembl, or options I<-available_species -db ensemblgenomes>
 to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
@@ -516,6 +469,21 @@ would change their file formats or locations.
 
 =pod
 
+=item B<-species_suffix>
+
+Suffix to append to the full species ID.
+
+By default, the full species ID is composed by concatenating the
+Ensembl species and assembly version. The option I<-species_suffix>
+allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
+will be appended to the full species ID.
+
+=cut
+    } elsif ($arg eq "-species_suffix") {
+    $species_suffix = shift(@arguments);
+
+=pod
+
 =item B<-task #>
 
 What you whant to install
@@ -561,29 +529,53 @@ This task is executed by running I<install-organism>.
 	 my $task = shift(@arguments);
 	 push (@main::tasks, split(",",$task));
 
-=pod 
-
-=item B<-dir #>
-
-The directory in wich RSAT data must be installed. The selected
-species will be installed in a sub-directory composed of Species name
-and Ensembl genome version.
-
-Default : $RSAT/data/
-
-=cut
-    } elsif ($arg eq "-dir") {
-      $main::data_dir = shift(@arguments);
+# =pod 
+#
+# =item B<-dir #>
+#
+# The directory in wich RSAT data must be installed. The selected
+# species will be installed in a sub-directory composed of Species name
+# and Ensembl genome version.
+#
+# Default : $RSAT/data/
+#
+# =cut
+#     } elsif ($arg eq "-dir") {
+#       $main::data_dir = shift(@arguments);
 
 =pod
 
-=item B<-ensembl_genomes>
+=item B<-db ensembl|ensemblgenomes>
 
-Download genome from ensembl genomes (Protist, fungi ...);
+Default: Ensembl
+
+Select the source database. 
+
+=over
+
+=item I<ensembl>
+
+The "historical" Ensembl database (L<http://ensembl.org/>), restricted
+to a series of genomes from model organisms (69 supported species on
+Oct 30, 2014).
+
+=item I<ensemblgenomes>
+
+The exended EnsemblGenomes database (L<http://ensemblgenomes.org/>),
+which comprises repositories for the following taxa: Bacteria
+(actually includes Archaea), Fungi, Metazoa, Plants, Protists.
+
+In Oct 2014, EnsemblGenomes supports >15,000 species.
+
+=back
 
 =cut
-   } elsif ($arg eq "-ensembl_genomes") {
-	$main::db = "ensembl_genomes";
+   } elsif ($arg eq "-db") {
+    $main::db = lc(shift(@arguments));
+    unless (($main::db eq "ensembl")
+	    || ($main::db eq "ensemblgenomes")) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+    }
 
 =pod
 
@@ -607,15 +599,6 @@ I<download-ensembl-features>.
    } elsif ($arg eq "-only_api") {
      $main::only_api = 1;
 
-=pod
-
-=item B<-dry>
-
-Dry run: print the commands but do not execute them.
-
-=cut
-   } elsif ($arg eq "-dry") {
-	$main::dry_run = 1;;
 
 =pod
 
@@ -634,6 +617,17 @@ incomplete.
 
 =pod
 
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands without running them (for testing and
+debugging).
+
+=cut
+     } elsif ($arg eq "-dry") {
+	$dry_run = 1;
+
 =item B<-batch>
 
 Run the last installation tasks (I<install-organism>) in batch. This
@@ -643,16 +637,6 @@ properly in the configuration file $RSAT/RSAT_config.props.
 =cut
      } elsif ($arg eq "-batch") {
 	$batch = 1;
-
-=pod
-
-=item B<-dry>
-
-Generate the commands without running them (for testing and debugging)
-
-=cut
-     } elsif ($arg eq "-dry") {
-	$dry_run = 1;
 
      } else {
 	&FatalError(join("\t", "Invalid option", $arg));
@@ -674,6 +658,7 @@ sub Verbose {
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   printf $out "; %-22s\t%s\n", "Ensembl release", $ensembl_version;
+  printf $out "; %-22s\t%s\n", "Species suffix", $species_suffix;
   if (%main::infile) {
     print $out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
@@ -685,6 +670,67 @@ sub Verbose {
     while (my ($key,$value) = each %main::outfile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
+  }
+}
+
+################################################################
+## Get the list of available species for the 3 components of the
+## installation (download, features and variations).
+sub GetAvailableSpecies {
+  if ($get_available_species) {
+    my %available_species = ();
+
+    my $arg = "-v ".$verbose;
+    $arg .= " -available_species";
+    $arg .= " -version $ensembl_version";
+    $arg .= " -db ".$db;
+
+    my %species_taxon = ();
+
+    ## Get the list of available species from Ensembl via download-ensembl-genome
+    &RSAT::message::TimeWarn("Getting the list of species with available genomes in", $db) if ($main::verbose >= 2);
+    my @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-genome  $arg};
+    foreach (@species) {
+      chomp();
+      my ($species,$taxon) = split("\t");
+      $species_taxon{$species} = $taxon unless ($db eq "ensembl");
+      push (@{$available_species{$species}}, "genome");
+    }
+
+    ## Get the list of genomes for which features are available
+    &RSAT::message::TimeWarn("Getting the list of species with available features in ", $db) if ($main::verbose >= 2);
+    if ($only_api) {
+      $arg .= " -only_api";
+    }
+    my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features -available_species ".$arg;
+    @species = qx{$command};
+    foreach (@species) {
+      chomp();
+      my ($species,$taxon) = split("\t");
+      $species_taxon{$species} = $taxon unless ($db eq "ensembl");
+      push (@{$available_species{$species}}, "features");
+    }
+
+    ## Get the list of genomes for which variations are available
+    &RSAT::message::TimeWarn("Getting the list of species with available variations in", $db) if ($main::verbose >= 2);
+    @species = qx{$ENV{'RSAT'}/perl-scripts/download-ensembl-variations -available_species $arg};
+    foreach (@species) {
+      chomp();
+      push (@{$available_species{$_}}, "variations");
+    }
+
+    ## Print out the result
+    foreach my $species ( sort {$a cmp $b} keys(%available_species) ) {
+      print $out $species,"\t",join(", ",@{$available_species{$species}});
+      print $out "\t", $species_taxon{$species} if ($species_taxon{$species});
+      print $out "\n";
+    }
+
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    close $out;
+    exit(0);
   }
 }
 

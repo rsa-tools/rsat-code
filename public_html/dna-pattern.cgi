@@ -164,7 +164,7 @@ if ($query->param("output") =~ /display/i) {
 
   ### Print the result on Web page
   print "<h2>Result</h2>";
-  &PrintHtmlTable(RESULT, $result_file, 1);
+  &PrintHtmlTable(RESULT, $result_file, 1, 5000);
   close RESULT;
 
   &PrintURLTable(@result_files);
