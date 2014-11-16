@@ -65,7 +65,7 @@ package main;
 
   local $insert_col_left = 0;
   local $insert_col_right = 0;
-
+  $matrix_list_name=0;
   ## Return type(s)
   @return_fields = ();
   %supported_return_type = (
@@ -121,6 +121,7 @@ package main;
 			     "pdf"=>1,
       );
   $supported_logo_formats = join ",", sort keys %supported_logo_format;
+  @tf_name_in_file= ();
 
   ################################################################
   ## Read command-line arguments
@@ -155,6 +156,11 @@ package main;
       my @fields = split /\s+/;
       my $matrix_file = $fields[0];
       push @matrix_files, $matrix_file;
+      if($matrix_list_name==1){
+	  my $matrix_id = $fields[1];
+	  push @tf_name_in_file, $matrix_id ;
+      }
+
     }
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
@@ -302,26 +308,29 @@ package main;
   if (scalar(@matrix_files >= 1)) {
     $m = 0;
     foreach my $matrix_file (@matrix_files) {
+	if (scalar(@tf_name_in_file)>=1){
+	    $main::args{prefix}=shift(@tf_name_in_file);
+	}
       last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
-      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
-      foreach my $matrix (@matrices_from_file) {
-	$m++;
-	last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
-	&SetMatrixName($matrix, $m, $matrix_file, $input_format);
-	push @matrices, $matrix;
-      }
+	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
+	foreach my $matrix (@matrices_from_file) {
+	    $m++;
+	    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+	    &SetMatrixName($matrix, $m, $matrix_file, $input_format);
+	    push @matrices, $matrix;
+	}
     }
   } else {
-    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
-    my $m = 0;
-    foreach my $matrix (@matrices_from_file) {
+      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
+      my $m = 0;
+      foreach my $matrix (@matrices_from_file) {
       $m++;
       last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
       &SetMatrixName($matrix, $m, "", $input_format);
       push @matrices, $matrix;
-    }
+      }
   }
-
+  
   ## Check that there is at least one input matrix
   if (scalar(@matrices) < 1) {
     &RSAT::message::Warning("Input file contained not a single matrix");
@@ -644,6 +653,9 @@ OPTIONS
 		name. Any further information on the same row is
 		ignored.
 
+	-mlist_name inout file in -mlist  with tf name in second column
+		File containing a list of matrices has in the second column the name of the TF or ID
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -953,9 +965,10 @@ INPUT/OUTPUT FORMATS
         (http://www.gene-regulation.com/pub/databases.html)
 
     CIS-BP (input)
-        Format used in the CIS-BP database;
-        Similar to transfac, but without the AC/ID lines, and Position line labeled with Pos instead of PO.
+        Format used in the CIS-BP database.
 
+        Similar to transfac, but without the AC/ID lines, and Position
+        line labeled with Pos instead of PO.
 
     STAMP (input/output)
 	Converts the matrix from/to a string in STAMP format
@@ -1273,6 +1286,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-mlist") {
 	    $infile{matrix_list} = $ARGV[$a+1];;
 
+	    ### list of input files contains also tf name
+	
+	} elsif ($ARGV[$a] eq "-mlist_name") {
+	    $matrix_list_name = 1;;
+	    
 	    ### Maximal number of matrices to return
 	} elsif ($ARGV[$a] eq "-top") {
 	  $top_matrices = $ARGV[$a+1];
