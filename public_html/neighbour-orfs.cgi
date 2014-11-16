@@ -73,10 +73,10 @@ MAIN:
   ### Print the header
   print <<End_Header;
 <HEADER>
-<TITLE>RSA-tools - neighbour-orfs result</TITLE>
+<TITLE>RSAT - neighbour-orfs result</TITLE>
 </HEADER><BODY BGCOLOR="#FFFFFF">
 <H3 ALIGN=CENTER><A HREF="$ENV{rsat_www}/RSAT_home.cgi">
-RSA-tools</A> - neighbour-orfs result $input{'set_name'}</H3>
+RSAT</A> - neighbour-orfs result $input{'set_name'}</H3>
 End_Header
 
 

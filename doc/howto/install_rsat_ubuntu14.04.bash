@@ -12,6 +12,14 @@
 #    add English (Macintosh)
 
 
+## For Debian, I must set the locales manually
+# export LANGUAGE=en_US.UTF-8
+# export LANG=en_US.UTF-8
+# export LC_ALL=en_US.UTF-8
+# locale-gen en_US.UTF-8
+# dpkg-reconfigure locales
+
+
 ################################################################
 ## Must be executed as root. If you are non-root but sudoer user, you
 ## can become it withn "sudo bash"
@@ -61,85 +69,86 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALL
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
-	curl
-	yum
-	php-elisp
-	libgdbm-dev
-	libgd2-xpm-dev
-	libxml2-dev
-	links
-	gfortran
-	libmysqlclient-dev
-	texlive-latex-base
-	python-virtualenv
-	ipython
-	ipython-notebook
-	libssl-dev
-	libreadline-gplv2-dev:i386
-	lib64readline-gplv2-dev:i386
-	libreadline-gplv2-dev
-	libx11-dev
-	libxt-dev
-	libcurl4-openssl-dev
-	libxml2-dev
-	tcl8.5-dev
-	tk8.5-dev
-	libxss-dev
-	libpng12-dev
-	libjpeg62-dev
-	libcairo2-dev
-	lib32z1
-	lib32ncurses5
-	lib32bz2-1.0
-	libc6-dev
-	build-essential
-	python-dev
-	python3-dev
-	libnet-ssleay-perl
-	libcrypt-ssleay-perl
-        exfat-fuse
-        exfat-utils 
+curl
+yum
+php-elisp
+libgdbm-dev
+libgd2-xpm-dev
+libxml2-dev
+links
+gfortran
+libmysqlclient-dev
+texlive-latex-base
+python-virtualenv
+ipython
+ipython-notebook
+libssl-dev
+libreadline-gplv2-dev:i386
+lib64readline-gplv2-dev:i386
+libreadline-gplv2-dev
+libx11-dev
+libxt-dev
+libcurl4-openssl-dev
+libxml2-dev
+tcl8.5-dev
+tk8.5-dev
+libxss-dev
+libpng12-dev
+libjpeg62-dev
+libcairo2-dev
+lib32z1
+lib32ncurses5
+lib32bz2-1.0
+libc6-dev
+build-essential
+python-dev
+python3-dev
+libnet-ssleay-perl
+libcrypt-ssleay-perl
+exfat-fuse
+exfat-utils 
 "
 
 PACKAGES="
-	ssh
-	git
-	cvs
-	wget
-	zip
-	unzip
-	finger
-	screen
-	make
-	g++
-	apache2
-	php5
-	libapache2-mod-php5
-	libgd-tools
-	libgd-gd2-perl
-	ghostscript
-	gnuplot
-	graphviz
-	mysql-client
-	default-jre
-	python
-	python-pip
-	python-setuptools 
-	python-numpy
-	python-scipy
-	python-matplotlib
-	python-suds
-	python3
-	python3-pip
-	python3-setuptools 
-	python3-numpy
-	python3-scipy
-	python3-matplotlib
-	r-base-core
-	emacs
-        x11-apps
-        firefox
-        eog
+ssh
+git
+cvs
+wget
+zip
+unzip
+finger
+screen
+make
+g++
+apache2
+php5
+libapache2-mod-php5
+libgd-tools
+libgd-gd2-perl
+ghostscript
+gnuplot
+graphviz
+mysql-client
+default-jre
+python
+python-pip
+python-setuptools 
+python-numpy
+python-scipy
+python-matplotlib
+python-suds
+python3
+python3-pip
+python3-setuptools 
+python3-numpy
+python3-scipy
+python3-matplotlib
+r-base-core
+emacs
+x11-apps
+firefox
+eog
+ntp
 "
 
 ################################################################
@@ -148,45 +157,45 @@ PACKAGES="
 ## ubuntu OS)
 
 PACKAGES_PERL="perl-doc
-	pmtools
-	libyaml-perl
-	libemail-simple-perl
-	libemail-sender-perl
-	libemail-simple-creator-perl
-	libpostscript-simple-perl
-	libstatistics-distributions-perl
-	libio-all-perl
-	libobject-insideout-perl
-	libobject-insideout-perl
-	libsoap-lite-perl
-	libsoap-wsdl-perl
-	libxml-perl
-	libxml-simple-perl
-	libxml-compile-cache-perl
-	libdbi-perl
-	liblockfile-simple-perl
-	libobject-insideout-perl
-	libgd-perl
-	libdbd-mysql-perl
-	libjson-perl
-	libbio-perl-perl
-	libdigest-md5-file-perl
-        libnet-address-ip-local-perl
+pmtools
+libyaml-perl
+libemail-simple-perl
+libemail-sender-perl
+libemail-simple-creator-perl
+libpostscript-simple-perl
+libstatistics-distributions-perl
+libio-all-perl
+libobject-insideout-perl
+libobject-insideout-perl
+libsoap-lite-perl
+libsoap-wsdl-perl
+libxml-perl
+libxml-simple-perl
+libxml-compile-cache-perl
+libdbi-perl
+liblockfile-simple-perl
+libobject-insideout-perl
+libgd-perl
+libdbd-mysql-perl
+libjson-perl
+libbio-perl-perl
+libdigest-md5-file-perl
+libnet-address-ip-local-perl
 "
 
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.
 PACKAGES_PERL_MISSING="
-	libalgorithm-cluster-perl
-	digest-md5-file-perl
-	liblockfile-simple
-	libutil-properties-perl
-        librest-client-perl
-        libxml-compile-soap11-perl
-        libxml-compile-wsdl11-perl
-        libxml-compile-transport-soaphttp-perl
-        libbio-das-perl        
+libalgorithm-cluster-perl
+digest-md5-file-perl
+liblockfile-simple
+libutil-properties-perl
+librest-client-perl
+libxml-compile-soap11-perl
+libxml-compile-wsdl11-perl
+libxml-compile-transport-soaphttp-perl
+libbio-das-perl        
 "
 
 ## Install the apt-get libraries
@@ -285,11 +294,11 @@ a2enmod cgi ## this is apparently required to enable cgi
 ## added to the pip installation
 pip install soappy
 pip install fisher
+pip install httplib2
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 ## optional: an utility to measure internet bandwidth
 pip install speedtest-cli
-
 
 #${INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
@@ -442,13 +451,21 @@ make -f makefiles/init_rsat.mk init
 exit
 
 ################################################################
+## Previous way to specify bashrc parameters, via
+## /etc/bash_completion.d/. I change it (2014-09-23) because it does
+## not allow to run remote commands via ssh (/etc/bash_completion.d is
+## apparently only loaded in interactive mode).
+## 
 ## Link the RSAT bash configuration file to a directory where files
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 #rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
-ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
+## ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
 source ${RSAT_HOME}/RSAT_config.bashrc
+
+emacs -nw /etc/bash.bashrc
+
 
 ## Check that the root has well loaded the RSAT configuration
 echo $RSAT
@@ -734,5 +751,15 @@ grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
+
+
+################################################################
+## OPTIONAL
+## Install some software tools for NGS analysis
+cd ${RSAT}
+
+make -f makefiles/install_software.mk install_weblogo
+make -f makefiles/install_software.mk install_d3
+make -f makefiles/install_software.mk install_meme
 
 

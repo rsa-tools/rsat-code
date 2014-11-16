@@ -228,9 +228,10 @@ sub readFromFile {
     }
 
     ## Only retain the N top matrices if requested
+    my $top = 0;
     if (defined($args{top})) {
-      my $top = $args{top};
-      if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
+      $top = $args{top};
+      if ((&RSAT::util::IsNatural($top)) && ($top > 0)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
 	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
@@ -241,6 +242,109 @@ sub readFromFile {
       }
     }
 
+
+    ## Skip the N first matrices if requested
+    my $skip = 0;
+    if (defined($args{skip})) {
+      $skip = $args{skip};
+      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+      if ((&RSAT::util::IsNatural($skip)) && ($skip > 0)) {
+	for my $m (1..$skip) {
+	  shift(@matrices);
+	}
+      }
+    }
+
+
+
+    ## Select matrices specified as list of IDs
+    my @selected_ids = ();
+    if (defined($args{selected_ids})) {
+      @selected_ids = @{$args{selected_ids}};
+      &RSAT::message::Info("Selected IDs", join (",", @selected_ids)) if ($main::verbose >= 2);
+      if (scalar(@selected_ids) > 0) {
+	## Index selected IDs in a hash table
+	my %selected_id = ();
+	foreach my $id (@selected_ids) {
+	  $selected_id{lc($id)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_id = $matrix->get_attribute("id");
+	  push @retained_matrices, $matrix if ($selected_id{lc($matrix_id)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+    ## Select matrices specified as list of ACs
+    my @selected_acs = ();
+    if (defined($args{selected_acs})) {
+      @selected_acs = @{$args{selected_acs}};
+      &RSAT::message::Info("Selected ACs", join (",", @selected_acs)) if ($main::verbose >= 2);
+      if (scalar(@selected_acs) > 0) {
+	## Index selected ACs in a hash table
+	my %selected_ac = ();
+	foreach my $ac (@selected_acs) {
+	  $selected_ac{lc($ac)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_ac = $matrix->get_attribute("accession");
+	  push @retained_matrices, $matrix if ($selected_ac{lc($matrix_ac)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+
+    ## Select matrices specified as list of names
+    my @selected_names = ();
+    if (defined($args{selected_names})) {
+      @selected_names = @{$args{selected_names}};
+      &RSAT::message::Info("Selected names", join (",", @selected_names)) if ($main::verbose >= 2);
+      if (scalar(@selected_names) > 0) {
+	## Index selected names in a hash table
+	my %selected_name = ();
+	foreach my $name (@selected_names) {
+	  $selected_name{lc($name)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_name = $matrix->get_attribute("name");
+	  push @retained_matrices, $matrix if ($selected_name{lc($matrix_name)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+
+    ## Report remaining matrices after selection
+    if ((($skip + $top) > 0)
+	|| (scalar(@selected_acs) > 0)
+	|| (scalar(@selected_ids) > 0)
+	|| (scalar(@selected_names) > 0)
+	) {
+      &RSAT::message::Info("Number of matrices after selection",  scalar(@matrices)) if ($main::verbose >= 1);
+      if ($main::verbose >= 2) {
+	my @retained_acs = ();
+	my @retained_names = ();
+	foreach my $matrix (@matrices) {
+#	  push @retained_acs, $matrix->get_attribute("accession");
+#	  push @retained_names, $matrix->get_attribute("name");
+	  push @retained_message, $matrix->get_attribute("accession")." (".$matrix->get_attribute("name").")";
+	}
+#	&RSAT::message::Info("Retained matrix ACs",  join ",", (@retained_acs));
+#	&RSAT::message::Info("Retained matrix names",  join ",", (@retained_names));
+	&RSAT::message::Info("Retained matrices",  join "; ", (@retained_message));
+      }
+    }
 
     ## Return the matrices
     return @matrices;

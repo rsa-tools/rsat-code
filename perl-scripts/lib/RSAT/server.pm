@@ -396,19 +396,19 @@ sub DelayedRemoval {
     my ($file_to_remove, $delay) = @_;
     $delay = $delay || "24 hours";
     unless (-e $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
 	return();
     }
     unless (-r $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
 	return();
     }
     unless (-w $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
 	return();
     }
 
-    &RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
 
     #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
     return();
@@ -715,7 +715,32 @@ sub send_mail {
 
 	Email::Sender::Simple->send($email, {transport => $transport});
     }
+}
 
+
+=pod
+
+=item MessageToAdmin
+
+Report an error by sending an email to RSAT administrator
+
+=cut
+sub MessageToAdmin {
+    my ($message) = @_;
+
+    ## Check if server admin has been specified
+    unless (defined( $ENV{SERVER_ADMIN})) {
+      &RSAT::message::Warning("Cannot send mail to server admin. Variable SERVER_ADMIN should be defined in RSAT_config.props");
+      return();
+    }
+
+    ## Define title based on script name
+    my $script_name = &RSAT::util::ShortFileName($0);
+    my $title = join(" - " , "RSAT", $script_name, $date);
+#    $mail_command = "mail -s \'".$title."\'";
+#    $mail_command = "mail -s \'RSAT - $script_name - $date\'";
+#    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
+    &send_mail($message, $ENV{SERVER_ADMIN}, $title);
 }
 
 

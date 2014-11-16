@@ -5,7 +5,7 @@
 <html>
 <head>
    <meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=iso-8859-1\">
-   <title>RSA-tools - Web Services - Taverna workflows</title>
+   <title>RSAT - Web Services - Taverna workflows</title>
 <link rel=\"stylesheet\" type=\"text/css\" href = \"main.css\" media=\"screen\">
 </head>
 <body class=\"info\">

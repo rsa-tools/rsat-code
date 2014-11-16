@@ -110,12 +110,12 @@ print <<EndText;
   </table>
 </div>
 
-    <div class="attention">
+<!--    <div class="attention">
     <p><b>Attention!</b></p>
     <p>The main address for Regulatory Sequence Analysis Tools (RSAT) will be changed to <a target="_top" href="http://www.rsat.eu/">http://www.rsat.eu/</a></p>
     <p>Please update your bookmarks.</p>
     </div>
-
+-->
 <table border=0 cellpadding=3>
   <tr>
     <td COLSPAN=3>

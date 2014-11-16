@@ -298,7 +298,7 @@ if (($query->param('output') =~ /display/i) ||
 #    my $title = $query->param('title');
 ##    print $query->header();
 ##    print $query->start_html(
-##	-title=>"RSA-tools : $title",
+##	-title=>"RSAT : $title",
 #	-class => "$css_body_class",
 ##	-author=>'jvanheld@bigre.ulb.ac.be',
 #	-style => { 	-src => "$ENV{rsat_www}/main.css",
@@ -326,7 +326,7 @@ if (($query->param('output') =~ /display/i) ||
 #    my $title = $query->param('title');
 #    print $query->header();
 #    print $query->start_html(
-#	-title=>"RSA-tools : $title",
+#	-title=>"RSAT : $title",
 #	-class => "$css_body_class",
 #	-author=>'jvanheld@bigre.ulb.ac.be',
 #	-style => { 	-src => "$ENV{rsat_www}/main.css",
