@@ -69,3 +69,6 @@ backups
 ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
 public_html/web_services/RSATWS.wsdl
 public_html/web_services/RSATWS_documentation.xml
+results
+rsat_*.tar.gz
+available*
