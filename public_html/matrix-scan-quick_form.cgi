@@ -23,7 +23,7 @@ $default{origin}="end";
 
 $default{bg_method}="bginput";
 $checked{$default{bg_method}} = "CHECKED";
-$default{markov_order} = "0";
+$default{markov_order} = "1";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
@@ -366,12 +366,12 @@ binding sites annotated in the <a target=_blank href='http://www.oreganno.org'>O
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the Pval.
 </blockquote>");
-print $query->hidden(-name=>'bg_method',-default=>'bgfile');
+print $query->hidden(-name=>'bg_method',-default=>'bginput');
 print $query->hidden(-name=>'thresh_field',-default=>'pval');
 print $query->hidden(-name=>'thresh_value',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'0');
+print $query->hidden(-name=>'markov_order',-default=>'1');
 print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'return_field',-default=>'pval');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
