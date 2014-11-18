@@ -137,7 +137,7 @@ QSUB_OPTIONS=
 ##
 ## This will only be required if you intend to install yourself some
 ## organisms from tne NCBI genomes repository.
-GENBANK_DIR=[RSAT_PARENT_PATH]/rsat/downloads/ftp.ncbi.nih.gov/genomes/
+REFSEQ_DIR=[RSAT_PARENT_PATH]/rsat/downloads/ftp.ncbi.nih.gov/genomes/refseq
 
 ################################################################
 ## Libraries required for direct access to the Ensembl and
