@@ -45,7 +45,7 @@ $mismatches = 3;
 $in_format = "fasta";
 $verbose = 0;
 $dry_run = 0;
-$die_on_error = 1
+$die_on_error = 1;
 $mask_short = 0; ## If >0, sequences strictly shorter than the specified length will be masked before purging
 $skip_short = 0; ## If >0, sequences strictly shorter than the specified length will be skipped (will not appear in the output)
 
