@@ -1168,7 +1168,7 @@ sub Hclustering {
 	my $param = "Ncor";
 	my $val = $lth{$param};
 	%lth = ();
-	$lth{$param} = $value;
+	$lth{$param} = $val;
     }
 
     ## Pass the thresholds on the score to R for clustering
