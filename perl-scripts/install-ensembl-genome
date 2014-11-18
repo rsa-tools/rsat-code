@@ -269,7 +269,7 @@ package main;
       my $arg = " -v ".$verbose;
       $arg .= " -species ".$species;
       $arg .= " -version ".$ensembl_version;
-      $arg .= " -species_suffix ".$species_suffix;
+      $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
       $arg .= " -db ".$db;
 
       if ($task{"genome"}) {
@@ -295,7 +295,7 @@ package main;
       ## suffix with the data source (ensembl), assembly and ensembl
       ## version.
       my $full_species_id = &Get_full_species_ID($species,"",$ensembl_version, $species_suffix);
-      
+
       &RSAT::message::Info("Species", $species) if ($main::verbose >= 0);
       &RSAT::message::Info("Full species ID", $full_species_id) if ($main::verbose >= 0);
 

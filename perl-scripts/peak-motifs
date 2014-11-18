@@ -1165,8 +1165,8 @@ sub SequenceLengths {
     $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
     $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
     print $cmd, "\n";
-    die "HELLO";
-#    &one_command($cmd,1);
+#    die "HELLO";
+    &one_command($cmd,1);
   }
 }
 
