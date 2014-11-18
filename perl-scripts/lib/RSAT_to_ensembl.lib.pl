@@ -453,6 +453,8 @@ Ex:
 sub Get_full_species_ID {
   my ($species, $assembly_version,$ensembl_version, $species_suffix) = @_;
 
+  &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly_version, $ensembl_version, $species_suffix) if ($main::verbose >= 0);
+
   ## Check that Ensembl version has been provided. If not, take
   ## default one.
   unless ($ensembl_version) {
@@ -465,9 +467,10 @@ sub Get_full_species_ID {
   ## it.
   unless ($assembly_version) {
       &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 5);
-      $assembly_version = &Get_assembly_version($species,$ensembl_version);
+      $assembly_version = &Get_assembly_version($species,$ensembl_version,$species_suffix);
       &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
   }
+
 
   ## Full ID convention (2014-10, JvH  AMR)
   ## [Species]_[assembly_version]_[db][ensembl_version]
@@ -490,14 +493,16 @@ version for a given species.
 
 =cut
 sub Get_assembly_version {
-  my ($species,$ensembl_version) = @_;
+  my ($species,$ensembl_version,$species_suffix) = @_;
   &RSAT::message::Debug("&Get_assembly_version()", 
+			"main::db=".$main::db,
 			"species=".$species, 
 			"ensembl_version=".$ensembl_version,
-			"main::db=".$main::db,
+			"species_suffix=".$species_suffix,
       ) 
-      if ($main::verbose >= 5);
+      if ($main::verbose >= 0);
   $supported_file = &Get_supported_file();
+  die "HELLO";
 
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
