@@ -411,6 +411,7 @@ package main;
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
   $main::outfile{temp_2} = $main::outfile{prefix}."_temporary_2.html";
+  $main::outfile{int_align} = $main::outfile{prefix}."_intermediate_alignments.tab";
 
   ## Open the HTML index file
   $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
@@ -458,14 +459,14 @@ package main;
 
   if($selected_tasks{all} || $selected_tasks{cluster}){
       
-      ################################################################
-      ## Create temporary files with information about single matrices
+      #####################################################
+      ## Create temporary files with the single matrices
       %alignment_info = &Create_single_matrix_files();
 
       ################################################################
       ## Cluster the matrices
       &Hclustering();
-      
+
       ################################################################
       ## Read the motif to cluster assignation, which will be required for
       ## several functions below.
@@ -501,12 +502,12 @@ package main;
 
       ###################################
       ## Delete .tf files
-      &Delete_single_motif_files();
+      &Delete_temporal_files();
 
       ######################
       ## Clone input file
       if($clone_input_flag == 1){
-	  &Clone_input();
+      	  &Clone_input();
       }
 
       ################################################################
@@ -1749,75 +1750,152 @@ sub Create_single_matrix_files(){
 }
 
 
-################################################################
+#########################################################################
 ## Merge the matrices at each level of the hclust tree, and produce a
 ## branch-wise matrix + logo + consensus.
 sub Merge_matrices(){
 
-  &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
-  ## Get the cluster sizes
-
-  foreach my $cluster (@clusters_to_HTML){
-
-    my @nodes = @{$cluster_nodes{$cluster}};
-    &RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
-
-    $clusters_info{$cluster} = scalar(@nodes); 
-    $clusters_info{$cluster} =~ s/\s+//g;
     
-    
-    ## Folders with the aligned matrices
-    my @folder_merged_matrices = ();
-    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
-    
-    foreach my $folder (@folder_merged_matrices){
-      
-      ## Get the names of the aligned matrices files
-      chomp(my @file_names = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses/$folder`);
-      foreach my $file(@file_names){
-	$file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$file
-      }
-      my $files = join(" ", @file_names);
-
-      
-      
-      ## Merge the matrices and create a single matrix
-      my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_cat.tf";
-      my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
-
-      my $cmd = "cat ".$files." >".$cat_file;
-      $cmd .= "; merge-matrices -i ".$cat_file;
-      $cmd .= " -in_format tf -out_format tf";
-      $cmd .= " -o ".$merged_mat_file;
-      &doit($cmd, 0, $die_on_error, $verbose);
-      
-      ## Delete files
-      unlink($cat_file);
-      foreach my $file(@file_names){
-	unlink($file);
-      }
-      
-     ## Create branch-wise logos
-      $cmd = "convert-matrix -i ".$merged_mat_file;
-      $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
-      ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
-      $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder.".png"; 
-      &doit($cmd, 0, $die_on_error, $verbose);
-      
-
-      $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
-      $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
-      
-      $merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
-      
-      my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
-      my $cons = `more $mat_file | grep '^DE'`;
-      chomp($cons);
-      $cons =~ s/^DE\s+//;
-      $merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
+    ## Read the file with the information of the intermediate alignments
+    ## This info will be used to create the branch-motifs
+    my %int_align_files = ();
+    my ($int_align_file) = &OpenInputFile($main::outfile{int_align});
+    while (<$int_align_file>) {
+	chomp;
+	my $line = $_;
+	my @split_line = split("\t", $line);
+	my $cluster_number = "cluster_".$split_line[1];
+	my $level_number = "merge_level_".$split_line[2];
+	my $file_path = $split_line[3];
+	$int_aling_files{$cluster_number}{$level_number} = $file_path;
     }
-  }
+    close $int_align_file;
 
+
+    &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
+    ## Get the cluster sizes
+    
+    foreach my $cluster (@clusters_to_HTML){
+
+	my @nodes = @{$cluster_nodes{$cluster}};
+	&RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
+	
+	$clusters_info{$cluster} = scalar(@nodes); 
+	$clusters_info{$cluster} =~ s/\s+//g;
+
+	
+	## Folders with the aligned matrices
+	my @folder_merged_matrices = ();
+	chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
+	
+	my %int_align_info = ();
+	foreach my $folder (@folder_merged_matrices){
+
+	    ## Read the table with the number of spaced for each matrix,
+	    ## for each level of each cluster
+	    my $merge_level = $folder;
+	    $main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
+	    my @level_motifs = ();
+	    my ($int_align_dataframe) = &OpenInputFile($main::outfile{int_align_offset});
+	    while (<$int_align_dataframe>) {
+		chomp;
+		my $line = $_;
+		my @split_line = split("\t", $line);
+		my $motif_id = $split_line[0];
+		my $motif_strand = $split_line[2];
+		my $offset_up = $split_line[4];
+		my $offset_down = $split_line[5];
+		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
+		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
+		$int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
+		push(@level_motifs, $motif_id);
+	    }
+	    close $int_align_dataframe;	    
+	    unlink($main::outfile{int_align_offset});
+
+	    ## For each level add the gaps to the matrices
+	    foreach my $motif (@level_motifs){
+
+		## Reset the variables
+		my $offset_left = $int_align_info{$cluster}{$merge_level}{$motif}{offset_up};
+		my $offset_right = $int_align_info{$cluster}{$merge_level}{$motif}{offset_down};
+		my $strand = $int_align_info{$cluster}{$merge_level}{$motif}{strand};
+		my $file_name = $alignment_info{$motif}{file_name};
+
+		## Run the convert-matrix command to add the empty columns to the logos
+		if($strand eq "D"){
+		    
+		    ## Add the empty columns
+		    my $cmd = "convert-matrix -i ".$file_name;
+		    $cmd .= " -from tf -to tf -return counts,consensus";
+		    $cmd .= " -insert_col_left ".$offset_left;
+		    $cmd .= " -insert_col_right ".$offset_right;
+		    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
+		    &doit($cmd, 0, $die_on_error, $verbose);
+		    
+		}else{
+		    		 
+		    ## First convert the matrix to reverse complement 
+		    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
+		    $cmd = "convert-matrix -i ".$file_name;
+		    $cmd .= " -from tf -to tf -rc -return counts,consensus";
+		    $cmd .= " -o ".$temp_mat;
+		    &doit($cmd, 0, $die_on_error, $verbose);
+		    
+		    ## Then add the gaps
+		    $cmd = "convert-matrix -i ".$temp_mat;
+		    $cmd .= " -from tf -to tf -return counts,consensus";
+		    $cmd .= " -insert_col_left ".$offset_left;
+		    $cmd .= " -insert_col_right ".$offset_right;
+		    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
+		    &doit($cmd, 0, $die_on_error, $verbose);
+		    unlink($temp_mat);
+		}
+	    }
+
+	    
+	    my @file_names = @level_motifs;
+	    ## Get the names of the files of each level
+	    foreach my $m (@file_names){
+	    	$m = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$m.".tf";
+	    }
+	    my $files = join(" ", @file_names);
+
+	    ## Merge the matrices and create a single matrix
+	    my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
+	    my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
+	    my $cmd = "cat ".$files." >".$cat_file;
+	    $cmd .= "; merge-matrices -i ".$cat_file;
+	    $cmd .= " -in_format tf -out_format tf";
+	    $cmd .= " -o ".$merged_mat_file;
+	    &doit($cmd, 0, $die_on_error, $verbose);
+	    
+	    ## Delete files with single matrices
+	    unlink($cat_file);
+	    foreach my $file (@file_names){
+	    	unlink($file);
+	    }    
+
+	    ## Create branch-wise logos
+	    $cmd = "convert-matrix -i ".$merged_mat_file;
+	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
+	    ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
+	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
+	    &doit($cmd, 0, $die_on_error, $verbose);
+	    
+	    
+	    $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
+	    $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+	    
+	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+	    
+	    my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+	    my $cons = `more $mat_file | grep '^DE'`;
+	    chomp($cons);
+	    $cons =~ s/^DE\s+//;
+	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
+	}
+    }
 }
 
 
@@ -2616,20 +2694,12 @@ sub branch_consensus_table{
 ## to the first X motifs, however the input motif file is 
 ## splitted on individual files, although not all of them 
 ## are not. This functions will delete those files
-sub Delete_single_motif_files {
+sub Delete_temporal_files {
 
-    my @pref = split("/", $main::outfile{prefix});
-    my $prefix = pop(@pref);
-    my $folder_pref = join("/", @pref);
-    my $cmd = "ls ".$folder_pref." | grep ".$prefix." | grep .tf ";
-    my @files_tf = `$cmd`;
-
-    if(scalar(@files_tf) > 0){
-	foreach my $f_name (@files_tf){
-	    my $file_to_delete = $folder_pref."/".$f_name;
-	    system("rm ".$file_to_delete);
-	}
+    foreach my $f (keys %alignment_info){
+	unlink($alignment_info{$f}{file_name});
     }
+    unlink($main::outfile{int_align});
 }
 
 ##############################################
