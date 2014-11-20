@@ -406,6 +406,7 @@ align.two.leaves <- function(child1, child2){
     motifs.info[[id1]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id1]][["consensus"]], "-")))-1
     motifs.info[[id2]][["spacer"]] <<- length(unlist(strsplit(motifs.info[[id2]][["consensus"]], "-")))-1
   }
+  
   rm(n1, n2)
 }
 
@@ -988,34 +989,10 @@ fill.downstream.forest <- function(motifs.list){
 }
 
 
-########################################
-## Call the program convert-matrix to
-## add empty columns to the matrices  
-add.empty.columns <- function(id){
-
-  strand <- motifs.info[[id]][["strand"]]
-
-  if(strand == "D"){
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
-  } else{
-
-    ## First convert the matrix to reverse complement
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", single.mat.files[[id]], " -from tf -to tf -return counts,consensus -rc -o ", cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = ""))
-
-    temp.mat <- paste(cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, "_temp.tf", sep = "")
-
-    ## Then add the gaps
-    system(paste(dir.rsat, "/perl-scripts/convert-matrix -i ", temp.mat, " -from tf -to tf -logo_format png -return counts,consensus,parameters -insert_col_left ", merge.consensus.info[[id]][["spacer"]], " -insert_col_right ", merge.consensus.info[[id]][["offset_down"]], " -o ", cluster.folder, "/merged_consensuses/merge_level_", merge.level, "/merged_consensus_", id, ".tf", sep = ""))
-
-    system(paste("rm ", temp.mat, sep = ""))
-    rm(temp.mat)    
-  }
-}
-
-#####################################
-## Generate the aligned matrices
-## for each merge level of the tree
-aligned.matrices.to.merge <- function(level){
+#####################################################
+## Creates the folders where the branch-motifs
+## for each merge level of the tree will be stored
+create.dir.merge <- function(level){
 
   ## Create the folder with the merged consensuses
   merge.dir <- paste("merged_consensuses/merge_level_", level, sep = "")
@@ -1026,49 +1003,6 @@ aligned.matrices.to.merge <- function(level){
   if(flag >= 1){
     system(paste("rm -r ", new.dir, "/*", sep = ""))
   }
-  ids <- get.id(merge.levels.leaves[[level]])
-  
-  ## Add the spacer to the consensuses
-  merge.consensus.info <<- consensus.internal.merge(motifs.info, ids)
-
-
-  ## Get the single matrices file names
-  single.mat.files <<- sapply(ids, function(X){
-    paste(out.prefix, "_single_matrices_", X, ".tf", sep = "")
-  })
-  single.mat.files <<- as.list(single.mat.files)
-
-  ## For each level, add the empty columns to the
-  ## corresponding matrices
-  sapply(ids, add.empty.columns)
-}
-
-
-###################################################
-## Set the sizes of all consensuses to the largest
-## one, adding "-" at the end of the consensuses
-consensus.internal.merge <- function(motifs.list, ids){
-
-  ## Temporal list with ids info
-  temporal <- list()
-  for(id in ids){
-    temporal[[id]] <- motifs.list[[id]]
-  }
-
-  ## Get the highest length among the consensuses
-  width <- sapply(temporal, function(X){
-    consensuses <- sapply(X[["consensus"]], nchar)
-  })
-  max.width <- unique(max(width))
-
-  ## Fill the spaces
-  for(id in ids){
-    spacer.length <-  max.width - nchar(temporal[[id]][["consensus"]])
-    spacer <- paste(rep("-", times = spacer.length), collapse = "")
-    temporal[[id]][["consensus"]] <- paste(temporal[[id]][["consensus"]], spacer, sep = "")
-    temporal[[id]][["offset_down"]] <- spacer.length
-  }
-  return(temporal)
 }
 
 
@@ -1078,83 +1012,86 @@ consensus.internal.merge <- function(motifs.list, ids){
 ## this information is used to create the logos tree
 ## with JavaScript, at the end this file is deleted
 JSON.clusters <- function(){
-  tree2 <<- tree
-  tree2$labels <- NULL
-  tree2$labels <- as.vector(global.description.table$n)
-  halfway.tree2 <- hclustToTree(tree2)
-  jsonTree2 <- toJSON(halfway.tree2)
-  jsonTree2 <- gsub("\\],", "\\]", jsonTree2, perl = TRUE)
-  jsonTree2 <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree2, "}", sep = "")
-  jsonTree2 <- gsub("\n\"order\":\\s+\\d+", "", jsonTree2, perl = TRUE)
-  copy.Json <- jsonTree2
-  copy.Json <- gsub("[^ \\d+ \\[ \\]  \\.]", "", copy.Json, perl = TRUE)
-  copy.Json <- gsub("(\\d+)", "|\\1", copy.Json, perl = TRUE)
-  
-  copy.Json.vector <- unlist(strsplit(copy.Json, " "))
-  copy.Json.vector <- copy.Json.vector[2:length(copy.Json.vector)]
-  copy.Json.vector <- copy.Json.vector[which(copy.Json.vector != "")]
-  
-  symbol.counter <- length(which(copy.Json.vector == "[")) 
-  symbol <- which(copy.Json.vector == "[")[2:symbol.counter]
-  
-  up.pos <- 1
-  col1 <- NULL
-  col2 <- NULL
-  for(j in 1:(symbol.counter-1)){
     
-    col1 <- append(col1, j)
+    tree2 <<- tree
+    tree2$labels <- NULL
+    tree2$labels <- as.vector(global.description.table$n)
+    halfway.tree2 <- hclustToTree(tree2)
+    jsonTree2 <- toJSON(halfway.tree2)
+    jsonTree2 <- gsub("\\],", "\\]", jsonTree2, perl = TRUE)
+    jsonTree2 <- paste("{\n\"name\": \"\",\n\"children\":", jsonTree2, "}", sep = "")
+    jsonTree2 <- gsub("\n\"order\":\\s+\\d+", "", jsonTree2, perl = TRUE)
+    copy.Json <- jsonTree2
+    copy.Json <- gsub("[^ \\d+ \\[ \\]  \\.]", "", copy.Json, perl = TRUE)
+    copy.Json <- gsub("(\\d+)", "|\\1", copy.Json, perl = TRUE)
     
-    up.count <- 0
-    down.count <- 0
-    for(i in symbol[j]:length(copy.Json.vector)){
-      
-      ## Counters
-      if(copy.Json.vector[i] == "["){
-        up.count <- up.count + 1
+    copy.Json.vector <- unlist(strsplit(copy.Json, " "))
+    copy.Json.vector <- copy.Json.vector[2:length(copy.Json.vector)]
+    copy.Json.vector <- copy.Json.vector[which(copy.Json.vector != "")]
+    
+    symbol.counter <- length(which(copy.Json.vector == "[")) 
+    symbol <- which(copy.Json.vector == "[")[2:symbol.counter]
+    
+    up.pos <- 1
+    col1 <- NULL
+    col2 <- NULL
+    for(j in 1:(symbol.counter-1)){
         
-        ## Positions up
-        if(up.count == 1){
-          up.pos <- i
+        col1 <- append(col1, j)
+        
+        up.count <- 0
+        down.count <- 0
+        for(i in symbol[j]:length(copy.Json.vector)){
+            
+            ## Counters
+            if(copy.Json.vector[i] == "["){
+                up.count <- up.count + 1
+                
+                ## Positions up
+                if(up.count == 1){
+                    up.pos <- i
+                }
+            } else if(copy.Json.vector[i] == "]"){
+                down.count <- down.count + 1
+            }
+            
+            ## Condition
+            if(up.count == down.count){
+                
+                ## Position down
+                down.pos <- i
+                temp <- NULL
+                temp <- gsub("[^\\d+ \\|]", "" ,copy.Json.vector[up.pos:down.pos], perl = TRUE)
+                numb <- NULL
+                numb <- as.integer(unlist((strsplit(paste(temp, collapse = ""), "\\|"))))
+                numb <- numb[which(numb != "NA")]
+                col2 <- append(col2, paste(get.id(numb), collapse = ","))
+                break
+            }
         }
-      } else if(copy.Json.vector[i] == "]"){
-        down.count <- down.count + 1
-      }
-      
-      ## Condition
-      if(up.count == down.count){
-        
-        ## Position down
-        down.pos <- i
-        temp <- NULL
-        temp <- gsub("[^\\d+ \\|]", "" ,copy.Json.vector[up.pos:down.pos], perl = TRUE)
-        numb <- NULL
-        numb <- as.integer(unlist((strsplit(paste(temp, collapse = ""), "\\|"))))
-        numb <- numb[which(numb != "NA")]
-        col2 <- append(col2, paste(numb, collapse = " "))
-        break
-      }
     }
-  }
-  JSON.clusters.table <- data.frame(col1)
-  JSON.clusters.table$cluster <- col2
-  colnames(JSON.clusters.table) <- c(";level", "cluster")
-  
-  cluster <- NULL
-  for(x in 1:nrow(JSON.clusters.table)){
-    leaves.JSON <- sort(as.integer(unlist(strsplit(JSON.clusters.table[x,2], " "))))
-    for(y in 1:length(merge.levels.leaves)){
-      leaves.merge <- sort(merge.levels.leaves[[y]])
-      if(length(leaves.JSON) == length(leaves.merge)){
-        if(sum(leaves.merge == leaves.JSON) == length(leaves.JSON)){
-          cluster <- append(cluster, paste("merge_level_", y, sep = ""))
-          break
-        }
-      }
-    } 
-  }
-  JSON.clusters.table$mergelevel <- cluster
-  JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
-  write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+    
+    JSON.clusters.table <- data.frame(col1)
+    JSON.clusters.table$cluster <- col2 
+    colnames(JSON.clusters.table) <- c(";level", "cluster")
+    cluster <- NULL
+    for(x in 1:nrow(JSON.clusters.table)){
+        
+        leaves.JSON <- unlist(strsplit(JSON.clusters.table[x,2], ","))
+        
+        for(y in 1:length(merge.levels.leaves)){
+            leaves.merge <- sort(merge.levels.leaves[[y]])
+            if(length(leaves.JSON) == length(leaves.merge)){   
+                if(sort(get.id(leaves.merge)) == sort(leaves.JSON)){                  
+                    cluster <- append(cluster, paste("merge_level_", y, sep = ""))
+                    break
+                }
+            }
+        } 
+    }
+    JSON.clusters.table$merge_level <- cluster
+    JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_cluster_", cluster.nb,"_table.tab")
+    write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 }
 
 
@@ -1194,7 +1131,7 @@ nodes.by.level <- function(level.nb){
 ## NOTE: this is not the alignment step
 ## After this step, the clusters are defined
 fill.internal.nodes.attributes <- function(){
-
+    
   for (merge.level in 1:nrow(tree$merge)) {
     ##for (merge.level in 1:5) { 
     merge.level <<- merge.level 
@@ -1253,7 +1190,7 @@ fill.internal.nodes.attributes <- function(){
       
       internal.nodes.attributes[[paste("merge_level_", merge.level, sep = "")]][["merging_type"]] <<- 3
     }
-    
+
     
     if(hclust.method == "single"){
       ## Get the id of each node
