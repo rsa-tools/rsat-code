@@ -12,6 +12,7 @@
 suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
+## suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
 
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
@@ -254,16 +255,17 @@ verbose(paste("merge attributes table", attributes.file), 1)
 ## of each cluster will be stored
 clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
 dir.create(clusters.info.folder, recursive = TRUE, showWarnings = FALSE)
-
 global.motifs.info <<- motifs.info
 forest.list <- list()
-
+intermediate.levels.counter <- 0
+intermediate.levels <- vector()
 for(nb in 1:length(clusters)){
     
     cluster.nb <<- nb 
     
     verbose(paste("Exploring the cluster generated: ", nb ), 2)
-    
+
+    motifs.info.levels <- list()
     internal.nodes.attributes <<- list()
     motifs.info <<- list()
     merge.level.leaves <<- list()
@@ -307,6 +309,9 @@ for(nb in 1:length(clusters)){
         if(flag >= 1){
             system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
         }
+
+        intermediate.levels.counter <- intermediate.levels.counter + 1
+        intermediate.levels[intermediate.levels.counter] <- paste(intermediate.levels.counter, cluster.nb, merge.level, "NO_FILE", sep = "\t")
         next
     }
     
@@ -372,36 +377,52 @@ for(nb in 1:length(clusters)){
     ## the hclust tree and align the leaves.
     ## Bottom-up traversal of the tree to orientate the logos
     for (merge.level in 1:nrow(tree$merge)) {
+        
+        child1 <- tree$merge[merge.level,1]
+        child2 <- tree$merge[merge.level,2]
+      
+        ########################################
+        ## Case 1: merging between two leaves ##
+        ########################################
+        if ((child1 < 0) && (child2 < 0)) {
+            align.two.leaves(child1, child2)
+        }
+        
+        ############################################
+        ## Case 2: merging a motif with a cluster ##
+        ############################################
+        if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
+            align.leave.and.cluster(child1, child2)
+        }
+        
+        ##########################################
+        ## Case 3: merging between two clusters ##
+        ##########################################
+        if ((child1 > 0) && (child2 > 0)) {
+            align.clusters(child1, child2)
+        }
+        
 
-      child1 <- tree$merge[merge.level,1]
-      child2 <- tree$merge[merge.level,2]
-      
-      ########################################
-      ## Case 1: merging between two leaves ##
-      ########################################
-      if ((child1 < 0) && (child2 < 0)) {
-        align.two.leaves(child1, child2)
-      }
-      
-      ############################################
-      ## Case 2: merging a motif with a cluster ##
-      ############################################
-      if(((child1 < 0) && (child2 > 0)) || ((child1 > 0) && (child2 < 0))){
-        align.leave.and.cluster(child1, child2)
-      }
-      
-      ##########################################
-      ## Case 3: merging between two clusters ##
-      ##########################################
-      if ((child1 > 0) && (child2 > 0)) {
-        align.clusters(child1, child2)
-      }
-      
-      ## Create the files with the aligned matrices
-      single.mat.files <<- NULL
-      merge.consensus.info <<- NULL
-      verbose(paste("Merging the matrices at tree level: ", merge.level ), 2)
-      aligned.matrices.to.merge(merge.level)
+        ## Export the intermediate-alignment information in order to create the branch-motifs
+        motifs.info.levels[[paste("merge_level_", merge.level, sep = "")]] <- motifs.info[get.id(merge.levels.leaves[[merge.level]])]
+        motifs.info.levels[[paste("merge_level_", merge.level, sep = "")]] <- fill.downstream.forest(motifs.info.levels[[paste("merge_level_", merge.level, sep ="")]])
+        motifs.info.levels[[paste("merge_level_", merge.level, sep = "")]] <- sapply(motifs.info.levels[[paste("merge_level_", merge.level, sep = "")]], function(x){
+            return(x[c("name", "number", "strand", "consensus", "spacer", "offset_down")])
+        })
+        for(lev in names(motifs.info.levels)){
+            level.info <- t(data.frame(motifs.info.levels[[lev]]))
+            f <- paste(cluster.folder, "/levels_JSON_cluster_", cluster.nb, "_merge_level_", merge.level, "_dataframe.tab", sep = "")
+            write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+        }
+        intermediate.levels.counter <- intermediate.levels.counter + 1
+        intermediate.levels[intermediate.levels.counter] <- paste(intermediate.levels.counter, cluster.nb, merge.level, f, sep = "\t")
+
+        
+        ## Create the files with the aligned matrices
+        single.mat.files <<- NULL
+        merge.consensus.info <<- NULL
+        create.dir.merge(merge.level)
+        #aligned.matrices.to.merge(merge.level)
     }
   
   
@@ -503,9 +524,8 @@ alignment.table$cluster <- forest.id
 ##  Re-order the table and export it
 alignment.table <- alignment.table[,c(7, 6, 9, 2:4, 8, 5)]
 colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
-alignment.file <- paste(sep="", out.prefix, "_alignment_table.tab")
+alignment.file <- paste(sep = "", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
-
-
-
+## Print the table with the intermediate alignment (it wll be used in the perl code to create the branch-motifs)
+write.table(intermediate.levels, file = paste(out.prefix, "_intermediate_alignments.tab", sep = ""), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE )
