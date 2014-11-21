@@ -1802,9 +1802,9 @@ sub Merge_matrices(){
 		my $line = $_;
 		my @split_line = split("\t", $line);
 		my $motif_id = $split_line[0];
-		my $motif_strand = $split_line[2];
-		my $offset_up = $split_line[4];
-		my $offset_down = $split_line[5];
+		my $motif_strand = $split_line[3];
+		my $offset_up = $split_line[5];
+		my $offset_down = $split_line[6];
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
