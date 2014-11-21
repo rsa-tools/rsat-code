@@ -83,6 +83,13 @@ dist.matrix <- distances.objects[[2]]
 write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, col.names=NA, sep = "\t")
 
 
+###################################################
+## Export objects in RData (to use the packages)
+RData.folder <- paste(out.prefix, "_RData", sep = "")
+dir.create(RData.folder, recursive = TRUE, showWarnings = FALSE)
+save(global.compare.matrices.table, file = file.path(RData.folder, "compare_matrices_table.RData"))
+save(global.description.table, file = file.path(RData.folder, "description_table.RData"))
+
 ##############################################
 ### Build the tree by hierarchical clustering, and export it in Newick format
 tree <<- hclust(dist.matrix, method = hclust.method)
@@ -412,7 +419,7 @@ for(nb in 1:length(clusters)){
         for(lev in names(motifs.info.levels)){
             level.info <- t(data.frame(motifs.info.levels[[lev]]))
             f <- paste(cluster.folder, "/levels_JSON_cluster_", cluster.nb, "_merge_level_", merge.level, "_dataframe.tab", sep = "")
-            write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+            write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
         }
         intermediate.levels.counter <- intermediate.levels.counter + 1
         intermediate.levels[intermediate.levels.counter] <- paste(intermediate.levels.counter, cluster.nb, merge.level, f, sep = "\t")
