@@ -1,0 +1,108 @@
+---
+title: "Clustering Transcription Factor Binding Motifs with TFBMclust"
+author: "Jaime Castro-Mondragon & Jacques van Helden"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{TFBM Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\usepackage[utf8]{inputenc}
+---
+
+This vignette shows how to use the R packae TFBMclust to cluster a set of transcription factor binding motifs (TFBMs).
+
+## Loading the demo data set "Oct4 chip-seq"
+
+```{r}
+library(TFBMclust)
+data(oct4chipseq)
+```
+
+
+## Exploring the motif comparison table
+
+The oct4chipseq dataset contains two R objects: 
+
+1. A motif comparison table, produced by the RSAT program *compare-matrices*.
+2. A motif description table, documenting each motif with various attributes.
+
+The motif comparison tables contains many columns, because when running *compare-matrices*, we asked the program to compute a set different metrics. 
+
+```{r}
+names(oct4.tfbm.compa)
+```
+
+The content of the columns is described in the help for this dataset.
+```{r eval=FALSE}
+help(oct4.tfbm.compa)
+```
+
+In order to get some feeling about these scores, we could draw some dot plot. 
+
+### Comparison between non-normalized and normalized correlation
+
+The normalized correlation is obtained by multiplying the correlation by the relative weight of the alignment. This relative alignemnt represents the fraction of columns of the respective matrices that are included in the alignment.
+
+$Ncor = cor \cdot w/W$
+
+```{r, fig.show='hold',fig.width=5,fig.height=5}
+plot(oct4.tfbm.compa$cor,oct4.tfbm.compa$Ncor, 
+     main="Effect of normalization on motif correlation", 
+     xlab="Pearson correlation", 
+     ylab="Width-normalized Pearson correlation",
+     xlim=c(-1,1), ylim=c(-1,1),col="blue"
+     )
+grid()
+abline(h=0)
+abline(v=0)
+abline(a=0,b=1)
+```
+
+Some observations:
+- By construction, the normalized correlation (Y axis) has always a lower absolute value than the correlation (X axis). 
+
+
+
+<!--
+## Vignette Info
+
+Note the various macros within the `vignette` setion of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+
+## Styles
+
+The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+
+    output: 
+      rmarkdown::html_vignette:
+        css: mystyles.css
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+plot(1:10)
+plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
+-->
