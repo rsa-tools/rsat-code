@@ -1,0 +1,43 @@
+\name{build.distance.matrix}
+\alias{build.distance.matrix}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{Build distance matrix from a motif comparison table}
+\description{This function takes as input a motif comparison table, and collects the socres from a user-specified column in order to build a motif-to-motif distance matrix, to be used further for hierarchical clustering. Importantly, the function also "interprets" the score as either a distance or a similarity, and, in case of similarity scores, converts it to a distance score. }
+\usage{
+build.distance.matrix(comparison.table,score="Ncor")
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{comparison.table}{This table must contain at least three columns indicating the ID of the first motif (first column), the ID of the second matrix (second column), and the score (user-specified column).
+  }
+  \item{score}{Column of the matrix to be used as score. Default: Ncor.}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+Returns a list with two fields:
+\item{dist.matrix}{a distance object providing the score for each pair of motif (lower triangle only, since the score is assumed to be symmetrical).}
+\item{dist.table}{a matrix providing the score for each pair of motif, in both directions (the upper and lower triangles are filled up).}
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+%%  ~~who you are~~
+}
+\note{
+%%  ~~further notes~~
+}
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+## Load the Oct4 chip-seq demo dataset
+data(oct4chipseq)
+
+## Collect the motif distance matrix
+oct4.dist <-build.distance.matrix(oct4.tfbm.compa, score="Ncor")
+}
+\keyword{datasets}
