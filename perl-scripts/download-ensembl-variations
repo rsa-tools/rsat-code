@@ -264,20 +264,34 @@ package	main;
   &Verbose() if ($main::verbose >= 1);
 
   ################################################################
-  ## Get available species
+  ## Get available species in the ensembl variation ftp server
+
+  ##Get ensembl variation ftp path
   my @variation_ftp = &Get_variation_ftp($db, $ensembl_version);
   &RSAT::error::FatalError("$db version : $ensembl_version not supported. No variation available for this version.") if (scalar(@variation_ftp) == 0);
+
+  ## If several addresses are available loop thrhough them and list them 
+  ## Usually recent version of ensembl won't have multiple folders
   foreach (@variation_ftp) {
     &RSAT::message::Info("Variation URL",$_) if ($main::verbose >= 2);
   }
 
+  ## Retrieve the subfolders in the variations folder
+  ## in the ensembl server
   my @available_species_dir = ();
   my @available_species = ();
 
+  ## push the subfolder names into a variable
+  ## subfolder names correspond to species
   foreach my $ftp (@variation_ftp) {
     push (@available_species_dir, qx{wget -S --spider $ftp 2>&1})
   }
 
+  
+  &RSAT::message::Debug("Species with viariation data available \n", join("\n",@available_species_dir)) if  ($main::verbose >= 10) ;
+  
+  ## Take the subfolder names and parse them 
+  ## so they only contain the species names
   foreach (@available_species_dir) {
     next unless (/^d/);
     my @fields = split(" ");
@@ -305,13 +319,16 @@ package	main;
   &RSAT::error::FatalError("You must specify a species (option -species).") unless ($species);
   &RSAT::error::FatalError("No variation avalaible for $species on $db") unless ( grep($_ eq $species, @available_species ));
 
-  # Get genome version
-  my $assembly_version = &Get_assembly_version($species,$ensembl_version);
+  ## Get genome version
+  my $assembly_version = &Get_assembly_version($species,$ensembl_version, $species_suffix);
+  #die "BOOM";
+
   &RSAT::error::FatalError("No assembly version found for $species and $db version $ensembl_version. Use download-ensembl-genome before download-ensembl-variations.") unless ($assembly_version);
 
-
-  # Check if genome version has been installed
+  
+  ## Check if genome version has been installed
   $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix);
+
   &RSAT::message::Info("Full species ID", $full_species_ID) if ($main::verbose >= 2);
   $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version, $species_suffix);
   &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 2);
@@ -319,7 +336,6 @@ package	main;
   printf $out ("; %-22s\t%s\n", "Genome directory", $genome_dir);
   &RSAT::error::FatalError($genome_dir, "does not exist. Use download-ensembl-genome before download-ensembl-variations.") 
       unless (-d $genome_dir);
-
   # Check if sequence file are not missing
   my %chr_file = &Get_file_seq_name($genome_dir);
   foreach my $file (keys(%chr_file)) {
@@ -339,10 +355,11 @@ package	main;
 
   ## Get URL
   my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_version);
+  
   my $species_gvf_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
   &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
   &RSAT::message::Info("Species gvf URL --> $species_gvf_ftp") if ($main::verbose >= 2);
-
+  
   my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version, $species_suffix);
   my $gvf_file = $variation_dir."/".ucfirst($species).".gvf";
   if ($tasks{download_gvf}){
@@ -775,7 +792,7 @@ sub Get_super_variation {
       print @{$output_line{$start}{$end}} if (($main::verbose >= 10) && (scalar(@super_variation)>1));
     }
   }
-  <STDIN> if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));  
+  #<STDIN> if ( ($main::verbose >= 10) && (scalar(@super_variation)>1));  
 }
 
 ################################################################
