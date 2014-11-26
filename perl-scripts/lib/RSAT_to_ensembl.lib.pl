@@ -502,7 +502,7 @@ sub Get_assembly_version {
       ) 
       if ($main::verbose >= 0);
   $supported_file = &Get_supported_file();
-  die "HELLO";
+  #die "HELLO";
 
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
@@ -832,7 +832,7 @@ sub UpdateEnsemblSupported {
 			       $species,
 			       $assembly_version,
 			       $main::db,
-			       &get_ensembl_version,
+			       $ensembl_version , #&get_ensembl_version,
 			       &AlphaDate(),
 			       &Get_species_dir($species,$assembly_version,$ensembl_version,$species_suffix),
 	);
