@@ -282,8 +282,9 @@ package	main;
   my %chr_file = &Get_file_seq_name($genome_dir);
 
   foreach my $file (keys(%chr_file)) {
-    unless (-f $genome_dir.$chr_file{$file}) {
-      &RSAT::error::FatalError($genome_dir.$chr_file{$file}," is missing.");
+      my $raw_seq_file=$genome_dir."/".$chr_file{$file};
+    unless (-f $raw_seq_file) {
+      &RSAT::error::FatalError($raw_seq_file," is missing.");
     }
   }
 
@@ -325,7 +326,6 @@ package	main;
   foreach ( glob ( $variation_dir."*.tab") ) {
     push (@variation_file,$_) unless (/Failed/);
   }
-
 
   ################################################################
   ## Retrieve variations from rsat-var format
@@ -542,7 +542,8 @@ package	main;
       $total_nb_variation++;
 
       if ($chr ne $last_chr) { ## get the raw sequence for the given chromosome 
-        $ref_seq = qx($SCRIPTS/sub-sequence -i $genome_dir$chr_file{$chr} -from 1 -to 250000000 -format raw);
+	  my $raw_seq_file=$genome_dir."/".$chr_file{$chr};
+	  $ref_seq = qx($SCRIPTS/sub-sequence -i $raw_seq_file -from 1 -to 250000000 -format raw);
 	&RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 10); 
         $last_chr = $chr;
 	&RSAT::message::Debug("last_chr value",  $last_chr) if ($main::verbose >= 10);
@@ -567,14 +568,16 @@ package	main;
 	  ## deletions, but would not make sense in the sequence of
 	  ## the variant extended on both flanks.
 	  $variant_aux =~ s/-//g; 
+	  
 	  my $left_flank = substr($ref_seq,$start-$flank_len-1,$flank_len);
 	  my $right_flank = substr($ref_seq,$end,$flank_len);
 	  my $variant_seq = $left_flank.$variant_aux.$right_flank;
 
 	  ## Select the output fields
 	  my @out_fields = ($chr, $start, $end, $strand, $id, $type, $ref, $minor_allele_freq, $variant_aux, $variant_seq);
-
-	  print $out join("\t", @out_fields), "\n";
+	  &RSAT::message::Debug("Variant retrieved fields\n", join("\t",@out_fields )) if ($main::verbose >= 5);
+	  print $out join("\t", @out_fields)."\n";
+	  #<STDIN>;
 	  $total_nb_variant++;
       }
     }
