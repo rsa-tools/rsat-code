@@ -32,16 +32,21 @@ convert_var:
 ################################################################
 ## Retrieve the sequences surrounding a set of input variations
 ORG=Homo_sapiens
+SPECIES_SUFFIX=ensembl72
+A_VERSION=GRCh37
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${ORG} \
 	-e_version ${E_VERSION} \
+	-a_version ${A_VERSION} \
+	-species_suffix ${SPECIES_SUFFIX} \
 	-i ${VARIANTS}.rsat-var \
 	-mml 30 -format rsat-var \
 	-o ${VARIANTS}_rsat_var.seq
 retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
 	@${RETRIEVE_VAR_CMD}
+	@echo "Out file" ${VARIANTS}_rsat_var.seq
 
 ################################################################
 ## Scan selected variations with the matrix of interest
