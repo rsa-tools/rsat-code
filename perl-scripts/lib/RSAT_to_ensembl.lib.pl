@@ -269,6 +269,7 @@ version of ensembl.
 =cut
 sub Get_variation_ftp {
   my ($db,$ensembl_version) = @_;
+  my %variation_ftp = ();
 
   ## Ensembl
   if ($db eq "ensembl") {                                                    
@@ -287,19 +288,20 @@ sub Get_variation_ftp {
     if ($ensembl_version < 17) {                                             # Version  1 to 16
       return ();
     } else {                                                                 # Version 17 to ??
-      my @variation_ftp = ();
-
       foreach $taxon (@taxa) {
-        my $taxon_ftp = &Get_ftp($db)."release-".$ensembl_version."/".$taxon;
-	&RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $taxon_ftp) if ($main::verbose >= 4);
-        my @available_files = qx{wget -S --spider $taxon_ftp 2>&1};
-        foreach $file (@available_files) {
-          next unless ($file =~ /^d/);
-          push (@variation_ftp, $taxon_ftp."/gvf/") if ($file =~ /gvf/);
-        }
+        my $gvf_ftp = &Get_ftp($db).$taxon."/release-".$ensembl_version."/gvf/";
+	&RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $gvf_ftp) if ($main::verbose >= 2);
+        my @available_files = qx{wget -S --spider $gvf_ftp 2>&1};
+        foreach my $line (@available_files) {
+	  chomp($line);
+#	  &RSAT::message::Debug($line) if ($main::verbose >= 10);
+          next unless ($line =~ /^drw+.*\s+(\S+\_\S+)\s*$/);
+	  my $species = $1;
+	  my $species_ftp = $gvf_ftp.$species."/";
+	  $variation_ftp{$species} = $species_ftp;
+	}
       }
-
-      return @variation_ftp;
+      return(%variation_ftp);
     }
   }
 }
