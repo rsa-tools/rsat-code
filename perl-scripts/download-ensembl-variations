@@ -265,28 +265,38 @@ package	main;
 
   ################################################################
   ## Get available species
-  my @variation_ftp = &Get_variation_ftp($db, $ensembl_version);
-  &RSAT::error::FatalError("$db version : $ensembl_version not supported. No variation available for this version.") if (scalar(@variation_ftp) == 0);
-  foreach (@variation_ftp) {
-    &RSAT::message::Info("Variation URL",$_) if ($main::verbose >= 2);
-  }
-
   my @available_species_dir = ();
   my @available_species = ();
+  my %variation_ftp = ();
+  if ($db eq "ensemblgenomes") {
+    %variation_ftp = &Get_variation_ftp($db, $ensembl_version);
+    @available_species = sort keys %variation_ftp;
 
-  foreach my $ftp (@variation_ftp) {
-    push (@available_species_dir, qx{wget -S --spider $ftp 2>&1})
-  }
-
-  foreach (@available_species_dir) {
-    next unless (/^d/);
-    my @fields = split(" ");
-    next if ($fields[-1] =~ /\./);
-    push (@available_species, $fields[-1]);
+  } else {
+    my @variation_ftp = &Get_variation_ftp($db, $ensembl_version);
+    if (scalar(@variation_ftp) == 0) {
+      &RSAT::message::Warning("$db version : $ensembl_version not supported. No variation available for this version.");
+      exit(0);
+    }
+    foreach (@variation_ftp) {
+      &RSAT::message::Info("Variation URL",$_) if ($main::verbose >= 2);
+    }
+    
+    
+    foreach my $ftp (@variation_ftp) {
+      push (@available_species_dir, qx{wget -S --spider $ftp."/" 2>&1})
+    }
+    
+    foreach (@available_species_dir) {
+      next unless (/^d/);
+      my @fields = split(" ");
+      next if ($fields[-1] =~ /\./);
+      push (@available_species, $fields[-1]);
+    }
   }
 
   ################################################################
-  ##Print available species
+  ## Print available species
   if ($get_available_species) {
 
     foreach (sort {$a cmp $b} @available_species) {
@@ -306,7 +316,7 @@ package	main;
   &RSAT::error::FatalError("No variation avalaible for $species on $db") unless ( grep($_ eq $species, @available_species ));
 
   # Get genome version
-  my $assembly_version = &Get_assembly_version($species,$ensembl_version);
+  $assembly_version = &Get_assembly_version($species,$ensembl_version);
   &RSAT::error::FatalError("No assembly version found for $species and $db version $ensembl_version. Use download-ensembl-genome before download-ensembl-variations.") unless ($assembly_version);
 
 
@@ -1118,13 +1128,12 @@ sub Verbose {
   &PrintArguments($out);
 
   if (%main::outfile) {
-      print $out "; Output files\n";
-      while (my ($key,$value) = each %main::outfile) {
-	printf $out ";\t%-13s\t%s\n", $key, $value;
-      }
-      
-      printf $out ("; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version);
-      printf $out ("; %-22s\t%s\n", "Ensembl version",$ensembl_version);
-      printf $out ("; %-22s\t%s\n", "Species suffix", $species_suffix) if ($species_suffix);
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+    printf $out ("; %-22s\t%s\n", "Ensembl safe version", $ensembl_version_safe);
+    printf $out ("; %-22s\t%s\n", "Ensembl version",$ensembl_version);
+    printf $out ("; %-22s\t%s\n", "Species suffix", $species_suffix) if ($species_suffix);
   }
 }
