@@ -2557,7 +2557,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -o ".$pssm_prefix;
 
   ## Run the command
-  print "<PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+  print "<hr><PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 0);
   system("$pssm_command");
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
