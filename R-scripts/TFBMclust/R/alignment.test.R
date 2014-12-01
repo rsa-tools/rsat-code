@@ -2,6 +2,7 @@
 ## Evaluate if the mean of scores for all pairs of leaves between
 ## the two clusters is upper/lower than the threshold,
 ## if so, then the two clusters should be aligned
+
 alignment.test <- function(id1, id2, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), hclust.method = "average", hclust.metric = "Ncor"){
 
   ## Calculate the mean of the scores for all the pairs of motifs
