@@ -343,6 +343,8 @@ package	main;
     print $out ";\t",'19',"\t",'str_change',"\t",'Indicate if strand have change between the offset of min_offset_diff',"\n";
     print $out ";\t",'20',"\t",'best_seq',"\t",'Sequence of the worst putative site',"\n";
     print $out ";\t",'21',"\t",'worst_seq',"\t",'Sequence of the worst putative site',"\n";
+    print $out ";\t",'22',"\t",'monir_alle_freq',"\t",'Minor allele frequency',"\n";
+
   }
 
   ## Print header
@@ -367,7 +369,8 @@ package	main;
                       worst_strand
                       str_change
                       best_seq
-                      worst_seq)),"\n";
+                      worst_seq 
+                      minor_allele_freq)),"\n";
 
   ################################################################
   ## ALE'S NOTE= Read Matrix File and store it in a hash ?
@@ -613,8 +616,9 @@ package	main;
       chomp();
       
       ## Split line in rsat_var format
-      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq) = split(/\t/);
-
+      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq,$ma_freq) = split(/\t/);
+      &RSAT::message::Debug("Reading in one viariable from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq, $ma_freq)) if ($main::verbose >= 3);
+      #die "HELLO3";
       $ref = "-" if ($ref eq "");
       
       if ($last_id ne $id && $last_id ne "") {
@@ -630,9 +634,10 @@ package	main;
 	      $last_nb += 2000;
 	  }
       }
-      print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n";
+      print $out_fas ">$id;$ref;$variant;$type;$ma_freq|$chrom:$start-$end\_$strand\n";
       print $out_fas substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
       $nb_seq++;
+      #die "BOOM2";
       $last_id = $id;
     }
     close ($var_seq);
@@ -705,7 +710,10 @@ sub log10 {
 }
 
 ################################################################
-##
+## Retreive information from the scanning output
+## per line.
+## Each line contains the variant information that can be usefull
+## for the user, like the minor allele frequency
 sub getLineInfo {
     my %line_info = ();
 
@@ -723,6 +731,7 @@ sub getLineInfo {
     $line_info{'variant_ref'} = $token3[1];
     $line_info{'variant_alt'} = $token3[2];
     $line_info{'type'} = $token3[3];
+    $line_info{'minor_allele_freq'} = $token3[4];
 
     $diff_pos = 0;
     $diff_pos ++ if ($line_info{'variant_ref'} eq "-"); 
@@ -745,7 +754,7 @@ sub Analyse_scanning {
 	next if ($line =~ m/^#/);
 	next if ($line =~ m/^;/);
 	chomp($line);
-
+	#die "Boom".$line;
 	my %line_info = &getLineInfo($line);
 
 	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
@@ -780,7 +789,8 @@ sub Analyse_scanning {
 
 	$scanning_info{'matrice'} = $line_info{'matrice'};
 	$scanning_info{'variation'} = $line_info{'id'};
-	$scanning_info{'type'} = $line_info{'type'};
+	$scanning_info{'type'} = $line_info{'type'}; ##Get type of variant
+	$scanning_info{'minor_allele_freq'} = $line_info{'minor_allele_freq'}; ##Get minor allele frequency of the variant
 	$scanning_info{'coord'} = $line_info{'coord'};
 	$scanning_info{'same_len'} = $same_variant_len;
     }
@@ -996,9 +1006,9 @@ sub Printline {
   $str .= $scanning_info{'min_offset_diff'}."\t";
   $str .= $scanning_info{'best_strand'}."\t".$scanning_info{'worst_strand'}."\t"; # strand
   $str .= $scanning_info{'strand_change'}."\t";
-  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\n"; # seq
-
-  print $out $str;
+  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\t"; # seq
+  $str .= $scanning_info{'minor_allele_freq'};
+  print $out $str."\n"; ## Back
 }
 
 ################################################################
