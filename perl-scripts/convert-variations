@@ -379,6 +379,7 @@ sub Get_var_from_vcf {
     if($key eq "CAF"){ ## Retrieve minor allele frequency information from vcf entry
 	my ($major_freq,$minor_freq)=split(",",$value);
 	$minor_freq=~s/\]//;
+	$minor_freq="NA" if ($minor_freq eq ".");
 	$variation{'m_allele_freq'}=$minor_freq;
 	next; ## do not store the CAF information in attributes,include it manually on the gvf and rsat outfiles with the correct naming
     }
