@@ -10,15 +10,15 @@ build.distance.matrix(comparison.table,score="Ncor")
 \arguments{
   \item{comparison.table}{This table must contain at least three columns indicating the ID of the first motif (first column), the ID of the second matrix (second column), and the score (user-specified column).
   }
-  \item{score}{Column of the matrix to be used as score. Default: Ncor.}
+  \item{score}{ Column of the comparison matrix to be used as score. Default: Ncor. }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
 Returns a list with two fields:
-\item{dist.matrix}{a distance object providing the score for each pair of motif (lower triangle only, since the score is assumed to be symmetrical).}
-\item{dist.table}{a matrix providing the score for each pair of motif, in both directions (the upper and lower triangles are filled up).}
+\item{$matrix}{A distance object providing the score for each pair of motif (lower triangle only, since the score is assumed to be symmetrical).}
+\item{$table}{A matrix providing the score for each pair of motif, in both directions (the upper and lower triangles are filled up).}
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -38,6 +38,6 @@ Returns a list with two fields:
 data(oct4chipseq)
 
 ## Collect the motif distance matrix
-oct4.dist <-build.distance.matrix(oct4.tfbm.compa, score="Ncor")
+oct4.dist <- build.distance.matrix(oct4.tfbm.compa, score="Ncor")
 }
 \keyword{datasets}
