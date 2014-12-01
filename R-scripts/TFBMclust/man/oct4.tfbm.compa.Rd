@@ -50,7 +50,18 @@
 Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry, D. and van Helden, J. (2012) RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res, 40, e31–e31.
 }
 \examples{
-data(oct4.tfbm.compa)
-## maybe str(oct4.tfbm.compa) ; plot(oct4.tfbm.compa) ...
+library(TFBMclust)
+data(oct4chipseq)
+
+## The dataset contains 2 data frames
+
+## (1) Matrix-to-matrix comparison table,
+## with various scores to compare each pair of
+View(oct4.tfbm.compa)  matrices
+
+## (2) Description table for the input PSSM
+## (ID,name,consensus in both orientations, ...)
+View(oct4.tfbm.desc)
+
 }
 \keyword{datasets}
