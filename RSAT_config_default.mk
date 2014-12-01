@@ -115,4 +115,4 @@ CLUSTER_QUEUE=rsat
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
 ENSEMBL_RELEASE=77
-ENSEMBLGENOMES_BRANCH=23
+ENSEMBLGENOMES_BRANCH=24

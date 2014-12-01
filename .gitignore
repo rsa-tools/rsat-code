@@ -27,7 +27,7 @@ contrib/count-words/count-words
 contrib/info-gibbs/info-gibbs
 contrib/kwalks/bin/lkwalk
 contrib/matrix-scan-quick/matrix-scan-quick
-data
+./data
 denied_IP_addresses*
 distrib_accounts
 doc/manuals/*.log
