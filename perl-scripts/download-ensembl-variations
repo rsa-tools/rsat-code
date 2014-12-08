@@ -523,6 +523,10 @@ package	main;
 	      
 	      ## Extracts the full sequence of the chromosome, in
 	      ## order to check all the reference sequences.
+	      ##
+	      ## QUESTION FROM JVH: should we really do this
+	      ## verification ? We should check how much time the
+	      ## whole procedure takes with, and without it.
 	      if ($check_ref_seq) {
 		  my $raw_file = $genome_dir."/".$chr_file{$chr};
 		  &RSAT::message::TimeWarn("Reading sequence for chromosome", $chr, $raw_file) if ($main::verbose >= 0);
