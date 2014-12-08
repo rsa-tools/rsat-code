@@ -467,27 +467,27 @@ package main;
       ## Cluster the matrices
       &Hclustering();
 
-      ################################################################
-      ## Read the motif to cluster assignation, which will be required for
-      ## several functions below.
-      &ReadClusterComposition();
+      # ################################################################
+      # ## Read the motif to cluster assignation, which will be required for
+      # ## several functions below.
+      # &ReadClusterComposition();
       
-      ################################################################
-      ## Create the merged matrices and consensuses
-      &Merge_matrices();
+      # ################################################################
+      # ## Create the merged matrices and consensuses
+      # &Merge_matrices();
       
-      ################################################################
-      ## Parse the JSON file
-      &Add_attributes_to_JSON();
+      # ################################################################
+      # ## Parse the JSON file
+      # &Add_attributes_to_JSON();
       
-      ################################################################
-      ## Creates the body of html to display
-      ## each cluster separately
-      &Add_div_to_HTML();
+      # ################################################################
+      # ## Creates the body of html to display
+      # ## each cluster separately
+      # &Add_div_to_HTML();
       
-      ################################################################
-      ## Creates the html template to display the tree
-      &Create_html_tree_file();
+      # ################################################################
+      # ## Creates the html template to display the tree
+      # &Create_html_tree_file();
       
       ################################################################
       ## Creates the html template to display the pylogram
@@ -1767,7 +1767,7 @@ sub Merge_matrices(){
 	my $cluster_number = "cluster_".$split_line[1];
 	my $level_number = "merge_level_".$split_line[2];
 	my $file_path = $split_line[3];
-	$int_aling_files{$cluster_number}{$level_number} = $file_path;
+	$int_align_files{$cluster_number}{$level_number} = $file_path;
     }
     close $int_align_file;
 
