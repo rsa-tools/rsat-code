@@ -765,7 +765,10 @@ sub Get_file_seq_name {
     }
     close $file;
   } else {
-    &RSAT::error::FatalError("$contig is missing.");
+      &RSAT::error::FatalError("Missing contig table", 
+			       "\n\t".$contig,
+			       "\n\tYou should first install genomic features (download-ensembl-features)",
+	  );
   }
 
   ##  Get seq_file_name and seq_id
