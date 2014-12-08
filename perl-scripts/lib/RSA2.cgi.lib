@@ -964,6 +964,7 @@ sub GetMatrix {
 				'tab'=>1,
 				'transfac'=>1,
 				'uniprobe'=>1,
+				'encode'=>1,
 			       );
   ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
   ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
