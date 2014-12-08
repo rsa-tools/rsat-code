@@ -1,4 +1,4 @@
-convert.to.JSON <- function(tree){
+convert.hclust.to.JSON <- function(tree){
 
   ## Require ctc if it is required
   if(!require("RJSONIO")){
