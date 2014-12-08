@@ -52,6 +52,7 @@ formats.
 			   'transfac'=>1,
 			   'cis-bp'=>1,
 			   'uniprobe'=>1,
+			   'encode'=>1,
 			  );
 $supported_input_formats = join ",", sort(keys %supported_input_formats);
 
@@ -113,7 +114,9 @@ sub readFromFile {
     } elsif ($format eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
     } elsif ($format eq "cluster-buster") {
-      @matrices = _readFromClusterBusterFile($file, %args);
+	@matrices = _readFromClusterBusterFile($file, %args);
+    }elsif ($format eq "encode") {
+	@matrices = _readFromEncodeFile($file, %args);
     } elsif (($format eq "jaspar") || ($format eq "mscan")) {
 	@matrices = _readFromJasparFile($file, %args);
     } elsif ($format eq "uniprobe") {
@@ -2013,6 +2016,85 @@ sub _readFromClusterBusterFile {
 # 	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
 #       }
 #     }
+
+    return (@matrices);
+}
+=pod
+
+=item _readFromEncodeFile($file)
+
+Read a matrix from a file in Encode format. This method is called by the method
+C<readFromFile($file, "encode")>.
+
+=cut
+sub _readFromEncodeFile {
+    my ($file, %args) = @_;
+    &RSAT::message::Info(join("\t", "Reading matrix from Encode file\t",$file)) if ($main::verbose >= 3);
+
+
+    ## open input stream
+    my ($in, $dir) = &main::OpenInputFile($file);
+
+    ## Initialize the matrix list
+    my @matrices = ();
+    my @alphabet = qw(a c g t); ## encode does not explicitly indicate the alphabet, it is always supposed to represent DNA matrices
+    my $matrix;
+    my $current_matrix_nb = 1;
+    my $l = 0;
+    my $ncol = 0;
+    while ($line = <$in>) {
+      $l++;
+      next unless ($line =~ /\S/); ## Skip empty lines
+      chomp($line); ## Suppress newline
+      $line =~ s/\r//; ## Suppress carriage return
+      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+      next if ($line =~ /^;/) ; # skip comment lines
+      #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+      ## Create a new matrix if required
+      if  ($line =~ /^\>(\S*)/) {
+	  ## First line is compossed of two elements, first the TF ID, then separated by space
+	  ## a description that some times includes the pograms used to discover the motif
+	  my ($name,$comment)=split(" ",$line);
+	  $name=~s/^>//;
+	  $comment=~s/#/_/g;
+	  #print join ("+++" ,$name,$comment);
+	  #die "BOOM";
+	  #if ($line =~ /\/name=(\S*)/) { $name = $1;}
+	  $matrix = new RSAT::matrix();
+	  $matrix->set_parameter("program", "encode");
+	  $ncol = 0;
+	  if ($name) {
+	      $matrix->set_attribute("name", $name);
+	      $matrix->set_attribute("AC", $name);
+	      $matrix->set_attribute("accession", $name);
+	  }
+	  if ($comment){
+	      $matrix->set_parameter("description", $comment);
+	  }
+	  my @alphabet = qw(a c g t);
+	  $matrix->setAlphabet_lc(@alphabet);
+#	$matrix->force_attribute("nrow", 4);
+	  push @matrices, $matrix;
+	  $current_matrix_nb++;
+	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
+	  next;
+      }
+
+      if ($line =~ /^\s*(\S+)\s+/) {
+	$line = &main::trim($line);
+	my @fields = split /\t/, $line;
+	## First character in the column is the consesus
+	shift (@fields);
+#	&RSAT::message::Info("line", $l, "adding column", join(";", @fields)) if ($main::verbose >= 10);
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
+      }
+    }
+    close $in if ($file);
+
+    ## Initialize prior as equiprobable alphabet
+    &InitializeEquiPriors(@matrices);
 
     return (@matrices);
 }
