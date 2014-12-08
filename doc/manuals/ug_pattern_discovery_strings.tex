@@ -83,8 +83,8 @@ ls -1
 You should see the following file list:
 {\color{OliveGreen} \begin{footnotesize} 
 \begin{verbatim}
-Escherichia_coli_K12_start_codons.wc
-Escherichia_coli_K12_stop_codons.wc
+Escherichia_coli_K_12_substr__MG1655_uid57779_start_codons.wc
+Escherichia_coli_K_12_substr__MG1655_uid57779_stop_codons.wc
 MET_genes.txt
 MET_up800-noorf.fasta
 PHO_genes.txt
@@ -127,7 +127,7 @@ Try the following command:
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-oligo-analysis -v 1 -i Escherichia_coli_K12_start_codons.wc \
+oligo-analysis -v 1 -i Escherichia_coli_K_12_substr__MG1655_uid57779_start_codons.wc \
     -format wc -l 3 -1str
 \end{verbatim} \end{footnotesize}
 }
@@ -154,9 +154,9 @@ You can also ask some more information by speifying a verbosity of 1
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-oligo-analysis -v 1 -i Escherichia_coli_K12_start_codons.wc \
+oligo-analysis -v 1 -i Escherichia_coli_K_12_substr__MG1655_uid57779_start_codons.wc \
     -format wc -l 3 -1str -return occ,freq \
-    -o Escherichia_coli_K12_start_codon_frequencies.tab
+    -o Escherichia_coli_K_12_substr__MG1655_uid57779_start_codon_frequencies.tab
 \end{verbatim} \end{footnotesize}
 }
 
@@ -164,7 +164,7 @@ Read the result file:
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-more Escherichia_coli_K12_start_codon_frequencies.tab
+more Escherichia_coli_K_12_substr__MG1655_uid57779_start_codon_frequencies.tab
 \end{verbatim} \end{footnotesize}
 }
 
@@ -529,7 +529,7 @@ more PHO_up800-noorf_6nt-2str-noov_sig0_mkv1
 }
 
 The number of patterns is strongly reduced, compared to the
-equiprobable model. A few AT-rich patterns are still rpesent, but the
+equiprobable model. A few AT-rich patterns are still present, but the
 Pho4p motif now appears at the 3rd position. We can assemble these
 oligos in order to highligh the different motifs.
 
@@ -609,7 +609,7 @@ more PHO_up800-noorf_6nt-2str-noov_sig0_mkv4
 
 Note that the Markov order 0 means that there is no dependency between
 successive residues. The probability of a word is thus simply the
-prodct of its residue probabilities. This is a \concept{Bernoulli
+product of its residue probabilities. This is a \concept{Bernoulli
   model}, but, by extension of the concepts of Markov chain, it is
 accepted to call it markov chain of order 0.
 
@@ -651,9 +651,9 @@ more PHO_up800-noorf_6nt-2str-noov_sig0_mkv0.asmb
 \section{Genome-scale pattern discovery}
 
 The detection of exceptional words can also be used to detect signals
-in large sequence sets, such as th whole set of upstream sequences for
-a given organism, or even its complete genome. We will illustrate this
-with two examples.
+in large sequence sets, such as the whole set of upstream sequences
+for a given organism, or even its complete genome. We will illustrate
+this with two examples.
 
 \subsection{Detection of over-represented words in all the yeast
   upstream   sequences}
@@ -695,7 +695,7 @@ cerevisiae Promoter Database
 
 \begin{exercise}
 
-  Analyze the frequencies of al the hexanucleotides in
+  Analyze the frequencies of all the hexanucleotides in
   \org{Escherichia coli K12}. One of them shows a very high degree of
   under-representation. Try to understand the reason why this
   hexanucleotide is avoided in this genome.
@@ -705,7 +705,7 @@ cerevisiae Promoter Database
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-ls $RSAT/data/genomes/Escherichia_coli_K12/genome/contigs.txt
+ls $RSAT/data/genomes/Escherichia_coli_K_12_substr__MG1655_uid57779/genome/contigs.txt
 \end{verbatim} \end{footnotesize}
 }
 
@@ -717,7 +717,7 @@ by specifying the format \option{-format filelist}.
 
 % {\color{Blue} \begin{footnotesize} 
 % \begin{verbatim}
-% oligo-analysis -v 1 -format filelist -i $RSAT/data/genomes/Escherichia_coli_K12/genome/contigs.txt -return occ,proba,zscore,rank -under -l 6 -sort -o Escherichia_coli_K12_genome_6nt-2str-noov_mkv0_under -2str -noov -markov 0
+% oligo-analysis -v 1 -format filelist -i $RSAT/data/genomes/Escherichia_coli_K_12_substr__MG1655_uid57779/genome/contigs.txt -return occ,proba,zscore,rank -under -l 6 -sort -o Escherichia_coli_K_12_substr__MG1655_uid57779_genome_6nt-2str-noov_mkv0_under -2str -noov -markov 0
 % \end{verbatim} \end{footnotesize}
 % }
 
