@@ -184,6 +184,8 @@ use File::Path qw( mkpath );
 package	main;
 {
 
+    &RSAT::error::FatalError("This script has been replaced by download-ensembl-variations and install-ensembl-genomes");
+
 	###############################################################
 	## Initialise parameters
 	our $start_time = &RSAT::util::StartScript();
