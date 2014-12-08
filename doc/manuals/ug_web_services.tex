@@ -90,7 +90,7 @@ my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
-my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my $organism = 'Escherichia_coli_K_12_substr__MG1655_uid57779';  ## Name of the query organism
 my @gene = (``metA'', ``metB'', ``metC'');  ## List of query genes
 my $all = 0;  ## the -all option (other accepted value = 1). This option is
 incompatible with the query list @gene (above)
@@ -218,7 +218,7 @@ my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 $soap->wsdlinit;
 
 ## Gene-info parameters
-my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my $organism = 'Escherichia_coli_K_12_substr__MG1655_uid57779';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
 my $full = 1;  ## Looking for full match, not substring match.
 
@@ -280,7 +280,7 @@ descriptions (by default, they are only matched against gene names).
 ... (same as above)
 
 ## Gene-info parameters
-my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my $organism = 'Escherichia_coli_K_12_substr__MG1655_uid57779';  ## Name of the query organism
 my @queries = ("methionine", "purine");  ## List of queries
 my $full = 0;
 my $descr = 1;  ## Search also in description field of genes
@@ -347,7 +347,7 @@ $soap->wsdlinit;
 my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
-my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my $organism = 'Escherichia_coli_K_12_substr__MG1655_uid57779';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
 my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
 my $from = 0;  ## Start position of the sequence
@@ -762,7 +762,7 @@ The property file looks like this:
 \begin{footnotesize}
 \begin{verbatim}
 output=both
-organism=Escherichia_coli_K12
+organism=Escherichia_coli_K_12_substr__MG1655_uid57779
 query=metA,metB
 all=0
 noorf=1
@@ -959,7 +959,7 @@ if __name__ == '__main__':
     else:
         my_http_proxy=None
 
-    organism = "Escherichia_coli_K12"
+    organism = "Escherichia_coli_K_12_substr__MG1655_uid57779"
     query = ["methionine", "purine"]
     full = 0
     noquery = 0
