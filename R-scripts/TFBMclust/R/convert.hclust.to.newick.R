@@ -1,7 +1,7 @@
 #####################################################
 ## Convert the hclust object to a character object
 ## with the lines ready to print a Newick file
-export.newick <- function(tree, decimals = 3){
+convert.hclust.to.newick <- function(tree, decimals = 3){
 
   ## Require ctc if it is required
   if(!require("ctc")){
@@ -17,5 +17,5 @@ export.newick <- function(tree, decimals = 3){
 
   ## Convert the hclust tree to Newick format
   ## If ‘flat=TRUE’ the result is a string can be written in a file                                     file).
-  return(hc2Newick(temp.tree, flat = TRUE))
+  return(hc2Newick(tree, flat = TRUE))
 }
