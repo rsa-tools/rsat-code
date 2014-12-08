@@ -2021,14 +2021,24 @@ sub _readFromClusterBusterFile {
 }
 =pod
 
-=item _readFromEncodeFile($file)
+=item B<_readFromEncodeFile($file)>
 
 Read a matrix from a file in Encode format. This method is called by the method
 C<readFromFile($file, "encode")>.
 
+Source: 
+  http://compbio.mit.edu/encode-motifs/
+
+Reference:
+
+    Pouya Kheradpour and Manolis Kellis (2013). Systematic discovery
+    and characterization of regulatory motifs in ENCODE TF binding
+    experiments Nucleic Acids Research, 2013 December 13,.
+    doi:10.1093/nar/gkt1249 
+
 =cut
 sub _readFromEncodeFile {
-    my ($file, %args) = @_;
+    my ($file) = @_;
     &RSAT::message::Info(join("\t", "Reading matrix from Encode file\t",$file)) if ($main::verbose >= 3);
 
 
