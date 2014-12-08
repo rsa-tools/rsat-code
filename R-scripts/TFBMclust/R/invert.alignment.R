@@ -2,52 +2,49 @@
 ## Given a vector with IDs, return a list with the
 ## information (consensus, number, id, strand, spacer)
 ## of the inverted alignment
-inverted.alignment <- function(ids, motifs.list, desc.table){
+inverted.alignment <- function(ids.inv, motifs.list, desc.table){
 
-  temporal.list <- list()
-
-  ## Get the higher length among the consensuses
-  consensuses <- sapply(motifs.info[ids], function(X){
-    nchar(X[["consensus"]])
-  })
-  max.cons.length <- max(consensuses)
-
+  motifs.list.temp <- motifs.list[ids.inv]
   ## Create the new consensuses with the inverted orientation
-  temporal.list <- sapply(ids, function(X){
+  sapply(ids.inv, function(X){
 
     inverted.aligment.list <- list()
     inverted.consensus <- NULL
-    spacer.length <- NULL
-    spacer <- NULL
+    spacer.up.length <- NULL
+    spacer.up <- NULL
+    spacer.dw.length <- NULL
+    spacer.dw <- NULL
 
-    ## Create the spacer
-    spacer.length <- as.numeric(motifs.list[[X]][["spacer"]])
-    spacer <- paste(rep("-", times = spacer.length), collapse = "")
+    ## Create the spacers
+    spacer.up.length <- get.spacer.nb(motifs.list.temp[[X]][["consensus"]])$up.spacer
+    spacer.dw.length <- get.spacer.nb(motifs.list.temp[[X]][["consensus"]])$dw.spacer
 
-    ## Get the consensus in the inverted orientation
-    if(motifs.info[[X]][["strand"]] == "D"){
-      inverted.consensus <- as.vector(description.table[[as.numeric(motifs.info[[X]][["number"]]), "rc_consensus"]])
+    spacer.up <- paste(rep("-", times = spacer.up.length), collapse = "")
+    spacer.dw <- paste(rep("-", times = spacer.dw.length), collapse = "")
+
+    ## Depending on the current orientation, get the consensus in the inverted orientation
+    if(motifs.list.temp[[X]][["strand"]] == "D"){
+
+      inverted.consensus <- get.consensus(X, desc.table, RC = TRUE)
       inverted.aligment.list[[X]][["strand"]] <- "R"
-    }else{
-      inverted.consensus <- as.vector(description.table[[as.numeric(motifs.info[[X]][["number"]]), "consensus"]])
+
+    } else{
+
+      inverted.consensus <- get.consensus(X, desc.table, RC = FALSE)
       inverted.aligment.list[[X]][["strand"]] <- "D"
     }
 
-    ## Fill the spaces with "-"
-    new.consensus <- paste(inverted.consensus, spacer, sep = "")
-    new.consensus <- paste(paste(rep("-", times = max.cons.length - nchar(new.consensus)), collapse = ""), new.consensus, sep = "")
-    new.consensus <- paste(unlist(strsplit(new.consensus, "[A-Za-z]+", perl = TRUE))[1], inverted.consensus, sep = "")
+    ## Create the new consensus
+    new.consensus <- paste(spacer.dw, inverted.consensus, spacer.up, sep = "")
 
     ## Fill the new list
     inverted.aligment.list[[X]][["consensus"]] <- new.consensus
-    inverted.aligment.list[[X]][["number"]] <- as.numeric(motifs.info[[X]][["number"]])
-    inverted.aligment.list[[X]][["name"]] <- motifs.info[[X]][["name"]]
-    inverted.aligment.list[[X]][["spacer"]] <- length(unlist(strsplit(new.consensus, "-")))-1
+    inverted.aligment.list[[X]][["name"]] <- motifs.list.temp[[X]][["name"]]
+    inverted.aligment.list[[X]][["number"]] <- as.numeric(motifs.list.temp[[X]][["number"]])
+    inverted.aligment.list[[X]][["spacer.up"]] <- get.spacer.nb(new.consensus)$up.spacer
+    inverted.aligment.list[[X]][["spacer.dw"]] <- get.spacer.nb(new.consensus)$dw.spacer
 
-    return(inverted.aligment.list)
+    motifs.list.temp[names(inverted.aligment.list)] <<- inverted.aligment.list[names(inverted.aligment.list)]
   })
-
-  #names(temporal.list) <- sapply(strsplit(names(temporal.list), "\\."), function(X){return(X[1])})
-  names(temporal.list) <- ids
-  return(temporal.list)
+  return(motifs.list.temp)
 }
