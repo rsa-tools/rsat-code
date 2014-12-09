@@ -1,12 +1,9 @@
 \name{convert.hclust.to.newick}
 \alias{convert.hclust.to.newick}
-\title{ Convert \code{hclust} tree to Newick format}
+\title{ Convert \code{hclust} tree to Newick format. }
 \description{
-This function takes one \code{hclust} object and convert it to an object of \code{character} class saving the tree in Newick format, it can be further exported in a text file. The number of decimals for the branch values can be specified by the user.
-}
-\usage{
-convert.to.newick(tree, decimals = 3)
-}
+This function takes one \code{hclust} object and convert it to an object of \code{character} class saving the tree in Newick format, it can be further exported in a text file. The number of decimals for the branch values can be specified by the user. }
+\usage{ convert.to.newick(tree, decimals = 3) }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{ tree }{ One object of class \code{hclust} with the analyzis of the input motifs. The labels of the branches in the \code{hclust} tree will be the same in the Newick tree. }
@@ -15,9 +12,7 @@ convert.to.newick(tree, decimals = 3)
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
-\value{
-\item {Returns an object of class \code{character} containing the Newick tree.}
-}
+\value{ Returns an object of class \code{character} containing the Newick tree. }
 \references{
 %% ~put references to the literature/web site here ~
 }
