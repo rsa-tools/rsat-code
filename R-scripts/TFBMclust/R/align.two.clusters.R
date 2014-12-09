@@ -2,9 +2,7 @@
 ## Align two clusters: align the two cluster, in some cases is
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.two.clusters <- function(child1, child2, desc.table, compa.table, score = "Ncore", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
-
-  print("Case 3")
+align.two.clusters <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
 
   ## Identify the merge level and the node numbers of each cluster
   merge.level <- which(hclust.tree$merge == child1)
@@ -45,7 +43,7 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
 
     ## Find the central motif of the cluster
     ## Get the id of each node on the description table
-    central.motifs <- closest.or.farthest.motifs.ids(ids1.hclust, ids2.hclust, compa.table, score = "Ncor", closest = TRUE)
+    central.motifs <- closest.or.farthest.motifs.ids(ids1.hclust, ids2.hclust, compa.table, score = score, closest = TRUE)
     id1 <- central.motifs[1]
     id2 <- central.motifs[2]
 
@@ -155,8 +153,9 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
       temp <- list()
       temp[[y]][["strand"]] <- temp.motifs.info[[y]][["strand"]]
       temp[[y]][["consensus"]] <- paste(spacer, temp.motifs.info[[y]][["consensus"]], sep="")
-      temp[[y]][["name"]] <- temp.motifs.info[[y]][["name"]]
+      temp[[y]][["name"]] <- get.name(y, desc.table)
       temp[[y]][["number"]] <- as.numeric(temp.motifs.info[[y]][["number"]])
+      #print(temp.motifs.info[[y]])
       temp[[y]][["spacer.up"]] <- get.spacer.nb(temp.motifs.info[[y]][["consensus"]])$up.spacer
       temp[[y]][["spacer.dw"]] <- get.spacer.nb(temp.motifs.info[[y]][["consensus"]])$dw.spacer
 
