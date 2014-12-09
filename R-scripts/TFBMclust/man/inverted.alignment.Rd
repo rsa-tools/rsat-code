@@ -9,12 +9,10 @@
   \item{desc.table}{ A table with the motifs attributes with at least 4 columns: \code{id}, \code{name},     \code{consensus} and \code{rc.consensus}.
 
   The ID must be unique, the name can be the same as the ID.} }
-}
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{ Returns a \code{list} object with the same attributes than \code{motifs.list} with the inverted consensus and orientation. }
-}
 \references{
 %% ~put references to the literature/web site here ~
 }
