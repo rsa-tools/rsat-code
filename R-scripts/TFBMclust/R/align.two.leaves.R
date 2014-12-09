@@ -3,8 +3,6 @@
 ## (strand, consensus, offset) of the aligned motifs
 align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
 
-  print("Case 1")
-
   ## Identify the node number
   n1 <- min(-child1,-child2) ## row number of the first motif in the description table
   n2 <- max(-child1,-child2) ## row number of the second motif in the description table
