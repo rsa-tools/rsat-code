@@ -2,9 +2,7 @@
 ## Align a leaf and one cluster: align the single motif relative
 ## to the already aligned cluster; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, score = "Ncore", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
-
-  print("Case 2")
+align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
 
   ## Identify the node numbers, the new leaf and the aligned leaves
   merge.level <- which(hclust.tree$merge == child1)
@@ -68,7 +66,7 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
 
     ## Find the central motif of the cluster
     ## Get the id of each node on the description table
-    central.motifs <- closest.or.farthest.motifs.ids(id1.hclust, id2.hclust, compa.table, score = "Ncor", closest = TRUE)
+    central.motifs <- closest.or.farthest.motifs.ids(id1.hclust, id2.hclust, compa.table, score = score, closest = TRUE)
     id1 <- central.motifs[1]
     id2 <- central.motifs[2]
 
