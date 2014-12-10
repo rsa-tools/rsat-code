@@ -78,7 +78,7 @@ define.clusters.bottom.up <- function(attributes.list, tree, desc.table){
 
           ## Conversely, creates a new cluster with the single leaf
           }else{
-            cluster.number <- cluster.number + 1
+            cluster.number <<- cluster.number + 1
             clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(attributes.cp[[X]][["cluster_1"]])
             attributes.cp[[X]][["flag"]] <<- 0
           }
@@ -86,7 +86,7 @@ define.clusters.bottom.up <- function(attributes.list, tree, desc.table){
         ## Conversely, creates a new cluster with the single leaf
         } else{
 
-          cluster.number <- cluster.number + 1
+          cluster.number <<- cluster.number + 1
           clusters[[paste("cluster_", cluster.number, sep = "")]] <<- as.numeric(attributes.cp[[X]][["cluster_1"]])
           attributes.cp[[X]][["flag"]] <<- 0
         }
@@ -98,10 +98,10 @@ define.clusters.bottom.up <- function(attributes.list, tree, desc.table){
 
         ## Obtain the status of the two clusters before merge them
         prev.cluster.1.nb <- as.numeric(attributes.cp[[X]][["node_1"]])
-        prev.status.1 <- as.numeric(attributes.cp[[X]][["alignment_flag"]])
+        prev.status.1 <- as.numeric(attributes.cp[[prev.cluster.1.nb ]][["alignment_flag"]])
 
         prev.cluster.2.nb <- as.numeric(attributes.cp[[X]][["node_2"]])
-        prev.status.2 <- as.numeric(attributes.cp[[X]][["alignment_flag"]])
+        prev.status.2 <- as.numeric(attributes.cp[[prev.cluster.2.nb ]][["alignment_flag"]])
 
         if(as.numeric(attributes.cp[[X]][["alignment_flag"]]) == 1){
           if(prev.status.1 == 0 | prev.status.2 == 0){
@@ -112,6 +112,7 @@ define.clusters.bottom.up <- function(attributes.list, tree, desc.table){
             cluster.name.erase <- return.cluster.name(cluster.2.nodes, clusters)
             clusters[[cluster.name]] <<- append(clusters[[cluster.name]], cluster.2.nodes)
             clusters[[cluster.name.erase]] <<- NULL
+            #rm(clusters[[cluster.name.erase]])
           }
         }else{
           attributes.cp[[X]][["alignment_flag"]] <<- 0
@@ -126,4 +127,3 @@ define.clusters.bottom.up <- function(attributes.list, tree, desc.table){
   clusters <- lapply(clusters,function(x){get.id(x, desc.table)})
   return(clusters)
 }
-
