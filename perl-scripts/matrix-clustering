@@ -212,6 +212,7 @@ package main;
   local @supported_metrics = qw(
 			         cor
                                  Ncor
+                                 w
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -2157,7 +2158,14 @@ sub Creates_website(){
 
     }
     close $cluster_handle;
- 
+
+    my $threshold_names_html = "";
+    my $threshold_values_html = "";
+    foreach my $par (sort keys %lth){
+	$threshold_names_html .= '<th class="tab_col">'.$par." value</th>\n";
+	$threshold_values_html .= '<td>'.$lth{$par}."</td>\n";
+    } 
+
 
     ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
     my $method = $hclust_method;
@@ -2178,14 +2186,18 @@ sub Creates_website(){
 
 	my $print_cmd = "matrix-clustering ".&PrintArguments();
 
+	## Add the columns with the name of the metric used as thresholds
+	$line =~ s/--Thresholds--/$threshold_names_html/;
+
 	## Fill the summary table
 	$line =~ s/--cmd--/$print_cmd/;
 	$line =~ s/--motifs--/$number_of_motifs/;
 	$line =~ s/--nb--/$number_of_clusters/;
 	$line =~ s/--hmethod--/$method/;
-	$line =~ s/--Ncor--/$ncor_val/;
-	$line =~ s/--cor--/$cor_val/;
-	$line =~ s/--width--/$w_val/;
+	$line =~ s/--Values--/$threshold_values_html/;
+	# $line =~ s/--Ncor--/$ncor_val/;
+	# $line =~ s/--cor--/$cor_val/;
+	# $line =~ s/--width--/$w_val/;
 	$line =~ s/COL_HERE/$general_tab/;
 
         ## Search the tag where the clusters will be inserted
