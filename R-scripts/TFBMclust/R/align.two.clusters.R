@@ -112,6 +112,7 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
       }
     }
 
+
     ## In some cases it is required to invert the alignment (change its orientation)
     ## in order to align properly the two clusters.
     ## Cases in which is required invert the aligment
@@ -135,8 +136,8 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
 
     ## According to the cases, reset the offset
     if(case %in% c(1,6)){
-      ofsset <- nchar(get.consensus(id1, desc.table, RC = FALSE)) - nchar(get.consensus(id2, desc.table, RC = FALSE)) - offset + (cluster.1.spacer - cluster.2.spacer)
-    } else if(case %in% c(2,3,4,5,7,8)){
+      offset <- nchar(get.consensus(id1, desc.table, RC = FALSE)) - nchar(get.consensus(id2, desc.table, RC = FALSE)) - offset + (cluster.1.spacer - cluster.2.spacer)
+      } else if(case %in% c(2,3,4,5,7,8)){
       offset <- offset + (cluster.1.spacer - cluster.2.spacer)
     }
 
@@ -149,10 +150,11 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
     }
     spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
     temp.motifs.info <- motifs.info[ids.mod]
+
     sapply(ids.mod, function(y){
       temp <- list()
       temp[[y]][["strand"]] <- temp.motifs.info[[y]][["strand"]]
-      temp[[y]][["consensus"]] <- paste(spacer, temp.motifs.info[[y]][["consensus"]], sep="")
+      temp[[y]][["consensus"]] <- paste(spacer, temp.motifs.info[[y]][["consensus"]], sep = "")
       temp[[y]][["name"]] <- get.name(y, desc.table)
       temp[[y]][["number"]] <- as.numeric(temp.motifs.info[[y]][["number"]])
       #print(temp.motifs.info[[y]])
