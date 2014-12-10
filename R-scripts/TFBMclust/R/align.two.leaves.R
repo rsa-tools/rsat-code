@@ -42,20 +42,21 @@ align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "N
   ## In case the motifs should not be aligned export the default parameters
   if(aligned.motif.flag == 0){
 
-    motifs.info.temp <-  sapply(c(n1, n2), function(X){
-          list(
-            name = get.name(get.id(X, desc.table),desc.table),
-            consensus = get.consensus(get.id(X, desc.table), desc.table, RC = FALSE),
-            strand = "D",
-            number = X,
-            spacer.up = 0,
-            spacer.dw = 0
-          )
-    })
-    motifs.info.temp <-  data.frame(t(motifs.info.temp))
-    rownames(motifs.info.temp) <- motifs.info.temp$name
-    motifs.info.temp <- apply(motifs.info.temp, 1, as.list)
-    motifs.info[names(motifs.info.temp)] <- motifs.info.temp[names(motifs.info.temp)]
+      n1.id <- get.id(n1, desc.table)
+      motifs.info[[n1.id]][["name"]] <<- get.name(n1.id,desc.table)
+      motifs.info[[n1.id]][["consensus"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
+      motifs.info[[n1.id]][["strand"]] <<- "D"
+      motifs.info[[n1.id]][["number"]] <<- n1
+      motifs.info[[n1.id]][["spacer.up"]] <<- 0
+      motifs.info[[n1.id]][["spacer.dw"]] <<- 0
+
+      n2.id <- get.id(n2, desc.table)
+      motifs.info[[n2.id]][["name"]] <<- get.name(n2.id,desc.table)
+      motifs.info[[n2.id]][["consensus"]] <<- get.consensus(n2.id, desc.table, RC = FALSE)
+      motifs.info[[n2.id]][["strand"]] <<- "D"
+      motifs.info[[n2.id]][["number"]] <<- n2
+      motifs.info[[n2.id]][["spacer.up"]] <<- 0
+      motifs.info[[n2.id]][["spacer.dw"]] <<- 0
 
   ## Conversely align the motifs
   }else{
