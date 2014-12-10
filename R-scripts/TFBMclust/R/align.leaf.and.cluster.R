@@ -4,12 +4,18 @@
 ## (strand, consensus, offset) of the aligned motifs
 align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
 
-  ## Identify the node numbers, the new leaf and the aligned leaves
+  ## Identify the node numbers, the new.node leaf and the aligned leaves
   merge.level <- which(hclust.tree$merge == child1)
   n1 <- abs(min(child1, child2))
   n.aligned <- leaves.per.node(hclust.tree)[[merge.level]][which(leaves.per.node(hclust.tree)[[merge.level]] != n1)]
   n2 <- n.aligned
   ids.aligned <- get.id(n.aligned, desc.table)
+
+
+  motifs.info[[get.id(n1, desc.table)]][["name"]] <<- n1
+  motifs.info[[get.id(n1, desc.table)]][["spacer.up"]] <<- 0
+  motifs.info[[get.id(n1, desc.table)]][["spacer.dw"]] <<- 0
+
 
   ## Get the id of each node on the description table
   id1.hclust <- get.id(n1, desc.table)
@@ -18,6 +24,7 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
   ## Check the if the node shall be aligned
   aligned.motif.flag <- 0
   aligned.motif.flag <- alignment.test(id1.hclust, id2.hclust, compa.table, thresholds, hclust.method = method, hclust.metric = metric)
+
 
   ## Fill the attributes table
   if(nodes.attributes == TRUE){
@@ -42,20 +49,14 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
 
-    motifs.info.temp <-  sapply(c(n1, n2), function(X){
-      list(
-        name = get.name(get.id(X, desc.table),desc.table),
-        consensus = get.consensus(get.id(X, desc.table), desc.table, RC = FALSE),
-        strand = "D",
-        number = X,
-        spacer.up = 0,
-        spacer.dw = 0
-      )
-    })
-    motifs.info.temp <-  data.frame(t(motifs.info.temp))
-    rownames(motifs.info.temp) <- motifs.info.temp$name
-    motifs.info.temp <- apply(motifs.info.temp, 1, as.list)
-    motifs.info[names(motifs.info.temp)] <<- motifs.info.temp[names(motifs.info.temp)]
+    n1.id <- get.id(n1, desc.table)
+
+    motifs.info[[n1.id]][["name"]] <<- get.name(n1.id,desc.table)
+    motifs.info[[n1.id]][["consensus"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
+    motifs.info[[n1.id]][["strand"]] <<- "D"
+    motifs.info[[n1.id]][["number"]] <<- n1
+    motifs.info[[n1.id]][["spacer.up"]] <<- 0
+    motifs.info[[n1.id]][["spacer.dw"]] <<- 0
 
   ## Conversely align the motifs
   } else{
@@ -73,11 +74,11 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
     ## NOTE: the order of the ids (ID1 or ID2) should be the same as in the comparison table
     ## If the order in the hclust tree is the opposite, then the order of the numbers is inverted
     switch.ids <- 0
-    new <- NULL
+    new.node <- NULL
     aligned <- NULL
     if(id1 != id1.hclust){
       aligned <- id1
-      new <- id2
+      new.node <- id2
       temporal <- NULL
       temporal <- n1
       n1 <- n2
@@ -85,7 +86,7 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
       switch.ids <- 1
     } else{
       aligned <- id2
-      new <- id1
+      new.node <- id1
     }
     rm(id1.hclust, id2.hclust)
 
@@ -144,25 +145,26 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
       }
     }
 
+
     ## In some cases it is required to invert the alignment (change its orientation)
-    ## in order to align the new leaf and store in the motifs.info variable
+    ## in order to align the new.node leaf and store in the motifs.info variable
     if(case %in% c(2,4,6,7)){
       inverted.alignment.aligned.ids <- inverted.alignment(ids.aligned, motifs.info, desc.table)
       motifs.info[names(inverted.alignment.aligned.ids)] <<- inverted.alignment.aligned.ids[names(inverted.alignment.aligned.ids)]
     }
 
-    ## Choose the consensus for the new motif
+    ## Choose the consensus for the new.node motif
     if(case %in% c(1,2,5,6,7,8)){
-      consensus.new <- get.consensus(new, desc.table, RC = FALSE)
-      motifs.info[[new]][["strand"]] <<- "D"
-      motifs.info[[new]][["consensus"]] <<- consensus.new
+      consensus.new.node <- get.consensus(new.node, desc.table, RC = FALSE)
+      motifs.info[[new.node]][["strand"]] <<- "D"
+      motifs.info[[new.node]][["consensus"]] <<- consensus.new.node
 
     } else if(case %in% c(3,4)){
-      consensus.new <- get.consensus(new, desc.table, RC = TRUE)
-      motifs.info[[new]][["strand"]] <<- "R"
-      motifs.info[[new]][["consensus"]] <<- consensus.new
+      consensus.new.node <- get.consensus(new.node, desc.table, RC = TRUE)
+      motifs.info[[new.node]][["strand"]] <<- "R"
+      motifs.info[[new.node]][["consensus"]] <<- consensus.new.node
     }
-    motifs.info[[new]][["name"]] <<- get.name(new, desc.table)
+    motifs.info[[new.node]][["name"]] <<- get.name(new.node, desc.table)
 
     ## Reset the offset
     aligned.spacer.up <- as.numeric(motifs.info[[aligned]][["spacer.up"]])
@@ -177,20 +179,22 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
     spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
 
     ## Add the gaps
+    ids.mod <- NULL
     if(offset <= 0){
         ids.mod <- get.id(n1, desc.table)
     }else{
-      ids.mod <- get.id(n2, desc.table)
+        ids.mod <- get.id(n2, desc.table)
     }
-    temp.motifs.info <- motifs.info
-    sapply(ids.mod, function(id){
+
+    temp.motifs.info <- motifs.info[ids.mod]
+    sapply(ids.mod, function(x){
       temp <- list()
-      temp[[id]][["strand"]] <- temp.motifs.info[[id]][["strand"]]
-      temp[[id]][["consensus"]] <- paste(spacer, temp.motifs.info[[id]][["consensus"]], sep="")
-      temp[[id]][["name"]] <- temp.motifs.info[[id]][["name"]]
-      temp[[id]][["number"]] <- as.numeric(temp.motifs.info[[id]][["number"]])
-      temp[[id]][["spacer.up"]] <- get.spacer.nb(motifs.info[[id]][["consensus"]])$up.spacer
-      temp[[id]][["spacer.dw"]] <- get.spacer.nb(motifs.info[[id]][["consensus"]])$dw.spacer
+      temp[[x]][["strand"]] <- temp.motifs.info[[x]][["strand"]]
+      temp[[x]][["consensus"]] <- paste(spacer, temp.motifs.info[[x]][["consensus"]], sep="")
+      temp[[x]][["name"]] <- temp.motifs.info[[x]][["name"]]
+      temp[[x]][["number"]] <- as.numeric(temp.motifs.info[[x]][["number"]])
+      temp[[x]][["spacer.up"]] <- get.spacer.nb(temp.motifs.info[[x]][["consensus"]])$up.spacer
+      temp[[x]][["spacer.dw"]] <- get.spacer.nb(temp.motifs.info[[x]][["consensus"]])$dw.spacer
       temp.motifs.info[names(temp)] <<- temp[names(temp)]
     })
 
