@@ -239,6 +239,7 @@ package main;
   ## Matrices
   local @matrices = ();
   local $show_consensus = 0;
+  local $draw_heatmap = 0;
 
 
   ## Unrecognized arguments are passed to compare-matrices
@@ -661,7 +662,19 @@ tree.
 =cut
     } elsif ($arg eq "-cons"){
       $show_consensus = 1;
-   
+
+=pod
+
+=item B<-heatmap>
+
+Display consensus of merged matrices on the internal branches of the
+tree.
+
+=cut
+    } elsif ($arg eq "-heatmap"){
+      $draw_heatmap = 1;
+
+  
 =pod
 
 =item B<-export format>
@@ -1163,6 +1176,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
+    $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
 
@@ -2328,6 +2342,19 @@ sub Creates_website(){
 		   </tr>
                 ';
 
+	    ## If it is specified, add the heatmap
+	    if($draw_heatmap == 1){
+		$add_files .= 
+		    '
+
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_heatmap.pdf"><strong>Heatmap</strong></a></td>
+		      <td class="tab_spacer_2">the heatmap showing the hierarchical tree with the clusters and the alignments.</td>
+		   </tr>
+                     ';
+	    }
+
+            ## If it is specified, add the heatmap
 	    if($clone_input_flag == 1){
 		$add_files .= 
 		    '
