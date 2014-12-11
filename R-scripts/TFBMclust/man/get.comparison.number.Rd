@@ -59,4 +59,3 @@ get.comparison.numbers(IDs1, IDs2, oct4.tfbm.compa)
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
