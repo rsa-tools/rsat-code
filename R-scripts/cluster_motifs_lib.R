@@ -38,6 +38,11 @@ check.param <- function() {
     hclust.method <<- "average";
   }
 
+  ## Default hclust method is the complete method
+  if (!exists("draw.heatmap")) {
+    draw.heatmap <<- "1";
+  }
+
   ## Define the kind of metric used: scores or distances
   supported.scores <- c("cor", "Ncor")
   supported.distances <- c(NULL)
