@@ -135,6 +135,17 @@ clusters <<- define.clusters.bottom.up(alignment.attributes, tree, global.descri
 ## Number of clusters
 forest.nb <- length(clusters)
 
+######################
+## Draw the heatmap
+if(draw.heatmap == 1){
+    heatmap.file <- paste(sep="", out.prefix, "_heatmap.pdf")
+    w.inches <- 14 ## width in inches
+    h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
+    pdf(file = heatmap.file, width = w.inches, height = h.inches)
+    draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
+      verbose(paste("drawing heatmap", heatmap.file), 1)
+    dev.off()
+}
 ########################################
 ## Define the label color of the tree
 ## according to the cluster
@@ -163,7 +174,7 @@ mar4 <- alignment.width - 10
 plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
   w.inches <- 14 ## width in inches
-  h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
+  h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
   resol <- 72 ## Screen resolution
   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
   verbose(paste("hclust tree drawing", tree.drawing.file), 1)
