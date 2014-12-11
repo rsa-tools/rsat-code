@@ -20,11 +20,12 @@
   \code{Single}: using as reference the same metric used to build the hierarchical tree, select the closest pair of motifs, if the values of all metrics selected in the threshold are satisfied, the cluster can be aligned. }
   \item{metric}{ Column of the comparison matrix to be used as score. Default: Ncor. }
   \item{hclust.tree}{ One object of class \code{hclust} with the analyzis of the input motifs. }
+  \item{nodes.attributes}{ logical. Should be returned the alignment status of each level tree?. Default: FALSE. }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
-\value{ Returns the \code{list} called \code{motifs.list} updated, with the alignment of those levels containing a pair of single leaves. }
+\value{ Returns the \code{list}s called \code{motifs.list} and \code{internal.nodes.attributes} updated, with the alignment of those levels containing a pair of leaves and its corresponding alignment status, respectively. }
 \references{
 %% ~put references to the literature/web site here ~
 }
