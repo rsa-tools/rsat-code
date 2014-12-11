@@ -31,7 +31,29 @@
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+## Load the data
+data(oct4chipseq)
 
+## Collect the motif distance matrix
+oct4.dist <- build.distance.matrix(oct4.tfbm.compa, score = "Ncor")
+
+## Save the matrix
+oct4.dist.matrix <- oct4.dist$matrix
+
+## Run the hierarchical clustering analysis
+tree <- hclust.motifs(oct4.dist.matrix, hclust.method = "average")
+
+## Align the motifs
+oct4.alignment <- align.motifs(tree, oct4.tfbm.desc, oct4.tfbm.compa, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = FALSE)
+
+## Save the alignment attributes at each level of the tree
+oct4.alignment.attributes <- oct4.alignment$node.attributes
+
+## Find the clusters
+clusters.oct4 <- define.clusters.bottom.up(oct4.alignment.attributes, tree, oct4.tfbm.desc)
+
+## Create the vector with the color code
+color.code.clusters(clusters.oct4, tree, oct4.tfbm.desc)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
