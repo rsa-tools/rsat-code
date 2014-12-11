@@ -37,7 +37,32 @@ Return an object of class \code{dataframe} with 3 columns:
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+## Load the data
+data(oct4chipseq)
 
+## Collect the motif distance matrix
+oct4.dist <- build.distance.matrix(oct4.tfbm.compa, score = "Ncor")
+
+## Save the matrix
+oct4.dist.matrix <- oct4.dist$matrix
+
+## Run the hierarchical clustering analysis
+tree <- hclust.motifs(oct4.dist.matrix, hclust.method = "average")
+
+## Load the data
+data(oct4chipseq)
+
+## Collect the motif distance matrix
+oct4.dist <- build.distance.matrix(oct4.tfbm.compa, score = "Ncor")
+
+## Save the matrix
+oct4.dist.matrix <- oct4.dist$matrix
+
+## Run the hierarchical clustering analysis
+tree <- hclust.motifs(oct4.dist.matrix, hclust.method = "average")
+
+##
+JSON.clusters.table <- identify.JSON.tree.branches(tree, oct4.tfbm.desc)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
