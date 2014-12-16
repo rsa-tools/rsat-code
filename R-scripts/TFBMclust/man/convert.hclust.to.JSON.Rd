@@ -14,9 +14,7 @@ convert.hclust.to.JSON(tree)
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
-\value{
-\item {Returns an object of class \code{character} containing the Newick tree.}
-}
+\value{ Returns an object of class \code{character} containing the Newick tree. }
 \references{
 %% ~put references to the literature/web site here ~
 }
