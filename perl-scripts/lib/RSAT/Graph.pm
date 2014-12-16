@@ -35,7 +35,7 @@ Graph class.
 
 
 
-################################################################
+
 =pod
 
 =item B<create_node()>
@@ -54,7 +54,7 @@ sub create_node {
     return $node;
 }
 
-################################################################
+
 =pod
 
 =item B<add_node()>
@@ -73,7 +73,7 @@ sub add_node {
     return $node;
 }
 
-################################################################
+
 =pod
 
 =item B<get_nodes()>
@@ -86,7 +86,7 @@ sub get_nodes {
   return $self->get_attribute("nodes");
 }
 
-################################################################
+
 =pod
 
 =item B<get_size()>
@@ -105,7 +105,7 @@ sub get_size {
 
 
 
-################################################################
+
 =pod
 
 =item B<node_by_id()>
@@ -125,7 +125,7 @@ sub node_by_id {
     return $node;
 }
 
-################################################################
+
 =pod
 
 =item B<add_arc()>
@@ -155,7 +155,7 @@ sub create_arc {
 
 
 
-################################################################
+
 =pod
 
 =item B<read_from_table>
@@ -263,7 +263,7 @@ sub read_from_table {
     close $main::in if ($inputfile);    
 }
 
-################################################################
+
 =pod
 
 =item B<to_text()>
@@ -274,23 +274,25 @@ Supported formats: dot, gml, gdl, tab
 
 =cut
 sub to_text {
-    my ($self, $out_format, @args) = @_;
-    if ($out_format eq "dot") {
-	return $self->to_dot(@args);
-    } elsif ($out_format eq "gdl") {
-	return $self->to_gdl(@args);
-    } elsif ($out_format eq "gml") {
-	return $self->to_gml(@args);
-    } elsif ($out_format eq "tab") {
-	return $self->to_tab(@args);
-    } elsif ($out_format eq "node_table") {
-	return $self->to_node_table(@args);
-    } else {
-	&RSAT::error::FatalError(join ("\t", $out_format, "Invalid format for a graph."));
-    }
+  my ($self, $out_format, @args) = @_;
+  if ($out_format eq "dot") {
+    return $self->to_dot(@args);
+  } elsif ($out_format eq "adj_list") {
+    return $self->to_adjacency_list(@args);
+  } elsif ($out_format eq "gdl") {
+    return $self->to_gdl(@args);
+  } elsif ($out_format eq "gml") {
+    return $self->to_gml(@args);
+  } elsif ($out_format eq "tab") {
+    return $self->to_tab(@args);
+  } elsif ($out_format eq "node_table") {
+    return $self->to_node_table(@args);
+  } else {
+    &RSAT::error::FatalError($out_format, "Invalid format for to export a graph (Graph::to_text)");
+  }
 }
 
-################################################################
+
 =pod
 
 =item B<to_dot()>
@@ -331,7 +333,52 @@ sub to_dot {
     return $dot;
 }
 
-################################################################
+=pod
+
+=item B<to_adjacency_list()>
+
+Return the graph as an adjacency list:
+
+- first column contain a node
+
+- second column contains the list of all its target nodes (can be
+  empty), separated by commas.
+
+Example:
+
+Alice : Bob, David, Eve
+Bob : Alice, David, Jean Luc
+David : Bob, Alice, Jean Luc
+Eve : Alice, Jean Luc
+Jean Luc : Eve, Bob , David
+
+=cut
+sub to_adjacency_list {
+    my ($self) = @_;    
+
+    my $adj_list = "";
+
+    my %targets_per_node = ();
+    foreach my $arc ($self->get_attribute("arcs")) {
+	my $source = $arc->get_attribute("source");
+	my $source_id = $source->get_attribute("id");
+	my $target = $arc->get_attribute("target");
+	my $target_id = $target->get_attribute("id");
+	push (@{$targets_per_node{$source_id}}, $target_id);
+    }
+
+    foreach my $node ($self->get_attribute("nodes")) {
+      my $source_id = $source->get_attribute("id");
+      $adj_list .= $source_id;
+      $adj_list .= "\t";
+      $adj_list .= join (", ", @{$targets_per_node{$source_id}});
+      $adj_list .= "\n";
+    }
+
+    return ($adj_list);
+}
+
+
 =pod
 
 =item B<to_gdl()>
@@ -351,7 +398,7 @@ sub to_gdl {
 }
 
 
-################################################################
+
 =pod
 
 =item B<to_gml()>
@@ -440,7 +487,7 @@ sub to_gml {
     return $gml;
 }
 
-################################################################
+
 =pod
 
 =item B<to_tab()>
@@ -480,7 +527,7 @@ sub to_tab {
 
     return $tab;
 }
-################################################################
+
 =pod
 
 =item B<to_node_table(@out_fields)>
@@ -538,7 +585,7 @@ sub to_node_table {
 
   return $node_table;
 }
-################################################################
+
 =pod
 
 =item B<load_classes($class_file)>
