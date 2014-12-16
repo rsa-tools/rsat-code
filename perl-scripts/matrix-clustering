@@ -212,6 +212,7 @@ package main;
   local @supported_metrics = qw(
 			         cor
                                  Ncor
+                                 w
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -238,6 +239,7 @@ package main;
   ## Matrices
   local @matrices = ();
   local $show_consensus = 0;
+  local $draw_heatmap = 0;
 
 
   ## Unrecognized arguments are passed to compare-matrices
@@ -660,7 +662,19 @@ tree.
 =cut
     } elsif ($arg eq "-cons"){
       $show_consensus = 1;
-   
+
+=pod
+
+=item B<-heatmap>
+
+Display consensus of merged matrices on the internal branches of the
+tree.
+
+=cut
+    } elsif ($arg eq "-heatmap"){
+      $draw_heatmap = 1;
+
+  
 =pod
 
 =item B<-export format>
@@ -1162,6 +1176,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
+    $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
 
@@ -1320,7 +1335,6 @@ sub ClusterMotifs {
 sub Add_attributes_to_JSON(){
   my (%matrix_info) = ();
 
-  
 
   ## Create the logos with the empty columns, which will be displayed
   ## in the HTML5 file
@@ -1341,22 +1355,23 @@ sub Add_attributes_to_JSON(){
       @split_line = split(/\s+/, $_);
       my $matrix_label = $split_line[6];
 
-      $matrix_info{$matrix_label}{id} = $split_line[1];
-      $matrix_info{$matrix_label}{name} = $split_line[2];
-      $matrix_info{$matrix_label}{width} = $alignment_info{$matrix_info{$matrix_label}{id}}{width};
-      $matrix_info{$matrix_label}{consensus} = $split_line[4];
-      $matrix_info{$matrix_label}{consensus_rc} = $split_line[5];
-      $matrix_info{$matrix_label}{label} = $split_line[6];
-      $matrix_info{$matrix_label}{logo_file} = $split_line[7];
-      $matrix_info{$matrix_label}{logo_file_rc} = $split_line[8];
+      $matrix_info{$split_line[1]}{id} = $split_line[1];
+      $matrix_info{$split_line[1]}{name} = $split_line[2];
+      $matrix_info{$split_line[1]}{width} = $alignment_info{$matrix_info{$split_line[1]}{id}}{width};
+      $matrix_info{$split_line[1]}{consensus} = $split_line[4];
+      $matrix_info{$split_line[1]}{consensus_rc} = $split_line[5];
+      $matrix_info{$split_line[1]}{label} = $split_line[6];
+      $matrix_info{$split_line[1]}{logo_file} = $split_line[7];
+      $matrix_info{$split_line[1]}{logo_file_rc} = $split_line[8];
+      #$matrix_info{$matrix_label}{logo_file_rc} = $split_line[8];
 
       ## The path of the aligned logo (in D or R) that will be displayed 
       if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
-	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
-	  $matrix_info{$matrix_label}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
+	  $matrix_info{$split_line[1]}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
+	  $matrix_info{$split_line[1]}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
       }else{
-	  $matrix_info{$matrix_label}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo}; 
-	  $matrix_info{$matrix_label}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
+	  $matrix_info{$split_line[1]}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo}; 
+	  $matrix_info{$split_line[1]}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
       }
   }
   close(DATA);
@@ -1394,7 +1409,7 @@ sub Add_attributes_to_JSON(){
 	  	      if ($children >= 2){
 	  		  my $folder = $levels_JSON[$children-2];
 	  		  if($folder ~~ @merged_cons_folders){
-	  		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo});
+	  		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 	  		      $consensus_link =~ s/^\.\.\///g;
 	  		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
 	  		      $Add_this .= " \"url\" : \"$consensus_link\", ";
@@ -1413,6 +1428,7 @@ sub Add_attributes_to_JSON(){
 	      ## Define te URL of the logo file, relative to the location of the json file
 	      my $aligned_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file});
 	      $aligned_logo_link =~ s/^\.\.\///g;
+
 	      my $aligned_logo_url = $aligned_logo_link.".png";
 
 	      ## Define te URL of the logo file, relative to the location of the json file
@@ -1767,7 +1783,7 @@ sub Merge_matrices(){
 	my $cluster_number = "cluster_".$split_line[1];
 	my $level_number = "merge_level_".$split_line[2];
 	my $file_path = $split_line[3];
-	$int_aling_files{$cluster_number}{$level_number} = $file_path;
+	$int_align_files{$cluster_number}{$level_number} = $file_path;
     }
     close $int_align_file;
 
@@ -2156,7 +2172,14 @@ sub Creates_website(){
 
     }
     close $cluster_handle;
- 
+
+    my $threshold_names_html = "";
+    my $threshold_values_html = "";
+    foreach my $par (sort keys %lth){
+	$threshold_names_html .= '<th class="tab_col">'.$par." value</th>\n";
+	$threshold_values_html .= '<td>'.$lth{$par}."</td>\n";
+    } 
+
 
     ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
     my $method = $hclust_method;
@@ -2177,14 +2200,18 @@ sub Creates_website(){
 
 	my $print_cmd = "matrix-clustering ".&PrintArguments();
 
+	## Add the columns with the name of the metric used as thresholds
+	$line =~ s/--Thresholds--/$threshold_names_html/;
+
 	## Fill the summary table
 	$line =~ s/--cmd--/$print_cmd/;
 	$line =~ s/--motifs--/$number_of_motifs/;
 	$line =~ s/--nb--/$number_of_clusters/;
 	$line =~ s/--hmethod--/$method/;
-	$line =~ s/--Ncor--/$ncor_val/;
-	$line =~ s/--cor--/$cor_val/;
-	$line =~ s/--width--/$w_val/;
+	$line =~ s/--Values--/$threshold_values_html/;
+	# $line =~ s/--Ncor--/$ncor_val/;
+	# $line =~ s/--cor--/$cor_val/;
+	# $line =~ s/--width--/$w_val/;
 	$line =~ s/COL_HERE/$general_tab/;
 
         ## Search the tag where the clusters will be inserted
@@ -2315,6 +2342,19 @@ sub Creates_website(){
 		   </tr>
                 ';
 
+	    ## If it is specified, add the heatmap
+	    if($draw_heatmap == 1){
+		$add_files .= 
+		    '
+
+		   <tr>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_heatmap.pdf"><strong>Heatmap</strong></a></td>
+		      <td class="tab_spacer_2">the heatmap showing the hierarchical tree with the clusters and the alignments.</td>
+		   </tr>
+                     ';
+	    }
+
+            ## If it is specified, add the heatmap
 	    if($clone_input_flag == 1){
 		$add_files .= 
 		    '
