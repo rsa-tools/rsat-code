@@ -323,9 +323,21 @@ package	main;
   ## directory.
   my @variation_file = ();
 
-  foreach ( glob ( $variation_dir."*.tab") ) {
-    push (@variation_file,$_) unless (/Failed/);
-  }
+  #########
+  ## AMR NOTE: I'm having a lot of problems with the glob function
+  ## and haven't been able to figure them out.
+  ## I'll change back this part of the code as soon as I get it to
+  ## work. This code is a patch
+
+  my $vart_files=`ls $variation_dir/*.tab`;
+  @variation_file= split ("\n",$vart_files);
+
+  
+  ## print join("+",@variation_file);
+  ## die "BOOM";
+  ## foreach ( glob ( $variation_dir."*.tab") ) {
+  ##  push (@variation_file,$_) unless (/Failed/);
+  ## }
 
   ################################################################
   ## Retrieve variations from rsat-var format
