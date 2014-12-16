@@ -46,7 +46,7 @@ formats.  Graph class.
 
 =cut
 
-################################################################
+
 =pod
 
 =item B<new()>
@@ -133,7 +133,7 @@ sub new {
     return $self;
 }
 
-################################################################
+
 =pod
 
 =item B<empty_graph()>
@@ -185,7 +185,7 @@ sub empty_graph {
     return $self;
 }
 
-################################################################
+
 =pod
 
 =item B<set_seed_nodes>
@@ -210,7 +210,7 @@ sub set_seed_nodes {
   $self->{seed_nodes} = 1;
 }
 
-################################################################
+
 =pod
 
 =item B<randomize()> 
@@ -388,7 +388,7 @@ sub randomize {
 }
 
 
-################################################################
+
 =pod
 
 =item B<create_random_graph()> 
@@ -809,7 +809,7 @@ sub create_random_graph_old {
 }
 
 
-################################################################
+
 =pod
 
 =item B<random_graph_degree_distrib()> 
@@ -884,7 +884,7 @@ sub random_graph_degree_distrib {
 }
 
 
-################################################################
+
 =pod
 
 =item B<get_node_color()>
@@ -900,7 +900,7 @@ sub get_node_color {
     return $color;
 }
 
-################################################################
+
 =pod
 
 =item B<get_out_labels()>
@@ -919,7 +919,7 @@ sub get_out_labels {
     return @node_out_label;
 }
 
-################################################################
+
 =pod
 
 =item B<get_out_labels_id()>
@@ -937,7 +937,7 @@ sub get_out_labels_id {
     return @node_out_label;
 }
 
-################################################################
+
 =pod
 
 =item B<get_out_color()>
@@ -957,7 +957,7 @@ sub get_out_colors {
 }
 
 
-################################################################
+
 =pod
 
 =item B<get_out_color()>
@@ -976,7 +976,7 @@ sub get_out_colors_id {
 }
 
 
-################################################################
+
 =pod
 
 =item B<contains_node>
@@ -999,7 +999,7 @@ sub contains_node {
 
 
 
-################################################################
+
 =pod
 
 =item B<get_out_neighbours()>
@@ -1024,7 +1024,7 @@ sub get_out_neighbours {
     return @out_neighbours_names;
 }
 
-################################################################
+
 =pod
 
 =item B<get_neighbours_id()>
@@ -1107,7 +1107,7 @@ sub get_neighbours_id {
 
   return @result;
 }
-################################################################
+
 =pod
 
 =item B<get_clust_coef(@nodes)>
@@ -1146,7 +1146,7 @@ sub get_clust_coef {
 
 
 
-################################################################
+
 =pod
 
 =item B<properties()>
@@ -1162,7 +1162,7 @@ sub properties {
     my $nbnodes = scalar (keys(%nodes_id_name));
     return ($nbnodes, $nbarcs);
 }
-################################################################
+
 =pod
 
 =item B<get_weights()>
@@ -1184,7 +1184,7 @@ sub get_weights() {
 }
 
 
-################################################################
+
 =pod
 
 =item B<weight_properties()>
@@ -1229,7 +1229,7 @@ sub weight_properties {
     $self->force_attribute("min_weight", $min);
     return ($mean, $sd, $min, $max);
 }
-################################################################
+
 =pod
 
 =item B<get_out_neighbours()>
@@ -1255,7 +1255,7 @@ sub get_out_neighbours_id {
 }
 
 
-################################################################
+
 =pod
 
 =item B<get_node_label()>
@@ -1274,7 +1274,7 @@ sub get_node_label {
 
 
 
-################################################################
+
 =pod
 
 =item B<create_node()>
@@ -1392,7 +1392,7 @@ sub create_arc {
 
 
 
-################################################################
+
 =pod
 
 =item B<get_nodes()>
@@ -1406,7 +1406,7 @@ sub get_nodes {
   return keys %nodes_name_id;
 }
 
-################################################################
+
 =pod
 
 =item B<get_nodes()>
@@ -1421,7 +1421,7 @@ sub get_arcs_ref {
   return $arcsRef
 }
 
-################################################################
+
 =pod
 
 =item B<get_size()>
@@ -1441,7 +1441,7 @@ sub get_size {
 }
 
 
-################################################################
+
 =pod
 
 =item B<get_nodes_clusters()>
@@ -1464,7 +1464,7 @@ sub get_nodes_clusters {
 }
 
 
-################################################################
+
 =pod
 
 =item B<get_nodes_clusters()>
@@ -1484,7 +1484,7 @@ sub get_node_id_clusters {
 }
 
 
-################################################################
+
 =pod
 
 =item B<node_by_name()>
@@ -1504,7 +1504,7 @@ sub node_by_name {
     }
 }
 
-################################################################
+
 =pod
 
 =item B<arcs_by_name()>
@@ -1528,7 +1528,7 @@ sub arcs_by_name {
 }
 
 
-################################################################
+
 =pod
 
 =item B<node_by_id()>
@@ -1833,16 +1833,15 @@ sub read_from_paths {
     $self->load_from_array(@array);
     return $self;
 }
-################################################################
-## Load a graph from a tab delimited adjacency matrix
 
-#   where col1 = source node
-#   	col2 = target node
-# 	col3 = weight or edge label
-# 	col4 = source color
-# 	col5 = target color
-# 	col6 = arc color
 
+=pod
+
+=item B<read_from_adj_matrix()>
+
+Load a graph from a tab delimited adjacency matrix
+
+=cut
 
 sub read_from_adj_matrix {
     my ($self, $inputfile, $directed) = @_;
@@ -1914,7 +1913,6 @@ sub read_from_adj_matrix {
     $self->load_from_array(@array);
     return $self;
 }
-
 
 
 ################################################################
@@ -2496,8 +2494,6 @@ sub load_from_array {
     
     
     $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
-    
-
 }
 
 
@@ -2518,8 +2514,10 @@ Arguments depend on the graph format.
 =cut
 sub graph_from_text {
     my ($self, $in_format, @args) = @_;
+
     if ($in_format eq "gml") {
 	return $self->load_from_gml(@args);
+
     } elsif ($in_format eq "tab") {
         my $inputfile =  $args[0];
         my $scol = $args[1];
@@ -2533,16 +2531,20 @@ sub graph_from_text {
         my $txcol = $args[9] || 0;
         my $tycol = $args[10] || 0;
 	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol, $sxcol, $sycol, $txcol, $tycol);
+
     } elsif ($in_format eq "path_extract") {
         my $inputfile =  $args[0];
         return $self->read_path_extract($inputfile);
+
     } elsif ($in_format eq "adj_matrix") {
 	return $self->read_from_adj_matrix($args[0], $args[11]);
+
     } elsif ($in_format eq "path") {
       my $inputfile = $args[0];
       my $path_col = $args[12];
       my $distinct_path = $args[13] || 0;
       return $self->read_from_paths($inputfile, $path_col, $distinct_path);
+
     } else {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
     }
@@ -2555,38 +2557,50 @@ sub graph_from_text {
 
 =item B<to_text()>
 
-Return the graph in various format.
+Return the graph in various formats.
 
 Supported formats: dot, gml, tab, rnsc, tab_numeric
 
 =cut
 sub to_text {
     my ($self, $out_format, @args) = @_;
+
     if ($out_format eq "dot") {
 	return $self->to_dot(@args);
+
+    } elsif ($out_format eq "adj_list") {
+	return $self->to_adj_list(@args);
+
     } elsif ($out_format eq "gml") {
         shift @args;
         shift @args;
 	return $self->to_gml(@args);
+
     } elsif ($out_format eq "tab") {
 	return $self->to_tab(@args);
+
     } elsif ($out_format eq "tab_java") {
 	return $self->to_tab_java(@args);
+
     } elsif ($out_format eq "adj_matrix") {
         shift @args;
 	return $self->to_adj_matrix(@args);
+
     } elsif ($out_format eq "rnsc") {
 	return $self->to_rnsc(@args);
+
     } elsif ($out_format eq "tab_numeric") {
 	return $self->to_tab_numeric(@args);
+
     } elsif ($out_format eq "node_table") {
 	return $self->to_node_table(@args);
+
     } else {
-	&RSAT::error::FatalError(join ("\t", $out_format, "Invalid format for a graph."));
+	&RSAT::error::FatalError($out_format, "Invalid format for a graph (Graph2::to_text).");
     }
 }
 
-################################################################
+
 =pod
 
 =item B<to_dot()>
@@ -2665,7 +2679,58 @@ sub to_dot {
     return $dot;
 }
 
-################################################################
+
+=pod
+
+=item B<to_adj_list()>
+
+Return the graph as an adjacency list.
+
+
+- first column contain a node
+
+- second column contains the list of all its target nodes (can be
+  empty), separated by commas.
+
+Example:
+
+Alice : Bob, David, Eve
+Bob : Alice, David, Jean Luc
+David : Bob, Alice, Jean Luc
+Eve : Alice, Jean Luc
+Jean Luc : Eve, Bob , David
+
+=cut
+sub to_adj_list {
+    my ($self) = @_;
+
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+
+    my @nodes = $self->get_nodes();
+    my $adj_list = "";
+
+    ## Iterate over nodes
+    for (my $i = 0; $i < scalar @nodes; $i++) {
+      my $source_name = $nodes_id_name{$i};
+
+      my @row = @empty_row;
+
+      ## Collect target nodes
+      if (defined($out_neighbours[$i])) {
+        for (my $j = 0; $j < scalar @{$out_neighbours[$i]}; $j++) {
+          my $out_id = $out_neighbours[$i][$j];
+	  my $out_name = $nodes_id_name{$out_id};
+	  push @row, $out_name;
+        }
+      }
+      $adj_list .= $source_name." :\t";
+      $adj_list .= join(", ", @row);
+      $adj_list .= "\n";
+    }
+    return $adj_list;
+}
+
 =pod
 
 =item B<to_adj_matrix()>
@@ -2762,7 +2827,7 @@ sub layout {
 
 }
 
-################################################################
+
 =pod
 
 =item B<layout_fr()>
@@ -3666,7 +3731,7 @@ sub layout_random {
 
 
 
-################################################################
+
 =pod
 
 =item B<to_gml()>
@@ -3794,7 +3859,7 @@ sub to_gml {
     return $gml;
 }
 
-################################################################
+
 =pod
 
 =item B<to_tab($arc_id)>
@@ -3846,7 +3911,7 @@ sub to_tab {
     return $tab;
 }
 ################################################################
-################################################################
+
 =pod
 
 =item B<to_rnsc()>
@@ -3886,7 +3951,7 @@ sub to_rnsc {
 }
 
 ################################################################
-################################################################
+
 =pod
 
 =item B<to_tab_numeric()>
@@ -3911,7 +3976,7 @@ sub to_tab_numeric {
     return $output;
 }
 
-################################################################
+
 =pod
 
 =item B<to_tab_index($arcs_multiple_attribute)>
@@ -4037,7 +4102,7 @@ sub to_tab_arcs_attribute {
 
 
 
-################################################################
+
 =pod
 
 =item B<to_node_table(@out_fields)>
@@ -4095,7 +4160,7 @@ sub to_node_table {
 
   return $node_table;
 }
-################################################################
+
 =pod
 
 =item B<load_classes($class_file)>
@@ -4190,7 +4255,7 @@ sub gaussian_rand {
 return 1;
 
 #############################################################
-################################################################
+
 =pod
 
 =item B<c_topology($arc_id)>
@@ -4317,7 +4382,7 @@ sub c_topology {
 
 
 
-################################################################
+
 =pod
 
 =item B<to_tab_java($arc_id)>

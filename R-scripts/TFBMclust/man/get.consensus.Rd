@@ -13,7 +13,7 @@ get.consensus(id, desc.table, RC = FALSE)
   \item{desc.table}{ A table with the motifs attributes with at least 4 columns: \code{id}, \code{name},     \code{consensus} and \code{rc.consensus}.
 
   The ID must be unique, the name can be the same as the ID. }
-  \item{RC}{ logical.  Should be searched the consensus or its Reverse Complement?. Default: FALSE}
+  \item{RC}{ logical.  Should be searched the consensus or its Reverse Complement?. Default: FALSE. }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
