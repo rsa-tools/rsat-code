@@ -1,25 +1,37 @@
-fill.downstream <- function(motifs.ids, motifs.list){
+fill.downstream <- function(ids.fill, motifs.list){
+
+  motifs.temp <- motifs.list[ids.fill]
 
   ## Get the highest length among the consensuses
-  consensuses <- sapply(motifs.ids, function(X){
-    nchar(motifs.list[[X]][["consensus"]])
+  consensuses <- sapply(ids.fill, function(X){
+    nchar(motifs.temp[[X]][["consensus"]])
   })
-  max.width <- (max(unlist(consensuses)))
+  max.width <- max(unlist(consensuses))
 
   ## Add the downstream spacer
-  motifs.info.temp <- lapply(motifs.info[motifs.ids], function(x){
+  sapply(ids.fill, function(x){
 
-      ## Update the downstream spacer value
-      x[["spacer.dw"]] <- max.width - nchar(x[["consensus"]])
+    temp.list <- list()
+    ## Update the consensus
+    cons.new <- NULL
+    cons.new <- paste(motifs.temp[[x]][["consensus"]],
+      paste(rep("-",
+        times = max.width - nchar(motifs.temp[[x]][["consensus"]])),
+        collapse = ""
+      ),
+      sep = ""
+    )
 
-      ## Update the consensus
-      x[["consensus"]] <- paste(x[["consensus"]],
-          paste(rep("-",
-                    times = max.width - nchar(x[["consensus"]])),
-                collapse = ""
-          ),
-          sep = "")
-      return(x)
+    temp.list[[x]][["strand"]] <- motifs.temp[[x]][["strand"]]
+    temp.list[[x]][["consensus"]] <- cons.new
+    temp.list[[x]][["name"]] <- motifs.temp[[x]][["name"]]
+    temp.list[[x]][["number"]] <- motifs.temp[[x]][["number"]]
+    temp.list[[x]][["spacer.up"]] <- get.spacer.nb(temp.list[[x]][["consensus"]])$up.spacer
+    temp.list[[x]][["spacer.dw"]] <- get.spacer.nb(temp.list[[x]][["consensus"]])$dw.spacer
+
+    ## Update the motifs list
+    motifs.temp[names(temp.list)] <<- temp.list[names(temp.list)]
   })
-  return(motifs.info.temp)
+  #print(motifs.temp)
+  return(motifs.temp)
 }
