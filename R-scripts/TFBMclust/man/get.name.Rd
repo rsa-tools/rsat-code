@@ -7,7 +7,7 @@ Given the ID of a (motif) leaf, search its corresponding motif name in the provi
 Note: The ids in the description table must be orderer alphabetically.
 }
 \usage{
-get.name(desc.table, id)
+get.name(id, desc.table)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
