@@ -31,7 +31,7 @@ align.motifs(hclust.tree, desc.table, compa.table, thresholds = list(Ncor = 0.4,
 \value{
 An object of class \code{list} with three elements:
   \item{motifs.alignment}{ An object of class \code{list} where each element correspond to the motifs Id and each value correspond to information of the motif: name, strand, number, spacer ustream and spacer downstream. }
-  \item{node.attributes}{ An object of class \code{list} where each element correspond to the level of the tree and each value correspond to information of tha alignment of that level: ids aligned, alignmet status. }
+  \item{node.attributes}{ An object of class \code{list} where each element correspond to the level of the tree and each value correspond to information of the alignment in that level: ids aligned, alignmet status. }
   \item{intermediate.alignments}{ An object of class \code{list} where each element correspond to the level of the tree, with one \code{list} for each motif aligned in that level, each value of the motif list correspond to information of the motif: name, strand, number, spacer ustream and spacer downstream.}
 }
 \references{
