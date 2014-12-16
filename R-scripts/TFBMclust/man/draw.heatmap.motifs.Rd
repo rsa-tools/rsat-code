@@ -17,7 +17,7 @@ draw.heatmap.motifs(dist.table, method = "average", clusters.list, alignment.lis
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
-\value{ The heatmap corresponding to the distance table, where the column names correspond to the motifs Ids and the row names are he aligned consensus. In addition each clustre is indicated with a bar of a different color in the heatmap.
+\value{ This function returns the heatmap corresponding to the distance table, where the column names are to the motifs Ids and the row names are the aligned consensus. In addition each cluster is indicated with a bar of a different color in the heatmap.
 }
 \references{
 %% ~put references to the literature/web site here ~
