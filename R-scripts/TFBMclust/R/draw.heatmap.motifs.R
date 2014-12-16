@@ -3,19 +3,22 @@
 ## method.
 draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list){
 
+  dist.table <- as.matrix(dist.table)
+
   ## Set the suported colors
-  color <- c("red", "green", "blue")
-  cluster.to.color <- list()
+  color <- rainbow(length(clusters.list))
+  cluster.to.color <- list(length(clusters.list))
   color.counter <- 0
+
 
   ## Fill a list where each element correspond to a cluster name
   ## and the value its corresponding color
   sapply(names(clusters.list), function(x){
     color.counter <<- color.counter + 1
     cluster.to.color[[x]] <<- color[color.counter]
-    if(color.counter == 3){
-      color.counter <<- 0
-    }
+#     if(color.counter == 7){
+#       color.counter <<- 0
+#     }
   })
 
   ## Create a vector with the the corresponding color of each motif
@@ -27,7 +30,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   })
 
   ## Color gradient for the heatmap
-  grad <- colorRampPalette(c("green", "blue","red", "white"))(n = 299)
+  grad <- colorRampPalette(c("green", "black", "red"))(n = 299)
 
 
   ## Calculate the bottom border
@@ -46,6 +49,8 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           symm=TRUE,
           ColSideColors = color.order,
           RowSideColors = color.order,
+          Rowv = as.dendrogram(tree),
+          Colv =as.dendrogram(tree),
           col = grad,
           labRow = consensus
   )
