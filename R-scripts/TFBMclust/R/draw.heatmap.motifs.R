@@ -54,8 +54,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           col = grad
 #          labRow = consensus
   )
-
-print("------------------------------------------------------------------")
+  print("Yo te llevo a donde quiera solo dejate encontrar")
 }
 
 
