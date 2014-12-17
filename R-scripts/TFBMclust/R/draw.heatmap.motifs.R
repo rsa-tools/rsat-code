@@ -55,7 +55,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 #          labRow = consensus
   )
 
-print("--------------------------dddddd----------------------------------------")
+print("------------------------------------------------------------------")
 }
 
 
