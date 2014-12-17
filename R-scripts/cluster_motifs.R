@@ -8,13 +8,6 @@
 ## It returns the resulting tree in json format, which can be loaded
 ## by the d3 library for display purposes.
 
-## Load required libraries
-suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
-
 ## Redefine the main directory (this should be adapted to local configuration)
 dir.main <- getwd()
 
@@ -22,6 +15,33 @@ dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
+
+## Install Rclusterpp if it is required
+if(!require("Rclusterpp")){
+  install.packages("Rcpp")
+}
+
+# package.skeleton(file.path(dir.rsat, 'R-scripts/TFBMclust/R'), force = TRUE)
+# update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
+# #install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
+#
+# installed.packages(priority='NA')["TFBMclust",]
+#
+# update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust/TFBMclust'),
+#                 checkBuilt=TRUE,
+#                 ask=FALSE,
+#                 repos = NULL,
+#                 type = "source"
+#                 )
+
+
+## Load required libraries
+suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
+
 
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
@@ -218,7 +238,7 @@ intermediate.levels <- vector()
 
 
 i <- sapply(1:length(clusters), function(nb){
-    
+
     verbose(paste("Exploring the cluster generated: ", nb ), 1)
 
     alignment.cluster <<- list()
@@ -232,15 +252,15 @@ i <- sapply(1:length(clusters), function(nb){
 
     ids <- clusters[[paste("cluster_", nb, sep = "")]]
     if(length(ids) >= 2){
-        case <- "case.2"        
+        case <- "case.2"
     } else{
         case <- "case.1"
     }
-    
+
     switch(case,
 
            ## If the cluster has only one element, create its JSON file and skip the
-           ## hierarchical clustering step 
+           ## hierarchical clustering step
            case.1 = {
 
                ## Fill the cluster list with the data of the non-aligned motifs (singleton)
@@ -249,7 +269,7 @@ i <- sapply(1:length(clusters), function(nb){
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["number"]] <<- as.numeric(1)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer.up"]] <<- as.numeric(0)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
-             
+
 
                ## Create a JSON file for trees with a single node
                ## In this situation this step is required because it is not possible to use the hclustToJson function
@@ -257,13 +277,13 @@ i <- sapply(1:length(clusters), function(nb){
                json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
                verbose(paste("JSON tree file", json.file), 1)
                writeLines(JSON.single.node, con=json.file)
-               
+
                ## For consistency, print the empty file
                ## It will be erased later
                JSON.empty <- ";Empty_file\n"
                JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
                write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-               
+
                ## For consistency, Create the folder with the merged consensuses
                dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
                flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
@@ -274,7 +294,7 @@ i <- sapply(1:length(clusters), function(nb){
                intermediate.levels.counter <<- intermediate.levels.counter + 1
                intermediate.levels[intermediate.levels.counter] <<- paste(intermediate.levels.counter, nb, 0, "NO_FILE", sep = "\t")
            },
-           
+
            ####################################################################
            ## Align the internal cluster of they have more than a single node
            ## NOTE: for each cluster found previously, its herarchical tree
@@ -311,7 +331,7 @@ i <- sapply(1:length(clusters), function(nb){
                verbose(paste("JSON tree file", json.file), 1)
                writeLines(JSON.tree, con = json.file)
 
-               
+
                ## Creates a file indicating to which levels of the JSON tree correspond to the levels on the hclust tree
                ## This step is required to assign a name to the branches in the JSON tree in order to create
                ## the branch-motifs
@@ -319,13 +339,13 @@ i <- sapply(1:length(clusters), function(nb){
                JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
                write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
-               
+
                ## Align the motifs and retrieve the information of the intermediate alignments
                alignment.cluster <<- align.motifs(tree, description.table, compare.matrices.table, thresholds = thresholds, score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = FALSE, intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
 
-               
-               ## Export the table with the intermediates alignment information 
+
+               ## Export the table with the intermediates alignment information
                sapply(names(intern.alignment), function(lev){
                    level.info <- t(data.frame(intern.alignment[[lev]]))
                    f <- paste(cluster.folder, "/levels_JSON_cluster_", nb, "_", lev, "_dataframe.tab", sep = "")
@@ -335,7 +355,7 @@ i <- sapply(1:length(clusters), function(nb){
                forest.list[[paste("cluster_", nb, sep = "")]] <<- alignment.cluster$motifs.alignment
            }
        )
-    
+
 })
 
 #################################
