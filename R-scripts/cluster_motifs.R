@@ -16,11 +16,6 @@ if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
 
-## Install Rclusterpp if it is required
-if(!require("Rclusterpp")){
-  install.packages("Rcpp")
-}
-
 # package.skeleton(file.path(dir.rsat, 'R-scripts/TFBMclust/R'), force = TRUE)
 # update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
 # #install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
