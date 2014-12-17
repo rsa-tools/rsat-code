@@ -16,6 +16,11 @@ if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
 
+## Require ctc if it is required
+if(!require("TFBMclust")){
+  install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
+}
+
 # package.skeleton(file.path(dir.rsat, 'R-scripts/TFBMclust/R'), force = TRUE)
 # update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
 # #install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
