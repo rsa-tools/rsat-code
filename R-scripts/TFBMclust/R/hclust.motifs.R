@@ -5,7 +5,7 @@ hclust.motifs <- function(dist.matrix, hclust.method = "average"){
 
   ## Require Rclusterpp if it is required
   if(!require("Rclusterpp")){
-    install.packages("Rclusterpp")
+    install.packages("Rcpp")
   }
 
   ## Load library
