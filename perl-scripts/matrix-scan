@@ -2035,7 +2035,8 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 	    foreach my $matrix (@matrices) {
 	      my $matrix_name = $matrix->get_attribute("name");
 	      if (defined($crer_hits_per_matrix{$matrix_name."_hits"})) {
-		$crer->set_attribute($matrix_name."_hits", $crer_hits_per_matrix{$matrix_name."_hits"});
+		  #$crer->set_attribute($matrix_name."_hits", $crer_hits_per_matrix{$matrix_name."_hits"});
+		  $crer->force_attribute($matrix_name."_hits", $crer_hits_per_matrix{$matrix_name."_hits"});
 		$hit_sum +=  $crer_hits_per_matrix{$matrix_name."_hits"};
 	      } else {
 		$crer->set_attribute($matrix_name."_hits", 0);
