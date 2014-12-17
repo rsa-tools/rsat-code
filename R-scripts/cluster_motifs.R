@@ -26,16 +26,17 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 
 system(paste("R CMD INSTALL --no-multiarch --with-keep.source \"", file.path(dir.rsat, "R-scripts/TFBMclust"), "\"", sep =""))
-#reload(file.path(dir.rsat, "R-scripts/TFBMclust"))
+reload(file.path(dir.rsat, "R-scripts/TFBMclust"))
 
-unload(file.path(dir.rsat, "R-scripts/TFBMclust"))
-require("TFBMclust", character.only = TRUE, quietly = TRUE)
+# unload(file.path(dir.rsat, "R-scripts/TFBMclust"))
+# require("TFBMclust", character.only = TRUE, quietly = TRUE)
 
 ## Load required libraries
 suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("devtools", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
 
 ## Options
