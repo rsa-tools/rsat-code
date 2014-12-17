@@ -38,10 +38,10 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   par(oma=c(bottom,0,0,2), family="mono")
 
   ## Get the aligned consensuses, which will be used as the Row names
-  consensus <-sapply(colnames(dist.table), function(x){
-    as.vector(alignment.list[[x]][["consensus"]])
-  })
-  consensus <- as.vector(consensus)
+#   consensus <-sapply(colnames(dist.table), function(x){
+#     as.vector(alignment.list[[x]][["consensus"]])
+#   })
+#   consensus <- as.vector(consensus)
 
   ## Draw the heatmap
   heatmap(dist.table,
@@ -51,10 +51,13 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           RowSideColors = color.order,
           Rowv = as.dendrogram(tree),
           Colv =as.dendrogram(tree),
-          col = grad,
-          labRow = consensus
+          col = grad
+#          labRow = consensus
   )
+
+print("--------------------------dddddd----------------------------------------")
 }
+
 
 
 
