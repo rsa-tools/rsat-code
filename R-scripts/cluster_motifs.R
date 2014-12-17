@@ -27,14 +27,15 @@ suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("devtools", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
 
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 
-system(paste("R CMD INSTALL --no-multiarch --with-keep.source \"", file.path(dir.rsat, "R-scripts/TFBMclust"), "\"", sep =""))
+## Update the package TFBMclust
+system(paste("R CMD INSTALL --no-multiarch --with-keep.source  \"", file.path(dir.rsat, "R-scripts/TFBMclust"), "\"", sep =""))
 reload(file.path(dir.rsat, "R-scripts/TFBMclust"))
+suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
 
 ## Options
 plot.tree <- FALSE
