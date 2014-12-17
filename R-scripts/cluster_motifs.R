@@ -16,24 +16,20 @@ if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
 
-## Require ctc if it is required
+## Require TFBMclust if it is required
 if(!require("TFBMclust")){
   install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
 }
 
-# package.skeleton(file.path(dir.rsat, 'R-scripts/TFBMclust/R'), force = TRUE)
-update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
-# #install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
-#
-# installed.packages(priority='NA')["TFBMclust",]
-#
-# update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust/'),
-#                 checkBuilt=TRUE,
-#                 ask=FALSE,
-#                 repos = NULL,
-#                 type = "source"
-#                 )
+## Load some libraries
+source(file.path(dir.rsat, 'R-scripts/config.R'))
+source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 
+system(paste("R CMD INSTALL --no-multiarch --with-keep.source \"", file.path(dir.rsat, "R-scripts/TFBMclust"), "\"", sep =""))
+#reload(file.path(dir.rsat, "R-scripts/TFBMclust"))
+
+unload(file.path(dir.rsat, "R-scripts/TFBMclust"))
+require("TFBMclust", character.only = TRUE, quietly = TRUE)
 
 ## Load required libraries
 suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
@@ -41,12 +37,6 @@ suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
-
-
-## Load some libraries
-source(file.path(dir.rsat, 'R-scripts/config.R'))
-source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
-
 
 ## Options
 plot.tree <- FALSE
