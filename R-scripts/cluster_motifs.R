@@ -22,12 +22,12 @@ if(!require("TFBMclust")){
 }
 
 # package.skeleton(file.path(dir.rsat, 'R-scripts/TFBMclust/R'), force = TRUE)
-# update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
+update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
 # #install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source")
 #
 # installed.packages(priority='NA')["TFBMclust",]
 #
-# update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust/TFBMclust'),
+# update.packages(file.path(dir.rsat, 'R-scripts/TFBMclust/'),
 #                 checkBuilt=TRUE,
 #                 ask=FALSE,
 #                 repos = NULL,
