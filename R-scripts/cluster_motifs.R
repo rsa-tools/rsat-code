@@ -144,16 +144,36 @@ clusters <<- define.clusters.bottom.up(alignment.attributes, tree, global.descri
 ## Number of clusters
 forest.nb <- length(clusters)
 
+## Get the aligment width, to calculate the limits of the plot
+alignment.width <- as.vector(
+  unlist(
+    sapply(
+      tree$labels, function(X){
+        nchar(X)
+      })
+  )
+)
+alignment.width <- max(alignment.width)
+mar4 <- alignment.width
+
 ######################
 ## Draw the heatmap
 if(draw.heatmap == 1){
-    heatmap.file <- paste(sep="", out.prefix, "_heatmap.pdf")
+
+  for (plot.format in c("pdf", "jpeg")) {
+    heatmap.file <- paste(sep="", out.prefix, "_heatmap.", plot.format)
     w.inches <- 14 ## width in inches
     h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
-    pdf(file = heatmap.file, width = w.inches, height = h.inches)
+    resol <- 72 ## Screen resolution
+    verbose(paste("drawing heatmap", heatmap.file), 1)
+    if (plot.format == "pdf") {
+      pdf(file = heatmap.file, width = 6, height = 6)
+    } else if (plot.format == "jpeg") {
+      jpeg(filename = heatmap.file, width=6, height=5, units="in", res=500)
+    }
     draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
-      verbose(paste("drawing heatmap", heatmap.file), 1)
     dev.off()
+  }
 }
 ########################################
 ## Define the label color of the tree
@@ -167,20 +187,7 @@ labels_colors(tree.dendro) <- color.code
 
 #######################################
 ## Export the tree with the aligment
-
-## Get the aligment width, to calculate the limits of the plot
-alignment.width <- as.vector(
-  unlist(
-    sapply(
-      tree$labels, function(X){
-        nchar(X)
-    })
-  )
-)
-alignment.width <- max(alignment.width)
 mar4 <- alignment.width - 10
-
-plot.format <- "pdf" ## Default for testing inside the loop
 for (plot.format in c("pdf", "png")) {
   w.inches <- 14 ## width in inches
   h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
