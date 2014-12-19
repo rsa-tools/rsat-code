@@ -161,7 +161,7 @@ print <<EndText;
 
 <hr  align='left'></hr>
 <div id = 'serverlist'>
-  <table class='serverlist'>
+  <table class='serverlist' cellspacing='10'>
     
     
     <tr>
@@ -203,10 +203,10 @@ print <<EndText;
     </tr><tr>
 
       <td align=center>
-	<a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
+	<a href='http://ens.rsat.fr/' target='_top'>
 	  <b>ENS Paris - France</b><br>
 	  <img src="images/paris.jpg" height=80 border=0><br>
-	  http://rsat01.biologie.ens.fr/rsa-tools/</a>
+	  http://ens.rsat.fr/</a>
       </td>
 
 
@@ -236,10 +236,10 @@ print <<EndText;
       </td>
       
       <td>
-	<a href="http://rsat.sb-roscoff.fr/" target="_top">
+	<a href="http://roscoff.rsat.fr/" target="_top">
 	  <b>Roscoff - France</b><br>
 	  <img src="images/roscoff_sb.jpg" height=80 border=0><br>
-	  http://rsat.sb-roscoff.fr/</a>
+	  http://roscoff.rsat.fr/</a>
       </td>
 
 
