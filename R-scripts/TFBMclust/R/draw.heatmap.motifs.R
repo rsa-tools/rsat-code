@@ -16,9 +16,6 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   sapply(names(clusters.list), function(x){
     color.counter <<- color.counter + 1
     cluster.to.color[[x]] <<- color[color.counter]
-#     if(color.counter == 7){
-#       color.counter <<- 0
-#     }
   })
 
   ## Create a vector with the the corresponding color of each motif
@@ -34,14 +31,24 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
 
   ## Calculate the bottom border
-  bottom <- 0.2777778 * max(nchar(colnames(dist.table)))
+  bottom <- 0.277 * max(nchar(colnames(dist.table)))
   par(oma=c(bottom,0,0,2), family="mono")
 
-  ## Get the aligned consensuses, which will be used as the Row names
-#   consensus <-sapply(colnames(dist.table), function(x){
-#     as.vector(alignment.list[[x]][["consensus"]])
-#   })
-#   consensus <- as.vector(consensus)
+  # Get the aligned consensuses, which will be used as the Row names
+  consensus <-sapply(colnames(dist.table), function(x){
+    as.vector(alignment.list[[x]][["consensus"]])
+  })
+  consensus <- as.vector(consensus)
+
+  # Get the aligned consensuses, which will be used as the Row names
+  columns.heatmap <- sapply(colnames(dist.table), function(x){
+    if(x == alignment.list[[x]][["name"]]){
+      as.vector(x)
+    } else{
+      paste(x, alignment.list[[x]][["name"]], sep = "  ")
+    }
+  })
+  columns.heatmap <- as.vector(columns.heatmap)
 
   ## Draw the heatmap
   heatmap(dist.table,
@@ -51,12 +58,15 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           RowSideColors = color.order,
           Rowv = as.dendrogram(tree),
           Colv =as.dendrogram(tree),
-          col = grad
-#          labRow = consensus
+          col = grad,
+          labRow = consensus,
+          labCol = columns.heatmap,
+          cexRow = 30/length(consensus) + 0.05,
+          cexCol = 30/length(consensus) + 0.05
+#           cexRow = 0.002132353*length(consensus),
+#           cexCol = 0.002132353*length(consensus)
   )
-  print("----- Testing uploading TFBMclust PAckage -----")
 }
-
 
 
 
