@@ -1,0 +1,600 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!  THIS SCRIPT DOES NOT WORK ANYMORE. IT HAS TO BE UPDATED !!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+### initialization
+$start_time = &RSAT::util::StartScript();
+$in_format = "orf";
+$out_format = "lr";
+
+$arab{I} = 1;
+$arab{II} = 2;
+$arab{III} = 3;
+$arab{IV} = 4;
+$arab{V} = 5;
+$arab{VI} = 6;
+$arab{VII} = 7;
+$arab{VIII} = 8;
+$arab{IX} = 9;
+$arab{X} = 10;
+$arab{XI} = 11;
+$arab{XII} = 12;
+$arab{XIII} = 13;
+$arab{XIV} = 14;
+$arab{XV} = 15;
+$arab{XVI} = 16;
+
+$latin{1} = 'I';
+$latin{2} = 'II';
+$latin{3} = 'III';
+$latin{4} = 'IV';
+$latin{5} = 'V';
+$latin{6} = 'VI';
+$latin{7} = 'VII';
+$latin{8} = 'VIII';
+$latin{9} = 'IX';
+$latin{10} = 'X';
+$latin{11} = 'XI';
+$latin{12} = 'XII';
+$latin{13} = 'XIII';
+$latin{14} = 'XIV';
+$latin{15} = 'XV';
+$latin{16} = 'XVI';
+
+&ReadArguments();
+
+
+
+
+#### read ORF positions ####
+$orf_pos_file = "$ENV{RSAT}/public_html/data/yeast/orfs/ORF_table.txt";
+unless (open ORF_POS, $orf_pos_file) {
+    print "Error: cannot open the ORF position table\n";
+    print "please contact jvanheld\@bigre.ulb.ac.be\n";
+    exit;
+}
+
+while (<ORF_POS>) {
+    unless (/^;/) {
+	@fields = split("\t", $_);
+	$ORF_id = uc($fields[0]);
+	$ORF_locus = uc($fields[2]);
+	$orf_id{$ORF_id} = $ORF_id;
+	$orf_id{$ORF_locus} = $ORF_id;
+	$ORF_chrom = $arab{uc($fields[3])};
+	$chrom{$ORF_id} = $ORF_chrom;
+	$start{$ORF_id} = $fields[4];
+	$end{$ORF_id} = $fields[5];
+	$ORF_locus{$ORF_id} = uc($fields[2]);
+	if ($fields[5] > $fields[4]) {
+	    $strand{$ORF_id} = "W";
+	    $ID_end5{$ORF_chrom}{$fields[4]} = $ORF_id;
+	    $ID_end3{$ORF_chrom}{$fields[5]} = $ORF_id;
+	} else {
+	    $strand{$ORF_id} = "C";
+	    $ID_end5{$ORF_chrom}{$fields[5]} = $ORF_id;
+	    $ID_end3{$ORF_chrom}{$fields[4]} = $ORF_id;
+	}
+    }
+} #while
+for $chr (1..16) {
+    @{$sorted_end3{$chr}} = sort {$a <=> $b} keys %{$ID_end3{$chr}};
+    @{$sorted_end5{$chr}} = sort {$a <=> $b} keys %{$ID_end5{$chr}};
+}
+
+&ReadSynonyms();
+
+
+#### read queries ####
+unless ($input_as_arg)  {
+    ($in, $input_dir) = &OpenInputFile($inputfile);
+    $count = -1;
+    while (<$in>) {
+	if ((/^\s*$/) || (/^;/)) {
+	    next;
+	}
+        $count++;
+        @fields = split(/\s+/);
+	if ($in_format eq "pos") {
+	    ### read position ###
+	    $contig[$count] = $fields[0];
+	    $startposition[$count] = $fields[1];
+	    if ($fields[2] =~ /^\d+$/) {
+		$endposition[$count] = $fields[2];
+	    } else {
+		$endposition[$count] = $startposition[$count];
+	    }
+	    $id[$count] = $fields[3];
+
+	} elsif ($in_format eq "dna-pattern") {
+	    ### read position ###
+	    $id[$count] = $fields[0];
+	    $contig[$count] = $fields[3];
+	    $contig[$count] =~ s/chr//i;
+	    $contig[$count] =~ s/\.raw//i;
+	    $startposition[$count] = $fields[4];
+	    $endposition[$count] = $fields[5];
+
+	} elsif ($in_format eq "orf") {
+	    $query = $orf_id{uc($fields[0])};
+	    $id[$count] = $query;
+	    $contig[$count] = $chrom{$query};
+	    $startposition[$count] = $start{$query};
+	    $endposition[$count] = $end{$query};
+	}
+    }
+    close $in unless ($inputfile eq "");
+}
+
+$out = &OpenOutputFile($outputfile);
+
+
+
+#### verbose ####
+if ($verbose) {
+    print $out ";neighbour-orfs result\n";
+    if ($inputfile ne "") {
+      print $out ";Input file	$inputfile\n";
+    } 
+    if ($outputfile ne "") {
+      print $out ";Output file	$outputfile\n";
+    }
+    print $out ";Query format:\t$in_format\n";
+    print $out ";Output format:\t";
+    if ($out_format eq "ud") {
+        print $out "upstream-downstream\n";
+    } else {
+        print $out "left-right\n";
+    }
+
+    ### print header ###
+    print $out ";";
+    print $out "QUERY\t";
+    print $out "QUERY\t";
+    print $out "QUERY\t";
+    print $out "QUERY\t";
+    print $out "QUERY\t";
+
+    if ($out_format eq "ud") {
+	print $out "UPSTR\t";
+	print $out "UPSTR\t";
+	print $out "UPSTR\t";
+	print $out "UPSTR\t";
+
+	print $out "DOWNSTR\t";
+	print $out "DOWNSTR\t";
+	print $out "DOWNSTR\t";
+	print $out "DOWNSTR\n";
+    } else {
+	print $out "LEFT\t";
+	print $out "LEFT\t";
+	print $out "LEFT\t";
+	print $out "LEFT\t";
+
+	print $out "RIGHT\t";
+	print $out "RIGHT\t";
+	print $out "RIGHT\t";
+	print $out "RIGHT\n";
+    }
+
+    print $out ";";
+    print $out "Q_id\t";
+    print $out "Q_gene\t";
+    print $out "Q_chr\t";
+    print $out "Qstrand\t";
+    print $out "Q_start\t";
+    print $out "Q_end\t";
+
+    if ($out_format eq "ud") {
+	print $out "U_ORF\t";
+	print $out "U_gene\t";
+	print $out "Ustrand\t";
+	print $out "U_dist\t";
+	print $out "U_len\t";
+
+	print $out "D_ORF\t";
+	print $out "D_gene\t";
+	print $out "Dstrand\t";
+	print $out "D_dist\t";
+	print $out "D_len\n";
+    } else {
+	print $out "L_ORF\t";
+	print $out "L_gene\t";
+	print $out "Lstrand\t";
+	print $out "L_dist\t";
+	print $out "L_len\t";
+
+	print $out "R_ORF\t";
+	print $out "R_gene\t";
+	print $out "Rstrand\t";
+	print $out "R_dist\t";
+	print $out "R_len\n";
+    }
+}
+
+QUERYLOOP:
+for $query (0..$#contig) {
+    $id = $id[$query];
+
+    ### check parameter values ###
+    if (($in_format eq "orf") && !(defined $chrom{$id})) {
+	print $out ";WARNING! $id invalid ORF identifier $id\n";
+	next QUERYLOOP;
+    }
+
+    $locus = $ORF_locus{$id};
+    $strand = $strand{$id};
+    $contig = $contig[$query];
+    $startposition = $startposition[$query];
+    $endposition = $endposition[$query];
+
+
+    if (defined($arab{$contig})) {
+	$contig = $arab{uc($contig)};
+    }
+
+    if (($contig < 1) || ($contig > 16)) {
+	print $out ";WARNING! $contig: invalid contig specification\n";
+	next QUERYLOOP;
+    }
+
+
+    if ($startposition < 1) {
+	$startposition = 1;
+    }
+
+    if ($endposition < 1) {
+	$endposition = 1;
+    }
+
+
+    if ($startposition > $endposition) {
+	$end5 = $endposition;
+	$end3 = $startposition;
+	$strand = "C";
+    } else {
+	$end3 = $endposition;
+	$end5 = $startposition;
+	$strand = "W";
+    }
+
+    $max_count = $#{$sorted_end3{$contig}};
+
+
+    $found = 0;
+    $count = -1;
+    ### search left neighbour end3
+    do {
+        $count++;
+        $next_end3 = ${$sorted_end3{$contig}}[$count];
+        if ($next_end3 >  $end5) {
+	    $found = 1;
+	}
+    } until (($count > $max_count) || ($found));
+    if ($count ==0) {
+	$nearest_left_end3 = 0;
+	$left_neighbour = "none";
+    } else {
+	$nearest_left_end3 =  ${$sorted_end3{$contig}}[$count-1];
+        $left_neighbour = $ID_end3{$contig}{$nearest_left_end3};
+        $left_distance = $end5 - $nearest_left_end3;
+        $left_len = abs($start{$left_neighbour} - $end{$left_neighbour}) +1;
+    }
+
+    $found = 0;
+    $count = -1;
+    do {
+        $count++;
+        $next_end5 = ${$sorted_end5{$contig}}[$count];
+        if ($next_end5 >  $end3) {
+            $found = 1;
+        }
+    } until (($count > $max_count) || ($found));
+
+    if ($count > $max_count) {
+        $nearest_right_end5 = 9999999;
+        $right_neighbour = "none";
+    } else {
+        $nearest_right_end5 =  ${$sorted_end5{$contig}}[$count];
+        $right_neighbour =  $ID_end5{$contig}{$nearest_right_end5};
+        $right_distance =  $nearest_right_end5 - $end3;
+        $right_len = abs($start{$right_neighbour} - $end{$right_neighbour}) +1;
+    }
+
+
+    ### print result ###    
+    print $out "$id\t";
+    print $out "$locus\t";
+
+    print $out $latin{$contig}, "\t";
+    print $out $strand{$id}, "\t";
+    print $out $startposition, "\t";
+    print $out $endposition, "\t";
+
+    if (($out_format eq "ud") && ($strand eq "C")) {
+        print $out $right_neighbour, "\t";
+        if ( $ORF_locus{$right_neighbour} eq "") {
+            print $out "-\t";
+        } else {
+            print $out $ORF_locus{$right_neighbour}, "\t";
+        }
+        print $out $strand{$right_neighbour}, "\t";
+        print $out "$right_distance\t$right_len\t";
+
+        print $out $left_neighbour, "\t";
+        if ( $ORF_locus{$left_neighbour} eq "") {
+            print $out "-\t";
+        } else {
+            print $out $ORF_locus{$left_neighbour}, "\t";
+        }
+        print $out $strand{$left_neighbour}, "\t";
+        print $out "$left_distance\t$left_len\n"; 
+  
+    } else {
+        print $out $left_neighbour, "\t";
+        if ( $ORF_locus{$left_neighbour} eq "") {
+            print $out "-\t";
+        } else {
+            print $out $ORF_locus{$left_neighbour}, "\t";
+        }
+        print $out $strand{$left_neighbour}, "\t";
+        print $out "$left_distance\t$left_len\t"; 
+     
+        print $out $right_neighbour, "\t";
+        if ( $ORF_locus{$right_neighbour} eq "") {
+            print $out "-\t";
+        } else {
+            print $out $ORF_locus{$right_neighbour}, "\t";
+        }
+        print $out $strand{$right_neighbour}, "\t";
+        print $out "$right_distance\t$right_len\n";
+    }
+}
+
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+sub PrintHelp  {
+  open HELP ,"| more";
+  print HELP <<End_of_help;
+NAME
+	neighbour-orfs  
+
+USAGE
+        neighbour-orfs [-v] -pos #chr #startpos [#endpos]
+
+        neighbour-orfs [-v] -orf ORF_ID
+
+        neighbour-orfs -i inputfile -o outputfile [-v] [-format input_format]
+
+
+DESCRIPTION
+	returns the closest ORFS on left and right side from a given 
+	chromosomal coordinate.
+	
+CATEGORY
+	genomics
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+        -format input format
+                Accepted formats
+                        pos
+                        orf
+                        dna-pattern (file input only)
+                Default format is orf.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-orf query_orf_name
+		allows to enter a single orf name as query
+		Can be used reiteratively to enter several queries
+		on the same command line.
+		Mutually exclusive with -pos and -i
+	-pos chr# start# end#	
+		allows to directly enter a single chromosomal position on
+		the command line. 
+		Mutually exclusive with -orf and -i
+	-id identifier
+		enter a single identifier on the command line (use this 
+		option with either -pos or -orf).
+        -lr     left-right (default)
+                the output columns provide the neighbour according to 
+                their left or right location relative to the 
+                query. Mutually exclusive with the -ud option.
+        -ud     upstream-downstream (default)
+                the output columns provide the neighbour according to 
+                their upstream or downstream location relative to the 
+                query. Mutually exclusive with the -lr option. 
+                Valid only if query format is "orf".
+
+INPUT FILE FORMATS
+        ORF IDENTIFIER
+            -format orf
+            
+            The first word of each line contains an ORF identifier
+            (e.g.: YFL021W).
+            Default format.
+
+        POSITION
+            -format pos
+
+            Each line contains a query position specification is the
+            following form 
+                #chr #startpos [#endpos] [id]
+
+            Where 
+               #chr is the contig number (in latin or arab notation)
+               #startpos is the start position
+               #endpos is the end position (optional)
+               id is an optional identifier
+
+        RESULT FROM A PATTERN SEARCH IN COMPLETE CHROMOSOMAL 
+        SEQUENCES WITH dna-pattern 
+            -format dna-pattern
+            
+            The matching position returned by dna-pattern is used 
+            as query position
+
+OUTPUT FORMATS
+    The output is presented in 1 line per query.
+    The neighbours are sorted either as left and rigth (-lr option)
+    or as upstream and downstrean (-ud option, default).
+
+    UPSTREAM-DOWNSTREAM ORFS
+        Columns from the output provide respectively
+        - Q_id    query identifier
+        - Q_gene  query gene name
+        - Q_chr   query contig
+        - Qstrand query strand
+        - Q_start query start position
+        - Q_end   query end position
+        - U_ORF   upstream neighbour ORF identifier
+        - U_gene  upstream neighbour gene name
+        - Ustrand upstream neighbour strand
+        - U_dist  distance between query position and upstream neighbour
+        - U_len	  upstream ORF length
+        - D_ORF   downstream neighbour ORF identifier
+        - D_gene  downstream neighbour gene name
+        - Dstrand downstream neighbour strand
+        - D_dist  distance between query position and downstream neighbour
+        - D_len	  downstream ORF length
+
+    LEFT-RIGHT ORFS
+        Columns from the output provide respectively
+        - Q_id    query identifier
+        - Q_gene  query gene name
+        - Q_chr   query contig
+        - Qstrand query strand
+        - Q_start query start position
+        - Q_end   query end position
+        - L_ORF   left neighbour ORF identifier
+        - L_gene  left neighbour gene name
+        - Lstrand left neighbour strand
+        - L_dist  distance between query position and left neighbour
+        - L_len	  left ORF length
+        - R_ORF   right neighbour ORF identifier
+        - R_gene  right neighbour gene name
+        - Rstrand right neighbour strand
+        - R_dist  distance between query position and right neighbour
+        - R_len	  right ORF length
+
+
+EXAMPLE
+	neighbour-orfs -pos VII 42315
+	neighbour-orfs -orf YFL021W
+	neighbour-orfs -i orf_file -format orf
+	neighbour-orfs -i pos_file -format pos
+	neighbour-orfs -i match_file -format dna-pattern
+	neighbour-orfs -format orf -q nil1 -q gal4 -q YCR037C
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+neighbour-orfs options
+----------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-q	query on the command line.	
+-format input format. Accepted formats: pos, orf, dna-pattern
+-o      output file
+-v      verbose
+-pos    position (e.g neighbour-orfs -pos #chr #start [$end])
+-orf    ORF identifier (e.g neighbour-orfs -orf YFL021W)
+-id identifier
+-lr     left-right output (default)
+-ud     upstream-downstream output (valid only if query format is "orf")
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+
+sub ReadArguments {
+    #### read arguments ####
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-id") {
+	    $id[0] = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-ud") {
+	    $out_format = "ud";
+
+	} elsif ($ARGV[$a] eq "-lr") {
+	    $out_format = "lr";
+	    
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-orf") {
+	    $in_format = "orf";
+	    $input_as_arg = 1;
+	    $query_number = $#id+1;
+	    $id[$query_number] = $orf_id{uc($ARGV[$a+1])};
+	    $contig[$query_number] = $chrom{$id[$query_number]};
+	    $startposition[$query_number] = $start{$id[$query_number]};
+	    $endposition[$query_number] = $end{$id[$query_number]};
+	    
+	} elsif ($ARGV[$a] eq "-pos") {
+	    $in_format = "pos";
+	    $input_as_arg = 1;
+	    $contig[0] = $ARGV[$a+1];
+	    $startposition[0] = $ARGV[$a+2];
+	    if ($ARGV[$a+3] =~ /^[-\+\d]\d*$/) {
+		$endposition[0] = $ARGV[$a+3];
+	    } else {
+		$endposition[0] = $startposition[0];
+	    }
+	}
+    }
+}
+    
