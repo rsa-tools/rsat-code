@@ -125,12 +125,12 @@ close $out if ($output);
 ################################################################
 
 =pod
-    
+
 =head1 INPUT FORMAT
-    
-The format must be a tab-delimited file with one column for the
-score threshold (default:1), one column for the Sn (default:2) 
-and one column for the FPR (default:3).
+
+The format must be a tab-delimited file with one column for the score
+threshold (default:1), one column for the Sn (default:2) and one
+column for the FPR (default:3).
 
 =cut
     
@@ -240,27 +240,32 @@ sub displayOptions{
 
 =head1 ESTIMATION OF THE AREA UNDER THE CURVE (AUC)
 
-Several methods can be used in order to estimate the area under the Receiver
-Operating Characteristic (ROC) curve in order to measure the effectiveness of
-a predictive method. The most popular methods are implemented here. 
+Several methods can be used in order to estimate the area under the
+Receiver Operating Characteristic (ROC) curve in order to measure the
+effectiveness of a predictive method. The most popular methods are
+implemented here.
 
-A perfect test would have AUC=1, whereas a completely random test with the ROC
-curve lying on the main diagonal would have AUC=0.5. However, any attempt to
-summarize the ROC curve into a single number loses information about the
-pattern of tradeoffs of the particular discriminator algorithm.
+A perfect test would have AUC=1, whereas a completely random test with
+the ROC curve lying on the main diagonal would have AUC=0.5. However,
+any attempt to summarize the ROC curve into a single number loses
+information about the pattern of tradeoffs of the particular
+discriminator algorithm.
 
-=item B<Geometric or Trapezoïdal method>
+=over
 
-The total area is calculated by summing the area for each adjacent points
-of the curve, (x1,y1) and (x2,y2), and the base. This is done by
-calculating the area of the rectangle between (x1,0),(x2,0),(x1,y1) and
-(x2,y1), then the area of the triangle corresponding to (x1,y1),(x2,y1)
-and (x2,y2). This method is also called the trapezoïdal method.
+=item B<Geometric or trapezoidal method>
+
+The total area is calculated by summing the areas for all adjacent
+points of the curve, (x1,y1) and (x2,y2), and the base. This is done
+by calculating the area of the rectangle between (x1,0) and and
+(x2,y1), then the area of the triangle joining (x1,y1),(x2,y1) and
+(x2,y2). This method is also called the trapezoidal method.
 
 =item B<Normal method>
 
-This simple parametric method assumes that the rate of true positives (X)
-and the rate of false positives (Y) are independent normal variates:
+This simple parametric method assumes that the rate of true positives
+(X) and the rate of false positives (Y) are independent normal
+variates:
 
 =begin text
 
@@ -283,21 +288,23 @@ and the rate of false positives (Y) are independent normal variates:
 
 =item B<Mann-Whitney method>
 
-The Mann-Whitney (MW) approach estimates the AUC as a step-function based on
-empirical cumulative distribution functions. It can be shown that the area
-under the ROC curve is equivalent to the Mann-Whitney U which tests for the
-median difference between scores obtained in the two groups considered in the
-study.
+The Mann-Whitney (MW) approach estimates the AUC as a step-function
+based on empirical cumulative distribution functions. It can be shown
+that the area under the ROC curve is equivalent to the Mann-Whitney U
+which tests for the median difference between scores obtained in the
+two groups considered in the study.
 
 =begin text
 
-         AUC =( R - n1*(n1+1)/2) / (n1*n2)
+         AUC = (R - n1*(n1+1)/2) / (n1*n2)
 
      where R  = sum of the rank in the sensitivities
            n1 = number of Sn  values
            n2 = number of FPR values
 
 =end text
+
+=back
 
 =head1 OUTPUT
 
@@ -318,6 +325,8 @@ I<AUCn> Area calculated by using the Normal assumption
 =pod
 
 =over
+
+=back
 
 =head1 OPTIONS
 
@@ -354,10 +363,16 @@ Make the roc graph representation using XYgraph.
 
 C<XYgraph -i input -xcol FPR_col -ycol SN_col -o graph.jpeg -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 "FPR" -yleg1 "TPR" >
 
+=back
+
 =head1 SEE ALSO
+
+=over
 
 =item B<roc-stats>
 
 =item B<XYgraph>
 
 =back
+
+=cut
