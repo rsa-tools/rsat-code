@@ -48,7 +48,7 @@ USAGE
         RSA-backup
 
 DESCRIPTION
-	Creates a backup of rsa-tools programs, in the for of two tar
+	Creates a backup of rsa-tools programs, in the form of two tar
 	files: one containing perl-script and the other public_html.
 
 CATEGORY
