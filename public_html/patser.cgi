@@ -45,7 +45,6 @@ $query = new CGI;
 $command = $BIN."/patser";
 #$convert_seq_command = $SCRIPTS."/convert-seq";
 $features_from_patser_cmd = $SCRIPTS."/features-from-patser -v 1";
-$add_yeast_link_command = $SCRIPTS."/add-yeast-link";
 $prefix = "patser";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
