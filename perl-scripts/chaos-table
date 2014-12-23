@@ -22,10 +22,15 @@ $program_version
 
 =head1 DESCRIPTION
 
-Generates the frequency table that can then be used to display oligonucleotide frequencies
-with CHAOS Game Representation (CGR). This table serves as input to I<draw-heatmap>, which handles
-the graphical display. The oligonucleotide frequencies must be pre-calculated, for example by running I<oligo-analysis> 
-or or using with I<choose-background-model> to retrieve a Markov-chain model (taxon- or organism-specific) precalculated in RSAT.
+Generates the frequency table that can then be used to display
+oligonucleotide frequencies with CHAOS Game Representation (CGR). This
+table serves as input to I<draw-heatmap>, which handles the graphical
+display. 
+
+The oligonucleotide frequencies must be pre-calculated, for example by
+running I<oligo-analysis> or or using with I<choose-background-model>
+to retrieve a Markov-chain model (taxon- or organism-specific)
+precalculated in RSAT.
 
 =head1 AUTHORS
 
@@ -49,58 +54,80 @@ or or using with I<choose-background-model> to retrieve a Markov-chain model (ta
 
 =head1 USAGE
 
- - Produce the CHAOS frequency table only, for user-input frequency file:
+=head2 Computing oligonucleotide frequencies
 
-chaos-table -i frequency_file -o outputfile [-v #]
+Before using I<chaos-table>, compute some oligonucleotide
+frequencies. We give an example below.
 
- - Produce the CHAOS image from an RSAT predefined Markov Model:
+ retrieve-seq -org Saccharomyces_cerevisiae -all \
+   | oligo-analysis -v 1 -l 5 -return freq -o frequency_file
 
-choose-background-model -type oligo
-          -org organism_name [-1str|-2str] -l oligo_length
+The resulting frequency file can be used as input for I<chaos-table>.
+
+=head2 Produce the CHAOS frequency table only
+
+ chaos-table -i frequency_file -o chaos_file [-v #]
+
+=head2 Produce CHAOS image from an RSAT predefined Markov background model
+
+ choose-background-model -type oligo \
+          -org organism_name [-1str|-2str] -l oligo_length \
           -bg [background] -ovlp|-noov 
 
-it returns the path to the frequency_file
-          
-chaos-table -i frequency_file -return freq -o chaosfile 
+The command above returns the path to the frequency_file, which can
+then be used as input for I<chaos-table>.  
 
-draw-heatmap -i chaosfile -o outputfile -out_format [png|jpeg] -chaos -col_width 50 -html output.html
+ chaos-table -i frequency_file -return freq -o chaos_file
 
-
+ draw-heatmap -i chaos_file -o chaos_heatmap.png -out_format png \
+    -chaos -col_width 50 -html chaos_heatmap.html
 
 =head1 INPUT FORMAT
 
-The background model format is specified with the option -bg_format.Supported :
-oligo-analysis, MotifSampler, meme. Default is: oligo-analysis.
+The background model format is specified with the option
+-bg_format.Supported : oligo-analysis, MotifSampler, meme. Default is:
+oligo-analysis.
 
-For a description of available format, see I<convert-backgound-model -h>
+For a description of available format, see I<convert-backgound-model
+-h>
 
 =head1 OUTPUT FORMAT
 
-This program calculates the coordinates of any given word on the CGR square. The output format is thus 
-a table for which each value is printed at the expected position for a given word. By default, the value is 
-the frequency of the words. It can also be the word itself, which provides an easy way to see how words are
-positionned.
+This program calculates the coordinates of any given word on the CGR
+square. The output format is thus a table for which each value is
+printed at the expected position for a given word. By default, the
+value is the frequency of the words. It can also be the word itself,
+which provides an easy way to see how words are positionned.
 
 =head1 CHAOS Game Representation
 
-CHAOS Game representation (CGR) is an image that represents
-patterns in DNA sequences. It is a fractale structure, first introduced by
-Jeffrey (1990), and that has been enhanced later (Deschavanne, 1999) to directly represents
-k-mers frequencies. The picture is a square for which each angle represents a given nucleotide (A, T, G C).
-To represent the frequency of single letters (1-mers), this square is divided in four smaller squares, each corresponding to the letter of its angle. 
-Each square is then filled with a color taken from a gradient, corresponding to the frequency of each nucleotide.
-To represent 2-mers frequencies, the squares are subdivided in four squares, each representing one of the 16 possible 2-mers.
-Note that the position of each k-mer is always the same on a CGR, which allows to visually compare various CGRs.
-Explanations of how to interpet a CGR are given in (Goldman, 1993). 
+CHAOS Game representation (CGR) is an image that represents patterns
+in DNA sequences. It is a fractale structure, first introduced by
+Jeffrey (1990), and that has been enhanced later (Deschavanne, 1999)
+to directly represents k-mers frequencies. The picture is a square for
+which each angle represents a given nucleotide (A, T, G C).  To
+represent the frequency of single letters (1-mers), this square is
+divided in four smaller squares, each corresponding to the letter of
+its angle.  Each square is then filled with a color taken from a
+gradient, corresponding to the frequency of each nucleotide.  To
+represent 2-mers frequencies, the squares are subdivided in four
+squares, each representing one of the 16 possible 2-mers.  Note that
+the position of each k-mer is always the same on a CGR, which allows
+to visually compare various CGRs.  Explanations of how to interpet a
+CGR are given in (Goldman, 1993).
 
 =head1 REFERENCES
 
-Jeffrey. Chaos game representation of gene structure. Nucleic Acids Research (1990) vol. 18 (8) pp. 2163-70
+Jeffrey (1990). Chaos game representation of gene structure. Nucleic
+Acids Research, vol. 18 (8) pp. 2163-70
 
-Goldman. Nucleotide, dinucleotide and trinucleotide frequencies explain patterns observed in chaos game representations of DNA sequences. Nucleic Acids Research (1993) vol. 21 (10) pp. 2487-91
+Goldman (1993). Nucleotide, dinucleotide and trinucleotide frequencies
+explain patterns observed in chaos game representations of DNA
+sequences. Nucleic Acids Research, vol. 21 (10) pp. 2487-91
 
-Deschavanne et al. Genomic signature: characterization and classification of species assessed by chaos game representation of sequences. Mol Biol Evol (1999) vol. 16 (10) pp. 1391-9
-
+Deschavanne et al. (1999). Genomic signature: characterization and
+classification of species assessed by chaos game representation of
+sequences. Mol Biol Evol, vol. 16 (10) pp. 1391-9
 
 =cut
 
