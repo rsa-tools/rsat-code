@@ -1803,7 +1803,8 @@ DESCRIPTION
 	Draws a XY plot using the numeric values in selected columns
 	of a tab-delimited file.
 
-CATEGORY drawing
+CATEGORY
+        drawing
 
 USAGE
 	XYgraph [-i inputfile] [-o outputfile] [-v]
