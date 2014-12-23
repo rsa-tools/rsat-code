@@ -1,0 +1,161 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: add-orf-id,v 1.10 2013/09/29 04:56:22 jvanheld Exp $
+#
+# Time-stamp: <2003-07-06 20:15:40 jvanheld>
+#
+############################################################
+
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require RSAT::OrganismManager;
+
+$start_time = &RSAT::util::StartScript(); 
+$date = $start_time;
+
+#### initialise parameters ####
+
+&FatalError ("add-orf-id is obsolete. Use add-gene-info instead"); 
+
+&ReadArguments;
+
+#### check parameter values
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    %accepted_feature_types = %supported_feature_types;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
+
+#### organism
+&RSAT::OrganismManager::CheckOrganism($organism_name);
+
+### read ORF information
+&ReadFeatures($organism_name,"",$feature_types);
+&ReadSynonyms($organism_name);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### $verbose #####
+if ($verbose) {
+    print $out ";add-orf-id result\n";
+    printf $out "; %-14s\t%s\n", "organism", $organism_name;
+    if ($inputfile) {
+	print $out ";Query file	$inputfile\n";
+    }
+    if ($outputfile) {
+	print $out ";Output file	$outputfile\n";
+    }
+}
+
+#### read queries file ######
+($in, $input_dir) = &OpenInputFile($inputfile);
+while (my $line = <$in>) {
+    next if ($line =~ /^;/);
+    next unless ($line =~ /\S/);
+    if  ($line =~ /^\s*(\S+)/) {
+	my $query = $1;
+	if (defined($orf_id{uc($query)})) {
+	    print $out $orf_id{uc($query)}, "\t", $line;
+	} else {
+	    print $out ";WARNING: no orf for query $query\t", $line;
+	}
+
+    }
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+########################## subroutine definition ############################
+
+
+sub PrintHelp {
+  open HELP, "| more ";
+  print HELP <<End_of_help;
+USAGE
+	add-orf-id -org organism i query_file
+
+DESCRIPTION
+	Taking as input a file where each line starts with a gene name
+	(or any supoprted synonym), adds a column in frot of it,
+	giving the ORF identifer. 
+
+CATEGORY
+	genomics
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-org	organism
+		Supported organisms :
+$supported_organisms
+	-i	input file
+	-o	output file
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+add-orf-id options
+------------------
+-h		display full help message
+-help		display options
+-v		verbose
+-org		organism
+	Supported organisms :
+$supported_organisms
+-i		input file
+-o		output file
+
+End_short_help
+  close HELP;
+  exit;
+}
+
+sub ReadArguments {
+#### read arguments ####
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name =$ARGV[$a+1];
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	}
+    }
+}
