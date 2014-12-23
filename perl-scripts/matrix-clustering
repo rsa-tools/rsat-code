@@ -396,6 +396,12 @@ package main;
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
   # $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
   # $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
+
+  my @heatmap_file_path = split(/\//, $main::outfile{prefix}."_heatmap.jpg");
+  my $heatmap_file_name = pop(@heatmap_file_path);
+  $main::outfile{heatmap} = $heatmap_file_name;
+
+
   if ($export_tree_format eq "newick"){
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
     ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
@@ -2209,10 +2215,13 @@ sub Creates_website(){
 	$line =~ s/--nb--/$number_of_clusters/;
 	$line =~ s/--hmethod--/$method/;
 	$line =~ s/--Values--/$threshold_values_html/;
-	# $line =~ s/--Ncor--/$ncor_val/;
-	# $line =~ s/--cor--/$cor_val/;
-	# $line =~ s/--width--/$w_val/;
 	$line =~ s/COL_HERE/$general_tab/;
+
+	## Search the line where the heatmap picture will be inserted
+	if($line =~ /--HEATMAP--/){
+	    my $heatmap_line_code = '<img id="heatmap" src="'.$main::outfile{heatmap}.'" />';
+	    $line =~ s/--HEATMAP--/$heatmap_line_code/;
+	}
 
         ## Search the tag where the clusters will be inserted
 	if($line =~ m/Paste\scluster\sdelim/){
