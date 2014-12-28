@@ -1,0 +1,614 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: crer-scan,v 1.47 2012/03/18 10:29:49 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+crer-scan
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Detect regions enriched in cis-regulatory elements (or any other type
+of input features).
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=back
+
+=head1 USAGE
+
+crer-scan [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The input file should be a feature file, in any of the supported
+formats (ft, bed, gff). See onvert-features for description and
+interconversions.
+
+=head1 OUTPUT FORMAT
+
+RSAT feature format (.ft). See onvert-features for description and
+conversions.
+
+=head1 SEE ALSO
+
+=head2 matrix-scan
+
+crer-scan is typically used to detect CRERs from the collection of
+predicted cis-regulatory elements (sites) returned by I<matrix-scan>.
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+use RSAT::feature;
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.47 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+
+  ## Return fields
+  local %supported_return_fields = (
+				    crer_sites=>1, ## location of the sites located within CRERs
+				    limits=>1, ## Sequence limits (for drawing feature maps)
+				    seq_scores=>1, ## sequence-wise scores
+				    p_score=>1,	## score as defenined in Bailey 2003
+				    crer=>1, ## Cis Regulatory element Enriched Region => CRER)
+				    crer_details=>1, ## Table with detailed information about the CRERs
+				   );
+  $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+  local %return_fields = ();		## Fields to return
+
+  ## Thresholds
+  our %lth = ();
+  $lth{crer_site_distance} = 1; ## Min distance for considering two matches as non-overlapping
+  $lth{crer_size} = 100; ## Min CRER size
+
+  our %uth = ();
+  $uth{crer_size} = 10000; ## Max CRER size
+  $uth{crer_site_distance} = 100; ## Max distance for considering two matches aas part of the same CRER
+
+  ## Hit (site) p-value is necessary to compute the binomial p-value
+  ## of the crer. Could be provided by the user, or estimated
+  ## otherwise. To be refined.
+  our $hit_p = $uth{pval} = 0.001; ## Threshold on site P-value
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  while (<$main::in>) {
+
+  }
+  close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item B<-in_format feature_format>
+
+Format of the input feature file. Any format supported by
+I<convert-features> can be used as input for I<crer-scan>.
+
+=cut
+
+    } elsif ($arg eq "-in_format") {
+      $in_format = shift(@arguments);
+      &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: ", $RSAT::feature::supported_input_formats)
+	unless ($RSAT::feature::supported_input_format{$input_format});
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; crer-scan ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+################################################################
+## New algorithm for CRER detection (July 2011).
+##
+## Compute CRERs in an alternative way, from the list of sorted
+## matches, using an approach developed by Julien Van Braekel (Master
+## thesis in bioinformatics at ULB, June 2011), adapted and upgraded
+## by Jacques van Helden.
+sub ComputeCrers {
+  if ($return_fields{crer}) {
+    &RSAT::message::TimeWarn("Detecting CRERs in seq", $sequence_number, $seq_id) if ($main::verbose >= 3);
+
+    ## Sort predicted sites (matches) per position
+    if (defined(@{$matches_per_seq{$seq_id}})) {
+      my @matches_sorted_per_position =
+	sort {$a->get_attribute('start') <=> $b->get_attribute('start')}
+	  @{$matches_per_seq{$seq_id}};
+      &RSAT::message::Info("Sorted", scalar(@matches_sorted_per_position), "predicted sites in sequence", $seq_id) if ($main::verbose >= 5);
+
+
+      ## Parameters
+      unless (defined($lth{crer_sites})) {
+	$lth{crer_sites} = 2;
+      }
+
+      ## Avoid mutually overlapping matches
+      if ((!defined($lth{crer_site_distance})) || ($lth{crer_site_distance} < 1)) {
+	$lth{crer_site_distance} = 1; ## in any case, avoid counting matches on the same position
+      }
+
+      ## Probability to observe at least one hit starting at this
+      ## position of the sequence for any of the input matrices.
+      ##    $m = nb of matrices
+      ##    $hit_p = proba to observe a hit by chance for a given matrix.
+      my $m = $matrix_nb;
+
+      my $hit_p = $uth{pval};
+      my $hit_proba_any_matrix;
+      if ($main::both_strands) {
+	$hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,2*$m,1)
+      } else {
+	$hit_proba_any_matrix = &RSAT::stats::binomial_boe($hit_p,$m,1)
+      }
+      #        &RSAT::message::Debug("m=".$m,
+      #  			    "hit_p=".$hit_p,
+      #  			    "1 - hit_p=".(1 - $hit_p),
+      #  			    "(1 - hit_p)**(2*m)=".((1 - $hit_p)**(2*$m)),
+      # 			     "hit_proba_any_matrix=".$hit_proba_any_matrix,
+      # 			    ) if ($main::verbose >= 10);
+
+      ## Sequence-specific parameters
+      local $max_crer_size;
+      if (defined($uth{crer_size})) {
+	$max_crer_size = $uth{crer_size};
+      } else {
+	$max_crer_size = $seq_len;
+      }
+
+      ## Scan the vector of sorted matches per position.
+      foreach my $i (0..$#matches_sorted_per_position) {
+	my %crer_hits_per_matrix = ();
+	my $start_match = $matches_sorted_per_position[$i];
+	my $start_match_start = $start_match->get_attribute("start");
+	my $last_match_start = $start_match_start;
+	my $discarded_sites = 0;
+	my $matrix_name = $start_match->get_attribute('feature_name');
+	$crer_hits_per_matrix{$matrix_name."_hits"}++;
+
+	&RSAT::message::Debug("Starting CRER extension",
+			      $seq_id,
+			      "i=".$i,
+			      "start_match_start=".$start_match_start,
+			     )
+	  if ($main::verbose >= 5);
+
+
+	## Initialize cumulative scores
+	my $pval_prod =  $start_match->get_attribute("pval");
+	my $weight_sum = $start_match->get_attribute("score");
+	my $normw_sum = $start_match->get_attribute("normw");
+
+	## Initialize end match
+	my $j = $i+1;
+	while ($j <= $#matches_sorted_per_position) {
+	  my $end_match = $matches_sorted_per_position[$j];
+	  my $end_match_start = $end_match->get_attribute("start");
+
+	  ################################################################
+	  ## Compute CRER size. No threshold checking yet, because we
+	  ## first need to evaluate if the new site will be retained
+	  ## or discarded.
+	  my $end_match_end = $end_match->get_attribute("end");
+	  my $crer_size = $end_match_end - $start_match_start + 1;
+
+	  ################################################################
+	  ## Skip overlapping sites, which may result from different effects:
+	  ## - self-overlapping motifs (e.g. GAGAGAGA)
+	  ## - palindromic motifs (e.g. CACGTG) or motifs overlapping
+	  ##   with their reverse complement (e.g. TCACGTG)
+	  ## - mutually overlapping motifs (e.g. CACGTG and CACGTk)
+	  my $site_distance = $end_match_start - $last_match_start;
+	  &RSAT::message::Debug("CRER extension", "i=".$i, "j=".$j,
+				"start_match_start=".$start_match_start,
+				"end_match_start=".$end_match_start,
+				"crer_size=".$crer_size,
+				"site_distance=".$site_distance,
+			       )
+	    if ($main::verbose >= 5);
+
+	  ## Check thresholds on site distance
+	  if ($site_distance < $lth{crer_site_distance}) {
+	    &RSAT::message::Debug("Skipping overlapping site", $seq_id, 
+				  "i=".$i, "j=".$j,
+				  "start=".$end_match_start,
+				  "last_match_start:".$last_match_start,
+				  "site_distance:".$site_distance, "< ".$lth{crer_site_distance},
+				  "discarded", $discarded_sites,
+				 ) if ($main::verbose >= 5);
+	    $discarded_sites++;
+	    $j++;
+	    next;
+
+	  } elsif ((defined($uth{crer_site_distance})) && ($site_distance > $uth{crer_site_distance})) {
+	    &RSAT::message::Debug("Stopping CRER extension at site", $seq_id,
+				  "i=".$i, "j=".$j,
+				  "start=".$end_match_start,
+				  "last_match_start:".$last_match_start,
+				  "site_distance:".$site_distance, "> ".$uth{crer_site_distance}
+				 ) if ($main::verbose >= 5);
+	    last;
+
+	  } else {
+	    ## Update the end match
+	    $last_match_start = $end_match_start;
+
+	    ## Update the details
+	    if ($return_fields{crer_details}) {
+	      my $matrix_name = $end_match->get_attribute('feature_name');
+	      $crer_hits_per_matrix{$matrix_name."_hits"}++;
+	      #		&RSAT::message::Debug("AFTER crer match", $seq_id, "i=".$i, "j=".$j, $matrix_name, $crer_hits_per_matrix{$matrix_name."_hits"}) if ($main::verbose >= 5);
+	    }
+	  }
+
+	  ################################################################
+	  ## Check thresholds on CRER size. This must be done after
+	  ## having checked the site distances, because if the CRER
+	  ## size is smaller than the lower threshold, we
+	  ## nevertheless need to count the number of discarded
+	  ## sites for further CRER extension.
+
+	  ## Check CRER size.  We apply a different treatment for
+	  ## the upper and lower threshold: stop the loop if CRER
+	  ## size exceeds max size; skip the site but pursue CRER
+	  ## extension if the size is smaller than min size.
+	  if ($crer_size > $max_crer_size) {
+	    &RSAT::message::Debug("Stopping CRER extension because crer_size (".$crer_size.") exceeds upper threshold (".$max_crer_size.")") if ($main::verbose >= 5);
+	    last;
+	  }
+	  if ((defined($lth{crer_size})) && ($crer_size < $lth{crer_size})) {
+	    &RSAT::message::Debug("Skipping CRER crer_size (".$crer_size.") smaller than lower threshold (".$lth{crer_size}.")") if ($main::verbose >= 5);
+
+	    $j++;
+	    next;
+	  }
+
+	  ################################################################
+	  ## Compute various CRER scores
+
+	  ## Number of sites in the CRER
+	  my $crer_site_nb = $j - $i + 1 - $discarded_sites;
+	  unless ($crer_site_nb >=  $lth{crer_sites}) {
+	    $j++;
+	    next;
+	  }
+	  if ((defined($uth{crer_sites})) && ($crer_site_nb <=  $uth{crer_sites})) {
+	    last;
+	  }
+
+	  ## Site density (number of site / length)
+	  my $crer_density = $crer_site_nb / $crer_size;
+
+
+	  ################################################################
+	  ## Update cumulative scores
+
+	  ## Product of P-values for all the sites of the CRER
+	  $pval_prod *= $end_match->get_attribute("pval");;
+
+	  ## Sum of site weights
+	  $weight_sum += $end_match->get_attribute("score");
+
+	  ## Sum of site normalized weights
+	  $normw_sum += $end_match->get_attribute("normw") if ($calc_fields{normw});
+
+	  ## Prepare output (ft format)
+	  my $strand_binon = "D";
+	  $strand_binon = "DR" if ($main::both_strands);
+
+	  ################################################################
+	  ## Compute CRER P-value.
+	  ## Beware: computed slightly differently from before since we
+	  ## now discard overlapping matches.
+	  my $crer_nb_site_positions = $end_match_start - $start_match_start + 1; ## Beware, this is slightly different from crre_size, since it is the number of positions where a site can start.
+
+	  ## Number of trials for the binomial.  If the minimal site
+	  ## distance is >1, the number of trials must be corrected
+	  ## for the overlap segment after each counted site, except
+	  ## for the last site.
+	  my $n = $crer_nb_site_positions - (($crer_site_nb -1) *($lth{crer_site_distance} -1)); ## Max number of sites in the CRER (assuming overlap distance is 1, as a first simplification)
+
+	  &RSAT::message::Debug("Computing CRER binomial pval",
+				$seq_id, "i=".$i, "j=".$j,
+				"p=".$hit_proba_any_matrix,
+				"crer_nb_site_positions=".$crer_nb_site_positions,
+				"n=".$n,
+				"sites=".$crer_site_nb,
+				"discarded=".$discarded_sites,
+			       ) if ($main::verbose >= 5);
+
+	  my $crer_pval = &sum_of_binomials($hit_proba_any_matrix, ## Proba of success at each trial i.e. the proba to observe a hit for at least one matrix at that sequence position
+					    $n,
+					    $crer_site_nb, ## Number of sites in the CRER
+					    $n,
+					   );
+	  $nb_of_binom_tests{$seq_id}++;
+	  $sum_binom_tests++;
+
+	  ## Check thresholds on crer_pval
+	  unless (&check_thresholds("crer_pval", $crer_pval)) {
+	    $j++;
+	    next;
+	  }
+
+	  ## Compute CRER significance
+	  my $crer_sig = "Inf";
+	  if ($crer_pval > 0) {
+	    $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
+	  }
+	  ## Check thresholds on CRER significance
+	  unless (&check_thresholds("crer_sig", $crer_sig)) {
+	    $j++;
+	    next;
+	  }
+
+	  ## Instantiate a new CRER object and specify its attributes
+	  my $crer = new RSAT::feature();
+	  $crer->force_attribute('seq_name', $seq_id);
+	  $crer->force_attribute('ft_type', 'CRER');
+	  if ($crer_ids) {
+	    $crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
+	  } else {
+	    $crer->force_attribute('feature_name', "crer");
+	  }
+	  $crer->force_attribute('strand',$strand_binon);
+	  $crer->force_attribute('start', $start_match_start);
+	  $crer->force_attribute('end', $end_match_end);
+	  $crer->force_attribute('crer_site_nb', $crer_site_nb);
+	  $crer->force_attribute('crer_sig', $crer_sig);
+	  $crer->force_attribute('score', $crer_sig); ## Redundant, but useful for export with &print_match();
+	  $crer->force_attribute('crer_pval', $crer_pval);
+	  $crer->force_attribute('pval_prod',$pval_prod);
+	  $crer->force_attribute('weight_sum',$weight_sum);
+	  $crer->force_attribute('crer_size',$crer_size);
+	  $crer->force_attribute('discarded',$discarded_sites);
+	  $crer->force_attribute('positions',$crer_nb_site_positions);
+	  $crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
+	  $crer->force_attribute('density',$crer_density);
+	  $crer->force_attribute('description',
+				 join("; ",
+				      "L=".$crer_size,
+				      "n=".$crer_nb_site_positions,
+				      #				      "p=".$hit_proba_any_matrix,
+				      "sites:".$crer_site_nb,
+				      "discarded:".$discarded_sites,
+				      "dens:".sprintf("%.3f", $crer_density),
+				      "pval:".sprintf("%.3g", $crer_pval),
+				      "pval_prod:".sprintf("%.3g", $pval_prod),
+				      "weight_sum:".sprintf("%.2f", $weight_sum),
+				      #				      "sig:".sprintf("%.3g", $crer_sig),
+				     ));
+
+	  ## Set hits per matrix for the current crer
+	  my $hit_sum = 0;
+	  foreach my $matrix (@matrices) {
+	    my $matrix_name = $matrix->get_attribute("name");
+	    if (defined($crer_hits_per_matrix{$matrix_name."_hits"})) {
+	      $crer->set_attribute($matrix_name."_hits", $crer_hits_per_matrix{$matrix_name."_hits"});
+	      $hit_sum +=  $crer_hits_per_matrix{$matrix_name."_hits"};
+	    } else {
+	      $crer->set_attribute($matrix_name."_hits", 0);
+	    }
+	  }
+	  $crer->force_attribute('hit_sum', $hit_sum);
+
+	  ## Print the CRER
+	  &print_crer($crer);
+	  &print_crer_details($crer) if ($return_fields{crer_details});
+	  #	  &print_match($crer);
+	  undef($crer);
+
+	  $j++;
+	}
+      }
+    } else {
+      &RSAT::message::Warning("No CRER prediction in sequence", $seq_id, "because there was not a single site") if ($main::verbose >= 3);
+    }
+  }
+}
+
+__END__

@@ -30,8 +30,8 @@ local $out = STDOUT;
 #### check argument values ####
 
 #### accepted feature types
-unless (defined %accepted_feature_types) {
-    %accepted_feature_types = %supported_feature_types;
+unless (%accepted_feature_types) {
+  %accepted_feature_types = %supported_feature_types;
 }
 $feature_types = join ",", keys (%accepted_feature_types);
 

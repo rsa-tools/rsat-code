@@ -33,15 +33,15 @@ $seq_nb=10;
 $ov="-noov";
 @overlap_modes=("-noov", "-ovlp");
 $thosig = -2;
-$repet = 1000;
+$repet = 100;
 $start=1;
 
 @tasks = ();
 %supported_task = ();
-$supported_task{'oligos'}++;
-$supported_task{'synthesis'}++;
-$supported_task{'theory'}++;
-$supported_task{'all'}++;
+$supported_task{'oligos'} = 1;
+$supported_task{'synthesis'} = 1;
+$supported_task{'theory'} = 1;
+$supported_task{'all'} = 1;
 $supported_tasks = join",", sort(keys (%supported_task));
 
 &ReadArguments();
@@ -49,11 +49,11 @@ $supported_tasks = join",", sort(keys (%supported_task));
 ################################################################
 #### task list
 if (scalar(@tasks) <= 0) {
-    &RSAT::error::FatalError("You should select at least one task. Supported: $supported_task.");
+    &RSAT::error::FatalError("You should select at least one task (option -task). Supported: $supported_tasks");
 }
 foreach my $t (@tasks) {
     unless ($supported_task{$t}) {
-	&RSAT::error::FatalError("Task $t is invalid. Supported: $supported_tasks.");
+	&RSAT::error::FatalError("Task $t is invalid. Supported: $supported_tasks");
     }
     $task{$t}++;
 }
@@ -82,7 +82,7 @@ $out = &OpenOutputFile($outfile{output});
 
 
 ################################################################
-#### run oligo-analysis
+## Run oligo-analysis
 if ($task{oligos}) {
     for $job ($start..$repet) {
 	foreach $ov (@overlap_modes) {
@@ -187,13 +187,14 @@ sub OneJob {
     ### compose the command
     my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
     &RSAT::util::CheckOutDir($result_dir);
-    $command = "random-seq -l ${seq_len} -r ${seq_nb} ";
-    $command .= " | oligo-analysis -v $job_verbose -return occ,freq,proba,rank -sort "; 
-    $command .= " -l $oligo_len";
-    $command .= " $str";
-    $command .= " $ov";
-    $command .= " -thosig ${thosig}";
-    $command .= " -o ${result_file}";
+    $command = "random-seq -l ".$seq_len." -n ".$seq_nb;
+    $command .= " | oligo-analysis -v ".$job_verbose;
+    $command .= " -return occ,freq,proba,rank -sort "; 
+    $command .= " -l ".$oligo_len;
+    $command .= " ".$str;
+    $command .= " ".$ov;
+    $command .= " -lth occ_sig ".${thosig};
+    $command .= " -o ".$result_file;
 
     ################################################################
     ###### execute the command
