@@ -126,6 +126,7 @@ PERL_MODULES= \
 	Email::Simple::Creator \
 	PostScript::Simple	 \
 	Statistics::Distributions \
+	Math::CDF \
 	Algorithm::Cluster \
 	File::Spec \
 	POSIX \
