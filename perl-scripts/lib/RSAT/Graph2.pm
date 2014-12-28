@@ -1,7 +1,7 @@
 ###############################################################
 #
 # Class Graph2
-#
+
 package RSAT::Graph2;
 
 use RSAT::GenericObject;

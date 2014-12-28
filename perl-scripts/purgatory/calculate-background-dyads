@@ -1,0 +1,83 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+my $queue = 'infinite';
+
+#my @organisms = ('Homo_sapiens');  ## Name of the query organism
+
+my @organisms = ('Anopheles_gambiae', 'Bos_taurus', 'Caenorhabditis_elegans', 'Canis_familiaris', 'Ciona_intestinalis', 'Danio_rerio', 'Drosophila_melanogaster', 'Equus_caballus', 'Gallus_gallus', 'Homo_sapiens', 'Macaca_mulatta', 'Monodelphis_domestica', 'Mus_musculus', 'Ornithorhynchus_anatinus', 'Oryzias_latipes' ,'Pan_troglodytes', 'Pongo_pygmaeus', 'Rattus_norvegicus', 'Saccharomyces_cerevisiae', 'Tetraodon_nigroviridis');  ## Name of the query organism
+
+#my @organisms = ('Anopheles_gambiae', 'Bos_taurus', 'Caenorhabditis_elegans', 'Canis_familiaris', 'Ciona_intestinalis', 'Danio_rerio', 'Drosophila_melanogaster', 'Equus_caballus', 'Gallus_gallus', 'Ornithorhynchus_anatinus', 'Oryzias_latipes' ,'Pan_troglodytes', 'Pongo_pygmaeus', 'Rattus_norvegicus', 'Saccharomyces_cerevisiae', 'Tetraodon_nigroviridis');
+
+my $ensembl_version = $ENV{ensembl_version};
+
+foreach my $organism (@organisms) {
+
+    my $ensembl_org = $organism."_EnsEMBL_".$ensembl_version;
+
+    ###
+    ### Retrieve-ensembl-seq parameters
+    ###
+
+    ## Feature types
+    foreach my $feattype ('mRNA', 'CDS', 'intron', 'firstintron', 'utr') {
+#    foreach my $feattype ('mRNA') {
+
+	## Type
+	my $type;
+	my $from;
+	my $to;
+	if (($feattype eq 'mRNA') || ($feattype eq 'CDS')) {
+	    $type = 'upstream';  ## The -type option value; other example:'-type downstream'
+	    $from = -2000;  ## Start position of the sequence
+	    $to = -1;  ## End position of the sequence
+	} else {
+	    $type = '';
+	    $from = '';
+	    $to = '';
+	}
+
+	my $maskcoding = '-maskcoding';
+
+	foreach my $rm ('', '-rm') {
+#	foreach my $rm ('-rm') {
+	    foreach my $noov ('-ovlp', '-noov') {
+#	    foreach my $noov ('-ovlp') {
+		foreach my $str ('-1str', '-2str') {
+#		foreach my $str ('-1str') {
+		    foreach my $monad_size ('1', '2', '3') {
+#		    foreach my $monad_size ('1') {
+
+			my $input_file_name = $organism."_".$type."_".$feattype.$from.$to.$maskcoding.$rm.".fasta";
+			$input_file_name =~ s/__/_/;
+
+			my $output_file_name = "dyads_".$monad_size."nt_sp0-20_".$type."_".$feattype.$from.$to.$maskcoding.$rm."_".$organism.$noov.$str.".freq";
+			$output_file_name =~ s/__/_/;
+
+			my $output_file_path = "/bio/rsa-tools/data/genomes/".$ensembl_org."/oligo-frequencies/".$output_file_name;
+			unless (-e $output_file_path) {
+			    print "Saving result to file $output_file_name\n";
+
+			    my $command = "dyad-analysis -v 1 -timeout 1000000 -i /bio/rsa-tools/data/genomes/$ensembl_org/genome/$input_file_name -l $monad_size -sp 0-20 $str $noov -return freq,occ -o /bio/rsa-tools/data/genomes/$ensembl_org/oligo-frequencies/$output_file_name";
+#			`$command`;
+			    my $job_prefix = $organism."_dyad_".$monad_size;
+			    my $job_log = $job_prefix.$type.$feattype.$rm.$str.$noov.".log";
+
+			    open JOB, ">script.sh";
+			    print JOB "#!/bin/csh -f", "\n";
+			    print JOB "echo \"Runnin on host \$HOST\"", "\n";
+			    print JOB "( cd /genomix/home/rsat/ensembl_genomes";
+			    print JOB "; ", $command;
+			    print JOB " )", "\n";
+			    close JOB;
+
+			    system("qsub -l kernel=2.6 -q $queue -N $job_prefix -j y -o /genomix/home/rsat/ensembl_genomes/jobs/$job_log script.sh");
+#			    system("qsub -l hostname=n140 -q $queue -N $job_prefix -j y -o /genomix/home/rsat/ensembl_genomes/jobs/$job_log script.sh");
+			}
+		    }
+		}
+	    }
+	}
+    }
+}

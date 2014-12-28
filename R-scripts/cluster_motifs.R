@@ -27,6 +27,7 @@ suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("devtools", warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("gplots", warn.conflicts=FALSE))
 
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
@@ -160,16 +161,18 @@ mar4 <- alignment.width
 ## Draw the heatmap
 if(draw.heatmap == 1){
 
-  for (plot.format in c("pdf", "jpeg")) {
+
+
+  for (plot.format in c("pdf", "jpg")) {
     heatmap.file <- paste(sep="", out.prefix, "_heatmap.", plot.format)
-    w.inches <- 14 ## width in inches
-    h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
+      w <- 6
+      h <- w + 0.75
     resol <- 72 ## Screen resolution
     verbose(paste("drawing heatmap", heatmap.file), 1)
     if (plot.format == "pdf") {
-      pdf(file = heatmap.file, width = 6, height = 6)
-    } else if (plot.format == "jpeg") {
-      jpeg(filename = heatmap.file, width=6, height=5, units="in", res=500)
+      pdf(file = heatmap.file, width = w, height = h)
+    } else if (plot.format == "jpg") {
+      jpeg(filename = heatmap.file, width=w, height=h, units="in", res=500)
     }
     draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
     dev.off()
