@@ -20,8 +20,17 @@ if (dir.rsat == "") {
 if(!require("TFBMclust")){
   install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source", dependencies = TRUE)
 } else if(!require("gplots")){
-  install.packages("gplots", repos = "http://cran.us.r-project.org")
+  install.packages("gplots", repos = "http://cran.univ-lyon1.fr/")
+} else if(!require("RJSONIO")){
+  install.packages("RJSONIO", repos = "http://cran.univ-lyon1.fr/")
+} else if(!require("dendextend")){
+  install.packages("dendextend", repos = "http://cran.univ-lyon1.fr/")
+} else if(!require("devtools")){
+  install.packages("devtools", repos = "http://cran.univ-lyon1.fr/")
+} else if(!require("Rclusterpp")){
+  install.packages("Rlusterpp", repos = "http://cran.univ-lyon1.fr/")
 }
+
 
 ## Load required libraries
 suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
