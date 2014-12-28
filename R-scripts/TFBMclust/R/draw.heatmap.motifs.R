@@ -27,12 +27,14 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   })
 
   ## Color gradient for the heatmap
-  grad <- colorRampPalette(c("green", "black", "red"))(n = 299)
-
+  #grad <- colorRampPalette(c("green", "black", "red"))(n = 299)
+  grad <- greenred(200)
 
   ## Calculate the bottom border
-  bottom <- 0.277 * max(nchar(colnames(dist.table)))
-  par(oma=c(bottom,0,0,2), family="mono")
+  rigth <- round(170/length(alignment.list) + (length(alignment.list)/2 * 0.001), digits = 2)
+  bottom <- round(190/length(alignment.list) + (length(alignment.list)/2 * 0.001), digits = 2)
+
+  par(oma=c(bottom,0.5,0.5,rigth), family="mono")
 
   # Get the aligned consensuses, which will be used as the Row names
   consensus <-sapply(colnames(dist.table), function(x){
@@ -50,21 +52,41 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   })
   columns.heatmap <- as.vector(columns.heatmap)
 
+
   ## Draw the heatmap
-  heatmap(dist.table,
-          hclustfun = function(d){hclust(d, method = method)},
+  heatmap.2(dist.table,
+
+          ## Display the tree symetrically
+          trace = "none",
           symm=TRUE,
+
+          ## Set the colors of columns, rows and cells
           ColSideColors = color.order,
           RowSideColors = color.order,
+          col = grad,
+
+          ## The order of the values is set according these dendrograms
           Rowv = as.dendrogram(tree),
           Colv =as.dendrogram(tree),
-          col = grad,
+
+          ## To show only the dendrogram in row
+          dendrogram = "column",
+
+          ## Set the col and row labels
           labRow = consensus,
           labCol = columns.heatmap,
-          cexRow = 30/length(consensus) + 0.05,
-          cexCol = 30/length(consensus) + 0.05
-#           cexRow = 0.002132353*length(consensus),
-#           cexCol = 0.002132353*length(consensus)
+
+          ## Set the margins
+          cexRow = 20/length(consensus) + 0.1,
+          cexCol = 20/length(consensus) + 0.02,
+
+          ## Set the key with the values
+          key = TRUE,
+          keysize = 1.5,
+          key.xlab = "Distance",
+          key.ylab = "",
+          key.title = "Color key",
+          density.info = "none"
   )
 }
 
