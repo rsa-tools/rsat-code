@@ -20,7 +20,7 @@ if (dir.rsat == "") {
 if(!require("TFBMclust")){
   install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source", dependencies = TRUE)
 } else if(!require("gplots")){
-  install.packages("gplots")
+  install.packages("gplots", repos = "http://cran.us.r-project.org")
 }
 
 ## Load required libraries
