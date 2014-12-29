@@ -16,19 +16,19 @@ if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
 
-## Require TFBMclust if it is required
-dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
-library("TFBMclust", lib.loc=dir.rsat.rscripts)
-
-## Install the TFBM library
-# dir.rsat.rlib <- file.path(dir.rsat, "R-scripts", "Rpackages")
+# dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+# library("TFBMclust", lib.loc=dir.rsat.rscripts)
+## Install the TFBM library if required
+dir.rsat.rlib <- file.path(dir.rsat, "R-scripts", "Rpackages")
 # dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
-# if(!require("TFBMclust", lib.loc=dir.rsat.rscripts)){
-#   install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'),
-#                    repos=NULL, type="source",
-#                    dependencies=TRUE,
-#                    lib=dir.rsat.rlib)
-# }
+if(!require("TFBMclust", lib.loc=dir.rsat.rlib)){
+   stop("The TFBM R library is not properly installed.")
+  # print(paste("Installing TFBMclust package in directory", dir.rsat.rlib))
+  # install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'),
+  #                  repos=NULL, type="source",
+  #                  dependencies=TRUE,
+  #                  lib=dir.rsat.rlib)
+}
 
 ## Check requirement for other R packages
 required.packages <- c("gplots",
@@ -38,7 +38,8 @@ required.packages <- c("gplots",
                        "Rclusterpp")
 for (pkg in required.packages) {
   if(!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
-    install.packages(pkg, repos="http://cran.univ-lyon1.fr/", dependencies=TRUE)
+    stop(paste("cluster-matrices and TFBMcluster require the R package", pkg))
+#    install.packages(pkg, repos="http://cran.rstudio.com/", dependencies=TRUE)
 #    library(pkg, quietly=TRUE, character.only = TRUE)
   }
 }
