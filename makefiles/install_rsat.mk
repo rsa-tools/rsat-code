@@ -281,7 +281,7 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO dendroextras dendextend Rclusterpp gplots
+R_MODULES=RJSONIO dendroextras dendextend Rcpp Rclusterpp gplots devtools
 ## reshape plyr: are these still required ?
 ## Note: package  ctc does not exist. To check with Jaime Castro
 r_modules_list:
@@ -296,16 +296,15 @@ r_modules_install_all:
 
 R_MODULE=RJSONIO
 r_modules_install_one:
-	${SUDO} echo "install.packages('${R_MODULE}')" \
-		| R --slave --no-save --no-restore --no-environ ; 
+	${SUDO} echo "install.packages('${R_MODULE}', repos='http://cran.rstudio.com/', dependencies=TRUE)" | ${SUDO} R --slave --no-save --no-restore --no-environ
 #	${SUDO} R CMD INSTALL ${R_MODULE}
 
 BIOCONDUCTOR_MODULES=ctc
 r_bioconductor_modules:
 	for module in ${BIOCONDUCTOR_MODULES}; do \
 		echo "Insalling bioconductor module	$${module}"; \
-		${SUDO} echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
-		| R --slave --no-save --no-restore --no-environ ; \
+		${SUDO} (echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
+		| R --slave --no-save --no-restore --no-environ ;) \
 	done
 
 ################################################################
