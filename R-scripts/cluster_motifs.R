@@ -18,27 +18,44 @@ if (dir.rsat == "") {
 
 ## Require TFBMclust if it is required
 if(!require("TFBMclust")){
-  install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos = NULL, type="source", dependencies = TRUE)
-} else if(!require("gplots")){
-  install.packages("gplots", repos = "http://cran.univ-lyon1.fr/")
-} else if(!require("RJSONIO")){
-  install.packages("RJSONIO", repos = "http://cran.univ-lyon1.fr/")
-} else if(!require("dendextend")){
-  install.packages("dendextend", repos = "http://cran.univ-lyon1.fr/")
-} else if(!require("devtools")){
-  install.packages("devtools", repos = "http://cran.univ-lyon1.fr/")
-} else if(!require("Rclusterpp")){
-  install.packages("Rlusterpp", repos = "http://cran.univ-lyon1.fr/")
+  install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'), repos=NULL, type="source", dependencies=TRUE)
+}
+
+## Check requirement for other R packages
+required.packages <- c("gplots",
+                       "RJSONIO",
+                       "dendextend",
+                       "devtools",
+                       "Rclusterpp")
+for (pkg in required.packages) {
+  if(!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
+    install.packages(pkg, repos="http://cran.univ-lyon1.fr/", dependencies=TRUE)
+#    library(pkg, quietly=TRUE, character.only = TRUE)
+  }
 }
 
 
+## Check requirement for bioconductor packages
+bioconductor.packages <- c("ctc")
+for (pkg in bioconductor.packages) {
+  if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
+    source("http://bioconductor.org/biocLite.R")
+    biocLite();
+    biocLite(pkg)
+    #  library("ctc", quietly=TRUE, character.only = TRUE)
+  }
+}
+
 ## Load required libraries
-suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("devtools", warn.conflicts=FALSE))
-suppressPackageStartupMessages(library("gplots", warn.conflicts=FALSE))
+for (pkg in c(required.packages, bioconductor.packages)) {
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
+}
+# suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
+# suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
+# suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
+# suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
+# suppressPackageStartupMessages(library("devtools", warn.conflicts=FALSE))
+# suppressPackageStartupMessages(library("gplots", warn.conflicts=FALSE))
 
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
@@ -60,7 +77,7 @@ thresholds <<- list()
 ## Arguments passed on the command line
 ## will over-write the default arguments
 ## specified above.
-args = commandArgs(trailingOnly=TRUE);
+args <- commandArgs(trailingOnly=TRUE);
 if (length(args >= 1)) {
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
@@ -75,13 +92,13 @@ check.param()
 
 ##################################
 ## Read matrix comparison table
-global.compare.matrices.table <<- read.csv(infile, sep = "\t", comment.char = ";")
+global.compare.matrices.table <<- read.csv(infile, sep="\t", comment.char=";")
 names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
 
 
 ################################################################
 ## Read description table
-global.description.table <<- read.csv(description.file, sep = "\t", comment.char = ";")
+global.description.table <<- read.csv(description.file, sep="\t", comment.char=";")
 if(length(global.description.table$id) == 2*length(unique(global.description.table$id))){
   global.description.table <- global.description.table[1:length(unique(global.description.table$id)),]
 }
@@ -102,26 +119,26 @@ if (length(grep(pattern=score, names(global.compare.matrices.table))) < 1) {
 }
 
 ## Convert distance table into a distance matrix, required by hclust
-distances.objects <- build.distance.matrix(global.compare.matrices.table, score = score)
+distances.objects <- build.distance.matrix(global.compare.matrices.table, score=score)
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
 
 ## Export the distance table
-write.table(dist.table, file = distance.table, quote = FALSE, row.names = TRUE, col.names=NA, sep = "\t")
+write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep="\t")
 
 
 ################################################
 ## Build the tree by hierarchical clustering,
 ## export it in Newick format
-tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
+tree <<- hclust.motifs(dist.matrix, hclust.method=hclust.method)
 dir.trees <- paste(out.prefix, "_trees", sep="")
-dir.create(dir.trees, showWarnings = FALSE, recursive = TRUE)
+dir.create(dir.trees, showWarnings=FALSE, recursive=TRUE)
 
 
 ################################################
 ## If it is indicated, export the newick tree
 if (export == "newick") {
-  newick.tree <- convert.hclust.to.newick(tree, decimals = 3)
+  newick.tree <- convert.hclust.to.newick(tree, decimals=3)
   newick.file <- file.path(dir.trees, "tree.newick")
   verbose(paste("Exporting newick file", newick.file), 2)
   write(newick.tree, file=newick.file)
@@ -134,19 +151,19 @@ if (export == "newick") {
 JSON.tree <- convert.hclust.to.JSON(tree)
 json.file <- paste(out.prefix, "_trees/tree.json", sep="")
 verbose(paste("JSON tree file", json.file), 1)
-writeLines(JSON.tree, con = json.file)
+writeLines(JSON.tree, con=json.file)
 
 
 #############################################################
 ## Bottom-up traversal of the tree to orientate the logos
-alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = FALSE)
+alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds=thresholds, score="Ncor", method="average", metric="Ncor", nodes.attributes=TRUE, intermediate.alignments=FALSE)
 
 alignment.list <- alignment$motifs.alignment
 alignment.attributes <- alignment$node.attributes
 
 ## Reset the labels
 tree$labels <- sapply(tree$labels, function(x){
-  paste(alignment.list[[x]][["consensus"]], alignment.list[[x]][["name"]], sep = "   " )
+  paste(alignment.list[[x]][["consensus"]], alignment.list[[x]][["name"]], sep="   " )
 })
 
 #############################################
@@ -181,11 +198,11 @@ if(draw.heatmap == 1){
     resol <- 72 ## Screen resolution
     verbose(paste("drawing heatmap", heatmap.file), 1)
     if (plot.format == "pdf") {
-      pdf(file = heatmap.file, width = w, height = h)
+      pdf(file=heatmap.file, width=w, height=h)
     } else if (plot.format == "jpg") {
-      jpeg(filename = heatmap.file, width=w, height=h, units="in", res=500)
+      jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
     }
-    draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
+    draw.heatmap.motifs(dist.table, method="average", clusters, alignment.list)
     dev.off()
   }
 }
@@ -215,7 +232,7 @@ for (plot.format in c("pdf", "png")) {
   }
 
   par(mar=c(3,2,1,mar4),family="mono")
-  plot(tree.dendro, horiz=TRUE, main = paste("Aligned consensus tree; labels:" ,paste(c("consensus", "name"), collapse = ","), sep = " "))
+  plot(tree.dendro, horiz=TRUE, main=paste("Aligned consensus tree; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
   dev.off()
 }
 
@@ -228,7 +245,7 @@ internal.nodes.attributes.table <- lapply(alignment.attributes, function(X){
 internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
 colnames(internal.nodes.attributes.table) <- c("#level", "method", "alignment_status", "cluster_1", "cluster_2")
 attributes.file <- paste(sep="", out.prefix, "_internal_nodes_attributes.tab")
-write.table(internal.nodes.attributes.table, file = attributes.file, sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
 verbose(paste("merge attributes table", attributes.file), 1)
 
 
@@ -239,8 +256,8 @@ verbose(paste("merge attributes table", attributes.file), 1)
 
 ## Creates a folder with where the separated information
 ## of each cluster will be stored
-clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
-dir.create(clusters.info.folder, recursive = TRUE, showWarnings = FALSE)
+clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep="")
+dir.create(clusters.info.folder, recursive=TRUE, showWarnings=FALSE)
 global.motifs.info <<- motifs.info
 forest.list <<- list()
 intermediate.levels.counter <- 0
@@ -249,7 +266,7 @@ intermediate.levels <- vector()
 
 i <- sapply(1:length(clusters), function(nb){
 
-    verbose(paste("Exploring the cluster generated: ", nb ), 1)
+  verbose(paste("Exploring the cluster generated: ", nb ), 1)
 
     alignment.cluster <<- list()
     description.table <<- NULL
@@ -257,10 +274,10 @@ i <- sapply(1:length(clusters), function(nb){
     tree <<- NULL
 
     ## Creates an individual folder for each cluster
-    cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", nb, sep = ""))
-    dir.create(cluster.folder, recursive = TRUE, showWarnings = FALSE)
+    cluster.folder <<- file.path(clusters.info.folder, paste("cluster_", nb, sep=""))
+    dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
 
-    ids <- clusters[[paste("cluster_", nb, sep = "")]]
+    ids <- clusters[[paste("cluster_", nb, sep="")]]
     if(length(ids) >= 2){
         case <- "case.2"
     } else{
