@@ -17,14 +17,18 @@ if (dir.rsat == "") {
 }
 
 ## Require TFBMclust if it is required
-dir.rsat.rlib <- file.path(dir.rsat, "R-scripts", "Rpackages")
-dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
-if(!require("TFBMclust", lib.loc=dir.rsat.rlib)){
-  install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'),
-                   repos=NULL, type="source",
-                   dependencies=TRUE,
-                   lib=dir.rsat.rlib)
-}
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+library("TFBMclust", lib.loc=dir.rsat.rscripts)
+
+## Install the TFBM library
+# dir.rsat.rlib <- file.path(dir.rsat, "R-scripts", "Rpackages")
+# dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
+# if(!require("TFBMclust", lib.loc=dir.rsat.rscripts)){
+#   install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'),
+#                    repos=NULL, type="source",
+#                    dependencies=TRUE,
+#                    lib=dir.rsat.rlib)
+# }
 
 ## Check requirement for other R packages
 required.packages <- c("gplots",
