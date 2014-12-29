@@ -281,7 +281,8 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO reshape plyr dendroextras dendextend Rclusterpp
+R_MODULES=RJSONIO dendroextras dendextend Rclusterpp gplots
+## reshape plyr: are these still required ?
 ## Note: package  ctc does not exist. To check with Jaime Castro
 r_modules_list:
 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
