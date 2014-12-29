@@ -35,7 +35,7 @@ RSAT makefile:
   make -f makefiles/install_software.mk install_mcl
 
 
-Many R packages are required in I<matrix-clustering> to convert the 
+Various R packages are required in I<matrix-clustering> to convert the 
 hierarchical tree into different output formats and to manipulate the
 dendrogram which is exported.
 
@@ -1405,7 +1405,7 @@ sub Add_attributes_to_JSON(){
 	  $Flag = 0;
 	  $line = $_;
 	  
-	  # # If the user select the option -cons 1
+	  # # If the user selects the option -cons 1
 	  # Add the consensus to the json file to be displayed in the tree
 	  #if ($show_consensus){
 	  	  if ($line =~ /(\s*\"children\":\s*\[)/){
