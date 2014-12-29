@@ -1213,7 +1213,7 @@ sub Hclustering {
     #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
 
     if ($r_path) {
-        &doit($cluster_motifs_cmd, 0, $die_on_error, $verbose);
+        &doit($cluster_motifs_cmd, 0, 1, $verbose);
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
@@ -2238,7 +2238,8 @@ sub Creates_website(){
 		$line .= "\n".$head_insert."\n\n";
 		
 		## Make dynamics the buttons of the cluster header
-		my $buttons = &cluster_head_buttons(scalar(keys $alignment_table_data{$cl_id}));
+		my %current_alignment_table_data =  %{$alignment_table_data{$cl_id}};
+		my $buttons = &cluster_head_buttons(scalar(keys %current_alignment_table_data));
 		$buttons =~ s/--Cluster_id--/$cl_id/g;
 		$buttons =~ s/--Cluster_id_head--/head_$cl_id/g;
 		$buttons =~ s/--nb--/$num/g;
@@ -2247,17 +2248,17 @@ sub Creates_website(){
 		## Draw the alignment table
 		my $alignment_table = &alignment_table();
 		my $tab = "";
-		foreach my $id (keys $alignment_table_data{$cl_id}){
+		foreach my $id (keys %current_alignment_table_data){
 		    my $tr = "";
 		    $tr .= "\n\t\t\t\t<tr>\n";
 		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$id.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$alignment_table_data{$cl_id}{$id}{name}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$current_alignment_table_data{$id}{name}.'</td>'."\n";
 		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$cl_id.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{strand}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{offset_up}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{offset_down}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$alignment_table_data{$cl_id}{$id}{width}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cl_id}{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{strand}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_up}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_down}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{width}.'</td>'."\n";
+		    $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($current_alignment_table_data{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
 		    $tab .= $tr;
 		}
 		$alignment_table =~ s/--Cluster_id--/$cl_id/g;
@@ -2272,7 +2273,7 @@ sub Creates_website(){
 		
 		## Draw the logo tree
 		my $d3_logo_tree = &logo_tree();
-		my $factor_height = scalar(keys $alignment_table_data{$cl_id});
+		my $factor_height = scalar(keys %current_alignment_table_data);
 		my $folder_tree = $prefix."_trees";
 		$d3_logo_tree =~ s/--folder_tree--/$folder_tree/g;
 		$d3_logo_tree =~ s/--nb--/$num/g;
@@ -2286,10 +2287,10 @@ sub Creates_website(){
 		$script_jquery .= $toogle_tree."\n";
 		
 		## Draw the branch-consensus table
-		if(scalar(keys $alignment_table_data{$cl_id}) > 1){
+		if(scalar(keys %current_alignment_table_data) > 1){
 		    my $consensus_table = &branch_consensus_table();
 		    my $consensus_table_columns = "";
-		    foreach my $level (1..scalar(keys $alignment_table_data{$cl_id})-1){
+		    foreach my $level (1..scalar(keys %current_alignment_table_data)-1){
 			
 			my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
 			$logo_D = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo.png";
