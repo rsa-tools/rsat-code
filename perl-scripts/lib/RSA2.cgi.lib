@@ -713,6 +713,8 @@ sub MultiGetSequenceFile {
     }
   }
 
+
+
   #### sequence file will be deleted
   &DelayedRemoval($sequence_file);
 
