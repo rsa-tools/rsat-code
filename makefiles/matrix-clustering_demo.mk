@@ -120,11 +120,16 @@ cluster_rdb:
 
 ################################################################
 ## Cluster one jaspar group
-JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
+JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
 JASPAR_GROUP=vertebrates
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
 JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
+cluster_jaspar_all_groups:
+	@for g in ${JASPAR_GROUPS}; do \
+		${MAKE} cluster_jaspar_one_group JASPAR_GROUP=$${g} ; \
+	done
+
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
 	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
