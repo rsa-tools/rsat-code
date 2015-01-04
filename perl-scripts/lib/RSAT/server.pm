@@ -393,25 +393,29 @@ sub UpdateExecTimeLogFile {
 #### &DelayedRemoval($file_to_remove, $delay);
 ####
 sub DelayedRemoval {
-    my ($file_to_remove, $delay) = @_;
+    my ($file_to_remove, $delay, $check_file) = @_;
     $delay = $delay || "24 hours";
-    unless (-e $file_to_remove) {
+
+    #### THIS FUNCTION IS TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES
+    #### A LOT OF MEMORY
+    return();
+
+    if ($check_file) {
+      unless (-e $file_to_remove) {
 	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
 	return();
-    }
-    unless (-r $file_to_remove) {
+      }
+      unless (-r $file_to_remove) {
 	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
 	return();
     }
-    unless (-w $file_to_remove) {
+      unless (-w $file_to_remove) {
 	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
 	return();
+      }
     }
-
-    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
-
-    #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
-    return();
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") 
+	if ($ENV{rsat_echo} >= 2);
 
     open REMOVE, "| at now + $delay";
     print REMOVE "rm -f $file_to_remove \n";
