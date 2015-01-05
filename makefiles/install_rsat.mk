@@ -23,9 +23,18 @@ SSH=-e 'ssh -x'
 ################################################################
 ## Install the RSAT package
 install_rsat:
-	make -f ${RSAT}/makefiles/init_rsat.mk init
-	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
-	make -f ${RSAT}/makefiles/install_software.mk install_ext_apps
+	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk init
+	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
+	${MAKE} -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
+	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_ext_apps
+
+################################################################
+## Update RSAT and check the dependent tasks (compilation of C
+## programs, installation of R packages)
+update:
+	git pull
+	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
+#	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
 
 ################################################################
 ## Install Unix packages required for RSAT
@@ -281,31 +290,36 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO dendroextras dendextend Rcpp Rclusterpp gplots devtools
-## reshape plyr: are these still required ?
-## Note: package  ctc does not exist. To check with Jaime Castro
-r_modules_list:
-	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
+install_r_packages:
+	Rscript ${RSAT}/R-scripts/install_packages_for_rsat.R
 
-r_modules_install_all:
-	@echo
-	@echo "Installing R modules"
-	@for m in ${R_MODULES}; do \
-		${MAKE} r_modules_install_one R_MODULE=$${m}; \
-	done
+##  --slave --no-save --no-restore --no-environ
 
-R_MODULE=RJSONIO
-r_modules_install_one:
-	${SUDO} echo "install.packages('${R_MODULE}', repos='http://cran.rstudio.com/', dependencies=TRUE)" | ${SUDO} R --slave --no-save --no-restore --no-environ
-#	${SUDO} R CMD INSTALL ${R_MODULE}
+# R_MODULES=RJSONIO dendextend Rcpp Rclusterpp gplots devtools
+# ## reshape plyr: are these still required ?
+# ## Note: package  ctc does not exist. To check with Jaime Castro
+# r_modules_list:
+# 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 
-BIOCONDUCTOR_MODULES=ctc
-r_bioconductor_modules:
-	for module in ${BIOCONDUCTOR_MODULES}; do \
-		echo "Insalling bioconductor module	$${module}"; \
-		${SUDO} (echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
-		| R --slave --no-save --no-restore --no-environ ;) \
-	done
+# r_modules_install_all:
+# 	@echo
+# 	@echo "Installing R modules"
+# 	@for m in ${R_MODULES}; do \
+# 		${MAKE} r_modules_install_one R_MODULE=$${m}; \
+# 	done
+
+# R_MODULE=RJSONIO
+# r_modules_install_one:
+# 	${SUDO} echo "install.packages('${R_MODULE}', repos='http://cran.rstudio.com/', dependencies=TRUE)" | ${SUDO} R --slave --no-save --no-restore --no-environ
+# #	${SUDO} R CMD INSTALL ${R_MODULE}
+
+# BIOCONDUCTOR_MODULES=ctc
+# r_bioconductor_modules:
+# 	for module in ${BIOCONDUCTOR_MODULES}; do \
+# 		echo "Installing bioconductor module	$${module}"; \
+# 		${SUDO} (echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
+# 		| R --slave --no-save --no-restore --no-environ ;) \
+# 	done
 
 ################################################################
 ## Install tex-live for generating the doc
