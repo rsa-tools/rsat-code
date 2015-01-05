@@ -372,6 +372,8 @@ package	main;
                       str_change
                       best_seq
                       worst_seq 
+                      reference_allele
+                      is_ref_better
                       minor_allele_freq)),"\n";
 
   ################################################################
