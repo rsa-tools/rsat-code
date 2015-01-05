@@ -23,28 +23,37 @@ required.packages = c("RJSONIO",
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("ctc")
 
+## List of RSAT-specific packages to be compiled on the server
+required.packages.rsat <- c("TFBMclust")
+
 ## Define the local directory for R librairies
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
 }
-dir.rsat.rlib <- file.path(dir.rsat, "R-scripts", "Rpackages")
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
+dir.create(dir.rsat.rlib, showWarnings = FALSE, recursive = FALSE)
 
 ## Install R packages from the CRAN
+print(paste("Installing R packages from CRAN repository", rcran.repos))
+#print(required.packages)
 for (pkg in required.packages) {
   if(!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
     install.packages(pkg, repos=rcran.repos, dependencies=TRUE, lib=dir.rsat.rlib)
+    print(paste(pkg, "CRAN package installed in dir", dir.rsat.rlib))
   }
 }
 
-
 ## Check requirement for bioconductor packages
+print(paste("Installing BioConductor packages"))
+#print(required.packages.bioconductor)
 for (pkg in required.packages.bioconductor) {
   if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
     source("http://bioconductor.org/biocLite.R")
     biocLite(lib=dir.rsat.rlib);
     biocLite(pkg, lib=dir.rsat.rlib)
-    #  library("ctc", quietly=TRUE, character.only = TRUE)
+    print(paste(pkg, "BioConductor package installed in dir", dir.rsat.rlib))
   }
 }
 
@@ -53,12 +62,14 @@ for (pkg in c(required.packages, required.packages.bioconductor)) {
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
 }
 
-## Update the package TFBMclust
-print("Installing RSAT TFBM package")
-install.packages(pkgs=file.path(dir.rsat.rscripts, "TFBMclust"), repos=NULL,  lib=dir.rsat.rlib, type="source", INSTALL_opts=c("no-multiarch"))
-#system(paste("R CMD INSTALL --no-multiarch --with-keep.source  \"", file.path(dir.rsat, "R-scripts/TFBMclust"), "\"", sep =""))
-# reload(file.path(dir.rsat, "R-scripts/TFBMclust"))
-suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
+
+## Install RSAT-specific packages
+print("Installing RSAT-specific packages")
+print(required.packages.rsat)
+for (package in required.packages.rsat) {
+  print(paste("Installing RSAT package", package, "in folder", dir.rsat.rlib))
+  install.packages(pkgs=file.path(dir.rsat.rscripts, "TFBMclust"), repos=NULL,  lib=dir.rsat.rlib, type="source")
+}
 
 
 
