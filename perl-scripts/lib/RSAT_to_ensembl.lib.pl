@@ -96,7 +96,7 @@ sub get_ensembl_version_latest {
   my $ftp = &Get_ftp($db);
 
   &RSAT::message::TimeWarn("Getting latest ensembl version from FTP site", $ftp) 
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 3);
 
   my @available_releases = qx{wget -S --spider $ftp 2>&1};
 
@@ -390,8 +390,7 @@ sub Get_species_taxon {
 # get API host name
 sub Get_host_port {
   my ($db) = @_;
-
-  &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 3);
 
   if ($db eq "ensembl") {
     return ('ensembldb.ensembl.org','5306');
@@ -455,7 +454,7 @@ Ex:
 sub Get_full_species_ID {
   my ($species, $assembly_version,$ensembl_version, $species_suffix) = @_;
 
-  &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly_version, $ensembl_version, $species_suffix) if ($main::verbose >= 0);
+  &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly_version, $ensembl_version, $species_suffix) if ($main::verbose >= 5);
 
   ## Check that Ensembl version has been provided. If not, take
   ## default one.
@@ -502,9 +501,8 @@ sub Get_assembly_version {
 			"ensembl_version=".$ensembl_version,
 			"species_suffix=".$species_suffix,
       ) 
-      if ($main::verbose >= 0);
+      if ($main::verbose >= 5);
   $supported_file = &Get_supported_file();
-  #die "HELLO";
 
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
