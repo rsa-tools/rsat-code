@@ -8,73 +8,17 @@
 ## It returns the resulting tree in json format, which can be loaded
 ## by the d3 library for display purposes.
 
-## Redefine the main directory (this should be adapted to local configuration)
-dir.main <- getwd()
 
-dir.rsat <- Sys.getenv("RSAT")
-if (dir.rsat == "") {
-  stop("The environment variable RSAT is not defined.")
-}
-
-# dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
-# library("TFBMclust", lib.loc=dir.rsat.rscripts)
 ## Install the TFBM library if required
-dir.rsat.rlib <- file.path(dir.rsat, "R-scripts", "Rpackages")
 # dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
 if(!require("TFBMclust", lib.loc=dir.rsat.rlib)){
-   stop("The TFBM R library is not properly installed.")
-  # print(paste("Installing TFBMclust package in directory", dir.rsat.rlib))
-  # install.packages(file.path(dir.rsat, 'R-scripts/TFBMclust'),
-  #                  repos=NULL, type="source",
-  #                  dependencies=TRUE,
-  #                  lib=dir.rsat.rlib)
+  stop("The TFBM R library is not properly installed.")
 }
 
-## Check requirement for other R packages
-required.packages <- c("gplots",
-                       "RJSONIO",
-                       "dendextend",
-                       "devtools",
-                       "Rclusterpp")
-for (pkg in required.packages) {
-  if(!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
-    stop(paste("cluster-matrices and TFBMcluster require the R package", pkg))
-#    install.packages(pkg, repos="http://cran.rstudio.com/", dependencies=TRUE)
-#    library(pkg, quietly=TRUE, character.only = TRUE)
-  }
-}
-
-
-## Check requirement for bioconductor packages
-bioconductor.packages <- c("ctc")
-for (pkg in bioconductor.packages) {
-  if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
-    source("http://bioconductor.org/biocLite.R")
-    biocLite();
-    biocLite(pkg)
-    #  library("ctc", quietly=TRUE, character.only = TRUE)
-  }
-}
-
-## Load required libraries
-for (pkg in c(required.packages, bioconductor.packages)) {
-  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
-}
-# suppressPackageStartupMessages(library("RJSONIO", warn.conflicts=FALSE))
-# suppressPackageStartupMessages(library("ctc", warn.conflicts=FALSE))
-# suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
-# suppressPackageStartupMessages(library("Rclusterpp", warn.conflicts=FALSE))
-# suppressPackageStartupMessages(library("devtools", warn.conflicts=FALSE))
-# suppressPackageStartupMessages(library("gplots", warn.conflicts=FALSE))
 
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
-
-## Update the package TFBMclust
-system(paste("R CMD INSTALL --no-multiarch --with-keep.source  \"", file.path(dir.rsat, "R-scripts/TFBMclust"), "\"", sep =""))
-reload(file.path(dir.rsat, "R-scripts/TFBMclust"))
-suppressPackageStartupMessages(library(TFBMclust, warn.conflicts=FALSE))
 
 ## Options
 plot.tree <- FALSE
