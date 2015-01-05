@@ -200,18 +200,20 @@ package	main;
 
   our $get_available_species = 0;
   our $ref_seq = "";
-   ## Tasks
+
+  ## Tasks
   local @supported_tasks = ("all", ## Run all other tasks
+			    "default", ## Run default tasks (avoid eavy tasks such as check_ref_seq)
 			    "download_gvf", ## Fetch gvf file from ensembl 
 			    "report_snps", ## Read downloaded file from ensembl and report the processed data 
-
+			    "check_ref_seq", ## Check the sequence on the reference genome
       );
-  $supported_tasks = join (",", @supported_tasks);
+  local $supported_tasks = join (",", @supported_tasks);
   local %supported_tasks = ();
   foreach my $task (@supported_tasks) {
       $supported_tasks{$task} = 1;
   }
-  %tasks = ();
+  local %task = (); ## List of tasks to be executed
 
   ################################################################
   ## Options
@@ -222,12 +224,6 @@ package	main;
 
   our $clean_gvf = 0; ## Set to 1 to delete original GVF variation file if requested
 
-  ## Check the consistency between reference sequence in the GVF file
-  ## and corresponding genomic sequence. Note that this verification
-  ## costs memory (each chromosome is laoded in RAM) and time (the
-  ## control of each variation requires a substring extraction).
-  our $check_ref_seq = 1; 
-
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -235,7 +231,7 @@ package	main;
 
   &check_ensembl_version($db, $ensembl_version);
 
-  # Change Ensembl version to EnsemblGenomes version
+  ## Change Ensembl version to EnsemblGenomes version if required
   if (lc($db) eq "ensemblgenomes") {
     use Bio::EnsEMBL::Registry;
     my $registry = 'Bio::EnsEMBL::Registry';
@@ -257,6 +253,17 @@ package	main;
       }
     }
   }
+
+  ## Check the consistency between reference sequence in the GVF file
+  ## and corresponding genomic sequence. Note that this verification
+  ## costs memory (each chromosome is laoded in RAM) and time (the
+  ## control of each variation requires a substring extraction).
+  if ($task{check_ref_seq}) {
+      &RSAT::message::Warning("Beware: task check_ref_seq is activated.", 
+			      "This may take a while for large genomes with high frequencies of variations") 
+	  if ($main::verbose >= 1);
+  }
+  
 
   ################################################################
   ## Print verbose
@@ -381,33 +388,66 @@ package	main;
   }
 
   ## If no tasks has been specified, execute them all
-  if (($tasks{all}) || (scalar(keys(%tasks))==0)) {
+  if ($task{all}) {
       %tasks = %supported_tasks;
-      $tasks{all} = 0;
+      $task{all} = 0;
+  } elsif (scalar(keys(%tasks))==0) {
+      ## Activate default tasks, i.e. all tasks except some highly
+      ## time-consuming tasks
+      %tasks = %supported_tasks;
+      $task{all} = 0;
+      $task{check_ref_seq} = 0;
   }
+
 
   ################################################################
   ## Retrieve GVF file from ensembl
 
   ## Get URL
   my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_version);
-  
-  my $species_gvf_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
-  &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
-  &RSAT::message::Info("Species gvf URL --> $species_gvf_ftp") if ($main::verbose >= 2);
-  
+
+  ## Define the basename of the GVF file
+  my $gvf_file = ucfirst($species).".gvf";
+
+  ## Define the path of the GVF file in the variation directory
   my $variation_dir = &Get_variation_dir($species, $assembly_version,$ensembl_version, $species_suffix);
-  my $gvf_file = $variation_dir."/".ucfirst($species).".gvf";
-  if ($tasks{download_gvf}){
+  my $gvf_file_local_path = $variation_dir."/".$gvf_file;
+  
+  ## Define the URL of the GVF file on Ensembl FTP server
+  my $gvf_file_ftp = &Get_gvf_ftp($db,$species,$ensembl_version);
+  
+  &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
+  &RSAT::message::Info("Species gvf URL --> $gvf_file_ftp") if ($main::verbose >= 2);
+  
+  if ($task{download_gvf}){
+      
+      ## JvH: THIS SHOULD BE REVISED: currently, the GVF files are
+      ## systematically downloaded, even if they are already there,
+      ## because the files are decompressed locally -> the original
+      ## .gz files are systematically missing, so they are
+      ## re-downloaded and re-decompressed and so on.
       
       ###Dowload variation file
-      &RSAT::message::TimeWarn("Downloading GVF file") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Downloading GVF files from", $gvf_file_ftp) if ($main::verbose >= 2);
       &RSAT::util::CheckOutDir($variation_dir);
-      system("wget -NL -nv $species_gvf_ftp -P $variation_dir");
+      system(join(" ", "wget --no-verbose --timestamping -L", $gvf_file_ftp, "-P", $variation_dir));
       
-      ## Decompress variation file
-      &RSAT::message::TimeWarn("Decompressing GVF file") if ($main::verbose >= 2);
-      system("gzip -dvf $variation_dir/*.gz");
+      ## Decompress variation files only if their timestamps differ
+      my $gvf_file_gz = $gvf_file_local_path.".gz";
+      
+      my $time_stamp_gvf_file = `stat -c %Y $gvf_file_local_path`;
+      my $time_stamp_gvf_file_gz = `stat -c %Y $gvf_file_gz`;
+      if ($time_stamp_gvf_file >= $time_stamp_gvf_file_gz) {
+	  &RSAT::message::Info("Skipping uncompression, since gz file is not newer than uncompressed file", $gvf_file_local_path) 
+	      if ($main::verbose >= 0);
+      }  else {
+	  &RSAT::message::TimeWarn("Decompressing GVF file", $gvf_file_gz) if ($main::verbose >= 2);
+	  my $cmd = "gunzip -vcf ".$gvf_file_gz." > ".$gvf_file_local_path; ## Uncompress the gz GVF file
+	  $cmd .= "; touch -r ".$gvf_file_gz." ".$gvf_file_local_path; ## Assign the time stamp of the gzip file to the uncompressed file
+	  system($cmd);
+      }
+
+      die "HELLO";
   }
 
   ################################################################
@@ -439,17 +479,19 @@ package	main;
 
   ################################################################
   ## Process/open GVF file
-  if ($tasks{report_snps}){
-      my $gvf_file = $species_gvf_ftp;
-      $gvf_file =~ s/\.gz//;
-      $gvf_file =~ s/$species_variation_ftp/$variation_dir\//;
+  if ($task{report_snps}){
+      my $gvf_file = ucfirst($species).".gvf";
+      &RSAT::message::TimeWarn("Starting task 'report_snps' for GVF file", $gvf_file) if ($main::verbose >= 2); 
+#      my $gvf_file = $gvf_file_ftp;
+#      $gvf_file =~ s/\.gz//;
+#      $gvf_file =~ s/$species_variation_ftp/$variation_dir\//;
       
       ## Intialize variables 
       my @super_variation = ();
       my $last_chr = "";
       my $last_end = 0;
       my $last_id = "";
-      &RSAT::message::Info("Analysing GVF file", $gvf_file, "Only SNPs with accurate information will be kept.") 
+      &RSAT::message::Info("Analyzing GVF file", $gvf_file, "Only SNPs with accurate information will be kept.") 
 	  if ($main::verbose >= 2);
 
       ## Open GVF file and report SNP information and sequence to be used by retrieve-variation
@@ -504,6 +546,11 @@ package	main;
 	      $m_allele_freq ="NA"; ## If minor allele freq is not avialable mark as NA
 	  }
 	  
+
+	  ## JVH: I SHOULD REALLY REVISE THIS.  It is really not clean
+	  ## to load the chromosome sequence at the end of the
+	  ## loop. There is a conceptual problem here.
+
 	  ## Get reference sequence and change output file.  Note: the
 	  ## whole script assumes that variations are sorted by
 	  ## chromosome.
@@ -514,7 +561,7 @@ package	main;
 	      $last_end = 0;
 	      $last_id = "";
 	      
-	      &RSAT::message::TimeWarn("Analysing variations on chromosome : $chr",
+	      &RSAT::message::TimeWarn("Analyzing variations on chromosome : $chr",
 				       "\n\tOutfile:",$variation_dir."/".$chr.".tab")
 		  if ($main::verbose >= 2);
 	      
@@ -527,7 +574,7 @@ package	main;
 	      ## QUESTION FROM JVH: should we really do this
 	      ## verification ? We should check how much time the
 	      ## whole procedure takes with, and without it.
-	      if ($check_ref_seq) {
+	      if ($task{check_ref_seq}) {
 		  my $raw_file = $genome_dir."/".$chr_file{$chr};
 		  &RSAT::message::TimeWarn("Reading sequence for chromosome", $chr, $raw_file) if ($main::verbose >= 0);
 		  $ref_seq = qx(cat $raw_file);
@@ -583,9 +630,9 @@ package	main;
 	  ## Check that sequence provided as reference in the GVF file
 	  ## matches the sequence at corresponding position in the 
 	  ## genome installed on RSAT.
-	  if ($check_ref_seq) {
-	      $genome_ref_seq = substr($ref_seq,$start-1,$end-$start+1);
-	      if (( $info{'Reference_seq'} ne "-") && ($info{'Reference_seq'} ne $genome_ref_seq)) {
+	  if ($task{check_ref_seq}) {
+	      $variation_ref_seq = substr($ref_seq,$start-1,$end-$start+1);
+	      if (( $info{'Reference_seq'} ne "-") && ($info{'Reference_seq'} ne $variation_ref_seq)) {
 		  print $out_rm join ("\t", 
 				      $chr,
 				      $start,
@@ -595,7 +642,7 @@ package	main;
 				      "Reference sequence",
 				      $info{'Reference_seq'},
 				      "differs from genome sequence",
-				      $genome_ref_seq), "\n";
+				      $variation_ref_seq), "\n";
 		  next;
 	      }
 	  }
@@ -836,66 +883,75 @@ sub Get_super_variation {
 }
 
 ################################################################
-## Create combinatory variations
+## Create all combinations between variations
+##
+## JvH: THIS SHOULD BE REVISED, it can lead to a combinatorial
+## explosion of the data size. Do we really want to create all
+## possible combinations, whereas only a subset of them are observed
+## in populations ? An alternative would be to use te data about
+## haplotypes, but this should also be evaluated because haplotype
+## datasets are voluminous.
 sub MakeSuperVar {
-
-  my $super_start=0;
-  my $super_end=0;
-  my @list_id = ();
-
-  foreach my $line (@_) {
-    my @var_info = split("\t",$line);
-
-    ## Get coord
-    $super_end = $var_info[2] if ($var_info[2] > $super_end);
-    $super_start = $var_info[1] if ($var_info[1] < $super_start || $super_start == 0);
-
-    ## Get id
-    push (@list_id,$var_info[4]);
-  }
-
-  ## Get ref seq
-  my $super_ref = substr($ref_seq,$super_start-1,$super_end-$super_start+1);
-  $super_ref = "-" if (length($super_ref) == 0);
-
-
-  ## Get variants
-  my @list_variants = ();
-  @list_variants = &Get_alternative_variant($super_ref,$super_start-2,$super_start,$super_end,\@_,\@list_variants);
-
-  ## Get SO_Term
-  my $so_term = "sequence_alteration";
-  
-  if ($super_ref eq "-" ) {
-    $so_term = "insertion";
-
-  } else {
-    my $same_len = 1;
-    my $is_del = 1;
+    my @lines = @_;
+    &RSAT::message::TimeWarn("Computing combinations between", scalar(@lines), "variations");
     
-    foreach $var (@list_variants) {
-      if (length($var) >=  length($super_ref)) {
-        $is_del = 0;
-      }
-      if ( length($var) != length($super_ref) ) {
-        $same_len = 0;
-      }
+    my $super_start=0;
+    my $super_end=0;
+    my @list_id = ();
+    
+    foreach my $line (@lines) {
+	my @var_info = split("\t",$line);
+	
+	## Get coord
+	$super_end = $var_info[2] if ($var_info[2] > $super_end);
+	$super_start = $var_info[1] if ($var_info[1] < $super_start || $super_start == 0);
+
+	## Get id
+	push (@list_id,$var_info[4]);
     }
 
-    if ($same_len && length($super_ref) == 1) {
-        $so_term = "SNV";
-    } elsif ($same_len) {
-        $so_term = "subsitution";
-    } elsif ($is_del) {
-      $so_term = "deletion";
-    }
-  }
+    ## Get ref seq
+    my $super_ref = substr($ref_seq,$super_start-1,$super_end-$super_start+1);
+    $super_ref = "-" if (length($super_ref) == 0);
 
-  return $super_start."\t".$super_end."\t"."+"."\t".join(',',@list_id)."\t".$super_ref."\t".join(',',@list_variants)."\t".$so_term;
+
+    ## Get variants
+    my @list_variants = ();
+    @list_variants = &Get_alternative_variant($super_ref,$super_start-2,$super_start,$super_end,\@_,\@list_variants);
+
+    ## Get SO_Term
+    my $so_term = "sequence_alteration";
+    
+    if ($super_ref eq "-" ) {
+	$so_term = "insertion";
+
+    } else {
+	my $same_len = 1;
+	my $is_del = 1;
+	
+	foreach $var (@list_variants) {
+	    if (length($var) >=  length($super_ref)) {
+		$is_del = 0;
+	    }
+	    if ( length($var) != length($super_ref) ) {
+		$same_len = 0;
+	    }
+	}
+
+	if ($same_len && length($super_ref) == 1) {
+	    $so_term = "SNV";
+	} elsif ($same_len) {
+	    $so_term = "subsitution";
+	} elsif ($is_del) {
+	    $so_term = "deletion";
+	}
+    }
+
+    return $super_start."\t".$super_end."\t"."+"."\t".join(',',@list_id)."\t".$super_ref."\t".join(',',@list_variants)."\t".$so_term;
 }
 
 ################################################################
-## Get Alternatif Variant
+## Get alternative variant.
 sub Get_alternative_variant {
   my ($ref_variant,$last_end,$super_start,$super_end,$list_variations,$list_variants) = @_;
 
@@ -973,6 +1029,7 @@ Same as -h
 =pod
 
 =item B<-species species_name>
+=item B<-org species_name> (equivalent)
 
 Name of the species for which you want to download the variations (e.g
 Homo_sapiens, Mus_musculus).
@@ -1078,9 +1135,9 @@ Calculate the theoretical distribution
 	foreach my $task (@tasks) {
 	    $task = lc($task);
 	    if ($supported_tasks{$task}) {
-		$tasks{$task} = 1;
+		$task{$task} = 1;
 	    } else {
-		&RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+		&RSAT::error::FatalError($task, "Invalid tasks. Supported:", $supported_tasks);
 	    }
 	}
 	
@@ -1119,6 +1176,8 @@ This corresponds to the lastest available version of Ensembl. Beware:
 this version is not guaranteed to be compatible with RSAT, in case
 Ensembl would change their file formats or locations.
 
+=back
+
 =cut
     } elsif ($arg eq "-version") {
       my $version = shift(@arguments);
@@ -1139,6 +1198,7 @@ Ensembl would change their file formats or locations.
       } else {
         &RSAT::error::FatalError($version, "Invalid value for Ensembl version.");
       }
+
 =pod
 
 =item B<-species_suffix>
@@ -1156,7 +1216,7 @@ will be appended to the full species ID.
 
 
     } else {
-      &FatalError(join("\t", "Invalid option", $arg));
+      &FatalError($arg, "Invalid option");
     }
   }
 
