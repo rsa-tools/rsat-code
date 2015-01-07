@@ -1,0 +1,174 @@
+\section{Installing genomes and variations from \ensembl}
+\ref{sect:install_ensembl_genome}
+
+\RSAT includes a series of programs to download and install genomes
+from Ensembl.
+
+\begin{enumerate}
+
+\item \program{install-ensembl-genome} is a wrapper enabling to
+  autmoatize the download (genome sequences, features, variations) and
+  configuration tasks.
+
+\item \program{download-ensembl-genome} downloads the genomics
+  sequences and converts them in the raw format required for \RSAT.
+
+\item \program{download-ensembl-features} downloads tab-delimited text
+  files describing genomic features (transcripts, CDS, genes, \ldots).
+
+\item \program{download-ensembl-variations} downloads tab-delimited
+  text files describing genomic variations (polymorphism).
+
+\end{enumerate}
+
+\subsection{Installing genomes from Ensembl}
+
+The program \program{install-ensembl-genome} manages all the required
+steps to download and install a genome (sequence, features, and
+optionally variations) from Ensembl to \RSAT.
+
+It performs the following tasks: 
+\begin{enumerate}
+
+\item The option \option{-task genome} runs the program
+  \program{download-ensembl-genome} to download the complete genomic
+  sequence of a given organism from the \ensembl Web site, and formats
+  it according to \RSAT requirements (conversion from the original
+  fasta sequence file to one file per chromosome, in raw format).
+
+\item The option \option{-task features} runs
+  \program{download-ensembl-features} to download the positions and
+  descriptions of genomic features (genes, CDS, mRNAs, ...).
+
+\item Optionally, when the option \option{-task variations} is
+  activated, run \program{download-ensembl-variations} to download the
+  description of genomic variations (polymorphism). Note that
+  variations are supported only for a subset of genomes.
+
+\item Update \RSAT configuration (\option{-task config}) to make the
+  genome available to other programs in the current \RSAT site. 
+
+\item Run the additional tasks (\option{-task install}) required to
+  have a fully functional genome on the local \RSAT site: compute
+  genomic statisics (intergenic sizes, \ldots) and background models
+  (oligonucleotide and dyad frequencies).
+
+\item With the option \option{-available\_species}, the program
+  returns the list species available on the Ensembl server, together
+  with their status of availability for the 3 data types (genome
+  sequence, features, variations). When this option is called, the
+  program does not install any genome.
+
+\end{enumerate}
+
+The detailed description of the program and the list of options can be
+obtained with the option \option{-help}.
+
+\begin{lstlisting}
+## Get the description of the program + all options
+install-ensembl-genome -help
+\end{lstlisting}
+
+\subsubsection{Getting the list of available genomes}
+
+Before installing a genome, it is generally a good idea to know which
+genomes are available. For this, use the option
+\option{-available\_species}.
+
+\begin{lstlisting}
+## Retrieve the list of supported species on EnsEMBL
+install-ensembl-genome -v 1  -available_species -o available_species_ensembl.tab
+
+## Read the result file
+more available_species_ensembl.tab
+\end{lstlisting}
+
+\emph{Note:} inter-individual variations are available for a subset
+only of the genomes available in \ensembl. The option
+\option{-available\_species} indicates, for each species, the
+availability (genome, features, variations). Obviously, the programs
+to analyse regulatory variations (\program{convert-variations},
+\program{retrieve-variation-seq}, \program{variation-scan}) are
+working only for the genomes documented with variations.
+
+\subsubsection{Installing a genome from Ensembl}
+
+We can now download and install the complete genomic sequence for the
+species of our choice. For the sake of space and time economy, we will
+use a small genome for this manual: the budding yeast
+\org{Saccharomyces cerevisiae}.
+
+\emph{Beware}: some installation steps take a lot of time. For large
+genomes (e.g. Vertebrate organisms), the full installation can thus
+take several hours. This should in principle not be a big issue, since
+installing a genome is not a daily task, but it is worth knowing that
+the whole process requires a continuous connection during several
+hours.
+
+\begin{lstlisting}
+## Install the genome sequences for a selected organism
+install-ensembl-genome -v 2 -species Saccharomyces_cerevisiae
+\end{lstlisting}
+
+This command will automatically run all the installation tasks
+described above, except the installation of variations (see
+Section~\ref{sect:download_ensembl_variations}).
+
+\subsection{Installing genomes from EnsemblGenomes}
+
+The historical \ensembl project \urlref{http://www.ensembl.org/}
+was focused on vertebrate genomes + a few model organisms
+(\org{Saccharomyces cerevisiae}, \org{Drosophila melanogaster},
+\ldots).
+
+A more recent project called \ensemblgenomes
+\urlref{http://ensemblgenomes.org/} extends the \ensembl project to a
+wider taxonomic range (in Oct 2014, there are >15,000 genomes
+available at EnsemblGenomes, where as Ensembl only provides 69
+genomes).
+
+The program \program{install-ensembl-genome} supports the installation
+of genomes from \ensembl as well as \ensemblgenomes. By default, it
+opens a connection to the historical \ensembl database, but the option
+\option{-db ensemblgenomes} enables to install genomes from the new
+project \ensemblgenomes.
+
+\begin{lstlisting}
+## Get the list of available species from the extended project
+## EnsemblGenomes
+install-ensembl-genome -v 2 -available_species -db ensemblgenomes \
+   -o available_species_at_EnsemblGenome.txt
+\end{lstlisting}
+
+You can then identify your genome of interest in the file
+\file{available\_species\_at\_EnsemblGenome.txt}, and start the
+installation (don't forget the option \option{-db ensemblgenomes}.
+
+\begin{lstlisting}
+## Install Escherichia coli (strain K12 MG1665) from EnsemblGenomes
+install-ensembl-genome -v 2 -db ensemblgenomes \
+   -species Escherichia_coli_str_k_12_substr_mg1655
+\end{lstlisting}
+
+
+\subsection{Downloading variations}
+\label{sect:download_ensembl_variations}
+
+The program \program{download-ensembl-variations} downloads variations
+from the \ensembl Web site, and installs it on the local \RSAT
+site. 
+
+This program relies on \program{wget}, which must be installed
+beforehand on your computer.
+
+\begin{lstlisting}
+## Retrieve the list of supported species in the EnsEMBL variation database
+download-ensembl-variations -v 1  -available_species
+\end{lstlisting}
+
+We can now download all the variations available for the yeast.
+
+\begin{lstlisting}
+## Download all variations for a selected organism on your server
+download-ensembl-variations -v 1 -species Saccharomyces_cerevisiae
+\end{lstlisting}

@@ -20,7 +20,8 @@ $program_version
 
 =head1 DESCRIPTION
 
-Scan sequence with different matrice weigth-position of transcription factor
+Scan variant sequences with different possition specific scoring matrices (PSSM).
+PSSM sumarize the binding afinities of transcription factors. 
 
 
 =head1 AUTHORS
@@ -54,7 +55,7 @@ A list  of matrix in transfanc format
 
 =head2 Background file
 
-Oligo-analysis format
+oligo-analysis format
 
 =head1 OUTPUT FORMAT
 
@@ -193,7 +194,7 @@ package	main;
 
   our %matrix_list = ();
   our %matrix_PWM = ();
-  our $flank_len = 29;
+  our $flank_len = 29; ## Default -mml value
   our $only_biggest = 0;
   our $pval_limit = 1;
 
@@ -201,6 +202,7 @@ package	main;
   our %supported_uth = ();
   $supported_uth{'pval'} = 1;
 
+  ## Supported thresholds
   our %lth = ();
   our %supported_lth = ();
   $supported_lth{'score'} = 1;
@@ -215,6 +217,7 @@ package	main;
   our $top_variation = -1;
   our $no_offset = 1;
 
+
   our $nb_matrix = 0;
   our $nb_variation =0;
   our $nb_seq = 0;
@@ -225,15 +228,35 @@ package	main;
   &ReadArguments();
   $out = &OpenOutputFile($outfile{output});
 
+  ## If input was not given by user, die
+  &RSAT::error::FatalError("No sequences were given as input use -i or STDIN ") unless ($main::infile{input});
+
+  ## check the matrix-scan-quick executable is present
+  my $quick_cmd_test = &RSAT::server::GetProgramPath("matrix-scan-quick");
+
+  ## In addition, we want to check if the command actually works before any calculation is done
+  if ($quick_cmd_test) {
+    `$quick_cmd_test -h`;
+    if ($?) {
+       &RSAT::error::FatalError("matrix-scan-quick is installed but not working. variation-scan requires matrix-scan-quick to be fully functional");
+      return(0);
+    }
+  } else {
+    &RSAT::error::FatalError("matrix-scan-quick is not installed. variation-scan requires matrix-scan-quick.");
+    return(0);
+  }
+
   ###############################################################
   ## Check arguments
-  &RSAT::error::FatalError("You forgot to indicate a background file. Use -bg option") unless ($infile{'bg'});
-  &RSAT::error::FatalError("You forgot to indicate a matrix file. Use -m option") unless ($infile{'matrixfile'});
+  &RSAT::error::FatalError("Background file is mandatory. Use -bg option to specify it") unless ($infile{'bg'});
+  &RSAT::error::FatalError("Matrix files in mandatory. Use -m option to specify it") unless ($infile{'matrixfile'});
   &RSAT::error::FatalError("Background file",$infile{'bg'},"does not exist") unless (-f $infile{'bg'});
   &RSAT::error::FatalError("Matrice file",$infile{'matrixfile'},"does not exist") unless (-f $infile{'matrixfile'});
   
+  ################
+  ## Calculate distribution of scores for matrices using convert-matrix (separete matrices) and matrix-distrib on each matrix file
   if ($calc_distrib) {
-    &RSAT::error::FatalError("You forgot to indicate distribution directory. Use -distrib_dir option") unless ($distrib_dir);
+    &RSAT::error::FatalError("Specify distribution directory. Use -distrib_dir option") unless ($distrib_dir);
     &RSAT::message::TimeWarn("Calculing distribution") if ($main::verbose >= 2);
 
     my @bg_name = split('/',$infile{'bg'});
@@ -245,13 +268,20 @@ package	main;
 
     my $split_dir = $distrib_dir."/split_dir/tmp";
     &RSAT::util::CheckOutDir($split_dir);
+    
+    ## convert-matrix command, split matrix file into separete ones
+    my $convert_matrix_cmd=$ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from tf -to tf -split ";
+    $convert_matrix_cmd.=" -i ".$infile{'matrixfile'};
+    $convert_matrix_cmd.=" -o ".$split_dir;
 
-    &doit($ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from tf -to tf -split -i $infile{'matrixfile'} -o $split_dir", 0, 0, 0);
+    &doit($convert_matrix_cmd, 0, 0, 0);
 
-
+    ## Opent outfile to keep record of all matrix distribution files
     my $outD = &OpenOutputFile($distrib_dir.'/'.$outfile{'distrib_list'});
     print $outD "#MATRIX_ID\tDISTRIB_FILE\tDB\tBG_PREFIX";
 
+    ## Read in temporary matrix list file
+    ## For each split matrix calculate the distribution of scores using matrix-distrib,
     my ($file) = &OpenInputFile($split_dir.'_matrix_list.tab');
     while (<$file>) {
       next if (/^#/); ## Skip comment lines
@@ -259,10 +289,16 @@ package	main;
       next unless (/\S/); ## Skip empty lines
       chomp();
       my @token = split("\t");
-      my $distrib_file = $token[1]."_".$bg_name.".tab";
+      my $distrib_file = $token[1]."_".$bg_name.".tab"; ## Matrix distrib outfile for each matrix
 
-      &doit($ENV{'RSAT'}."matrix-distrib -m $token[2] -matrix_format tf -decimals 1 -bgfile $infile{'matrixfile'} -bg_pseudo 0.01 -bg_format oligos -pseudo 1 -o $distrib_dir/$distrib_file", 0, 0, 0);
-      print $outD $token[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n";
+      my $matrix_distrib_cmd=$ENV{'RSAT'}."matrix-distrib ";
+      $matrix_distrib_cmd.=" -m ".$token[2]." -matrix_format tf -decimals 1 ";
+      $matrix_distrib_cmd.=" -bgfile ".$infile{'matrixfile'};
+      $matrix_distrib_cmd.=" -bg_pseudo 0.01 -bg_format oligos -pseudo 1 ";
+      $matrix_distrib_cmd.=" -o ".$distrib_dir/$distrib_file;
+      &doit($matrix_distrib_cmd, 0, 0, 0);
+
+      print $outD $token[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n"; ## Print distrib file
     }
     &RSAT::message::Info("Distrib_list :", $distrib_dir.'/'.$outfile{'distrib_list'}) if ($main::verbose >= 2);
 
@@ -275,13 +311,14 @@ package	main;
     exit(0);
   }
 
+  ## If distrib_list file is given as input check the file exists
   if ($infile{'distrib_list'}) {
     &RSAT::error::FatalError("Distrib list",$infile{'distrib_list'},"file does not exist") unless (-f $infile{'distrib_list'});
   }
 
 
   ################################################################
-  ## Print verbose
+  ## Print column descritions if verbosity was required
   if ($main::verbose >= 1) {
     &Verbose() if ($main::verbose >= 1);
     print $out "; column content","\n";
@@ -306,8 +343,13 @@ package	main;
     print $out ";\t",'19',"\t",'str_change',"\t",'Indicate if strand have change between the offset of min_offset_diff',"\n";
     print $out ";\t",'20',"\t",'best_seq',"\t",'Sequence of the worst putative site',"\n";
     print $out ";\t",'21',"\t",'worst_seq',"\t",'Sequence of the worst putative site',"\n";
+    print $out ";\t",'22',"\t",'reference_allele',"\t",'Reference allele',"\n";
+    print $out ";\t",'23',"\t",'is_ref_better',"\t",'Flag if the reference allele is the allele with the best score',"\n";
+    print $out ";\t",'24',"\t",'monir_alle_freq',"\t",'Minor allele frequency',"\n";
+
   }
 
+  ## Print header
   print $out "#",join("\t",qw(
                       ac_motif
                       motif
@@ -329,16 +371,20 @@ package	main;
                       worst_strand
                       str_change
                       best_seq
-                      worst_seq)),"\n";
+                      worst_seq 
+                      reference_allele
+                      is_ref_better
+                      minor_allele_freq)),"\n";
 
   ################################################################
-  #Read Matrix File
+  ## ALE'S NOTE= Read Matrix File and store it in a hash ?
   &RSAT::message::TimeWarn("Reading Matrix File") if ($main::verbose >= 2);
 
   my $length = 0;
   my $need_count = 0;
   my $ac = "";
 
+  ## Matrix file in transfac format
   my ($mat_file) = &OpenInputFile($main::infile{'matrixfile'});
   while (<$mat_file>) {
     next if (/^#/); ## Skip comment lines
@@ -346,6 +392,7 @@ package	main;
     next unless (/\S/); ## Skip empty lines
     chomp();
 
+    ## Identify parts of the transfac matrix
     my @token = split (" ",$_);
 
     if ( $token[0] eq "AC") {
@@ -385,7 +432,7 @@ package	main;
     }
 
   }
-  $matrix_list{$ac}{'length'} = $length;
+  $matrix_list{$ac}{'length'} = $length; ## ALE'S NOTE=Is this line correct or is it redundant with line 401
   $nb_matrix++;
   close $mat_file;
 
@@ -406,16 +453,21 @@ package	main;
   }
 
   ################################################################
+  ## Scan variations
+
+  ## Prepare temporary files for scanning
   my $fasta_file = &RSAT::util::make_temp_file("","variation-scan_fasta_seq", 1);
   my $bg_file = &RSAT::util::make_temp_file("","variation-scan_bg_file", 1);
   my $matrix_file_tab = &RSAT::util::make_temp_file("","variation-scan_matrices_tab", 1);
   my $variation_seq = &RSAT::util::make_temp_file("","variation-scan_variant_seq_tab", 1);
 
-  ## Change bg_file format
-  my $command = "$ENV{'RSAT'}/perl-scripts/convert-background-model -i $main::infile{'bg'} -from oligos -to inclusive -o $bg_file -bg_pseudo 0.01";
-  &doit($command, 0, 0, 0);
+  ## Change bg_file format, matrix-scan-quick only accepts background model in inclusive format
+  my $convert_bg_cmd = "$ENV{'RSAT'}/perl-scripts/convert-background-model ";
+  $convert_bg_cmd .=" -i ".$main::infile{'bg'}." -from oligos -to inclusive ";
+  $convert_bg_cmd .=" -o ".$bg_file." -bg_pseudo 0.01 ";
+  &doit($convert_bg_cmd, 0, 0, 0);
 
-  ## Take sequences from STDIN and write them in a file to be read
+  ## Take variats sequence from STDIN and write them in a file to be read
   unless ($main::infile{input}) {
     my $outstream_var_seq = &OpenOutputFile($variation_seq); 
     while (<$main::in>) {
@@ -430,16 +482,20 @@ package	main;
   }
 
 
-  ## Scan
+  ## Scan variants using one matrix at the time
   our $matrix_length = 0;
 
+  ## for each matrix in the matrix hash created previously by reading the matrix file
   foreach my $matrix_ac (keys(%matrix_list)) {
     $matrix_length = $matrix_list{$matrix_ac}{'length'};
     next if ($matrix_length == 0);
-    next if ($matrix_length > $flank_len+1);
+    if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
+	&RSAT::message::Info("Matrix is wider thant varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
+	next;
+    }
 
 
-    ## Make matrix file on tab format
+    ## Save matrix in tab format. matrix-scan-quick only takes as input matrices in tab delimited format
     my $outM = &OpenOutputFile($matrix_file_tab);
     foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
       print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
@@ -447,17 +503,22 @@ package	main;
     close($outM);
 
 
-    ## Get distribution
+    ## Get score distribution for the current matrix to obtain pvalues
+    ## matrix-scan-quick returns scores, in order to stablish which pvalue
+    ## corresponds to each score is necesary to have the score distribution file
+    
     &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
 
     %matrix_info = ();
 
-    # Use precalculte distrib file
+    ## Use precalculte distrib file if it was specified or distributions were requested as output
     if ($distrib_file_list{$matrix_ac}) {
       my %legend_col = ();
 
       my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
       my ($d_file) = &OpenInputFile($distrib_file);
+
+      ## Read in distribution file for current matrix
       while (<$d_file>) {
         next if (/;/);
         chomp;
@@ -470,29 +531,37 @@ package	main;
           }
         } else {
           my @value = split("\t");
-          $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
+          $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}]; ## Retrive corresponding pvalue per score
         }
       }
 
+      ## Define pval values for score 0 to match matrix-scan-quick number notation
       $matrix_info{$matrix_ac}{'pval'}{'0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
       $matrix_info{$matrix_ac}{'pval'}{'-0.0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
 
       my @sorted_pval = sort {$a <=> $b} keys (%{$matrix_info{$matrix_ac}{'pval'}});
+
+      ## variation-scan calculates the pvalue ration or sigma between variants. Define the maximal ratio based on the theoretical max pvalues
       $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
 
-    # Calcul distrib file
+   #####################
+   ## If distribution files were not given as input or were not required as outputs
+   ## Calcul distribution for each matrix
     } else {
       my %legend_col = ();
-      my $arg = "-m $matrix_file_tab -matrix_format tab";
-      $arg .= " -decimals 1 -pseudo 1";
-      $arg .= " -bgfile $main::infile{'bg'} -bg_format oligos";
-      $arg .= " -bg_pseudo 0.01";
+      ## matrix-distrib command
+      my $mtx_distrob_cmd=" $ENV{'RSAT'}/perl-scripts/matrix-distrib " ;
+      $mtx_distrob_cmd .= " -m ".$matrix_file_tab ." -matrix_format tab";
+      $mtx_distrob_cmd .= " -decimals 1 -pseudo 1";
+      $mtx_distrob_cmd .= " -bgfile ".$main::infile{'bg'}." -bg_format oligos";
+      $mtx_distrob_cmd .= " -bg_pseudo 0.01";
 
-      my @result_distrib = qx{$ENV{'RSAT'}/perl-scripts/matrix-distrib $arg};
+      ## Excute matrix-distrib command and store it in an array
+      my @result_distrib = qx{$mtx_distrob_cmd };
 
-      foreach (@result_distrib) {
+      foreach (@result_distrib) { ## Read matrix-distrib file
         chomp;
-
+	## ALE'S NOTE: This chunck of code is redundant
         if (/^#/) {
           $_ = substr($_,1) ;
           my @legends = split("\t");
@@ -506,10 +575,13 @@ package	main;
         $matrix_info{$matrix_ac}{'pval'}{$value[$legend_col{"weight"}]} = $value[$legend_col{"Pval"}];
       }
 
+      ## Define pval values for score 0 to match matrix-scan-quick number notation
       $matrix_info{$matrix_ac}{'pval'}{'0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
       $matrix_info{$matrix_ac}{'pval'}{'-0.0'} = $matrix_info{$matrix_ac}{'pval'}{'0.0'};
 
       my @sorted_pval = sort {$a <=> $b} keys (%{$matrix_info{$matrix_ac}{'pval'}});
+
+      ## variation-scan calculates the pvalue ration or sigma between variants. Define the maximal ratio based on the theoretical max pvalues
       $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
     }
 
@@ -519,7 +591,7 @@ package	main;
     my $last_nb = 2000; ## Note from Alejandra: I don't understand this number
 
     ## Scan command 
-    my $scan_cmd = &RSAT::server::GetProgramPath("matrix-scan-quick");
+    my $scan_cmd = $quick_cmd_test ;
     $scan_cmd .= " -i $fasta_file";
     $scan_cmd .= " -m $matrix_file_tab";
     $scan_cmd .= " -pseudo 1 -decimals 1 -2str -origin start";
@@ -532,10 +604,10 @@ package	main;
 
     ################
     ## Open rsat variable input file and change it to fasta format to be used with matrix-scan-quick
+    ## One fasta file will be created per variant with all alleles to be scanned with the current matrix
+    ## ALE'S NOTE: not sure this should be here, maybe this should be done outside the matrix loop and stored to be used inside it?
 
-    &RSAT::error::FatalError("No sequences were given as input use -i or STDIN ") unless ($main::infile{input});
     &RSAT::message::Info("Open Sequence File", $main::infile{input} ) if ($main::verbose >= 3);
-
     &RSAT::message::Debug("Open Empty fasta file to store sequences", $fasta_file) if ($main::verbose >= 3);
     my $out_fas = &OpenOutputFile($fasta_file);
 
@@ -548,8 +620,9 @@ package	main;
       chomp();
       
       ## Split line in rsat_var format
-      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq) = split(/\t/);
-
+      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq) = split(/\t/);
+      &RSAT::message::Debug("Reading in one viariable from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq)) if ($main::verbose >= 3);
+      #die "HELLO3";
       $ref = "-" if ($ref eq "");
       
       if ($last_id ne $id && $last_id ne "") {
@@ -565,9 +638,10 @@ package	main;
 	      $last_nb += 2000;
 	  }
       }
-      print $out_fas ">$id;$ref;$variant;$type|$chrom:$start-$end\_$strand\n";
+      print $out_fas ">$id;$ref;$variant;$type;$ma_freq|$chrom:$start-$end\_$strand\n";
       print $out_fas substr($seq,$flank_len-$matrix_length+1,length($seq)-($flank_len-$matrix_length+1)*2)."\n";
       $nb_seq++;
+      #die "BOOM2";
       $last_id = $id;
     }
     close ($var_seq);
@@ -640,7 +714,10 @@ sub log10 {
 }
 
 ################################################################
-##
+## Retreive information from the scanning output
+## per line.
+## Each line contains the variant information that can be usefull
+## for the user, like the minor allele frequency
 sub getLineInfo {
     my %line_info = ();
 
@@ -653,11 +730,12 @@ sub getLineInfo {
     my @token2 = split(/\|/,$token[0]); #var_info, coord
     $line_info{'coord'} = $token2[1];
 
-    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type
+    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type,minor_allele_freq
     $line_info{'id'} = $token3[0];
     $line_info{'variant_ref'} = $token3[1];
     $line_info{'variant_alt'} = $token3[2];
     $line_info{'type'} = $token3[3];
+    $line_info{'minor_allele_freq'} = $token3[4];
 
     $diff_pos = 0;
     $diff_pos ++ if ($line_info{'variant_ref'} eq "-"); 
@@ -680,7 +758,7 @@ sub Analyse_scanning {
 	next if ($line =~ m/^#/);
 	next if ($line =~ m/^;/);
 	chomp($line);
-
+	#die "Boom".$line;
 	my %line_info = &getLineInfo($line);
 
 	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
@@ -712,10 +790,12 @@ sub Analyse_scanning {
             push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
             push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
 	}
-
+	
+	$scanning_info{'original_ref'}=$line_info{'variant_ref'};
 	$scanning_info{'matrice'} = $line_info{'matrice'};
 	$scanning_info{'variation'} = $line_info{'id'};
-	$scanning_info{'type'} = $line_info{'type'};
+	$scanning_info{'type'} = $line_info{'type'}; ##Get type of variant
+	$scanning_info{'minor_allele_freq'} = $line_info{'minor_allele_freq'}; ##Get minor allele frequency of the variant
 	$scanning_info{'coord'} = $line_info{'coord'};
 	$scanning_info{'same_len'} = $same_variant_len;
     }
@@ -931,9 +1011,19 @@ sub Printline {
   $str .= $scanning_info{'min_offset_diff'}."\t";
   $str .= $scanning_info{'best_strand'}."\t".$scanning_info{'worst_strand'}."\t"; # strand
   $str .= $scanning_info{'strand_change'}."\t";
-  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\n"; # seq
-
-  print $out $str;
+  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\t"; # seq
+  ## Flag to specify if the best score was obtained from the major allele (reference variant) or from the minor allele
+  my $is_ref_better;
+  if ($scanning_info{'best_variant'} eq $scanning_info{'original_ref'}){
+      $is_ref_better="Y";
+  }
+  else {
+      $is_ref_better="N";
+  }
+  $str .= $scanning_info{'original_ref'}."\t"; ## Print major allele (reference allele) original id is to diferiantate from when scanning is donde on reference allele
+  $str .= $is_ref_better."\t"; ## Flag if the best score comes from the major allele (reference allele)
+  $str .= $scanning_info{'minor_allele_freq'}; ## Report minor allele frequency
+  print $out $str."\n"; ## Back
 }
 
 ################################################################
@@ -1025,14 +1115,15 @@ Input File
 
 =item B<-mml #>
 
-Length of the longest Matrix
+Length of the longest Matrix, this values has to be consistent with the one used io
+for retrieving the variant sequences (see <retrieve-variation-seq>).
 
 =cut
     } elsif ($arg eq "-mml") {
       if (&IsNatural($arguments[0])) {
         $main::flank_len = shift(@arguments)-1;
       } else {
-        &RSAT::error::FatalError("-mml argument : ",shift(@arguments)," is not natual");
+        &RSAT::error::FatalError("-mml argument : ",shift(@arguments)," is not natural");
       }
 
 =pod
@@ -1149,7 +1240,7 @@ Name of the file containing the list of matrix distrib file name
 =item B<-only_biggest>
 
 Only return the biggest difference of score between two alleles of a
-variation.
+variation regarthless of the window, this option is usefull for insertions and deletions
 
 =cut
     } elsif ($arg eq "-only_biggest") {

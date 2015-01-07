@@ -39,10 +39,10 @@ scan_eve:
 	@echo
 	@echo "SEQ		${SEQ}"
 	@echo "MATRIX_FILE	${MATRIX_FILE}"
-	@echo "Scanning"
+	@echo "${DATE}	Scanning"
 	@mkdir -p ${RES_DIR}
 	${MATRIX_SCAN_CMD}
-	@echo "Result file"
+	@echo "${DATE}	Result file"
 	@echo "	${SITES}.ft"
 
 ## Select a subset of matrices specified by their name
@@ -64,3 +64,4 @@ scan_jaspar_selected_names:
 ## Scan even-skipped promoter with the option -quick
 scan_eve_quick:
 	${MAKE} scan_eve OPT=-quick SUFFIX=-quick 
+

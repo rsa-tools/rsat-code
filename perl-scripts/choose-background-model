@@ -87,6 +87,14 @@ Taxon-specific background models
       -taxon taxon_name [-1str|-2str] -l oligo_length \
       -bg [background] -ovlp|-noov
 
+=head2 Example
+
+ choose-background-model -org Saccharomyces_cerevisiae \
+     -l 6 -bg upstream-noorf -1str -noov
+
+This command returns the full path to the specified background model
+file.
+
 =head1 OUTPUT FORMAT
 
 The output is a single row, giving the name of the background model

@@ -42,7 +42,6 @@
 		float: left;
 		margin-top: 55px;
 		width: 99%;
-		height: 20px;
 		position: relative;
 		display: block;
 		text-align: left;
@@ -278,6 +277,11 @@
 	.tab_spacer_2 {
 		padding: 3px 2px 3px 2px;	
 	}
+	
+	#heatmap {
+		heigth: 1100px;	
+		width: 900px;		
+	}
 
 
 	/****************/
@@ -295,8 +299,8 @@
 	
 	
 	.node circle {
-		fill: #fff;
-		stroke: steelblue;
+		//fill: #fff;
+		//stroke: steelblue;
 		stroke-width: 0.5px;
 	}
 
@@ -308,7 +312,7 @@
 
 	.link {
 		fill: none;
-		stroke: #0D86D7;
+		//stroke: #0D86D7;
 		stroke-width: 1px;
 	}
 	
@@ -330,7 +334,7 @@
 	
 	<!--Div with the command executed-->
 	<div id="command">
-		<strong>Command:</strong> make -f $RSAT/makefiles/matrix-clustering_demo.mk cluster_peakmo_Oct4_threhsolds
+		<strong>Command:</strong> --cmd--
 	</div>
 	
 
@@ -345,9 +349,7 @@
 					<th class="tab_col">Number of motifs</th>
 					<th class="tab_col">Number of clusters</th>
 					<th class="tab_col">Clustering method</th>
-					<th class="tab_col">Ncor value</th>
-					<th class="tab_col">cor value</th>
-					<th class="tab_col">Minimum<br>width</th>
+					--Thresholds--
 				</tr>
 			</thead>
 			<tbody>
@@ -355,14 +357,16 @@
 					<td>--motifs--</td>					
 					<td>--nb--</td>
 					<td>--hmethod--</td>
-					<td>--Ncor--</td>
-					<td>--cor--</td>
-					<td>--width--</td>
+					--Values--
 				</tr>
 			</tbody>
 		</table>
 	</div>
 	
+	<div class="tab">
+		<p><strong>Heatmap with consensus alignment</strong></p>
+		--HEATMAP--
+	</div>
 	
 	<!-- Div with the aligment table with all the motifs-->
 	<div class="tab">
