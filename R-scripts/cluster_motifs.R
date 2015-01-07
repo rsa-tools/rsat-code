@@ -32,7 +32,7 @@ required.packages.bioconductor <- c("ctc")
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
 for (pkg in c(required.packages, required.packages.bioconductor, required.packages.rsat)) {
-  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
 
 
