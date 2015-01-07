@@ -1158,13 +1158,7 @@ sub Hclustering {
 
 
     ##################################
-    ### This lines are required?
-    #my $r_path = &RSAT::server::GetProgramPath("R", 0);
-    #RSAT::message::Info("R path", $r_path) if ($main::verbose >= 3);
-
-    ####################################
-    ### Modify the path
-#    chomp(my $r_path = `which R`);
+    ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
 
     my $cluster_motifs_script  = $ENV{RSAT}."/R-scripts/cluster_motifs.R";
