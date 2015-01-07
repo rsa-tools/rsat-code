@@ -12,7 +12,7 @@ package RSAT::feature;
 			  bed=>1,
 			  bed3col=>1,
 			  galaxy_seq=>1,
-			  ucsc_seq=>1,
+			  ucsc2_seq=>1,
 			  swembl=>1,
 			 );
 $supported_input_formats = join (",", keys %supported_input_format);
@@ -209,6 +209,16 @@ $header_char{galaxy_seq} = "#";
 			    strand
 			   );
 @{$strands{ucsc_seq}} = ("1", "2");
+
+
+## UCSC sequences
+## warning: the coordinates are zero-based
+@{$columns{ucsc2_seq}} = qw (seq_name
+			    start
+			    end
+			    strand
+			   );
+@{$strands{ucsc2_seq}} = ("+", "-");
 
 ## Define specific formats
 our %format = ();
@@ -683,17 +693,6 @@ Defines the strand - either '+' or '-'.
 
 =back
 
-=head2 ucsc_seq
-
-Fasta sequences retrieved from the UCSC server.  Warning: this format
-assumes that features are described with chromosomal positions, and
-should be zero-based (meaning that the first position is 0, not 1).
-
-Coordinates are parsed from the fasta header.
-
->11:3052022..3052331:1
-
-
 =head3 Example of galaxy_seq format
 
 >hg17_chr7_127475281_127475310_+
@@ -708,6 +707,32 @@ TGGGAAGGAAAATGCATTGGGGAACCCTGTGCGGATTCTTGTGGCTTTGG
 CCCTATCTTTTCTATGTCCAAGCTGTGCCCATCCAAAAAGTCCAAGATGA
 CACCAAAACCCTCATCAAGACAATTGTCACCAGGATCAATGACATTTCAC
 ACACG
+
+
+=head2 ucsc_seq
+
+Fasta sequences retrieved from the UCSC server.  Warning: this format
+assumes that features are described with chromosomal positions, and
+should be zero-based (meaning that the first position is 0, not 1).
+
+Coordinates are parsed from the fasta header.
+
+>11:3052022..3052331:1
+
+
+=head2 ucsc2_seq
+
+Fasta sequences retrieved from the UCSC server, or produced by
+fetch-sequence with the option -header_format UCSC.
+
+Coordinates are parsed from the fasta header.
+
+Example of  header in UCSC2 format:
+
+>dm3_flyBaseGene_CG2328-RA range=chr2R:5861246-5866745 5'pad=0 3'pad=0 strand=+ repeatMasking=none
+
+NOTE: I (JvH) should check why there are two distinct formats called
+UCSC.
 
 
 =head1 METHODS
@@ -767,7 +792,20 @@ sub parse_from_row {
 #    if ($row =~ />11:3052022..3052331:1	/target='11:3052022..3052331' /seq_id='11' /strand='+' /type='region' /original_strand='+' /end='3052331' /start='3052022'/) {
       @fields = ($1, $2, $3, $4);
     } else {
-      &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
+      &RSAT::message::Warning("Invalid UCSC fasta header for feature extraction", $row) if ($main::verbose >= 0);
+      return();
+    }
+
+
+    ## WHERE DOES THIS FORMAT COME FROM ? IT IS USED FOR THE DEMO OF
+    ## matrix-scan, and it seems to correspond to the format produced
+    ## by fetch_sequences with the option -header_format ucsc.
+  } elsif ($in_format eq "ucsc2_seq") {
+    if ($row =~ /range\=(\S+)\:(\d+)\-(\d+).+strand=(\S+)/) {
+      ## >dm3_flyBaseGene_CG2328-RA range=chr2R:5861246-5866745 5'pad=0 3'pad=0 strand=+ repeatMasking=none
+      @fields = ($1, $2, $3, $4);
+    } else {
+      &RSAT::message::Warning("Invalid UCSC fasta header for feature extraction", $row) if ($main::verbose >= 0);
       return();
     }
 

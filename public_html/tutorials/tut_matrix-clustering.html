@@ -1,26 +1,24 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<html>
-	
+
+<html>		
+  <head>
+    <title>RSA-tools - tutorials - matrix-clustering</title>
+    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="syntaxhighlight/shCore.js"></script>
+    <script type="text/javascript" src="syntaxhighlight/shBrushBash.js"></script>
+    <link type="text/css" rel="stylesheet" href="syntaxhighlight/shCore.css"/>
+    <link type="text/css" rel="stylesheet" href="syntaxhighlight/Shthemedefault.css"/>
+    <script type="text/javascript">
+      SyntaxHighlighter.config.clipboardSwf = 'syntaxhighlight/clipboard.swf';
+      SyntaxHighlighter.all();
+    </script>
+    <meta charset=utf-8 />
+  </head>
+
+<!-- Define some additional styles for the dynamic elements of this Web page -->
 	<style>
-		
-		
-		#logo_tree_no_threshold {
-			height: 17%;
-			width: 70%;
-			clear: both;
-			float: left;
-			display: block;
-			border: 1px solid blue;
-		}
-		
-		
-		.pic {
-			clear: both;
-			float: left;
-			display: block;	
-		}
-		
 		
 		.pic_tab {
 			height: 500px;
@@ -70,15 +68,15 @@
 		
 		.fig_button {
 	        margin-top: 3px;
-			width: 80px;
-			heigth: 60px;
+		width: 80px;
+		heigth: 60px;
 	        border: 1px;
-			position: relative;
+		position: relative;
 	        padding: 1px;
 	        font-size:14px;
 	        color: #ffffff;
-            background:#cc0000;
-            border-radius:5px;
+		background:#cc0000;
+		border-radius:5px;
 	        cursor: pointer;
 	        display: inline-block;
 	        text-align: center;
@@ -94,8 +92,8 @@
 	        padding: 1px;
 	        font-size:14px;
 	        color: #ffffff;
-            background:#000000;
-            border-radius:5px;
+		background:#000000;
+		border-radius:5px;
 	        cursor: pointer;
 	        display: inline-block;
 	        text-align: center;
@@ -103,6 +101,8 @@
 		
 		
 		.fig {
+			clear: both;
+			float: left;
 			display:none;
 		}
 		
@@ -110,11 +110,25 @@
 			clear:both;
 		}
 		
+
+		#logo_tree_no_threshold {
+			height: 17%;
+			width: 70%;
+			clear: both;
+			float: left;
+			display: block;
+			border: 1px solid blue;
+		}
 		
-		.soct {
+		
+		#soct {
 		    width: 40%;
 			height: auto;
+			float: left;
+			clear: both;
+			display: block;
 		}
+		
 		
 		.branch_motifs {
 			width: 75%;
@@ -128,14 +142,41 @@
 			
 		}
 		
-	</style>
 		
-  <head>
-    <title>RSA-tools - tutorials - peak-motifs</title>
-    <link rel="stylesheet" type="text/css" href = "../course.css" media="screen"/>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-	<meta charset=utf-8 />
-  </head>
+		.network_insects {
+			width: 65%;
+			height: auto;		
+		}		
+
+
+		.network_vertebrates {
+			width: 100%;
+			height: auto;	
+				
+		}	
+		
+
+		#insect_logo_tree {
+			width: 95%;
+			height: auto;	
+				
+		}	
+	
+	
+		#vertebrate_logo_tree {
+			width: 75%;
+			height: auto;	
+				
+		}
+		
+
+		.sc_2{
+			display: block;
+			clear: both;
+		}
+		
+	</style>
+
   <body>
     
     <center>
@@ -166,7 +207,7 @@
       developed in the following parts of the theoretical course.
       <ol>
 	<li><a href='../course/pdf_files/01.4.PSSM_theory.pdf'>PSSM theory</a></li>
-	<li><a href="http://rsat.ulb.ac.be/rsat/course/pdf_files/12.peak-motifs.pdf">Motif comparison</a></li>	
+	<li><a href="http://rsat.ulb.ac.be/rsat/course/pdf_files/">Motif comparison</a></li>	
       </ol>
     </p>
 
@@ -180,452 +221,751 @@
     <hr><a name='intro'></a><h2>Introduction</h2>
 
     <p>The
-      program <a href='../matrix-clustering_form.cgi'><i>matrix-clustering</i></a>
-      enable to discover and align groups of similarities among motif collections
-      displaying the results with different motif-representation formats. 
+      program <a href='../matrix-clustering_form.cgi'><span class="program">matrix-clustering</span></a>
+      enables to discover and align groups of similarities among motif
+      collections displaying the results with different
+      motif-representation formats.
+    </p>
       
-		<p>Transcription factors binding motifs (TFBM) are classically represented either as consensus
-		strings (IUPAC, regular expressions), or as position-specific scoring matrices (PSSM). <br>
-		Thousands of curated TFBM are available in specialized databases (JASPAR, RegulonDB,
-		TRANSFAC, etc), built from collections of transcription factor binding sites (TFBS) <br>obtained
-		from various experimental methods (e.g. EMSA, DNAse footprinting, SELEX). <br>
-		TFBMs can also be discovered ab initio from genome-scale data sets: promoters of co-expressed genes,
-		ChIP-seq peaks, phylogenetic footprints, etc. <br>
-		Motif collections sometimes contain groups of similar motifs, for different reasons: curation
-		of alternative motifs for a same TF; homologous proteins sharing a particular DNA binding
-		domain,<br>motifs discovered with analytic workflows combining several algorithms (e.g. RSAT
-		peak-motifs, or MEME-chip). In order to address the increasing need for efficient tools
-		enabling to discover groups<br>of similarities among motif collections, we developed
-		matrix-clustering, which presents significant advantages over existing solutions.
-		</p>
-      
-      <ul>
-		<li>Segmentation of the input set of motifs into separated clusters, displayed as a motif forest
-rather than a single motif tree (alternative software tools force all motifs to be aligned).</li>
-		<li>Multiple alignment of all motifs belonging to a same cluster.</li>
-		<li>User-friendly display of motif trees with aligned logos and consensuses.</li>
-		<li>At each level of the hierarchical tree, computation of a merged motif (matrix and
-consensus) summarizing all the descendant motifs.</li>
-		<li>Support for a large series of alternative metrics (Pearson correlation, Euclidian distance, SSD,
-Sandelin-Wasserman, logo dot product, and length-normalized version of these scores).</li>
-		<li>Possibility to select a custom combination between different similarity measures to compute an integrative
-threshold.</li>
-      </ul>
+    <p>Transcription factor binding motifs
+      (<span class="concept">TFBM</span>) are classically represented
+      either as consensus strings (stric consensus, IUPAC or regular
+      expressions), or as position-specific scoring matrices
+      (<span class="concept">PSSM</span>). </p>
+
+    <p> Thousands of curated TFBM are available in specialized
+      databases (<a target="_blank"
+      href="http://jaspar.genereg.net/">JASPAR</a>, <a target="_blank"
+      href="http://regulondb.ccg.unam.mx/">RegulonDB</a>, <a target="_blank"
+      href="http://www.gene-regulation.com/pub/databases.html">TRANSFAC</a>,
+      etc). These PSSMs were traditionally built from collections of
+      transcription factor binding sites (TFBS) obtained by various
+      experimental methods (e.g. EMSA, DNAse footprinting, SELEX).</p>
+
+    <p>TFBMs can also be discovered <i>ab initio</i> from genome-scale
+      datasets: promoters of co-expressed genes, ChIP-seq peaks,
+      phylogenetic footprints, etc. 
     </p>
 
+    <p>Motif collections (databases as well as <i>ab initio</i> motif
+      discovery results) sometimes contain groups of similar motifs,
+      for different reasons: curation of alternative motifs for a same
+      TF; homologous proteins sharing a particular DNA binding domain,
+      motifs discovered with analytic workflows combining several
+      algorithms
+      (e.g. RSAT <span class="program"><a href="../peak-motifs_form.cgi">peak-motifs</a></span>,
+      or <span class="program"><a target="_blank"
+      href="http://meme.nbcr.net/meme/cgi-bin/meme-chip.cgi">MEME-chip</a></span>).</p>
+
+    <p>The RSAT
+      tool <span class="program"><a href="../matrix-clustering_form.cgi">matrix-clustering</a></span>
+      addresses these needs, and includes several interesting features
+      which will be illustrated in this tutorial.
+    </p>
+    
+    <p>
+      <ol>
+	<li>For the computation of inter-matrices distances, support
+	  for a large series of alternative metrics (Pearson
+	  correlation, Euclidian distance, SSD, Sandelin-Wasserman,
+	  logo dot product, and length-normalized version of these
+	  scores).</li>
+
+	<li>Possibility to select a custom combination between several
+	  of these similarity metrics, in order to compute an
+	  integrative threshold.</li>
+
+	<li>The set of input motifs is split into separate clusters,
+	  each of which canbe displayed in user-interactive ways.</li>
+
+	<li>User-friendly display of motif trees with aligned logos
+	  and consensuses.</li>
+
+	<li>At each level of the hierarchical tree, all the descendent
+	  matrices are aligned (multiple alignement), and a merged
+	  motif is computed (<span class="concept">branch
+	  motif</span>), which can be represented schematically as
+	  a <span class="concept">branch logo</span> or
+	  a <span class="concept">branch consensus</span>.</li>
+      </ol>
+    </p>
 
     <p>In this tutorial, we explain how to tune the parameters and
-      interpret of results of the
-      <i>matrix-clustering</i> in addition we explain how the selection of
-      parameters can affect the results:
-      
+      interpret of results of
+      <span class="program">matrix-clustering</span>. 
       <ol>	
-		  
-		<li><b>Motif redundancy</b> examples in motif-discovery results and in motif databases.</li>
-
-		<li><b>Metrics</b> to measure motif simlarity.</li>
-
-		<li><b>Hierarchical clustering</b></li>
-
-		<li><b>Thresholds</b>: setting a combination of similarity measures values as a threshold to define the gruops of similarities.</li>
-		
-		<li><b>Impact of parameters</b>: some example showing how changing the values of the parameters can affect cluster composition or tree topology.</li>
-	
+	<li><b>Motif redundancy</b>: examples in motif-discovery
+	  results and in motif databases.</li>
+	<li><b>Thresholds</b>: setting a combination of similarity
+	  measures values as a threshold to define the groups of
+	  similarities.</li>
+	<li><b>Impact of parameters</b>: some example showing how
+	  changing the values of the parameters can affect cluster
+	  composition or tree topology.</li>
       </ol>
-
     </p>
-
+    
     <hr><a name='study_case'></a><h2>Study cases</h2>
     
-    <ul>
-		
-		<li>
-			<h2>Study case 1</h2>
-			<p>Clustering a collection of motifs discovered in a Oct4 ChIP-seq</p>
-			<p>
-				In this example, first we will run <i>matrix-clustering</i> without set thresholds and after setting threshold values in order to compare
-				the resulting clusters and how the selection of parameters affect the results. 
-				<br><br>
-				We will analyze a set of motifs discovered with the tool <i>peak-motifs</i> from a set of 
-				peak sequences that were obtained by pulling down genomic regions bound by the transcription 
-				factor Oct4 in the mouse. <br>
-				The experiment was performed in the context of a wider study, where Chen and colleagues 
-				characterized the binding location of 12 transcription factors involved in mouse
-                embryonic stem cell differentiation.
-                
-                (<a href='#ref_chen_2010'>Chen et al., 2008</a>)
-			</p>
-		</li>
-		
-		<li>
-			<h2>Study case 2</h2>
-			<p>Clustering a full motif database and finding groups of motifs belonging to the same TF family.</p>
-			<p>
-				In this example we analize a collection of Vertebrates and Insects motifs stored in <a href="">JASPAR</a> which 
-				is a database specialized in eukaryote motifs. <br>
-				We will observe the redundancy of motif stored in these database and 
-				how we can find groups of motif corresponding to TF of the same TF family.  
-				
-				(<a href=''>Sandelin et al., 2004</a>)
-			</p>
-		</li>
-		
-    </ul>
+    <h3>Study case 1</h3>
+    
+    <p><b>Goal:</b> clustering a set of partly redundant motifs
+      discovered by various algorithms.</p>
+    
+    <p><b>Data set:</b> To illustrate the use of motif clustering
+      to filter out redundancy, we will analyze a set of motifs
+      discovered with the
+      workflow <span class="program"><a href="../peak-motifs_form.cgi">peak-motifs</span></a>,
+      which combines several motif discovery approaches:
+      <ol>
+	<li><a href="../oligo-analysis_form.cgi"><span class="program">oligo-analysis</span></a></li>
+	<li><a href="../position-analysis_form.cgi"><span class="program">position-analysis</span></a></li>
+	<li><a href="../local-word-analysis_form.cgi"><span class="program">local-word-analysis</span></a></li>
+	<li><a href="../dyad-analysis_form.cgi"><span class="program">dyad-analysis</span></a></li>
+      </ol>
 
+    <p>We ran these algorithms on a set of peak sequences obtained
+      by pulling down genomic regions bound by the transcription
+      factor Oct4 in mouse ES cells.  This experiment had been
+      performed in the context of a wider study, where Chen and
+      colleagues characterized the binding location of 12
+      transcription factors involved in mouse embryonic stem cell
+      differentiation (<a href='#ref_chen_2010'>Chen et al.,
+	2008</a>).
+    </p>
+    
+    <p>In this example, 
+      <ol>
+	<li>We will run <a href="../matrix-clustering_form.cgi"><span class="program">matrix-clustering</span></a>
+	  with its default parameters, which were tuned to generally
+	  provide a suitable result; </li>
+	<li>We will then run the same analysis with alternative
+	  threshold values, in order to analyze the impact of this
+	  crucial parameter on the result.</li>
+	<li>Finally, we will run a <span class="concept">negative
+	    control</span> by randomizing the motifs (random
+	  permutations of the columns for each matrix) and
+	  running the clustering. In principle, the clustering
+	  algorithm should assign each matrix to a singleton
+	  (cluster containing only one element).</li>
+      </ol>
+    </p>
 
+    <h3>Study case 2</h3>
+
+    <p class="attention"><b>Beware</b>: this tutorial requires to let
+      the program running for a while, and mobilize important computer
+      resources. It is thus only available for the command line
+      version of the tool.</p>
+
+    <p><b>Goal:</b> cluster all motifs from specific sections
+      (Vertebtrates, Insects) of the <a target="_blank"
+      href="http://jaspar.genereg.net/">JASPAR</a> database
+      (<a href=''>Sandelin et al., 2004</a>), in order to identify
+      groups of similar motifs, which may be bound by TFs of the same
+      family (e.g. several factors of the Hox family).</p>
+
+    <p>Note that in some cases factors with unrelated DNA-binding
+      domain may recognize partly similar motifs (e.g. yeast Pho4p and
+      Met4p recognize a motif centered on CACGTG, but differing by the
+      flanking residues).
+    </p>	
+    
     <hr><a name='test_sets'></a><h2>Test sets</h2>
     
     <ul>
-		
-		<li>
-			<h2>Test set 1</h2>
-			<p>The set of 21 motifs discovered with <i>peak-motifs</i> in Oct4 ChIP-seq is available on the section <i>data</i> of RSAT.</p>
-			<p><a href='http://rsat.ulb.ac.be/rsat/data/published_data/peak-motifs_NAR_2012/results/motifs/Chen_2008_motifs/peaks_from_peaksplitter_maxseqlen0_motifs_toppeaks0/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted/reports/Oct4vsGFP_MACS_fdr0.02_splitted_peaks_sorted_links.html'>Discovered motifs in Oct4 ChIP-seq peaks</a></p>
-		</li>
-		
-		<li>
-			<h2>Test set 2</h2>
-			<p>JASPAR vertebrate and insect motifs are available on the section <i>data</i> of RSAT.</p>
-			<p><a href='http://rsat.ulb.ac.be/rsat/data/motif_databases/JASPAR'>JASPAR motifs</a></p>
-		</li>
-		
+      
+      <li>
+	<h2>Test set 1</h2>
+	<p>The set of 21 motifs discovered with <span class="program">peak-motifs</span> in
+	  Oct4 ChIP-seq.</p>
+	
+	<p><a target="_blank" href="../demo_files/peak-motifs_Oct4_matrices.tf">Discovered
+	    motifs in Oct4 ChIP-seq peaks</a></p>
+      </li>
+      
+      <li>
+	<h2>Test set 2</h2>
+	<p>JASPAR vertebrate and insect motifs are available on the section <i>data</i> of RSAT.</p>
+	<p><a target="_blank" href="../data/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf">JASPAR insect core motifs</a> (136 matrices, 2013 release)</p>
+	<p><a target="_blank" href="../data/motif_databases/JASPAR/jaspar_core_vertebrates_2013-11.tf">JASPAR vertebrate core motifs</a> (263 matrices, 2013 release)</p>     
+ </li>
+      
     </ul>
 
 
-    <hr><a name='parameters'></a><h2>Tuning <i>matrix-clustering</i> parameters</h2>
+    <hr><a name='parameters'></a><h2>Tuning <span class="program">matrix-clustering</span> parameters</h2>
     
     <ul>
-		<br>
+      <li>
+	<h2>Study case 1</h2>
+
+	<h3><i>Running  <span class="program">matrix-clustering</span> to group partly redundant motifs.</i></h3>	
+	<div class='protocol'>
+	  <p><b>NOTE:</b> This section will be done using the command line</p>
+	  <ol>
+	    <li>
+	      <p>Open a terminal.<p>
+	    </li>
+	    <li>
+	      <p>Move to a directory where the result will be saved.</p>
+	    </li>
+	    <li>
+	      <p>Execute this command (<span class="program">matrix-clustering</span> demo): </p>
+	       <pre class="brush:bash;">
+		 matrix-clustering -v 2 -i \
+		 $RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf \
+		 -matrix_format tf -cons -hclust_method average \
+		 -lth Ncor 0.4 -lth cor 0.6 -lth w 5 -label name,consensus \
+		 -o results/peak-motifs_Oct4/Oct4_analysis_Ncor_0.4_cor_0.6/Oct4_analysis_Ncor_0.4_cor_0.6
+	       </pre>	      
+	    </li>
+	    <li>
+	      <p>Execute this command (changing the threshold values
+		affect the resulting clusters): </p>
+	      <pre class="brush:bash;">
+		matrix-clustering -v 2 -i \
+		$RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf \
+		-matrix_format tf -cons -hclust_method average \
+		-lth Ncor 0.55 -lth cor 0.625 -lth w 5 -label name,consensus \
+		-o results/peak-motifs_Oct4/Oct4_analysis_Ncor_0.55_cor_0.625/Oct4_analysis_Ncor_0.55_cor_0.625
+	      </pre>
+	      <p>You can read the help of the parameters used
+	      in  <span class="program">matrix-clustering</span> typing on therminal: <i>matrix-clustering -h</i></p>
+	      <ul>
 		<li>
-			
-			<h2>Study case 1</h2>
-			<br>
-			
-			<h3><i>Running matrix-clustering without thresholds</i></h3>
-      
-			<div class='protocol'>
-				<p><b>NOTE:</b> This section will be done using the command line</p>
-		
-				<ol>
-					<li>
-						<p>Open a terminal.<p>
-					</li>
-					<li>
-						<p>Move to a directory where the result will be saved.</p>
-					</li>
-					<li>
-						<p>Execute this command: </p>
-						<p><b>matrix-clustering -v 2 -i $RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf -matrix_format tf -cons -hclust_method average -label name,consensus -o results/peak-motifs_Oct4_No_thresholds/Oct4_analysis_No_thresholds</b></p>
-						<p>You can read the help of the parameters used in matrix-clustering typing: <i>matrix-clustering -h</i></p>
-						<ul>
-							<li>
-								<p><b>Note:</b> You can change the input motif with the parameter -i.  Example: <i> -i folder/motif_file.tf -format tf</i></p>
-							</li>
-							<li>
-								<p><b>Note:</b> You can change the output folder name with the parameter -o. Example: <i> -o folder/prefix </i></p>
-							</li>
-							<li>
-								<p><b>Note:</b> You can change the clustering method with the parameter -hclust_method [average|complete|single]. Example: <i> -hclust_method single </i></p>
-							</li>
-						</ul>	
-					</li>
-				</ol>
-			</div>  
-		</li>  
-		
-		<br>
-
-		<h3><i>Running matrix-clustering with thresholds</i></h3>
-      
-		<div class='protocol'>
-			<p><b>NOTE:</b> This section will be done using the command line</p>
-			
-			<ol>
-				<li>
-					<p>Open a terminal.<p>
-				</li>
-				<li>
-					<p>Move to a directory where the result will be saved.</p>
-				</li>
-				<li>
-					<p>Execute this command: </p>
-					<p><b>matrix-clustering -v 2 -i $RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf -matrix_format tf -cons -hclust_method average -lth Ncor 0.4 -lth cor 0.6 -lth w 5 -label name,consensus -o results/peak-motifs_Oct4/Oct4_analysis</b></p>
-					<p>You can read the help of the parameters used in matrix-clustering typing: <i>matrix-clustering -h</i></p>
-					<ul>
-						<li>
-							<p><b>Note:</b> You can change the lower threshold values with the parameter -lth [cor|Ncor|w]. Example: <i> -lth Ncor 0.6 -lth cor 0.75 -lth w 5 </i></p>
-						</li>
-					</ul>	
-				</li>
-			</ol>
-		</div>  
-
-	<br>
+		  <p>
+		    <b>Note:</b> You can change the lower threshold
+		    values with the parameter -lth
+		    [cor|Ncor|w]. Example: <i> -lth Ncor 0.6 -lth cor
+		      0.75 -lth w 5 </i>
+		  </p>
 		<li>
-			
-			<h2>Study case 2</h2>
-			<br>
-			
-			<h3><i>Running matrix-clustering with thresholds to identify groups of TFs belonging to the same family</i></h3>
-      
-			<div class='protocol'>
-				<p><b>NOTE:</b> This section will be done using the command line</p>
-		
-				<ol>
-					<li>
-						<p>Open a terminal.<p>
-					</li>
-					<li>
-						<p>Move to a directory where the result will be saved.</p>
-					</li>
-					<li>
-						<p>Execute the next commands: </p>
-							<ul>
-								<li><p>JASPAR insect core (136 motifs):</p></li>
-								<p> <b>matrix-clustering -v 2 -i $RSAT/data/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf -matrix_format tf -cons -hclust_method average -lth Ncor 0.5 -lth cor 0.7 -lth w 5 -label name,consensus -o results/JASPAR_insects/Jaspar_insects</b></p>
-								<li><p>JASPAR vertebrate core (263 motifs):</p></li>
-								<p><b>matrix-clustering -v 2 -i $RSAT/data/motif_databases/JASPAR/jaspar_core_vertebrates_2013-11.tf -matrix_format tf -cons -hclust_method average -lth Ncor 0.5 -lth cor 0.7 -lth w 5 -label name,consensus -o results/JASPAR_vertebrates/Jaspar_vertebrates</b></p>
-							</ul>
-						<p>Remember: you can read the help of the parameters used in matrix-clustering typing: <i>matrix-clustering -h</i></p>	
-						<p><b>Note:</b>These are bigger dataset than the study case 1 and <i>matrix-clustering</i> will take much more time to analyse them.</p>
-					</li>
-				</ol>
-			</div>  
-		</li> 
-
- 
-	</ul>
-
-
-<hr><a name='interpret'></a><h2>Interpreting the results</h2>
-
-<ul>
+		  <p>
+		    <b>Note:</b> You can change the input motif with
+		    the parameter -i. Example: <i> -i
+		      folder/motif_file.tf -format tf</i>
+		  </p>
+		</li>
+		<li>
+		  <p>
+		    <b>Note:</b> You can change the output folder name
+		    with the parameter -o. Example: <i> -o folder/prefix </i>
+		  </p>
+		</li>
+		<li>
+		  <p>
+		    <b>Note:</b> You can change the clustering method
+		    with the parameter -hclust_method
+		    [average|complete|single]. Example: <i> -hclust_method single </i>
+		  </p>
+		</li>
+	      </ul>
+	    </li>	
+	  </ol>
+	</div>  	  
 	<br>
+      </li>	
+      <li>
+	<h3>Negative control</h3>	
+	<div class='protocol'>
+	  <p><b>NOTE:</b> This section will be done using the command line</p>
+	  <ol>
+	    <li>
+	      <p>Open a terminal.<p>
+	    </li>
+	    <li>
+	      <p>Move to a directory where the negative control results will be saved.</p>
+	    </li>
+	    <li>
+	      <p>Execute this command: </p>
+	      <pre class="brush:bash;">
+		convert-matrix -i $RSAT/public_html/demo_files/peak-motifs_Oct4_matrices.tf -from tf -to tf -perm 1 -o peak-motifs_Oct4_matrices_permuted.tf
+	      </pre>
+	      <p>You can read the help of the parameters used
+		in  <span class="program">convert-matrix</span> typing
+		on therminal: <i>convert-matrix -h</i></p>
+	    </li>
+	    <li>
+	      <p>Execute this command: </p>
+	      <pre class="brush:bash;">
+		matrix-clustering -v 2 -i peak-motifs_Oct4_matrices_permuted.tf \
+		-matrix_format tf -cons -hclust_method average \
+		-lth Ncor 0.4 -lth cor 0.6 -lth w 5 -label name,consensus \
+		-o results/peak-motifs_Oct4/Oct4_analysis_Ncor_0.4_cor_0.6_permuted/Oct4_analysis_Ncor_0.4_cor_0.6_permuted
+	      </pre>
+	    </li>
+	  </ol>
+	</div>  
+      </li>
+      <br>
+      <li>
+	
+	<h2>Study case 2</h2>
+	<h3><i>Running <span class="program">matrix-clustering</span> to identify groups of TFs belonging to the same family</i></h3>
+	
+	<div class='protocol'>
+	  <p><b>NOTE:</b> This section will be done using the command line</p>
+	  
+	  <ol>
+	    <li>
+	      <p>Open a terminal.<p>
+	    </li>
+	    <li>
+	      <p>Move to a directory where the result will be saved.</p>
+	    </li>
+	    <li>
+	      <p>Execute the next commands: </p>
+	      <ul>
+		<li><p>JASPAR insect core (136 motifs):</p></li>
+		<pre class="brush:bash;">
+		  matrix-clustering -v 2 -i \
+		  $RSAT/data/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf \
+		  -matrix_format tf -cons -hclust_method average \
+		  -lth Ncor 0.5 -lth cor 0.7 -lth w 5 -label name,consensus \ 
+		  -o results/JASPAR_insects/Jaspar_insects
+		</pre>
+		<li><p>JASPAR vertebrate core (263 motifs):</p></li>
+		<pre class="brush:bash;">
+		  matrix-clustering -v 2 -i
+		  $RSAT/data/motif_databases/JASPAR/jaspar_core_vertebrates_2013-11.tf
+		  -matrix_format tf -cons -hclust_method average -lth
+		  Ncor 0.5 -lth cor 0.7 -lth w 5 -label name,consensus
+		  -o results/JASPAR_vertebrates/Jaspar_vertebrates
+		</pre>
+	      </ul>
+	      <p>
+		Remember: you can read the help of the parameters used
+		in <span class="program">matrix-clustering</span> 
+		typing: <i>matrix-clustering -h</i></p>	
+	      <p>
+		<b>Note:</b>These are bigger dataset than the study
+		case 1 and <span class="program">matrix-clustering</span> will take much
+		more time to analyse them.
+	      </p>
+	    </li>
+	  </ol>
+	</div>  
+      </li>   
+    </ul>
+
+
+    <hr><a name='interpret'></a><h2>Interpreting the results</h2>
+    <ul>
+      <li>
+	<h2>Study case 1</h2>	
+	<h3><i>Running <span class="program">matrix-clustering</span> with thresholds</i></h3>
+	<p>
+	  In this example we will study a set of motifs
+	  dicovered in a ChIP-seq experiment done for the TF
+	  Oct4 (Pou5f1) which is an essential TF in cell fate
+	  decision, ES cells and early embryonic development, 
+	  it binds the canonical sequence <i><b>5'-ATGCAAAT-3'</b></i>.
+	</p>
+	<p>
+	  In ES cells, Oct4 often interacts with another TF,
+	  Sox2, which binds to an adjacent Sox motif <b><i>5'-CATTGTA-3'</i></b>.
+	  Together, both TFs co­regulate specific genes. 
+	</p>
+	<p>
+	  During the analysis of Oct4 or Sox2 binding peaks,
+	  the so-called <b><i>SOCT</i></b> motif is usually
+	  found, which is a composite motif encompassing both 
+	  Oct and Sox motifs. <b>(Figure 1)</b> 
+	</p>
+	<ol>
+	  <li>Go to the results folder: results/peak-motifs_Oct4/Oct4_analysis_Ncor_0.4_cor_0.6</li>
+	  <li>Open in a web browser (Firefox is recommended) the file:
+	    Oct4_analysis_Ncor_0.4_cor_0.6_SUMMARY.html</li>
+	  <p>This file has the link to all the output files and show separately the clusters found in the analysis.</p>
+	  <p>You will find the next files: </p>
+	  <ol>
+	    <li><b>Summary table:</b> shows the parameters used for the analysis, the number of input motifs and the number of clusters.</li>
+	    <li><b>General Alignment table:</b> shows the global alignment of all input motifs, separated on their corresponding clusters.</li>
+	    <li><b>Buttons with the results:</b> There is one button for each cluster analysis.
+	      <ul>
+		<li><b>Cluster aligment table</b></li>
+		<li><b>Cluster tree</b></li>
+		<li><b>Cluster branch-motif table</b></li>
+	      </ul>
+	    </li>
+	    <li><b>List with additional files:</b> output files with general information of all motifs (not cluster specific)
+	      <ul>
+		<li><b>Distance table</b></li>
+		<li><b>Internal node attributes table</b></li>
+		<li><b>Logo Forest</b></li>
+		<li><b>Pairwise comparison table</b></li>
+		<li><b>Motif description table</b></li>
+		<li><b>Consensus tree</b></li><br>
+	      </ul>
+	    </li>
+	  </ol>
+	  <li>Observe the <i>Alignment</i> table. <b>(Figure 2)</b>
+	    <ul>
+	      <li>You can notice how the motifs are separated in different clusters, observe that each aligment has a different width.</li>
+	      <li>Some motifs are not asociated to a cluster and remain as singleton.</li>
+	      <br>
+	    </ul>
+	  </li>
+	  <li>
+	    Click the cluster buttons and display the aligment tables and logo trees.
+	  </li>
+	  <li>In the logo tree you can observe (for clusters with at least two motifs) that each branch has a consensus, we called it <span class="concept">branch-consensus</span> which summarizes all the descendant motifs. <b>(Figure 3)</b></li>
+	  <li>Display the branch-motifs table. You can donwload the motifs corresponding to these <span class="concept">branch-motifs</span> by clicking on the links in this table. <b>(Figure 4)</b></li>
+	  <li>
+	    Go to the list of additional files and display the <span class="concept">logo forest</span>.  
+	    In this file you can observe a set of trees (<span class="concept">Forest</span>) with all the
+	    logo trees of this analysis. <b>(Figure 5)</b>
+	      <ul>
+		<li>Some single motifs are considered as a cluster with a single member (<span class="concept">singleton</span>).</li>
+		<li>Let's focus on cluster 1. On its logo tree we can observe two groups, one group with 6 members sharing the motif <b><i>ATGCAAAT</i></b> (which actually corresponds to Oct4 motif) and the second group with five members sharing the bigger motif <b><i>TTGATATGCAAAT</i></b> (corresponding to the <i>SOCT</i> motif).</li>
+		<li>
+		  By clicking on the <span class="concept">branch-consensus</span>
+		  for these groups you can observe the logo. We use the program 
+		  <a href='../compare-matrices_form.cgi'><span class="program">compare-matrices</span></a>
+		  to compare these  <span class="concept">branch-motifs</span> against the 
+		  <a target="_blank" href="http://jaspar.genereg.net/">JASPAR</a> vertebrates
+		  motifs, the short motif in fact correspond to Oct4 and the other to Sox2::Pou5f1 (SOCT). <b>(Figure 6)</b>
+		</li>
+		<li>
+		  This means some peaks only contain Oct4 bound, however, others have bound  Oct4 + Sox2, 
+		  and for these reason the SOCT motif was founded.
+		</li>
+	      </ul>
+	  </li>
+	  <br>
+	  <li>Now we are going to show the differences of the trees when we change the hierarchical clustering agglomeration rule.</li> 
+	  <ul>
+	    <li>By default the rule used in <span class="program">matrix-clustering</span> is the <span class="concept">average</span> method, but also can be used the <span class="concept">single</span> and <span class="concept">complete</span> methods.</li>
+	    <li>Remember you can change this option with the parameter <i>-hclust_method</i> .</li>
+	  </ul>
+	  <br>
+	   <li>In <b>Figure 7</b> you can observe the differences in the tree topologies and cluster size when we use exactly the
+	    same 21 motifs and thresholds but with a different agglomeration rule selected. </li>
+	  <li>Go to the results folder: results/peak-motifs_Oct4/Oct4_analysis_Ncor_0.55_cor_0.625</li>
+	  <li>Open in a web browser (Firefox is recommended) the file: Oct4_analysis_Ncor_0.55_cor_0.625_SUMMARY.html</li>
+	  <li>Notice in the <i>alignment</i> table that there are more clusters (8 and 6 in this and the previous example, respectively)</li>
+	  <li>
+	    Click on the buttons to display the results of <i>cluster_1</i> and <i>cluster_3</i>
+	    <ul>
+	      <li>
+		Compare both clusters with the cluster_1 in the previous example (Ncor>=0.6; cor>=0.4). 
+		Notice how the <i>cluster_1</i> of the previous example was split and actually 
+		these motifs are those belonging to the <i>cluster_1</i> and <i>cluster_3</i> 
+		in the current analaysis. <b>(Figure 8)</b>
+	      </li>
+	      <li>These clusters correspond to SOCT and Oct4 motifs, respectively. See <b>Figure 6</b>.</li>
+	      <li>This example shows how the number of clusters and their composition can vary according the user-selected threshold values.</li>
+	    </ul>
+	  </li>
+	  <br>
+	  <li>Go to the negative results folder: <i>results/peak-motifs_Oct4/Oct4_analysis_Ncor_0.4_cor_0.6_permuted</i> </li>
+	  <li>
+	    In the <i>summary</i> and <i>alignment</i> table you can
+	    see the clusters for the randomized motifs. <b>(Figure 9)</b>
+	    <p><b>NOTE:</b> the number of clusters in the analysis of the randomized set of motifs may variate.</p>
+	    <p>
+	      <b>NOTE:</b> in this dataset there are two motifs which are almost similar to each
+	      other, the A-rich motifs (position_6nt_m2 and position_7nt_m3). 
+	      Notice that after randomization these motifs remain almost similar and is
+	      probably that they will group together. 
+	    </p>
+	  </li>
+	</ol>
+	<br>
+	<br>
+	<div class="case1 all_buttons" id="button">Fig case 1:</div>
+	<div class="fig_button" id="button_fig_1">Figure 1</div>
+	<div class="fig_button" id="button_fig_2">Figure 2</div>
+	<div class="fig_button" id="button_fig_3">Figure 3</div>
+	<div class="fig_button" id="button_fig_4">Figure 4</div>
+	<div class="fig_button" id="button_fig_5">Figure 5</div>
+	<div class="fig_button" id="button_fig_6">Figure 6</div>
+	<div class="fig_button" id="button_fig_7">Figure 7</div>
+	<div class="fig_button" id="button_fig_8">Figure 8</div>
+	<div class="fig_button" id="button_fig_9">Figure 9</div>
+	<br><br>
+
+
+	<!-- Figure 1 -->
+	<div class="fig" id="fig_1">
+	  <img id="soct" src="../images/matrix-clustering_tutorial/soct.png"/>
+	  <p><b>Figure 1.</b> 3D model showing the cooperative binding
+	    between Sox2 and Oct4 TFs whose closely interact to bind DNA. 
+	    Together, they recognize a composite motif called the SOCT motif (SOx+OCT).</p>
+	</div>	
+
+
+	<!-- Figure 2 -->
+	<div id="fig_2" class="fig">	  
+	  <div class="div_tab">
+	    <ul><p><b>Oct4 ChIP-seq discovered motifs table WITH thresholds</b></p></ul>
+	    <img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_tab.jpeg"/>
+	  </div>
+	  <p><b>Figure 2.</b> Table with the 21 motifs discovered
+	    by <span class="program">peak-motifs</span> in the Oct4
+	    ChIP-seq peaks andalized
+	    with <span class="program">matrix-clustering</span>. 
+	    Ncor<=0.4; cor>=0.6:</p>
+	</div>
+
+
+	<!-- Figure 3 -->
+	<div class="div_tab fig" id="fig_3">
+	  <ul><p><b>Cluster 1 logo tree</b></p></ul>
+	  <img id="logo_tree" src="../images/matrix-clustering_tutorial/logo_tree_cluster1.jpeg"/>
+	  <p><b>Figure 3.</b> Logo tree of the cluster 1 found in the Oct4 ChIP-seq motifs. The hierarchical tree displays the logo aligment in both orientations. For each branch is calculated a branchwise-motif. </p>
+	</div>
+
+
+	<!-- Figure 4 -->
+	<div class="div_tab fig" id="fig_4">
+	  <ul><p><b>Cluster 1 branch-motifs table</b></p></ul>
+	  <img id="branch_cons_tab" src="../images/matrix-clustering_tutorial/Oct4_cluster1_branch_tab.jpeg"/>
+	  <p><b>Figure 4.</b> Branch-motif table for cluster 1. You can download the motif in TRANSFAC format or the logo in both orientations by clicking on them.</p>
+	</div>
+
+
+	<!-- Figure 5 -->
+	<div class="div_tab fig" id="fig_5">
+	  <ul><p><b>Logo Forest</b></p></ul>
+	  <img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/logo_forest_oct4_peak-motifs.png"/>
+	  <p><b>Figure 5.</b> Logo Forest with the 21 motifs discovered by <span class="program">peak-motifs</span> in the Oct4 ChIP-seq peaks. Using a combination of values as threshold (cor = 0.6; Ncor = 0.4) these motif were separated in 6 different clusters and each one is displayed in a tree.</p>
+	</div>
+	
+
+	<!-- Figure 6 -->
+	<div class="div_tab fig branch_motifs" id="fig_6">
+	  <ul><p><b>Branch-motif analysis</b></p></ul>
+	  <img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/branch_consensus_analysis.jpeg"/>
+	  <p><b>Figure 6.</b> The logo tree of cluster one showing the branch-motifs </p>
+	</div>
+
+
+	<!-- Figure 7 -->
+	<div class="div_tab fig branch_motifs" id="fig_7">
+	  <table>
+	    <tbody>
+	      <tr>
+		<br><br>
+		<ul><p><b>Consensus tree - Average method</b></p></ul>
+		<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_average_consensus_tree.png"/>
+		<br><br>
+	      </tr>    
+	      <tr>
+		<br><br>
+		<ul><p><b>Consensus tree - Complete method</b></p></ul>
+		<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_complete_consensus_tree.png"/>
+	      </tr>
+	      <tr>
+		<br><br>
+		<ul><p><b>Consensus tree - Single method</b></p></ul>
+		<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_single_consensus_tree.png"/>	
+	      </tr>
+	    </tbody>
+	  </table>
+	  <p>
+	    <b>Figure 7.</b> Three examples of consensus tree
+	    when we are using the same data (21 motifs discovered
+	    by <span class="program">peak-motifs</span> in the
+	    Oct4 ChIP-seq) and the same threslhold values 
+	    (cor >= 0.4; Ncor >= 0.6).
+	  </p>
+	  In this picture we only change the hierarchical clustering agglomeration rule. 
+	  From top to down: average, complete, single linkage.Each cluster is represented with a different color. 
+	  Observe how the number of clusters and the tree topology change depending on the selected method.
+    </p>
+    </div> 
+
+
+    <!-- Figure 8 -->
+    <div id="fig_8" class="fig">
+      <div>
+	<ul><p><b>Logo tree for cluster_1</b></p></ul>
+	<img class="cons_tree" src="../images/matrix-clustering_tutorial/clusters_1_logo_tree.png"/>
+      </div>
+      <br>
+      <div>
+	<ul><p><b>Logo tree for cluster_3</b></p></ul>
+	<img class="cons_tree" src="../images/matrix-clustering_tutorial/clusters_3_logo_tree.png"/>
+      </div>
+      <p>
+	<b>Figure 8.</b> Logo trees for cluster 1 and 3 which actually correspond to the SOCT and Oct4 motifs
+	respectively. The threshold parameters used were: Ncor>=0.55 and
+	cor>=0.625 .
+      </p>
+    </div>
+
+
+    <!-- Figure 9 -->
+    <div class="div_tab fig branch_motifs" id="fig_9">
+      <ul><p><b>Summary table</b></p></ul>
+      <img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/summary_table_randomized.png"/>
+      <p><b>Figure 9.</b> Summary table of an example of matrix-clustering results with randomized motifs</p>
+    </div>
+</li>
+
+<li class="sc_2">
+  
+  
+  <h2><br><br>Study case 2</h2>
+  <h3>Identifying groups of motifs belonging to the same TF Family with <span class="program">matrix-clustering</span></h3>
+  <p>
+    <span class="program">matrix-clustering</span> can be used to group motifs
+    bound by TF belonging to the same TF family 
+    because usually they share a common DNA binding 
+    domain.
+  </p>
+  <p>
+    We will analyze separately two sections of the 'core'
+    <a target="_blank" href="http://jaspar.genereg.net/">JASPAR</a> 
+    database, corresponding to insect and vertebrate motifs. 
+  </p>
+  <p>
+    It must be noticed that even the curated databases may
+    contain different motifs for the same TF because more than 
+    one different technique can be used to discover the binding motif. 
+  </p>
+  <p>
+    Before the analysis with <span class="program">matrix-clustering</span>,
+    for both cases, the motifs of each collection where compared to each other, using
+    RSAT <span class="program">compare-matrices</span>, the resulting motif-to-motif 
+    similarities were visualized as a <span class="concept">motif-to-motif network</span>
+    using <span class="program">Cytoscape</span> where each 
+    motif is represented as a vertex and the edges denote pairs of similar motif,
+    with color and thickness reflecting the similarity scores.<b>(Figures 10 and 11). </b>
+  </p>
+  <p>
+    This network representation allows a visualization of the
+    groups, however this visualization does not provide a
+    partition of the data into proper clusters. So we will run 
+    <span class="program">matrix-clustering</span> to study the similar motifs.
+  </p>
+  <ol>
+    <li>Go to the results folder
+      <ul>
+	<p>results/JASPAR_insects<br>results/JASPAR_vertebrates</p>
+      </ul>
+    </li>
+    <li>For each analysis open the Summary file (We recommend to use Firefox)</li>
+    <li>
+      <b>Insects motifs:</b>
+      <ul>
+	<li>In the motif-to-motif network <b>(Figure 10)</b> you can see a big group of motifs encompassing most motif in this database, 
+	  as they are highly connected in the network this means they are very similar to each other.</li>
+	      <li>
+		To visualize the high similarity you can observe either:
+		<ul>
+		  <li>Alignment table</li>
+		  <li>Logo Forest</li>
+		  <li>Consensus tree</li>
+		  <li>Cluster 4 results <b>(Figure 12)</b></li>
+		  <br>
+		</ul>
+	      </li>
 	<li>
-			<h2>Study case 1</h2>
-			<h3><i>Running matrix-clustering without thresholds</i></h3>
-			<p><b>NOTE: </b>As in this example we did not set threshold values, all input motifs are forced to be aligned in a single global alignment, this means only one cluster encompassing all the motifs. </p>
-			<ol>
-				<li>Go to the results folder: results/peak-motifs_Oct4_No_thresholds</li>
-				<li>Open in a web browser (Firefox is recommended) the file: Oct4_analysis_No_thresholds_SUMMARY.html
-					<p>This file has the link to all the output files and show separately the clusters found in the analysis.</p>
-					<p>You will find the next files: </p>
-					<ol>
-						<li><b>Summary table:</b> shows the parameters used for tha analysis, the number of input motifs and the number of clusters.</li>
-						<li><b>General Alignment table:</b> shows the global alignment of all input motifs, separated on their corresponding clusters. </li>
-						<li><b>Buttons with the results:</b> There is one button for each cluster  each clster analysis.
-							<ul>
-								<li><b>Cluster aligment table</b></li>
-								<li><b>Cluster tree</b></li>
-								<li><b>Cluster branch-motif table</b></li>
-							</ul>
-						</li>
-						<li><b>List with additional files:</b> output files with general information of all motifs (not cluster specific)
-							<ul>
-								<li><b>Distance table</b></li>
-								<li><b>Internal node attributes table</b></li>
-								<li><b>Logo Forest</b></li>
-								<li><b>Pairwise comparison table</b></li>
-								<li><b>Motif description table</b></li>
-								<li><b>Consensus tree</b></li><br>
-							</ul>
-						</li>
-					</ol>
-				</li>
-				<li>
-					Click on <i>cluster_1</i> button and display the <i>logo tree</i>. 
-					<p>In this logo tree you can see the logo aligment in direct an reverse orientation. 
-						It must be noted that the middle motifs in the logo are aligned relative to the positions <b>ATGCAAT</b>,<br>
-						however the motifs at the top of the logo tree are C-rich and they are not matching well with the rest of the alignment,  
-						whilst the same case occurs with the bottom motifs at the logo tree, the A-rich motifs. <b>(Figure 1)</b></p>
-					<br>
-				</li>			
-			</ol>
-		<br>	
-		<h3><i>Running matrix-clustering with thresholds</i></h3>
-		<p>In this example we will study a set of motifs dicovered in a ChIP-seq experiment done for the TF Oct4 (Pou5f1).<br>Oct4 is an   essential   TF   in   cell   fate   decision,   ES   cells   and   early   embryonic
-        development,   it  binds  the   canonical  sequence  <i><b>5'-­ATGCAAAT­-3'</i></b>.  In  ES   cells,  Oct4  often interacts   with   another   TF,   Sox2,   which   binds   to   an   adjacent   Sox   motif   <b><i>5'-­CATTGTA­-3'</i></b>.
-        <br>Together, both TFs co­regulate specific genes. During the analysis of Oct4 or Sox2 binding peaks, the so­ called <b><i>SOCT</i></b> motif is usually found, which is a composite motif encompassing both Oct and Sox motifs. <b>(Figure 2)</b> 
-		</p>
-		<ol>
-			<li>Go to the results folder: results/peak-motifs_Oct4</li>
-			<li>Open in a web browser (Firefox is recommended) the file: Oct4_analysis_SUMMARY.html</li>
-			<li>Compare the <i>Summary</i> and <i>Alignment</i> table between Oct4 analysis with and without thresholds. <b>(Figure 3)</b>
-				<ul>
-					<li>Observe how the number of clusters changes when you set threshold values.</li>
-					<li>In the aligment table you can observe how the motifs are separated in different clusters, observe that each aligment has a different width.</li>
-					<li>Some motifs are not asociated to a cluster and remain as singleton.</li>
-					<br>
-				</ul>
-			</li>
-			<li>Click the cluster buttons and display the aligment tables and logo trees.</li>
-			<li>In the logo trees you can observe (for cluster with 2 or more motifs) that each branch has in blue a consensus, we called it <i>branch-consensus</i> which summarizes all the descendant motifs. <b>(Figure 4)</b></li>
-			<li>Display the branch-motifs table. Ypu can donwload the motifs corresponding to these branch-motifs by clicking on the links in this table. <b>(Figure 5)</b></li>
-			<li>
-				Go to the list of additional files and display the <i>Logo forest</i>. Observe how the tree displayed in the example when we are not using threshold is partitioned in many trees (Forest). <b>(Figure 6)</b>
-				<ul>
-					<li>Some motifs are not grouped and are considered as a cluster wit a single member.</li>
-					<li>Let's focus on cluster 1. We can see two groups within this cluster.<br>One group with 6 members sharing the motif <b><i>ATGCAAAT</i></b> (which actually corresponds to Oct4 motif) and the second group with five members sharing the bigger motif <b><i>TTGATATGCAAAT</i></b> (corresponding to the <i>SOCT</i> motif).</li>
-					<li>By clicking on the branch-consensuses for these groups you can observe the logo. We use the program <i>compare-matrices</i> to compare these branch-motifs against the JASPAR vertebrates motifs,<br>the short motif in fact correspond to Oct4 and the other to Sox2::Pou5f1 (SOCT). <b>(Figure 7)</b></li>
-					<li>This means some peaks only contain Oct4 bound, however others have Oct4+Sox2, for these reason were founded the SOCT motif.</li>
-				</ul>
-			</li>
-			<br>
-			<li>Now we are going to show the differences of the trees when we change the hierarchical clustering agglomeration rule.</li> 
-				<ul>
-					<li>By default the rule used in <i>matrix-clustering</i> is the <i>average</i> method, but also can be used the <i>single</i> and <i>complete</i> methods.</li>
-					<li>Remember you can change this option with the parameter <i>-hclust_method</i> .</li>
-					<li>Run <i>matrix-clustering</i> with the same data for each hclustering agglomeration rule.</li>
-					<li>In the <i>List of file</i> menu display the file <i>consensus tree</i> for each analysis.</li>
-					<li>See <b>Figure 8</b> to observe the differences in the tree topologies using the same 21 motifs as input data depending on the rulse selected. </li>
-				</ul>
-		</ol>
-<!-- ######################################################################## -->
-
-			<br>
-			<div class="all_buttons" id="button">Figures: </div>
-			<div class="fig_button" id="button_fig_1">Figure 1</div>
-			<div class="fig_button" id="button_fig_2">Figure 2</div>
-			<div class="fig_button" id="button_fig_3">Figure 3</div>
-			<div class="fig_button" id="button_fig_4">Figure 4</div>
-			<div class="fig_button" id="button_fig_5">Figure 5</div>
-			<div class="fig_button" id="button_fig_6">Figure 6</div>
-			<div class="fig_button" id="button_fig_7">Figure 7</div>
-			<div class="fig_button" id="button_fig_8">Figure 8</div>
-			<br><br>
-			
-			
-			<!-- Figure 1 -->
-			<div class="pic fig" id="fig_1">
-				<img id="logo_tree_no_threshold" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_logo_tree.png"/>
-				<p><b>Figure 1.</b> Logo tree with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. As there is not a set threshold, all motifs are forced to be aligned in a single alignment.</p>
-			</div>
-			
-			
-			<!-- Figure 2 -->
-			<div class="fig soct" id="fig_2">
-				<img src="../images/matrix-clustering_tutorial/soct.png"/>
-				<p><b>Figure 2.</b> 3D model showing the cooperative binding between Sox2 and Oct4 TFs whose closely interact to bind DNA. Their recognize a composite motif called the SOCT motif (SOx+OCT).</p>
-			</div>
-
-			
-			<!-- Figure 3 -->
-			<div id="fig_3" class="fig">
-				<div class="div_tab" >
-					<ul><p><b>Oct4 ChIP-seq discovered motifs table WITHOUT thresholds</b></p></ul>
-					<img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_tab.jpeg"/>
-				</div>
-			
-				<div class="div_tab">
-					<ul><p><b>Oct4 ChIP-seq discovered motifs table WITH thresholds</b></p></ul>
-					<img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_tab.jpeg"/>
-				</div>
-				<p><b>Figure 3.</b> Tables with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks andalized with <i>matrix-clustering</i> with and without setting threshold values.</p>
-			</div>
-
-
-			<!-- Figure 4 -->
-			<div class="div_tab fig" id="fig_4">
-				<ul><p><b>Cluster 1 logo tree</b></p></ul>
-				<img id="logo_tree" src="../images/matrix-clustering_tutorial/logo_tree_cluster1.jpeg"/>
-				<p><b>Figure 4.</b> Logo tree of the cluster 1 found in the Oct4 ChIP-seq motifs. The hierarchical tree displays the logo aligment in both orientations. For each branch is calculated a branchwise-motif. </p>
-			</div>
-			
-			
-			<!-- Figure 5 -->
-			<div class="div_tab fig" id="fig_5">
-				<ul><p><b>Cluster 1 branch-motifs table</b></p></ul>
-				<img id="branch_cons_tab" src="../images/matrix-clustering_tutorial/Oct4_cluster1_branch_tab.jpeg"/>
-				<p><b>Figure 5.</b> Branch-motif table for cluster 1. You can download the motif in TRANSFAC format or the logo in both orientations by clicking on them.</p>
-			</div>
-			
-			
-			<!-- Figure 6 -->
-			<div class="div_tab fig" id="fig_6">
-				<ul><p><b>Logo Forest</b></p></ul>
-				<img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/logo_forest_oct4_peak-motifs.png"/>
-				<p><b>Figure 6.</b> Logo Forest with the 21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq peaks. Using a combination of values as threshold (cor = 0.6; Ncor = 0.4) these motif were separated in 6 different clusters and Each one is displayed in a tree (We called <i>Forest</i> to one set of trees).</p>
-			</div>
-			
-			
-			<!-- Figure 7 -->
-			<div class="div_tab fig branch_motifs" id="fig_7">
-				<ul><p><b>Branch-motif analysis</b></p></ul>
-				<img id="logo_forest_threshold" src="../images/matrix-clustering_tutorial/branch_consensus_analysis.jpeg"/>
-				<p><b>Figure 7.</b> The logo tree of cluster one showing the branch-motifs </p>
-			</div>
-			
-			
-			<!-- Figure 8 -->
-			<div class="div_tab fig branch_motifs" id="fig_8">
-				<table>
-					<tbody>
-						<tr>
-							<br><br>
-							<ul><p><b>Consensus tree - Average method</b></p></ul>
-							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_average_consensus_tree.png"/>
-							<br><br>
-						</tr>
-
-						<tr>
-							<br><br>
-							<ul><p><b>Consensus tree - Complete method</b></p></ul>
-							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_complete_consensus_tree.png"/>
-						</tr>
-						<tr>
-							<br><br>
-							<ul><p><b>Consensus tree - Single method</b></p></ul>
-							<img class="cons_tree" src="../images/matrix-clustering_tutorial/peak-motifs_Oct4_single_consensus_tree.png"/>
-						</tr>
-					</tbody>
-				</table>
-				<p><b>Figure 8.</b> Three examples of consensus tree when we are using the same data (21 motifs discovered by <i>peak-motifs</i> in the Oct4 ChIP-seq) and the same threslhold values (cor >= 0.4; Ncor >= 0.6).<br>
-				In this picture we only change the hierarchical clustering agglomeration rule. Top to down: average, complete, single linkage.<br>Each cluster is represented with a different color. Observe how the number of clusters and the tree topology change depending on the selected method.
-				</p>
-			</div>
+	  Observe that the motifs in
+	  this big cluster have
+	  the sequence <b>5'-TTAATT-3'</b>
+	  which correspond to Hox family TFs. 
+	  We could think most insect TFs correspond to Hox
+	  family, however the topology observed in the motif-to-motif network can be 
+	  explained because there is a
+	  high enrichment of motifs
+	  belonging to this TF family
+	  in <a target="_blank" href="http://jaspar.genereg.net/">JASPAR</a>,
+	  many research groups study these TFs and upload
+	  to this database the motifs they found.
+	  <br>
 	</li>
+      </ul>
+    </li>
+    <li>
+      <b>Vertebrate motifs:</b>
+      <ul>
+	<li>In the motif-to-motif network <i>(Figure 10)</i> you can see a many groups of motifs (i.e. GATA, SOX, FOX).</li>
+	<li>Open the Logo Forest file note that in many clusters the motifs grouped belong to the same Family. <b>(Figure 13)</b></li>
+      </ul>
+    </li>
+  </ol>
+  
+  <br>
+  <div class="case2 all_buttons" id="button">Fig case 2:</div>
+  <div class="fig_button" id="button_fig_10">Figure 10</div>
+  <div class="fig_button" id="button_fig_11">Figure 11</div>
+  <div class="fig_button" id="button_fig_12">Figure 12</div>
+  <div class="fig_button" id="button_fig_13">Figure 13</div>
+  <br><br>
+  
+  
+  <!-- Figure 10 -->
+  <div class="fig" id="fig_10">
+    <img class="network_insects" src="../images/matrix-clustering_tutorial/insects_JASPAR.jpeg"/>
+    <p><b>Figure 10.</b> Motif-to-motif network done with <span class="program">Cytoscape</span> for all the JASPAR insect motifs. Notice the big group encompassing most of the motifs of the network.</p>
+  </div>
+  
+  
+  <!-- Figure 11 -->
+  <div class="fig" id="fig_11">
+    <img class="network_vertebrates" src="../images/matrix-clustering_tutorial/vertebrates_JASPAR.jpeg"/>
+    <p><b>Figure 11.</b> Motif-to-motif network done with <span class="program">Cytoscape</span> for all the JASPAR vertebrate motifs.</p>
+  </div>
+  
+  
+  <!-- Figure 12 -->
+  <div class="fig" id="fig_12">
+    <img id="insect_logo_tree" src="../images/matrix-clustering_tutorial/insects_motifs_logo_tree.jpeg"/>
+    <p><b>Figure 12.</b> Logo tree showing the highly similar motif visualized in the motif-to-motif insects network.</p>
+  </div>
+  
+  
+  <!-- Figure 13 -->
+  <div class="fig" id="fig_13">
+    <img id="vertebrate_logo_tree" src="../images/matrix-clustering_tutorial/vertebrate_clusters.png"/>
+    <p><b>Figure 13.</b> Some clusters resulting from <span class="program">matrix-clustering</span> are signaled in the motif-to-motif network of vertebrate motifs.</p>
+  </div>
+  
+</li>
+
 </ul>
-
-				
-
-<hr><a name='exercises'></a><h2>Additional exercises</h2>
-<ul>
-  <li><a href='#seq'>Retrieving peak sequences with Galaxy</a></li>
-
-  <!--
-      <li>Upload your own collection of motifs</li>
-<li>Upload a reference motif</li>
-<li>Change motif-discovery parameters by clicking "dyad-analysis"</li>
--->
-</ul>
-
 
 <hr><a name='references'></a><h2>References</h2>
 
 <ol>
-<li><a name='ref_chen_2010'>Chen</a>, X., Xu, H., Yuan, P., Fang, F.,
-Huss, M., Vega, V. B., Wong, E., Orlov, Y. L., Zhang, W., Jiang, J.,
-Loh, Y. H., Yeo, H. C., Yeo, Z. X., Narang, V., Govindarajan, K. R.,
-Leong, B., Shahab, A., Ruan, Y., Bourque, G., Sung, W. K., Clarke,
-N. D., Wei, C. L. and Ng, H. H. (2008). Integration of external
-signaling pathways with the core transcriptional network in embryonic
-stem cells. Cell 133, 1106-17. [Pubmed <a target='_blank'
-href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a>].
-</li>
-
-<li>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry,
-  D. and van Helden, J. (2011). RSAT peak-motifs: motif analysis in
-  full-size ChIP-seq datasets Nucleic Acids Research
-  doi:10.1093/nar/gkr1104, 9.
-  [<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open access</a>]
-</li>
+  <li><a name='ref_chen_2010'>Chen</a>, X., Xu, H., Yuan, P., Fang, F.,
+    Huss, M., Vega, V. B., Wong, E., Orlov, Y. L., Zhang, W., Jiang, J.,
+    Loh, Y. H., Yeo, H. C., Yeo, Z. X., Narang, V., Govindarajan, K. R.,
+    Leong, B., Shahab, A., Ruan, Y., Bourque, G., Sung, W. K., Clarke,
+    N. D., Wei, C. L. and Ng, H. H. (2008). Integration of external
+    signaling pathways with the core transcriptional network in embryonic
+    stem cells. Cell 133, 1106-17. [Pubmed <a target='_blank'
+					      href='http://www.ncbi.nlm.nih.gov/pubmed?term=18555785[uid]'>18555785</a>].
+  </li>
+  
+  <li>Thomas-Chollier, M., Herrmann, C., Defrance, M., Sand, O., Thieffry,
+    D. and van Helden, J. (2011). RSAT peak-motifs: motif analysis in
+    full-size ChIP-seq datasets Nucleic Acids Research
+    doi:10.1093/nar/gkr1104, 9.
+    [<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full?keytype=ref&ijkey=zOvloLjtKzL73F8'>Open access</a>]
+  </li>
+      
+      
+  <li>Mathelier, A., Zhao, X., Zhang, A. W., Parcy, F., Worsley-Hunt, R., 
+    Arenillas, D. J., Buchman, S., Chen, C.-y., Chou, A., Ienasescu, H., Lim, 
+    J., Shyr, C., Tan, G., Zhou, M., Lenhard, B., Sandelin, A. and Wasserman, 
+    W. W. JASPAR 2014: an extensively expanded and updated open-access 
+    database of transcription factor binding profiles 
+    Nucleic Acids Research, 2013
+    [<a target='_blank' href='http://nar.oxfordjournals.org/content/early/2013/11/04/nar.gkt997.full'>Open access</a>]
+  </li>
+  
 </ol>
-
+    
 <hr width="100%">
 
 <address>
 For suggestions or information request, please contact 
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a> or 
+<a target='_blank' href=''>Jaime Castro-Mondragon</a> or 
 <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a>
 </address>
 
@@ -692,7 +1032,42 @@ For suggestions or information request, please contact
 		
 		
 		$(document).ready(function(){
-			$('.all_buttons').click(function(){
+			$('#button_fig_9').click(function(){
+			$('#fig_9').slideToggle('slow');
+			}); 
+		});
+
+
+		$(document).ready(function(){
+			$('#button_fig_10').click(function(){
+			$('#fig_10').slideToggle('slow');
+			}); 
+		});		
+
+
+		$(document).ready(function(){
+			$('#button_fig_11').click(function(){
+			$('#fig_11').slideToggle('slow');
+			}); 
+		});
+		
+
+		$(document).ready(function(){
+			$('#button_fig_12').click(function(){
+			$('#fig_12').slideToggle('slow');
+			}); 
+		});
+
+
+		$(document).ready(function(){
+			$('#button_fig_13').click(function(){
+			$('#fig_13').slideToggle('slow');
+			}); 
+		});				
+		
+		
+		$(document).ready(function(){
+			$('.case1').click(function(){
 				$('#fig_1').hide();
 				$('#fig_2').hide();
 				$('#fig_3').hide();
@@ -701,9 +1076,75 @@ For suggestions or information request, please contact
 				$('#fig_6').hide();
 				$('#fig_7').hide();
 				$('#fig_8').hide();
+				$('#fig_9').hide();
+			}); 
+		});
+
+
+		$(document).ready(function(){
+			$('.case2').click(function(){
+				$('#fig_10').hide();
+				$('#fig_11').hide();
+				$('#fig_12').hide();
 			}); 
 		});
 	
 	</script>
 
+<!-- 
+
+##################################################
+## Running matrix-clustering without thresholds ##
+##################################################
+
+<h3><i>Running <span class="program">matrix-clustering</span> without thresholds</i></h3>
+<p>
+  <b>NOTE: </b>As in this example we did not set threshold values, all
+  input motifs are forced to be aligned in a single global alignment,
+  this means only one cluster encompassing all the motifs.
+</p>
+<ol>
+  <li>Go to the results folder: results/peak-motifs_Oct4_No_thresholds</li>
+  <li>Open in a web browser (Firefox is recommended) the file: Oct4_analysis_No_thresholds_SUMMARY.html
+    
+  </li>
+  <li>
+    Click on <i>cluster_1</i> button and display
+    the <span class="concept">logo tree</span>. 
+    <p>In this logo tree you can see the logo aligment in direct an reverse orientation. 
+      It must be noted that the middle motifs in the logo are aligned relative to the positions <b>ATGCAAT</b>,
+      however the motifs at the top of the logo tree are C-rich and they are not matching well with the rest of the alignment,  
+      whilst the same case occurs with the bottom motifs at the logo tree, the A-rich motifs. <b>(Figure 1)</b></p>
+    <br>
+  </li>			
+</ol>
+
+
+<!--Prev Figure 1 
+
+<div class="fig" id="fig_2">
+  <img id="logo_tree_no_threshold" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_logo_tree.png"/>
+  <p><b>Figure 2.</b> Logo tree with the 21 motifs discovered by <span class="program">peak-motifs</span> in the Oct4 ChIP-seq peaks. As there is not a set threshold, all motifs are forced to be aligned in a single alignment.</p>
+</div>
+
+
+<!-- Figure 3
+
+<div id="fig_3" class="fig">
+  <div class="div_tab" >
+    <ul><p><b>Oct4 ChIP-seq discovered motifs table WITHOUT thresholds</b></p></ul>
+    <img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_no_thresholds_tab.jpeg"/>
+  </div>
+  
+  <div class="div_tab">
+    <ul><p><b>Oct4 ChIP-seq discovered motifs table WITH thresholds</b></p></ul>
+    <img class="pic_tab" src="../images/matrix-clustering_tutorial/Oct4_tab.jpeg"/>
+  </div>
+  <p><b>Figure 3.</b> Tables with the 21 motifs discovered by <span class="program">peak-motifs</span> in the Oct4 ChIP-seq peaks andalized with <span class="program">matrix-clustering</span> with and without setting threshold values.</p>
+</div>
+
+-->
+
+
 </html>
+

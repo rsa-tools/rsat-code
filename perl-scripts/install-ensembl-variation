@@ -6,6 +6,10 @@
 #
 ############################################################
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## OBSOLETE ? TO BE CHECKED
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 use warnings;
 
 =pod
@@ -179,6 +183,8 @@ use File::Path qw( mkpath );
 ## Main package
 package	main;
 {
+
+    &RSAT::error::FatalError("This script has been replaced by download-ensembl-variations and install-ensembl-genomes");
 
 	###############################################################
 	## Initialise parameters

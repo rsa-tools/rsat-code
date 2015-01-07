@@ -26,13 +26,14 @@ administrator of the computer).
   \item On Mac OSX: \file{/etc/apache2/users/rsat.conf}
   \end{itemize}
   
-\item You need to restart the Web server (the command depends on your
-  OS. Can be \program{apachectl}, \program{apache2ctl} or
+\item You need to restart the Web server (note: the command depends on
+  your OS. Can be \program{apachectl}, \program{apache2ctl} or
   \program{httpd}.
 
   \begin{lstlisting}
-sudo apache2ctl restart
+sudo apachectl restart
   \end{lstlisting}
+
 
 \item Check that all properties related to the Web site URL are
   properly defined in the \RSAT property files

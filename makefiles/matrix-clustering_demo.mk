@@ -65,7 +65,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
-		-cons \
+		-cons -heatmap\
 		-export json -d3_base link -hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
@@ -110,7 +110,7 @@ cluster_footprints:
 
 
 ## Cluster all motifs from RegulonDB
-RDB_CLUSTER_DIR=results/regulondDB_clusters
+RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
@@ -120,20 +120,26 @@ cluster_rdb:
 
 ################################################################
 ## Cluster one jaspar group
-JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
+JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
 JASPAR_GROUP=vertebrates
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
 JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
+cluster_jaspar_all_groups:
+	@for g in ${JASPAR_GROUPS}; do \
+		${MAKE} cluster_jaspar_one_group JASPAR_GROUP=$${g} ; \
+	done
+
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
 	${MAKE} cluster DEMO_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
 
 #############################
 ## Cluster one cisBP group
-CISBP_GROUPS=human mouse
-CISBP_GROUP=mouse
-CISBP_PREFIX=${CISBP_GROUP}_motifs_cisBP2013
+## Default: Mus_musculus
+CISBP_GROUPS=Homo_sapiens Mus_musculus
+CISBP_GROUP=Mus_musculus
+CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
 CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
 CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
 cluster_cisbp_one_group:
