@@ -586,7 +586,7 @@ package	main;
 	  my $variant_seq = $left_flank.$variant_aux.$right_flank;
 
 	  ## Select the output fields
-	  my @out_fields = ($chr, $start, $end, $strand, $id, $type, $ref,  $variant_aux, $variant_seq, $minor_allele_freq);
+	  my @out_fields = ($chr, $start, $end, $strand, $id, $type, $ref,  $variant_aux,  $minor_allele_freq, $variant_seq);
 	  &RSAT::message::Debug("Variant retrieved fields\n", join("\t",@out_fields )) if ($main::verbose >= 5);
 	  print $out join("\t", @out_fields)."\n";
 	  #<STDIN>;
