@@ -12,7 +12,7 @@
 
 =head1 NAME
 
-retrieve-variation-seq
+variation-scan
 
 =head1 VERSION
 
@@ -47,7 +47,9 @@ Jeremy.Delerce@univ-amu.fr
 
 =head2 Sequence file
 
-See I<retrieve-variation-seq> output format.
+I<variation-scan> takes as input a variation file in the format
+produced by I<retrieve-variation-seq>. for details about this format,
+see I<retrieve-variation-seq> output format.
 
 =head2 Matrix file
 
