@@ -1,0 +1,175 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	closest-pair
+
+        v1.0, 1997 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	
+USAGE
+        closest-pair [-i inputfile] [-o outputfile] [-v] [-all]
+
+DESCRIPTION
+        returns the distance between the closest elements of a 
+        list of integer numbers.
+
+CATEGORY
+	statistics
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-all    return all distance between pairs of neighbour elements	
+INPUT FORMAT
+	any text file with integer numbers. 
+        Other words are ignored. 
+        Several numbers can be included in the same line.
+	
+OUTPUT FORMAT
+	Output in 3 columns providing respectively:
+        - the distance between two elements
+        - the value of the first element
+        - the value of the second element
+
+        By default, as single line is returned providing the 
+        information about the closest pair. 
+        With the option -all, all pairs are returned. 
+	
+EXAMPLES
+       closest-pair -v -i mydata -o myresult 
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+closest-pair options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-all    returns all distance between pairs of neighbour elements	
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = &RSAT::util::StartScript();
+
+#### initialise parameters ####
+$return_all = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-all") {
+    $return_all = 1;
+
+  }
+}
+
+
+#### check argument values ####
+
+
+
+### open input file ###
+($in, $input_dir) = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+
+###### execute the command #########
+
+while ($current_line = <$in>) {
+    while ($current_line =~ /(\S+)(.*)/) {
+	if (&IsReal($1)) {
+	    push (@numbers, $1);
+	}
+	$current_line = $2;
+    }
+}
+
+if ($#numbers < 1) {
+    print "\tError: the input must contain at least two integer values\n";
+    print "\tType clostest-pair -help for info\n";
+    exit;
+}
+
+@sorted_numbers = sort {$a<=>$b} @numbers;
+
+$min_index = 0;
+
+foreach $i (0..($#sorted_numbers-1)) {
+    $distance[$i] = $sorted_numbers[$i+1] - $sorted_numbers[$i];
+    if ($distance[$i] < $distance[$min_index]) {
+	$min_index = $i;
+    }
+}
+
+#### verbose ####
+if ($verbose) {
+  print $out ";closest-pair result\n";
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  print $out ";Number of elements\t", $#sorted_numbers + 1, "\n";
+}
+
+###### print output ######
+if ($return_all) {
+    for $i (0..($#sorted_numbers-1)) {
+	print "$distance[$i]\t$sorted_numbers[$i]\t$sorted_numbers[$i+1]\n";
+    }
+} else {
+    print "$distance[$min_index]\t$sorted_numbers[$min_index]\t$sorted_numbers[$min_index+1]\n";
+}
+
+
+################################################################
+## Report execution time and close output stream
+my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+close $main::out if ($outputfile);
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+

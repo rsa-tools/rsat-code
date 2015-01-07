@@ -36,7 +36,6 @@ $query = new CGI;
 $dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
 $add_linenb_command = "$SCRIPTS/add-linenb";
 $add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
-$link_command = "$SCRIPTS/add-yeast-link -db all ";
 $prefix = "gs-dna-pattern";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 
@@ -168,13 +167,6 @@ unless (($query->param("sequence_type") =~ /chromosome/) ||
 	($query->param("match_format") eq "fasta")) {
     $command .= "| $add_orf_function_command -org $org ";
     $command .= "| $add_linenb_command ";
-
-    #### linking to external databases
-#    if ( ($query->param("output") =~ /display/i) &&
-#	 ($org eq "Saccharomyces_cerevisiae")) { #### not yet supported for other organisms
-#	$command .= "| $link_command -col $orf_col  ";
-#    }
-}
 
 &ReportWebCommand($command);
 

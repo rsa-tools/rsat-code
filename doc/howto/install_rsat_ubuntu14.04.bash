@@ -752,4 +752,22 @@ grep ^processor /proc/cpuinfo
 ## Check RAM
 grep MemTotal /proc/meminfo
 
+################################################################
+########################     OPTIONAL     ######################
+################################################################
+
+
+## Install some software tools for NGS analysis
+cd ${RSAT}
+make -f makefiles/install_software.mk install_weblogo
+make -f makefiles/install_software.mk install_d3
+make -f makefiles/install_software.mk install_meme
+
+################################################################
+## Ganglia: tool to monitor a cluster (or single machine)
+## https://www.digitalocean.com/community/tutorials/introduction-to-ganglia-on-ubuntu-14-04
+sudo apt-get install -y ganglia-monitor rrdtool gmetad ganglia-webfrontend
+sudo cp /etc/ganglia-webfrontend/apache.conf /etc/apache2/sites-enabled/ganglia.conf
+sudo apachectl restart
+
 
