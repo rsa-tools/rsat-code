@@ -12,6 +12,8 @@
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
   stop("The environment variable RSAT is not defined.")
+#} else {
+#  print(paste("Environment variable RSAT = ", dir.rsat))
 }
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
