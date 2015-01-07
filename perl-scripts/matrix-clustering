@@ -285,8 +285,11 @@ package main;
   local $mat_nb_flag = 0;
   local $mat_nb = 0;
   
-  ## Limit the number of input motifs
+  ## To export in the results the input file
   local $clone_input_flag = 0;
+
+  ## A hash to save the name of the clusters and their corresponding hexa code
+  local %hexa_code = ();
 
   ################################################################
   ## Options used for motif comparison
@@ -370,6 +373,9 @@ package main;
 
   ## Individual matrix descriptions
   $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
+
+  ## Hexadecimal color for the clusters
+  $main::outfile{hexa_colors} = $main::outfile{prefix}."_hexa_colors.txt";
 
   ## Simliarity network between matrices
   if ($main::return_field{network}) {
@@ -483,6 +489,11 @@ package main;
       ################################################################
       ## Create the merged matrices and consensuses
       &Merge_matrices();
+
+      ################################################################
+      ## Read the table with the hexadecimal code 
+      ## for the colors assigned to each cluster
+      %hexa_code = &Read_cluster_colors();
       
       ################################################################
       ## Parse the JSON file
@@ -1481,6 +1492,7 @@ sub Add_attributes_to_JSON(){
   return();
 }
 
+#		stroke: #0D86D7;
 
 ###################################
 ## Create the html file to 
@@ -1550,6 +1562,12 @@ sub Create_html_tree_file(){
 	if(/"#"/){
 	    my $clust = "cluster_".$cluster_nb;
 	    $_ =~ s/\"#\"/\"#$clust\"/;
+	}
+
+	## Add the color of the cluster
+	if(/--stroke--/){
+	    my $clust = "cluster_".$cluster_nb;
+	    $_ =~ s/--stroke--/$hexa_code{$clust}/;
 	}
 
 	if ($_ =~ /Insert labels/){
@@ -1961,6 +1979,7 @@ sub paste_new_cluster_to_HTML(){
 		.data(cluster.links(nodes))
 		.enter().append(\"path\")
 		.attr(\"class\", \"link\")
+                .attr(\"stroke\", \"--stroke--\")
 		.attr(\"d\", elbow);
 
 
@@ -1972,7 +1991,9 @@ sub paste_new_cluster_to_HTML(){
 
 	
 	node.append(\"circle\")
-		.attr(\"r\", 6.5);
+		.attr(\"r\", 6.5)
+                .attr(\"fill\", \"--stroke--\")
+                .attr(\"stroke\", \"--stroke--\");
 
 	/*Insert labels*/
 	
@@ -2273,6 +2294,8 @@ sub Creates_website(){
 		my $toogle_table = &toogle_table();
 		$toogle_table =~ s/--nb--/$num/g;
 		$script_jquery .= $toogle_table."\n";
+
+		my $cl_name = "cluster_".$num;
 		
 		## Draw the logo tree
 		my $d3_logo_tree = &logo_tree();
@@ -2282,6 +2305,7 @@ sub Creates_website(){
 		$d3_logo_tree =~ s/--nb--/$num/g;
 		$d3_logo_tree =~ s/--nb_motifs--/$factor_height/g;
 		$d3_logo_tree =~ s/--Cluster_id--/$cl_id/g;
+		$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_name}/g;
 		$line .= "\n".$d3_logo_tree."\n\n";
 		
 		## Add the code to hide/show the logo tree
@@ -2629,6 +2653,7 @@ d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 		.data(cluster.links(nodes))
 		.enter().append("path")
 		.attr("class", "link")
+                .attr("stroke", "--stroke--")
 		.attr("d", elbow);
 
 
@@ -2640,7 +2665,8 @@ d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 
 	
 	node.append("circle")
-		.attr("r", 6.5);
+		.attr("r", 6)
+                .attr("fill", "--stroke--");
 
 	node.append("a")
 			.attr("xlink:href", function(d) { return d.url; })
@@ -2764,6 +2790,29 @@ sub Clone_input{
     my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
     &RSAT::util::one_command($cmd, 1,"");
     &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
+}
+
+
+##################################
+## Read the cluster-color table
+sub Read_cluster_colors{
+
+    my %hexa_hash = ();
+
+    open(HEXA, $main::outfile{hexa_colors}) || &RSAT::error::FatalError( "Cannot open Hexadecimal code for colors file", $main::outfile{hexa_colors});
+
+    while(<HEXA>){
+	chomp;
+	my @string_split = split(/\s+/, $_);
+	my $cl = $string_split[0];
+	my $hexa = $string_split[1];
+	$hexa =~ s/FF$//ig;
+	$hexa_hash{$cl} = $hexa;
+    }
+    close(HEXA);
+    unlink($main::outfile{hexa_colors});
+
+    return(%hexa_hash);
 }
 
 __END__
