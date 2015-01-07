@@ -345,7 +345,9 @@ package	main;
     print $out ";\t",'19',"\t",'str_change',"\t",'Indicate if strand have change between the offset of min_offset_diff',"\n";
     print $out ";\t",'20',"\t",'best_seq',"\t",'Sequence of the worst putative site',"\n";
     print $out ";\t",'21',"\t",'worst_seq',"\t",'Sequence of the worst putative site',"\n";
-    print $out ";\t",'22',"\t",'monir_alle_freq',"\t",'Minor allele frequency',"\n";
+    print $out ";\t",'22',"\t",'reference_allele',"\t",'Reference allele',"\n";
+    print $out ";\t",'23',"\t",'is_ref_better',"\t",'Flag if the reference allele is the allele with the best score',"\n";
+    print $out ";\t",'24',"\t",'monir_alle_freq',"\t",'Minor allele frequency',"\n";
 
   }
 
@@ -372,6 +374,8 @@ package	main;
                       str_change
                       best_seq
                       worst_seq 
+                      reference_allele
+                      is_ref_better
                       minor_allele_freq)),"\n";
 
   ################################################################
@@ -618,8 +622,8 @@ package	main;
       chomp();
       
       ## Split line in rsat_var format
-      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq,$ma_freq) = split(/\t/);
-      &RSAT::message::Debug("Reading in one viariable from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$seq, $ma_freq)) if ($main::verbose >= 3);
+      my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq) = split(/\t/);
+      &RSAT::message::Debug("Reading in one viariable from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq)) if ($main::verbose >= 3);
       #die "HELLO3";
       $ref = "-" if ($ref eq "");
       
@@ -728,7 +732,7 @@ sub getLineInfo {
     my @token2 = split(/\|/,$token[0]); #var_info, coord
     $line_info{'coord'} = $token2[1];
 
-    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type
+    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type,minor_allele_freq
     $line_info{'id'} = $token3[0];
     $line_info{'variant_ref'} = $token3[1];
     $line_info{'variant_alt'} = $token3[2];
@@ -788,7 +792,8 @@ sub Analyse_scanning {
             push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
             push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
 	}
-
+	
+	$scanning_info{'original_ref'}=$line_info{'variant_ref'};
 	$scanning_info{'matrice'} = $line_info{'matrice'};
 	$scanning_info{'variation'} = $line_info{'id'};
 	$scanning_info{'type'} = $line_info{'type'}; ##Get type of variant
@@ -1009,7 +1014,17 @@ sub Printline {
   $str .= $scanning_info{'best_strand'}."\t".$scanning_info{'worst_strand'}."\t"; # strand
   $str .= $scanning_info{'strand_change'}."\t";
   $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\t"; # seq
-  $str .= $scanning_info{'minor_allele_freq'};
+  ## Flag to specify if the best score was obtained from the major allele (reference variant) or from the minor allele
+  my $is_ref_better;
+  if ($scanning_info{'best_variant'} eq $scanning_info{'original_ref'}){
+      $is_ref_better="Y";
+  }
+  else {
+      $is_ref_better="N";
+  }
+  $str .= $scanning_info{'original_ref'}."\t"; ## Print major allele (reference allele) original id is to diferiantate from when scanning is donde on reference allele
+  $str .= $is_ref_better."\t"; ## Flag if the best score comes from the major allele (reference allele)
+  $str .= $scanning_info{'minor_allele_freq'}; ## Report minor allele frequency
   print $out $str."\n"; ## Back
 }
 

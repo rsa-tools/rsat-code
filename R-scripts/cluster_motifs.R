@@ -8,6 +8,33 @@
 ## It returns the resulting tree in json format, which can be loaded
 ## by the d3 library for display purposes.
 
+## Define the local directory for R librairies
+dir.rsat <- Sys.getenv("RSAT")
+if (dir.rsat == "") {
+  stop("The environment variable RSAT is not defined.")
+}
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
+
+
+## Load required libraries
+## List of packages to install
+required.packages = c("RJSONIO",
+                      "dendextend",
+                      "Rcpp",
+                      "Rclusterpp",
+                      "gplots",
+                      "devtools")
+
+## List of required packages from Bioconductor
+required.packages.bioconductor <- c("ctc")
+
+## List of RSAT-specific packages to be compiled on the server
+required.packages.rsat <- c("TFBMclust")
+for (pkg in c(required.packages, required.packages.bioconductor, required.packages.rsat)) {
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
+}
+
 
 ## Install the TFBM library if required
 # dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
@@ -217,6 +244,11 @@ forest.list <<- list()
 intermediate.levels.counter <- 0
 intermediate.levels <- vector()
 
+## Print a file with the Hexadecimals code for the colors of the clusters
+## The color of the clusters showed in the heatmap will be the same
+## colors in the D3 trees.
+colors <- rainbow(length(clusters))
+write.table(paste("cluster_", 1:length(colors), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
 
 i <- sapply(1:length(clusters), function(nb){
 
