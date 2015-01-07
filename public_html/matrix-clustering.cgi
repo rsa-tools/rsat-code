@@ -60,7 +60,7 @@ local $parameters = " -v 1";
 ## Matrix input format
 local $query_matrix_format = lc($query->param('matrix_format'));
 ($query_matrix_format) = split (/\s+/, $query_matrix_format);
-$parameters .= " -format ".$query_matrix_format;
+$parameters .= " -matrix_format ".$query_matrix_format;
 
 ################################################################
 #### Query matrix file
