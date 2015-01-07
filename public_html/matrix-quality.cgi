@@ -98,7 +98,7 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 
 ################################################################
 ## k parameter for the k-fold validation
-if (&IsInteger($query->param('kfold'))) {
+if ((&IsInteger($query->param('kfold'))) && ($query->param('kfold') > 0)) {
     $parameters .= " -kfold ".$query->param('kfold');
 }
 
