@@ -41,11 +41,14 @@ sub GetProgramPath {
     ## Find the preferred location of the program
     my @rsat_path = @preferred_paths;
     if (defined($ENV{RSAT_BIN})) {
-      push @rsat_path, ($ENV{RSAT_BIN});
+      push @rsat_path, ($ENV{RSATBIN});
     };
-    push @rsat_path, ($ENV{RSAT}."/bin/",
-		      $ENV{RSAT}."/python-scripts/",
-		      $ENV{RSAT}."/perl-scripts/",
+
+    ## If the RSAT path contains the searcher program, use this
+    ## version as preferred path.
+    push @rsat_path, ($ENV{RSAT}."/bin",
+		      $ENV{RSAT}."/python-scripts",
+		      $ENV{RSAT}."/perl-scripts",
 		      ".");
 
     my $path_found = 0;
@@ -54,8 +57,6 @@ sub GetProgramPath {
       $possible_path =~ s|/+|/|g;
 #      &RSAT::message::Debug("GetProgramPath()", "testing", $program_name, $possible_path) if ($main::verbose >= 10);
       if (-e $possible_path) {
-	## If the RSAT property file contains a RSAT_BIN, use it as
-	## preferred path
 	$program_path = $possible_path;
 	last;
       }
