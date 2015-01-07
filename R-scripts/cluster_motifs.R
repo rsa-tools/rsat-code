@@ -11,10 +11,10 @@
 ## Define the local directory for R librairies
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
-  stop("The environment variable RSAT is not defined.")
-#} else {
+    stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
+} 
 #  print(paste("Environment variable RSAT = ", dir.rsat))
-}
+
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
