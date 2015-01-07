@@ -57,10 +57,10 @@ for (pkg in required.packages.bioconductor) {
   }
 }
 
-## Load required libraries
-for (pkg in c(required.packages, required.packages.bioconductor)) {
-  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
-}
+# ## Load required libraries
+# for (pkg in c(required.packages, required.packages.bioconductor)) {
+#   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
+# }
 
 
 ## Install RSAT-specific packages
