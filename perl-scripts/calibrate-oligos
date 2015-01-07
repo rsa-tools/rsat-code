@@ -61,7 +61,8 @@ if ($task{all}) {
 }
 
 ## organism name
-&RSAT::OrganismManager::CheckOrganismName($organism_name);
+#&RSAT::OrganismManager::CheckOrganismName($organism_name);
+&RSAT::OrganismManager::check_name($organism_name);
 
 ## Sequence length
 if ($seq_len) {

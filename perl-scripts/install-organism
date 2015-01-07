@@ -78,7 +78,8 @@ package main;
   $parse_options = "";
 
   $null = "<NULL>";		## NULL value
-  $source = "NCBI";
+##  $source = "NCBI";
+  $source = "refseq";
   $taxonomy = $null;
   @taxa = ();
   our %infile = ();
@@ -138,23 +139,27 @@ package main;
 
   ################################################################
   ## Check the directory contianing the Genbank-formatted organisms
-  ## (which can be downloaded from NCBI).
+  ## (which can be downloaded from NCBI/refseq).
   if ($task{parse}) {
-    unless ($dir{genbank}) {
-      if ($ENV{GENBANK_DIR}) {
-	$dir{genbank} = $ENV{GENBANK_DIR};
-      } elsif ($GENBANK_DIR) {
-	$dir{genbank} = $GENBANK_DIR;
+    unless ($dir{refseq}) {
+      if ($ENV{REFSEQ_DIR}) {
+	$dir{refseq} = $ENV{REFSEQ_DIR};
+      } elsif ($REFSEQ_DIR) {
+	$dir{refseq} = $REFSEQ_DIR;
+      } elsif ($ENV{REFSEQ_DIR}) {
+	&RSAT::message::Warning("environment variable GENBANK_DIR is obsolete, please specify REFSEQ_DIR in ", ${RSAT}."/RSAT_config.props");
+	$dir{refseq} = $ENV{GENBANK_DIR}."/refseq";
       } else {
-	&RSAT::error::FatalError("Please set the GENBANK_DIR variable in RSAT configuration file", ${RSAT}."/RSAT_config.props");
+	&RSAT::error::FatalError("Please set the option REFSEQ_DIR in RSAT configuration file", ${RSAT}."/RSAT_config.props");
       }
     }
-    unless (-d $dir{genbank}) {
-      &RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
+    unless (-d $dir{refseq}) {
+      &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
     }
   }
 
   if ($main::all_organisms) {
+#    @organisms_dirs = glob($dir{refseq}."/*_*");
     @organisms_dirs = &glob($dir{genbank}."/*_*");
     foreach my $dir (@organisms_dirs) {
       my $org = &RSAT::util::ShortFileName($dir);
@@ -162,7 +167,8 @@ package main;
 
       ## The NCBI dir Bacteria contains some folders starting with
       ## "_", I guess these genomes are problematic.
-      next if ($org =~ /^_/); 
+      next if ($org =~ /^_/);  ## Skip directories that do not seem to correspond to gene_species
+      next if ($org =~ /uncultured/);  ## Skip uncultured genomes
 
       ## The NCBI dir Bacteria contains some gzip archives. 
       next if ($org =~ /\.gz$/); 
@@ -174,8 +180,8 @@ package main;
       push @organisms, $org;
     }
     &RSAT::message::Info("Installing",scalar(@organisms),
-			 "organisms found in the Genbank directory", 
-			 $dir{genbank}) if ($main::verbose >= 1);
+			 "organisms found in the Refseq directory", 
+			 $dir{refseq}) if ($main::verbose >= 1);
     if ($main::verbose >= 3) {
       for my $i (1..scalar(@organisms)) {
 	&RSAT::message::Info("", $i, $organisms[$i-1]);
@@ -372,7 +378,7 @@ sub Verbose {
     printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
     printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
     printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
-    printf $out ";    %-25s\t%s\n", "Genbank dir", $dir{genbank};
+    printf $out ";    %-25s\t%s\n", "Refseq dir", $dir{refseq};
     printf $out ";    %-25s\t%s\n", "Installation directory", $dir{install};
     printf $out ";    %-25s\t%s\n", "Genome directory", $dir{genome};
     printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
@@ -1099,8 +1105,8 @@ OPTIONS
 		ignored.
 
 	-all_organisms
-		Install all the organisms found in the Genbank
-		directory (see option -genbank).
+		Install all the organisms found in the Refseq
+		directory (see option -refseq).
 
       	-taxon  taxon name (mutually exclusive with -org)
 
@@ -1186,16 +1192,24 @@ OPTIONS
 		name.
 	-up_from distal limit of the upstream regions (e.g. -800 for yeast)
 	-up_to	proximal limit of the upstream regions (e.g. -1)
-	-genbank
-		genbank directory
-
-		A directory containing a mirror of the NCBI genbank
-		genome directory:
-		       http://ftp.ncbi.nih.gov/genomes
-		Normally, the genbank directory is specified by
-		defining a global variable GENBANK_DIR in the config
-		file. The option -genbank allows to overwrite this
+	-genbank genbank directory (obsolete, see refseq)
+	-refseq
+		Local directory containing the mirror of the refseq
+		genomes found on the NCBI site:
+		       ftp://ftp.ncbi.nih.gov/genomes/refseq
+		Normally, the refseq directory is specified by
+		defining a global variable REFSEQ_DIR in the config
+		file. The option -refseq allows to overwrite this
 		value.
+
+	-group  refseq_group 
+
+	        folder of the refseq directory corresponding to a
+	        taxonomic group (archaea, bacteria, fungi,
+	        invertebrate, plant, protist, protozoa,
+	        vertebrate_mammalian, vertebrate_other).
+
+                default: bacteria
 
 	-prefid feattype idname
 	        passed to parse-genbank.pl
@@ -1320,17 +1334,17 @@ install_organism options
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
 -taxon		iterate installation tasks over all the previously installed organisms of a taxon
 -org_file	organism_file_name
--all_organisms  install all organisms found in the Genbank/NCBI directory
+-all_organisms  install all organisms found in the NCBI refseq directory
 -skip #         Skip the # first organisms (convenient to resume interrupted list) 
 -last #         Stop after the # first organisms (convenient to install by chunks) 
--source		data source (e.g. ncbi);
+-source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
 -config		alternative organism configuration file
 -backup_org_table  Store a backup copy of the organism table before overwriting it.
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
--genbank	genbank directory
+-refseq	        refseq directory
 -ensembl	ensembl directory
 -task		installation task ($supported_tasks)
 -rm		calibrate oligo and dyad frequncies on repeat masked sequences
@@ -1393,7 +1407,7 @@ sub ReadArguments {
     } elsif ($arg eq "-taxon") {
       push @taxa, shift(@arguments);
 
-      ## All organisms found in the Genbank dir
+      ## All organisms found in the Refseq dir
     } elsif ($arg eq "-all_organisms") {
       $main::all_organisms = 1;
 
@@ -1440,9 +1454,13 @@ sub ReadArguments {
     } elsif ($arg =~ /^-dir/) {
       $install_dir = shift(@arguments);
 
+      ## Refseq dir
+    } elsif ($arg =~ /^-refseq/) {
+      $dir{refseq} = shift(@arguments);
+
       ## Genbank dir
     } elsif ($arg =~ /^-genbank/) {
-      $dir{genbank} = shift(@arguments);
+      &RSAT::error::FatalError("Option -genbank is obsolete, use -refseq instead.");
 
       ## ENSEMBL dir
     } elsif ($arg =~ /^-ensembl/) {
@@ -1564,12 +1582,12 @@ sub ParseGenome {
   &RSAT::message::TimeWarn("&ParseGenome()") if ($main::verbose >= 2);
   if ($dir{ensembl}) {
     $dir{source} = $dir{ensembl};
-  } elsif (-d "$dir{genbank}/$organism_short_name") {
-    $dir{source} = "$dir{genbank}/$organism_short_name";
-  } elsif (-d "$dir{genbank}/Bacteria/$organism_short_name") {
-    $dir{source} = "$dir{genbank}/Bacteria/$organism_short_name";
+  } elsif (-d "$dir{refseq}/$organism_short_name") {
+    $dir{source} = "$dir{refseq}/$organism_short_name";
+  } elsif (-d "$dir{refseq}/Bacteria/$organism_short_name") {
+    $dir{source} = "$dir{refseq}/Bacteria/$organism_short_name";
   } else {
-    &RSAT::error::FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
+    &RSAT::error::FatalError("Cannot find a directory $organism_short_name in refseq dir $dir{refseq}" );
   }
   my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
   $command .= " -i ".$dir{source};

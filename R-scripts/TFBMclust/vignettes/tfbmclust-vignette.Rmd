@@ -1,0 +1,257 @@
+---
+title: "Clustering Transcription Factor Binding Motifs with TFBMclust"
+author: "Jaime Castro-Mondragon & Jacques van Helden"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{TFBM Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\usepackage[utf8]{inputenc}
+---
+
+This vignette shows how to use the R packgae TFBMclust to cluster a set of transcription factor binding motifs (TFBMs).
+
+## Study case: clustering redundant motifs
+
+### Goal: 
+clustering a set of partly redundant motifs discovered by various _motif-discovery_ algorithms.
+
+### Data set: 
+To illustrate the use of motif clustering to filter out redundancy, we will analyze a set of motifs discovered with the workflow _peak-motifs_, which combines several motif discovery algorithms: 
+
+* _oligo-analysis_
+* _position-analysis_
+* _local-word-analysis_
+* _dyad-analysis_ 
+   
+
+We analized a set of peak sequences obtained by pulling down genomic regions bound by the transcription factor (__TF__) Oct4 in mouse ES cells  (Chen et al, 2008). Oct4 is an essential TF in cell fate decision, ES cells and early embryonic development, it binds the canonical sequence __5'-ATGCAAAT-3'__. Oct4 often interacts with another TF, Sox2, which binds to an adjacent Sox motif __5'-CATTGTA-3'__. Together, both TFs corregulate specific genes. 
+
+During the analysis of Oct4 or Sox2 binding peaks, the so-called SOCT motif is usually found, which is a composite motif encompassing both Oct and Sox motifs. 
+
+
+## Loading the demo data set "Oct4 chip-seq"
+
+```{r cache=TRUE}
+library(TFBMclust)
+data(oct4chipseq)
+```
+
+
+## Exploring the motif comparison table
+
+The oct4chipseq dataset contains two R objects: 
+
+1. A motif comparison table, produced by the RSAT program *compare-matrices*.
+2. A motif description table, documenting each motif with various attributes.
+
+The motif comparison tables contains many columns, because when running *compare-matrices*, we asked the program to compute a set of different metrics. 
+
+```{r}
+names(oct4.tfbm.compa)
+```
+
+The content of the columns is described in the help for this dataset.
+```{r eval=FALSE}
+help(oct4.tfbm.compa)
+```
+
+## Convert the _compare-matrix_ scores into distances
+
+Many metrics in _oct4.tfbm.compa_ correspond to similarity values (correlations) and others to distances. As we will apply a hierarchical clustering approach to group the motifs: 
+
+  * First we need to select only one metric which will be used as base to measure the (dis)similarties.
+  * Given the nature of the metrics, their results must be converted into distances.
+
+
+In order to get some feeling about these metrics, we could draw some dot plot. 
+
+## Comparison between non-normalized and normalized correlation
+
+The normalized correlation is obtained by multiplying the correlation by the relative weight of the alignment. This relative alignemnt represents the fraction of columns of the respective matrices that are included in the alignment.
+
+$Ncor = cor \cdot w/W$
+
+```{r, fig.show='hold',fig.width=5,fig.height=5}
+plot(oct4.tfbm.compa$cor,oct4.tfbm.compa$Ncor, 
+     main="Effect of normalization on motif correlation", 
+     xlab="Pearson correlation", 
+     ylab="Width-normalized Pearson correlation",
+     xlim=c(-1,1), ylim=c(-1,1),col="blue"
+     )
+grid()
+abline(h=0)
+abline(v=0)
+abline(a=0,b=1)
+```
+
+Some observations:
+
+* By construction, the normalized correlation (Y axis) has always a lower absolute value than the correlation (X axis). 
+
+In this example we selected _Ncor_ as the metric that will be used to group the motifs. 
+This function returns a table (_dataframe_) and an object of class _dist_ with the distances between the motifs.
+```{r cache=TRUE}
+## Convert distance table into a distance matrix, required by hclust
+distances.objects <- build.distance.matrix(oct4.tfbm.compa, score = "Ncor")
+dist.table <- distances.objects$table
+dist.matrix <- distances.objects$matrix
+```
+
+
+### Build the tree by hierarchical clustering
+
+Once we produced the distance matrix, we can use the hierarchical clustering approach to group the motifs.
+There are many method used to group the nodes in the tree, for this example we will use the _average_ method.
+```{r cache=TRUE }
+tree <- hclust.motifs(dist.matrix, hclust.method = "average")
+```
+
+```{r fig.show='hold',fig.width=5,fig.height=5}
+plot(tree,
+     main = "clustering of Oct4 Chip-seq discovered motifs")
+```
+
+
+### Convert the _hclust_ tree in different formats
+
+This package allows to export one _hclust()_ tree in different formats:
+
+  * Newick: a widely used format to represent phylogenetic trees and the branch distances.
+  * JSON: (JavaScript Object Notation)
+
+In the case of convert the _hclust()_ tree to Newick format, the user can select the number of decimals printed in the tree's branches. 
+
+In this example the variables _newick.tree_ and _JSON.tree_ contains the Newick and JSON tree, respectively, as an object of class _character()_ which can be further exported in a text file. 
+
+```{r eval=FALSE}
+
+## Convert and export the hclust tree in Newick format
+newick.tree <- convert.hclust.to.newick(tree, decimals = 3)
+write(newick.tree, file = "oct4_motifs_tree.newick")
+
+## Convert and export the hclust tree in JSON format
+JSON.tree <- convert.hclust.to.JSON(tree)
+write(JSON.tree, file = "oct4_motifs_tree.json")
+```
+
+
+### Aligning the motifs
+
+Now, taking the data of the comparison of each pair of motifs, as the orientation and the offset (displacement), this function will using the information of the order in which the motifs are incorporated in the _hclust_ tree, to create a progressive global alignment.
+
+A threshold must be specified in order to separate all the input motifs in disctinct clusters. This funtcion allows to set different values for different metrics. In this example we will use Ncor >= 0.4; cor >= 0.6; w >= 5. 
+Note: for each metric set as thresold and for each level in the tree, all the motifs corresponding to that level are evaluated using the same agglomeration method used in the _hclust()_ function, if all the condition (metrics) are satisfied, then the motifs are aligned. 
+
+The funtion _align.motifs_ return an object of class _list_ with three elements:
+
+  * motifs.alignment: An object of class _list_ where each element correspond to one motifs ID and each value correspond to information of the motif (already aligned): name, strand, number, spacer ustream and spacer downstream.
+  * node.attributes: An object of class _list_ where each element correspond to the level of the tree and each value correspond to information of the alignment in that level: id of motifs, alignmet status, method of the alignment. }
+  * intermediate.alignments: An object of class _list_ where each element correspond to level of the tree, containing one object of class _dataframe_ where each columns correspond to each aligned motif in such level, and the rows correspond to information of the motif: name, strand, number, spacer ustream and spacer downstream.}
+  
+```{r cache=TRUE}
+
+## Define the threshold values
+thr <- list(
+  Ncor = 0.4,
+  cor = 0.6,
+  w = 5
+)
+
+## Align the motifs, also return the internal attributes at each level of the tree
+## and each intermediate alignment at each level.
+alignment <- align.motifs(tree, 
+                          desc.table = oct4.tfbm.desc, 
+                          compa.table = oct4.tfbm.compa, 
+                          thresholds = thr, 
+                          score = "Ncor", 
+                          method = "average", 
+                          metric = "Ncor", 
+                          nodes.attributes = TRUE, 
+                          intermediate.alignments = TRUE
+              )
+
+## Save the alignment, attributes and intermediate alignments in different variables
+alignment.list <- alignment$motifs.alignment
+alignment.attributes <- alignment$node.attributes
+alignment.intermediates <- alignment$intermediate.alignments
+
+## Reset the labels with the aligned consensuses + the motif name
+tree$labels <- sapply(tree$labels, function(x){
+  paste(alignment.list[[x]][["consensus"]], alignment.list[[x]][["name"]], sep = "   " )
+})
+```
+
+
+### Defining the clusters, using a bottom-up approach
+
+Using the object _list_ containing the attributes of the alignment at each level of the tree, this function will traverse the tree in an bottom-up approach and will collect the nodes corresponding to each cluster. It returns an objecto of class _list_ where each elements correspond to the cluster name and its values are the IDs of the motifs belonging to such cluster.
+
+```{r}
+## Define the clusters: Bottom-up approach
+clusters <- define.clusters.bottom.up(alignment.attributes, tree, oct4.tfbm.desc)
+
+print(clusters)
+```
+
+
+
+### Drawing a heatmap of the clustered motifs
+
+The function _draw.heatmap.motifs_ takes a (motifs) distance table and draws a heatmap, to be consistent, the agglomeration method must be the same used to obtain the hierarchical tree using the function _hclust.motifs()_.
+
+The heatmap produced corresponds to the distance table, where the column names are to the motifs IDs and the row names are the aligned consensus. In addition each cluster is indicated with a bar of a different color in the heatmap.
+
+```{r fig.show='hold',fig.width=7,fig.height=8}
+
+## Draw the heatmap
+draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
+```
+
+### Draw the hierarchical clustering tree
+
+Previously we draw the _hclust_ tree with default parameters, now that we have the alignment done we can modify the tree in order to show the clusters and the aligned consensuses.
+
+First we need to create a _vector_ with numbers (1-4) indictating a color. All the motifs corresponding to one cluster will be colored of the same color, and these colors will be recycled. Then the tree is converted in a _dendrogram_ and the color of the labels is changed, usig the _vector_ of numbers.
+
+We calculate the length of the largest label in order to set the tree when is drew. 
+
+
+
+```{r cache=TRUE}
+suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
+
+## Define the label color of the tree according to the cluster
+color.code <- color.code.clusters(clusters, tree, oct4.tfbm.desc)
+
+## Convert the hclust object in a dendrogram
+tree.dendro <- as.dendrogram(tree)
+labels_colors(tree.dendro) <- color.code
+
+## Calculate the max length of all the consensus
+## This vlaue will be used to plot the tree
+alignment.width <- as.vector(
+  unlist(
+    sapply(
+      tree$labels, function(X){
+        nchar(X)
+    })
+  )
+)
+alignment.width <- max(alignment.width)
+```
+```{r fig.show='hold',fig.width=7,fig.height=8}
+## Plot the tree
+mar4 <- alignment.width - 20
+par(mar=c(3,2,1,mar4),family="mono")
+plot(tree.dendro, 
+     horiz=TRUE, 
+     main = "Aligned consensus tree"
+)
+```
+
+## Interpretation of results
+
+In this example, the 21 motifs discovered in the set of Oct4 peaks were separated in six clusters. The cluster one is the biggest one, incluiding 11 motifs. In the heatmap is clearly observed a big cluster with five motifs highly similar to each other corresponding to this cluter, and other group of six similar motifs of smaller size. Looking at the rows of the heatmap and in the consensus tree, we can see the six motifs are aligned with the larger five motifs, aligned relative to the sequence __5'-ATGYWAAT-3'__ which correspond to the consensus sequence of Oct4 (__5'-ATGCAAAT-3'__). The five larger motifs are aligned in the position __5'-WTTGWTA-3'__ which correspond to the Sox2 motif (__5'-CATTGTA-3'__). In addition, this five motifs include the Oct4 motifs, indicating they correspond actually to the SOCT motif. Summarizing, some of the peaks contain the OCt4 motifs, and other have the SOCT motif.
+
+The other ten motifs are grouped in five motifs, some of them are of low complexity (A- and C-rich). Each cluster is colored with a different color in the consensus tree and is indicated with a line in the heatmap. 

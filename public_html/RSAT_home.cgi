@@ -59,7 +59,7 @@ print <<EndText;
 
     <td align=center valign = top width="160">
       <a target=_blank href="http://embnet.ccg.unam.mx/">
-	<img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
+	<img src="images/ccg_logo_lr.jpg" alt="CCG" border='0'  width=75></a>
       <br>
       <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG</font>
     </td>
@@ -116,7 +116,7 @@ print <<EndText;
     <p>Please update your bookmarks.</p>
     </div>
 -->
-<table border=0 cellpadding=3>
+<table border='0' cellpadding=3>
   <tr>
     <td COLSPAN=3>
       <p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
@@ -142,7 +142,7 @@ print <<EndText;
 	<li> Check the <b>latest news</b> in <a
 						href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our [Forum] </b></a></li>
 	
-	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
+	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER='0'></a></li>
 	  
 	  
 	<p><li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li></p>
@@ -161,7 +161,7 @@ print <<EndText;
 
 <hr  align='left'></hr>
 <div id = 'serverlist'>
-  <table class='serverlist'>
+  <table class='serverlist' cellspacing='10'>
     
     
     <tr>
@@ -172,7 +172,7 @@ print <<EndText;
       <td>
 	<a href="http://bigre.rsat.eu/" target="_top">
 	  <b>Brussels - Belgium</b><br>
-	  <img src="images/manneken_pis.jpg" height=80 border=0><br>
+	  <img src="images/manneken_pis.jpg" height='80' border='0'><br>
 	  http://bigre.rsat.eu/</a>
       </td>
 
@@ -180,7 +180,7 @@ print <<EndText;
       <td>
 	<a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
 	  <b>Brussels (2) - Belgium</b><br>
-	  <img src="images/Atomium_icon_80.png" height=80 border=0><br>
+	  <img src="images/Atomium_icon_80.png" height='80' border='0'><br>
 	  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
       </td>
 -->
@@ -189,24 +189,24 @@ print <<EndText;
       <td align=center>
 	<a href='http://www.rsat.fr/' target='_top'>
 	  <b>Marseille TAGC - France</b><br>
-	  <img src="images/marseille_calanques.jpg" height=80 border=0><br>
+	  <img src="images/marseille_calanques.jpg" height='80' border='0'><br>
 	  http://www.rsat.fr/</a>
       </td>
 
       <td ALIGN=CENTER>
 	<a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
 	  <b>Cuernavaca - Mexico</b><br>
-	  <img src="images/zapata.jpg" height=80 border=0><br>
+	  <img src="images/zapata.jpg" height='80' border='0'><br>
 	  http://embnet.ccg.unam.mx/rsa-tools/</a>
       </td>
 
     </tr><tr>
 
       <td align=center>
-	<a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
+	<a href='http://ens.rsat.fr/' target='_top'>
 	  <b>ENS Paris - France</b><br>
-	  <img src="images/paris.jpg" height=80 border=0><br>
-	  http://rsat01.biologie.ens.fr/rsa-tools/</a>
+	  <img src="images/paris.jpg" height='80' border='0'><br>
+	  http://ens.rsat.fr/</a>
       </td>
 
 
@@ -214,7 +214,7 @@ print <<EndText;
 	<a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
 	  <!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
 	  <b>Uppsala - Sweden</b><br>
-	  <img src="images/uppsala_lcb.jpg" height=80 border=0><br>
+	  <img src="images/uppsala_lcb.jpg" height='80' border='0'><br>
 	  http://bongcam1.hgen.slu.se/rsat/</a>
 	<!--http://liv.hgen.slu.se/rsa-tools/</a>-->
       </td>
@@ -222,7 +222,7 @@ print <<EndText;
       <td align=center>
 	<a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
 	  <b>Salerno - Italia</b><br>
-	  <img src="images/salerno_icon.jpg" height=80 border=0><br>
+	  <img src="images/salerno_icon.jpg" height='80' border='0'><br>
 	  http://lmmge-webserver.unisa.it/rsat//</a>
       </td>
 
@@ -231,15 +231,15 @@ print <<EndText;
       <td align=center>
 	<a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
 	  <b>Pretoria - South-Africa</b><br>
-	  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
+	  <img src="images/pretoria_icon.jpg" height='80' border='0'><br>
 	  http://anjie.bi.up.ac.za/rsa-tools/</a>
       </td>
       
       <td>
-	<a href="http://rsat.sb-roscoff.fr/" target="_top">
+	<a href="http://roscoff.rsat.fr/" target="_top">
 	  <b>Roscoff - France</b><br>
-	  <img src="images/roscoff_sb.jpg" height=80 border=0><br>
-	  http://rsat.sb-roscoff.fr/</a>
+	  <img src="images/roscoff_sb.jpg" height='80' border='0'><br>
+	  http://roscoff.rsat.fr/</a>
       </td>
 
 
@@ -247,7 +247,7 @@ print <<EndText;
 	  <td align=center>
 	    <a href="http://rsat.ccb.sickkids.ca/" target="_top">
 	      <b>Toronto - Canada</b><br>
-	      <img src="images/toronto.jpg" height=80 border=0><br>
+	      <img src="images/toronto.jpg" height='80' border='0'><br>
 	      http://rsat.ccb.sickkids.ca/</a>
 	  </td>
       </tr><tr>
@@ -256,7 +256,7 @@ print <<EndText;
   <td align=center>
     <a href="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
       <b>Vienna - Austria</b><br>
-      <img src="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" height=80 border=0><br>
+      <img src="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" height='80' border='0'><br>
       http://af.boku.ac.at:4080/rsa-tools/</a>
   </td>
   
@@ -267,7 +267,7 @@ print <<EndText;
   <td ALIGN=CENTER>
     <a href="http://www.flychip.org.uk/rsa-tools/" target="_top">
       <b>Cambridge - UK</b><br>
-      <img src="images/cambridge.jpg" height=80 border=0><br>
+      <img src="images/cambridge.jpg" height='80' border='0'><br>
       http://www.flychip.org.uk/rsa-tools/</a>
   </td>
   -->
