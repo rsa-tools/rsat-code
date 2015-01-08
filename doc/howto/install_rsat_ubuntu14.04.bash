@@ -69,6 +69,7 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALL
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
+ess
 curl
 yum
 php-elisp
