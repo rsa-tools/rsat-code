@@ -11,8 +11,10 @@
 ## Define the local directory for R librairies
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
-  stop("The environment variable RSAT is not defined.")
-}
+    stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
+} 
+#  print(paste("Environment variable RSAT = ", dir.rsat))
+
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
@@ -32,7 +34,7 @@ required.packages.bioconductor <- c("ctc")
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
 for (pkg in c(required.packages, required.packages.bioconductor, required.packages.rsat)) {
-  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE))
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
 
 
