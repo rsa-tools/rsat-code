@@ -50,10 +50,7 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 
 ################################################################
 ## Command line paramters
-$parameters .= " -v 1";
-
-## Read parameters
-local $parameters = " -v 1";
+local $parameters .= " -v 3";
 
 ################################################################
 ## Matrix input format
@@ -86,9 +83,9 @@ if ($hclust_method) {
 
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
-my @selected_output_fields = ();
+my @threshold_fields = qw(cor Ncor w);
 my $thresholds = "";
-foreach my $field (@supported_output_fields) {
+foreach my $field (@threshold_fields) {
   ## Selected field
   if ($query->param('return_'.$field)) {
     push @selected_output_fields, $field;
@@ -123,9 +120,12 @@ $parameters .= " -return ".$selected_output_fields;
 
 ################################################################
 ## Output formats
-$parameters .= " -export newick";
-$parameters .= " -d3_base file";
-$parameters .= " -labels name,consensus";
+$parameters .= " -cons";
+$parameters .= " -heatmap";
+$parameters .= " -export json -d3_base link";
+$parameters .= " -d3_base link";
+$parameters .= " -export newick"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
+$parameters .= " -labels name,consensus"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
 
 ################################################################
 ## Output file
