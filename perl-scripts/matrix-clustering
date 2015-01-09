@@ -421,7 +421,7 @@ package main;
 
   ## Files required for the summary
   $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
-  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html";
+  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html"; push @outfiles, "summary";
 
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
@@ -2206,7 +2206,8 @@ sub Creates_website(){
     } 
 
 
-    ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
+    ## Create a copy of the backbone file and change the data taking
+    ## the info from the alignment table
     my $method = $hclust_method;
     my $ncor_val = $lth{Ncor};
     my $cor_val = $lth{cor};
@@ -2216,7 +2217,7 @@ sub Creates_website(){
     my $prefix = pop(@pref);
     my $number_of_clusters = scalar(keys %alignment_table_data);
 
-    my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
+    my $cmd = "cp ".$ENV{RSAT}."/perl-scripts/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
     &doit($cmd, 0, $die_on_error, $verbose);
     my ($summary_temp) = &RSAT::util::OpenInputFile($outfile{summary_temp});
     while (<$summary_temp>) {
@@ -2224,6 +2225,9 @@ sub Creates_website(){
 	$line = $_;
 
 	my $print_cmd = "matrix-clustering ".&PrintArguments();
+
+	## Convert 
+	$line =~ s/--rsat_www--/$ENV{rsat_www}/;
 
 	## Add the columns with the name of the metric used as thresholds
 	$line =~ s/--Thresholds--/$threshold_names_html/;
