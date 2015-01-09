@@ -177,7 +177,7 @@ BIN=${RSAT}/bin
 SUDO=
 compile_one_program:
 	@echo "Compiling ${PROGRAM}"
-	(cd ${SRC_DIR}; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
+	(cd ${SRC_DIR}; make clean; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
 #	(cd ${SRC_DIR}; make all; ln -fs ${SRC_DIR}/${PROGRAM} ${RSAT}/bin/${PROGRAM})
 	@echo ${BIN}/${PROGRAM}
 	@echo ""
