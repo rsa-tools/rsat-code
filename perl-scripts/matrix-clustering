@@ -1120,12 +1120,10 @@ sub CompareMatricesQuick {
   my $BIN=$ENV{RSAT}."/bin";
 
   ## Create the description table
-  $cmd = "";
-  $cmd .= "compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc  -o ".$main::outfile{pairwise_compa};
+  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc  -o ".$main::outfile{pairwise_compa};
   &RSAT::util::one_command($cmd, 1,"");
   &RSAT::message::TimeWarn("Matrix description table", $main::outfile{matrix_descriptions}) if ($main::verbose >= 2);
-  $cmd = "";
-  $cmd .= $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
+  $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
   $cmd .= " -o ".$main::outfile{matrix_descriptions_html};
   &RSAT::util::one_command($cmd, 1,"");
 
@@ -1295,7 +1293,7 @@ sub ClusterMotifs {
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{clusters_mcl};
   $cmd .= " >& /dev/null";
-  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{clusters_mcl};
+  $cmd .= " ; ".${SCRIPTS}."/convert-classes -i ".$main::outfile{clusters_mcl};
   $cmd .= " -from mcl -to tab ";
   $cmd .= " -o ".$main::outfile{clusters_tab};
   &RSAT::util::one_command($cmd, 1);
@@ -1720,7 +1718,7 @@ sub Add_empty_columns_to_logos(){
     if($strand eq "D"){
 
       ## Add the empty columns
-      my $cmd = "convert-matrix -i ".$file_name;
+      my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
       $cmd .= " -insert_col_right ".$offset_right;
@@ -1731,13 +1729,13 @@ sub Add_empty_columns_to_logos(){
 
       ## First convert the matrix to reverse complement 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
-      $cmd = "convert-matrix -i ".$file_name;
+      $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -rc -return counts,consensus";
       $cmd .= " -o ".$temp_mat;
       &doit($cmd, 0, $die_on_error, $verbose);
       
       ## Then add the gaps
-      $cmd = "convert-matrix -i ".$temp_mat;
+      $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
       $cmd .= " -insert_col_right ".$offset_right;
@@ -1773,7 +1771,8 @@ sub Create_single_matrix_files(){
 
   ## Split the matrix file into single matrices file, 
   ## in order to process individually each matrix
-  my $cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
+  my $cmd = $SCRIPTS."/convert-matrix";
+  $cmd .= " -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
   &doit($cmd, 0, $die_on_error, $verbose);
   
   ## Get the ids of the matrices
@@ -1864,7 +1863,7 @@ sub Merge_matrices(){
 		if($strand eq "D"){
 		    
 		    ## Add the empty columns
-		    my $cmd = "convert-matrix -i ".$file_name;
+		    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 		    $cmd .= " -from tf -to tf -return counts,consensus";
 		    $cmd .= " -insert_col_left ".$offset_left;
 		    $cmd .= " -insert_col_right ".$offset_right;
@@ -1875,13 +1874,13 @@ sub Merge_matrices(){
 		    		 
 		    ## First convert the matrix to reverse complement 
 		    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-		    $cmd = "convert-matrix -i ".$file_name;
+		    $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 		    $cmd .= " -from tf -to tf -rc -return counts,consensus";
 		    $cmd .= " -o ".$temp_mat;
 		    &doit($cmd, 0, $die_on_error, $verbose);
 		    
 		    ## Then add the gaps
-		    $cmd = "convert-matrix -i ".$temp_mat;
+		    $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
 		    $cmd .= " -from tf -to tf -return counts,consensus";
 		    $cmd .= " -insert_col_left ".$offset_left;
 		    $cmd .= " -insert_col_right ".$offset_right;
@@ -1915,7 +1914,7 @@ sub Merge_matrices(){
 	    }    
 
 	    ## Create branch-wise logos
-	    $cmd = "convert-matrix -i ".$merged_mat_file;
+	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
 	    ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
