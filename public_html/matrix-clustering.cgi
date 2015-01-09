@@ -30,7 +30,6 @@ $query = new CGI;
 &RSA_header("matrix-clustering result", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-#
 ## Check security issues
 &CheckWebInput($query);
 
@@ -94,13 +93,13 @@ foreach my $field (@supported_output_fields) {
   if ($query->param('return_'.$field)) {
     push @selected_output_fields, $field;
   }
-
+  
   ## Lower threshold
   my $lth = $query->param('lth_'.$field);
   if (&IsReal($lth)) {
     $thresholds .= " -lth ".$field." ".$lth;
   }
-
+  
   ## Upper threshold
   my $uth = $query->param('uth_'.$field);
   if (&IsReal($uth)) {
@@ -128,32 +127,31 @@ $parameters .= " -export newick";
 $parameters .= " -d3_base file";
 $parameters .= " -labels name,consensus";
 
-
-
 ################################################################
 ## Output file
 $parameters .= " -o ".$output_path."/".$output_prefix;
 
 ## Add an error-log file for matrix-clustering
-  $err_file = $output_path."/".$output_prefix."_err.txt";
-  $parameters .= " >& ".$err_file;
+$err_file = $output_path."/".$output_prefix."_err.txt";
+$parameters .= " >& ".$err_file;
 
 ## Report the full command before executing
-  &ReportWebCommand($command." ".$parameters);
+&ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Display or send result by email
-  $index_file = $output_path."/".$output_prefix."_index.html";
-  my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
-  if ($query->param('output') =~ /display/i) {
-    &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
-  } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
-  }
+$index_file = $output_path."/".$output_prefix."_index.html";
+#$index_file = $output_path."/".$output_prefix."_SUMMARY.html";
+my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
+if ($query->param('output') =~ /display/i) {
+  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
+}
 
 ################################################################
 ## Result page footer
-  print $query->end_html;
+print $query->end_html;
 
-  exit(0);
+exit(0);
 
