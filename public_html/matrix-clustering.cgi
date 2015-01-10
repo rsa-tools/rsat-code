@@ -120,11 +120,11 @@ $parameters .= " -return ".$selected_output_fields;
 
 ################################################################
 ## Output formats
-$parameters .= " -cons";
+#$parameters .= " -cons";
 $parameters .= " -heatmap";
-$parameters .= " -export json -d3_base link";
-$parameters .= " -d3_base file";
-$parameters .= " -export newick"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
+$parameters .= " -export json";
+#$parameters .= " -d3_base file";
+#$parameters .= " -export newick"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
 $parameters .= " -labels name,consensus"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
 
 ################################################################
