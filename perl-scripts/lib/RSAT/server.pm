@@ -35,100 +35,86 @@ unless ($ENV{RSAT}) {
 ## Usage:
 ##    my $program_path = &RSAT::server::GetProgramPath("program_name", $die_on_error, @preferred_paths);
 sub GetProgramPath {
-    my ($program_name, $die_on_error, @preferred_paths) = @_;
-    my $program_path = "";
-
-    ## Find the preferred location of the program
-    my @rsat_path = @preferred_paths;
-    if (defined($ENV{RSAT_BIN})) {
-      push @rsat_path, ($ENV{RSATBIN});
-    };
-
-    ## If the RSAT path contains the searcher program, use this
-    ## version as preferred path.
-    push @rsat_path, ($ENV{RSAT}."/bin",
-		      $ENV{RSAT}."/python-scripts",
-		      $ENV{RSAT}."/perl-scripts",
-		      ".");
-
-    my $path_found = 0;
-    foreach my $dir (@rsat_path) {
-      my $possible_path = $dir."/".$program_name;
-      $possible_path =~ s|/+|/|g;
+  my ($program_name, $die_on_error, @preferred_paths) = @_;
+  my $program_path = "";
+  
+  ## Find the preferred location of the program
+  my @rsat_path = @preferred_paths;
+  if (defined($ENV{RSAT_BIN})) {
+    push @rsat_path, ($ENV{RSAT_BIN});
+  };
+  
+  ## If the RSAT path contains the searcher program, use this
+  ## version as preferred path.
+  push @rsat_path, ($ENV{RSAT}."/bin",
+		    $ENV{RSAT}."/python-scripts",
+		    $ENV{RSAT}."/perl-scripts",
+		    ".");
+  
+  my $path_found = 0;
+  foreach my $dir (@rsat_path) {
+    my $possible_path = $dir."/".$program_name;
+    $possible_path =~ s|/+|/|g;
 #      &RSAT::message::Debug("GetProgramPath()", "testing", $program_name, $possible_path) if ($main::verbose >= 10);
-      if (-e $possible_path) {
-	$program_path = $possible_path;
-	last;
-      }
+    if (-e $possible_path) {
+      $program_path = $possible_path;
+      last;
     }
+  }
 
-    ## If the path has ont ben found yet, find the program anywhere in
-    ## the user path
-    unless ($program_path) {
-	$program_path = `which $program_name`;
-	chomp($program_path);
+  ## If the path has ont ben found yet, find the program anywhere in
+  ## the user path
+  unless ($program_path) {
+    $program_path = `which $program_name`;
+    chomp($program_path);
+  }
+
+  ## Check if the program path has been found
+  unless ($program_path) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
+    } else {
+      &RSAT::message::Warning("The program ".$program_name." is not found in your path.");
+      return();
     }
+  }
 
-
-#     if (($ENV{RSAT_BIN}) && (-e $ENV{RSAT_BIN}."/".$program_name)) {
-# 	## If the RSAT property file contains a RSAT_BIN, use it as
-# 	## preferred path
-# 	$program_path = $ENV{RSAT_BIN}."/".$program_name;
-#     } elsif (-e $ENV{RSAT}."/bin/".$program_name) {
-# 	## Standard RSAT bin directory
-# 	$program_path = $ENV{RSAT}."/bin/".$program_name;
-#     } else {
-# 	## Find the program anywhere in the user path
-# 	$program_path = `which $program_name`;
-# 	chomp($program_path);
-#     }
-
-    ## Check if the program path has been found
-    unless ($program_path) {
-      if ($die_on_error) {
-	&RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
-      } else {
-	&RSAT::message::Warning("The program ".$program_name." is not found in your path.");
-	return();
-      }
+  ## Check if the program can be executed
+  unless (-x $program_path) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
+    } else {
+      &RSAT::message::Warning("The program ".$program_path." cannot be run. ");
     }
+  }
 
-    ## Check if the program can be executed
-    unless (-x $program_path) {
-      if ($die_on_error) {
-	&RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
-      } else {
-	&RSAT::message::Warning("The program ".$program_path." cannot be run. ");
-      }
-    }
-
-    &RSAT::message::Info("&RSAT::server::GetProgramPath()", "path found", $program_path)
-	if ($main::verbose >= 4);
-    return $program_path;
+  &RSAT::message::Info("&RSAT::server::GetProgramPath()", "path found", $program_path)
+      if ($main::verbose >= 4);
+  return $program_path;
 }
 
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
-    my $nb_visitors = 1;
+  my $nb_visitors = 1;
 
-    ### read previous counter value
-    if (-e $counter_file) {
-	open(COUNTER, "<$counter_file");
-	#flock(COUNTER, 2);
-	$nb_visitors = <COUNTER>;
-	#flock(COUNTER,8);
-	close(COUNTER);
-	$nb_visitors++;
-    }
-
-    ### save new counter value
-    open(COUNTER, ">$counter_file");
-    #flock(COUNTER,2);
-    print COUNTER $nb_visitors;
+  ### read previous counter value
+  if (-e $counter_file) {
+    open(COUNTER, "<$counter_file");
+    #flock(COUNTER, 2);
+    $nb_visitors = <COUNTER>;
     #flock(COUNTER,8);
     close(COUNTER);
-    return $nb_visitors;
+    $nb_visitors++;
+  }
+
+  ### save new counter value
+  open(COUNTER, ">$counter_file");
+  #flock(COUNTER,2);
+  print COUNTER $nb_visitors;
+  #flock(COUNTER,8);
+  close(COUNTER);
+  return $nb_visitors;
 }
 
 
