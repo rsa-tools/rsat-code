@@ -4,7 +4,7 @@ align.motifs <- function(hclust.tree, desc.table, compa.table, thresholds = list
   motifs.info.levels <- list()
   internal.nodes.attributes <<- list()
 
-  apply(tree$merge, 1, function(x){
+  apply(hclust.tree$merge, 1, function(x){
     child1 <- x[1]
     child2 <- x[2]
     level <- which(tree$merge == child1)
