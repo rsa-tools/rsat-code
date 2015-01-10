@@ -745,7 +745,9 @@ Note: I<-d3_base link> requires internet connection to work.
     } elsif ($arg eq "-d3_base") {
       $d3_base_format = shift(@arguments);
       unless ($d3_base_formats{$d3_base_format}) {
-	&RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
+	&RSAT::error::FatalError($d3_base_format, 
+				 "Invalid format for d3 base selection.", 
+				 "Supported options: ".$main::d3_base_formats);
       }
 
 
@@ -1902,7 +1904,7 @@ sub Merge_matrices(){
 	    my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 	    my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
 	    my $cmd = "cat ".$files." >".$cat_file;
-	    $cmd .= "; merge-matrices -i ".$cat_file;
+	    $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 	    $cmd .= " -in_format tf -out_format tf";
 	    $cmd .= " -o ".$merged_mat_file;
 	    &doit($cmd, 0, $die_on_error, $verbose);
@@ -2784,7 +2786,6 @@ sub Delete_temporal_files {
 ## the input file is exported in the result 
 ## folder
 sub Clone_input{
-    
     my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
     &RSAT::util::one_command($cmd, 1,"");
     &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
