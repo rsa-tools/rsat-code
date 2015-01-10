@@ -28,13 +28,13 @@ $default{matrix_file}="";
 #$default{pseudo_distribution}="pseudo_prior";
 #$checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
-$default{hclust_method}="complete";
+$default{hclust_method}="average";
 $checked{$default{bg_method}} = "CHECKED";
 
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
-$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "none";
-$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "none";
-$default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 100;
+$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
+$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
+## $default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 100; ## JvH: Jaime, why did we initially set this threshold to 100 ? I suppress it since it is not in the demo makefile. 
 $default{'return_logoDP'} = "CHECKED";
 $default{'return_NSW'} = "CHECKED";
 $default{'return_NsEucl'} = "CHECKED";

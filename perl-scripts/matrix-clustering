@@ -421,7 +421,7 @@ package main;
 
   ## Files required for the summary
   $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
-  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html";
+  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html"; push @outfiles, "summary";
 
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
@@ -745,7 +745,9 @@ Note: I<-d3_base link> requires internet connection to work.
     } elsif ($arg eq "-d3_base") {
       $d3_base_format = shift(@arguments);
       unless ($d3_base_formats{$d3_base_format}) {
-	&RSAT::error::FatalError($d3_base_format, "Invalid format for d3 base selectiob\tSupported options: ".$main::d3_base_formats);
+	&RSAT::error::FatalError($d3_base_format, 
+				 "Invalid format for d3 base selection.", 
+				 "Supported options: ".$main::d3_base_formats);
       }
 
 
@@ -1120,12 +1122,10 @@ sub CompareMatricesQuick {
   my $BIN=$ENV{RSAT}."/bin";
 
   ## Create the description table
-  $cmd = "";
-  $cmd .= "compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc  -o ".$main::outfile{pairwise_compa};
+  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc  -o ".$main::outfile{pairwise_compa};
   &RSAT::util::one_command($cmd, 1,"");
   &RSAT::message::TimeWarn("Matrix description table", $main::outfile{matrix_descriptions}) if ($main::verbose >= 2);
-  $cmd = "";
-  $cmd .= $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
+  $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
   $cmd .= " -o ".$main::outfile{matrix_descriptions_html};
   &RSAT::util::one_command($cmd, 1,"");
 
@@ -1304,7 +1304,7 @@ sub ClusterMotifs {
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{clusters_mcl};
   $cmd .= " >& /dev/null";
-  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{clusters_mcl};
+  $cmd .= " ; ".${SCRIPTS}."/convert-classes -i ".$main::outfile{clusters_mcl};
   $cmd .= " -from mcl -to tab ";
   $cmd .= " -o ".$main::outfile{clusters_tab};
   &RSAT::util::one_command($cmd, 1);
@@ -1729,7 +1729,7 @@ sub Add_empty_columns_to_logos(){
     if($strand eq "D"){
 
       ## Add the empty columns
-      my $cmd = "convert-matrix -i ".$file_name;
+      my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
       $cmd .= " -insert_col_right ".$offset_right;
@@ -1740,13 +1740,13 @@ sub Add_empty_columns_to_logos(){
 
       ## First convert the matrix to reverse complement 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
-      $cmd = "convert-matrix -i ".$file_name;
+      $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -rc -return counts,consensus";
       $cmd .= " -o ".$temp_mat;
       &doit($cmd, 0, $die_on_error, $verbose);
       
       ## Then add the gaps
-      $cmd = "convert-matrix -i ".$temp_mat;
+      $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
       $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
       $cmd .= " -insert_col_left ".$offset_left;
       $cmd .= " -insert_col_right ".$offset_right;
@@ -1782,7 +1782,8 @@ sub Create_single_matrix_files(){
 
   ## Split the matrix file into single matrices file, 
   ## in order to process individually each matrix
-  my $cmd = "convert-matrix -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
+  my $cmd = $SCRIPTS."/convert-matrix";
+  $cmd .= " -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
   &doit($cmd, 0, $die_on_error, $verbose);
   
   ## Get the ids of the matrices
@@ -1873,7 +1874,7 @@ sub Merge_matrices(){
 		if($strand eq "D"){
 		    
 		    ## Add the empty columns
-		    my $cmd = "convert-matrix -i ".$file_name;
+		    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 		    $cmd .= " -from tf -to tf -return counts,consensus";
 		    $cmd .= " -insert_col_left ".$offset_left;
 		    $cmd .= " -insert_col_right ".$offset_right;
@@ -1884,13 +1885,13 @@ sub Merge_matrices(){
 		    		 
 		    ## First convert the matrix to reverse complement 
 		    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-		    $cmd = "convert-matrix -i ".$file_name;
+		    $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 		    $cmd .= " -from tf -to tf -rc -return counts,consensus";
 		    $cmd .= " -o ".$temp_mat;
 		    &doit($cmd, 0, $die_on_error, $verbose);
 		    
 		    ## Then add the gaps
-		    $cmd = "convert-matrix -i ".$temp_mat;
+		    $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
 		    $cmd .= " -from tf -to tf -return counts,consensus";
 		    $cmd .= " -insert_col_left ".$offset_left;
 		    $cmd .= " -insert_col_right ".$offset_right;
@@ -1912,7 +1913,7 @@ sub Merge_matrices(){
 	    my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 	    my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
 	    my $cmd = "cat ".$files." >".$cat_file;
-	    $cmd .= "; merge-matrices -i ".$cat_file;
+	    $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 	    $cmd .= " -in_format tf -out_format tf";
 	    $cmd .= " -o ".$merged_mat_file;
 	    &doit($cmd, 0, $die_on_error, $verbose);
@@ -1924,7 +1925,7 @@ sub Merge_matrices(){
 	    }    
 
 	    ## Create branch-wise logos
-	    $cmd = "convert-matrix -i ".$merged_mat_file;
+	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
 	    ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
@@ -2215,7 +2216,8 @@ sub Creates_website(){
     } 
 
 
-    ## Then creates a copy of the backbone file and change the data taking the info from the alignment table
+    ## Create a copy of the backbone file and change the data taking
+    ## the info from the alignment table
     my $method = $hclust_method;
     my $ncor_val = $lth{Ncor};
     my $cor_val = $lth{cor};
@@ -2225,7 +2227,7 @@ sub Creates_website(){
     my $prefix = pop(@pref);
     my $number_of_clusters = scalar(keys %alignment_table_data);
 
-    my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
+    my $cmd = "cp ".$ENV{RSAT}."/perl-scripts/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
     &doit($cmd, 0, $die_on_error, $verbose);
     my ($summary_temp) = &RSAT::util::OpenInputFile($outfile{summary_temp});
     while (<$summary_temp>) {
@@ -2233,6 +2235,9 @@ sub Creates_website(){
 	$line = $_;
 
 	my $print_cmd = "matrix-clustering ".&PrintArguments();
+
+	## Convert 
+	$line =~ s/--rsat_www--/$ENV{rsat_www}/;
 
 	## Add the columns with the name of the metric used as thresholds
 	$line =~ s/--Thresholds--/$threshold_names_html/;
@@ -2790,7 +2795,6 @@ sub Delete_temporal_files {
 ## the input file is exported in the result 
 ## folder
 sub Clone_input{
-    
     my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
     &RSAT::util::one_command($cmd, 1,"");
     &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
