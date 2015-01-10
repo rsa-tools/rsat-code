@@ -139,7 +139,7 @@ writeLines(JSON.tree, con=json.file)
 
 #############################################################
 ## Bottom-up traversal of the tree to orientate the logos
-alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds=thresholds, score="Ncor", method="average", metric="Ncor", nodes.attributes=TRUE, intermediate.alignments=FALSE)
+alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric="Ncor", nodes.attributes=TRUE, intermediate.alignments=FALSE)
 
 alignment.list <- alignment$motifs.alignment
 alignment.attributes <- alignment$node.attributes
