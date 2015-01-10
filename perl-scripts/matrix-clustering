@@ -2003,7 +2003,7 @@ sub Add_div_to_HTML(){
     my $print = "";
     my $temp = paste_new_cluster_to_HTML();
 
-    my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);
 
     my %clusters_info_sorted = ();
@@ -2171,7 +2171,7 @@ sub Creates_website(){
     my $prefix = pop(@pref);
     my $number_of_clusters = scalar(keys %alignment_table_data);
 
-    my $cmd = "cp ".$ENV{RSAT}."/perl-scripts/lib/d3/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
     &doit($cmd, 0, $die_on_error, $verbose);
     my ($summary_temp) = &RSAT::util::OpenInputFile($outfile{summary_temp});
     while (<$summary_temp>) {
