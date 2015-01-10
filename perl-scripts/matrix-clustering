@@ -1133,6 +1133,12 @@ sub CompareMatricesQuick {
   my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
   $cmd .=  " -file1 ".$main::infile{matrices};
   $cmd .=  " -file2 ".$main::infile{matrices};
+  $cmd .= " -lth_ncor1 -1";
+  $cmd .= " -lth_ncor2 -1";
+  $cmd .= " -lth_ncor -1";
+  $cmd .= " -lth_cor -1";
+  $cmd .= " -lth_w 0";
+  $cmd .= " -mode matches";
   $cmd .= " -o ".$main::outfile{pairwise_compa};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
@@ -1193,10 +1199,13 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
 
     if($quick_flag == 1){
-	my $param = "Ncor";
-	my $val = $lth{$param};
-	%lth = ();
-	$lth{$param} = $val;
+	my %lth2 = ();
+	my @param = qw (Ncor cor);
+	foreach my $p (@param){
+	    my $val = $lth{$p};
+	    $lth2{$p} = $val;
+	}
+	%lth = %lth2;
     }
 
     ## Pass the thresholds on the score to R for clustering
