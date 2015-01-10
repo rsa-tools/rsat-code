@@ -12,7 +12,7 @@
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
     stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
-} 
+}
 #  print(paste("Environment variable RSAT = ", dir.rsat))
 
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
@@ -139,7 +139,7 @@ writeLines(JSON.tree, con=json.file)
 
 #############################################################
 ## Bottom-up traversal of the tree to orientate the logos
-alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric="Ncor", nodes.attributes=TRUE, intermediate.alignments=FALSE)
+alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric=score, nodes.attributes=TRUE, intermediate.alignments=FALSE)
 
 alignment.list <- alignment$motifs.alignment
 alignment.attributes <- alignment$node.attributes
@@ -356,7 +356,7 @@ i <- sapply(1:length(clusters), function(nb){
 
 
                ## Align the motifs and retrieve the information of the intermediate alignments
-               alignment.cluster <<- align.motifs(tree, description.table, compare.matrices.table, thresholds = thresholds, score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = FALSE, intermediate.alignments = TRUE)
+               alignment.cluster <<- align.motifs(tree, description.table, compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric = score, nodes.attributes = FALSE, intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
 
 
