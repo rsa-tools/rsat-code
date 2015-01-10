@@ -156,17 +156,9 @@ package main;
   local $supported_tree_formats = join ",", @supported_tree_formats;
   local $export_tree_format = "";
 
-  ## Select d3 base
-  ## Note : option link requires internet connection
-  local @d3_base_formats = qw (file link);
-  local %d3_base_formats = ();
-  foreach my $format (@d3_base_formats) {
-    $d3_base_formats{$format} = 1;
-  }
-  local $d3_base_formats = join ",", @d3_base_formats;
-  local $d3_base_format = "";
-  #local $d3_base_url= $ENV{RSAT}."/public_html/lib/d3/";
-  local $d3_base_url= "http://d3js.org/d3.v3.min.js";
+  ## Javascript (D3 + JQuery) base
+  local $d3_base= $ENV{RSAT}."/public_html/lib/d3/d3.v3.min.js";
+  local $jquery_base = $ENV{RSAT}."/public_html/lib/d3/jquery_lib.js";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -239,7 +231,6 @@ package main;
 
   ## Matrices
   local @matrices = ();
-  local $show_consensus = 0;
   local $draw_heatmap = 0;
 
 
@@ -672,17 +663,6 @@ list of output files (pariwise matrix comparisons, matrix clusters).
 
 =pod
 
-=item B<-cons>
-
-Display consensus of merged matrices on the internal branches of the
-tree.
-
-=cut
-    } elsif ($arg eq "-cons"){
-      $show_consensus = 1;
-
-=pod
-
 =item B<-heatmap>
 
 Display consensus of merged matrices on the internal branches of the
@@ -727,29 +707,6 @@ Widely used textual format to describe phylogenetic trees.
       unless($supported_tree_formats{$export_tree_format}) {
 	&RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
       }
-
-=pod
-
-=item	B<-d3_base>
- 
-Option to specify any type of URL (file://, http://, ...) as base to load the d3 library. 
-I<D3> is a JavaScript library to visualize data, it is required to visualize the logo forest in HTML.
-    
-B<Supported d3 bases>
-    
- (Default: file, optional: link )
-
-Note: I<-d3_base link> requires internet connection to work. 
-
-=cut
-    } elsif ($arg eq "-d3_base") {
-      $d3_base_format = shift(@arguments);
-      unless ($d3_base_formats{$d3_base_format}) {
-	&RSAT::error::FatalError($d3_base_format, 
-				 "Invalid format for d3 base selection.", 
-				 "Supported options: ".$main::d3_base_formats);
-      }
-
 
 =pod
 
@@ -1420,29 +1377,26 @@ sub Add_attributes_to_JSON(){
 	  $Flag = 0;
 	  $line = $_;
 	  
-	  # # If the user selects the option -cons 1
 	  # Add the consensus to the json file to be displayed in the tree
-	  #if ($show_consensus){
-	  	  if ($line =~ /(\s*\"children\":\s*\[)/){
+	  if ($line =~ /(\s*\"children\":\s*\[)/){
 	  
-	  	      $children++;
-	  	      $Add_this = "";
-	  	      if ($children >= 2){
-	  		  my $folder = $levels_JSON[$children-2];
-
-	  		  # if($folder ~~ @merged_cons_folders){
-	  		  if(grep( /^folder$/, @merged_cons_folders)){
-
-	  		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
-	  		      $consensus_link =~ s/^\.\.\///g;
-	  		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
-	  		      $Add_this .= " \"url\" : \"$consensus_link\", ";
-	  		      push(@Parsed_JSON, $Add_this."\n");
-	  		  }
-	  	      }
-	  	  }
-	  # #}
-
+	      $children++;
+	      $Add_this = "";
+	      if ($children >= 2){
+		  my $folder = $levels_JSON[$children-2];
+		  
+		  # if($folder ~~ @merged_cons_folders){
+		  if(grep( /^folder$/, @merged_cons_folders)){
+		      
+		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      $consensus_link =~ s/^\.\.\///g;
+		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
+		      $Add_this .= " \"url\" : \"$consensus_link\", ";
+		      push(@Parsed_JSON, $Add_this."\n");
+		  }
+	      }
+	  }
+	  
 	  ### Search the pattern separating the matrices names
 	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
 	      $Flag = 1;
@@ -1524,11 +1478,6 @@ sub Create_html_tree_file(){
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
 
-    ## Select the D3 base
-    if ($d3_base_format eq "link"){
-	$d3_base_url = "http://d3js.org";	
-    }
-
     while(<TREE>){
 	chomp;	
 
@@ -1544,7 +1493,7 @@ sub Create_html_tree_file(){
 	}
 	
 	### Fix the d3 library path
-	$_ =~ s|src=\"\"|src=\"$d3_base_url/d3.v3.js\"|;
+	$_ =~ s|src=\"\"|src=\"$d3_base\"|;
 
 	### Set the height 
 	if(/\s+height =,/){
@@ -1606,11 +1555,6 @@ sub Create_html_tree_file(){
 	    print TEMP $add_this."\n";
 	}
 
-	# if ($show_consensus){
-	#     if ($_ =~ /Insert consensus/){
-	# 	print TEMP $consensus_branch_label."\n";
-	#     }
-	# }
 	print TEMP $_."\n";
     }
     close(TEMP);
@@ -2238,6 +2182,10 @@ sub Creates_website(){
 
 	## Convert 
 	$line =~ s/--rsat_www--/$ENV{rsat_www}/;
+
+	## Add the Javascript libraries path
+	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--jquery--/$jquery_base/;
 
 	## Add the columns with the name of the metric used as thresholds
 	$line =~ s/--Thresholds--/$threshold_names_html/;
