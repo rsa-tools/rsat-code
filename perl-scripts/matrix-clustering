@@ -159,6 +159,9 @@ package main;
   ## Javascript (D3 + JQuery) base
   local $d3_base= $ENV{RSAT}."/public_html/lib/d3/d3.v3.min.js";
   local $jquery_base = $ENV{RSAT}."/public_html/lib/d3/jquery_lib.js";
+  local $datatable_base= $ENV{RSAT}."/public_html/lib/d3/dataTables.js";
+  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/d3/dataTables.css";
+
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -2061,6 +2064,28 @@ sub Creates_website(){
 '
 <script>
 
+  // Dynamic parameter table
+  $(document).ready( function () {
+    $(\'#parameters_table\').DataTable({
+        "paging":   false,
+        "searching": false,
+        "ordering": false,
+        "info":     false		
+		});
+
+   } );
+
+
+  // Dynamic alignment table
+  $(document).ready( function () {
+    $(\'#alignment_dyn_table\').DataTable({
+        "paging":   false,
+        "info":     false		
+		});
+
+   } );
+ 
+
   // Change the color of the selected cluster header
    $(document).ready(function() {
     
@@ -2125,18 +2150,18 @@ sub Creates_website(){
 	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
 	$number_of_motifs++;
 
-	## Add the spacer in the aligment table
-	if($cluster_id_cur ne $cluster_id_prev){
-	    	$general_tab .= '
+	# ## Add the spacer in the aligment table
+	# if($cluster_id_cur ne $cluster_id_prev){
+	#     	$general_tab .= '
 
-				<tr>					
-					<td class="sep"></td>
-					<td class="sep"></td>
-					<td class="sep"></td>
-                                        <td class="sep"></td>
-				</tr>   
-        ';
-	}
+	# 			<tr>					
+	# 				<td class="sep"></td>
+	# 				<td class="sep"></td>
+	# 				<td class="sep"></td>
+        #                                 <td class="sep"></td>
+	# 			</tr>   
+        # ';
+	# }
 
 	## Add the sequences
 	$general_tab .= '
@@ -2144,6 +2169,10 @@ sub Creates_website(){
 					<td class="tab_spacer_1">'.$id.'</td>
                                         <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
 					<td class="tab_spacer_2">'.$cluster_id.'</td>
+					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{strand}.'</td>
+					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{offset_up}.'</td>
+					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{offset_down}.'</td>
+					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{width}.'</td>
 					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
 				</tr>
         ';
@@ -2186,6 +2215,8 @@ sub Creates_website(){
 	## Add the Javascript libraries path
 	$line =~ s/--d3--/$d3_base/;
 	$line =~ s/--jquery--/$jquery_base/;
+	$line =~ s/--datatable--/$datatable_base/;
+	$line =~ s/--DTcss--/$datatable_css_base/;
 
 	## Add the columns with the name of the metric used as thresholds
 	$line =~ s/--Thresholds--/$threshold_names_html/;
@@ -2226,31 +2257,31 @@ sub Creates_website(){
 		$buttons =~ s/--nb--/$num/g;
 		$script_jquery .= $buttons."\n";
 		
-		## Draw the alignment table
-		my $alignment_table = &alignment_table();
-		my $tab = "";
-		foreach my $id (keys %current_alignment_table_data){
-		    my $tr = "";
-		    $tr .= "\n\t\t\t\t<tr>\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$id.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$current_alignment_table_data{$id}{name}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$cl_id.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{strand}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_up}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_down}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{width}.'</td>'."\n";
-		    $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($current_alignment_table_data{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
-		    $tab .= $tr;
-		}
-		$alignment_table =~ s/--Cluster_id--/$cl_id/g;
-		$alignment_table =~ s/HERE/$tab/g;
-		$alignment_table =~ s/--nb--/$num/g;
-		$line .= "\n".$alignment_table."\n\n";
+		# ## Draw the alignment table
+		# my $alignment_table = &alignment_table();
+		# my $tab = "";
+		# foreach my $id (keys %current_alignment_table_data){
+		#     my $tr = "";
+		#     $tr .= "\n\t\t\t\t<tr>\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$id.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$current_alignment_table_data{$id}{name}.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$cl_id.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{strand}.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_up}.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_down}.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{width}.'</td>'."\n";
+		#     $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($current_alignment_table_data{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
+		#     $tab .= $tr;
+		# }
+		# $alignment_table =~ s/--Cluster_id--/$cl_id/g;
+		# $alignment_table =~ s/HERE/$tab/g;
+		# $alignment_table =~ s/--nb--/$num/g;
+		# $line .= "\n".$alignment_table."\n\n";
 		
-		## Add the code to hide/show the alignment table
-		my $toogle_table = &toogle_table();
-		$toogle_table =~ s/--nb--/$num/g;
-		$script_jquery .= $toogle_table."\n";
+		# ## Add the code to hide/show the alignment table
+		# my $toogle_table = &toogle_table();
+		# $toogle_table =~ s/--nb--/$num/g;
+		# $script_jquery .= $toogle_table."\n";
 
 		my $cl_name = "cluster_".$num;
 		
@@ -2450,7 +2481,7 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
+       //$(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
        $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
        $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
        $(\'#alignment_table_--nb--\').hide();  
