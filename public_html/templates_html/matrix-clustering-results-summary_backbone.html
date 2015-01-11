@@ -4,6 +4,8 @@
 <head>
   <script type="text/javascript" src="--d3--"></script>
   <script type="text/javascript" src="--jquery--"></script>
+  <script type="text/javascript" src="--datatable--"></script>
+  <link rel="stylesheet" type="text/css" href="--DTcss--">
   <meta charset=utf-8 />
   <title> matrix-clustering summary </title>
   <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
@@ -52,7 +54,7 @@
   }
   
   
-  #cluster_info_head {
+  .cluster_info_head {
   background-color: #DCE4EC;
   float: left;
   margin-top: 1px;
@@ -338,7 +340,7 @@
   
   <!-- Div with the table of selected parameters-->
   <div class="tab">
-    <table>
+    <table id="parameters_table">
       <thead>
 	<tr>
 	  <th colspan="6"><strong>Summary</strong></th>
@@ -361,22 +363,38 @@
     </table>
   </div>
   
-  <div class="tab">
-    <p><strong>Heatmap with consensus alignment</strong></p>
-    --HEATMAP--
-	</div>
   
+	<!--Insert the Heatmap picture-->
+	<div class="tab">
+		<p><strong>Heatmap with consensus alignment</strong></p>
+		--HEATMAP--
+	</div>
+ 
+ 
+
+ 
+ 
   <!-- Div with the aligment table with all the motifs-->
 	<div class="tab">
-	  <table>
+	  <table id="alignment_dyn_table">
+		  
+		   	<!--Div: search in alignment table-->
+			<div class="cluster_info_head">
+				<strong>Click on the column names to change the order of the data.</strong><br>
+				<strong>To select the results of one cluster, write the name of one cluster in the <i>Search</i> window . Example: <i>cluster_1</i></strong>
+			</div>
 	    <thead>
 	      <tr>
-		<th colspan="4"><strong>Alignment</strong></th>
+		<th colspan="8"><strong>Alignment</strong></th>
 	      </tr>
 	      <tr>
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
+		<th class="tab_col">Strand</th>
+		<th class="tab_col">Upstream_Offset</th>
+		<th class="tab_col">Downstream_Offset</th>
+		<th class="tab_col">Width</th>
 		<th class="tab_col">Aligned consensus</th>
 	      </tr>
 	    </thead>
@@ -388,7 +406,7 @@
 	
 	
 	<!--Div with the header of the buttons-->
-	<div id="cluster_info_head">
+	<div class="cluster_info_head">
 	  <strong>Click on the buttons to display separately the information of each cluster.</strong>
 	</div>
 	<div id="hclust_tree_head">
