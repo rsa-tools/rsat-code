@@ -21,8 +21,11 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   ## Create a vector with the the corresponding color of each motif
   color.order <- vector()
   sapply(colnames(dist.table), function(y){
+    match.exp <- paste("^", y, "$", sep = "")
+    current.cluster <- names(unlist(sapply(clusters.list, function(x){
+                                                            grep(match.exp, x, value = TRUE, perl = TRUE)
+                                                          })))
 
-    current.cluster <- names(unlist(sapply(clusters.list, function(x){ grep(y,x, value = TRUE)})))
     color.order <<- append(color.order, cluster.to.color[[current.cluster]])
   })
 
