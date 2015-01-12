@@ -1396,7 +1396,7 @@ sub Add_attributes_to_JSON(){
 	      $Add_this = "";
 	      if ($children >= 2){
 		  my $folder = $levels_JSON[$children-2];
-		  
+
 		  # if($folder ~~ @merged_cons_folders){
 		  if(grep( /^$folder$/, @merged_cons_folders)){
 
@@ -1747,9 +1747,8 @@ sub Create_single_matrix_files(){
 
   ## Get the file name of each matrix and stores it in the hash
   foreach my $id (@ids){
-      chomp($matrix_files{$id}{file_name} = `ls $main::outfile{prefix}* | grep $id | grep '.tf'`);
+      $matrix_files{$id}{file_name} = $main::outfile{prefix}."_single_matrices_".$id.".tf";
   }
-
   return(%matrix_files);
 }
 
@@ -1806,6 +1805,7 @@ sub Merge_matrices(){
 		my $line = $_;
 		my @split_line = split("\t", $line);
 		my $motif_id = $split_line[0];
+		$motif_id =~ s/\./-/;
 		my $motif_strand = $split_line[3];
 		my $offset_up = $split_line[5];
 		my $offset_down = $split_line[6];
@@ -1824,7 +1824,7 @@ sub Merge_matrices(){
 		my $offset_left = $int_align_info{$cluster}{$merge_level}{$motif}{offset_up};
 		my $offset_right = $int_align_info{$cluster}{$merge_level}{$motif}{offset_down};
 		my $strand = $int_align_info{$cluster}{$merge_level}{$motif}{strand};
-		my $file_name = $alignment_info{$motif}{file_name};
+		my $file_name = $main::outfile{prefix}."_single_matrices_".$motif.".tf";
 
 		## Run the convert-matrix command to add the empty columns to the logos
 		if($strand eq "D"){
@@ -1856,7 +1856,6 @@ sub Merge_matrices(){
 		    unlink($temp_mat);
 		}
 	    }
-
 	    
 	    my @file_names = @level_motifs;
 	    ## Get the names of the files of each level
