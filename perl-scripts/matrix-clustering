@@ -651,6 +651,15 @@ For a description of these formats, see the help of I<convert-matrix>.
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
       }
 
+# =pod
+
+# =item	B<-title graph_title>
+
+# Title displayed on top of the graphs.
+
+# =cut
+#     } elsif ($arg eq "-title") {
+
 =pod
 
 =item	B<-o output_prefix>
@@ -1389,8 +1398,8 @@ sub Add_attributes_to_JSON(){
 		  my $folder = $levels_JSON[$children-2];
 		  
 		  # if($folder ~~ @merged_cons_folders){
-		  if(grep( /^folder$/, @merged_cons_folders)){
-		      
+		  if(grep( /^$folder$/, @merged_cons_folders)){
+
 		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      $consensus_link =~ s/^\.\.\///g;
 		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
@@ -2080,8 +2089,12 @@ sub Creates_website(){
   $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
         "paging":   false,
-        "info":     false		
-		});
+        "info":     false,
+	"search": {
+		    "regex": true,
+		    "smart": true
+	}	
+     });
 
    } );
  
@@ -2362,8 +2375,8 @@ sub Creates_website(){
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_consensus_tree.pdf"><strong>Consensus tree</strong></a></td>
-		      <td class="tab_spacer_2">A PDF file showing the consensus alignment. Each cluster is represented with a different color.</td>
+		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_tree_of_consensus.pdf"><strong>Tree of consensus</strong></a></td>
+		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
 		   </tr>
                 ';
 
@@ -2527,7 +2540,7 @@ sub alignment_table{
 					<th class="tab_col">Motif id</th>
                                         <th class="tab_col">Motif name</th>
 					<th class="tab_col tab_spacer_2">Cluster number</th>
-					<th class="tab_col tab_spacer_2">Strand</th>
+					<th class="tab_col tab_spacer_2">Orientation</th>
 					<th class="tab_col tab_spacer_2">Offset<br>upstream</th>
 					<th class="tab_col tab_spacer_2">Offset<br>downstream</th>
 					<th class="tab_col tab_spacer_2">Alignment<br>width</th>
