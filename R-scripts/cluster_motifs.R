@@ -206,7 +206,7 @@ for (plot.format in c("pdf", "png")) {
   w.inches <- 14 ## width in inches
   h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
   resol <- 72 ## Screen resolution
-  tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree.", plot.format)
+  tree.drawing.file <- paste(sep="", out.prefix, "_tree_of_consensus.", plot.format)
   verbose(paste("hclust tree drawing", tree.drawing.file), 1)
   if (plot.format == "pdf") {
     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
@@ -215,7 +215,7 @@ for (plot.format in c("pdf", "png")) {
   }
 
   par(mar=c(3,2,1,mar4),family="mono")
-  plot(tree.dendro, horiz=TRUE, main=paste("Aligned consensus tree; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
+  plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
   dev.off()
 }
 
