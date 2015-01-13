@@ -30,8 +30,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   })
 
   ## Color gradient for the heatmap
-  #grad <- colorRampPalette(c("green", "black", "red"))(n = 299)
-  grad <- greenred(200)
+  grad <- colorRampPalette(c("blue", "white"))(n = 299)
 
   ## Calculate the bottom border
   rigth <- round(170/length(alignment.list) + (length(alignment.list)/2 * 0.001), digits = 2)
