@@ -2138,6 +2138,8 @@ sub Creates_website(){
 
 
     ## First read the alignment table and save the results in a hash
+    my @pref = split("/", $main::outfile{prefix});
+    my $prefix = pop(@pref);
     my ($line, $id, $cluster_id);
     my $general_tab = "";
     my $number_of_motifs = 0;
@@ -2161,6 +2163,10 @@ sub Creates_website(){
 	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
 	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
 	$number_of_motifs++;
+	$logo_tab_D = $prefix."_aligned_logos/".$id."_logo.png";
+	$logo_tab_R = $prefix."_aligned_logos/".$id."_logo_rc.png";
+
+	#print $logo_tab_D."------------------->\n";
 
 	## Add the sequences
 	$general_tab .= '
@@ -2169,6 +2175,8 @@ sub Creates_website(){
                                         <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
 					<td class="tab_spacer_2">'.$cluster_id.'</td>
 					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
+                                        <th class="tab_spacer_2"><a href="'.$logo_tab_D.'"><img class="logo" src="'.$logo_tab_D.'" /></a></th>
+                                        <th class="tab_spacer_2"><a href="'.$logo_tab_R.'"><img class="logo" src="'.$logo_tab_R.'" /></a></th>
 				</tr>
         ';
 	$cluster_id_prev = $cluster_id_cur;
