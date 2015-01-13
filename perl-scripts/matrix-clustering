@@ -2162,34 +2162,16 @@ sub Creates_website(){
 	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
 	$number_of_motifs++;
 
-	# ## Add the spacer in the aligment table
-	# if($cluster_id_cur ne $cluster_id_prev){
-	#     	$general_tab .= '
-
-	# 			<tr>					
-	# 				<td class="sep"></td>
-	# 				<td class="sep"></td>
-	# 				<td class="sep"></td>
-        #                                 <td class="sep"></td>
-	# 			</tr>   
-        # ';
-	# }
-
 	## Add the sequences
 	$general_tab .= '
 				<tr>					
 					<td class="tab_spacer_1">'.$id.'</td>
                                         <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
 					<td class="tab_spacer_2">'.$cluster_id.'</td>
-					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{strand}.'</td>
-					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{offset_up}.'</td>
-					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{offset_down}.'</td>
-					<td class="tab_spacer_2">'.$alignment_table_data{$cluster_id}{$id}{width}.'</td>
 					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
 				</tr>
         ';
 	$cluster_id_prev = $cluster_id_cur;
-
     }
     close $cluster_handle;
 
@@ -2510,7 +2492,7 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
+       //$(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
        $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
        $(\'#alignment_table_--nb--\').hide();  
        $(\'#cluster_--nb--\').hide(); 
@@ -2676,28 +2658,6 @@ d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 			.attr("dy", function(d) { return d.children ? 0 : 3; })
 			.attr("font-size", "8px")
 			.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
-
-/*
-	node.append("text")
-			.text(function(d){ return d.children ? "" :  d.consensus; })
-			.attr("x", function(d){ return d.children ? 0 : 20; })
-			.attr("dy", function(d){ return d.children ? 0 : 23; })
-			.attr("font-size", "8px")
-			.attr("text-anchor", function(d){ return d.children ? "end" : "start"; });
-*/
-	/*Insert labels*/
-	
-	
-	/*Insert consensus*/
-		node.append("a")
-		.attr("xlink:href", function(d) { return d.children ? d.url : ""; })
-		.append("text")
-		.text(function(d) { return d.children ? d.name : ""; })
-		.attr("dx", function(d) { return d.children ? -20 : 0; })
-		.attr("dy", function(d) { return d.children ? -6 : 0; })
-		.attr("fill", function(d) { return d.children ? "blue" : ""; })
-		.attr("font-size", "10px")
-		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 		
 	node.append("svg:image")
