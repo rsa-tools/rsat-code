@@ -2087,15 +2087,18 @@ sub Creates_website(){
   // Dynamic alignment table
   $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
-        "paging":   false,
         "info":     false,
+        "iDisplayLength": 20,
+        "order": [[ 2, "asc" ]],
 	"search": {
 		    "regex": true,
 		    "smart": true
-	}	
+	},
+      "aoColumnDefs": [
+          { "bSortable": false, "aTargets": [ 3,4,5 ] }
+       ]	
      });
-
-   } );
+   });
  
 
   // Change the color of the selected cluster header
@@ -2127,7 +2130,7 @@ sub Creates_website(){
   // Slide the alignment table
   $(document).ready(function(){
     $(\'#File_list\').click(function(){
-       $(\'.tab_list\').slideToggle(\'slow\');
+       $(\'.tab_list\').slideToggle(\'fast\');
      }); 
   });
 
@@ -2166,8 +2169,7 @@ sub Creates_website(){
 	$logo_tab_D = $prefix."_aligned_logos/".$id."_logo.png";
 	$logo_tab_R = $prefix."_aligned_logos/".$id."_logo_rc.png";
 
-	#print $logo_tab_D."------------------->\n";
-
+	$logo_width = 12*$alignment_table_data{$cluster_id}{$id}{width};
 	## Add the sequences
 	$general_tab .= '
 				<tr>					
@@ -2175,10 +2177,13 @@ sub Creates_website(){
                                         <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
 					<td class="tab_spacer_2">'.$cluster_id.'</td>
 					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
-                                        <th class="tab_spacer_2"><a href="'.$logo_tab_D.'"><img class="logo" src="'.$logo_tab_D.'" /></a></th>
-                                        <th class="tab_spacer_2"><a href="'.$logo_tab_R.'"><img class="logo" src="'.$logo_tab_R.'" /></a></th>
+                                        <th class="tab_spacer_2"><a href="'.$logo_tab_D.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_D.'" /></a></th>
+                                        <th class="tab_spacer_2"><a href="'.$logo_tab_R.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_R.'" /></a></th>
 				</tr>
         ';
+
+	$general_tab =~ s/--width/$logo_width/gi;
+
 	$cluster_id_prev = $cluster_id_cur;
     }
     close $cluster_handle;
@@ -2483,9 +2488,9 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       //$(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
-       $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
-       $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
+       //$(\'#button_alignment_table_--nb--\').slideToggle(\'fast\');
+       $(\'#button_logo_tree_--nb--\').slideToggle(\'fast\');
+       $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
        $(\'#alignment_table_--nb--\').hide();  
        $(\'#cluster_--nb--\').hide(); 
        $(\'.branch_consensus_cluster_--nb--\').hide();  
@@ -2500,8 +2505,8 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       //$(\'#button_alignment_table_--nb--\').slideToggle(\'slow\');
-       $(\'#button_logo_tree_--nb--\').slideToggle(\'slow\');
+       //$(\'#button_alignment_table_--nb--\').slideToggle(\'fast\');
+       $(\'#button_logo_tree_--nb--\').slideToggle(\'fast\');
        $(\'#alignment_table_--nb--\').hide();  
        $(\'#cluster_--nb--\').hide(); 
      }); 
@@ -2557,7 +2562,7 @@ sub toogle_table{
 // Slide the alignment table
   $(document).ready(function(){
     $(\'#button_alignment_table_--nb--\').click(function(){
-       $(\'#alignment_table_--nb--\').slideToggle(\'slow\');
+       $(\'#alignment_table_--nb--\').slideToggle(\'fast\');
      }); 
   $(\'#alignment_table_--nb--\').css(\'display\', \'none\');
   });
@@ -2575,7 +2580,7 @@ sub toogle_tree{
 // Slide the logo tree
   $(document).ready(function(){
     $(\'#button_logo_tree_--nb--\').click(function(){
-       $(\'#cluster_--nb--\').slideToggle(\'slow\');
+       $(\'#cluster_--nb--\').slideToggle(\'fast\');
      }); 
   $(\'#cluster_--nb--\').css(\'display\', \'none\');
   });
@@ -2593,7 +2598,7 @@ sub toogle_branch_consensus_table{
 // Slide the branch-motif table
   $(document).ready(function(){
     $(\'#button_branch_consensus_cluster_--nb--\').click(function(){
-       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
+       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
      }); 
   $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
   });
