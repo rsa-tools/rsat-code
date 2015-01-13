@@ -158,7 +158,7 @@ package main;
 
   ## Javascript (D3 + JQuery) base
   local $d3_base= $ENV{RSAT}."/perl-scripts/lib/d3/d3.v3.min.js";
-  local $jquery_base = $ENV{RSAT}."/public_html/lib/d3/jquery_lib.js";
+  local $jquery_base = $ENV{RSAT}."/perl-scripts/lib/d3/jquery_lib.js";
   local $datatable_base= $ENV{RSAT}."/public_html/lib/d3/dataTables.js";
   local $datatable_css_base = $ENV{RSAT}."/public_html/lib/d3/dataTables.css";
 
