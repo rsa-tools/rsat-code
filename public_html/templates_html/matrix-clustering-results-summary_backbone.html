@@ -69,6 +69,23 @@
   border-radius:5px;
   }
   
+
+  .alignment_tab_head{
+	background-color: #DCE4EC;
+	float: left;
+	margin-top: 1px;
+	margin-bottom: 3px;
+	height: 30px;
+	position: relative;
+	display: block;
+	text-align: left;
+	color: #34373B;
+	font-size: 15px;
+	padding: 6px;
+	clear: both;
+	border-radius:5px;  
+	}
+  
   
   .cluster_division {
   background-color: #97C0F9;
@@ -371,30 +388,24 @@
 	</div>
  
  
-
- 
- 
   <!-- Div with the aligment table with all the motifs-->
 	<div class="tab">
 	  <table id="alignment_dyn_table">
 		  
 		   	<!--Div: search in alignment table-->
-			<div class="cluster_info_head">
+			<div class="alignment_tab_head">
 				<strong>Click on the column names to change the order of the data.</strong><br>
-				<strong>To select the results of one cluster, write the name of one cluster in the <i>Search</i> window . Example: <i>cluster_1</i></strong><br>
+				<strong>Write the name of one cluster in the <i>Search</i> window . Example: <i>cluster_1</i></strong>
+				<p></p>
 			</div>
 	    <thead>
 	      <tr>
-		<th colspan="8"><strong>Alignment</strong></th>
+		<th colspan="4"><strong>Alignment</strong></th>
 	      </tr>
 	      <tr>
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
-		<th class="tab_col">Strand</th>
-		<th class="tab_col">Upstream_Offset</th>
-		<th class="tab_col">Downstream_Offset</th>
-		<th class="tab_col">Width</th>
 		<th class="tab_col">Aligned consensus</th>
 	      </tr>
 	    </thead>
