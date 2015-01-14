@@ -12,7 +12,20 @@ MATRIX=${RSAT}/public_html/demo_files/do798+do735_mmus_hnf6_liver.transfac
 ## non-trivial cases with >2 variants.
 VARIANTS=${RSAT}/public_html/demo_files/variation_demo_set
 
-E_VERSION=72
+################################################################
+## Count the number of variations per chromosome/contig for the selected organism
+ORG=${SPECIES}_${ASSEMBLY}
+VARIATION_DIR=${RSAT}/public_html/data/genomes/${ORG}/variations
+variation_stats:
+	@echo "Statistics about variations"
+	@echo "	SPECIES		${SPECIES}"	
+	@echo "	ASSEMBLY	${ASSEMBLY}"
+	@echo "	ORG		${ORG}"	
+	@echo "	VARIATION_DIR	${VARIATION_DIR}"
+	@echo "Number of lines per variation file"
+	@(cd ${VARIATION_DIR}; wc -l *.tab | sort -n)
+
+ENSEMBL_VERSION=72
 V=2
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
@@ -20,7 +33,7 @@ V=2
 TO=rsat-var
 CONVERT_VAR_CMD=convert-variations \
 	-i ${VARIANTS}.vcf  \
-	-e_version ${E_VERSION} \
+	-e_version ${ENSEMBL_VERSION} \
 	-v ${V} -from vcf -to ${TO} \
 	-o ${VARIANTS}.${TO}
 convert_var:
@@ -31,14 +44,14 @@ convert_var:
 
 ################################################################
 ## Retrieve the sequences surrounding a set of input variations
-ORG=Homo_sapiens
+SPECIES=Homo_sapiens
 SPECIES_SUFFIX=ensembl72
-A_VERSION=GRCh37
+ASSEMBLY=GRCh37
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
-	-species ${ORG} \
-	-e_version ${E_VERSION} \
-	-a_version ${A_VERSION} \
+	-species ${SPECIES} \
+	-e_version ${ENSEMBL_VERSION} \
+	-a_version ${ASSEMBLY} \
 	-species_suffix ${SPECIES_SUFFIX} \
 	-i ${VARIANTS}.rsat-var \
 	-mml 30 -format rsat-var \
