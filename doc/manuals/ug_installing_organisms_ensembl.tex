@@ -77,7 +77,8 @@ genomes are available. For this, use the option
 
 \begin{lstlisting}
 ## Retrieve the list of supported species on EnsEMBL
-install-ensembl-genome -v 1  -available_species -o available_species_ensembl.tab
+install-ensembl-genome -v 1  -available_species \
+  -o available_species_ensembl.tab
 
 ## Read the result file
 more available_species_ensembl.tab
@@ -172,3 +173,17 @@ We can now download all the variations available for the yeast.
 ## Download all variations for a selected organism on your server
 download-ensembl-variations -v 1 -species Saccharomyces_cerevisiae
 \end{lstlisting}
+
+Variation files are stored in a specific subfolder for the specified
+organism.
+
+\begin{lstlisting}
+## Check the content of the variation directory for the yeast
+make -f makefiles/variation-scan_demo.mk \
+   SPECIES=Saccharomyces_cerevisiae ASSEMBLY=R64-1-1 \
+   variation_stats
+\end{lstlisting}
+
+This command will indicate the location of the variation directory on
+your \RSAT server, and count the number of lines for each variation
+file (there is one separate file per chromosome or contig).
