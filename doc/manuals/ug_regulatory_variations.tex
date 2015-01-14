@@ -142,6 +142,100 @@ together with \RSAT (see \RSAT installation guide for details).
 % \end{lstlisting}
 
 
+\section{Getting variation sequences}
+
+Before detecting regulatory variations, the first step is to obtain
+the genomic sequences of these variations.  For this, variations must
+have been installed on your server by the \RSAT administrator (the
+installation protocol is explained in
+Section~\ref{sect:download_ensembl_variations}).
+
+To check if variations have been installed for your genome of
+interest, you can proceed in the following way. 
+
+
+\subsection{Checking the installation of variations on your \RSAT server}
+
+Since the databases about polymorphic variations are growing
+exponentially, the default genome installation does not include
+variations. The program \program{install-ensembl-genome} includes the
+option \option{-task variations}, which downloads all variations from
+the Ensembl database, and exports them in one file per chromosome or
+contig.
+
+\begin{enumerate}
+\item Check which versions and assemblies of your organism of interest
+  have been installed on \RSAT.
+\item Check if variations have been installed for these
+  versions/assemblies.
+\item Count the number of variations per chromosome.
+\end{enumerate}
+
+Let us assume that we are interested by the Human genome. We want to
+see if our \RSAT admin installed it, and, if so, to check which
+versions or assemblies are available locally.
+
+\begin{lstlisting}
+supported-organisms -taxon Homo
+\end{lstlisting}
+
+In our case, we get the following answer:
+
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+Homo_sapiens_GRCh37
+Homo_sapiens_GRCh38
+\end{verbatim} \end{footnotesize}
+}
+
+Variations are installed in the organism-specific folder of the genome
+directory.
+
+\begin{lstlisting}
+ls ${RSAT}/public_html/data/genomes/Homo_sapiens_GRCh38/variations
+\end{lstlisting}
+
+Variations are stored in tab-delimited text files, with one separate file
+per chromosome.  The demo makefile includes a target to check the size
+of variation files (count the number of lines per file).
+
+\begin{lstlisting}
+## Check the content of the variation directory for the yeast
+make -f makefiles/variation-scan_demo.mk \
+   SPECIES=Homo_sapiens ASSEMBLY=GRCh38 \
+   variation_stats
+\end{lstlisting}
+
+This command will indicate the location of the variation directory on
+your \RSAT server, and count the number of lines for each variation
+file (there is one separate file per chromosome or contig).
+
+
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+Statistics about variations
+        SPECIES         Homo_sapiens
+        ASSEMBLY        GRCh38
+        ORG             Homo_sapiens_GRCh38
+        VARIATION_DIR   /data/rsat/public_html/data/genomes/Homo_sapiens_GRCh38/variations
+Number of lines per variation file
+... (we skip some lines)
+   3148687 8.tab
+   3371527 7.tab
+   3556350 6.tab
+   3705433 5.tab
+   4027724 4.tab
+   4134079 3.tab
+   4666045 1.tab
+   4984715 2.tab
+  60448850 total
+\end{verbatim} \end{footnotesize}
+}
+
+\section{File formats for variations}
+
+
+
 \section{Detecting regulatory variations}
 
 \subsection{Scanning a selected variation with selected matrices}
@@ -159,7 +253,6 @@ Open a connection to the dbSNP database
 test in the query box:
 
 \begin{lstlisting}
-
 ("Homo sapiens"[ORG]) AND (diabetes[Text Word]) AND ("false"[Not Reference Assembly])
 \end{lstlisting}
 
