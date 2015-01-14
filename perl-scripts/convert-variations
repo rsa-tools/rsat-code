@@ -43,15 +43,7 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 SUPPORTED FORMAT
 
-VCF, GVF, rsat-var
-
-=head2 Variant Call Format (VCF)
-
-http://en.wikipedia.org/wiki/Variant_Call_Format
-
-This format was defined for the 1000 genomes project. It is no longer
-maintained. The converter supports it merely for the sake of backwards
-compatibility.
+GVF, VCF, rsat-var
 
 =head2 Genome Variant Format (GVF)
 
@@ -62,6 +54,50 @@ restrictions specified for GFF3 apply to the GVF specification as
 well." (quoted from the Sequence Ontology)
 
 http://www.sequenceontology.org/resources/gvf_1.00.html
+
+
+A GVF file starts with a header providing general information about
+the file content: format version, date, data source, length of the
+chromosomes / contigs covered by the variations.
+
+
+ ##gff-version 3
+ ##gvf-version 1.07
+ ##file-date 2014-09-21
+ ##genome-build ensembl GRCh38
+ ##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+ ##feature-ontology http://song.cvs.sourceforge.net/viewvc/song/ontology/so.obo?revision=1.283
+ ##data-source Source=ensembl;version=77;url=http://e77.ensembl.org/Homo_sapiens
+ ##file-version 77
+ ##sequence-region Y 1 57227415
+ ##sequence-region 17 1 83257441
+ ##sequence-region 6 1 170805979
+ ##sequence-region 1 1 248956422
+ ## [...]
+
+This header is followed by the actual description of the variations,
+in a column-delimited format compying with the GFF format. 
+
+ Y       dbSNP   SNV     10015   10015   .       +       .       ID=1;variation_id=23299259;Variant_seq=C,G;Dbxref=dbSNP_138:rs113469508;allele_string=A,C,G;evidence_values=Multiple_observations;Reference_seq=A
+ Y       dbSNP   SNV     10146   10146   .       +       .       ID=2;variation_id=26647928;Reference_seq=C;Variant_seq=G;evidence_values=Multiple_observations,1000Genomes;allele_string=C,G;Dbxref=dbSNP_138:rs138058540;global_minor_allele_frequency=0|0.0151515|33
+ Y       dbSNP   SNV     10153   10153   .       +       .       ID=3;variation_id=21171339;Reference_seq=C;Variant_seq=G;evidence_values=Multiple_observations,1000Genomes;allele_string=C,G;Dbxref=dbSNP_138:rs111264342;global_minor_allele_frequency=1|0.00229568|5
+ Y       dbSNP   SNV     10181   10181   .       +       .       ID=4;variation_id=47159994;Reference_seq=C;Variant_seq=G;evidence_values=1000Genomes;allele_string=C,G;Dbxref=dbSNP_138:rs189980076;global_minor_allele_frequency=0|0.00137741|3
+
+The last column contains a lot of relevant information, but is not
+very easy to read. We should keep in mind that this format was
+initially defined to describe generic genomic features, so all the
+specific attributes come in the last column (description).
+
+For this reasons, we developed a custom tab-delimited format to store
+variations, which we call I<rsat-var> (see description below).
+
+=head2 Variant Call Format (VCF)
+
+http://en.wikipedia.org/wiki/Variant_Call_Format
+
+This format was defined for the 1000 genomes project. It is no longer
+maintained. The converter supports it merely for the sake of backwards
+compatibility.
 
 =head2 RSAT variation format (rsat-var)
 
@@ -81,16 +117,19 @@ to further parse the last column of the GVF file.
 =item File separated per chromosome
 
 This is a matter of organization rather than an intrinsic property of
-the format (we could have chromosome-separated GVF files, or
-whole-genomes RSAT variant files), but it speeds up the search for
+the format (we could as well have used chromosome-separated GVF files,
+or whole-genomes RSAT variant files), but it speeds up the search for
 variants.
 
 =item Combined variations
 
-When several variants are mutually overlapping (for example one SNP
-and one insertion), I<install-ensembl-variations> computes all
-possible combinations variations (for instance apply the substitions
-on the insertion).
+When several variants are mutually overlapping,
+I<install-ensembl-variations> enables to compute all possible
+combinations of variations. However, this option may require
+considerable computer resources (computing time, storage), so we
+inactivate it by default. To support combinatory variants,
+I<install-ensembl-variations> must be called with the option I<-task
+combine>.
 
 =back
 
