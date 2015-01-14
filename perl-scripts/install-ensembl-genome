@@ -294,7 +294,7 @@ package main;
       ## differs from the Ensembl species name, because we add a
       ## suffix with the data source (ensembl), assembly and ensembl
       ## version.
-      my $full_species_id = &Get_full_species_ID($species,"",$ensembl_version, $species_suffix);
+      my $full_species_id = &Get_full_species_ID($species, $assembly_version, $ensembl_version, $species_suffix);
 
       &RSAT::message::Info("Species", $species) if ($main::verbose >= 0);
       &RSAT::message::Info("Full species ID", $full_species_id) if ($main::verbose >= 0);
@@ -466,6 +466,21 @@ would change their file formats or locations.
     $ensembl_version = shift(@arguments);
     &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.")
       unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
+
+=pod
+
+=item B<-assembly_version>
+
+Choose a particular assembly version for the configuration. In
+principle this option should not be used, snice the assembly version
+is automatically determined when the request is send to Ensembl.
+
+This option can be convenient to enable the option I<-task config>
+when the genome has been synchronized from another RSAT server.
+
+=cut
+    } elsif ($arg eq "-assembly_version") {
+      $main::assembly_version = shift(@arguments);
 
 =pod
 
@@ -658,6 +673,7 @@ sub Verbose {
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   printf $out "; %-22s\t%s\n", "Ensembl release", $ensembl_version;
+#  printf $out "; %-22s\t%s\n", "Assembly version", $assembly_version;
   printf $out "; %-22s\t%s\n", "Species suffix", $species_suffix;
   if (%main::infile) {
     print $out "; Input files\n";
