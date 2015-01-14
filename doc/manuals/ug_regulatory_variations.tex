@@ -201,7 +201,7 @@ of variation files (count the number of lines per file).
 
 \begin{lstlisting}
 ## Check the content of the variation directory for the yeast
-make -f makefiles/variation-scan_demo.mk \
+make -f ${RSAT}/makefiles/variation-scan_demo.mk \
    SPECIES=Homo_sapiens ASSEMBLY=GRCh38 \
    variation_stats
 \end{lstlisting}
@@ -220,10 +220,6 @@ Statistics about variations
         VARIATION_DIR   /data/rsat/public_html/data/genomes/Homo_sapiens_GRCh38/variations
 Number of lines per variation file
 ... (we skip some lines)
-   3148687 8.tab
-   3371527 7.tab
-   3556350 6.tab
-   3705433 5.tab
    4027724 4.tab
    4134079 3.tab
    4666045 1.tab
@@ -234,7 +230,23 @@ Number of lines per variation file
 
 \section{File formats for variations}
 
+Several formats have been defined to store inforamtion about genetic
+variations. 
 
+
+To ensure compatibility between the different sources of information
+and \RSAT requirements, the program \program{convert-variation}
+ensures inter-conversions betwneen different formats. The program
+includes an on-line help which provides more information about the
+different formats.
+
+\begin{lstlisting}
+convert-variations -h
+\end{lstlisting}
+
+
+
+\tbw
 
 \section{Detecting regulatory variations}
 
