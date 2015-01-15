@@ -452,7 +452,7 @@ Ex:
 =cut
 
 sub Get_full_species_ID {
-  my ($species, $assembly_version,$ensembl_version, $species_suffix) = @_;
+  my ($species, $assembly_version, $ensembl_version, $species_suffix) = @_;
 
   &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly_version, $ensembl_version, $species_suffix) if ($main::verbose >= 5);
 
