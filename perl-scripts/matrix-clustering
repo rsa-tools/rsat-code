@@ -119,6 +119,12 @@ use RSAT::MatrixReader;
 use RSAT::SeqUtil;
 
 
+require "RSA.disco.lib";
+require "footprint.lib.pl";
+use Data::Dumper;
+use File::Basename;
+
+
 ################################################################
 ## Main package
 package main;
@@ -133,6 +139,7 @@ package main;
   %main::infile = ();
   %main::outfile = ();
   %main::dir = ();
+  %main::param = ();
   @dirs = ();
 
   $main::verbose = 0;
@@ -285,6 +292,10 @@ package main;
 
   ## A hash to save the name of the clusters and their corresponding hexa code
   local %hexa_code = ();
+
+  ## Format to export all the results
+  $main::param{archive_format} = "zip";
+  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
 
   ################################################################
   ## Options used for motif comparison
@@ -527,6 +538,9 @@ package main;
       ################################################################
       ## Creates the website
       &Creates_website();
+
+      ## 
+      &Archive(1)
   }
 
   ################################################################
@@ -2078,10 +2092,12 @@ sub Creates_website(){
         "paging":   false,
         "searching": false,
         "ordering": false,
-        "info":     false,		
-		});
-
-   } );
+        "info":     false,
+        "columnDefs": [
+	   { "width": "20%", "targets": [0,1,2,3] }
+	]		
+    });
+  });
 
 
   // Dynamic alignment table
@@ -2182,8 +2198,8 @@ sub Creates_website(){
                                         <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
 					<td class="tab_spacer_2">'.$cluster_id.'</td>
 					<td class="seq tab_spacer_1">'.$colored_consensus.'</td>
-                                        <th class="tab_spacer_2"><a href="'.$logo_tab_D.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_D.'" /></a></th>
-                                        <th class="tab_spacer_2"><a href="'.$logo_tab_R.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_R.'" /></a></th>
+                                        <th class="tab_spacer_2"><a target="_blank" href="'.$logo_tab_D.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_D.'" /></a></th>
+                                        <th class="tab_spacer_2"><a target="_blank" href="'.$logo_tab_R.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_R.'" /></a></th>
 				</tr>
         ';
 
@@ -2193,11 +2209,9 @@ sub Creates_website(){
     }
     close $cluster_handle;
 
-    my $threshold_names_html = "";
     my $threshold_values_html = "";
     foreach my $par (sort keys %lth){
-	$threshold_names_html .= '<th class="tab_col">'.$par." value</th>\n";
-	$threshold_values_html .= '<td>'.$lth{$par}."</td>\n";
+	$threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}.";  ";
     } 
 
 
@@ -2240,6 +2254,7 @@ sub Creates_website(){
 	$line =~ s/--hmethod--/$method/;
 	$line =~ s/--Values--/$threshold_values_html/;
 	$line =~ s/COL_HERE/$general_tab/;
+	$line =~ s/--zip--/$main::outfile{archive}/;
 
 	## Search the line where the heatmap picture will be inserted
 	if($line =~ /--HEATMAP--/){
@@ -2330,9 +2345,9 @@ sub Creates_website(){
 			$consensus_table_columns .= "\n<tr>\n";
 			$consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
 			$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
-			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
-			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
+			$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
 			$consensus_table_columns .= "</tr>\n";
 		    }
 		    $consensus_table =~ s/--nb--/$num/g;
@@ -2354,27 +2369,27 @@ sub Creates_website(){
 	    my $add_files = 
 		'
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_distance_table.html"><strong>Distance table</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_distance_table.html"><strong>Distance table</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_internal_nodes_attributes.html"><strong>Internal nodes attributes</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_internal_nodes_attributes.html"><strong>Internal nodes attributes</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_logo_tree.html"><strong>Logo Forest</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_logo_tree.html"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_pairwise_compa.html"><strong>Pairwise comparison</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_pairwise_compa.html"><strong>Pairwise comparison</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_pairwise_compa_matrix_descriptions.html"><strong>Matrix description</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_pairwise_compa_matrix_descriptions.html"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_tree_of_consensus.pdf"><strong>Tree of consensus</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_tree_of_consensus.pdf"><strong>Tree of consensus</strong></a></td>
 		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
 		   </tr>
                 ';
@@ -2385,7 +2400,7 @@ sub Creates_website(){
 		    '
 
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_heatmap.pdf"><strong>Heatmap</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_heatmap.pdf"><strong>Heatmap</strong></a></td>
 		      <td class="tab_spacer_2">the heatmap showing the hierarchical tree with the clusters and the alignments.</td>
 		   </tr>
                      ';
@@ -2397,7 +2412,7 @@ sub Creates_website(){
 		    '
 
 		   <tr>
-		      <td class="tab_spacer_2"><a class="file_link" href="'.$prefix.'_input_motifs.tf"><strong>Input motifs</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_input_motifs.tf"><strong>Input motifs</strong></a></td>
 		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
 		   </tr>
                      ';
@@ -2752,4 +2767,59 @@ sub Read_cluster_colors{
     return(%hexa_hash);
 }
 
+
+################################################################
+## Generate a compressed archive with all the results
+sub Archive {
+
+  my ($remove_first, $to_archive) = @_;
+
+  $main::param{archive_format} = "zip";
+  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
+
+  ## By default, archive the whole output directory
+  $to_archive = $main::dir{output} unless $to_archive;
+
+  &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
+
+  ## Delete previous version of the archive to avoid including the old archive in the new one
+  $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
+
+  ## Archive all data and results
+  my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive});
+  my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
+#  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
+  my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
+  my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
+
+  ## avoids crash of the program when run from the "$archive_dir_dir"
+  if ($archive_dir_dir eq "") {
+      $archive_dir_dir = ".";
+      $to_archive_rel_path = $to_archive;
+      $archive_rel_path = $main::outfile{archive};	 
+  }
+
+  my $cmd = "";
+  if ($main::param{archive_format} eq "zip") {
+    $cmd .= "(cd ".$archive_dir_dir." ; ";
+    $cmd .= " zip -ryq ".$archive_rel_path." ".$to_archive_rel_path;
+    $cmd .= " -x ".$archive;
+    $cmd .= ")";
+  } elsif (($main::param{archive_format} eq "tar") ||
+	   ($main::param{archive_format} eq "tgz")) {
+    $cmd .= "tar -cpf ".$main::outfile{archive};
+    $cmd .= " -z" if ($main::param{archive_format} eq "tgz");
+    $cmd .= " -C ".$archive_dir_dir; ## Avoid including the whole path in the archive paths
+    $cmd .= " --exclude ".$archive;
+    $cmd .= " ".$to_archive_rel_path;
+  #$cmd .= " ".$to_archive;
+  } else {
+    &RSAT::error::FatalError($main::param{archive_format}, "Invalid archive format. Supported: zip, tar, tgz.");
+  }
+
+#  $cmd .= "zip -q ".$archive." ".$to_archive;
+  &one_command($cmd, 1);
+
+  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
+}
 __END__
