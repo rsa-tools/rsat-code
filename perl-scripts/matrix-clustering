@@ -116,6 +116,7 @@ require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
+use RSAT::SeqUtil;
 
 
 ################################################################
@@ -157,11 +158,10 @@ package main;
   local $export_tree_format = "";
 
   ## Javascript (D3 + JQuery) base
-  local $d3_base= $ENV{RSAT}."/perl-scripts/lib/d3/d3.v3.min.js";
-  local $jquery_base = $ENV{RSAT}."/perl-scripts/lib/d3/jquery_lib.js";
-  local $datatable_base= $ENV{RSAT}."/public_html/lib/d3/dataTables.js";
-  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/d3/dataTables.css";
-
+  local $d3_base= $ENV{RSAT}."/public_html/lib/d3/d3.v3.min.js";
+  local $jquery_base = $ENV{RSAT}."/public_html/lib/d3/DataTables-1.10.4/media/js/jquery.js";
+  local $datatable_base= $ENV{RSAT}."/public_html/lib/d3/DataTables-1.10.4/media/js/jquery.dataTables.js";
+  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/d3/DataTables-1.10.4/media/css/jquery.dataTables.css";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -2078,7 +2078,7 @@ sub Creates_website(){
         "paging":   false,
         "searching": false,
         "ordering": false,
-        "info":     false		
+        "info":     false,		
 		});
 
    } );
@@ -2095,8 +2095,12 @@ sub Creates_website(){
 		    "smart": true
 	},
       "aoColumnDefs": [
-          { "bSortable": false, "aTargets": [ 3,4,5 ] }
-       ]	
+          { "bSortable": false, "aTargets": [ 4,5 ] }
+       ],
+        "columnDefs": [ {
+            "targets": -1,
+            "data": null
+        } ]	
      });
    });
  
@@ -2171,12 +2175,13 @@ sub Creates_website(){
 
 	$logo_width = 12*$alignment_table_data{$cluster_id}{$id}{width};
 	## Add the sequences
+	my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($alignment_table_data{$cluster_id}{$id}{consensus}, bold=>1, iupac=>$main::param{iupac_coloring});
 	$general_tab .= '
 				<tr>					
 					<td class="tab_spacer_1">'.$id.'</td>
                                         <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
 					<td class="tab_spacer_2">'.$cluster_id.'</td>
-					<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($alignment_table_data{$cluster_id}{$id}{consensus}).'</td>
+					<td class="seq tab_spacer_1">'.$colored_consensus.'</td>
                                         <th class="tab_spacer_2"><a href="'.$logo_tab_D.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_D.'" /></a></th>
                                         <th class="tab_spacer_2"><a href="'.$logo_tab_R.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_R.'" /></a></th>
 				</tr>
@@ -2324,7 +2329,7 @@ sub Creates_website(){
 			
 			$consensus_table_columns .= "\n<tr>\n";
 			$consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
-			$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&DNA_string_to_HTML($cons).'</th>'."\n";
+			$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
 			$consensus_table_columns .= '   <th class="tab_spacer_2"><a href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
@@ -2416,46 +2421,6 @@ sub Creates_website(){
     close(SUMMARY);
 }
 
-
-###################################################
-## Converts a DNA string (consensus) input into  
-## an HTML code painting the conserved nucleotide
-sub DNA_string_to_HTML{
-    
-    my $DNA_string = shift;
-
-    ## Convert the string into an array
-    my @DNA_string = split //, $DNA_string;
-
-    ## Substitutes the ACGT for the HTML code
-    foreach my $pos (@DNA_string){
-
-	next if $pos eq '-';
-    
-	if($pos eq 'A'){
-	    $pos = '<span style="color: green">A</span>';
-	} elsif ($pos eq 'a'){
-	    $pos = '<span style="color: green">a</span>';
-	} elsif ($pos eq 'C'){
-	    $pos = '<span style="color: blue">C</span>';
-	} elsif ($pos eq 'c'){
-	    $pos = '<span style="color: blue">c</span>';
-	} elsif ($pos eq 'G'){
-	    $pos = '<span style="color: yellow">G</span>';
-	} elsif ($pos eq 'g'){
-	    $pos = '<span style="color: yellow">g</span>';
-	} elsif ($pos eq 'T'){
-	    $pos = '<span style="color: red">T</span>';
-	} elsif ($pos eq 't'){
-	    $pos = '<span style="color: red">t</span>';
-	} 
-    }
-
-    ## Join the DNA array into a string
-    my $HTML_string = join("",@DNA_string);
-
-    return($HTML_string);
-}
 
 ##########################################
 ## Store in a string the cluster header
