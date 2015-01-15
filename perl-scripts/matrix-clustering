@@ -158,10 +158,10 @@ package main;
   local $export_tree_format = "";
 
   ## Javascript (D3 + JQuery) base
-  local $d3_base= $ENV{RSAT}."/public_html/lib/d3/d3.v3.min.js";
-  local $jquery_base = $ENV{RSAT}."/public_html/lib/d3/DataTables-1.10.4/media/js/jquery.js";
-  local $datatable_base= $ENV{RSAT}."/public_html/lib/d3/DataTables-1.10.4/media/js/jquery.dataTables.js";
-  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/d3/DataTables-1.10.4/media/css/jquery.dataTables.css";
+  local $d3_base= $ENV{RSAT}."/public_html/lib/js/d3.v3.min.js";
+  local $jquery_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.js";
+  local $datatable_base= $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.dataTables.js";
+  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/css/jquery.dataTables.css";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
