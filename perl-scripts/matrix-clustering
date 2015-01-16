@@ -167,8 +167,8 @@ package main;
   ## Javascript (D3 + JQuery) base
   local $d3_base= $ENV{RSAT}."/public_html/lib/js/d3.v3.min.js";
   local $jquery_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.js";
-  local $datatable_base= $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.dataTables.js";
-  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/css/jquery.dataTables.css";
+  local $datatable_base= $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.dataTables.min.js";
+  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/css/jquery.dataTables.min.css";
 
   ## Select phylo and newick d3 bases
   ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
@@ -413,6 +413,10 @@ package main;
   my $heatmap_file_name = pop(@heatmap_file_path);
   $main::outfile{heatmap} = $heatmap_file_name;
 
+  ## Get the name of the folder of results withaout the absolute path
+  ## Required to name some temporal files 
+  my @pref = split("/", $main::outfile{prefix});
+  local $prefix = pop(@pref);
 
   if ($export_tree_format eq "newick"){
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
@@ -1513,8 +1517,6 @@ sub Create_html_tree_file(){
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
-#	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-#	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
 	}
 	
@@ -1522,25 +1524,29 @@ sub Create_html_tree_file(){
 	$_ =~ s|src=\"\"|src=\"$d3_base\"|;
 
 	### Set the height 
-	if(/\s+height =,/){
+	if(/--height--/){
 	    my $clust = "cluster_".$cluster_nb;
 	    my $mat_number = $clusters_info{$clust} + 2;
-	    $_ =~ s/\s+height =,/\t\theight = 100 + 85 * $mat_number,/;
+	    $_ =~ s/--height--/100 + 85 * $mat_number/;
+	}
+
+	### Set the height 
+	if(/--widthtree--/){;
+	    $_ =~ s/--widthtree--/3500/;
 	}
 
 	### Add the JSON file name
-	if(/^\s+d3.json\(/){
+	if(/--jsonfile--/){
 	    $json_file_name = $main::outfile{prefix}."_trees/parsed_tree_cluster_".$cluster_nb.".json";
 	    my @name = split(/\//, $json_file_name);
 	    my $n1 = pop(@name);
 	    my $n2 = pop(@name);
 	    $json_file_name = $n2."/".$n1;
-	    $_ =~ s/^\s+d3.json\(/d3.json\(\"$json_file_name\"/;
+	    $_ =~ s/--jsonfile--/$json_file_name/;
 	}
 
-	if(/"#"/){
-	    my $clust = "cluster_".$cluster_nb;
-	    $_ =~ s/\"#\"/\"#$clust\"/;
+	if(/--nb--/){
+	    $_ =~ s/--nb--/$cluster_nb/;
 	}
 
 	## Add the color of the cluster
@@ -1562,7 +1568,6 @@ sub Create_html_tree_file(){
 		    if($labels_num == 1){
 			$add_this = $main_label;
 			$up = uc($field);
-			#$add_this =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
 			$add_this =~ s/d\.;/ d\.$field;/;
 		    }
 		    
@@ -1570,7 +1575,6 @@ sub Create_html_tree_file(){
 		    if($labels_num > 1){
 			my $copy = $new_label;
 			$up = uc($field);
-			#$copy =~ s/d\.;/ \"$up: \" \+ d\.$field;/;
 			$copy =~ s/d\.;/ d\.$field;/;
 			my $y_displacement = 3 + (($labels_num -1) * 20);
 			$copy =~ s/#/$y_displacement/;
@@ -1924,11 +1928,8 @@ sub Merge_matrices(){
 ## 	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
 sub paste_new_cluster_to_HTML(){
     my $d3_tree_base = "(function(){
-                var width = 3500,
-		height =,
-		m = [40, 240, 40, 240],
-		w = width ,//-m[0] -m[0],
-		h = height //-m[0] -m[2];
+                var width = --widthtree--,
+		height = --height--;
 	;
 
 
@@ -1937,7 +1938,7 @@ sub paste_new_cluster_to_HTML(){
 	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
 
 
-	var svg = d3.select(\"#\").append(\"svg\")
+	var svg = d3.select(\"#cluster_--nb--\").append(\"svg\")
 		.attr(\"width\", width)
 		.attr(\"height\", height)
 		.append(\"g\")
@@ -1945,7 +1946,7 @@ sub paste_new_cluster_to_HTML(){
 		.attr(\"transform\", \"translate(40,0)\");
 		
 
-	d3.json(, function(json) {
+	d3.json(\"--jsonfile--\", function(json) {
 				
 	var nodes = cluster.nodes(json);
 
@@ -1998,14 +1999,6 @@ sub paste_new_cluster_to_HTML(){
   		.attr(\"x\", function(d) { return (d.size + 2)  * 24 + 375; })  
 		.attr(\"y\", -33) 
 		.attr(\"preserveAspectRatio\", \"none\");
-/*
-	d3.select(\"svg\")
-        .call(d3.behavior.zoom()
-        .scaleExtent([0.5, 5])
-        .on(\"zoom\", zoom));
-		.attr(\"x\", function(d) { (d.size + 2) * 24 + 450;})  
-*/
-			
 	});
 	
 
@@ -2049,7 +2042,6 @@ sub Add_div_to_HTML(){
 	## Add one <div> for each cluster
 	if(/^\s*\/\/Divisions/){
 	    $line = "";
-	    ##foreach my $cluster (sort keys %clusters_info_sorted){ 
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted){             
 		$line .= "<div id=\"cluster_".$cluster."\"><h2>cluster_".$cluster."</h2><\/div>\n";
 	    }
@@ -2057,10 +2049,8 @@ sub Add_div_to_HTML(){
 
 	## 
 	if(/^\s*\/\/Body/){
-	    $line = "";
-	    #foreach my $cluster (sort keys %clusters_info sort keys { $a cmp $b } %clusters_info ){	
+	    $line = "";	
 	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted){      
-	    ##foreach my $cluster (sort keys %clusters_info_sorted ){
 		$line .= $temp."\n";
 	    }
 	}
@@ -2161,8 +2151,6 @@ sub Creates_website(){
 
 
     ## First read the alignment table and save the results in a hash
-    my @pref = split("/", $main::outfile{prefix});
-    my $prefix = pop(@pref);
     my ($line, $id, $cluster_id);
     my $general_tab = "";
     my $number_of_motifs = 0;
@@ -2222,8 +2210,6 @@ sub Creates_website(){
     my $cor_val = $lth{cor};
     my $w_val = $lth{w};
     my @summary = ();
-    my @pref = split("/", $main::outfile{prefix});
-    my $prefix = pop(@pref);
     my $number_of_clusters = scalar(keys %alignment_table_data);
 
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
@@ -2245,7 +2231,7 @@ sub Creates_website(){
 	$line =~ s/--DTcss--/$datatable_css_base/;
 
 	## Add the columns with the name of the metric used as thresholds
-	$line =~ s/--Thresholds--/$threshold_names_html/;
+	$line =~ s/--Thresholds--/$threshold_values_html/;
 
 	## Fill the summary table
 	$line =~ s/--cmd--/$print_cmd/;
@@ -2313,21 +2299,32 @@ sub Creates_website(){
 		my $cl_name = "cluster_".$num;
 		
 		## Draw the logo tree
-		my $d3_logo_tree = &logo_tree();
+		my $d3_logo_tree .= '       
+                      <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
+	              <!--Div containing D3 logo tree-->
+                      <div id="cluster_--nb--" class="logo_tree">
+		      <script type="text/javascript">
+                ';
+		$d3_logo_tree .= &logo_tree();
 		my $factor_height = scalar(keys %current_alignment_table_data);
-		my $folder_tree = $prefix."_trees";
-		$d3_logo_tree =~ s/--folder_tree--/$folder_tree/g;
+		$d3_logo_tree =~ s/--widthtree--/3500/g;
 		$d3_logo_tree =~ s/--nb--/$num/g;
-		$d3_logo_tree =~ s/--nb_motifs--/$factor_height/g;
+		$d3_logo_tree =~ s/--nb_motifs--/100 + 30 * $factor_height/g;
 		$d3_logo_tree =~ s/--Cluster_id--/$cl_id/g;
 		$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_name}/g;
-		$line .= "\n".$d3_logo_tree."\n\n";
-		
+		my $jname = $prefix."_trees/parsed_tree_cluster_".$num.".json";
+		$d3_logo_tree =~ s/--jsonfile--/$jname/;
+		$d3_logo_tree .= '
+                         </script>
+	                 </div>
+                 ';
+		$line .= "\n".$d3_logo_tree."\n";
+
 		## Add the code to hide/show the logo tree
 		my $toogle_tree = &toogle_tree();
 		$toogle_tree =~ s/--nb--/$num/g;
 		$script_jquery .= $toogle_tree."\n";
-		
+
 		## Draw the branch-consensus table
 		if(scalar(keys %current_alignment_table_data) > 1){
 		    my $consensus_table = &branch_consensus_table();
@@ -2587,23 +2584,16 @@ sub toogle_branch_consensus_table{
 }
 
 
-#########################
+######################### d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 ## Insert D3 logo tree 
 sub logo_tree{
 
     my $logo_tree = 
 	'
 
-        <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
-	<!--Div containing D3 logo tree-->
-	<div id="cluster_--nb--" class="logo_tree">
-		<script type="text/javascript">
 		(function(){
-                var width = 3500,
-		height = 100 + 30 * --nb_motifs--,
-		m = [40, 240, 40, 240],
-		w = width ,//-m[0] -m[0],
-		h = height //-m[0] -m[2];
+                var width = --widthtree--,
+		height = --nb_motifs--;
 	;
 
 
@@ -2620,7 +2610,8 @@ sub logo_tree{
 		.attr("transform", "translate(40,0)");
 		
 
-d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
+
+d3.json("--jsonfile--", function(json) {
 				
 	var nodes = cluster.nodes(json);
 
@@ -2641,7 +2632,12 @@ d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 	
 	node.append("circle")
 		.attr("r", 6)
-                .attr("fill", "--stroke--");
+                .attr("fill", "--stroke--"),
+                .attr(\"stroke\", \"--stroke--\");
+
+
+       /*Insert labels*/
+
 
 	node.append("a")
 			.attr("xlink:href", function(d) { return d.url; })
@@ -2678,9 +2674,7 @@ d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
 		+ "V" + d.target.x + "H" + d.target.y;
 	}
 })();
-	</script>
-	</div>	
-
+	
 ';
 
     return($logo_tree);
