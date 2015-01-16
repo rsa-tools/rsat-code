@@ -17,9 +17,9 @@ $program_version
 
 =head1 DESCRIPTION
 
-Retrieve variation sequences of length L for a set of coordinates
-specified in a bed-formatted file, for a variation id list or
-variation in I<retrieve-variation-seq> formatted file.
+Given a set of IDs for polymorphic variations, retrieve the
+corresponding variants and their flanking sequences, in order to scan
+them wiht the tool I<variation-scan>.
 
 =head1 AUTHORS
 

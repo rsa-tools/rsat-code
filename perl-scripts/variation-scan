@@ -20,13 +20,23 @@ $program_version
 
 =head1 DESCRIPTION
 
-Scan variant sequences with different possition specific scoring matrices (PSSM).
-PSSM sumarize the binding afinities of transcription factors. 
+Scan variant sequences with position specific scoring matrices (PSSM)
+and report variations that affect the binding score, in order to
+predict regulatory variants.
 
 
 =head1 AUTHORS
 
-Jeremy.Delerce@univ-amu.fr
+=over
+
+=item Jeremy.Delerce@univ-amu.fr
+
+=item Jacques.van-Helden@univ-amu.fr
+
+=item Alejandra Medina-Rivera  <amedina@lcg.unam.mx>
+
+=back
+
 
 =head1 CATEGORY
 
