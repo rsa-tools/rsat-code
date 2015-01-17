@@ -275,20 +275,25 @@ package	main;
   ## Get the list of sequences already installed in the local server
   &RSAT::message::TimeWarn("Checking local versions of genomic sequences") if ($main::verbose >= 2);
   my %seq_installed = ();
-  my @genome_dir_content =glob($genome_dir."/*");
-  foreach ( @genome_dir_content ) {
-    next unless (/\.raw/);
-
-    $len = -s $_;
-    $_ =~ s/$genome_dir\///g;
-    $_ =~ s/\.raw//g;
-
-    my ($type,$slice) = split($assembly_version,$_);
-    $type =~ s/_/:/g;
-    $slice =~ s/_/:/g;
-
-    $seq_installed{$type.$assembly_version.$slice} = $len;
-  }
+   my @genome_dir_content =glob($genome_dir."/*");
+  #my @genome_dir_content =`(ls $genome_dir/*)`; ## NOTE FROM ALE: please do not remove commented line
+                                                ## I'm having problmes with my glob function
+ 
+   foreach ( @genome_dir_content ) {
+       ##chomp;  ## NOTE FROM ALE: please do not remove commented line
+               ## I'm having problmes with my glob function
+       next unless (/\.raw/);
+       
+       $len = -s $_;
+       $_ =~ s/$genome_dir\///g;
+       $_ =~ s/\.raw//g;
+       
+       my ($type,$slice) = split($assembly_version,$_);
+       $type =~ s/_/:/g;
+       $slice =~ s/_/:/g;
+       
+       $seq_installed{$type.$assembly_version.$slice} = $len;
+   }
   
 
 
