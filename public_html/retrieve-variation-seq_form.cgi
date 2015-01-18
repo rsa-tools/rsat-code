@@ -30,6 +30,10 @@ foreach $key (keys %default) {
 ### head
 print "<CENTER>";
 print "Given a set of IDs for polymorphic variations, retrieve the corresponding variants and their flanking sequences, in order to scan them wiht the tool <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
+print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
+print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 
 
@@ -54,27 +58,40 @@ print "<B>Variants or regions in bed format</B>&nbsp;";
 
 print "<BR>\n";
 print "<UL>\n";
-
-print $query->textarea(-name=>'input',
-		       -default=>$default{input},
-		       -rows=>6,
-		       -columns=>65);
+ if ($variants_file = $query->param("variants_file")) {
+    ## Variants file is already on the server machine
+    ## (piped from a previous script)
+    $variants_url = $variants_file;
+    $variants_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+    $variantsChoiceString .=  "<a href=$variants_url>";
+    $variantsChoiceString .=  " transferred from previous query<BR>\n";
+    $variantsChoiceString .=  "</a>";
+    $variants_format = $query->param(variants_format);
+    $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
+    $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
+    print $variantsChoiceString ;
+}else{
+    
+    print $query->textarea(-name=>'input',
+			   -default=>$default{input},
+			   -rows=>6,
+			   -columns=>65);
 ### Option to upload a file with variant information (IDs, rsat-var file or 
 ### genomic regions in bed format)
-print "<BR>Upload variants or regions<BR>\n";
-print $query->filefield(-name=>'uploaded_file',
-			-default=>'',
-			-size=>45,
-			-maxlength=>200);
-print "</UL>\n";
-print "<BR>\n";
-
-
+    print "<BR>Upload variants or regions<BR>\n";
+    print $query->filefield(-name=>'uploaded_file',
+			    -default=>'',
+			    -size=>45,
+			    -maxlength=>200);
+    print "</UL>\n";
+    print "<BR>\n";
+    
+}
 ### Input type
 print "<B>Input format</B>&nbsp;";
-print $query->popup_menu(-name=>'input_type',
-			 -Values=>['rsat-var','id','bed'],
-			 -default=>$default{input_type});
+    print $query->popup_menu(-name=>'input_type',
+			     -Values=>['rsat-var','id','bed'],
+			     -default=>$default{input_type});
 print "<\p>";
 ### Lenght of the sequences surranding the variant
 print "<B>Length of sequence around the variant</B>&nbsp;\n";
