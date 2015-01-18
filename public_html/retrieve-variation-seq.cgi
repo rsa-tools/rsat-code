@@ -73,37 +73,39 @@ if (defined($supported_organism{$organism})) {
 
 ## Get input
 
-my $input_set_file= $tmp_file_path."retrieve-variation-seq_input";
-push @result_files ,("input", $input_set_file) ;
-if ($query->param('uploaded_file')) {
-    $upload_file = $query->param('uploaded_file');
-    if ($upload_file =~ /\.gz$/) {
-	$input_set_file .= ".gz";
-    }
-    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-    open INPUT_FILE, ">". $input_set_file ||
-	&cgiError("Cannot store input file in temporary directory");
-    while (<$upload_file>) {
-	print INPUT_FILE;
-    }
-    close INPUT_FILE;
-} else {
-    my $input_var = $query->param('input');
-    $input_varc =~ s/\r/\n/g;
-    my @input_var = split (/[\n\r]/, $input_var);
-    if ($input_var =~ /\S/) {
-	open QUERY, ">".$input_set_file;
-	foreach my $row (@input_var) {
-	    next unless $row =~ /\S/; ## Skip empty rows
-	    chomp($row); ## Suppress newline character
-	    $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option
-	    print QUERY $row, "\n";
+unless ($input_set_file=$query->param("variants_file")){
+    $input_set_file= $tmp_file_path."retrieve-variation-seq_input";
+    if ($query->param('uploaded_file')) {
+	$upload_file = $query->param('uploaded_file');
+	if ($upload_file =~ /\.gz$/) {
+	    $input_set_file .= ".gz";
 	}
-	close QUERY;
+	$type = $query->uploadInfo($upload_file)->{'Content-Type'};
+	open INPUT_FILE, ">". $input_set_file ||
+	    &cgiError("Cannot store input file in temporary directory");
+	while (<$upload_file>) {
+	    print INPUT_FILE;
+	}
+	close INPUT_FILE;
     } else {
-	&cgiError("You should enter at least one variant ID, genomic regions or variant in rsat format in the query box.");
+	my $input_var = $query->param('input');
+	$input_varc =~ s/\r/\n/g;
+	my @input_var = split (/[\n\r]/, $input_var);
+	if ($input_var =~ /\S/) {
+	    open QUERY, ">".$input_set_file;
+	    foreach my $row (@input_var) {
+		next unless $row =~ /\S/; ## Skip empty rows
+		chomp($row); ## Suppress newline character
+		$row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option
+		print QUERY $row, "\n";
+	    }
+	    close QUERY;
+	} else {
+	    &cgiError("You should enter at least one variant ID, genomic regions or variant in rsat format in the query box.");
+	}
     }
 }
+push @result_files ,("input", $input_set_file) ;
 $parameters .= " -i ".$input_set_file;
 &DelayedRemoval($input_set_file);
 
@@ -179,13 +181,13 @@ sub PipingForm {
 	<TR>
 	<TD valign=top>
 	<FORM METHOD="POST" ACTION="variation-scan_form.cgi">
-        <INPUT type="hidden" NAME="var-seq_file" VALUE="$var_file">
+        <INPUT type="hidden" NAME="variants_seq_file" VALUE="$var_file">
 	<INPUT type="submit" value="variation scan">
 	</FORM>
 	</TD>
  
-	End_of_form
-	print '   
+End_of_form
+print '   
 </TR>
 </TABLE>
 </CENTER>';
