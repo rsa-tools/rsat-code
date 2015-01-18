@@ -1473,20 +1473,25 @@ sub Add_attributes_to_JSON(){
       unlink($JSON);
   }
 
-#  system("rm -r ".$main::outfile{prefix}."_pairwise_compa_logos");
   my $cmd = "rm -r ".$main::outfile{prefix}."_pairwise_compa_logos";
   &doit($cmd, 0, $die_on_error, $verbose);
 
   return();
 }
 
-#		stroke: #0D86D7;
 
 ###################################
 ## Create the html file to 
 ## display the tree
 sub Create_html_tree_file(){
-    
+
+    ## Values to change in the D3 tree
+    my $svg_width = 24;
+    my $svg_height = 80;
+    my $svg_x1 = 325;
+    my $svg_y1 = -33;
+    my $svg_x2 = '24 + 375';
+    my $add_this = "";
     my $labels_num = 0;
     my $cluster_nb = 0;
     my $main_label = 	        
@@ -1505,6 +1510,16 @@ sub Create_html_tree_file(){
 	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
 	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
 
+    my $display_consensus_d3 =
+	"		node.append(\"a\")
+		.attr(\"xlink:href\", function(d) { return d.children ? d.url : \"\"; })
+		.append(\"text\")
+		.text(function(d) { return d.children ? d.name : \"\"; })
+		.attr(\"dx\", function(d) { return d.children ? -20 : 0; })
+		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
+		.attr(\"fill\", function(d) { return d.children ? \"blue\" : \"\"; })
+		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
 
@@ -1521,7 +1536,9 @@ sub Create_html_tree_file(){
 	}
 	
 	### Fix the d3 library path
-	$_ =~ s|src=\"\"|src=\"$d3_base\"|;
+	if(/--d3--/){;
+	    $_ =~ s/--d3--/$d3_base/g;
+	}
 
 	### Set the height 
 	if(/--height--/){
@@ -1555,8 +1572,32 @@ sub Create_html_tree_file(){
 	    $_ =~ s/--stroke--/$hexa_code{$clust}/;
 	}
 
+	if(/--svgwidth--/){
+	    $_ =~ s/--svgwidth--/$svg_width/g;
+	}
+
+	if(/--svgheight--/){
+	    $_ =~ s/--svgheight--/$svg_height/g;
+	}
+
+	if(/--x1--/){
+	    $_ =~ s/--x1--/$svg_x1/g;
+	}
+
+	if(/--y1--/){
+	    $_ =~ s/--y1--/$svg_y1/g;
+	}
+
+	if(/--x2--/){
+	    $_ =~ s/--x2--/$svg_x2/g;
+	}
+
+	if(/--lab--/){
+	    $_ =~ s/--lab--//g;
+	}
+
 	if ($_ =~ /Insert labels/){
-	    my $add_this = "";
+	    $add_this = "";
 	    $labels_num = 0;
 	    ################################################################
 	    ## Insert in the html script the labels selected by the user
@@ -1582,6 +1623,12 @@ sub Create_html_tree_file(){
 		    }
 		}
 	    }
+	    print TEMP $add_this."\n";
+	}
+
+	if ($_ =~ /Insert consensus/){
+	    $add_this = "";
+	    $add_this .= "\n\n".$display_consensus_d3."\n\n";
 	    print TEMP $add_this."\n";
 	}
 
@@ -1900,7 +1947,6 @@ sub Merge_matrices(){
 	    ## Create branch-wise logos
 	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
-	    ## JvH: Jaime, why do you include a .png exension in the output prefix of convert-matrix ? Since it is in rransfac format, the extension should be .tf, no ?
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 	    &doit($cmd, 0, $die_on_error, $verbose);
 	    
@@ -1920,98 +1966,6 @@ sub Merge_matrices(){
 }
 
 
-###################################
-## This is the body of d3 script,
-## each time a new cluster is added 
-## to the file the next code is paste 
-## and modified
-## 	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
-sub paste_new_cluster_to_HTML(){
-    my $d3_tree_base = "(function(){
-                var width = --widthtree--,
-		height = --height--;
-	;
-
-
-	var cluster = d3.layout.cluster()
-		.size([height, width - 2500])
-	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
-
-
-	var svg = d3.select(\"#cluster_--nb--\").append(\"svg\")
-		.attr(\"width\", width)
-		.attr(\"height\", height)
-		.append(\"g\")
-		.attr(\"class\",\"drawarea\")
-		.attr(\"transform\", \"translate(40,0)\");
-		
-
-	d3.json(\"--jsonfile--\", function(json) {
-				
-	var nodes = cluster.nodes(json);
-
-	var link = svg.selectAll(\"path.link\")
-		.data(cluster.links(nodes))
-		.enter().append(\"path\")
-		.attr(\"class\", \"link\")
-                .attr(\"stroke\", \"--stroke--\")
-		.attr(\"d\", elbow);
-
-
-	var node = svg.selectAll(\"g.node\")
-		.data(nodes)
-		.enter().append(\"g\")
-		.attr(\"class\", \"node\")
-		.attr(\"transform\", function(d) { return \"translate(\" + d.y + \",\" + d.x + \")\"; });
-
-	
-	node.append(\"circle\")
-		.attr(\"r\", 6.5)
-                .attr(\"fill\", \"--stroke--\")
-                .attr(\"stroke\", \"--stroke--\");
-
-	/*Insert labels*/
-	
-	
-	/*Insert consensus*/
-		node.append(\"a\")
-		.attr(\"xlink:href\", function(d) { return d.children ? d.url : \"\"; })
-		.append(\"text\")
-		.text(function(d) { return d.children ? d.name : \"\"; })
-		.attr(\"dx\", function(d) { return d.children ? -20 : 0; })
-		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
-		.attr(\"fill\", function(d) { return d.children ? \"blue\" : \"\"; })
-		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });
-
-		
-	node.append(\"svg:image\")
-		.attr(\"xlink:href\", function(d) { return d.image; })  
-		.attr(\"width\", function(d) { return (d.size + 2)  * 24; })
-		.attr(\"height\", 80)
-		.attr(\"x\", 325)    
-		.attr(\"y\", -33) 
-		.attr(\"preserveAspectRatio\", \"none\");	
-		
-	node.append(\"svg:image\")
-		.attr(\"xlink:href\", function(d) { return d.image_rc; })  
-		.attr(\"width\", function(d) { return (d.size + 2)  * 24; })
-		.attr(\"height\", 80)
-  		.attr(\"x\", function(d) { return (d.size + 2)  * 24 + 375; })  
-		.attr(\"y\", -33) 
-		.attr(\"preserveAspectRatio\", \"none\");
-	});
-	
-
-	function elbow(d, i) {
-		
-		return \"M\" + d.source.y + \",\" + d.source.x
-		+ \"V\" + d.target.x + \"H\" + d.target.y;
-	}
-})();";
-    return($d3_tree_base);
-}
-
-
 ########################################
 ## Before modify the width and heigth
 ## of the alignments, creates the <div>
@@ -2019,7 +1973,7 @@ sub paste_new_cluster_to_HTML(){
 sub Add_div_to_HTML(){
     my $line = "";
     my $print = "";
-    my $temp = paste_new_cluster_to_HTML();
+    my $temp = &logo_tree();
 
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose);
@@ -2145,9 +2099,26 @@ sub Creates_website(){
   });
 
 ';
-    
+    my $label_single_tree = '
+	node.append("a")
+	        .attr("xlink:href", function(d) { return d.url; })
+	        .append("text")
+	        .text(function(d) { return d.children ? "" :  d.name; })
+		.attr("dx", function(d) { return d.children ? 0 : 20; })
+		.attr("dy", function(d) { return d.children ? 0 : 3; })
+		.attr("font-size", "8px")
+		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+    ';
+ 
     my %alignment_table_data = ();
     my @split_line = ();
+
+    ## Values to change in the D3 tree
+    my $svg_width = 8.5;
+    my $svg_height = 35;
+    my $svg_x1 = 160;
+    my $svg_y1 = -15;
+    my $svg_x2 = '12 + 110';
 
 
     ## First read the alignment table and save the results in a hash
@@ -2269,33 +2240,6 @@ sub Creates_website(){
 		$buttons =~ s/--Cluster_id_head--/head_$cl_id/g;
 		$buttons =~ s/--nb--/$num/g;
 		$script_jquery .= $buttons."\n";
-		
-		# ## Draw the alignment table
-		# my $alignment_table = &alignment_table();
-		# my $tab = "";
-		# foreach my $id (keys %current_alignment_table_data){
-		#     my $tr = "";
-		#     $tr .= "\n\t\t\t\t<tr>\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$id.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_1">'.$current_alignment_table_data{$id}{name}.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$cl_id.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{strand}.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_up}.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{offset_down}.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="tab_spacer_2">'.$current_alignment_table_data{$id}{width}.'</td>'."\n";
-		#     $tr .= "\t\t\t\t\t".'<td class="seq tab_spacer_1">'.&DNA_string_to_HTML($current_alignment_table_data{$id}{consensus}).'</td>'."\n\t\t\t\t".'</tr>'."\n";
-		#     $tab .= $tr;
-		# }
-		# $alignment_table =~ s/--Cluster_id--/$cl_id/g;
-		# $alignment_table =~ s/HERE/$tab/g;
-		# $alignment_table =~ s/--nb--/$num/g;
-		# $line .= "\n".$alignment_table."\n\n";
-		
-		# ## Add the code to hide/show the alignment table
-		# my $toogle_table = &toogle_table();
-		# $toogle_table =~ s/--nb--/$num/g;
-		# $script_jquery .= $toogle_table."\n";
-
 		my $cl_name = "cluster_".$num;
 		
 		## Draw the logo tree
@@ -2307,13 +2251,19 @@ sub Creates_website(){
                 ';
 		$d3_logo_tree .= &logo_tree();
 		my $factor_height = scalar(keys %current_alignment_table_data);
+		$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 		$d3_logo_tree =~ s/--widthtree--/3500/g;
 		$d3_logo_tree =~ s/--nb--/$num/g;
-		$d3_logo_tree =~ s/--nb_motifs--/100 + 30 * $factor_height/g;
+		$d3_logo_tree =~ s/--height--/100 + 30 * $factor_height/g;
 		$d3_logo_tree =~ s/--Cluster_id--/$cl_id/g;
 		$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_name}/g;
 		my $jname = $prefix."_trees/parsed_tree_cluster_".$num.".json";
-		$d3_logo_tree =~ s/--jsonfile--/$jname/;
+		$d3_logo_tree =~ s/--jsonfile--/$jname/g;
+		$d3_logo_tree =~ s/--svgwidth--/$svg_width/g;
+		$d3_logo_tree =~ s/--svgheight--/$svg_height/g;
+		$d3_logo_tree =~ s/--x1--/$svg_x1/g;
+		$d3_logo_tree =~ s/--y1--/$svg_y1/g;
+		$d3_logo_tree =~ s/--x2--/$svg_x2/g;
 		$d3_logo_tree .= '
                          </script>
 	                 </div>
@@ -2439,14 +2389,14 @@ sub Creates_website(){
 sub cluster_delim {
 
     my $cluster_delim = 
-"	
+'	
         <!--Div with cluster 1 delimitation and buttons to display results-->
-	<div class=\"cluster_division --Cluster_id_head--\">
+	<div class="cluster_division --Cluster_id_head--">
 		<strong>--Cluster_id--</strong>
 	</div>
-	<div class=\"Cluster_results --Cluster_id--\" id=\"button_alignment_table_--nb--\">Alignment table</div>
+	<div class="Cluster_results --Cluster_id--" id="button_alignment_table_--nb--">Alignment table</div>
 
-";
+';
     
     return($cluster_delim);
 }
@@ -2531,24 +2481,6 @@ sub alignment_table{
 
 
 ###################################
-## Hide/show the alignment table
-sub toogle_table{
-
-    my $toogle_align_tab  = 
-'
-// Slide the alignment table
-  $(document).ready(function(){
-    $(\'#button_alignment_table_--nb--\').click(function(){
-       $(\'#alignment_table_--nb--\').slideToggle(\'fast\');
-     }); 
-  $(\'#alignment_table_--nb--\').css(\'display\', \'none\');
-  });
-';
-    return($toogle_align_tab);
-}
-
-
-###################################
 ## Hide/show the logo tree
 sub toogle_tree{
 
@@ -2584,16 +2516,18 @@ sub toogle_branch_consensus_table{
 }
 
 
-######################### d3.json("--folder_tree--/parsed_tree_cluster_--nb--.json", function(json) {
-## Insert D3 logo tree 
+##############################################################
+## Insert D3 logo tree: This is the body of d3 script, each 
+## time a new cluster is added to the file the next code is 
+## pasted and modified           
 sub logo_tree{
 
     my $logo_tree = 
 	'
 
-		(function(){
-                var width = --widthtree--,
-		height = --nb_motifs--;
+	(function(){
+        var width = --widthtree--,
+	height = --height--;
 	;
 
 
@@ -2632,37 +2566,30 @@ d3.json("--jsonfile--", function(json) {
 	
 	node.append("circle")
 		.attr("r", 6)
-                .attr("fill", "--stroke--"),
-                .attr(\"stroke\", \"--stroke--\");
+                .attr("fill", "--stroke--");
 
 
        /*Insert labels*/
+       --lab--
 
 
-	node.append("a")
-			.attr("xlink:href", function(d) { return d.url; })
-			.append("text")
-			.text(function(d) { return d.children ? "" :  d.name; })
-			.attr("dx", function(d) { return d.children ? 0 : 20; })
-			.attr("dy", function(d) { return d.children ? 0 : 3; })
-			.attr("font-size", "8px")
-			.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+       /*Insert consensus*/
 
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image; })  
-		.attr("width", function(d) { return (d.size + 2)  * 8.5; })
-		.attr("height", 35)
-		.attr("x", 160)    
-		.attr("y", -15) 
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+		.attr("x", --x1--)    
+		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");	
 		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.image_rc; })  
-		.attr("width", function(d) { return (d.size + 2)  * 8.5; })
-		.attr("height", 35)
-  		.attr("x", function(d) { return (d.size + 2)  * 12 + 110; })  
-		.attr("y", -15) 
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+  		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
+		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");
 			
 	});
