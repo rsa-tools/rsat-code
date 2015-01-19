@@ -20,7 +20,8 @@ $program_version
 
 =head1 DESCRIPTION
 
-Convert a variation file between different formats.
+Ensure inter-conversions between different formats of polymorphic
+variations.
 
 /!\ To convert to VCF format, raw genomic sequence must be installed
 (I<download-ensembl-genome>).

@@ -69,7 +69,6 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name,consensus ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
-
 cluster:
 	@echo
 	@echo "Running matrix-clustering	${DEMO_PREFIX}"
