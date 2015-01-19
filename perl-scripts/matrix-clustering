@@ -2119,6 +2119,15 @@ sub Creates_website(){
 		.attr("font-size", "8px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
+
+    my $label_single_tree_no_link = '
+	node.append("text")
+	        .text(function(d) { return d.children ? "" :  d.name; })
+		.attr("dx", function(d) { return d.children ? 0 : 20; })
+		.attr("dy", function(d) { return d.children ? 0 : 3; })
+		.attr("font-size", "8px")
+		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+    ';
  
     my %alignment_table_data = ();
     my @split_line = ();
@@ -2182,8 +2191,8 @@ sub Creates_website(){
     my $svg_width = 6;
     my $svg_height = 14;
     my $svg_x1 = 150;
-    my $svg_y1 = -7;
-    my $svg_x2 = 80;
+    my $svg_y1 = -5;
+    my $svg_x2 = 13;
 
     my $div = "";
     my $small_forest = '' ;
@@ -2191,34 +2200,52 @@ sub Creates_website(){
     my $script_tag = '       
 		      <script type="text/javascript">
                 ';
+    my $sum_motifs = 0;
+    my $sum = 0;
+    my $cluster_sum = 0;
     foreach my $num (1..scalar(keys %alignment_table_data)){
+    #foreach my $num (1..2){
 
 	$cl_id_s = "cluster_".$num."_s";
 	$cl_id = "cluster_".$num;
 
 	my $cluster_size = scalar(keys %{$alignment_table_data{$cl_id}});
-	
-        ## Draw the logo forest 
-	$div .= '<div id="'.$cl_id_s.'"></div><hr>'."\n";
-	
-	my $tree = &logo_tree();
-	$tree =~ s/--lab--/$label_single_tree/;
-	$tree =~ s/--widthtree--/600/g;
-	$tree =~ s/--radius--/3/g;
-	$tree =~ s/--size--/250/g;
-	$tree =~ s/--nb--/$num/g;
-	$tree =~ s/--height--/70 + 10 * $cluster_size/g;
-	$tree =~ s/--cl_id--/$cl_id_s/g;
-	$tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
-	my $json_name = $prefix."_trees/parsed_tree_cluster_".$num.".json";
-	$tree =~ s/--jsonfile--/$json_name/g;
-	$tree =~ s/--svgwidth--/$svg_width/g;
-	$tree =~ s/--svgheight--/$svg_height/g;
-	$tree =~ s/--x1--/$svg_x1/g;
-	$tree =~ s/--y1--/$svg_y1/g;
-	$tree =~ s/--x2--/$svg_x2/g;
-		
-	$small_tree .= $tree."\n";
+	my $sum = $sum_motifs + $cluster_size;
+	if($sum < 17){
+
+	    ## Draw the logo forest 
+	    $div .= '<div id="'.$cl_id_s.'"></div>';
+
+	    if($cluster_sum < 2){
+		$div .= '<hr>'."\n";
+	    }
+	    
+	    my $tree = &logo_tree();
+	    $tree =~ s/--lab--/$label_single_tree_no_link/;
+	    $tree =~ s/--widthtree--/700/g;
+	    $tree =~ s/--radius--/3/g;
+	    $tree =~ s/--size--/150/g;
+	    $tree =~ s/--nb--/$num/g;
+	    $tree =~ s/--height--/60 + 8 * $cluster_size/g;
+	    $tree =~ s/--cl_id--/$cl_id_s/g;
+	    $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
+	    my $json_name = $prefix."_trees/parsed_tree_cluster_".$num.".json";
+	    $tree =~ s/--jsonfile--/$json_name/g;
+	    $tree =~ s/--svgwidth--/$svg_width/g;
+	    $tree =~ s/--svgheight--/$svg_height/g;
+	    $tree =~ s/--x1--/$svg_x1/g;
+	    $tree =~ s/--y1--/$svg_y1/g;
+	    $tree =~ s/--x2--/$svg_x2/g;
+	    
+	    $small_tree .= $tree."\n";
+
+	    $cluster_sum++;
+	    $sum_motifs += $cluster_size;
+	}
+
+	if($cluster_sum == 2){
+	    last; 
+	}
     }
     $small_forest .= $div."\n".'<script type="text/javascript">'."\n".$small_tree."\n".'</script>'."\n";
 
