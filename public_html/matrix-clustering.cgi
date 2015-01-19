@@ -50,7 +50,7 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 
 ################################################################
 ## Command line paramters
-local $parameters .= " -v 3";
+local $parameters .= " -v 1";
 
 ################################################################
 ## Matrix input format
