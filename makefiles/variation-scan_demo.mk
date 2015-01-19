@@ -73,20 +73,24 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
 	@${RETRIEVE_VAR_CMD}
-	@echo "Out file" ${RESULT_DIR}/${VARIANTS}_rsat_var.seq
+	@echo "Out file"
+	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.seq"
 
 ################################################################
 ## Scan selected variations with the matrix of interest
 PVAL=1
 PVAL_RATIO=1
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
+VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VAR_SCAN_CMD=variation-scan -v ${V} \
 	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.seq \
 	-m ${MATRIX} -bg ${BG_MODEL} -uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
-	-o ${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}.tab
+	-o ${VAR_SCAN_RES}.tab
 variation_scan:
 	@echo "${VAR_SCAN_CMD}"
 	@${VAR_SCAN_CMD}
+	@echo "Output file"
+	@echo "	${VAR_SCAN_RES}.tab"
 
 
