@@ -17,9 +17,9 @@ $program_version
 
 =head1 DESCRIPTION
 
-Retrieve variation sequences of length L for a set of coordinates
-specified in a bed-formatted file, for a variation id list or
-variation in I<retrieve-variation-seq> formatted file.
+Given a set of IDs for polymorphic variations, retrieve the
+corresponding variants and their flanking sequences, in order to scan
+them wiht the tool I<variation-scan>.
 
 =head1 AUTHORS
 
@@ -27,7 +27,7 @@ variation in I<retrieve-variation-seq> formatted file.
 
 =item B<Jeremy Delerce> (M2 thesis project 2013)
 
-=item B<Alejandra Medina Rivera>
+=item B<Alejandra Medina Rivera> <amedina@lcg.unam.mx>
 
 =item B<Jacques van Helden> <Jacques.van-Helden@univ-amu.fr>
 
@@ -581,8 +581,11 @@ package	main;
 	  ## the variant extended on both flanks.
 	  $variant_aux =~ s/-//g; 
 	  
-	  my $left_flank = substr($ref_seq,$start-$flank_len-1,$flank_len);
-	  my $right_flank = substr($ref_seq,$end,$flank_len);
+
+	  ## JvH, for Ale: we should check it the strand is well taken
+	  ## into account (here or below ?)
+	  my $left_flank = lc(substr($ref_seq,$start-$flank_len-1,$flank_len));
+	  my $right_flank = lc(substr($ref_seq,$end,$flank_len));
 	  my $variant_seq = $left_flank.$variant_aux.$right_flank;
 
 	  ## Select the output fields
