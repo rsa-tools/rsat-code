@@ -6,7 +6,7 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
 V=2
 SPECIES=Homo_sapiens
-ASSEMBLY=GRCh37
+ASSEMBLY=GRCh38
 ENSEMBL_VERSION=75
 
 ## The folder does not depend on the ensembl version anymore.  The
