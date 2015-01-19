@@ -581,8 +581,11 @@ package	main;
 	  ## the variant extended on both flanks.
 	  $variant_aux =~ s/-//g; 
 	  
-	  my $left_flank = substr($ref_seq,$start-$flank_len-1,$flank_len);
-	  my $right_flank = substr($ref_seq,$end,$flank_len);
+
+	  ## JvH, for Ale: we should check it the strand is well taken
+	  ## into account (here or below ?)
+	  my $left_flank = lc(substr($ref_seq,$start-$flank_len-1,$flank_len));
+	  my $right_flank = lc(substr($ref_seq,$end,$flank_len));
 	  my $variant_seq = $left_flank.$variant_aux.$right_flank;
 
 	  ## Select the output fields
