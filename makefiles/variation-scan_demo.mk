@@ -7,7 +7,7 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 V=2
 SPECIES=Homo_sapiens
 ASSEMBLY=GRCh38
-ENSEMBL_VERSION=75
+ENSEMBL_VERSION=77
 
 ## The folder does not depend on the ensembl version anymore.  The
 ## following option should be used only for specific purpose (when
@@ -78,13 +78,14 @@ retrieve_var:
 
 ################################################################
 ## Scan selected variations with the matrix of interest
-PVAL=1
-PVAL_RATIO=1
+PVAL=0.1
+PVAL_RATIO=2
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VAR_SCAN_CMD=variation-scan -v ${V} \
 	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.seq \
-	-m ${MATRIX} -bg ${BG_MODEL} -uth pval ${PVAL} \
+	-m ${MATRIX} -bg ${BG_MODEL} \
+	-uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
 	-o ${VAR_SCAN_RES}.tab
 variation_scan:

@@ -14,23 +14,33 @@ use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 
-## Specification of the server
+## Specification of the server(s)
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || qw(
-			    http://rsat.ulb.ac.be/rsat
-			    http://139.124.66.4/rsat
-                            http://rsat.sb-roscoff.fr
-			    http://www.rsat.eu
-			    http://www.rsat.fr
-			    http://embnet.ccg.unam.mx/rsa-tools
-			    http://rsat01.biologie.ens.fr/rsa-tools
-			    http://tagc.univ-mrs.fr/rsa-tools
-			    http://anjie.bi.up.ac.za/rsa-tools
-			    http://bongcam1.hgen.slu.se/rsat
-			    http://localhost/rsat
-			    );
+        http://rsat.ulb.ac.be/rsat
+    	http://prokaroyte.rsat.eu
+	http://fungi.rsat.eu
+	http://plants.rsat.eu
+	http://metazoa.rsat.eu
+	http://protists.rsat.eu
+	http://teaching.rsat.eu
+	http://training.rsat.eu);
 
-# 			    http://wwwsup.scmbb.ulb.ac.be/rsat
+my @more_servers = qw(
+        http://pedagogix-tagc.univ-mrs.fr/rsat
+        http://rsat-tagc.univ-mrs.fr/rsat
+        http://rsat.sb-roscoff.fr
+        http://www.rsat.eu
+        http://www.rsat.fr
+        http://embnet.ccg.unam.mx/rsa-tools
+        http://rsat01.biologie.ens.fr/rsa-tools
+        http://tagc.univ-mrs.fr/rsa-tools
+        http://localhost/rsat
+        );
+
+#        http://nexus.hgen.slu.se/rsat
+#        http://anjie.bi.up.ac.za/rsa-tools
+#        http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## Query parameters
 #my $taxon = 'Fungi';
