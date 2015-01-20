@@ -35,20 +35,14 @@ $default{mml}=30;
 
 
 ## Threshold values for site detection
-$default{lth_score} = "1";
-$default{uth_score} = "none";
-$default{lth_rank} = "none";
-$default{uth_rank} = "none";
-$default{lth_proba_M} = "none";
-$default{uth_proba_M} = "none";
-$default{lth_proba_B} = "none";
-$default{uth_proba_B} = "none";
-$default{lth_normw} = "none";
-$default{uth_normw} = "none";
-$default{lth_sig} = "none";
-$default{uth_sig} = "none";
-$default{lth_pval} = "none";
+## Suported uth 
 $default{uth_pval} = "1e-3";
+
+## Suported lth
+$default{lth_score} = "1";
+$default{lth_w_diff} = "1";
+$default{lth_pval_ratio} = "10";
+
 
 ## Background model
 $default{markov_order} = "1";
@@ -282,71 +276,31 @@ sub Panel3 {
 					  $query->textfield(-name=>'lth_score',
 							    -default=>$default{lth_score},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_score',
-							    -default=>$default{uth_score},
-							    -size=>5)
+					  ""
 					 ]),
 
 			      ### Threshold on P-value of the score
-			      $query->td(['P-value',
-					  $query->textfield(-name=>'lth_pval',
-							    -default=>$default{lth_pval},
+			      $query->td(['P-value ratio',
+					  $query->textfield(-name=>'lth_pval_ratio',
+							    -default=>$default{lth_pval_ratio},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_pval',
-							    -default=>$default{uth_pval},
-							    -size=>5)
+					  ""
 					 ]),
 					  
 				### Threshold on Sig of the score
-			      $query->td(['Sig',
-					  $query->textfield(-name=>'lth_sig',
-							    -default=>$default{lth_sig},
+			      $query->td(['Weight<br>score difference',
+					  $query->textfield(-name=>'lth_w_diff',
+							    -default=>$default{lth_w_diff},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_sig',
-							    -default=>$default{uth_sig},
-							    -size=>5)
+					  ""
 					 ]),
-
-			      ### Threshold on proba_M
-			      $query->td(['P(S|M)<br>proba_M',
-					  $query->textfield(-name=>'lth_proba_M',
-							    -default=>$default{lth_proba_M},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_proba_M',
-							    -default=>$default{uth_proba_M},
-							    -size=>5)
-					 ]),
-
-			      ### Threshold on proba_B
-			      $query->td(['P(S|B)<br>proba_B',
-					  $query->textfield(-name=>'lth_proba_B',
-							    -default=>$default{lth_proba_B},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_proba_B',
-							    -default=>$default{uth_proba_B},
-							    -size=>5)
-					 ]),
-
-			      ### Threshold on normw
-			      $query->td(['Normalized<br>weight',
-					  $query->textfield(-name=>'lth_normw',
-							    -default=>$default{lth_normw},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_normw',
-							    -default=>$default{uth_normw},
-							    -size=>5)
-					 ]),
-
-			      ### Threshold on rank
-			      $query->td(['Rank',
-					  $query->textfield(-name=>'lth_rank',
-							    -default=>$default{lth_rank},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_rank',
-							    -default=>$default{uth_rank},
-							    -size=>5)
-					 ]),
-
+		      
+                              ### Threshold on P-value of the score
+			      $query->td(['P-value (site)',
+					  "     ",$query->textfield(-name=>'uth_pval',
+							    -default=>$default{uth_pval},
+							    -size=>5)				       
+					 ])
 			     ]
 			    )
 		 );
