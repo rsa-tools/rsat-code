@@ -18,12 +18,21 @@ SERVER=http://www.rsat.eu
 # SERVER=http://localhost/rsat
 SERVERS= \
 	http://www.rsat.eu \
+	http://prokaroyte.rsat.eu \
+	http://fungi.rsat.eu \
+	http://plants.rsat.eu \
+	http://metazoa.rsat.eu \
+	http://protists.rsat.eu \
+	http://teaching.rsat.eu \
+	http://training.rsat.eu \
 	http://rsat.ulb.ac.be/rsat \
-	http://139.124.66.4/rsat \
-	http://liv.bmc.uu.se/rsa-tools \
-	http://tagc.univ-mrs.fr/rsa-tools \
 	http://embnet.ccg.unam.mx/rsa-tools \
+	http://pedagogix-tagc.univ-mrs.fr/rsat \
+	http://nexus.hgen.slu.se/rsa-tools
+SERVERS_TO_CHECK = \
+	http://tagc.univ-mrs.fr/rsa-tools \
 	http://localhost/rsat
+
 list_servers:
 	@echo "SERVERS	${SERVERS}"
 	@echo "SERVER	${SERVER}"
