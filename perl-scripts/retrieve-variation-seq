@@ -427,7 +427,7 @@ package	main;
     my @not_found = sort(keys(%variation_id));
     my $not_found_nb = scalar(@not_found);
     if ($not_found_nb > 0) {
-      &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb);
+      &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
       my $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check\n";
 
       foreach my $id (@not_found) {
