@@ -12,6 +12,14 @@
 #    add English (Macintosh)
 
 
+## For Debian, I must set the locales manually
+# export LANGUAGE=en_US.UTF-8
+# export LANG=en_US.UTF-8
+# export LC_ALL=en_US.UTF-8
+# locale-gen en_US.UTF-8
+# dpkg-reconfigure locales
+
+
 ################################################################
 ## Must be executed as root. If you are non-root but sudoer user, you
 ## can become it withn "sudo bash"
@@ -40,12 +48,16 @@ dpkg-reconfigure tzdata
 ## Create a separate directory for RSAT, which must be readable by all
 ## users (in particular by the apache user)
 mkdir -p ${INSTALL_ROOT_DIR}
-chmod 755 ${INSTALL_ROOT_DIR}
 cd ${INSTALL_ROOT_DIR}
 mkdir -p ${INSTALL_ROOT_DIR}/install_logs
+chmod 777 ${INSTALL_ROOT_DIR}/install_logs
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+
+## We can then check the increase of disk usage during the different
+## steps of the installation
+grep sda1 ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
@@ -57,86 +69,87 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALL
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
-	curl
-	yum
-	php-elisp
-	libgdbm-dev
-	libgd2-xpm-dev
-	libxml2-dev
-	links
-	gfortran
-	libmysqlclient-dev
-	texlive-latex-base
-	python-virtualenv
-	ipython
-	ipython-notebook
-	libssl-dev
-	libreadline-gplv2-dev:i386
-	lib64readline-gplv2-dev:i386
-	libreadline-gplv2-dev
-	libx11-dev
-	libxt-dev
-	libcurl4-openssl-dev
-	libxml2-dev
-	tcl8.5-dev
-	tk8.5-dev
-	libxss-dev
-	libpng12-dev
-	libjpeg62-dev
-	libcairo2-dev
-	lib32z1
-	lib32ncurses5
-	lib32bz2-1.0
-	libc6-dev
-	build-essential
-	python-dev
-	python3-dev
-	libnet-ssleay-perl
-	libcrypt-ssleay-perl
-        exfat-fuse
-        exfat-utils 
+ess
+curl
+yum
+php-elisp
+libgdbm-dev
+libgd2-xpm-dev
+libxml2-dev
+links
+gfortran
+libmysqlclient-dev
+texlive-latex-base
+python-virtualenv
+ipython
+ipython-notebook
+libssl-dev
+libreadline-gplv2-dev:i386
+lib64readline-gplv2-dev:i386
+libreadline-gplv2-dev
+libx11-dev
+libxt-dev
+libcurl4-openssl-dev
+libxml2-dev
+tcl8.5-dev
+tk8.5-dev
+libxss-dev
+libpng12-dev
+libjpeg62-dev
+libcairo2-dev
+lib32z1
+lib32ncurses5
+lib32bz2-1.0
+libc6-dev
+build-essential
+python-dev
+python3-dev
+libnet-ssleay-perl
+libcrypt-ssleay-perl
+exfat-fuse
+exfat-utils 
 "
 
 PACKAGES="
-	ssh
-	git
-	cvs
-	wget
-	zip
-	unzip
-	finger
-	screen
-	make
-	g++
-	apache2
-	php5
-	libapache2-mod-php5
-	libgd-tools
-	libgd-gd2-perl
-	ghostscript
-	gnuplot
-	graphviz
-	mysql-client
-	default-jre
-	python
-	python-pip
-	python-setuptools 
-	python-numpy
-	python-scipy
-	python-matplotlib
-	python-suds
-	python3
-	python3-pip
-	python3-setuptools 
-	python3-numpy
-	python3-scipy
-	python3-matplotlib
-	r-base-core
-	emacs
-        console-data
-        x11-apps
-        firefox
-        eog
+ssh
+git
+cvs
+wget
+zip
+unzip
+finger
+screen
+make
+g++
+apache2
+php5
+libapache2-mod-php5
+libgd-tools
+libgd-gd2-perl
+ghostscript
+gnuplot
+graphviz
+mysql-client
+default-jre
+python
+python-pip
+python-setuptools 
+python-numpy
+python-scipy
+python-matplotlib
+python-suds
+python3
+python3-pip
+python3-setuptools 
+python3-numpy
+python3-scipy
+python3-matplotlib
+r-base-core
+emacs
+x11-apps
+firefox
+eog
+ntp
 "
 
 ################################################################
@@ -145,45 +158,45 @@ PACKAGES="
 ## ubuntu OS)
 
 PACKAGES_PERL="perl-doc
-	pmtools
-	libyaml-perl
-	libemail-simple-perl
-	libemail-sender-perl
-	libemail-simple-creator-perl
-	libpostscript-simple-perl
-	libstatistics-distributions-perl
-	libio-all-perl
-	libobject-insideout-perl
-	libobject-insideout-perl
-	libsoap-lite-perl
-	libsoap-wsdl-perl
-	libxml-perl
-	libxml-simple-perl
-	libxml-compile-cache-perl
-	libdbi-perl
-	liblockfile-simple-perl
-	libobject-insideout-perl
-	libgd-perl
-	libdbd-mysql-perl
-	libjson-perl
-	libbio-perl-perl
-	libdigest-md5-file-perl
-        libnet-address-ip-local-perl
+pmtools
+libyaml-perl
+libemail-simple-perl
+libemail-sender-perl
+libemail-simple-creator-perl
+libpostscript-simple-perl
+libstatistics-distributions-perl
+libio-all-perl
+libobject-insideout-perl
+libobject-insideout-perl
+libsoap-lite-perl
+libsoap-wsdl-perl
+libxml-perl
+libxml-simple-perl
+libxml-compile-cache-perl
+libdbi-perl
+liblockfile-simple-perl
+libobject-insideout-perl
+libgd-perl
+libdbd-mysql-perl
+libjson-perl
+libbio-perl-perl
+libdigest-md5-file-perl
+libnet-address-ip-local-perl
 "
 
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.
 PACKAGES_PERL_MISSING="
-	libalgorithm-cluster-perl
-	digest-md5-file-perl
-	liblockfile-simple
-	libutil-properties-perl
-        librest-client-perl
-        libxml-compile-soap11-perl
-        libxml-compile-wsdl11-perl
-        libxml-compile-transport-soaphttp-perl
-        libbio-das-perl        
+libalgorithm-cluster-perl
+digest-md5-file-perl
+liblockfile-simple
+libutil-properties-perl
+librest-client-perl
+libxml-compile-soap11-perl
+libxml-compile-wsdl11-perl
+libxml-compile-transport-soaphttp-perl
+libbio-das-perl        
 "
 
 ## Install the apt-get libraries
@@ -198,6 +211,10 @@ do \
    df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${INSTALL_ROOT_DIR}/install_logs"
+
+## This package has to be installed in an interactive mode (dialog
+## box)
+${INSTALLER} install ${INSTALLER_OPT} console-data
 
 ################################################################
 ## Specific treatment for some Python libraries
@@ -219,26 +236,20 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.t
 ## Check the evolution of disk usage during package installation
 grep sda1 install_logs/df_*
 
-
 ## DONE: installation of Ubuntu packages
 ################################################################
-
 
 
 ################################################################
 ## Activate the Apache Web server
 ##
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!! SOME MANUAL INTERVENTION IS REQUIRED HERE  !!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
-
-## And write the following line:
-##        DocumentRoot /bio/rsat/public_html
-## The server will now immediately display RSAT home page when you
-## type its IP address.
 
 
 ## To avoid puzzling warning at apache start, set ServerName globally.
@@ -257,6 +268,12 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 ##   AddType text/plain .fasta
 ##   AddType text/plain .bed
 
+## Adapt the PHP parameters
+emacs -nw /etc/php5/apache2/php.ini
+## Modify the following parameters
+##      upload_max_size=100M
+##      post_max_size = 100M
+
 
 ## The following lines are required to activate cgi scripts.  Found at
 ## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
@@ -264,14 +281,6 @@ chmod 755 /usr/lib/cgi-bin
 chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
 
-## Adapt the PHP parameters
-emacs -nw /etc/php5/apache2/php.ini
-## Modify the following parameters
-##      upload_max_size=100M
-##      post_max_size = 100M
-
-## Restart the apache server to take the new config into account
-service apache2 restart
 
 ## DONE: apache server configured and started
 ## You can check it by opening a Web connection to 
@@ -286,11 +295,11 @@ service apache2 restart
 ## added to the pip installation
 pip install soappy
 pip install fisher
+pip install httplib2
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 ## optional: an utility to measure internet bandwidth
 pip install speedtest-cli
-
 
 #${INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
@@ -378,9 +387,6 @@ visudo
 ## then add the following line below "User privilege specification"
 # rsat    ALL=(ALL:ALL) ALL
 
-## RSAT installation is done under the rsat login
-su - rsat
-
 ################################################################
 ## Download RSAT distribution
 
@@ -388,6 +394,9 @@ su - rsat
 ## server, which is currently only possible for RSAT developing team.
 ## In the near future, I envisage to use git also for the end-user
 ## distribution.
+
+## RSAT installation is done under the rsat login
+su - rsat
 cd ${HOME}
 git clone git@depot.biologie.ens.fr:rsat
 
@@ -397,8 +406,8 @@ export INSTALL_ROOT_DIR=/bio
 export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 
 ## Move the rsat distribution to the RSAT_HOME directory
-sudo mv rsat ${RSAT_HOME}
-ln -fs ${RSAT_HOME} rsat
+sudo mv ${HOME}/rsat ${RSAT_HOME}
+ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## For users who don't have an account on the RSAT git server, the
 ## code can be downloaded as a tar archive from the Web site.
@@ -443,13 +452,25 @@ make -f makefiles/init_rsat.mk init
 exit
 
 ################################################################
+## Previous way to specify bashrc parameters, via
+## /etc/bash_completion.d/. I change it (2014-09-23) because it does
+## not allow to run remote commands via ssh (/etc/bash_completion.d is
+## apparently only loaded in interactive mode).
+## 
 ## Link the RSAT bash configuration file to a directory where files
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 #rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
-ln -fs ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
-source ${RSAT}/RSAT_config.bashrc
+## ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
+source ${RSAT_HOME}/RSAT_config.bashrc
+
+emacs -nw /etc/bash.bashrc
+
+
+## Check that the root has well loaded the RSAT configuration
+echo $RSAT
+
 
 ################################################################
 ## Installation of Perl modules required for RSAT
@@ -571,6 +592,10 @@ emacs -nw /etc/apache2/sites-available/000-default.conf
 ## Comment the line with the default document root (should appear as
 ## such in the original config):
 ##        DocumentRoot /var/www/html                                                                            
+## And write the following line:
+##        DocumentRoot /bio/rsat/public_html
+## The server will now immediately display RSAT home page when you
+## type its IP address.
 
 apache2ctl restart
 
@@ -580,7 +605,7 @@ echo $RSAT_WWW
 
 ## If the value is "auto", get the URL as follows
 # export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
-# export IP=192.168.56.114
+# export IP=192.168.56.101
 # echo ${IP}
 # export RSAT_WWW=http://${IP}/rsat/
 # echo $RSAT_WWW
@@ -589,9 +614,11 @@ echo $RSAT_WWW
 ## Next steps require to be done as rsat administrator user
 
 ## compile RSAT programs written in C
+su - rsat
+export INSTALL_ROOT_DIR=/bio/
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
+sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -600,9 +627,11 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
-## ONLY FOR THE IFB CLOUD: 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!      ONLY FOR THE IFB CLOUD    !!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ##
 ## replace the data directory by a link to
 ## a separate disk containing all RSAT data.
@@ -626,7 +655,7 @@ download-organism -v 1 -org Saccharomyces_cerevisiae \
 ## Get the list of organisms supported on your computer.
 supported-organisms
 
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
+sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 
@@ -723,5 +752,23 @@ grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
+
+################################################################
+########################     OPTIONAL     ######################
+################################################################
+
+
+## Install some software tools for NGS analysis
+cd ${RSAT}
+make -f makefiles/install_software.mk install_weblogo
+make -f makefiles/install_software.mk install_d3
+make -f makefiles/install_software.mk install_meme
+
+################################################################
+## Ganglia: tool to monitor a cluster (or single machine)
+## https://www.digitalocean.com/community/tutorials/introduction-to-ganglia-on-ubuntu-14-04
+sudo apt-get install -y ganglia-monitor rrdtool gmetad ganglia-webfrontend
+sudo cp /etc/ganglia-webfrontend/apache.conf /etc/apache2/sites-enabled/ganglia.conf
+sudo apachectl restart
 
 

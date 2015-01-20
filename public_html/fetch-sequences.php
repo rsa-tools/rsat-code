@@ -378,16 +378,29 @@ if (!$errors) {
   }  
 
   //Display pipe
-  echo ('   <table class = "nextstep">
-    <tr><th>next step</th></tr>
-    <tr><td align=center>
+  echo ('
+  <table class = "nextstep">
+    <tr><th colspan=4>next step</th></tr>
+    <tr>
+      <td align=center>
 	    <form method="post" action="peak-motifs_form.cgi">
 	    <input type="hidden" name="title" value="'.str_replace('.bed', '', end(explode('/',$bed_file))).'">
 	    <input type="hidden" name="sequence_url1" value="'.rsat_path_to_url($output_file).'">
 	    <input type="submit" value="peak-motifs">
-	    </form></td>
-	  </tr>
-	  </table>');  
+	    </form>
+      </td>
+         
+      <td align=center>
+	    <form method="post" action="random-genome-fragments_form.cgi">
+	    <input type="hidden" name="title" value="'.str_replace('.bed', '', end(explode('/',$bed_file))).'">
+	    <input type="hidden" name="sequence_url1" value="'.rsat_path_to_url($output_file).'">
+	    <input type="submit" value="random-genome-fragments">
+            <br>(<font color="red">Note: select organism manually</font>)
+	    </form>
+      </td>
+    </tr>
+
+  </table>');  
 }	
 
 ?>

@@ -18,16 +18,26 @@ SERVER=http://www.rsat.eu
 # SERVER=http://localhost/rsat
 SERVERS= \
 	http://www.rsat.eu \
+	http://prokaroyte.rsat.eu \
+	http://fungi.rsat.eu \
+	http://plants.rsat.eu \
+	http://metazoa.rsat.eu \
+	http://protists.rsat.eu \
+	http://teaching.rsat.eu \
+	http://training.rsat.eu \
 	http://rsat.ulb.ac.be/rsat \
-	http://139.124.66.4/rsat \
-	http://liv.bmc.uu.se/rsa-tools \
-	http://tagc.univ-mrs.fr/rsa-tools \
 	http://embnet.ccg.unam.mx/rsa-tools \
+	http://pedagogix-tagc.univ-mrs.fr/rsat \
+	http://nexus.hgen.slu.se/rsa-tools
+SERVERS_TO_CHECK = \
+	http://tagc.univ-mrs.fr/rsa-tools \
 	http://localhost/rsat
+
 list_servers:
 	@echo "SERVERS	${SERVERS}"
 	@echo "SERVER	${SERVER}"
 	@echo "WSDL_URL	${WSDL_URL}"
+	@echo "RSAT_WS	${RSAT_WS}"
 
 stub_param:
 	@echo "Parameters for generating the stub"
@@ -49,7 +59,13 @@ stub:
 stub_test:
 	perl ./convert_matrix_soap_wsdl_2.pl 
 
+
 nostub_test:
-	@echo "Testing web services without stub"
+	@echo "Testing web services without stub	${RSAT_WS}"
 	perl ./supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
-#	@ls -ltr organisms_*.txt
+
+nostub_test_all_servers:
+	@for server in ${SERVERS}; do \
+		${MAKE} RSAT_WS=$${server} nostub_test; \
+	done
+

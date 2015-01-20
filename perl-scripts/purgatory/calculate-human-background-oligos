@@ -1,0 +1,67 @@
+#!/usr/bin/perl -w
+
+## This script computes background models for a given Ensembl organism.
+
+use strict;
+
+my @organisms = ('Homo_sapiens');  ## Name of the query organism
+
+my $upstream_length = 2000;
+
+my $ensembl_version = $ENV{ensembl_version};
+#my $ensembl_version = '61';
+
+foreach my $organism (@organisms) {
+
+  my $ensembl_org = $organism."_EnsEMBL_".$ensembl_version;
+
+  ###
+  ### Retrieve-ensembl-seq parameters
+  ###
+
+  ## Feature types
+  foreach my $feattype ('mRNA', 'CDS', 'intron', 'firstintron', 'utr') {
+
+    ## Type
+    my $type;
+    my $from;
+    my $to;
+    if (($feattype eq 'mRNA') || ($feattype eq 'CDS')) {
+      $type = 'upstream'; ## The -type option value; other example:'-type downstream'
+      $from = - $upstream_length;		## Start position of the sequence
+      $to = -1;			## End position of the sequence
+    } else {
+      $type = '';
+      $from = '';
+      $to = '';
+    }
+
+    my $maskcoding = '-maskcoding';
+
+    foreach my $rm ('', '-rm') {
+      foreach my $noov ('-ovlp', '-noov') {
+	foreach my $str ('-1str', '-2str') {
+	  foreach my $oligo_size ('1', '2', '3', '4', '5', '6', '7', '8') {
+
+	    my $input_file_name = $organism."_".$type."_".$feattype.$from.$to.$maskcoding.$rm.".fasta";
+	    $input_file_name =~ s/__/_/;
+
+	    my $output_file_name = $oligo_size."nt_".$type."_".$feattype.$from.$to.$maskcoding.$rm."_".$organism.$noov.$str.".freq";
+	    $output_file_name =~ s/__/_/;
+
+	    print "Saving result to file $output_file_name\n";
+
+	    my $noov_cw;
+	    if ($noov eq '-ovlp') {
+	      $noov_cw = '';
+	    } else {
+	      $noov_cw = '-noov';
+	    }
+	    my $command = "count-words -i /bio/rsa-tools/data/genomes/$ensembl_org/genome/$input_file_name -l $oligo_size $str $noov_cw > /bio/rsa-tools/data/genomes/$ensembl_org/oligo-frequencies/$output_file_name";
+	    `$command`;
+	  }
+	}
+      }
+    }
+  }
+}

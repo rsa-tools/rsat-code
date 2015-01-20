@@ -30,7 +30,6 @@ $query = new CGI;
 &RSA_header("matrix-clustering result", "results");
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-#
 ## Check security issues
 &CheckWebInput($query);
 
@@ -51,16 +50,13 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 
 ################################################################
 ## Command line paramters
-$parameters .= " -v 1";
-
-## Read parameters
-local $parameters = " -v 1";
+local $parameters .= " -v 1";
 
 ################################################################
 ## Matrix input format
 local $query_matrix_format = lc($query->param('matrix_format'));
 ($query_matrix_format) = split (/\s+/, $query_matrix_format);
-$parameters .= " -format ".$query_matrix_format;
+$parameters .= " -matrix_format ".$query_matrix_format;
 
 ################################################################
 #### Query matrix file
@@ -87,20 +83,20 @@ if ($hclust_method) {
 
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
-my @selected_output_fields = ();
+my @threshold_fields = qw(cor Ncor w);
 my $thresholds = "";
-foreach my $field (@supported_output_fields) {
+foreach my $field (@threshold_fields) {
   ## Selected field
   if ($query->param('return_'.$field)) {
     push @selected_output_fields, $field;
   }
-
+  
   ## Lower threshold
   my $lth = $query->param('lth_'.$field);
   if (&IsReal($lth)) {
     $thresholds .= " -lth ".$field." ".$lth;
   }
-
+  
   ## Upper threshold
   my $uth = $query->param('uth_'.$field);
   if (&IsReal($uth)) {
@@ -124,36 +120,38 @@ $parameters .= " -return ".$selected_output_fields;
 
 ################################################################
 ## Output formats
-$parameters .= " -export newick";
-$parameters .= " -d3_base file";
-$parameters .= " -labels name,consensus";
-
-
+#$parameters .= " -cons";
+$parameters .= " -heatmap";
+$parameters .= " -export json";
+#$parameters .= " -d3_base file";
+#$parameters .= " -export newick"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
+$parameters .= " -labels name,consensus"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
 
 ################################################################
 ## Output file
 $parameters .= " -o ".$output_path."/".$output_prefix;
 
 ## Add an error-log file for matrix-clustering
-  $err_file = $output_path."/".$output_prefix."_err.txt";
-  $parameters .= " >& ".$err_file;
+$err_file = $output_path."/".$output_prefix."_err.txt";
+$parameters .= " >& ".$err_file;
 
 ## Report the full command before executing
-  &ReportWebCommand($command." ".$parameters);
+&ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Display or send result by email
-  $index_file = $output_path."/".$output_prefix."_index.html";
-  my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
-  if ($query->param('output') =~ /display/i) {
-    &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
-  } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
-  }
+$index_file = $output_path."/".$output_prefix."_index.html";
+#$index_file = $output_path."/".$output_prefix."_SUMMARY.html";
+my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
+if ($query->param('output') =~ /display/i) {
+  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
+}
 
 ################################################################
 ## Result page footer
-  print $query->end_html;
+print $query->end_html;
 
-  exit(0);
+exit(0);
 

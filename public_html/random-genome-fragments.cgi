@@ -145,21 +145,21 @@ $result_file = $tmp_file_path."_fragments.".$output_format;
 push @result_files, ("Genome fragments ($output_format)",$result_file);
 
 ############################################################
-## Command
-
+## Report the command
 &ReportWebCommand($command." ".$parameters);
 
-### execute the command ###
+################################################################
+## Run the command
 open RESULT, "$command $parameters |";
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
 
-  ### print the result
+  ## Print the result
   print '<H4>Result</H4>';
 
-  ### open the sequence file on the server
+  ## Open the sequence file on the server
   if (open MIRROR, ">$result_file") {
     $mirror = 1;
     &DelayedRemoval($result_file);
@@ -177,7 +177,7 @@ if (($query->param('output') =~ /display/i) ||
   ## Print table with links to the result files
   &PrintURLTable(@result_files);
 
-  ### prepare data for piping
+  ## Prepare data for piping
   if ($query->param('outputformat') eq "outputseq"){
     $out_format = "fasta"; ## Fasta is the only supported format, but it is necessary to specify it for the piping form
     &PipingFormForSequence();
