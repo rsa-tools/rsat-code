@@ -300,17 +300,17 @@ package	main;
       next if (/^;/); ## Skip RSAT-like comment lines
       next unless (/\S/); ## Skip empty lines
       chomp();
-      my @token = split("\t");
-      my $distrib_file = $token[1]."_".$bg_name.".tab"; ## Matrix distrib outfile for each matrix
+      my @field = split("\t");
+      my $distrib_file = $field[1]."_".$bg_name.".tab"; ## Matrix distrib outfile for each matrix
 
       my $matrix_distrib_cmd=$ENV{'RSAT'}."matrix-distrib ";
-      $matrix_distrib_cmd.=" -m ".$token[2]." -matrix_format tf -decimals 1 ";
+      $matrix_distrib_cmd.=" -m ".$field[2]." -matrix_format tf -decimals 1 ";
       $matrix_distrib_cmd.=" -bgfile ".$infile{'matrixfile'};
       $matrix_distrib_cmd.=" -bg_pseudo 0.01 -bg_format oligos -pseudo 1 ";
       $matrix_distrib_cmd.=" -o ".$distrib_dir/$distrib_file;
       &doit($matrix_distrib_cmd, 0, 0, 0);
 
-      print $outD $token[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n"; ## Print distrib file
+      print $outD $field[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n"; ## Print distrib file
     }
     &RSAT::message::Info("Distrib_list :", $distrib_dir.'/'.$outfile{'distrib_list'}) if ($main::verbose >= 2);
 
@@ -362,7 +362,7 @@ package	main;
   }
 
   ## Print header
-  print $out "#",join("\t",qw(
+  @out_fields = qw(
                       ac_motif
                       motif
                       var_id
@@ -386,7 +386,8 @@ package	main;
                       worst_seq 
                       reference_allele
                       is_ref_better
-                      minor_allele_freq)),"\n";
+                      minor_allele_freq);
+  print $out "#",join("\t", @out_fields),"\n";
 
   ################################################################
   ## ALE'S NOTE= Read Matrix File and store it in a hash ?
@@ -405,36 +406,36 @@ package	main;
     chomp();
 
     ## Identify parts of the transfac matrix
-    my @token = split (" ",$_);
+    my @field = split (" ",$_);
 
-    if ( $token[0] eq "AC") {
-      $ac = $token[-1];
+    if ( $field[0] eq "AC") {
+      $ac = $field[-1];
       $length = 0;
     }
 
-    if ( $token[0] eq "ID" ) {
-      $matrix_list{$ac}{'id'} = $token[-1];
+    if ( $field[0] eq "ID" ) {
+      $matrix_list{$ac}{'id'} = $field[-1];
     }
 
-    $need_count = 0 if ( $token[0] eq "XX" );
+    $need_count = 0 if ( $field[0] eq "XX" );
 
     if ($need_count) {
       $length += 1;
 
       for (my $i = 1;$i < scalar(keys(%{$matrix_list{$ac}{'tab'}})+1);$i++ ) {
-        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, $token[$i] );
+        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, $field[$i] );
       }
     }
 
-    if ( $token[0] eq "P0" ||$token[0] eq "PO" ) {
+    if ( $field[0] eq "P0" ||$field[0] eq "PO" ) {
       $need_count = 1;
 
-      for (my $i = 1;$i < scalar(@token);$i++ ) {
-        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, lc($token[$i]) );
+      for (my $i = 1;$i < scalar(@field);$i++ ) {
+        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, lc($field[$i]) );
       }
     }
 
-    if ( $token[0] eq "//") {
+    if ( $field[0] eq "//") {
       $matrix_list{$ac}{'length'} = $length;
       $nb_matrix++;
     }
@@ -459,8 +460,8 @@ package	main;
       next if (/^#/); ## Skip comment lines
       next if (/^;/); ## Skip RSAT-like comment lines
       chomp();
-      my @token = split("\t");
-      $distrib_file_list{$token[0]} = $token[1];
+      my @field = split("\t");
+      $distrib_file_list{$field[0]} = $field[1];
     }
   }
 
@@ -479,7 +480,7 @@ package	main;
   $convert_bg_cmd .=" -o ".$bg_file." -bg_pseudo 0.01 ";
   &doit($convert_bg_cmd, 0, 0, 0);
 
-  ## Take variats sequence from STDIN and write them in a file to be read
+  ## Take variant sequence from STDIN and write them in a file to be read
   unless ($main::infile{input}) {
     my $outstream_var_seq = &OpenOutputFile($variation_seq); 
     while (<$main::in>) {
@@ -733,25 +734,25 @@ sub log10 {
 sub getLineInfo {
     my %line_info = ();
 
-    my @token = split ("\t",$_[0]);  #var_info,site,matrice,site_strand,site_start_offset,site_end_offset,seq,score
-    $line_info{'matrice'} = $token[2];
-    $line_info{'site_strand'} = $token[3];
-    $line_info{'seq'} = $token[6];
-    $line_info{'score'} = sprintf("%.1f",$token[7]);
+    my @field = split ("\t",$_[0]);  #var_info,site,matrice,site_strand,site_start_offset,site_end_offset,seq,score
+    $line_info{'matrice'} = $field[2];
+    $line_info{'site_strand'} = $field[3];
+    $line_info{'seq'} = $field[6];
+    $line_info{'score'} = sprintf("%.1f",$field[7]);
 
-    my @token2 = split(/\|/,$token[0]); #var_info, coord
-    $line_info{'coord'} = $token2[1];
+    my @field2 = split(/\|/,$field[0]); #var_info, coord
+    $line_info{'coord'} = $field2[1];
 
-    my @token3 = split(/\;/,$token2[0]); #id,ref,alt,type,minor_allele_freq
-    $line_info{'id'} = $token3[0];
-    $line_info{'variant_ref'} = $token3[1];
-    $line_info{'variant_alt'} = $token3[2];
-    $line_info{'type'} = $token3[3];
-    $line_info{'minor_allele_freq'} = $token3[4];
+    my @field3 = split(/\;/,$field2[0]); #id,ref,alt,type,minor_allele_freq
+    $line_info{'id'} = $field3[0];
+    $line_info{'variant_ref'} = $field3[1];
+    $line_info{'variant_alt'} = $field3[2];
+    $line_info{'type'} = $field3[3];
+    $line_info{'minor_allele_freq'} = $field3[4];
 
     $diff_pos = 0;
     $diff_pos ++ if ($line_info{'variant_ref'} eq "-"); 
-    $line_info{'site_offset_start'} = $token[4]+$diff_pos-$matrix_length;
+    $line_info{'site_offset_start'} = $field[4]+$diff_pos-$matrix_length;
     return (%line_info);
 }
 
@@ -1010,20 +1011,6 @@ sub Printline {
   my (%scanning_info) = @_;
   $output_lines++;
 
-  my $str = "";
-  $str .= $scanning_info{'matrice'}."\t";
-  $str .= $matrix_list{$scanning_info{'matrice'}}{'id'}."\t";
-  $str .= $scanning_info{'variation'}."\t".$scanning_info{'type'}."\t".$scanning_info{'coord'}."\t";
-  $str .= $scanning_info{'best_score'}."\t".$scanning_info{'worst_score'}."\t";  # weigth
-  $str .= sprintf("%.2f",$scanning_info{'w_diff'})."\t"; #w_diff
-  $str .= $scanning_info{'best_pval'}."\t".$scanning_info{'worst_pval'}."\t";  # pvalues
-  $str .= sprintf("%.2f",$scanning_info{'pval_ratio'})."\t";  # pvalues ratio
-  $str .= $scanning_info{'best_variant'}."\t".$scanning_info{'worst_variant'}."\t"; # variants
-  $str .= $scanning_info{'best_offset'}."\t".$scanning_info{'worst_offset'}."\t"; # off
-  $str .= $scanning_info{'min_offset_diff'}."\t";
-  $str .= $scanning_info{'best_strand'}."\t".$scanning_info{'worst_strand'}."\t"; # strand
-  $str .= $scanning_info{'strand_change'}."\t";
-  $str .= $scanning_info{'best_seq'}."\t".$scanning_info{'worst_seq'}."\t"; # seq
   ## Flag to specify if the best score was obtained from the major allele (reference variant) or from the minor allele
   my $is_ref_better;
   if ($scanning_info{'best_variant'} eq $scanning_info{'original_ref'}){
@@ -1032,9 +1019,47 @@ sub Printline {
   else {
       $is_ref_better="N";
   }
-  $str .= $scanning_info{'original_ref'}."\t"; ## Print major allele (reference allele) original id is to diferiantate from when scanning is donde on reference allele
-  $str .= $is_ref_better."\t"; ## Flag if the best score comes from the major allele (reference allele)
-  $str .= $scanning_info{'minor_allele_freq'}; ## Report minor allele frequency
+
+  # ## JvH: TO BE FIXED.This does not work because the best_seq and
+  # ## worst_seq are sometimes multiple sequences, separated by commas
+  # ## !!!
+  # my $best_offset = -$scanning_info{'best_offset'};
+  # my $best_seq = lc(substr($scanning_info{'best_seq'}, 0, $best_offset-1));
+  # $best_seq .= uc(substr($scanning_info{'best_seq'},$best_offset,1));
+  # $best_seq .= lc(substr($scanning_info{'best_seq'},$best_offset+1));
+
+  # my $worst_offset = -$scanning_info{'worst_offset'};
+  # my $worst_seq = lc(substr($scanning_info{'worst_seq'}, 0, $worst_offset-1));
+  # $worst_seq .= uc(substr($scanning_info{'worst_seq'},$worst_offset,1));
+  # $worst_seq .= lc(substr($scanning_info{'worst_seq'},$worst_offset+1));
+
+  my $str = join ("\t", 
+		  $scanning_info{'matrice'},
+		  $matrix_list{$scanning_info{'matrice'}}{'id'},
+		  $scanning_info{'variation'},
+		  $scanning_info{'type'},
+		  $scanning_info{'coord'},
+		  $scanning_info{'best_score'},
+		  $scanning_info{'worst_score'}, 
+		  $str .= sprintf("%.2f",$scanning_info{'w_diff'}),
+		  $str .= $scanning_info{'best_pval'},
+		  $scanning_info{'worst_pval'}, 
+		  $str .= sprintf("%.2f",$scanning_info{'pval_ratio'}), 
+		  $str .= $scanning_info{'best_variant'},
+		  $scanning_info{'worst_variant'},
+		  $str .= $scanning_info{'best_offset'},
+		  $scanning_info{'worst_offset'},
+		  $str .= $scanning_info{'min_offset_diff'},
+		  $scanning_info{'best_strand'},
+		  $scanning_info{'worst_strand'},
+		  $str .= $scanning_info{'strand_change'},
+		  $scanning_info{'best_seq'},
+		  $scanning_info{'worst_seq'},
+#		  $best_seq,
+#		  $worst_seq,
+		  $scanning_info{'original_ref'}, ## Print major allele (reference allele) original id is to diferiantate from when scanning is donde on reference allele
+		  $is_ref_better, ## Flag if the best score comes from the major allele (reference allele)
+		  $scanning_info{'minor_allele_freq'});
   print $out $str."\n"; ## Back
 }
 
