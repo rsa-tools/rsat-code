@@ -32,7 +32,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$prefix = "retrieve-variation-seq";
+$prefix = "retrieve-variation-seq -v 0";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
 @result_files = ();
 
