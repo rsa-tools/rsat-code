@@ -79,7 +79,7 @@ retrieve_var:
 ################################################################
 ## Scan selected variations with the matrix of interest
 PVAL=0.1
-PVAL_RATIO=5
+PVAL_RATIO=2
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VAR_SCAN_CMD=variation-scan -v ${V} \
