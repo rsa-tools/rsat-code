@@ -208,7 +208,7 @@ with the LOO procedure.
 
 =over
 
-=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+=item Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
 =item Alejandra Medina-Rivera  <amedina@lcg.unam.mx> (CCG, UNAM, Mexico)
 
@@ -364,7 +364,7 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
-
+    
     ################################################################
     ## Additional plots
     $supported_tasks{plot} = 0 unless $tasks{plot};
@@ -398,14 +398,19 @@ package main;
       &RSAT::message::Warning("Contradictory options: -no_cv and -task cv. Task skipped.");
     }
 
+
     ## If no tasks has been specified, execute them all
     if (($tasks{all}) || (scalar(keys(%tasks))==0)) {
       %tasks = %supported_tasks;
       $tasks{all} = 0;
+
+      ## Only if no_cv has been selected set cv option to zero
       if ($no_cv) {
 	$tasks{cv} = 0;
       }
     }
+
+ #   die  join ("\t", "HELLO", sort keys %tasks), "\n";
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {
@@ -674,7 +679,7 @@ package main;
       &RSAT::message::Debug("Adding file to index ",  "matrix_sites", $outfile{matrix_sites}  ) if ($main::verbose >= 10);
 
       if(($tasks{cv} )&& (!$main::infile{matrix_sites} )){
-	  &RSAT::error::FatalError("CrossValiadtion option is selected but matrix sites were not provided, verify options -ms and -seq ");
+	  &RSAT::error::FatalError("Cross-validation option is selected but matrix sites were not provided, verify options -ms and -seq ");
       }
 
       ## Export input sites with the matrix

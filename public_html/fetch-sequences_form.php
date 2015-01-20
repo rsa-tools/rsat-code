@@ -33,7 +33,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 
   <body class="form">
     <div>
-      <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSA-tools</a> - fetch-sequence</h3>
+      <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>
       <br/>
 <?php
    ## Get the list of supported organisms from UCSC and display it in the pop-up menu

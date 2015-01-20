@@ -88,28 +88,31 @@ sub PrintOrthoSelectionSection {
   ## This is temporary, we need to find a way to provide orhtologs for
   ## all organisms.
 
+#### Not supported anymore
+##			       Escherichia_coli_K12
+##                                Bacillus_subtili
+##			       Desulfovibrio_vulgaris_Hildenborough_uid57645
+##			       Klebsiella_pneumoniae_MGH_78578
+##			       Mycoplasma_pneumoniae
+##			       Rhizobium_etli_CFN_42 
+##			       Rhizobium_etli_CFN_42_uid58377 
+##			       Salmonella_typhi
+##			       Salmonella_typhimurium_LT2
+##			       Streptococcus_mutans
+##                               Brucella_melitensis
+##                               Dickeya_dadantii_3937_uid52537
+##                               Escherichia_coli_ETEC_H10407
+##                               Mycobacterium_tuberculosis_H37Rv_uid57777
+##                               Pseudoalteromonas_haloplanktis_TAC125
+##                               Pseudomonas_putida_KT2440
+##                               Ralstonia_metallidurans_CH34
+##                               Yersinia_pestis_KIM
+
   my @supported_orthologs = qw(
-			       Bacillus_subtilis_168_uid57675
-			       Desulfovibrio_vulgaris_Hildenborough_uid57645
-			       Escherichia_coli_K12
-			       Klebsiella_pneumoniae_MGH_78578
-			       Mycoplasma_pneumoniae
-			       Rhizobium_etli_CFN_42 
-			       Rhizobium_etli_CFN_42_uid58377 
-			       Saccharomyces_cerevisiae
-			       Salmonella_typhi
-			       Salmonella_typhimurium_LT2
-			       Streptococcus_mutans
-                               Bacillus_subtilis
-                               Brucella_melitensis
-                               Dickeya_dadantii_3937_uid52537
-                               Escherichia_coli_ETEC_H10407
                                Escherichia_coli_K_12_substr__MG1655_uid57779
-                               Mycobacterium_tuberculosis_H37Rv_uid57777
-                               Pseudoalteromonas_haloplanktis_TAC125
-                               Pseudomonas_putida_KT2440
-                               Ralstonia_metallidurans_CH34
-                               Yersinia_pestis_KIM
+			       Saccharomyces_cerevisiae
+			       Bacillus_subtilis_168_uid57675
+                               Mycoplasma_genitalium_G37_uid57707
 			       );
   foreach my $org (@supported_orthologs) {
       $supported_orthologs{$org} = 1;
@@ -252,7 +255,7 @@ sub RSA_header {
 
 
   ### print the header of the result page
-  print $query->start_html(-title=>"RSA-tools : $title",
+  print $query->start_html(-title=>"RSAT : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -script=>[
@@ -266,7 +269,7 @@ sub RSA_header {
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
-  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</a> - $title</h3>";
+  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSAT</a> - $title</h3>";
 
   ################################################################
   ## Check if client IP is blacklisted on this server.
@@ -710,6 +713,8 @@ sub MultiGetSequenceFile {
     }
   }
 
+
+
   #### sequence file will be deleted
   &DelayedRemoval($sequence_file);
 
@@ -961,6 +966,7 @@ sub GetMatrix {
 				'tab'=>1,
 				'transfac'=>1,
 				'uniprobe'=>1,
+				'encode'=>1,
 			       );
   ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
   ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
@@ -1211,7 +1217,7 @@ sub GetBackgroundModel {
 			       -default=>$default{markov_order});
     }
     if ($params{markov_message}) {
-      print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-consuming.</font>");
+      print ("&nbsp;&nbsp;&nbsp;<font color='orange'>High orders can be time-consuming, but order 0 is generally not representative</font>. We recommend orders 1 or 2.");
     }
   }
 
@@ -1604,9 +1610,9 @@ sub PrintHtmlResultHeader {
   ## Start HTML body
   $header .=  "<body>\n";
   if (defined($ENV{rsat_www})) {
-    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSAT</a> - ".$program." result</h1>\n";
   } else {
-    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSAT</a> - ".$program." result</h1>\n";
   }
   $header .=  "<h3 style='text-align:center;'>Analysis: ";
   $header .=  $title." (";
@@ -2554,7 +2560,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -o ".$pssm_prefix;
 
   ## Run the command
-  print "<PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+  print "<hr><PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 0);
   system("$pssm_command");
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);

@@ -52,6 +52,7 @@ formats.
 			   'transfac'=>1,
 			   'cis-bp'=>1,
 			   'uniprobe'=>1,
+			   'encode'=>1,
 			  );
 $supported_input_formats = join ",", sort(keys %supported_input_formats);
 
@@ -113,7 +114,9 @@ sub readFromFile {
     } elsif ($format eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
     } elsif ($format eq "cluster-buster") {
-      @matrices = _readFromClusterBusterFile($file, %args);
+	@matrices = _readFromClusterBusterFile($file, %args);
+    }elsif ($format eq "encode") {
+	@matrices = _readFromEncodeFile($file, %args);
     } elsif (($format eq "jaspar") || ($format eq "mscan")) {
 	@matrices = _readFromJasparFile($file, %args);
     } elsif ($format eq "uniprobe") {
@@ -228,9 +231,10 @@ sub readFromFile {
     }
 
     ## Only retain the N top matrices if requested
+    my $top = 0;
     if (defined($args{top})) {
-      my $top = $args{top};
-      if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
+      $top = $args{top};
+      if ((&RSAT::util::IsNatural($top)) && ($top > 0)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
 	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
@@ -241,6 +245,109 @@ sub readFromFile {
       }
     }
 
+
+    ## Skip the N first matrices if requested
+    my $skip = 0;
+    if (defined($args{skip})) {
+      $skip = $args{skip};
+      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+      if ((&RSAT::util::IsNatural($skip)) && ($skip > 0)) {
+	for my $m (1..$skip) {
+	  shift(@matrices);
+	}
+      }
+    }
+
+
+
+    ## Select matrices specified as list of IDs
+    my @selected_ids = ();
+    if (defined($args{selected_ids})) {
+      @selected_ids = @{$args{selected_ids}};
+      &RSAT::message::Info("Selected IDs", join (",", @selected_ids)) if ($main::verbose >= 2);
+      if (scalar(@selected_ids) > 0) {
+	## Index selected IDs in a hash table
+	my %selected_id = ();
+	foreach my $id (@selected_ids) {
+	  $selected_id{lc($id)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_id = $matrix->get_attribute("id");
+	  push @retained_matrices, $matrix if ($selected_id{lc($matrix_id)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+    ## Select matrices specified as list of ACs
+    my @selected_acs = ();
+    if (defined($args{selected_acs})) {
+      @selected_acs = @{$args{selected_acs}};
+      &RSAT::message::Info("Selected ACs", join (",", @selected_acs)) if ($main::verbose >= 2);
+      if (scalar(@selected_acs) > 0) {
+	## Index selected ACs in a hash table
+	my %selected_ac = ();
+	foreach my $ac (@selected_acs) {
+	  $selected_ac{lc($ac)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_ac = $matrix->get_attribute("accession");
+	  push @retained_matrices, $matrix if ($selected_ac{lc($matrix_ac)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+
+    ## Select matrices specified as list of names
+    my @selected_names = ();
+    if (defined($args{selected_names})) {
+      @selected_names = @{$args{selected_names}};
+      &RSAT::message::Info("Selected names", join (",", @selected_names)) if ($main::verbose >= 2);
+      if (scalar(@selected_names) > 0) {
+	## Index selected names in a hash table
+	my %selected_name = ();
+	foreach my $name (@selected_names) {
+	  $selected_name{lc($name)} = 1;
+	}
+
+	## Select matrices
+	my @retained_matrices = ();
+	foreach my $matrix (@matrices) {
+	  my $matrix_name = $matrix->get_attribute("name");
+	  push @retained_matrices, $matrix if ($selected_name{lc($matrix_name)});
+	}
+	@matrices = @retained_matrices;
+      }
+    }
+
+
+    ## Report remaining matrices after selection
+    if ((($skip + $top) > 0)
+	|| (scalar(@selected_acs) > 0)
+	|| (scalar(@selected_ids) > 0)
+	|| (scalar(@selected_names) > 0)
+	) {
+      &RSAT::message::Info("Number of matrices after selection",  scalar(@matrices)) if ($main::verbose >= 1);
+      if ($main::verbose >= 2) {
+	my @retained_acs = ();
+	my @retained_names = ();
+	foreach my $matrix (@matrices) {
+#	  push @retained_acs, $matrix->get_attribute("accession");
+#	  push @retained_names, $matrix->get_attribute("name");
+	  push @retained_message, $matrix->get_attribute("accession")." (".$matrix->get_attribute("name").")";
+	}
+#	&RSAT::message::Info("Retained matrix ACs",  join ",", (@retained_acs));
+#	&RSAT::message::Info("Retained matrix names",  join ",", (@retained_names));
+	&RSAT::message::Info("Retained matrices",  join "; ", (@retained_message));
+      }
+    }
 
     ## Return the matrices
     return @matrices;
@@ -1663,7 +1770,7 @@ sub _readFromAssemblyFile {
     } elsif ($line =~ /^;/) {
       next;
 
-      ## New site from a two-strand assembly
+      ## New site from a two-strands assembly
     } elsif ($line =~ /^(\S+)\t(\S+)\s+(\S+)/) {
       my $pattern = $1; 
       my $pattern_rc = $2;
@@ -1671,7 +1778,7 @@ sub _readFromAssemblyFile {
       my $pattern_id = $pattern."|";
       $pattern =~ s/\./n/g;
       $pattern_rc =~ s/\./n/g;
-      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
+#      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 10);
       $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id, max_score=>1);
 
       ## New site from a single-strand assembly
@@ -1909,6 +2016,95 @@ sub _readFromClusterBusterFile {
 # 	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
 #       }
 #     }
+
+    return (@matrices);
+}
+=pod
+
+=item B<_readFromEncodeFile($file)>
+
+Read a matrix from a file in Encode format. This method is called by the method
+C<readFromFile($file, "encode")>.
+
+Source: 
+  http://compbio.mit.edu/encode-motifs/
+
+Reference:
+
+    Pouya Kheradpour and Manolis Kellis (2013). Systematic discovery
+    and characterization of regulatory motifs in ENCODE TF binding
+    experiments Nucleic Acids Research, 2013 December 13,.
+    doi:10.1093/nar/gkt1249 
+
+=cut
+sub _readFromEncodeFile {
+    my ($file) = @_;
+    &RSAT::message::Info(join("\t", "Reading matrix from Encode file\t",$file)) if ($main::verbose >= 3);
+
+
+    ## open input stream
+    my ($in, $dir) = &main::OpenInputFile($file);
+
+    ## Initialize the matrix list
+    my @matrices = ();
+    my @alphabet = qw(a c g t); ## encode does not explicitly indicate the alphabet, it is always supposed to represent DNA matrices
+    my $matrix;
+    my $current_matrix_nb = 1;
+    my $l = 0;
+    my $ncol = 0;
+    while ($line = <$in>) {
+      $l++;
+      next unless ($line =~ /\S/); ## Skip empty lines
+      chomp($line); ## Suppress newline
+      $line =~ s/\r//; ## Suppress carriage return
+      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+      next if ($line =~ /^;/) ; # skip comment lines
+      #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+      ## Create a new matrix if required
+      if  ($line =~ /^\>(\S*)/) {
+	  ## First line is compossed of two elements, first the TF ID, then separated by space
+	  ## a description that some times includes the pograms used to discover the motif
+	  my ($name,$comment)=split(" ",$line);
+	  $name=~s/^>//;
+	  $comment=~s/#/_/g;
+	  #print join ("+++" ,$name,$comment);
+	  #die "BOOM";
+	  #if ($line =~ /\/name=(\S*)/) { $name = $1;}
+	  $matrix = new RSAT::matrix();
+	  $matrix->set_parameter("program", "encode");
+	  $ncol = 0;
+	  if ($name) {
+	      $matrix->set_attribute("name", $name);
+	      $matrix->set_attribute("AC", $name);
+	      $matrix->set_attribute("accession", $name);
+	  }
+	  if ($comment){
+	      $matrix->set_parameter("description", $comment);
+	  }
+	  my @alphabet = qw(a c g t);
+	  $matrix->setAlphabet_lc(@alphabet);
+#	$matrix->force_attribute("nrow", 4);
+	  push @matrices, $matrix;
+	  $current_matrix_nb++;
+	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
+	  next;
+      }
+
+      if ($line =~ /^\s*(\S+)\s+/) {
+	$line = &main::trim($line);
+	my @fields = split /\t/, $line;
+	## First character in the column is the consesus
+	shift (@fields);
+#	&RSAT::message::Info("line", $l, "adding column", join(";", @fields)) if ($main::verbose >= 10);
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
+      }
+    }
+    close $in if ($file);
+
+    ## Initialize prior as equiprobable alphabet
+    &InitializeEquiPriors(@matrices);
 
     return (@matrices);
 }
