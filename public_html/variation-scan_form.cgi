@@ -19,13 +19,12 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-### Read the CGI query
-$default{demo_descr1} = "";
 
 ################################################################
 ## Default values for filling the form
 
 ## matrix-scan
+$default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
@@ -49,7 +48,7 @@ $default{uth_normw} = "none";
 $default{lth_sig} = "none";
 $default{uth_sig} = "none";
 $default{lth_pval} = "none";
-$default{uth_pval} = "1e-4";
+$default{uth_pval} = "1e-3";
 
 ## Background model
 $default{markov_order} = "1";
@@ -141,12 +140,12 @@ print $query->end_form;
 ################################################################
 ### data for the demo
 
-my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
+my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 
 $descr1 .= "<p>In this demonstration, we use <i>variation-scan<\i> to assess the effect that a genetic variants have on transcription factor binding.</p>\n
 
-<p> The genetic variants used in this example have been previously reported in the literature. Used motifs correspond to TFs which biniding is expected to be affected</p>\n";
+<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. Motifs correspond to the transcription factores which biniding was reported to be affected by Weireauch, et al.</p>\n";
 
 $descr1 .= "</blockquote>";
 
@@ -155,14 +154,14 @@ print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
 
-$demo_matrix=`cat demo_files/do798+do735_mmus_hnf6_liver.transfac`;
-$demo_var_seq="./demo_files/variation_demo_set_rsat_var.seq";
+$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
+$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq`;
 
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-print $query->hidden(-name=>'variants_seq_file', -default=>$demo_var_seq);
+print $query->hidden(-name=>'variants_seqs', -default=>$demo_var_seq);
 
 print $query->hidden(-name=>'bg_method',-default=>'background"');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
