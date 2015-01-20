@@ -37,7 +37,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 ################################################################
 #### Matrix specification
-$matrix_file_aux = $tmp_file_path."input_matrix";
+$matrix_file_aux = $tmp_file_path."_input_matrix";
 local $input_format = lc($query->param('matrix_format'));
 
 if ($query->param('matrix')) {
@@ -51,13 +51,26 @@ if ($query->param('matrix')) {
 }
 
 ## variation-scan only takes transfac format matrices as input
+## if the matrix in other formating transforme it to trasnfac and store it
 my $convert_mtx_cmd;
-if ($input_format != 'transfac'){
-    $matrix_file= $result_dir."/input_matrix_transfac_format";
-    $convert_mtx_cmd=" convert-matrix -from $input_fromat ";
+if (!($input_format eq 'transfac')){
+    $matrix_file= $tmp_file_path."_input_matrix_transfac_format";
+    $convert_mtx_cmd=" convert-matrix -v 3 -from $input_format ";
     $convert_mtx_cmd.=" -to transfac -i $matrix_file_aux ";
-    $convert_mtx_cmd.="-o  $matrix_file ";
+    $convert_mtx_cmd.=" -o $matrix_file ";
     $matrix_covert=1;
+
+    # open MTX_RESULT, "$convert_mtx_cmd |";
+
+    # if (open MTX_FILE, ">$matrix_file") {
+    # 	&DelayedRemoval($matrix_file);
+    # }
+    # while (<MTX_RESULT>) {
+    # 	print  MTX_FILE  $_ ;
+    # }
+    # close MTX_RESULT;
+    # close MTX_FILE;   
+    
 }else{
     $matrix_file=$matrix_file_aux;
 }
@@ -66,7 +79,7 @@ $parameters .= " -m $matrix_file";
 
 ## Get input
 
-unless ($input_seq_file = $query->param("variants_seq_file")){
+unless ($input_seq_file = $query->param('variants_seq_file')){
     
     $input_seq_file= $tmp_file_path."variation-scan_sequence_input";
     
@@ -151,8 +164,8 @@ if  ($bg_method eq "bgfile") {
       close BGFILE;
       $bg_format=$query->param('bg_format');
       ##NEED TO CONVERT BG MODELS IN OTHER FORMAT NOT SUPPORTED
-      if ($bg_format != 'oligo-analysis'){
-	  $bg_file_oligo= $result_dir."/input_bgfile_oligoformat";
+      if (!($bg_format eq 'oligo-analysis')){
+	  $bg_file_oligo= $tmp_file_path.."input_bgfile_oligoformat";
 	  $convert_bg_cmd=" convert-matrix -from $bg_format ";
 	  $convert_bg_cmd.=" -to oligo-analysis -i $bg_file ";
 	  $convert_bg_cmd.="-o $bg_file_oligo ";
@@ -197,36 +210,24 @@ if ( $bg_conver){
 
 ## Report the command
 &ReportWebCommand($command." ".$parameters);
-$var_scan_file = "$tmp_file_path.variants-seq";
+$var_scan_file = "$tmp_file_path.variants-seq_result";
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
-
-    open RESULT, "$command $parameters |";
-
-    ### print the result
     &PipingWarning();
 
-    ### open the sequence file on the server
-    if (open MIRROR, ">$var_scan_file") {
-	$mirror = 1;
-	&DelayedRemoval($var_scan_file);
-    }
-
-    print "<PRE>";
-    while (<RESULT>) {
-	print "$_" unless ($query->param('output') =~ /server/i);
-	print MIRROR $_ if ($mirror);
-    }
-    print "</PRE>";
+    open RESULT, "$command $parameters |";
+    &PrintHtmlTable(RESULT, $var_scan_file, true, 1000);
+    ### print the result
     close RESULT;
-    close MIRROR if ($mirror);
+    
 
+    push @result_files ,("variation-scan results",$var_scan_file ) ;
     &PrintURLTable(@result_files);
 
     ### prepare data for piping
-    &PipingForm();
+   # &PipingForm();
 
     print "<HR SIZE = 3>";
 
