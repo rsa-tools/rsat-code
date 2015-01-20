@@ -185,20 +185,19 @@ if  ($bg_method eq "bgfile") {
 
 ################
 ##  scanning thresholds
-my @threshold_fields = qw(score pval sig rank proba_M proba_B normw);
-foreach my $field (@threshold_fields) {
-    if ($query->param("lth_".$field) ne "none") {
-	my $lth = $query->param("lth_".$field);
-	&RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
-	$parameters .= " -lth $field $lth ";
-    }
-    
-    if ($query->param("uth_".$field) ne "none") {
-	my $uth = $query->param("uth_".$field);
-	&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
-	$parameters .= " -uth $field $uth ";
-    }
+my @l_threshold_fields = qw(score w_diff pval_ratio);
+my @u_threshold_fields = qw(pval);
+foreach my $field (@l_threshold_fields) {
+    my $lth = $query->param("lth_".$field);
+    &RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
+    $parameters .= " -lth $field $lth ";
 }
+foreach my $field (@u_threshold_fields) {    
+    my $uth = $query->param("uth_".$field);
+    &RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
+    $parameters .= " -uth $field $uth ";
+}
+
 
 if ($matrix_covert){
     $command=$convert_mtx_cmd." ; ".$command ;
