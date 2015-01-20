@@ -13,6 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
+$default{demo_descr1} = "";
 $default{organism} = "Homo_sapiens_GRCh37";
 $default{input_type}="bed";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant, 
@@ -36,11 +37,11 @@ print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medin
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 
+print $default{demo_descr1};
 
 print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
 
 
-#print "<FONT FACE='Helvetica'>";
 
 #### Select organims to retrieve variants sequences from
 
@@ -70,6 +71,7 @@ print "<UL>\n";
     $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
     $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
     print $variantsChoiceString ;
+
 }else{
     
     print $query->textarea(-name=>'input',
@@ -114,13 +116,24 @@ print $query->end_form;
 ################
 ## Data for demo
 
-print $query->start_multipart_form(-action=>"retrieve-variation-seq_form.cgi");
 ## Data for demo
+my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
+$descr1 .= "<blockquote class ='demo'>";
+
+$descr1 .= "<p>In this demonstration, we retrieve the sequence of genetic variants.</p>\n
+
+<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
+
+$descr1 .= "</blockquote>";
+
+print $query->start_multipart_form(-action=>"retrieve-variation-seq_form.cgi");
+
 $demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set.rsat-var";
 $demo_rsat_var=`cat $demo_rsat_var_file` ;
 
 
 print "<TD><B>";
+print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 print $query->hidden(-name=>'input',-default=>"$demo_rsat_var");
 print $query->hidden(-name=>'input_type',-default=>"rsat-var");
