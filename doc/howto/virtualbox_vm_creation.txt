@@ -10,6 +10,7 @@ Creation of the virtual machine (with VirtualBox)
 
 Name and operating system
 	Name: 
+	      rsat-lub-14 for Lubuntu (desktop) - light version of Ubuntu, occupies 2.3Gb disk space at first install
 	      rsat-vb-ub14d for the "desktop" version of Ubuntu
 	      rsat-vb-ub14s for the "server" version of Ubuntu
 	Type: Linux
@@ -90,7 +91,6 @@ In VirtualBox Preferences
 
 After having created the VM, open its network settings.
 We will activate several adapters:
-   - at
 
 - click on the tab "Adapter 1",
       - check "Enable Network Adapter"
@@ -102,6 +102,7 @@ We will activate several adapters:
       via the fixed IP address (e.g. 192.168.56.114) that will be
       specified manually after having installed the operating system
       (see below).
+
 
 OPTIONAL
 --------
@@ -246,7 +247,7 @@ Reboot
 Login in in the VM
 ================================================================
 
-At this tage, the machine is able to boot and get a dynamic IP from
+At this stage, the machine is able to boot and get a dynamic IP from
 the network. I login as rsat user and type
     ifconfig
 to get the IP address. I then open a terminal on the host machine, and run
@@ -271,55 +272,59 @@ ssh-add
 Network specification
 ================================================================
 
-## I need emacs to edit the network configuration file
-sudo bash
-df -h
-apt-get install  --quiet --assume-yes  emacs
-
-## Since this is the first installation of an apt-get package, it
-## takes some time to install dependencies.
-df -h
-
-emacs -nw /etc/network/interfaces
-
-## I edit the file /etc/network/interfaces
-
-## Host-only network interface for the VirtualBox VM
-auto eth0
-iface eth0 inet static
-address 192.168.56.114
-netmask 255.255.255.0
-network 192.168.56.0
-broadcast 192.168.56.255
-gateway 192.168.56.1
-
-## Let the second interface automatically ask an IP address to the
-## DHCP server (this was by default the first interface eth0, but we
-## want to impose the static address as first interface).
-autho eth1
-iface eth1 inet dhcp
-
-## Re-activate the interface, this seems to be the best way withb ubuntu 14.04
-ifdown eth1 ## Stop the eth1 interface
-ifup eth1 ## Start the eth1 interface with its new configuration
-ifconfig ## Check that eth1 is specified as expected
-
-## This should display something like this
-## ...
-## eth1      Link encap:Ethernet  HWaddr 08:00:27:9e:3d:cd  
-##           inet addr:192.168.56.114  Bcast:192.168.56.255  Mask:255.255.255.0
-## ...
-
 
 ## We need to install the ssh package in order to enable connection
 ## from the host terminal
 apt-get install --quiet --assume-yes ssh
 
-## reboot
-## (Note: I am not sure if we still need to reboot here, to be checked)
 
 ## We can now access the VM by ssh to its static IP address
-ssh rsat@192.168.56.114
+ssh rsat@192.168.56.101
+
+################################################################
+### ### NOT NECESSARY ANYMORE
+
+### ## I need emacs to edit the network configuration file
+### sudo bash
+### df -h
+### apt-get install  --quiet --assume-yes  emacs
+
+### ## Since this is the first installation of an apt-get package, it
+### ## takes some time to install dependencies.
+### df -h
+
+### emacs -nw /etc/network/interfaces
+
+### ## I edit the file /etc/network/interfaces
+
+### ## Host-only network interface for the VirtualBox VM
+### auto eth0
+### iface eth0 inet static
+### address 192.168.56.114
+### netmask 255.255.255.0
+### network 192.168.56.0
+### broadcast 192.168.56.255
+### gateway 192.168.56.1
+
+### ## Let the second interface automatically ask an IP address to the
+### ## DHCP server (this was by default the first interface eth0, but we
+### ## want to impose the static address as first interface).
+### autho eth1
+### iface eth1 inet dhcp
+
+### ## Re-activate the interface, this seems to be the best way withb ubuntu 14.04
+### ifdown eth1 ## Stop the eth1 interface
+### ifup eth1 ## Start the eth1 interface with its new configuration
+### ifconfig ## Check that eth1 is specified as expected
+
+### ## This should display something like this
+### ## ...
+### ## eth1      Link encap:Ethernet  HWaddr 08:00:27:9e:3d:cd  
+### ##           inet addr:192.168.56.114  Bcast:192.168.56.255  Mask:255.255.255.0
+### ## ...
+
+### ## reboot
+### ## (Note: I am not sure if we still need to reboot here, to be checked)
 
 ================================================================
 Install ubuntu packages
@@ -388,7 +393,7 @@ sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
     --home /home/vuser \
     --create-home \
     --shell /bin/bash \
-    --comment "VM-user" \
+    --comment "Default user for the Virtual Machine" \
     vuser
 
 ## Force vuser to change password at first login
@@ -403,7 +408,6 @@ sudo emacs -nw /etc/sudoers
 ## Below it, add the following line:
 ##     rsat  ALL=(ALL:ALL) ALL
 ##     vuser  ALL=(ALL:ALL) ALL
-
 
 
 ================================================================
@@ -470,7 +474,7 @@ Appliance Settings
 	Product-URL	http://rsat.eu/
 	Vendor		Jacques van Helden
 	Vendor URL	http://jacques.van-helden.perso.luminy.univ-amu.fr/
-	Version		2014-09-06
+	Version		2014-10-10
 	Description	Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. 
 	License		Free of use for academic users, non-commercial and non-military usage. 
 

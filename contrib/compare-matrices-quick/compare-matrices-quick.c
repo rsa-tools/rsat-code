@@ -1,16 +1,16 @@
 /*  ================================================================
-compare-matrices-quick.c: 25/09/2012 Sebastien Jaeger
+compmat.c: 25/09/2012 Sebastien Jaeger
  
-compare-matrices-quick.c is a simplified C translation of compare_matrices developed by Jacques Van Helden.
+compmat.c is a simplified C translation of compare_matrices developed by Jacques Van Helden.
 	
-Compilation: gcc compare-matrices-quick.c -o compare-matrices-quick -lm
-Execution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5
+Compilation: gcc compmat_quick_2modes.c -o compmat -lm
+Exucution example: ./compmat -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor 0.7 -lth_w 5
 
-Synopsis: compare-matrices-quick -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matrices_file> \
+Synopsis: compmat -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matrices_file> \
 			[-lth_w <min_aligned_columns>]	min treshold on matrices overlap (default 5)
 			[-lth_ncor <min_ncor>]			min threshold on normalized correlation (default 0.4)
-			[-lth_ncor1 <min_ncor1>]		min threshold on correlation normalized on ref. matrices (default 0.7)
-			[-lth_ncor2 <min_ncor2>]		min threshold on correlation normalized on query matrices (default 0.7)
+			[-lth_ncor1 <min_ncor1>]		min threshold on correlation normalized on ref. matrices (default 0.)
+			[-lth_ncor2 <min_ncor2>]		min threshold on correlation normalized on query matrices (default 0.)
 
 =================================================================== */
 #include <stdio.h> 
@@ -23,6 +23,7 @@ Synopsis: compare-matrices-quick -o <ouput_file> -file1 <ref_matrices_file> -fil
 
 #define min(x,y) x<y ? x:y
 #define max(x,y) x>y ? x:y
+#define flipflap(x) (x+1)%2
 
 
 //==================================================================
@@ -31,16 +32,19 @@ Synopsis: compare-matrices-quick -o <ouput_file> -file1 <ref_matrices_file> -fil
 
 // --------------- User-specified parameters: ---------------------
 int lth_w = 5;				// lower trheshold on the number of aligned columns 
-double lth_ncor = 0.;		// lower threshold on normalized correlation 
+double lth_ncor = 0.4;		// lower threshold on normalized correlation
 double lth_ncor1 = 0.;		// lower threshold normalized on reference matrices
 double lth_ncor2 = 0.;		// lower threshold normalized on query matrices
 char *Qfile;				// Query matrices file 
 char *Rfile;				// Reference conserved matrices file 
 char *outfile="compmat_out.tab";	// Output file
 char verbose = 0;
+char detect_palindromes = 0;
+char *mode="scan";
+
 //-----------------------------------------------------------------
 
-/*static FILE *pf,*pf2;*/
+//static FILE *pf,*pf2;
 
 
 typedef struct				// Matrix structure
@@ -52,15 +56,23 @@ typedef struct				// Matrix structure
 	float **mat;
 } pssm;
 
+typedef struct				// Match coordinates structure
+{	
+	char ID[128];
+	int offset;
+} mat_coods;
+
+
 typedef struct				// Correlations structure
 {	
 	double cor;
 	double Ncor;
 	double Ncor1;
 	double Ncor2;
+    int w;
 } correls;
 
-typedef struct				// alignment structure (corresponds to output line format
+typedef struct				// alignment structure (corresponds to output line format)
 {	
 	char *id1;
 	char *id2;
@@ -72,8 +84,10 @@ typedef struct				// alignment structure (corresponds to output line format
 	double Ncor2;
 	int w1;
 	int w2;
+    int w;
 	int offset;
 	char strand;
+	int fake_matches_count;
 } match;
 
 
@@ -94,14 +108,16 @@ void print_help(void);								// print the help
 //============================== MAIN ==============================
 //==================================================================
 int main(int argc, char *argv[]){
-	int i,j,k,Rnum=0,Qnum=0; 
+	int i,j,k,l,Rnum=0,Qnum=0; 
 	FILE *fp;
-	/*char currline[64];*/
-	/*char test[20];*/
+	char currline[64];
+	char test[20];
 	pssm *Rmatab=NULL;
 	pssm *Qmatab=NULL,*Qrevtab=NULL;
+	long *last_match=NULL;
 	correls **cor_tab[2];
-	/*	char ID[30];*/
+	short int best_correl;
+	char ID[30];
 	int min_offset,max_offset;
 	match *res_tab=NULL;
 	long res_count=0;
@@ -120,6 +136,10 @@ int main(int argc, char *argv[]){
 	Qmatab=readmat(fp,&Qnum);
 	printf("-> %d query matrices retrieved from '%s'\n",Qnum,Qfile);
 	fclose(fp);
+	last_match=(long *)malloc(Qnum*sizeof(long));
+	for (i=0; i<Qnum; i++) {
+		last_match[i]=-1;
+	}
 	
 	if (verbose) {
 		printf("Reference matrices file:\n");
@@ -127,7 +147,7 @@ int main(int argc, char *argv[]){
 			printf("\tID: %s\tname: %s\t%dbp\n",Rmatab[i].ID,Rmatab[i].name,Rmatab[i].width);
 		}
 		printf("Query matrices file:\n");
-		for (i=0; i<Rnum; i++) {
+		for (i=0; i<Qnum; i++) {
 			printf("\tID: %s\tname: %s\t%dbp\n",Qmatab[i].ID,Qmatab[i].name,Qmatab[i].width);
 		}
 	}
@@ -143,6 +163,7 @@ int main(int argc, char *argv[]){
 	for (i=0; i<Qnum; i++) {
 		Qrevtab[i]=reverse_matrix(Qmatab[i]);
 	}
+	
 		
 	for (i=0; i<Rnum; i++) {						// Computes all correlations
 		for (j=0; j<Qnum; j++) {
@@ -151,46 +172,97 @@ int main(int argc, char *argv[]){
 			for (k=min_offset; k<=max_offset; k++) {
 				cor_tab[0][i][j] = calc_corr(k,Rmatab[i],Qmatab[j]);
 				cor_tab[1][i][j] = calc_corr(k,Rmatab[i],Qrevtab[j]);
-				if ((cor_tab[0][i][j].Ncor >= lth_ncor) && (cor_tab[0][i][j].Ncor1 >= lth_ncor1) && (cor_tab[0][i][j].Ncor2 >= lth_ncor2)) {	// Direct strand cases
-					res_tab=(match *)realloc(res_tab,(res_count+1)*sizeof(match));
-					res_tab[res_count].id1=Rmatab[i].ID;
-					res_tab[res_count].id2=Qmatab[j].ID;
-					res_tab[res_count].name1=Rmatab[i].name;
-					res_tab[res_count].name2=Qmatab[j].name;
-					res_tab[res_count].cor=cor_tab[0][i][j].cor;
-					res_tab[res_count].Ncor=cor_tab[0][i][j].Ncor;
-					res_tab[res_count].Ncor1=cor_tab[0][i][j].Ncor1;
-					res_tab[res_count].Ncor2=cor_tab[0][i][j].Ncor2;
-					res_tab[res_count].w1=Rmatab[i].width;
-					res_tab[res_count].w2=Qmatab[j].width;
-					res_tab[res_count].offset=k;
-					res_tab[res_count].strand='D';
-					res_count++;
-				}
-				if ((cor_tab[1][i][j].Ncor >= lth_ncor) && (cor_tab[1][i][j].Ncor1 >= lth_ncor1) && (cor_tab[1][i][j].Ncor2 >= lth_ncor2)) {	// Reverse strand cases
-					res_tab=(match *)realloc(res_tab,(res_count+1)*sizeof(match));
-					res_tab[res_count].id1=Rmatab[i].ID;
-					res_tab[res_count].id2=Qmatab[j].ID;
-					res_tab[res_count].name1=Rmatab[i].name;
-					res_tab[res_count].name2=Qmatab[j].name;
-					res_tab[res_count].cor=cor_tab[1][i][j].cor;
-					res_tab[res_count].Ncor=cor_tab[1][i][j].Ncor;
-					res_tab[res_count].Ncor1=cor_tab[1][i][j].Ncor1;
-					res_tab[res_count].Ncor2=cor_tab[1][i][j].Ncor2;
-					res_tab[res_count].w1=Rmatab[i].width;
-					res_tab[res_count].w2=Qmatab[j].width;
-					res_tab[res_count].offset=k;
-					res_tab[res_count].strand='R';
-					res_count++;
-				}
+				(cor_tab[0][i][j].cor >= cor_tab[1][i][j].cor) ? (best_correl = 0) : (best_correl = 1);
+				if ((cor_tab[best_correl][i][j].Ncor >= lth_ncor) && (cor_tab[best_correl][i][j].Ncor1 >= lth_ncor1) && (cor_tab[best_correl][i][j].Ncor2 >= lth_ncor2)) {	// best strand cases
+                    if (strcmp(mode,"scan") == 0) {
+                        if ((last_match[j] >= 0) && (Rmatab[i].ID == res_tab[last_match[j]].id1) && ((k-res_tab[last_match[j]].offset)<res_tab[last_match[j]].w2)) {
+                            if (cor_tab[best_correl][i][j].Ncor > res_tab[last_match[j]].Ncor) {
+                                res_tab[last_match[j]].cor=cor_tab[best_correl][i][j].cor;
+                                res_tab[last_match[j]].Ncor=cor_tab[best_correl][i][j].Ncor;
+                                res_tab[last_match[j]].Ncor1=cor_tab[best_correl][i][j].Ncor1;
+                                res_tab[last_match[j]].Ncor2=cor_tab[best_correl][i][j].Ncor2;
+                                //res_tab[last_match[j]].w=cor_tab[best_correl][i][j].w;
+                                res_tab[last_match[j]].offset=k;
+                                (best_correl == 0) ? (res_tab[last_match[j]].strand='D') : (res_tab[last_match[j]].strand='R');
+                            }
+                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
+                                res_tab[last_match[j]].fake_matches_count++;
+                            }
+                            res_tab[last_match[j]].fake_matches_count++;
+                        }
+                        else {
+                            res_tab=(match *)realloc(res_tab,(res_count+1)*sizeof(match));
+                            res_tab[res_count].fake_matches_count=0;
+                            res_tab[res_count].id1=Rmatab[i].ID;
+                            res_tab[res_count].id2=Qmatab[j].ID;
+                            res_tab[res_count].name1=Rmatab[i].name;
+                            res_tab[res_count].name2=Qmatab[j].name;
+                            res_tab[res_count].cor=cor_tab[best_correl][i][j].cor;
+                            res_tab[res_count].Ncor=cor_tab[best_correl][i][j].Ncor;
+                            res_tab[res_count].Ncor1=cor_tab[best_correl][i][j].Ncor1;
+                            res_tab[res_count].Ncor2=cor_tab[best_correl][i][j].Ncor2;
+                            res_tab[res_count].w1=Rmatab[i].width;
+                            res_tab[res_count].w2=Qmatab[j].width;
+                            //res_tab[res_count].w=cor_tab[best_correl][i][j].w;
+                            res_tab[res_count].offset=k;
+                            (best_correl == 0) ? (res_tab[res_count].strand='D') : (res_tab[res_count].strand='R');
+                            last_match[j]=res_count;
+                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >=  lth_ncor2)) {	// if other strand also matches...
+							res_tab[res_count].fake_matches_count++;
+                            }
+                            res_count++;
+                        }
+                    }
+                    else if (strcmp(mode,"matches") == 0) {
+                        if ((last_match[j] >= 0) && (Rmatab[i].ID == res_tab[last_match[j]].id1)) {
+                            if ((cor_tab[best_correl][i][j].Ncor > res_tab[last_match[j]].Ncor) || (cor_tab[best_correl][i][j].Ncor == res_tab[last_match[j]].Ncor && cor_tab[best_correl][i][j].w > res_tab[last_match[j]].w)) {
+                                res_tab[last_match[j]].cor=cor_tab[best_correl][i][j].cor;
+                                res_tab[last_match[j]].Ncor=cor_tab[best_correl][i][j].Ncor;
+                                res_tab[last_match[j]].Ncor1=cor_tab[best_correl][i][j].Ncor1;
+                                res_tab[last_match[j]].Ncor2=cor_tab[best_correl][i][j].Ncor2;
+                                res_tab[last_match[j]].w=cor_tab[best_correl][i][j].w;
+                                res_tab[last_match[j]].offset=k;
+                                (best_correl == 0) ? (res_tab[last_match[j]].strand='D') : (res_tab[last_match[j]].strand='R');
+                            }
+                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
+                                res_tab[last_match[j]].fake_matches_count++;
+                            }
+                            res_tab[last_match[j]].fake_matches_count++;
+                        }
+                        else {
+                            res_tab=(match *)realloc(res_tab,(res_count+1)*sizeof(match));
+                            res_tab[res_count].fake_matches_count=0;
+                            res_tab[res_count].id1=Rmatab[i].ID;
+                            res_tab[res_count].id2=Qmatab[j].ID;
+                            res_tab[res_count].name1=Rmatab[i].name;
+                            res_tab[res_count].name2=Qmatab[j].name;
+                            res_tab[res_count].cor=cor_tab[best_correl][i][j].cor;
+                            res_tab[res_count].Ncor=cor_tab[best_correl][i][j].Ncor;
+                            res_tab[res_count].Ncor1=cor_tab[best_correl][i][j].Ncor1;
+                            res_tab[res_count].Ncor2=cor_tab[best_correl][i][j].Ncor2;
+                            res_tab[res_count].w1=Rmatab[i].width;
+                            res_tab[res_count].w2=Qmatab[j].width;
+                            res_tab[res_count].w=cor_tab[best_correl][i][j].w;
+                            res_tab[res_count].offset=k;
+                            (best_correl == 0) ? (res_tab[res_count].strand='D') : (res_tab[res_count].strand='R');
+                            last_match[j]=res_count;
+                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
+                                res_tab[res_count].fake_matches_count++;
+                            }
+                            res_count++;
+
+                        }
+                    }
+                    else {printf("No valide mode set, analysis failed\n"); exit(0);}
+                }
 			}
 		}
 	}
 	
 	fp = fopen(outfile,"w");						// output printing... 
-	fprintf(fp,"#id1\tid2\tname1\tname2\tcor\tNcor\tNcor1\tNcor2\tw1\tw2\toffset\tstrand\n");
+	fprintf(fp,"#id1\tid2\tname1\tname2\tcor\tNcor\tNcor1\tNcor2\tw1\tw2\toffset\tstrand\tuncounted\n");
 	for (i=0; i<res_count; i++) {
-		fprintf(fp,"%s\t%s\t%s\t%s\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%c\n",res_tab[i].id1,res_tab[i].id2,res_tab[i].name1,res_tab[i].name2,res_tab[i].cor,res_tab[i].Ncor,res_tab[i].Ncor1,res_tab[i].Ncor2,res_tab[i].w1,res_tab[i].w2,res_tab[i].offset,res_tab[i].strand);
+		fprintf(fp,"%s\t%s\t%s\t%s\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%c\t%d\n",res_tab[i].id1,res_tab[i].id2,res_tab[i].name1,res_tab[i].name2,res_tab[i].cor,res_tab[i].Ncor,res_tab[i].Ncor1,res_tab[i].Ncor2,res_tab[i].w1,res_tab[i].w2,res_tab[i].offset,res_tab[i].strand,res_tab[i].fake_matches_count);
 	}
 	
 	free(Rmatab);									// memory desallocations...
@@ -204,7 +276,7 @@ int main(int argc, char *argv[]){
 	
 	t2 = clock();
 	exec_time = (float)(t2-t1)/CLOCKS_PER_SEC;
-	fprintf(fp,"; Analysis performed in %fs\n",exec_time);
+	fprintf(fp,";Analysis performed in %fs\n",exec_time);
 	printf("Analysis performed in %fs\n",exec_time);
 	
 	fclose(fp);
@@ -229,6 +301,8 @@ void read_arg(int argc, char *argv[]){
 			  if(strcmp(argv[i],"-lth_ncor") == 0)  lth_ncor  = atof(argv[++i]);
 			  if(strcmp(argv[i],"-lth_ncor1") == 0)  lth_ncor1  = atof(argv[++i]);
 			  if(strcmp(argv[i],"-lth_ncor2") == 0)  lth_ncor2  = atof(argv[++i]);
+			  if(strcmp(argv[i],"-detect_palindromes") == 0)  detect_palindromes  = 1;
+              if(strcmp(argv[i],"-mode") == 0)  mode  = argv[++i];
 		  }
 	  }
   }
@@ -243,12 +317,11 @@ void read_arg(int argc, char *argv[]){
 //==================================================================
 pssm *readmat(FILE *fp,int *matnum){
 	char currline[128];
-	/*int i,width,count=0;*/
-	int width=0;
+	int i, width,count=0;
 	float a,c,g,t;
 	pssm *matab;
 	regex_t pregAC,pregID;
-	/*regmatch_t *pmatch = NULL;*/
+	regmatch_t *pmatch = NULL;
 	
 	regcomp(&pregAC,"^AC[[:space:]]+[^[:space:]]+",REG_EXTENDED| REG_NOSUB);
 	regcomp(&pregID,"^ID[[:space:]]+[^[:space:]]+",REG_EXTENDED| REG_NOSUB);
@@ -317,7 +390,7 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	double v1 = 0;			// Variance of aligned columns in matrix 1 
 	double v2 = 0;			// Variance of aligned columns in matrix 2 
 	double cov = 0;			// Covariance of aligned columns 
-	/*double cor = 0;			// Coefficient of correlation for aligned columns */
+	double cor = 0;			// Coefficient of correlation for aligned columns 
 	double sum_f1 = 0;		// Sum of residue frequencies for aligned columns of matrix 1 
 	double sum_f2 = 0;		// Sum of residue frequencies for aligned columns of matrix 2 
 	double sum_sq_f1 = 0;	// sum of squared residue frequencies for aligned columns of matrix 1 (used to compute v1)  
@@ -325,9 +398,8 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	double sum_f1f2 = 0;	// Sum of residue frequencies between the matrices (used to compute cov) 
 	int end2,start2,w;
 	int pos;				// Position of the current column relative to the number of aligned columns 
-	/*int col1,col2;			// Current column in M1 (query) and M2 (ref.) respectively */
-	int r;
-	/*int i,j,k,r;*/
+	int col1,col2;			// Current column in M1 (query) and M2 (ref.) respectively 
+	int i,j,k,r;
 	int n;					// Total number of cells in the aligned matrix
 	double f1,f2;			// frenquencies
 	double norm_factor;
@@ -345,7 +417,12 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	m2.mat = M2.mat + start2; 
 	m2.width = w;
 	
-	norm_factor = (double)w / (M1.width+M2.width-w);
+    if (strcmp(mode,"scan")==0) {
+        norm_factor = (double)w / (M1.width+M2.width-w);
+    }
+    else if (strcmp(mode,"matches")==0) {
+        norm_factor = (double)w / M2.width;
+    }
 	
 	for (pos=0; pos<w; pos++) {					// Compute correlations for each pos 
 		for (r=0;r<4;r++) {							// Iterate over residues (matrix rows) 
@@ -374,6 +451,7 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	Cor.Ncor = Cor.cor * norm_factor;
 	Cor.Ncor1 = Cor.cor * (double)w / M1.width;
 	Cor.Ncor2 = Cor.cor * (double)w / M2.width;
+    Cor.w = w;
 			
 	return Cor;
 }
@@ -395,7 +473,7 @@ double crude_freq(pssm m,int r,int c) {
 //====================== Print the help/manual  =========================
 //=======================================================================
 void print_help(void){
-	printf("compare-matrices-quick is a simplified C translation of compare_matrices developed by Jacques Van Helden. ");
+	printf("Compmat is a simplified C translation of compare_matrices developed by Jacques Van Helden. ");
 	printf("It takes as input a reference matrices file and a query matrices file (both transfac formated) and computes correlations for each possible couple of matrices.\n");
 	printf("The output consists in a tab-delimited file containing one line per match (i.e. alignments with correlations scores above user-defined thresholds) following the format:\n\n");
 
@@ -407,16 +485,21 @@ void print_help(void){
 	printf("\t<Ncor2>\t\tdenotes the coefficient of correlation normalized on query matrix length,\n");
 	printf("\t<offset>\tis the relative position off the query matrix relatively to the reference matrix\n\t\t\t(-> zero if the first column of the query is aligned with the first column of the ref.,\n\t\t\tand can be negative if the query is shifted leftward),\n");
 	printf("\t<Strand>\tcan be Direct ('D') or Reverse ('R') if the comparison considered the reverse-complement matrix of the query.\n\n");
+	printf("\t<uncounted>\tindicates the number of matches that were not counted because of a beter match in a close vicinity or on the other strand\n\n");
 
-	printf("Synopsis: compare-matrices-quick -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matrices_file> \\\n");
+	printf("Synopsis: compmat -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matrices_file> \\\n");
 	printf("\t\t[-lth_w <min_aligned_columns>]\t\tmin treshold on matrices overlap (default 5)\n");
 	printf("\t\t[-lth_ncor <min_ncor>]\t\t\tmin threshold on normalized correlation (default 0.4)\n");
 	printf("\t\t[-lth_ncor1 <min_ncor1>]\t\tmin threshold on correlation normalized on ref. matrices (default 0.7)\n");
 	printf("\t\t[-lth_ncor2 <min_ncor2>]\t\tmin threshold on correlation normalized on query matrices (default 0.7)\n");
 	printf("\t\t[-h]\t\t\t\t\tprint this help\n");
-	printf("\t\t[-v]\t\t\t\t\tVerbose mode (debuging...)\n\n");
+	printf("\t\t[-v]\t\t\t\t\tVerbose mode (debuging...)\n");
+    printf("\t\t[-mode <mode>]\t\t\t\t\twhere <mode> can be either \"scan\" or \"matches\" (default = scan)\n\n");
+    printf("\t\"scan\" mode: reports all matching positions between matrix 2 (reference) and matrix 1 (query) that pass the thresholds on the metrics""\n\n");
+    printf("\t\"matches\" mode: For each pair of matrices (one from file1 and one from file2), the program tests all possible offsets, and reports only\n\t\t the best Ncor matching position (if passing the Ncor threshold)\n\n");
+
 	
-	printf("Execution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5\n");
+	printf("Exucution example: ./compmat -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5 -mode matches\n");
 }
 	
 

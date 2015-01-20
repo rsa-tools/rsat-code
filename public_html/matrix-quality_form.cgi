@@ -31,7 +31,7 @@ $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "meme";
-$default{kfold}="0";
+$default{kfold}="none";
 $default{permutation1} = "1";
 $default{permutation2} = "1";
 $default{tag1} = "sequence_set1";
@@ -101,11 +101,13 @@ print "<fieldset>
 
 
 &GetMatrix();
- print "<\p><b>K fold validation</B>&nbsp;";
- print $query->popup_menu(-name=>'kfold',
-			   -Values=>[0,3,4,5,6,7,8,9,10],
-			   -default=>$default{kfold});
-print "<p><font color=red>Only the first matrix will be taken in acount</font></p>";
+print "<p><font color='orange'>Only the first matrix will be taken in acount</font></p>";
+
+print "<\p><b>K fold validation</B>&nbsp;";
+print $query->popup_menu(-name=>'kfold',
+			 -Values=>["none",0,3,4,5,6,7,8,9,10],
+			 -default=>$default{kfold});
+print "&nbsp;"x5, "<font color='orange'><b>Note:</b> validation requires a matrix with binding sites, in a suitable format (e.g. transfac, meme).</font>";
 
 print "</fieldset><p/>";
 
@@ -144,14 +146,13 @@ print "</fieldset><p/>";
 
 
 ################################################################
-### send results by email or display on the browser
+## Send results by email or display on the browser
 print "<p>\n";
-&SelectOutput("email", email_only=>1);
-
+&SelectOutput("email");
 
 
 ################################################################
-### action buttons
+## Action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";

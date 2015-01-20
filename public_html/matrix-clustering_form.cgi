@@ -28,13 +28,13 @@ $default{matrix_file}="";
 #$default{pseudo_distribution}="pseudo_prior";
 #$checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
-$default{hclust_method}="complete";
+$default{hclust_method}="average";
 $checked{$default{bg_method}} = "CHECKED";
 
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
-$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "none";
-$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "none";
-$default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 100;
+$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
+$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
+## $default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 100; ## JvH: Jaime, why did we initially set this threshold to 100 ? I suppress it since it is not in the demo makefile. 
 $default{'return_logoDP'} = "CHECKED";
 $default{'return_NSW'} = "CHECKED";
 $default{'return_NsEucl'} = "CHECKED";
@@ -142,7 +142,8 @@ peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_file = "demo_files/peak-motifs_result_Chen_Oct4_matrices.tf";
+#$demo_file = "demo_files/peak-motifs_result_Chen_Oct4_matrices.tf";
+$demo_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_matrices=`cat ${demo_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);

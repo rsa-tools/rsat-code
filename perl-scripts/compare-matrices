@@ -2876,6 +2876,21 @@ analysis to a subset of a large matrix library.
 
 =pod
 
+=item B<-top X>
+
+Only analyze the first X motifs of the input file(s). 
+
+This combines the effect of -top1 and -top2.
+
+=cut
+    } elsif ($arg eq "-top") {
+      $main::top1 = $main::top2 = shift(@arguments);
+      &RSAT::error::FatalError($main::top1, "invalid value for the option -top. Must be a positive Natural number.") 
+        unless ((&IsNatural($main::top1)) && ($top1 >= 0));
+
+
+=pod
+
 =item B<-skip1 X>
 
 Skip the first X motifs of the first input matrix file. This options
@@ -2899,6 +2914,20 @@ analysis to a given subset of a large library.
     } elsif ($arg eq "-skip2") {
       $main::skip2 = shift(@arguments);
       &RSAT::error::FatalError($main::skip2, "invalid value for the option -skip2. Must be a positive Natural number.") unless ((&IsNatural($main::skip2)) && ($skip2 >= 0));
+
+=pod
+
+=item B<-skip X>
+
+Only analyze the first X motifs of the input file(s). 
+
+This combines the effect of -skip1 and -skip2.
+
+=cut
+    } elsif ($arg eq "-skip") {
+      $main::skip1 = $main::skip2 = shift(@arguments);
+      &RSAT::error::FatalError($main::skip1, "invalid value for the option -skip. Must be a positive Natural number.") 
+        unless ((&IsNatural($main::skip1)) && ($skip1 >= 0));
 
 
 =pod
