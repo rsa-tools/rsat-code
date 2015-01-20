@@ -337,7 +337,7 @@ package	main;
 
       next if ($token[9] == 1);
       if (scalar( @token ) != 11 ) {
-         &RSAT::message::WARNING("$_ skip. RSAT-var line must be cointain 11 columns");
+         &RSAT::message::Warning("$_ skip. RSAT-var line must be cointain 11 columns");
          next;
       }
 
@@ -351,7 +351,7 @@ package	main;
       my @token = split("\t",$_);
 
       if (scalar( @token ) != 9) {
-        &RSAT::message::WARNING("$_ skip. gvf line must be cointain 9 columns");
+        &RSAT::message::Warning("$_ skip. gvf line must be cointain 9 columns");
         next;
       }
 
