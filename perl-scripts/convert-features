@@ -15,7 +15,7 @@ BEGIN {
 }
 use RSAT::feature;
 use RSAT::Color;
-use POSIX;
+#use POSIX;
 
 
 ################################################################
@@ -118,17 +118,20 @@ while (<$in>) {
   next if (/^#/);
   next unless (/\S/);
   ## other lines to discard
-  if (($input_format eq "bed") || ($input_format eq "bed3col")) {
+  if (($input_format eq "bed") 
+      || ($input_format eq "bed3col")
+      || ($input_format eq "great")
+      ) {
       next if (/track name=/);
       next if (/^browser/);
   }
  if ($input_format eq "swembl") {
    next if (/^Region/);
   }
-  if ($input_format eq "galaxy_seq") {
-    next unless (/^\s*>/);
-  }
-  if ($input_format eq "ucsc_seq") {
+  if (($input_format eq "galaxy_seq") 
+      ||  ($input_format eq "ucsc_seq")
+      ||  ($input_format eq "ucsc2_seq")
+      ){
     next unless (/^\s*>/);
   }
   chomp();
@@ -359,7 +362,8 @@ sub calc_absolute {
       ## length
       my $feat_length = abs($feat_end - $feat_start) + 1;
       ## genomic center
-      my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
+#      my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
+      my $genomic_center = $genomic_start + sprintf("%d", (($genomic_end - $genomic_start)/2));
       ## start
       $new_start = $genomic_center + $feat_start;
       ## end
@@ -395,7 +399,8 @@ sub calc_absolute {
       ## length
       my $feat_length = abs($feat_end - $feat_start) + 1;
       ## genomic center
-      my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
+#      my $genomic_center = $genomic_start + ceil(($genomic_end - $genomic_start)/2);
+      my $genomic_center = $genomic_start + sprinf("%d", (($genomic_end - $genomic_start)/2));
       ## end
       $new_end = $genomic_center + $feat_end;
       ## start
@@ -510,7 +515,10 @@ OPTIONS
 
 	-coord   bedfile with absolute coordinate of the sequence fragment
 
-	-origin [start|end|center] origin of coordinates relative to sequence fragment
+	-origin [start|end|center] 
+	        Origin of coordinates relative to sequence fragment.
+		This option is only valid when combined with the
+		option -coord.
 
 CONVERSION TO GENOMIC COORDINATES
 

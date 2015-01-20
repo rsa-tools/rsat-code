@@ -41,10 +41,10 @@ sequences of \org{E.coli}.
 
 \begin{small}
 \begin{verbatim}
-cd $RSAT/data/genomes/Escherichia_coli_K12/oligo-frequencies/
+cd $RSAT/data/genomes/Escherichia_coli_K_12_substr__MG1655_uid57779/oligo-frequencies/
 
 ## Have a look at the content of the 4nt frequency file
-gunzip -c 4nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz | more
+gunzip -c 4nt_upstream-noorf_Escherichia_coli_K_12_substr__MG1655_uid57779-1str.freq.gz | more
 \end{verbatim}
 \end{small}
 
@@ -63,7 +63,7 @@ use the program \program{convert-background-model}.
 \begin{small}
 \begin{verbatim}
 convert-background-model \
-  -i 2nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -i 2nt_upstream-noorf_Escherichia_coli_K_12_substr__MG1655_uid57779-1str.freq.gz  \
   -from oligo-analysis -to tab
 \end{verbatim}
 \end{small}
@@ -79,7 +79,7 @@ trinucleotide frequencies.
 \begin{small}
 \begin{verbatim}
 convert-background-model \
-  -i 3nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -i 3nt_upstream-noorf_Escherichia_coli_K_12_substr__MG1655_uid57779-1str.freq.gz  \
   -from oligo-analysis -to tab
 \end{verbatim}
 \end{small}
@@ -101,7 +101,7 @@ from the nucleotide frequencies ($m+1=1$).
 \begin{small}
 \begin{verbatim}
 convert-background-model \
-  -i 1nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -i 1nt_upstream-noorf_Escherichia_coli_K_12_substr__MG1655_uid57779-1str.freq.gz  \
   -from oligo-analysis -to tab
 \end{verbatim}
 \end{small}

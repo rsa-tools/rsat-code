@@ -17,7 +17,7 @@ First trial: we will extract the upstream sequence for a single
 gene. Try:
 
 \begin{lstlisting}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type upstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -q metA -from -200 -to -1
 \end{lstlisting}
 
@@ -59,7 +59,7 @@ To better understand the system of coordinates, try to locate the
 start codon in the sequence obtained with the following commands.
 
 \begin{lstlisting}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type upstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -q metA -from -5 -to 6
 \end{lstlisting}
 
@@ -73,7 +73,7 @@ effect by preventing RNA-polymerase from binding DNA. The command
 the start codon, to combine an upstream and a coding segment.
 
 \begin{lstlisting}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type upstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -q metA -from -200 -to 49
 \end{lstlisting}
 
@@ -83,7 +83,7 @@ The option \option{-q} (query gene) can be used iteratively in a
 command to retrieve sequences for several genes.
 
 \begin{lstlisting}
-retrieve-seq -org Escherichia_coli_K12 \
+retrieve-seq -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -from -200 -to 49 -q metA -q metB -q metC
 \end{lstlisting}
 
@@ -178,7 +178,7 @@ hisS
 The default behaviour will return 200bp for each gene. 
 
 \begin{lstlisting}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type upstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -i his_genes.txt -from -200 -to -1
 \end{lstlisting}
 
@@ -186,7 +186,7 @@ With the option \option{-noorf}, sequences are clipped depending on
 the position of the closest upstream neighbour.
 
 \begin{lstlisting}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type upstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -i his_genes.txt -from -200 -to -1 -noorf \
     -o his_up200_noorf.fasta
 
@@ -383,16 +383,16 @@ base of the coding sequence. Thus, by specifying positions 0 to 2, we
 will extract the three first coding bases, i.e. the start codon. 
 
 \begin{lstlisting}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type upstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -from 0 -to 2 \
     -all -format wc -nocomments -label id,name \
-    -o Escherichia_coli_K12_start_codons.wc
+    -o Escherichia_coli_K_12_substr__MG1655_uid57779_start_codons.wc
 \end{lstlisting}
 
 Check the result:
 
 \begin{lstlisting}
-more Escherichia_coli_K12_start_codons.wc
+more Escherichia_coli_K_12_substr__MG1655_uid57779_start_codons.wc
 \end{lstlisting}
 
 
@@ -419,10 +419,10 @@ use \program{retrieve-seq} to extract the stop codons for all the
 genes of \org{Escherichia coli}.
 
 \begin{lstlisting}
-retrieve-seq -type downstream -org Escherichia_coli_K12 \
+retrieve-seq -type downstream -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -from -2 -to 0 \
     -all -format wc -nocomments -label id,name \
-    -o Escherichia_coli_K12_stop_codons.wc
+    -o Escherichia_coli_K_12_substr__MG1655_uid57779_stop_codons.wc
 \end{lstlisting}
 
 \section{Inferring operons}
@@ -481,7 +481,7 @@ With the following command, we infer the operon for a set of input
 genes.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
+infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q mhpR \
   -q mhpA -q mhpD
 \end{lstlisting}
 
@@ -495,7 +495,7 @@ One option would be to increase the distance threshold to 150bp.
 
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
+infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q mhpR \
   -q mhpA -q mhpD -dist 150
 \end{lstlisting}
 
@@ -510,7 +510,7 @@ we will undully consider these promoters as WO.
 The option \option{-return} allows to specify custom return fields.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI -q lacZ \
+infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q lacI -q lacZ \
   -return q_info,up_info,leader,trailer,operon
 \end{lstlisting}
 
@@ -521,7 +521,7 @@ and \gene{lacA} is 65bp. This can be checked with the return field
 \option{down\_info}.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K12 -q lacZ -q lacY \
+infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q lacZ -q lacY \
   -return q_info,up_info,down_info,operon
 \end{lstlisting}
 
@@ -532,7 +532,7 @@ metT operon contains a series of tRNA genes for methionine, leucine
 and glutamina, respectively.
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q glnV -q metU -q ileV \
 -return q_info,up_info,operon
 \end{lstlisting}
 
@@ -542,7 +542,7 @@ The option \option{-all} allows to infer operons for all the genes of
 an organism.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K12 -all \
+infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -all \
   -return q_info,up_info,leader,operon
 \end{lstlisting}
 
@@ -556,7 +556,7 @@ the corresponding promoter sequences. For this, we will use the option
 result table. 
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF
 \end{lstlisting}
 
@@ -571,7 +571,7 @@ To avoid including twice their leader, we use the unix command sort -u
 
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
    | cut -f 1 \
    | sort -u 
@@ -581,11 +581,11 @@ We can now use the resulting non-redundant list of operon leaders as
 input for retrieve-seq.
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
    | cut -f 1 \
    | sort -u \
-   | retrieve-seq -org Escherichia_coli_K12 -noorf
+   | retrieve-seq -org Escherichia_coli_K_12_substr__MG1655_uid57779 -noorf
 \end{lstlisting}
 
 

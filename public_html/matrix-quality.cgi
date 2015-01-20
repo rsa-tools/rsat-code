@@ -98,7 +98,7 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 
 ################################################################
 ## k parameter for the k-fold validation
-if (&IsInteger($query->param('kfold'))) {
+if ((&IsInteger($query->param('kfold'))) && ($query->param('kfold') > 0)) {
     $parameters .= " -kfold ".$query->param('kfold');
 }
 
@@ -228,7 +228,12 @@ $parameters .= " -archive -o ".$result_dir."/".$file_prefix ." ";
 
 $index_file = $tmp_file_name."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
-&EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
+#&EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
+if ($query->param('output') =~ /display/i) {
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>"$mail_title",no_email=>1);
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>"$mail_title");
+}
 
 print $query->end_html();
 

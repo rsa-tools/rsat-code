@@ -4,42 +4,94 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
+V=2
+SPECIES=Homo_sapiens
+ASSEMBLY=GRCh38
+ENSEMBL_VERSION=77
+
+## The folder does not depend on the ensembl version anymore.  The
+## following option should be used only for specific purpose (when
+## installing several ensembl versions of the same assembly).
+#SPECIES_SUFFIX=ensembl${ENSEMBL_VERSION}
+#SPECIES_SUFFIX_OPT=-species_suffix ${SPECIES_SUFFIX}
+SPECIES_SUFFIX=
+SPECIES_SUFFIX_OPT=
+
 ################################################################
 ## The test matrix comes from Ballester et al.
 MATRIX=${RSAT}/public_html/demo_files/do798+do735_mmus_hnf6_liver.transfac
 
 ## Variants selected to illustate the typology of cases, including
 ## non-trivial cases with >2 variants.
-VARIANTS=${RSAT}/public_html/demo_files/test_complex_tab
+DEMO_DIR=${RSAT}/public_html/demo_files/
+VARIANTS=variation_demo_set
 
-E_VERSION=72
-V=3
 ################################################################
-## Convert variations in VCF (variation X file) format into the format
-## supported as input by RSAT retrieve-var.
-CONVERT_VAR_CMD=convert-variations -i ${VARIANTS}.vcf  -e_version ${E_VERSION} -v ${V} -from vcf -to rsat-var -o ${VARIANTS}.rsat_var
+## Count the number of variations per chromosome/contig for the selected organism
+ORG=${SPECIES}_${ASSEMBLY}
+VARIATION_DIR=${RSAT}/public_html/data/genomes/${ORG}/variations
+variation_stats:
+	@echo "Statistics about variations"
+	@echo "	SPECIES		${SPECIES}"	
+	@echo "	ASSEMBLY	${ASSEMBLY}"
+	@echo "	ORG		${ORG}"	
+	@echo "	VARIATION_DIR	${VARIATION_DIR}"
+	@echo "Number of lines per variation file"
+	@(cd ${VARIATION_DIR}; wc -l *.tab | sort -n)
+
+################################################################
+## Convert variations from VCF (variation X file) format into the
+## format supported as input by RSAT retrieve-var.
+RESULT_DIR=results/variation_scan_demo
+VARIANT_FORMAT_IN=vcf
+VARIANT_FORMAT_OUT=rsat-var
+CONVERT_VAR_CMD=convert-variations \
+	-i ${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}  \
+	-e_version ${ENSEMBL_VERSION} \
+	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} \
+	-o ${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}
 convert_var:
 	@echo ""
-	@echo "Converting variations"
+	@echo "Converting variations from ${VARIANT_FORMAT_IN} to ${VARIANT_FORMAT_OUT}"
+	@mkdir -p ${RESULT_DIR}
 	@echo "${CONVERT_VAR_CMD}"
 	@${CONVERT_VAR_CMD}
+	@echo "Converted variation file"
+	@echo "	${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}"
 
 ################################################################
 ## Retrieve the sequences surrounding a set of input variations
-ORG=Homo_sapiens
-RETRIEVE_VAR_CMD=retrieve-variation-seq  -v ${V} -species ${ORG}  -e_version ${E_VERSION} -i ${VARIANTS}.rsat_var  -mml 30 -o ${VARIANTS}_rsat_var.seq -format rsat-var
+RETRIEVE_VAR_CMD=retrieve-variation-seq  \
+	-v ${V} \
+	-species ${SPECIES} \
+	-e_version ${ENSEMBL_VERSION} \
+	-a_version ${ASSEMBLY} \
+	${SPECIES_SUFFIX_OPT} \
+	-i ${RESULT_DIR}/${VARIANTS}.rsat-var \
+	-mml 30 -format rsat-var \
+	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.seq
 retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
 	@${RETRIEVE_VAR_CMD}
+	@echo "Out file"
+	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.seq"
 
 ################################################################
 ## Scan selected variations with the matrix of interest
-PVAL=1e-2
-PVAL_RATIO=1
+PVAL=0.1
+PVAL_RATIO=2
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
-VAR_SCAN_CMD=variation-scan -i ${VARIANTS}_rsat_var.seq -m ${MATRIX} -bg ${BG_MODEL} -uth pval ${PVAL} -lth pval_ratio ${PVAL_RATIO} -o ${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}.tab
+VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
+VAR_SCAN_CMD=variation-scan -v ${V} \
+	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.seq \
+	-m ${MATRIX} -bg ${BG_MODEL} \
+	-uth pval ${PVAL} \
+	-lth pval_ratio ${PVAL_RATIO} \
+	-o ${VAR_SCAN_RES}.tab
 variation_scan:
 	@echo "${VAR_SCAN_CMD}"
 	@${VAR_SCAN_CMD}
+	@echo "Output file"
+	@echo "	${VAR_SCAN_RES}.tab"
 
 
