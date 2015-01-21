@@ -37,6 +37,7 @@ list_servers:
 	@echo "SERVERS	${SERVERS}"
 	@echo "SERVER	${SERVER}"
 	@echo "WSDL_URL	${WSDL_URL}"
+	@echo "RSAT_WS	${RSAT_WS}"
 
 stub_param:
 	@echo "Parameters for generating the stub"
@@ -58,7 +59,13 @@ stub:
 stub_test:
 	perl ./convert_matrix_soap_wsdl_2.pl 
 
+
 nostub_test:
-	@echo "Testing web services without stub"
+	@echo "Testing web services without stub	${RSAT_WS}"
 	perl ./supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
-#	@ls -ltr organisms_*.txt
+
+nostub_test_all_servers:
+	@for server in ${SERVERS}; do \
+		${MAKE} RSAT_WS=$${server} nostub_test; \
+	done
+
