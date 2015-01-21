@@ -305,6 +305,9 @@ package main;
   #$param{matrix_compa_metrics} = "Ncor";
   $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
   $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
+  $param{archive_format} = "zip";
+  $param{progressive_synthesis} = 1;
+
 
   ################################################################
   ## Read argument values
@@ -314,6 +317,7 @@ package main;
   ## Check argument values
 
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
 
   ## Non-recognized parameters are passed to compare-matrices
   if (scalar(@args_to_pass)) {
@@ -351,9 +355,9 @@ package main;
 
   ################################################################
   ## Check output directories and define file names
-
   &set_output_file_names();
 
+  &OpenSynthesis() if ($main::param{progressive_synthesis}); ## Already open the HTML report summary, for the Web site
 
   ################################################################
   ## Read input matrices
@@ -2053,7 +2057,7 @@ $(document).ready(function(){
   my $cluster_id_cur = 'cluster_1';
   my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
 
-  ## Get the name of the folder of results withaout the absolute
+  ## Get the name of the folder of results without the absolute
   ## path. This prefix is required to name some temporary files.
   my @pref = split("/", $main::outfile{prefix});
   my $prefix = pop(@pref);
@@ -2840,18 +2844,9 @@ sub set_output_file_names {
   $main::outfile{temp_2} = $main::outfile{prefix}."_temporary_2.html";
   $main::outfile{int_align} = $main::outfile{prefix}."_intermediate_alignments.tab";
 
-  ## Open the HTML index file
+  ## Open the HTML index file and write header
   $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
   push @outfiles, "html_index";
-  $main::html_index = &OpenOutputFile($main::outfile{html_index});
-  my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
-  #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
-  print $main::html_index $header;
-  
-  ## Report command
-  print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
-  &PrintArguments($main::html_index, 1);
-  print $html_index "</tt></p>\n";
   
 }
 
@@ -2859,12 +2854,22 @@ sub set_output_file_names {
 ## Open the HTML page for the synthesis
 sub OpenSynthesis {
 
-  # my $refresh_time;
-  # if ($progressive_synthesis) {
-  #   $refresh_time = 120;
-  # } else {
-  #    $refresh_time = 0;
-  # }
+  my $refresh_time;
+  if ($main::param{progressive_synthesis}) {
+    $refresh_time = 120;
+  } else {
+     $refresh_time = 0;
+  }
+
+  $main::html_index = &OpenOutputFile($main::outfile{html_index});
+  my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>$refresh_time);
+  #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+  print $main::html_index $header;
+  
+  ## Report command
+  print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
+  &PrintArguments($main::html_index, 1);
+  print $html_index "</tt></p>\n";
 
   # ## Create a directory to store the arrow icons
   # $main::dir{images_html} = $dir{output}."/images_html";
@@ -2875,30 +2880,30 @@ sub OpenSynthesis {
   # $cmd .= " ".$main::dir{images_html};
   # &one_command($cmd, 1);
 
-  ## Open the HTML file
+  ## Open the summary HTML file
   $syn = &OpenOutputFile($main::outfile{summary});
      $main::param{title} = "Test";
   $synthesis_path = `dirname $main::outfile{summary}`;
   chomp($synthesis_path);
 
-     ## Add the JS libraries paths
-     my $html_lib = '
+  ## Add the JS libraries paths
+  my $html_lib = '
    <script type="text/javascript" src="'.$d3_base.'"></script>
    <script type="text/javascript" src="'.$jquery_base.'"></script>
    <script type="text/javascript" src="'.$datatable_base.'"></script>
    <link rel="stylesheet" type="text/css" href="'.$datatable_css_base.'">
 </head>
      ';
-
-     ## Add the CSS style for matrix-clustering summary and 
-     ## concatenate it to header the CSS sytles
-     my $css_matrix_clustering = &ReportStyleCSS();
-     $html_lib .= $css_matrix_clustering."\n";
-
-     my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title});
-     $head =~ s|</head>|$html_lib|;
- 
-     print $syn $head;
+  
+  ## Add the CSS style for matrix-clustering summary and 
+  ## concatenate it to header the CSS sytles
+  my $css_matrix_clustering = &ReportStyleCSS();
+  $html_lib .= $css_matrix_clustering."\n";
+  
+  my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title});
+  $head =~ s|</head>|$html_lib|;
+  
+  print $syn $head;
 
   &ReportCommand();
 }
@@ -3868,6 +3873,8 @@ sub Synthesis {
 
     &RSAT::message::TimeWarn("\n; Generating HTML summary") if ($main::verbose >= 2);
 
+    &OpenSynthesis() unless ($main::param{progressive_synthesis});
+
     ## Initialize the variables
     %ids_to_cluster = ();
     my %alignment_table_data = ();
@@ -3877,8 +3884,6 @@ sub Synthesis {
 
     &ReadAlignmentTable();
     $number_of_clusters = scalar(keys %alignment_table_data);
-
-    &OpenSynthesis();
 
     &OpenScriptJQuery();
     
