@@ -140,8 +140,8 @@ $parameters .= " >& ".$err_file;
 
 ################################################################
 ## Display or send result by email
-$index_file = $output_path."/".$output_prefix."_index.html";
-#$index_file = $output_path."/".$output_prefix."_SUMMARY.html";
+#$index_file = $output_path."/".$output_prefix."_index.html";
+$index_file = $output_path."/".$output_prefix."_SUMMARY.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
