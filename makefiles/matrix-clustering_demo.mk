@@ -95,7 +95,7 @@ permute_matrices: list_param
 ## Run clustering on permuted matrices
 cluster_permuted_matrices:
 	@echo "Clustering permuted matrices	${PERMUTED_MATRIX_FILE}"
-	${MAKE} _cluster MATRIX_PREFIX=${PERMUTED_PREFIX} 
+	${MAKE} _cluster MATRIX_PREFIX=${PERMUTED_PREFIX} MATRIX_FILE=${PERMUTED_MATRIX_FILE}
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
@@ -115,7 +115,8 @@ cluster_rdb:
 
 ## Permutation test with RegulonDB
 cluster_rdb_permute:
-	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} permute_matrices cluster_permuted_matrices
+	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} permute_matrices
+	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} cluster_permuted_matrices
 
 ################################################################
 ## Cluster one jaspar group
