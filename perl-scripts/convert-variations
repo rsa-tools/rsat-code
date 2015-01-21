@@ -44,7 +44,7 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 SUPPORTED FORMAT
 
-GVF, VCF, rsat-var
+GVF, VCF, varbed
 
 =head2 Genome Variant Format (GVF)
 
@@ -90,7 +90,7 @@ initially defined to describe generic genomic features, so all the
 specific attributes come in the last column (description).
 
 For this reasons, we developed a custom tab-delimited format to store
-variations, which we call I<rsat-var> (see description below).
+variations, which we call I<varbed> (see description below).
 
 =head2 Variant Call Format (VCF)
 
@@ -100,7 +100,7 @@ This format was defined for the 1000 genomes project. It is no longer
 maintained. The converter supports it merely for the sake of backwards
 compatibility.
 
-=head2 RSAT variation format (rsat-var)
+=head2 RSAT variation format (varbed)
 
 Tab-delimited format with a specific column order, used as input by
 I<retrieve-variation-seq>. 
@@ -179,7 +179,7 @@ package	main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
-  our @supported_format = ("vcf","gvf","rsat-var");
+  our @supported_format = ("vcf","gvf","varbed");
   our $data_dir = "$ENV{'RSAT'}/data/";
 
   our @validate_patterns = (
@@ -246,7 +246,7 @@ package	main;
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  if ($main::to eq "rsat-var") {
+  if ($main::to eq "varbed") {
       &Verbose() if ($main::verbose >= 1);
   }
 
@@ -268,7 +268,7 @@ package	main;
         $main::outfile{input} .= ".".$extension;
       } else {
         $main::outfile{input} .= ".vcf" if ($from eq "vcf");
-        $main::outfile{input} .= ".tab" if ($from eq "rsat-var");
+        $main::outfile{input} .= ".tab" if ($from eq "varbed");
         $main::outfile{input} .= ".gvf" if ($from eq "gvf");
       }
 
@@ -310,7 +310,7 @@ package	main;
       if ($legend) {
 	  print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
 	  print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
-	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'rsat-var');
+	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'varbed');
 	  $legend = 0;
       }
       
@@ -332,12 +332,12 @@ package	main;
       
 
     ## RSAT file
-    if ($from eq 'rsat-var') {
+    if ($from eq 'varbed') {
       my @token = split("\t",$_);
 
       next if ($token[9] == 1);
       if (scalar( @token ) != 11 ) {
-         &RSAT::message::Warning("$_ skip. RSAT-var line must be cointain 11 columns");
+         &RSAT::message::Warning("$_ skip. varbed line must be cointain 11 columns");
          next;
       }
 
@@ -374,7 +374,7 @@ package	main;
     }
 
     ### Output variation
-    print $out &Convert_var_to_rsat(%variation),"\n" if ($to eq "rsat-var");
+    print $out &Convert_var_to_rsat(%variation),"\n" if ($to eq "varbed");
     print $out &Convert_var_to_vcf(%variation),"\n" if ($to eq "vcf");
     print $out &Convert_var_to_gvf(%variation),"\n" if ($to eq "gvf");
   }
@@ -733,7 +733,7 @@ This option is mutually exclusive with option I<-i>.
 =item B<-from #>
 
 Format of the input file
-vcf,gvf,rsat-var
+vcf,gvf,varbed
 
 =cut
     } elsif ($arg eq "-from") {
@@ -745,7 +745,7 @@ vcf,gvf,rsat-var
 =item B<-to #>
 
 Format of the output file
-vcf,gvf,rsat-var
+vcf,gvf,varbed
 
 =cut
     } elsif ($arg eq "-to") {
