@@ -100,6 +100,9 @@ foreach my $server (@servers) {
     }
 
     close OUT;
+    my $nb_organisms = `grep -v '^;' ${file} | grep -v '^#' | wc -l`;
+    chomp($nb_organisms);
+    print join("\t", $nb_organisms, "organisms at", $server, $file), "\n";
   };
 
   ## Report exceptions
