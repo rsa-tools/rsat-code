@@ -305,6 +305,9 @@ package main;
   #$param{matrix_compa_metrics} = "Ncor";
   $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
   $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
+  $param{archive_format} = "zip";
+  $param{progressive_synthesis} = 1;
+
 
   ################################################################
   ## Read argument values
@@ -314,6 +317,7 @@ package main;
   ## Check argument values
 
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
 
   ## Non-recognized parameters are passed to compare-matrices
   if (scalar(@args_to_pass)) {
@@ -351,9 +355,9 @@ package main;
 
   ################################################################
   ## Check output directories and define file names
-
   &set_output_file_names();
 
+  &OpenSynthesis() if ($main::param{progressive_synthesis}); ## Already open the HTML report summary, for the Web site
 
   ################################################################
   ## Read input matrices
@@ -2053,7 +2057,7 @@ $(document).ready(function(){
   my $cluster_id_cur = 'cluster_1';
   my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
 
-  ## Get the name of the folder of results withaout the absolute
+  ## Get the name of the folder of results without the absolute
   ## path. This prefix is required to name some temporary files.
   my @pref = split("/", $main::outfile{prefix});
   my $prefix = pop(@pref);
@@ -2840,18 +2844,9 @@ sub set_output_file_names {
   $main::outfile{temp_2} = $main::outfile{prefix}."_temporary_2.html";
   $main::outfile{int_align} = $main::outfile{prefix}."_intermediate_alignments.tab";
 
-  ## Open the HTML index file
+  ## Open the HTML index file and write header
   $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
   push @outfiles, "html_index";
-  $main::html_index = &OpenOutputFile($main::outfile{html_index});
-  my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>120);
-  #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
-  print $main::html_index $header;
-  
-  ## Report command
-  print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
-  &PrintArguments($main::html_index, 1);
-  print $html_index "</tt></p>\n";
   
 }
 
@@ -2859,12 +2854,22 @@ sub set_output_file_names {
 ## Open the HTML page for the synthesis
 sub OpenSynthesis {
 
-  # my $refresh_time;
-  # if ($progressive_synthesis) {
-  #   $refresh_time = 120;
-  # } else {
-  #    $refresh_time = 0;
-  # }
+  my $refresh_time;
+  if ($main::param{progressive_synthesis}) {
+    $refresh_time = 120;
+  } else {
+     $refresh_time = 0;
+  }
+
+  $main::html_index = &OpenOutputFile($main::outfile{html_index});
+  my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", refresh_time=>$refresh_time);
+  #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+  print $main::html_index $header;
+  
+  ## Report command
+  print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
+  &PrintArguments($main::html_index, 1);
+  print $html_index "</tt></p>\n";
 
   # ## Create a directory to store the arrow icons
   # $main::dir{images_html} = $dir{output}."/images_html";
@@ -2875,30 +2880,30 @@ sub OpenSynthesis {
   # $cmd .= " ".$main::dir{images_html};
   # &one_command($cmd, 1);
 
-  ## Open the HTML file
+  ## Open the summary HTML file
   $syn = &OpenOutputFile($main::outfile{summary});
      $main::param{title} = "Test";
   $synthesis_path = `dirname $main::outfile{summary}`;
   chomp($synthesis_path);
 
-     ## Add the JS libraries paths
-     my $html_lib = '
+  ## Add the JS libraries paths
+  my $html_lib = '
    <script type="text/javascript" src="'.$d3_base.'"></script>
    <script type="text/javascript" src="'.$jquery_base.'"></script>
    <script type="text/javascript" src="'.$datatable_base.'"></script>
    <link rel="stylesheet" type="text/css" href="'.$datatable_css_base.'">
 </head>
      ';
-
-     ## Add the CSS style for matrix-clustering summary and 
-     ## concatenate it to header the CSS sytles
-     my $css_matrix_clustering = &ReportStyleCSS();
-     $html_lib .= $css_matrix_clustering."\n";
-
-     my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title});
-     $head =~ s|</head>|$html_lib|;
- 
-     print $syn $head;
+  
+  ## Add the CSS style for matrix-clustering summary and 
+  ## concatenate it to header the CSS sytles
+  my $css_matrix_clustering = &ReportStyleCSS();
+  $html_lib .= $css_matrix_clustering."\n";
+  
+  my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title});
+  $head =~ s|</head>|$html_lib|;
+  
+  print $syn $head;
 
   &ReportCommand();
 }
@@ -3190,8 +3195,7 @@ sub ReportStyleCSS{
   #display_clusters{
     background-color: #B1D4F9;
     text-align: center;
-    padding-top: 3px; 
-    padding-bottom: 1px; 
+    padding-top: 3px 1px 1px 1px; 
   }
 
   .par_text {
@@ -3207,11 +3211,18 @@ sub ReportStyleCSS{
   }
 
   .display{
-height: auto;
-width: auto;
-	border-radius: 40px;
+	height: auto;
+	width: 95%;
+	border-radius: 5px;
 	background-color: #FFFFFF; 
-	margin: 20px;
+	margin: 10px;
+        padding: 7px;
+	text-align: left; 
+	font-size: 17px;
+	border: solid 3px #004F72; 
+	clear: both;
+	position: relative;
+	float:left;
   }
 
   #individual_results{
@@ -3222,14 +3233,16 @@ width: auto;
 	height: auto;
 	border-radius: 10px; 
 	background-color: #B1D4F9; 
-  }  
+        position: relative;
+        clear: both;
+  } 
  
   .cluster_info_head {
 	background-color: #DCE4EC;
 	float: left;
 	height: 20px;
 	width: auto;
-	position: absolute;
+	position: relative;
 	left: 27.5%;
 	display: inline-block;
 	text-align: center;
@@ -3237,6 +3250,7 @@ width: auto;
 	font-size: 15px;
 	padding: 3px 7px;
 	border-radius:5px;
+	clear: both;
   } 
 
   /****************/
@@ -3498,7 +3512,7 @@ sub InsertSmallForest {
 	if($sum < 20){
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'"></div>';
+	    $div .= '<div id="'.$cl_id_s.'" style="padding: 0px;"></div>';
 	    
 	    if($cluster_sum < 3){
 		$div .= '<hr>'."\n";
@@ -3672,14 +3686,6 @@ sub InsertTreesAndBranchMotifs {
 	$buttons =~ s/--Cluster_id_head--/head_$cl_id/g;
 	$buttons =~ s/--nb--/$num/g;
 	$script_jquery .= $buttons."\n";
-	
-	## Draw the logo tree
-	# my $d3_logo_tree .= '       
-        #               <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
-	#               <!--Div containing D3 logo tree-->
-        #               <div id="cluster_--nb--" class="logo_tree">
-	# 	      <script type="text/javascript">
-        #         ';
 
 	## Draw the logo tree
 	my $d3_logo_tree .= '       
@@ -3687,17 +3693,13 @@ sub InsertTreesAndBranchMotifs {
                       <div id="cluster_--nb--" class="logo_tree">
 		      <script type="text/javascript">
                 ';
-	#$d3_logo_tree_test =~ s/--nb--/$num/g;
-
-
-	my $add = '<div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>';
-	$add =~ s/--nb--/$num/g;
-
+	my $tree_button = '<div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>';
+	$tree_button =~ s/--nb--/$num/g;
 
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/3500/g;
+	$d3_logo_tree =~ s/--widthtree--/1000/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--size--/400/g;
 	$d3_logo_tree =~ s/--radius--/6/g;
@@ -3714,10 +3716,8 @@ sub InsertTreesAndBranchMotifs {
                          </script>
 	                 </div>
                  ';
-	#$insert_div .= "\n".$d3_logo_tree."\n";
-	#$all_d3_trees .= $d3_logo_tree_test."\n".$d3_logo_tree."\n";
         $all_d3_trees .= "\n".$d3_logo_tree."\n";
-	$insert_div .= "\n".$add."\n";
+	$insert_div .= "\n".$tree_button."\n";
 
 	## Add the code to hide/show the logo tree
 	my $toogle_tree = &toogle_tree();
@@ -3779,9 +3779,9 @@ sub DisplaySingleCluster{
 	<div class="cluster_info_head">
 	  <strong>Click on the buttons to display separately the information of each cluster.</strong>
 	</div>
-	<div class="display" id="single_tree_dis">'.$all_d3_trees.'</div> 
+	<div class="display"><strong>Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
-	<div class="display" id="branch_motif_dis"></div>
+	<div class="display"></div>
     </div> 
     ';
     print $syn $div_display;
@@ -3873,6 +3873,8 @@ sub Synthesis {
 
     &RSAT::message::TimeWarn("\n; Generating HTML summary") if ($main::verbose >= 2);
 
+    &OpenSynthesis() unless ($main::param{progressive_synthesis});
+
     ## Initialize the variables
     %ids_to_cluster = ();
     my %alignment_table_data = ();
@@ -3882,8 +3884,6 @@ sub Synthesis {
 
     &ReadAlignmentTable();
     $number_of_clusters = scalar(keys %alignment_table_data);
-
-    &OpenSynthesis();
 
     &OpenScriptJQuery();
     
@@ -3918,4 +3918,17 @@ sub Synthesis {
     
     &RSAT::message::TimeWarn("Synthetic report", $main::outfile{summary}) if ($main::verbose >= 2);
 }
+
+  # // Slide the buttons to show the results
+  # $(document).ready(function(){
+  #   $('.head_cluster_1', this).click(function(){
+  #      $('#cluster_1').slideToggle('fast');
+  #      $('#button_branch_consensus_cluster_1').slideToggle('fast');
+  #      $('#alignment_table_1').hide();  
+  #      $('.branch_consensus_cluster_1').hide(); 
+  #      $('.individual_results').css('height','auto'); 
+  #      $('.individual_results').css('width','95%');
+  #    }); 
+  # });
+
 __END__
