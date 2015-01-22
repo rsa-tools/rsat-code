@@ -10,4 +10,4 @@ License: This package is part of the RSAT software suite and inherits
         its license.
 Suggests: knitr
 VignetteBuilder: knitr
-Built: R 3.1.2; ; 2015-01-07 14:48:29 UTC; unix
+Built: R 3.1.2; ; 2015-01-22 12:34:24 UTC; unix
