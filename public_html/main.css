@@ -136,6 +136,13 @@ hr.solid
   height: 1px;
   }
 
+hr.portal 
+{
+  border: 0;
+  border-bottom: 1px solid #cc6600;
+  margin: 30px;
+  }
+
 pre,tt 
 {
   font-size: 12px;
@@ -630,7 +637,7 @@ table.serverlist
 table.serverlist td, table.serverlist tr, table.serverlist th 
 {
   padding: 0px;
-  font-size: 90%;
+  font-size: 80%;
   padding-right: 5px;
   
 
