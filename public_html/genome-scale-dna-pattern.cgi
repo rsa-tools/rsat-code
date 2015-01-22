@@ -18,10 +18,10 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$ENV{RSAT}/public_html/genome-scale.lib.pl";
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
-### print the header of the result page
+## print the header of the result page
 &RSA_header("dna-pattern result ".$query->param("title"), "results");
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
@@ -50,26 +50,6 @@ $org = $query->param("organism");
 
 ################################################################
 #
-# Sequence retrieval parameters
-#
-#  if ($query->param("sequence_type") =~ /chromosome/) {
-#      $seq_format = $supported_organism{$org}->{'seq_format'};
-#      $command = "dna-pattern -i ".$supported_organism{$org}->{'genome'};
-#  #      #### DEBUGGING
-#  #      print "<PRE>";
-#  #      print `ls -lt $supported_organism{$org}->{'genome'}`;
-#  #      print `cat $supported_organism{$org}->{'genome'}`;
-#  #      print "</PRE>";
-
-#  } else {
-#    &ReadRetrieveSeqParams();
-#    $command = "$retrieve_seq_command $retrieve_seq_parameters | $dna_pattern_command ";
-#    $seq_format = "fasta";
-#}
-
-
-################################################################
-#
 # dna-pattern parameters
 #
 
@@ -79,7 +59,7 @@ $parameters_dna_pattern = "";
 $parameters_dna_pattern .= " -v ";
 $parameters_dna_pattern .= " -format $seq_format ";
 
-### pattern file ####
+## pattern file ####
 unless ($query->param('patterns') =~ /\S/) {
   &cgiError("The pattern box should not be empty.<P>Read on-line manual for more information.");
 }
@@ -92,15 +72,14 @@ if (open PAT, ">$pattern_file") {
 }
 $parameters_dna_pattern .= " -pl $pattern_file";
 
-### return match count ###
+## Return match count ###
 if ($query->param('return') =~ /count/i) {
   $parameters_dna_pattern .= " -return counts";
   if (($query->param('threshold') =~ /^\d+$/) && ($query->param('threshold') > 0)) {
     $parameters_dna_pattern .= " -th ".$query->param('threshold');
   }
 
-
-### return match count table
+## Return match count table
 } elsif ($query->param('return') =~ /table/i) {
   $parameters_dna_pattern .= " -return table";
   ### add a rwo and a column with the totals
@@ -108,11 +87,11 @@ if ($query->param('return') =~ /count/i) {
     $parameters_dna_pattern .= " -return total";
   }
   
-### return matching positions
+## Return matching positions
 } elsif ($query->param('return') =~ /positions/) { 
     $parameters_dna_pattern .= " -return sites";
     
-    ### origin ###
+    ## Origin
     if ($query->param('origin') =~ /end/i) {
 	$parameters_dna_pattern .= " -origin -0";
     }
@@ -122,33 +101,32 @@ if ($query->param('return') =~ /count/i) {
     }
     
     
-    #### match format
+    ## Match format
     if ($query->param('match_format') eq "fasta") {
 	$parameters_dna_pattern .= " -match_format fasta";
     }
 }
 
-### prevent overlapping matches
+## Prevent overlapping matches
 if (lc($query->param('noov')) eq "on") {
   $parameters_dna_pattern .= " -noov";
 }
 
 
-### strands
+## Strands
 if ($query->param('strands') =~ /direct/i) {
   $parameters_dna_pattern .= " -D";
 } elsif  ($query->param('strands') =~ /reverse/i) {
   $parameters_dna_pattern .= " -R";
 }
 
-### substitutions
+## Substitutions
 if ($query->param('subst') =~ /^\d+$/) {
   $parameters_dna_pattern .= " -subst ".$query->param('subst');
 }
 
 
-
-#### pattern matching parameters
+## Pattern matching parameters
 &ReadRetrieveSeqParams();
 $command = "$retrieve_seq_command $retrieve_seq_parameters | $dna_pattern_command ";
 $command .= " $parameters_dna_pattern ";
@@ -167,11 +145,11 @@ unless (($query->param("sequence_type") =~ /chromosome/) ||
 	($query->param("match_format") eq "fasta")) {
     $command .= "| $add_orf_function_command -org $org ";
     $command .= "| $add_linenb_command ";
-
+}
 &ReportWebCommand($command);
 
 ################################################################
-### execute the command ###
+## Run the command
 if ($query->param("output") =~ /display/i) {
 
 
@@ -209,7 +187,7 @@ exit(0);
 
 
 
-### prepare data for piping
+## Prepare data for piping
 sub PipingForm {
   $title = $query->param("title");
   $title =~ s/\"/\'/g;
@@ -247,46 +225,49 @@ if ($query->param('return') =~ /positions/) {
 part2
     
 }
-  
-  if (($org eq "Saccharomyces_cerevisiae") && 
-      !($query->param("sequence_type") =~ /chromosome/) &&
-      !($query->param("match_format") eq "fasta") 
-      ) {
-#### pipe to external servers
-      print <<part3
 
-<tr>
-<td><h3>External servers</h3></td>
-</tr>
 
-<!--
-<tr>
-<TD>
-<a href="http://www.biologie.ens.fr/fr/genetiqu/puces/publications/ymgv_NARdb2002/index.html" target=_blank>yMGV transcription profiles</a>
-</TD></tr><tr><td align = 'left'>
-<FORM METHOD="POST" ACTION="http://www.transcriptome.ens.fr/ymgv/list_signatures.php3" target=_blank>
-<INPUT type="hidden" NAME="generequest" VALUE="$export_genes">
-<INPUT type="submit" VALUE="Send">
-</FORM>
-</TD>
-</tr>
--->
+#   if (($org eq "Saccharomyces_cerevisiae") && 
+#       !($query->param("sequence_type") =~ /chromosome/) &&
+#       !($query->param("match_format") eq "fasta") 
+#       ) {
 
-<tr>
-<TD>
-<a href="http://www.genome.ad.jp/kegg/kegg2.html#pathway" target=_blank>KEGG pathway coloring</a>
-</TD>
-</tr><tr><td>
-<FORM METHOD="GET" target=_blank ACTION='http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www'>
-<INPUT type="hidden" NAME=org_name VALUE=sce>
-<INPUT type="hidden" NAME=unclassified VALUE="$export_genes">
-<INPUT type="submit" VALUE="Send">
-</FORM>
-</TD>
-</TR>
 
-part3
-}
+# #### pipe to external servers
+#       print <<part3
+
+# <tr>
+# <td><h3>External servers</h3></td>
+# </tr>
+
+# <tr>
+# <TD>
+# <a href="http://www.biologie.ens.fr/fr/genetiqu/puces/publications/ymgv_NARdb2002/index.html" target=_blank>yMGV transcription profiles</a>
+# </TD></tr><tr><td align = 'left'>
+# <FORM METHOD="POST" ACTION="http://www.transcriptome.ens.fr/ymgv/list_signatures.php3" target=_blank>
+# <INPUT type="hidden" NAME="generequest" VALUE="$export_genes">
+# <INPUT type="submit" VALUE="Send">
+# </FORM>
+# </TD>
+# </tr>
+
+
+# <tr>
+# <TD>
+# <a href="http://www.genome.ad.jp/kegg/kegg2.html#pathway" target=_blank>KEGG pathway coloring</a>
+# </TD>
+# </tr><tr><td>
+# <FORM METHOD="GET" target=_blank ACTION='http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www'>
+# <INPUT type="hidden" NAME=org_name VALUE=sce>
+# <INPUT type="hidden" NAME=unclassified VALUE="$export_genes">
+# <INPUT type="submit" VALUE="Send">
+# </FORM>
+# </TD>
+# </TR>
+
+# part3
+# }
+
   
   print <<End_of_form;
 </TABLE>
