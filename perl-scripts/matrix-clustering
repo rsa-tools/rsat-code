@@ -2124,20 +2124,20 @@ $(document).ready(function(){
   my $sum = 0;
   my $cluster_sum = 0;
   foreach my $num (1..scalar(keys %alignment_table_data)){
-    #foreach my $num (1..2){
 
-    $cl_id_s = "cluster_".$num."_s";
-    $cl_id = "cluster_".$num;
+    $clus_id = 'cluster_'.$num.'_small';
+    $cl_id = 'cluster_'.$num;
 
     my $cluster_size = scalar(keys %{$alignment_table_data{$cl_id}});
     my $sum = $sum_motifs + $cluster_size;
     if($sum < 17){
 
       ## Draw the logo forest 
-      $div .= '<div id="'.$cl_id_s.'"></div>';
+      $div .= '<div id="--id_s--"></div>';
+      $div =~ s/--id_s--/$clus_id/g;
 
       if($cluster_sum < 2){
-	$div .= '<hr>'."\n";
+	$div .= "<hr>\n";
       }
       
       my $tree = &logo_tree();
@@ -2147,9 +2147,9 @@ $(document).ready(function(){
       $tree =~ s/--size--/150/g;
       $tree =~ s/--nb--/$num/g;
       $tree =~ s/--height--/60 + 8 * $cluster_size/g;
-      $tree =~ s/--cl_id--/$cl_id_s/g;
+      $tree =~ s/--cl_id--/$clus_id/g;
       $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
-      my $json_name = $prefix."_trees/parsed_tree_cluster_".$num.".json";
+      my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_".$num.".json");
       $tree =~ s/--jsonfile--/$json_name/g;
       $tree =~ s/--svgwidth--/$svg_width/g;
       $tree =~ s/--svgheight--/$svg_height/g;
@@ -2405,7 +2405,7 @@ sub cluster_delim {
   
   return($cluster_delim);
 }
-
+ 
 
 ###########################
 ## Slide buttons cluster header
@@ -2420,11 +2420,8 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'#button_logo_tree_--nb--\').slideToggle(\'fast\');
-       $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
-       $(\'#alignment_table_--nb--\').hide();  
-       $(\'#cluster_--nb--\').hide(); 
-       $(\'.branch_consensus_cluster_--nb--\').hide();  
+       $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'fast\'); 
+       $(\'#cluster_--nb--\').css(\'display\', \'block\');
      }); 
   });
 
@@ -2436,9 +2433,7 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'#button_logo_tree_--nb--\').slideToggle(\'fast\');
-       $(\'#alignment_table_--nb--\').hide();  
-       $(\'#cluster_--nb--\').hide(); 
+         $(\'#cluster_--nb--\').css(\'display\', \'block\');
      }); 
   });
 
@@ -2492,9 +2487,9 @@ sub toogle_tree{
 // Slide the logo tree
   $(document).ready(function(){
     $(\'#button_logo_tree_--nb--\').click(function(){
-       $(\'#cluster_--nb--\').slideToggle(\'fast\');
+       $(\'#cluster_--nb--\').css(\'display\', \'block\');
      }); 
-  $(\'#cluster_--nb--\').css(\'display\', \'none\');
+//  $(\'#cluster_--nb--\').css(\'display\', \'none\');
   });
 ';
   return($toogle_tree);
@@ -2505,17 +2500,34 @@ sub toogle_tree{
 ## Hide/show the alignment table
 sub toogle_branch_consensus_table{
 
-  my $toogle_branch_consensus_tab  = 
-      '
+    my $toogle_branch_consensus_tab  = 
+'
 // Slide the branch-motif table
   $(document).ready(function(){
     $(\'#button_branch_consensus_cluster_--nb--\').click(function(){
-       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
+       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
      }); 
   $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
   });
 ';
-  return($toogle_branch_consensus_tab);
+    return($toogle_branch_consensus_tab);
+}
+
+
+###################################
+## Hide/show the alignment table
+sub hide_tree {
+
+  my $hide_tree  = 
+      '
+// Hide the logo tree
+  $(document).ready(function(){
+    $(\'#hide_tree_--nb--\').click(function(){
+       $(\'#cluster_--nb--\').css(\'display\', \'none\');
+     }); 
+  });
+';
+  return($hide_tree);
 }
 
 
@@ -3217,29 +3229,32 @@ sub ReportStyleCSS{
 	border: solid 3px #004F72; 
 	clear: both;
 	position: relative;
-	float:left;
+	float: left;
+	display: block;
   }
 
   #individual_results{
 	text-align:center; 
-	padding: 10px 20px 20px 20px; 
+	padding: 1px 20px 20px 20px; 
 	border: solid 3px #004F72; 
-	width: 85%;
+	width: auto;
 	height: auto;
 	border-radius: 10px; 
 	background-color: #B1D4F9; 
         position: relative;
         clear: both;
+    margin: 7px;
+    display: block;
+    float: left;
   } 
  
   .cluster_info_head {
 	background-color: #DCE4EC;
 	float: left;
 	height: 20px;
-	width: auto;
+	width: 600px;
 	position: relative;
-	left: 27.5%;
-	display: inline-block;
+	display: block;
 	text-align: center;
 	color: #34373B;
 	font-size: 15px;
@@ -3507,7 +3522,7 @@ sub InsertSmallForest {
 	if($sum < 20){
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="padding: 0px;"></div>';
+	    $div .= '<div id="'.$cl_id_s.'"></div>';
 	    
 	    if($cluster_sum < 3){
 		$div .= '<hr>'."\n";
@@ -3686,9 +3701,10 @@ sub InsertTreesAndBranchMotifs {
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
                       <div id="cluster_--nb--" class="logo_tree">
+                      <div id="hide_tree_--nb--" class="Cluster_results" style="display:block">Hide</div>
 		      <script type="text/javascript">
                 ';
-	my $tree_button = '<div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>';
+	my $tree_button = '<div class="Cluster_results" id="button_logo_tree_--nb--">Logo tree</div>';
 	$tree_button =~ s/--nb--/$num/g;
 
 	$d3_logo_tree .= &logo_tree();
@@ -3717,7 +3733,12 @@ sub InsertTreesAndBranchMotifs {
 	## Add the code to hide/show the logo tree
 	my $toogle_tree = &toogle_tree();
 	$toogle_tree =~ s/--nb--/$num/g;
-	$script_jquery .= $toogle_tree."\n";
+
+	my $hide_single_tree = &hide_tree();
+	$hide_single_tree =~ s/--nb--/$num/g;
+
+	$script_jquery .= $toogle_tree."\n\n";
+	$script_jquery .= $hide_single_tree."\n\n";
 	
 	## Draw the branch-consensus table
 	if(scalar(keys %current_alignment_table_data) > 1){
@@ -3776,7 +3797,7 @@ sub DisplaySingleCluster{
 	</div>
 	<div class="display"><strong>Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
-	<div class="display"></div>
+	<div class="display"><strong>Display Branch-Motifs</strong></div>
     </div> 
     ';
     print $syn $div_display;
@@ -3911,19 +3932,6 @@ sub Synthesis {
     ## Add the HTML synthesis report to the archive
     #&Archive(0, $main::outfile{synthesis}) if ($task{archive}); 
     
-    &RSAT::message::TimeWarn("Synthetic report", $main::outfile{summary}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Report", $main::outfile{summary}) if ($main::verbose >= 2);
 }
-
-  # // Slide the buttons to show the results
-  # $(document).ready(function(){
-  #   $('.head_cluster_1', this).click(function(){
-  #      $('#cluster_1').slideToggle('fast');
-  #      $('#button_branch_consensus_cluster_1').slideToggle('fast');
-  #      $('#alignment_table_1').hide();  
-  #      $('.branch_consensus_cluster_1').hide(); 
-  #      $('.individual_results').css('height','auto'); 
-  #      $('.individual_results').css('width','95%');
-  #    }); 
-  # });
-
 __END__
