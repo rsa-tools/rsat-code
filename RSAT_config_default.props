@@ -158,20 +158,20 @@ ensembl_host=ensembldb.ensembl.org
 ## rsync site to download the ensembl data
 ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 
-## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
-##   (retrieve-ensembl-seq, get-ensembl-genome)
-ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-24-77/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-24-77/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-24-77/ensembl-variation/modules
-
 ## Preferred version of the databases
 ## ensembl  (http://www.ensembl.org/) and
 ## ensemblgenomes (http://ensemblgenomes.org/).
 ##
 ## These parameters are used by the tools to install genomes from
 ## these two sources.
-ensembl_version=77
-ensemblgenomes_version=24
+ensembl_version=78
+ensemblgenomes_version=25
+
+## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
+##   (retrieve-ensembl-seq, get-ensembl-genome)
+ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-25-78/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-25-78/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-25-78/ensembl-variation/modules
 
 ## Safe version of the ensembl database (for download-ensembl-genome,
 ## download-ensembl-variations, ...). The database structures and API
