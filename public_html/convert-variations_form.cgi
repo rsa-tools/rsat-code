@@ -13,8 +13,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
+$default{demo_descr1} = "";
 $default{organism} = "Homo_sapiens_GRCh37";
-$default{input_type}="vcf";
+$default{input_type}="gvf";
 $default{out_type}="rsat-var";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant, 
                    ## has to be consistent with the longest matrix to be used
@@ -37,6 +38,7 @@ print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medin
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 
+print $default{demo_descr1};
 
 print $query->start_multipart_form(-action=>"convert-variations.cgi");
 
@@ -110,17 +112,25 @@ print $query->end_form;
 
 ################
 ## Data for demo
+$descr1 .= "<blockquote class ='demo'>";
+
+$descr1 .= "<p>In this demonstration, we convert variants in <a href='http://www.sequenceontology.org/resources/gvf_1.00.html'>GVF</a> format to rsat-var format.</p>\n
+
+<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
+
+$descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"convert-variations_form.cgi");
 ## Data for demo
-$demo_vcf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set.vcf";
-$demo_vcf_var=`cat $demo_vcf_file` ;
+$demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.gvf";
+$demo_gvf_var=`cat $demo_gvf_file` ;
 
 
 print "<TD><B>";
+print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
-print $query->hidden(-name=>'input',-default=>"$demo_vcf_var");
-print $query->hidden(-name=>'input_type',-default=>"vcf");
+print $query->hidden(-name=>'input',-default=>"$demo_gvf_var");
+print $query->hidden(-name=>'input_type',-default=>"gvf");
 print $query->hidden(-name=>'out_type',-default=>"rsat-var");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";

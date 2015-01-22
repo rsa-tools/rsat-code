@@ -97,6 +97,7 @@ Function getTempFileName($prefix, $ext) {
   //  print_r("<br>tmpDir = ".$tmpDir."</br>");
   //  print_r("<br>tmpFile = ".$tmpFile."</br>");
 
+  // return the complete path to the temporary file
   return $tmpDir.$tmpFile;
 }
 
@@ -116,7 +117,10 @@ Function storeFile($file) {
 
 
 Function writeTempFile($prefix, $data) {
-  $temp_command = "mktemp tmp/$prefix.XXXXX";
+  $tmpFileName = getTempFileName($prefix);
+
+#  $temp_command = "mktemp tmp/$prefix.XXXXX";
+  $temp_command = "mktemp ".$tmpFileName;
   exec($temp_command, $temp_file);
   $temp_file = $temp_file[0];
   $temp_file = trim_text($temp_file);

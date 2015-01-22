@@ -19,13 +19,12 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-### Read the CGI query
-$default{demo_descr1} = "";
 
 ################################################################
 ## Default values for filling the form
 
 ## matrix-scan
+$default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
@@ -36,20 +35,14 @@ $default{mml}=30;
 
 
 ## Threshold values for site detection
+## Suported uth 
+$default{uth_pval} = "1e-3";
+
+## Suported lth
 $default{lth_score} = "1";
-$default{uth_score} = "none";
-$default{lth_rank} = "none";
-$default{uth_rank} = "none";
-$default{lth_proba_M} = "none";
-$default{uth_proba_M} = "none";
-$default{lth_proba_B} = "none";
-$default{uth_proba_B} = "none";
-$default{lth_normw} = "none";
-$default{uth_normw} = "none";
-$default{lth_sig} = "none";
-$default{uth_sig} = "none";
-$default{lth_pval} = "none";
-$default{uth_pval} = "1e-4";
+$default{lth_w_diff} = "1";
+$default{lth_pval_ratio} = "10";
+
 
 ## Background model
 $default{markov_order} = "1";
@@ -141,12 +134,12 @@ print $query->end_form;
 ################################################################
 ### data for the demo
 
-my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
+my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 
 $descr1 .= "<p>In this demonstration, we use <i>variation-scan<\i> to assess the effect that a genetic variants have on transcription factor binding.</p>\n
 
-<p> The genetic variants used in this example have been previously reported in the literature. Used motifs correspond to TFs which biniding is expected to be affected</p>\n";
+<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. Motifs correspond to the transcription factores which biniding was reported to be affected by Weireauch, et al.</p>\n";
 
 $descr1 .= "</blockquote>";
 
@@ -155,14 +148,14 @@ print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
 
-$demo_matrix=`cat demo_files/do798+do735_mmus_hnf6_liver.transfac`;
-$demo_var_seq="./demo_files/variation_demo_set_rsat_var.seq";
+$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
+$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq`;
 
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-print $query->hidden(-name=>'variants_seq_file', -default=>$demo_var_seq);
+print $query->hidden(-name=>'variants_seqs', -default=>$demo_var_seq);
 
 print $query->hidden(-name=>'bg_method',-default=>'background"');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
@@ -283,71 +276,31 @@ sub Panel3 {
 					  $query->textfield(-name=>'lth_score',
 							    -default=>$default{lth_score},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_score',
-							    -default=>$default{uth_score},
-							    -size=>5)
+					  ""
 					 ]),
 
 			      ### Threshold on P-value of the score
-			      $query->td(['P-value',
-					  $query->textfield(-name=>'lth_pval',
-							    -default=>$default{lth_pval},
+			      $query->td(['P-value ratio',
+					  $query->textfield(-name=>'lth_pval_ratio',
+							    -default=>$default{lth_pval_ratio},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_pval',
-							    -default=>$default{uth_pval},
-							    -size=>5)
+					  ""
 					 ]),
 					  
 				### Threshold on Sig of the score
-			      $query->td(['Sig',
-					  $query->textfield(-name=>'lth_sig',
-							    -default=>$default{lth_sig},
+			      $query->td(['Weight<br>score difference',
+					  $query->textfield(-name=>'lth_w_diff',
+							    -default=>$default{lth_w_diff},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_sig',
-							    -default=>$default{uth_sig},
-							    -size=>5)
+					  ""
 					 ]),
-
-			      ### Threshold on proba_M
-			      $query->td(['P(S|M)<br>proba_M',
-					  $query->textfield(-name=>'lth_proba_M',
-							    -default=>$default{lth_proba_M},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_proba_M',
-							    -default=>$default{uth_proba_M},
-							    -size=>5)
-					 ]),
-
-			      ### Threshold on proba_B
-			      $query->td(['P(S|B)<br>proba_B',
-					  $query->textfield(-name=>'lth_proba_B',
-							    -default=>$default{lth_proba_B},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_proba_B',
-							    -default=>$default{uth_proba_B},
-							    -size=>5)
-					 ]),
-
-			      ### Threshold on normw
-			      $query->td(['Normalized<br>weight',
-					  $query->textfield(-name=>'lth_normw',
-							    -default=>$default{lth_normw},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_normw',
-							    -default=>$default{uth_normw},
-							    -size=>5)
-					 ]),
-
-			      ### Threshold on rank
-			      $query->td(['Rank',
-					  $query->textfield(-name=>'lth_rank',
-							    -default=>$default{lth_rank},
-							    -size=>5),
-					  $query->textfield(-name=>'uth_rank',
-							    -default=>$default{uth_rank},
-							    -size=>5)
-					 ]),
-
+		      
+                              ### Threshold on P-value of the score
+			      $query->td(['P-value (site)',
+					  "     ",$query->textfield(-name=>'uth_pval',
+							    -default=>$default{uth_pval},
+							    -size=>5)				       
+					 ])
 			     ]
 			    )
 		 );

@@ -6,8 +6,8 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
 V=2
 SPECIES=Homo_sapiens
-ASSEMBLY=GRCh37
-ENSEMBL_VERSION=75
+ASSEMBLY=GRCh38
+ENSEMBL_VERSION=77
 
 ## The folder does not depend on the ensembl version anymore.  The
 ## following option should be used only for specific purpose (when
@@ -44,7 +44,7 @@ variation_stats:
 ## format supported as input by RSAT retrieve-var.
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
-VARIANT_FORMAT_OUT=rsat-var
+VARIANT_FORMAT_OUT=varbed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}  \
 	-e_version ${ENSEMBL_VERSION} \
@@ -67,26 +67,31 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
 	${SPECIES_SUFFIX_OPT} \
-	-i ${RESULT_DIR}/${VARIANTS}.rsat-var \
-	-mml 30 -format rsat-var \
-	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.seq
+	-i ${RESULT_DIR}/${VARIANTS}.varbed \
+	-mml 30 -format varbed \
+	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
 retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
 	@${RETRIEVE_VAR_CMD}
-	@echo "Out file" ${RESULT_DIR}/${VARIANTS}_rsat_var.seq
+	@echo "Out file"
+	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varseq"
 
 ################################################################
 ## Scan selected variations with the matrix of interest
-PVAL=1
-PVAL_RATIO=1
+PVAL=0.1
+PVAL_RATIO=2
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
+VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VAR_SCAN_CMD=variation-scan -v ${V} \
-	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.seq \
-	-m ${MATRIX} -bg ${BG_MODEL} -uth pval ${PVAL} \
+	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq \
+	-m ${MATRIX} -bg ${BG_MODEL} \
+	-uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
-	-o ${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}.tab
+	-o ${VAR_SCAN_RES}.tab
 variation_scan:
 	@echo "${VAR_SCAN_CMD}"
 	@${VAR_SCAN_CMD}
+	@echo "Output file"
+	@echo "	${VAR_SCAN_RES}.tab"
 
 
