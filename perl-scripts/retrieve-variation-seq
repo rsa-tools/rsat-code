@@ -427,7 +427,7 @@ package	main;
     my @not_found = sort(keys(%variation_id));
     my $not_found_nb = scalar(@not_found);
     if ($not_found_nb > 0) {
-      &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb);
+      &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
       my $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check\n";
 
       foreach my $id (@not_found) {
@@ -581,8 +581,11 @@ package	main;
 	  ## the variant extended on both flanks.
 	  $variant_aux =~ s/-//g; 
 	  
-	  my $left_flank = substr($ref_seq,$start-$flank_len-1,$flank_len);
-	  my $right_flank = substr($ref_seq,$end,$flank_len);
+
+	  ## JvH, for Ale: we should check it the strand is well taken
+	  ## into account (here or below ?)
+	  my $left_flank = lc(substr($ref_seq,$start-$flank_len-1,$flank_len));
+	  my $right_flank = lc(substr($ref_seq,$end,$flank_len));
 	  my $variant_seq = $left_flank.$variant_aux.$right_flank;
 
 	  ## Select the output fields
