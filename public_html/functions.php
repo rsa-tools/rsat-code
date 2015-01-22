@@ -97,6 +97,7 @@ Function getTempFileName($prefix, $ext) {
   //  print_r("<br>tmpDir = ".$tmpDir."</br>");
   //  print_r("<br>tmpFile = ".$tmpFile."</br>");
 
+  // return the complete path to the temporary file
   return $tmpDir.$tmpFile;
 }
 
