@@ -449,7 +449,6 @@ package main;
 
       ################################################################
       ## Creates the website
-      #&create_html_report();
       &Synthesis();
 
       ## 
@@ -1336,10 +1335,11 @@ sub Add_attributes_to_JSON(){
 
 		  # if($folder ~~ @merged_cons_folders){
 		  if(grep( /^$folder$/, @merged_cons_folders)){
-
+		      
 		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      $consensus_link =~ s/^\.\.\///g;
 		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
+		      $Add_this .= " \"id\" : \"".$cluster."_".$folder."\", ";
 		      $Add_this .= " \"url\" : \"$consensus_link\", ";
 		      push(@Parsed_JSON, $Add_this."\n");
 		  }
@@ -1499,6 +1499,10 @@ sub create_html_tree_file(){
 
 	if(/--radius--/){
 	    $_ =~ s/--radius--/6/;
+	}
+
+	if(/--insert--/){
+	    $_ =~ s/--insert--//;
 	}
 
 	if(/--svgwidth--/){
@@ -1948,451 +1952,6 @@ sub Add_div_to_HTML(){
     &doit($cmd, 0, $die_on_error, $verbose);    
 }
 
-
-########################################
-## Creates the summary file in HTML
-sub create_html_report(){
-
-  ## Stores the jquery script, some patches of code are added through 
-  ## the function. The <script> tag is closed ad the end of the function.
-  my $script_jquery = '<script>';
-  $script_jquery .= '
-// Dynamic parameter table
-$(document).ready( function () {
-    $(\'#parameters_table\').DataTable({
-        "paging":   false,
-        "searching": false,
-        "ordering": false,
-        "info":     false,
-        "columnDefs": [
-	    { "width": "20%", "targets": [0,1,2,3] }
-	]		
-    });
-});
-
-
-// Dynamic alignment table
-$(document).ready( function () {
-    $(\'#alignment_dyn_table\').DataTable({
-        "info":     false,
-        "iDisplayLength": 20,
-        "order": [[ 2, "asc" ]],
-	"search": {
-	    "regex": true,
-	    "smart": true
-	},
-	"aoColumnDefs": [
-            { "bSortable": false, "aTargets": [ 4,5 ] }
-	],
-        "columnDefs": [ {
-            "targets": -1,
-            "data": null
-        } ]	
-    });
-});
-
-
-// Change the color of the selected cluster header
-$(document).ready(function() {
-    
-    $(\'.cluster_division\').mouseenter(function(){
-        $(this).fadeTo(\'fast\',1); 
-    });
-
-    $(\'.cluster_division\').mouseleave(function(){
-        $(this).fadeTo(\'fast\',0.5); 
-    });
-});
-
-
-// Change the color of the selected cluster header
-$(document).ready(function() {
-    
-    $(\'#File_list\').mouseenter(function(){
-        $(this).fadeTo(\'fast\',1); 
-    });
-
-    $(\'#File_list\').mouseleave(function(){
-        $(this).fadeTo(\'fast\',0.5); 
-    });
-});
-
-
-// Slide the alignment table
-$(document).ready(function(){
-    $(\'#File_list\').click(function(){
-	$(\'.tab_list\').slideToggle(\'fast\');
-    }); 
-});
-';
-
-  my $label_single_tree = '
-	node.append("a")
-	        .attr("xlink:href", function(d) { return d.url; })
-	        .append("text")
-	        .text(function(d) { return d.children ? "" :  d.name; })
-		.attr("dx", function(d) { return d.children ? 0 : 20; })
-		.attr("dy", function(d) { return d.children ? 0 : 3; })
-		.attr("font-size", "8px")
-		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
-    ';
-
-  my $label_single_tree_no_link = '
-	node.append("text")
-	        .text(function(d) { return d.children ? "" :  d.name; })
-		.attr("dx", function(d) { return d.children ? 0 : 20; })
-		.attr("dy", function(d) { return d.children ? 0 : 3; })
-		.attr("font-size", "8px")
-		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
-    ';
-  
-  my %alignment_table_data = ();
-  my @split_line = ();
-  
-  ## First read the alignment table and save the results in a hash
-  my ($line, $id, $cluster_id);
-  my $general_tab = "";
-  my $number_of_motifs = 0;
-  my $cluster_id_prev = 'cluster_1';
-  my $cluster_id_cur = 'cluster_1';
-  my ($cluster_handle) = &RSAT::util::OpenInputFile($outfile{alignment_table});
-
-  ## Get the name of the folder of results without the absolute
-  ## path. This prefix is required to name some temporary files.
-  my @pref = split("/", $main::outfile{prefix});
-  my $prefix = pop(@pref);
-
-  while (<$cluster_handle>) {
-    next if (/^#/); ## Skip header line
-    next if (/^;/); ## Skip comment lines
-    next unless (/\S/); ## Skip empty lines
-    chomp;
-    $line = $_;
-    @split_line = split("\t", $line);
-    $id = $split_line[0];
-    $cluster_id = $split_line[2];
-    $cluster_id_cur = $cluster_id;
-    $alignment_table_data{$cluster_id}{$id}{name} = $split_line[1];
-    $alignment_table_data{$cluster_id}{$id}{strand} = $split_line[3];
-    $alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[4];
-    $alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[5];
-    $alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
-    $alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
-    $number_of_motifs++;
-    $logo_tab_D = $prefix."_aligned_logos/".$id."_logo.png";
-    $logo_tab_R = $prefix."_aligned_logos/".$id."_logo_rc.png";
-
-    $logo_width = 12*$alignment_table_data{$cluster_id}{$id}{width};
-
-    ## Add colored consensuses
-    my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($alignment_table_data{$cluster_id}{$id}{consensus}, bold=>1, iupac=>$main::param{iupac_coloring});
-    $general_tab .= '
-				<tr>					
-					<td class="tab_spacer_1">'.$id.'</td>
-                                        <td class="tab_spacer_1">'.$alignment_table_data{$cluster_id}{$id}{name}.'</td>
-					<td class="tab_spacer_2">'.$cluster_id.'</td>
-					<td class="seq tab_spacer_1">'.$colored_consensus.'</td>
-                                        <th class="tab_spacer_2"><a target="_blank" href="'.$logo_tab_D.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_D.'" /></a></th>
-                                        <th class="tab_spacer_2"><a target="_blank" href="'.$logo_tab_R.'"><img class="logo_tab" width="--width--" src="'.$logo_tab_R.'" /></a></th>
-				</tr>
-        ';
-
-    $general_tab =~ s/--width/$logo_width/gi;
-
-    $cluster_id_prev = $cluster_id_cur;
-  }
-  close $cluster_handle;
-
-  my $threshold_values_html = "";
-  foreach my $par (sort keys %lth){
-    $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}.";  ";
-  } 
-
-
-  ######################################################################
-  ## Cleates the logo forest (small) picture displayed in the summary
-  ## Values to change in the D3 tree
-  my $svg_width = 6;
-  my $svg_height = 14;
-  my $svg_x1 = 150;
-  my $svg_y1 = -5;
-  my $svg_x2 = 13;
-
-  my $div = "";
-  my $small_forest = '' ;
-  my $small_tree = '' ;
-  my $script_tag = '       
-		      <script type="text/javascript">
-                ';
-  my $sum_motifs = 0;
-  my $sum = 0;
-  my $cluster_sum = 0;
-  foreach my $num (1..scalar(keys %alignment_table_data)){
-    #foreach my $num (1..2){
-
-    $cl_id_s = "cluster_".$num."_s";
-    $cl_id = "cluster_".$num;
-
-    my $cluster_size = scalar(keys %{$alignment_table_data{$cl_id}});
-    my $sum = $sum_motifs + $cluster_size;
-    if($sum < 17){
-
-      ## Draw the logo forest 
-      $div .= '<div id="'.$cl_id_s.'"></div>';
-
-      if($cluster_sum < 2){
-	$div .= '<hr>'."\n";
-      }
-      
-      my $tree = &logo_tree();
-      $tree =~ s/--lab--/$label_single_tree_no_link/;
-      $tree =~ s/--widthtree--/700/g;
-      $tree =~ s/--radius--/3/g;
-      $tree =~ s/--size--/150/g;
-      $tree =~ s/--nb--/$num/g;
-      $tree =~ s/--height--/60 + 8 * $cluster_size/g;
-      $tree =~ s/--cl_id--/$cl_id_s/g;
-      $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
-      my $json_name = $prefix."_trees/parsed_tree_cluster_".$num.".json";
-      $tree =~ s/--jsonfile--/$json_name/g;
-      $tree =~ s/--svgwidth--/$svg_width/g;
-      $tree =~ s/--svgheight--/$svg_height/g;
-      $tree =~ s/--x1--/$svg_x1/g;
-      $tree =~ s/--y1--/$svg_y1/g;
-      $tree =~ s/--x2--/$svg_x2/g;
-      
-      $small_tree .= $tree."\n";
-
-      $cluster_sum++;
-      $sum_motifs += $cluster_size;
-    }
-
-    if($cluster_sum == 2){
-      last; 
-    }
-  }
-  $small_forest .= $div."\n".'<script type="text/javascript">'."\n".$small_tree."\n".'</script>'."\n";
-
-
-  ## Create a copy of the backbone file and change the data taking
-  ## the info from the alignment table
-  $svg_width = 8.5;
-  $svg_height = 35;
-  $svg_x1 = 160;
-  $svg_y1 = -15;
-  $svg_x2 = '12 + 110';
-  my $method = $hclust_method;
-  my $ncor_val = $lth{Ncor};
-  my $cor_val = $lth{cor};
-  my $w_val = $lth{w};
-  my @summary = ();
-  my $number_of_clusters = scalar(keys %alignment_table_data);
-
-  my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/matrix-clustering-results-summary_backbone.html ".$main::outfile{summary_temp};
-  &doit($cmd, 0, $die_on_error, $verbose);
-  my ($summary_temp) = &RSAT::util::OpenInputFile($outfile{summary_temp});
-  while (<$summary_temp>) {
-    chomp;
-    $line = $_;
-
-    my $print_cmd = "matrix-clustering ".&PrintArguments();
-
-    ## Convert 
-    $line =~ s/--rsat_www--/$ENV{rsat_www}/;
-
-    ## Add the Javascript libraries path
-    $line =~ s/--d3--/$d3_base/;
-    $line =~ s/--jquery--/$jquery_base/;
-    $line =~ s/--datatable--/$datatable_base/;
-    $line =~ s/--DTcss--/$datatable_css_base/;
-
-    ## Add the columns with the name of the metric used as thresholds
-    $line =~ s/--Thresholds--/$threshold_values_html/;
-
-    ## Fill the summary table
-    $line =~ s/--cmd--/$print_cmd/;
-    $line =~ s/--motifs--/$number_of_motifs/;
-    $line =~ s/--nb--/$number_of_clusters/;
-    $line =~ s/--hmethod--/$method/;
-    $line =~ s/--Values--/$threshold_values_html/;
-    $line =~ s/COL_HERE/$general_tab/;
-    $line =~ s/--zip--/$main::outfile{archive}/;
-
-    ## Add the small forest
-    $line =~ s/--forest--/$small_forest/;
-
-    ## Search the line where the heatmap picture will be inserted
-    if($line =~ /--HEATMAP--/){
-      my $heatmap_line_code = '<img id="heatmap" src="'.$main::outfile{heatmap}.'" />';
-      $line =~ s/--HEATMAP--/$heatmap_line_code/;
-    }
-
-    ## Search the tag where the clusters will be inserted
-    if($line =~ m/Paste\scluster\sdelim/){
-      
-      ## The next procces is repeated for each cluster
-      foreach my $num (1..scalar(keys %alignment_table_data)){
-	
-	## Insert the header of the cluster
-	my $head_insert = &cluster_delim();
-	my $cl_id = "cluster_".$num;
-	$head_insert =~ s/--Cluster_id--/$cl_id/g;
-	$head_insert =~ s/--Cluster_id_head--/head_$cl_id/g;
-	$head_insert =~ s/--nb--/$num/g;
-	$line .= "\n".$head_insert."\n\n";
-	
-	## Make dynamics the buttons of the cluster header
-	my %current_alignment_table_data =  %{$alignment_table_data{$cl_id}};
-	my $buttons = &cluster_head_buttons(scalar(keys %current_alignment_table_data));
-	my $number_of_motifs = scalar(keys %current_alignment_table_data);
-	$buttons =~ s/--Cluster_id--/$cl_id/g;
-	$buttons =~ s/--Cluster_id_head--/head_$cl_id/g;
-	$buttons =~ s/--nb--/$num/g;
-	$script_jquery .= $buttons."\n";
-
-	## Draw the logo tree
-	my $d3_logo_tree .= '       
-                      <div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>
-	              <!--Div containing D3 logo tree-->
-                      <div id="cluster_--nb--" class="logo_tree">
-		      <script type="text/javascript">
-                ';
-	$d3_logo_tree .= &logo_tree();
-	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
-	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/3500/g;
-	$d3_logo_tree =~ s/--nb--/$num/g;
-	$d3_logo_tree =~ s/--size--/400/g;
-	$d3_logo_tree =~ s/--radius--/6/g;
-	$d3_logo_tree =~ s/--height--/100 + 30 * $number_of_motifs/g;
-	$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
-	my $jname = $prefix."_trees/parsed_tree_cluster_".$num.".json";
-	$d3_logo_tree =~ s/--jsonfile--/$jname/g;
-	$d3_logo_tree =~ s/--svgwidth--/$svg_width/g;
-	$d3_logo_tree =~ s/--svgheight--/$svg_height/g;
-	$d3_logo_tree =~ s/--x1--/$svg_x1/g;
-	$d3_logo_tree =~ s/--y1--/$svg_y1/g;
-	$d3_logo_tree =~ s/--x2--/$svg_x2/g;
-	$d3_logo_tree .= '
-                         </script>
-	                 </div>
-                 ';
-	$line .= "\n".$d3_logo_tree."\n";
-
-	## Add the code to hide/show the logo tree
-	my $toogle_tree = &toogle_tree();
-	$toogle_tree =~ s/--nb--/$num/g;
-	$script_jquery .= $toogle_tree."\n";
-
-	## Draw the branch-consensus table
-	if(scalar(keys %current_alignment_table_data) > 1){
-	  my $consensus_table = &branch_consensus_table();
-	  my $consensus_table_columns = "";
-	  foreach my $level (1..scalar(keys %current_alignment_table_data)-1){
-	    
-	    my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
-	    $logo_D = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo.png";
-	    $logo_R = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo_rc.png";
-	    $transfac_file = $prefix."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
-	    $transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
-	    $cons = `more $transfac_file_2 | grep DE`;
-	    $cons =~ s/DE\s+//gi;
-	    
-	    $consensus_table_columns .= "\n<tr>\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
-	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
-	    $consensus_table_columns .= "</tr>\n";
-	  }
-	  $consensus_table =~ s/--nb--/$num/g;
-	  $consensus_table =~ s/HERE/$consensus_table_columns/g;
-	  $line .= "\n".$consensus_table."\n\n";
-	}
-
-	## Add the code to hide/show the branch-consensus table
-	my $cons_tab = &toogle_branch_consensus_table();
-	$cons_tab =~ s/--nb--/$num/g;
-	$script_jquery .= $cons_tab."\n";
-      }
-    }
-    
-    
-    ## Fill the 'additional files' menu
-    if($line =~ m/Additional_files/){
-
-      my $add_files = 
-	  '
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_distance_table.html"><strong>Distance table</strong></a></td>
-		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
-		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_internal_nodes_attributes.html"><strong>Internal nodes attributes</strong></a></td>
-		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
-		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_logo_tree.html"><strong>Logo Forest</strong></a></td>
-		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
-		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_pairwise_compa.html"><strong>Pairwise comparison</strong></a></td>
-		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
-		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_pairwise_compa_matrix_descriptions.html"><strong>Matrix description</strong></a></td>
-		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
-		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_tree_of_consensus.pdf"><strong>Tree of consensus</strong></a></td>
-		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
-		   </tr>
-                ';
-
-      ## If it is specified, add the heatmap
-      if($draw_heatmap == 1){
-	$add_files .= 
-	    '
-
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_heatmap.pdf"><strong>Heatmap</strong></a></td>
-		      <td class="tab_spacer_2">the heatmap showing the hierarchical tree with the clusters and the alignments.</td>
-		   </tr>
-                     ';
-      }
-
-      ## If it is specified, add the heatmap
-      if($clone_input_flag == 1){
-	$add_files .= 
-	    '
-
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.$prefix.'_input_motifs.tf"><strong>Input motifs</strong></a></td>
-		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
-		   </tr>
-                     ';
-      }
-
-      $line =~ s/Additional_files/$add_files/;
-    }
-
-
-    ## Close the 'script' tag
-    if($line =~ m/Paste\sjquery/){
-      $line .= "\n".$script_jquery."</script>\n\n";
-    }
-    
-    push(@summary, $line."\n");
-  }
-  close $summary_temp;
-  unlink($outfile{summary_temp});
-  open(SUMMARY, ">".$main::outfile{summary}) || die "Cannot open SUMMARY: $!\n";
-  print SUMMARY @summary;
-  close(SUMMARY);
-}
-
-
 ##########################################
 ## Store in a string the cluster header
 sub cluster_delim {
@@ -2403,13 +1962,11 @@ sub cluster_delim {
 	<div class="cluster_division --Cluster_id_head--">
 		<strong>--Cluster_id--</strong>
 	</div>
-	<div class="Cluster_results --Cluster_id--" id="button_alignment_table_--nb--">Alignment table</div>
-
 ';
   
   return($cluster_delim);
 }
-
+ 
 
 ###########################
 ## Slide buttons cluster header
@@ -2424,14 +1981,10 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'#button_logo_tree_--nb--\').slideToggle(\'fast\');
-       $(\'#button_branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
-       $(\'#alignment_table_--nb--\').hide();  
-       $(\'#cluster_--nb--\').hide(); 
-       $(\'.branch_consensus_cluster_--nb--\').hide();  
+       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'block\'); 
+       $(\'#cluster_--nb--\').css(\'display\', \'block\');
      }); 
   });
-
     ';
   } else{
 
@@ -2440,14 +1993,10 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'#button_logo_tree_--nb--\').slideToggle(\'fast\');
-       $(\'#alignment_table_--nb--\').hide();  
-       $(\'#cluster_--nb--\').hide(); 
+         $(\'#cluster_--nb--\').css(\'display\', \'block\');
      }); 
   });
-
     ';
-
   }
   return($jquery_toggle_buttons);
 }
@@ -2496,9 +2045,9 @@ sub toogle_tree{
 // Slide the logo tree
   $(document).ready(function(){
     $(\'#button_logo_tree_--nb--\').click(function(){
-       $(\'#cluster_--nb--\').slideToggle(\'fast\');
+       $(\'#cluster_--nb--\').css(\'display\', \'block\');
      }); 
-  $(\'#cluster_--nb--\').css(\'display\', \'none\');
+//  $(\'#cluster_--nb--\').css(\'display\', \'none\');
   });
 ';
   return($toogle_tree);
@@ -2509,17 +2058,69 @@ sub toogle_tree{
 ## Hide/show the alignment table
 sub toogle_branch_consensus_table{
 
-  my $toogle_branch_consensus_tab  = 
-      '
+    my $toogle_branch_consensus_tab  = 
+'
 // Slide the branch-motif table
   $(document).ready(function(){
     $(\'#button_branch_consensus_cluster_--nb--\').click(function(){
-       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
+       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
      }); 
   $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
   });
 ';
-  return($toogle_branch_consensus_tab);
+    return($toogle_branch_consensus_tab);
+}
+
+
+###################################
+## Show selected branch motifs
+sub Display_Selected_Branch{
+
+    my $selected_branch  = 
+'
+  $(document).ready(function(){
+    $(\'#cluster_--nb--_merge_level_--level--\').click(function(){
+       showOne("cluster_--nb--_level_--level--")
+     }); 
+  }); 
+';
+    return($selected_branch);
+}
+
+
+
+###################################
+## Hide/show the alignment table
+sub hide_branch_motifs {
+
+  my $hide_branch_motifs  = 
+      '
+// Hide the logo tree
+  $(document).ready(function(){
+    $(\'#hide_branch_table_--nb--\').click(function(){
+       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+     }); 
+  });
+';
+  return($hide_branch_motifs);
+}
+
+
+###################################
+## Hide/show the alignment table
+sub hide_tree {
+
+  my $hide_tree  = 
+      '
+// Hide the logo tree
+  $(document).ready(function(){
+    $(\'#hide_tree_--nb--\').click(function(){
+       $(\'#cluster_--nb--\').css(\'display\', \'none\');
+       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+     }); 
+  });
+';
+  return($hide_tree);
 }
 
 
@@ -2573,7 +2174,8 @@ d3.json("--jsonfile--", function(json) {
 	
 	node.append("circle")
 		.attr("r", --radius--)
-                .attr("fill", "--stroke--");
+                .attr("fill", "--stroke--")
+                --insert--;
 
 
        /*Insert labels*/
@@ -2615,16 +2217,15 @@ d3.json("--jsonfile--", function(json) {
 }
 
 
-#########################
-## Insert D3 logo tree 
+#########################     <div class="Cluster_results" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
+## Insert D3 logo tree        <div class="Cluster_results" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
 sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="Cluster_results --Cluster_id--" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
-
     <div class="tab branch_consensus_cluster_--nb--">
-		<table>
+    <div id="hide_branch_table_--nb--" class="Cluster_results" style="display:block; clear:both">Hide</div>
+		<table style="display:block; clear:both;">
 			<thead>
 				<tr>
 					<th colspan="5">Branch-consensus and branch-motifs</th>
@@ -3222,29 +2823,32 @@ sub ReportStyleCSS{
 	border: solid 3px #004F72; 
 	clear: both;
 	position: relative;
-	float:left;
+	float: left;
+	display: block;
   }
 
   #individual_results{
 	text-align:center; 
-	padding: 10px 20px 20px 20px; 
+	padding: 1px 20px 20px 20px; 
 	border: solid 3px #004F72; 
-	width: 85%;
+	width: auto;
 	height: auto;
 	border-radius: 10px; 
 	background-color: #B1D4F9; 
         position: relative;
         clear: both;
+    margin: 7px;
+    display: block;
+    float: left;
   } 
  
   .cluster_info_head {
 	background-color: #DCE4EC;
 	float: left;
 	height: 20px;
-	width: auto;
+	width: 600px;
 	position: relative;
-	left: 27.5%;
-	display: inline-block;
+	display: block;
 	text-align: center;
 	color: #34373B;
 	font-size: 15px;
@@ -3490,7 +3094,7 @@ sub InsertSmallForest {
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
-    my $small_forest = '<div id="show_forest"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'">'."\n" ;  
+    my $small_forest = '<div id="show_forest"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'">'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
@@ -3512,7 +3116,7 @@ sub InsertSmallForest {
 	if($sum < 20){
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="padding: 0px;"></div>';
+	    $div .= '<div id="'.$cl_id_s.'"></div>';
 	    
 	    if($cluster_sum < 3){
 		$div .= '<hr>'."\n";
@@ -3523,6 +3127,7 @@ sub InsertSmallForest {
 	    $tree =~ s/--widthtree--/700/g;
 	    $tree =~ s/--radius--/3/g;
 	    $tree =~ s/--size--/150/g;
+	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
 	    $tree =~ s/--height--/70 + 11 * $cluster_size/g;
 	    $tree =~ s/--cl_id--/$cl_id_s/g;
@@ -3677,6 +3282,13 @@ sub InsertTreesAndBranchMotifs {
 	$head_insert =~ s/--Cluster_id_head--/head_$cl_id/g;
 	$head_insert =~ s/--nb--/$num/g;
 	my $insert_div = "\n".$head_insert."\n\n";
+
+	## Insert Id + Pointer
+	my $insert_id = '
+                .attr("cursor", function(d) { return d.children ? "pointer" : ""; })
+                .attr("id", function(d) { return d.children ? d.id : ""; })
+
+        ';
 	
 	## Make dynamics the buttons of the cluster header
 	my %current_alignment_table_data =  %{$alignment_table_data{$cl_id}};
@@ -3691,9 +3303,10 @@ sub InsertTreesAndBranchMotifs {
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
                       <div id="cluster_--nb--" class="logo_tree">
+                      <div id="hide_tree_--nb--" class="Cluster_results" style="display:block">Hide</div>
 		      <script type="text/javascript">
                 ';
-	my $tree_button = '<div class="Cluster_results --Cluster_id--" id="button_logo_tree_--nb--">Logo tree</div>';
+	my $tree_button = '<div class="Cluster_results" id="button_logo_tree_--nb--">Logo tree</div>';
 	$tree_button =~ s/--nb--/$num/g;
 
 	$d3_logo_tree .= &logo_tree();
@@ -3701,6 +3314,7 @@ sub InsertTreesAndBranchMotifs {
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
 	$d3_logo_tree =~ s/--widthtree--/1000/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
+	$d3_logo_tree =~ s/--insert--/$insert_id/g;
 	$d3_logo_tree =~ s/--size--/400/g;
 	$d3_logo_tree =~ s/--radius--/6/g;
 	$d3_logo_tree =~ s/--height--/100 + 30 * $motifs_nb/g;
@@ -3722,12 +3336,22 @@ sub InsertTreesAndBranchMotifs {
 	## Add the code to hide/show the logo tree
 	my $toogle_tree = &toogle_tree();
 	$toogle_tree =~ s/--nb--/$num/g;
-	$script_jquery .= $toogle_tree."\n";
+
+	my $hide_single_tree = &hide_tree();
+	$hide_single_tree =~ s/--nb--/$num/g;
+
+	my $hide_single_branch_table = &hide_branch_motifs();
+	$hide_single_branch_table =~ s/--nb--/$num/g;
+
+	$script_jquery .= $toogle_tree."\n\n";
+	$script_jquery .= $hide_single_tree."\n\n";
+	$script_jquery .= $hide_single_branch_table."\n\n";
 	
 	## Draw the branch-consensus table
 	if(scalar(keys %current_alignment_table_data) > 1){
 
-	    my $consensus_table = &branch_consensus_table();
+	    $consensus_table = "";
+	    $consensus_table = &branch_consensus_table();
 	    my $consensus_table_columns = "";
 	    foreach my $level (1..scalar(keys %current_alignment_table_data)-1){
 		
@@ -3739,25 +3363,37 @@ sub InsertTreesAndBranchMotifs {
 		$cons = `more $transfac_file_2 | grep DE`;
 		$cons =~ s/DE\s+//gi;
 		
-		$consensus_table_columns .= "\n<tr>\n";
+		$consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'_level_'.$level.'" class="branch_motifs">'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
+
+		## Add the code to hide/show the branch-consensus table
+		my $selection_branch = &Display_Selected_Branch();
+		$selection_branch =~ s/--nb--/$num/g;
+		$selection_branch =~ s/--level--/$level/g;
+		$script_jquery .= $selection_branch."\n";
 	    }
 	    $consensus_table =~ s/--nb--/$num/g;
 	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
-	    $insert_div .= "\n".$consensus_table."\n\n";
+	    $all_consensus_table .= "\n".$consensus_table."\n";
 	    
-	    # ## Add the code to hide/show the branch-consensus table
+	    ## Add the code to hide/show the branch-consensus table
 	    my $cons_tab = &toogle_branch_consensus_table();
 	    $cons_tab =~ s/--nb--/$num/g;
 	    $script_jquery .= $cons_tab."\n";
 	}
 	print $syn $insert_div;
     }
+
+    $script_jquery .= "\n".'
+    function showOne(id) {
+       $(\'.branch_motifs\').css(\'display\', \'table-row'\');
+       $(\'.branch_motifs\').not(\'#\' + id).css(\'display\', \'none\');
+     }'."\n";
     $script_jquery .= "</script>\n";
 }
 
@@ -3781,7 +3417,7 @@ sub DisplaySingleCluster{
 	</div>
 	<div class="display"><strong>Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
-	<div class="display"></div>
+	<div class="display"><strong>Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
     </div> 
     ';
     print $syn $div_display;
@@ -3880,6 +3516,7 @@ sub Synthesis {
     my %alignment_table_data = ();
     $script_jquery = "";
     $all_d3_trees = "";
+    $all_consensus_table = "";
     $number_of_motifs = 0;
 
     &ReadAlignmentTable();
@@ -3916,19 +3553,6 @@ sub Synthesis {
     ## Add the HTML synthesis report to the archive
     #&Archive(0, $main::outfile{synthesis}) if ($task{archive}); 
     
-    &RSAT::message::TimeWarn("Synthetic report", $main::outfile{summary}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Report", $main::outfile{summary}) if ($main::verbose >= 2);
 }
-
-  # // Slide the buttons to show the results
-  # $(document).ready(function(){
-  #   $('.head_cluster_1', this).click(function(){
-  #      $('#cluster_1').slideToggle('fast');
-  #      $('#button_branch_consensus_cluster_1').slideToggle('fast');
-  #      $('#alignment_table_1').hide();  
-  #      $('.branch_consensus_cluster_1').hide(); 
-  #      $('.individual_results').css('height','auto'); 
-  #      $('.individual_results').css('width','95%');
-  #    }); 
-  # });
-
 __END__
