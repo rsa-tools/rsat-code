@@ -3391,7 +3391,7 @@ sub InsertTreesAndBranchMotifs {
 
     $script_jquery .= "\n".'
     function showOne(id) {
-       $(\'.branch_motifs\').css(\'display\', \'table-row'\');
+       $(\'.branch_motifs\').css(\'display\', \'table-row\');
        $(\'.branch_motifs\').not(\'#\' + id).css(\'display\', \'none\');
      }'."\n";
     $script_jquery .= "</script>\n";
