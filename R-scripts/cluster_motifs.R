@@ -185,7 +185,7 @@ if(draw.heatmap == 1){
     } else if (plot.format == "jpg") {
       jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
     }
-    draw.heatmap.motifs(dist.table, method="average", clusters, alignment.list)
+    draw.heatmap.motifs(dist.table, method="average", clusters, alignment.list, score=score)
     dev.off()
   }
 }
