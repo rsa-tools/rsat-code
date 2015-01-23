@@ -3513,7 +3513,7 @@ sub Synthesis {
 
     ## Initialize the variables
     %ids_to_cluster = ();
-    my %alignment_table_data = ();
+    %alignment_table_data = ();
     $script_jquery = "";
     $all_d3_trees = "";
     $all_consensus_table = "";
@@ -3521,7 +3521,7 @@ sub Synthesis {
 
     &ReadAlignmentTable();
     $number_of_clusters = scalar(keys %alignment_table_data);
-
+    
     &OpenScriptJQuery();
     
     &ReportStyleCSS();
