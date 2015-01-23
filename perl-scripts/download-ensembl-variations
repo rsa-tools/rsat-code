@@ -464,7 +464,7 @@ package	main;
 
   ## Intialize output file per chromosome
   foreach my $chr (keys(%chr_file)) {
-    $out_vars{$chr} = &OpenOutputFile($variation_dir."/".$chr.".tab");
+    $out_vars{$chr} = &OpenOutputFile($variation_dir."/".$chr.".varBed");
     $out_var = $out_vars{$chr};
 
     ## Print header (field names)
@@ -568,7 +568,7 @@ package	main;
 	      $last_id = "";
 	      
 	      &RSAT::message::TimeWarn("Analyzing variations on chromosome : $chr",
-				       "\n\tOutfile:",$variation_dir."/".$chr.".tab")
+				       "\n\tOutfile:",$variation_dir."/".$chr.".varBed")
 		  if ($main::verbose >= 2);
 	      
 	      $last_chr = $chr;
