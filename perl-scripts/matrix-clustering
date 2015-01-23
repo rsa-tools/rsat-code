@@ -2251,7 +2251,7 @@ sub branch_consensus_table{
 
 
 ##############################################################
-## When the option -top1 is used the analysis is restricted 
+## When the option -top is used the analysis is restricted 
 ## to the first X motifs, however the input motif file is 
 ## splitted on individual files, although not all of them 
 ## are not. This functions will delete those files
@@ -3391,7 +3391,7 @@ sub InsertTreesAndBranchMotifs {
 
     $script_jquery .= "\n".'
     function showOne(id) {
-       $(\'.branch_motifs\').css(\'display\', \'table-row'\');
+       $(\'.branch_motifs\').css(\'display\', \'table-row\');
        $(\'.branch_motifs\').not(\'#\' + id).css(\'display\', \'none\');
      }'."\n";
     $script_jquery .= "</script>\n";
@@ -3513,7 +3513,7 @@ sub Synthesis {
 
     ## Initialize the variables
     %ids_to_cluster = ();
-    my %alignment_table_data = ();
+    %alignment_table_data = ();
     $script_jquery = "";
     $all_d3_trees = "";
     $all_consensus_table = "";
@@ -3521,7 +3521,7 @@ sub Synthesis {
 
     &ReadAlignmentTable();
     $number_of_clusters = scalar(keys %alignment_table_data);
-
+    
     &OpenScriptJQuery();
     
     &ReportStyleCSS();

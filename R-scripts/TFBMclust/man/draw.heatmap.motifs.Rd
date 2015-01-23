@@ -13,11 +13,14 @@ draw.heatmap.motifs(dist.table, method = "average", clusters.list, alignment.lis
   \item{method}{ Hierachical clustering agglomeration rule. Default: average. Supported: average, complete, single.}
   \item{clusters.list}{ An object of class \code{list} where the name of the elements are the cluster's name and the values are the motifs Ids belonging to each cluster. }
   \item{alignment.list}{ An object of class \code{list} containing one \code{list} for each motif analyzed. It must contain the next attributes: \code{name}, \code{consensus}, \code{strand}, \code{number}, \code{spacer.up} and \code{spacer.dw}. The \code{names()} of each list must be the motif \code{ID}.}
+  \item{score}{ Column of the comparison matrix to be used as score. Default: Ncor. In this function the color of the heatmap is based on the score definition [correlation or distance]. }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{ This function returns the heatmap corresponding to the distance table, where the column names are to the motifs Ids and the row names are the aligned consensus. In addition each cluster is indicated with a bar of a different color in the heatmap.
+
+The scale of colors for the heatmap is adapted relative to the score definition, some metrics measure correlation and others do distances.
 }
 \references{
 %% ~put references to the literature/web site here ~
