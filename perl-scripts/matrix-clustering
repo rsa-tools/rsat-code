@@ -2251,7 +2251,7 @@ sub branch_consensus_table{
 
 
 ##############################################################
-## When the option -top1 is used the analysis is restricted 
+## When the option -top is used the analysis is restricted 
 ## to the first X motifs, however the input motif file is 
 ## splitted on individual files, although not all of them 
 ## are not. This functions will delete those files
