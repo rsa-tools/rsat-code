@@ -1,7 +1,68 @@
 ####################################################
 ## Draw a heatmap usig a particular allgomeration
 ## method.
-draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list){
+draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list, score = "Ncor"){
+
+  ################################################################
+  ## Blue -> White -> Red palette
+  blue.white.red <- function() {
+    blue.levels <- c(rep(127,127), 126:0)/128
+    red.levels <- c(0:127,rep(127,127))/128
+    green.levels <- c(0:127, 126:0)/128
+    palette <- rgb(red.levels, green.levels, blue.levels)
+    return(palette)
+  }
+
+  metric.definition <- NULL
+  ## If required, convert similarities to distances
+  ## Similarity sores bounded to 1
+  if ((score == "Ncor")
+      || (score=="cor")
+      || (score=="logocor")
+      || (score=="Nlocogor")
+      || (score=="Icor")
+      || (score=="NIcor")
+  ) {
+    ## cor       Pearson correlation (computed on residue occurrences in aligned columns)
+    ## Ncor   		Relative width-normalized Pearson correlation
+    ## logocor 			correlation computed on sequence logos
+    ## Nlogocor 			Relative width-normalized logocor
+    ## Icor 			Pearson correlation computed on Information content
+    ## NIcor 			Relative width-normalized Icor
+    metric.definition <- "correlation"
+
+  } else if ((score == "logoDP")
+             || (score == "cov")) {
+    ## logoDP 			dot product of sequence logos
+    ## cov 			covariance between residues in aligned columns
+
+    stop("logoDP and cov scores are not supported yet")
+
+  } else if ((score == "dEucl")
+             || (score == "NdEucl")
+             || (score == "NdEucl")
+             || (score == "NsEucl")
+             || (score == "SSD")
+             || (score == "SW")
+             || (score == "NSW")
+  ) {
+    ## dEucl 			Euclidian distance between residue occurrences in aligned columns
+    ## NdEucl 			Relative width-normalized dEucl
+    ## NsEucl 			similarity derived from Relative width-normalized Euclidian distance
+    ## SSD 			Sum of square deviations
+    ## SW 			Sandelin-Wasserman
+    ## NSW 			Relative width-normalized Sandelin-Wasserman
+
+    metric.definition <- "distance"
+
+  } else if (score == "match_rank") {
+    ## match_rank rank of current match among all sorted matches
+    stop("match_rank score is not supported yet")
+
+  } else {
+    stop(paste(score, "is not a valid score", sep="\t"))
+  }
+
 
   ## The font size is adapted relative to the number of input motifs
   ## If there are less than 25, set the font size to 25
@@ -38,7 +99,13 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   })
 
   ## Color gradient for the heatmap
-  grad <- colorRampPalette(c("blue", "black"))(n = 299)
+#  grad <- colorRampPalette(c("blue", "black"))(n = 299)
+  if(metric.definition == "correlation"){
+    grad <- blue.white.red()
+  }else if(metric.definition == "correlation"){
+    grad <- colorRampPalette(c("red", "white"))(n = 256)
+  }
+
 
   ## Calculate the bottom border
   rigth <- round(170/font.size + (font.size/2 * 0.001), digits = 2)
