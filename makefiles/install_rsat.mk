@@ -197,7 +197,7 @@ perl_modules_cmd:
 
 ## Do not test the modules, simply install them
 CPAN_OPT=-T 
-CPAN_CMD=cpan ${CPAN_OPT}
+CPAN_CMD=${CPAN} ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
 ## configuration, cpan may ask you to answer y/n for each module and
 ## dependency.
@@ -255,7 +255,7 @@ perl_modules_check_doc:
 
 perl_module_test_eval:
 	@echo "	Checking perl module	${PERL_MODULE}"
-	@echo "${PERL_MODULE}" | xargs -I MODULE perl -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
+	@echo "${PERL_MODULE}" | xargs -I MODULE ${PERL} -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_version:
 	@echo "	Checking perl module version	${PERL_MODULE}"
