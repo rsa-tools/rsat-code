@@ -164,7 +164,7 @@ foreach my $ctg (sort keys %contig) {
 	my  @segment_gene_strands = ();
 	$nc_start = $gene_segment_right+1;
 	$gene_group++;
-	&RSAT::message::Debug("Gene segments", "treating gene", $gene_nb, $sorted_genes[$gene_nb]) if ($main::verbose >= 0);
+	&RSAT::message::Debug("Gene segments", "treating gene", $gene_nb, $sorted_genes[$gene_nb]) if ($main::verbose >= 10);
 	push @segment_genes, $sorted_genes[$gene_nb]->get_attribute('id');
 	push @segment_gene_strands, $sorted_genes[$gene_nb]->get_attribute('strand');
 	$gene_segment_left = $left{$sorted_genes[$gene_nb]};
