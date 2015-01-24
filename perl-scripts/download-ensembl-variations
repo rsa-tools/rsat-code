@@ -467,7 +467,7 @@ package	main;
 
   ## Intialize output file per chromosome
   foreach my $chr (keys(%chr_file)) {
-    $out_vars{$chr} = &OpenOutputFile($variation_dir."/".$chr.".tab");
+    $out_vars{$chr} = &OpenOutputFile($variation_dir."/".$chr.".varBed");
     $out_var = $out_vars{$chr};
 
     ## Print header (field names)
@@ -503,6 +503,14 @@ package	main;
       &RSAT::message::Info("Analyzing GVF file", $gvf_file, "Only SNPs with accurate information will be kept.") 
 	  if ($main::verbose >= 2);
 
+      ## Check if the files is ordered while analyzing it
+      ## if one chromose is done being analyzed it will get flagged
+      ## if further down the file the chromosome appears again this means
+      ## the file is not sorted.
+      ## Send a warnning if this is the case and  die.
+
+      my %analyzed_chr=(); 
+
       ## Open GVF file and report SNP information and sequence to be used by retrieve-variation
       my ($file) = &OpenInputFile($gvf_file_local_path);
       while (<$file>) {
@@ -511,6 +519,13 @@ package	main;
 	  
 	  ## Get variation info
 	  my ($chr,$source,$so_term,$start,$end,$score,$strand,$phase,$attributes) = split("\t");
+
+	  ## variants ares expected to be sorted by chromosome 
+	  ## if the chromosome was fralged as completed die on error
+	  if ($analyzed_chr{$chr}){
+	      &RSAT::error::FatalError("Format Error: Input file is not sorted correctly");
+	  }
+
 	  my %info = ();
 	  foreach my $fields (split(";",$attributes)) { ## Split and stor attribute values
 	      my ($attributeID,$value) = split("=",$fields);
@@ -563,15 +578,20 @@ package	main;
 	  ## Get reference sequence and change output file.  Note: the
 	  ## whole script assumes that variations are sorted by
 	  ## chromosome.
+	  ## ALE: IF THE FILE IS NOT SORTED NOW THE PROGRAM WILL DIE ON ERROR, SAME AS BEDTOOLS
+
 	  if ($last_chr ne $chr) {
-	      
+
+	      ## Flag analyzed chromosome as done
+	      $analyzed_chr{$last_chr}=1;
+
 	      &Get_super_variation($last_chr, $last_end,@super_variation) unless ( scalar(@super_variation) == 0);
 	      @super_variation = (); ## Empty super_variations array
 	      $last_end = 0;
 	      $last_id = "";
 	      
 	      &RSAT::message::TimeWarn("Analyzing variations on chromosome : $chr",
-				       "\n\tOutfile:",$variation_dir."/".$chr.".tab")
+				       "\n\tOutfile:",$variation_dir."/".$chr.".varBed")
 		  if ($main::verbose >= 2);
 	      
 	      $last_chr = $chr;
@@ -589,6 +609,8 @@ package	main;
 		  $ref_seq = qx(cat $raw_file);
 #		  $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
 	      }
+	      
+	     
 	  }
 
 	  ################################################################
@@ -669,6 +691,7 @@ package	main;
 	  ## them. In particular, check if they do not provoke a
 	  ## combinatorial explosion of processing time and/or storage
 	  ## space.
+	  ## ALE: THIS PART ALSO ASSUMES VARIANTS ARE SORTED BY CHROMOSOME AND THEN BY POSSITION
 
 	  if ( $start <= $last_end ) {
 	      $last_end=$end if ($last_end < $end);
@@ -680,7 +703,8 @@ package	main;
 	      $last_id = "";
 	  }
 	  
-	  $start ++ if ($info{'Reference_seq'} eq "-");
+	  ## This could be causing the insertion crazyness where start was being marked as bigger than the end
+	  #$start ++ if ($info{'Reference_seq'} eq "-");
 	  push (@super_variation, join("\t",
 				       $chr,
 				       $start,
