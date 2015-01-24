@@ -54,7 +54,7 @@ them wiht the tool I<variation-scan>.
       -species Homo_sapiens -e_version 72
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -mml 30 \
-      -o variations.tab
+      -o variations.varBed
 
 =head1 INPUT FORMAT
 
@@ -240,10 +240,10 @@ package	main;
   our $validate = 0;
 
   ## Define supported output formats
-  our @supported_output_formats = qw (rsat-var id bed);
-  our $supported_output_formats = join ",", @supported_output_formats;
+  our @supported_input_formats = qw (varBed id bed);
+  our $supported_input_formats = join ",", @supported_input_formats;
   our %supported_output_format = ();
-  foreach my $format (@supported_output_formats) {
+  foreach my $format (@supported_input_formats) {
       $supported_output_format{$format} = 1;
   }
   our $format = "";
@@ -329,24 +329,24 @@ package	main;
   ## I'll change back this part of the code as soon as I get it to
   ## work. This code is a patch
 
-  my $vart_files=`ls $variation_dir/*.tab`;
+  my $vart_files=`ls $variation_dir/*.varBed`;
   @variation_files= split ("\n",$vart_files);
 
   
   ## print join("+",@variation_files);
   ## die "BOOM";
-  ## foreach ( glob ( $variation_dir."*.tab") ) {
+  ## foreach ( glob ( $variation_dir."*.varBed") ) {
   ##  push (@variation_files,$_) unless (/Failed/);
   ## }
 
   ################################################################
-  ## Retrieve variations from rsat-var format
-  if ($format eq "rsat-var") {
+  ## Retrieve variations from varBed format
+  if ($format eq "varBed") {
     if ($main::infile{'input'}) {
       $main::infile{'input_variation'} = $main::infile{'input'};
 
     } else { ## Read in STDIN and write it to a file
-      $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
+      $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
       my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'});
 
       while (<$main::in>) {
@@ -367,7 +367,8 @@ package	main;
   elsif ($format eq "id") {
     &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
     ## Retrieved variation information in rsat format will be writen in a temporary file
-    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
+    ## ALE NOTE: THIS IS THE PLACE THAT WILL BE SUBSITUTED WITH GET-VARIATIONS CALL
+    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
     my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'} );
 
     my %variation_id = ();
@@ -445,7 +446,7 @@ package	main;
 
 
       $file_name = &RSAT::util::hide_RSAT_path($file_name);
-      &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id) ) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id) )) if ($main::verbose >= 2);
     }
     close $out_v;
 
@@ -505,7 +506,7 @@ package	main;
 
     ## Retrieve variation
     &RSAT::message::TimeWarn("Retrieve variation from coordinate") if ($main::verbose >= 2);
-    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
+    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
     my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'} );
     
     ## For each chromosome reported in the bed file
@@ -514,7 +515,7 @@ package	main;
       my $nb_coord = scalar(@lefts);
       my $i = 0;
       my $nb_variation = 0;
-      my ($var_file) = &OpenInputFile($variation_dir.$chr.".tab"); ## Variation file in RSAT corresponding to the chromosome
+      my ($var_file) = &OpenInputFile($variation_dir.$chr.".varBed"); ## Variation file in RSAT corresponding to the chromosome
 
       my $left = $lefts[$i];
       my $right = $chr_coord{$chr}{$left};
@@ -545,6 +546,7 @@ package	main;
 
   ################################################################
   ## Change default variation file
+  ## ALE NOTE: Don't understand what this is for
   if ($main::infile{'input_variation'}) {
     @variation_files = ();
     push (@variation_files,$main::infile{'input_variation'});
@@ -783,7 +785,7 @@ Supported formats:
 
 =over
 
-=item I<rsat>
+=item I<varBed>
 
 Format of variation files used by all RSAT scripts.
 
@@ -803,7 +805,7 @@ General format for the description of genomic features
     } elsif ($arg eq "-format") {
       $main::format = shift(@arguments);
       unless ($supported_output_format{$main::format}) {
-         &RSAT::error::FatalError($format, "Invalid output format. Supported: ". $supported_output_formats);
+         &RSAT::error::FatalError($format, "Invalid output format. Supported: ". $supported_input_formats);
       }
 
 =pod
