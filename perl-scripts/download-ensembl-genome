@@ -127,7 +127,7 @@ package	main;
   our $verbose = 0;
   our $registry = 'Bio::EnsEMBL::Registry';
 
-  our $db = "ensembl";
+  our $db = "ensembl"; ## Supported: ensembl, ensemblgenomes, both
   our $taxid = "";
   our $species = "";
   our $assembly_version = "";
@@ -148,7 +148,7 @@ package	main;
   ## Check that the user-selected Ensembl version is supported.
   &check_ensembl_version($db,$ensembl_version);
 
-  my ($host,$port) = &Get_host_port($db);
+#  my ($host, $port) = &Get_host_port($db);
 
   ################################################################
   ## Print verbose
@@ -159,15 +159,9 @@ package	main;
   ## Print the list of available species
   if ($get_available_species) {
 
-    &RSAT::message::TimeWarn("Getting available species", "host=".$host, "port=".$port) if ($main::verbose >= 2);
-
-    $registry->load_registry_from_db(
-      -host => $host,
-      -port => $port,
-      -user => 'anonymous',
-      -db_version => $ensembl_version
-    );
-
+    &RSAT::message::TimeWarn("download-ensembl-genome", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
+    &LoadRegistry($registry, $db);
+    
     my @db_adaptors = @{ $registry->get_all_DBAdaptors(-group => 'core') };
     my %species_taxon = ();
 
@@ -217,12 +211,13 @@ package	main;
   ################################################################
   ## Connecting to ensembl
   &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
-  $registry->load_registry_from_db (-host => $host,
-				    -port => $port,
-				    -user => 'anonymous',
-				    -db_version => $ensembl_version,
-				    -species => $species
-				   );
+  # $registry->load_registry_from_db (-host => $host,
+  # 				    -port => $port,
+  # 				    -user => 'anonymous',
+  # 				    -db_version => $ensembl_version,
+  # 				    -species => $species
+  # 				   );
+  &LoadRegistry($registry, $db);
 
   ################################################################
   ## Get Adaptators
@@ -480,7 +475,7 @@ by replacing repeats with 'N's.
 
 =pod
 
-=item B<-db ensembl|ensemblgenomes>
+=item B<-db ensembl|ensemblgenomes|both>
 
 Default: Ensembl
 
@@ -508,8 +503,10 @@ In Oct 2014, EnsemblGenomes supports >15,000 species.
    } elsif ($arg eq "-db") {
     $main::db = lc(shift(@arguments));
     unless (($main::db eq "ensembl")
-	    || ($main::db eq "ensemblgenomes")) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+	    || ($main::db eq "ensemblgenomes")
+	    || ($main::db eq "both")
+            ) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes, both");
     }
 
 =pod
