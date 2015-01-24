@@ -16,7 +16,6 @@ package main;
 our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 19;
 
-
 ## Fields of the table describing the supported organisms obtained
 ## from Ensembl. These fields are used by several methods
 our @supported_header_fields = ("id",
@@ -415,8 +414,17 @@ Establish simultaneous connection to Ensembl and EnsemblGenomes
 
 
 sub LoadRegistry {
-    ($registry, $db) = @_;
+    ($registry, $db, $ensembl_version) = @_;
 
+    &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 0);
+# my $ensembl_version = 78;
+# Bio::EnsEMBL::Registry->load_registry_from_db(
+#            -host => 'mysql-eg-publicsql.ebi.ac.uk',
+#            -port => '4157',
+#            -user => 'anonymous',
+#            -db_version => $ensembl_version,
+#    -verbose=>1
+#    );
 
     if ($db eq "ensembl") {
 	$registry->load_registry_from_db(
@@ -447,6 +455,8 @@ sub LoadRegistry {
     } else {
 	&RSAT::error::FatalError("Invalid db for ensembl queries. Supported: ensembl, ensemblgenomes, both.");
     }
+    my $nb_species = scalar(@{ $registry->get_all_DBAdaptors(-group => 'core') });
+    &RSAT::message::TimeWarn("Loaded registry with", $nb_species, "species") if ($main::verbose >= 0);
 }
 
 ############################################################################

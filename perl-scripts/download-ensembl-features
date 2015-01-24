@@ -103,17 +103,17 @@ package main;
   our %outfile = ();
 
   our $verbose = 0;
-  our $registry = 'Bio::EnsEMBL::Registry';
   our $db = "ensembl";
   our $species = "";
   our $assembly_version = "";
   our $species_suffix = "";
   our $full_species_ID = "";
+  our $registry = 'Bio::EnsEMBL::Registry';
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
-
   our $dry_run = 0; ## Do not run the SQL queries, but print them out for checking
+  our $null = "<NULL>";
 
 #  our $only_api = 0;
   our $query_mode = "sql";
@@ -152,13 +152,7 @@ package main;
   ## Print available species
   if ($get_available_species) {
     &RSAT::message::TimeWarn("download-ensembl-features", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
-    # $registry->load_registry_from_db(
-    #   -host => $host,
-    #   -port => $port,
-    #   -user => 'anonymous',
-    #   -db_version => $ensembl_version
-    # );
-    &LoadRegistry($registry, $db);
+    &LoadRegistry($registry, $db, $ensembl_version);
 
     my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
     my %species_taxon = ();
@@ -190,15 +184,7 @@ package main;
 
   ################################################################
   ## Connecting to ensembl
-  &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
-  # $registry->load_registry_from_db(
-  #   -host => $host,
-  #   -port => $port,
-  #   -user => 'anonymous',
-  #   -db_version => $ensembl_version,
-  #   -species => $species
-  # );
-  &LoadRegistry($registry, $db);
+  &LoadRegistry($registry, $db, $ensembl_version);
 
   ################################################################
   ## Get Adaptator
@@ -286,15 +272,7 @@ package main;
   # Change Ensembl version to Ensembl Genomes version
   my $ftp_ensembl_version = $ensembl_version;
   if (lc($db) eq "ensemblgenomes") {
-    &RSAT::message::TimeWarn("Converting Ensembl version to EnsemblGenomes version") if ($main::verbose >= 2);
-    # $registry->load_registry_from_db(
-    #     -host => $host,
-    #     -port => $port,
-    #     -user => 'anonymous',
-    # 	-species => 'multi',
-    #     -db_version => $ensembl_version
-    # );
-    &LoadRegistry($registry, $db);
+    &LoadRegistry($registry, $db, $ensembl_version);
 
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
@@ -1728,7 +1706,7 @@ In Oct 2014, EnsemblGenomes supports >15,000 species.
 	    || ($main::db eq "ensemblgenomes")
 	    || ($main::db eq "both")
             ) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes, both");
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,both");
     }
 
 =pod
