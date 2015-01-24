@@ -589,8 +589,10 @@ In Oct 2014, EnsemblGenomes supports >15,000 species.
    } elsif ($arg eq "-db") {
     $main::db = lc(shift(@arguments));
     unless (($main::db eq "ensembl")
-	    || ($main::db eq "ensemblgenomes")) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+	    || ($main::db eq "ensemblgenomes")
+	    || ($main::db eq "both")
+    ) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,both");
     }
 
 =pod
