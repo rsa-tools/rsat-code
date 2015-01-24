@@ -1,0 +1,363 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-organisms-ensemblgenomes,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+supported-organisms-ensemblgenomes
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Return the list of organisms supported at the Ensembl Genomes
+database, using the Perl API. Organisms can be selected by different criteria: 
+
+=over
+
+=item B<taxonomic ID (taxid)>
+
+=item B<organism name>
+
+Full or partial match, using regular expressions
+
+=back
+
+This script relies on the ensemblgenomes programmatic interface
+developed by Dan Staines
+(http://ensemblgenomes.org/info/access/eg_api).
+
+=head1 AUTHORS
+
+Jacques.van-Helden@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+
+=head2 Selection by taxon
+
+supported-organisms-ensemblgenomes -taxon taxid
+
+Example : select all Fungi
+
+supported-organisms-ensemblgenomes -taxon 4751
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited file with one row per organism, and one column per
+attribute.
+
+=head1 SEE ALSO
+
+=over
+
+=item B<install-ensembl-genome>
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+use warnings;
+use Bio::EnsEMBL::LookUp;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+
+  ## Supported query types
+  our @supported_query_types = qw(taxid name);
+  our %supported_query_type = ();
+  foreach my $query_type (@supported_query_types) {
+      $supported_query_type{$query_type} = 1;
+  }
+  $supported_query_types = join (",", @supported_query_types);
+
+  our $query_type = "taxon";
+  our $query = "131567"; ## By default, take all cellular organisms
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  if (scalar(@queries) < 1) {
+      &RSAT::error::FatalError("You must submit at least one query");
+  }
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+
+  ################################################################
+  ## Establish the connection to Ensembl Genomes
+  &RSAT::message::TimeWarn("Opening connection to Ensembl Genomes") if ($main::verbose >= 2);
+
+  ## Lookup
+  &RSAT::message::TimeWarn("Opening EnsEMBL::Lookup") if ($main::verbose >= 3);
+  my $lookup = Bio::EnsEMBL::LookUp->new();
+  
+
+  ## Get the database adaptors
+  &RSAT::message::TimeWarn("Getting database adaptors by", $query_type, $query) if ($main::verbose >= 3);
+  
+  ## Select by organism name
+  our @dbas = (); ## List of database adaptors (one per organism)
+  if ($query_type eq "taxid") {
+      foreach my $query (@queries) {
+	  push @dbas, @{$lookup->get_all_by_taxon_id($query)};
+      }
+  } elsif ($query_type eq "name") {
+      foreach my $query (@queries) {
+	  push @dbas, @{$lookup->get_all_by_name_pattern($query)};
+      }
+  } else {
+      &RSAT::error::FatalError($query_type, "Invalid query type. Supported: ".$supported_query_types);
+  }
+  &RSAT::message::TimeWarn("Collected", scalar(@dbas), "database adaptors") if ($main::verbose >= 2);
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-query_type>
+
+=cut
+    } elsif ($arg eq "-query_type") {
+      $main::query_type = shift(@arguments);
+      &RSAT::error::FatalError($main::query_type, 
+			       "Invalid query type. Supported: ".$main::supported_query_types)
+	  unless ($supported_query_type{$main::query_type});
+	
+=pod
+
+=item B<-q query>
+
+Query string. 
+
+For name queries, regular expressions are supported.
+
+Multiple queries can be entered by using iteratively the option -q.
+
+Examples:
+
+ ## Get species whose name matches escherichia or saccharomyces
+ supported-organisms-ensemblgenomes -query_type name \
+   -q 'escherichia.*' -q 'saccharomyces.*'
+
+ ## Get all species belonging to the genus Escherichia (taxid 561) or
+ ## to genus Saccharomyces (taxid 4930)
+ supported-organisms-ensemblgenomes -query_type taxid -q 561 -q 4930
+
+=cut
+    } elsif ($arg eq "-q") {
+      push @main::queries, shift(@arguments);
+
+=pod
+
+=item B<-query_file query_file>
+
+Enter several queries in a file. The first word of each row is
+considered as a query. Additional information is ignored.
+
+=cut
+    } elsif ($arg eq "-query_file") {
+      $main::infile{query_file} = shift(@arguments);
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; supported-organisms-ensemblgenomes ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
