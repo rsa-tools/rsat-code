@@ -393,10 +393,60 @@ sub Get_host_port {
   &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 3);
 
   if ($db eq "ensembl") {
-    return ('ensembldb.ensembl.org','5306');
+      return ('ensembldb.ensembl.org','5306');
   } elsif (lc($db) eq "ensemblgenomes") {
-    return ("mysql.ebi.ac.uk","4157");
+#      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
+      return ("mysql.ebi.ac.uk","4157");
   }
+}
+
+
+
+=pod
+
+=head1 B<LoadRegistry>
+
+Usage:
+    LoadRegistry($registry);
+
+Establish simultaneous connection to Ensembl and EnsemblGenomes
+
+=cut
+
+
+sub LoadRegistry {
+    ($registry, $db) = @_;
+
+
+    if ($db eq "ensembl") {
+	$registry->load_registry_from_db(
+	    -host => 'ensembldb.ensembl.org',
+	    -port => '5306',
+	    -user => 'anonymous',
+	    -db_version => $ensembl_version
+	    );
+    } elsif ($db eq "ensemblgenomes") {
+	$registry->load_registry_from_db(
+	    -host => 'mysql-eg-publicsql.ebi.ac.uk', 
+	    -port => '4157',
+	    -user => 'anonymous',
+	    -db_version => $ensembl_version
+	    );
+    } elsif ($db eq "both") {
+	$registry->load_registry_from_multiple_dbs 
+	    (
+	     {-host => 'mysql-eg-publicsql.ebi.ac.uk',
+	      -port => 4157, 
+	      -user => 'anonymous'
+	     },
+	     {-host => 'ensembldb.ensembl.org',
+	      -port => 5306,
+	      -user    => 'anonymous'
+	     }
+	    );
+    } else {
+	&RSAT::error::FatalError("Invalid db for ensembl queries. Supported: ensembl, ensemblgenomes, both.");
+    }
 }
 
 ############################################################################

@@ -280,16 +280,19 @@ package	main;
   if (lc($db) eq "ensemblgenomes") {
     use Bio::EnsEMBL::Registry;
     my $registry = 'Bio::EnsEMBL::Registry';
-    my ($host,$port) = &Get_host_port($db);
-    &RSAT::message::TimeWarn("Loading registry from EnsemblGenomes") if ($main::verbose >= 2);
-    $registry->load_registry_from_db(
-        -host => $host,
-        -port => $port,
-        -user => 'anonymous',
-	-species => 'multi',
-        -db_version => $ensembl_version
-    );
+#    my ($host,$port) = &Get_host_port($db);
+#    &RSAT::message::TimeWarn("Loading registry from EnsemblGenomes") if ($main::verbose >= 2);
+    # $registry->load_registry_from_db(
+    #     -host => $host,
+    #     -port => $port,
+    #     -user => 'anonymous',
+    # 	  -species => 'multi',w
+    #     -db_version => $ensembl_version
+    # );
 
+    &RSAT::message::TimeWarn("download-ensembl-variations", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
+    &LoadRegistry($registry, $db);
+    
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
       if ($dba->species() eq "multi") {
@@ -1116,8 +1119,10 @@ In Oct 2014, EnsemblGenomes supports >15,000 species.
    } elsif ($arg eq "-db") {
     $main::db = lc(shift(@arguments));
     unless (($main::db eq "ensembl")
-	    || ($main::db eq "ensemblgenomes")) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+	    || ($main::db eq "ensemblgenomes")
+	    || ($main::db eq "both")
+            ) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes, both");
     }
 
 =pod
