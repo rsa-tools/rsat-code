@@ -527,9 +527,9 @@ sub Get_full_species_ID {
   ## Check that the assembly version has been provided. If not, guess
   ## it.
   unless ($assembly_version) {
-      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 5);
+      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 0);
       $assembly_version = &Get_assembly_version($species,$ensembl_version,$species_suffix);
-      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
+      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 0);
   }
 
 
@@ -555,6 +555,7 @@ version for a given species.
 =cut
 sub Get_assembly_version {
   my ($species,$ensembl_version,$species_suffix) = @_;
+  my $assembly_version = "";
   &RSAT::message::Debug("&Get_assembly_version()", 
 			"main::db=".$main::db,
 			"species=".$species, 
