@@ -546,8 +546,6 @@ exit(0);
 ################################################################
 #### detailed help message
 sub PrintHelp {
-
-    my $supported_organisms = &ListSupportedOrganisms("sizes");
     open(HELP, "| more");
     print HELP<<End_help;
 USAGE
