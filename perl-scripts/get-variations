@@ -220,6 +220,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
 
 
 
@@ -347,7 +348,6 @@ package main;
   if ($format eq "id") {
       &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
       
-      my $out = &OpenOutputFile($main::outfile{'variation_rsat'} );
       
       my %variation_id = ();
       
@@ -492,7 +492,7 @@ package main;
 	my $nb_coord = scalar(@lefts);
 	my $i = 0;
 	my $nb_variation = 0;
-	my ($var_file) = &OpenInputFile($variation_dir.$chr.".varBed"); ## Variation file in RSAT corresponding to the chromosome
+	my ($var_file) = &OpenInputFile($variation_dir."/".$chr.".varBed"); ## Variation file in RSAT corresponding to the chromosome
 	
 	my $left = $lefts[$i];
 	my $right = $chr_coord{$chr}{$left};
