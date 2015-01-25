@@ -360,6 +360,9 @@ sub Get_gvf_ftp {
 ## Get an the main taxon (bacteria, fungi, metazoa, ...) for each
 ## species supported in an ansembl database. The result is returned as
 ## a has table, with species names as keys and taxa as values.
+##
+## JvH: THIS IS TRICKY: uses an ftp server. I should rewrite it using
+## the Lookup interface or something else, see with Dan Staines.
 sub Get_species_taxon {
   my ($db,$ensembl_version) = @_;
   my %species_taxon = ();
