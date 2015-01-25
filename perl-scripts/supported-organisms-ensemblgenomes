@@ -24,11 +24,29 @@ database, using the Perl API. Organisms can be selected by different criteria:
 
 =over
 
-=item B<taxonomic ID (taxid)>
+=item B<branch>
 
-=item B<organism name>
+Given the NCBI taxonomic ID, return all species belonging to the
+corresponding taxon.
 
-Full or partial match, using regular expressions
+=item B<name>
+
+Full or partial match with the organism name, using regular
+expressions.
+
+=item B<species_taxid>
+
+Identify species by their NCBI taxonomic ID. Beware: the IDs must
+correspond to species (taxids from wider taxa should be treated with
+the query of type "branch").
+
+=item B<by genomic INSDC accession>
+
+TO BE DONE
+
+=item B<by Genome Assembly accession>
+
+TO BE DONE
 
 =back
 
@@ -50,14 +68,37 @@ Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
+Examples:
 
-=head2 Selection by taxon
+=head2 By species name
 
-supported-organisms-ensemblgenomes -taxon taxid
+Get species whose name starts with either 'escherichia' or
+'saccharomyces'.
 
-Example : select all Fungi
+ supported-organisms-ensemblgenomes -v 1 -query_type name \
+   -q 'escherichia.*' -q 'saccharomyces.*'
 
-supported-organisms-ensemblgenomes -taxon 4751
+=head2 By taxonomic branch
+
+Select all Fungi
+
+ supported-organisms-ensemblgenomes -v 1 -query_type branch -q 4751
+
+
+Get all species belonging eitherto the genus Escherichia (branch 561) or
+to genus Saccharomyces (branch 4930)
+
+ supported-organisms-ensemblgenomes -v 1 -query_type branch -q 561 -q 4930
+
+=head2 By species taxonomic ID
+
+Get the model strains for I<Saccharomyces cerevisiae> and
+I<Escherichia coli K12 MG1655>.
+
+ supported-organisms-ensemblgenomes -v 1 -query_type species_taxid \
+    -q XXX -q XXX (I did not find them yet)
+
+
 
 =head1 OUTPUT FORMAT
 
@@ -112,7 +153,7 @@ package main;
 
 
   ## Supported query types
-  our @supported_query_types = qw(taxid name);
+  our @supported_query_types = qw(branch name species_taxid);
   our %supported_query_type = ();
   foreach my $query_type (@supported_query_types) {
       $supported_query_type{$query_type} = 1;
@@ -152,18 +193,22 @@ package main;
   
   ## Select by organism name
   our @dbas = (); ## List of database adaptors (one per organism)
-  if ($query_type eq "taxid") {
+  if ($query_type eq "branch") {
       foreach my $query (@queries) {
-	  push @dbas, @{$lookup->get_all_by_taxon_id($query)};
+	  push @dbas, @{$lookup->get_all_by_taxon_branch($query)};
       }
   } elsif ($query_type eq "name") {
       foreach my $query (@queries) {
 	  push @dbas, @{$lookup->get_all_by_name_pattern($query)};
       }
+  } elsif ($query_type eq "species_taxid") {
+      foreach my $query (@queries) {
+	  push @dbas, @{$lookup->get_all_by_taxon_id($query)};
+      }
   } else {
       &RSAT::error::FatalError($query_type, "Invalid query type. Supported: ".$supported_query_types);
   }
-  &RSAT::message::TimeWarn("Collected", scalar(@dbas), "database adaptors") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Collected", scalar(@dbas), "database adaptors") if ($main::verbose >= 1);
 
   ################################################################
   ## Print verbose
@@ -289,15 +334,6 @@ For name queries, regular expressions are supported.
 
 Multiple queries can be entered by using iteratively the option -q.
 
-Examples:
-
- ## Get species whose name matches escherichia or saccharomyces
- supported-organisms-ensemblgenomes -query_type name \
-   -q 'escherichia.*' -q 'saccharomyces.*'
-
- ## Get all species belonging to the genus Escherichia (taxid 561) or
- ## to genus Saccharomyces (taxid 4930)
- supported-organisms-ensemblgenomes -query_type taxid -q 561 -q 4930
 
 =cut
     } elsif ($arg eq "-q") {
