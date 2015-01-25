@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+  push (@INC, "$`lib/");
 }
 require "RSA.lib";
 require "RSA.stat.lib";
@@ -20,7 +20,7 @@ $NULL="<NULL>";
 @supported_return = qw(ncs cs pos div conv tandem gene seq stats);
 %supported_return = ();
 foreach my $field (@supported_return) {
-    $supported_return{$field} = 1;
+  $supported_return{$field} = 1;
 }
 $supported_return = join (",", @supported_return);
 &ReadArguments();
@@ -38,7 +38,7 @@ unless (%return) {
   $return{'gene'} = 1;
   $return{'seq'} = 1;
 }
-   
+
 ### read feature attributes (position, description, ...)
 $organism = new RSAT::organism();
 
@@ -60,7 +60,7 @@ $organism->LoadFeatures($annotation_table);
 
 ### open all output files
 if ($return{stats}) {
-    open STATS, ">${out_dir}/${organism_name}_stats.tab";
+  open STATS, ">${out_dir}/${organism_name}_stats.tab";
 }
 
 if ($return{'seq'}) {
@@ -78,10 +78,10 @@ if ($return{'seq'}) {
 my @pos_field_header = qw(segm_type_nb contig left right length);
 if ($return{pos}) {
   &RSAT::message::TimeWarn("Opening output streams for segment positions") if ($main::verbose >= 3);
-    open C_POSITIONS, ">${out_dir}/${organism_name}_gene_segments.pos";
-    print C_POSITIONS ";", join("\t", @pos_field_header, "feat_nb", "features"),  "\n";
-    open NC_POSITIONS, ">${out_dir}/${organism_name}_intergenic_segments.pos";
-    print NC_POSITIONS "; ", join ("\t", @pos_field_header,"L_feat", "R_feat","L_strand", "R_strand"), "\n";
+  open C_POSITIONS, ">${out_dir}/${organism_name}_gene_segments.pos";
+  print C_POSITIONS ";", join("\t", @pos_field_header, "feat_nb", "features"),  "\n";
+  open NC_POSITIONS, ">${out_dir}/${organism_name}_intergenic_segments.pos";
+  print NC_POSITIONS "; ", join ("\t", @pos_field_header,"L_feat", "R_feat","L_strand", "R_strand"), "\n";
 }
 
 ################################################################
@@ -90,209 +90,218 @@ $gene_nb = 0;
 
 my %contig = $organism->get_attribute("contigs");
 
-&RSAT::message::Info(join ("\t", "Contig IDs\t", join (";", sort keys %contig))) if ($main::verbose >= 30);
+&RSAT::message::Info("Contig IDs", join (";", sort keys %contig)) if ($main::verbose >= 10);
 
 my %left = $organism->index_attribute_by_feature("left");
 my %right = $organism->index_attribute_by_feature("right");
 foreach my $ctg (sort keys %contig) {
-    my $contig = $contig{$ctg};
-    &RSAT::message::Info(join ("\t", "Analyzing Contig\t", $ctg, $contig->count_genes())) if ($main::verbose >= 3);
+  my $contig = $contig{$ctg};
+  &RSAT::message::TimeWarn("Analyzing Contig\t", $ctg, "containing", $contig->count_genes(), "genes") if ($main::verbose >= 2);
 
-    my @genes = sort { $left{$a} <=> $left{$b} } $contig->get_genes();
-    &RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
+  my @genes = sort { $left{$a} <=> $left{$b} } $contig->get_genes();
+  &RSAT::message::Info("Genes per contig", $ctg, scalar(@genes)) if ($main::verbose >= 3);
 
-    ## Open sequence for the current contig
-    my $sequence = $contig->get_attribute("sequence");
-    if ($sequence) {
-	$seq_file = $sequence->get_attribute("filename");
-    } else {
-	&RSAT::error::FatalError("There is no sequence for contig $ctg");
-    }
-    
-    ## Contig length
-    my $ctg_length = $sequence->get_length();
+  ## Open sequence for the current contig
+  my $sequence = $contig->get_attribute("sequence");
+  if ($sequence) {
+    $seq_file = $sequence->get_attribute("filename");
+  } else {
+    &RSAT::error::FatalError("There is no sequence for contig $ctg");
+  }
+  
+  ## Contig length
+  my $ctg_length = $sequence->get_length();
 
-    my @genes = $contig->get_genes();
-    $gene_nb += scalar(@genes);
-    &RSAT::message::Info(join("\t", $seq_file, $ctg, $ctg_length, scalar(@genes), $gene_nb))
-	if ($verbose >= 3);
+  my @genes = $contig->get_genes();
+  $gene_nb += scalar(@genes);
+  &RSAT::message::Info($seq_file, $ctg, $ctg_length, scalar(@genes), $gene_nb)
+      if ($verbose >= 4);
 
-    ### sort genes belonging to the current contig
-    @sorted_genes = sort {
-	(($left{$a} <=> $left{$b}) || (($left{$a} == $left{$b}) && ($right{$a} <=> $right{$b})))
-	} @genes;
+  ### sort genes belonging to the current contig
+  &RSAT::message::TimeWarn("Contig", $ctg, "Sorting", scalar(@genes), "genes by position") if ($main::verbose >= 3);
+  @sorted_genes = sort {
+    (($left{$a} <=> $left{$b}) || (($left{$a} == $left{$b}) && ($right{$a} <=> $right{$b})))
+  } @genes;
+  &RSAT::message::Info(scalar(@sorted_genes), "Sorted genes") if ($main::verbose >= 3);
 
-    ################################################################
-    ### Return gene sequences
-    if (($return{'gene'}) && ($return{'seq'})) {
-	&RSAT::message::Info("Printing gene sequences") if ($main::verbose >= 2);
-	foreach $gene (@sorted_genes) {
-	    my $id = $gene->get_attribute("id");
-	    $seq_id = join ("_", 
-			    $gene->get_attribute("id"),
-			    $ctg, 
-			    $gene->get_attribute("start"),
-			    $gene->get_attribute("end"),
-			    $gene->get_attribute("strand"));
-	    $current_seq = $sequence->get_sequence($left{$gene},$right{$gene});
+  ################################################################
+  ### Return gene sequences
+  if (($return{'gene'}) && ($return{'seq'})) {
+    &RSAT::message::TimeWarn("Printing gene sequences") if ($main::verbose >= 2);
+    foreach $gene (@sorted_genes) {
+      my $id = $gene->get_attribute("id");
+      $seq_id = join ("_", 
+		      $gene->get_attribute("id"),
+		      $ctg, 
+		      $gene->get_attribute("start"),
+		      $gene->get_attribute("end"),
+		      $gene->get_attribute("strand"));
+      $current_seq = $sequence->get_sequence($left{$gene},$right{$gene});
 #	&RSAT::message::Debug($seq_id,  $current_seq) if ($main::verbose >= 5);
-	    
-	    if ($gene->get_attribute("strand") eq "R") {
-		$current_seq = &ReverseComplement($current_seq);
-	    }
-	    &PrintNextSequence(GENE_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
-	}
+      
+      if ($gene->get_attribute("strand") eq "R") {
+	$current_seq = &ReverseComplement($current_seq);
+      }
+      &PrintNextSequence(GENE_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
     }
-    
-    ################################################################
-    #### Gene and intergenic segments
-    my $gene_segment_right = 0;
-    my $end_reached = 0;
-    my $gene_nb = 0;
-    my $gene_group = 0;
-    my $nc_left_gene = $NULL;
-    my $nc_left_gene_ID = $NULL;
-    my $nc_left_gene_strand = $NULL;
-    my $nc_right_gene_ID = $NULL;
-    my $nc_right_gene_strand = $NULL;
-    
-    &RSAT::message::Info("Treating intergenic and gene segments") if ($main::verbose >= 2);
+  }
+  
+  ################################################################
+  #### Gene and intergenic segments
+  my $gene_segment_right = 0;
+  my $end_reached = 0;
+  my $gene_nb = 0;
+  my $gene_group = 0;
+  my $nc_left_gene = $NULL;
+  my $nc_left_gene_ID = $NULL;
+  my $nc_left_gene_strand = $NULL;
+  my $nc_right_gene_ID = $NULL;
+  my $nc_right_gene_strand = $NULL;
+  
+  &RSAT::message::TimeWarn("Treating intergenic and gene segments") if ($main::verbose >= 3);
+  
+  if (scalar(@sorted_genes) < 1) {
+    &RSAT::message::Warning("Not a single gene on contig", $ctg);
+  } else {
     do {
-	################################################################
-	### next intergenic segment
-	my  @segment_genes = ();
-	my  @segment_gene_strands = ();
-	$nc_start = $gene_segment_right+1;
-	$gene_group++;
-	&RSAT::message::Debug("Gene segments", "treating gene", $gene_nb, $sorted_genes[$gene_nb]) if ($main::verbose >= 10);
-	push @segment_genes, $sorted_genes[$gene_nb]->get_attribute('id');
-	push @segment_gene_strands, $sorted_genes[$gene_nb]->get_attribute('strand');
-	$gene_segment_left = $left{$sorted_genes[$gene_nb]};
-	$nc_right_gene = $sorted_genes[$gene_nb];
-	$nc_right_gene_ID = $nc_right_gene->get_attribute("id");
-	$nc_right_gene_strand = $nc_right_gene->get_attribute("strand");
-	$nc_end = $gene_segment_left - 1;
-	$nc_len = $nc_end - $nc_start + 1;
-	push @nc_lengths, $nc_len;
+      ################################################################
+      ### next intergenic segment
+      my  @segment_genes = ();
+      my  @segment_gene_strands = ();
+      $nc_start = $gene_segment_right+1;
+      $gene_group++;
+      &RSAT::message::Debug("Gene segments", "treating gene", $gene_nb, $sorted_genes[$gene_nb]) if ($main::verbose >= 10);
+      my $current_gene = $sorted_genes[$gene_nb];
+      my $id = $current_gene->get_attribute('id') || "<NO_ID>"; ## JvH: I don't know why, there is sometimes a warning about undefined value. TO CHECK
+      push @segment_genes, $id;
+      push @segment_gene_strands, $current_gene->get_attribute('strand');
+      $gene_segment_left = $left{$current_gene};
+      $nc_right_gene = $current_gene;
+      $nc_right_gene_ID = $nc_right_gene->get_attribute("id");
+      $nc_right_gene_strand = $nc_right_gene->get_attribute("strand");
+      $nc_end = $gene_segment_left - 1;
+      $nc_len = $nc_end - $nc_start + 1;
+      push @nc_lengths, $nc_len;
 
-	@pos_fields =  ("intergenic_segment_".$gene_group,
-			$ctg,
-			$nc_start,
-			$nc_end,
-			$nc_len,
-			$nc_left_gene_ID,
-			$nc_right_gene_ID,
-			$nc_left_gene_strand,
-			$nc_right_gene_strand,
-		       );
-	print NC_POSITIONS join ("\t", @pos_fields), "\n" if ($return{pos});
-	&RSAT::message::Debug(@pos_fields) if ($main::verbose >= 3);
+      @pos_fields =  ("intergenic_segment_".$gene_group,
+		      $ctg,
+		      $nc_start,
+		      $nc_end,
+		      $nc_len,
+		      $nc_left_gene_ID,
+		      $nc_right_gene_ID,
+		      $nc_left_gene_strand,
+		      $nc_right_gene_strand,
+	  );
+      print NC_POSITIONS join ("\t", @pos_fields), "\n" if ($return{pos});
+      &RSAT::message::Debug(@pos_fields) if ($main::verbose >= 3);
 
-	if ($return{'seq'}) {
-	    $seq_id = join ("_", @pos_fields);
-	    $current_seq = $sequence->get_sequence($nc_start,$nc_end);
-	    &PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
-	    
-	    if ($nc_left_gene eq $NULL) {
-		## TO BE TREATED ##
-		&RSAT::message::Info(join ("\t", 
-					    "Intergenic segment without left gene",
-					    "nc_left_gene_ID", $nc_left_gene_ID,
-					    "nc_right_gene_ID", $nc_right_gene_ID,
-					   )) if ($main::verbose >= 1);
-	    } elsif ($nc_left_gene->get_attribute('strand') eq $nc_right_gene->get_attribute('strand')) {
-		&PrintNextSequence(TANDEM_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) 
-		    if ($return{'tandem'});
-	    } elsif (($nc_left_gene->get_attribute('strand') eq "R") && ($nc_right_gene->get_attribute('strand') eq "D")) {
-		&PrintNextSequence(DIVERGENT_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id)  
-		    if ($return{'div'});
-	    } elsif (($nc_left_gene->get_attribute('strand') eq "D") && ($nc_right_gene->get_attribute('strand') eq "R")) {
-		&PrintNextSequence(CONVERGENT_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
-	    }
-	}
+      if ($return{'seq'}) {
+	$seq_id = join ("_", @pos_fields);
+	$current_seq = $sequence->get_sequence($nc_start,$nc_end);
+	&PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
 	
-	################################################################
-	#### Next gene segment.
-	#### Note: a gene segment can contain one or several genes
-	#### (overlapping genes are frequent in bacteria)
-	$gene_segment_right = $right{$sorted_genes[$gene_nb]};
-	$nc_left_gene = $sorted_genes[$gene_nb]; 
-
-        #### Extend the current gene segment by incorporating all overlapping genes.
-	while (($gene_nb < $#sorted_genes) && 
-	       ($left{$sorted_genes[$gene_nb+1]} <= $gene_segment_right+1)) { 
-	    $gene_nb++;
-	    &RSAT::message::Debug(join("\t", "Next gene", $gene_nb,
-				       $sorted_genes[$gene_nb]->get_attribute("id"),
-				       "gene segment right:".$gene_segment_right,
-				      )) if ($main::verbose >= 3);
-	    push @segment_genes, $sorted_genes[$gene_nb]->get_attribute('id');
-	    push @segment_gene_strands, $sorted_genes[$gene_nb]->get_attribute('strand');
-
-	    #### The rightmost gene of this segment will be the left limit of the next intergenic segment
-	    if ($gene_segment_right > $sorted_genes[$gene_nb]->get_attribute("right")) {
-		&RSAT::message::Info(join("\t", "Embedded gene", $sorted_genes[$gene_nb]->get_attribute("id"))) if ($main::verbose >= 1);
-	    } else {
-		$nc_left_gene = $sorted_genes[$gene_nb]; 
-		$gene_segment_right = &max($gene_segment_right, $right{$sorted_genes[$gene_nb]});
-	    }
+	if ($nc_left_gene eq $NULL) {
+	  ## JvH TO BE TREATED
+	  &RSAT::message::Info(
+	     "Intergenic segment without left gene",
+	     "nc_left_gene_ID", $nc_left_gene_ID,
+	     "nc_right_gene_ID", $nc_right_gene_ID,
+	      ) if ($main::verbose >= 1);
+	} elsif ($nc_left_gene->get_attribute('strand') eq $nc_right_gene->get_attribute('strand')) {
+	  &PrintNextSequence(TANDEM_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) 
+	      if ($return{'tandem'});
+	} elsif (($nc_left_gene->get_attribute('strand') eq "R") && ($nc_right_gene->get_attribute('strand') eq "D")) {
+	  &PrintNextSequence(DIVERGENT_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id)  
+	      if ($return{'div'});
+	} elsif (($nc_left_gene->get_attribute('strand') eq "D") && ($nc_right_gene->get_attribute('strand') eq "R")) {
+	  &PrintNextSequence(CONVERGENT_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
 	}
-	unless ($nc_left_gene eq $NULL) {
-	    $nc_left_gene_ID = $nc_left_gene->get_attribute("id");
-	    $nc_left_gene_strand = $nc_left_gene->get_attribute("strand");
-	}
+      }
+      
+      ################################################################
+      #### Next gene segment.
+      #### Note: a gene segment can contain one or several genes
+      #### (overlapping genes are frequent in bacteria)
+      $gene_segment_right = $right{$current_gene};
+      $nc_left_gene = $current_gene; 
 
-	## Export the current gene segment
-	$cs_len = $gene_segment_right - $gene_segment_left + 1;
-	push @cs_lengths, $cs_len;
-	@pos_fields =  ("gene_segment_".$gene_group,
-			$ctg,
-			$gene_segment_left,
-			$gene_segment_right,
-			$cs_len,
-			scalar (@segment_genes),
-			join (":", @segment_genes),
-			    join (":", @segment_gene_strands),
-		       );
-	print C_POSITIONS join ("\t", @pos_fields), "\n"  if ($return{pos});
+      #### Extend the current gene segment by incorporating all overlapping genes.
+      while (($gene_nb < $#sorted_genes) && 
+	     ($left{$sorted_genes[$gene_nb+1]} <= $gene_segment_right+1)) { 
+	$gene_nb++;
+	&RSAT::message::Debug(join("\t", "Next gene", $gene_nb,
+				   $current_gene->get_attribute("id"),
+				   "gene segment right:".$gene_segment_right,
+			      )) if ($main::verbose >= 3);
+	push @segment_genes, $current_gene->get_attribute('id');
+	push @segment_gene_strands, $current_gene->get_attribute('strand');
 
-	## Export the current gene segment sequence
-	if (($return{'cs'}) && ($return{'seq'})) {
-	    $seq_id = join("_", @pos_fields);
-	    $current_seq = $sequence->get_sequence($gene_segment_left,$gene_segment_right);
-	    &PrintNextSequence(C_SEQ, $seq_format,$line_width,$current_seq,$seq_id);	    
+	#### The rightmost gene of this segment will be the left limit of the next intergenic segment
+	if ($gene_segment_right > $current_gene->get_attribute("right")) {
+	  &RSAT::message::Info("Embedded gene", $current_gene->get_attribute("id")) if ($main::verbose >= 1);
+	} else {
+	  $nc_left_gene = $current_gene; 
+	  $gene_segment_right = &max($gene_segment_right, $right{$current_gene});
 	}
-    	$gene_nb++;
+      }
+      unless ($nc_left_gene eq $NULL) {
+	$nc_left_gene_ID = $nc_left_gene->get_attribute("id");
+	$nc_left_gene_strand = $nc_left_gene->get_attribute("strand");
+      }
 
-	################################################################
-	### Last intergenic segment
-	if ($gene_nb > $#sorted_genes) {
-	    $end_reached = 1;
-	    $nc_start = $gene_segment_right+1;
-	    $nc_end = $ctg_length;
-	    $nc_len = $nc_end - $nc_start + 1;
-	    $nc_right_gene_ID = $NULL;
-	    $nc_right_gene_strand = $NULL;
-	    push @nc_lengths, $nc_len;
-	    @pos_fields = ("intergenic_segment_".$gene_group,
-			   $ctg,
-			   $nc_start,
-			   $nc_end,
-			   $nc_len,
-			   $nc_left_gene_ID,
-			   $nc_right_gene_ID,
-			   $nc_left_gene_strand,
-			   $nc_right_gene_strand,
-			  );
-	    print NC_POSITIONS join("\t", @pos_fields), "\n" if ($return{pos});
-	    
-	    if (($return{'ncs'}) && ($return{'seq'})) {
-		$seq_id = join ("_", @pos_fields);
-		$current_seq = $sequence->get_sequence($nc_start,$nc_end);
-		&PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
-	    }
+      ## Export the current gene segment
+      $cs_len = $gene_segment_right - $gene_segment_left + 1;
+      push @cs_lengths, $cs_len;
+      @pos_fields =  ("gene_segment_".$gene_group,
+		      $ctg,
+		      $gene_segment_left,
+		      $gene_segment_right,
+		      $cs_len,
+		      scalar (@segment_genes),
+		      join (":", @segment_genes),
+		      join (":", @segment_gene_strands),
+	  );
+      print C_POSITIONS join ("\t", @pos_fields), "\n"  if ($return{pos});
+
+      ## Export the current gene segment sequence
+      if (($return{'cs'}) && ($return{'seq'})) {
+	$seq_id = join("_", @pos_fields);
+	$current_seq = $sequence->get_sequence($gene_segment_left,$gene_segment_right);
+	&PrintNextSequence(C_SEQ, $seq_format,$line_width,$current_seq,$seq_id);	    
+      }
+      $gene_nb++;
+
+      ################################################################
+      ### Last intergenic segment
+      if ($gene_nb > $#sorted_genes) {
+	$end_reached = 1;
+	$nc_start = $gene_segment_right+1;
+	$nc_end = $ctg_length;
+	$nc_len = $nc_end - $nc_start + 1;
+	$nc_right_gene_ID = $NULL;
+	$nc_right_gene_strand = $NULL;
+	push @nc_lengths, $nc_len;
+	@pos_fields = ("intergenic_segment_".$gene_group,
+		       $ctg,
+		       $nc_start,
+		       $nc_end,
+		       $nc_len,
+		       $nc_left_gene_ID,
+		       $nc_right_gene_ID,
+		       $nc_left_gene_strand,
+		       $nc_right_gene_strand,
+	    );
+	print NC_POSITIONS join("\t", @pos_fields), "\n" if ($return{pos});
+	
+	if (($return{'ncs'}) && ($return{'seq'})) {
+	  $seq_id = join ("_", @pos_fields);
+	  $current_seq = $sequence->get_sequence($nc_start,$nc_end);
+	  &PrintNextSequence(NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id);
 	}
+      }
     } until ($end_reached || ($gene_nb > $#sorted_genes));
+  }
 }
 
 ################################################################
