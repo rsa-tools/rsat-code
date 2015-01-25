@@ -44,7 +44,7 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 SUPPORTED FORMAT
 
-GVF, VCF, varbed
+GVF, VCF, varBed
 
 =head2 Genome Variant Format (GVF)
 
@@ -90,7 +90,7 @@ initially defined to describe generic genomic features, so all the
 specific attributes come in the last column (description).
 
 For this reasons, we developed a custom tab-delimited format to store
-variations, which we call I<varbed> (see description below).
+variations, which we call I<varBed> (see description below).
 
 =head2 Variant Call Format (VCF)
 
@@ -100,7 +100,7 @@ This format was defined for the 1000 genomes project. It is no longer
 maintained. The converter supports it merely for the sake of backwards
 compatibility.
 
-=head2 RSAT variation format (varbed)
+=head2 RSAT variation format (varBed)
 
 Tab-delimited format with a specific column order, used as input by
 I<retrieve-variation-seq>. 
@@ -179,7 +179,7 @@ package	main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
-  our @supported_format = ("vcf","gvf","varbed");
+  our @supported_format = ("vcf","gvf","varBed");
   our $data_dir = "$ENV{'RSAT'}/data/";
 
   our @validate_patterns = (
@@ -200,6 +200,7 @@ package	main;
   our $species = "";
 
   our $assembly_version = "";
+  our $db="ensembl";
   our $ensembl_version = "";
   our $genome_dir = "";
   our %chr_file = ();
@@ -224,14 +225,16 @@ package	main;
   if ($to eq "vcf") {
 
     if ($species eq "") {
-      &RSAT::error::FatalError("Species must be indicate if option -to equal vcf");
+      &RSAT::error::FatalError("Species must be indicated if option -to equal vcf");
     }
 
     unless ( $assembly_version || $ensembl_version ) {
       &RSAT::error::FatalError("Ensembl or assembly version must be indicate if option -to equal vcf");
     }
-
-    $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
+    unless ($assembly_version){
+	$assembly_version=&Get_assembly_version($species,$ensembl_version,$species_suffix);
+    }
+    $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version)."/";
     &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before covert-variation.") unless (-d $genome_dir);
 
     # Check if sequence file are not missing
@@ -246,7 +249,7 @@ package	main;
   ################################################################
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
-  if ($main::to eq "varbed") {
+  if ($main::to eq "varBed") {
       &Verbose() if ($main::verbose >= 1);
   }
 
@@ -258,7 +261,7 @@ package	main;
 
     if (defined($outfile{output})) {
       $main::outfile{input} = $main::outfile{output};
-      $main::outfile{input} =~ s/\.tab$//;
+      $main::outfile{input} =~ s/\.varBed$//;
       $main::outfile{input} =~ s/\.vcf$//;
       $main::outfile{input} =~ s/\.gvf$//;
       
@@ -268,7 +271,7 @@ package	main;
         $main::outfile{input} .= ".".$extension;
       } else {
         $main::outfile{input} .= ".vcf" if ($from eq "vcf");
-        $main::outfile{input} .= ".tab" if ($from eq "varbed");
+        $main::outfile{input} .= ".varBed" if ($from eq "varBed");
         $main::outfile{input} .= ".gvf" if ($from eq "gvf");
       }
 
@@ -310,7 +313,7 @@ package	main;
       if ($legend) {
 	  print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
 	  print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
-	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'varbed');
+	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'varBed');
 	  $legend = 0;
       }
       
@@ -332,12 +335,12 @@ package	main;
       
 
     ## RSAT file
-    if ($from eq 'varbed') {
+    if ($from eq 'varBed') {
       my @token = split("\t",$_);
 
       next if ($token[9] == 1);
       if (scalar( @token ) != 11 ) {
-         &RSAT::message::Warning("$_ skip. varbed line must be cointain 11 columns");
+         &RSAT::message::Warning("$_ skip. varBed line must be cointain 11 columns");
          next;
       }
 
@@ -374,7 +377,7 @@ package	main;
     }
 
     ### Output variation
-    print $out &Convert_var_to_rsat(%variation),"\n" if ($to eq "varbed");
+    print $out &Convert_var_to_rsat(%variation),"\n" if ($to eq "varBed");
     print $out &Convert_var_to_vcf(%variation),"\n" if ($to eq "vcf");
     print $out &Convert_var_to_gvf(%variation),"\n" if ($to eq "gvf");
   }
@@ -454,7 +457,7 @@ sub Get_var_from_vcf {
     $variation{'ref'} = "-" unless ($variation{'ref'});
 
     # Coordinate
-    $variation{'start'} ++;
+    ## $variation{'start'} ++; ## VCF is one base coordintes in both start and end 
     $variation{'end'} = $variation{'start'} + length($variation{'ref'})-1;
   }
 
@@ -733,11 +736,11 @@ This option is mutually exclusive with option I<-i>.
 =item B<-from #>
 
 Format of the input file
-vcf,gvf,varbed
+vcf,gvf,varBed
 
 =cut
     } elsif ($arg eq "-from") {
-      $main::from = lc(shift(@arguments));
+      $main::from = shift(@arguments);
       &RSAT::error::FatalError("Not supported input format : $from") unless ( grep($_ eq $from, @supported_format ));
 
 =pod
@@ -745,11 +748,11 @@ vcf,gvf,varbed
 =item B<-to #>
 
 Format of the output file
-vcf,gvf,varbed
+vcf,gvf,varBed
 
 =cut
     } elsif ($arg eq "-to") {
-      $main::to = lc(shift(@arguments));
+      $main::to = shift(@arguments);
       &RSAT::error::FatalError("Not supported output format : $to") unless ( grep($_ eq $to, @supported_format ));
 
 =pod
@@ -760,7 +763,7 @@ Species where variation are coming from (Homo_sapiens, Mus_musculus).
  
 =cut
     } elsif ($arg eq "-species") {
-      $main::species = lc(shift(@arguments));
+      $main::species = shift(@arguments);
 
 =pod
 

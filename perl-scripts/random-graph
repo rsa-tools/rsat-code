@@ -72,6 +72,7 @@ package main;
 
   $main::verbose = 0;
   $main::out = STDOUT;
+
   ## Input formats
   local $input_format = "tab";
   %supported_input_format =(
@@ -110,6 +111,7 @@ package main;
     
   # directed edges
   $directed = 0;
+  $bidirectional = 0;
     
   # source and target nodes stay connected in the random graph
   $col_conservation = 0;
@@ -209,6 +211,7 @@ package main;
   if ($random_type ne "ER" && $col_conservation) {
     &RSAT::error::FatalError("Option -col_conservation must be used with randomization ER (-random_type ER option)");
   }
+
   ################################################################
   ## Read an input graph if available
   my $graph = new RSAT::Graph2();
@@ -657,9 +660,7 @@ Prevent the ER graph from containing nodes with no neighbour. For a real Erdos-R
 	} elsif ($arg eq "-no_single") {
 	    $single = 1;
 
-	    	   ## Directed option
 =pod
-
 
 =item B<-directed>
 
@@ -670,7 +671,19 @@ from node A to node B is different from an edge from B to A (by default, edges a
 	    	    
 	} elsif ($arg eq "-directed") {
 	    $directed = 1;
-	    	   ## Normal option
+
+=pod
+
+=item B<-bidirectional>
+
+Export each edge in both directions. This amounts to explicitly create
+an indirected network.
+
+=cut
+	    	    
+	} elsif ($arg eq "-bidirectional") {
+	    $bidirectional = 1;
+
 	   
 =pod
 
