@@ -1925,7 +1925,6 @@ sub PrintSequence {
 ################################################################
 #### detailed help message
 sub PrintHelp {
-#    my $supported_organisms = &ListSupportedOrganisms("sizes");
     open(HELP, "| less");
     print HELP<<End_help;
 USAGE
