@@ -414,9 +414,9 @@ Establish simultaneous connection to Ensembl and EnsemblGenomes
 
 
 sub LoadRegistry {
-    ($registry, $db, $ensembl_version) = @_;
+  ($registry, $db, $ensembl_version) = @_;
 
-    &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 0);
 # my $ensembl_version = 78;
 # Bio::EnsEMBL::Registry->load_registry_from_db(
 #            -host => 'mysql-eg-publicsql.ebi.ac.uk',
@@ -426,37 +426,43 @@ sub LoadRegistry {
 #    -verbose=>1
 #    );
 
-    if ($db eq "ensembl") {
-	$registry->load_registry_from_db(
-	    -host => 'ensembldb.ensembl.org',
-	    -port => '5306',
-	    -user => 'anonymous',
-	    -db_version => $ensembl_version
-	    );
-    } elsif ($db eq "ensemblgenomes") {
-	$registry->load_registry_from_db(
-	    -host => 'mysql-eg-publicsql.ebi.ac.uk', 
-	    -port => '4157',
-	    -user => 'anonymous',
-	    -db_version => $ensembl_version
-	    );
-    } elsif ($db eq "both") {
-	$registry->load_registry_from_multiple_dbs 
-	    (
-	     {-host => 'mysql-eg-publicsql.ebi.ac.uk',
-	      -port => 4157, 
-	      -user => 'anonymous'
-	     },
-	     {-host => 'ensembldb.ensembl.org',
-	      -port => 5306,
-	      -user    => 'anonymous'
-	     }
-	    );
-    } else {
-	&RSAT::error::FatalError("Invalid db for ensembl queries. Supported: ensembl, ensemblgenomes, both.");
-    }
-    my $nb_species = scalar(@{ $registry->get_all_DBAdaptors(-group => 'core') });
-    &RSAT::message::TimeWarn("Loaded registry with", $nb_species, "species") if ($main::verbose >= 0);
+  if ($db eq "ensembl") {
+    $registry->load_registry_from_db(
+      -host => 'ensembldb.ensembl.org',
+      -port => '5306',
+      -user => 'anonymous',
+      -db_version => $ensembl_version,
+#      -verbose=>0
+	);
+  } elsif ($db eq "ensemblgenomes") {
+    $registry->load_registry_from_db(
+      -host => 'mysql-eg-publicsql.ebi.ac.uk', 
+      -port => '4157',
+      -user => 'anonymous',
+      -db_version => $ensembl_version,
+#      -verbose=>0
+	);
+  } elsif ($db eq "ensemblall") {
+    $registry->load_registry_from_multiple_dbs 
+	(
+	 {-host => 'mysql-eg-publicsql.ebi.ac.uk',
+	  -port => 4157, 
+	  -user => 'anonymous',
+	  -db_version => $ensembl_version,
+#	  -verbose=>0
+	 },
+	 {-host => 'ensembldb.ensembl.org',
+	  -port => 5306,
+	  -user    => 'anonymous',
+	  -db_version => $ensembl_version,
+#	  -verbose=>0
+	 }
+	);
+  } else {
+    &RSAT::error::FatalError("Invalid db for ensembl queries. Supported: ensembl, ensemblgenomes, ensemblall.");
+  }
+  my $nb_species = scalar(@{ $registry->get_all_DBAdaptors(-group => 'core') });
+  &RSAT::message::TimeWarn("Loaded registry with", $nb_species, "species") if ($main::verbose >= 0);
 }
 
 ############################################################################

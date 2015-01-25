@@ -583,6 +583,10 @@ which comprises repositories for the following taxa: Bacteria
 
 In Oct 2014, EnsemblGenomes supports >15,000 species.
 
+=item I<ensemblall>
+
+Load both Ensembl and Ensembl Genomes.
+
 =back
 
 =cut
@@ -590,9 +594,9 @@ In Oct 2014, EnsemblGenomes supports >15,000 species.
     $main::db = lc(shift(@arguments));
     unless (($main::db eq "ensembl")
 	    || ($main::db eq "ensemblgenomes")
-	    || ($main::db eq "both")
+	    || ($main::db eq "ensemblall")
     ) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,both");
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,ensemblall");
     }
 
 =pod
