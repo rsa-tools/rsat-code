@@ -48,9 +48,10 @@ package main;
     }
     $supported_return_fields = join ",", @supported_return_fields;
 
-    ## Taxon
+    ## Filters
     our $taxon = "";
     our $depth = 0;
+    our $source = "";
 
     ## Read arguments
     &ReadArguments();
@@ -95,7 +96,7 @@ package main;
 	  &RSAT::error::FatalError($out_format, "Invalid output format");
 	}
       } else {
-	print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, $depth, @return_fields); ## Export the table with header and absolute paths
+	print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $depth, @return_fields); ## Export the table with header and absolute paths
       }
     }
 
@@ -164,6 +165,13 @@ OPTIONS
 
         -taxon selected_taxon 
 	       Only returns organisms belonging to a selected taxon.
+	       Example: 
+	           supported-organisms -taxon Fungi
+
+	-source selected_source
+	       Only return organisms from a user-selected source.
+	       Example: 
+	           supported-organisms -source ensembl
 
 	-depth #
 	       Depth for exploring the taxonomic tree. When the value
@@ -226,6 +234,7 @@ template options
 -format	output format ($supported_formats)
 -return output fields ($supported_return_fields)
 -taxon  selected_taxon
+-source selected_source
 -depth	traversal depth for the taxonomic tree
 -server return organisms supported on the remote RSAT server.
 End_short_help
@@ -235,9 +244,10 @@ End_short_help
 
 
 ################################################################
-#### Read arguments 
+## Read arguments 
 sub ReadArguments {
   foreach my $a (0..$#ARGV) {
+
     ### verbose ###
     if ($ARGV[$a] eq "-v") {
       if (&IsNatural($ARGV[$a+1])) {
@@ -298,6 +308,10 @@ sub ReadArguments {
       $depth = $ARGV[$a+1];
       &RSAT::error::FatalError($depth, "Invalid value for depth, must be an Integer number") 
 	unless &IsInteger($depth);
+
+      ### Select source
+    } elsif ($ARGV[$a] eq "-source") {
+      $source = $ARGV[$a+1];
 
 
       ### output file
