@@ -769,9 +769,7 @@ sub OrganismPopUpSelectable {
 sub OrganismPopUpString {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-##	@selected_organisms = &ListSupportedOrganisms("keys");
 	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
-#	die join("\n", @selected_organisms, "HELLO");
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";

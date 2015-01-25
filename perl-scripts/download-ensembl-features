@@ -103,17 +103,17 @@ package main;
   our %outfile = ();
 
   our $verbose = 0;
-  our $registry = 'Bio::EnsEMBL::Registry';
   our $db = "ensembl";
   our $species = "";
   our $assembly_version = "";
   our $species_suffix = "";
   our $full_species_ID = "";
+  our $registry = 'Bio::EnsEMBL::Registry';
   our $safe_ensembl_version = &get_ensembl_version_safe($db);
   our $latest_ensembl_version = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
-
   our $dry_run = 0; ## Do not run the SQL queries, but print them out for checking
+  our $null = "<NULL>";
 
 #  our $only_api = 0;
   our $query_mode = "sql";
@@ -141,7 +141,7 @@ package main;
   ## Check that the user-selected Ensembl version is supported.
   &check_ensembl_version($db,$ensembl_version);
 
-  my ($host,$port) = &Get_host_port($db);
+#  my ($host,$port) = &Get_host_port($db);
 
   ################################################################
   ## Print verbose
@@ -151,13 +151,8 @@ package main;
   ################################################################
   ## Print available species
   if ($get_available_species) {
-    &RSAT::message::TimeWarn("Getting the list of available species (download-ensembl-features)") if ($main::verbose >= 1);
-    $registry->load_registry_from_db(
-      -host => $host,
-      -port => $port,
-      -user => 'anonymous',
-      -db_version => $ensembl_version
-    );
+    &RSAT::message::TimeWarn("download-ensembl-features", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
+    &LoadRegistry($registry, $db, $ensembl_version);
 
     my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
     my %species_taxon = ();
@@ -189,14 +184,7 @@ package main;
 
   ################################################################
   ## Connecting to ensembl
-  &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
-  $registry->load_registry_from_db(
-    -host => $host,
-    -port => $port,
-    -user => 'anonymous',
-    -db_version => $ensembl_version,
-    -species => $species
-  );
+  &LoadRegistry($registry, $db, $ensembl_version);
 
   ################################################################
   ## Get Adaptator
@@ -284,14 +272,7 @@ package main;
   # Change Ensembl version to Ensembl Genomes version
   my $ftp_ensembl_version = $ensembl_version;
   if (lc($db) eq "ensemblgenomes") {
-    &RSAT::message::TimeWarn("Converting Ensembl version to EnsemblGenomes version") if ($main::verbose >= 2);
-    $registry->load_registry_from_db(
-        -host => $host,
-        -port => $port,
-        -user => 'anonymous',
-	-species => 'multi',
-        -db_version => $ensembl_version
-    );
+    &LoadRegistry($registry, $db, $ensembl_version);
 
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
@@ -996,8 +977,8 @@ package main;
 	  $cds_end = $cds_right = $row{'end_exon_start'} + $row{'translate_end'} - 1;
 	}
 
-	## DEBUG
-	if ($main::verbose >= 0) {
+	## JvH DEBUG FOR THE PROBLEM OF CDS START AND STOP
+	if ($main::verbose >= 10) {
 	  if ($c==1) {
 	    &RSAT::message::Debug("row", 
 				  "cds",
@@ -1716,14 +1697,20 @@ which comprises repositories for the following taxa: Bacteria
 
 In Oct 2014, EnsemblGenomes supports >15,000 species.
 
+=item I<ensemblall>
+
+Load both Ensembl and Ensembl Genomes.
+
 =back
 
 =cut
    } elsif ($arg eq "-db") {
     $main::db = lc(shift(@arguments));
     unless (($main::db eq "ensembl")
-	    || ($main::db eq "ensemblgenomes")) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+	    || ($main::db eq "ensemblgenomes")
+	    || ($main::db eq "ensemblall")
+            ) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,ensemblall");
     }
 
 =pod

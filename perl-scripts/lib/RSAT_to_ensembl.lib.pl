@@ -16,7 +16,6 @@ package main;
 our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
 our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 19;
 
-
 ## Fields of the table describing the supported organisms obtained
 ## from Ensembl. These fields are used by several methods
 our @supported_header_fields = ("id",
@@ -361,6 +360,9 @@ sub Get_gvf_ftp {
 ## Get an the main taxon (bacteria, fungi, metazoa, ...) for each
 ## species supported in an ansembl database. The result is returned as
 ## a has table, with species names as keys and taxa as values.
+##
+## JvH: THIS IS TRICKY: uses an ftp server. I should rewrite it using
+## the Lookup interface or something else, see with Dan Staines.
 sub Get_species_taxon {
   my ($db,$ensembl_version) = @_;
   my %species_taxon = ();
@@ -393,10 +395,77 @@ sub Get_host_port {
   &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 3);
 
   if ($db eq "ensembl") {
-    return ('ensembldb.ensembl.org','5306');
+      return ('ensembldb.ensembl.org','5306');
   } elsif (lc($db) eq "ensemblgenomes") {
-    return ("mysql.ebi.ac.uk","4157");
+#      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
+      return ("mysql.ebi.ac.uk","4157");
   }
+}
+
+
+
+=pod
+
+=head1 B<LoadRegistry>
+
+Usage:
+    LoadRegistry($registry);
+
+Establish simultaneous connection to Ensembl and EnsemblGenomes
+
+=cut
+
+
+sub LoadRegistry {
+  ($registry, $db, $ensembl_version) = @_;
+
+  &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 0);
+# my $ensembl_version = 78;
+# Bio::EnsEMBL::Registry->load_registry_from_db(
+#            -host => 'mysql-eg-publicsql.ebi.ac.uk',
+#            -port => '4157',
+#            -user => 'anonymous',
+#            -db_version => $ensembl_version,
+#    -verbose=>1
+#    );
+
+  if ($db eq "ensembl") {
+    $registry->load_registry_from_db(
+      -host => 'ensembldb.ensembl.org',
+      -port => '5306',
+      -user => 'anonymous',
+      -db_version => $ensembl_version,
+#      -verbose=>0
+	);
+  } elsif ($db eq "ensemblgenomes") {
+    $registry->load_registry_from_db(
+      -host => 'mysql-eg-publicsql.ebi.ac.uk', 
+      -port => '4157',
+      -user => 'anonymous',
+      -db_version => $ensembl_version,
+#      -verbose=>0
+	);
+  } elsif ($db eq "ensemblall") {
+    $registry->load_registry_from_multiple_dbs 
+	(
+	 {-host => 'mysql-eg-publicsql.ebi.ac.uk',
+	  -port => 4157, 
+	  -user => 'anonymous',
+	  -db_version => $ensembl_version,
+#	  -verbose=>0
+	 },
+	 {-host => 'ensembldb.ensembl.org',
+	  -port => 5306,
+	  -user    => 'anonymous',
+	  -db_version => $ensembl_version,
+#	  -verbose=>0
+	 }
+	);
+  } else {
+    &RSAT::error::FatalError("Invalid db for ensembl queries. Supported: ensembl, ensemblgenomes, ensemblall.");
+  }
+  my $nb_species = scalar(@{ $registry->get_all_DBAdaptors(-group => 'core') });
+  &RSAT::message::TimeWarn("Loaded registry with", $nb_species, "species") if ($main::verbose >= 0);
 }
 
 ############################################################################
@@ -467,9 +536,9 @@ sub Get_full_species_ID {
   ## Check that the assembly version has been provided. If not, guess
   ## it.
   unless ($assembly_version) {
-      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 5);
+      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 0);
       $assembly_version = &Get_assembly_version($species,$ensembl_version,$species_suffix);
-      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
+      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 0);
   }
 
 
@@ -495,6 +564,7 @@ version for a given species.
 =cut
 sub Get_assembly_version {
   my ($species,$ensembl_version,$species_suffix) = @_;
+  my $assembly_version = "";
   &RSAT::message::Debug("&Get_assembly_version()", 
 			"main::db=".$main::db,
 			"species=".$species, 
