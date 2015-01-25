@@ -153,7 +153,7 @@ if ($query->param('out_type')) {
 
 
 &ReportWebCommand($command." ".$parameters);
-$var_file = "$tmp_file_path.variants";
+$var_file = "$tmp_file_path.".$out_type;
 push @result_files, ("Variations in $out_type format", $var_file);
 
 #### execute the command #####
@@ -200,7 +200,7 @@ exit(0);
 ## Send result file to variation-scan form
 sub PipingForm {
     ### prepare data for piping
-    if ($out_type eq "rsat-var"){
+    if ($out_type eq "varBed"){
 	print <<End_of_form;
 	<CENTER>
 	    <TABLE class="nextstep">
@@ -213,7 +213,7 @@ sub PipingForm {
 	    <TD valign=top>
 	    <FORM METHOD="POST" ACTION="retrieve-variation-seq_form.cgi">
 	    <INPUT type="hidden" NAME="variants_file" VALUE="$var_file">
-	    <INPUT type="hidden" NAME="input_type" VALUE="rsat-var">
+	    <INPUT type="hidden" NAME="input_type" VALUE="varBed">
 	<INPUT type="submit" value="retrieve variants sequence">
 	</FORM>
 	</TD>
