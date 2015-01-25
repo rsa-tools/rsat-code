@@ -300,7 +300,7 @@ package main;
       ## Declare the organism in RSAT
       if ($task{"config"}) {
 	&RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -task config -org ".$full_species_id;
+	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db." -task config -org ".$full_species_id;
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
 
@@ -309,7 +309,7 @@ package main;
       ## sequences, compute aa frequencies in protein sequences, ...)
       if ($task{"install"}) {
 	&RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species, $full_species_id) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl";
+	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db;
 	$command .= " -org ".$full_species_id;
 	$command .= " -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
 	$command .= " -batch" if ($batch); ## JvH : to check: I don't thinkn I can pass here if the batch option is active
