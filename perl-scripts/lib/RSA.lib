@@ -519,7 +519,7 @@ sub ListSupportedOrganisms {
   $header = 0 unless ($header);
   my $taxon = "";
   my $depth = 0;
-  return (&RSAT::OrganismManager::supported_organism_table($header, 0, $taxon, $depth, @fields));
+  return (&RSAT::OrganismManager::supported_organism_table($header, 0, $source, $taxon, $depth, @fields));
 }
 
 sub ListSupportedOrganisms_old {
