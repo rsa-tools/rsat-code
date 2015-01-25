@@ -524,7 +524,7 @@ sub Get_assembly_version {
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
 			      "\n\tquery", $species, $main::db,$ensembl_version,
 			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
-	    ) if ($main::verbose >= 5);
+	    ) if ($main::verbose >= 0);
 	if ((lc($species) eq lc($db_species)) 
 	    && ($db_db eq $main::db)
 	    && ($ensembl_version eq $db_ensembl_version)
