@@ -222,6 +222,9 @@ sub export_supported_organisms {
   my (%args) = @_;
   my $organism_table = $args{file} || $ENV{RSAT}."/public_html/data/supported_organisms.tab";
   my $store_backup = $args{backup} || 0;
+  my $source = $args{source} || "";
+  my $taxon = $args{taxon} || "";
+  my $depth = $args{depth} || 0;
 
   ## Save a copy of the previous table
   if ($store_backup) {
@@ -238,7 +241,7 @@ sub export_supported_organisms {
   &RSAT::message::TimeWarn("Storing updated organism table to temporary file", $organism_table_tmp) if ($main::verbose >= 2);
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table_tmp);
 
-  print $table_handle &supported_organism_table("header", 1, @fields);
+  print $table_handle &supported_organism_table("header", 1, $source, $taxon, $depth, @fields);
   &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/public_html/data/supported_organisms.pl") if ($main::verbose >= 3);
 
   ## Rename the updated table to make it effective
@@ -281,7 +284,7 @@ Restrict only return organisms belonging to a given taxon.
 
 =cut
 sub supported_organism_table {
-  my ($header,$relative_path, $taxon, $depth, @fields) = @_;
+  my ($header,$relative_path, $source, $taxon, $depth, @fields) = @_;
   my $table = "";
 
   &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "taxon: ".$taxon, "fields", join( ";", @fields)) 
@@ -326,6 +329,12 @@ sub supported_organism_table {
   my $n = 0;
   foreach my $org (@selected_organisms) {
     $n++;
+
+    ## Filter by source
+    if ($source) {
+      next unless lc($main::supported_organism{$org}->{'source'}) eq lc($source);
+    }
+
     $main::supported_organism{$org}->{'ID'} = $org;
     $main::supported_organism{$org}->{'nb'} = $n; ## Reset nb in case of filtering
     my @values = ();
