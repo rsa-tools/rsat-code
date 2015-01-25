@@ -650,8 +650,8 @@ sub send_mail {
 
     ## Set a subject if not specificed in arguents
     unless ($subject) {
-	$script_namen= $0;
-	$subject = join " ", "[RSAT]", $script_name, &AlphaDate();
+	$script_name = $0;
+	$subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
     }
 
     ## Define the SMTP server

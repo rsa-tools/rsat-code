@@ -4,7 +4,6 @@
 *.o
 *~
 .#*
-./lib
 .DS_Store
 .Rhistory
 CVS
@@ -35,7 +34,7 @@ doc/manuals/*.out
 doc/manuals/*.toc
 downloads
 jobs
-lib
+./lib
 logs
 logs_tmp
 makefile
