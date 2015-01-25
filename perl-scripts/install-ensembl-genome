@@ -267,10 +267,10 @@ package main;
     foreach my $species (@species_names) {
       $s++;
       my $arg = " -v ".$verbose;
-      $arg .= " -species ".$species;
-      $arg .= " -version ".$ensembl_version;
-      $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
       $arg .= " -db ".$db;
+      $arg .= " -version ".$ensembl_version;
+      $arg .= " -species ".$species;
+      $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
 
       if ($task{"genome"}) {
 	&RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
@@ -292,17 +292,15 @@ package main;
 
       ## Get the name of the organism as installed in RSAT. This
       ## differs from the Ensembl species name, because we add a
-      ## suffix with the data source (ensembl), assembly and ensembl
-      ## version.
+      ## suffix with the assembly version.
       my $full_species_id = &Get_full_species_ID($species, $assembly_version, $ensembl_version, $species_suffix);
-
-      &RSAT::message::Info("Species", $species) if ($main::verbose >= 0);
-      &RSAT::message::Info("Full species ID", $full_species_id) if ($main::verbose >= 0);
+      
+      &RSAT::message::Info("Species", $species, "Full species ID", $full_species_id) if ($main::verbose >= 0);
 
       ## Declare the organism in RSAT
       if ($task{"config"}) {
 	&RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $full_species_id -task config";
+	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -task config -org ".$full_species_id;
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
 
@@ -311,8 +309,10 @@ package main;
       ## sequences, compute aa frequencies in protein sequences, ...)
       if ($task{"install"}) {
 	&RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species, $full_species_id) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl -org $full_species_id -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
-	$command .= " -batch" if ($batch);
+	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ensembl";
+	$command .= " -org ".$full_species_id;
+	$command .= " -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
+	$command .= " -batch" if ($batch); ## JvH : to check: I don't thinkn I can pass here if the batch option is active
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
     }
