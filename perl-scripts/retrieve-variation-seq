@@ -54,7 +54,7 @@ them wiht the tool I<variation-scan>.
       -species Homo_sapiens -e_version 72
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -mml 30 \
-      -o variations.tab
+      -o variations.varBed
 
 =head1 INPUT FORMAT
 
@@ -240,10 +240,10 @@ package	main;
   our $validate = 0;
 
   ## Define supported output formats
-  our @supported_output_formats = qw (rsat-var id bed);
-  our $supported_output_formats = join ",", @supported_output_formats;
+  our @supported_input_formats = qw (varBed id bed);
+  our $supported_input_formats = join ",", @supported_input_formats;
   our %supported_output_format = ();
-  foreach my $format (@supported_output_formats) {
+  foreach my $format (@supported_input_formats) {
       $supported_output_format{$format} = 1;
   }
   our $format = "";
@@ -321,7 +321,7 @@ package	main;
   ################################################################
   ## Get the list of variation files installed in the RSAT data
   ## directory.
-  my @variation_file = ();
+  my @variation_files = ();
 
   #########
   ## AMR NOTE: I'm having a lot of problems with the glob function
@@ -329,24 +329,24 @@ package	main;
   ## I'll change back this part of the code as soon as I get it to
   ## work. This code is a patch
 
-  my $vart_files=`ls $variation_dir/*.tab`;
-  @variation_file= split ("\n",$vart_files);
+  my $vart_files=`ls $variation_dir/*.varBed`;
+  @variation_files= split ("\n",$vart_files);
 
   
-  ## print join("+",@variation_file);
+  ## print join("+",@variation_files);
   ## die "BOOM";
-  ## foreach ( glob ( $variation_dir."*.tab") ) {
-  ##  push (@variation_file,$_) unless (/Failed/);
+  ## foreach ( glob ( $variation_dir."*.varBed") ) {
+  ##  push (@variation_files,$_) unless (/Failed/);
   ## }
 
   ################################################################
-  ## Retrieve variations from rsat-var format
-  if ($format eq "rsat-var") {
+  ## Retrieve variations from varBed format
+  if ($format eq "varBed") {
     if ($main::infile{'input'}) {
       $main::infile{'input_variation'} = $main::infile{'input'};
 
     } else { ## Read in STDIN and write it to a file
-      $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
+      $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
       my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'});
 
       while (<$main::in>) {
@@ -367,7 +367,8 @@ package	main;
   elsif ($format eq "id") {
     &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
     ## Retrieved variation information in rsat format will be writen in a temporary file
-    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
+    ## ALE NOTE: THIS IS THE PLACE THAT WILL BE SUBSITUTED WITH GET-VARIATIONS CALL
+    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
     my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'} );
 
     my %variation_id = ();
@@ -376,55 +377,81 @@ package	main;
     if ($main::infile{'input'}) {
       ($main::in) = &OpenInputFile($main::infile{'input'});
     }
+
     ## Get SNP ids from the input list 
     while (<$main::in>) {
       next if (/^#/);
       next if (/^;/);
+      next unless (/\S/);
       chomp();
-      my @token = split("\t");
-      $variation_id{$token[$col-1]} = 1; ## $col=1, definied above
-    }
+      my @fields = split("\t");
+      my $id =  $fields[$col-1]; ## Select the ID from the user-specified column
 
-    &RSAT::message::TimeWarn("Number of variations to find:",scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
+      ## Check if the ID has already been found previously if the
+      ## file. If yes ignore it, if not add it to the list.
+      unless (defined($variation_id{$id})) {
+	push @variation_ids, $id;
+	$variation_id{$id} = 1; ## Index the curent ID to remove potential duplicates
+      }
+	
+    }
+    &RSAT::message::TimeWarn("Number of variations to find:", scalar(@variation_ids) ) if ($main::verbose >= 2);
 
     ## Try to idenfity the variations in each chromosome separately.
     ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are 
     ## ALE'S NOTE: THIS NOTE IS INCOMPLETE
 
-    ## Create a regular expression to select the rows containing query
-    ## IDs with grep
-    my $grep_id = "'".join('\|',keys(%variation_id))."'"; ## 
-
     ## Grep each variation file to collect the selected IDs
+    foreach my $file_name (@variation_files) {
+      my @variations_to_find = sort keys (%variation_id);
+      &RSAT::message::Warning("Starting to grep variation file", $file_name) if ($main::verbose >= 2);
+      &RSAT::message::Warning("Variation IDs remaining to be found", scalar(@variations_to_find)) if ($main::verbose >= 2);
 
-    foreach my $file_name (@variation_file) {
-      last if ( scalar(keys(%variation_id)) == 0);
+      last if (scalar(@variations_to_find) == 0);      
 
-      my @result = qx{grep $grep_id $file_name};
+      ## Create a regular expression to select the rows containing
+      ## query IDs with grep. Only search the variations that have not
+      ## yet been identified.
+      my $grep_expression = join('\|',@variations_to_find); ## 
+      my $grep_cmd = "grep '".$grep_expression."' ".$file_name;
+      &RSAT::message::Warning("Running grep command", $grep_cmd) if ($main::verbose >= 3);
 
+      my @result = qx{$grep_cmd};
+      
       my $i = 0;
       foreach (@result) {
         chomp();
-        my @token = split("\t");
-        next if ( $token[10] == 1 );               ##Remove super-variation ## Ale's note: colum number changed after adding minor allele frequency
-        next unless ($variation_id{$token[4]});
-        delete($variation_id{$token[4]});       	##Remove found variation from the variations list 
-        $token[11] = 0;                           ##Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
-        print $out_v join("\t",@token),"\n"; ## Reporte variation information in outfile
+        my @fields = split("\t");
+
+	## Skip super-variation 
+	my $is_super = $fields[10];
+	## Ale's note: colum number changed after adding minor allele frequency. JvH note: we should later check if we really want to maintain these super-variations
+        next if ($is_super); 
+
+	## Check if the variation ID is part of the queries
+	my $current_id = $fields[4];
+        next unless ($variation_id{$current_id});
+
+
+	## Remove found variation from the list of variations to be found
+        delete($variation_id{$fields[4]});       	
+
+	## Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
+        $fields[11] = 0;
+
+	## Report variation information in outfile
+        print $out_v join("\t",@fields),"\n"; 
         $i++;
       }
 
-      ## Redefine the regular expression with only the variations not
-      ## yet found.
-      $grep_id = "'".join('\|',keys(%variation_id))."'";
 
       $file_name = &RSAT::util::hide_RSAT_path($file_name);
-      &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id)) ) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id) )) if ($main::verbose >= 2);
     }
     close $out_v;
 
     ## Report not found variations
-    my @not_found = sort(keys(%variation_id));
+    my @not_found = sort(@variation_ids);
     my $not_found_nb = scalar(@not_found);
     if ($not_found_nb > 0) {
       &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
@@ -479,7 +506,7 @@ package	main;
 
     ## Retrieve variation
     &RSAT::message::TimeWarn("Retrieve variation from coordinate") if ($main::verbose >= 2);
-    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".tab";
+    $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
     my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'} );
     
     ## For each chromosome reported in the bed file
@@ -488,7 +515,7 @@ package	main;
       my $nb_coord = scalar(@lefts);
       my $i = 0;
       my $nb_variation = 0;
-      my ($var_file) = &OpenInputFile($variation_dir.$chr.".tab"); ## Variation file in RSAT corresponding to the chromosome
+      my ($var_file) = &OpenInputFile($variation_dir.$chr.".varBed"); ## Variation file in RSAT corresponding to the chromosome
 
       my $left = $lefts[$i];
       my $right = $chr_coord{$chr}{$left};
@@ -497,12 +524,12 @@ package	main;
         next if (/^#/);
         next if (/^;/);
         next unless (/\t/);
-        my @token = split("\t"); ## One variation 
+        my @fields = split("\t"); ## One variation 
   
-        if ($token[1] <= $right && $token[2] >= $left) { ## If variant is inside the coordinate print variant in variation file
+        if ($fields[1] <= $right && $fields[2] >= $left) { ## If variant is inside the coordinate print variant in variation file
           $nb_variation++;
           print $out_v $_ ;
-        } elsif ($token[2] > $right) { ## Get the next coordinate if the current variant is out of bounds for the current coordinate
+        } elsif ($fields[2] > $right) { ## Get the next coordinate if the current variant is out of bounds for the current coordinate
           $i++; 
           last if ($i >= $nb_coord);
          $left = $lefts[$i];
@@ -518,10 +545,11 @@ package	main;
   }
 
   ################################################################
-  ##Change default variation file
+  ## Change default variation file
+  ## ALE NOTE: Don't understand what this is for
   if ($main::infile{'input_variation'}) {
-    @variation_file = ();
-    push (@variation_file,$main::infile{'input_variation'});
+    @variation_files = ();
+    push (@variation_files,$main::infile{'input_variation'});
   }
 
   ################################################################
@@ -533,7 +561,7 @@ package	main;
   my $nb_var = 0;
   my $last_nb = 1000000;
 
-  foreach my $var_file (@variation_file) {
+  foreach my $var_file (@variation_files) {
     my $last_chr = "";
     my $ref_seq = "";
     
@@ -757,7 +785,7 @@ Supported formats:
 
 =over
 
-=item I<rsat>
+=item I<varBed>
 
 Format of variation files used by all RSAT scripts.
 
@@ -777,7 +805,7 @@ General format for the description of genomic features
     } elsif ($arg eq "-format") {
       $main::format = shift(@arguments);
       unless ($supported_output_format{$main::format}) {
-         &RSAT::error::FatalError($format, "Invalid output format. Supported: ". $supported_output_formats);
+         &RSAT::error::FatalError($format, "Invalid output format. Supported: ". $supported_input_formats);
       }
 
 =pod

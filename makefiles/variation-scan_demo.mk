@@ -44,7 +44,7 @@ variation_stats:
 ## format supported as input by RSAT retrieve-var.
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
-VARIANT_FORMAT_OUT=varbed
+VARIANT_FORMAT_OUT=varBed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}  \
 	-e_version ${ENSEMBL_VERSION} \
@@ -67,8 +67,8 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
 	${SPECIES_SUFFIX_OPT} \
-	-i ${RESULT_DIR}/${VARIANTS}.varbed \
-	-mml 30 -format varbed \
+	-i ${RESULT_DIR}/${VARIANTS}.varBed \
+	-mml 30 -format varBed \
 	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
 retrieve_var:
 	@echo "${RETRIEVE_VAR_CMD}"
