@@ -73,7 +73,7 @@ if (defined($supported_organism{$organism})) {
 
 ## Get input
 
-unless ($input_set_file=$query->param("variants_file")){
+unless ($input_set_file=$query->param('variants_file')){
     $input_set_file= $tmp_file_path."retrieve-variation-seq_input";
     if ($query->param('uploaded_file')) {
 	$upload_file = $query->param('uploaded_file');
@@ -123,7 +123,7 @@ if (&IsInteger($query->param('mml'))) {
 }
 
 &ReportWebCommand($command." ".$parameters);
-$var_file = "$tmp_file_path.variants-seq";
+$var_file = "$tmp_file_path.varseq";
 push @result_files, ("sequences", $var_file);
 
 #### execute the command #####
@@ -181,7 +181,7 @@ sub PipingForm {
 	<TR>
 	<TD valign=top>
 	<FORM METHOD="POST" ACTION="variation-scan_form.cgi">
-        <INPUT type="hidden" NAME="variants_seq_file" VALUE="$var_file">
+        <INPUT type="hidden" NAME='variants_seq_file' VALUE="$var_file">
 	<INPUT type="submit" value="variation scan">
 	</FORM>
 	</TD>

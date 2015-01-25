@@ -59,7 +59,7 @@ print "<B>Variants or regions in bed format</B>&nbsp;";
 
 print "<BR>\n";
 print "<UL>\n";
- if ($variants_file = $query->param("variants_file")) {
+ if ($variants_file = $query->param('variants_file')) {
     ## Variants file is already on the server machine
     ## (piped from a previous script)
     $variants_url = $variants_file;
@@ -78,7 +78,7 @@ print "<UL>\n";
 			   -default=>$default{input},
 			   -rows=>6,
 			   -columns=>65);
-### Option to upload a file with variant information (IDs, rsat-var file or 
+### Option to upload a file with variant information (IDs, varBed file or 
 ### genomic regions in bed format)
     print "<BR>Upload variants or regions<BR>\n";
     print $query->filefield(-name=>'uploaded_file',
@@ -92,7 +92,7 @@ print "<UL>\n";
 ### Input type
 print "<B>Input format</B>&nbsp;";
     print $query->popup_menu(-name=>'input_type',
-			     -Values=>['rsat-var','id','bed'],
+			     -Values=>['varBed','id','bed'],
 			     -default=>$default{input_type});
 print "<\p>";
 ### Lenght of the sequences surranding the variant
@@ -128,7 +128,7 @@ $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"retrieve-variation-seq_form.cgi");
 
-$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set.rsat-var";
+$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varBed";
 $demo_rsat_var=`cat $demo_rsat_var_file` ;
 
 
@@ -136,7 +136,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 print $query->hidden(-name=>'input',-default=>"$demo_rsat_var");
-print $query->hidden(-name=>'input_type',-default=>"rsat-var");
+print $query->hidden(-name=>'input_type',-default=>"varBed");
 print $query->hidden(-name=>'mml',-default=>"30");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
