@@ -730,22 +730,50 @@ sub PipingWarning {
 
 
 ################################################################
-## Display a pop-up menu with a selection of organism on the basis of
-## the server-specific list of supported organisms.
+## Display a pop-up menu with a selection of organism on the
+## basis of the server-specific list of supported organisms.
+## JvH: I should check if thi is still required, or replace it by OrganismPopupSelectable
 sub OrganismPopUp {
-    print &OrganismPopUpString(@_);
+  print &OrganismPopUpString(@_);
 }
 
+
+################################################################
+## Generate a *dynamic* pop-up menu with a selection of organism on the
+## basis of the server-specific list of supported organisms.
+sub OrganismPopUpSelectable {
+  my $popup = "";
+
+  ## Include a javascript to enable dynamic selection of subsets of matching organisms 
+  $popup .=  "<script type='text/javascript' src='".$ENV{RSAT}."/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js'>\n";
+  $popup .=  `cat $ENV{RSAT}/perl-scripts/lib/js/popup-sub-select.js`;
+  $popup =~ s/ui.combobox/organism/g;
+  $popup .=  $script;
+  $popup .=  "</script>\n";
+
+  ## Embed the pop-up menu in a table
+  $popup .=  "<table border='0' width='100%' cellspacing='0' cellpadding='2'>\n";
+  $popup .=  "<tr>\n";
+  $popup .=  "<td style='vertical-align:middle; text-align:left; width: 45%;'>\n";
+  $popup .=  "<input type='text' id='theVisibleElement' value=''/>\n";
+  $popup .=  &OrganismPopUpString(@_);
+  $popup .=  "</td>\n";
+  $popup .=  "</tr>\n";
+  $popup .=  "</table>\n";
+#  die "$popup";
+  return $popup;
+}
+
+################################################################
+## Generate the content of the pop-up menu to be displayed for organism selection
 sub OrganismPopUpString {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-##	@selected_organisms = &ListSupportedOrganisms("keys");
 	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
-#	die join("\n", @selected_organisms, "HELLO");
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-    $organismPopup .=  "<SELECT NAME='organism'>\n";
+    $organismPopup .=  "<select name='organism'>\n";
     foreach my $org (@selected_organisms) {
 	if (defined($supported_organism{$org})) {
 	    my $name = $org;
@@ -753,14 +781,14 @@ sub OrganismPopUpString {
 #	    $name = $supported_organism{$org}->{'name'};
 	    if ((lc($org) eq lc($default{organism})) ||
 		(lc($name) eq lc($default{organism}))) {
-		$organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
+		$organismPopup .=  "<option selected VALUE='$org'>$name\n";
 	    } else {
-		$organismPopup .=  "<OPTION VALUE='$org'>$name\n";
+		$organismPopup .=  "<option value='$org'>$name\n";
 	    }
 	}
     }
-    $organismPopup .=  "</SELECT>";
-    $organismPopup .=  "<BR>\n";
+    $organismPopup .=  "</select>";
+    $organismPopup .=  "<br>\n";
     return $organismPopup;
 }
 
@@ -794,7 +822,7 @@ sub OrganismPopUpEnsembl {
     $organismPopup .=  "</SELECT>";
     $organismPopup .=  $info_ensembl;
     $organismPopup .=  "<BR>\n";
-    print $organismPopup;
+    return $organismPopup;
 }
 
 

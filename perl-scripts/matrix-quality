@@ -287,7 +287,7 @@ package main;
     $bg_format = "oligos";
     $bg_model = new RSAT::MarkovModel();
 
-    $kfold = 0;
+    $kfold = "none";
 
     $distrib_score_col = 5; ## Column containing the dCDF (decreasing cumulative density function) in the output of the command matrix-distrib-quick -distrib
 
@@ -326,7 +326,7 @@ package main;
 
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
-    $tasks{plot}=0;
+    $task{plot}=0;
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -343,11 +343,11 @@ package main;
 			      "plot", ## Calculte NWD data
 		       );
     $supported_tasks = join (",", @supported_tasks);
-    local %supported_tasks = ();
+    local %supported_task = ();
     foreach my $task (@supported_tasks) {
-      $supported_tasks{$task} = 1;
+      $supported_task{$task} = 1;
     }
-    %tasks = ();
+    %task = ();
 
     ################################################################
     ## The C command matrix-scan-quick is MUCH faster than
@@ -367,7 +367,7 @@ package main;
     
     ################################################################
     ## Additional plots
-    $supported_tasks{plot} = 0 unless $tasks{plot};
+    $supported_task{plot} = 0 unless $task{plot};
     my @add_plots= split (/,/,$main::plottypes);
     foreach (@add_plots){
 	&RSAT::error::FatalError("The requested additional plot is not available", "$_") unless ($main::supported_plot_types{$_});
@@ -394,23 +394,30 @@ package main;
     }
 
     ## Report user-selected contradictory options
-    if (($no_cv) && ($tasks{cv})) {
+    if (($no_cv) && ($task{cv})) {
       &RSAT::message::Warning("Contradictory options: -no_cv and -task cv. Task skipped.");
     }
 
 
     ## If no tasks has been specified, execute them all
-    if (($tasks{all}) || (scalar(keys(%tasks))==0)) {
-      %tasks = %supported_tasks;
-      $tasks{all} = 0;
+    if (($task{all}) || (scalar(keys(%task))==0)) {
+      %task = %supported_task;
+      $task{all} = 0;
 
-      ## Only if no_cv has been selected set cv option to zero
+      ## If no_cv has been selected set cv option to zero
       if ($no_cv) {
-	$tasks{cv} = 0;
+	  $task{cv} = 0;
+      } else {
+	  if (&IsNatural($kfold)) {
+	      $task{cv} = 1;
+	  } else {
+	      $task{cv} = 0;
+	      $no_cv = 1;
+	  }
       }
     }
 
- #   die  join ("\t", "HELLO", sort keys %tasks), "\n";
+ #   die  join ("\t", "HELLO", sort keys %task), "\n";
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {
@@ -445,7 +452,7 @@ package main;
 
     #############################################################
     ## Generate the general HTML report
-    if ($tasks{synthesis}) {
+    if ($task{synthesis}) {
 	&OpenGeneralHTMLReport($outfile{synthesis});
     }
 
@@ -488,8 +495,8 @@ package main;
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
      ## NWD
-    $tasks{plot}=1 if (scalar(@main::plot_seq_type));
-    # unless ( ((scalar(@main::plot_seq_type))&& !($tasks{plot})) || (!(scalar(@main::plot_seq_type))&& ($tasks{plot})) ){
+    $task{plot}=1 if (scalar(@main::plot_seq_type));
+    # unless ( ((scalar(@main::plot_seq_type))&& !($task{plot})) || (!(scalar(@main::plot_seq_type))&& ($task{plot})) ){
     # 	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
     # }
 
@@ -678,7 +685,7 @@ package main;
       $main::seqfile{matrix_sites} = $outfile{matrix_sites} if ($infile{matrix_sites});
       &RSAT::message::Debug("Adding file to index ",  "matrix_sites", $outfile{matrix_sites}  ) if ($main::verbose >= 10);
 
-      if(($tasks{cv} )&& (!$main::infile{matrix_sites} )){
+      if(($task{cv} )&& (!$main::infile{matrix_sites} )){
 	  &RSAT::error::FatalError("Cross-validation option is selected but matrix sites were not provided, verify options -ms and -seq ");
       }
 
@@ -693,12 +700,12 @@ package main;
 	$scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation used to build the matrix
 	#      unless ($quick) {
 	#      }
-	&ExportInputSites($matrix, $matrix_file) if ($tasks{export_matrix});
+	&ExportInputSites($matrix, $matrix_file) if ($task{export_matrix});
       }
 
       ################################################################
       ## Export matrix in various formats
-      if ($tasks{export_matrix}) {
+      if ($task{export_matrix}) {
 	## Export the matrix in tab-delimited format
 	&ExportTabMatrix($matrix);
 
@@ -717,7 +724,7 @@ package main;
       $outfile{'matrix_theoretical_distrib'} = $main::matrix_prefix{$matrix_name}."_theor_score_distrib.tab"; push @files_to_index, "matrix_theoretical_distrib";
       &RSAT::message::Debug("Adding file to index ",  "matrix_theoretical_distrib", $outfile{'matrix_theoretical_distrib'}  ) if ($main::verbose >= 10);
 
-      &CalcTheorScoreDistribution($outfile{matrix_tab},$outfile{'matrix_theoretical_distrib'}) if ($tasks{theor});
+      &CalcTheorScoreDistribution($outfile{matrix_tab},$outfile{'matrix_theoretical_distrib'}) if ($task{theor});
 
       ################################################################
       ## Calculate empirical score distributions in the different sequence sets
@@ -725,9 +732,9 @@ package main;
       ################################################################
       ## Calculate the Leave-one-out score distribution for the matrix sites
       my @matrix_sites = $matrix->get_attribute("sequences");
-      if (scalar(@matrix_sites) == 0) {
+      if (($task{cv}) && (scalar(@matrix_sites) == 0)) {
 	&RSAT::message::Warning("Cannot perform cross-validation because the matrix file does not contain any site.");
-	$tasks{cv}=0;
+	$task{cv}=0;
 	$no_cv=1;
       }
 
@@ -747,18 +754,18 @@ package main;
 	$outfile{matrix_sites_cv_distrib} = $matrix_prefix{$matrix_name}."_scan_matrix_sites${cv_suffix}_score_distrib.tab" ;push @files_to_index, "matrix_sites_cv_distrib";
 	&RSAT::message::Debug("Adding file to index ",  "matrix_sites_cv_distrib", $outfile{matrix_sites_cv_distrib}  ) if ($main::verbose >= 10);
 
-	if (($tasks{cv}) || ($tasks{compare}) || ($tasks{graphs})) {
+	if (($task{cv}) || ($task{compare}) || ($task{graphs})) {
 	  push @distrib_files, $outfile{matrix_sites_cv_distrib}; $file_nb{matrix_sites_cv_distrib} = scalar(@distrib_files);
 	}
 
-	if ($tasks{cv} ) {
+	if ($task{cv} ) {
 	  &CrossValidation($matrix, @matrix_scan_options);
 	}
 
 	## Calculate the theoretical distributions of LOO partial matrices
 	&RSAT::message::Debug("Calculating the theoretical distribution for ",scalar(@partial_matrix_files) ,"partial matrices") if ($main::verbose >= 3);
 
-	if ($tasks{theor_cv}) {
+	if ($task{theor_cv}) {
 	  our @th_distrib_files =();
 
 	  foreach my $partial_matrix (@partial_matrix_files) {
@@ -877,7 +884,7 @@ package main;
       ##Calculate NWD
       &RSAT::message::TimeWarn("Calculating NWD file")  if ($main::verbose >= 2);
 
-      if ($tasks{plot}) {
+      if ($task{plot}) {
 	  foreach (@local_plot_seq_type) {
 	      my $st= $_;
 	      my $nwd_st= &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_types{nwd}) ;	      
@@ -912,7 +919,7 @@ package main;
       }
       ################################################################
       ## Synthesis results in a HTML file
-      if ($tasks{synthesis}) {
+      if ($task{synthesis}) {
 	  &GenerateHTMLReport($outfile{matrix_synthesis});
 	  &Add_info_to_GeneralHTML_Report;
       }
@@ -920,7 +927,7 @@ package main;
       ################################################################
       ###### Clean some temporary files
 
-      if ($tasks{clean}) {
+      if ($task{clean}) {
 	## Remove the single permuted matrix files (all matrices are stored in another file)
 	if (defined($perm_nb_max)) {
 	  for my $i (1..$perm_nb_max) {
@@ -972,7 +979,7 @@ package main;
     print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
     close $main::out if ($main::prefix{main});
 
-    &CloseGeneralHTMLReport($outfile{synthesis}) if ($tasks{synthesis});
+    &CloseGeneralHTMLReport($outfile{synthesis}) if ($task{synthesis});
 
     ## Give the warning about the output prefix
     if ($main::verbose >= 2) {
@@ -1231,7 +1238,8 @@ are sampled in a random way.
 
 =cut
 	} elsif ($arg eq "-kfold") {
-	  $main::kfold = shift(@arguments);
+	  $main::kfold = lc(shift(@arguments));
+          next if ($main::kfold eq "none");
 	  &RSAT::error::FatalError($main::kfold, "Invalid k-fold value. Must be a Natural number.")
 	    unless &RSAT::util::IsNatural($main::kfold);
 	  &RSAT::error::FatalError("k-fold cannot be 1, because we need to partition the sites in testing and training sets.")
@@ -1253,7 +1261,7 @@ without re-running the time-consuming scanning steps.
 
 =cut
 	} elsif ($arg eq "-noperm") {
-	  $supported_tasks{permute} = 0;
+	  $supported_task{permute} = 0;
 
 	    ## Skip the matrix-scan step.
 
@@ -1267,7 +1275,7 @@ re-running the time-consuming scanning steps.
 
 =cut
 	} elsif ($arg eq "-noscan") {
-	  $supported_tasks{scan} = 0;
+	  $supported_task{scan} = 0;
 
 	    ## Skip the distrib comparison step
 
@@ -1282,7 +1290,7 @@ steps.
 
 =cut
 	} elsif ($arg eq "-nocompa") {
-	  $supported_tasks{compare} = 0;
+	  $supported_task{compare} = 0;
 
 	    ## Skip the distrib comparison graphs
 
@@ -1294,7 +1302,7 @@ Skip the step of drawing comparison graphs.
 
 =cut
 	} elsif ($arg eq "-nograph") {
-	  $supported_tasks{nographs} = 0;
+	  $supported_task{nographs} = 0;
 
 =pod
 
@@ -1729,10 +1737,10 @@ Calculate the OCC proba.
 	 my @tasks = split ",", $arg;
 	 foreach my $task (@tasks) {
 	   $task = lc($task);
-	   if ($supported_tasks{$task}) {
-	     $tasks{$task} = 1;
+	   if ($supported_task{$task}) {
+	     $task{$task} = 1;
 	   } else {
-	     &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	     &RSAT::error::FatalError($task, "Invalid tasks. Supported:", $supported_tasks);
 	   }
 	 }
 
@@ -2109,7 +2117,7 @@ sub CalcSequenceDistrib {
   print $main::out "\n";
 
   ## Execute the command
-  if ($tasks{scan}) {
+  if ($task{scan}) {
     &RSAT::message::TimeWarn("Computing observed distribution",
 			     "\nseq_type=".$seq_type,
 			     "\nmatrix_file=".$matrix_file,
@@ -2167,7 +2175,7 @@ sub AddSequenceDistribOptions_classfreq {
 #   $main::outfile{$seq_type} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib_matrixscan.tab";
 
 #   ## Scan the sequences if requested
-#   return unless  ($tasks{scan});
+#   return unless  ($task{scan});
 #   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{'empirical_distrib_'.$seq_type})
 #     if ($main::verbose >= 2);
 
@@ -2404,7 +2412,7 @@ sub PermuteMatrixColumns {
     push @files_to_index, 'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm' if ($perm_nb{$seq_type} > 0);
   }
 
-  if ($tasks{permute}) {
+  if ($task{permute}) {
 
     ## Remove previous version of the column-permuted matrix files
     ## before appending the new permuted columns
@@ -2446,7 +2454,7 @@ sub CompareDistrib {
 
   $outfile{distrib_compa} = $matrix_prefix{$matrix_name}."_score_distrib_compa";
 
-  if ($tasks{compare}) {
+  if ($task{compare}) {
     &RSAT::message::TimeWarn("Comparing score distributions",  $outfile{distrib_compa})
       if ($main::verbose >= 2);
     &RSAT::message::Info("\n", "distrib_files", @distrib_files)
@@ -2469,7 +2477,7 @@ sub CompareDistrib {
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
   }
-  if ($tasks{graphs}) {
+  if ($task{graphs}) {
     &RSAT::message::TimeWarn("Generating comparison graphs")
       if ($main::verbose >= 2);
 
@@ -2619,7 +2627,7 @@ sub CompareDistrib {
       }
 
       unless ($no_cv) {
-	if ($tasks{theor_cv}) {
+	if ($task{theor_cv}) {
 
 	  $outfile{th_distrib_compa} = $matrix_prefix{$matrix_name}."_theoretical_score_distrib_compa";
 
@@ -3077,7 +3085,7 @@ sub GenerateHTMLReport {
 
   ## NWD curves and table
     
-    if ($tasks{plot}) {
+    if ($task{plot}) {
 	if ($main::plot_types{nwd}){
 	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
@@ -3214,7 +3222,7 @@ sub CloseGeneralHTMLReport{
 
     ## Draw NWD curve for al matrices for each required set of sequences
 
-    if ($tasks{plot}) {
+    if ($task{plot}) {
 	if ($main::plot_types{nwd}){
 	    print $synthesis_general "\n<h3>NWD curves </h3>\n";
 	    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
