@@ -194,9 +194,11 @@ package	main;
   our $species_suffix = "";
   our $full_species_ID = "";
 #  our $data_dir = &Get_data_dir();
+  our $registry = 'Bio::EnsEMBL::Registry';
   our $ensembl_version_safe = &get_ensembl_version_safe($db);
   our $ensembl_version_latest = &get_ensembl_version_latest($db);
   our $ensembl_version = &get_ensembl_version($db);
+  our $null = "<NULL>";
 
   our $get_available_species = 0;
   our $ref_seq = "";
@@ -279,17 +281,9 @@ package	main;
   ## Change Ensembl version to EnsemblGenomes version if required
   if (lc($db) eq "ensemblgenomes") {
     use Bio::EnsEMBL::Registry;
-    my $registry = 'Bio::EnsEMBL::Registry';
-    my ($host,$port) = &Get_host_port($db);
-    &RSAT::message::TimeWarn("Loading registry from EnsemblGenomes") if ($main::verbose >= 2);
-    $registry->load_registry_from_db(
-        -host => $host,
-        -port => $port,
-        -user => 'anonymous',
-	-species => 'multi',
-        -db_version => $ensembl_version
-    );
-
+    &RSAT::message::TimeWarn("download-ensembl-variations", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
+    &LoadRegistry($registry, $db, $ensembl_version);
+    
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
       if ($dba->species() eq "multi") {
@@ -1135,14 +1129,20 @@ which comprises repositories for the following taxa: Bacteria
 
 In Oct 2014, EnsemblGenomes supports >15,000 species.
 
+=item I<ensemblall>
+
+Load both Ensembl and Ensembl Genomes.
+
 =back
 
 =cut
    } elsif ($arg eq "-db") {
     $main::db = lc(shift(@arguments));
     unless (($main::db eq "ensembl")
-	    || ($main::db eq "ensemblgenomes")) {
-	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl, ensemblgenomes");
+	    || ($main::db eq "ensemblgenomes")
+	    || ($main::db eq "ensemblall")
+            ) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,ensemblall");
     }
 
 =pod

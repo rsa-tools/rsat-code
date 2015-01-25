@@ -56,7 +56,7 @@ EXT_APP_TARGETS=\
 	install_blast \
 	install_ensembl_bioperl \
 	install_ensembl_api \
-	install_vmatch
+	install_vmatch 
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
