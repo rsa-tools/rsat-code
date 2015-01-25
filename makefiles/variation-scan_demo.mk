@@ -6,8 +6,8 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
 V=2
 SPECIES=Homo_sapiens
-ASSEMBLY=GRCh38
-ENSEMBL_VERSION=77
+ASSEMBLY=GRCh37
+ENSEMBL_VERSION=75
 
 ## The folder does not depend on the ensembl version anymore.  The
 ## following option should be used only for specific purpose (when
@@ -60,21 +60,90 @@ convert_var:
 	@echo "	${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}"
 
 ################################################################
+## get variation information from IDs or from a bed file region
+
+## Bed file from the demo directory
+BED_VARIANTS=${DEMO_DIR}/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed
+VAR_FROM_BED_OUT=${RESULT_DIR}/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19
+ID_VARIANTS=${DEMO_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt
+VAR_FROM_ID_OUT=${RESULT_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs
+
+GET_VAR_CMD=get-variations \
+	-species ${SPECIES} \
+	-e_version ${ENSEMBL_VERSION} \
+	-a_version ${ASSEMBLY} \
+	${SPECIES_SUFFIX_OPT} 
+
+GET_VAR_BED_CMD=${GET_VAR_CMD} \
+	-i ${BED_VARIANTS} \
+	-format bed \
+	-o ${VAR_FROM_BED_OUT}.varBed
+
+GET_VAR_ID_CMD=${GET_VAR_CMD} \
+	-i ${ID_VARIANTS} \
+	-format id \
+	-o ${VAR_FROM_ID_OUT}.varBed
+
+get_var_from_bed:
+	@echo "${GET_VAR_BED_CMD}"
+	@${GET_VAR_BED_CMD}
+	@echo "Out file"
+	@echo "	${VAR_FROM_BED_OUT}"
+
+get_var_from_ID:
+	@echo "${GET_VAR_ID_CMD}"
+	@${GET_VAR_ID_CMD}
+	@echo "Out file"
+	@echo "	${VAR_FROM_ID_OUT}"
+
+
+
+################################################################
 ## Retrieve the sequences surrounding a set of input variations
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${SPECIES} \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
-	${SPECIES_SUFFIX_OPT} \
+	${SPECIES_SUFFIX_OPT} 
+
+RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
 	-i ${RESULT_DIR}/${VARIANTS}.varBed \
 	-mml 30 -format varBed \
 	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
-retrieve_var:
-	@echo "${RETRIEVE_VAR_CMD}"
-	@${RETRIEVE_VAR_CMD}
+
+retrieve_var_varbed:
+	@echo "${RETRIEVE_VAR_CMD_VARBED}"
+	@${RETRIEVE_VAR_CMD_VARBED}
 	@echo "Out file"
 	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varseq"
+
+
+RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
+	-i  ${BED_VARIANTS}\
+	-mml 30 -format bed \
+	-o ${VAR_FROM_BED_OUT}.varseq
+
+retrieve_var_bed:
+	@echo "${RETRIEVE_VAR_CMD_BED}"
+	@${RETRIEVE_VAR_CMD_BED}
+	@echo "Out file"
+	@echo "${VAR_FROM_BED_OUT}.varseq"
+
+
+
+RETRIEVE_VAR_CMD_ID=${RETRIEVE_VAR_CMD} \
+	-i  ${ID_VARIANTS} \
+	-mml 30 -format id \
+	-o ${VAR_FROM_ID_OUT}.varseq
+
+retrieve_var_id:
+	@echo "${RETRIEVE_VAR_CMD_ID}"
+	@${RETRIEVE_VAR_CMD_ID}
+	@echo "Out file"
+	@echo "	${VAR_FROM_ID_OUT}.varseq"
+
+
 
 ################################################################
 ## Scan selected variations with the matrix of interest
