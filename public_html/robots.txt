@@ -2,3 +2,9 @@ User-agent: *
 Disallow: data
 Disallow: tmp
 Disallow: lib
+Disallow: /rsat/data
+Disallow: /rsat/tmp
+Disallow: /rsat/lib
+Disallow: /rsa-tools/data
+Disallow: /rsa-tools/tmp
+Disallow: /rsa-tools/lib
