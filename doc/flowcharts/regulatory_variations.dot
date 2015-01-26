@@ -20,10 +20,20 @@ digraph {
     genomic_regions -> 	get_variations_input
     variation_ids -> 	get_variations_input
     get_variations_input  [shape="circle", style="filled", fillcolor="#FFFFFF", label="OR" fontsize=8 width="0.001" height="0.001" margin="0"];
+
+    ## Convert variations
+    variation_file  [shape="record", style="filled", fillcolor="#D6EEFA", label="{Variation file|various formats (VCF,GVF,varBed)}"];
+    variation_file -> convert_variations
+    convert_variations  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{convert-variations}", URL="http://localhost/rsat/convert-variations_form.cgi", fontcolor="#0D73A7"];
+    convert_variations -> variation_info_table
+
+    ## Get variations
     get_variations_input -> get_variations
     get_variations  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{get-variations}", URL="http://localhost/rsat/get-variations_form.cgi", fontcolor="#0D73A7"];
     get_variations -> variation_info_table
     variation_info_table  [shape="record", style="filled", fillcolor="#D6EEFA", label="{Variation info table|varBed (bed-derived)}"];
+
+    ## Retrieve-variations
     variation_info_table -> retrieve_variation_seq
     retrieve_variation_seq  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{retrieve-variation-seq}", URL="http://localhost/rsat/retrieve-variation-seq_form.cgi", fontcolor="#0D73A7"];
     retrieve_variation_seq -> variation_sequences
