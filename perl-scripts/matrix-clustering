@@ -1977,9 +1977,10 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'block\'); 
-       $(\'#cluster_--nb--\').css(\'display\', \'block\');
+       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
+       $(\'#cluster_--nb--\').slideToggle(\'fast\');
      }); 
+       $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
   });
     ';
   } else{
@@ -1989,8 +1990,9 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-         $(\'#cluster_--nb--\').css(\'display\', \'block\');
+       $(\'#cluster_--nb--\').slideToggle(\'fast\');
      }); 
+       $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
   });
     ';
   }
@@ -2033,24 +2035,6 @@ sub alignment_table{
 
 
 ###################################
-## Hide/show the logo tree
-sub toogle_tree{
-
-  my $toogle_tree  = 
-      '
-// Slide the logo tree
-  $(document).ready(function(){
-    $(\'#button_logo_tree_--nb--\').click(function(){
-       $(\'#cluster_--nb--\').css(\'display\', \'block\');
-     }); 
-//  $(\'#cluster_--nb--\').css(\'display\', \'none\');
-  });
-';
-  return($toogle_tree);
-}
-
-
-###################################
 ## Hide/show the alignment table
 sub toogle_branch_consensus_table{
 
@@ -2076,13 +2060,13 @@ sub Display_Selected_Branch{
 '
   $(document).ready(function(){
     $(\'#cluster_--nb--_merge_level_--level--\').click(function(){
-       showOne("cluster_--nb--_level_--level--")
+       showOneRow("cluster_--nb--_level_--level--");
+       showOneTable("branch_consensus_cluster_--nb--");
      }); 
   }); 
 ';
     return($selected_branch);
 }
-
 
 
 ###################################
@@ -2094,7 +2078,7 @@ sub hide_branch_motifs {
 // Hide the logo tree
   $(document).ready(function(){
     $(\'#hide_branch_table_--nb--\').click(function(){
-       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+       $(\'#branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
      }); 
   });
 ';
@@ -2219,7 +2203,7 @@ sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="tab branch_consensus_cluster_--nb--">
+    <div class="tab cons_tab" id="branch_consensus_cluster_--nb--">
     <div id="hide_branch_table_--nb--" class="Cluster_results" style="display:block; clear:both">Hide</div>
 		<table style="display:block; clear:both;">
 			<thead>
@@ -2561,7 +2545,7 @@ sub ReportStyleCSS{
 	background-color: #97C0F9;
 	float: left;
 	margin: 5px 3px 3px 3px;
-	width: 150px;
+	width: 110px;
 	height: 20px;
 	position: relative;
 	display: inline-block;
@@ -2696,8 +2680,8 @@ sub ReportStyleCSS{
 
 
   #hclust_tree_head {
-  width: 950px;
-  heigth: 500px;
+  width: 900px;
+  heigth: 400px;
   margin-top: 15px;
   margin-bottom: 5px;
   display: inline-block;
@@ -2773,10 +2757,9 @@ sub ReportStyleCSS{
     font-size: 12px;
   }
 
-
   #heatmap {
-	heigth: 1100px;
-	width: 900px;
+	heigth: 700px;
+	width: 875px;
   }
   
   #show_forest {
@@ -3172,7 +3155,7 @@ sub InsertHeatMap {
 
     my $heat_map = ' 
 	<div class="tab">
-		<p><strong>Heatmap with consensus alignment</strong></p>
+		<p><strong>Heatmap with consensus alignment</strong>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_distance_table.tab').'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_heatmap.pdf').'">PDF</a></p>
 		<img id="heatmap" src="'.$main::outfile{heatmap}.'">
 	</div>
     ';
@@ -3307,8 +3290,8 @@ sub InsertTreesAndBranchMotifs {
 	## Draw the logo tree
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
-                      <div id="cluster_--nb--" class="logo_tree">
-                      <div id="hide_tree_--nb--" class="Cluster_results" style="display:block">Hide</div>
+                      <div id="cluster_--nb--" class="logo_tree"">
+                      <div id="hide_tree_--nb--" class="Cluster_results" style="clear:both; position:relative; float:left" >Hide</div>
 		      <script type="text/javascript">
                 ';
 	my $tree_button = '<div class="Cluster_results" id="button_logo_tree_--nb--">Logo tree</div>';
@@ -3338,17 +3321,12 @@ sub InsertTreesAndBranchMotifs {
         $all_d3_trees .= "\n".$d3_logo_tree."\n";
 	$insert_div .= "\n".$tree_button."\n";
 
-	## Add the code to hide/show the logo tree
-	my $toogle_tree = &toogle_tree();
-	$toogle_tree =~ s/--nb--/$num/g;
-
 	my $hide_single_tree = &hide_tree();
 	$hide_single_tree =~ s/--nb--/$num/g;
 
 	my $hide_single_branch_table = &hide_branch_motifs();
 	$hide_single_branch_table =~ s/--nb--/$num/g;
 
-	$script_jquery .= $toogle_tree."\n\n";
 	$script_jquery .= $hide_single_tree."\n\n";
 	$script_jquery .= $hide_single_branch_table."\n\n";
 	
@@ -3395,10 +3373,15 @@ sub InsertTreesAndBranchMotifs {
     }
 
     $script_jquery .= "\n".'
-    function showOne(id) {
+    function showOneRow(id) {
        $(\'.branch_motifs\').css(\'display\', \'table-row\');
        $(\'.branch_motifs\').not(\'#\' + id).css(\'display\', \'none\');
-     }'."\n";
+     };
+
+    function showOneTable(id) {
+       $(\'.cons_tab\').css(\'display\', \'table\');
+       $(\'.cons_tab\').not(\'#\' + id).css(\'display\', \'none\');
+     };'."\n";
     $script_jquery .= "</script>\n";
 }
 
@@ -3420,9 +3403,9 @@ sub DisplaySingleCluster{
 	<div class="cluster_info_head">
 	  <strong>Click on the buttons to display separately the information of each cluster.</strong>
 	</div>
-	<div class="display"><strong>Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
+	<div class="display"><strong style="display:block">Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
-	<div class="display"><strong>Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
+	<div class="display"><strong style="display:block">Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
     </div> 
     ';
     print $syn $div_display;
@@ -3449,11 +3432,11 @@ sub InsertListOfFiles {
 	    </thead>
 	    <tbody>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_distance_table.html').'"><strong>Distance table</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_distance_table.tab').'"><strong>Distance table</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_internal_nodes_attributes.html').'"><strong>Internal nodes attributes</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_internal_nodes_attributes.tab').'"><strong>Internal nodes attributes</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
 		   </tr>
 		   <tr>
@@ -3461,11 +3444,11 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa.html').'"><strong>Pairwise comparison</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa.tab').'"><strong>Pairwise comparison</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa_matrix_descriptions.html').'"><strong>Matrix description</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa_matrix_descriptions.tab').'"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
 		   <tr>
@@ -3481,7 +3464,7 @@ sub InsertListOfFiles {
 
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_heatmap.pdf').'"><strong>Heatmap</strong></a></td>
-		      <td class="tab_spacer_2">the heatmap showing the hierarchical tree with the clusters and the alignments.</td>
+		      <td class="tab_spacer_2">The heatmap showing the hierarchical tree with the clusters and the alignments.</td>
 		   </tr>
                      ';
       }
@@ -3541,8 +3524,6 @@ sub Synthesis {
 
     &InsertAlignmentTable();
 
-    &InsertHeatMap();
-
     &InsertInfoDiv();
 
     print $syn '<div class="sep_clusters_div">'."\n";
@@ -3550,6 +3531,10 @@ sub Synthesis {
     print $syn "\n".'</div>';
 
     &DisplaySingleCluster();
+
+    if($draw_heatmap == 1){
+	&InsertHeatMap();
+    }
 
     &InsertListOfFiles();
 
