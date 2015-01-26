@@ -15,7 +15,8 @@ $query = new CGI;
 ### default values for filling the form
 $default{demo_descr1} = "";
 $default{organism} = "Homo_sapiens_GRCh37";
-$default{input_type}="bed";
+$default{input_type}="gvf";
+$default{out_type}="rsat-var";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant, 
                    ## has to be consistent with the longest matrix to be used
 ### replace defaults by parameters from the cgi call, if defined
@@ -26,11 +27,11 @@ foreach $key (keys %default) {
 }
 
 ### print the form ###
-&RSA_header("retrieve variation sequence", 'form');
+&RSA_header("Get variations information", 'form');
 
 ### head
 print "<CENTER>";
-print "Given a set of IDs for polymorphic variations, retrieve the corresponding variants and their flanking sequences, in order to scan them wiht the tool <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
+print "From a set of genomic regions or varian IDs get the information of variants contain in the genomic regions or mathching the input IDs.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
@@ -39,9 +40,10 @@ print "</CENTER>";
 
 print $default{demo_descr1};
 
-print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
+print $query->start_multipart_form(-action=>"get-variations.cgi");
 
 
+#print "<FONT FACE='Helvetica'>";
 
 #### Select organims to retrieve variants sequences from
 
@@ -54,52 +56,43 @@ print "<p>\n";
 ### from where variants annotated in ensembl variations will be extracted.
 
 print "<p>";
-print "<B>Variants or regions in bed format</B>&nbsp;";
+print "<B>Variations IDs or genomic regions of interest</B>&nbsp;";
 
 
 print "<BR>\n";
 print "<UL>\n";
- if ($variants_file = $query->param('variants_file')) {
-    ## Variants file is already on the server machine
-    ## (piped from a previous script)
-    $variants_url = $variants_file;
-    $variants_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
-    $variantsChoiceString .=  "<a href=$variants_url>";
-    $variantsChoiceString .=  " transferred from previous query<BR>\n";
-    $variantsChoiceString .=  "</a>";
-    $variants_format = $query->param(variants_format);
-    $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
-    $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
-    print $variantsChoiceString ;
 
-}else{
-    
-    print $query->textarea(-name=>'input',
-			   -default=>$default{input},
-			   -rows=>6,
-			   -columns=>65);
-### Option to upload a file with variant information (IDs, varBed file or 
+print $query->textarea(-name=>'input',
+		       -default=>$default{input},
+		       -rows=>6,
+		       -columns=>65);
+### Option to upload a file with variant information (IDs  or 
 ### genomic regions in bed format)
-    print "<BR>Upload variants or regions<BR>\n";
-    print $query->filefield(-name=>'uploaded_file',
-			    -default=>'',
-			    -size=>45,
-			    -maxlength=>200);
-    print "</UL>\n";
-    print "<BR>\n";
-    
-}
+print "<BR>Upload variants or regions<BR>\n";
+print $query->filefield(-name=>'uploaded_file',
+			-default=>'',
+			-size=>45,
+			-maxlength=>200);
+print "</UL>\n";
+print "<BR>\n";
+
+ ## Option to fetch sequence file from an URL
+print "&nbsp;"x3;
+print "URL of variants file or genomic regions available on a Web server (e.g. Galaxy).<BR>\n";
+print $query->textfield(-name=>'variants_url',
+			-default=>"",
+			-size=>62);
+print "<br>\n";
+
 ### Input type
 print "<B>Input format</B>&nbsp;";
-    print $query->popup_menu(-name=>'input_type',
-			     -Values=>['varBed','id','bed'],
-			     -default=>$default{input_type});
+print $query->popup_menu(-name=>'input_type',
+			 -Values=>['bed', 'id'],
+			 -default=>$default{input_type});
 print "<\p>";
-### Lenght of the sequences surranding the variant
-print "<B>Length of sequence around the variant</B>&nbsp;\n";
-print $query->textfield(-name=>'mml',
-			-default=>$default{mml},
-			-size=>5);
+
+
+print "<\p>";
 print "<BR>\n";
 
 ### send results by email or display on the browser
@@ -115,36 +108,32 @@ print $query->end_form;
 
 ################
 ## Data for demo
-
-## Data for demo
-my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 
-$descr1 .= "<p>In this demonstration, we retrieve the sequence of genetic variants.</p>\n
+$descr1 .= "<p>In this demonstration, we retrieve varian information using a list of IDs\n
 
 <p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
 
 $descr1 .= "</blockquote>";
 
-print $query->start_multipart_form(-action=>"retrieve-variation-seq_form.cgi");
-
-$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varBed";
-$demo_rsat_var=`cat $demo_rsat_var_file` ;
+print $query->start_multipart_form(-action=>"get-variations_form.cgi");
+## Data for demo
+$demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt";
+$demo_gvf_var=`cat $demo_gvf_file` ;
 
 
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
-print $query->hidden(-name=>'input',-default=>"$demo_rsat_var");
-print $query->hidden(-name=>'input_type',-default=>"varBed");
-print $query->hidden(-name=>'mml',-default=>"30");
+print $query->hidden(-name=>'input',-default=>"$demo_gvf_var");
+print $query->hidden(-name=>'input_type',-default=>"id");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.retrieve-variation-seq.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_retrieve-variation-seq.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='help.get-variations.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_get-variations.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

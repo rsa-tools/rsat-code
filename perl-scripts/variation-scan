@@ -886,6 +886,8 @@ sub Compare {
  
 	my $worst_score = $sorted_score[-1];
 	my $worst_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$worst_score};
+	#print "worst pval". $worst_pval;
+	#die "BOOM";
 
 	my $diff_1 = $best_score-$score;
 	my $diff_2 = $score-$worst_score;
@@ -906,6 +908,7 @@ sub Compare {
 	    $scanning_info{'w_diff'} = $diff_1;
 	    $scanning_info{'best_pval'} = $best_pval;
 	    $scanning_info{'worst_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
+	   
 	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
 	    $scanning_info{'best_offset'} =  join(";", @{ $scanning_score{$best_score}{'site_offset_start'} });
 	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
@@ -1041,18 +1044,18 @@ sub Printline {
 		  $scanning_info{'coord'},
 		  $scanning_info{'best_score'},
 		  $scanning_info{'worst_score'}, 
-		  $str .= sprintf("%.2f",$scanning_info{'w_diff'}),
-		  $str .= $scanning_info{'best_pval'},
+		  sprintf("%.2f",$scanning_info{'w_diff'}),
+		  $scanning_info{'best_pval'},
 		  $scanning_info{'worst_pval'}, 
-		  $str .= sprintf("%.2f",$scanning_info{'pval_ratio'}), 
-		  $str .= $scanning_info{'best_variant'},
+		  sprintf("%.2f",$scanning_info{'pval_ratio'}), 
+		  $scanning_info{'best_variant'},
 		  $scanning_info{'worst_variant'},
-		  $str .= $scanning_info{'best_offset'},
+		  $scanning_info{'best_offset'},
 		  $scanning_info{'worst_offset'},
-		  $str .= $scanning_info{'min_offset_diff'},
+		  $scanning_info{'min_offset_diff'},
 		  $scanning_info{'best_strand'},
 		  $scanning_info{'worst_strand'},
-		  $str .= $scanning_info{'strand_change'},
+		  $scanning_info{'strand_change'},
 		  $scanning_info{'best_seq'},
 		  $scanning_info{'worst_seq'},
 #		  $best_seq,
@@ -1060,6 +1063,10 @@ sub Printline {
 		  $scanning_info{'original_ref'}, ## Print major allele (reference allele) original id is to diferiantate from when scanning is donde on reference allele
 		  $is_ref_better, ## Flag if the best score comes from the major allele (reference allele)
 		  $scanning_info{'minor_allele_freq'});
+
+ # print "pval infor"," $scanning_info{'best_pval'}"."++"."$scanning_info{'worst_pval'}\n" ;
+ # print $str."\n";
+ # die "BOOM";
   print $out $str."\n"; ## Back
 }
 

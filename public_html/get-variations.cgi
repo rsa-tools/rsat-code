@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### print the header
-&RSA_header("convert-variations result", 'results');
+&RSA_header("get-variations result", 'results');
 
 
 ## Check security issues
@@ -32,7 +32,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$prefix = "convert-variations";
+$prefix = "get-variations";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
 @result_files = ();
 
@@ -42,7 +42,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/convert-variations";
+$command = "$SCRIPTS/get-variations";
 
 ################
 ## Parameters
@@ -73,7 +73,7 @@ if (defined($supported_organism{$organism})) {
 
 ## Get input
 
-my $input_set_file= $tmp_file_path."convert-variations_input";
+my $input_set_file= $tmp_file_path."get-variations_input";
 push @result_files ,("input", $input_set_file) ;
 if ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
@@ -97,14 +97,14 @@ if ($query->param('uploaded_file')) {
 	print SEQ $var;
 	close SEQ;
       } else {
-	&RSAT::error::FatalError("Variants could not  be downloaded from the URL ".$url);
+	&RSAT::error::FatalError("Input could not  be downloaded from the URL ".$url);
       }
     }
 
     ## Check sequence file
     my $file_type = `file $input_set_file`;
     if ($file_type =~ "gzip") {
-      &RSAT::message::TimeWarn("Uncompressing sequence file", $input_set_file);
+      &RSAT::message::TimeWarn("Uncompressing input file", $input_set_file);
       my $cmd = "mv ".$input_set_file." ".$input_set_file.".gz";
       $cmd .= " ; gunzip ".$input_set_file.".gz";
       &doit($cmd);
@@ -130,7 +130,7 @@ if ($query->param('uploaded_file')) {
 	}
 	close QUERY;
     } else {
-	&cgiError("You should enter at least one variant ID, genomic regions or variant in rsat format in the query box.");
+	&cgiError("You should enter at least one variant ID or genomic regions in the query box.");
     }
 }
 $parameters .= " -i ".$input_set_file;
@@ -140,21 +140,15 @@ $parameters .= " -i ".$input_set_file;
 ### Input format
 if ($query->param('input_type')) {
     ($input_type) = split " ", $query->param('input_type'); ### take the first word
-    $parameters .= " -from ".$input_type;
+    $parameters .= " -format ".$input_type;
 }
 
-
-### Out format
-if ($query->param('out_type')) {
-    ($out_type) = split " ", $query->param('out_type'); ### take the first word
-    $parameters .= " -to ".$out_type;
-}
 
 
 
 &ReportWebCommand($command." ".$parameters);
-$var_file = "$tmp_file_path.".$out_type;
-push @result_files, ("Variations in $out_type format", $var_file);
+$var_file = "$tmp_file_path.varBed";
+push @result_files, ("Variations in varBed format", $var_file);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
@@ -200,7 +194,6 @@ exit(0);
 ## Send result file to variation-scan form
 sub PipingForm {
     ### prepare data for piping
-    if ($out_type eq "varBed"){
 	print <<End_of_form;
 	<CENTER>
 	    <TABLE class="nextstep">
@@ -223,5 +216,5 @@ print '
 </TR>
 </TABLE>
 </CENTER>';
-    }
+    
 }
