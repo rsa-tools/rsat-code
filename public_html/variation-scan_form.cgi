@@ -78,7 +78,7 @@ foreach $key (keys %default) {
 &RSA_header("variation-scan", "form");
 print "<CENTER>";
 print " variation-scan.<P>\n";
-print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
+print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:</br> ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
@@ -306,7 +306,7 @@ sub Panel3 {
 		 );
 
    
-    print "<br/> <b>Threshold </b> <br/>";
+    print "<br> <b>Thresholds </b> </br>";
     
     print "<td bgcolor='#F6E6CA'>$thresh_matches</td>";
     

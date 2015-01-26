@@ -694,8 +694,9 @@ package	main;
 	      $last_id = "";
 	  }
 	  
-	  ## This could be causing the insertion crazyness where start was being marked as bigger than the end
-	  #$start ++ if ($info{'Reference_seq'} eq "-");
+	  ## ALE: This could be causing the insertion crazyness where start was being marked
+	  ## as bigger than the end. I'm not sure what was the aim of the line.
+	  ## $start ++ if ($info{'Reference_seq'} eq "-");
 	  push (@super_variation, join("\t",
 				       $chr,
 				       $start,
