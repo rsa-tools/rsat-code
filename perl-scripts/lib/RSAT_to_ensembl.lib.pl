@@ -397,8 +397,8 @@ sub Get_host_port {
   if ($db eq "ensembl") {
       return ('ensembldb.ensembl.org','5306');
   } elsif (lc($db) eq "ensemblgenomes") {
-#      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
-      return ("mysql.ebi.ac.uk","4157");
+      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
+#      return ("mysql.ebi.ac.uk","4157");
   }
 }
 
