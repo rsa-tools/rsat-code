@@ -60,6 +60,8 @@ package main;
 			dyads
 		       );
   @extra_tasks = qw(
+                        uninstall
+                        erase
 			distrib
 			ncf
 			intergenic_freq
@@ -289,18 +291,18 @@ package main;
       &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
     }
 
-    &RSAT::util::CheckOutDir($dir{install});
-
     $dir{genome} = $dir{install}."/genome";
-    &RSAT::util::CheckOutDir($dir{genome});
-
     $dir{oligos} = $dir{install}."/oligo-frequencies";
-    &RSAT::util::CheckOutDir($dir{oligos});
-
     $outfile{features} = $dir{genome}."/feature.tab";
     $outfile{synonyms} = $dir{genome}."/feature_names.tab";
     $outfile{genome} = $dir{genome}."/contigs.txt";
-
+    ## Create output directoryies if required
+    unless (($task{erase}) || ($task{uninstall})) {
+      &RSAT::util::CheckOutDir($dir{install});
+      &RSAT::util::CheckOutDir($dir{genome});
+      &RSAT::util::CheckOutDir($dir{oligos});
+    }
+    
 
     ################################################################
     ###################### Installation tasks ######################
@@ -310,27 +312,34 @@ package main;
     our $out = &OpenOutputFile($outputfile);
     &Verbose() if ($verbose >= 1);
 
-    &ParseGenome() if ($task{parse});
+    &Erase() if ($task{erase});
 
-    &UpdateConfig() if ($task{config});
-
-    &CreatePhylogeny() if ($task{phylogeny});
-
-    &StartAndStopCodons() if ($task{start_stop});
-
-    &IntergenicSegments() if ($task{genome_segments});
-
-    &AllUpstream() if ($task{allup});
-
-    &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
-
-    &CleanUp if ($task{clean});
-
-    ## Touch the installation dir to indicate the last modification date
-    $dir{main};
-    chdir($dir{main});
-    &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
-    system "touch $dir{install}";
+    &Uninstall() if ($task{uninstall});
+    
+    unless (($task{uninstall}) || ($task{erase})) {
+      
+      &ParseGenome() if ($task{parse});
+      
+      &UpdateConfig() if ($task{config});
+      
+      &CreatePhylogeny() if ($task{phylogeny});
+      
+      &StartAndStopCodons() if ($task{start_stop});
+      
+      &IntergenicSegments() if ($task{genome_segments});
+      
+      &AllUpstream() if ($task{allup});
+      
+      &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
+      
+      &CleanUp if ($task{clean});
+      
+      ## Touch the installation dir to indicate the last modification date
+      $dir{main};
+      chdir($dir{main});
+      &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
+      system "touch $dir{install}";
+    }
 
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
     print $main::out $exec_time if ($main::verbose >= 1);
@@ -387,6 +396,46 @@ sub Verbose {
 #    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
 }
 
+################################################################
+## Uninstall an organism by deleting its row from the configuration
+## file. This does not clean the organism directory on the hard drive
+## (which requires the task "erase").
+sub Uninstall {
+  foreach our $organism_short_name (@organisms) {
+    if (defined($supported_organism{$organism_short_name})) {
+      &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 0);
+      delete($supported_organism{$organism_short_name});
+    }
+  }
+  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
+}
+
+################################################################
+## Erase an organism by deleting its whole folder in
+## RSAT/public_html/data/genomes directory.
+sub Erase {
+  foreach our $organism_short_name (@organisms) {
+    &RSAT::message::Warning("Erasing organism", $organism_short_name) if ($main::verbose >= 0);
+      
+    ## Identify the data directory for the organism
+    my $organism_data_dir = "";
+    if ((defined($supported_organism{$organism_short_name})) &&
+	(defined($main::supported_organism{$organism_short_name}->{'data'}))) {
+      $organism_data_dir = $main::supported_organism{$organism_short_name}->{'data'};
+    } else {
+      $organism_data_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
+    }
+    
+    ## Remove the directory
+    if (-e $organism_data_dir) {
+      &RSAT::message::Warning("Erasing directory", $organism_data_dir) if ($main::verbose >= 0);
+      &doit("rm -rf ".$organism_data_dir, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    } else {
+      &RSAT::message::Warning("No need to erase unexisting directory", $organism_data_dir);
+    }
+
+  }
+}
 
 ################################################################
 ## Update configuration file
@@ -416,7 +465,6 @@ sub UpdateConfig {
     }
   }
   close $org_handle;
-
 
   ## Default limits of upstream region for retrieve-seq
   unless (defined($up_from)) {
@@ -460,14 +508,6 @@ sub UpdateConfig {
   }
   &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to)) if ($main::verbose >= 2);
 
-  ## 2009/05/13: The old perl config file should not be used anymore,
-  ## but is still exported for the sake of backward compatibility
-  ##
-  ## 2013/08/11: I comment this line, in principle we don't need this
-  ## outdated perl config file
-#  &UpdateConfigPerl();
-
-  ## Since 2009/05/13
   &UpdateConfigTab();
 }
 
