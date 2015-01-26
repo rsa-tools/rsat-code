@@ -574,6 +574,7 @@ sub Get_assembly_version {
       if ($main::verbose >= 5);
   $supported_file = &Get_supported_file();
 
+  ## Check if the organism is installed in the tab-delimited file of organisms
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
 
