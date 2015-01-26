@@ -423,10 +423,6 @@ package main;
       &Add_div_to_HTML();
       
       ################################################################
-      ## Creates the html template to display the tree
-      &create_html_tree_file();
-      
-      ################################################################
       ## Creates the html template to display the pylogram
       ##
       ## !! Temporary disabled
@@ -1407,9 +1403,9 @@ sub create_html_tree_file(){
     ## Values to change in the D3 tree
     my $svg_width = 24;
     my $svg_height = 80;
-    my $svg_x1 = 325;
+    my $svg_x1 = 15 * $nb_char;
     my $svg_y1 = -33;
-    my $svg_x2 = '24 + 375';
+    my $svg_x2 = '25 + '.$svg_x1.' + 30';;
     my $add_this = "";
     my $labels_num = 0;
     my $cluster_nb = 0;
@@ -2524,7 +2520,7 @@ sub CloseSynthesis {
 ## Report the command before running the analysis, for the sake of
 ## debugging and to facilitate copy-paste of the options.
 sub ReportCommand {
-  print $syn &open_menu_heading("<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
   print $syn "<pre>";
   print $syn "matrix-clustering ";
   &PrintArguments($syn);
@@ -2784,8 +2780,8 @@ sub ReportStyleCSS{
   }
   
   #show_forest {
-	heigth: 700px;
-	width: 700px;
+	heigth: auto;
+	width: 900px;
 	position: relative;
 	float: left;
 	clear: both;
@@ -2973,6 +2969,15 @@ sub ReadAlignmentTable {
 	my $link_logo_r = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
 	$alignment_table_data{$cluster_id}{$id}{logo} = &RSAT::util::RelativePath($main::outfile{summary}, $link_logo_d);
 	$alignment_table_data{$cluster_id}{$id}{logo_rc} = &RSAT::util::RelativePath($main::outfile{summary}, $link_logo_r);
+
+	## Calculate the max nb of characters and the width of the alignment 
+	## This numbers will be used to set the logos properly in the logo trees
+	if(length($split_line[1]) >= $nb_char){
+	    $nb_char = length($split_line[1]);
+	    $alignment_size{$cluster_id}{nb_char} = $nb_char;
+	}
+	$alignment_size{$cluster_id}{width} = $split_line[6];
+
 	$number_of_motifs++;
 
 	$ids_to_cluster{$id} = $cluster_id;
@@ -3086,11 +3091,11 @@ sub InsertSmallForest {
     ';
 
     ## D3 values of the parameters of the small trees
-    my $svg_width = 6;
-    my $svg_height = 14;
-    my $svg_x1 = 150;
-    my $svg_y1 = -5;
-    my $svg_x2 = '6 + 175';
+    my $svg_width = 7;
+    my $svg_height = 18;
+    my $svg_x1 = 6.25 * $nb_char;
+    my $svg_y1 = -7;
+    my $svg_x2 = '6 + '.$svg_x1.' + 30';
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
@@ -3124,12 +3129,12 @@ sub InsertSmallForest {
 	    
 	    my $tree = &logo_tree();
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/700/g;
+	    $tree =~ s/--widthtree--/800/g;
 	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/150/g;
+	    $tree =~ s/--size--/300/g;
 	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
-	    $tree =~ s/--height--/70 + 11 * $cluster_size/g;
+	    $tree =~ s/--height--/70 + 13 * $cluster_size/g;
 	    $tree =~ s/--cl_id--/$cl_id_s/g;
 	    $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
 	    my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_".$num.".json");
@@ -3258,9 +3263,9 @@ sub InsertTreesAndBranchMotifs {
 
     my  $svg_width = 8.5;
     my  $svg_height = 35;
-    my  $svg_x1 = 160;
+    my  $svg_x1 = 6.25 * $nb_char;
     my  $svg_y1 = -15;
-    my  $svg_x2 = '12 + 110';
+    my  $svg_x2 = '7.5 + '.$svg_x1.' + 30';
     my $label_single_tree = '
 	node.append("a")
 	        .attr("xlink:href", function(d) { return d.url; })
@@ -3514,14 +3519,18 @@ sub Synthesis {
     ## Initialize the variables
     %ids_to_cluster = ();
     %alignment_table_data = ();
+    %alignment_size = ();
     $script_jquery = "";
     $all_d3_trees = "";
     $all_consensus_table = "";
     $number_of_motifs = 0;
+    $nb_char = 0;
 
     &ReadAlignmentTable();
-    $number_of_clusters = scalar(keys %alignment_table_data);
-    
+    $number_of_clusters = scalar(keys %alignment_table_data);      
+
+    &create_html_tree_file();
+
     &OpenScriptJQuery();
     
     &ReportStyleCSS();
