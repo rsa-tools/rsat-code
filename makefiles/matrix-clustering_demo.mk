@@ -52,7 +52,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth w ${MIN_W} \
 		-heatmap\
 		-hclust_method ${HCLUST_METHOD} \
-		-label name,consensus ${OPT} \
+		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}
 _cluster:
 	@echo
