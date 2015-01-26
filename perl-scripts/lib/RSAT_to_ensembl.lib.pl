@@ -397,8 +397,8 @@ sub Get_host_port {
   if ($db eq "ensembl") {
       return ('ensembldb.ensembl.org','5306');
   } elsif (lc($db) eq "ensemblgenomes") {
-#      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
-      return ("mysql.ebi.ac.uk","4157");
+      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
+#      return ("mysql.ebi.ac.uk","4157");
   }
 }
 
@@ -595,7 +595,7 @@ sub Get_assembly_version {
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
 			      "\n\tquery", $species, $main::db,$ensembl_version,
 			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
-	    ) if ($main::verbose >= 5);
+	    ) if ($main::verbose >= 0);
 	if ((lc($species) eq lc($db_species)) 
 	    && ($db_db eq $main::db)
 	    && ($ensembl_version eq $db_ensembl_version)
