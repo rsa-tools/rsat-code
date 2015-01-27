@@ -27,7 +27,7 @@ $default{matrix_file}="";
 $default{matrix_format} = "transfac";
 $default{hclust_method}="average";
 $checked{$default{bg_method}} = "CHECKED";
-
+$default{labels} = "name";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
@@ -91,6 +91,11 @@ print "<B><A HREF='help.matrix-clustering.html#hclust_method'>Aglomeration rule<
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
+
+print "<b>Labels to display in logo trees</b>";
+print $query->popup_menu(-name=>'labels',
+ 			 -Values=>["consensus", "id", "name"],
+ 			 -default=>$default{labels});
 
 
 ################################################################
