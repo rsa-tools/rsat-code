@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### print the header
-&RSA_header("retrieve-variation-seq result", 'results');
+&RSA_header("variation-info result", 'results');
 
 
 ## Check security issues
@@ -32,7 +32,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$prefix = "retrieve-variation-seq -v 0";
+$prefix = "variation-info";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
 @result_files = ();
 
@@ -42,7 +42,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/retrieve-variation-seq";
+$command = "$SCRIPTS/variation-info";
 
 ################
 ## Parameters
@@ -73,39 +73,66 @@ if (defined($supported_organism{$organism})) {
 
 ## Get input
 
-unless ($input_set_file=$query->param('variants_file')){
-    $input_set_file= $tmp_file_path."retrieve-variation-seq_input";
-    if ($query->param('uploaded_file')) {
-	$upload_file = $query->param('uploaded_file');
-	if ($upload_file =~ /\.gz$/) {
-	    $input_set_file .= ".gz";
+my $input_set_file= $tmp_file_path."variation-info_input";
+push @result_files ,("input", $input_set_file) ;
+if ($query->param('uploaded_file')) {
+    $upload_file = $query->param('uploaded_file');
+    if ($upload_file =~ /\.gz$/) {
+	$input_set_file .= ".gz";
+    }
+    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+    open INPUT_FILE, ">". $input_set_file ||
+	&cgiError("Cannot store input file in temporary directory");
+    while (<$upload_file>) {
+	print INPUT_FILE;
+    }
+    close INPUT_FILE;
+}elsif ($query->param('variants_url') =~ /\S/) {
+    my $url = $query->param('variants_url');
+    &RSAT::message::Info("Fetching variants from URL ".$url) if ($ENV{rsat_echo} >= 1);
+    my $var = "";
+    if (open SEQ, ">$input_set_file") {
+      $var = get($url);
+      if ($var =~ /\S/) {
+	print SEQ $var;
+	close SEQ;
+      } else {
+	&RSAT::error::FatalError("Input could not  be downloaded from the URL ".$url);
+      }
+    }
+
+    ## Check sequence file
+    my $file_type = `file $input_set_file`;
+    if ($file_type =~ "gzip") {
+      &RSAT::message::TimeWarn("Uncompressing input file", $input_set_file);
+      my $cmd = "mv ".$input_set_file." ".$input_set_file.".gz";
+      $cmd .= " ; gunzip ".$input_set_file.".gz";
+      &doit($cmd);
+    }
+
+    &RSAT::message::Debug("Variants file=", &RSAT::util::hide_RSAT_path($input_set_file), 
+			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
+	) if ($main::verbose >= 5);
+
+
+    ### Read sequence from the textarea "input"
+  } else {
+    my $input_var = $query->param('input');
+    $input_varc =~ s/\r/\n/g;
+    my @input_var = split (/[\n\r]/, $input_var);
+    if ($input_var =~ /\S/) {
+	open QUERY, ">".$input_set_file;
+	foreach my $row (@input_var) {
+	    next unless $row =~ /\S/; ## Skip empty rows
+	    chomp($row); ## Suppress newline character
+	    $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option
+	    print QUERY $row, "\n";
 	}
-	$type = $query->uploadInfo($upload_file)->{'Content-Type'};
-	open INPUT_FILE, ">". $input_set_file ||
-	    &cgiError("Cannot store input file in temporary directory");
-	while (<$upload_file>) {
-	    print INPUT_FILE;
-	}
-	close INPUT_FILE;
+	close QUERY;
     } else {
-	my $input_var = $query->param('input');
-	$input_varc =~ s/\r/\n/g;
-	my @input_var = split (/[\n\r]/, $input_var);
-	if ($input_var =~ /\S/) {
-	    open QUERY, ">".$input_set_file;
-	    foreach my $row (@input_var) {
-		next unless $row =~ /\S/; ## Skip empty rows
-		chomp($row); ## Suppress newline character
-		$row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option
-		print QUERY $row, "\n";
-	    }
-	    close QUERY;
-	} else {
-	    &cgiError("You should enter at least one variant ID, genomic regions or variant in rsat format in the query box.");
-	}
+	&cgiError("You should enter at least one variant ID or genomic regions in the query box.");
     }
 }
-push @result_files ,("input", $input_set_file) ;
 $parameters .= " -i ".$input_set_file;
 &DelayedRemoval($input_set_file);
 
@@ -117,14 +144,11 @@ if ($query->param('input_type')) {
 }
 
 
-### Lenght of the longest matrix, sequence window around the variant ###
-if (&IsInteger($query->param('mml'))) {
-    $parameters .= " -mml ".$query->param('mml');
-}
+
 
 &ReportWebCommand($command." ".$parameters);
-$var_file = "$tmp_file_path.varSeq";
-push @result_files, ("sequences", $var_file);
+$var_file = "$tmp_file_path.varBed";
+push @result_files, ("Variations in varBed format", $var_file);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
@@ -170,19 +194,20 @@ exit(0);
 ## Send result file to variation-scan form
 sub PipingForm {
     ### prepare data for piping
-    print <<End_of_form;
-    <CENTER>
-	<TABLE class="nextstep">
-	<TR>
-	<TD colspan=2>
-	<H3>Next step</H3>
-	</TD>
-	</TR>
-	<TR>
-	<TD valign=top>
-	<FORM METHOD="POST" ACTION="variation-scan_form.cgi">
-        <INPUT type="hidden" NAME='variants_seq_file' VALUE="$var_file">
-	<INPUT type="submit" value="variation scan">
+	print <<End_of_form;
+	<CENTER>
+	    <TABLE class="nextstep">
+	    <TR>
+	    <TD colspan=2>
+	    <H3>Next step</H3>
+	    </TD>
+	    </TR>
+	    <TR>
+	    <TD valign=top>
+	    <FORM METHOD="POST" ACTION="retrieve-variation-seq_form.cgi">
+	    <INPUT type="hidden" NAME="variants_file" VALUE="$var_file">
+	    <INPUT type="hidden" NAME="input_type" VALUE="varBed">
+	<INPUT type="submit" value="retrieve variants sequence">
 	</FORM>
 	</TD>
  
@@ -191,4 +216,5 @@ print '
 </TR>
 </TABLE>
 </CENTER>';
+    
 }
