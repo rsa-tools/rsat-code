@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### print the header
-&RSA_header("get-variations result", 'results');
+&RSA_header("variation-info result", 'results');
 
 
 ## Check security issues
@@ -32,7 +32,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$prefix = "get-variations";
+$prefix = "variation-info";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
 @result_files = ();
 
@@ -42,7 +42,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/get-variations";
+$command = "$SCRIPTS/variation-info";
 
 ################
 ## Parameters
@@ -73,7 +73,7 @@ if (defined($supported_organism{$organism})) {
 
 ## Get input
 
-my $input_set_file= $tmp_file_path."get-variations_input";
+my $input_set_file= $tmp_file_path."variation-info_input";
 push @result_files ,("input", $input_set_file) ;
 if ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
