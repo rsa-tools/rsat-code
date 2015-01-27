@@ -27,7 +27,7 @@ foreach $key (keys %default) {
 }
 
 ### print the form ###
-&RSA_header("Get variations", 'form');
+&RSA_header("Variation information", 'form');
 
 ### head
 print "<CENTER>";
@@ -41,7 +41,7 @@ print "</CENTER>";
 
 print $default{demo_descr1};
 
-print $query->start_multipart_form(-action=>"get-variations.cgi");
+print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 
 #print "<FONT FACE='Helvetica'>";
@@ -110,14 +110,12 @@ print $query->end_form;
 ################
 ## Data for demo
 $descr1 .= "<blockquote class ='demo'>";
-
-$descr1 .= "<p>In this demonstration, we retrieve varian information using a list of IDs\n
-
-<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
-
+$descr1 .= "<p>In this demonstration, we retrieve information about a set of variations specified by providing a list of IDs as query. </p>\n\n";
+$descr1 .= "<p>The genetic variations used in this example were taken from Weireauch, et al (Cell, 2014). ";
+$descr1 .= "These authors collected from the litterature a set of variants shown to affect transcription factor binding. </p>\n";
 $descr1 .= "</blockquote>";
 
-print $query->start_multipart_form(-action=>"get-variations_form.cgi");
+print $query->start_multipart_form(-action=>"variation-info_form.cgi");
 ## Data for demo
 $demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt";
 $demo_gvf_var=`cat $demo_gvf_file` ;
@@ -133,8 +131,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.get-variations.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_get-variations.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='help.variation-info.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_variation-info.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

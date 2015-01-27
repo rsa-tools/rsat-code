@@ -397,8 +397,8 @@ sub Get_host_port {
   if ($db eq "ensembl") {
       return ('ensembldb.ensembl.org','5306');
   } elsif (lc($db) eq "ensemblgenomes") {
-#      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
-      return ("mysql.ebi.ac.uk","4157");
+      return('mysql-eg-publicsql.ebi.ac.uk', '4157');
+#      return ("mysql.ebi.ac.uk","4157");
   }
 }
 
@@ -574,6 +574,7 @@ sub Get_assembly_version {
       if ($main::verbose >= 5);
   $supported_file = &Get_supported_file();
 
+  ## Check if the organism is installed in the tab-delimited file of organisms
   if (-f $supported_file ) {
     my ($file) = &OpenInputFile($supported_file);
 
