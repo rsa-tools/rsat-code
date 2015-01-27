@@ -67,31 +67,31 @@ VAR_FROM_BED_OUT=${RESULT_DIR}/Ballester_etal_elife_2014_module_beyondprimates_c
 ID_VARIANTS=${DEMO_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt
 VAR_FROM_ID_OUT=${RESULT_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs
 
-GET_VAR_CMD=get-variations \
+VAR_INFO_CMD=variation-info \
 	-species ${SPECIES} \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
 	${SPECIES_SUFFIX_OPT} 
 
-GET_VAR_BED_CMD=${GET_VAR_CMD} \
+VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
 	-i ${BED_VARIANTS} \
 	-format bed \
 	-o ${VAR_FROM_BED_OUT}.varBed
 
-GET_VAR_ID_CMD=${GET_VAR_CMD} \
+VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
 	-i ${ID_VARIANTS} \
 	-format id \
 	-o ${VAR_FROM_ID_OUT}.varBed
 
 get_var_from_bed:
-	@echo "${GET_VAR_BED_CMD}"
-	@${GET_VAR_BED_CMD}
+	@echo "${VAR_INFO_BED_CMD}"
+	@${VAR_INFO_BED_CMD}
 	@echo "Out file"
 	@echo "	${VAR_FROM_BED_OUT}"
 
 get_var_from_ID:
-	@echo "${GET_VAR_ID_CMD}"
-	@${GET_VAR_ID_CMD}
+	@echo "${VAR_INFO_ID_CMD}"
+	@${VAR_INFO_ID_CMD}
 	@echo "Out file"
 	@echo "	${VAR_FROM_ID_OUT}"
 
@@ -109,38 +109,38 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
 	-i ${RESULT_DIR}/${VARIANTS}.varBed \
 	-mml 30 -format varBed \
-	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
+	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq
 
 retrieve_var_varbed:
 	@echo "${RETRIEVE_VAR_CMD_VARBED}"
 	@${RETRIEVE_VAR_CMD_VARBED}
 	@echo "Out file"
-	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varseq"
+	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq"
 
 
 RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
 	-i  ${BED_VARIANTS}\
 	-mml 30 -format bed \
-	-o ${VAR_FROM_BED_OUT}.varseq
+	-o ${VAR_FROM_BED_OUT}.varSeq
 
 retrieve_var_bed:
 	@echo "${RETRIEVE_VAR_CMD_BED}"
 	@${RETRIEVE_VAR_CMD_BED}
 	@echo "Out file"
-	@echo "${VAR_FROM_BED_OUT}.varseq"
+	@echo "${VAR_FROM_BED_OUT}.varSeq"
 
 
 
 RETRIEVE_VAR_CMD_ID=${RETRIEVE_VAR_CMD} \
 	-i  ${ID_VARIANTS} \
 	-mml 30 -format id \
-	-o ${VAR_FROM_ID_OUT}.varseq
+	-o ${VAR_FROM_ID_OUT}.varSeq
 
 retrieve_var_id:
 	@echo "${RETRIEVE_VAR_CMD_ID}"
 	@${RETRIEVE_VAR_CMD_ID}
 	@echo "Out file"
-	@echo "	${VAR_FROM_ID_OUT}.varseq"
+	@echo "	${VAR_FROM_ID_OUT}.varSeq"
 
 
 
@@ -151,7 +151,7 @@ PVAL_RATIO=2
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VAR_SCAN_CMD=variation-scan -v ${V} \
-	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq \
+	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq \
 	-m ${MATRIX} -bg ${BG_MODEL} \
 	-uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
