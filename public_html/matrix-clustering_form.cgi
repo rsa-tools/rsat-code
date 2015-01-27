@@ -92,6 +92,7 @@ print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
 
+print "<hr>";
 print "<b>Labels to display in logo trees</b>";
 print $query->popup_menu(-name=>'labels',
  			 -Values=>["consensus", "id", "name"],
