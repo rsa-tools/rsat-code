@@ -107,14 +107,6 @@ print $query->popup_menu(-name=>'hclust_method',
 
 print "<h2>", "Display options", ,"</h2>";
 
-## Display consensus of merged matrices on internal branches of the
-## tree.
-print "<br>", $query->checkbox(-name=>'internal_cons',
-		       -checked=>$default{internal_cons},
-		       -label=>'');
-print "&nbsp;<A HREF='help.matrix-clustering.html#cons'>Display consensus of merged motifs on internal branches</A>";
-print "<BR>";
-
 print "<hr>";
 
 ################################################################
