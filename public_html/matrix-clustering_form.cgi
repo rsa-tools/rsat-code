@@ -70,6 +70,7 @@ print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacq
 print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
 print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>t</sup>\n";
 print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
+print "and <a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
 print "</CENTER>";
 
 ## demo description
