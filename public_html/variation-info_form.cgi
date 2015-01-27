@@ -40,7 +40,7 @@ print "</CENTER>";
 
 print $default{demo_descr1};
 
-print $query->start_multipart_form(-action=>"get-variations.cgi");
+print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 
 #print "<FONT FACE='Helvetica'>";
@@ -116,7 +116,7 @@ $descr1 .= "<p>In this demonstration, we retrieve varian information using a lis
 
 $descr1 .= "</blockquote>";
 
-print $query->start_multipart_form(-action=>"get-variations_form.cgi");
+print $query->start_multipart_form(-action=>"variation-info_form.cgi");
 ## Data for demo
 $demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt";
 $demo_gvf_var=`cat $demo_gvf_file` ;
@@ -132,8 +132,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.get-variations.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_get-variations.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='help.variation-info.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_variation-info.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
