@@ -27,15 +27,16 @@ foreach $key (keys %default) {
 }
 
 ### print the form ###
-&RSA_header("Get variations information", 'form');
+&RSA_header("Get variations", 'form');
 
 ### head
 print "<CENTER>";
-print "From a set of genomic regions or varian IDs get the information of variants contain in the genomic regions or mathching the input IDs.<P>\n";
+print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
-print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
+print ", Jeremy Delerce<sup>ci</sup>\n";
+print ", Yvon Mbouamboua<sup>t</sup>\n";
 print "</CENTER>";
 
 print $default{demo_descr1};

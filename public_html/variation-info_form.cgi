@@ -27,15 +27,16 @@ foreach $key (keys %default) {
 }
 
 ### print the form ###
-&RSA_header("Get variations information", 'form');
+&RSA_header("Variation information", 'form');
 
 ### head
 print "<CENTER>";
-print "From a set of genomic regions or varian IDs get the information of variants contain in the genomic regions or mathching the input IDs.<P>\n";
+print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
-print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
+print ", Jeremy Delerce<sup>ci</sup>\n";
+print ", Yvon Mbouamboua<sup>t</sup>\n";
 print "</CENTER>";
 
 print $default{demo_descr1};
@@ -109,11 +110,9 @@ print $query->end_form;
 ################
 ## Data for demo
 $descr1 .= "<blockquote class ='demo'>";
-
-$descr1 .= "<p>In this demonstration, we retrieve varian information using a list of IDs\n
-
-<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
-
+$descr1 .= "<p>In this demonstration, we retrieve information about a set of variations specified by providing a list of IDs as query. </p>\n\n";
+$descr1 .= "<p>The genetic variations used in this example were taken from Weireauch, et al (Cell, 2014). ";
+$descr1 .= "These authors collected from the litterature a set of variants shown to affect transcription factor binding. </p>\n";
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"variation-info_form.cgi");
