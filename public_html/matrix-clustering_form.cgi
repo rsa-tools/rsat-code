@@ -24,9 +24,6 @@ $default{ref_db} = "CHECKED";
 $default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
-#$default{pseudo_counts}=1;
-#$default{pseudo_distribution}="pseudo_prior";
-#$checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
 $default{hclust_method}="average";
 $checked{$default{bg_method}} = "CHECKED";
@@ -34,23 +31,18 @@ $checked{$default{bg_method}} = "CHECKED";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
-## $default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 100; ## JvH: Jaime, why did we initially set this threshold to 100 ? I suppress it since it is not in the demo makefile. 
 $default{'return_logoDP'} = "CHECKED";
 $default{'return_NSW'} = "CHECKED";
 $default{'return_NsEucl'} = "CHECKED";
-
-
-## motif database
-$default{compare_motif_database}="jaspar_core_vertebrates";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-#   if ($query->param($key) =~ /checked/i) {
-#     $checked{$key} = "CHECKED";
-#   }
+  if ($query->param($key) =~ /checked/i) {
+    $checked{$key} = "CHECKED";
+  }
 }
 
 
@@ -64,7 +56,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("matrix-clustering", "form");
 print "<CENTER>";
-print "Identify clusters of similar matrices and build consensus motifs by merging the matrices that belong to the same cluster.<P>\n";
+print "Measure the (dis)similarity between a set of motifs to identify clusters of similarities and align the motifs.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
