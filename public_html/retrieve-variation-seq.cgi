@@ -123,7 +123,7 @@ if (&IsInteger($query->param('mml'))) {
 }
 
 &ReportWebCommand($command." ".$parameters);
-$var_file = "$tmp_file_path.varseq";
+$var_file = "$tmp_file_path.varSeq";
 push @result_files, ("sequences", $var_file);
 
 #### execute the command #####
