@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-variations,v 1.0 2013/10/03 17:24:24 amedina Exp $
+# $Id: variation-info,v 1.0 2013/10/03 17:24:24 amedina Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-get-variations
+variation-info
 
 =head1 VERSION
 
@@ -19,7 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Taking as input variation IDs (rs numbers) or regions in a given genome I<get-variations> 
+Taking as input variation IDs (rs numbers) or regions in a given genome I<variation-info> 
 will retrieve the varians information varBed format.
 
 =head1 AUTHORS
@@ -42,7 +42,7 @@ will retrieve the varians information varBed format.
 
 =head1 USAGE
 
-get-variations [-i inputfile] [-o outputfile] [-v #] [-format variatio_format]
+variation-info [-i inputfile] [-o outputfile] [-v #] [-format variatio_format]
     [- col ID_column ] [-mml #] [-o output_file] [...]
 
 =head1 INPUT FORMAT
@@ -183,12 +183,12 @@ Installe organims from ensembl genomes.
 
 Get variation coordiantes from ensembl.
 Variants information obtained with this tool are retrived by
-I<get-variations>.
+I<variation-info>.
 
 =head2 convert-variations
 
 Convert between diferent variation data file types.
-I<get-variations> retrieves variants in varBed format, 
+I<variation-info> retrieves variants in varBed format, 
 <convert-variations> can be used to convert to vcf anf gvf formats.
 
 =head2 retrieve-variations-seq

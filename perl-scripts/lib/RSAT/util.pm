@@ -1003,12 +1003,13 @@ sub doit {
     my $job_script = "";
     $job_script .=  "#!".$shell."\n";
     $job_script .= "(cd ".$wd;
-    $job_script .=  "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
-    $job_script .=  "; hostname >> ".$job_file.".started"; 
-    $job_script .=  "; ".$command;
-    $job_script .=  "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
-    $job_script .=  "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
-    $job_script .=  " )"."\n";
+    $job_script .= "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
+    $job_script .= "; hostname >> ".$job_file.".started"; 
+    $job_script .= "; source ".$ENV{RSAT}."/RSAT_config.bashrc"; ## Apparently required for PERL5LIB
+    $job_script .= "; ".$command;
+    $job_script .= "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
+    $job_script .= "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
+    $job_script .= " )"."\n";
     open JOB, ">$job_file" || die "Cannot write job file ".$job_file;
     print JOB $job_script;
     close JOB;
@@ -1067,7 +1068,8 @@ sub doit {
       chomp($wd);
 
       ## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
-      $qsub_cmd = "qsub ".$selected_nodes;
+      $qsub_cmd = "qsub";
+      $qsub_cmd .= " ".$selected_nodes if ($selected_nodes);
       $qsub_cmd .= " -d ".$wd;
       $qsub_cmd .= " -m ".$batch_mail;
       $qsub_cmd .= " -N ".$job_file;
