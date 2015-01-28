@@ -101,15 +101,15 @@ print "<br><br>\n";
 print "<h2>", "Clustering options", ,"</h2>";
 
 ## Metric selected to build the hierarchical tree
-print "<b>Metric to build the tree.</b>";
-print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Metric  </A>&nbsp;</B>\n";
+## print "<b>Metric to build the tree.</b>";
+print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Metric to build the trees.  </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["cor", "Ncor"],
  			 -default=>$default{metric});
 print "<br><br>\n";
 
 ## Hierarchical clusterting agglomeration rule
-print "<b>Agglomeration rule</b>";
+## print "<b>Agglomeration rule</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rule  </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
