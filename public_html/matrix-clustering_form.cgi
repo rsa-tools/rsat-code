@@ -236,7 +236,7 @@ sub PrintMatrixClusteringMatchingScores {
 			    'offset'=>'offset between first and second matrices',
       );
 
-  &ThresholdsDiv("Matrix comparison scores and thresholds",
+  &ThresholdsDiv("Thresholds to define the clusters",
 			  "help.compare-matrices.html#return_fields",
 			  \@matching_scores,
 			  \%score_descriptions);
