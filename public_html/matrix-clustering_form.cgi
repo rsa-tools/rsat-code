@@ -106,6 +106,7 @@ print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Metric  </A>&nbs
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["cor", "Ncor"],
  			 -default=>$default{metric});
+print "<br><br>\n";
 
 ## Hierarchical clusterting agglomeration rule
 print "<b>Agglomeration rule</b>";
@@ -113,6 +114,7 @@ print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rul
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
+print "<br><br>\n";
 
 #######################################
 ## Specific options for output files
