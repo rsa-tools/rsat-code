@@ -47,6 +47,7 @@ $default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
 #$default{html_title}="";
 $default{markov_order} = "0";
 $default{nwd}="";
+$default{m_sites}="1";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -101,6 +102,12 @@ print "<fieldset>
 
 
 &GetMatrix();
+print "<p></p>";
+print $query->checkbox(-name=>'matrix_sites',
+  		       -checked=>$default{m_sites},
+		       -label=>'');
+
+print "&nbsp;Matrix file includes sites";
 print "<p><font color='orange'>Only the first matrix will be taken in acount</font></p>";
 
 print "<\p><b>K fold validation</B>&nbsp;";
