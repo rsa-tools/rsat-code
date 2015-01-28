@@ -3509,6 +3509,8 @@ sub Synthesis {
     $number_of_motifs = 0;
     $nb_char = 0;
 
+    $menu_nb = 200; ## Numbering of the IDs for collapsible elements
+
     &ReadAlignmentTable();
     $number_of_clusters = scalar(keys %alignment_table_data);      
 
