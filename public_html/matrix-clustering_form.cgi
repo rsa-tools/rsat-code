@@ -236,28 +236,7 @@ sub PrintMatrixClusteringMatchingScores {
 			    'offset'=>'offset between first and second matrices',
       );
 
-
-  # ## ##############################################################
-  # ## Other selectable output fields
-  # ##
-  # ## Note (JvH, 2014-05-15): I think these output fields are just
-  # ## ignored by compare-matrices, I should revise this.
-  
-  # my @other_fields = qw(matrix_number
-  # 		      matrix_id
-  # 		      matrix_name
-  # 		      matrix_ac
-  # 		      strand
-  # 		      direction
-  # 		      pos
-  # 		      consensus
-  # 		      alignments_pairwise
-  # 		      alignments_1ton
-  # 		     );
-
-
-
-  &aScoresAndThresholdsDiv("Matrix comparison scores and thresholds",
+  &ThresholdsDiv("Matrix comparison scores and thresholds",
 			  "help.compare-matrices.html#return_fields",
 			  \@matching_scores,
 			  \%score_descriptions);
@@ -266,7 +245,7 @@ sub PrintMatrixClusteringMatchingScores {
 
 ################################################################
 ## Display a collapsable div with selectable scores and thresholds
-sub aScoresAndThresholdsDiv {
+sub ThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
@@ -274,7 +253,7 @@ sub aScoresAndThresholdsDiv {
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
-  &aFieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
+  &FieldsThresholdsTableMC($help_file, $field_ref, $field_descr_ref);
 
   print "</fieldset><p/>";
   print '</div></div><p class="clear"></p>';
@@ -284,7 +263,7 @@ sub aScoresAndThresholdsDiv {
 ################################################################
 ## Display a table with checkboxes and thresholds for a set of
 ## specified fields
-sub aFieldsThresholdsTable {
+sub FieldsThresholdsTableMC {
   my ($help_file, $field_ref, $field_descr_ref) = @_;
   my @fields = @{$field_ref};
   my %field_descr = %{$field_descr_ref};
@@ -297,10 +276,6 @@ sub aFieldsThresholdsTable {
     my $uth = $default{'uth_'.$field} || "none";
 
     print "<tr valign='middle'>";
-#    print "<td>", $field, "</td>\n";
-    # print "<td>", $query->checkbox(-name=>'return_'.$field,
-    # 			   -checked=>$default{'return_'.$field},
-    # 			   -label=>''), "&nbsp;", $field, "</td>\n";
     print "<td>".$field."</td>\n";
     print "<td>", $query->textfield(-name=>'lth_'.$field,
 				    -default=>$lth,
