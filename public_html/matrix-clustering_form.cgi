@@ -236,8 +236,8 @@ sub PrintMatrixClusteringMatchingScores {
 			    'offset'=>'offset between first and second matrices',
       );
 
-  &ThresholdsDiv("Thresholds to define the clusters",
-			  "help.compare-matrices.html#return_fields",
+  &ThresholdsDiv(" Thresholds to define the clusters",
+			  "help.matrix-clustering.html#return_fields",
 			  \@matching_scores,
 			  \%score_descriptions);
 }
@@ -249,8 +249,8 @@ sub ThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
-  print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'102\')\" id=\"heading102\"><b>",$title,"</b>\n";
+  print "<div id=\"menu102\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
   &FieldsThresholdsTableMC($help_file, $field_ref, $field_descr_ref);
