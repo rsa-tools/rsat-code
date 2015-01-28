@@ -90,7 +90,7 @@ print "<h2>", "Motif comparison options", ,"</h2>";
 print $query->checkbox(-name=>'quick',
   		       -checked=>$default{quick},
   		       -label=>'');
-print "&nbsp;<A'><p><B>Make the motif comparison with compare-matrices-quick.</B></p><p><B>100 times faster. Threshold restricted to Ncor and Cor.</B></p></A>";
+print "&nbsp;<A'><B>Make the motif comparison with compare-matrices-quick.</B><B>100 times faster. Threshold restricted to Ncor and Cor.</B></A>";
 print "<br><br>\n";
 #print "<HR width=550 align=left>\n";
 
