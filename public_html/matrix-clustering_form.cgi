@@ -103,7 +103,6 @@ print $query->checkbox(-name=>'heatmap',
   		       -checked=>$default{heatmap},
   		       -label=>'');
 print "&nbsp;<A'><B>Draw a heatmap showing the distances between the motifs.</B></A>";
-print "<BR>";
 print "<HR width=550 align=left>\n";
 
 ## Export the trees in Newick format
@@ -112,7 +111,6 @@ print $query->checkbox(-name=>'Newick',
   		       -checked=>$default{newick},
   		       -label=>'');
 print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
-print "<BR>";
 print "<HR width=550 align=left>\n";
 
 
