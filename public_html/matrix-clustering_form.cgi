@@ -83,8 +83,20 @@ print "<hr>";
 print "<hr>";
 
 ############################################
-## Specific options for matrix-clustering
+## Specific options for motif comparison
+print "<h2>", "Motif comparison options", ,"</h2>";
 
+## Allow run compare-matrices-quick
+print $query->checkbox(-name=>'quick',
+  		       -checked=>$default{quick},
+  		       -label=>'');
+print "&nbsp;<A'><p><B>Make the motif comparison with compare-matrices-quick.</B></p><p><B>100 times faster. Threshold restricted to Ncor and Cor.</B></p></A>";
+print "<br><br>\n";
+#print "<HR width=550 align=left>\n";
+
+
+############################################
+## Specific options for matrix-clustering
 print "<h2>", "Clustering options", ,"</h2>";
 
 ## Hierarchical clusterting agglomeration rul
@@ -103,7 +115,7 @@ print $query->checkbox(-name=>'heatmap',
   		       -checked=>$default{heatmap},
   		       -label=>'');
 print "&nbsp;<A'><B>Draw a heatmap showing the distances between the motifs.</B></A>";
-print "<br>\n";
+print "<br><br>\n";
 #print "<HR width=550 align=left>\n";
 
 ## Export the trees in Newick format
@@ -112,7 +124,7 @@ print $query->checkbox(-name=>'Newick',
   		       -checked=>$default{newick},
   		       -label=>'');
 print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
-print "<br>\n";
+print "<br><br>\n";
 #print "<HR width=550 align=left>\n";
 
 
