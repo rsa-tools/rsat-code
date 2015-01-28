@@ -82,7 +82,7 @@ print "<hr>";
 &GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 print "<hr>";
 
-################################################################
+############################################
 ## Specific options for matrix-clustering
 
 print "<h2>", "Clustering options", ,"</h2>";
@@ -93,6 +93,10 @@ print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rul
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
+
+#######################################
+## Specific options for output files
+print "<h2>", "Output file options", ,"</h2>";
 
 ## Draw heatmap
 print $query->checkbox(-name=>'heatmap',
