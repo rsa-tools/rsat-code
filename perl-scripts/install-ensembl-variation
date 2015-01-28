@@ -6,6 +6,10 @@
 #
 ############################################################
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## OBSOLETE ? TO BE CHECKED
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 use warnings;
 
 =pod
@@ -24,7 +28,7 @@ Download gvf file of variation from ensembl.
 Decompress the file, remove variation that don't pass quality check.
 Make "super-variation" from overlapping variation.
 Write new variation file with one file per chromosomes
-and on for remove variation.
+and one for remove variation.
 
 /!\ 
 Sequence in raw format need to be install for
@@ -44,18 +48,18 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- get-ensembl-variation -species # [-genomesdir #] [-available_species] [-v #]
+ install-ensembl-variation -species # [-genomesdir #] [-available_species] [-v #]
 
 =head2 Example
 
 	Get variation for a given species 
-		get-ensembl-variation -species Homo_sapiens
+		install-ensembl-variation -species Homo_sapiens
 
 =head1 OUTPUT FORMAT
 
 A tab delimited file with the following column content.
 
-=head 2 GOOD VARIATION
+=head2 VARIATIONS PASSING QC
 
 =over
 
@@ -91,9 +95,9 @@ Sequence of all the variant
 
 Type of the variation
 
-=item 9. validate
+=item 9. validation
 
-If the variation is validate.
+If the variation is validated.
 Go to the following link to see all validation state :
 http://www.ncbi.nlm.nih.gov/projects/SNP/snp_legend.cgi?legend=validation 
 
@@ -107,7 +111,7 @@ If the variation is in a super-variation
 
 =back
 
-=head 2 WRONG VARIATION
+=head2 VARIATIONS NOT PASSING QC
 
 =over
 
@@ -153,7 +157,7 @@ from Ensembl using the tool I<install-ensembl-genome>.
 I<retrieve-snp-seq> uses files product by I<get-ensembl-variation>
 to make all the sequence of a variation.
 
-=head2 snp-scan
+=head2 variation-scan
 
 Scan SNP sequences with one or several position-specific scoring
 matrices.
@@ -169,7 +173,7 @@ BEGIN {
 #    push (@INC, "../DD300/Users/jeremy/rsa-tools/perl-scripts/lib");
 #    push (@INC, "/jolidisk/software/rsa-tools/perl-scripts/lib");
 	push (@INC, "../rsa-tools/perl-scripts/lib");
-	$ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
+	#$ENV{'RSAT'} = "/Users/jeremy/rsa-tools";
 }
 
 require "RSA.lib";
@@ -179,6 +183,8 @@ use File::Path qw( mkpath );
 ## Main package
 package	main;
 {
+
+    &RSAT::error::FatalError("This script has been replaced by download-ensembl-variations and install-ensembl-genomes");
 
 	###############################################################
 	## Initialise parameters

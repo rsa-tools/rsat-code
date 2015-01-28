@@ -14,7 +14,7 @@ DESCRIPTION
 CATEGORY
         motifs
 
-USAGE        
+USAGE
         %(usage)s
 
 ARGUMENTS
@@ -33,7 +33,7 @@ ARGUMENTS
 SEE ALSO
         random-sites
         implant-sites
-        
+
 '''
 
 # ===========================================================================
@@ -55,7 +55,7 @@ def motif_generator(length, conservation, N, rounded):
     high = [0.91, 0.03, 0.03, 0.03]
     low =  [0.55, 0.15, 0.15, 0.15]
     switch = 0.6
-    
+
     m = []
     for j in range(length):
         if conservation == 'low':
@@ -74,7 +74,7 @@ def motif_generator(length, conservation, N, rounded):
             m += [[int(round(i * N, 0)) for i in probs]]
         else:
             m += [[i * N for i in probs]]
-    return m    
+    return m
 
 def main(options, args):
     if options.verbosity >= 1:
@@ -92,11 +92,11 @@ def main(options, args):
 
         data += [ matrix.matrix2tab(mymatrix, count=options.rounded) ]
         data += [ '' ]
-    
+
         if type(options.output) is str:
             options.output = open(options.output, 'w')
         options.output.write('\n'.join(data))
-        
+
         if i != options.n - 1:
                 options.output.write("//\n")
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     parser.add_option("-m", "--mutiplier", type="float", dest="m", help="mutliply each cell of the matrix by #", default=1.0)
     parser.add_option("-n", "--motifs", type="int", dest="n", help="generate # motifs", default=1)
     parser.add_option("--round", dest="rounded", action="store_true", help="round each cell tp integer")
-    parser.add_option("--debug", action="store_true", dest="debug") 
+    parser.add_option("--debug", action="store_true", dest="debug")
     (options, args) = parser.parse_args()
 
     if options.help:

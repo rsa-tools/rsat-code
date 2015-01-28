@@ -29,9 +29,9 @@ program should perform interconversions between any supported format).
 
 =head1 AUTHORS
 
-Sylvain Brohée <sylvain@bigre.ulb.ac.be>
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
-Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
 =head1 CATEGORY
 
@@ -189,10 +189,9 @@ package main;
 			       tab=>1,
 			       tab_java=>1,
 			       adj_matrix=>1,
+			       adj_list=>1,
 			       rnsc=>1,
 			       tab_numeric=>1);
-
-
     $supported_output_formats = join (",", keys %supported_output_format);
 
     ## Color gradients
@@ -217,8 +216,9 @@ package main;
     #### check argument values
 
 
-    if (($output_format eq "rnsc" || $output_format eq "tab_numeric") && $main::outfile{output} eq "") {
-      &RSAT::error::FatalError("You must specify an output file name without extension with output format rnsc");
+    if ((($output_format eq "rnsc") || ($output_format eq "tab_numeric")) && 
+	((!defined($main::outfile{output})) || ($main::outfile{output} eq ""))) {
+      &RSAT::error::FatalError("Output format", $output_format, "requires to specify an output file (option -o).");
     }
 
     if ($layout && $output_format ne 'gml') {
@@ -316,9 +316,10 @@ package main;
     }
 
     ################################################################
-    ###### print output
-    ### open output streams
-    if ($output_format ne "rnsc" && $output_format ne "tab_numeric") {
+    ## Print output
+
+    ## Open output streams
+    if (($output_format ne "rnsc") && ($output_format ne "tab_numeric")) {
       $main::out = &OpenOutputFile($main::outfile{output});
     }
     if ($output_format eq "tab") {
@@ -326,26 +327,31 @@ package main;
     } else {
       $main::verbose_out = STDOUT;
     }
-    #### print verbose
+
+    ## Print verbose
     &Verbose() if ($main::verbose);
+
+
+    ## Print the output graph
     my $output_graph = $graph->to_text($output_format, $arc_id_option, $directed, $edge_width, $min_value, $max_value);
 
-    if ($output_format ne "rnsc" && $output_format ne "tab_numeric") {
-      print $out $output_graph;
-    } elsif ($output_format eq "rnsc" || $output_format eq "tab_numeric") {
+#    if (($output_format ne "rnsc") && ($output_format ne "tab_numeric") {
+    if ($output_format eq "rnsc" || $output_format eq "tab_numeric") {
       # RNSC and tab numeric output is composed of two files
-      # a graph file (output.suffix)
-      # a node names file (output_nodes_names.suffix)
-      my $suffix = "tab";
-      $suffix = "rnsc" if ($output_format eq "rnsc");
+      # a graph file (output.extension)
+      # a node names file (output_nodes_names.extension)
+      my $extension = "tab";
+      $extension = "rnsc" if ($output_format eq "rnsc");
 
       my @split = split "#####NODES_NAME#####", $output_graph;
-      my $output_graph_file = $main::outfile{output}.".".$suffix;
-      my $output_graph_node_names_file = $main::outfile{output}."_node_names.".$suffix;
+      my $output_graph_file = $main::outfile{output}.".".$extension;
+      my $output_graph_node_names_file = $main::outfile{output}."_node_names.".$extension;
       $main::out = &OpenOutputFile($output_graph_file);
       $main::out_names = &OpenOutputFile($output_graph_node_names_file);
       print $main::out $split[0];
       print $main::out_names $split[1];
+    } else {
+      print $out $output_graph;
     }
 
 
@@ -361,7 +367,7 @@ package main;
 }
 
 ################################################################
-################### subroutine definition ######################
+################### Subroutine definition ######################
 ################################################################
 
 
@@ -433,7 +439,6 @@ Same as -h
 
 
 =pod
-	    ## Input file
 
 =item B<-i inputfile>
 
@@ -477,7 +482,7 @@ Input format. Supported: tab, gml, adj_matrix, path, pathway_extract
 
 =item B<-to output_format>
 
-Output format. Supported: tab, dot, gml, adj_matrix, rnsc, tab_numeric
+Output format. Supported: tab, dot, gml, adj_matrix, adj_list, rnsc, tab_numeric
 
 For rnsc and tab_numeric output (see above), you must submit an output prefix as two output files are returned.
 
@@ -854,6 +859,8 @@ __END__
 
 =head1 SEE ALSO
 
+=over
+
 =item I<compare-graphs>
 
 =item I<graph-get-clusters>
@@ -863,5 +870,7 @@ __END__
 =item I<graph-node-degree>
 
 =item I<graph-set-attributes>
+
+=back 
 
 =cut

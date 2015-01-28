@@ -24,7 +24,7 @@ die "Error : invalid value for probability\t$proba\n",
     "Proba should be >=0 and <=1.\n" 
     if (($proba <= 0) || ($proba >= 1));
 
-die "Error: you should define the number of trials (option -r)\n"
+die "Error: you should define the number of trials (option -n)\n"
     unless (defined($trials));
 die "Error : invalid value for number of trials\t$trials\n",
     "Should be a positive natural number\n"
@@ -134,7 +134,7 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-p	success probability
-	-r	trials
+	-n	number of trials
 	-step	step
 	-max	max number of successes
 	-min	min number of successes
@@ -154,7 +154,7 @@ template options
 -o	output file
 -v	verbose
 -p	success probability
--r	trials
+-n	trials
 -step	step
 -max	max number of successes
 -min	min number of successes
@@ -192,7 +192,7 @@ sub ReadArguments {
 	    $proba = $ARGV[$a+1];
 	    
 	    #### tials
-	} elsif ($ARGV[$a] eq "-r") {
+	} elsif ($ARGV[$a] eq "-n") {
 	    $trials = $ARGV[$a+1];
 	    
 	    #### step

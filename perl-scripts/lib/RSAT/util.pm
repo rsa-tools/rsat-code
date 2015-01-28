@@ -1003,12 +1003,13 @@ sub doit {
     my $job_script = "";
     $job_script .=  "#!".$shell."\n";
     $job_script .= "(cd ".$wd;
-    $job_script .=  "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
-    $job_script .=  "; hostname >> ".$job_file.".started"; 
-    $job_script .=  "; ".$command;
-    $job_script .=  "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
-    $job_script .=  "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
-    $job_script .=  " )"."\n";
+    $job_script .= "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
+    $job_script .= "; hostname >> ".$job_file.".started"; 
+    $job_script .= "; source ".$ENV{RSAT}."/RSAT_config.bashrc"; ## Apparently required for PERL5LIB
+    $job_script .= "; ".$command;
+    $job_script .= "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
+    $job_script .= "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
+    $job_script .= " )"."\n";
     open JOB, ">$job_file" || die "Cannot write job file ".$job_file;
     print JOB $job_script;
     close JOB;
@@ -1025,13 +1026,18 @@ sub doit {
 
     ## Cluster queue manager
 
-    my $qsub_manager="";
-    if (defined($ENV{QSUB_MANAGER})) {
-      $qsub_manager=$ENV{QSUB_MANAGER};
+    my $queue_manager="";
+    if (defined($ENV{QUEUE_MANAGER})) {
+      $queue_manager=$ENV{QUEUE_MANAGER};
+
+    } elsif (defined($ENV{QSUB_MANAGER})) {
+      $queue_manager=$ENV{QSUB_MANAGER};
+      &RSAT::message::Warning("Parameter QSUB_MANAGER is obsolete.\nPlease rename if to QUEUE_MANAGER in ".$RSAT."/RSAT_config.props") if ($main::verbose >= 1);
 
     } else {
-      $ENV{QSUB_MANAGER} = "sge";
-      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($verbose >= 2);
+      $ENV{QUEUE_MANAGER} = "torque";
+      $queue_manager=$ENV{QUEUE_MANAGER};
+      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'torque'.") if ($verbose >= 2);
     }
 
     my $qsub_options="";
@@ -1057,12 +1063,13 @@ sub doit {
 
     ################################################################
     ## Choose the queue manager depending on the local configuration
-    if (lc($qsub_manager) eq "torque") {
+    if (lc($queue_manager) eq "torque") {
       $wd = `pwd`;
       chomp($wd);
 
       ## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
-      $qsub_cmd = "qsub ".$selected_nodes;
+      $qsub_cmd = "qsub";
+      $qsub_cmd .= " ".$selected_nodes if ($selected_nodes);
       $qsub_cmd .= " -d ".$wd;
       $qsub_cmd .= " -m ".$batch_mail;
       $qsub_cmd .= " -N ".$job_file;

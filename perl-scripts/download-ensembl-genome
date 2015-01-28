@@ -26,9 +26,15 @@ required for RSAT sequence retrieval.
 
 =head1 AUTHORS
 
-Jeremy.Delerce@univ-amu.fr
+=over
 
-Revised by Jacques.van-Helden@univ-amu.fr
+=item I<Jeremy Delerce> (Master 2 thesis 2013)
+
+=item I<Alejandra Medina-Rivera> (amedina@lcg.unam.mx)
+
+=item I<Jacques van Helden> (Jacques.van-Helden@univ-amu.fr)
+
+=back
 
 =head1 CATEGORY
 
@@ -40,40 +46,55 @@ Revised by Jacques.van-Helden@univ-amu.fr
 
 =head1 USAGE
 
- download-ensembl-genome -species # [-ensembl_genomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]
+C<download-ensembl-genome -species # [-db ensemblgenomes] [-no_rm] [-version #] [-force] [-o genomesDirectory] [-var] [-available_species] [-v #]>
 
 =head2 Examples
 
 Get a list of species available at Ensembl
 
- download-ensembl-genome -available_species
+C<download-ensembl-genome -available_species>
 
 Get raw genome sequences for the human genome (Homo sapiens)
 
- download-ensembl-genome -species Homo_sapiens
+C<download-ensembl-genome -species Homo_sapiens>
 
-Get repeat-masked versio of the mouse genome (Mus musculus)
+Get repeat-masked version of the mouse genome (Mus musculus)
 
- download-ensembl-genome -species Mus_musculus -rm
+C<download-ensembl-genome -species Mus_musculus -rm>
 
 =head1 OUTPUT FORMAT
 
-Sequence file in raw format
+The program returns 
+
+Several sequence files (one file per chromosome/contig) in raw
+format.
+
+A tab-delimited file (contig.tab) providing the attributes of each
+contig.
+
+A text file (contigs.txt) indicating which sequence file corresponds
+to which chromosome.
 
 =head1 SEE ALSO
 
+=head2 install-ensembl-genome
+
+A wrapper managing all the tasks required to install genome from
+Ensembl on RSAT (including I<download-ensembl-genome>.
+
 =head2 download-ensembl-variations
 
-Downloads variation for a species
+Downloads tab-delimited files providing the positions and descriptions
+of the genomic features (genes, transcripts, CDS, ...).
+
+=head2 download-ensembl-variations
+
+Downloads variation for a species.
 
 =head2 retrieve-variation-seq
 
 I<retrieve-variation-seq> uses files product by I<download-ensembl-variations>
 to make all the sequence of a variation.
-
-=head2 install-ensembl-genome
-
-Install genome from Ensembl on RSAT.
 
 =head1 WISH LIST
 
@@ -104,16 +125,17 @@ package	main;
   our %outfile = ();
 
   our $verbose = 0;
-  our $data_dir = &Get_data_dir();
-  our $registry = 'Bio::EnsEMBL::Registry';
 
-  our $db = "ensembl";
-  our $species = "";
+  our $db = "ensembl"; ## Supported: ensembl, ensemblgenomes, ensemblall
   our $taxid = "";
-  our $assembly_version = "";  
-  our $safe_ensembl_version = &Get_ensembl_version_safe($db);
-  our $latest_ensembl_version = &Get_ensembl_version($db);
-  our $ensembl_version = $safe_ensembl_version;
+  our $species = "";
+  our $assembly_version = "";
+  our $species_suffix = "";
+  our $registry = 'Bio::EnsEMBL::Registry';
+  our $safe_ensembl_version = &get_ensembl_version_safe($db);
+  our $latest_ensembl_version = &get_ensembl_version_latest($db);
+  our $ensembl_version = &get_ensembl_version($db);
+  our $null = "<NULL>";
 
   our $rm = 1;
   our $get_available_species = 0;
@@ -124,24 +146,10 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
-  &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version) if ($main::verbose >= 2);
-  &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version) if ($main::verbose >= 2);
-  &RSAT::message::Info("Selected ensembl version", $ensembl_version) if ($main::verbose >= 2);
+  ## Check that the user-selected Ensembl version is supported.
+  &check_ensembl_version($db,$ensembl_version);
 
-  if ($ensembl_version eq "safe") {
-      $ensembl_version = $safe_ensembl_version;
-
-  } elsif ($ensembl_version eq "latest") {
-      $ensembl_version = $latest_ensembl_version;
-
-  } else {
-    &RSAT::error::FatalError($ensembl_version, "is not a valid Ensembl version. Minimun supported version is 70.") if ($ensembl_version < 70);
-    &RSAT::error::FatalError($ensembl_version, " is not a valid Ensembl version. Can't be superior to latest ensembl_version", $latest_ensembl_version) if ($ensembl_version > $latest_ensembl_version);
-  }
-
-  &RSAT::message::TimeWarn("Getting host port for database", $db) if ($main::verbose >= 2);
-
-  my ($host,$port) = &Get_host_port($db);
+#  my ($host, $port) = &Get_host_port($db);
 
   ################################################################
   ## Print verbose
@@ -151,21 +159,14 @@ package	main;
   ###############################################################
   ## Print the list of available species
   if ($get_available_species) {
-
-    &RSAT::message::TimeWarn("Getting available species", "host=".$host, "port=".$port) if ($main::verbose >= 2);
-
-    $registry->load_registry_from_db(
-      -host => $host,
-      -port => $port,
-      -user => 'anonymous',
-      -db_version => $ensembl_version
-    );
-
+    &RSAT::message::TimeWarn("download-ensembl-genome", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
+    &LoadRegistry($registry, $db, $ensembl_version);
+    
     my @db_adaptors = @{ $registry->get_all_DBAdaptors(-group => 'core') };
     my %species_taxon = ();
 
-    if ($db eq "ensembl_genomes") {
-      my $ens_version = &Get_ensembl_version_safe($db);
+    if (lc($db) eq "ensemblgenomes") {
+      my $ens_version = &get_ensembl_version_safe($db);
       %species_taxon = &Get_species_taxon($db,$ens_version);
     }
 
@@ -174,9 +175,14 @@ package	main;
     foreach my $db_adaptor (@sort_species) {
 #       my $db_connection = $db_adaptor->dbc();
 #       if ($db_adaptor->group() eq "core") {
-         print $out ucfirst($db_adaptor->species());
-         print $out "\t",$species_taxon{$db_adaptor->species()} if ($species_taxon{$db_adaptor->species()});
-         print $out "\n";
+      my $species = ucfirst($db_adaptor->species());
+      my $taxon = $null;
+      if (defined($species_taxon{$db_adaptor->species()})) {
+	$taxon = $species_taxon{$db_adaptor->species()};
+      }
+      print $out join("\t", $species, $taxon), "\n";
+#         print $out "\t", if ($species_taxon{$db_adaptor->species()});
+#         print $out "\n";
 #      }
     }
     $registry->disconnect_all();
@@ -200,7 +206,6 @@ package	main;
 #     }
 #     my $dba = shift @dbas;
 #     &RSAT::message::Debug("DBA", $dba);
-#     die "HELLO";
 #   }
 
   ## Check that the species has been specified
@@ -210,27 +215,21 @@ package	main;
 
   ################################################################
   ## Connecting to ensembl
-  &RSAT::message::TimeWarn("Loading registry from Ensembl") if ($main::verbose >= 2);
-  $registry->load_registry_from_db (-host => $host,
-				    -port => $port,
-				    -user => 'anonymous',
-				    -db_version => $ensembl_version,
-				    -species => $species
-				   );
+  &LoadRegistry($registry, $db, $ensembl_version);
 
   ################################################################
   ## Get Adaptators
-  &RSAT::message::TimeWarn("Getting species slice from Ensembl") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Getting species adaptor from Ensembl") if ($main::verbose >= 2);
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
   if ($slice_adaptor) {
-    &RSAT::message::Debug("Slice adaptor", $slice_adaptor) if ($main::verbose >= 2);
+    &RSAT::message::Debug("Slice adaptor", $slice_adaptor) if ($main::verbose >= 5);
   } else {
     &RSAT::error::FatalError("Cannot get slice adaptor for species", $species);
   }
 
   my $mca = Bio::EnsEMBL::Registry->get_adaptor( $species, "core",  "metacontainer" );
   if ($mca) {
-      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 2);
+      &RSAT::message::Debug("Coordinate system adaptor (mca)", $mca) if ($main::verbose >= 5);
   } else {
       &RSAT::error::FatalError("Cannot get coordinate system adaptor (mca) for species", $species);
   }
@@ -239,7 +238,9 @@ package	main;
   # Get all Top Level slice
   my @slices = @{$slice_adaptor->fetch_all('toplevel')};
 
-  ## Correct Ensembl error with the two Y human chr
+  ## Correct Ensembl error with the two Y human chromosomes 
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ## TO BE CHECKED (JvH): is this still required ?
   if ($species eq "homo_sapiens") {
     my @slice_tmp = ();
     foreach my $slice (@slices) {
@@ -250,36 +251,48 @@ package	main;
   }
 
   ################################################################
-  ## Get available sequence on Ensembl and compare with sequence already install
+  ## Get the list of sequences available at Ensembl and compare with
+  ## those already installed on local server.
 
   ## Get genome_dir
-  my @token = split(":",$slices[0]->name());
-  $assembly_version = $token[1];
-  $genome_dir = &Get_genome_dir($data_dir,$species, $assembly_version,$ensembl_version);
+  my @fields = split(":",$slices[0]->name());
+  $assembly_version = $fields[1];
+  $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix);
+  &RSAT::message::Info("Full species ID", $full_species_ID) if ($main::verbose >= 2);
+  $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version, $species_suffix);
+  &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 2);
+  printf $out ("; %-22s\t%s\n", "Full species ID", $full_species_ID);
+  printf $out ("; %-22s\t%s\n", "Genome directory", $genome_dir);
   &RSAT::util::CheckOutDir($genome_dir);
 
-
-  ## Get local install sequence
-  &RSAT::message::TimeWarn("Checking local version") if ($main::verbose >= 2);
+  ## Get the list of sequences already installed in the local server
+  &RSAT::message::TimeWarn("Checking local versions of genomic sequences") if ($main::verbose >= 2);
   my %seq_installed = ();
-  foreach ( glob($genome_dir."/*") ) {
-    next unless (/\.raw/);
-
-    $len = -s $_;
-    $_ =~ s/$genome_dir\///g;
-    $_ =~ s/\.raw//g;
-
-    my ($type,$slice) = split($assembly_version,$_);
-    $type =~ s/_/:/g;
-    $slice =~ s/_/:/g;
-
-    $seq_installed{$type.$assembly_version.$slice} = $len;
-  }
+   my @genome_dir_content =glob($genome_dir."/*");
+  #my @genome_dir_content =`(ls $genome_dir/*)`; ## NOTE FROM ALE: please do not remove commented line
+                                                ## I'm having problmes with my glob function
+ 
+   foreach ( @genome_dir_content ) {
+       ##chomp;  ## NOTE FROM ALE: please do not remove commented line
+               ## I'm having problmes with my glob function
+       next unless (/\.raw/);
+       
+       $len = -s $_;
+       $_ =~ s/$genome_dir\///g;
+       $_ =~ s/\.raw//g;
+       
+       my ($type,$slice) = split($assembly_version,$_);
+       $type =~ s/_/:/g;
+       $slice =~ s/_/:/g;
+       
+       $seq_installed{$type.$assembly_version.$slice} = $len;
+   }
+  
 
 
 
   ################################################################
-  ##Download
+  ## Download
   &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);
   foreach my $slice (@slices) {
     &RSAT::message::TimeWarn("\tTreating slice",$slice->name()) if ($main::verbose >= 2);
@@ -293,7 +306,7 @@ package	main;
       &RSAT::message::TimeWarn("\tDownloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       my $filename = $slice->name().".raw";
       $filename =~ s/:/_/g;
-      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      my $out_seq_file = &OpenOutputFile($genome_dir."/".$filename);
       print $out_seq_file $slice->seq();
       close ($out_seq_file);
     }
@@ -304,7 +317,7 @@ package	main;
       &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
       my $filename = $slice->name()."_repeatmasked.raw";
       $filename =~ s/:/_/g;
-      my $out_seq_file = &OpenOutputFile($genome_dir.$filename);
+      my $out_seq_file = &OpenOutputFile($genome_dir."/".$filename);
       print $out_seq_file $slice->get_repeatmasked_seq()->seq();
       close ($out_seq_file);
     }
@@ -338,49 +351,14 @@ package	main;
 
 
     ## contig.tab
-    @token = split(":",$slice->name());
-    print $out_contig $slice->seq_region_name(),"\t",$slice->name(),"\t",$assembly_version,"\t",$token[0],"\t",$slice->length(),"\t",$token[0]," ",$slice->seq_region_name(),"\n";
+    @fields = split(":",$slice->name());
+    print $out_contig $slice->seq_region_name(),"\t",$slice->name(),"\t",$assembly_version,"\t",$fields[0],"\t",$slice->length(),"\t",$fields[0]," ",$slice->seq_region_name(),"\n";
   }
 
   close $out_contig;
   close $out_contigs;  
 
-
-  ################################################################
-  ## Write last genome install
-  $supported_organism_file = &Get_supported_file($data_dir);
-  &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
-
-  @other_species = ();
-
-  if (-f $supported_organism_file) {
-
-    my ($s_o_file) = &OpenInputFile($supported_organism_file);
-
-    while (<$s_o_file>) {
-      my @token = split("\t");
-      push (@other_species, $_) unless ($token[0] eq &Get_species_dir_name($species,$assembly_version,$ensembl_version) );
-    }
-    close $s_o_file;
-  }
-
-  my $new_org_config = join ("\t", 
-    &Get_species_dir_name($species,$assembly_version,$ensembl_version),
-    ucfirst($species)." ".$assembly_version." ".$ensembl_version, ## Species name (beware, includes a space)
-    &Get_species_dir($data_dir,$species,$assembly_version,$ensembl_version)
-  );
-
-  ## Replace absolute paths by relative paths
-  $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
-  $new_org_config =~ s|\/\/|/|g;
-
-  push (@other_species, $new_org_config."\n");
-
-  my $s_o_file = &OpenOutputFile($supported_organism_file);
-  print $s_o_file join("",@other_species);
-  close $s_o_file;
-
-  &RSAT::message::Info("Genome installed in folder", $genome_dir) if ($main::verbose >= 1);
+  &UpdateEnsemblSupported();
 
   ################################################################
   ## Report execution time and close output stream
@@ -461,7 +439,7 @@ Same as -h
 Species that you want download variation (homo_sapiens, mus_musculus).
 
 Use the option I<-available_species> to print a list of available
-species at Ensembl, or options I<-available_species -ensembl_genomes>
+species at Ensembl, or options I<-available_species -db ensemblgenomes>
 to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
@@ -495,13 +473,43 @@ by replacing repeats with 'N's.
 
 =pod
 
-=item B<-ensembl_genomes>
+=item B<-db ensembl|ensemblgenomes|ensemblall>
 
-Download genome from ensembl genomes (Protist, fungi ...);
+Default: Ensembl
+
+Select the source database. 
+
+=over
+
+=item I<ensembl>
+
+The "historical" Ensembl database (L<http://ensembl.org/>), restricted
+to a series of genomes from model organisms (69 supported species on
+Oct 30, 2014).
+
+=item I<ensemblgenomes>
+
+The exended EnsemblGenomes database (L<http://ensemblgenomes.org/>),
+which comprises repositories for the following taxa: Bacteria
+(actually includes Archaea), Fungi, Metazoa, Plants, Protists.
+
+In Oct 2014, EnsemblGenomes supports >15,000 species.
+
+=item I<ensemblall>
+
+Load both Ensembl and Ensembl Genomes.
+
+=back
 
 =cut
-    } elsif ($arg eq "-ensembl_genomes") {
-      $main::db = "ensembl_genomes";
+   } elsif ($arg eq "-db") {
+    $main::db = lc(shift(@arguments));
+    unless (($main::db eq "ensembl")
+	    || ($main::db eq "ensemblgenomes")
+	    || ($main::db eq "ensemblall")
+            ) {
+	&RSAT::error::FatalError($main::db, "Invalid value for the option -db. Supported: ensembl,ensemblgenomes,ensemblall");
+    }
 
 =pod
 
@@ -550,6 +558,22 @@ would change their file formats or locations.
 
 =pod
 
+=item B<-species_suffix>
+
+Suffix to append to the full species ID.
+
+By default, the full species ID is composed by concatenating the
+Ensembl species and assembly version. The option I<-species_suffix>
+allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
+will be appended to the full species ID.
+
+=cut
+    } elsif ($arg eq "-species_suffix") {
+    $species_suffix = shift(@arguments);
+
+
+=pod
+
 =item B<-force>
 
 Force installation even if the genome is already installed.
@@ -559,17 +583,19 @@ Force installation even if the genome is already installed.
     } elsif ($arg eq "-force") {
       $force = 1;
 
-=item B<-dir #>
-
-The directory in wich RSAT data must be installed. The selected
-species will be installed in a sub-directory composed of Species name
-and Ensembl genome version.
-
-Default : $RSAT/data/
-
-=cut
-    } elsif ($arg eq "-dir") {
-      $main::data_dir = shift(@arguments);
+# = pod
+#
+# =item B<-dir #>
+#
+# The directory in wich RSAT data must be installed. The selected
+# species will be installed in a sub-directory composed of Species name
+# and Ensembl genome version.
+#
+# Default : $RSAT/data/
+#
+# =cut
+#     } elsif ($arg eq "-dir") {
+#       $main::data_dir = shift(@arguments);
 
 =pod
 
@@ -615,6 +641,7 @@ sub Verbose {
     }
   }
 
-  printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&Get_ensembl_version_safe($db);
-  printf $out "; %-22s\t%s\n", "Ensembl version", $ensembl_version;
+    printf $out "; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version; #&get_ensembl_version_safe($db);
+    printf $out "; %-22s\t%s\n", "Ensembl version",$ensembl_version;
+    printf $out ("; %-22s\t%s\n", "Species suffix", $species_suffix) if ($species_suffix);
 }
