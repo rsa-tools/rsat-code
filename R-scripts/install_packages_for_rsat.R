@@ -45,14 +45,19 @@ for (pkg in required.packages) {
   }
 }
 
+
+################################################################
+####### THIS DOES NOT WORK AT ENS, where we are not sudoers !!!
 ## Check requirement for bioconductor packages
-print(paste("Installing BioConductor packages"))
-#print(required.packages.bioconductor)
+print("Installing BioConductor packages")
+print(required.packages.bioconductor)
 for (pkg in required.packages.bioconductor) {
-  if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
+  if (!suppressPackageStartupMessages(require("MASS", quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))
+      ) {
     source("http://bioconductor.org/biocLite.R")
-    biocLite(lib=dir.rsat.rlib);
-    biocLite(pkg, dependencies=TRUE, lib=dir.rsat.rlib)
+#    biocLite(ask=FALSE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
+    biocLite(lib=dir.rsat.rlib, lib.loc=c(.libPaths(),dir.rsat.rlib))
+    biocLite(pkg, dependencies=TRUE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
     print(paste(pkg, "BioConductor package installed in dir", dir.rsat.rlib))
   }
 }

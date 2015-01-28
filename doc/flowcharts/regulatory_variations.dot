@@ -4,9 +4,9 @@
 ##
 ## Author: Jacques van Helden
 
-digraph {	
+digraph {
 	## General properties of the graph (font, color, ...)
-	graph [fontname="ArialBlack",fontsize="14", label="Tool map - Regulatory Sequence Analysis Tools (RSAT)" labelloc="t", fontcolor="#0066BB", nodesep="0.05", ranksep="0.1", URL="http://localhost/rsat/", fontcolor="#0D73A7"];
+	graph [fontname="ArialBlack",fontsize="14", label="Tool map - Regulatory Sequence Analysis Tools (RSAT)" labelloc="t", fontcolor="#0066BB", nodesep="0.05", ranksep="0.1", URL="http://teaching.rsat.eu/", fontcolor="#0D73A7"];
 	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
 	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
 
@@ -24,18 +24,18 @@ digraph {
     ## Convert variations
     variation_file  [shape="record", style="filled", fillcolor="#D6EEFA", label="{Variation file|various formats (VCF,GVF,varBed)}"];
     variation_file -> convert_variations
-    convert_variations  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{convert-variations}", URL="http://localhost/rsat/convert-variations_form.cgi", fontcolor="#0D73A7"];
+    convert_variations  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{convert-variations}", URL="http://teaching.rsat.eu/convert-variations_form.cgi", fontcolor="#0D73A7"];
     convert_variations -> variation_info_table
 
     ## Get variations
     get_variations_input -> get_variations
-    get_variations  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{get-variations}", URL="http://localhost/rsat/get-variations_form.cgi", fontcolor="#0D73A7"];
+    get_variations  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{variation-info}", URL="http://teaching.rsat.eu/variation-info_form.cgi", fontcolor="#0D73A7"];
     get_variations -> variation_info_table
     variation_info_table  [shape="record", style="filled", fillcolor="#D6EEFA", label="{Variation info table|varBed (bed-derived)}"];
 
     ## Retrieve-variations
     variation_info_table -> retrieve_variation_seq
-    retrieve_variation_seq  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{retrieve-variation-seq}", URL="http://localhost/rsat/retrieve-variation-seq_form.cgi", fontcolor="#0D73A7"];
+    retrieve_variation_seq  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{retrieve-variation-seq}", URL="http://teaching.rsat.eu/retrieve-variation-seq_form.cgi", fontcolor="#0D73A7"];
     retrieve_variation_seq -> variation_sequences
     variation_sequences   [shape="record", style="filled", fillcolor="#D6EEFA", label="{Variation sequences|varSeq (bed-derived)}"];
 
@@ -46,7 +46,7 @@ digraph {
 
     variation_scan_input [shape="circle", style="filled", fillcolor="#FFFFFF", label="AND" fontsize=8 width="0.001" height="0.001" margin="0"];
     variation_scan_input -> variation_scan
-    variation_scan  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{variation-scan}", URL="http://localhost/rsat/variation-scan_form.cgi", fontcolor="#0D73A7"];
+    variation_scan  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{variation-scan}", URL="http://teaching.rsat.eu/variation-scan_form.cgi", fontcolor="#0D73A7"];
     variation_scan -> variation_impact
     variation_impact   [shape="record", style="filled", fillcolor="#D6EEFA", label="{Predicted impact of variations on TF binding|tab}"];
     }    
