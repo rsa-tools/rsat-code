@@ -2204,7 +2204,7 @@ sub branch_consensus_table{
   my $branch_consensus_table = 
       '
     <div class="tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
-    <div id="hide_branch_table_--nb--" class="Cluster_results" style="display:block; clear:both">Hide</div>
+    <div id="hide_branch_table_--nb--" class="Cluster_results" style="display:block; clear:both">Hide <strong>cluster_--nb--</strong></div>
 		<table style="display:block; clear:both;">
 			<thead>
 				<tr>
@@ -2625,7 +2625,6 @@ sub ReportStyleCSS{
   font-size: 15px;
   }
 
-
   .Cluster_results {
   margin-top: 3px;
   width: 130px;
@@ -2634,6 +2633,8 @@ sub ReportStyleCSS{
   position: relative;
   padding: 1px;
   font-size:14px;
+  margin-top: 20px;
+  text-align: center;
   color: #ffffff;
   background:#cc0000;
   border-radius:5px;
@@ -2642,7 +2643,6 @@ sub ReportStyleCSS{
   clear: both;
   display: none;
   }
-
 
   .Cluster_results:active {
   position:relative;
@@ -3290,8 +3290,8 @@ sub InsertTreesAndBranchMotifs {
 	## Draw the logo tree
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
-                      <div id="cluster_--nb--" class="logo_tree"">
-                      <div id="hide_tree_--nb--" class="Cluster_results" style="clear:both; position:relative; float:left" >Hide</div>
+                      <div id="cluster_--nb--" class="logo_tree">
+                      <div id="hide_tree_--nb--" class="Cluster_results" style="clear:both; position:relative; float:left" >Hide <strong>cluster_--nb--</strong></div>
 		      <script type="text/javascript">
                 ';
 	my $tree_button = '<div class="Cluster_results" id="button_logo_tree_--nb--">Logo tree</div>';
