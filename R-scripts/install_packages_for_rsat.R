@@ -52,7 +52,7 @@ for (pkg in required.packages.bioconductor) {
   if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE))) {
     source("http://bioconductor.org/biocLite.R")
     biocLite(lib=dir.rsat.rlib);
-    biocLite(pkg, lib=dir.rsat.rlib)
+    biocLite(pkg, dependencies=TRUE, lib=dir.rsat.rlib)
     print(paste(pkg, "BioConductor package installed in dir", dir.rsat.rlib))
   }
 }
