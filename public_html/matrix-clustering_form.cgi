@@ -249,7 +249,7 @@ sub ThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'111\')\" id=\"heading101\"><b>",$title,"</b>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
@@ -268,7 +268,7 @@ sub FieldsThresholdsTableMC {
   my @fields = @{$field_ref};
   my %field_descr = %{$field_descr_ref};
   print "<table align='center'>\n";
-  print $query->th([" <A HREF='".$help_file."'>Output<br>fields</A> ",
+  print $query->th([" <A HREF='".$help_file."'>Metrics</A> ",
 		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
 		    " <A HREF='".$help_file."'>Upper<BR>Threshold</A> "]);
   foreach my $field (@fields) {
