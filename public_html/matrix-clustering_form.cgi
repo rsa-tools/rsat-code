@@ -26,6 +26,7 @@ $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
 $default{hclust_method}="average";
+$default{metric} = "Ncor"
 $default{newick} = "";
 $checked{$default{bg_method}} = "CHECKED";
 $default{heatmap} = "CHECKED";
@@ -99,7 +100,14 @@ print "<br><br>\n";
 ## Specific options for matrix-clustering
 print "<h2>", "Clustering options", ,"</h2>";
 
-## Hierarchical clusterting agglomeration rul
+## Metric selected to build the hierarchical tree
+print "<b>Metric to build the tree.</b>";
+print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Metric  </A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'hclust_method',
+ 			 -Values=>["cor", "Ncor"],
+ 			 -default=>$default{metric});
+
+## Hierarchical clusterting agglomeration rule
 print "<b>Agglomeration rule</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rule  </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
