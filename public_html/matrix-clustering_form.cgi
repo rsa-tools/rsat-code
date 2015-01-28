@@ -83,7 +83,7 @@ print "<hr>";
 &GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 print "<hr>";
 
-############################################
+##############################################################
 ## Specific options for motif comparison
 print "<h2>", "Motif comparison options", ,"</h2>";
 
@@ -95,8 +95,11 @@ print "&nbsp;<A'><B>Motif comparison with <i>compare-matrices-quick</i> (100 tim
 print "<br><br>\n";
 #print "<HR width=550 align=left>\n";
 
+## Selection of output fields and thresholds
+&PrintMatrixMatchingScores();
 
-############################################
+
+###############################################################
 ## Specific options for matrix-clustering
 print "<h2>", "Clustering options", ,"</h2>";
 
@@ -116,7 +119,7 @@ print $query->popup_menu(-name=>'hclust_method',
  			 -default=>$default{hclust_method});
 print "<br><br>\n";
 
-#######################################
+################################################################
 ## Specific options for output files
 print "<h2>", "Output file options", ,"</h2>";
 
@@ -137,15 +140,6 @@ print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
 print "<br><br>\n";
 #print "<HR width=550 align=left>\n";
 
-
-
-################################################################
-## Selection of output fields and thresholds
-&PrintMatrixMatchingScores();
-
-print "<h2>", "Display options", ,"</h2>";
-
-print "<hr>";
 
 ################################################################
 ## Send results by email only
