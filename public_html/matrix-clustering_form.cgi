@@ -257,7 +257,7 @@ sub PrintMatrixClusteringMatchingScores {
 
 
 
-  &ScoresAndThresholdsDiv("Matrix comparison scores and thresholds",
+  &aScoresAndThresholdsDiv("Matrix comparison scores and thresholds",
 			  "help.compare-matrices.html#return_fields",
 			  \@matching_scores,
 			  \%score_descriptions);
@@ -266,7 +266,7 @@ sub PrintMatrixClusteringMatchingScores {
 
 ################################################################
 ## Display a collapsable div with selectable scores and thresholds
-sub ScoresAndThresholdsDiv {
+sub aScoresAndThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
@@ -274,7 +274,7 @@ sub ScoresAndThresholdsDiv {
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
   print "<p/><fieldset>\n";
 
-  &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
+  &aFieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
 
   print "</fieldset><p/>";
   print '</div></div><p class="clear"></p>';
@@ -284,7 +284,7 @@ sub ScoresAndThresholdsDiv {
 ################################################################
 ## Display a table with checkboxes and thresholds for a set of
 ## specified fields
-sub FieldsThresholdsTable {
+sub aFieldsThresholdsTable {
   my ($help_file, $field_ref, $field_descr_ref) = @_;
   my @fields = @{$field_ref};
   my %field_descr = %{$field_descr_ref};
