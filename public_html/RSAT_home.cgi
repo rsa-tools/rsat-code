@@ -93,6 +93,7 @@ print <<EndText;
             <option value="data3">Sequences</option>
             <option value="data4">Matrices (PSSM)</option>
             <option value="data5">Coordinates (BED)</option>
+            <option value="data6">List of variants</option>
         </select>
     <br/>
             </div>
@@ -101,7 +102,7 @@ print <<EndText;
          <b>2 - Choose your biological question / analysis to perform </b></br>
             <select id="questions" disabled="true">
                 <option value="">Choose selection</option>
-                <option value="peak-motifs" class="data1">Which TFs are overrepresented in this data set ?</option>
+                <option value="peak-motifs" class="data1">Which TF motifs are over-represented in this data set ?</option>
                 
                 <option value="retrieve-seq-programs" class="data2">I want to extract their promoter sequences (or other sequence features) </option>
                 <option value="footprint-programs" class="data2">Which regulatory elements are conserved in promoters of orthologs ?</option>
@@ -112,9 +113,13 @@ print <<EndText;
                 
                 <option value="matrix-scan" class="data4">I want to scan sequences with these matrices </option>
                 <option value="matrix-compa-programs" class="data4">I want to compare matrices (with known collections) </option>
+                <option value="matrix-compa-programs" class="data4">I want to cluster and align matrices </option>
                 <option value="convert-matrix" class="data4">I want to convert the matrix format </option>
                 
                 <option value="fetch-sequences" class="data5">I want to extract the sequences corresponding to these coordinates </option>
+                
+                 <option value="retrieve-variation-seq" class="data6">Obtain the variants and their flanking sequences </option>
+                 <option value="scan-variations" class="data6">Which transcription factor binding sites are affected by these variants ? </option>
             </select>
         </div>
     
@@ -139,10 +144,14 @@ print <<EndText;
                  <option value="matrix-scan-quick_form.cgi" class="matrix-scan">matrix-scan (quick)</option>
                  
                  <option value="compare-matrices_form.cgi" class="matrix-compa-programs">compare matrices</option>
+                 <option value="matrix-clustering_form.cgi" class="matrix-compa-programs">matrix clustering</option>
                  
                  <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
                  
                  <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC</option>
+                 
+                 <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
+                 <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>
             </select>
         </div>
         <br/>
