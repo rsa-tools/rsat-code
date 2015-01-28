@@ -266,7 +266,7 @@ sub RSA_header {
 				       -src      => 'RSAT_tabs.js'
 				     }
                                  ],
-			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
+			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css","$ENV{rsat_www}/chosen.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
   print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSAT</a> - $title</h3>";
@@ -773,7 +773,19 @@ sub OrganismPopUpString {
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-    $organismPopup .=  "<select name='organism'>\n";
+     print '<script type="text/javascript"> ' ;
+     print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
+     print ' </script>';
+    print '<script type="text/javascript"> ' ;
+     print `cat $ENV{RSAT}/perl-scripts/lib/js/chosen/chosen.jquery.min.js`;
+     print ' </script>';
+    print '<script type="text/javascript">    
+     jQuery(document).ready(function(){
+	 $(".chosen-select").chosen(); 
+});
+     
+  </script>';
+    $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
     foreach my $org (@selected_organisms) {
 	if (defined($supported_organism{$org})) {
 	    my $name = $org;
@@ -1521,6 +1533,7 @@ sub html_header {
   $header .=  "<html>\n";
   $header .=  "<header>\n";
   $header .=  "<title>$infile{input}</title>\n";
+  $header .=  "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />";
   $header .= &sorttable_script() if ($sorttable);
   $header .= "<style type='text/css'>\n";
   $header .= `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
@@ -1613,6 +1626,7 @@ sub PrintHtmlResultHeader {
   $header .=  "<html>\n";
   $header .=  "<head>\n";
   $header .=  "<title>".$program." ".$title."</title>\n";
+ 
 
   ## Page styles
   $header .=  "<style type='text/css'>\n";
