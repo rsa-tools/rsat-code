@@ -59,7 +59,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("matrix-clustering", "form");
 print "<CENTER>";
-print "Measure the (dis)similarity between a set of motifs to identify clusters of similarities and align the motifs.<P>\n";
+print "Identify groups (clusters) of similarities between a set of motifs and align them.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
