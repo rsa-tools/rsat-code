@@ -27,6 +27,7 @@ $default{matrix_file}="";
 $default{matrix_format} = "transfac";
 $default{hclust_method}="average";
 $checked{$default{bg_method}} = "CHECKED";
+$default{heatmap} = "CHECKED";
 $default{labels} = "name";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
@@ -85,18 +86,23 @@ print "<hr>";
 
 print "<h2>", "Clustering options", ,"</h2>";
 
-
+## Hierarchical clusterting agglomeration rul
 print "<b>Agglomeration rule</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rule  </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
-
 print "<hr>";
-print "<b>Labels to display in logo trees  </b>";
-print $query->popup_menu(-name=>'labels',
- 			 -Values=>["consensus", "id", "name"],
- 			 -default=>$default{labels});
+
+
+## Draw heatmap
+print $query->checkbox(-name=>'heatmap',
+  		       -checked=>$default{heatmap},
+  		       -label=>'');
+print "&nbsp;<A'><B>Draw a heatmap showing the distances between the motifs.</B></A>";
+print "<BR>";
+print "<HR width=550 align=left>\n";
+
 
 
 ################################################################
