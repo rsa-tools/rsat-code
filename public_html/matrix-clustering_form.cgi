@@ -102,7 +102,7 @@ print "<h2>", "Clustering options", ,"</h2>";
 
 ## Metric selected to build the hierarchical tree
 ## print "<b>Metric to build the tree.</b>";
-print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Metric to build the trees.  </A>&nbsp;</B>\n";
+print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["cor", "Ncor"],
  			 -default=>$default{metric});
@@ -110,7 +110,7 @@ print "<br><br>\n";
 
 ## Hierarchical clusterting agglomeration rule
 ## print "<b>Agglomeration rule</b>";
-print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rule  </A>&nbsp;</B>\n";
+print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Aglomeration rule </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
@@ -173,19 +173,18 @@ peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-#$demo_file = "demo_files/peak-motifs_result_Chen_Oct4_matrices.tf";
 $demo_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_matrices=`cat ${demo_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrices);
-#print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<td><b><a href='help.compare-matrices.html'>[MANUAL]</a></B></TD>\n";
+#print "<td><b><a href='help.compare-matrices.html'>[MANUAL]</a></B></TD>\n";
+print "<td><b><a href='help.matrix-clustering.html'>[MANUAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</tr></table></ul></ul>\n";
 
