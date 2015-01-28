@@ -42,7 +42,8 @@ all promoters of an organismo (e.g. Escherichia coli K12) and the
 expected WS in the theoretical distribution of the PSSM for a given
 P-value (see B<matrix-distrib>).
 
-Information of compared matrices is returned together with the graphic comparison..
+Information of compared matrices is returned together with the graphic
+comparison..
 
 =head1 AUTHORS
 
@@ -66,11 +67,13 @@ compare-qualities [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
-Each line contains the output path and prefix for one run of matrix quality .
+Each line contains the output path and prefix for one run of matrix
+quality .
 
 Eg: /Users/matrix_eval/AgaR/AgaR_eval
 
-With this path and prefix the files for score distribitions comparison and info about the matrix are obtained. 
+With this path and prefix the files for score distribitions comparison
+and info about the matrix are obtained.
 
 
 =head1 OUTPUT FORMAT 
@@ -81,10 +84,14 @@ Tow files will be created:
 
 =item Tab delimited file, containing information about all matrices.
 
-Matrix_name, sites, consensus, total_IC, column_IC, E-value, FPR_50% (LOO),  FPR_90% (LOO), FPR_100% (LOO), FPR_50% (matrix_sites),  FPR_90% (matrix_sites), FPR_100% (matrix_sites),FPR_50% (LOO)/FPR_50% (matrix_sites)
+Matrix_name, sites, consensus, total_IC, column_IC, E-value, FPR_50%
+(LOO), FPR_90% (LOO), FPR_100% (LOO), FPR_50% (matrix_sites), FPR_90%
+(matrix_sites), FPR_100% (matrix_sites),FPR_50% (LOO)/FPR_50%
+(matrix_sites)
 
-=item Graph displaying FPR_50% (LOO)/FPR_50% (matrix_sites) ratio  for all matrices in the list.
-If some matrix doesn't have sites, this values will be empty and set to NA 
+=item Graph displaying FPR_50% (LOO)/FPR_50% (matrix_sites) ratio for
+all matrices in the list.  If some matrix doesn't have sites, this
+values will be empty and set to NA
 
 =back 
 
@@ -305,15 +312,15 @@ package main;
 	    my $auc = $all_params{$distrib}{"auc"} || "NA";
 	    
 	    my @sens;
-	    if (defined @{$all_params{$distrib}{"sensitivity"}}) {
-		@sens = @{$all_params{$distrib}{"sensitivity"}};
+	    if (@{$all_params{$distrib}{"sensitivity"}}) {
+	      @sens = @{$all_params{$distrib}{"sensitivity"}};
 	    } else {
-		foreach (@FPR_for_Sens) {
-		    push @sens, "NA";
-		}
+	      foreach (@FPR_for_Sens) {
+		push @sens, "NA";
+	      }
 	    } ## get coverage values
 	    my @fpr_results;
-	    if ( defined @{$all_params{$distrib}{"fprs"}}) {
+	    if (@{$all_params{$distrib}{"fprs"}}) {
 		@fpr_results = @{$all_params{$distrib}{"fprs"}};
 	    } else {
 		foreach (@main::Sens_for_FPR) {
@@ -651,27 +658,32 @@ sub  GetInfoForTable{
 #Print output table with all the calculated score diferences
 
 sub PrintTable{
-    my @mtxs=sort(keys (%main::matrices));
-    print $main::out join("\t","#key",@mtxs)."\n";
-    my $kmin = $main::xmin;
-    foreach my $k (sort {$b<=>$a}( keys (%main::key_diferences_results) )){
-	#print("+++ $k +++ ");<STDIN>;
-	my $line = "$k";
-	next if ($k < $kmin);
-	    # foreach my $matrix_name ( keys (%{$main::key_diferences_results{$k} } )){
+  my @mtxs=sort(keys (%main::matrices));
+  print $main::out join("\t","#key",@mtxs)."\n";
+  my $kmin;
+#  if (defined ($main::xmin)) {
+#    $kmin = $main::xmin;
+#  } else {
+#    $kmin =  &RSAT::stats::min(keys(%main::key_diferences_results));
+#  }
+  foreach my $k (sort {$b<=>$a}( keys (%main::key_diferences_results))){
+    #print("+++ $k +++ ");<STDIN>;
+    my $line = "$k";
+#    next if ($k < $kmin);
+    # foreach my $matrix_name ( keys (%{$main::key_diferences_results{$k} } )){
 # 	    print "-----$matrix_name--------"; <STDIN>;
 # 	}	    
-	    foreach my $mtx (@mtxs) {
-		#print $mtx;<STDIN>;
-		#print $main::key_diferences_results{$k}{$mtx}; <STDIN>;
-		if ($main::key_diferences_results{$k}{$mtx}){
-		    $line.="\t".$main::key_diferences_results{$k}{$mtx};
-		}else{
-		    $line.="\t".'<NULL>';
-		}		
-	    }
-	print $main::out $line."\n";
-    }        
+    foreach my $mtx (@mtxs) {
+      #print $mtx;<STDIN>;
+      #print $main::key_diferences_results{$k}{$mtx}; <STDIN>;
+      if ($main::key_diferences_results{$k}{$mtx}){
+	$line.="\t".$main::key_diferences_results{$k}{$mtx};
+      }else{
+	$line.="\t".'<NULL>';
+      }		
+    }
+    print $main::out $line."\n";
+  }        
 }
 
 ################################################################

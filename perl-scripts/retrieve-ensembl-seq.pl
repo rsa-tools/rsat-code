@@ -1723,7 +1723,8 @@ sub GetSequence {
 #     $ortho_id = 'ENSMUSG00000038253';
 #     $ortho_id = 'ENSG00000004059';
 
-      my $gene_member = $ma->fetch_by_source_stable_id('ENSEMBLGENE', $ortho_id);
+#     my $gene_member = $ma->fetch_by_source_stable_id('ENSEMBLGENE', $ortho_id);
+      my $gene_member = $ma->fetch_by_stable_id($ortho_id);
 
       # print out some information about the Member
       &RSAT::message::Info("# Chrom_name Chrom_start Chrom_end Description Source_name Taxon_id") if ($main::verbose >= 1);
@@ -1924,7 +1925,6 @@ sub PrintSequence {
 ################################################################
 #### detailed help message
 sub PrintHelp {
-#    my $supported_organisms = &ListSupportedOrganisms("sizes");
     open(HELP, "| less");
     print HELP<<End_help;
 USAGE

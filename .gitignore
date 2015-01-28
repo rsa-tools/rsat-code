@@ -4,7 +4,6 @@
 *.o
 *~
 .#*
-./lib
 .DS_Store
 .Rhistory
 CVS
@@ -27,7 +26,7 @@ contrib/count-words/count-words
 contrib/info-gibbs/info-gibbs
 contrib/kwalks/bin/lkwalk
 contrib/matrix-scan-quick/matrix-scan-quick
-data
+./data
 denied_IP_addresses*
 distrib_accounts
 doc/manuals/*.log
@@ -35,7 +34,7 @@ doc/manuals/*.out
 doc/manuals/*.toc
 downloads
 jobs
-lib
+./lib
 logs
 logs_tmp
 makefile
@@ -65,3 +64,12 @@ share
 public_html/web_services/RSATWS.wsdl
 check_perl_modules_*.txt
 RSAT_config.conf
+backups
+ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
+public_html/web_services/RSATWS.wsdl
+public_html/web_services/RSATWS_documentation.xml
+results
+rsat_*.tar.gz
+available*
+.Rproj.user
+data

@@ -74,7 +74,7 @@ if ($query->param('title')){
 	  "seqlen",
 	  "composition",
 	  "disco",
-	  "merge_words",
+#	  "merge_words",
 	  "collect_motifs",
 	  "motifs_vs_motifs",
 	  "timelog",

@@ -68,18 +68,25 @@ SUDO=
 ##   RSAT_BIN=\${RSAT}/bin
 RSAT_BIN=${RSAT}/bin
 
+
 ################################################################
 ## Web services
 ##
-## This may differ from the RSAT site, because some tasks may be
-## delegated to remote RSAT web services.
+## This variable defines the address of the Web services, which will
+## be used to generate a stub. This stub will be used (under others)
+## by the Web interface of retrieve-ensembl-seq, and by the NeAT
+## tools. It is thus important to specify it correctly and test it.
 ##
-## Previous value: RSAT_WS=http://localhost/rsat/
+## By default, the web services are running on the host machine
+## itself. We thus set it to http://localhost/rsat/. This means that
+## the Web site and Web services will run on the same
+## machine. However, in some cases it might be useful to use a static
+## IP address. In principle, this would allow to redirect the Web
+## services towards a separate RSAT server. However, this is somewhat
+## tricky and might have side effects that we did not test. 
 ##
-## By default, we use an automatic configuration, but in some cases it
-## would be safer to use a fixed address.
-IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
-RSAT_WS=http://${IP}/rsat/
+## We recommend to leave this value to its default (localhost).
+RSAT_WS=http://localhost/rsat/
 
 ################################################################
 ##
@@ -94,10 +101,10 @@ RSAT_WS=http://${IP}/rsat/
 ## consequently.
 ##
 ## supported: torque | sge
-QUEUE_MANAGER=torque
+QSUB_MANAGER=torque
 
 ## Name of the queue where the jobs have to be sent
-QUEUE=
+CLUSTER_QUEUE=rsat
 
 ################################################################
 ## Ensembl and EnsemblGenomes releases. 
@@ -107,5 +114,5 @@ QUEUE=
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_RELEASE=75
-ENSEMBLGENOMES_BRANCH=22
+ENSEMBL_RELEASE=78
+ENSEMBLGENOMES_BRANCH=25

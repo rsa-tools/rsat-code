@@ -200,7 +200,7 @@ putative orthologs.
 
 \begin{footnotesize}
 \begin{verbatim}
-get-orthologs -v 1 -org Escherichia_coli_K12 \
+get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria.tab
 \end{verbatim}
@@ -221,7 +221,7 @@ IL0262  Idiomarina_loihiensis_L2TR      b4043
 ...
 c5014   Escherichia_coli_CFT073 b4043
 c3190   Escherichia_coli_CFT073 b4043
-b4043   Escherichia_coli_K12    b4043
+b4043   Escherichia_coli_K_12_substr__MG1655_uid57779    b4043
 ...
 \end{verbatim}
 \end{scriptsize}
@@ -243,7 +243,7 @@ alignment length, the E-value and the rank of each hit.
 
 \begin{footnotesize}
 \begin{verbatim}
-get-orthologs -v 1 -org Escherichia_coli_K12 \
+get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria.tab \
   -return ident,ali_len,e_value,rank 
@@ -264,7 +264,7 @@ IL0262  Idiomarina_loihiensis_L2TR      b4043   66.83   202     1e-75   1
 ...
 c5014   Escherichia_coli_CFT073 b4043   100.00  202     2e-111  1
 c3190   Escherichia_coli_CFT073 b4043   43.33   90      2e-14   2
-b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
+b4043   Escherichia_coli_K_12_substr__MG1655_uid57779    b4043   100.00  202     2e-111  1
 ...
 \end{verbatim}
 \end{scriptsize}
@@ -285,7 +285,7 @@ an upper threshold on the rank, with the option \option{-uth}.
 
 \begin{footnotesize}
 \begin{verbatim}
-get-orthologs -v 1 -org Escherichia_coli_K12 \
+get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh.tab \
   -return ident,ali_len,e_value,rank \
@@ -304,7 +304,7 @@ CPS_0237        Colwellia_psychrerythraea_34H   b4043   65.69   204     6e-75   
 IL0262  Idiomarina_loihiensis_L2TR      b4043   66.83   202     1e-75   1
 ...
 c5014   Escherichia_coli_CFT073 b4043   100.00  202     2e-111  1
-b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
+b4043   Escherichia_coli_K_12_substr__MG1655_uid57779    b4043   100.00  202     2e-111  1
 ...
 \end{verbatim}
 \end{scriptsize}
@@ -325,7 +325,7 @@ by imposing an upper threshold of 1e-10.
 \begin{footnotesize}
 \begin{verbatim}
 ## Note that or this test we suppress the BBH constraint (-uth rank 1)
-get-orthologs -v 1 -org Escherichia_coli_K12 \
+get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria_id30_len50_eval-10.tab \
   -return ident,ali_len,e_value,rank \
@@ -338,7 +338,7 @@ We can now combine the constrains above with the criterion of BBH.
 \begin{footnotesize}
 \begin{verbatim}
 ## Note that or this test we include the BBH constraint (-uth rank 1)
-get-orthologs -v 1 -org Escherichia_coli_K12 \
+get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
   -return ident,ali_len,e_value,rank \

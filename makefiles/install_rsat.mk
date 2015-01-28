@@ -23,9 +23,18 @@ SSH=-e 'ssh -x'
 ################################################################
 ## Install the RSAT package
 install_rsat:
-	make -f ${RSAT}/makefiles/init_rsat.mk init
+	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk init
+	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
+	${MAKE} -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
+	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_ext_apps
+
+################################################################
+## Update RSAT and check the dependent tasks (compilation of C
+## programs, installation of R packages)
+update:
+	git pull
+	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
 	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
-	make -f ${RSAT}/makefiles/install_software.mk install_ext_apps
 
 ################################################################
 ## Install Unix packages required for RSAT
@@ -118,9 +127,6 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
-	Net::Address::IP::Local \
-	Sys::Hostname \
-	Socket \
 	YAML \
 	Module::Build::Compat \
 	CGI \
@@ -129,6 +135,7 @@ PERL_MODULES= \
 	Email::Simple::Creator \
 	PostScript::Simple	 \
 	Statistics::Distributions \
+	Math::CDF \
 	Algorithm::Cluster \
 	File::Spec \
 	POSIX \
@@ -190,7 +197,7 @@ perl_modules_cmd:
 
 ## Do not test the modules, simply install them
 CPAN_OPT=-T 
-CPAN_CMD=cpan ${CPAN_OPT}
+CPAN_CMD=${CPAN} ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
 ## configuration, cpan may ask you to answer y/n for each module and
 ## dependency.
@@ -248,7 +255,7 @@ perl_modules_check_doc:
 
 perl_module_test_eval:
 	@echo "	Checking perl module	${PERL_MODULE}"
-	@echo "${PERL_MODULE}" | xargs -I MODULE perl -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
+	@echo "${PERL_MODULE}" | xargs -I MODULE ${PERL} -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_version:
 	@echo "	Checking perl module version	${PERL_MODULE}"
@@ -260,7 +267,7 @@ perl_module_test_doc:
 
 ################################################################
 ## Install modules required for python
-PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy
+PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy httplib2
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
@@ -283,31 +290,36 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
-R_MODULES=RJSONIO reshape plyr dendroextras dendextend
-## Note: package  ctc does not exist. To check with Jaime Castro
-r_modules_list:
-	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
+install_r_packages:
+	Rscript ${RSAT}/R-scripts/install_packages_for_rsat.R
 
-r_modules_install_all:
-	@echo
-	@echo "Installing R modules"
-	@for m in ${R_MODULES}; do \
-		${MAKE} r_modules_install_one R_MODULE=$${m}; \
-	done
+##  --slave --no-save --no-restore --no-environ
 
-R_MODULE=RJSONIO
-r_modules_install_one:
-	${SUDO} echo "install.packages('${R_MODULE}')" \
-		| R --slave --no-save --no-restore --no-environ ; 
-#	${SUDO} R CMD INSTALL ${R_MODULE}
+# R_MODULES=RJSONIO dendextend Rcpp Rclusterpp gplots devtools
+# ## reshape plyr: are these still required ?
+# ## Note: package  ctc does not exist. To check with Jaime Castro
+# r_modules_list:
+# 	@echo ${R_MODULES} | perl -pe 's|\s+|\n|g'
 
-BIOCONDUCTOR_MODULES=ctc
-r_bioconductor_modules:
-	for module in ${BIOCONDUCTOR_MODULES}; do \
-		echo "Insalling bioconductor module	$${module}"; \
-		${SUDO} echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
-		| R --slave --no-save --no-restore --no-environ ; \
-	done
+# r_modules_install_all:
+# 	@echo
+# 	@echo "Installing R modules"
+# 	@for m in ${R_MODULES}; do \
+# 		${MAKE} r_modules_install_one R_MODULE=$${m}; \
+# 	done
+
+# R_MODULE=RJSONIO
+# r_modules_install_one:
+# 	${SUDO} echo "install.packages('${R_MODULE}', repos='http://cran.rstudio.com/', dependencies=TRUE)" | ${SUDO} R --slave --no-save --no-restore --no-environ
+# #	${SUDO} R CMD INSTALL ${R_MODULE}
+
+# BIOCONDUCTOR_MODULES=ctc
+# r_bioconductor_modules:
+# 	for module in ${BIOCONDUCTOR_MODULES}; do \
+# 		echo "Installing bioconductor module	$${module}"; \
+# 		${SUDO} (echo "source('http://bioconductor.org/biocLite.R'); biocLite('"$${module}"')" \
+# 		| R --slave --no-save --no-restore --no-environ ;) \
+# 	done
 
 ################################################################
 ## Install tex-live for generating the doc

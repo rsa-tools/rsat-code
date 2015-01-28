@@ -1,13 +1,16 @@
 /* BODY  */
-body {
-       font-family: Verdana, Helvetica, Arial, sans-serif;
-       font-size: 11px;
-       margin-top: 2px;
-       margin-left: 20px;
-       margin-right: 10px;
-       text-align: left;
-       background: #FFFFFF;
-       }
+body  {
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    /*  font-family: Garamond, Times new roman, Times, serif; */
+    /*  font : 14px Garamond, 12px Times new roman, 12px Times, serif;*/
+    font-size: 11px;
+    margin-top: 2px;
+    margin-left:20px;
+    margin-right: 10px;
+    text-align: justify;
+    background: #FFFFFF;
+    max-width: 650px;
+}
 
 /* Links  */
 
@@ -89,6 +92,7 @@ hr.solid {
 pre,tt {
          font-size: 12px;
          background-color: #EEEEEE;
+	 text-align: left;
          }
 
 .author {
@@ -133,106 +137,107 @@ pre,tt {
 }
 
 .code {
-        font-family: Courier;
-        padding-top: 5px;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        padding-bottom: 5px;
-        padding-left: 5px;
-        border: 1px dashed #2f6fab;
-        background-color: #00FF00;
-        color: #0000888;
-       #margin-right: 20%
+    text-align: left;
+    font-family: Courier;
+    padding-top: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    border: 1px dashed #2f6fab;
+    background-color: #00FF00;
+    color: #0000888;
+    #margin-right: 20%
 }
 
 .terminal {
-        font-family: Courier;
-        padding-top: 5px;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        padding-bottom: 5px;
-        padding-left: 5px;
-        border: 1px dashed #2f6fab;
-        background-color: #000000;
-        color: #FFFFFF;
-       #margin-right: 20%
+    text-align: left;
+    font-family: Courier;
+    padding-top: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    border: 1px dashed #2f6fab;
+    background-color: #000000;
+    color: #FFFFFF;
+    #margin-right: 20%
 }
 
 .solution {
-        margin-top: 5px;
-        margin-bottom: 5px;
-            padding-top: 5px;
-            padding-bottom: 5px;
-            padding-left: 5px;
-            padding-right: 5px;
-            border: 1px dashed #FFFFFF;
-            background-color: #EEEEFF;
-            color: #0000BB;
-            font-size: 11px;
-            #margin-right: 20%
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: 1px dashed #FFFFFF;
+    background-color: #EEEEFF;
+    color: #0000BB;
+    font-size: 11px;
+    #margin-right: 20%
 }
 
 
 .exo {
-       #font-style:italic;
-        margin-top: 5px;
-        margin-bottom: 5px;
-       padding-top: 5px;
-       padding-bottom: 5px;
-       padding-left: 5px;
-       padding-right: 5px;
-       #border: 1px solid #9999ff;
-       #color: Black;
-       background-color: #FFEEEE;
-       color: rgb(51, 51,153);
-       #margin-right: 30%
+    #font-style:italic;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    #border: 1px solid #9999ff;
+    #color: Black;
+    background-color: #FFEEEE;
+    color: rgb(51, 51,153);
+    #margin-right: 30%
 }
 
 
 .tut {
-       #font-style:italic;
-        margin-top: 5px;
-        margin-bottom: 5px;
-       padding-top: 5px;
-       padding-bottom: 5px;
-       padding-left: 5px;
-       padding-right: 5px;
-       #border: 1px solid #9999ff;
-       #color: Black;
-       background-color: #EEEEEE;
-       color: rgb(51, 51,153);
-       #margin-right: 30%
+    #font-style:italic;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    #border: 1px solid #9999ff;
+    #color: Black;
+    background-color: #EEEEEE;
+    color: rgb(51, 51,153);
+    #margin-right: 30%
 }
 
 
 .answer {
-       #font-style:italic;
-        margin-top: 5px;
-        margin-bottom: 5px;
-       padding-top: 5px;
-       padding-bottom: 5px;
-       padding-left: 5px;
-       padding-right: 5px;
-       #border: 1px solid #9999ff;
-       #color: Black;
-       background-color: #EEFFEE;
-       color: rgb(51, 51,153);
-       #margin-right: 30%
+    #font-style:italic;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    #border: 1px solid #9999ff;
+    #color: Black;
+    background-color: #EEFFEE;
+    color: rgb(51, 51,153);
+    #margin-right: 30%
 }
 
 .attention {
-             color: #6B0909;
-             font-size: larger;
-             padding:10px;
-             background-color: #FFEEEE;
-             border: 2px solid #B40404;
-             margin-right: 5%;
-             margin-left: 5%;
-             }  
+    color: #6B0909;
+    /*    font-size: larger;*/
+    padding:10px;
+    background-color: #FFEEEE;
+    border: 2px solid #B40404;
+    margin-right: 5%;
+    margin-left: 5%;
+}  
 
 
-p.attention
-{
+p.attention {
   padding:10px;
   background-color: #FFEEEE;
   border: 2px solid #B40404;
@@ -242,74 +247,69 @@ p.attention
 
 
 .tbw {
-       font-style:italic;
-       margin-top: 5px;
-       margin-bottom: 5px;
-       padding-top: 5px;
-       padding-bottom: 5px;
-       padding-left: 5px;
-       padding-right: 5px;
-       border: 1px solid #9999ff;
-       color: Red;
-       background-color: #FFFFBB;
+    font-style:italic;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: 1px solid #9999ff;
+    color: Red;
+    background-color: #FFFFBB;
 }
 
 .protocol {
-            font-style:plain;
-            margin-top: 5px;
-            margin-bottom: 5px;
-            padding-top: 5px;
-            padding-bottom: 5px;
-            padding-left: 5px;
-            padding-right: 5px;
-            #border: 1px solid #9999ff;
-            color: #000055;
-            background-color: #EEEEFF;
-            }
+    font-style:plain;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    #border: 1px solid #9999ff;
+    color: #000055;
+    background-color: #EEEEFF;
+}
 
 /* Concept definitions */
-.concept 
-{ 
-  color: darkgreen;
-  font-style: italic;
-  font-weight: bold;
-  }
+.concept  { 
+    color: darkgreen;
+    font-style: italic;
+    font-weight: bold;
+}
 
 /* Figure legend */
-.legend
-{ 
-  text-align: center;
-  font-style: italic;
-  }
+.legend { 
+    text-align: center;
+    font-style: italic;
+}
 /* software tool, program */
-.program
-{ 
-  font-style: italic;
-  font-weight: bold;
-  color: darkgreen;
-  }
+.program { 
+    font-style: italic;
+    font-weight: bold;
+/*    color: darkgreen;*/
+}
 
 /* option for a program */
-.option
-{ 
-  font-style: italic;
-  color: darkgreen;
-  }
+.option { 
+    font-style: italic;
+    color: darkgreen;
+}
 
 /* option for a command */
-.command
-{ 
+.command { 
+    text-align: left;
     font-family: monaco,courier;
     color: black;
     background-color: white;
     margin-left: 5px;
     margin-right: 5px;
-  }
+}
 
 
 /* Page header line */
-.header
-{ 
+.header { 
   font-style: italic;
   color: #888888;
   text-align: center;
@@ -318,8 +318,7 @@ p.attention
 
 
 /* Mathematical formula */
-.formula
-{ 
+.formula { 
   font-style: italic;
   color: darkviolet;
   text-align: center;
@@ -355,3 +354,18 @@ table td {
            background-color: #DDEEFF;
            }
 
+table.simple  {
+  margin: 10px 20px 20px;
+  color: #000000;
+  }
+
+table.simple td,table.list th  {
+  font-size: 70%;
+  padding: 2px 10px;
+  background-color: #FFFFFF;
+  }
+
+table.simple th  {
+  font-size: 70%;
+  background-color: #F6E6CA;
+  }
