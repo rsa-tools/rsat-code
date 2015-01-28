@@ -60,12 +60,12 @@ foreach $key (keys %default) {
 &RSA_header("matrix-clustering", "form");
 print "<CENTER>";
 print "Identify groups (clusters) of similarities between a set of motifs and align them.<P>\n";
-print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
-print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>t</sup>\n";
-print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
+print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>&nbsp: ";
 print "and <a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
+#print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>t</sup>,\n";
+#print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
+print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print "</CENTER>";
 
 ## demo description
@@ -160,7 +160,8 @@ my $descr1 = "<H2>Comment on the demonstration example 1</H2>\n";
 $descr1 .= "<blockquote class ='demo'>";
 
 $descr1 .= "In this demo, we will apply <i>matrix-clustering</i> to a
-set of motifs discovered with <i>peak-motifs</i> in ChIP-seq binding
+set of motifs discovered with <a
+href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
 peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 2008).  </p>\n";
 
