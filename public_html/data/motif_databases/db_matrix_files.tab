@@ -30,3 +30,14 @@ DMMPMM_drosophila	tf	DMMPMM_drosophila/dmmpmm_PCM.tf	Drosophila DMMPMM (http://a
 IDMMPMM_drosophila	tf	DMMPMM_drosophila/idmmpmm_PCM.tf	Drosophila IDMMPMM (http://autosome.ru/DMMPMM/)	2010_11
 regulonDB	tf	REGULONDB/regulonDB_2012-05.tf	RegulonDB prokaryotes	2012_05
 Uniprobe_worm	tf	uniprobe/uniprobe_worm_Cell09.tf	Uniprobe worm from Groves (Cell09)	2009	http://thebrain.bwh.harvard.edu/uniprobe/downloads/Cell09/worm_pwm_all.zip
+<<<<<<< HEAD
+=======
+footprintDB-plants	tf	footprintDB/footprintDB.plants.motif.tf	footprintDB-plants [only plant DNA motifs]	2014-04	http://floresta.eead.csic.es/footprintdb
+footprintDB	tf	footprintDB/footprintDB.motif.tf	footprintDB	2014-04	http://floresta.eead.csic.es/footprintdb
+cisBP_human	tf	cisBP/cisBP_Homo_sapiens_2013-12.tf	cisBP human	2013-12_v0.9	http://cisbp.ccbr.utoronto.ca/ 
+cisBP_mouse	tf	cisBP/cisBP_Mus_musculus_2013-12.tf	cisBP mouse	2013-12_v0.9	http://cisbp.ccbr.utoronto.ca/
+cisBP_human	tf	cisBP/cisBP_Homo_sapiens_2014-10.tf	cisBP human	2014-10_v0.9	http://cisbp.ccbr.utoronto.ca/ 
+cisBP_mouse	tf	cisBP/cisBP_Mus_musculus_2014-10.tf	cisBP mouse	2014-10_v0.9	http://cisbp.ccbr.utoronto.ca/
+cisBP_drosophila	tf	cisBP/cisBP_Drosophila_melanogaster_2014-10.tf	cisBP drosophila	2014-10_v0.9	http://cisbp.ccbr.utoronto.ca/
+;encode	tf	ENCODE/encode-motifs_Kheradpour_Kellis_NAR2013.tf	ENCODE human	2014-03-14		http://compbio.mit.edu/encode-motifs/
+>>>>>>> abc6fdf2ba154f860306e5a9cea1179b9d6655f7

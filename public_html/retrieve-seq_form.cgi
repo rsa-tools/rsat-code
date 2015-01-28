@@ -62,6 +62,7 @@ print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' $CHECKED>",
        "<A HREF=help.retrieve-seq.html#single_org>",
        "<b>Single organism</b>",
        "</A>\n");
+#print "&nbsp;"x4, &OrganismPopUpSelectable();
 print "&nbsp;"x4, &OrganismPopUpString();
 print "<p>\n";
 

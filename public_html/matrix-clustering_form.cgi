@@ -24,33 +24,25 @@ $default{ref_db} = "CHECKED";
 $default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
-#$default{pseudo_counts}=1;
-#$default{pseudo_distribution}="pseudo_prior";
-#$checked{$default{pseudo_distribution}} = "CHECKED";
 $default{matrix_format} = "transfac";
-$default{hclust_method}="complete";
+$default{hclust_method}="average";
 $checked{$default{bg_method}} = "CHECKED";
-
+$default{labels} = "name";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
-$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "none";
-$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "none";
-$default{'return_match_rank'} = "CHECKED"; $default{'uth_match_rank'} = 100;
+$default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
+$default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
 $default{'return_logoDP'} = "CHECKED";
 $default{'return_NSW'} = "CHECKED";
 $default{'return_NsEucl'} = "CHECKED";
-
-
-## motif database
-$default{compare_motif_database}="jaspar_core_vertebrates";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-#   if ($query->param($key) =~ /checked/i) {
-#     $checked{$key} = "CHECKED";
-#   }
+  if ($query->param($key) =~ /checked/i) {
+    $checked{$key} = "CHECKED";
+  }
 }
 
 
@@ -64,12 +56,13 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("matrix-clustering", "form");
 print "<CENTER>";
-print "Identify clusters of similar matrices and build consensus motifs by merging the matrices that belong to the same cluster.<P>\n";
+print "Measure the (dis)similarity between a set of motifs to identify clusters of similarities and align the motifs.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
 print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>t</sup>\n";
 print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
+print "and <a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
 print "</CENTER>";
 
 ## demo description
@@ -94,10 +87,16 @@ print "<h2>", "Clustering options", ,"</h2>";
 
 
 print "<b>Agglomeration rule</b>";
-print "<B><A HREF='help.matrix-clustering.html#hclust_method'>Aglomeration rule</A>&nbsp;</B>\n";
+print "<B><A HREF='help.matrix-clustering.html#hclust_method'>  Aglomeration rule  </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
  			 -Values=>["complete", "average", "single"],
  			 -default=>$default{hclust_method});
+
+print "<hr>";
+print "<b>Labels to display in logo trees  </b>";
+print $query->popup_menu(-name=>'labels',
+ 			 -Values=>["consensus", "id", "name"],
+ 			 -default=>$default{labels});
 
 
 ################################################################
@@ -105,14 +104,6 @@ print $query->popup_menu(-name=>'hclust_method',
 &PrintMatrixMatchingScores();
 
 print "<h2>", "Display options", ,"</h2>";
-
-## Display consensus of merged matrices on internal branches of the
-## tree.
-print "<br>", $query->checkbox(-name=>'internal_cons',
-		       -checked=>$default{internal_cons},
-		       -label=>'');
-print "&nbsp;<A HREF='help.matrix-clustering.html#cons'>Display consensus of merged motifs on internal branches</A>";
-print "<BR>";
 
 print "<hr>";
 
@@ -142,7 +133,8 @@ peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_file = "demo_files/peak-motifs_result_Chen_Oct4_matrices.tf";
+#$demo_file = "demo_files/peak-motifs_result_Chen_Oct4_matrices.tf";
+$demo_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_matrices=`cat ${demo_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);

@@ -118,7 +118,7 @@ init:
 _create_download_dir:
 	cd ${RSAT}
 	mkdir -p downloads
-	(cd downloads; ln -fs $RSAT/makefiles/downloads.mk ./makefile)
+	(cd downloads; ln -fs ${RSAT}/makefiles/downloads.mk ./makefile)
 
 
 ## Adapt the IP address in the RSATWS.wsdl file
@@ -128,6 +128,7 @@ ws_init:
 	@perl -pe 's|\[RSAT_WS\]|${RSAT_WS}|g' \
 		${RSAT}/public_html/web_services/RSATWS_default.wsdl \
 		> ${RSAT}/public_html/web_services/RSATWS.wsdl
+	@cp ${RSAT}/public_html/web_services/RSATWS.wsdl ${RSAT}/public_html/web_services/RSATWS_documentation.xml
 	@${MAKE} ws_param
 
 ## List the parameters for the WS stub
@@ -176,7 +177,7 @@ BIN=${RSAT}/bin
 SUDO=
 compile_one_program:
 	@echo "Compiling ${PROGRAM}"
-	(cd ${SRC_DIR}; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
+	(cd ${SRC_DIR}; make clean; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
 #	(cd ${SRC_DIR}; make all; ln -fs ${SRC_DIR}/${PROGRAM} ${RSAT}/bin/${PROGRAM})
 	@echo ${BIN}/${PROGRAM}
 	@echo ""

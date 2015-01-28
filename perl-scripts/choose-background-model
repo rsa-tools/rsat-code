@@ -67,7 +67,7 @@ upstream-noorf-rm
 
 =head1 AUTHORS
 
-jvanheld@bigre.ulb.ac.be
+Jacques.van-Helden@univ-amu.fr
 
 =head1 CATEGORY
 
@@ -86,6 +86,14 @@ Taxon-specific background models
  choose-background-model -type oligo|dyad|protein \
       -taxon taxon_name [-1str|-2str] -l oligo_length \
       -bg [background] -ovlp|-noov
+
+=head2 Example
+
+ choose-background-model -org Saccharomyces_cerevisiae \
+     -l 6 -bg upstream-noorf -1str -noov
+
+This command returns the full path to the specified background model
+file.
 
 =head1 OUTPUT FORMAT
 

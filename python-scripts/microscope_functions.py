@@ -60,28 +60,31 @@ def connection_server_species(v):
     
     
     
-def retrieve_microscope_species(outfile):
-  
-     
-    print( "; Job started", time.strftime("%Y-%m-%d %H:%M:%S") + '\n')
-     
+def retrieve_microscope_species(outfile, v):
+    
+    if v >=1:
+        print( "; Job started", time.strftime("%Y-%m-%d %H:%M:%S"))
+        print( "; Connecting to MicroScope server ...")
     #Send the request to the Genoscope server and get a Json object
     org_supported_json = RequestGenoscope("/organisms/list")
 
     #Get a Python object from a JSON object : here an array containing dictionaries with each organism's informations 
     org_supported = json.loads(org_supported_json)         
     
-    
+    if v>=1:
+        print( "; Exporting data")
     ########According to the user choice, the program runs regarding to a few columns or all columns 
     out_columns = ['ospeciesCode','odirname','ogram','oid','osynonym','otaxon','oreplicNb','okingdom','oname','ostrain']
-    
+    if v >= 2:
+        print("; The output columns are : \n",out_columns)
     #Variable containing all strings matching to each value of the dictionary for a given species separated by tabulations
     file_content = ""
-    
+    if v == 3:
+        print( "; Number of the supported species into Microscope is :", len(org_supported))
+
     for i in range(len(org_supported)):
     #Dictionary containing informations about a given species
             current_species_dict = org_supported[i] 
-                   
     #Feeding of file_content variable 
             for j in range(len(out_columns)):
                 if out_columns[j] in current_species_dict.keys():
@@ -90,35 +93,43 @@ def retrieve_microscope_species(outfile):
     
     if outfile:
       #Creation of the tabulated file
-      Save_Tabulated_File(out_columns,outfile,file_content)
+        Save_Tabulated_File(out_columns,outfile,file_content)
+        if v >=2:
+            print("; Save data to the file: ", outfile)
     else:
-      Display_Tabulated_Results(out_columns,file_content)
+        if v >=2:
+            print("; List of supported MicroScope species:")
+        Display_Tabulated_Results(out_columns,file_content)
     
-    print( "; Job done", time.strftime("%Y-%m-%d %H:%M:%S") ) 
+    if v >= 1:
+        print( "; Job done", time.strftime("%Y-%m-%d %H:%M:%S") ) 
 
   
   
  ##################################################################
  ## REQUEST 2 :
  
-def genomicObjects_by_orgname(organism, outfile):
+def genomicObjects_by_orgname(organism, outfile, v):
  
     ## Job_started variable is created here to get the real moment of the beginning of the program. It will be used in the output file
-    Job_started = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    print( "; Job started", Job_started)
+    if v >=1 :
+        Job_started = time.strftime("%Y-%m-%d %H:%M:%S")
+        print( "; Job started", Job_started)
 
     # Send the request to the Genoscope server and get a Json object
-    print( 'Sending the request to the server and checking the request status')
+    if v>=2:
+        print( '; Sending the organism request to the server and checking the request status')
     supported_org_json = RequestGenoscope("/organisms/list")
 
     # From the JSON object we get a Python object : a list containing dictionaries containing dictionaries
-    print( 'Treatment of the server response')
+    if v>=2:
+        print( '; Treatment of the server response')
     supported_org = json.loads(supported_org_json)
 
     # This variable is initialized in order to get the organism Genoscope ID (oid)
     org_id = ''
-
+    if v>=3:
+        print( "; Check if your organism is in the list of supported MicroScope organisms")
     # Identify the query organism in the list of supported organisms and collect some of its Genoscope ID (oid)
     for i in range (len(supported_org)):
         current_species_dict = supported_org[i]
@@ -129,33 +140,43 @@ def genomicObjects_by_orgname(organism, outfile):
     # organisms : if it isn't listed, an error message is displayed on
     # the STDOUT and we quit the program
     if org_id == '' :
-        print( "Organism" + ' ' + organism + ' ' + "is not supported at Genoscope server. \nTo get the list of supported organisms use : 'python microscope_get.py organisms'")
+        print( "; Organism" + ' ' + organism + ' ' + "is not supported at Genoscope server. \nTo get the list of supported organisms use : 'python microscope_get.py organisms'")
         sys.exit()
+
+    if v>=2 :
+        print( '; Sending the gene information request to the server and checking the request status')
 
     ## New request to get informations about organism genes and get a new Json object
     org_genes_json = RequestGenoscope("/genomes/genomic-objects/list-from-organism/" + org_id)
-
+    
+    if v>=3:
+        print("; Collect gene information data")
     ## Get a Python object from a JSON object : here it is an array/lis containing dictionaries
     org_genes = json.loads(org_genes_json)
 
     ## Variable containing all strings matching to interesting values from dict_gene_val for a given gene separated by tabulations
     file_content = ''
-    print( 'Obtention of the response data')
-
-    ## Error 1 counters (list) ---> Error = there is a reaction but there is not an EC number
-    print( 'Errors search')
+    if v>=3:
+        print( '; Obtention of the response data')
+    if v>=3:
+        ## Error 1 counters (list) ---> Error = there is a reaction but there is not an EC number
+        print( '; Errors search')
     errors_Reaction_No_Ec = []
     reactionInerror = []
     ## Error 2 counter (list) ---> Error = there is an ID but no gene name
     errors_ID_No_GeneName = []
 
-
+    if v>=3:
+        print("; Output columns are :")
     ## Column headers list
     #list_columnHeaders = ['refSeq','uniprot','trembl','goOriId','evidence','protId']
     list_columnHeaders = ['refSeq','uniprot','trembl','goOriIdE','goTypeE','goFrameE','goBeginE','goEndE','goStatusE','goMutationE','goLabelE','goGeneNameE','goSynonymsE','goProductE','goProductTypeE','goFunctionE','goLocalizationE','goClassE','goLengthE','goEcE','goEvidenceE','goCreationDateE','goAmigeneStatusE','goPmidE','goProcessE','protId','goOriId']
     ## From the Python object (array) we get the dictionary containing informations about a given gene
-    print( 'Data analysis...')
-
+    if v>=2:
+        print(list_columnHeaders)
+        print( '; Collecting data ...')
+    if v>=3:
+        print("; Number of gene for specie '",organism,"' is :", len(org_genes)) 
     ## This dictionary contains column headers as keys and (in this
     ## worder) the list of data matching with the column header, the
     ## counter of Non Null data, the counter of Null data and the
@@ -231,27 +252,33 @@ def genomicObjects_by_orgname(organism, outfile):
     
     
     if outfile:
-      #Creation of the tabulated file
-      Save_Tabulated_File(list_columnHeaders,outfile,file_content)
+        #Creation of the tabulated file
+        Save_Tabulated_File(list_columnHeaders,outfile,file_content)
+        if v >=2:
+            print("; Save data to the file: ", outfile)
     else:
-      Display_Tabulated_Results(list_columnHeaders,file_content)
-     
+        if v >=3:
+            print("; List of gene information for the specie:", organism)
+        Display_Tabulated_Results(list_columnHeaders,file_content)
+      
 
-    
-    print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
+    if v >= 1:
+        print( "; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
 
   
   
-def get_MetaCycReaction(reaction):
+def get_MetaCycReaction(reaction, outfile, v):
     ## Job_started variable is created here to get the real moment of the beginning of the program. It will be used in the output file
-    Job_started = time.strftime("%Y-%m-%d %H:%M:%S")
-
+    if v>=1:
+        Job_started = time.strftime("%Y-%m-%d %H:%M:%S")
+        print("; Job started ",Job_started)
     ## The user has to enter an organism name to launch the program else we quit it
     if reaction == None:
         print( "Error: reaction name is mandatory. \nUse the option:\n\t-mrID my_Reaction_Name (ex: '6-ACETYLGLUCOSE-DEACETYLASE-RXN')")
         sys.exit()
 
-
+    if v>=2:
+        print("; Sending reaction information request")
     ## New request to get informations about organism genes and get a new Json object
     mrId_genes_json = RequestGenoscope("/networks/microcyc/reactions/get/" + reaction)
 
@@ -260,7 +287,8 @@ def get_MetaCycReaction(reaction):
 
     ## Variable containing all strings matching to interesting values from dict_gene_val for a given gene separated by tabulations
     file_content = ''
-    print( 'Obtention of the response data')
+    if v>=2:
+        print( '; Obtention of the response data')
 
    
 
@@ -268,7 +296,10 @@ def get_MetaCycReaction(reaction):
     #list_columnHeaders = ['refSeq','uniprot','trembl','goOriId','evidence','protId']
     list_columnHeaders = ['mrIdE','mrNameE','mrEcE','mrOfficialEcE','mrSpontaneousE','coefficientE','natureE','compartmentE','cidE']
     ## From the Python object (array) we get the dictionary containing informations about a given gene
-    print( 'Data analysis...')
+    if v>=3:
+        print("; Output columns are :\n", list_columnHeaders)
+    if v>=2:
+        print( '; Collecting data...')
 
     ## This dictionary contains column headers as keys and (in this
     ## worder) the list of data matching with the column header, the
@@ -308,17 +339,22 @@ def get_MetaCycReaction(reaction):
                                (9,"cidE")])
 
     if outfile:
-      #Creation of the tabulated file
-      Save_Tabulated_File(out_columns,outfile,file_content)
+        #Creation of the tabulated file
+        Save_Tabulated_File(out_columns,outfile,file_content)
+        if v >=2:
+            print("; Save data to the file: ", outfile)
     else:
-      Display_Tabulated_Results(list_columnHeaders,file_content)
+        if v >=2:
+            print("; List of genes implicated into the reaction:", reaction)
+        Display_Tabulated_Results(list_columnHeaders,file_content)
  
-    print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
+    if v>=1:
+        print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
 
  
  
   
-def get_MetaCycReactionFromOrg(organism):
+def get_MetaCycReactionFromOrg(organism, outfile, v):
       ## Job_started variable is created here to get the real moment of the beginning of the program. It will be used in the output file
     Job_started = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -330,13 +366,13 @@ def get_MetaCycReactionFromOrg(organism):
     ## The job can start here
     else :
         print( "; Job started", Job_started)
-
-        # Send the request to the Genoscope server and get a Json object
-        print( 'Sending the request to the server and checking the request status')
+        if v>=2:
+            # Send the request to the Genoscope server and get a Json object
+            print( '; Sending the request to the server and checking the request status')
         supported_org_json = RequestGenoscope("/organisms/list")
-
-        # From the JSON object we get a Python object : a list containing dictionaries containing dictionaries
-        print( 'Treatment of the server response')
+        if v>=2:
+            # From the JSON object we get a Python object : a list containing dictionaries containing dictionaries
+            print( '; Treatment of the server response')
         supported_org = json.loads(supported_org_json)
 
     # This variable is initialized in order to get the organism Genoscope ID (oid)
@@ -363,8 +399,11 @@ def get_MetaCycReactionFromOrg(organism):
 
     ## Variable containing all strings matching to interesting values from dict_gene_val for a given gene separated by tabulations
     file_content = ''
-    print( 'Obtention of the response data')
+    if v>=2:
+        print( '; Collectiong data...')
 
+    if v>=3:
+        print("; The number of reaction supported by the specie",organism, "is:", len(org_genes))
 
     ## Column headers list
     list_columnHeaders = ['reactionId','genes']
@@ -394,36 +433,44 @@ def get_MetaCycReactionFromOrg(organism):
 
     if outfile:
       #Creation of the tabulated file
-      Save_Tabulated_File(out_columns,outfile,file_content)
+      Save_Tabulated_File(list_columnHeaders,outfile,file_content)
+      if v >=2:
+            print("; Save data to the file: ", outfile)
     else:
-      Display_Tabulated_Results(list_columnHeaders,file_content)
+        if v >=2:
+            print("; List of reactions corresponding to specie:", organism)
+        Display_Tabulated_Results(list_columnHeaders,file_content)
  
-    print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
+    if v>=1:
+        print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
     
     
     
-def allReactionList():
-      ## Job_started variable is created here to get the real moment of the beginning of the program. It will be used in the output file
+def allReactionList(outfile, v):
+    ## Job_started variable is created here to get the real moment of the beginning of the program. It will be used in the output file
     Job_started = time.strftime("%Y-%m-%d %H:%M:%S")
-
+    if v>=1:
+        print("; Job started", Job_started)
+        print("; Connecting to microscope server")
 
     ## New request to get informations about organism genes and get a new Json object
     mrId_genes_json = RequestGenoscope("/networks/microcyc/reactions/list/")
 
     ## Get a Python object from a JSON object : here it is an array/lis containing dictionaries
     org_genes = json.loads(mrId_genes_json)
-
+    if v>=1:
+        print('; Exporting data')
     ## Variable containing all strings matching to interesting values from dict_gene_val for a given gene separated by tabulations
     file_content = ''
-    print( 'Obtention of the response data')
-
    
-
+    if v>=3:
+        print("; The number of supported reaction into MicroScope is", len(org_genes))
     ## Column headers list
     #list_columnHeaders = ['refSeq','uniprot','trembl','goOriId','evidence','protId']
     list_columnHeaders = ['mrIdE','mrNameE','mrEcE','mrOfficialEcE','mrSpontaneousE','coefficientE','natureE','compartmentE','cidE']
     ## From the Python object (array) we get the dictionary containing informations about a given gene
-    print( 'Data analysis...')
+    if v>=3:
+        print( '; The output columns are:\n', list_columnHeaders)
 
     ## This dictionary contains column headers as keys and (in this
     ## worder) the list of data matching with the column header, the
@@ -466,9 +513,14 @@ def allReactionList():
 
     if outfile:
       #Creation of the tabulated file
-      Save_Tabulated_File(out_columns,outfile,file_content)
+      Save_Tabulated_File(list_columnHeaders,outfile,file_content)
+      if v >=2:
+            print("; Save data to the file: ", outfile)
     else:
-      Display_Tabulated_Results(list_columnHeaders,file_content)
+        if v >=2:
+            print("; List of supported reactions:")
+        Display_Tabulated_Results(list_columnHeaders,file_content)
  
-    print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
+    if v>=1:
+        print( "\n; Job done", time.strftime("%Y-%m-%d %H:%M:%S"))
     

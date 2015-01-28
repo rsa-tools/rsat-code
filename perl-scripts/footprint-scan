@@ -16,9 +16,8 @@ footprint-scan
 =head1 DESCRIPTION
 
 Scan promoters of orthologous genes with one or several
-position-specific scoring matrices (PSSM) in order to detect motifs
-showing a higher number of hits than expected by chance
-(over-represented motifs).
+position-specific scoring matrices (PSSM) in order to detect enriched
+motifs, and thereby predict phylogenetically conserved target genes.
 
 =head1 AUTHORS
 
@@ -2033,7 +2032,7 @@ sub AddOneMatrixToMatricesReport{
   my $motif_name = $matrix->get_attribute("name");
 
   ################
-  ## Print information the the tab delimited table
+  ## Print information in the tab delimited table
   if ($m_tf) {
     print  $matrices_synthesis_table join("\t",$msuf,$m_tf,$consensus,$num_reg_genes,$m_report)."\n";
   } else {

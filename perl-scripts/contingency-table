@@ -21,7 +21,7 @@ values of 2 columns of a tab-delimited text file.
 
 =head1 AUTHORS
 
-jvanheld@bigre.ulb.ac.be
+Jacques.van-Helden@univ-amu.fr
 
 =head1 CATEGORY
 
@@ -352,6 +352,7 @@ appearing in the column header and row names).
 Sort columns and rows by alphabetical values of the labels (the values
 appearing in the column header and row names).
 
+=back
 
 =cut 
 	  } elsif ($arg eq "-sort") {
@@ -398,5 +399,13 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=over
+
+=item B<contingency-stats>
+
+=item B<roc-stats>
+
+=back
 
 =cut

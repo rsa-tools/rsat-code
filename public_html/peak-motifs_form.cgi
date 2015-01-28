@@ -172,14 +172,14 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
  &Panel5();
 
 ################################################################
-### send results by email only
+## Send results by email only
 print "<p>\n";
 #&SelectOutput('email', email_only=>1);
 &SelectOutput('email');
 print "<i>Note: email output is preferred for very large datasets or many comparisons with motifs collections</i>\n";
 
 ################################################################
-### action buttons
+## Action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";

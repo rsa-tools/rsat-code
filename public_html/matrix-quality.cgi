@@ -66,6 +66,7 @@ if ($query->param('html_title')) {
 #### Matrix specification
 $matrix_file = $result_dir."/input_matrix";
 local $input_format = lc($query->param('matrix_format'));
+$matrix_sites=$query->param('matrix_sites');
 
 if ($query->param('matrix')) {
     open MAT, "> ".$matrix_file;
@@ -73,7 +74,7 @@ if ($query->param('matrix')) {
     close MAT;
     &DelayedRemoval($matrix_file);
     ($input_format) = split (/\s+/, $input_format);
-    if (  ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "transfac" ) ){
+    if ( ( ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "transfac" )) && $matrix_sites ){
 	$parameters .= " -ms $matrix_file";
     }
     else{
@@ -98,7 +99,7 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 
 ################################################################
 ## k parameter for the k-fold validation
-if (&IsInteger($query->param('kfold'))) {
+if ((&IsInteger($query->param('kfold'))) && ($query->param('kfold') > 0)) {
     $parameters .= " -kfold ".$query->param('kfold');
 }
 
@@ -228,7 +229,12 @@ $parameters .= " -archive -o ".$result_dir."/".$file_prefix ." ";
 
 $index_file = $tmp_file_name."_synthesis.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
-&EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
+#&EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
+if ($query->param('output') =~ /display/i) {
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $index_file, title=>"$mail_title",no_email=>1);
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>"$mail_title");
+}
 
 print $query->end_html();
 

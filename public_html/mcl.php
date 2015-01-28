@@ -11,11 +11,14 @@
 </head>
 <body class="results">
 <?php 
-  require ('functions.php');
-  # log file update
-  UpdateLogFile("neat","","");
 
-  # File to store the commands
+   ## Load the function library for NeAT PHP interface
+   require ('functions.php');
+
+   ## Update the log file
+   UpdateLogFile("neat","","");
+   
+   # File to store the commands
    $cmd_file = getTempFileName('commands_mcl', '.txt');
    $cmd_handle = fopen($cmd_file, 'a');
 
@@ -36,6 +39,27 @@
   $w_col = $_REQUEST['w_col'];
   $inflation = $_REQUEST['inflation'];
   
+   ## Report all properties if echo >= 2 (for debugging only)
+   if ($properties['rsat_echo'] >= 2) {
+     print '<h2>Properties</h2>';
+     print '<pre>';
+     print_r($properties);
+     print '</pre>';
+
+     print '<h2>$_SERVER</h2>';
+     print '<pre>';
+     print_r($_SERVER);
+     print '</pre>';
+
+     print '<h2>Parameters</h2>';
+     print '<pre>';
+#     print_r($_REQUEST);
+     print '</pre>';
+   }
+   
+  ################################################################
+  ## Check parameters
+
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
     $error = 1;
@@ -47,7 +71,8 @@
     warning("Default value for source and target columns for tab-delimited input format are 1 and 2 respectively. ");
     info("The graph is considered as unweighted.");
   }
-  ## put the content of the file $graph_file in $graph
+
+  ## Put the content of the file $graph_file in $graph
   if ($graph_file != "" && $graph == "") {
     $graph = storeFile($graph_file);
   }
@@ -56,12 +81,11 @@
     $error = 1;
     error("You must submit an input graph");
   }
-//   print "lala";
+
   if (!$error) { 
   
     $graph = trim_text($graph);
     
-
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
@@ -76,6 +100,7 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+
                            
     ## Convert-graph
     $cg_parameters =  array( 
@@ -88,6 +113,7 @@
         "wcol"=>$w_col
       )
     );
+
     # Execute the command 
     $cg_echoed = $client->convert_graph($cg_parameters);
 
@@ -102,7 +128,7 @@
     ## Load the parameters of the program in to an array
     $cg_graph = storeFile($cg_server);
     $mcl_parameters = array( 
-      "request" => array(
+        "request" => array(
         "inputgraph"=>$cg_graph,
         "inflation"=>$inflation
       )
@@ -125,6 +151,7 @@
     $mcl_server = $mcl_response->server;
     $mcl_client = $mcl_response->client;
     $URL['Clusters (MCL format)'] = rsat_path_to_url($mcl_server);
+
 
     ################################################################
     # Run convert-classes to convert MCL-formatted into tab-formated clusters.
@@ -153,7 +180,6 @@
     ## Run contingency-table to obtain a class/member table
 
     ## Load the parameters of the program into an array
-
     print($cc_input_file."\n");
     $cc_input_file = storeFile($cc_server);
     $ct_parameters = array(

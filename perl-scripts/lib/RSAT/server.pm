@@ -5,10 +5,10 @@ require RSAT::message;
 require RSAT::error;
 # use MIME::Lite;
 # use Mail::Sendmail;
-use Email::Sender::Simple qw(sendmail);
-use Email::Simple;
-use Email::Simple::Creator;
-use Email::Sender::Transport::SMTP;
+# use Email::Sender::Simple qw(sendmail);
+# use Email::Simple;
+# use Email::Simple::Creator;
+# use Email::Sender::Transport::SMTP;
 
 ################################################################
 ## Check that the environment variable RSAT has been defined
@@ -35,99 +35,86 @@ unless ($ENV{RSAT}) {
 ## Usage:
 ##    my $program_path = &RSAT::server::GetProgramPath("program_name", $die_on_error, @preferred_paths);
 sub GetProgramPath {
-    my ($program_name, $die_on_error, @preferred_paths) = @_;
-    my $program_path = "";
-
-    ## Find the preferred location of the program
-    my @rsat_path = @preferred_paths;
-    if (defined($ENV{RSAT_BIN})) {
-      push @rsat_path, ($ENV{RSAT_BIN});
-    };
-    push @rsat_path, ($ENV{RSAT}."/bin/",
-		      $ENV{RSAT}."/python-scripts/",
-		      $ENV{RSAT}."/perl-scripts/",
-		      ".");
-
-    my $path_found = 0;
-    foreach my $dir (@rsat_path) {
-      my $possible_path = $dir."/".$program_name;
-      $possible_path =~ s|/+|/|g;
+  my ($program_name, $die_on_error, @preferred_paths) = @_;
+  my $program_path = "";
+  
+  ## Find the preferred location of the program
+  my @rsat_path = @preferred_paths;
+  if (defined($ENV{RSAT_BIN})) {
+    push @rsat_path, ($ENV{RSAT_BIN});
+  };
+  
+  ## If the RSAT path contains the searcher program, use this
+  ## version as preferred path.
+  push @rsat_path, ($ENV{RSAT}."/bin",
+		    $ENV{RSAT}."/python-scripts",
+		    $ENV{RSAT}."/perl-scripts",
+		    ".");
+  
+  my $path_found = 0;
+  foreach my $dir (@rsat_path) {
+    my $possible_path = $dir."/".$program_name;
+    $possible_path =~ s|/+|/|g;
 #      &RSAT::message::Debug("GetProgramPath()", "testing", $program_name, $possible_path) if ($main::verbose >= 10);
-      if (-e $possible_path) {
-	## If the RSAT property file contains a RSAT_BIN, use it as
-	## preferred path
-	$program_path = $possible_path;
-	last;
-      }
+    if (-e $possible_path) {
+      $program_path = $possible_path;
+      last;
     }
+  }
 
-    ## If the path has ont ben found yet, find the program anywhere in
-    ## the user path
-    unless ($program_path) {
-	$program_path = `which $program_name`;
-	chomp($program_path);
+  ## If the path has ont ben found yet, find the program anywhere in
+  ## the user path
+  unless ($program_path) {
+    $program_path = `which $program_name`;
+    chomp($program_path);
+  }
+
+  ## Check if the program path has been found
+  unless ($program_path) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
+    } else {
+      &RSAT::message::Warning("The program ".$program_name." is not found in your path.");
+      return();
     }
+  }
 
-
-#     if (($ENV{RSAT_BIN}) && (-e $ENV{RSAT_BIN}."/".$program_name)) {
-# 	## If the RSAT property file contains a RSAT_BIN, use it as
-# 	## preferred path
-# 	$program_path = $ENV{RSAT_BIN}."/".$program_name;
-#     } elsif (-e $ENV{RSAT}."/bin/".$program_name) {
-# 	## Standard RSAT bin directory
-# 	$program_path = $ENV{RSAT}."/bin/".$program_name;
-#     } else {
-# 	## Find the program anywhere in the user path
-# 	$program_path = `which $program_name`;
-# 	chomp($program_path);
-#     }
-
-    ## Check if the program path has been found
-    unless ($program_path) {
-      if ($die_on_error) {
-	&RSAT::error::FatalError("The program ".$program_name." is not found in your path.");
-      } else {
-	&RSAT::message::Warning("The program ".$program_name." is not found in your path.");
-	return();
-      }
+  ## Check if the program can be executed
+  unless (-x $program_path) {
+    if ($die_on_error) {
+      &RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
+    } else {
+      &RSAT::message::Warning("The program ".$program_path." cannot be run. ");
     }
+  }
 
-    ## Check if the program can be executed
-    unless (-x $program_path) {
-      if ($die_on_error) {
-	&RSAT::error::FatalError("The program ".$program_path." cannot be run. ");
-      } else {
-	&RSAT::message::Warning("The program ".$program_path." cannot be run. ");
-      }
-    }
-
-    &RSAT::message::Info("&RSAT::server::GetProgramPath()", "path found", $program_path)
-	if ($main::verbose >= 4);
-    return $program_path;
+  &RSAT::message::Info("&RSAT::server::GetProgramPath()", "path found", $program_path)
+      if ($main::verbose >= 4);
+  return $program_path;
 }
 
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
-    my $nb_visitors = 1;
+  my $nb_visitors = 1;
 
-    ### read previous counter value
-    if (-e $counter_file) {
-	open(COUNTER, "<$counter_file");
-	#flock(COUNTER, 2);
-	$nb_visitors = <COUNTER>;
-	#flock(COUNTER,8);
-	close(COUNTER);
-	$nb_visitors++;
-    }
-
-    ### save new counter value
-    open(COUNTER, ">$counter_file");
-    #flock(COUNTER,2);
-    print COUNTER $nb_visitors;
+  ### read previous counter value
+  if (-e $counter_file) {
+    open(COUNTER, "<$counter_file");
+    #flock(COUNTER, 2);
+    $nb_visitors = <COUNTER>;
     #flock(COUNTER,8);
     close(COUNTER);
-    return $nb_visitors;
+    $nb_visitors++;
+  }
+
+  ### save new counter value
+  open(COUNTER, ">$counter_file");
+  #flock(COUNTER,2);
+  print COUNTER $nb_visitors;
+  #flock(COUNTER,8);
+  close(COUNTER);
+  return $nb_visitors;
 }
 
 
@@ -393,25 +380,29 @@ sub UpdateExecTimeLogFile {
 #### &DelayedRemoval($file_to_remove, $delay);
 ####
 sub DelayedRemoval {
-    my ($file_to_remove, $delay) = @_;
+    my ($file_to_remove, $delay, $check_file) = @_;
     $delay = $delay || "24 hours";
-    unless (-e $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
-	return();
-    }
-    unless (-r $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
-	return();
-    }
-    unless (-w $file_to_remove) {
-	&RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
-	return();
-    }
 
-    &RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
-
-    #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
+    #### THIS FUNCTION IS TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES
+    #### A LOT OF MEMORY
     return();
+
+    if ($check_file) {
+      unless (-e $file_to_remove) {
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
+	return();
+      }
+      unless (-r $file_to_remove) {
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
+	return();
+    }
+      unless (-w $file_to_remove) {
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
+	return();
+      }
+    }
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") 
+	if ($ENV{rsat_echo} >= 2);
 
     open REMOVE, "| at now + $delay";
     print REMOVE "rm -f $file_to_remove \n";
@@ -559,15 +550,15 @@ sub InitRSAT {
     # my $hostname = hostname();
     # my @addresses = inet_ntoa((gethostbyname($hostname))[4]); ## In principle te function gethostbyname() should return all the IP addresses, but it seems to return only one
 
-    use Net::Address::IP::Local;
-    my @addresses = Net::Address::IP::Local->public;
+#    use Net::Address::IP::Local;
+#    my @addresses = Net::Address::IP::Local->public;
+#    my $ip_address = $addresses[0];
 
-
-    my $address = $addresses[0];
+    my $ip_address = $ENV{HTTP_HOST} || "localhost";
 
     &RSAT::message::Debug("Host IP addresses", scalar(@addresses), "\n", join ("\n", '@addresses', @addresses)) if ($main::verbose >= 4);
-    $ENV{rsat_www} = "http://".$address."/rsat/";
-    $ENV{rsat_ws} = "http://".$address."/rsat/";
+    $ENV{rsat_www} = "http://".$ip_address."/rsat/";
+    $ENV{rsat_ws} = "http://".$ip_address."/rsat/";
     &RSAT::message::Debug("RSAT_WWW", $ENV{rsat_www}) if ($main::verbose >= 4);
   }
 
@@ -659,8 +650,8 @@ sub send_mail {
 
     ## Set a subject if not specificed in arguents
     unless ($subject) {
-	$script_namen= $0;
-	$subject = join " ", "[RSAT]", $script_name, &AlphaDate();
+	$script_name = $0;
+	$subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
     }
 
     ## Define the SMTP server
@@ -715,7 +706,32 @@ sub send_mail {
 
 	Email::Sender::Simple->send($email, {transport => $transport});
     }
+}
 
+
+=pod
+
+=item MessageToAdmin
+
+Report an error by sending an email to RSAT administrator
+
+=cut
+sub MessageToAdmin {
+    my ($message) = @_;
+
+    ## Check if server admin has been specified
+    unless (defined( $ENV{SERVER_ADMIN})) {
+      &RSAT::message::Warning("Cannot send mail to server admin. Variable SERVER_ADMIN should be defined in RSAT_config.props");
+      return();
+    }
+
+    ## Define title based on script name
+    my $script_name = &RSAT::util::ShortFileName($0);
+    my $title = join(" - " , "RSAT", $script_name, $date);
+#    $mail_command = "mail -s \'".$title."\'";
+#    $mail_command = "mail -s \'RSAT - $script_name - $date\'";
+#    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
+    &send_mail($message, $ENV{SERVER_ADMIN}, $title);
 }
 
 

@@ -5,7 +5,7 @@
 <html>
 <head>
    <meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=iso-8859-1\">
-   <title>RSA-tools - Web Services</title>
+   <title>RSAT - Web Services</title>
 <link rel=\"stylesheet\" type=\"text/css\" href = \"main.css\" media=\"screen\">
 </head>
 <body class=\"info\">
