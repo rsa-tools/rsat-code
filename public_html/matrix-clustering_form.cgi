@@ -25,10 +25,10 @@ $default{demo_descr1} = "";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
-$default{hclust_method}="average";
+$default{hclust_method}= "average";
 $default{metric} = "Ncor";
 $default{newick} = "";
-$checked{$default{bg_method}} = "CHECKED";
+$default{quick} = "";
 $default{heatmap} = "CHECKED";
 $default{labels} = "name";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
@@ -106,7 +106,7 @@ print "<h2>", "Clustering options", ,"</h2>";
 ## Metric selected to build the hierarchical tree
 ## print "<b>Metric to build the tree.</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'hclust_method',
+print $query->popup_menu(-name=>'metric',
  			 -Values=>["cor", "Ncor"],
  			 -default=>$default{metric});
 print "<br><br>\n";
