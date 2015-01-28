@@ -83,7 +83,24 @@ if ($hclust_method) {
 
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
-my @threshold_fields = qw(cor Ncor w);
+my @threshold_fields = qw(w
+			 cor
+			 Ncor
+                         logoDP
+			 logocor
+			 Nlogocor
+			 Icor
+			 NIcor
+			 cov
+			 dEucl
+			 NdEucl
+			 NsEucl
+			 SSD
+			 SW
+			 NSW
+			 match_rank
+			 offset
+			);
 my $thresholds = "";
 foreach my $field (@threshold_fields) {
   ## Selected field
@@ -118,11 +135,28 @@ push @selected_output_fields, qw(
 my $selected_output_fields = join (",", @selected_output_fields);
 $parameters .= " -return ".$selected_output_fields;
 
-################################################################
-## Output formats
-$parameters .= " -heatmap";
-$parameters .= " -export json";
-$parameters .= " -labels name";
+##############################
+## Add options from toolbox
+
+## Heatmap selection
+$heatmap = $query->param('heatmap');
+if ($heatmap) {
+    $parameters .= " -heatmap";
+}
+
+## Export newick selection
+$newick = $query->param('newick');
+if ($newick) {
+    $parameters .= " -export newick";
+}
+
+## Run compare-matrices-selection
+$quick = $query->param('quick');
+if ($quick) {
+    $parameters .= " -quick";
+}
+
+
 
 ################################################################
 ## Output file
