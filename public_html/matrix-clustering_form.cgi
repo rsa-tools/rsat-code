@@ -96,7 +96,7 @@ print "<br><br>\n";
 #print "<HR width=550 align=left>\n";
 
 ## Selection of output fields and thresholds
-&PrintMatrixMatchingScores();
+&PrintMatrixClusteringMatchingScores();
 
 
 ###############################################################
@@ -197,7 +197,7 @@ exit(0);
 ################################################################
 ## Print the many scores supported by compare-matrices, which are also
 ## available for matrix-clustering.
-sub PrintMatrixMatchingScores {
+sub PrintMatrixClusteringMatchingScores {
   my @matching_scores = qw(w
 			 cor
 			 Ncor
