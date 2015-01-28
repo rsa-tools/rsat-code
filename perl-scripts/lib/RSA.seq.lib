@@ -913,8 +913,8 @@ sub PrintNextSequence {
 	if ($first_comment) {
 	    print $OUTFILE "\t".$first_comment;
 	}
-
 	print $OUTFILE "\n";
+	chomp($sequence);
 	print $OUTFILE $sequence;
 	print $OUTFILE "\n";
 

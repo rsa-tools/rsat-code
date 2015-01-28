@@ -1458,7 +1458,7 @@ sub delete_serial_files {
 	my @files = ();
 	eval {
 #	  @files = glob($serial_file);
-	    my $files = `ls -1 $serial_file | xargs`,
+	    my $files = `ls -1 $serial_file 2>/dev/null | xargs`,
 	    @files = split /\s/, $files;
 	};
 	#warn $@ if $@;                                            

@@ -801,9 +801,9 @@ sub SetOutFileNames {
 
 	## Convert negative markov orders relative to the current oligo length
 	unless (($main::param{oligo_min_mkv} eq "auto") ||
-	    ($main::param{oligo_min_mkv} eq "auto")) {
-	  my $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
-	  my $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
+		($main::param{oligo_min_mkv} eq "auto")) {
+	  $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
+	  $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
 	  $main::param{oligo_bg_suffix} = "mvk".$main::param{oligo_min_mkv}."_".$main::param{oligo_max_mkv};
 	  for my $markov ($min_mkv..$max_mkv) {
 	    my $oligo_bg_suffix = "mkv".$markov;
@@ -814,10 +814,6 @@ sub SetOutFileNames {
 	    push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
 	    push @patterns_to_merge, $pattern_type;
 	    push @oligos_to_merge, $pattern_type;
-
-	    ## oligo-analysis with all the oligos (no threshold) + a two-tails test (in order to detect under-represented patterns)
-	    #	  $main::outfile{$pattern_type."_all"} = &OutFileName("results/".$pattern_type."_all_2tails", ".tab", "oligos".$main::param{strand}.$main::param{disco_noov}."_all_2tails",
-	    #						       $len."nt", "vs_ctrl");
 	  }
 	}
       }
@@ -827,7 +823,7 @@ sub SetOutFileNames {
     ## local-word-analysis
     if ($disco{local_words}) {
 
-      ## I temporarily suppress the Makov loop for local_words since it seems incompatible with the mode --windowgroup
+      ## I temporarily suppress the Markov loop for local_words since it seems incompatible with the mode --windowgroup
       # for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
       #	    $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
       $pattern_type = 'local_words_'.$len.'nt';
@@ -846,7 +842,8 @@ sub SetOutFileNames {
     ## position-analysis
     if ($disco{positions}) {
       $pattern_type = 'positions_'.$len.'nt';
-      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
+      $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", 
+						   "positions".$main::param{strand}.$main::param{disco_noov},
 						   $len."nt", "ci".$main::param{positions_ci});
       push @pattern_types, $pattern_type unless ($main::param{merge_lengths});
       push @patterns_to_merge, $pattern_type;
@@ -864,9 +861,11 @@ sub SetOutFileNames {
     if ($disco{positions}) {
       my $pattern_type = "positions_".$main::param{oligo_range};
       $main::outfile{$pattern_type} =
-	  &OutFileName("results/".$pattern_type, ".tab", "positions".$main::param{strand}.$main::param{disco_noov},
+	  &OutFileName("results/".$pattern_type, ".tab", 
+		       "positions".$main::param{strand}.$main::param{disco_noov},
 		       $main::param{oligo_range}, "ci".$main::param{positions_ci});
       push @pattern_types, $pattern_type;
+      &RSAT::message::Debug("Merged file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 5);
     }
 
 
@@ -874,18 +873,28 @@ sub SetOutFileNames {
     if ($disco{local_words}) {
       my $pattern_type = "local_words_".$main::param{oligo_range};
       $main::outfile{$pattern_type} =
-	  &OutFileName("results/".$pattern_type, ".tab", "local_words".$main::param{strand}.$main::param{disco_noov},
+	  &OutFileName("results/".$pattern_type, ".tab", 
+		       "local_words".$main::param{strand}.$main::param{disco_noov},
 		       $main::param{oligo_range}, "windgroup".$main::param{local_words_windowgroup});
       push @pattern_types, $pattern_type;
+      &RSAT::message::Debug("Merged file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 5);
     }
 
     ## Merge oligo-analysis result files
     if ($disco{oligos}) {
+      $main::param{oligo_bg_suffix} = "mvk";
+      if (($main::param{oligo_min_mkv} eq "auto") ||
+	  ($main::param{oligo_min_mkv} eq "auto")) {
+	$main::param{oligo_bg_suffix} .=  "auto";
+      } else {
+	$main::param{oligo_bg_suffix} .= $main::param{oligo_min_mkv}."_".$main::param{oligo_max_mkv};
+      }
       my $pattern_type = "oligos_".$main::param{oligo_range};
       $main::outfile{$pattern_type} =
 	  &OutFileName("results/".$pattern_type, ".tab", "oligos".$main::param{strand}.$main::param{disco_noov},
 		       $main::param{oligo_range}, $main::param{oligo_bg_suffix});
       push @pattern_types, $pattern_type;
+      &RSAT::message::Debug("Merged file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 5);
     }
 
     ## Merge oligo-diff result files
@@ -893,6 +902,7 @@ sub SetOutFileNames {
       my $pattern_type = "oligo_diff_".$main::param{oligo_range};
       $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "oligo_diff".$main::param{strand}.$main::param{disco_noov},$main::param{oligo_range});
       push @pattern_types, $pattern_type;
+      &RSAT::message::Debug("Merged file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 5);
     }
   }
 
@@ -913,6 +923,7 @@ sub SetOutFileNames {
     $main::outfile{$pattern_type} = &OutFileName("results/".$pattern_type, ".tab", "dyads".$main::param{strand}.$main::param{disco_noov},"3nt_sp0-20_bg_monads");
     push @pattern_types, $pattern_type;
     push @patterns_to_merge, $pattern_type;
+    &RSAT::message::Debug("Merged file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 5);
   }
 
   ################################################################
@@ -925,10 +936,11 @@ sub SetOutFileNames {
 						);
     push @pattern_types, $pattern_type;
     push @patterns_to_merge, $pattern_type;
+    &RSAT::message::Debug("Merged file", $pattern_type, $main::outfile{$pattern_type}) if ($main::verbose >= 5);
   }
 
   ################################################################
-  ## We desactivate the graph display becayse the layout is really too
+  ## We desactivate the graph display because the layout is really too
   ## ugly. Users will be suggested to open the graph with Cytoscape
   ## until we find the time to implement a nice graph layout
   ## procedure.
@@ -1164,6 +1176,8 @@ sub SequenceLengths {
     my $bed_header= "track name=\"".$seq_type."_peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=".$bed_color;
     $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
     $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
+    print $cmd, "\n";
+#    die "HELLO";
     &one_command($cmd,1);
   }
 }
@@ -1371,7 +1385,7 @@ sub OligoAnalysis {
       } else {
 	$cmd .= " -markov ".$markov;
       }
-      $cmd .= " -pseudo ".$main::param{disco_pseudo};;
+      $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0) unless ($main::param{merge_lengths});
@@ -1405,7 +1419,7 @@ sub OligoDiff {
     $cmd .= " -uth rank ".$main::param{patterns_max_rank};
     #    $cmd .= " -return occ,proba,rank";
     #    $cmd .= " -seqtype dna";
-    #    $cmd .= " -pseudo ".$main::param{disco_pseudo};;
+    #    $cmd .= " -pseudo ".$main::param{disco_pseudo};
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
@@ -1445,7 +1459,7 @@ sub DyadAnalysis {
   } else {
     $cmd .= " -bg monads";
   }
-  $cmd .= " -pseudo ".$main::param{disco_pseudo};;
+  $cmd .= " -pseudo ".$main::param{disco_pseudo};
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{$pattern_type};
   &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
@@ -1531,9 +1545,10 @@ sub LocalDyads {
   #      $cmd .= " --heuristic=".$main::param{local_words_heuristic};
   #  $cmd .= " -seqtype dna";
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
-  # $cmd .= " -pseudo ".$main::param{disco_pseudo};;
+  # $cmd .= " -pseudo ".$main::param{disco_pseudo};
   $cmd .= " > ".$main::outfile{$pattern_type};
   &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
 }
 
@@ -1575,7 +1590,7 @@ sub LocalWords {
       #   $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " > ".$main::outfile{$pattern_type};
       &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0) unless ($main::param{merge_lengths});
 #    }
   }
 }
@@ -2326,20 +2341,17 @@ sub MotifsVersusDatabase {
       my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
       $cmd .= " -format1 transfac -file1 ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -format2 ".$main::motif_db_format{$db_name};
-      $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
+      $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};
       $cmd .= $main::param{motif_compa_options};
       $cmd .= " -o ".$main::prefix{$motif_id.'_vs_db_'.$db_name."_prefix"};
-## Not necessary here anymore, it is automatically done in the script compare-matrices
-#      $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id.'_vs_db_'.$db_name};
-#      $cmd .= " -o ".$main::outfile{$motif_id.'_vs_db_'.$db_name."_html"};
       &one_command($cmd, 1);
     }
 
     ################################################################
-    ## TO DO: the coparison of all motifs against db is redundant
-    ## (comparisons are performed twice), but the result is used for
-    ## drawing the db versus discovered graph. The comparison table
-    ## and graph should be recollected from the individual motif
+    ## JvH: TO DO: the comparison of all motifs against db is
+    ## redundant (comparisons are performed twice), but the result is
+    ## used for drawing the db versus discovered graph. The comparison
+    ## table and graph should be recollected from the individual motif
     ## comparisons.
 
     ################################################################
@@ -2347,12 +2359,9 @@ sub MotifsVersusDatabase {
     my $cmd = $SCRIPTS."/compare-matrices -v 1 -mode matches";
     $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};
     $cmd .= " -format2 ".$main::motif_db_format{$db_name};
-    $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};;
+    $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};
     $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
-## Not necessary here anymore, it is automatically done in the script compare-matrices
-#    $cmd .= " ; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_db_".$db_name};
-#    $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_html"};
     &one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt");
 
     &RSAT::message::TimeWarn("Discovered versus DB", $db_name, $main::outfile{"motifs_vs_db_".$db_name}) if ($main::verbose >= 2);
@@ -2386,6 +2395,11 @@ sub MotifsVersusDatabase {
 sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $pattern_type, $score_column) = @_;
   &RSAT::message::TimeWarn("Matrix from patterns", $pattern_type) if ($verbose >= 3);
+  &RSAT::message::Debug("Matrix from pattern",
+			"\n\tpattern_type: ".$pattern_type,
+			"\n\tpattern_file: ".$pattern_file,
+			"\n\tpssm_file: ".$pssm_file,
+      ) if ($verbose >= 5);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
 #  $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -seq ".$main::outfile{"test_converted"};
@@ -2411,10 +2425,9 @@ sub MatrixFromPatterns {
 }
 
 
-
 ################################################################
-## Compute the profile of enrichment of the test peaks in hits
-## for a given matrix (reference or discovered motif)
+## Compute profile of enrichment of the test peaks in hits for a given
+## matrix (reference or discovered motif).
 sub MotifEnrichment {
   my ($seq_file, $matrix_file, $out_file, $graph_file) = @_;
 
@@ -2469,7 +2482,6 @@ sub ScanSequences {
 
     ################################################################
     ## Predict site positions
-
 
     ## Site prediction with matrix-scan (option -quick)
     my $cmd = $SCRIPTS."/matrix-scan -quick -v 1";
@@ -3503,8 +3515,9 @@ sub SynthesisSequenceComposition {
       $genome_assembly = $main::param{coord_assembly};
     }
 
-    if ((($main::infile{coord})&&(-e $main::infile{coord}))
-      	||(($main::outfile{"test_seq_coord"})&&(-e $main::outfile{"test_seq_coord"}))) {
+    if ((($main::infile{coord}) && (-e $main::infile{coord}))
+      	|| (($main::outfile{"test_seq_coord"}) && (-e $main::outfile{"test_seq_coord"}))
+	) {
 
       ## UCSC link
       my $BED_UR = "";

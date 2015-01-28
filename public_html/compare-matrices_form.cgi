@@ -42,7 +42,7 @@ $default{'return_NsEucl'} = "CHECKED";
 
 
 ## motif database
-$default{compare_motif_database}="jaspar_core_vertebrates";
+$default{compare_motif_database}="footprintDB-plants"; #"jaspar_core_vertebrates";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {

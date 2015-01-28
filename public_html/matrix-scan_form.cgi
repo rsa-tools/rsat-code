@@ -26,7 +26,7 @@ $default{offset}="0";
 
 $default{bg_method}="bginput";
 $checked{$default{bg_method}} = "CHECKED";
-$default{markov_order} = "0";
+$default{markov_order} = "1";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
@@ -251,11 +251,11 @@ print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 
 
 ## Load demo sequences
-$demo_sequence_file = $ENV{RSAT}."/public_html/demo_files/matrix_scan_demo_sequences.fasta";
+$demo_sequence_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_eve_up5000.fasta";
 $demo_sequence = `cat $demo_sequence_file`;
 
 ## Load demo matrices
-$demo_matrix_file = $ENV{RSAT}."/public_html/demo_files/matrix_scan_demo_matrices.tf";
+$demo_matrix_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_segmentation_12matrices.tf";
 $demo_matrix = `cat $demo_matrix_file`;
 
 
@@ -277,11 +277,11 @@ Turatsinze.<p/>";
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.
 </blockquote>");
-print $query->hidden(-name=>'bg_method',-default=>'bgfile');
+print $query->hidden(-name=>'bg_method',-default=>'bginput');
 print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'0');
+print $query->hidden(-name=>'markov_order',-default=>'1');
 print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_sites');
 print $query->hidden(-name=>'return_rank',-default=>'');
@@ -305,7 +305,7 @@ print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_site_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'0');
+print $query->hidden(-name=>'markov_order',-default=>'1');
 print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_crer');
 print $query->hidden(-name=>'return_rank',-default=>'');
@@ -328,7 +328,7 @@ print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_site_pval',-default=>'1e-3');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'0');
+print $query->hidden(-name=>'markov_order',-default=>'1');
 print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_occ');
 print $query->hidden(-name=>'return_rank',-default=>'');

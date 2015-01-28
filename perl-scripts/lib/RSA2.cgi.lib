@@ -7,6 +7,10 @@ package main;
 require RSAT::OrganismManager;
 require RSAT::server;
 require RSAT::error;
+use Email::Sender::Simple qw(sendmail);
+use Email::Simple;
+use Email::Simple::Creator;
+use Email::Sender::Transport::SMTP;
 
 =pod
 
@@ -84,28 +88,31 @@ sub PrintOrthoSelectionSection {
   ## This is temporary, we need to find a way to provide orhtologs for
   ## all organisms.
 
+#### Not supported anymore
+##			       Escherichia_coli_K12
+##                                Bacillus_subtili
+##			       Desulfovibrio_vulgaris_Hildenborough_uid57645
+##			       Klebsiella_pneumoniae_MGH_78578
+##			       Mycoplasma_pneumoniae
+##			       Rhizobium_etli_CFN_42 
+##			       Rhizobium_etli_CFN_42_uid58377 
+##			       Salmonella_typhi
+##			       Salmonella_typhimurium_LT2
+##			       Streptococcus_mutans
+##                               Brucella_melitensis
+##                               Dickeya_dadantii_3937_uid52537
+##                               Escherichia_coli_ETEC_H10407
+##                               Mycobacterium_tuberculosis_H37Rv_uid57777
+##                               Pseudoalteromonas_haloplanktis_TAC125
+##                               Pseudomonas_putida_KT2440
+##                               Ralstonia_metallidurans_CH34
+##                               Yersinia_pestis_KIM
+
   my @supported_orthologs = qw(
-			       Bacillus_subtilis_168_uid57675
-			       Desulfovibrio_vulgaris_Hildenborough_uid57645
-			       Escherichia_coli_K12
-			       Klebsiella_pneumoniae_MGH_78578
-			       Mycoplasma_pneumoniae
-			       Rhizobium_etli_CFN_42 
-			       Rhizobium_etli_CFN_42_uid58377 
-			       Saccharomyces_cerevisiae
-			       Salmonella_typhi
-			       Salmonella_typhimurium_LT2
-			       Streptococcus_mutans
-                               Bacillus_subtilis
-                               Brucella_melitensis
-                               Dickeya_dadantii_3937_uid52537
-                               Escherichia_coli_ETEC_H10407
                                Escherichia_coli_K_12_substr__MG1655_uid57779
-                               Mycobacterium_tuberculosis_H37Rv_uid57777
-                               Pseudoalteromonas_haloplanktis_TAC125
-                               Pseudomonas_putida_KT2440
-                               Ralstonia_metallidurans_CH34
-                               Yersinia_pestis_KIM
+			       Saccharomyces_cerevisiae
+			       Bacillus_subtilis_168_uid57675
+                               Mycoplasma_genitalium_G37_uid57707
 			       );
   foreach my $org (@supported_orthologs) {
       $supported_orthologs{$org} = 1;
@@ -248,7 +255,7 @@ sub RSA_header {
 
 
   ### print the header of the result page
-  print $query->start_html(-title=>"RSA-tools : $title",
+  print $query->start_html(-title=>"RSAT : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -script=>[
@@ -262,7 +269,7 @@ sub RSA_header {
 			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
-  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</a> - $title</h3>";
+  print "<h3 align='center'><a href='$ENV{rsat_www}/RSAT_home.cgi'>RSAT</a> - $title</h3>";
 
   ################################################################
   ## Check if client IP is blacklisted on this server.
@@ -706,6 +713,8 @@ sub MultiGetSequenceFile {
     }
   }
 
+
+
   #### sequence file will be deleted
   &DelayedRemoval($sequence_file);
 
@@ -721,22 +730,50 @@ sub PipingWarning {
 
 
 ################################################################
-## Display a pop-up menu with a selection of organism on the basis of
-## the server-specific list of supported organisms.
+## Display a pop-up menu with a selection of organism on the
+## basis of the server-specific list of supported organisms.
+## JvH: I should check if thi is still required, or replace it by OrganismPopupSelectable
 sub OrganismPopUp {
-    print &OrganismPopUpString(@_);
+  print &OrganismPopUpString(@_);
 }
 
+
+################################################################
+## Generate a *dynamic* pop-up menu with a selection of organism on the
+## basis of the server-specific list of supported organisms.
+sub OrganismPopUpSelectable {
+  my $popup = "";
+
+  ## Include a javascript to enable dynamic selection of subsets of matching organisms 
+  $popup .=  "<script type='text/javascript' src='".$ENV{RSAT}."/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js'>\n";
+  $popup .=  `cat $ENV{RSAT}/perl-scripts/lib/js/popup-sub-select.js`;
+  $popup =~ s/ui.combobox/organism/g;
+  $popup .=  $script;
+  $popup .=  "</script>\n";
+
+  ## Embed the pop-up menu in a table
+  $popup .=  "<table border='0' width='100%' cellspacing='0' cellpadding='2'>\n";
+  $popup .=  "<tr>\n";
+  $popup .=  "<td style='vertical-align:middle; text-align:left; width: 45%;'>\n";
+  $popup .=  "<input type='text' id='theVisibleElement' value=''/>\n";
+  $popup .=  &OrganismPopUpString(@_);
+  $popup .=  "</td>\n";
+  $popup .=  "</tr>\n";
+  $popup .=  "</table>\n";
+#  die "$popup";
+  return $popup;
+}
+
+################################################################
+## Generate the content of the pop-up menu to be displayed for organism selection
 sub OrganismPopUpString {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-##	@selected_organisms = &ListSupportedOrganisms("keys");
 	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
-#	die join("\n", @selected_organisms, "HELLO");
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-    $organismPopup .=  "<SELECT NAME='organism'>\n";
+    $organismPopup .=  "<select name='organism'>\n";
     foreach my $org (@selected_organisms) {
 	if (defined($supported_organism{$org})) {
 	    my $name = $org;
@@ -744,14 +781,14 @@ sub OrganismPopUpString {
 #	    $name = $supported_organism{$org}->{'name'};
 	    if ((lc($org) eq lc($default{organism})) ||
 		(lc($name) eq lc($default{organism}))) {
-		$organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
+		$organismPopup .=  "<option selected VALUE='$org'>$name\n";
 	    } else {
-		$organismPopup .=  "<OPTION VALUE='$org'>$name\n";
+		$organismPopup .=  "<option value='$org'>$name\n";
 	    }
 	}
     }
-    $organismPopup .=  "</SELECT>";
-    $organismPopup .=  "<BR>\n";
+    $organismPopup .=  "</select>";
+    $organismPopup .=  "<br>\n";
     return $organismPopup;
 }
 
@@ -785,7 +822,7 @@ sub OrganismPopUpEnsembl {
     $organismPopup .=  "</SELECT>";
     $organismPopup .=  $info_ensembl;
     $organismPopup .=  "<BR>\n";
-    print $organismPopup;
+    return $organismPopup;
 }
 
 
@@ -957,6 +994,7 @@ sub GetMatrix {
 				'tab'=>1,
 				'transfac'=>1,
 				'uniprobe'=>1,
+				'encode'=>1,
 			       );
   ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
   ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
@@ -1207,7 +1245,7 @@ sub GetBackgroundModel {
 			       -default=>$default{markov_order});
     }
     if ($params{markov_message}) {
-      print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-consuming.</font>");
+      print ("&nbsp;&nbsp;&nbsp;<font color='orange'>High orders can be time-consuming, but order 0 is generally not representative</font>. We recommend orders 1 or 2.");
     }
   }
 
@@ -1600,9 +1638,9 @@ sub PrintHtmlResultHeader {
   ## Start HTML body
   $header .=  "<body>\n";
   if (defined($ENV{rsat_www})) {
-    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSAT</a> - ".$program." result</h1>\n";
   } else {
-    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSA-tools</a> - ".$program." result</h1>\n";
+    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSAT</a> - ".$program." result</h1>\n";
   }
   $header .=  "<h3 style='text-align:center;'>Analysis: ";
   $header .=  $title." (";
@@ -1610,14 +1648,15 @@ sub PrintHtmlResultHeader {
   $header .=  ")</h3>\n";
 
   ## Reserve space for result TOC in the beginning of the form
+  if ($refresh_time > 0) {
+    $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
+    $header .= "<p style='text-align:center;color:green'>Results will progressively be displayed on this page <br/>\n";
+    $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
+  }
+
   if ($result_toc) {
     $header .=  "<div id='Menu_space'>\n";
     $header .=  "<div id='Menu_wait'>\n";
-    if ($refresh_time > 0) {
-      $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
-      $header .= "<p style='text-align:center;color:green'>Results will progressively be displayed on this page <br/>\n";
-      $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
-    }
     $header .=  "</div>\n";
     $header .=  "</div>\n";
   }
@@ -2550,7 +2589,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -o ".$pssm_prefix;
 
   ## Run the command
-  print "<PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
+  print "<hr><PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 0);
   system("$pssm_command");
   push @result_files, ('significance matrices', $sig_matrix_file);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);

@@ -56,7 +56,7 @@ EXT_APP_TARGETS=\
 	install_blast \
 	install_ensembl_bioperl \
 	install_ensembl_api \
-	install_vmatch
+	install_vmatch 
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -85,15 +85,16 @@ install_ext_apps_optional:
 ## discovery tools in RSAT. If is used to purge sequences from
 ## redundant fragments. The program requires a license, which can be
 ## obtained (free of charge for academics) at http://www.vmatch.de/
+VMATCH_VERSION=2.2.4
 install_vmatch:
 	${MAKE} _install_vmatch_${OS}
 	${MAKE} _vmatch_warning
 
-VMATCH_VERSION_MACOSX=vmatch-2.2.2-Darwin_i386-64bit
+VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
 _install_vmatch_macosx:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
 
-VMATCH_VERSION_LINUX=vmatch-2.2.2-Linux_x86_64-64bit
+VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
 _install_vmatch_linux:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
 
@@ -132,6 +133,28 @@ _vmatch_warning:
 	@echo "AND PLACE THE FILE vmatch.lic IN THIS FOLDER"
 	@echo ""
 	@echo ""
+
+################################################################
+## LOGOL
+LOGOL_ARCHIVE=logol_1.7.1.orig.tar.bz2
+LOGOL_URL=https://gforge.inria.fr/frs/download.php/file/33588
+LOGOL_DIR=${SRC_DIR}/logol
+install_logol: _download_logol _compile_logol
+
+_download_logol:
+	@mkdir -p ${LOGOL_DIR}
+	@echo
+	@echo "Downloading logol	${LOGOL_URL}"
+	(cd ${LOGOL_DIR}; \
+		wget --timestamping --no-directories  ${LOGOL_URL}/${LOGOL_ARCHIVE}; \
+		tar -xpzf ${LOGOL_ARCHIVE})
+	@echo "logol dir	${LOGOL_DIR}"
+
+_compile_logol:
+	@echo "Installing logol in RSAT_BIN	${RSAT_BIN}"
+	@${SUDO} rsync -ruptl ${LOGOL_DIR}/weblogo/logol ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${LOGOL_DIR}/weblogo/template.* ${RSAT_BIN}/
+	@${SUDO} rsync -ruptl ${LOGOL_DIR}/weblogo/logo.pm ${RSAT_BIN}/
 
 ################################################################
 ## Get and install the program seqlogo
@@ -543,8 +566,8 @@ _download_biotoolbox:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
-MEME_VERSION=4.9.1
-MEME_PATCH=_2
+MEME_VERSION=4.10.0
+MEME_PATCH=_1
 #http://ebi.edu.au/ftp/software/MEME/4.9.1/meme_4.9.1_2.tar.gz
 MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
 MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
@@ -965,6 +988,7 @@ CEAS_VERSION=1.0.2
 CEAS_ARCHIVE=CEAS-Package-${CEAS_VERSION}.tar.gz
 CEAS_URL=http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_ARCHIVE}
 CEAS_DISTRIB_DIR=${CEAS_BASE_DIR}/CEAS-Package-${CEAS_VERSION}
+		make -f makefiles/install_software.mk RSAT_BIN=/usr/local/bin install_ceas
 install_ceas: _download_ceas _compile_ceas 
 
 _download_ceas:
@@ -974,16 +998,27 @@ _download_ceas:
 	wget -nd  --directory-prefix ${CEAS_BASE_DIR} -rNL ${CEAS_URL}
 
 CEAS_COMPILE_DIR=`dirname ${RSAT_BIN}`
+#CEAS_COMPILE_DIR=/usr/local
 _compile_ceas:
 	@echo
 	@echo "Installing CEAS in dir	${CEAS_DISTRIB_DIR}"
+	@echo "CEAS_BASE_DIR	${CEAS_BASE_DIR}"
+	@echo "CEAS_DISTRIB_DIR	${CEAS_DISTRIB_DIR}"
+	@echo "CEAS_COMPILE_DIR	${CEAS_COMPILE_DIR}"
 	(cd ${CEAS_BASE_DIR}; tar -xpzf ${CEAS_ARCHIVE})
 	@echo ${CEAS_DISTRIB_DIR}
 	(cd  ${CEAS_DISTRIB_DIR}; ${SUDO} python setup.py install --prefix=${CEAS_COMPILE_DIR})
-	@echo "CEAS was installed in dir ${RSAT_BIN}"
-	@echo "Before using CEAS, you need to add a line to the log-in shell script (i.e. .bashrc in case of bash shell)"
-	@echo "Adapt the python version in the path below"
-	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+	@echo "CEAS has been installed in dir ${CEAS_COMPILE_DIR}/bin"
+#	@echo "Before using CEAS, you need to add a line to the log-in shell script"
+#	@echo "(i.e. .bashrc in case of bash shell)"
+#	@echo "Adapt the python version in the path below"
+#	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+
+CEAS_DATA_DIR=${RSAT}/data/ceas
+download_ceas_data:
+		mkdir -p ${CEAS_DATA_DIR}/hg19
+		(cd ${CEAS_DATA_DIR}/hg19; 
+		wget http://liulab.dfci.harvard.edu/CEAS/src/hg19.refGene.gz)
 
 
 ################################################################

@@ -23,7 +23,7 @@ package main;
 ####                                                                    ####
 ####                            RSA.lib                                 ####
 ####                                                                    ####
-#### Regulatory Sequence Analysis Tools (RSA-tools)
+#### Regulatory Sequence Analysis Tools (RSAT)
 ####  Project started in 1997 by Jacques van Helden (jvanheld@bigre.ulb.ac.be)
 ####  a Perl library with diverse procedures
 ####  used by rsa-tools perl scripts
@@ -291,7 +291,8 @@ sub ReadExpectedFrequencies {
 	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
     }
     if ($freq_sum <= 0) {
-	&RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+	&RSAT::error::FatalError("Error with the expected frequency file",$exp_freq_file,
+				 "\nSum must be strictly positive", $freq_sum);
     }
 
     #### rescale expected frequencies to have a sum of 1
@@ -504,108 +505,20 @@ sub CheckOrganism {
   &RSAT::OrganismManager::CheckOrganism(@_);
 }
 
+# ################################################################
+# ## Return a list of the supported organisms
+# ## various formats are supported
+# $supported_organisms = &ListSupportedOrganisms("text", 0, "ID");
+# sub ListSupportedOrganisms {
+#   my ($out_format, $header, @fields) = @_;
+#   &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
+#   $out_format = "text" unless ($main::out_format);
+#   $header = 0 unless ($header);
+#   my $taxon = "";
+#   my $depth = 0;
+#   return (&RSAT::OrganismManager::supported_organism_table($header, 0, $source, $taxon, $depth, @fields));
+# }
 
-
-
-################################################################
-## Return a list of the supported organisms
-## various formats are supported
-sub ListSupportedOrganisms {
-  my ($out_format, $header, @fields) = @_;
-#  &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
-
-  $out_format = "text" unless ($main::out_format);
-  $header = 0 unless ($header);
-  my $taxon = "";
-  my $depth = 0;
-  return (&RSAT::OrganismManager::supported_organism_table($header, 0, $taxon, $depth, @fields));
-}
-
-sub ListSupportedOrganisms_old {
-  my $out_format = $_[0] || "text";
-
-  foreach my $key (keys %main::supported_organism) {
-      $names{$key} = $main::supported_organism{$key}->{'name'};
-  }
-  @sorted_names = sort values %names;
-  @sorted_keys = sort keys %supported_organism;
-
-  if ($out_format eq "html_list") {
-      my $result = "<UL>\n";
-      foreach my $name (@sorted_names) {
-	  $result .= "<LI>";
-	  $result .= $name;
-	  $result .= "\n";
-      }
-      $result .= "</UL>\n";
-      return $result;
-  } elsif ($out_format eq "html_table") {
-      my $result = "<TABLE>\n";
-      foreach my $key (@sorted_keys) {
-	  $result .= "<TR>\n";
-	  $result .= "<TD>$key</TD>\n";
-	  $result .= "<TD>";
-	  $result .= $names{$key};
-	  $result .= "</TD>\n";
-	  $result .= "</TR>\n";
-      }
-      $result .= "</TABLE>\n";
-      return $result;
-  } elsif (($out_format eq "names") ||
-	   ($out_format eq "array")) {
-      return @sorted_names;
-  } elsif ($out_format eq "keys") {
-      return @sorted_keys;
-  } elsif ($out_format eq "hash") {
-      my %result = ();
-      foreach my $ket (@sorted_keys) {
-	  $result{$key} = $main::supported_organism{$key}->{name};
-      }
-      return %result;
-  } elsif ($out_format eq "sizes") {
-      #### collect the default limits for each organism
-      my $result = sprintf ";\t%-35s\t%7s\t%7s\t%s\n", "Organism", "upstream from", "upstream to", "taxonomy";
-      foreach my $key (sort @sorted_keys) {
-	  $result .= sprintf ("\t%-35s\t%7s\t%7s\t%s\n", 
-			      $key, 
-			      $supported_organism{$key}->{'up_from'},
-			      $supported_organism{$key}->{'up_to'}
-			      );
-      }
-      return $result;
-  } elsif ($out_format eq "full") {
-      #### collect the default limits for each organism
-      my $result = join ("\t", 
-			 "; organism",
-# 			 "taxid", 
-			 "taxonomy", 
-			 "last update", 
-			 "upstream from", 
-			 "upstream to")."\n";
-      foreach my $key (sort @sorted_keys) {
-	  $result .= join ("\t", 
-			   $key,  
-# 			   $supported_organism{$key}->{'taxid'},
-			   $supported_organism{$key}->{'taxonomy'},
-			   $supported_organism{$key}->{'last_update'},
-			   $supported_organism{$key}->{'up_from'},
-			   $supported_organism{$key}->{'up_to'}
-			   )."\n";
-      }
-      return $result;
-  } else {
-      my $result = "";
-      foreach $key (@sorted_keys) {
-	  $result .= sprintf "\t\t%-30s", $key;
-	  $result .= "\t";
-	  $result .= $names{$key};
-	  $result .= "\n";
-      }
-      return $result;
-  }
-}
-
-$supported_organisms = &ListSupportedOrganisms("text", 0, "ID");
 
 ################################################################
 ## Return the list of supported taxa
@@ -1009,7 +922,7 @@ sub TimeWarn {
 }
 
 sub MessageToAdmin {
-    &RSAT::message::MessageToAdmin(@_);
+    &RSAT::server::MessageToAdmin(@_);
 }
 
 sub OutFileName {

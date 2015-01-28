@@ -23,11 +23,11 @@ print $query->header;
 print $query->start_html(-class => "info",
 			 -author=>'jacques.van.helden@ulb.ac.be',
 			 -style => { 	
-#			   -src => "$ENV{rsat_www}/main.css",
 			   -src => "main.css",
 			   -type => 'text/css',
 			   -media => 'screen' 
 			 });
+
 
 print "<blockquote>";
 
@@ -37,237 +37,197 @@ print <<EndText;
 
 <table class="title" cellpadding="10" width="100%">
   <tr>
-    <td align=center valign = top>
-      <a href="http://www.bigre.ulb.ac.be" target=_blank>
-	<img src="images/bigre_logo.png" alt="BiGRE lab" border=1 height=75>
-	<br>
-	<font color="#0000dd" size=-2>
-	  BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
-      </font>
-    </td>
-    
+
     <td align=center>
       <h1>Regulatory Sequence Analysis Tools</h1>
     </td>
     
-    
-    <td align=center valign = top width="160">
-      <a target=_blank href="http://embnet.ccg.unam.mx/">
-	<img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
-      <br>
-      <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG</font>
-    </td>
-    
+
+
   </TR>
 </table>
 
-<div class = 'serverlist'>
-  
-  <table border="0" cellspacing="3" cellpadding="7">
-    <TR>
-    <td><a href="tool_map.html"><b>
-    Tool Map</b></a></td>
 
-    <td><a href="intro.html"><b>
-    Introduction</b></a></td>
-
-    <td><a href="http://www.bigre.ulb.ac.be/forums/"><b>
-    Forum</b></a></td>
-
-    <td><a href="tutorials/tutorials.html"><b>
-    Tutorials</b></a></td>
-
-    <td><a href="publications.html"><b>
-    Publications</b></a></td>
-
-    <td><a href="credits.html"><b>
-    Credits</b></a></td>
-
-    <td><a href="people.html"><b>
-    People</b></a></td>
-
-    <td><a href="data/"><b>
-    Data</b></a></td>
-
-<!--    <td><a href="links.html"><b>
-    Links</b></a></td>
--->
-
-    <td><a href="distrib/index.html"><b>
-    Download</b></a></td>
-    
-    <td><a href="http://www.bigre.ulb.ac.be/forums/"><b>
-    [Forum]</b></a></td>
-
-    </tr>
-  </table>
-</div>
-
-    <div class="attention">
+<!--    <div class="attention">
     <p><b>Attention!</b></p>
     <p>The main address for Regulatory Sequence Analysis Tools (RSAT) will be changed to <a target="_top" href="http://www.rsat.eu/">http://www.rsat.eu/</a></p>
     <p>Please update your bookmarks.</p>
     </div>
-
-<table border=0 cellpadding=3>
-  <tr>
-    <td COLSPAN=3>
-      <p>Welcome to <b>Regulatory Sequence Analysis Tools</b>
-	(<b>RSAT</b>). This web site provides a series of modular computer
-	programs specifically designed for the detection of regulatory
-	signals in non-coding sequences.</p>
-    </td>
-  </tr>
-  <tr>
-    <td  WIDTH="50%" bgcolor=#F6E6CA>
-      <ul> 
-	<li><font color="red"><b>New !</b></font> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font></li>
+-->
+ <div align="center">
 	
-	<p><li> <b>Peak-motifs</b> is now published in <b>NAR</b> <a href='http://nar.oxfordjournals.org/content/early/2011/12/08/nar.gkr1104.full' target=_blank>[view article]</a></li>
+	<br/>
+	Welcome to <b>Regulatory Sequence Analysis Tools</b>
+	(<b>RSAT</b>).  <p> <a href="RSAT_portal.html" target="_top"><img src="images/RSAT_logo_w150.png"  alt="RSAT"></a>
+	  <br/>This web site provides a series of modular computer
+	  programs specifically designed for the detection of regulatory
+	  signals in non-coding sequences.</p>
+	
+	<p>RSAT servers have been up and running since 1997. The
+	  project was initiated
+	  by <a href="http://jacques.van-helden.perso.luminy.univ-amu.fr/"><b>Jacques
+	  van Helden</b></a>, and is now pursued by
+	  the <a href="people.html"><b>RSAT team</b></a>.
+	</p>
+	<p><i>This website is free and open to all users.</i></p>
+
+EndText
+
+print <<EndText;
+
+<div class="hr-like"> </div>
+
+<table border='0'>
+  <tr>
+    <td>
+    
+    <div id="display">
+    <p><b>Which program to use ?</b> A guide to our main tools for new users.
+    </p>
+    <div class="holder">
+    <b>1 - Choose your type of data to analyse</b></br>
+        <select id="datatypes">
+            <option value="">Choose Data type</option>
+            <option value="data1">ChIP-seq</option>
+            <option value="data2">List of gene names</option>
+            <option value="data3">Sequences</option>
+            <option value="data4">Matrices (PSSM)</option>
+            <option value="data5">Coordinates (BED)</option>
+        </select>
+    <br/>
+            </div>
+        
+        <div class="holder">
+         <b>2 - Choose your biological question / analysis to perform </b></br>
+            <select id="questions" disabled="true">
+                <option value="">Choose selection</option>
+                <option value="peak-motifs" class="data1">Which TFs are overrepresented in this data set ?</option>
+                
+                <option value="retrieve-seq-programs" class="data2">I want to extract their promoter sequences (or other sequence features) </option>
+                <option value="footprint-programs" class="data2">Which regulatory elements are conserved in promoters of orthologs ?</option>
+                
+                <option value="disco-programs" class="data3">Are there over-represented motifs in these sequences ? </option>
+                <option value="scan-programs" class="data3">I want to scan these sequences with a motif </option>
+                
+                
+                <option value="matrix-scan" class="data4">I want to scan sequences with these matrices </option>
+                <option value="matrix-compa-programs" class="data4">I want to compare matrices (with known collections) </option>
+                <option value="convert-matrix" class="data4">I want to convert the matrix format </option>
+                
+                <option value="fetch-sequences" class="data5">I want to extract the sequences corresponding to these coordinates </option>
+            </select>
+        </div>
+    
+     <div class="holder">
+         <b>3 - Relevant RSAT programs </b></br>
+            <select id="tools" disabled="true">
+                <option value="">Choose selection</option>
+                <option value="peak-motifs_form.cgi" class="peak-motifs">peak-motifs</option>
+                
+                <option value="retrieve-seq_form.cgi" class="retrieve-seq-programs">retrieve sequences</option>
+                <option value="retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences</option>
+                
+                 <option value="footprint-discovery_form.cgi" class="footprint-programs">footprint discovery</option>
+                 <option value="footprint-scan_form.cgi" class="footprint-programs">footprint-scan</option>
+                 
+                 <option value="oligo-analysis_form.cgi" class="disco-programs">oligo-analysis (words)</option>
+                 <option value="dyad-analysis_form.cgi" class="disco-programs">dyad-analysis (spaced pairs)</option>
+                 
+                 <option value="dna-pattern_form.cgi" class="scan-programs">dna-pattern</option>
+                 <option value="matrix-scan-quick_form.cgi" class="scan-programs">matrix-scan (quick)</option>
+                 
+                 <option value="matrix-scan-quick_form.cgi" class="matrix-scan">matrix-scan (quick)</option>
+                 
+                 <option value="compare-matrices_form.cgi" class="matrix-compa-programs">compare matrices</option>
+                 
+                 <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
+                 
+                 <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC</option>
+            </select>
+        </div>
+        <br/>
+             
+        
+    </div>
+</div>
+
+      
+    </td>
+
+    <td>
+    <ul> 
+	<p><li>Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" target="tools">ECCB'14</a></b></li>
+	
+	<p><li>Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font></li>
+		  
+	<!--p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li-->
+	
+	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER='0'></a></li>
 	  
-	<p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li>
+	 <p><li>Also try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
       </ul>
     </td>
-
-    <td WIDTH="30%" bgcolor=#F6E6CA>
-      <ul>
-      <li>Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li> <p>
-	<li> Check the <b>latest news</b> in <a
-						href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our [Forum] </b></a></li>
-	
-	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
-	  
-	  
-	<p><li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li></p>
-      </ul>
-    </td>
-    <td WIDTH="*"></td>
   </tr>
 
-  <tr>
-    <td COLSPAN=3>
-      <p> This website is free and open to all users.
-      </p>
-    </td>
-  </tr>
+
 </table>
 
-<hr  align='left'></hr>
-<div id = 'serverlist'>
-  <table class='serverlist'>
-    
-    
-    <tr>
-      <td align=center colspan=3><h3>Regulatory Sequence Analysis Tools - Web servers</h3></td>
-    </tr>
-    <tr align=center valign=bottom>
-      
-      <td>
-	<a href="http://bigre.rsat.eu/" target="_top">
-	  <b>Brussels - Belgium</b><br>
-	  <img src="images/manneken_pis.jpg" height=80 border=0><br>
-	  http://bigre.rsat.eu/</a>
-      </td>
-
-<!--
-      <td>
-	<a href="http://wwwsup.scmbb.ulb.ac.be/rsat/" target="_top">
-	  <b>Brussels (2) - Belgium</b><br>
-	  <img src="images/Atomium_icon_80.png" height=80 border=0><br>
-	  http://wwwsup.scmbb.ulb.ac.be/rsat/</a>
-      </td>
--->
-
-
-      <td align=center>
-	<a href='http://www.rsat.fr/' target='_top'>
-	  <b>Marseille TAGC - France</b><br>
-	  <img src="images/marseille_calanques.jpg" height=80 border=0><br>
-	  http://www.rsat.fr/</a>
-      </td>
-
-      <td ALIGN=CENTER>
-	<a href="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
-	  <b>Cuernavaca - Mexico</b><br>
-	  <img src="images/zapata.jpg" height=80 border=0><br>
-	  http://embnet.ccg.unam.mx/rsa-tools/</a>
-      </td>
-
-    </tr><tr>
-
-      <td align=center>
-	<a href='http://rsat01.biologie.ens.fr/rsa-tools/' target='_top'>
-	  <b>ENS Paris - France</b><br>
-	  <img src="images/paris.jpg" height=80 border=0><br>
-	  http://rsat01.biologie.ens.fr/rsa-tools/</a>
-      </td>
-
-
-      <td align=center>
-	<a href="http://bongcam1.hgen.slu.se/rsat/" target="_top">
-	  <!--  <a href="http://liv.hgen.slu.se/rsa-tools/" target="_top">-->
-	  <b>Uppsala - Sweden</b><br>
-	  <img src="images/uppsala_lcb.jpg" height=80 border=0><br>
-	  http://bongcam1.hgen.slu.se/rsat/</a>
-	<!--http://liv.hgen.slu.se/rsa-tools/</a>-->
-      </td>
-
-      <td align=center>
-	<a href="http://lmmge-webserver.unisa.it/rsat/" target="_top">
-	  <b>Salerno - Italia</b><br>
-	  <img src="images/salerno_icon.jpg" height=80 border=0><br>
-	  http://lmmge-webserver.unisa.it/rsat//</a>
-      </td>
-
-
-    </tr><tr>
-      <td align=center>
-	<a href="http://anjie.bi.up.ac.za/rsa-tools/" target="_top">
-	  <b>Pretoria - South-Africa</b><br>
-	  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
-	  http://anjie.bi.up.ac.za/rsa-tools/</a>
-      </td>
-      
-      <td>
-	<a href="http://rsat.sb-roscoff.fr/" target="_top">
-	  <b>Roscoff - France</b><br>
-	  <img src="images/roscoff_sb.jpg" height=80 border=0><br>
-	  http://rsat.sb-roscoff.fr/</a>
-      </td>
-
-
-      <!--
-	  <td align=center>
-	    <a href="http://rsat.ccb.sickkids.ca/" target="_top">
-	      <b>Toronto - Canada</b><br>
-	      <img src="images/toronto.jpg" height=80 border=0><br>
-	      http://rsat.ccb.sickkids.ca/</a>
-	  </td>
-      </tr><tr>
-      
-      
-  <td align=center>
-    <a href="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
-      <b>Vienna - Austria</b><br>
-      <img src="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" height=80 border=0><br>
-      http://af.boku.ac.at:4080/rsa-tools/</a>
-  </td>
-  
-  <td></td>
-  
-	  </tr><tr>
-	  
-  <td ALIGN=CENTER>
-    <a href="http://www.flychip.org.uk/rsa-tools/" target="_top">
-      <b>Cambridge - UK</b><br>
-      <img src="images/cambridge.jpg" height=80 border=0><br>
-      http://www.flychip.org.uk/rsa-tools/</a>
-  </td>
-  -->
-
-    </tr>
-  </table>
 </div>
+
+
+
+
+<div class="hr-like"> </div>
+<div align="center">
+       <table class='serverlist' cellspacing='3' style="font-size:14px;">
+        
+	<tr align=center valign=bottom>
+	  
+	  <td>
+	    <a href="http://fungi.rsat.eu/" target="_top">
+	      <img src="images/logo_fungi.jpg" height='100' border='0'
+		   alt="fungi"></a><br> maintained by
+	    <a href="http://tagc.univ-mrs.fr/tagc/index.php/software">TAGC - Université Aix Marseilles, France </a>
+	  </td>
+	  
+	  <td>
+	    <a href="http://prokaryotes.rsat.eu/" target="_top">
+	      <img src="images/logo_prokaryotes.jpg" height='100' border='0' alt="prokaryotes"></a><br>
+	    maintained by <a href="http://www.ccg.unam.mx/en/projects/collado/regulondb">RegulonDB - UNAM, Cuernavaca, Mexico </a>
+	  </td>
+	  
+          <td>
+	    <a href="http://metazoa.rsat.eu/" target="_top" >
+	      <img src="images/logo_metazoa.jpg" height='100' border='0' alt="metazoa"></a><br>
+	    maintained by <a href="http://abims.sb-roscoff.fr">platforme ABIMS Roscoff, France</a>
+	  </td>
+
+	</tr>
+	<tr align=center valign=bottom>
+
+	  <td>
+	    <a href="http://protists.rsat.eu/" target="_top">
+	      <img src="images/logo_protists.jpg" height='100' border='0' alt="protists"></a><br>
+	    maintained by <a href="http://www.biologie.ens.fr/csb/">Ecole Normale Supérieure Paris, France</a>
+	  </td>
+	  
+	  <td>
+	    <a href="http://plants.rsat.eu/" target="_top">
+	      <img src="images/logo_plants.jpg" height='100' border='0' alt="plants"></a><br>
+	    maintained by <a href="http://www.eead.csic.es/compbio/staff.html">Bruno Contreras Moreira, Spain</a>
+	  </td>
+	  
+          <td>
+	    <a href="http://teaching.rsat.eu" target="_top" >
+	      <img src="images/logo_teaching.jpg" height='100' border='0' alt="teaching"></a><br>
+	    maintained by <a href="http://sgbc.slu.se/">SLU Global Bioinformatics Center, Uppsala, Sweden  </a>
+	  </td>
+	  
+
+	</tr>
+      </table>
+</div>
+    
 EndText
 
 @orgs =  &RSAT::OrganismManager::get_supported_organisms();
@@ -277,10 +237,42 @@ print "<h4 align ='center'>", scalar(@orgs) ," organisms supported on $ENV{rsat_
 &UpdateLogFile();
 $count = &UpdateCounterFile();
 
+
 print <<EndAddress;
-<p>
-<hr  align = 'left'>
-<h4 class='footer'><i>
+<div class="hr-like"> </div>
+   <h2> Citing RSAT complete suite of tools:</h2>
+	<div align="left">
+      <ul>
+
+	<li>Thomas-Chollier M, Defrance M, Medina-Rivera A, Sand O, Herrmann C, Thieffry D, van Helden J. (2011)
+	  <b>RSAT 2011: regulatory sequence analysis tools</b>. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W86-91.
+	  <a href=http://www.ncbi.nlm.nih.gov/pubmed/21715389>[Pubmed 21715389]</a>
+	  <a href='http://nar.oxfordjournals.org/content/39/suppl_2/W86.long'>[Full text]</a>
+	</li>
+	<li>Thomas-Chollier, M., Sand, O., Turatsinze, J. V., Janky, R.,
+	  Defrance, M., Vervisch, E., Brohee, S. & van Helden, J. (2008). <b>RSAT:
+	    regulatory sequence analysis tools</b>. Nucleic Acids
+	  Res.
+	  <a href=http://www.ncbi.nlm.nih.gov/pubmed/18495751>[Pubmed 18495751]</a>
+	  <a href='http://nar.oxfordjournals.org/cgi/content/full/36/suppl_2/W119'>[Full text]</a>
+	</li>
+	<li>van Helden, J. (2003). <b>Regulatory sequence analysis
+	    tools</b>. Nucleic Acids Res. 2003 Jul 1;31(13):3593-6. [<a target=_blank
+									href="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=12824373&dopt=Abstract">Pubmed
+	    12824373</a>] [<a target=_blank
+			      href=http://nar.oupjournals.org/cgi/content/full/31/13/3593>Full
+	    text</a>] [<a target=_blank
+			  href=http://nar.oupjournals.org/cgi/reprint/31/13/3593.pdf>pdf</a>]
+	</li>
+      </ul>
+</div>
+      For citing individual tools: the reference of each tool is indicated on top of their query form.
+
+<hr  class = 'portal'/>
+<h4 class='footer'>
+      <div align="center">RSAT logos designed by Mauricio Guzman (<a href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)</div>
+
+<i>
 For suggestions or information request, please contact :
 <br>
 <a href="mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)">
@@ -291,6 +283,33 @@ EndAddress
 
 print "</blockquote>\n";
 &google_analytics_tag();
+
+print "<script type=\"text/javascript\">";
+
+ print  `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
+
+print "</script>";
+print '
+<script src="http://www.appelsiini.net/download/jquery.chained.js" type="text/javascript" charset="utf-8"></script> ';
+ 
+print '<script type="text/javascript" charset="utf-8"> 
+$(function(){ 
+	$("#questions").chained("#datatypes"); 
+	$("#tools").chained("#questions"); 
+	
+	document.getElementById("tools").onchange = function() {
+        if (this.selectedIndex!==0) {
+            window.location.href = this.value;
+        }        
+    };
+	
+	}); 
+	
+	
+</script> ';
+
+
+
 print $query->end_html, "\n";
 
 exit(0);

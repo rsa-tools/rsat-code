@@ -1,5 +1,6 @@
 ############################################################
-## RSATWS.pm - rsa-tools web services module
+## RSATWS.pm - Perl module to manage web services for the Regulatory
+## Sequence Analysis Tools (RSAT).
 
 package RSATWS;
 
@@ -1877,6 +1878,8 @@ sub convert_features {
     my $from = $args{"from"};
     my $to = $args{"to"};
 
+    my $coord = $args{"coord"};
+
     my $command = "$SCRIPTS/convert-features";
 
     if ($from) {
@@ -1889,6 +1892,12 @@ sub convert_features {
       $to =~ s/\'//g;
       $to =~ s/\"//g;
       $command .= " -to '".$to."'";
+    }
+
+    if ($coord) {
+      $coord =~ s/\'//g;
+      $coord =~ s/\"//g;
+      $command .= " -coord '".$coord."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
@@ -6220,6 +6229,10 @@ Run a command for the web services.
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
 
+  ## Report start time in the log file (depends on the satus of
+  ## start_time property)
+  local $start_time = &RSAT::util::StartScript();
+
   ## Define temporary output file and open it for writing
   my $tmp_outfile = &RSAT::util::make_temp_file("",$method_name, 1,0);
   $tmp_outfile .= ".".$out_format if ($out_format);
@@ -6295,6 +6308,10 @@ sub run_WS_command {
   close HIS_ERR;
 
   $stderr = &error_handling($stderr, 1);
+
+  ## Report execution time in the log file (depends on the satus of
+  ## exec_time property)
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be done for all the commands sent to WS
 
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: &RSAT::util::hide_RSAT_path($command)");
