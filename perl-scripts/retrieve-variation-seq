@@ -349,7 +349,7 @@ package	main;
   ## Initialize get_variations command in case format is bed or id
   my $get_variations_cmd="";
   if ($format eq "id" || $format eq "bed"){
-      $get_variations_cmd=$ENV{RSAT}."/perl-scripts/get-variations ";
+      $get_variations_cmd=$ENV{RSAT}."/perl-scripts/variation-info ";
       $get_variations_cmd .=" -species ". $main::species;
       $get_variations_cmd .=" -e_version ". $main::ensembl_version if ($main::ensembl_version );
       $get_variations_cmd .=" -a_version ". $main::assembly_version if ($main::assembly_version ) ;
@@ -386,7 +386,7 @@ package	main;
   ## to get the variant information in varBed format and save it in a temp file
 
   elsif ($format eq "id") {
-      &RSAT::message::TimeWarn("Retrieving variations from ID(s) using get-variations") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Retrieving variations from ID(s) using variation-info") if ($main::verbose >= 2);
       ## Retrieved variation information in rsat format will be writen in a temporary file
       
       ## Create temporary file
@@ -396,11 +396,11 @@ package	main;
       $get_variations_cmd .=" -format id " ;
       $get_variations_cmd .=" -o ".  $main::outfile{'variation_rsat'} ;
       
-      &RSAT::message::TimeWarn("get-variations command:", $get_variations_cmd) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("variation-info command:", $get_variations_cmd) if ($main::verbose >= 2);
       
       &doit($get_variations_cmd , $dry, $die_on_error, $verbose, $batch, $job_prefix);
       
-      ## Use get-variations out put as input to retrieve sequences 
+      ## Use variation-info out put as input to retrieve sequences 
       $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
   }
   
@@ -410,7 +410,7 @@ package	main;
   elsif ($format eq "bed") {
       
       ## Retrieve variation
-      &RSAT::message::TimeWarn("Retrieve variation from coordinate using get-variations") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Retrieve variation from coordinate using variation-info") if ($main::verbose >= 2);
 
       ## Retrieved variation information in rsat format will be writen in a temporary file
       ## Create temporary file
@@ -422,11 +422,11 @@ package	main;
       $get_variations_cmd .=" -format bed " ;
       $get_variations_cmd .=" -o ".  $main::outfile{'variation_rsat'} ;
     
-      &RSAT::message::TimeWarn("get-variations command:", $get_variations_cmd) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("variation-info command:", $get_variations_cmd) if ($main::verbose >= 2);
       
       &doit($get_variations_cmd , $dry, $die_on_error, $verbose, $batch, $job_prefix);
       
-      ## Use get-variations out put as input to retrieve sequences 
+      ## Use variation-info out put as input to retrieve sequences 
       $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
   }
   

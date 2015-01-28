@@ -120,12 +120,9 @@ $parameters .= " -return ".$selected_output_fields;
 
 ################################################################
 ## Output formats
-#$parameters .= " -cons";
 $parameters .= " -heatmap";
 $parameters .= " -export json";
-#$parameters .= " -d3_base file";
-#$parameters .= " -export newick"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
-$parameters .= " -labels name,consensus"; ## JvH: Jaime: is this parameter still necessary ? Not used in the demo makefile
+$parameters .= " -labels name";
 
 ################################################################
 ## Output file
@@ -133,7 +130,7 @@ $parameters .= " -o ".$output_path."/".$output_prefix;
 
 ## Add an error-log file for matrix-clustering
 $err_file = $output_path."/".$output_prefix."_err.txt";
-$parameters .= " >& ".$err_file;
+#$parameters .= " >& ".$err_file;
 
 ## Report the full command before executing
 &ReportWebCommand($command." ".$parameters);
