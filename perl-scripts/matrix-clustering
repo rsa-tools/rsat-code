@@ -1977,7 +1977,7 @@ sub cluster_head_buttons{
   // Slide the buttons to show the results
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
-       $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
+       $(\'#branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
      }); 
        $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
@@ -2203,7 +2203,7 @@ sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="tab cons_tab" id="branch_consensus_cluster_--nb--">
+    <div class="tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
     <div id="hide_branch_table_--nb--" class="Cluster_results" style="display:block; clear:both">Hide</div>
 		<table style="display:block; clear:both;">
 			<thead>
