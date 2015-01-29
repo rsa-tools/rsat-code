@@ -176,7 +176,7 @@ $demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
 print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
-print $query->submit(-label=>"DEMO_1");
+print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -186,21 +186,23 @@ print $query->end_form;
 my $descr_2 = "<H2>Comment on the demonstration example 2</H2>\n";
 $descr_2 .= "<blockquote class ='demo_2'>";
 
-$descr_2 .= "In this demo, we will analyze with <i>matrix-clustering</i> a
+$descr_2 .= "Negative control: we will analyze with <i>matrix-clustering</i> a
 set of motifs discovered with <a
 href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
 peaks for the mouse transcription factor Otc4 (data from Chen et al.,
-2008).  </p>\n";
+2008). The columns of the motifs are randomly permuted, conserving thus their 
+information content. Note that poor-complexity motifs (i.e. A-rich) are grouped
+together.  </p>\n";
 
 $descr_2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_2_file = "demo_files/peak-motifs_Oct4_matrices.tf";
+$demo_2_file = "demo_files/peak-motifs_result_Chen_Oct4_permuted_matrices.tf";
 $demo_2_matrices=`cat ${demo_2_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
 print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
-print $query->submit(-label=>"DEMO_2");
+print $query->submit(-label=>"DEMO (negative control)");
 print "</B></TD>\n";
 print $query->end_form;
 
