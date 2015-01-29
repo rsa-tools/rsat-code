@@ -20,8 +20,8 @@ $query = new CGI;
 
 ################################################################
 ### default values for filling the form
-$default{ref_db} = "CHECKED";
-$default{demo_descr1} = "";
+$default{demo_1_descr} = "";
+$default{demo_2_descr} = "";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
@@ -68,8 +68,11 @@ print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Mor
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print "</CENTER>";
 
-## demo description
-print $default{demo_descr1};
+## demo 1 description
+print $default{demo_1_descr};
+
+## demo 2 description
+print $default{demo_2_descr};
 
 print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 
@@ -155,30 +158,53 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-## Demo data
-my $descr1 = "<H2>Comment on the demonstration example 1</H2>\n";
-$descr1 .= "<blockquote class ='demo'>";
+## Demo 1 data
+my $descr_1 = "<H2>Comment on the demonstration example 1</H2>\n";
+$descr_1 .= "<blockquote class ='demo_1'>";
 
-$descr1 .= "In this demo, we will apply <i>matrix-clustering</i> to a
+$descr_1 .= "In this demo, we will analyze with <i>matrix-clustering</i> a
 set of motifs discovered with <a
 href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
 peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 2008).  </p>\n";
 
-$descr1 .= "</blockquote>";
+$descr_1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_file = "demo_files/peak-motifs_Oct4_matrices.tf";
-$demo_matrices=`cat ${demo_file}`;
+$demo_1_file = "demo_files/peak-motifs_Oct4_matrices.tf";
+$demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'matrix',-default=>$demo_matrices);
-print $query->submit(-label=>"DEMO");
+print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
+print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
+print $query->submit(-label=>"DEMO_1");
 print "</B></TD>\n";
 print $query->end_form;
 
 
-#print "<td><b><a href='help.compare-matrices.html'>[MANUAL]</a></B></TD>\n";
+################################################################
+## Demo 2 data
+my $descr_2 = "<H2>Comment on the demonstration example 2</H2>\n";
+$descr_2 .= "<blockquote class ='demo_2'>";
+
+$descr_2 .= "In this demo, we will analyze with <i>matrix-clustering</i> a
+set of motifs discovered with <a
+href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
+peaks for the mouse transcription factor Otc4 (data from Chen et al.,
+2008).  </p>\n";
+
+$descr_2 .= "</blockquote>";
+
+print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
+$demo_2_file = "demo_files/peak-motifs_Oct4_matrices.tf";
+$demo_2_matrices=`cat ${demo_2_file}`;
+print "<TD><b>";
+print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
+print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
+print $query->submit(-label=>"DEMO_2");
+print "</B></TD>\n";
+print $query->end_form;
+
+
 print "<td><b><a href='help.matrix-clustering.html'>[MANUAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</tr></table></ul></ul>\n";
