@@ -144,7 +144,8 @@ if ($quick) {
     $parameters .= " -quick";
 }
 
-
+## Insert lables
+$parameters .= " -label name ";
 
 ################################################################
 ## Output file
