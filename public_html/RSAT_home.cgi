@@ -23,7 +23,7 @@ print $query->header;
 print $query->start_html(-class => "info",
 			 -author=>'jacques.van.helden@ulb.ac.be',
 			 -style => { 	
-			   -src => "main.css",
+			   -src => ["main.css","font-awesome.min.css"],
 			   -type => 'text/css',
 			   -media => 'screen' 
 			 });
@@ -82,7 +82,7 @@ print <<EndText;
     <td>
     
     <div id="display">
-    <p><b>Which program to use ?</b> A guide to our main tools for new users.
+    <p><i class="fa fa-question-circle fa-lg"></i><b> Which program to use ?</b> A guide to our main tools for new users.
     </p>
     <div class="holder">
     <b>1 - Choose your type of data to analyse</b></br>
@@ -93,6 +93,7 @@ print <<EndText;
             <option value="data3">Sequences</option>
             <option value="data4">Matrices (PSSM)</option>
             <option value="data5">Coordinates (BED)</option>
+            <option value="data6">List of variants</option>
         </select>
     <br/>
             </div>
@@ -101,7 +102,7 @@ print <<EndText;
          <b>2 - Choose your biological question / analysis to perform </b></br>
             <select id="questions" disabled="true">
                 <option value="">Choose selection</option>
-                <option value="peak-motifs" class="data1">Which TFs are overrepresented in this data set ?</option>
+                <option value="peak-motifs" class="data1">Which TF motifs are over-represented in this data set ?</option>
                 
                 <option value="retrieve-seq-programs" class="data2">I want to extract their promoter sequences (or other sequence features) </option>
                 <option value="footprint-programs" class="data2">Which regulatory elements are conserved in promoters of orthologs ?</option>
@@ -112,9 +113,13 @@ print <<EndText;
                 
                 <option value="matrix-scan" class="data4">I want to scan sequences with these matrices </option>
                 <option value="matrix-compa-programs" class="data4">I want to compare matrices (with known collections) </option>
+                <option value="matrix-compa-programs" class="data4">I want to cluster and align matrices </option>
                 <option value="convert-matrix" class="data4">I want to convert the matrix format </option>
                 
                 <option value="fetch-sequences" class="data5">I want to extract the sequences corresponding to these coordinates </option>
+                
+                 <option value="retrieve-variation-seq" class="data6">Obtain the variants and their flanking sequences </option>
+                 <option value="scan-variations" class="data6">Which transcription factor binding sites are affected by these variants ? </option>
             </select>
         </div>
     
@@ -139,15 +144,19 @@ print <<EndText;
                  <option value="matrix-scan-quick_form.cgi" class="matrix-scan">matrix-scan (quick)</option>
                  
                  <option value="compare-matrices_form.cgi" class="matrix-compa-programs">compare matrices</option>
+                 <option value="matrix-clustering_form.cgi" class="matrix-compa-programs">matrix clustering</option>
                  
                  <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
                  
                  <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC</option>
+                 
+                 <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
+                 <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>
             </select>
         </div>
         <br/>
              
-        
+        <i class="fa fa-hand-o-left fa-lg"></i> Complete list of online tools is in the left menu
     </div>
 </div>
 
@@ -155,17 +164,15 @@ print <<EndText;
     </td>
 
     <td>
-    <ul> 
-	<p><li>Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" target="tools">ECCB'14</a></b></li>
+	<p><i class="fa fa-book fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" target="tools">ECCB'14</a></b> and <a href="tutorials/tutorials.html" target="tools"><b>all tutorials</b></a> 
 	
-	<p><li>Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font></li>
+	<p><i class="fa fa-book fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
 		  
 	<!--p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li-->
 	
-	<p><li> Stay Tuned !! <b>RSS feed</b> to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER='0'></a></li>
+	<p><i class="fa fa-rss-square fa-lg"></i> Stay Tuned !! <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><b>RSS feed</b></a> to all RSAT news.
 	  
-	 <p><li>Also try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms"></li>
-      </ul>
+	 <p><i class="fa fa-star fa-lg"></i> Also try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms">
     </td>
   </tr>
 
@@ -227,11 +234,13 @@ print <<EndText;
 	</tr>
       </table>
 </div>
+
+<p/>
     
 EndText
 
 @orgs =  &RSAT::OrganismManager::get_supported_organisms();
-print "<h4 align ='center'>", scalar(@orgs) ," organisms supported on $ENV{rsat_site} (<a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a>)</h4>\n";
+print "<div align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>", scalar(@orgs) ," </b> <i>organisms supported on $ENV{rsat_site} (<a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a>)</i></div>\n";
 # print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile();
@@ -240,7 +249,8 @@ $count = &UpdateCounterFile();
 
 print <<EndAddress;
 <div class="hr-like"> </div>
-   <h2> Citing RSAT complete suite of tools:</h2>
+<p/>
+   <i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b>
 	<div align="left">
       <ul>
 
@@ -289,8 +299,16 @@ print "<script type=\"text/javascript\">";
  print  `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
 
 print "</script>";
-print '
-<script src="http://www.appelsiini.net/download/jquery.chained.js" type="text/javascript" charset="utf-8"></script> ';
+
+print "<script type=\"text/javascript\">";
+
+ print  `cat $ENV{RSAT}/perl-scripts/lib/js/chained/jquery.chained.min.js`;
+
+print "</script>";
+
+
+#print '
+#<script src="http://www.appelsiini.net/download/jquery.chained.js" type="text/javascript" charset="utf-8"></script> ';
  
 print '<script type="text/javascript" charset="utf-8"> 
 $(function(){ 

@@ -20,11 +20,11 @@
       <h2>
 	<a href="RSAT_home.cgi" target="tools">
 	  <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0"> 
-	  <!--<a href="RSAT_home.cgi" target="tools"><img src="images/RSAT_logo.png" width='65'> -->
+	  <!--<a href="RSAT_home.cgi" target="tools"><img src="images/RSAT_logo.png" width='65'> 
 	  <span class='brown_text'>R</span>egulatory <br/>
 	  <span class='brown_text'>S</span>equence <br/>
 	  <span class='brown_text'>A</span>nalysis <br/>
-	  <span class='brown_text'>T</span>ools </a>
+	  <span class='brown_text'>T</span>ools --></a>
       </h2>
 
 <!--      <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;"><a href="http://www.eccb14.org/program/tutorials/cis-r" target="_blank">RSAT tutorial<br>at ECCB'14</a></h2></p>>
@@ -42,14 +42,14 @@
 	<div id="menu100">
 	  <a class="menu_item" href="retrieve-seq_form.cgi"
 	     target="tools">retrieve sequence</a>
-	  <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq</a>
+	  <a class="menu_item" href="peak-motifs_form.cgi" target="tools">peak-motifs</a>
 <!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi" target="tools">retrieve EnsEMBL seq</a>-->
 	  <a class="menu_item" href="oligo-analysis_form.cgi" target="tools">oligo-analysis (words)</a>
 	  <a class="menu_item" href="matrix-scan-quick_form.cgi" target="tools">matrix-scan (quick)</a>
 	</div>
       </div>
 
-      <div class="menu_expand" onclick="expandAll('13')" id="expand"> > view all tools</div>
+      <div class="menu_expand" onclick="expandAll('14')" id="expand"> > view all tools</div>
 
       <div class="menu">
 	<div class="menu_heading_closed"
@@ -79,6 +79,7 @@
 	<div id="menu12" class="menu_collapsible">
 	  <a class="menu_item" href="convert-matrix_form.cgi" target="tools">convert matrix</a>
 	  <a class="menu_item" href="compare-matrices_form.cgi" target="tools">compare matrices</a>
+	  <a class="menu_item" href="matrix-clustering_form.cgi" target="tools">matrix-clustering&nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
 	  <a class="menu_item" href="matrix-distrib_form.cgi" target="tools">matrix distrib</a>
 	  <a class="menu_item" href="matrix-quality_form.cgi" target="tools">matrix quality</a>
 	</div>
@@ -137,7 +138,7 @@
 	<div id="menu10" class="menu_collapsible">
 	  <a class="menu_item" href="get-orthologs_form.cgi" target="tools">get orthologs</a>
 	  <a class="menu_item" href="footprint-discovery_form.cgi" target="tools">footprint-discovery</a>
-	  <a class="menu_item" href="footprint-scan_form.cgi" target="tools">footprint-scan  <img src="images/onebit_49.png" height="30" class="new"></img>
+	  <a class="menu_item" href="footprint-scan_form.cgi" target="tools">footprint-scan&nbsp;<img src="images/onebit_49.png" height="30" class="new"></img>
 	  </a>
 	</div>
  
@@ -149,6 +150,17 @@
 	  <a class="menu_item" href="fetch-sequences_form.php" target="tools">fetch-sequences from UCSC</a>
 	  <a class="menu_item" href="random-genome-fragments_form.cgi" target="tools">random genome fragments</a>
 <!--	  <a class="menu_item" href="http://rsat.ulb.ac.be/rsat/random-genome-fragments_form.cgi" target="tools">random genome fragments</a>-->
+	</div>
+
+
+	<div class="menu_heading_closed"
+	     onclick="toggleMenu('14')" id="heading14">Genetic variations <img src="images/onebit_49.png" height="30" class="new"></div>
+	<div id="menu14" class="menu_collapsible">
+	  <a class="menu_item" href="variation-info_form.cgi" target="tools">Variation information 
+	    <img src="images/onebit_49.png" height="30" class="new"></a>
+	  <a class="menu_item" href="retrieve-variation-seq_form.php" target="tools">Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></a>
+	  <a class="menu_item" href="variation-scan_form.cgi" target="tools">Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></a>
+	  <a class="menu_item" href="convert-variations_form.cgi" target="tools">Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></a>
 	</div>
       </div>
 	
