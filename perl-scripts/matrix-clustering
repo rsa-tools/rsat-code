@@ -307,6 +307,7 @@ package main;
   $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
   $param{archive_format} = "zip";
   $param{progressive_synthesis} = 1;
+  $param{title} = "matrix-clustering";
 
 
   ################################################################
@@ -573,14 +574,15 @@ For a description of these formats, see the help of I<convert-matrix>.
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
       }
 
-# =pod
+=pod
 
-# =item	B<-title graph_title>
+=item	B<-title graph_title>
 
-# Title displayed on top of the graphs.
+Title displayed on top of the report page.
 
-# =cut
-#     } elsif ($arg eq "-title") {
+=cut
+     } elsif ($arg eq "-title") {
+      $main::param{title} = shift(@arguments);
 
 =pod
 
@@ -589,7 +591,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 Prefix for the output files.
 
 Mandatory option: since the program I<cluster-matrices> returns a
-list of output files (pariwise matrix comparisons, matrix clusters).
+list of output files (pairwise matrix comparisons, matrix clusters).
 
 =cut
     } elsif ($arg eq "-o") {
@@ -2463,7 +2465,6 @@ sub OpenSynthesis {
 
   ## Open the summary HTML file
   $syn = &OpenOutputFile($main::outfile{summary});
-     $main::param{title} = "Test";
   $synthesis_path = `dirname $main::outfile{summary}`;
   chomp($synthesis_path);
 
