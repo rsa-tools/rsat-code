@@ -38,7 +38,7 @@ $query = new CGI;
 
 ################################################################
 ## Output paths
-$command = "$ENV{RSAT}/perl-scripts/matrix-clustering";
+$command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
 
 $output_prefix = "matrix-clustering";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
@@ -122,18 +122,6 @@ foreach my $field (@threshold_fields) {
 }
 $parameters .= $thresholds;
 
-## Add selected output fields
-push @selected_output_fields, qw(
-				 matrix_id
-				 matrix_name
-				 width
-				 strand
-				 offset
-				 consensus
-				);
-
-my $selected_output_fields = join (",", @selected_output_fields);
-$parameters .= " -return ".$selected_output_fields;
 
 ##############################
 ## Add options from toolbox
@@ -156,7 +144,8 @@ if ($quick) {
     $parameters .= " -quick";
 }
 
-
+## Insert lables
+$parameters .= " -label name ";
 
 ################################################################
 ## Output file
@@ -171,7 +160,6 @@ $err_file = $output_path."/".$output_prefix."_err.txt";
 
 ################################################################
 ## Display or send result by email
-#$index_file = $output_path."/".$output_prefix."_index.html";
 $index_file = $output_path."/".$output_prefix."_SUMMARY.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
