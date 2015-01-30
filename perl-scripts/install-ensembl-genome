@@ -192,9 +192,9 @@ package main;
   }
 
   ## Read list of species from a file
-  if ($infile{input}) {
-    &RSAT::message::TimeWarn("Reading species list from file", $infile{input}) if ($main::verbose >= 2);
-    my ($file) = &OpenInputFile($infile{input});
+  if ($infile{species_list}) {
+    &RSAT::message::TimeWarn("Reading species list from file", $infile{species_list}) if ($main::verbose >= 2);
+    my ($file) = &OpenInputFile($infile{species_list});
     while (<$file>) {
       next unless (/\S/);	## Skip empty rows
       next if (/^;/);		## Skip comment lines
@@ -295,7 +295,7 @@ package main;
       ## suffix with the assembly version.
       my $full_species_id = &Get_full_species_ID($species, $assembly_version, $ensembl_version, $species_suffix);
       
-      &RSAT::message::Info("Species", $species, "Full species ID", $full_species_id) if ($main::verbose >= 0);
+      &RSAT::message::Info("Species", $species, "Full species ID", $full_species_id) if ($main::verbose >= 2);
 
       ## Declare the organism in RSAT
       if ($task{"config"}) {
@@ -429,7 +429,7 @@ the line is ignored.
 
 =cut
     } elsif ($arg eq "-species_file") {
-      $main::infile{input} = shift(@arguments);
+      $main::infile{species_list} = shift(@arguments);
 
 =pod
 
