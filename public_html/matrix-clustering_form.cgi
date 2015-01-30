@@ -31,6 +31,7 @@ $default{newick} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
 $default{labels} = "name";
+$default{html_title} = "";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
@@ -76,6 +77,14 @@ print $default{demo_2_descr};
 
 print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 
+################################################################
+#### Matrix specification
+print "<hr>";
+print "<h2 style='margin-left: 50px;'> Title ";
+
+print $query->textfield(-name=>'html_title',
+			 -default=>$default{html_title},
+			 -size=>30) ."</h2>";
 
 ################################################################
 #### Matrix specification
