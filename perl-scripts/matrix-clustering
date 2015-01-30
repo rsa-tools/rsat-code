@@ -2393,7 +2393,7 @@ sub set_output_file_names {
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
   $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
-  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table"; &AddTabToConvert("internal_nodes_attributes_table");
+  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
@@ -3436,10 +3436,6 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_internal_nodes_attributes.tab').'"><strong>Internal nodes attributes</strong></a></td>
-		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
-		   </tr>
-		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_logo_tree.html').'"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
@@ -3451,14 +3447,23 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa_matrix_descriptions.tab').'"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
+                         ';
+
+      if($number_of_motifs > 1){
+	  $add_files .='
+                   <tr>
+                   <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_internal_nodes_attributes.tab').'"><strong>Internal nodes attributes</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
+		   </tr>
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
 		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
 		   </tr>
                 ';
+      }
 
       ## If it is specified, add the heatmap
-      if($draw_heatmap == 1){
+      if($draw_heatmap == 1 && $number_of_motifs > 1){
 	$add_files .= 
 	    '
 
@@ -3534,7 +3539,7 @@ sub Synthesis {
 
     &DisplaySingleCluster();
 
-    if($draw_heatmap == 1){
+    if($draw_heatmap == 1 && $number_of_motifs > 1){
 	&InsertHeatMap();
     }
 
