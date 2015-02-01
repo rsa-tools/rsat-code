@@ -115,7 +115,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
   # Get the aligned consensuses, which will be used as the Row names
   consensus <-sapply(colnames(dist.table), function(x){
-    as.vector(alignment.list[[x]][["consensus"]])
+    as.vector(alignment.list[[x]][["consensus_d"]])
   })
   consensus <- as.vector(consensus)
 
