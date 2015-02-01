@@ -419,7 +419,7 @@ Establish simultaneous connection to Ensembl and EnsemblGenomes
 sub LoadRegistry {
   ($registry, $db, $ensembl_version) = @_;
 
-  &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 2);
 # my $ensembl_version = 78;
 # Bio::EnsEMBL::Registry->load_registry_from_db(
 #            -host => 'mysql-eg-publicsql.ebi.ac.uk',
@@ -465,7 +465,7 @@ sub LoadRegistry {
     &RSAT::error::FatalError("Invalid db for ensembl queries. Supported: ensembl, ensemblgenomes, ensemblall.");
   }
   my $nb_species = scalar(@{ $registry->get_all_DBAdaptors(-group => 'core') });
-  &RSAT::message::TimeWarn("Loaded registry with", $nb_species, "species") if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("Loaded registry with", $nb_species, "species") if ($main::verbose >= 3);
 }
 
 ############################################################################
@@ -536,9 +536,9 @@ sub Get_full_species_ID {
   ## Check that the assembly version has been provided. If not, guess
   ## it.
   unless ($assembly_version) {
-      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 0);
+      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 5);
       $assembly_version = &Get_assembly_version($species,$ensembl_version,$species_suffix);
-      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
   }
 
 
@@ -595,7 +595,7 @@ sub Get_assembly_version {
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
 			      "\n\tquery", $species, $main::db,$ensembl_version,
 			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
-	    ) if ($main::verbose >= 0);
+	    ) if ($main::verbose >= 5);
 	if ((lc($species) eq lc($db_species)) 
 	    && ($db_db eq $main::db)
 	    && ($ensembl_version eq $db_ensembl_version)
