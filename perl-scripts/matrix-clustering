@@ -399,7 +399,7 @@ package main;
       ################################################################
       ## Cluster the matrices
       &Hclustering();
-
+      
       ################################################################
       ## Read the motif to cluster assignation, which will be required for
       ## several functions below.
@@ -1814,8 +1814,8 @@ sub Merge_matrices(){
 		my $motif_id = $split_line[0];
 		#$motif_id =~ s/\./-/;
 		my $motif_strand = $split_line[3];
-		my $offset_up = $split_line[5];
-		my $offset_down = $split_line[6];
+		my $offset_up = $split_line[6];
+		my $offset_down = $split_line[7];
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
@@ -2959,6 +2959,7 @@ sub ReadAlignmentTable {
 	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[5];
 	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
 	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
+	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[8];
 
 	my $link_logo_d = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
 	my $link_logo_r = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
@@ -3001,13 +3002,14 @@ sub InsertAlignmentTable{
 			</div>
 	    <thead>
 	      <tr>
-		<th colspan="6"><strong>Alignment</strong></th>
+		<th colspan="7"><strong>Alignment</strong></th>
 	      </tr>
 	      <tr>
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
 		<th class="tab_col">Aligned consensus</th>
+		<th class="tab_col">Aligned consensus (Reversed)</th>
 		<th class="tab_col">Aligned Logo (Forward)</th>
 		<th class="tab_col">Aligned Logo (Reverse)</th>
 	      </tr>
@@ -3032,6 +3034,7 @@ sub InsertAlignmentTable{
                                         <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{name}.'</td>
 					<td class="tab_spacer_1">'.$ids_to_cluster{$id}.'</td>
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
+					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus_rc}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
                                         <th class="tab_spacer_2"><a target="_blank" href="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'"><img class="logo_tab" width="--width--" src="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'" /></a></th>
                                         <th class="tab_spacer_2"><a target="_blank" href="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo_rc}.'"><img class="logo_tab" width="--width--" src="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo_rc}.'" /></a></th>
 				</tr>
