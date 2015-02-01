@@ -13,7 +13,6 @@ dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
     stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
 }
-#  print(paste("Environment variable RSAT = ", dir.rsat))
 
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
@@ -138,7 +137,6 @@ if(number.of.motifs > 1){
   verbose(paste("JSON tree file", json.file), 1)
   writeLines(JSON.tree, con=json.file)
 
-
   #############################################################
   ## Bottom-up traversal of the tree to orientate the logos
   alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric=score, nodes.attributes=TRUE, intermediate.alignments=FALSE)
@@ -148,7 +146,7 @@ if(number.of.motifs > 1){
 
   ## Reset the labels
   tree$labels <- sapply(tree$labels, function(x){
-  paste(alignment.list[[x]][["consensus"]], alignment.list[[x]][["name"]], sep="   " )
+  paste(alignment.list[[x]][["consensus_d"]], alignment.list[[x]][["name"]], sep="   " )
   })
 
   #############################################
@@ -233,7 +231,7 @@ if(number.of.motifs > 1){
 
   motifs.info <- list()
   clusters <- list(cluster_1 = as.vector(global.description.table$id))
-  motifs.info[[as.vector(global.description.table$id)]] <- list(strand = "D", consensus = as.vector(global.description.table$consensus), name = as.vector(global.description.table$name), number = 1, spacer.up = 0, spacer.dw = 0)
+  motifs.info[[as.vector(global.description.table$id)]] <- list(strand = "D", consensus_d = as.vector(global.description.table$consensus), consensus_rc = as.vector(global.description.table$consensus.rc), name = as.vector(global.description.table$name), number = 1, spacer.up = 0, spacer.dw = 0)
   global.motifs.info <- motifs.info
   forest.nb <- length(clusters)
 }
@@ -287,7 +285,8 @@ i <- sapply(1:length(clusters), function(nb){
 
                ## Fill the cluster list with the data of the non-aligned motifs (singleton)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]] <<- global.motifs.info[[ids]]
-               forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus"]] <<- get.consensus(ids, global.description.table, RC = FALSE)
+               forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus_d"]] <<- get.consensus(ids, global.description.table, RC = FALSE)
+               forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["consensus_rc"]] <<- get.consensus(ids, global.description.table, RC = TRUE)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["number"]] <<- as.numeric(1)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer.up"]] <<- as.numeric(0)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
@@ -385,18 +384,18 @@ i <- sapply(1:length(clusters), function(nb){
 if(forest.nb > 1){
   alignment.table <- sapply(forest.list, function(X){
     sapply(X, function(Y){
-      return(c(Y[["number"]], Y[["strand"]], Y[["spacer.up"]], Y[["spacer.dw"]], Y[["consensus"]], Y[["name"]]))
+      return(c(Y[["number"]], Y[["strand"]], Y[["spacer.up"]], Y[["spacer.dw"]], Y[["consensus_d"]], Y[["consensus_rc"]], Y[["name"]]))
     })
   })
 } else{
   alignment.table <- lapply(forest.list[[1]], function(X){
-    return(c(X[["number"]], X[["strand"]], X[["spacer.up"]], X[["spacer.dw"]], X[["consensus"]], X[["name"]]))
+    return(c(X[["number"]], X[["strand"]], X[["spacer.up"]], X[["spacer.dw"]], X[["consensus_d"]], X[["consensus_rc"]], X[["name"]]))
   })
 }
 alignment.table <- unlist(alignment.table)
 names(alignment.table) <- NULL
-alignment.table <- data.frame(matrix(alignment.table, ncol = 6, byrow = TRUE))
-colnames(alignment.table) <- c("number", "strand", "spacer.up", "spacer.dw", "consensus", "name")
+alignment.table <- data.frame(matrix(alignment.table, ncol = 7, byrow = TRUE))
+colnames(alignment.table) <- c("number", "strand", "spacer.up", "spacer.dw", "consensus", "consensus_rc", "name")
 
 ## Produce the column ID
 ids.names <- unlist(as.vector(sapply(forest.list, function(x){names(x)})))
@@ -406,7 +405,7 @@ alignment.table$id <- ids.names
 ## Produce the column Width
 width.tmp <- unlist(sapply(forest.list, function(X){
   sapply(X, function(Y){
-    return( nchar(Y[["consensus"]]))
+    return( nchar(Y[["consensus_d"]]))
   })
 }))
 width.tmp <- as.vector(width.tmp)
@@ -421,8 +420,8 @@ for(name in forest.names){
 alignment.table$cluster <- forest.id
 
 ##  Re-order the table and export it
-alignment.table <- alignment.table[,c(7, 6, 9, 2:4, 8, 5)]
-colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus")
+alignment.table <- alignment.table[,c(8, 7, 10, 2:4, 9, 5:6)]
+colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
 
 alignment.file <- paste(sep = "", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
