@@ -38,7 +38,7 @@ $query = new CGI;
 
 ################################################################
 ## Output paths
-$command = "$ENV{RSAT}/perl-scripts/matrix-clustering";
+$command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
 
 $output_prefix = "matrix-clustering";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
@@ -83,7 +83,24 @@ if ($hclust_method) {
 
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
-my @threshold_fields = qw(cor Ncor w);
+my @threshold_fields = qw(w
+			 cor
+			 Ncor
+                         logoDP
+			 logocor
+			 Nlogocor
+			 Icor
+			 NIcor
+			 cov
+			 dEucl
+			 NdEucl
+			 NsEucl
+			 SSD
+			 SW
+			 NSW
+			 match_rank
+			 offset
+			);
 my $thresholds = "";
 foreach my $field (@threshold_fields) {
   ## Selected field
@@ -105,24 +122,30 @@ foreach my $field (@threshold_fields) {
 }
 $parameters .= $thresholds;
 
-## Add selected output fields
-push @selected_output_fields, qw(
-				 matrix_id
-				 matrix_name
-				 width
-				 strand
-				 offset
-				 consensus
-				);
 
-my $selected_output_fields = join (",", @selected_output_fields);
-$parameters .= " -return ".$selected_output_fields;
+##############################
+## Add options from toolbox
 
-################################################################
-## Output formats
-$parameters .= " -heatmap";
-$parameters .= " -export json";
-$parameters .= " -labels name";
+## Heatmap selection
+$heatmap = $query->param('heatmap');
+if ($heatmap) {
+    $parameters .= " -heatmap";
+}
+
+## Export newick selection
+$newick = $query->param('newick');
+if ($newick) {
+    $parameters .= " -export newick";
+}
+
+## Run compare-matrices-selection
+$quick = $query->param('quick');
+if ($quick) {
+    $parameters .= " -quick";
+}
+
+## Insert lables
+$parameters .= " -label name ";
 
 ################################################################
 ## Output file
@@ -137,7 +160,6 @@ $err_file = $output_path."/".$output_prefix."_err.txt";
 
 ################################################################
 ## Display or send result by email
-#$index_file = $output_path."/".$output_prefix."_index.html";
 $index_file = $output_path."/".$output_prefix."_SUMMARY.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-clustering", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
