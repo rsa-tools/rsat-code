@@ -176,12 +176,12 @@ if(number.of.motifs > 1){
       heatmap.file <- paste(sep="", out.prefix, "_heatmap.", plot.format)
         w <- 6
         h <- w + 0.75
-      resol <- 72 ## Screen resolution
+        resol <- 72 ## Screen resolution
       verbose(paste("drawing heatmap", heatmap.file), 1)
       if (plot.format == "pdf") {
         pdf(file=heatmap.file, width=w, height=h)
       } else if (plot.format == "jpg") {
-        jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
+          jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
       }
       draw.heatmap.motifs(dist.table, method = hclust.method, clusters, alignment.list, score = score)
       dev.off()
