@@ -154,12 +154,12 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
     sapply(ids.mod, function(y){
       temp <- list()
       temp[[y]][["strand"]] <- temp.motifs.info[[y]][["strand"]]
-      temp[[y]][["consensus"]] <- paste(spacer, temp.motifs.info[[y]][["consensus"]], sep = "")
+      temp[[y]][["consensus_d"]] <- paste(spacer, temp.motifs.info[[y]][["consensus_d"]], sep = "")
+      temp[[y]][["consensus_rc"]] <- paste(temp.motifs.info[[y]][["consensus_rc"]], spacer, sep = "")
       temp[[y]][["name"]] <- get.name(y, desc.table)
       temp[[y]][["number"]] <- as.numeric(temp.motifs.info[[y]][["number"]])
-      #print(temp.motifs.info[[y]])
-      temp[[y]][["spacer.up"]] <- get.spacer.nb(temp.motifs.info[[y]][["consensus"]])$up.spacer
-      temp[[y]][["spacer.dw"]] <- get.spacer.nb(temp.motifs.info[[y]][["consensus"]])$dw.spacer
+      temp[[y]][["spacer.up"]] <- get.spacer.nb(temp.motifs.info[[y]][["consensus_d"]])$up.spacer
+      temp[[y]][["spacer.dw"]] <- get.spacer.nb(temp.motifs.info[[y]][["consensus_d"]])$dw.spacer
 
       ## Update the motifs list
       temp.motifs.info[names(temp)] <<- temp[names(temp)]
