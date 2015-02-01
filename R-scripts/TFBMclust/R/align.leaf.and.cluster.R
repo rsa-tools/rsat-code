@@ -52,7 +52,8 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
     n1.id <- get.id(n1, desc.table)
 
     motifs.info[[n1.id]][["name"]] <<- get.name(n1.id,desc.table)
-    motifs.info[[n1.id]][["consensus"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
+    motifs.info[[n1.id]][["consensus_d"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
+    motifs.info[[n1.id]][["consensus_rc"]] <<- get.consensus(n1.id, desc.table, RC = TRUE)
     motifs.info[[n1.id]][["strand"]] <<- "D"
     motifs.info[[n1.id]][["number"]] <<- n1
     motifs.info[[n1.id]][["spacer.up"]] <<- 0
@@ -155,14 +156,18 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
 
     ## Choose the consensus for the new.node motif
     if(case %in% c(1,2,5,6,7,8)){
-      consensus.new.node <- get.consensus(new.node, desc.table, RC = FALSE)
+      consensus.1.new.node <- get.consensus(new.node, desc.table, RC = FALSE)
+      consensus.2.new.node <- get.consensus(new.node, desc.table, RC = TRUE)
       motifs.info[[new.node]][["strand"]] <<- "D"
-      motifs.info[[new.node]][["consensus"]] <<- consensus.new.node
+      motifs.info[[new.node]][["consensus_d"]] <<- consensus.1.new.node
+      motifs.info[[new.node]][["consensus_rc"]] <<- consensus.2.new.node
 
     } else if(case %in% c(3,4)){
-      consensus.new.node <- get.consensus(new.node, desc.table, RC = TRUE)
+      consensus.1.new.node <- get.consensus(new.node, desc.table, RC = TRUE)
+      consensus.2.new.node <- get.consensus(new.node, desc.table, RC = FALSE)
       motifs.info[[new.node]][["strand"]] <<- "R"
-      motifs.info[[new.node]][["consensus"]] <<- consensus.new.node
+      motifs.info[[new.node]][["consensus_d"]] <<- consensus.1.new.node
+      motifs.info[[new.node]][["consensus_rc"]] <<- consensus.2.new.node
     }
     motifs.info[[new.node]][["name"]] <<- get.name(new.node, desc.table)
 
@@ -190,11 +195,12 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, scor
     sapply(ids.mod, function(x){
       temp <- list()
       temp[[x]][["strand"]] <- temp.motifs.info[[x]][["strand"]]
-      temp[[x]][["consensus"]] <- paste(spacer, temp.motifs.info[[x]][["consensus"]], sep="")
+      temp[[x]][["consensus_d"]] <- paste(spacer, temp.motifs.info[[x]][["consensus_d"]], sep="")
+      temp[[x]][["consensus_rc"]] <- paste(temp.motifs.info[[x]][["consensus_rc"]], spacer, sep="")
       temp[[x]][["name"]] <- temp.motifs.info[[x]][["name"]]
       temp[[x]][["number"]] <- as.numeric(temp.motifs.info[[x]][["number"]])
-      temp[[x]][["spacer.up"]] <- get.spacer.nb(temp.motifs.info[[x]][["consensus"]])$up.spacer
-      temp[[x]][["spacer.dw"]] <- get.spacer.nb(temp.motifs.info[[x]][["consensus"]])$dw.spacer
+      temp[[x]][["spacer.up"]] <- get.spacer.nb(temp.motifs.info[[x]][["consensus_d"]])$up.spacer
+      temp[[x]][["spacer.dw"]] <- get.spacer.nb(temp.motifs.info[[x]][["consensus_d"]])$dw.spacer
       temp.motifs.info[names(temp)] <<- temp[names(temp)]
     })
 
