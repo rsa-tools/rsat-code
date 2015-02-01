@@ -1961,19 +1961,40 @@ sub Add_div_to_HTML(){
     &doit($cmd, 0, $die_on_error, $verbose);    
 }
 
-##########################################
-## Store in a string the cluster header
+
+###############################
+## Export the cluster header
 sub cluster_delim {
 
   my $cluster_delim = 
       '	
         <!--Div with cluster 1 delimitation and buttons to display results-->
-	<div class="cluster_division --Cluster_id_head--">
+	<div class="cluster_division button_click --Cluster_id_head--">
 		<strong>--Cluster_id--</strong>
 	</div>
 ';
   
   return($cluster_delim);
+}
+
+##########################################
+## Store in a string the cluster header
+sub hide_show_buttons {
+
+  my $HS_buttons = 
+      '	
+      <div style="clear:both; display:block; margin: 2px 5px 1px 5px;">
+        <!--Div with cluster 1 delimitation and buttons to display results-->
+	<div class="hide_show_button button_click" id="show_all_button">
+		<strong>Show All</strong>
+	</div>
+	<div class="hide_show_button button_click" id="hide_all_button">
+		<strong>Hide All</strong>
+	</div>
+      </div>
+';
+  
+  return($HS_buttons);
 }
  
 
@@ -1992,8 +2013,10 @@ sub cluster_head_buttons{
     $(\'.--Cluster_id_head--\', this).click(function(){
        $(\'#branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
+       $(this).toggleClass(\'selected_cluster\');
      }); 
        $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
+    
   });
     ';
   } else{
@@ -2004,6 +2027,7 @@ sub cluster_head_buttons{
   $(document).ready(function(){
     $(\'.--Cluster_id_head--\', this).click(function(){
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
+       $(this).toggleClass(\'selected_cluster\');
      }); 
        $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
   });
@@ -2216,8 +2240,8 @@ sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
-    <div id="hide_branch_table_--nb--" class="Cluster_results" style="display:block; clear:both">Hide <strong>cluster_--nb--</strong></div>
+    <div class="tab cons_tab hide_show" id="branch_consensus_cluster_--nb--" style="display:none">
+    <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both">Hide <strong>cluster_--nb--</strong></div>
 		<table style="display:block; clear:both;">
 			<thead>
 				<tr>
@@ -2557,13 +2581,13 @@ sub ReportStyleCSS{
 	background-color: #97C0F9;
 	float: left;
 	margin: 5px 3px 3px 3px;
-	width: 110px;
-	height: 20px;
+	width: 75px;
+	height: 15px;
 	position: relative;
 	display: inline-block;
 	text-align: center;
 	color: #34373B;
-	font-size: 15px;
+	font-size: 12px;
 	padding: 4px;
 	cursor: pointer;
 	border-radius:5px;
@@ -2571,7 +2595,7 @@ sub ReportStyleCSS{
   }
   
   
-  .cluster_division:active {
+  .button_click:active {
   position:relative;
   top:1px;
   }
@@ -2661,7 +2685,6 @@ sub ReportStyleCSS{
   top:1px;
   }
 
-
   #File_list {
   background-color: #DCE4EC;
   float: left;
@@ -2679,17 +2702,14 @@ sub ReportStyleCSS{
   cursor: pointer;
   }
 
-
   .file_link {
   cursor: pointer;
   text-decoration: none;
   }
 
-
   .file_link:hover {
   text-decoration: underline;
   }
-
 
   #hclust_tree_head {
   width: 900px;
@@ -2705,7 +2725,6 @@ sub ReportStyleCSS{
   font-size: 12px;
   clear: both;
   }
-
 
   .logo {
 	position: relative;
@@ -2799,7 +2818,7 @@ sub ReportStyleCSS{
     clear: both;
     float: left;
     display: block;
-    margin: 7px;
+    margin: 1px 5px 2px 5px;
   }
 
   .display{
@@ -2846,7 +2865,45 @@ sub ReportStyleCSS{
 	padding: 3px 7px;
 	border-radius:5px;
 	clear: both;
-  } 
+  }
+
+  .to_hide{
+    display: none;
+  }
+
+  .to_show{
+    display: block;
+  }
+
+  .hide_show_button{
+	float: left;
+	margin: 5px 3px 3px 3px;
+	width: 75px;
+	height: 15px;
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	color: #34373B;
+	font-size: 12px;
+	padding: 4px;
+	cursor: pointer;
+	border-radius:5px;
+  }
+
+  #show_all_button{
+     background-color: #76F076;
+     border: 1px solid green;
+  }
+
+  #hide_all_button{
+    background-color: #FCA0A0;
+    border: 1px solid red;
+  }
+
+  .selected_cluster {
+    background-color: #76F076;
+    border: 1px solid green;
+  }
 
   /****************/
   /* D3 CSS sytle */
@@ -3201,7 +3258,7 @@ $(document).ready( function () {
 $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
         "info":     false,
-        "iDisplayLength": 20,
+        "iDisplayLength": --display--,
         "order": [[ 2, "asc" ]],
 	"search": {
 	    "regex": true,
@@ -3218,6 +3275,42 @@ $(document).ready( function () {
     });
 });
 
+// Slide the alignment table
+$(document).ready(function(){
+    $(\'#show_all_button\').click(function(){
+	$(\'.hide_show\').css(\'display\',\'block\');
+//	$(\'.hide_show\').removeClass(\'to_hide\').addClass(\'to_show\');
+    }); 
+});
+
+// Slide the alignment table
+$(document).ready(function(){
+    $(\'#show_all_button\').click(function(){
+	$(\'.hide_show\').css(\'display\',\'none\');
+//	$(\'.hide_show\').removeClass(\'to_show\').addClass(\'to_hide\');
+    }); 
+});
+
+// Change the color of the selected cluster header
+$(document).ready(function() {
+    
+    $(\'#show_all_button\').mouseenter(function(){
+        $(this).fadeTo(\'fast\',1); 
+    });
+
+    $(\'#show_all_button\').mouseleave(function(){
+        $(this).fadeTo(\'fast\',0.5); 
+    });
+
+    $(\'#hide_all_button\').mouseenter(function(){
+        $(this).fadeTo(\'fast\',1); 
+    });
+
+    $(\'#hide_all_button\').mouseleave(function(){
+        $(this).fadeTo(\'fast\',0.5); 
+    });
+
+});
 
 // Change the color of the selected cluster header
 $(document).ready(function() {
@@ -3274,11 +3367,12 @@ sub InsertTreesAndBranchMotifs {
 		.attr("font-size", "8px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
-    
+
     ## The next procces is repeated for each cluster
     foreach my $num (1..scalar(keys %alignment_table_data)){
 	
 	## Insert the header of the cluster
+
 	my $head_insert .= &cluster_delim();
 	my $cl_id = "cluster_".$num;
 	$head_insert =~ s/--Cluster_id--/$cl_id/g;
@@ -3306,10 +3400,10 @@ sub InsertTreesAndBranchMotifs {
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
                       <div id="cluster_--nb--" class="logo_tree">
-                      <div id="hide_tree_--nb--" class="Cluster_results" style="clear:both; position:relative; float:left" >Hide <strong>cluster_--nb--</strong></div>
+                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" >Hide <strong>cluster_--nb--</strong></div>
 		      <script type="text/javascript">
                 ';
-	my $tree_button = '<div class="Cluster_results" id="button_logo_tree_--nb--">Logo tree</div>';
+	my $tree_button = '<div class="Cluster_results hide_show" id="button_logo_tree_--nb--">Logo tree</div>';
 	$tree_button =~ s/--nb--/$num/g;
 
 	$d3_logo_tree .= &logo_tree();
@@ -3433,7 +3527,7 @@ sub InsertListOfFiles {
       my $add_files = 
 	  '
 
-	<div id="File_list"><strong>List of files</strong></div>
+	<div id="File_list" class="button_click"><strong>List of files</strong></div>
 	<div class="tab_list">
 	  <table>
 	    <thead>
@@ -3548,6 +3642,7 @@ sub Synthesis {
 
     &InsertInfoDiv();
 
+    print $syn &hide_show_buttons."\n";
     print $syn '<div class="sep_clusters_div">'."\n";
     &InsertTreesAndBranchMotifs();
     print $syn "\n".'</div>';
@@ -3560,6 +3655,7 @@ sub Synthesis {
 
     &InsertListOfFiles();
 
+    $script_jquery =~ s/--display--/$number_of_motifs/g;
     &InsertJquery();
     
     ## End of the HTML file
