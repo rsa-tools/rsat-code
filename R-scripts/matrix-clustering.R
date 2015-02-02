@@ -419,9 +419,14 @@ for(name in forest.names){
 }
 alignment.table$cluster <- forest.id
 
+## Produce the column Collection
+col.size <- dim(global.description.table)[1]
+title.col <- rep(title, times = col.size)
+alignment.table$collection <- title.col
+
 ##  Re-order the table and export it
-alignment.table <- alignment.table[,c(8, 7, 10, 2:4, 9, 5:6)]
-colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
+alignment.table <- alignment.table[,c(8, 7, 10, 11, 2:4, 9, 5:6)]
+colnames(alignment.table) <- c("#id", "name", "cluster", "collection", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
 
 alignment.file <- paste(sep = "", out.prefix, "_alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
