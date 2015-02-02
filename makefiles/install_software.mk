@@ -1014,11 +1014,15 @@ _compile_ceas:
 #	@echo "Adapt the python version in the path below"
 #	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
 
+################################################################
+## Download data required to run CEAS with Human genome hg19
 CEAS_DATA_DIR=${RSAT}/data/ceas
+CEAS_GENOME=hg19
 download_ceas_data:
-		mkdir -p ${CEAS_DATA_DIR}/hg19
-		(cd ${CEAS_DATA_DIR}/hg19; 
-		wget http://liulab.dfci.harvard.edu/CEAS/src/hg19.refGene.gz)
+	@echo
+	@echo "Downloading data required to run CEAS with Human genome ${CEAS_GENOME}"
+	mkdir -p ${CEAS_DATA_DIR}/${CEAS_GENOME}
+	(cd ${CEAS_DATA_DIR}/${CEAS_GENOME}; wget http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_GENOME}.zip)
 
 
 ################################################################
