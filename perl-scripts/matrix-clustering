@@ -2115,7 +2115,7 @@ sub hide_branch_motifs {
 // Hide the logo tree
   $(document).ready(function(){
     $(\'#hide_branch_table_--nb--\').click(function(){
-       $(\'#branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+         $(\'#branch_consensus_cluster_--nb--\').hide();
      }); 
   });
 ';
@@ -2132,8 +2132,11 @@ sub hide_tree {
 // Hide the logo tree
   $(document).ready(function(){
     $(\'#hide_tree_--nb--\').click(function(){
-       $(\'#cluster_--nb--\').css(\'display\', \'none\');
-       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+       $(\'#cluster_--nb--\').hide();
+       $(\'#branch_consensus_cluster_--nb--\').hide();
+//       $(\'#cluster_--nb--\').css(\'display\', \'none\');
+//       $(\'#branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+       $(\'.head_cluster_--nb--\').removeClass(\'selected_cluster\');
      }); 
   });
 ';
@@ -2234,13 +2237,13 @@ d3.json("--jsonfile--", function(json) {
 }
 
 
-#########################     <div class="Cluster_results" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
-## Insert D3 logo tree        <div class="Cluster_results" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
+#########################
+## Insert D3 logo tree
 sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="tab cons_tab hide_show" id="branch_consensus_cluster_--nb--" style="display:none">
+    <div class="hide_show tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
     <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both">Hide <strong>cluster_--nb--</strong></div>
 		<table style="display:block; clear:both;">
 			<thead>
@@ -2867,14 +2870,6 @@ sub ReportStyleCSS{
 	clear: both;
   }
 
-  .to_hide{
-    display: none;
-  }
-
-  .to_show{
-    display: block;
-  }
-
   .hide_show_button{
 	float: left;
 	margin: 5px 3px 3px 3px;
@@ -3253,7 +3248,6 @@ $(document).ready( function () {
     });
 });
 
-
 // Dynamic alignment table
 $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
@@ -3275,25 +3269,27 @@ $(document).ready( function () {
     });
 });
 
-// Slide the alignment table
+// Show all results button
 $(document).ready(function(){
     $(\'#show_all_button\').click(function(){
-	$(\'.hide_show\').css(\'display\',\'block\');
-//	$(\'.hide_show\').removeClass(\'to_hide\').addClass(\'to_show\');
+        $(\'.hide_show\').show();
+        $(\'.cluster_division\').addClass(\'selected_cluster\');
     }); 
 });
 
-// Slide the alignment table
+// Hide all results button
 $(document).ready(function(){
-    $(\'#show_all_button\').click(function(){
-	$(\'.hide_show\').css(\'display\',\'none\');
-//	$(\'.hide_show\').removeClass(\'to_show\').addClass(\'to_hide\');
+    $(\'#hide_all_button\').click(function(){
+        $(\'.hide_show\').hide();
+        $(\'.cluster_division\').removeClass(\'selected_cluster\');
     }); 
 });
 
-// Change the color of the selected cluster header
+// Change the color of buttons
 $(document).ready(function() {
     
+    ///////////////////
+    // Hide/Show All
     $(\'#show_all_button\').mouseenter(function(){
         $(this).fadeTo(\'fast\',1); 
     });
@@ -3310,11 +3306,8 @@ $(document).ready(function() {
         $(this).fadeTo(\'fast\',0.5); 
     });
 
-});
-
-// Change the color of the selected cluster header
-$(document).ready(function() {
-    
+    /////////////////////
+    // Cluster buttons
     $(\'.cluster_division\').mouseenter(function(){
         $(this).fadeTo(\'fast\',1); 
     });
@@ -3322,12 +3315,9 @@ $(document).ready(function() {
     $(\'.cluster_division\').mouseleave(function(){
         $(this).fadeTo(\'fast\',0.5); 
     });
-});
 
-
-// Change the color of the selected cluster header
-$(document).ready(function() {
-    
+    /////////////////////////////
+    // Additional files button
     $(\'#File_list\').mouseenter(function(){
         $(this).fadeTo(\'fast\',1); 
     });
@@ -3335,8 +3325,8 @@ $(document).ready(function() {
     $(\'#File_list\').mouseleave(function(){
         $(this).fadeTo(\'fast\',0.5); 
     });
-});
 
+});
 
 // Slide the alignment table
 $(document).ready(function(){
@@ -3399,12 +3389,10 @@ sub InsertTreesAndBranchMotifs {
 	## Draw the logo tree
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
-                      <div id="cluster_--nb--" class="logo_tree">
+                      <div id="cluster_--nb--" class="logo_tree hide_show">
                       <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" >Hide <strong>cluster_--nb--</strong></div>
 		      <script type="text/javascript">
                 ';
-	my $tree_button = '<div class="Cluster_results hide_show" id="button_logo_tree_--nb--">Logo tree</div>';
-	$tree_button =~ s/--nb--/$num/g;
 
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
@@ -3428,7 +3416,6 @@ sub InsertTreesAndBranchMotifs {
 	                 </div>
                  ';
         $all_d3_trees .= "\n".$d3_logo_tree."\n";
-	$insert_div .= "\n".$tree_button."\n";
 
 	my $hide_single_tree = &hide_tree();
 	$hide_single_tree =~ s/--nb--/$num/g;
