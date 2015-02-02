@@ -2134,8 +2134,6 @@ sub hide_tree {
     $(\'#hide_tree_--nb--\').click(function(){
        $(\'#cluster_--nb--\').hide();
        $(\'#branch_consensus_cluster_--nb--\').hide();
-//       $(\'#cluster_--nb--\').css(\'display\', \'none\');
-//       $(\'#branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
        $(\'.head_cluster_--nb--\').removeClass(\'selected_cluster\');
      }); 
   });
@@ -2244,7 +2242,7 @@ sub branch_consensus_table{
   my $branch_consensus_table = 
       '
     <div class="hide_show tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
-    <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both">Hide <strong>cluster_--nb--</strong></div>
+    <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both"><strong>cluster_--nb--</strong></div>
 		<table style="display:block; clear:both;">
 			<thead>
 				<tr>
@@ -2858,14 +2856,15 @@ sub ReportStyleCSS{
   .cluster_info_head {
 	background-color: #DCE4EC;
 	float: left;
-	height: 20px;
+	height: 30px;
 	width: 600px;
 	position: relative;
 	display: block;
-	text-align: center;
+	text-align: justify;
 	color: #34373B;
 	font-size: 15px;
-	padding: 3px 7px;
+	padding: 2px 4px;
+	margin-top: 5px;
 	border-radius:5px;
 	clear: both;
   }
@@ -3390,7 +3389,7 @@ sub InsertTreesAndBranchMotifs {
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
                       <div id="cluster_--nb--" class="logo_tree hide_show">
-                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" >Hide <strong>cluster_--nb--</strong></div>
+                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" ><strong>cluster_--nb--</strong></div>
 		      <script type="text/javascript">
                 ';
 
@@ -3497,7 +3496,8 @@ sub DisplaySingleCluster{
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
 	<div class="cluster_info_head">
-	  <strong>Click on the buttons to display separately the information of each cluster.</strong>
+	  <p><strong>Click on the buttons to display separately the information of each cluster.</strong></p>
+	  <p><strong>Click on the circles displayed on each tree to display its corresponding merged motifs.</strong></p>
 	</div>
 	<div class="display"><strong style="display:block">Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
