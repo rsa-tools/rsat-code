@@ -176,11 +176,6 @@ package main;
   local $datatable_base= $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js";
   local $datatable_css_base = $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css";
 
-  ## Select phylo and newick d3 bases
-  ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
-  ## local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
-
-
   ## Supported label fields
   local @supported_label_fields = qw (id name consensus);
   local %supported_label_fields = ();
@@ -289,6 +284,9 @@ package main;
 
   ## Use compare-matrices-quick
   local $quick_flag = 0;
+
+  ## display title in trees and alignment table
+  local $display_title_flag = 0;
 
   ## Limit the number of input motifs
   local $mat_nb_flag = 0;
@@ -405,7 +403,7 @@ package main;
       ################################################################
       ## Cluster the matrices
       &Hclustering();
-      
+
       ################################################################
       ## Read the motif to cluster assignation, which will be required for
       ## several functions below.
@@ -428,14 +426,7 @@ package main;
       ## Creates the body of html to display
       ## each cluster separately
       &Add_div_to_HTML();
-      
-      ################################################################
-      ## Creates the html template to display the pylogram
-      ##
-      ## !! Temporary disabled
-      ##
-      ## &create_phylogram();
-      
+            
       ################################################################
       ## Convert tab files to HTML files
       &ConvertTabToHTML(@tab_to_convert);
@@ -590,6 +581,17 @@ Title displayed on top of the report page.
 =cut
      } elsif ($arg eq "-title") {
       $main::param{title} = shift(@arguments);
+
+=pod
+
+=item	B<-display_title>
+
+If it is selected. The title is displayed in the trees and in the result table.
+This is ideal when the user wants to compare motifs from different sources (files).
+
+=cut
+     } elsif ($arg eq "-display_title") {
+      $display_title_flag = 1;
 
 =pod
 
@@ -1112,11 +1114,11 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
+    $cluster_motifs_cmd .= "; title = '".$main::param{title}."'";
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
-    $cluster_motifs_cmd .= "; RSAT = '".$ENV{RSAT}."'"; ## JvH: I test this to fix the bug on web server
 
     if($quick_flag == 1){
 	my %lth2 = ();
@@ -1127,7 +1129,7 @@ sub Hclustering {
 	}
 	%lth = %lth2;
     }
-
+    
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
@@ -1620,47 +1622,6 @@ sub ConvertTabToHTML {
 }
 
 ################################################################
-## Create the phylogram
-## Given the phylogram is not well displayed, this option is temporaly disabled
-# sub create_phylogram(){
-
-#   ### Save the newick tree in the variable
-#   chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
-
-#   my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
-#   &doit($cmd, 0, $die_on_error, $verbose);
-#   open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
-#   open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
-
-
-#   ## Select the D3 base
-#   if ($d3_base_format eq "link"){
-#     $d3_base_url = "http://d3js.org";	
-#   }
-
-#   while(<PHYLO>){
-#     chomp;	
-
-#     ### Fix the d3 libraries path
-#     $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
-#     $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
-#     $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
-
-#     ### Paste the newick tree in the HTML code
-#     $_ =~ s/Paste_newick_here/$newick_tree/;
-
-#     print TEMP $_."\n";
-#   }
-#   close(TEMP);
-#   close(PHYLO);
-#   unlink($main::outfile{phylogram_html});
-#   $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
-#   &doit($cmd, 0, $die_on_error, $verbose);
-#   return();
-# }
-
-
-################################################################
 ## Add the empty columns to the logos that will be displayed, in order
 ## to get multiple alignment on the logo cladogram.
 sub Add_empty_columns_to_logos(){
@@ -1678,10 +1639,10 @@ sub Add_empty_columns_to_logos(){
     $split_line[0] =~ s/\s+//g;
     ## Store the ID, strand and offset of each aligned motif
     $alignment_info{$split_line[0]}{name} =  $split_line[1];
-    $alignment_info{$split_line[0]}{strand} =  $split_line[3];
-    $alignment_info{$split_line[0]}{offset_left} =  $split_line[4];
-    $alignment_info{$split_line[0]}{offset_right} =  $split_line[5];
-    $alignment_info{$split_line[0]}{width} = $split_line[6];    
+    $alignment_info{$split_line[0]}{strand} =  $split_line[4];
+    $alignment_info{$split_line[0]}{offset_left} =  $split_line[5];
+    $alignment_info{$split_line[0]}{offset_right} =  $split_line[6];
+    $alignment_info{$split_line[0]}{width} = $split_line[7];    
   }
   close(ALIGNMENT_TABLE);
 
@@ -2443,8 +2404,6 @@ sub set_output_file_names {
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
-  # $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
-  # $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
 
   my @heatmap_file_path = split(/\//, $main::outfile{prefix}."_heatmap.jpg");
   my $heatmap_file_name = pop(@heatmap_file_path);
@@ -2453,8 +2412,7 @@ sub set_output_file_names {
 
   ## Newick-formatted phylogram with motif consensuses
   if ($export_tree_format eq "newick"){
-    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
-    ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
+    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
   }
 
   ## Clone input (only if the user selects this option)
@@ -2580,7 +2538,7 @@ sub ReportStyleCSS{
 	float: left;
 	margin-top: 1px;
 	margin-bottom: 3px;
-	height: 30px;
+	height: 35px;
 	position: relative;
 	display: block;
 	text-align: left;
@@ -3017,12 +2975,13 @@ sub ReadAlignmentTable {
 	$id = $split_line[0];
 	$cluster_id = $split_line[2];
 	$alignment_table_data{$cluster_id}{$id}{name} = $split_line[1];
-	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[3];
-	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[4];
-	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[5];
-	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
-	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
-	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[8];
+	$alignment_table_data{$cluster_id}{$id}{collection} = $split_line[3];
+	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[4];
+	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[5];
+	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[6];
+	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[7];
+	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[8];
+	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[9];
 
 	my $link_logo_d = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
 	my $link_logo_r = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
@@ -3060,16 +3019,17 @@ sub InsertAlignmentTable{
 		   	<!--Div: search in alignment table-->
 			<div class="alignment_tab_head">
 				<strong>Click on the column names to change the order of the data.</strong><br>
-				<strong>Write the name of one cluster in the <i>Search</i> window . Example: <i>cluster_1</i></strong>
+				<strong>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.<br>
 				<p></p>
 			</div>
 	    <thead>
 	      <tr>
-		<th colspan="7"><strong>Alignment</strong></th>
+		<th colspan="8"><strong>Alignment</strong></th>
 	      </tr>
 	      <tr>
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
+		<th class="tab_col">Collection</th>
 		<th class="tab_col">Cluster</th>
 		<th class="tab_col">Aligned consensus</th>
 		<th class="tab_col">Aligned consensus (Reversed)</th>
@@ -3096,6 +3056,7 @@ sub InsertAlignmentTable{
 					<td class="tab_spacer_1">'.$id.'</td>
                                         <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{name}.'</td>
 					<td class="tab_spacer_1">'.$ids_to_cluster{$id}.'</td>
+                                        <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{collection}.'</td>
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus_rc}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
                                         <th class="tab_spacer_2"><a target="_blank" href="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'"><img class="logo_tab" width="--width--" src="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'" /></a></th>
@@ -3122,10 +3083,7 @@ sub InsertInfoDiv{
 	      <strong>Logo tree and alignment. </strong>This results shows the hierarchical tree with all the motifs of the corresponding cluster and the logo alignment in F (left logo) and R (rigth logo) orientation.
             </li>
             <li>
-              <strong>Branch consensus. </strong>Each branch show the <em>branch-consensus</em> which summarizes all the descendant motifs. Click on it to see the corresponding logo.
-            </li>
-            <li>
-	      <strong>Branch-motifs. </strong>On the logo tree, is displayed the the branch-consensus which summarizes all the descendant motif of each branch. This table shows more detailed information: the logo in both orientation and a file in TRANSFAC format corresponding to the branch-motif.
+	      <strong>Branch-motifs. </strong>On the logo trees are displayed the branch number in which the motifs were grouped. The Branch-Motifs table shows the details of each consensus corresponding to each branch: the logo in both orientations and a file in TRANSFAC format corresponding to the branch-motif.
             </li>
           </ul>
 	</div>
@@ -3275,7 +3233,7 @@ $(document).ready( function () {
         "columnDefs": [ {
             "targets": -1,
             "data": null,
-            "width": "5%", "targets": [0,1,2,3,4,5]
+            "width": "4%", "targets": [0,1,2,3,4,5,6,7]
         } ]	
     });
 });
