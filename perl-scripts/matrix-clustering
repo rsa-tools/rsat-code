@@ -1348,12 +1348,13 @@ sub Add_attributes_to_JSON(){
 	      if ($children >= 2){
 		  my $folder = $levels_JSON[$children-2];
 
-		  # if($folder ~~ @merged_cons_folders){
-		  if(grep( /^$folder$/, @merged_cons_folders)){
-		      
+		  if(grep( /^$folder$/, @merged_cons_folders)){	      
+		      my $branch = $folder;
+		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      $consensus_link =~ s/^\.\.\///g;
 		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
+		      $Add_this .= " \"branch\" : ".$branch.", ";
 		      $Add_this .= " \"id\" : \"".$cluster."_".$folder."\", ";
 		      $Add_this .= " \"url\" : \"$consensus_link\", ";
 		      push(@Parsed_JSON, $Add_this."\n");
@@ -2663,12 +2664,10 @@ sub ReportStyleCSS{
   padding: 7px;
   }
 
-
   .tab_col {
   padding: 7px 30px 7px 30px;
   background-color: #B1D4F9;
   }
-
 
   .seq {
   font-family: Monospace;
@@ -2677,12 +2676,12 @@ sub ReportStyleCSS{
 
   .Cluster_results {
   margin-top: 3px;
-  width: 130px;
-  heigth: 100px;
+  width: 90px;
+  heigth: 80px;
   border: 1px;
   position: relative;
   padding: 1px;
-  font-size:14px;
+  font-size: 13px;
   margin-top: 20px;
   text-align: center;
   color: #ffffff;
@@ -2869,17 +2868,17 @@ sub ReportStyleCSS{
   .cluster_info_head {
 	background-color: #DCE4EC;
 	float: left;
-	height: 30px;
-	width: 600px;
+	height: 45px;
+	width: 630px;
 	position: relative;
 	display: block;
-	text-align: justify;
+	text-align: left;
 	color: #34373B;
 	font-size: 15px;
-	padding: 2px 4px;
-	margin-top: 5px;
+	padding: 0px;
 	border-radius:5px;
 	clear: both;
+        margin-top: 5px;
   }
 
   .hide_show_button{
@@ -3368,6 +3367,14 @@ sub InsertTreesAndBranchMotifs {
 		.attr("dy", function(d) { return d.children ? 0 : 3; })
 		.attr("font-size", "8px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+		node.append("text")
+		.text(function(d) { return d.children ? d.branch : ""; })
+		.attr("dx", function(d) { return d.children ? -2 : 0; })
+		.attr("dy", function(d) { return d.children ? -6 : 0; })
+		.attr("fill", function(d) { return d.children ? "blue" : ""; })
+		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
     ';
 
     ## The next procces is repeated for each cluster
@@ -3499,7 +3506,7 @@ sub InsertTreesAndBranchMotifs {
 sub InsertJquery {
     print $syn $script_jquery;
 }
-
+  
 
 ################################################################
 ## Insert the code where the single trees and branch-motifs 
@@ -3509,9 +3516,11 @@ sub DisplaySingleCluster{
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
 	<div class="cluster_info_head">
-	  <p><strong>Click on the buttons to display separately the information of each cluster.</strong></p>
-	  <p><strong>Click on the circles displayed on each tree to display its corresponding merged motifs.</strong></p>
-	</div>
+          <ul type="square" style="margin:2px 0px 2px 5px; position:relative">
+           <li><strong>Click on the upper buttons to display separately the information of each cluster.</strong></li>
+           <li><strong>Click on the circles at each tree to display its corresponding merged motifs.</strong></li>
+         </ul>
+	 </div>
 	<div class="display"><strong style="display:block">Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
 	<div class="display"><strong style="display:block">Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
