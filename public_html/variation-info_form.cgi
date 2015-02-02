@@ -132,7 +132,6 @@ print $query->end_form;
 
 
 print "<TD><B><A HREF='help.variation-info.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_variation-info.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
