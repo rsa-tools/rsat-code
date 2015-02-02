@@ -140,7 +140,7 @@ JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_all_groups:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} _cluster_jaspar_one_group JASPAR_GROUP=$${g} ; \
+		${MAKE} cluster_jaspar_one_group JASPAR_GROUP=$${g} ; \
 	done
 
 cluster_jaspar_one_group:
