@@ -1,0 +1,348 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>perl-scripts/matrix-quality</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='matrix-quality.cgi'>matrix-quality</a> manual</h2>
+
+</center>
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#VERSION">VERSION</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#CATEGORY">CATEGORY</a></li>
+  <li><a href="#USAGE">USAGE</a>
+    <ul>
+      <li><a href="#Example">Example</a></li>
+    </ul>
+  </li>
+  <li><a href="#INPUT-FORMAT">INPUT FORMAT</a>
+    <ul>
+      <li><a href="#Sequence-file">Sequence file</a></li>
+      <li><a href="#Matrix-file">Matrix file</a></li>
+      <li><a href="#Background-file">Background file</a></li>
+    </ul>
+  </li>
+  <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a>
+    <ul>
+      <li><a href="#download-ensembl-genome">download-ensembl-genome</a></li>
+      <li><a href="#download-ensembl-variations">download-ensembl-variations</a></li>
+      <li><a href="#variation-scan">variation-scan</a></li>
+    </ul>
+  </li>
+  <li><a href="#WISH-LIST">WISH LIST</a></li>
+  <li><a href="#OPTIONS">OPTIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>variation-scan</p>
+
+<h1 id="VERSION">VERSION</h1>
+
+<p>$program_version</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Scan variant sequences with position specific scoring matrices (PSSM) and report variations that affect the binding score, in order to predict regulatory variants.</p>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<dl>
+
+<dt id="Jeremy.Delerce-univ-amu.fr">Jeremy.Delerce@univ-amu.fr</dt>
+<dd>
+
+</dd>
+<dt id="Jacques.van-Helden-univ-amu.fr">Jacques.van-Helden@univ-amu.fr</dt>
+<dd>
+
+</dd>
+<dt id="Alejandra-Medina-Rivera-amedina-lcg.unam.mx">Alejandra Medina-Rivera &lt;amedina@lcg.unam.mx&gt;</dt>
+<dd>
+
+</dd>
+</dl>
+
+<h1 id="CATEGORY">CATEGORY</h1>
+
+<dl>
+
+<dt id="util">util</dt>
+<dd>
+
+</dd>
+</dl>
+
+<h1 id="USAGE">USAGE</h1>
+
+<pre><code> variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]</code></pre>
+
+<h2 id="Example">Example</h2>
+
+<h1 id="INPUT-FORMAT">INPUT FORMAT</h1>
+
+<h2 id="Sequence-file">Sequence file</h2>
+
+<p><i>variation-scan</i> takes as input a variation file in the format produced by <i>retrieve-variation-seq</i>. for details about this format, see <i>retrieve-variation-seq</i> output format.</p>
+
+<h2 id="Matrix-file">Matrix file</h2>
+
+<p>A list of matrix in transfanc format</p>
+
+<h2 id="Background-file">Background file</h2>
+
+<p>oligo-analysis format</p>
+
+<h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
+
+<p>A tab delimited file with the following column content.</p>
+
+<dl>
+
+<dt id="matrix">1. matrix</dt>
+<dd>
+
+<p>Name of the matrice</p>
+
+</dd>
+<dt id="variation">2. variation</dt>
+<dd>
+
+<p>Name of the variation</p>
+
+</dd>
+<dt id="SO">3. SO</dt>
+<dd>
+
+<p>SO term of the variation.</p>
+
+</dd>
+<dt id="var_coord">4. var_coord</dt>
+<dd>
+
+<p>Coordinate of the variation.</p>
+
+</dd>
+<dt id="B_weight">5. B_weight</dt>
+<dd>
+
+<p>Best max weigth.</p>
+
+</dd>
+<dt id="W_weight">8. W_weight</dt>
+<dd>
+
+<p>Worst max weigth.</p>
+
+</dd>
+<dt id="Diff">7. Diff</dt>
+<dd>
+
+<p>Difference between the two max weigth.</p>
+
+</dd>
+<dt id="variant">8. variant</dt>
+<dd>
+
+<p>Variant of the variation in the sequence.</p>
+
+</dd>
+<dt id="B_pval">9. B_pval</dt>
+<dd>
+
+<p>Pvalue of the best max weigth.</p>
+
+</dd>
+<dt id="W_pval">10. W_pval</dt>
+<dd>
+
+<p>Pvalue of the worst max weigth.</p>
+
+<p>item 11. sigma</p>
+
+<p>Log10 difference between the two p-value.</p>
+
+<p>item 12. B_var</p>
+
+<p>Variant(s) in the sequence with the best max weigth.</p>
+
+<p>Multiple variant are return comma separate if the highest max weigth is the same in multiple sequence.</p>
+
+<p>item 13. W_var</p>
+
+<p>Variant(s) in the sequence with the worst max weigth.</p>
+
+<p>Multiple variant are return comma separate if the lowest max weigth is the same in multiple sequence.</p>
+
+<p>item 14. B_offset</p>
+
+<p>item 15. W_offset</p>
+
+<p>item 14. B_seq</p>
+
+<p>Sequence with the highest max weigth.</p>
+
+<p>Multiple sequence are return comma separate if the best max weigth is the same in multiple sequence.</p>
+
+<p>item 15. W_seq</p>
+
+<p>Sequence with the lowest max weigth.</p>
+
+<p>Multiple sequence are return comma separate if the worst max weigth is the same in multiple sequence.</p>
+
+</dd>
+</dl>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<h2 id="download-ensembl-genome">download-ensembl-genome</h2>
+
+<p><i>retrieve-variation-seq</i> uses the sequences downloaded from Ensembl using the tool <i>download-ensembl-genome</i>.</p>
+
+<h2 id="download-ensembl-variations">download-ensembl-variations</h2>
+
+<p><i>retrieve-variation-seq</i> uses variation coordinates downloaded from Ensembl using the tool <i>download-ensembl-variations</i>.</p>
+
+<h2 id="variation-scan">variation-scan</h2>
+
+<p>Scan variation sequences with one or several position-specific scoring matrices.</p>
+
+<h1 id="WISH-LIST">WISH LIST</h1>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<dl>
+
+<dt id="v"><b>-v #</b></dt>
+<dd>
+
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+
+</dd>
+<dt id="h"><b>-h</b></dt>
+<dd>
+
+<p>Display full help message</p>
+
+</dd>
+<dt id="help"><b>-help</b></dt>
+<dd>
+
+<p>Same as -h</p>
+
+</dd>
+<dt id="i"><b>-i #</b></dt>
+<dd>
+
+<p>Variation file RSAT format</p>
+
+</dd>
+<dt id="m"><b>-m #</b></dt>
+<dd>
+
+<p>The matrix file transfac format</p>
+
+</dd>
+<dt id="bg"><b>-bg</b></dt>
+<dd>
+
+<p>Background file</p>
+
+</dd>
+<dt id="i1"><b>-i #</b></dt>
+<dd>
+
+<p>Input File</p>
+
+</dd>
+<dt id="mml"><b>-mml #</b></dt>
+<dd>
+
+<p>Length of the longest Matrix, this values has to be consistent with the one used io for retrieving the variant sequences (see &lt;retrieve-variation-seq&gt;).</p>
+
+</dd>
+<dt id="top_matrix"><b>-top_matrix #</b></dt>
+<dd>
+
+<p>Only work with the # top matrix</p>
+
+</dd>
+<dt id="top_variationmatrix"><b>-top_variationmatrix #</b></dt>
+<dd>
+
+<p>Only work with the # top variation</p>
+
+</dd>
+<dt id="lth-type"><b>-lth type #</b></dt>
+<dd>
+
+<p>Only return rvar with type_score &gt; #</p>
+
+</dd>
+<dt id="uth-type"><b>-uth type #</b></dt>
+<dd>
+
+</dd>
+<dt id="html"><b>-html #</b></dt>
+<dd>
+
+<p>Convert the tab-delimited file into an HTML file, which facilitates the inspection of the results with a Web browser. The HTML file has the same name as the output file, but the extension (.tab, .txt) is replaced by the .html extension</p>
+
+</dd>
+<dt id="calc_distrib"><b>-calc_distrib</b></dt>
+<dd>
+
+<p>Calculate and save distribution of matrices</p>
+
+</dd>
+<dt id="distrib_dir"><b>-distrib_dir #</b></dt>
+<dd>
+
+<p>Directory to store the distribution files. Mandatory if -calc_distrib is being used.</p>
+
+</dd>
+<dt id="distrib_list"><b>-distrib_list #</b></dt>
+<dd>
+
+<p>Name of the file containing the list of matrix distrib file name</p>
+
+<p>/!\ This file must be in the same directory as the distrib file</p>
+
+</dd>
+<dt id="only_biggest"><b>-only_biggest</b></dt>
+<dd>
+
+<p>Only return the biggest difference of score between two alleles of a variation regarthless of the window, this option is usefull for insertions and deletions</p>
+
+</dd>
+<dt id="o-outputfile"><b>-o outputfile</b></dt>
+<dd>
+
+<p>The output file is in fasta format.</p>
+
+<p>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</p>
+
+</dd>
+</dl>
+
+
+</body>
+
+</html>
+
+
