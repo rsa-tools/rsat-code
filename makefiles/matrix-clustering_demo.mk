@@ -62,6 +62,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
 		-title '${TITLE}' \
+		-display_title \
 		-o ${CLUSTER_FILE_PREFIX}
 _cluster:
 	@echo
@@ -76,7 +77,7 @@ cluster_peakmotifs_Oct4:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
-		TITLE='Peak-motifs results with Oct4 ChIP-seq peaks'
+		TITLE='Oct4_motifs_peak_motifs'
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set),
 ## without any threshold
