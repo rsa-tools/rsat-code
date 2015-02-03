@@ -17,6 +17,12 @@ available_species:
 		-o ${AVAILABLE_SPECIES}
 	@echo "	${AVAILABLE_SPECIES}"
 
+available_ensembl:
+	@${MAKE} available_species DB=ensembl
+
+available_ensemblgenomes:
+	@${MAKE} available_species DB=ensemblgenomes
+
 AVAILABLE_PER_TAXID=${RESULT_DIR}/available_ensemblgenomes_${QUERY_TYPE}_${TAXID}_${DB}_release${ENSEMBL_RELEASE}_${DAY}.txt
 QUERY_TYPE=taxid
 TAXID=4751
