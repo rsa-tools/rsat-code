@@ -63,7 +63,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-label name ${OPT} \
 		-title '${TITLE}' \
 		-display_title \
-		-o ${CLUSTER_FILE_PREFIX}
+		-o ${CLUSTER_FILE_PREFIX}	
+
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}"
