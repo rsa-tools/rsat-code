@@ -1720,11 +1720,6 @@ sub Add_empty_columns_to_logos(){
 ## will be used to add empty columns with 
 ## convert-matrices and to create the merged
 ## consensus
-##
-## JvH: we should come back to this procedure, and revise it to avoid
-## system calls, if possible. Matrix IDs could be collected at the
-## beginning of the script by properly reading all matrices, and
-## storing them in a vector.
 sub create_single_matrix_files(){
 
     my @ids = ();
