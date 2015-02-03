@@ -289,7 +289,7 @@ package	main;
        
        my $seq_key = $type.$assembly_version.$slice;
        $seq_installed{$seq_key} = $len;
-       &RSAT::message::Debug("seq_installed", $seq_key, $len) if ($main::verbose >= 0);
+       &RSAT::message::Debug("seq_installed", $seq_key, $len) if ($main::verbose >= 3);
    }
   
 
@@ -304,10 +304,10 @@ package	main;
     ## Raw sequence
     my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
     if ( ($seq_norm_installed) && (!$force) ) {
-      &RSAT::message::TimeWarn("\tSkipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("\tSkipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       next;
     } else {
-      &RSAT::message::TimeWarn("\tDownloading DNA sequences for slice",$slice->name) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("\tDownloading DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       my $filename = $slice->name().".raw";
       $filename =~ s/:/_/g;
       my $out_seq_file = &OpenOutputFile($genome_dir."/".$filename);
@@ -317,10 +317,10 @@ package	main;
 
     ## Repeat-masked sequence
     my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
-    if ( (!$rm) || ( $seq_rm_installed && !$force ) ) {
-      &RSAT::message::TimeWarn("\tSkipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 3);
+    if ((!$rm) || ( $seq_rm_installed && !$force ) ) {
+      &RSAT::message::TimeWarn("\tSkipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
     } else {
-      &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
       my $filename = $slice->name()."_repeatmasked.raw";
       $filename =~ s/:/_/g;
       my $out_seq_file = &OpenOutputFile($genome_dir."/".$filename);
