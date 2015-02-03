@@ -1005,7 +1005,7 @@ sub doit {
     $job_script .= "(cd ".$wd;
     $job_script .= "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
     $job_script .= "; hostname >> ".$job_file.".started"; 
-    $job_script .= "; source ".$ENV{RSAT}."/RSAT_config.bashrc"; ## Apparently required for PERL5LIB
+    $job_script .= "; source ".$ENV{RSAT}."RSAT_config.bashrc"; ## Required for PERL5LIB
     $job_script .= "; ".$command;
     $job_script .= "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
     $job_script .= "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
