@@ -32,3 +32,34 @@ available_per_taxid:
 		-query_type taxid -q ${TAXID} \
 		-o ${AVAILABLE_PER_TAXID}
 	@echo "	${AVAILABLE_PER_TAXID}"
+
+ORG=Saccharomyces_cerevisiae
+install_one_species:
+	install-ensembl-genome -v ${V} -db ${DB} -species ${ORG}
+
+install_yeast:
+	${MAKE} install_one_species DB=ensemblgenomes ORG=Saccharomyces_cerevisiae
+
+install_coli:
+	${MAKE} install_one_species DB=ensemblgenomes ORG=Escherichia_coli_str_k_12_substr_mg1655
+
+
+AVAILABLE_GROUP=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${ORG_GROUP}.txt
+select_one_group:
+	@echo
+	@echo "Selecting group	${ORG_GROUP}	from db ${DB}	${AVAILABLE_SPECIES}"
+	grep -i ${ORG_GROUP} ${AVAILABLE_SPECIES} > ${AVAILABLE_GROUP}
+	@echo "	${AVAILABLE_GROUP}"
+
+ORG_GROUP=Fungi
+install_one_group:
+	@echo
+	@echo "Installing group ${ORG_GROUP} from db ${DB}"
+	install-ensembl-genome -v ${V} -db ${DB} -species_file ${AVAILABLE_GROUP} -nodie
+	@echo "Installed group ${ORG_GROUP} from db ${DB}"
+
+select_fungi:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
+
+install_fungi:
+	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Fungi
