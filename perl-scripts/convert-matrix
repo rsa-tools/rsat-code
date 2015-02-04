@@ -1278,16 +1278,15 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 
-	    ### input file 
+	    ## Input file 
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
 
-	    ### list of input file 
+	    ## List of input file 
 	} elsif ($ARGV[$a] eq "-mlist") {
 	    $infile{matrix_list} = $ARGV[$a+1];;
 
-	    ### list of input files contains also tf name
-	
+	    ## List of input files contains also tf name	
 	} elsif ($ARGV[$a] eq "-mlist_name") {
 	    $matrix_list_name = 1;;
 	    
@@ -1409,7 +1408,7 @@ sub ReadArguments {
 	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. Must be a Real number")
 		unless &RSAT::util::IsReal($multiply);
 
-	    ## Multiplicative factor
+	    ## Insert columns on the left or right side
 	} elsif ($ARGV[$a] eq "-insert_col_left") {
 	  $insert_col_left = $ARGV[$a+1];
 	  &RSAT::error::FatalError($insert_col_left, "Invalid number for columns. Must be a Natural number")
@@ -1426,7 +1425,7 @@ sub ReadArguments {
 	    &RSAT::error::FatalError($insert_col_right, "Invalid number for columns. Must be a Natural number")
 		unless &RSAT::util::IsNatural($insert_col_right);
 
-	    ## base for the logarihtms in the weight and info content
+	    ## Base for the logarihtms in the weight and info content
 	} elsif ($ARGV[$a] eq "-base") {
 	    $info_log_base = $ARGV[$a+1];
 	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($info_log_base));
