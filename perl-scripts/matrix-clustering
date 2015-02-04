@@ -164,16 +164,19 @@ package main;
   local $supported_tree_formats = join ",", @supported_tree_formats;
   local $export_tree_format = "";
 
+
+
   ## Javascript (D3 + JQuery) base
-  local $d3_base= $ENV{RSAT}."/public_html/lib/js/d3.v3.min.js";
-  local $jquery_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.js";
-  local $datatable_base= $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/js/jquery.dataTables.min.js";
-  local $datatable_css_base = $ENV{RSAT}."/public_html/lib/js/DataTables-1.10.4/media/css/jquery.dataTables.min.css";
-
-  ## Select phylo and newick d3 bases
-  ## local $d3_phylogram_base = $ENV{RSAT}."/public_html/lib/d3/d3.phylogram.js";
-  ## local $d3_newick_base = $ENV{RSAT}."/public_html/lib/d3/newick.js";
-
+  local $js_base;
+  if (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+    $js_base = $ENV{rsat_www}."/lib/js";
+  } else {
+    $js_base = $ENV{RSAT}."/public_html/lib/js";
+  }
+  local $d3_base= $js_base."/d3.v3.min.js";
+  local $jquery_base = $js_base."/DataTables-1.10.4/media/js/jquery.js";
+  local $datatable_base= $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js";
+  local $datatable_css_base = $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css";
 
   ## Supported label fields
   local @supported_label_fields = qw (id name consensus);
@@ -284,6 +287,9 @@ package main;
   ## Use compare-matrices-quick
   local $quick_flag = 0;
 
+  ## display title in trees and alignment table
+  local $display_title_flag = 0;
+
   ## Limit the number of input motifs
   local $mat_nb_flag = 0;
   local $mat_nb = 0;
@@ -293,6 +299,9 @@ package main;
 
   ## A hash to save the name of the clusters and their corresponding hexa code
   local %hexa_code = ();
+
+  ## List of files to delete
+  %to_delete = ();
 
   ################################################################
   ## Options used for motif comparison
@@ -399,7 +408,7 @@ package main;
       ################################################################
       ## Cluster the matrices
       &Hclustering();
-      
+
       ################################################################
       ## Read the motif to cluster assignation, which will be required for
       ## several functions below.
@@ -422,14 +431,7 @@ package main;
       ## Creates the body of html to display
       ## each cluster separately
       &Add_div_to_HTML();
-      
-      ################################################################
-      ## Creates the html template to display the pylogram
-      ##
-      ## !! Temporary disabled
-      ##
-      ## &create_phylogram();
-      
+            
       ################################################################
       ## Convert tab files to HTML files
       &ConvertTabToHTML(@tab_to_convert);
@@ -450,7 +452,7 @@ package main;
 
       ################################################################
       ## Create an archive with all result files
-      &Archive(1)
+      &Archive(1);
   }
 
   ################################################################
@@ -584,6 +586,18 @@ Title displayed on top of the report page.
 =cut
      } elsif ($arg eq "-title") {
       $main::param{title} = shift(@arguments);
+      $main::param{title} =~ s/\s+/_/g;
+
+=pod
+
+=item	B<-display_title>
+
+If it is selected. The title is displayed in the trees and in the result table.
+This is ideal when the user wants to compare motifs from different sources (files).
+
+=cut
+     } elsif ($arg eq "-display_title") {
+      $display_title_flag = 1;
 
 =pod
 
@@ -1106,11 +1120,11 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
+    $cluster_motifs_cmd .= "; title = '".$main::param{title}."'";
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
-    $cluster_motifs_cmd .= "; RSAT = '".$ENV{RSAT}."'"; ## JvH: I test this to fix the bug on web server
 
     if($quick_flag == 1){
 	my %lth2 = ();
@@ -1121,7 +1135,7 @@ sub Hclustering {
 	}
 	%lth = %lth2;
     }
-
+    
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
@@ -1342,12 +1356,13 @@ sub Add_attributes_to_JSON(){
 	      if ($children >= 2){
 		  my $folder = $levels_JSON[$children-2];
 
-		  # if($folder ~~ @merged_cons_folders){
-		  if(grep( /^$folder$/, @merged_cons_folders)){
-		      
+		  if(grep( /^$folder$/, @merged_cons_folders)){	      
+		      my $branch = $folder;
+		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      $consensus_link =~ s/^\.\.\///g;
 		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
+		      $Add_this .= " \"branch\" : ".$branch.", ";
 		      $Add_this .= " \"id\" : \"".$cluster."_".$folder."\", ";
 		      $Add_this .= " \"url\" : \"$consensus_link\", ";
 		      push(@Parsed_JSON, $Add_this."\n");
@@ -1414,11 +1429,11 @@ sub Add_attributes_to_JSON(){
 sub create_html_tree_file(){
 
     ## Values to change in the D3 tree
-    my $svg_width = 24;
+    my $svg_width = 25;
     my $svg_height = 80;
     my $svg_x1 = 15 * $nb_char;
     my $svg_y1 = -33;
-    my $svg_x2 = '25 + '.$svg_x1.' + 30';;
+    my $svg_x2 = '25 + '.$svg_x1.' + 25';;
     my $add_this = "";
     my $labels_num = 0;
     my $cluster_nb = 0;
@@ -1447,6 +1462,18 @@ sub create_html_tree_file(){
 		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
 		.attr(\"fill\", function(d) { return d.children ? \"blue\" : \"\"; })
 		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+
+    
+    my $display_title_lab .= '
+        node.append("text")
+	.text(function(d){ return d.children ? "" : "'.$main::param{title}.'"; })
+	.attr("x", function(d){ return d.children ? 0 : 20; })
+	.attr("dy", function(d){ return d.children ? 0 : 27; })
+        .attr("fill", "blue")
+	.attr("font-size", "17px")
+	.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
+        ';
+
 
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
@@ -1487,11 +1514,8 @@ sub create_html_tree_file(){
 
 	### Add the JSON file name
 	if(/--jsonfile--/){
-	    $json_file_name = $main::outfile{prefix}."_trees/parsed_tree_cluster_".$cluster_nb.".json";
-	    my @name = split(/\//, $json_file_name);
-	    my $n1 = pop(@name);
-	    my $n2 = pop(@name);
-	    $json_file_name = $n2."/".$n1;
+	    my $j_file = $main::outfile{prefix}."_trees/parsed_tree_cluster_".$cluster_nb.".json";
+	    $json_file_name = &RSAT::util::RelativePath($main::outfile{summary}, $j_file);
 	    $_ =~ s/--jsonfile--/$json_file_name/;
 	}
 
@@ -1553,6 +1577,10 @@ sub create_html_tree_file(){
 			$up = uc($field);
 			$add_this =~ s/d\.;/ d\.$field;/;
 		    }
+
+		    if($display_title_flag == 1){
+			$add_this .= "\n".$display_title_lab."\n";	
+		    }
 		    
 		    ### Add the new labels, set the distances among the labels in the tree
 		    if($labels_num > 1){
@@ -1613,47 +1641,6 @@ sub ConvertTabToHTML {
 }
 
 ################################################################
-## Create the phylogram
-## Given the phylogram is not well displayed, this option is temporaly disabled
-# sub create_phylogram(){
-
-#   ### Save the newick tree in the variable
-#   chomp(my $newick_tree = `more $main::outfile{consensus_phylogram_newick}`);
-
-#   my $cmd = "cp ".$ENV{RSAT}."/public_html/lib/d3/display_d3_phylogram.html ".$main::outfile{phylogram_html};
-#   &doit($cmd, 0, $die_on_error, $verbose);
-#   open(TEMP, ">".$main::outfile{temp_2}) || &RSAT::error::FatalError($main::outfile{temp_2}, "Cannot create phylogram temporary file");
-#   open(PHYLO,$main::outfile{phylogram_html}) || &RSAT::error::FatalError($main::outfile{phylogram_html}, "Cannot found the HTML tree file");
-
-
-#   ## Select the D3 base
-#   if ($d3_base_format eq "link"){
-#     $d3_base_url = "http://d3js.org";	
-#   }
-
-#   while(<PHYLO>){
-#     chomp;	
-
-#     ### Fix the d3 libraries path
-#     $_ =~ s|src=\"d3\"|src=\"${d3_base_url}/d3.v3.js\"|;
-#     $_ =~ s|src=\"newick\"|src=\"$d3_newick_base\"|;
-#     $_ =~ s|src=\"phylog\"|src=\"$d3_phylogram_base\"|;
-
-#     ### Paste the newick tree in the HTML code
-#     $_ =~ s/Paste_newick_here/$newick_tree/;
-
-#     print TEMP $_."\n";
-#   }
-#   close(TEMP);
-#   close(PHYLO);
-#   unlink($main::outfile{phylogram_html});
-#   $cmd = "mv ".$main::outfile{temp_2}." ".$main::outfile{phylogram_html};
-#   &doit($cmd, 0, $die_on_error, $verbose);
-#   return();
-# }
-
-
-################################################################
 ## Add the empty columns to the logos that will be displayed, in order
 ## to get multiple alignment on the logo cladogram.
 sub Add_empty_columns_to_logos(){
@@ -1671,10 +1658,10 @@ sub Add_empty_columns_to_logos(){
     $split_line[0] =~ s/\s+//g;
     ## Store the ID, strand and offset of each aligned motif
     $alignment_info{$split_line[0]}{name} =  $split_line[1];
-    $alignment_info{$split_line[0]}{strand} =  $split_line[3];
-    $alignment_info{$split_line[0]}{offset_left} =  $split_line[4];
-    $alignment_info{$split_line[0]}{offset_right} =  $split_line[5];
-    $alignment_info{$split_line[0]}{width} = $split_line[6];    
+    $alignment_info{$split_line[0]}{strand} =  $split_line[4];
+    $alignment_info{$split_line[0]}{offset_left} =  $split_line[5];
+    $alignment_info{$split_line[0]}{offset_right} =  $split_line[6];
+    $alignment_info{$split_line[0]}{width} = $split_line[7];    
   }
   close(ALIGNMENT_TABLE);
 
@@ -1733,30 +1720,43 @@ sub Add_empty_columns_to_logos(){
 ## will be used to add empty columns with 
 ## convert-matrices and to create the merged
 ## consensus
-##
-## JvH: we should come back to this procedure, and revise it to avoid
-## system calls, if possible. Matrix IDs could be collected at the
-## beginning of the script by properly reading all matrices, and
-## storing them in a vector.
 sub create_single_matrix_files(){
-  &RSAT::message::TimeWarn("Creating single matrix files") if ($main::verbose >= 2);
-  my @ids = ();
-  my %matrix_files = ();
 
-  ## Split the matrix file into single matrices file, 
-  ## in order to process individually each matrix
-  my $cmd = $SCRIPTS."/convert-matrix";
-  $cmd .= " -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
-  &doit($cmd, 0, $die_on_error, $verbose);
-  
-  ## Get the ids of the matrices
-  chomp(@ids = `grep -v '#' $main::outfile{matrix_descriptions} | cut -f2`);
+    my @ids = ();
+    my ($desc) = &OpenInputFile($main::outfile{matrix_descriptions});
+    while(<$desc>){
+	chomp;
+	next if /^#/;
+	my @split = split(/\t/, $_);
+	push(@ids, $split[1]);
+    }
+    close($desc);
 
-  ## Get the file name of each matrix and stores it in the hash
-  foreach my $id (@ids){
-      $matrix_files{$id}{file_name} = $main::outfile{prefix}."_single_matrices_".$id.".tf";
-  }
-  return(%matrix_files);
+    &RSAT::message::TimeWarn("Creating single matrix files") if ($main::verbose >= 2);
+
+    ## Split the matrix file into single matrices file, 
+    ## in order to process individually each matrix
+    my %matrix_files = ();
+    my $cmd = $SCRIPTS."/convert-matrix";
+    $cmd .= " -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
+    &doit($cmd, 0, $die_on_error, $verbose);
+    
+    $main::outfile{matrix_single_list} = $main::outfile{prefix}."_single_matrices_matrix_list.tab";
+    my ($mat_file_list) = &OpenInputFile($main::outfile{matrix_single_list});
+    while(<$mat_file_list>){
+	chomp;
+	next if /^#/;
+	my @split = split(/\t/, $_);
+	my $id = $split[1];
+	$to_delete{$id} = $main::outfile{prefix}."_single_matrices_".$id.".tf";
+	if(grep( /^$id$/, @ids)){
+	    my $id_file = $main::outfile{prefix}."_single_matrices_".$id.".tf";
+	    $matrix_files{$id}{file_name} = $id_file;
+	}
+    }
+    close($main::outfile{matrix_single_list});
+    unlink($main::outfile{matrix_single_list});
+    return(%matrix_files);
 }
 
 
@@ -1831,8 +1831,7 @@ sub Merge_matrices(){
 		my $offset_left = $int_align_info{$cluster}{$merge_level}{$motif}{offset_up};
 		my $offset_right = $int_align_info{$cluster}{$merge_level}{$motif}{offset_down};
 		my $strand = $int_align_info{$cluster}{$merge_level}{$motif}{strand};
-		my $file_name = $main::outfile{prefix}."_single_matrices_".$motif.".tf";
-
+		my $file_name = $alignment_info{$motif}{file_name};
 		## Run the convert-matrix command to add the empty columns to the logos
 		if($strand eq "D"){
 		    
@@ -2115,7 +2114,7 @@ sub hide_branch_motifs {
 // Hide the logo tree
   $(document).ready(function(){
     $(\'#hide_branch_table_--nb--\').click(function(){
-       $(\'#branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+         $(\'#branch_consensus_cluster_--nb--\').hide();
      }); 
   });
 ';
@@ -2132,8 +2131,9 @@ sub hide_tree {
 // Hide the logo tree
   $(document).ready(function(){
     $(\'#hide_tree_--nb--\').click(function(){
-       $(\'#cluster_--nb--\').css(\'display\', \'none\');
-       $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
+       $(\'#cluster_--nb--\').hide();
+       $(\'#branch_consensus_cluster_--nb--\').hide();
+       $(\'.head_cluster_--nb--\').removeClass(\'selected_cluster\');
      }); 
   });
 ';
@@ -2234,14 +2234,14 @@ d3.json("--jsonfile--", function(json) {
 }
 
 
-#########################     <div class="Cluster_results" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
-## Insert D3 logo tree        <div class="Cluster_results" id="button_branch_consensus_cluster_--nb--">Branch motifs</div>
+#########################
+## Insert D3 logo tree
 sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="tab cons_tab hide_show" id="branch_consensus_cluster_--nb--" style="display:none">
-    <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both">Hide <strong>cluster_--nb--</strong></div>
+    <div class="hide_show tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
+    <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both"><strong>cluster_--nb--</strong></div>
 		<table style="display:block; clear:both;">
 			<thead>
 				<tr>
@@ -2273,11 +2273,9 @@ sub branch_consensus_table{
 ## splitted on individual files, although not all of them 
 ## are not. This functions will delete those files
 sub Delete_temporal_files {
-
-  foreach my $f (keys %alignment_info){
-    unlink($alignment_info{$f}{file_name});
+  foreach my $f (keys %to_delete){
+    unlink($to_delete{$f});
   }
-  unlink($main::outfile{int_align});
 }
 
 ##############################################
@@ -2320,18 +2318,19 @@ sub Archive {
 
   my ($remove_first, $to_archive) = @_;
 
-  ## Format to export all the results
-#  die ("HELLO");
-#  $main::param{archive_format} = "zip";
-#  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
 
-  ## By default, archive the whole output directory
-  $to_archive = $main::dir{output} unless $to_archive;
 
   &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
 
   ## Delete previous version of the archive to avoid including the old archive in the new one
   $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
+
+
+  ################################################################
+  ## Define archiving parameters
+
+  ## By default, archive the whole output directory
+  $to_archive = $main::dir{output} unless $to_archive;
 
   ## Archive all data and results
   my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive});
@@ -2339,8 +2338,12 @@ sub Archive {
 #  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
+  if ($main::verbose >= 0) {
+    &RSAT::message::Debug("folder to archive", $to_archive);
+#    die "HELLO";
+  }
 
-  ## avoids crash of the program when run from the "$archive_dir_dir"
+  ## Avoid crash of the program when run from the "$archive_dir_dir"
   if ($archive_dir_dir eq "") {
     $archive_dir_dir = ".";
     $to_archive_rel_path = $to_archive;
@@ -2382,18 +2385,18 @@ sub set_output_file_names {
   &RSAT::util::CheckOutDir($dir{output});
   push @dirs, "output";
 
+  ## Create output directories
+  local @output_folders = qw( tables html figures pairwise_compa_logos aligned_logos);
+  foreach my $f (@output_folders){
+      my $new_f = $main::outfile{prefix}."_".$f;
+      &RSAT::util::CheckOutDir($new_f);
+  }
+
   ## Directory containing the matrix logos (to be displayed in the HTML tree)
   $dir{logos} = $main::outfile{prefix}."_pairwise_compa_logos"; push @dirs, "logos";
-  &RSAT::util::CheckOutDir($dir{logos});
 
   ## Directory to create the aligned logos
   $dir{aligned_logos} = $main::outfile{prefix}."_aligned_logos";
-  &RSAT::util::CheckOutDir($dir{aligned_logos});
-  
-  ## Format to export all the results
-#  die ("HELLO");
-  $main::param{archive_format} = "zip";
-  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
 
   ################################################################
   ## Specify output file names and open output stream
@@ -2403,11 +2406,16 @@ sub set_output_file_names {
 
 
   ## Pairwise comparisons between matrices
-  $main::outfile{pairwise_compa} = $main::outfile{prefix}."_pairwise_compa.tab"; push @outfiles, "pairwise_compa"; 
-  $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
+  $main::outfile{pairwise_compa} = $main::outfile{prefix}."_tables/pairwise_compa.tab"; push @outfiles, "pairwise_compa"; 
+  $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_html/pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
 
   ## Individual matrix descriptions
-  $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
+  $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_tables/pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
+  $main::outfile{matrix_descriptions_html} = $main::outfile{prefix}."_html/pairwise_compa_matrix_descriptions.html";  push @outfiles, "matrix_descriptions_html";
+
+  ## List with the single matrix files paths
+  ## Filled in the method create_single_matrix_files()
+  $main::outfile{matrix_single_list} = "";
 
   ## Hexadecimal color for the clusters
   $main::outfile{hexa_colors} = $main::outfile{prefix}."_hexa_colors.txt";
@@ -2428,29 +2436,25 @@ sub set_output_file_names {
   }
 
   ## Output files for the hierarchical clustering trees
-  $main::outfile{distance_table} = $main::outfile{prefix}."_distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
-  $main::outfile{alignment_table} = $main::outfile{prefix}."_alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
-  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
+  $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
+  $main::outfile{alignment_table} = $main::outfile{prefix}."_tables/alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
+  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
-  $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
-  # $main::outfile{consensus_phylogram_png} = $main::outfile{prefix}."_consensus_tree.png"; push @outfiles, "consensus_phylogram_png";
-  # $main::outfile{consensus_phylogram_pdf} = $main::outfile{prefix}."_consensus_tree.pdf"; push @outfiles, "consensus_phylogram_pdf";
-
-  my @heatmap_file_path = split(/\//, $main::outfile{prefix}."_heatmap.jpg");
-  my $heatmap_file_name = pop(@heatmap_file_path);
-  $main::outfile{heatmap} = $heatmap_file_name;
+  $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_html/logo_tree.html"; push @outfiles, "logo_cladogram_html";
+  $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
+  $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
 
   ## Newick-formatted phylogram with motif consensuses
   if ($export_tree_format eq "newick"){
-    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";
-    ## $main::outfile{phylogram_html} = $main::outfile{prefix}."_phylogram.html"; push @outfiles, "phylogram_html";    
+    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
   }
 
   ## Clone input (only if the user selects this option)
   if($clone_input_flag == 1){
-    $main::outfile{motif_file} = $main::outfile{prefix}."_input_motifs.tf";
+      &RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
+      $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
   }
 
   ## Files required for the summary
@@ -2459,11 +2463,16 @@ sub set_output_file_names {
 
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
-  $main::outfile{temp_2} = $main::outfile{prefix}."_temporary_2.html";
-  $main::outfile{int_align} = $main::outfile{prefix}."_intermediate_alignments.tab";
+  $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
+
+  ## Archive to facilitate transfer of all the results
+  $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
+#  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
+  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 0);
+#  die ("HELLO");
 
   ## Open the HTML index file and write header
-  $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
+  $main::outfile{html_index} = $main::outfile{prefix}."_html/index.html";
   push @outfiles, "html_index";
   
 }
@@ -2565,7 +2574,7 @@ sub ReportStyleCSS{
 	float: left;
 	margin-top: 1px;
 	margin-bottom: 3px;
-	height: 30px;
+	height: 35px;
 	position: relative;
 	display: block;
 	text-align: left;
@@ -2649,12 +2658,10 @@ sub ReportStyleCSS{
   padding: 7px;
   }
 
-
   .tab_col {
   padding: 7px 30px 7px 30px;
   background-color: #B1D4F9;
   }
-
 
   .seq {
   font-family: Monospace;
@@ -2663,12 +2670,12 @@ sub ReportStyleCSS{
 
   .Cluster_results {
   margin-top: 3px;
-  width: 130px;
-  heigth: 100px;
+  width: 90px;
+  heigth: 80px;
   border: 1px;
   position: relative;
   padding: 1px;
-  font-size:14px;
+  font-size: 13px;
   margin-top: 20px;
   text-align: center;
   color: #ffffff;
@@ -2738,9 +2745,10 @@ sub ReportStyleCSS{
 
   .logo_tab {
 	position: relative;
-	max-width: 80%;
+	max-width: 100%;
 	max-height: 10%;
 	height: 45px;
+	width: 60px
 	float: left;
 	clear: both;
   }
@@ -2855,24 +2863,17 @@ sub ReportStyleCSS{
   .cluster_info_head {
 	background-color: #DCE4EC;
 	float: left;
-	height: 20px;
-	width: 600px;
+	height: 45px;
+	width: 630px;
 	position: relative;
 	display: block;
-	text-align: center;
+	text-align: left;
 	color: #34373B;
 	font-size: 15px;
-	padding: 3px 7px;
+	padding: 0px;
 	border-radius:5px;
 	clear: both;
-  }
-
-  .to_hide{
-    display: none;
-  }
-
-  .to_show{
-    display: block;
+        margin-top: 5px;
   }
 
   .hide_show_button{
@@ -3011,12 +3012,13 @@ sub ReadAlignmentTable {
 	$id = $split_line[0];
 	$cluster_id = $split_line[2];
 	$alignment_table_data{$cluster_id}{$id}{name} = $split_line[1];
-	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[3];
-	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[4];
-	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[5];
-	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
-	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
-	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[8];
+	$alignment_table_data{$cluster_id}{$id}{collection} = $split_line[3];
+	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[4];
+	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[5];
+	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[6];
+	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[7];
+	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[8];
+	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[9];
 
 	my $link_logo_d = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
 	my $link_logo_r = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
@@ -3028,7 +3030,12 @@ sub ReadAlignmentTable {
 	if(length($split_line[1]) >= $nb_char){
 	    $nb_char = length($split_line[1]);
 	    $alignment_size{$cluster_id}{nb_char} = $nb_char;
+	} if($display_title_flag == 1){
+	    if(length($main::param{title}) >= $nb_char){
+		$nb_char = length($main::param{title});
+	    }
 	}
+
 	$alignment_size{$cluster_id}{width} = $split_line[6];
 
 	$number_of_motifs++;
@@ -3054,17 +3061,18 @@ sub InsertAlignmentTable{
 		   	<!--Div: search in alignment table-->
 			<div class="alignment_tab_head">
 				<strong>Click on the column names to change the order of the data.</strong><br>
-				<strong>Write the name of one cluster in the <i>Search</i> window . Example: <i>cluster_1</i></strong>
+				<strong>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.<br>
 				<p></p>
 			</div>
 	    <thead>
 	      <tr>
-		<th colspan="7"><strong>Alignment</strong></th>
+		<th colspan="8"><strong>Alignment</strong></th>
 	      </tr>
 	      <tr>
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
+		<th class="tab_col">Collection</th>
 		<th class="tab_col">Aligned consensus</th>
 		<th class="tab_col">Aligned consensus (Reversed)</th>
 		<th class="tab_col">Aligned Logo (Forward)</th>
@@ -3083,13 +3091,14 @@ sub InsertAlignmentTable{
     ## Fill the column's table 
     foreach my $id (keys %ids_to_cluster){
 
-	$logo_width = 12*$alignment_table_data{$ids_to_cluster{$id}}{$id}{width};
+	$logo_width = 10*$alignment_table_data{$ids_to_cluster{$id}}{$id}{width};
 
 	$alignment_table_columns .= '
 				<tr>					
 					<td class="tab_spacer_1">'.$id.'</td>
                                         <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{name}.'</td>
 					<td class="tab_spacer_1">'.$ids_to_cluster{$id}.'</td>
+                                        <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{collection}.'</td>
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus_rc}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
                                         <th class="tab_spacer_2"><a target="_blank" href="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'"><img class="logo_tab" width="--width--" src="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'" /></a></th>
@@ -3116,10 +3125,7 @@ sub InsertInfoDiv{
 	      <strong>Logo tree and alignment. </strong>This results shows the hierarchical tree with all the motifs of the corresponding cluster and the logo alignment in F (left logo) and R (rigth logo) orientation.
             </li>
             <li>
-              <strong>Branch consensus. </strong>Each branch show the <em>branch-consensus</em> which summarizes all the descendant motifs. Click on it to see the corresponding logo.
-            </li>
-            <li>
-	      <strong>Branch-motifs. </strong>On the logo tree, is displayed the the branch-consensus which summarizes all the descendant motif of each branch. This table shows more detailed information: the logo in both orientation and a file in TRANSFAC format corresponding to the branch-motif.
+	      <strong>Branch-motifs. </strong>On the logo trees are displayed the branch number in which the motifs were grouped. The Branch-Motifs table shows the details of each consensus corresponding to each branch: the logo in both orientations and a file in TRANSFAC format corresponding to the branch-motif.
             </li>
           </ul>
 	</div>
@@ -3148,7 +3154,7 @@ sub InsertSmallForest {
     ## D3 values of the parameters of the small trees
     my $svg_width = 7;
     my $svg_height = 18;
-    my $svg_x1 = 6.25 * $nb_char;
+    my $svg_x1 = 6 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '6 + '.$svg_x1.' + 30';
     
@@ -3227,8 +3233,8 @@ sub InsertHeatMap {
 
     my $heat_map = ' 
 	<div class="tab">
-		<p><strong>Heatmap with consensus alignment</strong>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_distance_table.tab').'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_heatmap.pdf').'">PDF</a></p>
-		<img id="heatmap" src="'.$main::outfile{heatmap}.'">
+		<p><strong>Heatmap with consensus alignment</strong>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
+		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
 	</div>
     ';
 
@@ -3253,7 +3259,6 @@ $(document).ready( function () {
     });
 });
 
-
 // Dynamic alignment table
 $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
@@ -3265,35 +3270,37 @@ $(document).ready( function () {
 	    "smart": true
 	},
 	"aoColumnDefs": [
-            { "bSortable": true, "aTargets": [ 4,5 ] }
+            { "bSortable": true, "aTargets": [ 6,7 ] }
 	],
         "columnDefs": [ {
             "targets": -1,
             "data": null,
-            "width": "5%", "targets": [0,1,2,3,4,5]
+            "width": "3%", "targets": [0,1,2,3,4,5,6,7]
         } ]	
     });
 });
 
-// Slide the alignment table
+// Show all results button
 $(document).ready(function(){
     $(\'#show_all_button\').click(function(){
-	$(\'.hide_show\').css(\'display\',\'block\');
-//	$(\'.hide_show\').removeClass(\'to_hide\').addClass(\'to_show\');
+        $(\'.hide_show\').show();
+        $(\'.cluster_division\').addClass(\'selected_cluster\');
     }); 
 });
 
-// Slide the alignment table
+// Hide all results button
 $(document).ready(function(){
-    $(\'#show_all_button\').click(function(){
-	$(\'.hide_show\').css(\'display\',\'none\');
-//	$(\'.hide_show\').removeClass(\'to_show\').addClass(\'to_hide\');
+    $(\'#hide_all_button\').click(function(){
+        $(\'.hide_show\').hide();
+        $(\'.cluster_division\').removeClass(\'selected_cluster\');
     }); 
 });
 
-// Change the color of the selected cluster header
+// Change the color of buttons
 $(document).ready(function() {
     
+    ///////////////////
+    // Hide/Show All
     $(\'#show_all_button\').mouseenter(function(){
         $(this).fadeTo(\'fast\',1); 
     });
@@ -3310,11 +3317,8 @@ $(document).ready(function() {
         $(this).fadeTo(\'fast\',0.5); 
     });
 
-});
-
-// Change the color of the selected cluster header
-$(document).ready(function() {
-    
+    /////////////////////
+    // Cluster buttons
     $(\'.cluster_division\').mouseenter(function(){
         $(this).fadeTo(\'fast\',1); 
     });
@@ -3322,12 +3326,9 @@ $(document).ready(function() {
     $(\'.cluster_division\').mouseleave(function(){
         $(this).fadeTo(\'fast\',0.5); 
     });
-});
 
-
-// Change the color of the selected cluster header
-$(document).ready(function() {
-    
+    /////////////////////////////
+    // Additional files button
     $(\'#File_list\').mouseenter(function(){
         $(this).fadeTo(\'fast\',1); 
     });
@@ -3335,8 +3336,8 @@ $(document).ready(function() {
     $(\'#File_list\').mouseleave(function(){
         $(this).fadeTo(\'fast\',0.5); 
     });
-});
 
+});
 
 // Slide the alignment table
 $(document).ready(function(){
@@ -3354,9 +3355,9 @@ sub InsertTreesAndBranchMotifs {
 
     my  $svg_width = 8.5;
     my  $svg_height = 35;
-    my  $svg_x1 = 6.25 * $nb_char;
+    my  $svg_x1 = 6.5 * $nb_char;
     my  $svg_y1 = -15;
-    my  $svg_x2 = '7.5 + '.$svg_x1.' + 30';
+    my  $svg_x2 = '7 + '.$svg_x1.' + 40';
     my $label_single_tree = '
 	node.append("a")
 	        .attr("xlink:href", function(d) { return d.url; })
@@ -3366,7 +3367,27 @@ sub InsertTreesAndBranchMotifs {
 		.attr("dy", function(d) { return d.children ? 0 : 3; })
 		.attr("font-size", "8px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+		node.append("text")
+		.text(function(d) { return d.children ? d.branch : ""; })
+		.attr("dx", function(d) { return d.children ? -2 : 0; })
+		.attr("dy", function(d) { return d.children ? -6 : 0; })
+		.attr("fill", function(d) { return d.children ? "blue" : ""; })
+		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
+
+    if($display_title_flag == 1){
+	$label_single_tree .= '
+        node.append("text")
+	.text(function(d){ return d.children ? "" : "'.$main::param{title}.'"; })
+	.attr("x", function(d){ return d.children ? 0 : 20; })
+	.attr("dy", function(d){ return d.children ? 0 : 15; })
+	.attr("font-size", "8px")
+        .attr("fill", "blue")
+	.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
+        ';
+    }
+
 
     ## The next procces is repeated for each cluster
     foreach my $num (1..scalar(keys %alignment_table_data)){
@@ -3399,12 +3420,10 @@ sub InsertTreesAndBranchMotifs {
 	## Draw the logo tree
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
-                      <div id="cluster_--nb--" class="logo_tree">
-                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" >Hide <strong>cluster_--nb--</strong></div>
+                      <div id="cluster_--nb--" class="logo_tree hide_show">
+                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" ><strong>cluster_--nb--</strong></div>
 		      <script type="text/javascript">
                 ';
-	my $tree_button = '<div class="Cluster_results hide_show" id="button_logo_tree_--nb--">Logo tree</div>';
-	$tree_button =~ s/--nb--/$num/g;
 
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
@@ -3428,7 +3447,6 @@ sub InsertTreesAndBranchMotifs {
 	                 </div>
                  ';
         $all_d3_trees .= "\n".$d3_logo_tree."\n";
-	$insert_div .= "\n".$tree_button."\n";
 
 	my $hide_single_tree = &hide_tree();
 	$hide_single_tree =~ s/--nb--/$num/g;
@@ -3500,7 +3518,7 @@ sub InsertTreesAndBranchMotifs {
 sub InsertJquery {
     print $syn $script_jquery;
 }
-
+  
 
 ################################################################
 ## Insert the code where the single trees and branch-motifs 
@@ -3510,8 +3528,11 @@ sub DisplaySingleCluster{
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
 	<div class="cluster_info_head">
-	  <strong>Click on the buttons to display separately the information of each cluster.</strong>
-	</div>
+          <ul type="square" style="margin:2px 0px 2px 5px; position:relative">
+           <li><strong>Click on the upper buttons to display separately the information of each cluster.</strong></li>
+           <li><strong>Click on the circles at each tree to display its corresponding merged motifs.</strong></li>
+         </ul>
+	 </div>
 	<div class="display"><strong style="display:block">Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
 	<br>
 	<div class="display"><strong style="display:block">Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
@@ -3541,19 +3562,19 @@ sub InsertListOfFiles {
 	    </thead>
 	    <tbody>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_distance_table.tab').'"><strong>Distance table</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'"><strong>Distance table</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_logo_tree.html').'"><strong>Logo Forest</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa.tab').'"><strong>Pairwise comparison</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{pairwise_compa}).'"><strong>Pairwise comparison</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_pairwise_compa_matrix_descriptions.tab').'"><strong>Matrix description</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{matrix_descriptions}).'"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
                          ';
@@ -3561,11 +3582,11 @@ sub InsertListOfFiles {
       if($number_of_motifs > 1){
 	  $add_files .='
                    <tr>
-                   <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_internal_nodes_attributes.tab').'"><strong>Internal nodes attributes</strong></a></td>
+                   <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{internal_nodes_attributes_table}).'"><strong>Internal nodes attributes</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
 		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
 		   </tr>
                 ';
@@ -3577,7 +3598,7 @@ sub InsertListOfFiles {
 	    '
 
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_heatmap.pdf').'"><strong>Heatmap</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><strong>Heatmap</strong></a></td>
 		      <td class="tab_spacer_2">The heatmap showing the hierarchical tree with the clusters and the alignments.</td>
 		   </tr>
                      ';
@@ -3589,7 +3610,7 @@ sub InsertListOfFiles {
 	    '
 
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_input_motifs.tf').'"><strong>Input motifs</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_data/input_motifs.tf').'"><strong>Input motifs</strong></a></td>
 		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
 		   </tr>
                      ';
