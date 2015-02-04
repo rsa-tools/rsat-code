@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:ae098a05-c83c-4e47-bf4d-06c2efd0a490" author="" title="NeAT_Nature_Protocol_workflow">This workflow combines MCL with compare-classes to identify biologically relevant modules obtained from MIPS in the yeast STRING network.</s:workflowdescription>
+  <s:processor name="outputMCL">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="mclResponse" name="output" qname="{urn:RSATWS}mclResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="MCLResponse" name="response" qname="&gt;mclResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="MCLResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="MCLResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="MCLResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseMCL">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="MCLResponse" name="response" qname="&gt;mclResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="MCLResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="MCLResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="MCLResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersCompareClasses">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="compare_classes" name="parameters" qname="{urn:RSATWS}compare_classes">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CompareClassesRequest" name="request" qname="&gt;compare_classes&gt;request">
+              <s:elements>
+                <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="CompareClassesRequest&gt;output" />
+                <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="ref_classes" qname="CompareClassesRequest&gt;ref_classes">
+                  <s:elementtype>
+                    <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+                  </s:elementtype>
+                </s:arraytype>
+                <s:basetype optional="true" unbounded="false" typename="string" name="query_classes" qname="CompareClassesRequest&gt;query_classes" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="return_fields" qname="CompareClassesRequest&gt;return_fields" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="score_column" qname="CompareClassesRequest&gt;score_column" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="input_classes" qname="CompareClassesRequest&gt;input_classes" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="upper_threshold_field" qname="CompareClassesRequest&gt;upper_threshold_field" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="upper_threshold_value" qname="CompareClassesRequest&gt;upper_threshold_value" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="lower_threshold_field" qname="CompareClassesRequest&gt;lower_threshold_field" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="lower_threshold_value" qname="CompareClassesRequest&gt;lower_threshold_value" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="sort" qname="CompareClassesRequest&gt;sort" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="distinct" qname="CompareClassesRequest&gt;distinct" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="triangle" qname="CompareClassesRequest&gt;triangle" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="matrix" qname="CompareClassesRequest&gt;matrix" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseCompareClasses">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="CompareClassesResponse" name="response" qname="&gt;compare_classesResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="CompareClassesResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="CompareClassesResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="CompareClassesResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="outputCompareClasses">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="compare_classesResponse" name="output" qname="{urn:RSATWS}compare_classesResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="CompareClassesResponse" name="response" qname="&gt;compare_classesResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="CompareClassesResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="CompareClassesResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="CompareClassesResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersMCL">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="mcl" name="parameters" qname="{urn:RSATWS}mcl">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="MCLRequest" name="request" qname="&gt;mcl&gt;request">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="inputgraph" qname="MCLRequest&gt;inputgraph" />
+                <s:basetype optional="true" unbounded="false" typename="float" name="inflation" qname="MCLRequest&gt;inflation" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="parametersConvertClasses">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="convert_classes" name="parameters" qname="{urn:RSATWS}convert_classes">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="ConvertClassesRequest" name="request" qname="&gt;convert_classes&gt;request">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="informat" qname="ConvertClassesRequest&gt;informat" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="ConvertClassesRequest&gt;outformat" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="member_col" qname="ConvertClassesRequest&gt;member_col" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="class_col" qname="ConvertClassesRequest&gt;class_col" />
+                <s:basetype optional="true" unbounded="false" typename="int" name="score_col" qname="ConvertClassesRequest&gt;score_col" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="min_score" qname="ConvertClassesRequest&gt;min_score" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="inputclasses" qname="ConvertClassesRequest&gt;inputclasses" />
+                <s:basetype optional="true" unbounded="false" typename="string" name="names" qname="ConvertClassesRequest&gt;names" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestCompareClasses">
+    <s:defaults>
+      <s:default name="return_fields">freq,occ,proba,rank</s:default>
+      <s:default name="lower_threshold_field">sig</s:default>
+      <s:default name="lower_threshold_value">0</s:default>
+      <s:default name="sort">sig</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="CompareClassesRequest" name="request" qname="&gt;compare_classes&gt;request">
+          <s:elements>
+            <s:basetype optional="true" unbounded="false" typename="string" name="output" qname="CompareClassesRequest&gt;output" />
+            <s:arraytype optional="true" unbounded="true" wrapped="false" typename="string" name="ref_classes" qname="CompareClassesRequest&gt;ref_classes">
+              <s:elementtype>
+                <s:basetype optional="false" unbounded="false" typename="string" name="" qname="{http://www.w3.org/2001/XMLSchema}string" />
+              </s:elementtype>
+            </s:arraytype>
+            <s:basetype optional="true" unbounded="false" typename="string" name="query_classes" qname="CompareClassesRequest&gt;query_classes" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="return_fields" qname="CompareClassesRequest&gt;return_fields" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="score_column" qname="CompareClassesRequest&gt;score_column" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="input_classes" qname="CompareClassesRequest&gt;input_classes" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="upper_threshold_field" qname="CompareClassesRequest&gt;upper_threshold_field" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="upper_threshold_value" qname="CompareClassesRequest&gt;upper_threshold_value" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="lower_threshold_field" qname="CompareClassesRequest&gt;lower_threshold_field" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="lower_threshold_value" qname="CompareClassesRequest&gt;lower_threshold_value" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="sort" qname="CompareClassesRequest&gt;sort" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="distinct" qname="CompareClassesRequest&gt;distinct" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="triangle" qname="CompareClassesRequest&gt;triangle" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="matrix" qname="CompareClassesRequest&gt;matrix" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="responseConvertClasses">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="ConvertClassesResponse" name="response" qname="&gt;convert_classesResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="ConvertClassesResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="ConvertClassesResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="ConvertClassesResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="outputConvertClasses">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="convert_classesResponse" name="output" qname="{urn:RSATWS}convert_classesResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="ConvertClassesResponse" name="response" qname="&gt;convert_classesResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="ConvertClassesResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="ConvertClassesResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="ConvertClassesResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestConvertClasses">
+    <s:defaults>
+      <s:default name="informat">mcl</s:default>
+      <s:default name="outformat">tab</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="ConvertClassesRequest" name="request" qname="&gt;convert_classes&gt;request">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="informat" qname="ConvertClassesRequest&gt;informat" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outformat" qname="ConvertClassesRequest&gt;outformat" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="member_col" qname="ConvertClassesRequest&gt;member_col" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="class_col" qname="ConvertClassesRequest&gt;class_col" />
+            <s:basetype optional="true" unbounded="false" typename="int" name="score_col" qname="ConvertClassesRequest&gt;score_col" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="min_score" qname="ConvertClassesRequest&gt;min_score" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="inputclasses" qname="ConvertClassesRequest&gt;inputclasses" />
+            <s:basetype optional="true" unbounded="false" typename="string" name="names" qname="ConvertClassesRequest&gt;names" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="requestMCL">
+    <s:defaults>
+      <s:default name="inflation">1.8</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="MCLRequest" name="request" qname="&gt;mcl&gt;request">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="inputgraph" qname="MCLRequest&gt;inputgraph" />
+            <s:basetype optional="true" unbounded="false" typename="float" name="inflation" qname="MCLRequest&gt;inflation" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="convert_classes">
+    <s:description>Interconversions between different formats of cluster files.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>convert_classes</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="compare_classes">
+    <s:description>Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file.
+The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>compare_classes</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="mcl">
+    <s:description>Clustering via Stijn van Dongen MCL algorithm</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl</s:wsdl>
+      <s:operation>mcl</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:link source="MIPS classes" sink="requestCompareClasses:ref_classes" />
+  <s:link source="STRING_yeast_network" sink="requestMCL:inputgraph" />
+  <s:link source="compare_classes:output" sink="outputCompareClasses:input" />
+  <s:link source="convert_classes:output" sink="outputConvertClasses:input" />
+  <s:link source="mcl:output" sink="outputMCL:input" />
+  <s:link source="outputCompareClasses:response" sink="responseCompareClasses:input" />
+  <s:link source="outputConvertClasses:response" sink="responseConvertClasses:input" />
+  <s:link source="outputMCL:response" sink="responseMCL:input" />
+  <s:link source="parametersCompareClasses:output" sink="compare_classes:parameters" />
+  <s:link source="parametersConvertClasses:output" sink="convert_classes:parameters" />
+  <s:link source="parametersMCL:output" sink="mcl:parameters" />
+  <s:link source="requestCompareClasses:output" sink="parametersCompareClasses:request" />
+  <s:link source="requestConvertClasses:output" sink="parametersConvertClasses:request" />
+  <s:link source="requestMCL:output" sink="parametersMCL:request" />
+  <s:link source="responseConvertClasses:client" sink="requestCompareClasses:query_classes" />
+  <s:link source="responseMCL:client" sink="requestConvertClasses:inputclasses" />
+  <s:link source="responseCompareClasses:client" sink="Compare classes result table" />
+  <s:source name="STRING_yeast_network">
+    <s:metadata>
+      <s:description>Network extracted from STRING for S. cerevisiae consists of direct and indirect protein-protein interactions. It has 11,000 edges.</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="MIPS classes" />
+  <s:sink name="Compare classes result table" />
+</s:scufl>
+
