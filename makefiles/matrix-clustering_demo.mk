@@ -63,7 +63,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-label name ${OPT} \
 		-title '${TITLE}' \
 		-display_title \
-		-o ${CLUSTER_FILE_PREFIX}
+		-o ${CLUSTER_FILE_PREFIX}	
+
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}"
@@ -77,7 +78,7 @@ cluster_peakmotifs_Oct4:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
-		TITLE='Oct4_motifs_peak_motifs'
+		TITLE='Oct4 motifs peak motifs'
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set),
 ## without any threshold
