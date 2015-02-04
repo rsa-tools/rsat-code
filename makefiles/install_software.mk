@@ -12,7 +12,7 @@
 ## and the configuration of the paths and environment variables for
 ## the users.
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/install_software.mk
+MAKEFILE=${RSAT}/makefiles/install_software.mk
 MAKE=make -f ${MAKEFILE}
 V=1
 
@@ -101,7 +101,6 @@ _install_vmatch_linux:
 
 VMATCH_BASE_DIR=${SRC_DIR}/vmatch
 VMATCH_URL=ftp://lscsa.de/pub/lscsa/
-VMATCH_VERSION=${VMATCH_VERSION_LINUX}
 VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
 #VMATCH_SOURCE_DIR=vmatch_latest
 _download_vmatch: 
@@ -109,7 +108,7 @@ _download_vmatch:
 	@echo "Downloading vmatch in folder"
 	@echo "	${VMATCH_BASE_DIR}"
 	@mkdir -p ${VMATCH_BASE_DIR}
-	wget --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
+	wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
 	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
 
 VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
@@ -130,8 +129,8 @@ _vmatch_warning:
 	@echo "vmatch has been installed in bin folder ${RSAT_BIN}"
 	@echo "IN ORDER TO GET A FUNCTIONAL COPY, YOU NEED TO REQUEST A LICENSE"
 	@echo "	http://www.vmatch.de/"
-	@echo "AND PLACE THE FILE vmatch.lic IN THIS FOLDER"
-	@echo ""
+	@echo "AND PLACE THE FILE vmatch.lic IN FOLDER"
+	@echo "	 ${RSAT_BIN}"
 	@echo ""
 
 ################################################################
@@ -988,7 +987,8 @@ CEAS_VERSION=1.0.2
 CEAS_ARCHIVE=CEAS-Package-${CEAS_VERSION}.tar.gz
 CEAS_URL=http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_ARCHIVE}
 CEAS_DISTRIB_DIR=${CEAS_BASE_DIR}/CEAS-Package-${CEAS_VERSION}
-		make -f makefiles/install_software.mk RSAT_BIN=/usr/local/bin install_ceas
+CEAS_COMPILE_DIR=`dirname ${RSAT_BIN}`
+#make -f makefiles/install_software.mk RSAT_BIN=/usr/local/bin install_ceas
 install_ceas: _download_ceas _compile_ceas 
 
 _download_ceas:
@@ -997,7 +997,6 @@ _download_ceas:
 	@mkdir -p ${CEAS_BASE_DIR}
 	wget -nd  --directory-prefix ${CEAS_BASE_DIR} -rNL ${CEAS_URL}
 
-CEAS_COMPILE_DIR=`dirname ${RSAT_BIN}`
 #CEAS_COMPILE_DIR=/usr/local
 _compile_ceas:
 	@echo
@@ -1009,10 +1008,10 @@ _compile_ceas:
 	@echo ${CEAS_DISTRIB_DIR}
 	(cd  ${CEAS_DISTRIB_DIR}; ${SUDO} python setup.py install --prefix=${CEAS_COMPILE_DIR})
 	@echo "CEAS has been installed in dir ${CEAS_COMPILE_DIR}/bin"
-#	@echo "Before using CEAS, you need to add a line to the log-in shell script"
-#	@echo "(i.e. .bashrc in case of bash shell)"
-#	@echo "Adapt the python version in the path below"
-#	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+	@echo "Before using CEAS, you need to add a line to the log-in shell script"
+	@echo "(i.e. .bashrc in case of bash shell)"
+	@echo "Adapt the python version in the path below"
+	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
 
 ################################################################
 ## Download data required to run CEAS with Human genome hg19
@@ -1022,7 +1021,9 @@ download_ceas_data:
 	@echo
 	@echo "Downloading data required to run CEAS with Human genome ${CEAS_GENOME}"
 	mkdir -p ${CEAS_DATA_DIR}/${CEAS_GENOME}
-	(cd ${CEAS_DATA_DIR}/${CEAS_GENOME}; wget http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_GENOME}.zip)
+	(cd ${CEAS_DATA_DIR}/${CEAS_GENOME}; \
+		wget --no-clobber http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_GENOME}.refGene.gz; \
+		gunzip ${CEAS_GENOME}.refGene.gz)
 
 
 ################################################################
