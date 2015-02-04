@@ -37,11 +37,19 @@ list_param:
 	@echo "PERMUTED_PREFIX		${PERMUTED_PREFIX}"
 	@echo "PERMUTED_DIR		${PERMUTED_DIR}"
 	@echo "PERMUTED_MATRIX_FILE	${PERMUTED_MATRIX_FILE}"
+	@echo "JASPAR_GROUPS		${JASPAR_GROUPS}"
+	@echo "JASPAR_GROUP		${JASPAR_GROUP}"
+	@echo "CISBP_GROUPS		${CISBP_GROUPS}"
+	@echo "CISBP_GROUP		${CISBP_GROUP}"
+#	@echo "		${}"
+
+
 
 
 ################################################################
 ## Run matrix-clustering on one demo set (the particular cases will be
 ## specified below)
+TITLE='matrix-clustering result'
 CLUSTER_PREFIX=${MATRIX_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_DIR=results/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
@@ -53,7 +61,10 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-heatmap\
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX}
+		-title '${TITLE}' \
+		-display_title \
+		-o ${CLUSTER_FILE_PREFIX}	
+
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}"
@@ -66,18 +77,21 @@ _cluster:
 cluster_peakmotifs_Oct4:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX}
+	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
+		TITLE='Oct4 motifs peak motifs'
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set),
 ## without any threshold
 cluster_peakmotifs_Oct4_no_threshold:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} _cluster MATRIX_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1 MIN_COR=-1
+	${MAKE} _cluster MATRIX_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1 MIN_COR=-1 \
+		TITLE='Peak-motifs results for Oct4 ChIP-seq peaks - no thresholds'
 
 ## Permutation test with peak-motifs (Chen Oct4 data set)
 cluster_peakmotifs_Oct4_permute:
 	${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices
+		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks'
 
 ## Rndomize input matrices by permuting their columns
 PERMUTED_PREFIX=${MATRIX_PREFIX}_permuted
@@ -111,7 +125,8 @@ RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
 cluster_rdb:
 	@echo "Clustering all matrices from RegulonDB"
-	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4
+	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4 \
+		TITLE='RegulonDB database'
 
 ## Permutation test with RegulonDB
 cluster_rdb_permute:
@@ -127,12 +142,15 @@ JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_all_groups:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} _cluster_jaspar_one_group JASPAR_GROUP=$${g} ; \
+		${MAKE} cluster_jaspar_one_group JASPAR_GROUP=$${g} ; \
 	done
 
 cluster_jaspar_one_group:
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
-	${MAKE} _cluster MATRIX_PREFIX=${JASPAR_PREFIX} MATRIX_FILE=${JASPAR_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
+	${MAKE} _cluster MATRIX_PREFIX=${JASPAR_PREFIX} \
+		MATRIX_FILE=${JASPAR_MATRICES} \
+		MIN_COR=0.6 MIN_NCOR=0.4 \
+		TITLE='Jaspar core ${JASPAR_GROUP} database'
 
 ## Permutation test with RegulonDB
 cluster_jaspar_one_group_permute:
@@ -148,4 +166,7 @@ CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
 CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
 cluster_cisbp_one_group:
 	@echo "Clustering all matrices from cisBP ${CISBP_GROUP}"
-	${MAKE} _cluster MATRIX_PREFIX=${CISBP_PREFIX} MATRIX_FILE=${CISBP_MATRICES} MIN_COR=0.6 MIN_NCOR=0.4
+	${MAKE} _cluster MATRIX_PREFIX=${CISBP_PREFIX} \
+		MATRIX_FILE=${CISBP_MATRICES} \
+		MIN_COR=0.6 MIN_NCOR=0.4
+		TITLE='cisBP ${CISBP_GROUP} database'

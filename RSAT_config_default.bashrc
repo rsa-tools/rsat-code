@@ -39,3 +39,9 @@ export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RE
 export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-tools/modules::${PERL5LIB}
 export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-variation/modules::${PERL5LIB}
 export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
+
+
+################################################################
+## Python libraries
+## (required for external tool CEAS)
+export PYTHONPATH=$PYTHONPATH:${RSAT}/lib/python2.7/site-packages

@@ -268,37 +268,41 @@ package	main;
   ## Get the list of sequences already installed in the local server
   &RSAT::message::TimeWarn("Checking local versions of genomic sequences") if ($main::verbose >= 2);
   my %seq_installed = ();
-   my @genome_dir_content =glob($genome_dir."/*");
+  my @genome_dir_content =glob($genome_dir."/*");
   #my @genome_dir_content =`(ls $genome_dir/*)`; ## NOTE FROM ALE: please do not remove commented line
                                                 ## I'm having problmes with my glob function
+
+  &RSAT::message::Info("genome_dir_content", scalar(@genome_dir_content), "files") if ($main::verbose >= 2);
  
-   foreach ( @genome_dir_content ) {
+   foreach my $file( @genome_dir_content ) {
        ##chomp;  ## NOTE FROM ALE: please do not remove commented line
                ## I'm having problmes with my glob function
-       next unless (/\.raw/);
+       next unless ($file =~ /\.raw/);
        
-       $len = -s $_;
-       $_ =~ s/$genome_dir\///g;
-       $_ =~ s/\.raw//g;
+       $len = -s $file;
+       $file =~ s/$genome_dir\///g;
+       $file =~ s/\.raw//g;
        
-       my ($type,$slice) = split($assembly_version,$_);
+       my ($type,$slice) = split($assembly_version, $file);
        $type =~ s/_/:/g;
        $slice =~ s/_/:/g;
        
-       $seq_installed{$type.$assembly_version.$slice} = $len;
+       my $seq_key = $type.$assembly_version.$slice;
+       $seq_installed{$seq_key} = $len;
+       &RSAT::message::Debug("seq_installed", $seq_key, $len) if ($main::verbose >= 3);
    }
   
 
 
 
   ################################################################
-  ## Download
+  ## Download sequences
   &RSAT::message::TimeWarn("Downloading sequences") if ($main::verbose >= 2);
   foreach my $slice (@slices) {
-    &RSAT::message::TimeWarn("\tTreating slice",$slice->name()) if ($main::verbose >= 2);
-    my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
-    my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
+    &RSAT::message::TimeWarn("\tTreating slice",$slice->name(), $slice->length()) if ($main::verbose >= 2);
 
+    ## Raw sequence
+    my $seq_norm_installed = $seq_installed{$slice->name()} && $seq_installed{$slice->name()} == $slice->length();
     if ( ($seq_norm_installed) && (!$force) ) {
       &RSAT::message::TimeWarn("\tSkipping download of DNA sequences for slice",$slice->name) if ($main::verbose >= 2);
       next;
@@ -311,7 +315,9 @@ package	main;
       close ($out_seq_file);
     }
 
-    if ( (!$rm) || ( $seq_rm_installed && !$force ) ) {
+    ## Repeat-masked sequence
+    my $seq_rm_installed = $seq_installed{$slice->name().":repeatmasked"} && $seq_installed{$slice->name().":repeatmasked"} == $slice->length();
+    if ((!$rm) || ( $seq_rm_installed && !$force ) ) {
       &RSAT::message::TimeWarn("\tSkipping dowload of repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
     } else {
       &RSAT::message::TimeWarn("\tDownloading repeat-masked DNA sequences for slice",$slice->name()) if ($main::verbose >= 2);
