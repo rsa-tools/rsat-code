@@ -1,0 +1,377 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>perl-scripts/matrix-quality</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='matrix-quality.cgi'>matrix-quality</a> manual</h2>
+
+</center>
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#VERSION">VERSION</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#CATEGORY">CATEGORY</a></li>
+  <li><a href="#USAGE">USAGE</a>
+    <ul>
+      <li><a href="#Example">Example</a></li>
+    </ul>
+  </li>
+  <li><a href="#INPUT-FORMAT">INPUT FORMAT</a>
+    <ul>
+      <li><a href="#Genomic-coordinate-file">Genomic coordinate file</a></li>
+      <li><a href="#Example-of-bed-file">Example of bed file</a></li>
+      <li><a href="#Variation-file">Variation file</a></li>
+      <li><a href="#Variation-ID-list">Variation ID list</a></li>
+    </ul>
+  </li>
+  <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a>
+    <ul>
+      <li><a href="#download-ensembl-genome">download-ensembl-genome</a></li>
+      <li><a href="#download-ensembl-variations">download-ensembl-variations</a></li>
+      <li><a href="#variation-scan">variation-scan</a></li>
+    </ul>
+  </li>
+  <li><a href="#WISH-LIST">WISH LIST</a></li>
+  <li><a href="#OPTIONS">OPTIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>retrieve-variation-seq</p>
+
+<h1 id="VERSION">VERSION</h1>
+
+<p>$program_version</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Given a set of IDs for polymorphic variations, retrieve the corresponding variants and their flanking sequences, in order to scan them wiht the tool <i>variation-scan</i>.</p>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<dl>
+
+<dt id="Jeremy-Delerce-M2-thesis-project-2013"><b>Jeremy Delerce</b> (M2 thesis project 2013)</dt>
+<dd>
+
+</dd>
+<dt id="Alejandra-Medina-Rivera-amedina-lcg.unam.mx"><b>Alejandra Medina Rivera</b> &lt;amedina@lcg.unam.mx&gt;</dt>
+<dd>
+
+</dd>
+<dt id="Jacques-van-Helden-Jacques.van-Helden-univ-amu.fr"><b>Jacques van Helden</b> &lt;Jacques.van-Helden@univ-amu.fr&gt;</dt>
+<dd>
+
+</dd>
+</dl>
+
+<h1 id="CATEGORY">CATEGORY</h1>
+
+<dl>
+
+<dt id="util">util</dt>
+<dd>
+
+</dd>
+</dl>
+
+<h1 id="USAGE">USAGE</h1>
+
+<pre><code> retrieve-snp-seq -species species_name (-e_version # | -a_version assembly_version)  \
+   [-i #inputfile] [-format variation_format] \
+   [-col ID_column] [-mml #] [-o outputfile] [-v #] [...]</code></pre>
+
+<h2 id="Example">Example</h2>
+
+<pre><code>  Get variation sequence of Homo_sapiens from a bed file
+    retrieve-snp-seq -v 2 \
+      -species Homo_sapiens -e_version 72
+      -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
+      -mml 30 \
+      -o variations.varBed</code></pre>
+
+<h1 id="INPUT-FORMAT">INPUT FORMAT</h1>
+
+<h2 id="Genomic-coordinate-file">Genomic coordinate file</h2>
+
+<p>The option <i>-i</i> allows to specify a genomic coordinate file in bed format. The program only takes into account the 3 first columns of the bed file, which specify the genomic coordinates.</p>
+
+<p><b>Note</b> (from Jacques van Helden): the UCSC genome browser adopts a somewhat inconsistent convention for start and end coordinates: the start position is zero-based (first nucleotide of a chromosome/scaffold has coordinate 0), but the end position is considered not included in the selection. This is equivalent to have a zero-based coordinate for the start, and a 1-base coordinate for the end.</p>
+
+<h2 id="Example-of-bed-file">Example of bed file</h2>
+
+<pre><code> chr1   3473041 3473370
+ chr1   4380371 4380650
+ chr1   4845581 4845781
+ chr1   4845801 4846260</code></pre>
+
+<p>The definition of the BED format is provided on the UCSC Genome Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).</p>
+
+<p>This program only takes into account the 3 first columns, which specify the genomic coordinates.</p>
+
+<dl>
+
+<dt id="chrom">1. chrom</dt>
+<dd>
+
+<p>The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold (e.g. scaffold10671).</p>
+
+</dd>
+<dt id="chromStart">2. chromStart</dt>
+<dd>
+
+<p>The starting position of the feature in the chromosome or scaffold. For RSAT programs, the first base in a chromosome is numbered 1 (this differs from the UCSC-specific zero-based notation for the start).</p>
+
+<p><b>Note</b> from Jacques van Helden: the UCSC genome browser adopts a somewhat inconsistent convention for start and end coordinates: the start position is zero-based (first nucleotide of a chromosome/scaffold has coordinate 0), and the end position is considered not included in the selection. This is equivalent to have a zero-based coordinate for the start, and a 1-base coordinate for the end. We find this representation completely counter-intuitive, and we herefore decided to adopt a &quot;normal&quot; convention, where:</p>
+
+<dl>
+
+<dt id="start-and-end-position-represent-the-first-and-last-positions-included-in-the-region-of-interest">start and end position represent the first and last positions <i>included</i> in the region of interest.</dt>
+<dd>
+
+</dd>
+<dt id="start-and-end-positions-are-provided-in-one-based-notation-first-base-of-a-chromosome-or-contig-has-coordinate-1">start and end positions are provided in one-based notation (first base of a chromosome or contig has coordinate 1).</dt>
+<dd>
+
+</dd>
+</dl>
+
+</dd>
+<dt id="chromEnd">3. chromEnd</dt>
+<dd>
+
+<p>The ending position of the feature in the chromosome or scaffold.</p>
+
+</dd>
+</dl>
+
+<h2 id="Variation-file">Variation file</h2>
+
+<p>See <i>download-ensembl-variation</i> output format.</p>
+
+<h2 id="Variation-ID-list">Variation ID list</h2>
+
+<p>A tab delimited file with id of variation in column.</p>
+
+<h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
+
+<p>A tab delimited file with the following column content.</p>
+
+<dl>
+
+<dt id="chrom1">1. chrom</dt>
+<dd>
+
+<p>The name of the chromosome (e.g. 1, X, 8...)</p>
+
+</dd>
+<dt id="chromStart1">2. chromStart</dt>
+<dd>
+
+<p>The starting position of the feature in the chromosome</p>
+
+</dd>
+<dt id="chromEnd1">3. chromEnd</dt>
+<dd>
+
+<p>The ending position of the feature in the chromosome</p>
+
+</dd>
+<dt id="chromStrand">4. chromStrand</dt>
+<dd>
+
+<p>The strand of the feature in the chromosome</p>
+
+</dd>
+<dt id="variation-id">5. variation id</dt>
+<dd>
+
+<p>ID of the variation</p>
+
+</dd>
+<dt id="SO-term">8. SO term</dt>
+<dd>
+
+<p>SO Term of the the variation</p>
+
+</dd>
+<dt id="ref-variant">7. ref variant</dt>
+<dd>
+
+<p>Allele of the variation in the reference sequence</p>
+
+</dd>
+<dt id="variant">8. variant</dt>
+<dd>
+
+<p>Allele of the variation in the sequence</p>
+
+</dd>
+<dt id="allele_frequency">10. allele_frequency</dt>
+<dd>
+
+<p>Allele frequency</p>
+
+</dd>
+<dt id="sequence">10. sequence</dt>
+<dd>
+
+<p>Sequence of lenght L center on the variation</p>
+
+</dd>
+</dl>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<h2 id="download-ensembl-genome">download-ensembl-genome</h2>
+
+<p><i>retrieve-variation-seq</i> uses the sequences downloaded from Ensembl using the tool <i>download-ensembl-genome</i>.</p>
+
+<h2 id="download-ensembl-variations">download-ensembl-variations</h2>
+
+<p><i>retrieve-variation-seq</i> uses variation coordinates downloaded from Ensembl using the tool <i>download-ensembl-variations</i>.</p>
+
+<h2 id="variation-scan">variation-scan</h2>
+
+<p>Scan variation sequences with one or several position-specific scoring matrices.</p>
+
+<h1 id="WISH-LIST">WISH LIST</h1>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<dl>
+
+<dt id="v"><b>-v #</b></dt>
+<dd>
+
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+
+</dd>
+<dt id="h"><b>-h</b></dt>
+<dd>
+
+<p>Display full help message</p>
+
+</dd>
+<dt id="help"><b>-help</b></dt>
+<dd>
+
+<p>Same as -h</p>
+
+</dd>
+<dt id="species-species_name"><b>-species species_name</b></dt>
+<dd>
+
+<p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
+
+</dd>
+<dt id="species_suffix"><b>-species_suffix</b></dt>
+<dd>
+
+<p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
+
+</dd>
+<dt id="e_version"><b>-e_version #</b></dt>
+<dd>
+
+<p>The version of ensembl database (e.g. 72).</p>
+
+<p>Note: each Ensembl version contains a specific assembly version for each species. When the option -e_version is used, the option -a_version should thus in principle not be used.</p>
+
+</dd>
+<dt id="a_version"><b>-a_version #</b></dt>
+<dd>
+
+<p>Assembly version (e.g. GRCh37 for the assembly 37 of the Human genome).</p>
+
+<p>Note: genome assemblies can cover several successive ensemble versions. In case of ambiguity, the latest corresponding ensembl version is used.</p>
+
+<p>#=item <b>-available_species</b> # #Get the list of all locally supported species and genome assemblies. # #=cut # } elsif ($arg eq &quot;-available_species&quot;) { # $main::available = 1; # #=pod</p>
+
+</dd>
+<dt id="i-input_file"><b>-i input_file</b></dt>
+<dd>
+
+<p>Input File.</p>
+
+<p>The input file specifies a list of query variations. Each row corresponds to one query.</p>
+
+<p>The variations can be provided in various formats (see option -format below).</p>
+
+</dd>
+<dt id="format-variation_format"><b>-format variation_format</b></dt>
+<dd>
+
+<p>Format of the input file</p>
+
+<p>Supported formats:</p>
+
+<dl>
+
+<dt id="varBed"><i>varBed</i></dt>
+<dd>
+
+<p>Format of variation files used by all RSAT scripts.</p>
+
+</dd>
+<dt id="id"><i>id</i></dt>
+<dd>
+
+<p>tab-delimited file with all variation IDs in a given column, which can be specified by the option <i>-col</i>.</p>
+
+</dd>
+<dt id="bed"><i>bed</i></dt>
+<dd>
+
+<p>General format for the description of genomic features (see https://genome.ucsc.edu/FAQ/FAQformat.html#format1).</p>
+
+</dd>
+</dl>
+
+</dd>
+<dt id="mml"><b>-mml #</b></dt>
+<dd>
+
+<p>Length of the longest Matrix</p>
+
+</dd>
+<dt id="col"><b>-col #</b></dt>
+<dd>
+
+<p>Column containing the variation IDs with the input format &quot;id&quot;.</p>
+
+<p>Default : 1</p>
+
+</dd>
+<dt id="o-outputfile"><b>-o outputfile</b></dt>
+<dd>
+
+<p>The output file is in fasta format.</p>
+
+<p>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</p>
+
+</dd>
+</dl>
+
+
+</body>
+
+</html>
+
+
