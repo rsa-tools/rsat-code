@@ -173,7 +173,7 @@ if(number.of.motifs > 1){
   if(draw.heatmap == 1){
 
     for (plot.format in c("pdf", "jpg")) {
-      heatmap.file <- paste(sep="", out.prefix, "_heatmap.", plot.format)
+      heatmap.file <- paste(sep="", out.prefix, "_figures/heatmap.", plot.format)
         w <- 6
         h <- w + 0.75
         resol <- 72 ## Screen resolution
@@ -203,7 +203,7 @@ if(number.of.motifs > 1){
     w.inches <- 14 ## width in inches
     h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
     resol <- 72 ## Screen resolution
-    tree.drawing.file <- paste(sep="", out.prefix, "_tree_of_consensus.", plot.format)
+    tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
     verbose(paste("hclust tree drawing", tree.drawing.file), 1)
     if (plot.format == "pdf") {
       pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
@@ -224,7 +224,7 @@ if(number.of.motifs > 1){
   })
   internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
   colnames(internal.nodes.attributes.table) <- c("#level", "method", "alignment_status", "cluster_1", "cluster_2")
-  attributes.file <- paste(sep="", out.prefix, "_internal_nodes_attributes.tab")
+  attributes.file <- paste(sep="", out.prefix, "_tables/internal_nodes_attributes.tab")
   write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
   verbose(paste("merge attributes table", attributes.file), 1)
 } else{
@@ -419,15 +419,20 @@ for(name in forest.names){
 }
 alignment.table$cluster <- forest.id
 
-##  Re-order the table and export it
-alignment.table <- alignment.table[,c(8, 7, 10, 2:4, 9, 5:6)]
-colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
+## Produce the column Collection
+col.size <- dim(global.description.table)[1]
+title.col <- rep(title, times = col.size)
+alignment.table$collection <- title.col
 
-alignment.file <- paste(sep = "", out.prefix, "_alignment_table.tab")
+##  Re-order the table and export it
+alignment.table <- alignment.table[,c(8, 7, 10, 11, 2:4, 9, 5:6)]
+colnames(alignment.table) <- c("#id", "name", "cluster", "collection", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
+
+alignment.file <- paste(sep = "", out.prefix, "_tables/alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
 ## Print the table with the intermediate alignment (it wll be used in the perl code to create the branch-motifs)
-write.table(intermediate.levels, file = paste(out.prefix, "_intermediate_alignments.tab", sep = ""), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE )
+write.table(intermediate.levels, file = paste(out.prefix, "_tables/intermediate_alignments.tab", sep = ""), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE )
 
 
 ################################################
