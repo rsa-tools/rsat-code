@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:4747213a-88e4-4589-92e8-dc604184b303" author="Karoline Faust" title="Neat_pathfinding_workflow">find paths in organism-specific networks</s:workflowdescription>
+  <s:processor name="metabolicgraphconstruction">
+    <s:description>Construct a metabolic graph from KEGG KGML files.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
+      <s:operation>metabolicgraphconstruction</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="metabolicgraphconstructionRequest">
+    <s:defaults>
+      <s:default name="organismFile" />
+      <s:default name="reactionIds" />
+      <s:default name="reactionFile" />
+      <s:default name="directed">false</s:default>
+      <s:default name="keepIrreversible">false</s:default>
+      <s:default name="graphType">s</s:default>
+      <s:default name="attributes" />
+      <s:default name="outFormat">tab</s:default>
+      <s:default name="excludeCompounds" />
+      <s:default name="excludeReactions" />
+      <s:default name="excludeRPairClasses" />
+      <s:default name="returnType">server</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="MetabolicGraphConstructorRequest" name="request" qname="&gt;metabolicgraphconstruction&gt;request">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="organismNames" qname="MetabolicGraphConstructorRequest&gt;organismNames" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="organismFile" qname="MetabolicGraphConstructorRequest&gt;organismFile" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="reactionIds" qname="MetabolicGraphConstructorRequest&gt;reactionIds" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="reactionFile" qname="MetabolicGraphConstructorRequest&gt;reactionFile" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="directed" qname="MetabolicGraphConstructorRequest&gt;directed" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="keepIrreversible" qname="MetabolicGraphConstructorRequest&gt;keepIrreversible" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="graphType" qname="MetabolicGraphConstructorRequest&gt;graphType" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="attributes" qname="MetabolicGraphConstructorRequest&gt;attributes" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outFormat" qname="MetabolicGraphConstructorRequest&gt;outFormat" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="excludeCompounds" qname="MetabolicGraphConstructorRequest&gt;excludeCompounds" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="excludeReactions" qname="MetabolicGraphConstructorRequest&gt;excludeReactions" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="excludeRPairClasses" qname="MetabolicGraphConstructorRequest&gt;excludeRPairClasses" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="returnType" qname="MetabolicGraphConstructorRequest&gt;returnType" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="metabolicgraphconstructionResponse">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="MetabolicGraphConstructorResponse" name="response" qname="&gt;metabolicgraphconstructionResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="MetabolicGraphConstructorResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="MetabolicGraphConstructorResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="MetabolicGraphConstructorResponse&gt;client" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="metabolicgraphconstructionParameters">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="metabolicgraphconstruction" name="parameters" qname="{urn:graphtools}metabolicgraphconstruction">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="MetabolicGraphConstructorRequest" name="request" qname="&gt;metabolicgraphconstruction&gt;request">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="organismNames" qname="MetabolicGraphConstructorRequest&gt;organismNames" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="organismFile" qname="MetabolicGraphConstructorRequest&gt;organismFile" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="reactionIds" qname="MetabolicGraphConstructorRequest&gt;reactionIds" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="reactionFile" qname="MetabolicGraphConstructorRequest&gt;reactionFile" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="directed" qname="MetabolicGraphConstructorRequest&gt;directed" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="keepIrreversible" qname="MetabolicGraphConstructorRequest&gt;keepIrreversible" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="graphType" qname="MetabolicGraphConstructorRequest&gt;graphType" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="attributes" qname="MetabolicGraphConstructorRequest&gt;attributes" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="outFormat" qname="MetabolicGraphConstructorRequest&gt;outFormat" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="excludeCompounds" qname="MetabolicGraphConstructorRequest&gt;excludeCompounds" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="excludeReactions" qname="MetabolicGraphConstructorRequest&gt;excludeReactions" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="excludeRPairClasses" qname="MetabolicGraphConstructorRequest&gt;excludeRPairClasses" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="returnType" qname="MetabolicGraphConstructorRequest&gt;returnType" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="metabolicgraphconstructionOutput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="metabolicgraphconstructionResponse" name="output" qname="{urn:graphtools}metabolicgraphconstructionResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="MetabolicGraphConstructorResponse" name="response" qname="&gt;metabolicgraphconstructionResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="MetabolicGraphConstructorResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="MetabolicGraphConstructorResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="MetabolicGraphConstructorResponse&gt;client" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfinding">
+    <s:description>Enumerate the k shortest paths between a set of source nodes and a set of target nodes in weighted graphs.</s:description>
+    <s:arbitrarywsdl>
+      <s:wsdl>http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</s:wsdl>
+      <s:operation>pathfinding</s:operation>
+    </s:arbitrarywsdl>
+  </s:processor>
+  <s:processor name="pathfindingParameters">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="pathfinding" name="parameters" qname="{urn:graphtools}pathfinding">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PathfinderRequest" name="request" qname="&gt;pathfinding&gt;request">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="source" qname="PathfinderRequest&gt;source" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="target" qname="PathfinderRequest&gt;target" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="nodesPresent" qname="PathfinderRequest&gt;nodesPresent" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="nodesAbsent" qname="PathfinderRequest&gt;nodesAbsent" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="graphString" qname="PathfinderRequest&gt;graphString" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="tmpInGraphFile" qname="PathfinderRequest&gt;tmpInGraphFile" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="inFormat" qname="PathfinderRequest&gt;inFormat" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="outFormat" qname="PathfinderRequest&gt;outFormat" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="directed" qname="PathfinderRequest&gt;directed" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="metabolic" qname="PathfinderRequest&gt;metabolic" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="exclusionAttr" qname="PathfinderRequest&gt;exclusionAttr" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="weight" qname="PathfinderRequest&gt;weight" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="algorithm" qname="PathfinderRequest&gt;algorithm" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="rank" qname="PathfinderRequest&gt;rank" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="maxWeight" qname="PathfinderRequest&gt;maxWeight" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="maxLength" qname="PathfinderRequest&gt;maxLength" />
+                <s:basetype optional="false" unbounded="false" typename="int" name="minLength" qname="PathfinderRequest&gt;minLength" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="attribs" qname="PathfinderRequest&gt;attribs" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="outputType" qname="PathfinderRequest&gt;outputType" />
+                <s:basetype optional="false" unbounded="false" typename="boolean" name="storeInputGraph" qname="PathfinderRequest&gt;storeInputGraph" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="returnType" qname="PathfinderRequest&gt;returnType" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfindingRequest">
+    <s:defaults>
+      <s:default name="nodesPresent" />
+      <s:default name="nodesAbsent" />
+      <s:default name="graphString" />
+      <s:default name="tmpInGraphFile" />
+      <s:default name="inFormat">tab</s:default>
+      <s:default name="outFormat">tab</s:default>
+      <s:default name="directed">false</s:default>
+      <s:default name="metabolic">true</s:default>
+      <s:default name="exclusionAttr">ExclusionAttribute</s:default>
+      <s:default name="weight">con</s:default>
+      <s:default name="algorithm">rea</s:default>
+      <s:default name="rank">1</s:default>
+      <s:default name="maxWeight">100000</s:default>
+      <s:default name="maxLength">100000</s:default>
+      <s:default name="minLength">0</s:default>
+      <s:default name="attribs" />
+      <s:default name="outputType">pathsUnion</s:default>
+      <s:default name="storeInputGraph">false</s:default>
+      <s:default name="returnType">client</s:default>
+    </s:defaults>
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLInputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PathfinderRequest" name="request" qname="&gt;pathfinding&gt;request">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="source" qname="PathfinderRequest&gt;source" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="target" qname="PathfinderRequest&gt;target" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="nodesPresent" qname="PathfinderRequest&gt;nodesPresent" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="nodesAbsent" qname="PathfinderRequest&gt;nodesAbsent" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="graphString" qname="PathfinderRequest&gt;graphString" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="tmpInGraphFile" qname="PathfinderRequest&gt;tmpInGraphFile" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="inFormat" qname="PathfinderRequest&gt;inFormat" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outFormat" qname="PathfinderRequest&gt;outFormat" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="directed" qname="PathfinderRequest&gt;directed" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="metabolic" qname="PathfinderRequest&gt;metabolic" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="exclusionAttr" qname="PathfinderRequest&gt;exclusionAttr" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="weight" qname="PathfinderRequest&gt;weight" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="algorithm" qname="PathfinderRequest&gt;algorithm" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="rank" qname="PathfinderRequest&gt;rank" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="maxWeight" qname="PathfinderRequest&gt;maxWeight" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="maxLength" qname="PathfinderRequest&gt;maxLength" />
+            <s:basetype optional="false" unbounded="false" typename="int" name="minLength" qname="PathfinderRequest&gt;minLength" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="attribs" qname="PathfinderRequest&gt;attribs" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="outputType" qname="PathfinderRequest&gt;outputType" />
+            <s:basetype optional="false" unbounded="false" typename="boolean" name="storeInputGraph" qname="PathfinderRequest&gt;storeInputGraph" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="returnType" qname="PathfinderRequest&gt;returnType" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfindingOutput">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="pathfindingResponse" name="output" qname="{urn:graphtools}pathfindingResponse">
+          <s:elements>
+            <s:complextype optional="false" unbounded="false" typename="PathfinderResponse" name="response" qname="&gt;pathfindingResponse&gt;response">
+              <s:elements>
+                <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="PathfinderResponse&gt;server" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="PathfinderResponse&gt;command" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="PathfinderResponse&gt;client" />
+                <s:basetype optional="false" unbounded="false" typename="string" name="graphid" qname="PathfinderResponse&gt;graphid" />
+              </s:elements>
+            </s:complextype>
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:processor name="pathfindingResponse">
+    <s:local>
+      org.embl.ebi.escience.scuflworkers.java.XMLOutputSplitter
+      <s:extensions>
+        <s:complextype optional="false" unbounded="false" typename="PathfinderResponse" name="response" qname="&gt;pathfindingResponse&gt;response">
+          <s:elements>
+            <s:basetype optional="false" unbounded="false" typename="string" name="server" qname="PathfinderResponse&gt;server" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="command" qname="PathfinderResponse&gt;command" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="client" qname="PathfinderResponse&gt;client" />
+            <s:basetype optional="false" unbounded="false" typename="string" name="graphid" qname="PathfinderResponse&gt;graphid" />
+          </s:elements>
+        </s:complextype>
+      </s:extensions>
+    </s:local>
+  </s:processor>
+  <s:link source="KEGG organisms" sink="metabolicgraphconstructionRequest:organismNames" />
+  <s:link source="Source node" sink="pathfindingRequest:source" />
+  <s:link source="Target node" sink="pathfindingRequest:target" />
+  <s:link source="metabolicgraphconstruction:output" sink="metabolicgraphconstructionOutput:input" />
+  <s:link source="metabolicgraphconstructionOutput:response" sink="metabolicgraphconstructionResponse:input" />
+  <s:link source="metabolicgraphconstructionParameters:output" sink="metabolicgraphconstruction:parameters" />
+  <s:link source="metabolicgraphconstructionRequest:output" sink="metabolicgraphconstructionParameters:request" />
+  <s:link source="metabolicgraphconstructionResponse:server" sink="pathfindingRequest:tmpInGraphFile" />
+  <s:link source="pathfinding:output" sink="pathfindingOutput:input" />
+  <s:link source="pathfindingOutput:response" sink="pathfindingResponse:input" />
+  <s:link source="pathfindingParameters:output" sink="pathfinding:parameters" />
+  <s:link source="pathfindingRequest:output" sink="pathfindingParameters:request" />
+  <s:link source="pathfindingResponse:client" sink="pathway" />
+  <s:source name="Source node">
+    <s:metadata>
+      <s:description>specify KEGG identifier of source node (several nodes can be given separated by /)
+e.g. C00049</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="Target node">
+    <s:metadata>
+      <s:description>specify KEGG identifier of target node (several nodes can be given separated by /)
+e.g. C00047</s:description>
+    </s:metadata>
+  </s:source>
+  <s:source name="KEGG organisms">
+    <s:metadata>
+      <s:description>specify KEGG abbreviation for organism (several organisms can be separated by /)
+e.g sce/eco</s:description>
+    </s:metadata>
+  </s:source>
+  <s:sink name="pathway">
+    <s:metadata>
+      <s:description>paths found in organism-specific network between given source and target node</s:description>
+    </s:metadata>
+  </s:sink>
+</s:scufl>
+
