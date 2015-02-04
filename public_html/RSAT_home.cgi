@@ -194,19 +194,19 @@ print <<EndText;
 	    <a href="http://fungi.rsat.eu/" target="_top">
 	      <img src="images/logo_fungi.jpg" height='100' border='0'
 		   alt="fungi"></a><br> maintained by
-	    <a href="http://tagc.univ-mrs.fr/tagc/index.php/software">TAGC - Université Aix Marseilles, France </a>
+	    <a target='_blank' href="http://tagc.univ-mrs.fr/">TAGC - Université Aix Marseilles, France </a>
 	  </td>
 	  
 	  <td>
 	    <a href="http://prokaryotes.rsat.eu/" target="_top">
 	      <img src="images/logo_prokaryotes.jpg" height='100' border='0' alt="prokaryotes"></a><br>
-	    maintained by <a href="http://www.ccg.unam.mx/en/projects/collado/regulondb">RegulonDB - UNAM, Cuernavaca, Mexico </a>
+	    maintained by <a target='_blank' href="http://www.ccg.unam.mx/en/ComputationalGenomics">Computational Genomics lab<br>CCG - UNAM, Cuernavaca, Mexico </a>
 	  </td>
 	  
           <td>
 	    <a href="http://metazoa.rsat.eu/" target="_top" >
 	      <img src="images/logo_metazoa.jpg" height='100' border='0' alt="metazoa"></a><br>
-	    maintained by <a href="http://abims.sb-roscoff.fr">platforme ABIMS Roscoff, France</a>
+	    maintained by <a target='_blank' href="http://abims.sb-roscoff.fr">platforme ABIMS Roscoff, France</a>
 	  </td>
 
 	</tr>
@@ -215,19 +215,19 @@ print <<EndText;
 	  <td>
 	    <a href="http://protists.rsat.eu/" target="_top">
 	      <img src="images/logo_protists.jpg" height='100' border='0' alt="protists"></a><br>
-	    maintained by <a href="http://www.biologie.ens.fr/csb/">Ecole Normale Supérieure Paris, France</a>
+	    maintained by <a target='_blank' href="http://www.biologie.ens.fr/csb/">Ecole Normale Supérieure Paris, France</a>
 	  </td>
 	  
 	  <td>
 	    <a href="http://plants.rsat.eu/" target="_top">
 	      <img src="images/logo_plants.jpg" height='100' border='0' alt="plants"></a><br>
-	    maintained by <a href="http://www.eead.csic.es/compbio/staff.html">Bruno Contreras Moreira, Spain</a>
+	    maintained by <a target='_blank' href="http://www.eead.csic.es/compbio/staff.html">Bruno Contreras Moreira, Spain</a>
 	  </td>
 	  
           <td>
 	    <a href="http://teaching.rsat.eu" target="_top" >
 	      <img src="images/logo_teaching.jpg" height='100' border='0' alt="teaching"></a><br>
-	    maintained by <a href="http://sgbc.slu.se/">SLU Global Bioinformatics Center, Uppsala, Sweden  </a>
+	    maintained by <a target='_blank' href="http://sgbc.slu.se/">SLU Global Bioinformatics Center, Uppsala, Sweden  </a>
 	  </td>
 	  
 
