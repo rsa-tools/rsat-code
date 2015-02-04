@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:scufl xmlns:s="http://org.embl.ebi.escience/xscufl/0.1alpha" version="0.2" log="0">
+  <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:c8de3275-5e37-4a3b-945b-fac109810377" author="" title="Nature_protocol" />
+  <s:processor name="Nested_Workflow">
+    <s:workflow>
+      <s:xscufllocation>http://rsat.bigre.ulb.ac.be/rsat/web_services/taverna/RSAT_retrieve_purge_oligo_DNAPattern_conver_feature_pattern_assembly.xml</s:xscufllocation>
+    </s:workflow>
+  </s:processor>
+  <s:link source="background" sink="Nested_Workflow:background" />
+  <s:link source="feattype" sink="Nested_Workflow:feattype" />
+  <s:link source="from" sink="Nested_Workflow:from" />
+  <s:link source="length" sink="Nested_Workflow:length" />
+  <s:link source="lth" sink="Nested_Workflow:lth" />
+  <s:link source="noorf" sink="Nested_Workflow:noorf" />
+  <s:link source="noov" sink="Nested_Workflow:noov" />
+  <s:link source="organism" sink="Nested_Workflow:organism" />
+  <s:link source="outputs" sink="Nested_Workflow:outputs" />
+  <s:link source="query" sink="Nested_Workflow:query" />
+  <s:link source="sort" sink="Nested_Workflow:sort" />
+  <s:link source="th" sink="Nested_Workflow:th" />
+  <s:link source="to" sink="Nested_Workflow:to" />
+  <s:link source="Nested_Workflow:FeatureMapImage" sink="Feature_Map" />
+  <s:link source="Nested_Workflow:Pattern_assembly_result" sink="Pattern_Assembly" />
+  <s:link source="Nested_Workflow:oligo" sink="Oligo_Analysis" />
+  <s:source name="outputs" />
+  <s:source name="organism" />
+  <s:source name="query" />
+  <s:source name="noorf" />
+  <s:source name="from" />
+  <s:source name="to" />
+  <s:source name="feattype" />
+  <s:source name="length" />
+  <s:source name="background" />
+  <s:source name="noov" />
+  <s:source name="sort" />
+  <s:source name="lth" />
+  <s:source name="th" />
+  <s:sink name="Feature_Map" />
+  <s:sink name="Oligo_Analysis" />
+  <s:sink name="Pattern_Assembly" />
+</s:scufl>
+
