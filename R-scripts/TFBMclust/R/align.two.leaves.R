@@ -44,7 +44,8 @@ align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "N
 
       n1.id <- get.id(n1, desc.table)
       motifs.info[[n1.id]][["name"]] <<- get.name(n1.id,desc.table)
-      motifs.info[[n1.id]][["consensus"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
+      motifs.info[[n1.id]][["consensus_d"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
+      motifs.info[[n1.id]][["consensus_rc"]] <<- get.consensus(n1.id, desc.table, RC = TRUE)
       motifs.info[[n1.id]][["strand"]] <<- "D"
       motifs.info[[n1.id]][["number"]] <<- n1
       motifs.info[[n1.id]][["spacer.up"]] <<- 0
@@ -52,7 +53,8 @@ align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "N
 
       n2.id <- get.id(n2, desc.table)
       motifs.info[[n2.id]][["name"]] <<- get.name(n2.id,desc.table)
-      motifs.info[[n2.id]][["consensus"]] <<- get.consensus(n2.id, desc.table, RC = FALSE)
+      motifs.info[[n2.id]][["consensus_d"]] <<- get.consensus(n2.id, desc.table, RC = FALSE)
+      motifs.info[[n2.id]][["consensus_rc"]] <<- get.consensus(n2.id, desc.table, RC = TRUE)
       motifs.info[[n2.id]][["strand"]] <<- "D"
       motifs.info[[n2.id]][["number"]] <<- n2
       motifs.info[[n2.id]][["spacer.up"]] <<- 0
@@ -80,13 +82,26 @@ align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "N
 
     ## Choose the relative orientation of the two motifs
     strand <- as.vector(compa.table[compa.nb, "strand"])
-    consensus1 <- as.vector(desc.table[n1,"consensus"]) ## Consensus of the first motif
+
+    consensus1a <- NULL
+    consensus1b <- NULL
+    consensus2a <- NULL
+    consensus2b <- NULL
+
+    ## Consensus of the first motif
+    consensus1a <- get.consensus(id1, desc.table, RC = FALSE)
+    consensus1b <- get.consensus(id1, desc.table, RC = TRUE)
+
     id1.strand <- "D"
     if (strand == "R") {
-      consensus2 <- as.vector(desc.table[n2,"rc.consensus"]) ## Consensus of the second motif
+      ## Consensuses of the second motif
+      consensus2a <- get.consensus(id2, desc.table, RC = TRUE)
+      consensus2b <- get.consensus(id2, desc.table, RC = FALSE)
       id2.strand <- "R"
     } else {
-      consensus2 <- as.vector(desc.table[n2,"consensus"]) ## Consensus of the second motif
+      ## Consensuses of the second motif
+      consensus2a <- get.consensus(id2, desc.table, RC = FALSE)
+      consensus2b <- get.consensus(id2, desc.table, RC = TRUE)
       id2.strand <- "D"
     }
 
@@ -95,25 +110,30 @@ align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "N
     spacer <- paste(collapse="",rep(x="-",times=abs(offset)))
 
     if (offset < 0) {
-      consensus1 <- paste(sep="", spacer, consensus1)
+      consensus1a <- paste(spacer, consensus1a, sep = "")
+      consensus1b <- paste(consensus1b, spacer, sep = "")
     } else {
-      consensus2 <- paste(sep="", spacer, consensus2)
+      consensus2a <- paste(spacer, consensus2a, sep = "")
+      consensus2b <- paste(consensus2b, spacer, sep = "")
     }
+
 
     ## Update the motifs information
     motifs.info[[id1]][["name"]] <<- get.name(id1, desc.table)
-    motifs.info[[id1]][["consensus"]] <<- consensus1
+    motifs.info[[id1]][["consensus_d"]] <<- consensus1a
+    motifs.info[[id1]][["consensus_rc"]] <<- consensus1b
     motifs.info[[id1]][["strand"]] <<- id1.strand
     motifs.info[[id1]][["number"]] <<- n1
-    motifs.info[[id1]][["spacer.up"]] <<- length(unlist(strsplit(motifs.info[[id1]][["consensus"]], "-")))-1
-    motifs.info[[id1]][["spacer.dw"]] <<- 0
+    motifs.info[[id1]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$up.spacer
+    motifs.info[[id1]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$dw.spacer
 
     motifs.info[[id2]][["name"]] <<- get.name(id2, desc.table)
-    motifs.info[[id2]][["consensus"]] <<- consensus2
+    motifs.info[[id2]][["consensus_d"]] <<- consensus2a
+    motifs.info[[id2]][["consensus_rc"]] <<- consensus2b
     motifs.info[[id2]][["strand"]] <<- id2.strand
     motifs.info[[id2]][["number"]] <<- n2
-    motifs.info[[id2]][["spacer.up"]] <<- length(unlist(strsplit(motifs.info[[id2]][["consensus"]], "-")))-1
-    motifs.info[[id2]][["spacer.dw"]] <<- 0
+    motifs.info[[id2]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$up.spacer
+    motifs.info[[id2]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$dw.spacer
 
     motifs.info.temp <- fill.downstream(get.id(leaves.per.node(hclust.tree)[[merge.level]], desc.table), motifs.info)
     motifs.info[names(motifs.info.temp)] <<- motifs.info.temp[names(motifs.info.temp)]

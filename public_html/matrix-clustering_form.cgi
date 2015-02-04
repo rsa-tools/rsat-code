@@ -31,13 +31,14 @@ $default{newick} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
 $default{labels} = "name";
+$default{html_title} = "";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
 $default{'return_logoDP'} = "CHECKED";
 $default{'return_NSW'} = "CHECKED";
 $default{'return_NsEucl'} = "CHECKED";
-
+my $demo_html_title = "";
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
@@ -76,6 +77,14 @@ print $default{demo_2_descr};
 
 print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 
+################################################################
+#### Matrix specification
+print "<hr>";
+print "<h2 style='margin-left: 50px;'> Title ";
+
+print $query->textfield(-name=>'html_title',
+			 -default=>$default{html_title},
+			 -size=>30) ."</h2>";
 
 ################################################################
 #### Matrix specification
@@ -171,9 +180,11 @@ peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 $descr_1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
+$demo_html_title = "Clustering matrices discovered in Oct4 ChIP-seq";
 $demo_1_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
+print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
 print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
 print $query->submit(-label=>"DEMO");
@@ -189,7 +200,7 @@ $descr_2 .= "<blockquote class ='demo_2'>";
 $descr_2 .= "Negative control: we will analyze with <i>matrix-clustering</i> a
 set of motifs discovered with <a
 href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
-peaks for the mouse transcription factor Otc4 (data from Chen et al.,
+peaks for the mouse transcription factor Oct4 (data from Chen et al.,
 2008). The columns of the motifs are randomly permuted, conserving thus their 
 information content. Note that poor-complexity motifs (i.e. A-rich) are grouped
 together.  </p>\n";
@@ -197,12 +208,15 @@ together.  </p>\n";
 $descr_2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
+$demo_html_title = "Clustering column-permuted matrices discovered in Oct4 ChIP-seq";
 $demo_2_file = "demo_files/peak-motifs_result_Chen_Oct4_permuted_matrices.tf";
 $demo_2_matrices=`cat ${demo_2_file}`;
 print "<TD><b>";
+print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
 print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
 print $query->submit(-label=>"DEMO (negative control)");
+
 print "</B></TD>\n";
 print $query->end_form;
 
