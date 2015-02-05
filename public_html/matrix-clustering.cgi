@@ -84,7 +84,7 @@ if ($hclust_method) {
 
 ###############
 ## Add title
-local $title = lc($query->param('title'));
+local $title = lc($query->param('html_title'));
 if($title){
     $title =~ s/\s+/_/g;
     $parameters .= " -title ".$title;
