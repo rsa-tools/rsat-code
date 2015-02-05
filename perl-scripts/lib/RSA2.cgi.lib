@@ -2759,7 +2759,11 @@ sub display_matrices_web {
     $cmd .= " -return consensus";
     #  $cmd .= " -return parameters";
     ## Logo parameters
-    $cmd .= " -return logo -logo_format png,pdf "; 
+    
+    ## JvH TEMPORARILY DISACTIVATED pdf logos (201502-05) to
+    ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
+    $cmd .= " -return logo -logo_format png "; 
+#    $cmd .= " -return logo -logo_format png,pdf "; 
     $cmd .= " -logo_opt '-e' "; ## Error bar
     $cmd .= " -logo_opt '-M' "; ## Small sample correction
     $cmd .= " -logo_dir ".$logo_dir;
@@ -2780,7 +2784,10 @@ sub display_matrices_web {
     if ($_ =~ /logo file:(.*)\.png$/){
       (local $logo = $1 )=~ s|${public_temp_dir}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
-      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
+      ## JvH TEMPORARILY DISACTIVATED pdf logos (201502-05) to
+      ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
+      print "<a href = '".$logo.".png'><IMG SRC='".$logo.".png' height='120'></a>";
+#      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
 
       ## A trick to print the carriage return only after the second logo (reverse complement)
       if ($after_logo) {
