@@ -193,7 +193,7 @@ WEBLOGO3_VERSION=3.3
 WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
 WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
 WEBLOGO3_DIR=${SRC_DIR}/weblogo3
-install_weblogo3_manually: _download_weblogo3
+install_weblogo3_manually: _download_weblogo3 _compile_weblogo3
 
 _download_weblogo3:
 	@mkdir -p ${WEBLOGO3_DIR}
