@@ -31,8 +31,8 @@ package main;
   ################################################################
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
-  local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
-  $seqlogo_path = &trim($seqlogo_path);
+  local $weblogo3_path = $ENV{weblogo} || $ENV{RSAT}."/bin/weblogo";
+  $weblogo3_path = &trim($weblogo3_path);
   $decimals = 1;
   $pseudo_weight = 1;
   $equi_pseudo = 0;
@@ -274,19 +274,19 @@ package main;
       @logo_formats = ($logo_format);
     }
 
-    ## Check that seqlogo is installed at the expected location
-    if (-e $seqlogo_path) {
-      if(-x $seqlogo_path) {
-	&RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+    ## Check that weblogo is installed at the expected location
+    if (-e $weblogo3_path) {
+      if(-x $weblogo3_path) {
+	&RSAT::message::Debug("weblogo path", $weblogo3_path) if ($main::verbose >= 4);
       } else {
-	&RSAT::message::Warning("Cannot execute the program seqlogo", 
-				$seqlogo_path);
-	$seqlogo_path="";
+	&RSAT::message::Warning("Cannot execute the program weblogo", 
+				$weblogo3_path);
+	$weblogo3_path="";
       }
     } else {
-      &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
-			      $seqlogo_path);
-      $seqlogo_path="";
+      &RSAT::message::Warning("Cannot generate logos because the program weblogo is not found in the expected path", 
+			      $weblogo3_path);
+      $weblogo3_path="";
     }
   }
 
@@ -407,7 +407,7 @@ package main;
     }
 
     ## Generate logo
-    if (($return_fields{logo}) && ($seqlogo_path)) {
+    if (($return_fields{logo}) && ($weblogo3_path)) {
 
       unless ($logo_dir) {
 	if ($outfile{output}) {
@@ -434,10 +434,8 @@ package main;
 	$logo_file .= "_logo";
       }
       #	$logo_file =~ s/\.\w+$//;
-#    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
       $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
-#    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
       $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
       $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
 
@@ -851,17 +849,17 @@ OPTIONS
 
 	-logo_opt 
 
-		Any other option to be passed to seqlogo for
+		Any other option to be passed to weblogo for
 		generating the logo. This option can be used
 		iteratively to specify multiple options.
 
 		For instance
-		    -logo_opt '-w 12' -logo_opt '-t "CRP matrix" -a'
-		will add the following options to the commande seqlogo:
-		     -w 12 -t "CRP matrix" -a
+		     -logo_opt '-t "CRP matrix" '
+		will add the following options to the command weblogo:
+		     -t "CRP matrix"
 
-		To obtain the list of options supported by seqlogo, type
-			    seqlogo
+		To obtain the list of options supported by weblogo, type
+			    weblogo
 
 PRIOR FREQUENCY FILE
 
@@ -1252,7 +1250,7 @@ convert-matrix options
 -logo_format	logo image format. Supported $supported_logo_formats 
 -logo_dir	directory to output the logo files
 -logo_file	base name for the logo file(s)
--logo_opt	options to be passed to seqlogo
+-logo_opt	options to be passed to weblogo
 End_short_help
   close HELP;
   exit(0);
