@@ -145,7 +145,11 @@ foreach my $stat (qw (counts frequencies weights info consensus parameters profi
   if ($query->param($stat)) {
     push @return_fields, $stat;
     if ($stat eq "logo"){
-      $parameters .= " -logo_format png,pdf ";
+
+      ## JvH TEMPORARILY DISACTIVATED pdf logos (201502-05) to
+      ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
+      $parameters .= " -logo_format png "; 
+#      $parameters .= " -logo_format png,pdf ";
       $parameters .= " -logo_file ".$result_file."_logo";
 
       # seqlogo options
@@ -200,7 +204,11 @@ if ($query->param('output') eq "display") {
     if ($_ =~ /logo file:(.*)\.png$/){
       (local $logo = $1 )=~ s|${public_temp_dir}| ${WWW_TMP}|g;
       $logo =~ s/\.png//;
-      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
+
+      ## JvH TEMPORARILY DISACTIVATED pdf (201502-05) to circumvent
+      ## strange bug with ghostscript on rsat.ulb.ac.be
+      print "<a href = '".$logo.".png'><IMG SRC='".$logo.".png' height='120'></a> ";
+#      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
     } else {
       print $_;
     }

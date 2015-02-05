@@ -1512,7 +1512,7 @@ sub create_html_tree_file(){
 	### Add the JSON file name
 	if(/--jsonfile--/){
 	    my $j_file = $main::outfile{prefix}."_trees/parsed_tree_cluster_".$cluster_nb.".json";
-	    $json_file_name = &RSAT::util::RelativePath($main::outfile{summary}, $j_file);
+	    $json_file_name = &RSAT::util::RelativePath($main::outfile{logo_cladogram_html}, $j_file);
 	    $_ =~ s/--jsonfile--/$json_file_name/;
 	}
 
@@ -2438,7 +2438,7 @@ sub set_output_file_names {
   $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
-  $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_html/logo_tree.html"; push @outfiles, "logo_cladogram_html";
+  $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
   $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
   $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
@@ -3280,6 +3280,9 @@ $(document).ready( function () {
 // Show all results button
 $(document).ready(function(){
     $(\'#show_all_button\').click(function(){
+
+       $(\'.branch_motifs\').show();
+       $(\'.cons_tab\').show();
         $(\'.hide_show\').show();
         $(\'.cluster_division\').addClass(\'selected_cluster\');
     }); 
@@ -3499,12 +3502,12 @@ sub InsertTreesAndBranchMotifs {
     $script_jquery .= "\n".'
     function showOneRow(id) {
        $(\'.branch_motifs\').css(\'display\', \'table-row\');
-       $(\'.branch_motifs\').not(\'#\' + id).css(\'display\', \'none\');
+       $(\'.branch_motifs\').not(\'#\' + id).hide();
      };
 
     function showOneTable(id) {
        $(\'.cons_tab\').css(\'display\', \'table\');
-       $(\'.cons_tab\').not(\'#\' + id).css(\'display\', \'none\');
+       $(\'.cons_tab\').not(\'#\' + id).hide();
      };'."\n";
     $script_jquery .= "</script>\n";
 }
