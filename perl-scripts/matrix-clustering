@@ -1353,7 +1353,7 @@ sub Add_attributes_to_JSON(){
 	      if ($children >= 2){
 		  my $folder = $levels_JSON[$children-2];
 
-#		  if(grep( /^$folder$/, @merged_cons_folders)){	      
+		  if(grep( /^$folder$/, @merged_cons_folders)){	      
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
@@ -1362,7 +1362,7 @@ sub Add_attributes_to_JSON(){
 		      $Add_this .= " \"id\" : \"".$cluster."_".$folder."\",\n";
 		      $Add_this .= " \"url\" : \"".$consensus_link."\",\n";
 		      push(@Parsed_JSON, $Add_this."\n");
-#		  }
+		  }
 	      }
 	  }
 	  
