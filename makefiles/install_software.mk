@@ -179,11 +179,12 @@ _compile_seqlogo:
 ## Get and install the program weblogo.  Weblogo is an upgrade from
 ## seqlogo. Seqlogo required sequences in input, whereas weblogo takes
 ## either sequences or matrices.
+PIP=pip
 install_weblogo:
 	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
-#	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
-#	${SUDO} pip install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
-	pip-2.7 install --target ${RSAT_BIN} weblogo
+	${SUDO} ${PIP} install --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${SUDO} ${PIP} install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${PIP} install --target ${RSAT_BIN} weblogo
 
 ################################################################
 ## Get and install the program gnuplot
