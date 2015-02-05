@@ -3916,8 +3916,30 @@ sub makeLogo{
     $id = $self->get_attribute("consensus.IUPAC");
     $self->force_attribute("id", $id);
   }
+  
+  ## get the number of sites
+  my $nb_col = $self->ncol();
+  my $nb_row = $self->nrow();
+  @matrix = @{$self->{table}};
+  ## Check if the sum of all column identical
+  my @col_sum = col_sum($nb_row,$nb_col,@matrix);
+  my $max_col_sum = &RSAT::stats::max(@col_sum);
+  
+  my $seq_number = $max_col_sum;
+  
+  ## temporarily write the matrix as transfac format
+  ## this is possible thanks to the new weblogo v3
+  ## and remove the need to use fake sequences
+  ## this file will be deleted after logo creation
+  my $tmp_tf_file = &RSAT::util::make_temp_file("", $id);
+  my $tf_handle = &RSAT::util::OpenOutputFile($tmp_tf_file);
+  print $tf_handle $self->toString(sep=>"\t",
+					type=>"counts",
+					format=>'transfac',
+				       );
+  close $tf_handle;
 
-
+  
   ## Make sure that logo basename is defined and that it does not include the directories
   if ($logo_basename) {
     my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_basename);
@@ -3956,7 +3978,8 @@ sub makeLogo{
 
 
   if ($rev_compl) {
-    $logo_title .= "  RC";
+    $logo_title .= "  Rev. Compl.";
+    $logo_options .= " --revcomp ";
   }
   my $max_logo_title=$ncol*3;
   if (length($logo_title) > $max_logo_title) {
@@ -3965,51 +3988,66 @@ sub makeLogo{
   }
 
   ## Create a file with fake sequences having the same residue composition as the matrix
-  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
+#  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
 #  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
 
   ## Legend on the X axis indicates number of sites
   my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
-  my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{RSAT_BIN});
+  my $weblogo3_path =  &RSAT::server::GetProgramPath("weblogo", 0, $ENV{RSAT_BIN});
   foreach my $logo_format (@logo_formats){
-    $seqlogo_path = &RSAT::util::trim($seqlogo_path);
-    unless (-e $seqlogo_path) {
-      &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path",
-			      $seqlogo_path,
-			      "Please install seqlogo in the recommended location.");
+  	$weblogo3_path = &RSAT::util::trim($weblogo3_path);
+    #unless (-e $seqlogo_path) {
+    unless (-e $weblogo3_path) {
+      &RSAT::message::Warning("Cannot generate the sequence logo because the program Weblogo3 is not found in the expected path",
+			      $weblogo3_path,
+			      "Please install Weblogo3 in the recommended location.");
       return;
     }
-    my ($dir_aux, $fake_seq_file_short) = &RSAT::util::SplitFileName($fake_seq_file);
+ #   my ($dir_aux, $fake_seq_file_short) = &RSAT::util::SplitFileName($fake_seq_file);
 
 
-    ## Prepare the seqlogo command
-   # my $logo_cmd = $seqlogo_path;
-    my $logo_cmd = "cd ".$logo_dir;
-    $logo_cmd .= "; ".$seqlogo_path;
-    $logo_cmd .= " -f ".$fake_seq_file_short;
-#    $logo_cmd .= " -f ".$fake_seq_file;
-    $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
-    $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
-    $logo_cmd .= " -x '".$logo_info."'";
-    $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
-#    $logo_cmd .= " -e -M";
-    $logo_cmd .= " ".$logo_options;
-#    $logo_cmd .= " -o ". $logo_basename;
-    $logo_cmd .= " -t '".$logo_title."'";
-    #$logo_cmd .= " -o "."$logo_dir/".$logo_basename;
-    $logo_cmd .= " -o "."./".$logo_basename;
-    &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
-    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5); 
+    ## Prepare the OLD seqlogo command
+#     my $logo_cmd = "cd ".$logo_dir;
+#     $logo_cmd .= "; ".$seqlogo_path;
+#     $logo_cmd .= " -f ".$fake_seq_file_short;
+#     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
+#     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
+#     $logo_cmd .= " -x '".$logo_info."'";
+#     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
+#     $logo_cmd .= " ".$logo_options;
+#     $logo_cmd .= " -t '".$logo_title."'";
+#     $logo_cmd .= " -o "."./".$logo_basename;
+#     &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
+#     &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5); 
 
 
-#     &RSAT::message::Debug("logo_dir=".$logo_dir,
-# 			  "\n\tseqlogo_path=".$seqlogo_path,
-# 			  "\n\tfake_seq_file=".$fake_seq_file,
-# 			  "\n\tpwd=".`pwd`,
-# 			  "logo_cmd=".$logo_cmd,
-# 			 ) if ($main::verbose >= 10);
+ my $logo_file = $logo_basename.".".$logo_format;
+
+ ## Prepare the NEW weblogo 3 command
+ my $logo_cmd = "cd ".$logo_dir;
+$logo_cmd .= "; ".$weblogo3_path;
+$logo_cmd .= " -D transfac ";
+$logo_cmd .= " -f ".$tmp_tf_file;
+#$logo_cmd .= " -f ".$fake_seq_file_short;
+$logo_cmd .= " -F ".$logo_format." -Y YES -X YES --resolution 299 -A dna --errorbars YES ";
+$logo_cmd .= " -C '#CA0813' T '' -C '#061AC8' C '' -C '#1FCA23' A '' -C '#FDB22B' G '' ";
+$logo_cmd .= " -x '".$logo_info."'";
+$logo_cmd .= " -s large " unless ($logo_options =~ /\-s /);
+$logo_cmd .= " --aspect-ratio 3 ";
+$logo_cmd .= " ".$logo_options;
+$logo_cmd .= " -t '".$logo_title."'";
+$logo_cmd .= " -o "."./".$logo_file;
+$logo_cmd .= " -P '' -E YES ";
+$logo_cmd .= " 2> /dev/null ";
+
+#      &RSAT::message::Debug("logo_dir=".$logo_dir,
+#  			  "\n\tweblogo_path=".$weblogo3_path,
+#  			  "\n\ttmp_tf_file=".$tmp_tf_file,
+#  			  "\n\tpwd=".`pwd`,
+#  			  "logo_cmd=".$logo_cmd,
+#  			 ) if ($main::verbose >= 0);
 
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
@@ -4020,7 +4058,6 @@ sub makeLogo{
 
     &RSAT::util::doit($logo_cmd,$logo_dry,$logo_die,$logo_verbose,$logo_prefix);
 
-    my $logo_file = $logo_basename.".".$logo_format;
 #     &RSAT::message::Debug("pwd", `pwd`,
 # 			  "\nlogo_dir", $logo_dir,
 # 			  "\nlogo_file", $logo_file,
@@ -4034,11 +4071,13 @@ sub makeLogo{
   ## Remove the fake sequences, not necessary anymore
   #    &RSAT::server::DelayedRemoval($fake_seq_file);
   #    unlink ($fake_seq_file);
-  system "rm -f $fake_seq_file";
+  system "rm -f $tmp_tf_file";
   return(@logo_files);
 }
 
 ################################################################
+## Not used anymore as we use Weblogo3 that directly takes as input PSSM in transfac format.
+## 
 ## This method is somewat artificial: it prints fake sequences that
 ## respect the residue counts of the matrix, in order to generate a
 ## logo with seqlogo.
