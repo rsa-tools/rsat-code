@@ -15,7 +15,7 @@ ARCHIVE=rsat/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
-TAR_EXCLUDE=--exclude .git --exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course
+TAR_EXCLUDE=--exclude .git --exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course --exclude eccb_2014_tutorial
 TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
