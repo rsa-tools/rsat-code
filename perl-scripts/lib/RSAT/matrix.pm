@@ -3964,12 +3964,12 @@ sub makeLogo{
     &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
   }
 
-  ## Legend on the X axis indicates number of sites
-  my $logo_info = $seq_number." sites";
-
   ## Create a file with fake sequences having the same residue composition as the matrix
   my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
 #  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
+
+  ## Legend on the X axis indicates number of sites
+  my $logo_info = $seq_number." sites";
 
   ## Run seqlogo to generate the logo(s)
   my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{RSAT_BIN});
