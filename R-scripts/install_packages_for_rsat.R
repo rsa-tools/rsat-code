@@ -16,6 +16,7 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 required.packages = c("RJSONIO",
                       "dendextend",
                       "Rcpp",
+                      "RcppEigen",
                       "Rclusterpp",
                       "gplots",
                       "devtools")
@@ -52,7 +53,7 @@ for (pkg in required.packages) {
 print("Installing BioConductor packages")
 print(required.packages.bioconductor)
 for (pkg in required.packages.bioconductor) {
-  if (!suppressPackageStartupMessages(require("MASS", quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))
+  if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))
       ) {
     source("http://bioconductor.org/biocLite.R")
 #    biocLite(ask=FALSE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
