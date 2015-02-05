@@ -181,19 +181,13 @@ _compile_seqlogo:
 ## either sequences or matrices.
 ##
 ## Source: http://weblogo.threeplusone.com/
-PIP=pip
-install_weblogo3:
-	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
-	${SUDO} ${PIP} install --install-option "--install-scripts=${RSAT_BIN}" weblogo
-#	${SUDO} ${PIP} install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
-#	${PIP} install --target ${RSAT_BIN} weblogo
 
-
+## Manual installation of Weblogo in ${RSAT_BIN}
 WEBLOGO3_VERSION=3.3
 WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
 WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
 WEBLOGO3_DIR=${SRC_DIR}/weblogo3
-install_weblogo3_manually: _download_weblogo3 _compile_weblogo3
+install_weblogo3: _download_weblogo3 _compile_weblogo3
 
 _download_weblogo3:
 	@mkdir -p ${WEBLOGO3_DIR}
@@ -206,6 +200,17 @@ _compile_weblogo3:
 	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
 	${SUDO} python2.7 setup.py install --prefix ${RSAT})
 	@echo "weblogo installed in ${RSAT_BIN}"
+
+## Installation via pip is simpler, but cannot be done on all RSAT
+## servers because it requires admin rights.
+PIP=pip
+install_weblogo3_pip:
+	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
+	${SUDO} ${PIP} install --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${SUDO} ${PIP} install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${PIP} install --target ${RSAT_BIN} weblogo
+
+
 
 ################################################################
 ## Get and install the program gnuplot
