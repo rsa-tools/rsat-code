@@ -1346,8 +1346,8 @@ sub Add_attributes_to_JSON(){
 	  $line = $_;
 	  
 	  # Add the consensus to the json file to be displayed in the tree
-	  if ($line =~ /(\s*\"children\":\s*\[)/){
-	  
+#	  if ($line =~ /(\s*\"children\":\s*\[)/){
+	  if ($line =~ /children/){	  
 	      $children++;
 	      $Add_this = "";
 	      if ($children >= 2){
