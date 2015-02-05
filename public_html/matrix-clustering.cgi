@@ -81,6 +81,15 @@ if ($hclust_method) {
   $parameters .= " -hclust_method ".$hclust_method;
 }
 
+
+###############
+## Add title
+local $title = lc($query->param('title'));
+if($title){
+    $title =~ s/\s+/_/g;
+    $parameters .= " -title ".$title;
+}
+
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
 my @threshold_fields = qw(w
