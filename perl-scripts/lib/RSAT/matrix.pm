@@ -3941,11 +3941,6 @@ sub makeLogo{
     push @logo_formats, "png";
   }
 
-  ## Create a file with fake sequences having the same residue composition as the matrix
-  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
-
-#  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
-
   ## Logo title indicates matrix ID, name
   my $logo_title = &RSAT::util::ShortFileName($id);
   if (my $ac = $self->get_attribute("ac")) {
@@ -3971,6 +3966,10 @@ sub makeLogo{
 
   ## Legend on the X axis indicates number of sites
   my $logo_info = $seq_number." sites";
+
+  ## Create a file with fake sequences having the same residue composition as the matrix
+  my ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
+#  &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
 
   ## Run seqlogo to generate the logo(s)
   my $seqlogo_path =  &RSAT::server::GetProgramPath("seqlogo", 0, $ENV{RSAT_BIN});
