@@ -180,7 +180,7 @@ peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 $descr_1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_html_title = "Clustering matrices discovered in Oct4 ChIP-seq";
+$demo_html_title = "Oct4 motifs peak motifs";
 $demo_1_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
