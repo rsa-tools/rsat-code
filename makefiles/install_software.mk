@@ -181,7 +181,9 @@ _compile_seqlogo:
 ## either sequences or matrices.
 install_weblogo:
 	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
-	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${SUDO} pip install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
+	pip-2.7 install --target ${RSAT_BIN} weblogo
 
 ################################################################
 ## Get and install the program gnuplot
