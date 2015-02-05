@@ -1347,7 +1347,7 @@ sub Add_attributes_to_JSON(){
 	  
 	  # Add the consensus to the json file to be displayed in the tree
 #	  if ($line =~ /(\s*\"children\":\s*\[)/){
-	  if ($line =~ /children/){	  
+	  if ($line =~ /\"children\"/){	  
 	      $children++;
 	      $Add_this = "";
 	      if ($children >= 2){
@@ -1374,7 +1374,7 @@ sub Add_attributes_to_JSON(){
 	      
 	      ## Define te URL of the logo file, relative to the location of the json file
 	      my $aligned_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file});
-	      $aligned_logo_link =~ s/^\.\.\///g;
+##	      $aligned_logo_link =~ s/^\.\.\///g;
 
 	      my $aligned_logo_url = $aligned_logo_link.".png";
 
