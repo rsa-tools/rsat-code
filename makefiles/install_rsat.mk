@@ -33,8 +33,8 @@ install_rsat:
 ## programs, installation of R packages)
 update:
 	git pull
+	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub compile_all
 	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
-	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
 
 ################################################################
 ## Install Unix packages required for RSAT
