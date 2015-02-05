@@ -117,11 +117,34 @@ package main;
   for my $extension (@props_extensions) {
 
     ## Check that the config file exists in the RSAT path
+    my $template_file = $rsat_path."/RSAT_config_default.".$extension;
     my $config_file = $rsat_path."/RSAT_config.".$extension;
-    warn("\n\n\n", "################################################################\n", 
-	 "## Editing \".${extension}\" configuration file\t", $config_file,"\n\n");
 
-    unless (-f $config_file) {
+    warn("\n\n\n", "################################################################\n", 
+	 "## Editing \".${extension}\" configuration file\t", $config_file,"\n",
+	 "## Based on template file\t", $config_file,"\n\n");
+
+    if (-f $config_file) {
+	## Load properties from existing configuration file
+	if ($extension eq "props")  {
+	    open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
+	    while (<CONFIG>) {
+		if ((/^(\S+)=(.*)/) && !(/^#/)) {
+		    my $key = $1;
+		    my $value = $2;
+		    
+		    ## Replace the RSAT parent path if required (at first installation)
+		    $value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
+		    
+		    ## Store the parameter value in a hash table
+		    $prev_param{lc($key)} = $value;
+##		    warn join("\t", $key, $value, $prev_param{lc($key)}), "\n"; ## DEBUG
+		    
+		}
+	    }
+	    close CONFIG;
+	}
+    } else {
       my $default_config_file = $rsat_path."/RSAT_config_default.${extension}";
       if (-e $default_config_file) {
 	warn ("\nThe config file RSAT_config.${extension} is not found in the RSAT path\n\t", $rsat_path,
@@ -145,7 +168,7 @@ package main;
       die ("Good bye\n\n");
     }
 
-    open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
+
 
     ## Create a copy of the config file
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
@@ -155,11 +178,19 @@ package main;
     warn ("\n\nBackup of previous config file\t", $config_file_bk, "\n\n");
     system("cp ".$config_file." ".$config_file_bk);
 
+
     ## Open a new file for writing the new config
     my $new_config_file = $config_file.".updated";
     open NEW_CONF, ">".$new_config_file || die "\n\nCannot write new config file\t", $new_config_file, "\n\n";
 
     ## Load the RSAT config file
+
+    $from_template = 1;
+    if ($from_template) {
+	open CONFIG, $template_file || die "\n\nCannot read template config file\t", $template_file, "\n\n";
+    } else {
+	open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
+    }
     while (<CONFIG>) {
 
       ## Treat the Apache config file
@@ -187,16 +218,26 @@ package main;
 		   && ($new_param{rsat_www} ne $prev_param{rsat_www})) {
 	    $value =~ s|$prev_param{rsat_www}|$new_param{rsat_www}|;
 	  }
-	  $prev_param{lc($key)} = $value;
 
-	  ## Transmit appropriate variables across extensions, if
-	  ## already specified.
-	  if (($extension eq "mk") || ($cross_ext_variable{lc($key)})) {
+	  if ($extension eq "props") {
+	      ## Select previous parameter values if defined in the props
+	      ## file
+##	  warn join("\t", $key, $value, "previously", $prev_param{lc($key)}), "\n"; DEBUG
+	      if (defined($prev_param{lc($key)})) {
+		  $value = $prev_param{lc($key)};
+	      } else {
+		  $prev_param{lc($key)} = $value;
+	      }
+	      
+	  } elsif (($extension eq "mk") || ($cross_ext_variable{lc($key)})) {
+	      ## Transmit appropriate variables across extensions, if
+	      ## already specified.
+	      
 	      if (defined($new_param{lc($key)})) {
 		  $value = $new_param{lc($key)};
 	      }
 	  }
-
+	  
 	  ## Prompt for the new value
 	  unless ($auto_extension{$extension}) {
 	      print "\n", $key, " [", $value, "] : ";
