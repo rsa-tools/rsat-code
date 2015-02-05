@@ -1353,17 +1353,16 @@ sub Add_attributes_to_JSON(){
 	      if ($children >= 2){
 		  my $folder = $levels_JSON[$children-2];
 
-		  if(grep( /^$folder$/, @merged_cons_folders)){	      
+#		  if(grep( /^$folder$/, @merged_cons_folders)){	      
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
-		      $consensus_link =~ s/^\.\.\///g;
-		      $Add_this .= " \"name\" : \"$merged_consensuses_files{$folder}{$cluster}{consensus}\", ";
-		      $Add_this .= " \"branch\" : ".$branch.", ";
-		      $Add_this .= " \"id\" : \"".$cluster."_".$folder."\", ";
-		      $Add_this .= " \"url\" : \"$consensus_link\", ";
+		      $Add_this .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      $Add_this .= " \"branch\" : ".$branch.",\n";
+		      $Add_this .= " \"id\" : \"".$cluster."_".$folder."\",\n";
+		      $Add_this .= " \"url\" : \"".$consensus_link."\",\n";
 		      push(@Parsed_JSON, $Add_this."\n");
-		  }
+#		  }
 	      }
 	  }
 	  
@@ -2492,15 +2491,6 @@ sub OpenSynthesis {
   print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
   &PrintArguments($main::html_index, 1);
   print $html_index "</tt></p>\n";
-
-  # ## Create a directory to store the arrow icons
-  # $main::dir{images_html} = $dir{output}."/images_html";
-  # &RSAT::util::CheckOutDir($main::dir{images_html}, "", 775);
-  # my $cmd = "rsync -ruptl ";
-  # $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
-  # $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/UCSC_icon.jpg ";
-  # $cmd .= " ".$main::dir{images_html};
-  # &one_command($cmd, 1);
 
   ## Open the summary HTML file
   $syn = &OpenOutputFile($main::outfile{summary});
