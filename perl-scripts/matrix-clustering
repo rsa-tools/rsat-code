@@ -1699,7 +1699,6 @@ sub Add_empty_columns_to_logos(){
       $cmd .= " -insert_col_right ".$offset_right;
       $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
       &doit($cmd, 0, $die_on_error, $verbose);
-
       unlink($temp_mat);
     }
     unlink($file_name);
@@ -1829,9 +1828,10 @@ sub Merge_matrices(){
 		my $offset_right = $int_align_info{$cluster}{$merge_level}{$motif}{offset_down};
 		my $strand = $int_align_info{$cluster}{$merge_level}{$motif}{strand};
 		my $file_name = $alignment_info{$motif}{file_name};
+
 		## Run the convert-matrix command to add the empty columns to the logos
 		if($strand eq "D"){
-		    
+
 		    ## Add the empty columns
 		    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 		    $cmd .= " -from tf -to tf -return counts,consensus";
@@ -1841,7 +1841,7 @@ sub Merge_matrices(){
 		    &doit($cmd, 0, $die_on_error, $verbose);
 		    
 		}else{
-		    		 
+		    
 		    ## First convert the matrix to reverse complement 
 		    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
 		    $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
@@ -1875,7 +1875,6 @@ sub Merge_matrices(){
 	    $cmd .= " -in_format tf -out_format tf";
 	    $cmd .= " -o ".$merged_mat_file;
 	    &doit($cmd, 0, $die_on_error, $verbose);
-	    
 	    ## Delete files with single matrices
 	    unlink($cat_file);
 	    foreach my $file (@file_names){
@@ -1884,10 +1883,9 @@ sub Merge_matrices(){
 
 	    ## Create branch-wise logos
 	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
-	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
+	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 	    &doit($cmd, 0, $die_on_error, $verbose);
-	    
 	    
 	    $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
 	    $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
