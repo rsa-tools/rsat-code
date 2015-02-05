@@ -179,15 +179,44 @@ _compile_seqlogo:
 ## Get and install the program weblogo.  Weblogo is an upgrade from
 ## seqlogo. Seqlogo required sequences in input, whereas weblogo takes
 ## either sequences or matrices.
-install_weblogo:
+##
+## Source: http://weblogo.threeplusone.com/
+
+## Manual installation of Weblogo in ${RSAT_BIN}
+WEBLOGO3_VERSION=3.3
+WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
+WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
+WEBLOGO3_DIR=${SRC_DIR}/weblogo3
+install_weblogo3: _download_weblogo3 _compile_weblogo3
+
+_download_weblogo3:
+	@mkdir -p ${WEBLOGO3_DIR}
+	@echo "Getting weblogo3 using wget"
+	(cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
+	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
+
+_compile_weblogo3:
+	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
+	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
+	${SUDO} python2.7 setup.py install --prefix ${RSAT})
+	@echo "weblogo installed in ${RSAT_BIN}"
+
+## Installation via pip is simpler, but cannot be done on all RSAT
+## servers because it requires admin rights.
+PIP=pip
+install_weblogo3_pip:
 	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
-	${SUDO} pip install --install-option "--install-scripts=${RSAT_BIN}" weblogo
+	${SUDO} ${PIP} install --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${SUDO} ${PIP} install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
+#	${PIP} install --target ${RSAT_BIN} weblogo
+
+
 
 ################################################################
 ## Get and install the program gnuplot
-GNUPLOT_VER=4.6.4
-GNUPLOT_TAR=gnuplot-${GNUPLOT_VER}.tar.gz
-GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VER}/${GNUPLOT_TAR}
+GNUPLOT_VERSION=4.6.4
+GNUPLOT_TAR=gnuplot-${GNUPLOT_VERSION}.tar.gz
+GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VERSION}/${GNUPLOT_TAR}
 GNUPLOT_DIR=${SRC_DIR}/gnuplot
 install_gnuplot: _download_gnuplot _compile_gnuplot
 
@@ -199,20 +228,20 @@ _download_gnuplot:
 
 _compile_gnuplot:
 	@echo "Compiling and installing gnuplot"
-	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER}; \
-	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VER} --bindir ${RSAT_BIN}  && make; ${SUDO} make install)
+	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION}; \
+	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION} --bindir ${RSAT_BIN}  && make; ${SUDO} make install)
 
 ################################################################
 ## Get and install the program ghostscript
 ## Note: for Mac users, please go to the ghostscript Web site
 ##
 GS_URL=http://downloads.ghostscript.com/public/binaries/
-GS_VER=9
+GS_VERSION=9
 ## Beware: I use an older version 9.07 because linux version 9.10 issues
 ## warnings Unrecoverable error: stackunderflow in .setdistillerparams"
 GS_SUBVER=07
-GS_BIN=gs-${GS_VER}${GS_SUBVER}-linux_x86_64
-GS_DISTRIB=ghostscript-${GS_VER}.${GS_SUBVER}-linux-x86_64
+GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux_x86_64
+GS_DISTRIB=ghostscript-${GS_VERSION}.${GS_SUBVER}-linux-x86_64
 GS_TAR=${GS_DISTRIB}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
 install_ghostscript: _download_gs _install_gs
