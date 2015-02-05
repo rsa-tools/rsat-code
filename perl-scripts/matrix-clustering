@@ -3280,6 +3280,9 @@ $(document).ready( function () {
 // Show all results button
 $(document).ready(function(){
     $(\'#show_all_button\').click(function(){
+
+       $(\'.branch_motifs\').show();
+       $(\'.cons_tab\').show();
         $(\'.hide_show\').show();
         $(\'.cluster_division\').addClass(\'selected_cluster\');
     }); 
@@ -3499,12 +3502,12 @@ sub InsertTreesAndBranchMotifs {
     $script_jquery .= "\n".'
     function showOneRow(id) {
        $(\'.branch_motifs\').css(\'display\', \'table-row\');
-       $(\'.branch_motifs\').not(\'#\' + id).css(\'display\', \'none\');
+       $(\'.branch_motifs\').not(\'#\' + id).hide();
      };
 
     function showOneTable(id) {
        $(\'.cons_tab\').css(\'display\', \'table\');
-       $(\'.cons_tab\').not(\'#\' + id).css(\'display\', \'none\');
+       $(\'.cons_tab\').not(\'#\' + id).hide();
      };'."\n";
     $script_jquery .= "</script>\n";
 }
