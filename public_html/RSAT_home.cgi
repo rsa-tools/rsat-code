@@ -81,9 +81,9 @@ print <<EndText;
   <tr>
     <td>
     
-    <div id="display">
-    <p><i class="fa fa-question-circle fa-lg"></i><b> Which program to use ?</b> A guide to our main tools for new users.
-    </p>
+    <div id="display" >
+    <p ><span style="color: #cc6600;"><i  class="fa fa-question-circle fa-lg"></i><b> Which program to use ?</b></span> A guide to our main tools for new users. </p>
+
     <div class="holder">
     <b>1 - Choose your type of data to analyse</b></br>
         <select id="datatypes">
@@ -250,7 +250,7 @@ $count = &UpdateCounterFile();
 print <<EndAddress;
 <div class="hr-like"> </div>
 <p/>
-   <i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b>
+   <span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 	<div align="left">
       <ul>
 
@@ -276,7 +276,14 @@ print <<EndAddress;
 	</li>
       </ul>
 </div>
-      For citing individual tools: the reference of each tool is indicated on top of their query form.
+
+<i class="fa fa-pencil fa-lg"></i> For citing <b>individual tools</b>: the reference of each tool is indicated on top of their query form.</br>
+<i class="fa fa-pencil fa-lg"></i> <a href="publications.html">All RSAT publications</a> and all publications for <a href=neat_publications.html> the Network Analysis Tools</a>. 
+
+
+</p>
+
+      
 
 <hr  class = 'portal'/>
 <h4 class='footer'>

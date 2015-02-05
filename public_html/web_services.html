@@ -3,6 +3,7 @@
    <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <title>RSAT - Web Services</title>
 <link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+<link rel="stylesheet" type="text/css" href="font-awesome.min.css" media="screen"/>
 </head>
 <body class="info">
 <blockquote>
@@ -19,47 +20,61 @@
 
 <br/>
 
-The <a target=_top href=index.html>Regulatory Sequence Analysis Tools</a> and <a target=_top href=index_neat.html>Network Analysis Tools</a> are
-now also available as <b>Web Services</b>.
+The <a target=_top href=index.html><b>Regulatory Sequence Analysis Tools</b></a> and <a target=_top href=index_neat.html>Network Analysis Tools</a> are
+accessible via <b>SOAP/WSDL Web Services</b>.
 
 <p>Web Services offer a <b>programmatic interface</b> for running the tools from
 a remote computer, and combining them with other similar
-services. Using RSAT via Web Services permits to <b>automatize repetitive
+services. Using RSAT via Web Services allows to <b>automatize repetitive
 tasks</b>.
 </p>
 
 <ul>
 
-  <p><li>The <b>WSDL</b> description of the services, which is the primary
-    programmatic interface for the web clients, can be accessed at<br>
-    <a
-    href=http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl>http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl</a>
+  <p><li>The <b><a
+    href="web_services/RSATWS.wsdl">WSDL</b></a> describes the services offered by RSAT. This is the primary
+    programmatic interface for the web clients.
   </li></p>
 
   <p><li><a
-	 href=http://rsat.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml>
+	 href="web_services/RSATWS_documentation.xml">
 	 Full description of the available Web Services and their options</a>
   </li></p>
 
-  <p><li><a href=http://rsat.ulb.ac.be/rsat/ws_clients.html>Examples of web clients in Perl, java and Python</a></li></p>
+</ul>
 
-  <p><li><a href=http://rsat.ulb.ac.be/rsat/distrib/tutorial_shell_rsat.pdf>
-	Tutorial with some documented examples of implementations.
-	</a></li></p>
-
-  <p><li>A <b>protocol</b> with detailed documentation of each
+<h2><i class="fa fa-question-circle fa-lg"></i> How to use RSAT web services ?</h2>
+<ul style="list-style-type: none;">
+<p><li><i class="fa fa-book fa-lg"></i>
+ A <b><a
+    href='http://www.ncbi.nlm.nih.gov/pubmed/18802441'>protocol</b></a> with detailed documentation of each
     programming step (Perl example). <br> Sand, O., Thomas-Chollier,
     M., Vervisch, E. and van Helden, J. (2008) Analyzing multiple data
     sets by interconnecting RSAT programs via SOAP Web services-an
     example with ChIP-chip data. Nat Protoc, 3,
     1604-1615. <a
     href='http://www.ncbi.nlm.nih.gov/pubmed/18802441'>Pubmed
-    18802441</a></li></p>
+    18802441</a></li><br/>
+    <i>The PERL code itself might be outdated by now, but the general information on Web services are still valid and constitute a good introduction for beginners.</i></p>
 
-</li></p>
+  <p><li><i class="fa  fa-graduation-cap fa-lg"></i> <a href="http://rsat.ulb.ac.be/eccb14/session3.html">Tutorial at ECCB 2014 </a>with beginner example in Python</li></p>
 
-
+  <p><li><i class="fa  fa-file-code-o fa-lg"></i> Examples of client programs in
+   <ul style="list-style-type: none;">
+  		<li><i class="fa  fa-code fa-lg"></i> Perl</li>
+  		<li><i class="fa  fa-code fa-lg"></i> Python</li>
+  		<li><i class="fa  fa-code fa-lg"></i> Java</li>
 </ul>
+  <p><li><i class="fa fa-book fa-lg"></i> <a href="distrib/tutorial_shell_rsat.pdf">
+	Additional documented examples of implementations.
+	</a></li></p>
+
+  
+
+</ul></p>
+
+
+
 
 <p>
 For information request, please contact
@@ -69,11 +84,11 @@ For information request, please contact
 <a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Olivier Sand (using spam protection)</a>
 </noscript>
 
+<hr  class = 'portal'/>
+
 <p>
 The development of the RSATWS initiative was supported by the <a target=_blank
 href=http://www.biosapiens.info/>BioSapiens</a> Network of excellence funded under the sixth Framework programme of the European Communities (LSHG-CT-2003-503265). 
-
-<HR WIDTH="100%">
 
 </blockquote>
 </BODY>
