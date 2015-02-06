@@ -33,7 +33,7 @@ package main;
   local $start_time = &RSAT::util::StartScript();
 
   ## External command used to generate logo drawings
-  local $logo_cmd_name = "weblogo"; ## Alternative: seqlogo (obsolete, maintained for backward compatibility)
+  local $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo"; ## Alternative: seqlogo (obsolete, maintained for backward compatibility)
   local $logo_cmd_path = $ENV{$logo_cmd_name} || $ENV{RSAT}."/bin/".$logo_cmd_name;
   $logo_cmd_path = &trim($logo_cmd_path);
 
@@ -1728,7 +1728,7 @@ sub ExportMatrix {
   ## Return logo
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
-      my $logo_file = $matrix->get_attribute("logo_file");
+      my $logo_file = $matrix->get_attribute("logo_file") || '';
       foreach my $rc_suffix ("", "_rc") {
 	foreach my $logo_format (@logo_formats) {
 	  print $out_handle  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
