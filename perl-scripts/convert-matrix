@@ -120,10 +120,16 @@ package main;
   local $logo_dir = "";
   local $logo_file_base = "";
   @logo_formats=();
+
+  ## Logo formats supported by weblogo 3 (several new formats compared
+  ## to seqlogo)
   %supported_logo_format =  ('png'=>1,
+			     'png_print'=>1,
 			     "eps"=>1,
-#			  "gif"=>1, # log from seqlogo : check logo.conf
 			     "pdf"=>1,
+			     "svg"=>1,
+			     "jpeg"=>1,
+			     "logodata"=>1,
       );
   $supported_logo_formats = join ",", sort keys %supported_logo_format;
   @tf_name_in_file= ();
