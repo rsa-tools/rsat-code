@@ -1312,7 +1312,6 @@ sub Add_attributes_to_JSON(){
       $matrix_info{$split_line[1]}{label} = $split_line[6];
       $matrix_info{$split_line[1]}{logo_file} = $split_line[7];
       $matrix_info{$split_line[1]}{logo_file_rc} = $split_line[8];
-      #$matrix_info{$matrix_label}{logo_file_rc} = $split_line[8];
 
       ## The path of the aligned logo (in D or R) that will be displayed 
       if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
@@ -1349,8 +1348,8 @@ sub Add_attributes_to_JSON(){
 	  $line = $_;
 	  
 	  # Add the consensus to the json file to be displayed in the tree
-#	  if ($line =~ /(\s*\"children\":\s*\[)/){
-	  if ($line =~ /children/){	  
+	  if ($line =~ /(\s*\"children\":\s*\[)/){
+#	  if ($line =~ /children/){	  
 	      $children++;
 	      $Add_this = "";
 	      if ($children >= 2){
