@@ -3902,11 +3902,44 @@ Return the logo from the matrix
 
 Usage:
 
-  my @logo_files = $matrix->makeLogo($logo_basename,\@logo_formats, $logo_opt, $rev_compl);
+  my @logo_files = $matrix->makeLogo($logo_basename,\@logo_formats, 
+         $logo_opt, $rev_compl, $logo_cmd_name);
+
+Arguments:
+    I<logo_basename>: prefix for logo files
+
+    I<logo_formats>: one or several supported formats (png, pdf)
+
+    I<logo_options>: options passed to the weblogo (or seqlogo) program
+
+    I<rev_compl>:    if non-null, the logo is generated for the reverse complement of the input matrix
+
+    I<logo_cmd_name>: name of the program used to draw logos. Supported: weblogo (default), seqlogo (obsolete)
 
 =cut
 sub makeLogo {
-  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl) = @_;
+  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl, $logo_cmd_name) = @_;
+
+#  my $logo_cmd_name = "seqlogo"; ## FOR DEBUG, OLD MODE
+
+  ## Make sure that the logo command name is correct: take default
+  ## (weblogo) unless user explicitly asked seqlogo.
+  $logo_cmd_name = "weblogo" unless ($logo_cmd_name eq "seqlogo"); 
+
+  &RSAT::message::Info("Generating logo for matrix", $self->get_attribute("id"), 
+		       "using program", $logo_cmd_name) if ($main::verbose >= 3);
+
+  ## Identify the path to the logo-generating program
+  my $logo_cmd_path =  &RSAT::server::GetProgramPath($logo_cmd_name, 0, $ENV{RSAT_BIN});
+  $logo_cmd_path = &RSAT::util::trim($logo_cmd_path);
+  unless (-e $logo_cmd_path) {
+    &RSAT::message::Warning("Cannot generate sequence logos because",
+			    $logo_cmd_name, "is not found in the expected path",
+			    $logo_cmd_path);
+    return;
+  }
+  &RSAT::message::Debug("&RSAT::matrix::makeLogo()", $logo_cmd_name, "path", $logo_cmd_path) if ($main::verbose >= 10);
+  
 
   ## We need an ID -> if not defined, use the consensus
   my $ac = $self->get_attribute("accession");
@@ -3931,14 +3964,20 @@ sub makeLogo {
   ## Legend on the X axis indicates number of sites
   my $logo_info = $seq_number." sites";
   
-  ## temporarily write the matrix as transfac format
-  ## this is possible thanks to the new weblogo v3
-  ## and remove the need to use fake sequences
-  ## this file will be deleted after logo creation
+  ## Temporarily write the matrix in TRANSFAC format, which is
+  ## supported as input format for weblogo 3.  This removes the need
+  ## to use fake sequences.  This temporary file will be deleted after
+  ## logo creation.
   my $tmp_tf_file = &RSAT::util::make_temp_file("", $id);
   my $tf_handle = &RSAT::util::OpenOutputFile($tmp_tf_file);
+  if ($rev_compl) {
+    $self->reverse_complement();
+  }
   print $tf_handle $self->toString(sep=>"\t", type=>"counts", format=>'transfac');
   close $tf_handle;
+  if ($rev_compl) {
+    $self->reverse_complement();
+  }
   
   
   ## Make sure that logo basename is defined and that it does not include the directories
@@ -3990,19 +4029,6 @@ sub makeLogo {
     &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
   }
 
-  ## Identify the path to the logo-generating program
-#  my $logo_cmd_name = "seqlogo"; ## FOR DEBUG, OLD MODE
-  my $logo_cmd_name = "weblogo"; ## New way to generate logos (installd in RSAT since 2015-02-05)
-  my $logo_cmd_path =  &RSAT::server::GetProgramPath($logo_cmd_name, 0, $ENV{RSAT_BIN});
-  $logo_cmd_path = &RSAT::util::trim($logo_cmd_path);
-  unless (-e $logo_cmd_path) {
-    &RSAT::message::Warning("Cannot generate sequence logos because",
-			    $logo_cmd_name, "is not found in the expected path",
-			    $logo_cmd_path);
-    return;
-  }
-  &RSAT::message::Debug("&RSAT::matrix::makeLogo()", $logo_cmd_name, "path", $logo_cmd_path) if ($main::verbose >= 10);
-  
 
   ################################################################
   ## Seqlogo is obsolete but maintained for consistency checking. It
@@ -4042,18 +4068,26 @@ sub makeLogo {
       ## Prepare the NEW weblogo3 command
       $logo_cmd = "cd ".$logo_dir;
       $logo_cmd .= "; ".$logo_cmd_path;
-      $logo_cmd .= " -D transfac ";
-      $logo_cmd .= " -f ".$tmp_tf_file;
-#$logo_cmd .= " -f ".$fake_seq_file_short;
-      $logo_cmd .= " -F ".$logo_format." -Y YES -X YES --resolution 299 -A dna --errorbars YES ";
-      $logo_cmd .= " -C '#CA0813' T '' -C '#061AC8' C '' -C '#1FCA23' A '' -C '#FDB22B' G '' ";
-      $logo_cmd .= " -x '".$logo_info."'";
-      $logo_cmd .= " -s large " unless ($logo_options =~ /\-s /);
+      $logo_cmd .= " --datatype transfac ";
+      $logo_cmd .= " --fin ".$tmp_tf_file;
+      $logo_cmd .= " --format ".$logo_format;
+      $logo_cmd .= " --show-yaxis YES";
+      $logo_cmd .= " --show-xaxis YES";
+      $logo_cmd .= " --resolution 299";
+      $logo_cmd .= " --sequence-type dna";
+      $logo_cmd .= " --errorbars YES";
+      $logo_cmd .= " --color '#CA0813' T 'Thymine'";
+      $logo_cmd .= " --color '#061AC8' C 'Cytosine'";
+      $logo_cmd .= " --color '#1FCA23' A 'Adenine'";
+      $logo_cmd .= " --color '#FDB22B' G 'Guanine'";
+      $logo_cmd .= " --xlabel '".$logo_info."'";
+      $logo_cmd .= " --size large " unless ($logo_options =~ /\-s /);
       $logo_cmd .= " --aspect-ratio 3 ";
       $logo_cmd .= " ".$logo_options;
-      $logo_cmd .= " -t '".$logo_title."'";
-      $logo_cmd .= " -o "."./".$logo_file;
-      $logo_cmd .= " -P '' -E YES ";
+      $logo_cmd .= " --title '".$logo_title."'";
+      $logo_cmd .= " --fineprint ''";
+      $logo_cmd .= " --show-ends YES ";
+      $logo_cmd .= " --fout "."./".$logo_file;
       $logo_cmd .= " 2> /dev/null ";
     }
 
@@ -4084,8 +4118,11 @@ sub makeLogo {
   
   
   ## Remove the fake sequences, not necessary anymore
-  #    &RSAT::server::DelayedRemoval($fake_seq_file);
-  #    unlink ($fake_seq_file);
+  if ($logo_cmd_name eq "seqlogo") {
+    #&RSAT::server::DelayedRemoval($fake_seq_file);
+    unlink ($fake_seq_file);
+  }
+
   system "rm -f $tmp_tf_file";
   return(@logo_files);
 }
@@ -4186,7 +4223,7 @@ Replace the matrix by its reverse complement.
 If require, re-compute the frequency, weight and information content
 matrice.
 
-Usage: $matrix->reverse_complment();
+Usage: $matrix->reverse_complement();
 
 =cut
 sub reverse_complement {
