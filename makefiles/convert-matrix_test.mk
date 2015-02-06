@@ -20,16 +20,20 @@ LOGO_DIR=${RES_DIR}/${LOGO_PROGRAM}
 OUT_MATRICES=${RES_DIR}/${PREFIX}
 FROM=tf
 TO=tab
+LOGO_FORMAT=png
 logos:
 	@echo
 	@echo "Converting ${IN_MATRICES}"
 	@echo "	from ${FROM} to ${TO}"
+	@echo "	LOGO_PROGRAM	${LOGO_PROGRAM}"
+	@echo "	LOGO_FORMAT	${LOGO_FORMAT}"
 	@echo "	RES_DIR		${RES_DIR}"
 	@echo "	LOGO_DIR	${LOGO_DIR}"
 	@mkdir -p ${RES_DIR} ${LOGO_DIR}
 	convert-matrix -v ${V} -i ${IN_MATRICES}.${FROM} -from ${FROM} \
 		-return counts,parameters,logo -logo_dir ${LOGO_DIR} \
 		-logo_program ${LOGO_PROGRAM} \
+		-logo_format ${LOGO_FORMAT} \
 		-to ${TO} -o ${OUT_MATRICES}.${TO}
 	@echo "	${OUT_MATRICES}.${TO}"
 
