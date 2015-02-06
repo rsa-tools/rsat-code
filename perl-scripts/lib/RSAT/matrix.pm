@@ -3930,7 +3930,7 @@ sub makeLogo {
 		       "using program", $logo_cmd_name) if ($main::verbose >= 3);
 
   ## Identify the path to the logo-generating program
-  my $logo_cmd_path =  &RSAT::server::GetProgramPath($logo_cmd_name, 0, $ENV{RSAT_BIN});
+  my $logo_cmd_path =  &RSAT::server::GetProgramPath($logo_cmd_name, 0, $ENV{RSAT_BIN}) || "";
   $logo_cmd_path = &RSAT::util::trim($logo_cmd_path);
   unless (-e $logo_cmd_path) {
     &RSAT::message::Warning("Cannot generate sequence logos because",
