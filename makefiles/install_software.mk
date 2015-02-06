@@ -23,6 +23,7 @@ WGET = wget -np -rNL
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
+PYTHON=python2.7
 
 ################################################################
 ## Install the software tools.
@@ -198,7 +199,7 @@ _download_weblogo3:
 _compile_weblogo3:
 	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
 	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
-	${SUDO} python2.7 setup.py install --prefix ${RSAT})
+	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
 	@echo "weblogo installed in ${RSAT_BIN}"
 
 ## Installation via pip is simpler, but cannot be done on all RSAT
@@ -1053,7 +1054,7 @@ _compile_ceas:
 	@echo "Before using CEAS, you need to add a line to the log-in shell script"
 	@echo "(i.e. .bashrc in case of bash shell)"
 	@echo "Adapt the python version in the path below"
-	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/${PYTHON}/site-packages'
 
 ################################################################
 ## Download data required to run CEAS with Human genome hg19
