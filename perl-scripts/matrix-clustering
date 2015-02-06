@@ -1334,7 +1334,20 @@ sub Add_attributes_to_JSON(){
       my ($M1, $M2, $Add_this, $Flag);
       my (@Split_line, @Parsed_JSON) = ();
       my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
-      chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
+
+      my @levels_JSON = ();
+      open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
+      while(<LVL_JSON>){
+	  chomp;
+	  next if /^;/;
+	  my @spl = split(/\t+/, $_);
+	  push(@levels_JSON, $spl[2]);
+	  
+      }
+      close(LVL_JSON);
+
+      
+ #     chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
 #      my @merged_cons_folders = keys(%merged_consensuses_files);
       
       ## Open the JSON file produced by R   
