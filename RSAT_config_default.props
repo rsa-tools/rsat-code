@@ -221,3 +221,11 @@ REA_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/REA
 ## kWalks, subgraph extraction program by Pierre Dupont and Jerome Callut
 ## Used for the pathway extraction hybrid algorithm in the NeAT suite.
 KWALKS_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/kwalks/bin
+
+
+################################################################
+## Name of the program used to generate logos.  Weblogo is not easy to
+## install on all servers -> we temporarily keep seqlogo as
+## alternative option.
+# LOGO_PROGRAM=seqlogo|weblogo
+LOGO_PROGRAM=seqlogo
