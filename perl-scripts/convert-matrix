@@ -34,9 +34,7 @@ package main;
 
   ## External command used to generate logo drawings
   local $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo"; ## Alternative: seqlogo (obsolete, maintained for backward compatibility)
-  local $logo_cmd_path = $ENV{$logo_cmd_name} || $ENV{RSAT}."/bin/".$logo_cmd_name;
-  $logo_cmd_path = &trim($logo_cmd_path);
-
+  local $logo_cmd_path = "";
 
   $decimals = 1;
   $pseudo_weight = 1;
@@ -123,6 +121,10 @@ package main;
 
   ## Logo formats supported by weblogo 3 (several new formats compared
   ## to seqlogo)
+  %supported_seqlogo_format = ('png'=>1,
+			       "eps"=>1,
+			       "pdf"=>1,
+      );
   %supported_logo_format =  ('png'=>1,
 			     'png_print'=>1,
 			     "eps"=>1,
@@ -274,29 +276,40 @@ package main;
   }
 
   ## Logo format(s)
+
+  ## Seqlogo supports less formats than weblogo -> if user selected
+  ## seqlogo, check that the format is supported
+  if ($logo_cmd_name eq "seqlogo") {
+    %supported_logo_format = %supported_seqlogo_format;
+  }
+
   if ($return_fields{logo}) {
-    if (scalar(@logo_formats)>=1){
-      foreach my $logo_format (@logo_formats){
-	unless ($supported_logo_format{$logo_format}) {
-	  &RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
-	}
-      }
-    }else{
+    if (scalar(@logo_formats) == 0){
       @logo_formats = ($logo_format);
+    }
+    foreach my $logo_format (@logo_formats){
+      unless ($supported_logo_format{$logo_format}) {
+	&RSAT::error::FatalError($logo_format, 
+				 "Invalid format for", $logo_cmd_name,
+				 "Supported: ".$supported_logo_formats);
+      }
+      &RSAT::message::Debug("Checked logo format", $logo_format) if ($main::verbose >= 5);
     }
 
     ## Check that weblogo is installed at the expected location
+    $logo_cmd_path =  &RSAT::server::GetProgramPath($logo_cmd_name, 0, $ENV{RSAT_BIN}) || "";
+    $logo_cmd_path = &RSAT::util::trim($logo_cmd_path);
     if (-e $logo_cmd_path) {
       if(-x $logo_cmd_path) {
-	&RSAT::message::Debug("weblogo path", $logo_cmd_path) if ($main::verbose >= 4);
+    	&RSAT::message::Debug("weblogo path", $logo_cmd_path) if ($main::verbose >= 4);
       } else {
-	&RSAT::message::Warning("Cannot execute the program weblogo", 
-				$logo_cmd_path);
-	$logo_cmd_path="";
+    	&RSAT::message::Warning("Cannot execute the program weblogo", 
+    				$logo_cmd_path);
+    	$logo_cmd_path="";
       }
     } else {
       &RSAT::message::Warning("Cannot generate logos because the program weblogo is not found in the expected path", 
-			      $logo_cmd_path);
+    			      $logo_cmd_path);
       $logo_cmd_path="";
     }
   }
