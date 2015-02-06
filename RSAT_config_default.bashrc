@@ -16,11 +16,11 @@ export PATH=${RSAT}/python-scripts:${PATH}
 
 ################################################################
 ## Add RSAT R packages lib to library path
-if  [ ${R_LIBS_USER} ]; then
-  export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
-else
-  export R_LIBS_USER=${RSAT}/R-scripts/Rpackages/
-fi
+#if  [ ${R_LIBS_USER} ]; then
+#  export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
+#else
+export R_LIBS_USER=${RSAT}/R-scripts/Rpackages/
+#fi
 
 ################################################################
 ## Class path for metabolic pathway analysis tools
