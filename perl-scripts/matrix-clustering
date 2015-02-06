@@ -1912,8 +1912,14 @@ sub Add_div_to_HTML(){
     my $line = "";
     my $print = "";
     my $temp = &logo_tree();
+    my $cmd = "";
 
-    my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+  if (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+      $cmd = "cp ".$ENV{rsat_www}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+  } else {
+      $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+  }
+    
     &doit($cmd, 0, $die_on_error, $verbose);
 
     my %clusters_info_sorted = ();
