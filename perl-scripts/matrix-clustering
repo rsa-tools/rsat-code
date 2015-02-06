@@ -170,7 +170,7 @@ package main;
   local $js_base;
   if (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
     $js_base = $ENV{rsat_www}."/rsat/lib/js";
-    $js_base = s|/rsat/rsat/|/rsat/|g;
+    $js_base =~ s|/rsat/rsat/|/rsat/|g;
   } else {
     $js_base = $ENV{RSAT}."/public_html/lib/js";
   }
