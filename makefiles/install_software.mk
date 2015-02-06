@@ -23,6 +23,7 @@ WGET = wget -np -rNL
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
+PYTHON=python2.7
 
 ################################################################
 ## Install the software tools.
@@ -198,7 +199,7 @@ _download_weblogo3:
 _compile_weblogo3:
 	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
 	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
-	${SUDO} python2.7 setup.py install --prefix ${RSAT})
+	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
 	@echo "weblogo installed in ${RSAT_BIN}"
 
 ## Installation via pip is simpler, but cannot be done on all RSAT
@@ -303,17 +304,30 @@ install_ensembl_api_git:
 	@echo ""
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 	@mkdir -p "${ENSEMBL_API_DIR}"
+	@echo ""
+	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_BRANCH}"
+	@(cd ${ENSEMBL_API_DIR}; git clone git://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
+		cd ensemblgenomes-api/ ; \
+		git checkout release/eg/${ENSEMBLGENOMES_BRANCH} )
+	@echo ""
 	@echo "Getting git clone for ensembl API release ${ENSEMBL_RELEASE}"
 	@(cd ${ENSEMBL_API_DIR}; \
 		git clone https://github.com/Ensembl/ensembl-git-tools.git; \
 		export PATH=${ENSEMBL_API_DIR}/ensembl-git-tools/bin:${PATH}; \
 		git ensembl --clone api; \
 		git ensembl --checkout --branch release/${ENSEMBL_RELEASE} api)
-	@echo ""
-	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_BRANCH}"
-	@(cd ${ENSEMBL_API_DIR}; git clone https://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
-		cd ensemblgenomes-api/ ; \
-		git checkout release/eg/${ENSEMBLGENOMES_BRANCH} )
+
+## Install git without using https (not supported on all servers)
+install_ensembl_api_git_git:
+	@(cd ${ENSEMBL_API_DIR}; \
+		git clone git://github.com/Ensembl/ensembl.git; \
+		git clone git://github.com/Ensembl/ensembl-compara.git; \
+		git clone git://github.com/Ensembl/ensembl-funcgen.git; \
+		git clone git://github.com/Ensembl/ensembl-tools.git; \
+		git clone git://github.com/Ensembl/ensembl-variation.git; \
+		git clone git://github.com/Ensembl/ensembl-git-tools.git; \
+	)
+
 
 ################################################################
 ## Ensembl API requires Bioperl version 1-2-3, as quoted in their
@@ -328,7 +342,7 @@ install_ensembl_bioperl:
 	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
 	@mkdir -p "${BIOPERL_DIR}"
-	@(cd ${BIOPERL_DIR}; git clone https://github.com/bioperl/bioperl-live.git)
+	@(cd ${BIOPERL_DIR}; git clone git://github.com/bioperl/bioperl-live.git)
 	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-${BIOPERL_VERSION})
 	@echo "bioperl-release-${BIOPERL_VERSION} installed in ${BIOPERL_DIR}"
 
@@ -1040,7 +1054,7 @@ _compile_ceas:
 	@echo "Before using CEAS, you need to add a line to the log-in shell script"
 	@echo "(i.e. .bashrc in case of bash shell)"
 	@echo "Adapt the python version in the path below"
-	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/python2.7/site-packages'
+	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/${PYTHON}/site-packages'
 
 ################################################################
 ## Download data required to run CEAS with Human genome hg19
