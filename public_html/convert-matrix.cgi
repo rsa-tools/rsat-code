@@ -154,15 +154,15 @@ foreach my $stat (qw (counts frequencies weights info consensus parameters profi
 
       # seqlogo options
       if ($query->param("error_bar")){
-	$parameters .= " -logo_opt '-e' ";
+#	$parameters .= " -logo_opt '-e' ";
       }
       if ($query->param("small_correc")){
-	$parameters .= " -logo_opt '-M' ";
+#	$parameters .= " -logo_opt '-M' ";
       }
       if ($query->param("stretch")){
-	$parameters .= " -logo_opt '-S' ";
+#	$parameters .= " -logo_opt '-S' ";
       }
-      $parameters .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+#      $parameters .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
     }
   }
 }
