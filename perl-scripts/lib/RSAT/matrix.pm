@@ -3924,7 +3924,7 @@ sub makeLogo {
 
   ## Make sure that the logo command name is correct: take default
   ## (weblogo) unless user explicitly asked seqlogo.
-  $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo" unless ($logo_cmd_name eq "seqlogo"); 
+  $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo" unless ($logo_cmd_name); 
 
   &RSAT::message::Info("Generating logo for matrix", $self->get_attribute("id"), 
 		       "using program", $logo_cmd_name) if ($main::verbose >= 3);
@@ -3970,20 +3970,15 @@ sub makeLogo {
   ## logo creation.
   my $tmp_tf_file = &RSAT::util::make_temp_file("", $id);
   my $tf_handle = &RSAT::util::OpenOutputFile($tmp_tf_file);
-  # if ($rev_compl) {
-  #   $self->reverse_complement();
-  # }
   print $tf_handle $self->toString(sep=>"\t", type=>"counts", format=>'transfac');
   close $tf_handle;
-  # if ($rev_compl) {
-  #   $self->reverse_complement();
-  # }
-  
+
+
   
   ## Make sure that logo basename is defined and that it does not include the directories
   if ($logo_basename) {
     my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_basename);
-    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename=".$logo_basename, "dir=".$dir, "short_file_name=".$short_file_name) if ($main::verbose >= 3);
+    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename=".$logo_basename, "dir=".$dir, "short_file_name=".$short_file_name) if ($main::verbose >= 4);
     $logo_basename = $short_file_name;
     if ($dir) {
       $logo_dir = $dir;
@@ -4001,6 +3996,7 @@ sub makeLogo {
   
   ## Make sure there is at least one logo format
   my (@logo_formats) = @{$logo_formats};
+  &RSAT::message::Debug("Logo formats", join(";", @logo_formats)) if ($main::verbose >= 5);
   if (scalar(@logo_formats) == 0) {
     push @logo_formats, "png";
   }
@@ -4070,7 +4066,20 @@ sub makeLogo {
       $logo_cmd = "cd ".$logo_dir;
       $logo_cmd .= "; ".$logo_cmd_path;
       $logo_cmd .= " --datatype transfac ";
-      $logo_cmd .= " --fin ".$tmp_tf_file;
+      if (($rev_compl) && ($logo_format eq "logodata")) {
+	## Special trick for weblogo format logodata, which does not work
+	## with option --rev-compl: create a separate temporary file with the reverse
+	## complement of the original matrix.
+	my $tmp_tf_file_rc = &RSAT::util::make_temp_file("", $id."_rc");
+	my $tf_handle_rc = &RSAT::util::OpenOutputFile($tmp_tf_file_rc);
+	$self->reverse_complement();
+	print $tf_handle_rc $self->toString(sep=>"\t", type=>"counts", format=>'transfac');
+	close $tf_handle_rc;
+	$logo_cmd .= " --fin ".$tmp_tf_file_rc;
+      } else {
+	$logo_cmd .= " --fin ".$tmp_tf_file;
+	$logo_cmd .= " --reverse " if ($rev_compl) ;
+      }
       $logo_cmd .= " --format ".$logo_format;
       $logo_cmd .= " --show-yaxis YES";
       $logo_cmd .= " --show-xaxis YES";
@@ -4089,21 +4098,21 @@ sub makeLogo {
       $logo_cmd .= " --fineprint ''";
       $logo_cmd .= " --show-ends YES ";
       $logo_cmd .= " --fout "."./".$logo_file;
-      $logo_cmd .= " --revcomp " if ($rev_compl);
       $logo_cmd .= " 2> /dev/null ";
     }
 
-    # &RSAT::message::Debug("logo_dir=".$logo_dir,
-    # 			  "\n\tlogo_cmd_path=".$logo_cmd_path,
-    # 			  "\n\ttmp_tf_file=".$tmp_tf_file,
-    # 			  "\n\tpwd=".`pwd`,
-    # 			  "logo_cmd=".$logo_cmd,
-    # 	) if ($main::verbose >= 10);
+     # &RSAT::message::Debug("logo_dir=".$logo_dir,
+     # 			  "\n\tlogo_cmd_path=".$logo_cmd_path,
+     # 			  "\n\ttmp_tf_file=".$tmp_tf_file,
+     # 			  "\n\tpwd=".`pwd`,
+     # 			  "logo_cmd=".$logo_cmd,
+     # 	) if ($main::verbose >= 0);
     
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
     my $logo_die = 0;
-    my $logo_verbose = 0;
+#    my $logo_verbose = $main::verbose;
+    my $logo_verbose = 3;
     my $logo_batch = 0;
     my $logo_job_prefix = "";
     
