@@ -1034,10 +1034,12 @@ sub CompareMatricesQuick {
       my $top = "convert-matrix ".$args_to_pass." -i ".$main::infile{matrices}." -from ".$main::matrix_format." -to tf -o ".$main::outfile{prefix}."_matrices.tf"; 
       &RSAT::util::one_command($top, 1,"");
       $main::infile{matrices} = $main::outfile{prefix}."_matrices.tf";
+  }else{
+      $args_to_pass = "";
   }
 
   ## Create the description table
-  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc ".$args_to_pass." -o ".$main::outfile{pairwise_compa};
+  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc ".$args_to_pass." -o ".$main::outfile{matrix_descriptions};
   &RSAT::util::one_command($cmd, 1, "");
   &RSAT::message::TimeWarn("Matrix description table", $main::outfile{matrix_descriptions}) if ($main::verbose >= 2);
   $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
