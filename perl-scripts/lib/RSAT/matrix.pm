@@ -4078,7 +4078,7 @@ sub makeLogo {
 	$logo_cmd .= " --fin ".$tmp_tf_file_rc;
       } else {
 	$logo_cmd .= " --fin ".$tmp_tf_file;
-	$logo_cmd .= " --reverse " if ($rev_compl) ;
+	$logo_cmd .= " --revcomp " if ($rev_compl) ;
       }
       $logo_cmd .= " --format ".$logo_format;
       $logo_cmd .= " --show-yaxis YES";
@@ -4111,8 +4111,8 @@ sub makeLogo {
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
     my $logo_die = 0;
-#    my $logo_verbose = $main::verbose;
-    my $logo_verbose = 3;
+    my $logo_verbose = $main::verbose;
+#    my $logo_verbose = 3;
     my $logo_batch = 0;
     my $logo_job_prefix = "";
     
