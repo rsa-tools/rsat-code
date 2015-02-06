@@ -31,8 +31,13 @@ package main;
   ################################################################
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
-  local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
-  $seqlogo_path = &trim($seqlogo_path);
+
+  ## External command used to generate logo drawings
+  local $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo"; ## Alternative: seqlogo (obsolete, maintained for backward compatibility)
+  local $logo_cmd_path = $ENV{$logo_cmd_name} || $ENV{RSAT}."/bin/".$logo_cmd_name;
+  $logo_cmd_path = &trim($logo_cmd_path);
+
+
   $decimals = 1;
   $pseudo_weight = 1;
   $equi_pseudo = 0;
@@ -115,10 +120,16 @@ package main;
   local $logo_dir = "";
   local $logo_file_base = "";
   @logo_formats=();
+
+  ## Logo formats supported by weblogo 3 (several new formats compared
+  ## to seqlogo)
   %supported_logo_format =  ('png'=>1,
+			     'png_print'=>1,
 			     "eps"=>1,
-#			  "gif"=>1, # log from seqlogo : check logo.conf
 			     "pdf"=>1,
+			     "svg"=>1,
+			     "jpeg"=>1,
+			     "logodata"=>1,
       );
   $supported_logo_formats = join ",", sort keys %supported_logo_format;
   @tf_name_in_file= ();
@@ -274,19 +285,19 @@ package main;
       @logo_formats = ($logo_format);
     }
 
-    ## Check that seqlogo is installed at the expected location
-    if (-e $seqlogo_path) {
-      if(-x $seqlogo_path) {
-	&RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+    ## Check that weblogo is installed at the expected location
+    if (-e $logo_cmd_path) {
+      if(-x $logo_cmd_path) {
+	&RSAT::message::Debug("weblogo path", $logo_cmd_path) if ($main::verbose >= 4);
       } else {
-	&RSAT::message::Warning("Cannot execute the program seqlogo", 
-				$seqlogo_path);
-	$seqlogo_path="";
+	&RSAT::message::Warning("Cannot execute the program weblogo", 
+				$logo_cmd_path);
+	$logo_cmd_path="";
       }
     } else {
-      &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
-			      $seqlogo_path);
-      $seqlogo_path="";
+      &RSAT::message::Warning("Cannot generate logos because the program weblogo is not found in the expected path", 
+			      $logo_cmd_path);
+      $logo_cmd_path="";
     }
   }
 
@@ -406,8 +417,8 @@ package main;
       $matrix->calcGCcontent();
     }
 
-    ## Generate logo
-    if (($return_fields{logo}) && ($seqlogo_path)) {
+    ## Generate logos
+    if (($return_fields{logo}) && ($logo_cmd_path)) {
 
       unless ($logo_dir) {
 	if ($outfile{output}) {
@@ -434,11 +445,9 @@ package main;
 	$logo_file .= "_logo";
       }
       #	$logo_file =~ s/\.\w+$//;
-#    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
-      $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0); ## Generate the logo image
+      $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0, $logo_cmd_name); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
-#    $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1);	## Generate logo image for the reverse complementary motif
-      $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1);	## Generate logo image for the reverse complementary motif
+      $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1, $logo_cmd_name);	## Generate logo image for the reverse complementary motif
       $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
 
       ## Index the logos in a HTML table
@@ -827,6 +836,19 @@ OPTIONS
 	-rc
 		Convert the matrix to its reverse complement.
 
+	-logo_program weblogo|seqlogo
+                External program used to generate logo drawings.
+
+		Until 2015 we used seqlogo, which was not very
+		convenient because it was taking fasta sequences as
+		input, rather than the actual matrices.
+
+		Since Feb 2015, we adapted the tools to use weblogo 3
+		instead. Since the results are slightly different
+		(e.g. error bars are larger), the seqlogo option is
+		maintained for backward compatibility and consistency
+		checking.
+
 	-logo_format
 		Format for logo image file. supported :
 		$supported_logo_formats (default:png).  Beware: the
@@ -851,17 +873,17 @@ OPTIONS
 
 	-logo_opt 
 
-		Any other option to be passed to seqlogo for
+		Any other option to be passed to weblogo for
 		generating the logo. This option can be used
 		iteratively to specify multiple options.
 
 		For instance
-		    -logo_opt '-w 12' -logo_opt '-t "CRP matrix" -a'
-		will add the following options to the commande seqlogo:
-		     -w 12 -t "CRP matrix" -a
+		     -logo_opt '-t "CRP matrix" '
+		will add the following options to the command weblogo:
+		     -t "CRP matrix"
 
-		To obtain the list of options supported by seqlogo, type
-			    seqlogo
+		To obtain the list of options supported by weblogo, type
+			    weblogo
 
 PRIOR FREQUENCY FILE
 
@@ -1250,9 +1272,10 @@ convert-matrix options
 -max_profile	Maximal width of the profile histogram 
 -rc		Convert the matrix to its reverse complement.
 -logo_format	logo image format. Supported $supported_logo_formats 
+-logo_program 	weblogo|seqlogo
 -logo_dir	directory to output the logo files
 -logo_file	base name for the logo file(s)
--logo_opt	options to be passed to seqlogo
+-logo_opt	options to be passed to weblogo
 End_short_help
   close HELP;
   exit(0);
@@ -1475,6 +1498,14 @@ sub ReadArguments {
 	    $rc = 1;
 
 	    ## Export logos
+	} elsif ($ARGV[$a] eq "-logo_program") {
+	    $logo_cmd_name = lc($ARGV[$a+1]);
+	    unless (($logo_cmd_name eq "seqlogo")
+		    || ($logo_cmd_name eq "weblogo")) {
+	      &RSAT::error::FatalError($logo_cmd_name, 
+				       "Invalid value for option -logo_program. Supported: weblogo|seqlogo.");
+	    }
+
 	} elsif ($ARGV[$a] eq "-logo_format") {
 	    $logo_formats = $ARGV[$a+1];
 	    push @logo_formats, split(",", $logo_formats);
@@ -1697,7 +1728,7 @@ sub ExportMatrix {
   ## Return logo
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
-      my $logo_file = $matrix->get_attribute("logo_file");
+      my $logo_file = $matrix->get_attribute("logo_file") || '';
       foreach my $rc_suffix ("", "_rc") {
 	foreach my $logo_format (@logo_formats) {
 	  print $out_handle  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";

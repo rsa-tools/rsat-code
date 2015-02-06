@@ -55,9 +55,11 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
+DEVICE=sda1
+
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
-grep sda1 ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
