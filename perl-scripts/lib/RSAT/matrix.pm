@@ -3924,7 +3924,7 @@ sub makeLogo {
 
   ## Make sure that the logo command name is correct: take default
   ## (weblogo) unless user explicitly asked seqlogo.
-  $logo_cmd_name = "weblogo" unless ($logo_cmd_name eq "seqlogo"); 
+  $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo" unless ($logo_cmd_name eq "seqlogo"); 
 
   &RSAT::message::Info("Generating logo for matrix", $self->get_attribute("id"), 
 		       "using program", $logo_cmd_name) if ($main::verbose >= 3);
@@ -3983,10 +3983,12 @@ sub makeLogo {
   ## Make sure that logo basename is defined and that it does not include the directories
   if ($logo_basename) {
     my ($dir, $short_file_name) = &RSAT::util::SplitFileName($logo_basename);
-    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename=".$logo_basename, "dir=".$dir, "short_file_name=".$short_file_name) if ($main::verbose >= 5);
+    &RSAT::message::Debug("RSAT::matrix::makeLogo()", "basename=".$logo_basename, "dir=".$dir, "short_file_name=".$short_file_name) if ($main::verbose >= 3);
     $logo_basename = $short_file_name;
     if ($dir) {
       $logo_dir = $dir;
+    } else {
+      $logo_dir = ".";
     }
   } else {
     $logo_basename = $accession || $id;
@@ -4092,11 +4094,11 @@ sub makeLogo {
     }
 
     # &RSAT::message::Debug("logo_dir=".$logo_dir,
-    # 			  "\n\tlogo_cmd_path=".$logo_cmd_path,
-    # 			  "\n\ttmp_tf_file=".$tmp_tf_file,
-    # 			  "\n\tpwd=".`pwd`,
-    # 			  "logo_cmd=".$logo_cmd,
-    # 	) if ($main::verbose >= 10);
+    			  "\n\tlogo_cmd_path=".$logo_cmd_path,
+    			  "\n\ttmp_tf_file=".$tmp_tf_file,
+    			  "\n\tpwd=".`pwd`,
+    			  "logo_cmd=".$logo_cmd,
+    	) if ($main::verbose >= 10);
     
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
@@ -4119,11 +4121,11 @@ sub makeLogo {
   
   ## Remove the fake sequences, not necessary anymore
   if ($logo_cmd_name eq "seqlogo") {
-    #&RSAT::server::DelayedRemoval($fake_seq_file);
     unlink ($fake_seq_file);
   }
 
-  system "rm -f $tmp_tf_file";
+  ## Suppress the temporary transfac file
+  unlink($tmp_tf_file);
   return(@logo_files);
 }
 
