@@ -3970,14 +3970,14 @@ sub makeLogo {
   ## logo creation.
   my $tmp_tf_file = &RSAT::util::make_temp_file("", $id);
   my $tf_handle = &RSAT::util::OpenOutputFile($tmp_tf_file);
-  if ($rev_compl) {
-    $self->reverse_complement();
-  }
+  # if ($rev_compl) {
+  #   $self->reverse_complement();
+  # }
   print $tf_handle $self->toString(sep=>"\t", type=>"counts", format=>'transfac');
   close $tf_handle;
-  if ($rev_compl) {
-    $self->reverse_complement();
-  }
+  # if ($rev_compl) {
+  #   $self->reverse_complement();
+  # }
   
   
   ## Make sure that logo basename is defined and that it does not include the directories
@@ -4021,7 +4021,6 @@ sub makeLogo {
   ## Prepare to compute the reverse complement
   if ($rev_compl) {
     $logo_title .= "  Rev. cpl.";
-#    $logo_options .= " --revcomp ";
   }
   
   ## Truncate logo title if too long
@@ -4090,15 +4089,16 @@ sub makeLogo {
       $logo_cmd .= " --fineprint ''";
       $logo_cmd .= " --show-ends YES ";
       $logo_cmd .= " --fout "."./".$logo_file;
+      $logo_cmd .= " --revcomp " if ($rev_compl);
       $logo_cmd .= " 2> /dev/null ";
     }
 
     # &RSAT::message::Debug("logo_dir=".$logo_dir,
-    			  "\n\tlogo_cmd_path=".$logo_cmd_path,
-    			  "\n\ttmp_tf_file=".$tmp_tf_file,
-    			  "\n\tpwd=".`pwd`,
-    			  "logo_cmd=".$logo_cmd,
-    	) if ($main::verbose >= 10);
+    # 			  "\n\tlogo_cmd_path=".$logo_cmd_path,
+    # 			  "\n\ttmp_tf_file=".$tmp_tf_file,
+    # 			  "\n\tpwd=".`pwd`,
+    # 			  "logo_cmd=".$logo_cmd,
+    # 	) if ($main::verbose >= 10);
     
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
@@ -4121,11 +4121,12 @@ sub makeLogo {
   
   ## Remove the fake sequences, not necessary anymore
   if ($logo_cmd_name eq "seqlogo") {
+    #&RSAT::server::DelayedRemoval($fake_seq_file);
     unlink ($fake_seq_file);
   }
 
   ## Suppress the temporary transfac file
-  unlink($tmp_tf_file);
+  ##unlink($tmp_tf_file);
   return(@logo_files);
 }
 
