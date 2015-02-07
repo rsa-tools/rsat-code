@@ -236,7 +236,7 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.t
 ## This really helps: it saves several hundreds Mb
 
 ## Check the evolution of disk usage during package installation
-grep sda1 install_logs/df_*
+grep ${DEVICE} install_logs/df_*
 
 ## DONE: installation of Ubuntu packages
 ################################################################
