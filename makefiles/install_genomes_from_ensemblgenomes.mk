@@ -66,13 +66,16 @@ install_one_group:
 	install-ensembl-genome -v ${V} -db ${DB} -species_file ${AVAILABLE_GROUP} -nodie
 	@echo "Installed group ${ORG_GROUP} from db ${DB}"
 
+install_one_group_shuffled:
+	@${MAKE} install_one_group AVAILABLE_GROUP=${AVAILABLE_GROUP_SHUFFLED}
+
 install_fungi:
 	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 
 
 AVAILABLE_GROUP_SHUFFLED=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${ORG_GROUP}_shuffled.txt
-install_bacteria:
+install_bacteria_shuffled:
 	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
 	@${MAKE} shuffle_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
-	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
+	@${MAKE} install_one_group_shuffled DB=ensemblgenomes ORG_GROUP=Bacteria
