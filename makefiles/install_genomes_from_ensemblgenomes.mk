@@ -3,7 +3,7 @@
 ## connection to Ensembl and Ensembl Genomes databases.
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/ensemblgenomes_perl_tester.mk
+MAKEFILE=makefiles/install_genomes_from_ensemblgenomes.mk
 
 DB=ensembl
 #DB=ensemblgenomes
