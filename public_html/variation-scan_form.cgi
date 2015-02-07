@@ -19,7 +19,6 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-
 ################################################################
 ## Default values for filling the form
 
@@ -51,6 +50,7 @@ $default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Homo_sapiens_GRCh37";
+#$default{organism}="Homo_sapiens";
 $default{pseudo_freq} = "0.01";
 
 
@@ -106,7 +106,7 @@ print $query->start_multipart_form(-action=>"variation-scan.cgi");
  &Panel1();
 
 
-################# Select reference organism, taxon and query genes
+################# Inout variant sequences
  &Panel2();
 
 ################# Scanning Parameters
@@ -206,7 +206,7 @@ sub Panel2 {
   print "<div id=\"menu101\" class=\"menu_collapsible_display\">\n";
 
   print "<p/><fieldset>\n";
-  print "<legend><b><a href='help.peak-motifs.html#tasks'>Select reference organism and input variations</a></b></legend>\n";
+  print "<legend><b><a href='help.peak-motifs.html#tasks'>Input variation sequences</a></b></legend>\n";
 
 
 ### Input variant-seqs
@@ -249,9 +249,27 @@ sub Panel2 {
 
 ##########################################
 sub Panel3 {
-    print '
-<div class="menu_heading_closed" onclick="toggleMenu(\'102\')" id="heading102"><b>Scanning Parameters</b> </div>
-<div id="menu102" class="menu_collapsible">';
+   
+################################################################
+## Background model
+    
+    #my %bg_params =("markov" => 1,
+#		    #"bg_input" => 1,
+#		    "no_bg_pseudo" => 1,
+#		    "markov_message" => 1
+		    #"ensembl"=>1
+#	);
+    
+    #&GetBackgroundModel();
+    
+    my %bg_params =("markov" => 1,
+		    "bg_input" => 1,
+		    "bg_window" => 1,
+		    "markov_message" => 1
+	);
+    &GetBackgroundModel(%bg_params);    
+
+   
     
     print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Scanning Parameters </a></b></legend>";
@@ -309,20 +327,7 @@ sub Panel3 {
     print "<br> <b>Thresholds </b> </br>";
     
     print "<td bgcolor='#F6E6CA'>$thresh_matches</td>";
-    
-################################################################
-## Background model
-    print "<hr>";
-    
-    my %bg_params =("markov" => 1,
-		    #"bg_input" => 1,
-		    "no_bg_pseudo" => 1,
-		    "markov_message" => 1
-	);
-    &GetBackgroundModel(%bg_params);
-    
-    
-    
+ 
     
     print "</p>";
     
