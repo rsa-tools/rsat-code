@@ -9,7 +9,7 @@ require "RSA2.cgi.lib";		## For sortable HTML tables
 ## Options for the &doit() command;
 local $dry = 0;	  ## Do not run the command, just echo them as warning
 local $batch = 0;		## Run the processes on a PC cluster
-local $die_on_error = 1;
+local $main::die_on_error = 0;
 local $job_prefix = "footprint_disco";
 local $cmd;
 
@@ -389,6 +389,7 @@ sub InitQueryOutput {
   $outfile{log} = $outfile{prefix}."_log.txt";
   $main::out = &OpenOutputFile($outfile{log});
 
+  %main::command_args={ out=>$outfile{log} };
 
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
@@ -1033,8 +1034,9 @@ sub InferQueryOperons {
   $cmd .= " -uth interg_dist ".$dist_thr;
   $cmd .= " -o ".$outfile{leader_qgenes};
   &RSAT::message::Debug("Command to infer operon leaders ", $cmd) if ($task{operons}  && ($main::verbose >= 5)) ;
-  &one_command($cmd) if ($task{operons});
-  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  #&one_command($cmd,0,"", %main::command_args) ;
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n";
+  &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix) if ($task{operons});
   &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
 }
 
@@ -1056,7 +1058,10 @@ sub RetrieveQueryPromoters {
     $cmd .= " -feattype misc_RNA,cds,trna";
     $cmd .= " -o ".$outfile{query_seq};
     &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);
-    &one_command($cmd);
+    #&one_command($cmd,0);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; 
+    &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+
   }
   &IndexOneFile("Query sequence", $outfile{query_seq});
 
@@ -1088,8 +1093,8 @@ sub ComputeFilterDyads {
     $cmd .= " ".$strands;
     $cmd .= " ".$noov;
     $cmd .= " -o ".$outfile{filter_dyads};
-    &one_command($cmd);
-    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+   # &one_command($cmd);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("Filter dyads", $outfile{filter_dyads});
 }
@@ -1206,9 +1211,10 @@ sub InferOrthoOperons {
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -o ".$outfile{bbh};
     $cmd .= " -uth interg_dist ".$dist_thr;
-    &one_command($cmd) ;
+    #&one_command($cmd, 1,"", %main::command_args) ;
+    
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
-  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   &IndexOneFile("Operon leader genes", $outfile{bbh});
 }
 
@@ -1224,8 +1230,8 @@ sub RetrieveOrthoSeq {
     $cmd .= " -noorf";
     $cmd .= " -feattype CDS,mRNA,tRNA,scRNA,misc_RNA" ;
     $cmd .= " -o ". $outfile{seq_notclean} ;
-    &one_command($cmd);
-
+    #&one_command($cmd);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
     ## Clearn non-dna characters
     $cmd = $SCRIPTS."/convert-seq";
     $cmd .= " -i ".$outfile{seq_notclean};
@@ -1234,8 +1240,8 @@ sub RetrieveOrthoSeq {
     $cmd .= " -to fasta ";
     $cmd .= " -dna ";
     $cmd .= " -o ". $outfile{seq};
-    &one_command($cmd);
-    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    #&one_command($cmd);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("$promoter sequences", $outfile{seq});
 
