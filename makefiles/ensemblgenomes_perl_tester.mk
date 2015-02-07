@@ -51,6 +51,14 @@ select_one_group:
 	grep -i ${ORG_GROUP} ${AVAILABLE_SPECIES} > ${AVAILABLE_GROUP}
 	@echo "	${AVAILABLE_GROUP}"
 
+## Shuffle the lines of a species file, in order to avoid staying
+## blocked in the hundreds of strains for the same species. This is
+## useful to install bacteria.
+shuffle_one_group:
+	cat ${AVAILABLE_GROUP} bacteria_to_install.txt  |  perl -MList::Util=shuffle -e 'print shuffle(<STDIN>);' > ${AVAILABLE_GROUP_SHUFFLED}
+	@echo "Shuffled ${AVAILABLE_GROUP}"
+	@echo "	${AVAILABLE_GROUP_SHUFFLED}"
+
 ORG_GROUP=Fungi
 install_one_group:
 	@echo
@@ -58,8 +66,13 @@ install_one_group:
 	install-ensembl-genome -v ${V} -db ${DB} -species_file ${AVAILABLE_GROUP} -nodie
 	@echo "Installed group ${ORG_GROUP} from db ${DB}"
 
-select_fungi:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
-
 install_fungi:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Fungi
+
+
+AVAILABLE_GROUP_SHUFFLED=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${ORG_GROUP}_shuffled.txt
+install_bacteria:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
+	@${MAKE} shuffle_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
+	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
