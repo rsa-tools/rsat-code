@@ -793,6 +793,8 @@ package main;
 	$main::rand = $global_rand;
       };
       ## Report caught errors
+      ## This is not working properly any more the one_command sends all 
+      ## to the current open file
       if ($@) {
 	if ($no_die) {
 	  ## Catch error and report in in log file
@@ -1656,7 +1658,7 @@ sub RunFootprintScan {
   &InferQueryOperons() if ($infer_operons);
 
   &RetrieveQueryPromoters();
-
+  
   ## Retrieve promoters of the query organism
   if ($main::filter) {
    # &ComputeFilterScan($matrix_format,@matrix_files);
