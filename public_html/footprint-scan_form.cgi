@@ -35,7 +35,7 @@ $checked{$default{pseudo_distribution}} = "CHECKED";
 ## Background model
 $default{markov_order} = "1";
 
-$default{leaders} = 'checked';
+#$default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
@@ -228,9 +228,23 @@ sub Panel2 {
 
 ##########################################
 sub Panel3 {
+################################################################
+## Background model
+print "<hr>";
+
+my %bg_params =("markov" => 1,
+		"bg_input" => 1,
+		"bg_window" => 1,
+		"markov_message" => 1
+    );
+&GetBackgroundModel(%bg_params);
+
+
 print '
 <div class="menu_heading_closed" onclick="toggleMenu(\'102\')" id="heading102"><b>Scanning Parameters</b> </div>
 <div id="menu102" class="menu_collapsible">';
+
+
 
 print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Scanning Parameters </a></b></legend>";
@@ -264,19 +278,6 @@ print "<p/><fieldset>
 print "<br/> <b>Threshold </b> <br/>";
 
 print "<td bgcolor='#F6E6CA'>$thresh_occ</td>";
-
-################################################################
-## Background model
-print "<hr>";
-
-my %bg_params =("markov" => 1,
-		"bg_input" => 1,
-		"bg_window" => 1,
-		"markov_message" => 1
-    );
-&GetBackgroundModel(%bg_params);
-
-
 
 
 print "</p>";
