@@ -6277,7 +6277,8 @@ sub run_WS_command {
 # 							       SOAP::Data->name('command' =>"site: ".$ENV{rsat_site}." command: ".&RSAT::util::hide_RSAT_path($command))))
 # 	  ->attr({'xmlns' => ''});
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
-							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
+							       SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+							       SOAP::Data->name('client' => 'NA')))
 	->attr({'xmlns' => ''});
   }
 
