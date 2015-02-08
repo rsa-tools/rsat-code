@@ -62,8 +62,8 @@ $symmetric = "true";
 
 # server-related params
 $result_location = $tmp.'/';
-$html_location = $WWW_RSA.'/tmp/';
-# $host= parse_url($WWW_RSA,PHP_URL_HOST);
+$html_location = $rsat_www.'/tmp/';
+# $host= parse_url($rsat_www,PHP_URL_HOST);
 $metabolicpathfinder_location = $neat_java_host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
 $pathwayinference_location = $neat_java_host.'/metabolicpathfinding/pathwayinference_form.jsp';
 

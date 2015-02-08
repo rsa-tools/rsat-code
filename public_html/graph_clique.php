@@ -102,7 +102,7 @@
     $gc_server = rtrim ($gc_server);
     $gc_temp_file = explode('/',$gc_server);
     $gc_temp_file = end($gc_temp_file);
-    $gc_resultURL = $WWW_RSA."/tmp/".$gc_temp_file;
+    $gc_resultURL = $rsat_www."/tmp/".$gc_temp_file;
     # Text-to-html
     $gc_file = storeFile($gc_server);
     $tth_parameters = array( 
@@ -123,7 +123,7 @@
     $tth_server = rtrim ($tth_server);
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
-    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
+    $tth_resultURL = $rsat_www."/tmp/".$tth_temp_file;    
     store_command($tth_command, "text-to-html", $cmd_handle);
     $URL['Cliques (html)'] = rsat_path_to_url($tth_server);
     

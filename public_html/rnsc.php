@@ -161,7 +161,7 @@
 //     $rnsc_server = rtrim ($rnsc_server);
 //     $rnsc_temp_file = explode('/',$rnsc_server);
 //     $rnsc_temp_file = end($rnsc_temp_file);
-    //    $URL['Clusters (RNSC format) old'] = $WWW_RSA."/tmp/".$rnsc_temp_file;
+    //    $URL['Clusters (RNSC format) old'] = $rsat_www."/tmp/".$rnsc_temp_file;
     $URL['Clusters (RNSC format)'] = rsat_path_to_url($rnsc_server);
 
 

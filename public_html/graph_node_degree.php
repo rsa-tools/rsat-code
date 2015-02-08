@@ -102,7 +102,7 @@
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    $resultURL = $rsat_www."/tmp/".$temp_file;
     # Display the results
     echo "The results is available at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a>"; 

@@ -1,6 +1,6 @@
 <?php
   require ('functions.php');
-  $host= parse_url($WWW_RSA,PHP_URL_HOST);
+  $host= parse_url($rsat_www,PHP_URL_HOST);
   echo("
 <html>
 <head>

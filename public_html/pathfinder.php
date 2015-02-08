@@ -29,7 +29,7 @@
   $tmpGraphFile = "";
   # server-related params
   $result_location = $tmp.'/';
-  $html_location = $WWW_RSA.'/tmp/';
+  $html_location = $rsat_www.'/tmp/';
   $sylvain_input_format = "tab";
   $sylvain_input_graph = "";
 
@@ -281,7 +281,7 @@
        	$tth_server = rtrim ($tth_server);
         $tth_temp_file = explode('/',$tth_server);
    	    $tth_temp_file = end($tth_temp_file);
-    	$tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
+    	$tth_resultURL = $rsat_www."/tmp/".$tth_temp_file;
     	
     	store_command("$tth_command", "Text to html", $cmd_handle);
     	

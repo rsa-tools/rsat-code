@@ -27,7 +27,7 @@ $error = 0;
 $tmpGraphFile = "";
 # server-related params
 $result_location = $tmp.'/';
-$html_location = $WWW_RSA.'/tmp/';
+$html_location = $rsat_www.'/tmp/';
 # visant address
 $address = "http://visant.bu.edu:8080/vserver/DAI?command=link&location=";
 
@@ -101,7 +101,7 @@ $parameters = array(
       $server = rtrim ($server);
       $temp_file = explode('/',$server);
       $temp_file = end($temp_file);
-      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      $resultURL = $rsat_www."/tmp/".$temp_file;
 }
 
 $graph = storeFile($server);
