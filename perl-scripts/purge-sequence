@@ -190,7 +190,7 @@ sub PrintHelp {
 NAME
 	purge-sequence
 
-        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        1999 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 USAGE
         purge-sequence [-i input_file] [-o output_file] [-v] [-2str | -1str]

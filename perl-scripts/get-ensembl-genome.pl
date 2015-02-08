@@ -1276,7 +1276,7 @@ CREATION DATE
 
 AUTHORS
 	Olivier Sand (oly\@bigre.ulb.ac.be)
-	Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 DESCRIPTION
 

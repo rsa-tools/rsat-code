@@ -47,7 +47,7 @@ print "<CENTER>\n";
 print "Matrix-based motif discovery using CONSENSUS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
-print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.<br>";
+print "Web interface by <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>.<br>";
 print "The stand-alone version of <i>consensus</i> is available at <a target=_blank href=http://ural.wustl.edu/software.html>http://ural.wustl.edu/software.html</a><P>";
 print "</CENTER><hr>";
 
@@ -242,7 +242,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.consensus.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.consensus.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_consensus.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

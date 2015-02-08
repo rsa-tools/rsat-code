@@ -245,7 +245,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.roc-stats.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_roc.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:rekins\@bigre.ulb.ac.be,jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:rekins\@bigre.ulb.ac.be,Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
@@ -273,7 +273,7 @@ sub NeAT_header {
   ### print the header of the result page
   print $query->start_html(-title=>"Network Analysis Tools : $title",
 			   -class => "$css_body_class",
-			   -author=>'Jacques.van-Helden@univ-amu.fr',
+			   -author=>'Jacques.van-Helden\@univ-amu.fr',
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });

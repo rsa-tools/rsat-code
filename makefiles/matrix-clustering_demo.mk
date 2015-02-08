@@ -90,7 +90,7 @@ cluster_peakmotifs_Oct4_no_threshold:
 
 ## Permutation test with peak-motifs (Chen Oct4 data set)
 cluster_peakmotifs_Oct4_permute:
-	${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices
+	${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices \
 		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks'
 
 ## Rndomize input matrices by permuting their columns

@@ -102,7 +102,7 @@ sub PrintHelp {
 NAME
 	template
 
-        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2004 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 DESCRIPTION
 	Split one column of 2-column file (relation table) containing

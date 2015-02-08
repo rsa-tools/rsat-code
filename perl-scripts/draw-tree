@@ -106,7 +106,7 @@ sub PrintHelp {
 NAME
 	draw-tree
 
-        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2004 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 DESCRIPTION
 	Draws a tree. 
