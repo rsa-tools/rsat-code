@@ -15,9 +15,12 @@ supported_taxon:
 	@echo "Supported ${TAXON} at ${URL}"
 	@mkdir -p ${RES_DIR}
 	@supported-organisms-server -taxon ${TAXON} -url ${URL} ${OPT} \
+		-return last_update,source,ID,taxonomy \
 		-o ${SUPPORTED_FILE}
 	@wc -l ${SUPPORTED_FILE}
 
+
+all: fungi plants prokaryotes protists metazoa
 
 fungi:
 	@${MAKE} supported_taxon TAXON=Fungi SERVER=rsat-tagc.univ-mrs.fr SERVER_PATH=rsat
@@ -25,3 +28,12 @@ fungi:
 plants:
 	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=floresta.eead.csic.es SERVER_PATH=rsat
 
+prokaryotes:
+	@${MAKE} supported_taxon TAXON=Bacteria SERVER=embnet.ccg.unam.mx SERVER_PATH=rsa-tools
+	@${MAKE} supported_taxon TAXON=Archaea SERVER=embnet.ccg.unam.mx SERVER_PATH=rsa-tools
+
+protists:
+	@${MAKE} supported_taxon TAXON=Organism SERVER=rsat01.biologie.ens.fr SERVER_PATH=rsat
+
+metazoa:
+	@${MAKE} supported_taxon TAXON=Metazoa SERVER=rsat.sb-roscoff.fr SERVER_PATH=
