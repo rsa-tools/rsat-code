@@ -3446,7 +3446,6 @@ sub InsertTreesAndBranchMotifs {
 	my $insert_id = '
                 .attr("cursor", function(d) { return d.children ? "pointer" : ""; })
                 .attr("id", function(d) { return d.children ? d.id : ""; })
-
         ';
 	
 	## Make dynamics the buttons of the cluster header
