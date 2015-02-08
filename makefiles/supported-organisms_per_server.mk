@@ -48,11 +48,13 @@ metazoa:
 	@${MAKE} supported_taxon TAXON=Metazoa SERVER=rsat.sb-roscoff.fr SERVER_PATH=
 
 
-## THIS DOES NOT WORK
 teaching:
+	@${MAKE} supported_taxon TAXON=Organisms SERVER=pedagogix-tagc.univ-mrs.fr SERVER_PATH=rsat
+
+## THIS DOES NOT WORK. The redirection prevents from using web
+## services. I (JvH) should debug this.
+teaching_direct:
 	@${MAKE} supported_taxon TAXON=Organisms SERVER=teaching.rsat.eu SERVER_PATH=
 
 
-pedagogix:
-	@${MAKE} supported_taxon TAXON=Organisms SERVER=pedagogix-tagc.univ-mrs.fr SERVER_PATH=rsat
 
