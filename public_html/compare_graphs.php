@@ -121,7 +121,7 @@
      // report parameters if echo requested
      if ($properties['rsat_echo'] >= 2) {
        info("rsat_main\t".$rsat_main);
-       info("WWW_RSA\t".$WWW_RSA);
+       info("rsat_www\t".$rsat_www);
        info("neat_wsdl\t".$neat_wsdl);
        print_r($parameters);
        if ($properties['rsat_echo'] >= 3) {
