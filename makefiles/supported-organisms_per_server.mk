@@ -12,7 +12,7 @@ URL=http://${SERVER}/${SERVER_PATH}
 RES_DIR=results/supported-organisms_per_server
 SUPPORTED_FILE=${RES_DIR}/supported_${TAXON}_${SERVER}_${SERVER_PATH}.tab
 supported_taxon:
-	@echo "Supported ${TAXON} at ${URL}"
+	@echo "Collecting supported ${TAXON} at ${URL}"
 	@mkdir -p ${RES_DIR}
 	@supported-organisms-server -taxon ${TAXON} -url ${URL} ${OPT} \
 		-return last_update,source,ID,taxonomy \
@@ -32,8 +32,17 @@ prokaryotes:
 	@${MAKE} supported_taxon TAXON=Bacteria SERVER=embnet.ccg.unam.mx SERVER_PATH=rsa-tools
 	@${MAKE} supported_taxon TAXON=Archaea SERVER=embnet.ccg.unam.mx SERVER_PATH=rsa-tools
 
+EUKARYOTA_FILE=${RES_DIR}/supported_Eukaryota_rsat01.biologie.ens.fr_rsat.tab
+PROTIST_FILE=${RES_DIR}/supported_Protists_rsat01.biologie.ens.fr_rsat.tab
 protists:
-	@${MAKE} supported_taxon TAXON=Organism SERVER=rsat01.biologie.ens.fr SERVER_PATH=rsat
+	@${MAKE} supported_taxon TAXON=Eukaryota SERVER=rsat01.biologie.ens.fr SERVER_PATH=rsat
+	@echo "Filtering protists"
+	awk '$$2=="ensemblgenomes"' ${EUKARYOTA_FILE} \
+		| grep -v 'Fungi' \
+		| grep -v 'Metazoa' \
+		| grep -v 'Viridiplantae' \
+		> ${PROTIST_FILE}
+	@echo "	${PROTIST_FILE}"
 
 metazoa:
 	@${MAKE} supported_taxon TAXON=Metazoa SERVER=rsat.sb-roscoff.fr SERVER_PATH=
