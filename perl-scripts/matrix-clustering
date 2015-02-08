@@ -166,18 +166,30 @@ package main;
 
 
 
-  ## Javascript (D3 + JQuery) base
+  ################################################################
+  ## Ensure the access to the java libraries, whcih are required to
+  ## display the results (logo trees, dynamic tables).
+  ##
+  ## If $include_js_lib is set to 1, the javascript libraries are
+  ## included in the output directory, in order to avoid problems with
+  ## the links. This solution enables to move the result
+  ## (e.g. download a self-contained archive), but costs 500kb of disk
+  ## space for each result, we should evaluate alternative solutions.
+  ## 
+  ## the alternative is to point to the libraries on the RSAT server,
+  ## but we faced problems on some servers, due to the the path
+  ## public_html/lib, which inludes a soft link (lib ->
+  ## ../perl-scripts/lib).
+  local $include_js_lib = 1; 
+
+
+  ## Base on which we will buld the the URLs to the javascripts (D3 +
+  ## JQuery libraries, required to display logo trees and tables).
   local $js_base;
-  if (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-    $js_base = $ENV{rsat_www}."/lib/js";
-#    $js_base =~ s|/rsat/rsat/|/rsat/|g;
-  } else {
-    $js_base = $ENV{RSAT}."/public_html/lib/js";
-  }
-  local $d3_base= $js_base."/d3.v3.min.js";
-  local $jquery_base = $js_base."/DataTables-1.10.4/media/js/jquery.js";
-  local $datatable_base= $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js";
-  local $datatable_css_base = $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css";
+  local $d3_base;
+  local $jquery_base;
+  local $datatable_base;
+  local $datatable_css_base;
 
   ## Supported label fields
   local @supported_label_fields = qw (id name consensus);
@@ -2470,6 +2482,33 @@ sub set_output_file_names {
   ## Files required for the summary
   $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
   $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html"; push @outfiles, "summary";
+
+
+  ## Define the base directories for the javascripts, which are
+  ## required to display logo trees and
+  if ($include_js_lib) {
+    ## Note: we will need to redefine it after having parsed the
+    ## arguments, since it will be relative to output directory.
+    &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 0);
+    my $js_sync_cmd = "rsync -ruptl";
+    $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
+    $js_sync_cmd .= " ".$dir{output};
+    &doit($js_sync_cmd, 0, 1, $verbose);
+    $js_base = $dir{output}."/js";
+    &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 0);
+  }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+    $js_base = $ENV{rsat_www}."/lib/js";
+#    $js_base =~ s|/rsat/rsat/|/rsat/|g;
+  } else {
+    ## NOTE from JvH to Jaime: This solution does not allow to see the
+    ## result on another computer than the RSAT server on which
+    ## matrix-clustering ran.
+    $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
+  }
+  $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
+  $jquery_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.js");
+  $datatable_base= &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
+  $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
 
   ## Some temporary files
   $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
