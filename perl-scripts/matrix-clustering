@@ -1346,7 +1346,15 @@ sub Add_attributes_to_JSON(){
       my (@Split_line, @Parsed_JSON) = ();
       my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
 
-      my @levels_JSON = ();
+
+      ################################################################
+      ## JAIME, I don't know why this list was defined as "my",
+      ## whereas it is defined as local above, and it is used at line
+      ## 283 where it is not defined. You should check the status of
+      ## this list at all moments of the code.
+      ##
+      ## @levels_JSON = ();
+      @levels_JSON = ();
       open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
       while(<LVL_JSON>){
 	  chomp;
