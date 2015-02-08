@@ -36,7 +36,8 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  $server_url = "http://rsat.eu/";
+  ## Default server. Can be changed with option -url
+  $server_url = "http://www.rsat.eu/"; 
 
   ## Output fields
   $return_fields = "";
@@ -245,7 +246,7 @@ template options
 -return output fields ($supported_return_fields)
 -taxon  selected_taxon
 -depth	traversal depth for the taxonomic tree
--url    URL of the remote server (e.g. http://rsat.ulb.ac.be/rsat/)
+-url    URL of the remote server (e.g. http://www.rsat.eu/)
 End_short_help
   close HELP;
   exit;
