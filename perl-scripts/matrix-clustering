@@ -180,8 +180,7 @@ package main;
   ## but we faced problems on some servers, due to the the path
   ## public_html/lib, which inludes a soft link (lib ->
   ## ../perl-scripts/lib).
-  local $include_js_lib = 1; 
-
+  local $include_js_lib = 1;
 
   ## Base on which we will buld the the URLs to the javascripts (D3 +
   ## JQuery libraries, required to display logo trees and tables).
@@ -3002,6 +3001,8 @@ sub ParametersTable{
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
 
+  my $link_to_archive = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive});
+
     my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
@@ -3024,7 +3025,7 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text"><a target=\'_blank\' href="'.$hclust_method_link.'">'.$hclust_method.'</a></td>
 	  <td class="par_text">'.$threshold_values_html.'</td>
-	  <td class="par_text"><a href="'.$main::outfile{archive}.'">Download all results</a></td>
+	  <td class="par_text"><a href="'.$link_to_archive.'">Download all results</a></td>
 	</tr>
       </tbody>
     </table>
