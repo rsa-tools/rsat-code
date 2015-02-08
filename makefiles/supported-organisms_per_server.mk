@@ -20,7 +20,7 @@ supported_taxon:
 	@wc -l ${SUPPORTED_FILE}
 
 
-all: fungi plants prokaryotes protists metazoa
+all: fungi plants prokaryotes protists metazoa teaching
 
 fungi:
 	@${MAKE} supported_taxon TAXON=Fungi SERVER=rsat-tagc.univ-mrs.fr SERVER_PATH=rsat
@@ -46,3 +46,7 @@ protists:
 
 metazoa:
 	@${MAKE} supported_taxon TAXON=Metazoa SERVER=rsat.sb-roscoff.fr SERVER_PATH=
+
+
+teaching:
+	@${MAKE} supported_taxon TAXON=Organisms SERVER=pedagogix-tagc.univ-mrs.fr SERVER_PATH=rsat
