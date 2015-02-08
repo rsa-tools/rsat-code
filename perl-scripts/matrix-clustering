@@ -1395,13 +1395,13 @@ sub Add_attributes_to_JSON(){
 	      $M1 = $1;
 	      
 	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file});
+	      my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $matrix_info{$M1}{logo_aligned_file});
 	      $aligned_logo_link =~ s/^\.\.\///g;
 
 	      my $aligned_logo_url = $aligned_logo_link.".png";
 
 	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file_rc});
+	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $matrix_info{$M1}{logo_aligned_file_rc});
 	      $aligned_rc_logo_link =~ s/^\.\.\///g;
 	      my $aligned_rc_logo_url = $aligned_logo_link.".png";
 	      
@@ -2111,7 +2111,7 @@ sub Display_Selected_Branch{
     my $selected_branch  = 
 '
   $(document).ready(function(){
-    $(\'#cluster_--nb--_merge_level_--level--\').click(function(){
+    $("#cluster_--nb--_merge_level_--level--").click(function(){
        showOneRow("cluster_--nb--_level_--level--");
        showOneTable("branch_consensus_cluster_--nb--");
      }); 
