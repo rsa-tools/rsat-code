@@ -32,7 +32,7 @@ title('compare-classes');
   members between each pair of classes.
 
 <br>This program was
-  developed <A HREF='mailto:Jacques.van-Helden@univ-amu.fr (Jacques van
+  developed <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van
   Helden)'>Jacques van Helden</a>, with a contribution of Joseph Tran
   for a first prototype.</center>
 

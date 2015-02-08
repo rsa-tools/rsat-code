@@ -460,7 +460,7 @@ NAME
 	compare-patterns
 
 AUTHOR
-	Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+	Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 USAGE
 	compare-patterns seq1 seq2

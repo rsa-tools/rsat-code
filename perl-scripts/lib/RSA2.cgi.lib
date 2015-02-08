@@ -257,7 +257,7 @@ sub RSA_header {
   ### print the header of the result page
   print $query->start_html(-title=>"RSAT : $title",
 			   -class => "$css_body_class",
-			   -author=>'jvanheld@bigre.ulb.ac.be',
+			   -author=>'Jacques.van-Helden\@univ-amu.fr',
 			   -script=>[
 				     { -type => 'text/javascript',
 				       -src      => 'RSAT_menu.js'

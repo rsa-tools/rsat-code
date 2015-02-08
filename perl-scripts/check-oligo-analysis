@@ -211,7 +211,7 @@ sub PrintHelp {
 NAME
 	check-oligo-analysis
 
-        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2002 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 DESCRIPTION
 	Check the program oligo-analysis by generating random

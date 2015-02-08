@@ -2,7 +2,7 @@
 ## Tests for peak-motifs
 
 include ${RSAT}/makefiles/util.mk
-makefile=${RSAT}/makefiles/peak-motifs_tests.mk
+MAKEFILE=${RSAT}/makefiles/peak-motifs_tests.mk
 
 V=2
 

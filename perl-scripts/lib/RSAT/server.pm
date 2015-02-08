@@ -503,7 +503,7 @@ sub ReadConfig {
 	    }
     }
   } else {
-    &RSAT::error::FatalError("Error: problem when opening config file. Please contact jvanheld\@bigre.ulb.ac.be");
+    &RSAT::error::FatalError("Error: problem when opening config file. Please contact Jacques.van-Helden\@univ-amu.fr");
   }
 }
 

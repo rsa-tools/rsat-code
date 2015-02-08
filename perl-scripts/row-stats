@@ -174,7 +174,7 @@ sub PrintHelp {
 NAME
 	row-stats
 
-        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2001 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 USAGE
         row-stats [-i inputfile] [-o outputfile] [-v]

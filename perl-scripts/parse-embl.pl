@@ -580,7 +580,7 @@ sub PrintHelp {
 NAME
 	parse-embl
 
-        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2001 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 USAGE
         parse-embl [-dir input_dir][-i inputfile] [-o outputfile] [-v]

@@ -43,7 +43,7 @@ print "<CENTER>\n";
 print "Matrix-based motif discovery using GIBBS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:neuwald\@cshl.org (Andrew Neuwald)'>Andrew Neuwald</A><BR>\n";
-print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.\n";
+print "Web interface by <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>.\n";
 print "</CENTER>\n";
 
 print "<CENTER><font color='red' size=2>\n";
@@ -209,7 +209,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.gibbs.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.gibbs.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_gibbs.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

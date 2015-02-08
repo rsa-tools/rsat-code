@@ -300,7 +300,7 @@ if (($query->param('output') =~ /display/i) ||
 ##    print $query->start_html(
 ##	-title=>"RSAT : $title",
 #	-class => "$css_body_class",
-##	-author=>'jvanheld@bigre.ulb.ac.be',
+##	-author=>'Jacques.van-Helden\@univ-amu.fr',
 #	-style => { 	-src => "$ENV{rsat_www}/main.css",
 #			-type => 'text/css',
 #			-media => 'screen' }
@@ -328,7 +328,7 @@ if (($query->param('output') =~ /display/i) ||
 #    print $query->start_html(
 #	-title=>"RSAT : $title",
 #	-class => "$css_body_class",
-#	-author=>'jvanheld@bigre.ulb.ac.be',
+#	-author=>'Jacques.van-Helden\@univ-amu.fr',
 #	-style => { 	-src => "$ENV{rsat_www}/main.css",
 #			-type => 'text/css',
 #			-media => 'screen' }

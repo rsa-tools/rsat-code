@@ -88,7 +88,7 @@ sub PrintHelp {
 NAME
 	split-chromosomes
 
-        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        1999 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 USAGE
         split-chromosomes [-i inputfile] [-prefix prefix] 
