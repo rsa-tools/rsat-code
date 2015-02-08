@@ -228,24 +228,28 @@ if ($properties['neat_www_root'] == "auto") {
 // Some particular properties are defined as global variables, for convenience
 $tmp = $properties['rsat_tmp'];
 $RSAT = $properties['RSAT'];
-$WWW_RSA = $properties['rsat_www'];
+$rsat_www = $properties['rsat_www'];
 $log_name = $properties['rsat_site'];
 date_default_timezone_set("Europe/Paris");
 
 // automatic definition of property neat_www_root
 if ($properties['neat_www_root'] == "auto") {
-  $properties['neat_www_root'] = $properties['rsat_www'];
+  $properties['neat_www_root'] = $rsat_www;
 }
 $neat_www_root = $properties['neat_www_root'];
+
+// automatic definition of neat_ws
+if ($properties['neat_ws'] == "auto") {
+  $properties['neat_ws'] = $rsat_www;
+}
 
 // address of the WSDL document
 $neat_wsdl = $properties['neat_ws']."/web_services/RSATWS.wsdl";
 
-
 // Karoline: property neat_java_host not required for me, just need the host name here
 // in future: obtain host from url address
-// $scheme = parse_url($WWW_RSA,PHP_URL_SCHEME);
-// $host = parse_url($WWW_RSA,PHP_URL_HOST);
+// $scheme = parse_url($rsat_www,PHP_URL_SCHEME);
+// $host = parse_url($rsat_www,PHP_URL_HOST);
 // $neat_java_host = $scheme."://".$host;
 // for the moment: java tools run only on ulb host
 $neat_java_host = $properties['neat_java_host'];
@@ -322,7 +326,7 @@ Function spaces_to_tab($string, $num) {
 # For example: /home/rsat/rsa-tool/public_html/tmp/brol.truc
 # will be converted to a link to the corresponding URL on the web server.
 Function rsat_path_to_url ($file_name) {
-  global $WWW_RSA;
+  global $rsat_www;
   global $properties;
   # transforms the $RSAT variable to the real RSAT path
   $file_name = str_replace("\$RSAT", $properties['RSAT'], $file_name);
@@ -331,7 +335,7 @@ Function rsat_path_to_url ($file_name) {
 #  $temp_file = rtrim($file_name);
 #  $temp_file = explode('/',$temp_file);
 #  $temp_file = end($temp_file);
-#  $resultURL = $WWW_RSA."/tmp/".$temp_file;
+#  $resultURL = $rsat_www."/tmp/".$temp_file;
   $resultURL = str_replace($properties['RSAT']."/public_html", $properties['rsat_www'], $file_name);
   return $resultURL;
 }
@@ -395,8 +399,8 @@ Function UpdateLogFile($suite ,$script_name, $message) {
 
 
 Function checkNeatTutorial($tutorial_url) {
-  global $WWW_RSA;
-  $pdf_tutorial = $WWW_RSA.'/tutorials/neat_tutorial.pdf';
+  global $rsat_www;
+  $pdf_tutorial = $rsat_www.'/tutorials/neat_tutorial.pdf';
   $address = $pdf_tutorial;
   if (file_exists($tutorial_url)) {
     $address = $tutorial_url;
