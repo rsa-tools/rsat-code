@@ -139,7 +139,7 @@
    $server = rtrim ($server);
 #    $temp_file = explode('/',$server);
 #   $temp_file = end($temp_file);
-#   $resultURL = $WWW_RSA."/tmp/".$temp_file;
+#   $resultURL = $rsat_www."/tmp/".$temp_file;
    $graph_topology_result = storeFile($server);
    $tth_parameters = array( 
      "request" => array(
@@ -155,7 +155,7 @@
    $tth_server = rtrim ($tth_server);
 #   $tth_temp_file = explode('/',$tth_server);
 #   $tth_temp_file = end($tth_temp_file);
-#   $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;   
+#   $tth_resultURL = $rsat_www."/tmp/".$tth_temp_file;   
    store_command($tth_command, "text-to-html", $cmd_handle);
    $URL['Graph topology (html)'] = rsat_path_to_url($tth_server);
   

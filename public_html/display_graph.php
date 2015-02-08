@@ -142,7 +142,7 @@
       $resultURL = rsat_path_to_url($server);
 #      $temp_file = explode('/',$server);
 #      $temp_file = end($temp_file);
-#      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+#      $resultURL = $rsat_www."/tmp/".$temp_file;
 #      $URL['Display (png)'] = $resultURL;
       hourglass("off");
       
