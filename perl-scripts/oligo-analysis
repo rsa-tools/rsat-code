@@ -3138,7 +3138,7 @@ SEE ALSO
 
 WEB VERSION
 	oligo-analysis can be used via internet at the RSAT Web site:
- 	    http://rsat.ulb.ac.be/rsat/
+ 	    http://www.rsat.eu/
 End_of_help
   close HELP;
   exit(0);

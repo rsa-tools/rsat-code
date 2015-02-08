@@ -229,7 +229,7 @@ print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
 print $query->hidden(-name=>'from',-default=>"-800");
 print $query->hidden(-name=>'to',-default=>"-1");
-# $ENV{rsat_www} = 	'http://rsat.ulb.ac.be/rsat/';
+# $ENV{rsat_www} = 	'http://www.rsat.eu/';
 print $query->hidden(-name=>'noorf',-default=>"");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";

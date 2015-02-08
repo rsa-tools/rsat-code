@@ -197,8 +197,6 @@ set of 1000 peak regions bound by the mouse transcription factor Oct4
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-#$demo_seq=`cat demo_files/peak-motifs_demo.fa`;
-#$demo_url= "http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_demo.fa";
 $demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr',-default=>$descr1);
@@ -224,20 +222,12 @@ $descr2 .= "In this demonstration, we run a differential analysis
 $descr2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-#$demo_seq=`cat demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa`;
-#$demo_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
 $demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
-#$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_3597peaks.fa";
-#$ctrl_seq=`cat demo_files/peak-motifs_GSM348066_limb_p300_1000peaks.fa`;
-#$ctrl_url="http://rsat.ulb.ac.be/rsat/demo_files/peak-motifs_GSM348066_limb_p300_1000peaks.fa";
 $ctrl_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_1000peaks.fa";
-#$ctrl_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_2105peaks.fa";
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr',-default=>$descr2);
-#print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
 print $query->hidden(-name=>'sequence_url1',-default=>$demo_url);
 print $query->hidden(-name=>'jaspar_pbm_mouse',-default=>'on');
-#print $query->hidden(-name=>'sequence2',-default=>$ctrl_seq);
 print $query->hidden(-name=>'sequence_url2',-default=>$ctrl_url);
 print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
 print $query->hidden(-name=>'sequence_format2',-default=>'fasta');
@@ -251,7 +241,6 @@ print $query->hidden(-name=>'oligo_length8', -default=>'');
 print $query->hidden(-name=>'nmotifs', -default=>'5');
 print $query->hidden(-name=>'top_sequences',-default=>'');
 print $query->hidden(-name=>'visualize',-default=>"galaxy");
-#print $query->hidden(-name=>'user_email',-default=>'nobody@nowhere');
 print $query->submit(-label=>"DEMO test vs ctrl");
 print "</B></TD>\n";
 print $query->end_form;

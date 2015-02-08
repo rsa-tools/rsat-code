@@ -43,7 +43,7 @@
    echo ("<center>Alter a graph either by adding or removing edges or nodes.\n");
    echo ("<br>This program was developed by 
 	  <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain Broh&eacute;e</a> and
-          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+          <a target=_blank href=http://jacques.van-helden.perso.luminy.univ-amu.fr/ >Jacques van Helden</a>.
           </center>\n");
    
    echo ("<form method='post' action='alter_graph.php' enctype='multipart/form-data'>
@@ -120,7 +120,7 @@
   <TD><B><A HREF='help.alter_graph.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Influence_graph_alteration.html")."'>TUTORIAL</A></B></TD>
 
-  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sbrohee\@ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
 
