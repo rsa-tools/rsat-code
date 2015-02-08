@@ -269,7 +269,6 @@ package main;
 
   ## Merged consensuses logos
   local %merged_consensuses_files = ();
-  local @levels_JSON = ();
 
   ## Supported taks
   local @supported_tasks = qw(
@@ -1346,10 +1345,6 @@ sub Add_attributes_to_JSON(){
       }
       close(LVL_JSON);
 
-      
- #     chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
-#      my @merged_cons_folders = keys(%merged_consensuses_files);
-      
       ## Open the JSON file produced by R   
       my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
       &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
@@ -1368,7 +1363,6 @@ sub Add_attributes_to_JSON(){
 	      if ($children > 1){
 		  my $folder = $levels_JSON[$children-2];
 
-#		  if(grep(/$folder/, @merged_cons_folders)){
 		  if(exists($merged_consensuses_files{$folder})){		
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
