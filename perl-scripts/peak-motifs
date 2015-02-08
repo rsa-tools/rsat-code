@@ -3276,18 +3276,19 @@ sub Archive {
   $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
 
   ## Archive all data and results
-  my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive});
-  my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
+  my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive}); ## Identify directory containing the archive
+  my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir); ## Identify parent dir of the archive-containing dir
 #  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
+#  $archive_rel_path = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{archive});
 
-	## avoids crash of the program when run from the "$archive_dir_dir"
- 	if ($archive_dir_dir eq "") {
- 		$archive_dir_dir = ".";
- 		$to_archive_rel_path = $to_archive;
- 		$archive_rel_path = $main::outfile{archive};	 
- 	}
+  ## avoids crash of the program when run from the "$archive_dir_dir"
+  if ($archive_dir_dir eq "") {
+    $archive_dir_dir = ".";
+    $to_archive_rel_path = $to_archive;
+    $archive_rel_path = $main::outfile{archive};	 
+  }
 	
 #&RSAT::message::Debug("&Archive()",
 # 			"\n\tto_archive", $to_archive,

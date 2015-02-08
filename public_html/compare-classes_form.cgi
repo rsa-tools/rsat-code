@@ -41,7 +41,7 @@ $default{jac} = "checked";
 print "<CENTER>";
 print "Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>\n";
 print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
-print "and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
+print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</A>\n";
 print "</CENTER>";
 print "<HR>";
 
@@ -250,7 +250,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.compare-classes.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_compare-classes.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

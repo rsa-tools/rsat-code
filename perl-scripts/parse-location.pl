@@ -87,7 +87,7 @@ sub PrintHelp {
 NAME
 	parse-location
 
-        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2001 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 USAGE
         parse-location [-i inputfile] [-o outputfile] [-v]

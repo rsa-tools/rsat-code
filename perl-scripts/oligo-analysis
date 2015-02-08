@@ -2440,7 +2440,7 @@ VERSION
         ${program_version}
 
 AUTHOR
-        1997-2007 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        1997-2007 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 DESCRIPTION
 	calculates oligomer frequencies in a set of sequences,

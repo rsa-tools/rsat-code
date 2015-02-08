@@ -24,7 +24,7 @@ package main;
 ####                            RSA.lib                                 ####
 ####                                                                    ####
 #### Regulatory Sequence Analysis Tools (RSAT)
-####  Project started in 1997 by Jacques van Helden (jvanheld@bigre.ulb.ac.be)
+####  Project started in 1997 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 ####  a Perl library with diverse procedures
 ####  used by rsa-tools perl scripts
 

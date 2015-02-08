@@ -293,7 +293,7 @@ sub PrintHelp {
 NAME
 	fit-distribution
 
-        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2002 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 DESCRIPTION
 	Fit a theoretical distribution on observed distributions, and

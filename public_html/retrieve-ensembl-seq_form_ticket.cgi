@@ -373,7 +373,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.retrieve-ensembl-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_retrieve-ensembl-seq.html'>TUTORIAL</A></B></TD>\n";
-# print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+# print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "<TD><B><script type='text/javascript'><!--
 var v2=\"FZ4BZ3EE5SS8KRHNM48\";var v7=unescape(\"%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'MAIL<\\/a>');
 //--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>MAIL (using spam protection)</a></noscript></B></TD>\n";
