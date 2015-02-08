@@ -2111,8 +2111,8 @@ sub Display_Selected_Branch{
     my $selected_branch  = 
 '
   $(document).ready(function(){
-    $("#cluster_--nb--_merge_level_--level--").click(function(){
-       showOneRow("cluster_--nb--_level_--level--");
+    $("#--branch_tab_id--").click(function(){
+       showOneRow("--branch_row_id--");
        showOneTable("branch_consensus_cluster_--nb--");
      }); 
   }); 
@@ -3523,9 +3523,13 @@ sub InsertTreesAndBranchMotifs {
 
 		## Add the code to hide/show the branch-consensus table
 		my $selection_branch = &Display_Selected_Branch();
+		my $branch_tab_id = "cluster_".$num."_merge_level_".$level;
+		my $branch_row_id = "cluster_".$num."_level_".$level;
+		$selection_branch =~ s/--branch_tab_id--/$branch_tab_id/g;
+		$selection_branch =~ s/--branch_row_id--/$branch_row_id/g;
 		$selection_branch =~ s/--nb--/$num/g;
-		$selection_branch =~ s/--level--/$level/g;
 		$script_jquery .= $selection_branch."\n";
+
 	    }
 	    $consensus_table =~ s/--nb--/$num/g;
 	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
