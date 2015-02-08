@@ -37,12 +37,12 @@ PROTIST_FILE=${RES_DIR}/supported_Protists_rsat01.biologie.ens.fr_rsat.tab
 protists:
 	@${MAKE} supported_taxon TAXON=Eukaryota SERVER=rsat01.biologie.ens.fr SERVER_PATH=rsat
 	@echo "Filtering protists"
-	awk '$$2=="ensemblgenomes"' ${EUKARYOTA_FILE} \
+	@awk '$$2=="ensemblgenomes"' ${EUKARYOTA_FILE} \
 		| grep -v 'Fungi' \
 		| grep -v 'Metazoa' \
 		| grep -v 'Viridiplantae' \
 		> ${PROTIST_FILE}
-	@echo "	${PROTIST_FILE}"
+	@wc -l ${PROTIST_FILE}
 
 metazoa:
 	@${MAKE} supported_taxon TAXON=Metazoa SERVER=rsat.sb-roscoff.fr SERVER_PATH=
