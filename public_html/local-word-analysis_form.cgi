@@ -434,7 +434,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.local-word-analysis.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_local-word-analysis.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "<hr />";

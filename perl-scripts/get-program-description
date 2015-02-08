@@ -133,7 +133,7 @@ sub PrintHelp {
 NAME
 	get-program-description
 
-        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2002 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 USAGE
         get-program-description [-i inputfile] [-o outputfile] [-v]

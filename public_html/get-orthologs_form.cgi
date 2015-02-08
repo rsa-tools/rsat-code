@@ -70,7 +70,7 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<br>\n";
 print "Program developed by <A HREF='mailto:rekins\@bigre.ulb.ac.be'>Rekin's Janky</A>\n";
-print "and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>).\n";
+print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>).\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
@@ -156,7 +156,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.get-orthologs.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_get-orthologs.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</BLOCKQUOTE>\n";

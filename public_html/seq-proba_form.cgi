@@ -149,7 +149,7 @@ print "</B></TD>\n";
 print $query->end_form;
 
 print "<TD><B><A HREF='help.seq-proba.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

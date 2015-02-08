@@ -3423,7 +3423,7 @@ VERSION
        $program_version
 
 AUTHOR
-       Since 1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+       Since 1999 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
        Since 2004 Olivier Sand (oly\@bigre.ulb.ac.be)
 
 USAGE
@@ -5449,7 +5449,7 @@ sub MDCreport {
 #  			 ">name of contact",
 #  			 "Jacques van Helden",
 #  			 ">email",
-#  			 "jvanheld\@bigre.ulb.ac.be",
+#  			 "Jacques.van-Helden\@univ-amu.fr",
 #  			 ">program name",
 #  			 "multiple-family-analyis"), "\n";
    close $results;
@@ -5461,7 +5461,7 @@ sub MDCreport {
 #  			    ">name of contact",
 #  			    "Jacques van Helden",
 #  			    ">email",
-#  			    "jvanheld\@bigre.ulb.ac.be",
+#  			    "Jacques.van-Helden\@univ-amu.fr",
 #  			    ">program name",
 #  			    "multiple-family-analyis"), "\n";
 

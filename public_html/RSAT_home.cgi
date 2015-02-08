@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 print $query->header;
 print $query->start_html(-class => "info",
-			 -author=>'Jacques.van-Helden@univ-amu.fr',
+			 -author=>'Jacques.van-Helden\@univ-amu.fr',
 			 -style => { 	
 			   -src => ["main.css","font-awesome.min.css"],
 			   -type => 'text/css',
@@ -292,8 +292,8 @@ print <<EndAddress;
 <i>
 For suggestions or information request, please contact :
 <br>
-<a href="mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)">
-Jacques van Helden (jvanheld\@bigre.ulb.ac.be)</i>
+<a href="mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)">
+Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)</i>
 </a>
 </h4>
 EndAddress

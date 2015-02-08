@@ -131,7 +131,7 @@ sub PrintHelp {
 NAME
 	parse-footprinter
 
-        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2004 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	
 DESCRIPTION
 	Parse the motif html file resulting of FootPrinter, and

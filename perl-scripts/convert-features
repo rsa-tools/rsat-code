@@ -459,7 +459,7 @@ sub PrintHelp {
 NAME
 	convert-features
 
-        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+        2002 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 DESCRIPTION
 	Interconversions between various formats of feature

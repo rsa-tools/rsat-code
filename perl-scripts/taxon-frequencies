@@ -37,7 +37,7 @@ taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 > Mollicutes_dyads_3nt
 
 =head1 AUTHORS
 
-Jacques.van-Helden@univ-amu.fr
+Jacques.van-Helden\@univ-amu.fr
 
 =head1 CATEGORY
 
