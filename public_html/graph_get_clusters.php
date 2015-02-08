@@ -145,7 +145,7 @@
 #    $server = rtrim ($server);
 #    $temp_file = explode('/',$server);
 #    $temp_file = end($temp_file);
-#    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+#    $resultURL = $rsat_www."/tmp/".$temp_file;
     store_command($command, "graph comparison", $cmd_handle);
     $URL['Result'] = rsat_path_to_url($server);
 

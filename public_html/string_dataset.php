@@ -102,7 +102,7 @@
   }
   
   $temp_file = writeTempFile("string", $file_content_tab);
-     $resultURL = $WWW_RSA.$temp_file;
+     $resultURL = $rsat_www.$temp_file;
 hourglass("off");
       # Display the results
       echo "The results is available at the following URL ";

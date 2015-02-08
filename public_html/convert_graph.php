@@ -146,15 +146,17 @@
     info("Results will appear below");
     echo"<hr>\n";
     hourglass("on");
+
+
     # Open the SOAP client
-    $client = new SoapClient(
-                       $neat_wsdl,
-                           array(
-                                 'trace' => 1,
-                                 'soap_version' => SOAP_1_1,
-                                 'style' => SOAP_DOCUMENT,
-                                 'encoding' => SOAP_LITERAL
-                                 )
+      $client = new SoapClient(
+			       $neat_wsdl,
+			       array(
+				     'trace' => 1,
+				     'soap_version' => SOAP_1_1,
+				     'style' => SOAP_DOCUMENT,
+				     'encoding' => SOAP_LITERAL
+				     )
                            );
 
     # Execute the command
