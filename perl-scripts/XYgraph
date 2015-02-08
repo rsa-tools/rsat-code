@@ -2003,9 +2003,6 @@ OPTIONS
 		 will draw a green line at the x positions 1, 2, 4, 8
 		 and 16
 
-Web VERSION
-	http://rsat.ulb.ac.be/rsat/
-
 End_of_Help
   close HELP;
 }

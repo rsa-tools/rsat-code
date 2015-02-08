@@ -28,7 +28,7 @@
    echo ("<center>This programs takes as input a contingency table, and calculates various
 	  matching statistics between the rows and columns. <br>The description of
 	  these statistics can be found in <a href = 'http://www.biomedcentral.com/1471-2105/7/488'>Broh&eacute;e and van Helden (2006)</a>\n");
-   echo ("<br>This program was developed by <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+   echo ("<br>This program was developed by <a target=_blank href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a>.
 	  </center>\n");
 
 
@@ -66,7 +66,7 @@
   <TD><B><A HREF='help.contingency_stats.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Influence_graph_alteration.html")."'>TUTORIAL</A></B></TD>
 
-  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sbrohee\@ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
 

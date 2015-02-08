@@ -33,7 +33,7 @@ echo ("<br>This program was developed by
 	  <a target=_blank
           href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain
           Broh&eacute;e</a> and <a target=_blank
-          href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van
+          href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van
           Helden</a>.
           </center>\n");
 
@@ -110,7 +110,7 @@ echo ("<br>
   </form>
   <TD><B><A HREF='help.convert_classes.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Network_visualization_forma.html")."'>TUTORIAL</A></B></TD>
-  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sbrohee\@ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE>
  ");
 

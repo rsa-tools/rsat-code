@@ -33,7 +33,7 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Convert between different file formats that store genetic variation information. The most commonly used formats are:<a href='http://en.wikipedia.org/wiki/Variant_Call_Format'> VCF </a> and <a href='http://www.sequenceontology.org/resources/gvf_1.00.html'>GVF</a>, varBed format format presents several advantages for scanning variations with  matrices using <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
