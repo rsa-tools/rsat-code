@@ -48,7 +48,7 @@ echo ("<br>This program was developed by
 <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a>,
 Gilles Vanderstocken 
 and 
-<a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+<a target=_blank href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a>.
 </center>\n");
   if($demo) {
     demo($demo_remark);
@@ -168,7 +168,7 @@ and
   <TD><B><A HREF='help.compare_graphs.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Comparisons_between_network.html")."'>TUTORIAL</A></B></TD>
 
-  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be' >MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sbrohee\@ulb.ac.be' >MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
   ?>
   </body>

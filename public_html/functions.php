@@ -320,8 +320,7 @@ Function spaces_to_tab($string, $num) {
 # This function converts a file name from its complete path
 # its URL on the RSAT webserver
 # For example: /home/rsat/rsa-tool/public_html/tmp/brol.truc
-# will be converted to
-# http://rsat.ulb.ac.be/rsat/tmp/brol.truc
+# will be converted to a link to the corresponding URL on the web server.
 Function rsat_path_to_url ($file_name) {
   global $WWW_RSA;
   global $properties;

@@ -146,7 +146,7 @@ package main;
 
   ## Remote server from which genomes should be downloaded
 #  $RSAT_SERVER="rsat.eu/";
-  $RSAT_SERVER="http://rsat.ulb.ac.be/rsat";
+  $RSAT_SERVER="http://www.rsat.eu/";
 
   ## List of organisms to install
   @organisms = ();
@@ -616,7 +616,7 @@ allows to use the command within a pipe.
 
 Specify an alternative server.
 
-Default: http://rsat.ulb.ac.be/rsat/
+Default: http://www.rsat.eu//
 
 =cut
 

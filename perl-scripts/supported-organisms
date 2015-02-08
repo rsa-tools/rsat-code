@@ -130,7 +130,7 @@ AUTHORS
 	Jacques.van-Helden@univmed.fr
 
 	Management of taxonomic tree: 
-	   Rekin\'s Janky (rekins@bigre.ulb.ac.be).
+	   Rekin\'s Janky (Rekins.Janky\@vib.be).
 
 DESCRIPTION
 
@@ -199,7 +199,7 @@ OPTIONS
 
 	-server Return the list of organisms supported on a remote
 		RSAT server, via the Web services interface
-		(http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl).
+		(http://www.rsat.eu/web_services/RSATWS.wsdl).
 
 		The option -server can be combined with the option
 		-taxon in order to obtain the list of organisms
