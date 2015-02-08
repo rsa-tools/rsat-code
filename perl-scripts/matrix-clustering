@@ -1379,15 +1379,16 @@ sub Add_attributes_to_JSON(){
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $id_json = $cluster."_".$folder;
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
-		      $Add .= " \"id\" : \"".$cluster."_".$folder."\",\n";
+		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"url\" : \"".$consensus_link."\",\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 	      }
 	  }
-	  
+
 	  ### Search the pattern separating the matrices names
 	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
 	      $Flag = 1;
@@ -3545,15 +3546,15 @@ sub InsertTreesAndBranchMotifs {
 
     $script_jquery .= "\n".'
     function showOneRow(id) {
-       $(\'.branch_motifs\').css(\'display\', \'table-row\');
-       $(\'.branch_motifs\').not(\'#\' + id).hide();
+       $(".branch_motifs").css("display", "table-row");
+       $(".branch_motifs").not("#" + id).hide();
      };
 
     function showOneTable(id) {
-       $(\'.cons_tab\').css(\'display\', \'table\');
-       $(\'.cons_tab\').not(\'#\' + id).hide();
-     };'."\n";
-    $script_jquery .= "</script>\n";
+       $(".cons_tab").css("display", "table");
+       $(".cons_tab").not("#" + id).hide();
+     };
+    </script>'."\n";
 }
 
 
