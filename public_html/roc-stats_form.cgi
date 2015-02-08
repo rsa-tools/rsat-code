@@ -273,7 +273,7 @@ sub NeAT_header {
   ### print the header of the result page
   print $query->start_html(-title=>"Network Analysis Tools : $title",
 			   -class => "$css_body_class",
-			   -author=>'jacques.van.helden@ulb.ac.be',
+			   -author=>'Jacques.van-Helden@univ-amu.fr',
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });

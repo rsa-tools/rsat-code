@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 print $query->header;
 print $query->start_html(-class => "info",
-			 -author=>'jacques.van.helden@ulb.ac.be',
+			 -author=>'Jacques.van-Helden@univ-amu.fr',
 			 -style => { 	
 			   -src => ["main.css","font-awesome.min.css"],
 			   -type => 'text/css',
