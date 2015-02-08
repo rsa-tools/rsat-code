@@ -2955,6 +2955,9 @@ sub ReportStyleCSS{
 ## taken from other parts of the code
 sub ParametersTable{
 
+#  my $hclust_method_link = "http://www.econ.upf.edu/~michael/stanford/maeb7.pdf";
+  my $hclust_method_link = "http://pedagogix-tagc.univ-mrs.fr/courses/statistics_bioinformatics/pdf_files/09.clustering.pdf";
+
   my $threshold_values_html = "";
   foreach my $par (sort keys %lth){
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
@@ -2980,7 +2983,7 @@ sub ParametersTable{
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	  <td class="par_text"><a target=\'_blank\' href="http://www.econ.upf.edu/~michael/stanford/maeb7.pdf">'.$hclust_method.'</a></td>
+	  <td class="par_text"><a target=\'_blank\' href="'.$hclust_method_link.'">'.$hclust_method.'</a></td>
 	  <td class="par_text">'.$threshold_values_html.'</td>
 	  <td class="par_text"><a href="'.$main::outfile{archive}.'">Download all results</a></td>
 	</tr>
