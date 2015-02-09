@@ -6175,15 +6175,16 @@ sub monitor {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
   my $ticket = $args{"ticket"};
-  $ticket =~ s/.*\.//;
+  $ticket =~ s/.*\/\.//;
   my $grep = `ps aux | grep $ticket | grep -v 'grep' | grep -v monitor`;
   if ($grep) {
-      return SOAP::Data->name('response' => {'status' => 'Running'});
+#     return SOAP::Data->name('response' => {'status' => 'Running'});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('status' => 'Running')))->attr({'xmlns' => ''});
   } else {
-      return SOAP::Data->name('response' => {'status' => 'Done'});
+#     return SOAP::Data->name('response' => {'status' => 'Done'});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('status' => 'Done')))->attr({'xmlns' => ''});
   }
 }
-
 
 ################################################################
 sub get_result {
@@ -6214,8 +6215,11 @@ sub get_result {
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
   } else {
-      return SOAP::Data->name('response' => {'client' => $result,
-					     'server' => $tmp_outfile});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('client' => $result),
+							       SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile))))
+	  ->attr({'xmlns' => ''});
+#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+#	  'client' => $result});
   }
 }
 
@@ -6258,8 +6262,11 @@ sub run_WS_command {
       $response .= "\t$result_URL\n";
       $response .= "When the result will be ready, you will be notified at your email address ($email_address).\n";
       $response .= "The result file will remain on the server for $delay.\n";;
-      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					     'client' => $response});
+#      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+#					     'client' => $response});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => 'NA'),
+ 				                               SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+					                       SOAP::Data->name('client' => $response)))->attr({'xmlns' => ''});
   }
 
   if ($output_choice eq 'ticket') {
