@@ -180,7 +180,7 @@ package main;
   ## but we faced problems on some servers, due to the the path
   ## public_html/lib, which inludes a soft link (lib ->
   ## ../perl-scripts/lib).
-  local $include_js_lib = 1;
+  local $include_js_lib = 1; 
 
   ## Base on which we will buld the the URLs to the javascripts (D3 +
   ## JQuery libraries, required to display logo trees and tables).
@@ -280,7 +280,6 @@ package main;
 
   ## Merged consensuses logos
   local %merged_consensuses_files = ();
-  local @levels_JSON = ();
 
   ## Supported taks
   local @supported_tasks = qw(
@@ -1365,10 +1364,6 @@ sub Add_attributes_to_JSON(){
       }
       close(LVL_JSON);
 
-      
- #     chomp(@levels_JSON = `more $file | grep -v ';' | cut -f3`);
-#      my @merged_cons_folders = keys(%merged_consensuses_files);
-      
       ## Open the JSON file produced by R   
       my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
       &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
@@ -1387,20 +1382,20 @@ sub Add_attributes_to_JSON(){
 	      if ($children > 1){
 		  my $folder = $levels_JSON[$children-2];
 
-#		  if(grep(/$folder/, @merged_cons_folders)){
 		  if(exists($merged_consensuses_files{$folder})){		
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
-		      my $consensus_link = &RSAT::util::RelativePath($JSON, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $id_json = $cluster."_".$folder;
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
-		      $Add .= " \"id\" : \"".$cluster."_".$folder."\",\n";
+		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"url\" : \"".$consensus_link."\",\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 	      }
 	  }
-	  
+
 	  ### Search the pattern separating the matrices names
 	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
 	      $Flag = 1;
@@ -1408,13 +1403,13 @@ sub Add_attributes_to_JSON(){
 	      $M1 = $1;
 	      
 	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file});
+	      my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $matrix_info{$M1}{logo_aligned_file});
 	      $aligned_logo_link =~ s/^\.\.\///g;
 
 	      my $aligned_logo_url = $aligned_logo_link.".png";
 
 	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($JSON, $matrix_info{$M1}{logo_aligned_file_rc});
+	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $matrix_info{$M1}{logo_aligned_file_rc});
 	      $aligned_rc_logo_link =~ s/^\.\.\///g;
 	      my $aligned_rc_logo_url = $aligned_logo_link.".png";
 	      
@@ -1532,7 +1527,7 @@ sub create_html_tree_file(){
 	    my $mat_number = $clusters_info{$clust} + 2;
 	    $_ =~ s/--height--/100 + 85 * $mat_number/;
 	}
-
+	
 	### Set the height 
 	if(/--widthtree--/){;
 	    $_ =~ s/--widthtree--/3500/;
@@ -2124,8 +2119,8 @@ sub Display_Selected_Branch{
     my $selected_branch  = 
 '
   $(document).ready(function(){
-    $(\'#cluster_--nb--_merge_level_--level--\').click(function(){
-       showOneRow("cluster_--nb--_level_--level--");
+    $("#--branch_tab_id--").click(function(){
+       showOneRow("--branch_row_id--");
        showOneTable("branch_consensus_cluster_--nb--");
      }); 
   }); 
@@ -3459,7 +3454,6 @@ sub InsertTreesAndBranchMotifs {
 	my $insert_id = '
                 .attr("cursor", function(d) { return d.children ? "pointer" : ""; })
                 .attr("id", function(d) { return d.children ? d.id : ""; })
-
         ';
 	
 	## Make dynamics the buttons of the cluster header
@@ -3537,9 +3531,13 @@ sub InsertTreesAndBranchMotifs {
 
 		## Add the code to hide/show the branch-consensus table
 		my $selection_branch = &Display_Selected_Branch();
+		my $branch_tab_id = "cluster_".$num."_merge_level_".$level;
+		my $branch_row_id = "cluster_".$num."_level_".$level;
+		$selection_branch =~ s/--branch_tab_id--/$branch_tab_id/g;
+		$selection_branch =~ s/--branch_row_id--/$branch_row_id/g;
 		$selection_branch =~ s/--nb--/$num/g;
-		$selection_branch =~ s/--level--/$level/g;
 		$script_jquery .= $selection_branch."\n";
+
 	    }
 	    $consensus_table =~ s/--nb--/$num/g;
 	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
@@ -3555,15 +3553,15 @@ sub InsertTreesAndBranchMotifs {
 
     $script_jquery .= "\n".'
     function showOneRow(id) {
-       $(\'.branch_motifs\').css(\'display\', \'table-row\');
-       $(\'.branch_motifs\').not(\'#\' + id).hide();
+       $(".branch_motifs").css("display", "table-row");
+       $(".branch_motifs").not("#" + id).hide();
      };
 
     function showOneTable(id) {
-       $(\'.cons_tab\').css(\'display\', \'table\');
-       $(\'.cons_tab\').not(\'#\' + id).hide();
-     };'."\n";
-    $script_jquery .= "</script>\n";
+       $(".cons_tab").css("display", "table");
+       $(".cons_tab").not("#" + id).hide();
+     };
+    </script>'."\n";
 }
 
 

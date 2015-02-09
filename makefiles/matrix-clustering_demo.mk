@@ -16,7 +16,7 @@ MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
 MIN_W=5
-V=2
+V=1
 
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
