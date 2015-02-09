@@ -743,6 +743,9 @@ sub getLineInfo {
     my @field2 = split(/\|/,$field[0]); #var_info, coord
     $line_info{'coord'} = $field2[1];
 
+    my @split_coord= split (/_/,$field2[1]); ## chr:start-end , strand
+    $line_info{'var_strand'} = $split_coord[1];
+
     my @field3 = split(/\;/,$field2[0]); #id,ref,alt,type,minor_allele_freq
     $line_info{'id'} = $field3[0];
     $line_info{'variant_ref'} = $field3[1];
@@ -811,6 +814,7 @@ sub Analyse_scanning {
 	$scanning_info{'minor_allele_freq'} = $line_info{'minor_allele_freq'}; ##Get minor allele frequency of the variant
 	$scanning_info{'coord'} = $line_info{'coord'};
 	$scanning_info{'same_len'} = $same_variant_len;
+	$scanning_info{'var_strand'}=$line_info{'var_strand'};
     }
     &Analyse_variation(\%scanning_info,\%scanning_score_pos,\%scanning_score_var );
 }
@@ -1016,7 +1020,16 @@ sub Printline {
 
   ## Flag to specify if the best score was obtained from the major allele (reference variant) or from the minor allele
   my $is_ref_better;
-  if ($scanning_info{'best_variant'} eq $scanning_info{'original_ref'}){
+  my $local_ref=$scanning_info{'original_ref'};
+
+  ## Take into account the strand information of the variable.
+  if ($scanning_info{'var_strand'} eq "-"){
+      
+       $local_ref=~ tr/ACGTacgt/TGCAtgca/;
+       &RSAT::message::Info("Transforming ref variant to revers complement for comparison", $scanning_info{'variation'}) if ($main::verbose>=5)
+  }
+
+  if ($scanning_info{'best_variant'} eq $local_ref){
       $is_ref_better="Y";
   }
   else {
