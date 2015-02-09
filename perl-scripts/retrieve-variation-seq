@@ -264,6 +264,8 @@ package	main;
   &ReadArguments();
   our $genomes_dir = &Get_genomes_dir();
 
+
+  #
   ################################################################
   ## Check argument values
 
@@ -274,7 +276,7 @@ package	main;
 
   if ($main::infile{'input'}) {
     &RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
-    &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
+   
   }
 
   # Check directory
@@ -284,14 +286,20 @@ package	main;
   &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
   &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
 
-  # Check if sequence file are not missing
+  # Check if sequence files are not missing
   my %chr_file = &Get_file_seq_name($genome_dir);
 
   foreach my $file (keys(%chr_file)) {
+      &RSAT::message::Debug("Chr ", "++".$file."++", "File",  $chr_file{$file} )  if ($main::verbose >= 10);
       my $raw_seq_file=$genome_dir."/".$chr_file{$file};
-    unless (-f $raw_seq_file) {
-      &RSAT::error::FatalError($raw_seq_file," is missing.");
-    }
+      unless (-f $raw_seq_file) {
+	  &RSAT::error::FatalError($raw_seq_file," is missing.");
+      }
+  }
+
+## Check if files was given
+  unless  ((-f  $main::infile{'input'} ) || !($main::in)){
+      &RSAT::error::FatalError("Input file not found, provide either input file or standar input information")  ;
   }
 
   ################################################################
@@ -359,26 +367,27 @@ package	main;
   ################################################################
   ## Retrieve variations from varBed format
   if ($format eq "varBed") {
-    if ($main::infile{'input'}) {
-      $main::infile{'input_variation'} = $main::infile{'input'};
-
-    } else { ## Read in STDIN and write it to a file
-      $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varSeq";
-      my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'});
-
-      while (<$main::in>) {
-        next if (/^#/);
-        next if (/^;/);
-        next unless (/\t/);
-        print $out_v $_;
+      if ($main::infile{'input'}) {
+	  $main::infile{'input_variation'} = $main::infile{'input'};
+	  
+      } else { ## Read in STDIN and write it to a file
+	  $main::outfile{'variation_rsat'} = &RSAT::util::make_temp_file("","variation_rsat", 1).".varBed";
+	  my $out_v = &OpenOutputFile($main::outfile{'variation_rsat'});
+	  
+	  while (<$main::in>) {
+	      next if (/^#/);
+	      next if (/^;/);
+	      next unless (/\t/);
+	      print $out_v $_;
+	  }
+	  close $out_v;
+	  
+	  $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
+	  
       }
-      close $out_v;
-
-      $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
-
-    }
   }
-
+  
+  
   ################################################################
   ## Retrieve variations from one or several ID(s)
   ## retrieve-variation-seq works with varBed formats
@@ -464,11 +473,16 @@ package	main;
 	  my ($chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$minor_allele_freq,$suvar,$invar) = split("\t");
 	  next if ($invar && !$validate);
 	  &RSAT::message::Debug("Line content", join("*",$chr,$start,$end,$strand,$id,$ref,$var,$type,$valide,$minor_allele_freq,$suvar,$invar)) if ($main::verbose >= 10);
-	  
+	  ## Strip chr from the chromosome to leave only the number, users some times leave the regarthless of the fact formats should not include it
+	  $chr=~s/chr//;
+
+	  #print "chr".$chr."\n";
 	  $total_nb_variation++;
 	  
 	  if ($chr ne $last_chr) { ## get the raw sequence for the given chromosome 
+	      
 	      my $raw_seq_file=$genome_dir."/".$chr_file{$chr};
+	      &RSAT::message::Debug("raw seq file  value", $chr, $raw_seq_file) if ($main::verbose >= 10); 
 	      $ref_seq = qx($SCRIPTS/sub-sequence -i $raw_seq_file -from 1 -to 250000000 -format raw);
 	      &RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 10); 
 	      $last_chr = $chr;
@@ -477,10 +491,11 @@ package	main;
 	  &RSAT::message::Debug("id  value",  $id) if ($main::verbose >= 10);
 	  &RSAT::message::Debug("last_id  value",  $last_id) if ($main::verbose >= 10);
 	  
-	  if ($id ne $last_id && !$main::infile{'input'}) {  ## ALE'S NOTE: I DONT UNDERSTAND THIS SEGMENT SPECIALLY THE NO INPUT INSTATEMENT IN THE IF
+	  #if ($id ne $last_id && !$main::infile{'input'}) {  ## ALE'S NOTE: I DONT UNDERSTAND THIS SEGMENT SPECIALLY THE NO INPUT INSTATEMENT IN THE IF
+	  if ($id ne $last_id ) {  
 	      $nb_var++;
 	      if ($nb_var >= $last_nb + 1000000) {
-		  &RSAT::message::TimeWarn("Getting sequence for the variation",$nb_var,"to",$last_nb) if ($main::verbose >= 2);
+		  &RSAT::message::TimeWarn("Getting sequence for the variation",$nb_var,"to",$last_nb) if ($main::verbose >= 10);
 		  $last_nb += 1000000;
 	      }
 	      $last_id = $id;
@@ -494,17 +509,37 @@ package	main;
 	      ## deletions, but would not make sense in the sequence of
 	      ## the variant extended on both flanks.
 	      $variant_aux =~ s/-//g; 
+	      $variant_aux2=$variant_aux;
+	      ## Take STRAND into account
+	      ## if the strand is reverse, the variant will be translate to the direct strand
+	      ## so all sequences will be direct 
+	      if ($strand eq "-"){
+		  $variant_aux2=~ tr/ACGTacgt/TGCAtgca/;
+	      }elsif ($strand ne "+"){
+		  &RSAT::message::TimeWarn("Strand information does not match any known annotation, varian will be retrieved as direct") if ($main::verbose >= 10);
+		  $variant_aux2=$variant_aux;
+	      }
+	      &RSAT::message::Debug( "variant ", $variant_aux ."\n",
+				     # "ref_seq " .$ref_seq ."\n" ,
+				     "strand", $strand."\n",
+				     "start ",$start ."\n" ,
+				     "flank_len ", $flank_len . "\n".
+				     "flank_len ", $flank_len ."\n" ) if ($main::verbose >= 10);
 	      
-	      
+	      #<STDIN>;
 	      ## JvH, for Ale: we should check it the strand is well taken
 	      ## into account (here or below ?)
-	      my $left_flank = lc(substr($ref_seq,$start-$flank_len-1,$flank_len));
-	      my $right_flank = lc(substr($ref_seq,$end,$flank_len));
-	      my $variant_seq = $left_flank.$variant_aux.$right_flank;
+	      ## Note Ale for Jacques 20150209: I added the strand part just before this note; 
+
+	      ##Substream fucntion is cero based (all perl is), given that the sequences is one base it
+	      ## it requires to substract 2 to the possition to gather the correct bp in the genome
+	      my $left_flank = lc(substr($ref_seq,$start-$flank_len-2,$flank_len));
+	      my $right_flank = lc(substr($ref_seq,$end-1,$flank_len));
+	      my $variant_seq = $left_flank.$variant_aux2.$right_flank;
 	      
 	      ## Select the output fields
 	      my @out_fields = ($chr, $start, $end, $strand, $id, $type, $ref,  $variant_aux,  $minor_allele_freq, $variant_seq);
-	      &RSAT::message::Debug("Variant retrieved fields\n", join("\t",@out_fields )) if ($main::verbose >= 5);
+	      &RSAT::message::Debug("Variant retrieved fields\n", join("\t",@out_fields )) if ($main::verbose >= 10);
 	      print $out join("\t", @out_fields)."\n";
 	      #<STDIN>;
 	      $total_nb_variant++;
