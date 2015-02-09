@@ -25,7 +25,7 @@ $default{limits} = "None";
 $descr{site_pval} = "P-value of input sites";
 $default{lth_site_pval} = "None";
 $default{uth_site_pval} = "1e-3";
-
+$default{demo_descr} = "";
 $descr{site_score} = "Score of input sites";
 $default{lth_site_score} = "None";
 $default{uth_site_score} = "None";
@@ -61,7 +61,11 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("crer-scan");
+
 &PrintDescription();
+
+## Demo description
+print $default{demo_descr} if ($default{demo_descr});
 
 print $query->start_multipart_form(-action=>"crer-scan.cgi");
 
@@ -129,12 +133,20 @@ print $query->end_form;
 
 ################################################################
 ## Data for the demo
+my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
+$descr1 .= "<blockquote class ='demo'>";
+$descr1 .= "<p>In this demonstration, we detect cis-regulatory enriched regions (CRER) in the 5kb upstream region of the Drosophila gene even-skipped, in order to detect putative cis-regulatory modules (CRM).\n";
+$descr1 .= "The program <i>crer-scan</i> takes as input a set of binding sites, and returns regions presenting a significant enrichment for these.\n";
+$descr1 .= "Binding sites were obtained by scanning the even-skipped upstream region with 12 PSSM corresponding to transcrition factors involvd in embryonic segmentation.";
+$descr1 .= "</blockquote>";
+
 print $query->start_multipart_form(-action=>"crer-scan_form.cgi");
 $demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
 $demo_sites = `cat $demo_file`;
 $#demo_sites = `grep -v '^;' $demo_file`;
 print "<TD><B>";
 print $query->hidden(-name=>'sites',-default=>$demo_sites);
+print $query->hidden(-name=>'demo_descr',-default=>$descr1);
 print $query->hidden(-name=>'in_format',-default=>"ft");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
