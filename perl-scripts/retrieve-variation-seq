@@ -515,15 +515,16 @@ package	main;
 	      ## so all sequences will be direct 
 	      if ($strand eq "-"){
 		  $variant_aux2=~ tr/ACGTacgt/TGCAtgca/;
+		  &RSAT::message::TimeWarn("Transforming negative stranded variant", $id,$variant_aux," to positive ",$variant_aux2) if ($main::verbose >= 2);
+
 	      }elsif ($strand ne "+"){
-		  &RSAT::message::TimeWarn("Strand information does not match any known annotation, varian will be retrieved as direct") if ($main::verbose >= 1);
+		  &RSAT::message::TimeWarn("Strand information does not match any known annotation, variant", $id," will be retrieved as direct") if ($main::verbose >= 1);
 		  $variant_aux2=$variant_aux;
 	      }
 	      &RSAT::message::Debug( "variant ", $variant_aux ."\n",
 				     # "ref_seq " .$ref_seq ."\n" ,
 				     "strand", $strand."\n",
 				     "start ",$start ."\n" ,
-				     "flank_len ", $flank_len . "\n".
 				     "flank_len ", $flank_len ."\n" ) if ($main::verbose >= 10);
 	      
 	      #<STDIN>;
@@ -531,10 +532,9 @@ package	main;
 	      ## into account (here or below ?)
 	      ## Note Ale for Jacques 20150209: I added the strand part just before this note; 
 
-	      ##Substream fucntion is cero based (all perl is), given that the sequences is one base it
-	      ## it requires to substract 2 to the possition to gather the correct bp in the genome
-	      my $left_flank = lc(substr($ref_seq,$start-$flank_len-2,$flank_len));
-	      my $right_flank = lc(substr($ref_seq,$end-1,$flank_len));
+	      
+	      my $left_flank = lc(substr($ref_seq,$start-$flank_len-1,$flank_len));
+	      my $right_flank = lc(substr($ref_seq,$end-0,$flank_len));
 	      my $variant_seq = $left_flank.$variant_aux2.$right_flank;
 	      
 	      ## Select the output fields
