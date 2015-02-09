@@ -516,7 +516,7 @@ package	main;
 	      if ($strand eq "-"){
 		  $variant_aux2=~ tr/ACGTacgt/TGCAtgca/;
 	      }elsif ($strand ne "+"){
-		  &RSAT::message::TimeWarn("Strand information does not match any known annotation, varian will be retrieved as direct") if ($main::verbose >= 10);
+		  &RSAT::message::TimeWarn("Strand information does not match any known annotation, varian will be retrieved as direct") if ($main::verbose >= 1);
 		  $variant_aux2=$variant_aux;
 	      }
 	      &RSAT::message::Debug( "variant ", $variant_aux ."\n",
