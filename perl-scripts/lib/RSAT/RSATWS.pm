@@ -6360,12 +6360,13 @@ sub email_command {
     my $email_message = "Your result is available at the following URL:\n\t$result_URL";
     $email_message .= "\nThe result file will remain there for $delay.";
 
-    my $mail_command = "mail -s \'".$title."\'";
+    my $mail_command = "send-mail -to \'".$email_address."\' -subject \'".$title."\'";
 
-    my $email_command =  "($command &>$tmp_outfile; ";
-    $email_command .= "echo \"$email_message\" | $mail_command $email_address) &"; 
+#    my $email_command =  "($command &>$tmp_outfile; ";
+#    $email_command .= "echo \"$email_message\" | $mail_command) &";
+#    my $email_command = "echo \"$email_message\" | $mail_command";
+    my $email_command = "echo 'COUCOU' | send-mail -to 'olivier.sand@good.ibl.fr' -subject 'test'";
     system $email_command;
-
 }
 
 
