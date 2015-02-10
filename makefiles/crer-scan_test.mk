@@ -7,7 +7,7 @@ MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 SITES_DIR=data
 SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
-RES_DIR=crer-scan_test/results
+RES_DIR=results/crer-scan_test/
 SITES=${SITES_DORSAL}
 demo_dorsal:
 	mkdir -p ${RES_DIR}
@@ -21,11 +21,13 @@ demo_dorsal:
 
 
 CRER_DIR=${RES_DIR}/crers
+EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft
 demo_eve:
-	@echo "Detectiong CRERS	${SITES_DIR}/matrix-scan_2014-03_segmentation_DEMO1.ft"
+	@echo "Detecting CRERs for segmentation TF in even-skipped upstream sequence"
+	@echo "Sites	${EVE_UPSTREAM_SITES}"
 	mkdir -p ${CRER_DIR}
 	python3 python-scripts/crer_scan.py -v ${V} \
-		-i ${RSAT}/public_html/demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft \
+		-i  ${EVE_UPSTREAM_SITES} \
 		-s \
 		-in_format ft \
 		-lth_crer_size 30 -uth_crer_size 500 \
@@ -41,4 +43,8 @@ demo_eve:
 		-o ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer.ft
 	@echo "	 ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer.ft"
 
+## Run eve demo with a sites file that contains no comment lines
+## FOR THE TIME BEING THIS DOES NOT WORK !!!
+demo_eve_nocomments:
+	@${MAKE} demo_eve EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001_nocomments.ft
 
