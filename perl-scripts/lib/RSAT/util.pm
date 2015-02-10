@@ -1067,7 +1067,7 @@ sub doit {
       $wd = `pwd`;
       chomp($wd);
 
-      ## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
+      ## qsub command functionning using torque
       $qsub_cmd = "qsub";
       $qsub_cmd .= " ".$selected_nodes if ($selected_nodes);
       $qsub_cmd .= " -d ".$wd;
@@ -1080,8 +1080,8 @@ sub doit {
 
       &RSAT::message::Debug("qsub command for torque", $qsub_cmd) if ($main::verbose >= 2);
 
-    } else {
-      ## qsub command functionning using Sun Grid Engine (note: this is the cluster management system installed at the BiGRe lab, 2012)
+    } elsif (lc($queue_manager) eq "sge") {
+      ## qsub command functionning using Sun Grid Engine
       $qsub_cmd = join(" ", "qsub",
 		       "-m", $batch_mail,
 		       "-q ", $cluster_queue,
@@ -1090,6 +1090,8 @@ sub doit {
 		       "-o ".$job_log,
 		       $qsub_options,
 		       $job_file);
+    } else {
+      &RSAT::error::FatalError($queue_manager, "please define the queue manager in RSAT_config.props. Supported: torque|SGE");
     }
     &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
