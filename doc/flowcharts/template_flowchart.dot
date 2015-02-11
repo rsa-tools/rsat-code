@@ -1,0 +1,23 @@
+digraph {
+start [label="Start"];
+
+start -> decision;
+
+decision [shape=diamond, label="Accessed externally?"];
+
+decision -> public [label="Yes"];
+decision -> notpublic [label="No"];
+
+public [shape=box, label="public"];
+notpublic [shape=diamond, label="Deny to children?"];
+
+notpublic -> protected [label="No"]
+notpublic -> private [label="Yes"]
+
+protected [shape=box, label="protected"]
+private [shape=box, label="private"]
+
+{ rank=same; decision; public }
+{ rank=same; notpublic; private }
+
+}
