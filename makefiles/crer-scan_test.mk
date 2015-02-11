@@ -7,11 +7,12 @@ MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 SITES_DIR=data
 SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
+PYTHON=python3
 RES_DIR=results/crer-scan_test/
 SITES=${SITES_DORSAL}
 demo_dorsal:
 	mkdir -p ${RES_DIR}
-	python3 python-scripts/crer_scan.py  \
+	${PYTHON} python-scripts/crer_scan.py  \
 		-i ${SITES_DORSAL} -s -in_format ft \
 		-lth_crer_size 30 -uth_crer_size 500 -lth_crer_sites 2 -uth_crer_sites 1000 \
 		-lth_crer_sites_distance 1 -uth_crer_sites_distance 1000 \
@@ -26,7 +27,7 @@ demo_eve:
 	@echo "Detecting CRERs for segmentation TF in even-skipped upstream sequence"
 	@echo "Sites	${EVE_UPSTREAM_SITES}"
 	mkdir -p ${CRER_DIR}
-	python3 python-scripts/crer_scan.py -v ${V} \
+	${PYTHON} python-scripts/crer_scan.py -v ${V} \
 		-i  ${EVE_UPSTREAM_SITES} \
 		-s \
 		-in_format ft \
