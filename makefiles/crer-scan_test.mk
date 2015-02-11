@@ -33,7 +33,7 @@ demo_eve:
 		-lth_crer_size 30 -uth_crer_size 500 \
 		-lth_crer_sites 2 -uth_crer_sites 1000 \
 		-lth_crer_sites_distance 1 -uth_crer_sites_distance 1000 \
-		-uth_site_pval 0.0001\
+		-uth_site_pval 0.001\
 		-uth_crer_eval 0.0001 \
 		-uth_crer_pval 0.0001 \
 		-lth_crer_sig 2 \
