@@ -152,7 +152,7 @@ $demo_sites = `cat $demo_file`;
 $#demo_sites = `grep -v '^;' $demo_file`;
 print "<TD><B>";
 print $query->hidden(-name=>'sites',-default=>$demo_sites);
-print $query->hidden(-name=>'lth_crer_sig',-default=>0);
+print $query->hidden(-name=>'lth_crer_sig',-default=>0.1);
 print $query->hidden(-name=>'demo_descr',-default=>$descr1);
 print $query->hidden(-name=>'in_format',-default=>"ft");
 print $query->submit(-label=>"DEMO");
