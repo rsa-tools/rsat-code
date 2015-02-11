@@ -82,6 +82,7 @@ package main;
 
   our %infile = ();
   our %outfile = ();
+  our %args = (); ## Arguments passd to &RSAT::server::send_mail()
 
   our $verbose = 0;
   our $in = STDIN;
@@ -112,7 +113,7 @@ package main;
 
   ################################################################
   ## Execute the command
-  &RSAT::server::send_mail($message, $recipient, $subject);
+  &RSAT::server::send_mail($message, $recipient, $subject, %args);
 
   ################################################################
   ## Report execution time and close output stream
@@ -233,16 +234,25 @@ Mandatory argument
     } elsif ($arg eq "-to") {
       $recipient = shift(@arguments);
 
-
 =pod
 
-=item	B<-subject 'email subject'>
-
-Subject of the message
+=item   B<-subject 'email subject'>                                                                                                                                                                                  
+Subject of the message.
 
 =cut
     } elsif ($arg eq "-subject") {
       $subject = shift(@arguments);
+
+
+# =pod
+
+# =item	B<-password your_password_for_smtp>
+
+# Some SMTP servers require an authentification
+
+# =cut
+#     } elsif ($arg eq "-password") {
+#       $args{sasl_password} = shift(@arguments);
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
