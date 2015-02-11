@@ -5,6 +5,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+
+require RSAT::organism;
+
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -48,7 +51,30 @@ print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 #### Select organims to retrieve variants sequences from
 
-print "&nbsp;"x0, &OrganismPopUpString();
+## Get supported organims
+my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms();
+
+## Intialize array to store organisms with variation files
+my @org_variations=(); 
+
+foreach my $org_aux  ( @installed_organisms){
+
+    ## Check by organims if there is variation file installed
+    my $org_var=&RSAT::organism::has_variations($org_aux);
+    if ($org_var){
+	#print $org_var."++";
+	push (@org_variations, $org_aux)
+    }
+}
+
+if (scalar(@org_variations)>0){
+    print "&nbsp;"x0, &OrganismPopUpString(@org_variations);
+
+}
+else {
+    print "&nbsp;"x3;
+    print "This RSAT site does not contain any genome with variations";
+}
 print "<p>\n";
 
 

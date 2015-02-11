@@ -562,6 +562,7 @@ sub Get_var_from_gvf {
 sub Convert_var_to_rsat {
   my %variation = @_;
 
+  $variation{'chr'}=~s/chr//;
   my $line = $variation{'chr'}."\t";
   $line .= $variation{'start'}."\t";
   $line .= $variation{'end'}."\t";
