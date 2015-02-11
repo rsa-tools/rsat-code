@@ -460,7 +460,9 @@ package main;
 	
 	next if (/^#/);
 	next if (/^;/);
-	next unless (/\t/);
+	#next unless (/\t/);
+	## if user input a file that is space separated change it to tab
+	$_=~s/ +/\t/g;
 	chomp();
 	
 	my ($chr,$left,$right,$strand)= split("\t");
