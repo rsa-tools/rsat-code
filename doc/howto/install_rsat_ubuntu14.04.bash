@@ -55,7 +55,10 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 apt-get update
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
-DEVICE=sda1
+## Check the installation device 
+DEVICE=`df -h / | grep '/dev'| awk '{print $1}' | perl -pe 's/\/dev\///'`
+echo ${DEVICE}
+## This should give sda1
 
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
@@ -68,6 +71,7 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ${INSTALLER} ${INSTALLER_OPT} upgrade
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
@@ -213,6 +217,7 @@ do \
    df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${INSTALL_ROOT_DIR}/install_logs"
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ## This package has to be installed in an interactive mode (dialog
 ## box)
@@ -226,6 +231,7 @@ ${INSTALLER} install ${INSTALLER_OPT} console-data
 ## Note that these dependencies cost 400Mb ! To be checked
 ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
@@ -234,6 +240,7 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremov
 ${INSTALLER} ${INSTALLER_OPT}  clean
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ## Check the evolution of disk usage during package installation
 grep ${DEVICE} install_logs/df_*
