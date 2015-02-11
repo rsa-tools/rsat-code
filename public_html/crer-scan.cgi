@@ -28,10 +28,15 @@ $query = new CGI;
 ## Check security issues
 &CheckWebInput($query);
 
-$command = "python3 ".$ENV{RSAT}."/python-scripts/crer_scan.py";
+$ENV{rsat_echo} = 1;
+# $python = "python2.7";
+#$python = "/usr/bin/env python";
+#$command = $python." ".$ENV{RSAT}."/python-scripts/crer_scan.py";
+$command = $ENV{RSAT}."/python-scripts/crer-scan";
 $prefix = "crer_scan";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 @result_files = ();
+
 
 #### read parameters ####
 $parameters = " -v 1 -s ";
@@ -152,8 +157,13 @@ $parameters .= " -return_limits_filtered";
 
 ## Output file
 $result_file = $tmp_file_path.".tab";
-#$parameters .= " -o ".$result_files;
+#$parameters .= " -o ".$result_file;
 push @result_files, ("CRERs",$result_file);
+
+## Errors and warnings
+#$err_file = $tmp_file_path."_stderr.txt";
+#$parameters .= "2> ".$err_file;
+#push @result_files, ("STDERR",$err_file);
 
 &ReportWebCommand($command." ".$parameters);
 
