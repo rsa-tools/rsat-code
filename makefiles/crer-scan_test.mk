@@ -7,7 +7,9 @@ MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 SITES_DIR=data
 SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
-PYTHON=python3
+## Choose python version. The script is compatible with both 2.7 and 3
+#PYTHON=python3
+PYTHON=python
 RES_DIR=results/crer-scan_test/
 SITES=${SITES_DORSAL}
 demo_dorsal:
