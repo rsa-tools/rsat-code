@@ -197,6 +197,7 @@ perl_modules_cmd:
 
 ## Do not test the modules, simply install them
 CPAN_OPT=-T 
+CPAN=cpan
 CPAN_CMD=${CPAN} ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
 ## configuration, cpan may ask you to answer y/n for each module and
