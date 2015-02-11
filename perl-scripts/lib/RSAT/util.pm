@@ -1091,7 +1091,9 @@ sub doit {
 		       $qsub_options,
 		       $job_file);
     } else {
-      &RSAT::error::FatalError($queue_manager, "please define the queue manager in RSAT_config.props. Supported: torque|SGE");
+      &RSAT::error::FatalError($queue_manager, 
+			       "Invalid queue manager. Supported: torque | SGE.",
+			       "Please define the queue manager in RSAT_config.props.");
     }
     &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
