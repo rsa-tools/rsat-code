@@ -554,7 +554,9 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 	list_limit =[]
 	j = 0
 	object_list=[]
+	matrix = []
 	max_site_pvalue = 0
+	number_of_matrix = 0
 	
 	# treatment line by line and extraction of interesting information in a list
 	for line in tab_list :
@@ -566,7 +568,7 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 			# Extraction of limit sequence informations in a list (init_table) 
 			# which is added to another list (list_limit)
 			if table[1]== 'limit':
-				
+			
 				init_table = []
 				init_table.append(table[0])
 				init_table.append(table[4])
@@ -598,11 +600,11 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 				else:
 					num = row.split()
 					matrix_list.append(int(num[1]))
-					
+			
+			# Number of matrix is the maximum of the matrix_list
+			number_of_matrix = max(matrix_list)
+		
 		j= j+1
-	
-	# Number of matrix is the maximum of the matrix_list
-	number_of_matrix = max(matrix_list)
 	
 	
 	if verbose >=3 :
@@ -647,10 +649,17 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 		
 		if lth_threshold and uth_threshold and lth_pval_site_threshold:
 			
+			matrix.append(j[2])
+			
 			max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 			
 			j[0] = Siteft(j[1],j[2],j[3],j[4],j[5],j[6],j[7],j[8],j[9],j[10])
 			object_list.append(j[0])
+	
+	# We consider that there is only one matrix per sites (not True every time) if there is no comments
+	if number_of_matrix == 0:
+		matrix=list(set(matrix)) # Remove duplicates
+		number_of_matrix = len(matrix)
 	
 	# Verbose message
 	if verbose >=3 :
@@ -699,6 +708,8 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 		list_limit=[]
 		j=0
 		max_site_pvalue = 0
+		matrix=[]
+		number_of_matrix = 0
 		
 		# treatment line by line and extraction of interesting information in a list
 		for line in tab_list :
@@ -739,10 +750,10 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 					else:
 						num = row.split()
 						matrix_list.append(int(num[1]))
+				# Number of matrix is the maximum of the matrix_list
+				number_of_matrix = max(matrix_list)
+			
 			j= j+1
-		
-		# Number of matrix is the maximum of the matrix_list
-		number_of_matrix = max(matrix_list)
 		
 		
 		object_list=[]
@@ -790,11 +801,18 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			
 			if lth_threshold and uth_threshold and lth_pval_site_threshold:
 				
+				matrix.append(j[2])
+				
 				max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 				j[0] = Siteft(j[1],j[2],j[3],j[4],j[5],j[6],j[7],j[8],j[9],j[10])
 				
 				object_list.append(j[0])
-			
+		
+		# We consider that there is only one matrix per sites (not True every time) if there is no comments
+		if number_of_matrix == 0:
+			matrix=list(set(matrix)) # Remove duplicates
+			number_of_matrix = len(matrix)
+		
 		# Verbose message
 		if verbose >=3 :
 			time_warn("	Site object instantiated")
@@ -822,11 +840,11 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 		# identification of table with sites
 		for line in read :
 			j=j+1
-			if line[0:13]=="browser dense":
+			if line[0:2]=="##":
 				line_table=read[j-1:]
-		
+	
 		# Extraction of table only
-		del line_table[0:2]
+		del line_table[0:1]
 		
 		# Extraction of element to do the limits of the sequence
 		for line in line_table:
@@ -937,11 +955,12 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 	# identification of table with sites
 	for line in read :
 		j=j+1
-		if line[0:13]=="browser dense":
+		if line[0:2]=="##":
 			line_table=read[j-1:]
 	
 	# Extraction of table only
-	del line_table[0:2]
+	del line_table[0:1]
+	
 	
 	# Extraction of element to do the limits of the sequence
 	for line in line_table:
@@ -1141,7 +1160,7 @@ if __name__=='__main__':
 		corresp=expression_reg.search(outfile)
 		
 		if corresp:
-			   raise IOError ("Forbidden character in the outfile's name")
+			raise IOError ("Forbidden character in the outfile's name")
 	
 	# Verbose message
 	# Print the start of the program in standard err
@@ -1150,10 +1169,9 @@ if __name__=='__main__':
 	
 	# If there is not a file, take sites on standard input
 	if file == False :
-		read = sys.stdin.read()
-		
+		readline = sys.stdin.read()
 		try:
-			list_site, init_table,number_of_matrix,max_site_pvalue = read_stdin(read,format,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
+			list_site, init_table,number_of_matrix,max_site_pvalue = read_stdin(readline,format,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
 			
 		except (UnboundLocalError,IndexError,NameError,ValueError):
 			sys.stderr.write("Parsing error :\n Sites in STDIN not in right format. /n Check the format: Default = ft. \n. Supported = ft or bed")
@@ -1757,11 +1775,13 @@ if __name__=='__main__':
 		read = tmp.read()
 		read = read.decode()
 		read = read.strip().split('\n')
+		
 		nb_crer = 0
 		
 		if not nopval :
 			for ligne in read :
 				crer_tmp = ligne.split('\t')
+				
 				# Extract limits of sequences, only here if there is retur_limits option
 				# Write limits on file
 				if crer_tmp[1] == 'limit':
@@ -1779,8 +1799,10 @@ if __name__=='__main__':
 					
 					# For this moment we define sig_base as one and after we can compute this.
 					# Computation of crer significance
-					
-					crer_sig = -math.log10(e_val)
+					try:
+						crer_sig = -math.log10(e_val)
+					except(ValueError):
+						crer_sig = 0
 					
 					# Verbose message for significance
 					if verbose >=3 :
