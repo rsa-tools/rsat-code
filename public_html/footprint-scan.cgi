@@ -10,7 +10,7 @@ require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-#$ENV{rsat_echo}=2;
+$ENV{rsat_echo}=0;
 
 ### Read the CGI query
 $query = new CGI;
@@ -29,7 +29,7 @@ $query = new CGI;
 $command = "$SCRIPTS/footprint-scan";
 
 #### read parameters ####
-$parameters = " -v 2 -synthesis  -sep_genes ";
+$parameters = " -v 0 -synthesis  -sep_genes ";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";

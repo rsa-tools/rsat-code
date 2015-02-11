@@ -1,0 +1,212 @@
+digraph {
+
+	graph [fontname="ArialBlack",fontsize="14", label="GO analysis flow chart" labelloc="t", fontcolor="#0066BB", nodesep="0.1", ranksep="0.2", rankdir=TB];
+	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
+	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
+
+
+	go_db [shape="record", style="rounded", fillcolor="#EEFFDD", label="{Gene Ontology (GO) database}"]
+	go_db -> download_go
+
+	ensemblgenomes_db [shape="record", style="rounded", fillcolor="#EEFFDD", label="{EnsemblGenomes database}"]
+	ensemblgenomes_db -> get_annotation
+
+	subgraph cluster_0 {
+		 color="#0066BB";
+	 	 label="go_analysis";
+
+		 download_go [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{download_go}"]
+
+		 download_go -> go_obo
+
+		 go_obo  [shape="record", style="filled", fillcolor="#FFEEDD", label="{GO terms (obo)|- term descriptions\l- hierarchy\l}"]
+
+		 go_obo -> parse_go
+
+		 parse_go  [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{parse_go}"]
+
+		 parse_go -> go_description
+		 parse_go -> go_hierarchy
+
+		 go_description  [shape="record", style="filled", fillcolor="#FFEEDD", label="{GO description (tsv)|- term ID\l- alt ID\l- name\l- type\l}"]
+		 go_hierarchy  [shape="record", style="filled", fillcolor="#FFEEDD", label="{GO hierarchy (tsv)|- child node\l- parent node\l}"]
+
+ 		 get_annotation  [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{get_annotation|-org\l}"]
+
+		 get_annotation -> annot_table
+		 annot_table  [shape="record", style="filled", fillcolor="#FFEEDD", label="{Annotation table (tsv)|- gene ID\l- GO ID\l}"]
+
+		 annot_table -> expand
+		 go_description -> expand
+		 go_hierarchy -> expand
+
+		 expand  [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{expand|{-org\l|-desc_file\l-hierarchy_file\l-annot_file\l}}"]
+
+		 expand -> expanded_annot_table
+
+		 expanded_annot_table  [shape="record", style="filled", fillcolor="#FFEEDD", label="{Expanded annotation table (tsv)|- gene ID\l- GO ID\l}"]
+	}
+
+	# subgraph cluster_0 {
+	# 	 color="#0066BB";
+	# 	 label="Reads";
+
+		
+	# 	raw_reads [shape="record", style="filled", fillcolor="#FFEEDD", label="{XXX Raw reads (bam)}"];
+
+	# 	raw_reads -> read_mapping
+	#  	read_mapping [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Read mapping (bowtie2)}"];
+	# 	read_mapping -> aligned_reads
+	# 	aligned_reads [shape="record", style="filled", fillcolor="#FFEEDD", label="{Aligned reads (bam)|- heart6: 6,813,541\l- heart5: 1,280,869\l}"];
+
+	# 	## Add quality control
+		
+	# }	
+
+
+	# subgraph cluster_1 {
+	# 	 color="#0066BB";
+	# 	 label="Peak calling";
+
+	# 	aligned_reads -> macs2
+	#  	macs2 [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{MACS2}"];
+	# 	macs2 -> macs2_peaks
+	# 	macs2_peaks [shape="record", style="filled", fillcolor="#FFEEDD", label="{MACS2 peaks|XXX peaks per sample\l}"];
+		 
+	# 	aligned_reads -> macs2_lenient
+	#  	macs2_lenient [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{MACS2 lenient}"];
+	# 	macs2_lenient -> macs2_lenient_peaks
+	# 	macs2_lenient_peaks [shape="record", style="filled", fillcolor="#FFEEDD", label="{MACS2 lenient peaks|\>30.000 peaks per sample\l}"];
+		 
+	# 	macs2_lenient_peaks -> idr
+	# 	idr [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{IDR}"];
+	# 	idr -> idr_peaks
+	# 	idr_peaks [shape="record", style="filled", fillcolor="#FFEEDD", label="{IDR peaks (bed)|3879 peaks\l}"];
+
+	# 	aligned_reads -> macs2_stringent
+	#  	macs2_stringent [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{MACS2 stringent}"];
+	# 	macs2_stringent -> macs2_stringent_peaks
+	# 	macs2_stringent_peaks [shape="record", style="filled", fillcolor="#FFEEDD", label="{MACS2 stringent peaks|\~3000 peaks/sample\l}"];
+
+	# 	aligned_reads -> homer
+	#  	homer [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{HOMER findpeaks}"];
+	# 	homer -> homer_peaks
+	# 	homer_peaks [shape="record", style="filled", fillcolor="#FFEEDD", label="{HOMER peaks|- heart6: 1173 peaks\l- heart5: 1947 peaks}"];
+
+	# }
+
+
+	# ## The generic node "peaks" must be connected outside
+	# macs2_peaks -> peaks
+	# macs2_lenient_peaks -> peaks
+	# macs2_stringent_peaks -> peaks
+	# idr_peaks -> peaks
+	# homer_peaks -> peaks
+	# rand_peaks -> peaks
+
+	# peaks -> peak_compa
+	# peaks -> rand_peak_selection
+	# peaks -> genomic_distrib
+	# peaks -> peak2gene
+	# peaks -> motif_discovery
+	# peaks -> motif_enrichment
+
+	# subgraph cluster_2 {
+	# 	 color="#0066BB";
+	# 	 label="Peak comparison";
+
+	#  	peak_compa [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Peak comparison|bedtools intersectbed}"];
+	# 	peak_compa -> peak_contingency_table
+	# 	peak_contingency_table [shape="record", style="filled", fillcolor="#FFEEDD", label="{Peak contingency table}"];
+		 
+	# }
+
+
+	# subgraph cluster_3 {
+	# 	 color="#0066BB";
+	# 	 label="Random peak selection";
+
+	#  	rand_peak_selection [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Random peak selection|bedtools shuffle -chrom}"];
+	# 	rand_peak_selection -> rand_peaks
+	# 	rand_peaks [shape="record", style="filled", fillcolor="#FFEEDD", label="{Random peaks}"];
+	# }
+
+	# subgraph cluster_4 {
+	# 	 color="#0066BB";
+	# 	 label="Genomic region distribution";
+
+	# 	genomic_region_types [shape="record", style="filled", fillcolor="#FFEEDD",
+	# 	    label="{Genomic region types (bed)|- intergenic (52Mb)\l- promoters +-500 (30.3Mb)\l- introns (226Mb)\l- transcripts (22.5Mb)\l- gene (97.7Mb)\l}"];
+	# 	genomic_region_types -> genomic_distrib
+	#  	genomic_distrib [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Genomic distribution|bedtools intersectbed}"];
+	# 	genomic_distrib -> genomic_distrib_stats
+	# 	genomic_distrib_stats [shape="record", style="filled", fillcolor="#FFEEDD", label="{Genomic distribution statistics}"];
+		 
+	# }
+
+	# subgraph cluster_5 {
+	# 	 color="#0066BB";
+	# 	 label="Functional enrichment";
+
+	#  	peak2gene [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Peak -\> gene assignment|betdools closest}"];
+	# 	peak2gene -> peak_assoc_genes
+	# 	peak_assoc_genes [shape="record", style="filled", fillcolor="#FFEEDD", label="{Peak-associated genes}"];
+
+	# 	gene_classes [shape="record", style="filled", fillcolor="#FFEEDD", label="{Gene classes|(Gene ontology, metabolic pathways, regulons, ...)}"];
+	# 	gene_classes -> func_enrich
+
+	# 	peak_assoc_genes -> func_enrich
+	#  	func_enrich [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Functional enrichment|DAVID}"];
+	# 	func_enrich -> enriched_classes
+	# 	enriched_classes [shape="record", style="filled", fillcolor="#FFEEDD", label="{Enriched classes (processes, ...)}"];
+	# }
+
+
+	# subgraph cluster_6 {
+	# 	 color="#0066BB";
+	# 	 label="Motif analysis";
+
+	#  	motif_discovery [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Motif discovery|peak-motifs}"];
+	# 	motif_discovery -> motifs
+	# 	motifs [shape="record", style="filled", fillcolor="#FFEEDD", label="{Discovered motifs}"];
+
+	#  	motif_enrichment [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Motif enrichment|matrix-quality}"];
+	# 	motif_enrichment -> enriched_motifs
+	# 	enriched_motifs [shape="record", style="filled", fillcolor="#FFEEDD", label="{Enriched motifs}"];
+		 
+	# }
+
+	# subgraph cluster_7 {
+	# 	 color="#0066BB";
+	# 	 label="Reference sets";
+
+	# 	 	pos_crm [shape="record", style="filled", fillcolor="#FFEEDD", label="{Positive CRM}"];
+	# 		neg_crm [shape="record", style="filled", fillcolor="#FFEEDD", label="{Negative CRM}"];
+	# 		pos_geneset [shape="record", style="filled", fillcolor="#FFEEDD", label="{Positive gene set}"];
+	# 		neg_geneset [shape="record", style="filled", fillcolor="#FFEEDD", label="{Negative gene set}"];
+	# }
+
+	# peaks -> peak_compa
+
+	# subgraph cluster_8 {
+	# 	 color="#0066BB";
+	# 	 label="Accuracy assessment";
+
+	# 	 neg_geneset -> geneset_compa;
+	# 	 pos_geneset -> geneset_compa;
+	# 	 peak_assoc_genes -> geneset_compa;
+
+	#  	geneset_compa [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Gene set comparisons|metrics-peak-callers}"];
+	# 	geneset_compa -> geneset_compa_stats
+	# 	geneset_compa_stats [shape="record", style="filled", fillcolor="#FFEEDD", label="{Geneset comparison statistics}"];
+
+	# 	 neg_crm -> peak_compa;
+	# 	 pos_crm -> peak_compa;
+	# 	 peak_assoc_genes -> peak_compa;
+
+	#  	peak_compa [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Peak comparisons|metrics-peak-callers}"];
+	# 	peak_compa -> peak_compa_stats
+	# 	peak_compa_stats [shape="record", style="filled", fillcolor="#FFEEDD", label="{Peak comparison statistics}"];
+		 
+	# }
+}
