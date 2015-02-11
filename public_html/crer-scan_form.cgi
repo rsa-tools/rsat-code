@@ -143,7 +143,7 @@ $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"crer-scan_form.cgi");
 #$demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
-$demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
+$demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001_nocomments.ft";
 $demo_sites = `cat $demo_file`;
 $#demo_sites = `grep -v '^;' $demo_file`;
 print "<TD><B>";
