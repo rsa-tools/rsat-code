@@ -1,0 +1,58 @@
+################################################################
+## Tool map of the Regulatory Sequence Analysis Tools
+##
+## Author: Jacques van Helden
+
+digraph {	
+	## General properties of the graph (font, color, ...)
+	graph [fontname="ArialBlack",fontsize="14", label="Regulatory Sequence Analysis Tools (RSAT) - Tool map" labelloc="t", fontcolor="#0066BB", nodesep="0.05", ranksep="0.1"];
+	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
+	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
+
+	subgraph cluster_0 {
+		color="#0066BB";
+		bgcolor="#EEEEEE";
+		label = "Sequence";
+    seq_genomic  [shape="record", style="filled", fillcolor="#D6EEFA", label="{genomic sequence}"];
+    seq_purged  [shape="record", style="filled", fillcolor="#D6EEFA", label="{purged sequence}"];
+    seq_genomic -> sequence [style="invis"]
+    seq_purged -> sequence [style="invis"]
+    sequence  [shape="record", style="invis"];
+
+#    	seq_genomic -> seq_purged [style="invis"]
+    	}
+
+
+	subgraph cluster_1 {
+		color="#0066BB";
+		bgcolor="#FBEEE0";
+		label = "Motif discovery";
+    oligo_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{oligo-analysis}", URL="http://rsat.eu/oligo-analysis_form.cgi", fontcolor="#0D73A7"];
+    position_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{position-analysis}", URL="http://rsat.eu/position-analysis_form.cgi", fontcolor="#0D73A7"];
+    dyad_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{dyad-analysis}", URL="http://rsat.eu/dyad-analysis_form.cgi", fontcolor="#0D73A7"];
+    local_word_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{local-word-analysis}", URL="http://rsat.eu/local-word-analysis_form.cgi", fontcolor="#0D73A7"];
+    	}
+
+          sequence -> oligo_analysis [style="tapered"]
+          sequence -> dyad_analysis [style="tapered"]
+          sequence -> position_analysis [style="tapered"]
+          sequence -> local_word_analysis [style="tapered"]
+          oligo_analysis -> oligos [style="tapered"]
+          dyad_analysis -> dyads [style="tapered"]
+          position_analysis -> oligos [style="tapered"]
+          local_word_analysis -> oligos [style="tapered"]
+
+	  subgraph cluster_2 {
+		color="#0066BB";
+		bgcolor="#FBEEE0";
+		label = "Motif"; 
+    oligos  [shape="record", style="filled", fillcolor="#D6EEFA", label="{oligonucleotides}"];
+    dyads  [shape="record", style="filled", fillcolor="#D6EEFA", label="{dyads}"];
+
+    
+
+    	   } 
+
+}
+
+

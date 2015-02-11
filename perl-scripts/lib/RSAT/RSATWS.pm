@@ -3735,7 +3735,7 @@ if ($args{"equi_pseudo"} == 1 ) {
       $command .= " -crer_ids";
   }
 
- &run_WS_command($command, $output_choice, ".matrix-scan", "ft")
+ &run_WS_command($command, $output_choice, "matrix-scan", "ft")
 }
 
 
@@ -3868,7 +3868,7 @@ sub convert_matrix {
     $command .= " -rc";
   }
 
- &run_WS_command($command, $output_choice, ".convert-matrix", $to)
+ &run_WS_command($command, $output_choice, "convert-matrix", $to)
 }
 
 
@@ -3958,7 +3958,7 @@ sub matrix_distrib {
     $command .= " -bg_pseudo '".$background_pseudo."'";
   }
 
-  &run_WS_command($command, $output_choice, ".matrix-distrib", "tab")
+  &run_WS_command($command, $output_choice, "matrix-distrib", "tab")
 }
 
 
@@ -4387,7 +4387,7 @@ sub random_seq {
     $command .= " -lf '".$tmp_length."'";
   }
 
- &run_WS_command($command, $output_choice, ".random-seq", $args{format})
+ &run_WS_command($command, $output_choice, "random-seq", $args{format})
 }
 
 
@@ -6175,15 +6175,17 @@ sub monitor {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
   my $ticket = $args{"ticket"};
-  $ticket =~ s/.*\.//;
+#  $ticket =~ s/.*\///;
+  $ticket =~ s/www-data\/\d+\/\d+\/\d+\///;
   my $grep = `ps aux | grep $ticket | grep -v 'grep' | grep -v monitor`;
   if ($grep) {
-      return SOAP::Data->name('response' => {'status' => 'Running'});
+#     return SOAP::Data->name('response' => {'status' => 'Running'});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('status' => 'Running')))->attr({'xmlns' => ''});
   } else {
-      return SOAP::Data->name('response' => {'status' => 'Done'});
+#     return SOAP::Data->name('response' => {'status' => 'Done'});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('status' => 'Done')))->attr({'xmlns' => ''});
   }
 }
-
 
 ################################################################
 sub get_result {
@@ -6214,8 +6216,11 @@ sub get_result {
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
   } else {
-      return SOAP::Data->name('response' => {'client' => $result,
-					     'server' => $tmp_outfile});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('client' => $result),
+							       SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile))))
+	  ->attr({'xmlns' => ''});
+#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+#	  'client' => $result});
   }
 }
 
@@ -6252,14 +6257,20 @@ sub run_WS_command {
       my $email_address = $output_choice;
       my $delay = "72 hours";
 
-      &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
+     &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
+      #my %args;
+      #$args{title} = join(" ", "[RSATWS]", $method_name);
+      #&RSAT::util::EmailTheResult($command, $email_address, $tmp_outfile, %args);
       my $response = "The server is now processing your request.\n"; 
       $response .= "Once it will be finished, the result will become available at the following URL\n";
       $response .= "\t$result_URL\n";
       $response .= "When the result will be ready, you will be notified at your email address ($email_address).\n";
       $response .= "The result file will remain on the server for $delay.\n";;
-      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					     'client' => $response});
+#      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+#					     'client' => $response});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => 'NA'),
+ 				                               SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+					                       SOAP::Data->name('client' => $response)))->attr({'xmlns' => ''});
   }
 
   if ($output_choice eq 'ticket') {
@@ -6353,12 +6364,13 @@ sub email_command {
     my $email_message = "Your result is available at the following URL:\n\t$result_URL";
     $email_message .= "\nThe result file will remain there for $delay.";
 
-    my $mail_command = "mail -s \'".$title."\'";
+    my $mail_command = $SCRIPTS."/send-mail -to \'".$email_address."\' -subject \'".$title."\'";
 
-    my $email_command =  "($command &>$tmp_outfile; ";
-    $email_command .= "echo \"$email_message\" | $mail_command $email_address) &"; 
+#    my $email_command =  "($command &>$tmp_outfile; ";
+#    $email_command .= "echo \"$email_message\" | $mail_command) &";
+    my $email_command =  $command." >> ".$tmp_outfile."; ";
+    $email_command .= "echo \"".$email_message."\" | ".$mail_command." &";
     system $email_command;
-
 }
 
 

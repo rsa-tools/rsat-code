@@ -1,0 +1,47 @@
+digraph {
+
+	graph [fontname="ArialBlack",fontsize="14", label="Phylogenetic profile analysis - flow chart" labelloc="t", fontcolor="#0066BB", nodesep="0.1", ranksep="0.2", rankdir=TB];
+	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
+	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
+
+
+	genomes  [shape="record", style="filled", fillcolor="#FFEEDD", label="{RSAT genomes (csv)|- genes\l- protein sequences\l}"]
+
+	taxonomy   [shape="record", style="filled", fillcolor="#FFEEDD", label="{Taxonomy}"]
+
+	genomes -> task_species
+	taxonomy -> task_species
+
+
+	subgraph cluster_0 {
+		 color="#0066BB";
+	 	 label="phylo-profiles";
+
+		 task_species [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Species selection|-task species\n[-depth depth]}"]
+		 task_species -> selected_species
+		 selected_species  [shape="record", style="filled", fillcolor="#FFEEDD", label="{Selected species (tsv)|- species ID\l...\l}"]
+
+
+		 selected_species -> task_bbh
+		 task_bbh [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Bidirectional Best Hit (BBH) selection|-task bbh\l}"]
+		 task_bbh -> bbh_table
+		 bbh_table  [shape="record", style="filled", fillcolor="#FFEEDD", label="{BBH table (tsv)}"]
+
+		 bbh_table -> task_profiles
+		 task_profiles [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Extraction of phylogenetic profiles|-task profiles\l}"]
+		 task_profiles -> profile_table
+		 profile_table  [shape="record", style="filled", fillcolor="#FFEEDD", label="{Phylogenetic profiles (tsv)|- one row per query gene\l- one column per reference genome}"]
+
+		 profile_table -> task_network
+		 task_network [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Extraction of co-occurrence network|-task network\l}"]
+		 task_network -> cooc_network
+		 cooc_network  [shape="record", style="filled", fillcolor="#FFEEDD", label="{Co-occurrence network (gml)|- one node per query gene\l- one edge per BBH\l}"]
+
+		 cooc_network -> task_clusters
+		 task_clusters [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Network partitioning|-task clusters\l}"]
+		 task_clusters -> sub_network
+		 sub_network  [shape="record", style="filled", fillcolor="#FFEEDD", label="{Co-occurrence clusters (tsv)|- gene\l- cluster\l}"]
+		 
+	}
+
+}
