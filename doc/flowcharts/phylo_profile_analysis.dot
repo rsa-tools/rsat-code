@@ -1,0 +1,24 @@
+digraph {
+
+taxon [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Reference taxon\n(e.g. Bacteria)"];
+org [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Query organism\n(e.g. Escherichia_coli_K_12_substr__MG1655_uid57779)"];
+
+species_selection [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Species selection|tree depth = 5\l}"]
+
+taxon -> species_selection
+org -> species_selection
+
+species_selection -> selected_species
+selected_species [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Selected species\n(species nb = 372)"];
+
+selected_species -> get_orthologs
+
+get_orthologs [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{get-orthologs|eval lt 1e-5, ...\l}"]
+
+get_orthologs -> bbh
+
+bbh [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="BBH\n(N=14,765)"];
+
+
+}
+
