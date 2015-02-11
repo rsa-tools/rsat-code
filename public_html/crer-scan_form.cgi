@@ -20,7 +20,7 @@ $default{limits} = "None";
 @supported_feature_types = qw(bed ft);
 
 ## Threshold fields
-@threshold_fields = qw(site_score site_pval crer_size crer_sites crer_sites_distance crer_sig);
+@threshold_fields = qw(site_score site_pval crer_size crer_sites crer_sites_distance crer_sig overlap);
 
 $descr{site_pval} = "P-value of input sites";
 $default{lth_site_pval} = "None";
@@ -41,6 +41,10 @@ $default{uth_crer_sites} = "None";
 $descr{crer_sites_distance} = "Inter-site distance (bp)";
 $default{lth_crer_sites_distance} = 1;
 $default{uth_crer_sites_distance} = 100;
+
+$descr{overlap} = "Overlap between sites";
+$default{lth_overlap} = "None";
+$default{uth_overlap} = 1;
 
 $descr{crer_sig} = "CRER significance";
 $default{lth_crer_sig} = 1;
