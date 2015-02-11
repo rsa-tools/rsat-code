@@ -43,7 +43,7 @@ $default{lth_crer_sites_distance} = 1;
 $default{uth_crer_sites_distance} = 100;
 
 $descr{crer_sig} = "CRER significance";
-$default{lth_crer_sig} = 2;
+$default{lth_crer_sig} = 1;
 $default{uth_crer_sig} = "None";
 
 
@@ -137,15 +137,18 @@ my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 $descr1 .= "<p>In this demonstration, we detect cis-regulatory enriched regions (CRER) in the 5kb upstream region of the Drosophila gene even-skipped, in order to detect putative cis-regulatory modules (CRM).\n";
 $descr1 .= "The program <i>crer-scan</i> takes as input a set of binding sites, and returns regions presenting a significant enrichment for these.\n";
-$descr1 .= "Binding sites were obtained by scanning the even-skipped upstream region with 12 PSSM corresponding to transcrition factors involvd in embryonic segmentation.";
+$descr1 .= "Binding sites were obtained by scanning the even-skipped upstream region with 12 PSSM corresponding to transcrition factors involvd in embryonic segmentation.\n";
+$descr1 .= "For this demo, we intently choose a lenient significance threshold, in order to increase the sensitivity of the scan. The result contains groups of mutually overlapping CRERs, which can be displayed with <i>feature-map</i>.\n";
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"crer-scan_form.cgi");
+#$demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
 $demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
 $demo_sites = `cat $demo_file`;
 $#demo_sites = `grep -v '^;' $demo_file`;
 print "<TD><B>";
 print $query->hidden(-name=>'sites',-default=>$demo_sites);
+print $query->hidden(-name=>'lth_crer_sig',-default=>0);
 print $query->hidden(-name=>'demo_descr',-default=>$descr1);
 print $query->hidden(-name=>'in_format',-default=>"ft");
 print $query->submit(-label=>"DEMO");
