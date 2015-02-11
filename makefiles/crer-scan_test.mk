@@ -24,23 +24,15 @@ demo_dorsal:
 		-lth_score 0 -uth_score 1000 -uth_overlap 1 -return_limits_filtered -o None -v 2 
 
 
+
+################################################################
+## Scan even-skipped promoter with the binding sites predicted from 12
+## TFBM (matrices) of Drosophila segmentation genes.
+LTH_SIG=0.1
 CRER_DIR=${RES_DIR}/crers
-EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft
-
-
-python2.7 $RSAT/python-scripts/crer_scan.py  -v 1 \
-		-s  \
-		-i $RSAT/public_html/tmp/apache/2015/02/11/crer_scan_2015-02-11.074115_6vu1Mo_query.txt \
-		-in_format ft \
-		-lth_crer_size 100 \
-		-uth_crer_size 500 \
-		-lth_crer_sites 2 \
-		-lth_crer_sites_distance 1 \
-		-uth_crer_sites_distance 100 \
-		-uth_site_pval 1e-3 \
-		-lth_crer_sig 0 \
-		-return_limits_filtered
-
+EVE_PREFIX=Drosophila_melanogaster_eve_segmentation_sites_pval0.001${SUFFIX}
+EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/${EVE_PREFIX}.ft
+EVE_OUT=${CRER_DIR}/${EVE_PREFIX}_crer.ft
 demo_eve:
 	@echo "Detecting CRERs for segmentation TF in even-skipped upstream sequence"
 	@echo "Sites	${EVE_UPSTREAM_SITES}"
@@ -55,14 +47,18 @@ demo_eve:
 		-lth_crer_sites_distance 1 \
 		-uth_crer_sites_distance 100 \
 		-uth_site_pval 1e-3 \
-		-lth_crer_sig 0 \
+		-lth_crer_sig ${LTH_SIG} \
 		-uth_overlap 1 \
 		-return_limits_filtered \
-		-o ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer.ft
-	@echo "	 ${CRER_DIR}/Drosophila_melanogaster_eve_segmentation_sitespval0.001_crer.ft"
+		-o ${EVE_OUT}
+	@echo "	 ${EVE_OUT}"
+
 
 ## Run eve demo with a sites file that contains no comment lines
-## FOR THE TIME BEING THIS DOES NOT WORK !!!
 demo_eve_nocomments:
-	@${MAKE} demo_eve EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001_nocomments.ft
+	@${MAKE} demo_eve SUFFIX=_nocomments
+
+## Check if the results with/without comments in the input file are the same
+check_eve_nocomments:
+	diff ${EVE_OUT} ${CRER_DIR}/${EVE_PREFIX}_nocomments_crer.ft
 
