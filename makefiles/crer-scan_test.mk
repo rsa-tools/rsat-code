@@ -30,9 +30,9 @@ demo_dorsal:
 ## TFBM (matrices) of Drosophila segmentation genes.
 LTH_SIG=0.1
 CRER_DIR=${RES_DIR}/crers
-EVE_PREFIX=Drosophila_melanogaster_eve_segmentation_sites_pval0.001${SUFFIX}
+EVE_PREFIX=Drosophila_melanogaster_eve_segmentation_sites_pval0.001${IN_SUFFIX}
 EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/${EVE_PREFIX}.ft
-EVE_OUT=${CRER_DIR}/${EVE_PREFIX}_crer.ft
+EVE_OUT=${CRER_DIR}/${EVE_PREFIX}${OUT_SUFFIX}_crer.ft
 demo_eve:
 	@echo "Detecting CRERs for segmentation TF in even-skipped upstream sequence"
 	@echo "Sites	${EVE_UPSTREAM_SITES}"
@@ -56,9 +56,14 @@ demo_eve:
 
 ## Run eve demo with a sites file that contains no comment lines
 demo_eve_nocomments:
-	@${MAKE} demo_eve SUFFIX=_nocomments
+	@${MAKE} demo_eve IN_SUFFIX=_nocomments
 
 ## Check if the results with/without comments in the input file are the same
 check_eve_nocomments:
 	diff ${EVE_OUT} ${CRER_DIR}/${EVE_PREFIX}_nocomments_crer.ft
+
+phython2.7_vs_3:
+	@${MAKE} demo_eve PYTHON=python2.7 OUT_SUFFIX=python2.7
+	@${MAKE} demo_eve PYTHON=python3 OUT_SUFFIX=python3
+
 
