@@ -637,69 +637,43 @@ sub CheckEmailAddress {
 
 =item B<Send an email message>
 
-This method sends an email by taking in consideration the parameters
-of the RSAT_config.props file.
-
-The following parameters are read in the configuration file:
-
-=over
-
-=item  I<mail_supported>
-
-If the value is "yes", the functions sends the mail.  Otherwise, it
-issues a warning and returns without sending any mail.
-
-=item I<smtp>
-
-The address (IP) of the SMTP server (SMTP stands for "sending mail transfer protocol").
-
-mitem I<smtp_sender>
-
-The email of the SMTP sender (must be accepted by the SMTP server).
-
-Usage:
-  &RSAT::server::send_mail($message, $recipient, $subject, %args);
-
-Additional arguments are passed to the module dealing the mail sender
-(Email::Sender::Transport::SMTP->new)..
-
 =cut
 sub send_mail {
-  my ($message, $recipient, $subject, %args) = @_;
+    my ($message, $recipient, $subject) = @_;
 
-  if ($ENV{mail_supported} eq "no") {
-    &RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
-  } else {
+    if ($ENV{mail_supported} eq "no") {
+	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    } else {
 
     ## Check if recipient argument contains a valid email address
     &CheckEmailAddress($recipient);
 
     ## Set a subject if not specificed in arguents
     unless ($subject) {
-      $script_name = $0;
-      $subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
+	$script_name = $0;
+	$subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
     }
 
     ## Define the SMTP server
     my $smtp_server = "localhost:25"; ## Default is send by local machine
     if (($ENV{smtp}) && ($ENV{smtp} !~ /smtp.at.your.site/)) {
-      $smtp_server = $ENV{smtp};
+	$smtp_server = $ENV{smtp};
     }
 
     ## Define the "from" email (can be defined in RSAT_config.props or
     ## as environment variable smtp_sender)
     my $from = "";
     if ($ENV{smtp_sender}) {
-      $from = $ENV{smtp_sender};
+	$from = $ENV{smtp_sender};
     }
 
     if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0)) {
-      my $mail_warn = "Sending mail";
-      $mail_warn .= " from \"".$from."\"" if ($from);
-      $mail_warn .= " to \"".$recipient."\"" if ($recipient);
-      $mail_warn .= " ; Subject: \"".$subject."\"";
-      $mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
-      &RSAT::message::TimeWarn($mail_warn);
+	my $mail_warn = "Sending mail";
+	$mail_warn .= " from \"".$from."\"" if ($from);
+	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
+	$mail_warn .= " ; Subject: \"".$subject."\"";
+	$mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+	&RSAT::message::TimeWarn($mail_warn);
     }
 
     # ## Send the message using MIME::Lite    
@@ -715,12 +689,12 @@ sub send_mail {
 
     ## Sent message using Email::Sender
     my $email = Email::Simple->create(
-      header => [
-	To      => $recipient,
-	From    => $from,
-	Subject => $subject,
-      ],
-      body => $message,
+	header => [
+	    To      => $recipient,
+	    From    => $from,
+	    Subject => $subject,
+	],
+	body => $message,
 	);
     &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
 
@@ -728,11 +702,10 @@ sub send_mail {
 #      host => $smtp_server,
 #      port => 25,
 #							});
-    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server, 
-							sasl_username => $from,
-							%args);
-    Email::Sender::Simple->send($email, {transport => $transport});
-  }
+    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);
+
+	Email::Sender::Simple->send($email, {transport => $transport});
+    }
 }
 
 
@@ -760,8 +733,6 @@ sub MessageToAdmin {
 #    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
     &send_mail($message, $ENV{SERVER_ADMIN}, $title);
 }
-
-
 
 
 
