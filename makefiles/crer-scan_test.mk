@@ -7,9 +7,10 @@ MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 SITES_DIR=data
 SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
-## Choose python version. The script is compatible with both 2.7 and 3
+## Choose python version. The script is compatible with both 2.7 and
+## 3. Version 2.7 at least is required to use argsparse.
 #PYTHON=python3
-PYTHON=python
+PYTHON=python2.7
 RES_DIR=results/crer-scan_test/
 SITES=${SITES_DORSAL}
 demo_dorsal:
