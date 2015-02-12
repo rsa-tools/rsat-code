@@ -24,6 +24,15 @@
 ## Must be executed as root. If you are non-root but sudoer user, you
 ## can become it withn "sudo bash"
 
+################################################################
+## Before anything else, check that the date, time and time zone are
+## correctly specified
+date
+
+## If not, set up the time zone, date and time with this command
+## (source: https://help.ubuntu.com/community/UbuntuTime).
+dpkg-reconfigure tzdata
+
 ## Configuration for the installation
 export INSTALLER=apt-get
 export INSTALLER_OPT="--quiet --assume-yes"
@@ -33,14 +42,6 @@ export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 #export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
 #export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
-################################################################
-## Before anything else, check that the date, time and time zone are
-## correctly specified
-date
-
-## If not, set up the time zone, date and time with this command
-## (source: https://help.ubuntu.com/community/UbuntuTime).
-dpkg-reconfigure tzdata
 
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
@@ -52,8 +53,7 @@ cd ${INSTALL_ROOT_DIR}
 mkdir -p ${INSTALL_ROOT_DIR}/install_logs
 chmod 777 ${INSTALL_ROOT_DIR}/install_logs
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
-apt-get update
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+
 
 ## Check the installation device 
 DEVICE=`df -h / | grep '/dev'| awk '{print $1}' | perl -pe 's/\/dev\///'`
@@ -68,7 +68,8 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 ## when installing and uninstalling packages.
 ## TO SAVE SPACE, I SUPPRESS aptitude
 ## apt-get install aptitude
-
+apt-get update
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 ${INSTALLER} ${INSTALLER_OPT} upgrade
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
 grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
@@ -235,15 +236,13 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 ${INSTALLER} ${INSTALLER_OPT}  autoremove
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
 ${INSTALLER} ${INSTALLER_OPT}  clean
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
 grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
-
-## Check the evolution of disk usage during package installation
-grep ${DEVICE} install_logs/df_*
 
 ## DONE: installation of Ubuntu packages
 ################################################################
@@ -280,8 +279,8 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 ## Adapt the PHP parameters
 emacs -nw /etc/php5/apache2/php.ini
 ## Modify the following parameters
-##      upload_max_size=100M
 ##      post_max_size = 100M
+##      upload_max_size=100M
 
 
 ## The following lines are required to activate cgi scripts.  Found at
@@ -289,7 +288,7 @@ emacs -nw /etc/php5/apache2/php.ini
 chmod 755 /usr/lib/cgi-bin
 chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
-
+service apache2 restart
 
 ## DONE: apache server configured and started
 ## You can check it by opening a Web connection to 
@@ -333,7 +332,9 @@ pip3 install fisher
 pip3 install suds-jurko
 pip3 install pysimplesoap
 
+## Check disk usage
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
 # ################################################################
 # ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
@@ -401,13 +402,20 @@ visudo
 
 ## Note: the git distribution requires an account at the ENS git
 ## server, which is currently only possible for RSAT developing team.
-## In the near future, I envisage to use git also for the end-user
+## In the near future, we may use git also for the end-user
 ## distribution.
 
-## RSAT installation is done under the rsat login
+## RSAT installation is done under the rsat login.
+##
+## We retrieve it in the home folder of the RSAT user, because RSAT
+## user has no write authorization on /bio. In a second time we do a
+## sudo mv to place the rsat folder in /bio.
 su - rsat
 cd ${HOME}
 git clone git@depot.biologie.ens.fr:rsat
+git config --global user.mail rsat@rsat-vm-2015-02
+git config --global user.name "RSAT admin on RSAT-VM"
+
 
 ## Define an environment variable with the RSAT_HOME directory
 ## (will be used later to configure RSAT)
@@ -444,6 +452,10 @@ ln -fs ${RSAT_HOME} ${HOME}/rsat
 cd ${RSAT_HOME}
 perl perl-scripts/configure_rsat.pl
 
+## Parameters to change
+##   rsat_site   rsat-vm
+##   rsat_server_admin    I don't specify it, because I don't want to receive notifications from all the VMs
+
 ## Load the (updated) RSAT environment variables
 source RSAT_config.bashrc
 
@@ -460,6 +472,13 @@ make -f makefiles/init_rsat.mk init
 ## to the root user
 exit
 
+## Load RSAT bashrc file
+cd ${RSAT_HOME}
+source ${RSAT_HOME}/RSAT_config.bashrc
+
+## Check that the root has well loaded the RSAT configuration
+echo $RSAT
+
 ################################################################
 ## Previous way to specify bashrc parameters, via
 ## /etc/bash_completion.d/. I change it (2014-09-23) because it does
@@ -470,15 +489,14 @@ exit
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
-#rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
+
+
+rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ## ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
-source ${RSAT_HOME}/RSAT_config.bashrc
 
-emacs -nw /etc/bash.bashrc
+#emacs -nw /etc/bash.bashrc
 
 
-## Check that the root has well loaded the RSAT configuration
-echo $RSAT
 
 
 ################################################################
@@ -502,6 +520,14 @@ echo $RSAT
 ##	sudo apt-get install libssl-dev
 
 
+## The first time we use cpan, we apparently need to open it manually
+## in order to configure and update it.
+cpan
+install YAML
+install CPAN ## I am not sure, but I think that this command is useful to properly install the subsequent packages.
+reload cpan
+## then type "quit"
+
 ## Set working directory to RSAT
 cd $RSAT
 
@@ -517,10 +543,14 @@ more check_perl_modules_eval.txt
 ## On Ubuntu 14.04, Object::InsideOut has status "Fail" but there is
 ## apparently no problem
 
+## Check missing modules
+grep Fail  check_perl_modules_eval.txt
+
 ## Identify Perl modules that were not OK after the ubuntu package installation
 grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
 MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
 echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
+
 
 ## Beware: the _noprompt suffix is
 ## optional. It has the advantage to avoid for the admin to confirm
@@ -547,45 +577,8 @@ more check_perl_modules_eval.txt
 
 ## Measure remaining disk space
 df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
+grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 
-
-################################################################
-## Install selected R librairies, required for some RSAT scripts
-################################################################
-
-## Installation of R packages
-
-cd $RSAT; make -f makefiles/install_rsat.mk install_r_packages
-
-## More convenient: the following command does the same (install R
-## packages) + compile the C programs
-cd $RSAT; make -f makefiles/install_rsat.mk update
-
-# ## The command R CMD INSTALL apparently does not work at this stage.
-# ##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
-# ##	Warning: invalid package 'reshape'
-# ##	Error: ERROR: no packages specified
-# cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
-# ### I install them from the R interface. This should be revised to
-# ### make it from the bash, but I need to see how to specify the CRAN
-# ### server from the command line (for the time being, I run R and the
-# ### programm asks me to specify my preferred CRAN repository the first
-# ### time I install packages).
-# R
-# ## At the R prompt, type the following R commands.
-# ##
-# ## Beware, the first installation of bioconductor may take a while,
-# ## because there are many packages to install
-# ##
-# ## Note: since this is the first time you install R packages on this
-# ## VM, you need to choose a RCRAN server nearby to your site.
-# install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras", "dendextend"))
-# source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
-# quit()
-# ## At prompt "Save workspace image? [y/n/c]:", answer "n"
-
-## Check remaining disk space
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
 
 ################################################################
 ## Configure RSAT web server
@@ -615,11 +608,11 @@ apache2ctl restart
 echo $RSAT_WWW
 
 ## If the value is "auto", get the URL as follows
-# export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
 # export IP=192.168.56.101
-# echo ${IP}
-# export RSAT_WWW=http://${IP}/rsat/
-# echo $RSAT_WWW
+echo ${IP}
+export RSAT_WWW=http://${IP}/rsat/
+echo $RSAT_WWW
 
 ################################################################
 ## Next steps require to be done as rsat administrator user
@@ -669,6 +662,46 @@ supported-organisms
 sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
 ################################################################
+## Install selected R librairies, required for some RSAT scripts
+################################################################
+
+whoami
+## Should return "rsat"
+
+## Installation of R packages
+cd $RSAT; make -f makefiles/install_rsat.mk install_r_packages
+
+## More convenient: the following command does the same (install R
+## packages) + compile the C programs
+cd $RSAT; make -f makefiles/install_rsat.mk update
+
+# ## The command R CMD INSTALL apparently does not work at this stage.
+# ##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
+# ##	Warning: invalid package 'reshape'
+# ##	Error: ERROR: no packages specified
+# cd $RSAT; make -f makefiles/install_rsat.mk  r_modules_list 
+# ### I install them from the R interface. This should be revised to
+# ### make it from the bash, but I need to see how to specify the CRAN
+# ### server from the command line (for the time being, I run R and the
+# ### programm asks me to specify my preferred CRAN repository the first
+# ### time I install packages).
+# R
+# ## At the R prompt, type the following R commands.
+# ##
+# ## Beware, the first installation of bioconductor may take a while,
+# ## because there are many packages to install
+# ##
+# ## Note: since this is the first time you install R packages on this
+# ## VM, you need to choose a RCRAN server nearby to your site.
+# install.packages(c("reshape", "RJSONIO", "plyr", "dendroextras", "dendextend"))
+# source('http://bioconductor.org/biocLite.R'); biocLite("ctc")
+# quit()
+# ## At prompt "Save workspace image? [y/n/c]:", answer "n"
+
+## Check remaining disk space
+df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+
+################################################################
 ## At this stage you can already check some simple RSAT command 
 
 ## Test a simple Perl script that does not require for organisms to be
@@ -686,9 +719,13 @@ random-motif -l 10 -c 0.90
 ## vmatch (used in purge-sequence)
 random-seq -l 100 | purge-sequence
 
-## get the help for seqlogo
+## Check that seqlogo is installed
 which seqlogo
 seqlogo
+
+## Check that weblogo 3 is installed
+which weblogo
+weblogo --help
 
 ## ghostscript
 which gs
@@ -703,7 +740,6 @@ retrieve-seq -org Saccharomyces_cerevisiae -all -from 0 -to +2 \
 ################################################################
 ## Configure the SOAP/WSDL Web services
 
-
 ## Check the URL of the web services (RSAT_WS). By default, the server
 ## addresses the WS requests to itself (http://localhost/rsat) because
 ## web services are used for multi-tierd architecture of some Web
@@ -711,12 +747,17 @@ retrieve-seq -org Saccharomyces_cerevisiae -all -from 0 -to +2 \
 cd $RSAT
 #echo $RSAT_WS
 
+## Get tehe current IP address
+export IP=`/sbin/ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+# export IP=192.168.56.101
+echo ${IP}
+export  RSAT_WS=http://${IP}/rsat/
 ## Initialize the Web services stub. 
-make -f makefiles/init_rsat.mk ws_init
+make -f makefiles/init_rsat.mk ws_init RSAT_WS=${RSAT_WS}
 
 ## After this, re-generate the web services stubb, with the following
 ## command.
-make -f makefiles/init_rsat.mk ws_stub
+make -f makefiles/init_rsat.mk ws_stub RSAT_WS=${RSAT_WS}
 
 ## Test the local web services
 make -f makefiles/init_rsat.mk ws_stub_test
@@ -729,7 +770,7 @@ make -f makefiles/init_rsat.mk ws_nostub_test
 ## services without stub
 supported-organisms-server -url ${RSAT_WS} | wc
 supported-organisms-server -url http://localhost/rsat/ | wc
-supported-organisms-server -url http://rsat.eu/ | wc
+supported-organisms-server -url http://rsat-tagc.univ-mrs.fr/ | wc
 
 
 ################################################################
@@ -771,8 +812,6 @@ grep MemTotal /proc/meminfo
 
 ## Install some software tools for NGS analysis
 cd ${RSAT}
-make -f makefiles/install_software.mk install_weblogo
-make -f makefiles/install_software.mk install_d3
 make -f makefiles/install_software.mk install_meme
 
 ################################################################
