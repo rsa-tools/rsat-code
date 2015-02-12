@@ -100,11 +100,11 @@ RSAT_WS=http://localhost/rsat/
 ## manager in this property file, so RSAT can adapt the options
 ## consequently.
 ##
-## supported: torque | sge
-QSUB_MANAGER=torque
+## supported: batch | torque | sge
+QSUB_MANAGER=batch
 
 ## Name of the queue where the jobs have to be sent
-CLUSTER_QUEUE=rsat
+CLUSTER_QUEUE=
 
 ################################################################
 ## Ensembl and EnsemblGenomes releases. 
