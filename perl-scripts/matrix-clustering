@@ -1455,7 +1455,7 @@ sub create_html_tree_file(){
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
-    my $svg_x1 = 17 * $nb_char;
+    my $svg_x1 = 16 * $nb_char + 8;
     my $svg_y1 = -33;
     my $svg_x2 = '25 + '.$svg_x1.' + 25';;
     my $add_this = "";
@@ -1468,6 +1468,7 @@ sub create_html_tree_file(){
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
+	\t\t.attr(\"font-size\", \"18px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -1494,7 +1495,7 @@ sub create_html_tree_file(){
 	.attr("x", function(d){ return d.children ? 0 : 20; })
 	.attr("dy", function(d){ return d.children ? 0 : 27; })
         .attr("fill", "blue")
-	.attr("font-size", "17px")
+	.attr("font-size", "18px")
 	.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
         ';
 
@@ -3197,7 +3198,7 @@ sub InsertSmallForest {
     ## D3 values of the parameters of the small trees
     my $svg_width = 7;
     my $svg_height = 18;
-    my $svg_x1 = 6 * $nb_char;
+    my $svg_x1 = 7 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '6 + '.$svg_x1.' + 30';
     
@@ -3401,7 +3402,7 @@ sub InsertTreesAndBranchMotifs {
 
     my  $svg_width = 8.5;
     my  $svg_height = 35;
-    my  $svg_x1 = 10 * $nb_char;
+    my  $svg_x1 = 9.5 * $nb_char + 6;
     my  $svg_y1 = -15;
     my  $svg_x2 = '7 + '.$svg_x1.' + 40';
     my $label_single_tree = '
@@ -3419,6 +3420,7 @@ sub InsertTreesAndBranchMotifs {
 		.attr("dx", function(d) { return d.children ? -2 : 0; })
 		.attr("dy", function(d) { return d.children ? -6 : 0; })
 		.attr("fill", function(d) { return d.children ? "blue" : ""; })
+		.attr("font-size", "8px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
 
