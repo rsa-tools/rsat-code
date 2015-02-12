@@ -47,7 +47,6 @@ print <<EndText;
   </TR>
 </table>
 
-
 <!--    <div class="attention">
     <p><b>Attention!</b></p>
     <p>The main address for Regulatory Sequence Analysis Tools (RSAT) will be changed to <a target="_top" href="http://www.rsat.eu/">http://www.rsat.eu/</a></p>
@@ -297,6 +296,10 @@ Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)</i>
 </a>
 </h4>
 EndAddress
+
+my $version_git = &RSAT::server::GetGitLastCommitDate();
+
+print "<div align=center> Running with RSAT code from : ".$version_git."</div>";
 
 print "</blockquote>\n";
 &google_analytics_tag();
