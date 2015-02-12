@@ -68,7 +68,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}"
-	${CLUSTER_CMD}
+	${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
+#	${CLUSTER_CMD}
 	@echo "		${CLUSTER_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
