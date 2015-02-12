@@ -139,8 +139,10 @@ print <<EndText;
                  
                  <option value="dna-pattern_form.cgi" class="scan-programs">dna-pattern</option>
                  <option value="matrix-scan-quick_form.cgi" class="scan-programs">matrix-scan (quick)</option>
+                 <option value="matrix-scan_form.cgi" class="scan-programs">matrix-scan (full options)</option>
                  
                  <option value="matrix-scan-quick_form.cgi" class="matrix-scan">matrix-scan (quick)</option>
+                 <option value="matrix-scan_form.cgi" class="matrix-scan">matrix-scan (full options)</option>
                  
                  <option value="compare-matrices_form.cgi" class="matrix-compa-programs">compare matrices</option>
                  <option value="matrix-clustering_form.cgi" class="matrix-compa-programs">matrix clustering</option>
