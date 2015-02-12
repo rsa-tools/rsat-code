@@ -53,7 +53,7 @@ JOB=`mktemp -u ${JOB_PREFIX}.XXXXXX`
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
 
-## Send a jobs to a cluster using the torque quee management system
+## Print the job in a script file
 ##
 ## A unique name is obtained for the script file with the command
 ## mktemp.  I use an awful trick to ensure that this name is generated
@@ -61,60 +61,58 @@ command_queue:
 ## element (JOB). Without this script, mktemp would be called once for
 ## creating the script, and another time when sending it to the queue
 ## (it would thus have a different name, and the task would fail).
+command_queue_print_job:
+	echo "job	${JOB}"
+	echo "Job file ${JOB_DIR}/${JOB}.sh"
+	echo "echo running on node "'$$HOST' > ${JOB_DIR}/${JOB}.sh
+	echo "hostname" >> ${JOB_DIR}/${JOB}.sh
+	echo "echo Job started" >> ${JOB_DIR}/${JOB}.sh
+	echo "date" >> ${JOB_DIR}/${JOB}.sh
+	echo "${MY_COMMAND}" >> ${JOB_DIR}/${JOB}.sh
+	echo "echo Job done" >> ${JOB_DIR}/${JOB}.sh
+	echo "date" >> ${JOB_DIR}/${JOB}.sh
+	chmod u+x ${JOB_DIR}/${JOB}.sh
+
+## Send a jobs to a cluster using the torque quee management system
 QSUB_CMD_TORQUE=qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do	\
-		echo; \
-		echo "Enqueued command:	${MY_COMMAND}" ;	\
-		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}.sh; \
-		echo "hostname" >> ${JOB_DIR}/$${job}.sh; \
-		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job}.sh ;	\
-		chmod u+x ${JOB_DIR}/$${job}.sh ;	\
-		echo "	Qsub command:	${QSUB_CMD_TORQUE}" ;	\
-		echo "	Job file: 	${JOB_DIR}/$${job}.sh" ;	\
-		echo "	Log file: 	${JOB_DIR}/$${job}.log" ;	\
-		echo "	Error log:	${JOB_DIR}/$${job}.err" ;	\
+		${MAKE} command_queue_print_job JOB=$${job}; \
 		${QSUB_CMD_TORQUE}; \
+		echo "	Qsub command:	${QSUB_CMD_TORQUE}"; \
+		echo "	Job file: 	${JOB_DIR}/$${job}.sh"; \
+		echo "	Log file: 	${JOB_DIR}/$${job}.log"; \
+		echo "	Error log:	${JOB_DIR}/$${job}.err"; \
 	done
+#		echo; \
+#		echo "Enqueued command:	${MY_COMMAND}" ;	\
+#		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}.sh; \
+#		echo "hostname" >> ${JOB_DIR}/$${job}.sh; \
+#		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job}.sh ;	\
+#		chmod u+x ${JOB_DIR}/$${job}.sh ;	\
+#		echo "	Qsub command:	${QSUB_CMD_TORQUE}" ;	\
+#		echo "	Job file: 	${JOB_DIR}/$${job}.sh" ;	\
+#		echo "	Log file: 	${JOB_DIR}/$${job}.log" ;	\
+#		echo "	Error log:	${JOB_DIR}/$${job}.err" ;	\
 
-## Send a jobs to a cluster using the torque quee management system
-_command_queue_torque_prev:
-	@mkdir -p ${JOB_DIR}
-	@for job in ${JOB} ; do	\
-		echo "Job ${JOB_DIR}/$${job}" ;	\
-		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
-		echo "hostname" >> ${JOB_DIR}/$${job}; \
-		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
-		chmod u+x ${JOB_DIR}/$${job} ;	\
-		qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
-		rm $${job} ;\
-	done
 
 ## Send a jobs to a cluster using the SGE queue management system
-##
-## A unique name is obtained for the script file with the command
-## mktemp.  I use an awful trick to ensure that this name is generated
-## only once for this target, by running a "for" loop with a single
-## element (JOB). Without this script, mktemp would be called once for
-## creating the script, and another time when sending it to the queue
-## (it would thus have a different name, and the task would fail).
 command_queue_sge:
 	@mkdir -p ${JOB_DIR}
 	@echo "job dir	${JOB_DIR}"
 	@for job in ${JOB} ; do	\
-		echo "job	$${job}" ; \
-		echo "Job ${JOB_DIR}/$${job}" ;	\
-		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; \
-		echo "hostname" >> ${JOB_DIR}/$${job}; \
-		echo "echo Job started" >> ${JOB_DIR}/$${job}; \
-		echo "date" >> ${JOB_DIR}/$${job}; \
-		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;	\
-		echo "echo Job done" >> ${JOB_DIR}/$${job}; \
-		echo "date" >> ${JOB_DIR}/$${job}; \
-		chmod u+x ${JOB_DIR}/$${job} ;	\
+		${MAKE} command_queue_print_job JOB=$${job}; \
 		qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -cwd -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
-		rm $${job} ;\
+	done
+
+## Send a jobs to batch
+command_queue_batch:
+	@mkdir -p ${JOB_DIR}
+	@echo "job dir	${JOB_DIR}"
+	@for job in ${JOB} ; do	\
+		${MAKE} command_queue_print_job JOB=$${job}; \
+		batch -f ${JOB_DIR}/$${job}.sh ; \
 	done
 
 command_now:
