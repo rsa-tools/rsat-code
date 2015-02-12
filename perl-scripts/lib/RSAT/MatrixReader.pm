@@ -2996,6 +2996,56 @@ sub SortMatrices {
 
 }
 
+=pod
+
+=item B<SetMatrixName(matrix, matrix_number_in_input_file, matrix_file, matrix_format)>
+
+=cut
+
+################################################################
+## Choose the name of a matrix
+sub SetMatrixName {
+  my ($matrix, $m, $matrix_file, $input_format) = @_;
+
+  ## Make sure that the matrix has the mandatory attribute "id"
+  my $matrix_id = $matrix->get_attribute("id");
+  unless ($matrix_id) {
+    if ($matrix_file) {
+      ($matrix_id) =  &RSAT::util::ShortFileName($matrix_file);
+      $matrix_id =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
+      $matrix_id =~ s/\.txt$//; ## suppress .txt extension
+      $matrix_id .= "_m".$m;
+      &RSAT::message::Debug("Matrix", $m."/".scalar(@matrices), "name", $matrix_id) if ($main::verbose >= 5);
+    } else {
+      $matrix_id = "matrix";
+      $matrix_id .= "_m".$m;
+    }
+    $matrix->force_attribute("id", $matrix_id);
+  }
+
+  ## Get accession number (preferred name for TRANSFAC input format)
+  my $matrix_ac = $matrix->get_attribute("accession") || $matrix->get_attribute("AC");
+  unless ($matrix_ac) {
+    $matrix_ac = $matrix_id;
+    $matrix->force_attribute("AC", $matrix_ac);
+    $matrix->force_attribute("accession", $matrix_ac);
+  }
+
+  ## Check that the matrix has a name
+  my $matrix_name = $matrix->get_attribute("name");
+  unless ($matrix_name){
+    $matrix_name = $matrix_ac;
+    $matrix->force_attribute("name", $matrix_name);
+  }
+  &RSAT::message::Info($m,
+		       "name=".$matrix->get_attribute("name"),
+		       "id=".$matrix->get_attribute("id"),
+		       "format=".$input_format,
+		       "file=".$matrix_file,
+		      ) if ($main::verbose >= 5);
+}
+
+
 return 1;
 
 __END__
