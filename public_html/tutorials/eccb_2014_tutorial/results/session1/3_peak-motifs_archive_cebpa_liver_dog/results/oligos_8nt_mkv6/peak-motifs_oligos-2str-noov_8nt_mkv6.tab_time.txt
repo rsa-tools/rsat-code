@@ -1,6 +1,0 @@
-; Job started 2014_09_03.183714
-; Job done    2014_09_03.183714
-
-real	0m23.403s
-user	0m23.394s
-sys	0m0.154s
