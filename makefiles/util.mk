@@ -64,13 +64,13 @@ command_queue:
 command_queue_print_job:
 	echo "job	${JOB}"
 	echo "Job file ${JOB_DIR}/${JOB}.sh"
-	echo "echo running on node "'$$HOST' > ${JOB_DIR}/${JOB}.sh
-	echo "hostname" >> ${JOB_DIR}/${JOB}.sh
-	echo "echo Job started" >> ${JOB_DIR}/${JOB}.sh
-	echo "date" >> ${JOB_DIR}/${JOB}.sh
-	echo "${MY_COMMAND}" >> ${JOB_DIR}/${JOB}.sh
-	echo "echo Job done" >> ${JOB_DIR}/${JOB}.sh
-	echo "date" >> ${JOB_DIR}/${JOB}.sh
+	echo "echo running on node "'$$HOST'";" > ${JOB_DIR}/${JOB}.sh
+	echo "hostname; " >> ${JOB_DIR}/${JOB}.sh
+	echo "echo Job started; " >> ${JOB_DIR}/${JOB}.sh
+	echo "date; " >> ${JOB_DIR}/${JOB}.sh
+	echo "${MY_COMMAND}; " >> ${JOB_DIR}/${JOB}.sh
+	echo "echo Job done; " >> ${JOB_DIR}/${JOB}.sh
+	echo "date; " >> ${JOB_DIR}/${JOB}.sh
 	chmod u+x ${JOB_DIR}/${JOB}.sh
 
 ## Send a jobs to a cluster using the torque quee management system
@@ -103,7 +103,7 @@ command_queue_sge:
 	@echo "job dir	${JOB_DIR}"
 	@for job in ${JOB} ; do	\
 		${MAKE} command_queue_print_job JOB=$${job}; \
-		qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -cwd -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ; \
+		qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -cwd -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh ; \
 	done
 
 ## Send a jobs to batch
@@ -112,7 +112,7 @@ command_queue_batch:
 	@echo "job dir	${JOB_DIR}"
 	@for job in ${JOB} ; do	\
 		${MAKE} command_queue_print_job JOB=$${job}; \
-		batch -f ${JOB_DIR}/$${job}.sh ; \
+		cat ${JOB_DIR}/$${job}.sh | batch  ; \
 	done
 
 command_now:
