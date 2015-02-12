@@ -23,6 +23,14 @@ export R_LIBS_USER=${RSAT}/R-scripts/Rpackages/
 #fi
 
 ################################################################
+## Add RSAT python libraries to PYTHONPATH
+if  [ ${PYTHONPATH} ]; then
+    export PYTHONPATH=${PYTHONPATH}:${RSAT}/lib/python2.7/site-packages/
+else
+    export PYTHONPATH=${RSAT}/lib/python2.7/site-packages/
+fi
+
+################################################################
 ## Class path for metabolic pathway analysis tools
 if  [ ${CLASSPATH} ]; then
        export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
