@@ -20,7 +20,7 @@ Send a set of commands to the queue of a cluster, using the RSAT function
 
 =head1 AUTHORS
 
-Jacques van Helden <jvhelden@ulb.ac.be>
+Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
 =head1 CATEGORY
 
@@ -33,13 +33,12 @@ queue-commands [-i inputfile] [-o outputfile] [-v #] [...]
 =head1 INPUT FORMAT
 
 The input file is a text file containing the commands that have to be
-sent to the cluster.
+sent to the cluster. Each non-empty row is considered to contain one
+command, that will be sent as a separate job to the job manager. Empty
+rows are skipped.
 
-Each non-empty row is considered to contain one command.
-
-Empty rows are skipped.
-
-Lines starting with # are considered as comments, and are echoed on the STDER. 
+Lines starting with '#' or ';' are considered as comments, and are echoed on
+the STDER.
 
 =head1 OUTPUT FORMAT
 
@@ -99,15 +98,21 @@ package main;
   }
 
   ################################################################
-  ## Read input
+  ## Read input and send each input line as a separate job to the grid
+  ## engine.
   ($main::in) = &OpenInputFile($main::infile{commands});
   while ($command = <$main::in>) {
     chomp($command);
-    next unless ($command);
-    if ($command =~ /^\#/) {
+    next unless ($command =~ /\S/); ## Skip empty rows
+
+    ## Report comment lines
+    if (($command =~ /^#/) || ($command =~ /^;/)) {
       warn $command, "\n";
       next;
     }
+
+    ## Send each line as a separate job
+    &RSAT::message::Debug("queue-commands", "Command:", $command) if ($main::verbose >= 5);
     &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
   }
   close $main::in if ($main::infile{commands});
