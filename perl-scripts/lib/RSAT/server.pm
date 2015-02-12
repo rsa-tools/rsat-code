@@ -23,7 +23,7 @@ unless ($ENV{RSAT}) {
     }
 }
 
-##
+## test Morgane (feb 2015) => does not seem to work...
 $ENV{PYTHONPATH}=$ENV{RSAT}."/lib/python2.7/site-packages";
 
 ################################################################
@@ -38,11 +38,12 @@ $ENV{PYTHONPATH}=$ENV{RSAT}."/lib/python2.7/site-packages";
 ## Date:   Wed Feb 11 23:47:48 2015 -0500
 
 sub GetGitLastCommitDate {
-	my $version_git = `git log | head -n 4 | tail -1 | sed s/Date:// ` ;
+	my $version_git = `git log | head -n 4 | grep Date` ;
+	$version_git =~ s/Date://;
 	$version_git =~ s/^\s*\w+\s+//;
 	$version_git =~ s/\D+\w+\s*$//;
 	&RSAT::message::Info("&RSAT::server::GetGitLastCommitDate()", "log version", $version_git)
-      if ($main::verbose >= 4);
+      if ($main::verbose >= 5);
   return $version_git;
 }
 
