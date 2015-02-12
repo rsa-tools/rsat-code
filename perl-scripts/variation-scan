@@ -183,7 +183,8 @@ BEGIN {
 }
 
 require "RSA.lib";
-
+use RSAT::matrix;
+use RSAT::MatrixReader;
 
 ################################################################
 ## Main package
@@ -235,6 +236,17 @@ package	main;
   our $nb_seq = 0;
   our $nb_rvar =0;
 
+
+  ################
+  ## Matrix format
+
+  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  $supported_input_formats = join ",", sort keys %supported_input_format;
+
+  $main::matrix_format="transfac";
+  local @matrix_files = ();
+  $top_matrices = "none";
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -261,12 +273,13 @@ package	main;
   ###############################################################
   ## Check arguments
   &RSAT::error::FatalError("Background file is mandatory. Use -bg option to specify it") unless ($infile{'bg'});
-  &RSAT::error::FatalError("Matrix files in mandatory. Use -m option to specify it") unless ($infile{'matrixfile'});
+  &RSAT::error::FatalError("Matrix files in mandatory. Use -m option to specify it") unless (@matrix_files>0);
   &RSAT::error::FatalError("Background file",$infile{'bg'},"does not exist") unless (-f $infile{'bg'});
-  &RSAT::error::FatalError("Matrice file",$infile{'matrixfile'},"does not exist") unless (-f $infile{'matrixfile'});
   
   ################
   ## Calculate distribution of scores for matrices using convert-matrix (separete matrices) and matrix-distrib on each matrix file
+
+  ## NOTE FROM ALE, I thin we can change this and put it within the matrix reading section
   if ($calc_distrib) {
     &RSAT::error::FatalError("Specify distribution directory. Use -distrib_dir option") unless ($distrib_dir);
     &RSAT::message::TimeWarn("Calculing distribution") if ($main::verbose >= 2);
@@ -282,7 +295,7 @@ package	main;
     &RSAT::util::CheckOutDir($split_dir);
     
     ## convert-matrix command, split matrix file into separete ones
-    my $convert_matrix_cmd=$ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from tf -to tf -split ";
+    my $convert_matrix_cmd=$ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from ".$main::matrix_format." -to tf -split ";
     $convert_matrix_cmd.=" -i ".$infile{'matrixfile'};
     $convert_matrix_cmd.=" -o ".$split_dir;
 
@@ -390,64 +403,100 @@ package	main;
   print $out "#",join("\t", @out_fields),"\n";
 
   ################################################################
-  ## ALE'S NOTE= Read Matrix File and store it in a hash ?
+  ## ALE'S NOTE= Read Matrix File and store it in a hash ? 201412
+
+  ################################################################
+  ## Read matrix file, store matrix objects
+
   &RSAT::message::TimeWarn("Reading Matrix File") if ($main::verbose >= 2);
 
   my $length = 0;
   my $need_count = 0;
   my $ac = "";
 
-  ## Matrix file in transfac format
-  my ($mat_file) = &OpenInputFile($main::infile{'matrixfile'});
-  while (<$mat_file>) {
-    next if (/^#/); ## Skip comment lines
-    next if (/^;/); ## Skip RSAT-like comment lines
-    next unless (/\S/); ## Skip empty lines
-    chomp();
-
-    ## Identify parts of the transfac matrix
-    my @field = split (" ",$_);
-
-    if ( $field[0] eq "AC") {
-      $ac = $field[-1];
-      $length = 0;
-    }
-
-    if ( $field[0] eq "ID" ) {
-      $matrix_list{$ac}{'id'} = $field[-1];
-    }
-
-    $need_count = 0 if ( $field[0] eq "XX" );
-
-    if ($need_count) {
-      $length += 1;
-
-      for (my $i = 1;$i < scalar(keys(%{$matrix_list{$ac}{'tab'}})+1);$i++ ) {
-        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, $field[$i] );
+  ################################################################
+  ## Read the input matrices and collect all matrices
+  &RSAT::message::TimeWarn("Reading matrices") if ($main::verbose >= 2);
+  if (scalar(@matrix_files >= 1)) {
+      $m = 0;
+      foreach my $matrix_file (@matrix_files) {
+	  last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
+	  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format, %args);  
+	  foreach my $matrix (@matrices_from_file) {
+	      $m++;
+	      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+	      &RSAT::MatrixReader::SetMatrixName($matrix, $m, $matrix_file, $matrix_format);
+	      push @matrices, $matrix;
+	  }
       }
-    }
-
-    if ( $field[0] eq "P0" ||$field[0] eq "PO" ) {
-      $need_count = 1;
-
-      for (my $i = 1;$i < scalar(@field);$i++ ) {
-        push ( @{ $matrix_list{$ac}{'tab'}{$i} }, lc($field[$i]) );
-      }
-    }
-
-    if ( $field[0] eq "//") {
-      $matrix_list{$ac}{'length'} = $length;
-      $nb_matrix++;
-    }
-
-    if ($top_matrix) {
-      last if ($top_matrix == $nb_matrix && $top_matrix > 0);
-    }
-
   }
-  $matrix_list{$ac}{'length'} = $length; ## ALE'S NOTE=Is this line correct or is it redundant with line 401
-  $nb_matrix++;
-  close $mat_file;
+  $nb_matrix=scalar(@matrices);
+# else {  ## NOTE code to be removed
+  #   my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
+  #   my $m = 0;
+  #   foreach my $matrix (@matrices_from_file) {
+#	  $m++;
+#	  last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+#	  &SetMatrixName($matrix, $m, "", $input_format);
+#	  push @matrices, $matrix;
+  #     }
+  # }
+  
+  
+  
+  
+
+  ## NOTE FROM ALE: old readin matrices version
+  # my ($mat_file) = &OpenInputFile($main::infile{'matrixfile'});
+  # while (<$mat_file>) {
+  #   next if (/^#/); ## Skip comment lines
+  #   next if (/^;/); ## Skip RSAT-like comment lines
+  #   next unless (/\S/); ## Skip empty lines
+  #   chomp();
+
+  #   ## Identify parts of the transfac matrix
+  #   my @field = split (" ",$_);
+
+  #   if ( $field[0] eq "AC") {
+  #     $ac = $field[-1];
+  #     $length = 0;
+  #   }
+
+  #   if ( $field[0] eq "ID" ) {
+  #     $matrix_list{$ac}{'id'} = $field[-1];
+  #   }
+
+  #   $need_count = 0 if ( $field[0] eq "XX" );
+
+  #   if ($need_count) {
+  #     $length += 1;
+
+  #     for (my $i = 1;$i < scalar(keys(%{$matrix_list{$ac}{'tab'}})+1);$i++ ) {
+  #       push ( @{ $matrix_list{$ac}{'tab'}{$i} }, $field[$i] );
+  #     }
+  #   }
+
+  #   if ( $field[0] eq "P0" ||$field[0] eq "PO" ) {
+  #     $need_count = 1;
+
+  #     for (my $i = 1;$i < scalar(@field);$i++ ) {
+  #       push ( @{ $matrix_list{$ac}{'tab'}{$i} }, lc($field[$i]) );
+  #     }
+  #   }
+
+  #   if ( $field[0] eq "//") {
+  #     $matrix_list{$ac}{'length'} = $length;
+  #     $nb_matrix++;
+  #   }
+
+  #   if ($top_matrix) {
+  #     last if ($top_matrix == $nb_matrix && $top_matrix > 0);
+  #   }
+
+  # }
+  # $matrix_list{$ac}{'length'} = $length; ## ALE'S NOTE=Is this line correct or is it redundant with line 401
+  # $nb_matrix++;
+  # close $mat_file;
 
   ## Get distrib files
   my %distrib_file_list = ();
@@ -460,7 +509,7 @@ package	main;
       next if (/^#/); ## Skip comment lines
       next if (/^;/); ## Skip RSAT-like comment lines
       chomp();
-      my @field = split("\t");
+      my @field = split("\t");  ## NOTE FROM ALE: Is this storing the matrix name and then the corresponding distri
       $distrib_file_list{$field[0]} = $field[1];
     }
   }
@@ -496,41 +545,87 @@ package	main;
 
 
   ## Scan variants using one matrix at the time
+  ## matrix-scan-quick will be used, all matrices will be exported to tab format
   our $matrix_length = 0;
 
-  ## for each matrix in the matrix hash created previously by reading the matrix file
-  foreach my $matrix_ac (keys(%matrix_list)) {
-    $matrix_length = $matrix_list{$matrix_ac}{'length'};
-    next if ($matrix_length == 0);
-    if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
-	&RSAT::message::Info("Matrix is wider thant varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
-	next;
-    }
+  ## For each matrix extract:
+  ##  1)ID and/or AC
+  ##  2)width
+  ##  3)Counts in tab format and write them in a temporal file, after writing them there is no need to store this info?
+  
+  #foreach $mtx ( @matrices){
+      ## Get ID or AC, if matrix is not transfac format consensus will be used
+  #    my $mtx_name="";
+  #    my $ID = $mtx->get_attribute("name");
+  #    my $AC=$mtx->get_attribute("id");
+  #    if ($ID eq $AC){
+ #	  $mtx_name=$ID;
+  #    }
+   #   else {
+#	  $mtx_name=$ID.$AC;
+ #     }
+  #    my $width = $mtx->get_attribute("ncol");
+   #   die "BOOM".$mtx_name."col"."++".$width."++";
+ 
+  #}
 
+  ## for each matrix in the matrix hash created previously by reading the matrix file --> OLD
+  #foreach my $matrix_ac (keys(%matrix_list)) {
 
-    ## Save matrix in tab format. matrix-scan-quick only takes as input matrices in tab delimited format
-    my $outM = &OpenOutputFile($matrix_file_tab);
-    foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
-      print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
-    }
-    close($outM);
-
-
-    ## Get score distribution for the current matrix to obtain pvalues
-    ## matrix-scan-quick returns scores, in order to stablish which pvalue
-    ## corresponds to each score is necesary to have the score distribution file
-    
-    &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
-
-    %matrix_info = ();
-
-    ## Use precalculte distrib file if it was specified or distributions were requested as output
-    if ($distrib_file_list{$matrix_ac}) {
-      my %legend_col = ();
-
-      my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
-      my ($d_file) = &OpenInputFile($distrib_file);
-
+  foreach $mtx ( @matrices){
+      $matrix_length = $mtx->get_attribute("ncol");     #$matrix_list{$matrix_ac}{'length'};
+      $ID = $mtx->get_attribute("name");
+      $AC=$mtx->get_attribute("id");
+      if ($ID eq $AC){
+	  $matrix_ac=$AC;
+      }
+      else {
+	  $matrix_ac=$ID."_".$AC;
+      }
+      
+      next if ($matrix_length == 0);
+      if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
+	  &RSAT::message::Info("Matrix is wider than varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
+	  next;
+      }
+      
+      
+      ## Save matrix in tab format. matrix-scan-quick only takes as input matrices in tab delimited format
+      
+      
+      
+      my $outM = &OpenOutputFile($matrix_file_tab);
+      
+      ##foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
+      ##print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
+      ##}
+      
+      ## Print the counts matrix
+      print  $outM $mtx->toString(sep=>"\t",
+				  type=>"counts",
+				  format=>"tab" ); 
+      ## Remove code
+      close($outM);
+      
+      
+      ## Get score distribution for the current matrix to obtain pvalues
+      ## matrix-scan-quick returns scores, in order to stablish which pvalue
+      ## corresponds to each score is necesary to have the score distribution file
+      # die "HELLO". $matrix_file_tab if $matrix_ac=~"M0414_0.90";
+      
+      
+      
+      &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
+      
+      %matrix_info = ();
+      
+      ## Use precalculte distrib file if it was specified or distributions were requested as output
+      if ($distrib_file_list{$matrix_ac}) {
+	  my %legend_col = ();
+	  
+	  my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
+	  my ($d_file) = &OpenInputFile($distrib_file);
+	  
       ## Read in distribution file for current matrix
       while (<$d_file>) {
         next if (/;/);
@@ -1147,7 +1242,19 @@ The matrix file transfac format
 
 =cut
     } elsif ($arg eq "-m") {
-      $main::infile{matrixfile} = shift(@arguments);
+	push @matrix_files,  shift(@arguments);
+
+=pod
+
+=item B<-top_matrices #>
+
+The matrix file transfac format
+
+=cut
+    } elsif ($arg eq "-top_matrices") {
+	$top_matrices = shift(@arguments);
+	&FatalError($top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
+	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
 
 =pod
 
@@ -1161,13 +1268,16 @@ Background file
 
 =pod
 
-=item B<-i #>
+=item B<-m_format matrix_format>
 
-Input File
+Matrix file format
 
 =cut
-    } elsif ($arg eq "-i") {
-      $main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-matrix_format") {
+      $main::matrix_format = lc(shift(@arguments));
+	    unless ($supported_input_format{$main::matrix_format }) {
+		&RSAT::error::FatalError("$main::matrix_format \tInvalid input format for matrix\tSupported:",$supported_input_formats);
+	    }
 =pod
 
 =item B<-mml #>
