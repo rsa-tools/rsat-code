@@ -68,7 +68,7 @@ command_queue_print_job:
 	echo "hostname; " >> ${JOB_DIR}/${JOB}.sh
 	echo "echo Job started; " >> ${JOB_DIR}/${JOB}.sh
 	echo "date; " >> ${JOB_DIR}/${JOB}.sh
-	echo "${MY_COMMAND}; " >> ${JOB_DIR}/${JOB}.sh
+	echo "source ${RSAT}/RSAT_config.bash; ${MY_COMMAND}; " >> ${JOB_DIR}/${JOB}.sh
 	echo "echo Job done; " >> ${JOB_DIR}/${JOB}.sh
 	echo "date; " >> ${JOB_DIR}/${JOB}.sh
 	chmod u+x ${JOB_DIR}/${JOB}.sh
