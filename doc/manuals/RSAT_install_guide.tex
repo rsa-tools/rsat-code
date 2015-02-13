@@ -304,6 +304,24 @@ which gs
 gs --version
 \end{lstlisting}
 
+\program{webllogo}
+
+\textbf{Note:} in 2015 we replaced the use of \program{seqlogo} by
+\program{weblogo}. We keep both for backwards compatibility.
+
+The program \program{weblogo} (version 3) is used to draw logos from
+position-specific scoring matrices. It is required for several \RSAT
+tools (\program{convert-matrix}, \program{peak-motifs},
+\program{matrix-clustering}, \program{footprint-discovery}, \ldots).
+
+\begin{lstlisting}
+## Locate the path of weblogo
+which weblogo
+
+## get the help for weblogo
+weblogo --help
+\end{lstlisting}
+
 
 \subsubsection{Testing supported organisms}
 
@@ -314,28 +332,28 @@ supported-organisms
 \end{lstlisting}
 
 Get the list of organisms supported on the server
-\url{http://rsat.eu/}. This script requires some Perl libraries for
+\url{http://rsat-tagc.univ-mrs.fr/rsat/}. This script requires some Perl libraries for
 the SOAP/WSDL protocol. If it works, it means that you are ready to
 use \RSAT Web services.
 
 \begin{lstlisting}
-supported-organisms-server -v 2 -server http://rsat.eu/ \
-   -o supported_on_rsat_eu.tab ; 
+supported-organisms-server -v 2 -server http://rsat-tagc.univ-mrs.fr/rsat/ \
+   -o supported_on_rsat-tagc.tab ; 
 
 ## Count the number of supported organisms on the remote server
-wc -l  supported_on_rsat_eu.tab
+wc -l  supported_on_rsat-tagc.tab
 
 ## Check the list of supported organisms on the remote server
-more   supported_on_rsat_eu.tab
+more   supported_on_rsat-tagc.tab
 \end{lstlisting}
 
 Get the list of organisms supported on another server
-\url{http://rsat.fr/}.
+\url{http://pedagogix-rsat.univ-mrs.fr/rsat/}.
 
 \begin{lstlisting}
-supported-organisms-server -server http://rsat.fr/ \
-   -o supported_on_rsat_fr.tab ; 
-wc -l  supported_on_rsat_fr.tab
+supported-organisms-server -server http://pedagogix-tagc.univ-mrs.fr/rsat/ \
+   -o supported_on_pedagogix-tagc.tab ; 
+wc -l  supported_on_pedagogix-tagc.tab
 \end{lstlisting}
 
 

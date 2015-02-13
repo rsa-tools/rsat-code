@@ -47,7 +47,6 @@ print <<EndText;
   </TR>
 </table>
 
-
 <!--    <div class="attention">
     <p><b>Attention!</b></p>
     <p>The main address for Regulatory Sequence Analysis Tools (RSAT) will be changed to <a target="_top" href="http://www.rsat.eu/">http://www.rsat.eu/</a></p>
@@ -140,8 +139,10 @@ print <<EndText;
                  
                  <option value="dna-pattern_form.cgi" class="scan-programs">dna-pattern</option>
                  <option value="matrix-scan-quick_form.cgi" class="scan-programs">matrix-scan (quick)</option>
+                 <option value="matrix-scan_form.cgi" class="scan-programs">matrix-scan (full options)</option>
                  
                  <option value="matrix-scan-quick_form.cgi" class="matrix-scan">matrix-scan (quick)</option>
+                 <option value="matrix-scan_form.cgi" class="matrix-scan">matrix-scan (full options)</option>
                  
                  <option value="compare-matrices_form.cgi" class="matrix-compa-programs">compare matrices</option>
                  <option value="matrix-clustering_form.cgi" class="matrix-compa-programs">matrix clustering</option>
@@ -164,7 +165,7 @@ print <<EndText;
     </td>
 
     <td>
-	<p><i class="fa fa-book fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" target="tools">ECCB'14</a></b> and <a href="tutorials/tutorials.html" target="tools"><b>all tutorials</b></a> 
+	<p><i class="fa fa-book fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a></b> and <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>all training material</b></a> 
 	
 	<p><i class="fa fa-book fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
 		  
@@ -297,6 +298,10 @@ Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)</i>
 </a>
 </h4>
 EndAddress
+
+my $version_git = &RSAT::server::GetGitLastCommitDate();
+
+print "<div align=center> Running with RSAT code from : ".$version_git."</div>";
 
 print "</blockquote>\n";
 &google_analytics_tag();

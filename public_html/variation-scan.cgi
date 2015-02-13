@@ -130,7 +130,12 @@ my $markov_order = $query->param('markov_order');
 
 ## Method for specifyung the background model
 my $bg_method = $query->param('bg_method');
-if  ($bg_method eq "bgfile") {
+
+if ($bg_method eq "bginput") {
+    $parameters .= " -bginput";
+    $parameters .= " -markov ".$markov_order;
+
+} elsif  ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
   my $organism_name = $query->param("organism");
   @org_name_split=split(" ",$organism_name);
@@ -149,7 +154,7 @@ if  ($bg_method eq "bgfile") {
 
 } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
-  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $bgfile = $tmp_file_path."_bgfile.txt";
   my $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
       if ($upload_bgfile =~ /\.gz$/) {
@@ -162,10 +167,12 @@ if  ($bg_method eq "bgfile") {
 	  print BGFILE;
       }
       close BGFILE;
+      
       $bg_format=$query->param('bg_format');
       ##NEED TO CONVERT BG MODELS IN OTHER FORMAT NOT SUPPORTED
       if (!($bg_format eq 'oligo-analysis')){
-	  $bg_file_oligo= $tmp_file_path.."input_bgfile_oligoformat";
+	  $bg_file_oligo= $tmp_file_path."input_bgfile_oligoformat";
+	  
 	  $convert_bg_cmd=" convert-matrix -from $bg_format ";
 	  $convert_bg_cmd.=" -to oligo-analysis -i $bg_file ";
 	  $convert_bg_cmd.="-o $bg_file_oligo ";

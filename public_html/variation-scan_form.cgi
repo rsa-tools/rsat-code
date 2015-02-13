@@ -77,7 +77,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("variation-scan", "form");
 print "<CENTER>";
-print " variation-scan.<P>\n";
+print "Scan sequences bearing variants with a list of motifs to predict which motifs may be affected by the variant.<br/>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:</br> ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
@@ -199,7 +199,7 @@ sub Panel1 {
 ##########################################
 sub Panel2 {
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_open\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>Variant Sequence</b> </div>\n";
+ # print "<div class=\"menu_heading_open\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>Variant Sequence</b> </div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible_display\">\n";
 
   print "<p/><fieldset>\n";
@@ -257,15 +257,17 @@ sub Panel3 {
 		    #"ensembl"=>1
 #	);
     
-    #&GetBackgroundModel();
-    
-    my %bg_params =("markov" => 1,
-		    "bg_input" => 1,
-		    "bg_window" => 1,
-		    "markov_message" => 1
-	);
-    &GetBackgroundModel(%bg_params);    
+print "<fieldset>
+<legend><b><a href='help.convert-matrix.html#io_format'>Background </a></b></legend>";
 
+my %bg_params =("markov" => 1,
+		"bg_input" => 0,
+		"markov_message" => 0,
+		"no_bg_pseudo"=>1
+	       );
+&GetBackgroundModel(%bg_params);
+
+print "</fieldset><p/>";
    
     
     print "<p/><fieldset>

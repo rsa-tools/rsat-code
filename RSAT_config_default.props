@@ -100,6 +100,7 @@ exec_time=0
 ##
 ## Example of values:
 rsat_ws=http://localhost/rsat/
+## Note: the auto option does not work for rsat_ws.
 
 ## Default image format
 rsat_img_format=png
@@ -110,8 +111,8 @@ rsat_img_format=png
 ## These options are useful only if you run the server on a PC
 ## cluster.
 
-## Queue manager (e.g. torque, SGE, ...)
-QUEUE_MANAGER=torque
+## Queue manager (e.g. batch, torque, SGE, ...)
+QUEUE_MANAGER=batch
 
 ## Indicate the name of the cluster queue
 ## This parameter is required to run tasks on the cluster
@@ -191,6 +192,8 @@ neat_www_root=auto
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
 ## on the new neat_ws server
+##
+## Note: the auto option does not work for neat_ws.
 neat_ws=http://localhost/rsat/
 
 ## URL for the NeAT Web services temporary directory, where the result files

@@ -1,0 +1,28 @@
+digraph {
+
+	graph [fontname="ArialBlack",fontsize="14", label="MICROSCOPE REST client" labelloc="t", fontcolor="#0066BB", nodesep="0.1", ranksep="0.2",  rankdir=LR];
+	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
+	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
+
+
+	microscope [shape="oval", style="filled", fillcolor="#FFEEDD", label="MICROSCOPE REST interface\nhttp://mgalileo.genoscope.cns.fr/"];
+
+	## get the list of supported organisms
+	microscope -> get_organisms
+	get_organisms [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Get organisms}"]
+	get_organisms -> organisms
+	organisms [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Organism table\n(N = 1476)"];
+
+	## get gene-protein-reaction table	
+	microscope -> get_gpr
+	get_gpr [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{{Get gene-protein-reaction (GPR)|organism (e.g. Escherichia_coli_K12_MG1655)\l}}"]
+	get_gpr -> gpr
+	gpr [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="GPR table\n(N = 4414)"];
+
+	## Get attributes of a single reaction	
+	microscope -> get_reaction
+	get_reaction [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{{Get reaction|mrId (e.g. 6-ACETYLGLUCOSE-DEACETYLASE-RXN)\l}}"]
+	get_reaction -> reaction
+	reaction [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Reaction"];
+	
+}
