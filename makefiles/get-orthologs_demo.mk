@@ -50,6 +50,20 @@ list_param:
 	@echo "	OUTPUT_FIELDS	${OUTPUT_FIELDS}"
 	@echo "	RES_DIR		${RES_DIR}"
 
+
+################################################################
+## Genome blast
+## THIS REQUIRES WRITE PERMISSIONS ON THE RSAT DIRECTORY
+genome_blast_formatdb:
+	@echo
+	@echo "genome-blast -task formatdb	${ORG}	${TAXON}"
+	genome-blast -v ${V} -q ${ORG} -dbtaxon ${TAXON} -reciprocal -task formatdb
+
+genome_blast_blastall:
+	@echo
+	@echo "genome-blast -task formatdb	${ORG}	${TAXON}"
+	genome-blast -v ${V} -q ${ORG} -dbtaxon ${TAXON} -reciprocal -task blastall ${OPT}
+
 ## Count the number of hits in a given file
 HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab
 HITS=`grep -v '^;' ${HIT_FILE} | grep -v '^\#' | wc -l`
