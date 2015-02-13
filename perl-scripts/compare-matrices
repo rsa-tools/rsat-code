@@ -2919,7 +2919,7 @@ analysis to a given subset of a large library.
 
 =item B<-skip X>
 
-Only analyze the first X motifs of the input file(s). 
+Skip the first X motifs of the input file(s). 
 
 This combines the effect of -skip1 and -skip2.
 
