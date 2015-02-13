@@ -974,8 +974,17 @@ sub make_temp_file {
 ##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 sub doit {
   my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
+
+  &RSAT::message::Debug("&RSAT::util::doit()", "Command:", $command) if ($main::verbose >= 5); 
+  unless ($command) {
+    &RSAT::message::Warning("&RSAT:::util::doit() was called with empty command. I don't do anything.");
+    return();
+  }
+
+  ## Define current working directory
   my $wd = `pwd`;
   chomp($wd);
+
 
   ## Fix scope problem with the variable $main::verbose
   unless(defined($verbose)) {
@@ -983,12 +992,17 @@ sub doit {
   }
 
   if ($batch) {
+
+    ## command used to send the actual command as a script to the job scheduler
+    my $batch_cmd; 
+
     ## Define the shell
     my $shell = $ENV{CLUSTER_SHELL} || $ENV{SHELL};
 
     unless ($ENV{CLUSTER_SHELL}) {
       $shell = &RSAT::server::GetProgramPath($shell);
     }
+
 
     ## Store the command in a sh script (the job)
     my $job_dir = "jobs";
@@ -1005,7 +1019,7 @@ sub doit {
     $job_script .= "(cd ".$wd;
     $job_script .= "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
     $job_script .= "; hostname >> ".$job_file.".started"; 
-    $job_script .= "; source ".$ENV{RSAT}."RSAT_config.bashrc"; ## Required for PERL5LIB
+    $job_script .= "; source ".$ENV{RSAT}."/RSAT_config.bashrc"; ## Required for PERL5LIB
     $job_script .= "; ".$command;
     $job_script .= "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
     $job_script .= "; hostname >> ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
@@ -1019,31 +1033,33 @@ sub doit {
     $job_name =~ s/\//_/g;
     my $job_log = $wd."/".$job_file.".log";
 
-
     ################################################################
     ## Check that the cluster parameters are well defined before
     ## trying to send jobs to a PC cluster
 
-    ## Cluster queue manager
-
+    ## Identify the job scheduler
     my $queue_manager="";
     if (defined($ENV{QUEUE_MANAGER})) {
       $queue_manager=$ENV{QUEUE_MANAGER};
-
+      
     } elsif (defined($ENV{QSUB_MANAGER})) {
       $queue_manager=$ENV{QSUB_MANAGER};
       &RSAT::message::Warning("Parameter QSUB_MANAGER is obsolete.\nPlease rename if to QUEUE_MANAGER in ".$RSAT."/RSAT_config.props") if ($main::verbose >= 1);
 
     } else {
-      $ENV{QUEUE_MANAGER} = "torque";
+      ## If job scheduler has not beed specified
+      $ENV{QUEUE_MANAGER} = "batch";
       $queue_manager=$ENV{QUEUE_MANAGER};
-      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'torque'.") if ($verbose >= 2);
+      &RSAT::message::Warning("Cluster job scheduler not defined, using the  default value 'torque'.") if ($verbose >= 2);
     }
 
+    ## Check if qsub options have been specified in RSAT properties or
+    ## as environment variable.
     my $qsub_options="";
     if (defined($ENV{QSUB_OPTIONS})) {
       $qsub_options = $ENV{QSUB_OPTIONS};
     }
+
 
     ## Cluster queue
     unless ($ENV{CLUSTER_QUEUE}) {
@@ -1059,30 +1075,28 @@ sub doit {
     my $selected_nodes =$ENV{NODES};
 #    my $selected_nodes =$ENV{NODES} || " -l nodes=1:k2.6 "; ##
 
-    my $qsub_cmd;
-
     ################################################################
-    ## Choose the queue manager depending on the local configuration
+    ## Choose the job scheduler depending on the local configuration
     if (lc($queue_manager) eq "torque") {
       $wd = `pwd`;
       chomp($wd);
 
-      ## qsub command functionning using Torque (e.g. new-hydra.ulb.ac.be)
-      $qsub_cmd = "qsub";
-      $qsub_cmd .= " ".$selected_nodes if ($selected_nodes);
-      $qsub_cmd .= " -d ".$wd;
-      $qsub_cmd .= " -m ".$batch_mail;
-      $qsub_cmd .= " -N ".$job_file;
-      #      $qsub_cmd .= " -j oe ";
-      $qsub_cmd .= " -e ".$job_file.".err";
-      $qsub_cmd .= " -o ".$job_file.".log";
-      $qsub_cmd .= " ".$job_file;
+      ## qsub command functionning using torque
+      $batch_cmd = "qsub";
+      $batch_cmd .= " ".$selected_nodes if ($selected_nodes);
+      $batch_cmd .= " -d ".$wd;
+      $batch_cmd .= " -m ".$batch_mail;
+      $batch_cmd .= " -N ".$job_file;
+      #      $batch_cmd .= " -j oe ";
+      $batch_cmd .= " -e ".$job_file.".err";
+      $batch_cmd .= " -o ".$job_file.".log";
+      $batch_cmd .= " ".$job_file;
 
-      &RSAT::message::Debug("qsub command for torque", $qsub_cmd) if ($main::verbose >= 2);
+      &RSAT::message::Debug("qsub command for torque", $batch_cmd) if ($main::verbose >= 2);
 
-    } else {
-      ## qsub command functionning using Sun Grid Engine (note: this is the cluster management system installed at the BiGRe lab, 2012)
-      $qsub_cmd = join(" ", "qsub",
+    } elsif (lc($queue_manager) eq "sge") {
+      ## qsub command functionning using Sun Grid Engine
+      $batch_cmd = join(" ", "qsub",
 		       "-m", $batch_mail,
 		       "-q ", $cluster_queue,
 		       " -j y ",
@@ -1090,8 +1104,21 @@ sub doit {
 		       "-o ".$job_log,
 		       $qsub_options,
 		       $job_file);
+
+    } elsif (lc($queue_manager) eq "batch") {
+      ## qsub command functionning using Sun Grid Engine
+      $batch_cmd = &RSAT::server::GetProgramPath("batch");
+      $batch_cmd = $batch_cmd;
+      $batch_cmd .= " -f ".$job_file;
+
+    } else {
+      &RSAT::error::FatalError($queue_manager, 
+			       "Invalid job scheduler. Supported: torque | SGE.",
+			       "Please define the job scheduler by setting the variable QUEUE_MANAGER in RSAT_config.props.");
     }
-    &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
+
+    &doit($batch_cmd, $dry, $die_on_error,$verbose,0);
+
 
   } else {
     ## Verbose: report command
@@ -1113,6 +1140,95 @@ sub doit {
       }
     }
   }
+}
+
+
+################################################################
+## Run a Web server query and send two notification email (submission
+## and completion, respectively), plus display the URL where results
+## will become available after completion.
+##
+## index=>$index_file  index generated by the called program (e.g. compare-matrices)
+sub EmailTheResult {
+    my ($command, $recipient, $tmp_file_path, %args) = @_;
+    my $delay = "72 hours";
+    my $subject = $args{title};
+    my $no_email = $args{no_email} || 0;
+
+    my $script_name = &RSAT::util::hide_RSAT_path($0);
+#    my $script_name = $0;
+#    ## Avoid providing the full path of the RSAT package
+#    $script_name =~ s|$ENV{RSAT}\/+public_html\/+||g;
+#    $script_name = &RSAT::util::hide_RSAT_path($script_name);
+    $script_name =~ s|.*public_html\/+||g; ## Suppress the public_html folder
+    $script_name =~ s|\.cgi$||; ## Suppress cgi extension
+
+
+    ## Check the subject
+    if ($subject) {
+	$subject =~ s/'/\'/g;
+    } else {
+      $subject = join " ", "[RSAT]", $script_name, &AlphaDate();
+    }
+
+    ## Avoid exposing the full RSAT path in the mail subject
+    $subject = &RSAT::util::hide_RSAT_path($subject);
+
+    ## Check the email address
+    &RSAT::server::CheckEmailAddress($recipient)  unless ($no_email);;
+
+    ## Temporary file for storing the result
+    unless ($tmp_file_path) {
+      $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); 
+    }
+    my $result_URL = $ENV{rsat_www}."/tmp/";
+    if ($args{index}) {
+      $result_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $args{index});
+    } else {
+      $result_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $tmp_file_path);
+    }
+    $result_URL =~ s|//tmp|/tmp|g;
+
+    ## Run the task in nice mode
+    $command = "nice -n 19 ".$command;
+    my $clean_command = &RSAT::util::hide_RSAT_path($command);
+
+    ## Add escape to '$RSAT' before calling the mail command, to avoid replacement by its actual value
+#    $clean_command =~ s|\$|\\\$|;
+
+
+    ## Indicate the URL of the future result file
+    my $submission_message = $subject."\n";
+    $submission_message .= "\n\nCommand: ".$clean_command;
+    $submission_message .= "\n\nYour task has been submitted to the RSAT server.";
+    $submission_message .= "\n\nAfter completion of the task, an email will be sent to ".$recipient unless ($no_email);
+    $submission_message .= "\n\nThe result will become available at\n";
+    $submission_message .= "\t".${result_URL}."\n\n";
+
+    ## Print the task submission message the Web page
+    $html_submission_message = $submission_message;
+    $html_submission_message =~ s|(http://\S+)|<a target='_blank' href='$1'>$1</a>|gm;
+    $html_submission_message =~ s|\\\$|\$|gm;
+    &RSAT::message::Info($html_submission_message);
+
+    &RSAT::server::send_mail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
+
+    ## Concatenate the command with the email notification
+    my $completion_message;
+    $completion_message .= $subject."\n";
+    $completion_message .= "\n\nCommand: ".$clean_command;
+    $completion_message .= "\n\nYour result is available at the following URL:\n\t${result_URL}";
+    $completion_message .= "\nThe result file will remain there for $delay.";
+
+    ## Run the command and send a notification mail if the user provided an email address
+    $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> ".$tmp_file_path;
+    $command .= "; echo \"$completion_message\" | ".$SCRIPTS."/send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
+    $command .= " &"; ## Run task in background
+    print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
+    system $command;
+
+    ## Prepare removal of the temporary file
+    &RSAT::server::DelayedRemoval($tmp_file_path, $delay);
 }
 
 

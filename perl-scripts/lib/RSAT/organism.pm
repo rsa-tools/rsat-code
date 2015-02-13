@@ -161,6 +161,34 @@ sub check_name {
   }
 }
 
+################################################################
+
+=pod
+
+=item has_variations()
+
+Usage: my $has_variation = &has_variations($organism);
+
+Return one if the organims has variations installed
+=cut
+sub has_variations{
+    my ($organism_name) = @_;
+   # my $variation_dir=join("", $main::supported_organism{$org}->{'data'}, "/variations");
+    my $variation_dir=join("/",$ENV{RSAT},"data","genomes",$organism_name ,"variations");
+    
+    if($organism_name eq "Homo_sapiens_GRCh37"){
+    return($variation_dir)
+    }
+    my $vart_files=`ls  $variation_dir/*.varBed`;
+   # return ($variation_dir);
+    my @variation_files= split ("\n",$vart_files);
+    if (scalar(@variation_file)>0){
+	return (1);
+    }
+    else {
+	return (0);
+    }
+}
 
 
 ################################################################

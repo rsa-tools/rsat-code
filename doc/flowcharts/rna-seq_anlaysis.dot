@@ -1,0 +1,91 @@
+digraph {
+
+	graph [fontname="ArialBlack",fontsize="14", label="TGML RNA-seq pipeline" labelloc="t", fontcolor="#0066BB", nodesep="0.1", ranksep="0.2"];
+	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
+	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
+
+	sequencing [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Sequencing}"];
+	sequencing -> raw_reads;
+	raw_reads [shape="record", style="filled", fillcolor="#FFEEDD", label="{Raw reads\n(fastq, xsq)}"];
+	raw_reads -> read_alignment;
+	raw_reads -> read_quality_analysis
+
+	subgraph cluster_0 {
+		color="#0066BB";
+		label = "Alignment";
+
+		read_alignment [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Alignment}"];
+		read_alignment -> aligned_reads;
+		aligned_reads [shape="record", style="filled", fillcolor="#FFEEDD", label="{Aligned reads\n(bam)}"];
+
+		aligned_reads -> chrom_coverage;
+		chrom_coverage [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Chromosomal coverage}"];
+		chrom_coverage -> density_profiles;
+		density_profiles [shape="record", style="filled", fillcolor="#FFEEDD", label="{Density profiles\n(wig)}"];
+	}
+
+
+	subgraph cluster_4 {
+		color="#0066BB";
+		label = "Fusion analysis";
+		aligned_reads -> fusion_detection;
+		fusion_detection [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Fusion detection}"];
+		fusion_detection -> gene_fusions;
+		gene_fusions [shape="record", style="filled", fillcolor="#FFEEDD", label="{Gene fusions\n(tabular, bed)}"];
+
+	}
+
+	subgraph cluster_5 {
+		color="#0066BB";
+		label = "Splicing analysis";
+		aligned_reads -> splicing_analysis;
+		splicing_analysis [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Splicing analysis}"];
+		splicing_analysis -> isoforms;
+		isoforms [shape="record", style="filled", fillcolor="#FFEEDD", label="{Isoforms\n(tabular, bed)}"];
+
+	}
+
+
+	subgraph cluster_2 {
+		color="#DD0066";
+		fontcolor="#DD0066";
+		label = "Quality control (TGML)";
+
+		read_quality_analysis [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Raw read quality}", color="#DD0066"]
+		read_quality_analysis -> raw_read_quality
+		raw_read_quality [shape="record", style="filled", fillcolor="#FFEEDD", label="{Raw read quality report\n(Text + figures)}"];
+
+		aligned_reads -> ali_quality_analysis
+		ali_quality_analysis [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Alignment quality}", color="#DD0066"]
+		ali_quality_analysis -> ali_read_quality
+		ali_read_quality [shape="record", style="filled", fillcolor="#FFEEDD", label="{Alignment quality report\n(Text + figures)}"];
+	}
+
+
+	subgraph cluster_3 {
+		color="#0066BB";
+		fontcolor="#0066BB";
+		label = "Differential analysis";
+
+		aligned_reads -> read_counting;
+		read_counting [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Read counting}"];
+		read_counting -> counts_per_transcript;
+		counts_per_transcript [shape="record", style="filled", fillcolor="#FFEEDD", label="{Counts per transcript\nRPKM\n(tabular)}"];
+
+		counts_per_transcript -> sample_aggregation;
+		sample_aggregation [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Sample aggregation}", color="#DD0066"];
+		sample_aggregation -> raw_expression_matrix;
+		raw_expression_matrix [shape="record", style="filled", fillcolor="#FFEEDD", label="{Raw expression matrix\n(tabular)}"];
+
+		raw_expression_matrix -> inter_sample_normalization;
+		inter_sample_normalization [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Inter-sample normalization}"];
+		inter_sample_normalization -> normalized_counts;
+		normalized_counts [shape="record", style="filled", fillcolor="#FFEEDD", label="{Normalized expression matrix\n(tabular)}"];
+
+		normalized_counts -> deg_detection;
+		deg_detection [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Differential expression}"];
+		deg_detection -> deg;
+		deg [shape="record", style="filled", fillcolor="#FFEEDD", label="{Differentially expressed\ngenes - DEG\n(tabular)}"];
+	}
+
+}

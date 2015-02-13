@@ -15,11 +15,13 @@ usage:
 					[-i FILE]
 					[-o OUTFILE]
 					[-v VERBOSE]
+					[-autoparam]
 					[-in_format FORMAT]
 					[-s]
 					[-return_limits]
 					[-return_limits_filtered] 
 					[-uth_site_pval UTH_SITE_PVAL] 
+					[-number_of_matrix]
 					[-lth_score LTH_SITE_SCORE]
 					[-uth_score UTH_SITE_SCORE]
 					[-lth_crer_size LTH_CRER_SIZE]
@@ -58,7 +60,12 @@ Optional arguments:
 		  By default : 1 = No message
 		  Level 2 : moderately density of messages
 		  Level 3 : High density
-		  
+		
+  -autoparam
+  		  Extract some input parameters from the commented rows (starting with ';') 
+  		  of the input file. This option is only valid for files 
+  		  produced by matrix-scan with a verbosity of at least 1. 
+  		
   -s
 		Sort the list of sites.
 		Very recommended.
@@ -77,7 +84,11 @@ Optional arguments:
 		maximal p-value of sites to be considered
 		Recommended to be the higher site p-value considered.
 		Default = 1e-4
-		
+
+  -number_of_matrix
+  		number of matrix used for the discovery of transcription factor binding sites.
+  		Warning : Not considered if autoparam is on
+  		
   -lth_score LTH_SITE_SCORE
 		minimal site score to be considered
 		
@@ -147,14 +158,6 @@ Mr Van-Helden for his support
 Mr Gonzalez for his advices
 Mr Tichit for his psychological support at the breakfast time
 And Genopole class room for its liberality
-"""
-
-"""
-Us to be the Best
-Mr Jack for his support 
-Mr Gonzalez for his legendary A+ in the bus
-Genopole class room for its liberality
-and last not least Mr Tichit for nothing
 """
 
 __version__ = 'v.1.00 '
@@ -523,7 +526,7 @@ class SiteSet(object):
 # Functions
 #===============================================================================
 
-def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_threshold, verbose):
+def read_features(number_of_matrix,autoparam,file_name,pval_threshold,lth_score_threshold, uth_score_threshold, verbose):
 	""" 
 	Read a matrix scan's output file.
 	Return respectively,
@@ -550,10 +553,10 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 
 	# Initiation of variables
 	sites_list =[]
-	i = 1
 	list_limit =[]
 	j = 0
 	object_list=[]
+	matrix = []
 	max_site_pvalue = 0
 	
 	# treatment line by line and extraction of interesting information in a list
@@ -566,7 +569,7 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 			# Extraction of limit sequence informations in a list (init_table) 
 			# which is added to another list (list_limit)
 			if table[1]== 'limit':
-				
+			
 				init_table = []
 				init_table.append(table[0])
 				init_table.append(table[4])
@@ -577,39 +580,39 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 			else:
 				
 				del table[1] # Remove the second element of the table ('site')
-				table.insert(0,i) # Insertion of an index
+				table.insert(0,"site") # Insertion of an index
 				sites_list.append(table) # Add this list of table elements (site's informations) to the list of sites
-				i = i+1
-	
-	# Extraction of other information like the number of matrix
-	for line in read :
-		
-		# When there is the word "Matches" the followed informations are extracted
-		if line[2:9]=="Matches":
-			matrix = read[j+2:] 
-			matrix_list = []
-			
-			# while the word "TOTAL" doesn't found the number find (second element of the row) are added in a list (matrix_list)
-			for row in matrix:
-				
-				if row[3:8] == "TOTAL" :
-					break
-				
-				else:
-					num = row.split()
-					matrix_list.append(int(num[1]))
-					
-		j= j+1
-	
-	# Number of matrix is the maximum of the matrix_list
-	number_of_matrix = max(matrix_list)
-	
 	
 	if verbose >=3 :
 		time_warn("	Information extracted from the input")
+		
+		
+	sites_list = sorted(sites_list,key=lambda x: x[4])
 	
-	
-	# every site is converted in SiteFt class object
+	# Extraction of other information like the number of matrix
+	if autoparam == "on" :
+		for line in read :
+			
+			# When there is the word "Matches" the followed informations are extracted
+			if line[2:9]=="Matches":
+				matrix = read[j+2:] 
+				matrix_list = []
+				
+				# while the word "TOTAL" doesn't found the number find (second element of the row) are added in a list (matrix_list)
+				for row in matrix:
+					
+					if row[3:8] == "TOTAL" :
+						break
+					
+					else:
+						num = row.split()
+						matrix_list.append(int(num[1]))
+				
+				# Number of matrix is the maximum of the matrix_list
+				number_of_matrix = max(matrix_list)
+			
+			j= j+1
+		
 	for j in sites_list :
 		
 		# Replace "." row in 0
@@ -618,51 +621,58 @@ def read_features(file_name,pval_threshold,lth_score_threshold, uth_score_thresh
 		
 		# If the site's p-value and score are between the thresholds
 		# Sites are instantiated and added to the list of Site object
-		if pval_threshold :
+		if pval_threshold or pval_threshold == 0:
 			if pval_threshold >= eval(j[8]):
 				lth_pval_site_threshold = True
 			else:
 				lth_pval_site_threshold = False 
 		
-		if not pval_threshold:
+		if not pval_threshold and pval_threshold != 0:
 			lth_pval_site_threshold = True
 			
-		if lth_score_threshold :
+		if lth_score_threshold or lth_score_threshold == 0:
 			if lth_score_threshold <= float(j[7]):
 				lth_threshold = True
 			else:
 				lth_threshold = False 
 		
-		if not lth_score_threshold:
+		if not lth_score_threshold and lth_score_threshold != 0:
 			lth_threshold = True
 		
-		if uth_score_threshold :
+		if uth_score_threshold or uth_score_threshold == 0 :
 			if uth_score_threshold >= float(j[7]):
 				uth_threshold = True
 			else:
 				uth_threshold = False 
 		
-		if not uth_score_threshold:
+		if not uth_score_threshold and uth_score_threshold != 0:
 			uth_threshold = True
 		
 		if lth_threshold and uth_threshold and lth_pval_site_threshold:
+			
+			matrix.append(j[2])
 			
 			max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 			
 			j[0] = Siteft(j[1],j[2],j[3],j[4],j[5],j[6],j[7],j[8],j[9],j[10])
 			object_list.append(j[0])
 	
+	# We consider that there is only one matrix per sites (not True every time) if there is no comments
+	if number_of_matrix == 0:
+		matrix=list(set(matrix)) # Remove duplicates
+		number_of_matrix = len(matrix)
+		
+	
 	# Verbose message
 	if verbose >=3 :
 		time_warn("	Site object instantiated")
-	
 	
 	filehandle.close()
 	
 	return object_list,list_limit,number_of_matrix,max_site_pvalue
 	
 	
-def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_threshold,verbose):
+def read_stdin(number_of_matrix,autoparam,stdin,format,pval_threshold,lth_score_threshold, uth_score_threshold,verbose):
 	""" 
 	Read a list of sites enter on standard input
 	Return respectively,
@@ -699,6 +709,8 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 		list_limit=[]
 		j=0
 		max_site_pvalue = 0
+		matrix=[]
+		number_of_matrix = 0
 		
 		# treatment line by line and extraction of interesting information in a list
 		for line in tab_list :
@@ -719,33 +731,37 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 				# Extraction of sites informations	
 				else :
 					del line[1] # Remove the second element of the table ('site')
-					line.insert(0,i) # Insertion of an index
+					line.insert(0,"site") # Insertion of an index
 					sites_list.append(line) # Add this list of table elements (site's informations) to the list of sites
-					i = i+1
-		
-		# Extraction of other information like the number of matrix
-		for line in read :
-			
-			# When there is the word "Matches" the followed informations are extracted
-			if line[2:9]=="Matches":
-				matrix=read[j+2:]
-				matrix_list=[]
-				
-				# while the word "TOTAL" doesn't found the number find (second element of the row) are added in a list (matrix_list)
-				for row in matrix :
-					
-					if row[3:8] == "TOTAL" :
-						break
-					else:
-						num = row.split()
-						matrix_list.append(int(num[1]))
-			j= j+1
-		
-		# Number of matrix is the maximum of the matrix_list
-		number_of_matrix = max(matrix_list)
-		
-		
+
 		object_list=[]
+	
+		# Sort site
+		sites_list = sorted(sites_list,key=lambda x: x[4])
+	
+		if autoparam == "on":
+		# Extraction of other information like the number of matrix
+			for line in read :
+				
+				# When there is the word "Matches" the followed informations are extracted
+				if line[2:9]=="Matches":
+					matrix = read[j+2:] 
+					matrix_list = []
+					
+					# while the word "TOTAL" doesn't found the number find (second element of the row) are added in a list (matrix_list)
+					for row in matrix:
+						
+						if row[3:8] == "TOTAL" :
+							break
+						
+						else:
+							num = row.split()
+							matrix_list.append(int(num[1]))
+					
+					# Number of matrix is the maximum of the matrix_list
+					number_of_matrix = max(matrix_list)
+				
+				j= j+1
 		
 		if verbose >=3 :
 			time_warn("	Information extracted from the input")
@@ -761,40 +777,47 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			
 			# If the site's p-value and score are between the thresholds
 			# Sites are instantiated and added to the list of Site object
-			if pval_threshold :
+			if pval_threshold or pval_threshold == 0:
 				if pval_threshold >= eval(j[8]):
 					lth_pval_site_threshold = True
 				else:
 					lth_pval_site_threshold = False 
 			
-			if not pval_threshold:
+			if not pval_threshold and pval_threshold != 0:
 				lth_pval_site_threshold = True
 				
-			if lth_score_threshold :
+			if lth_score_threshold or lth_score_threshold == 0 :
 				if lth_score_threshold <= float(j[7]):
 					lth_threshold = True
 				else:
 					lth_threshold = False 
 			
-			if not lth_score_threshold:
+			if not lth_score_threshold and lth_score_threshold != 0:
 				lth_threshold = True
 			
-			if uth_score_threshold :
+			if uth_score_threshold or uth_score_threshold == 0:
 				if uth_score_threshold >= float(j[7]):
 					uth_threshold = True
 				else:
 					uth_threshold = False 
 			
-			if not uth_score_threshold:
+			if not uth_score_threshold and uth_score_threshold != 0:
 				uth_threshold = True
 			
 			if lth_threshold and uth_threshold and lth_pval_site_threshold:
+				
+				matrix.append(j[2])
 				
 				max_site_pvalue = max(max_site_pvalue,eval(j[8]))
 				j[0] = Siteft(j[1],j[2],j[3],j[4],j[5],j[6],j[7],j[8],j[9],j[10])
 				
 				object_list.append(j[0])
-			
+		
+		# We consider that there is only one matrix per sites (not True every time) if there is no comments
+		if number_of_matrix == 0:
+			matrix=list(set(matrix)) # Remove duplicates
+			number_of_matrix = len(matrix)
+		
 		# Verbose message
 		if verbose >=3 :
 			time_warn("	Site object instantiated")
@@ -822,11 +845,11 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 		# identification of table with sites
 		for line in read :
 			j=j+1
-			if line[0:13]=="browser dense":
+			if line[0:2]=="##":
 				line_table=read[j-1:]
-		
+	
 		# Extraction of table only
-		del line_table[0:2]
+		del line_table[0:1]
 		
 		# Extraction of element to do the limits of the sequence
 		for line in line_table:
@@ -848,10 +871,11 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			else :
 				# Treatment of sites table
 				table = line.split()
-				table.insert(0,i) # Insertion of an index
+				table.insert(0,"site") # Insertion of an index
 				sites_list.append(table) # Add this list of table elements (site's informations) to the list of sites
-				i = i+1
 		
+		# Sort site
+		sites_list = sorted(sites_list,key=lambda x: x[2])
 		
 		if verbose >=3 :
 			time_warn("	Information extracted from the input")
@@ -868,22 +892,22 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 			
 			# If the site's p-value and score are between the thresholds
 			# Sites are instantiated and added to the list of Site object
-			if lth_score_threshold :
+			if lth_score_threshold or lth_score_threshold ==0 :
 				if lth_score_threshold<= float(site[5]):
 					lth_threshold = True
 				else:
 					lth_threshold = False 
 			
-			if not lth_score_threshold:
+			if not lth_score_threshold and lth_score_threshold != 0:
 				lth_threshold = True
 			
-			if uth_score_threshold :
+			if uth_score_threshold or uth_score_threshold == 0:
 				if uth_score_threshold >= float(site[5]):
 					uth_threshold = True
 				else:
 					uth_threshold = False 
 			
-			if not uth_score_threshold:
+			if not uth_score_threshold and uth_score_threshold != 0:
 				uth_threshold = True
 			
 			if lth_threshold and uth_threshold:
@@ -894,8 +918,9 @@ def read_stdin(stdin,format,pval_threshold,lth_score_threshold, uth_score_thresh
 				object_list.append(site[0])
 		
 		# We consider that there is only one matrix per sites (not True every time)
-		matrix=list(set(matrix)) # Remove duplicates
-		number_of_matrix = len(matrix) 
+		if number_of_matrix == 0 :
+			matrix=list(set(matrix)) # Remove duplicates
+			number_of_matrix = len(matrix) 
 		
 		if verbose >=3 :
 			time_warn("	Site object instantiated")
@@ -937,11 +962,12 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 	# identification of table with sites
 	for line in read :
 		j=j+1
-		if line[0:13]=="browser dense":
+		if line[0:2]=="##":
 			line_table=read[j-1:]
 	
 	# Extraction of table only
-	del line_table[0:2]
+	del line_table[0:1]
+	
 	
 	# Extraction of element to do the limits of the sequence
 	for line in line_table:
@@ -963,9 +989,12 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 		else :
 			# Treatment of sites table
 			table = line.split()
-			table.insert(0,i) # Insertion of an index
+			table.insert(0,"site") # Insertion of an index
 			sites_list.append(table) # Add this list of table elements (site's informations) to the list of sites
 			i = i+1
+	
+	# Sort site
+	sites_list = sorted(sites_list,key=lambda x: x[2])
 	
 	
 	if verbose >=3 :
@@ -983,22 +1012,22 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 		
 		# If the site's p-value and score are between the thresholds
 		# Sites are instantiated and added to the list of Site object
-		if lth_score_threshold :
+		if lth_score_threshold or lth_score_threshold == 0 :
 			if lth_score_threshold<= float(site[5]):
 				lth_threshold = True
 			else:
 				lth_threshold = False 
 		
-		if not lth_score_threshold:
+		if not lth_score_threshold and lth_score_threshold != 0:
 			lth_threshold = True
 		
-		if uth_score_threshold :
+		if uth_score_threshold or uth_score_threshold == 0:
 			if uth_score_threshold >= float(site[5]):
 				uth_threshold = True
 			else:
 				uth_threshold = False 
 		
-		if not uth_score_threshold:
+		if not uth_score_threshold and uth_score_threshold != 0:
 			uth_threshold = True
 		
 		if lth_threshold and uth_threshold:
@@ -1009,8 +1038,9 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 			object_list.append(site[0])
 	
 	# We consider that there is only one matrix per sites (not True every time)
-	matrix=list(set(matrix)) # Remove duplicates
-	number_of_matrix = len(matrix) 
+	if number_of_matrix == 0 :
+		matrix=list(set(matrix)) # Remove duplicates
+		number_of_matrix = len(matrix) 
 	
 	if verbose >=3 :
 		time_warn("	Site object instantiated")
@@ -1081,12 +1111,14 @@ if __name__=='__main__':
 	parse.add_argument('-o',action = 'store', dest='outfile',help ="Output file in ft format")
 	parse.add_argument('-v',action = 'store', dest = 'verbose',default=1,type = int ,help = "level of verbose. Messages are wrote on standard error. Supported: Integer = 1,2,3. By default : 1 = No message. Level 2 : moderately density of messages. Level 3 : High density")
 	
+	parse.add_argument('-autoparam',action = 'store', dest = 'autoparam',default= "off" ,help = "Extract some input parameters from the commented rows (starting with ';') of the input file. This option is only valid for files produced by matrix-scan with a verbosity of at least 1. ")
 	parse.add_argument('-s', action='store_true', dest='sort', default=None, help ="sort the list of sites. Very recommended. The sites are sorted by center position")
 	parse.add_argument('-return_limits',action='store_true',dest='return_limits',default= None, help = "return every limits of sequences. By default : no return any limits")
 	parse.add_argument('-return_limits_filtered',action='store_true',dest='return_limits_filtered',default= None, help = "return the limits filtered of the sequence. Only the sequence limits of CRERs. By default : no return any limits")
 	parse.add_argument('-lth_score',action='store',dest='lth_site_score',default= None ,type= float, help = "minimal site score to be considered")
 	parse.add_argument('-uth_score',action='store',dest='uth_site_score',default= None, type= float, help = "maximal site score to be considered")
 	parse.add_argument('-uth_site_pval', action='store', dest='uth_site_pval', default= 1e-4, type = float, help='maximal p_value of sites to be considered. recommended to be the higher site p_value considered')
+	parse.add_argument('-number_of_matrix',action = 'store', dest = 'number_of_matrix',type = int, default= 0 ,help = "number of matrix used for the discovery of transcription factor binding sites. Warning : Not considered if autoparam is on")
 	
 	# Arguments for return CRERs
 	parse.add_argument('-lth_crer_size',action='store',dest='lth_crer_size',default=None,type= float, help = "minimal size of the enriched region (in bp). Default: minimal size = 30bp")
@@ -1116,12 +1148,15 @@ if __name__=='__main__':
 	
 	file,sort,format,outfile = args.file,args.sort,args.format,args.outfile
 	verbose = args.verbose
+	autoparam = args.autoparam
 	
 	return_limits= args.return_limits
 	return_limits_filtered = args.return_limits_filtered
 	
 	pval_threshold= args.uth_site_pval
 	lth_score_threshold,uth_score_threshold = args.lth_site_score, args.uth_site_score
+	
+	number_of_matrix = args.number_of_matrix
 	
 	lth_size, lth_sites, lth_dist, lth_sig = args.lth_crer_size, args.lth_crer_sites, args.lth_crer_sites_distance, args.lth_crer_significance
 	uth_size, uth_sites, uth_dist, uth_pval,= args.uth_crer_size, args.uth_crer_sites, args.uth_crer_sites_distance, args.uth_crer_pval,
@@ -1141,7 +1176,7 @@ if __name__=='__main__':
 		corresp=expression_reg.search(outfile)
 		
 		if corresp:
-			   raise IOError ("Forbidden character in the outfile's name")
+			raise IOError ("Forbidden character in the outfile's name")
 	
 	# Verbose message
 	# Print the start of the program in standard err
@@ -1150,10 +1185,9 @@ if __name__=='__main__':
 	
 	# If there is not a file, take sites on standard input
 	if file == False :
-		read = sys.stdin.read()
-		
+		readline = sys.stdin.read()
 		try:
-			list_site, init_table,number_of_matrix,max_site_pvalue = read_stdin(read,format,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
+			list_site, init_table,number_of_matrix,max_site_pvalue = read_stdin(number_of_matrix,autoparam,readline,format,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
 			
 		except (UnboundLocalError,IndexError,NameError,ValueError):
 			sys.stderr.write("Parsing error :\n Sites in STDIN not in right format. /n Check the format: Default = ft. \n. Supported = ft or bed")
@@ -1169,7 +1203,7 @@ if __name__=='__main__':
 				time_warn("	FT format recognized")
 			
 			try :
-				list_site,init_table,number_of_matrix,max_site_pvalue = read_features(file,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
+				list_site,init_table,number_of_matrix,max_site_pvalue = read_features(number_of_matrix,autoparam,file,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
 			
 			# Error messages
 			except (UnboundLocalError,IndexError,NameError,ValueError):
@@ -1187,7 +1221,7 @@ if __name__=='__main__':
 				time_warn("	bed format recognized")
 			
 			try :
-				list_site,init_table,number_of_matrix = read_bed(file,lth_score_threshold, uth_score_threshold,verbose)
+				list_site,init_table,number_of_matrix = read_bed(number_of_matrix,file,lth_score_threshold, uth_score_threshold,verbose)
 				
 			# Error messages
 			except (UnboundLocalError,IndexError,NameError,ValueError):
@@ -1246,7 +1280,9 @@ if __name__=='__main__':
 	if outfile:
 		filehandle.write("-o %s " % args.outfile)
 	filehandle.write("-v %d " % verbose)
-	 
+	
+	filehandle.write("-autoparam %s " % args.autoparam)
+	
 	if sort:
 		filehandle.write("-s ")
 	 
@@ -1258,6 +1294,9 @@ if __name__=='__main__':
 	 
 	if pval_threshold:
 		filehandle.write("-uth_site_pval %g " % args.uth_site_pval)
+	
+	if args.number_of_matrix != 0 :
+		filehandle.write("-number_of_matrix %g " % args.number_of_matrix)
 	
 	if lth_score_threshold:
 		filehandle.write("-lth_score %g " % args.lth_site_score)
@@ -1303,7 +1342,7 @@ if __name__=='__main__':
 	
 
 	# Information about the input file
-	filehandle.write("; Input file\n;	input	%s\n" % file)
+	filehandle.write("\n; Input file\n; Input	%s\n" % file)
 	filehandle.write("; File format	%s\n" % format )
 	
 	# Description of thresholds
@@ -1312,10 +1351,11 @@ if __name__=='__main__':
 	filehandle.write(";	crer_sites	%s	%s\n" % (lth_sites, uth_sites))
 	filehandle.write(";	crer_sites_distance	%s	%s\n" % (lth_dist, uth_dist))
 	filehandle.write(";	crer_pval	None	%s\n" % uth_pval)
-	filehandle.write(";	crer_sig	%s\n	None" % lth_sig)
+	filehandle.write(";	crer_sig	%s	None\n" % lth_sig)
 	filehandle.write(";	crer_eval	None	%s\n" % uth_eval)
 	filehandle.write(";	site_pval	None	%s\n" % (pval_threshold))
 	filehandle.write(";	site_score	%s	%s\n" % (lth_score_threshold, uth_score_threshold))
+	filehandle.write(";	overlap	None	%s\n" % (uth_overlap))
 	if format == 'ft':
 		filehandle.write(";	maximal site p-value	%g \n" % max_site_pvalue)
 	
@@ -1505,12 +1545,12 @@ if __name__=='__main__':
 				#=======================================================================
 				# Overlap threshold
 				#=======================================================================
-				if uth_overlap:
+				if uth_overlap or uth_overlap == 0:
 					if overlap <= uth_overlap:
 						overlap_threshold=True
 					else:
 						overlap_threshold=False
-				if not uth_overlap:
+				if not uth_overlap and uth_overlap != 0:
 					overlap_threshold=True
 				
 				if overlap_threshold : 
@@ -1525,21 +1565,21 @@ if __name__=='__main__':
 					# Size threshold
 					# Verification of the size of the crer
 					#=======================================================================
-					if lth_size:
+					if lth_size or lth_size == 0:
 						if lth_size <= size:
 							lth_size_threshold = True
 						else :
 							lth_size_threshold = False
 								
-					if not lth_size:
+					if not lth_size and lth_size !=0 :
 						lth_size_threshold = True
 					   
-					if uth_size:
+					if uth_size or uth_size == 0:
 						if uth_size >= size:
 							uth_size_threshold = True
 						else:
 							uth_size_threshold = False
-					if not uth_size:
+					if not uth_size and uth_size != 0 :
 						uth_size_threshold = True
 					
 					
@@ -1559,22 +1599,22 @@ if __name__=='__main__':
 						# Verification of the distance between following sites
 						# If the distance is not correct the jth site is not keeping in the crer 
 						#=======================================================================
-						if lth_dist:
+						if lth_dist or lth_dist == 0:
 							if lth_dist <= dist:
 								lth_dist_threshold = True
 							else :
 								lth_dist_threshold = False
 								
-						if not lth_dist:
+						if not lth_dist and lth_dist != 0:
 							lth_dist_threshold = True
 						
-						if uth_dist:
+						if uth_dist or uth_dist == 0:
 							if uth_dist >= dist:
 								uth_dist_threshold = True
 							else:
 								uth_dist_threshold = False
 								
-						if not uth_dist:
+						if not uth_dist and uth_dist != 0:
 							uth_dist_threshold = True
 						
 						if lth_dist_threshold and uth_dist_threshold : 
@@ -1600,22 +1640,22 @@ if __name__=='__main__':
 							# Default minimal value is 2
 							# if it is not correct we don't keep the jth site in the crer
 							#=======================================================================
-							if lth_sites:
+							if lth_sites or lth_sites == 0:
 								if lth_sites <= nb_sites:
 									lth_sites_threshold = True
 								else :
 									lth_sites_threshold = False
 								
-							if not lth_sites:
+							if not lth_sites and lth_sites != 0:
 								lth_sites_threshold = True
 						
-							if uth_sites:
+							if uth_sites or uth_sites == 0:
 								if uth_sites >= nb_sites:
 									uth_sites_threshold = True
 								else:
 									uth_sites_threshold = False
 								
-							if not uth_sites:
+							if not uth_sites and uth_sites != 0 :
 								uth_sites_threshold = True
 							
 							if lth_sites_threshold and uth_sites_threshold :
@@ -1672,22 +1712,22 @@ if __name__=='__main__':
 										# P-value threshold
 										# E-value threshold
 										#=======================================================================
-										if uth_pval:
+										if uth_pval or uth_pval == 0:
 											if uth_pval >= crer_pval:
 												uth_pval_threshold = True
 											else :
 												uth_pval_threshold = False
 								
-										if not uth_pval:
+										if not uth_pval and uth_pval != 0:
 											uth_pval_threshold = True
 						
-										if uth_eval:
+										if uth_eval or uth_eval == 0:
 											if uth_eval >= crer_pval:
 												uth_eval_threshold = True
 											else:
 												uth_eval_threshold = False
 								
-										if not uth_eval:
+										if not uth_eval and uth_eval != 0:
 											uth_eval_threshold = True
 											
 										if uth_pval_threshold and uth_eval_threshold:
@@ -1757,11 +1797,13 @@ if __name__=='__main__':
 		read = tmp.read()
 		read = read.decode()
 		read = read.strip().split('\n')
+		
 		nb_crer = 0
 		
 		if not nopval :
 			for ligne in read :
 				crer_tmp = ligne.split('\t')
+				
 				# Extract limits of sequences, only here if there is retur_limits option
 				# Write limits on file
 				if crer_tmp[1] == 'limit':
@@ -1779,8 +1821,10 @@ if __name__=='__main__':
 					
 					# For this moment we define sig_base as one and after we can compute this.
 					# Computation of crer significance
-					
-					crer_sig = -math.log10(e_val)
+					try:
+						crer_sig = -math.log10(e_val)
+					except(ValueError):
+						crer_sig = 0
 					
 					# Verbose message for significance
 					if verbose >=3 :
@@ -1790,13 +1834,13 @@ if __name__=='__main__':
 					#=======================================================================
 					# Significance threshold
 					#=======================================================================
-					if lth_sig:
+					if lth_sig or lth_sig == 0:
 						if lth_sig <= crer_sig:
 							lth_sig_threshold = True
 						else :
 							lth_sig_threshold = False
 								
-					if not lth_sig:
+					if not lth_sig and lth_sig != 0:
 						lth_sig_threshold = True
 					
 					if lth_sig_threshold :
@@ -1851,6 +1895,7 @@ if __name__=='__main__':
 		time_warn("Writing the end of output file")
 	
 	# Statistics
+	filehandle.write("; Number of matrix	%d\n"% number_of_matrix)
 	filehandle.write("; Number of binomial	%d\n"% nb_binom_computation)
 	filehandle.write("; Number of sites scanned	%d\n" % length_list_site)
 	filehandle.write("; Sum of sequence lengths	%d\n" % sum_lengths)

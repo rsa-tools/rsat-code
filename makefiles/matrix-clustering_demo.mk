@@ -2,7 +2,7 @@
 ## Demo for the RSAT tool matrix-clustering
 ##
 ## Authors: Jaime Castro & Jacques van Helden
-## Date: Jan-April 2014
+## Date: 2014 - 2015
 
 
 ## include ${RSAT}/makefiles/util.mk
@@ -16,7 +16,7 @@ MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
 MIN_W=5
-V=1
+V=2
 
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
@@ -68,7 +68,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}"
-	${CLUSTER_CMD}
+	${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
+#	${CLUSTER_CMD}
 	@echo "		${CLUSTER_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
@@ -170,3 +171,10 @@ cluster_cisbp_one_group:
 		MATRIX_FILE=${CISBP_MATRICES} \
 		MIN_COR=0.6 MIN_NCOR=0.4
 		TITLE='cisBP ${CISBP_GROUP} database'
+
+################################################################
+## Send some jobs to the queue to check if it works
+enqueue_some_jobs:
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=single
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=average
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=complete
