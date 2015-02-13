@@ -44,3 +44,11 @@ droso_segm:
 ## Convert LexA matrix (E.coli)
 lexa:
 	@${MAKE} logos PREFIX=LexA.2nt_upstream-noorf-ovlp-2str.20
+
+
+## Generate logos using either seqlogo, or weblogo3, to check that
+## weblogo3 runs correctly on this server
+seqlogo_vs_weblogo3:
+	@${MAKE} logos PREFIX=LexA.2nt_upstream-noorf-ovlp-2str.20 LOGO_PROGRAM=weblogo
+	@${MAKE} logos PREFIX=LexA.2nt_upstream-noorf-ovlp-2str.20 LOGO_PROGRAM=seqlogo
+	@ls -lrt results/convert-matrix_test/LexA.2nt_upstream-noorf-ovlp-2str.20/*logo/*.png
