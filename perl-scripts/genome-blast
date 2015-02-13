@@ -512,11 +512,12 @@ sub iterate_blast {
 			($arg eq "-qtaxon") || 
 			($arg eq "-dbtaxon") ||
 			($arg eq "-query_org_file") || 
-			($arg eq "-db_org_file") ||
-			($arg eq "-reciprocal") ## Reciprocal is treated by swapping query and reference org lists (required fro formatdb)
-			) {
+			($arg eq "-db_org_file")) {
 			shift @args_to_pass;
 			next;
+		    } elsif ($arg eq "-reciprocal") {
+		      ## Reciprocal is treated by swapping query and reference org lists (required fro formatdb)
+		      next;
 		    } elsif ($arg eq "-batch") {
 		      if ((scalar(@args_to_pass) > 0) &&
 			  (&IsNatural($args_to_pass[0]))) {
