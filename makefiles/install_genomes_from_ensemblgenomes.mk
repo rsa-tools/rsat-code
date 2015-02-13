@@ -73,6 +73,10 @@ install_fungi:
 	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 
+install_metazoa:
+#	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
+	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
+
 
 AVAILABLE_GROUP_SHUFFLED=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${ORG_GROUP}_shuffled.txt
 install_bacteria_shuffled:

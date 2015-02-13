@@ -269,6 +269,12 @@ body.form center
   font-weight: bold;
   }
 
+body.form hr
+{
+  border: 0;
+  border-bottom: 1px solid #0D73A7;
+  }
+
 option 
 {
   /*text-align: center;*/
