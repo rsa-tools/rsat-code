@@ -58,7 +58,7 @@ all_hits: res_dir
 	@echo "	${RES_DIR}/${GENE}_all_hits_${TAXON}.tab "
 
 ## Filter hits on several criteria
-filtered_hits:
+filtered_hits: res_dir
 	@echo
 	@echo "Collecting filtered hits for ${ORG} gene ${GENE} in ${TAXON}"
 	get-orthologs -v 1 -org ${ORG} \
@@ -71,7 +71,7 @@ filtered_hits:
 
 
 ## Unidirectional best hits
-best_hits:
+best_hits: res_dir
 	@echo
 	@echo "Getting unidirectional best hits"
 	get-orthologs -v 1 -org ${ORG} \
@@ -83,7 +83,7 @@ best_hits:
 	@echo "	${RES_DIR}/${GENE}_best_hits_${TAXON}.tab "
 
 ## Bidirectional best hits (BBH)
-bbh:
+bbh: res_dir
 	@echo
 	@echo "Getting bidirectional best hits (BBH)"
 	get-orthologs -v 1 -org ${ORG} \
