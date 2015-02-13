@@ -171,3 +171,10 @@ cluster_cisbp_one_group:
 		MATRIX_FILE=${CISBP_MATRICES} \
 		MIN_COR=0.6 MIN_NCOR=0.4
 		TITLE='cisBP ${CISBP_GROUP} database'
+
+################################################################
+## Send some jobs to the queue to check if it works
+enqueue_some_jobs:
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=single
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=average
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=complete
