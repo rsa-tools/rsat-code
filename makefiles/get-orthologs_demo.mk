@@ -11,17 +11,20 @@ MAKEFILE=${RSAT}/makefiles/get-orthologs_demo.mk
 ################################################################
 ## Specify the default parameters
 
+## Gene of interest
+GENE=lexA
+
 ## Query organism
 ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 
 ## Reference taxon
 TAXON=Enterobacteriales
 
-## Gene of interest
-GENE=lexA
+## Taxonomic depth
+DEPTH=5
 
 ## Output fields
-OUTPUT_FIELDS=ident,ali_len,e_value,rank
+OUTPUT_FIELDS=ident,ali_len,e_value,rank,s_rank
 
 ## Additional options can be passed to get-orthologs (by default we
 ## leave them empty)
@@ -40,9 +43,10 @@ res_dir:
 
 ## Lis parameters
 list_param:
-	@echo "	ORG		${ORG}"
 	@echo "	GENE		${GENE}"
+	@echo "	ORG		${ORG}"
 	@echo "	TAXON		${TAXON}"
+	@echo "	DEPTH		${DEPTH}"
 	@echo "	OUTPUT_FIELDS	${OUTPUT_FIELDS}"
 	@echo "	RES_DIR		${RES_DIR}"
 
@@ -50,47 +54,71 @@ list_param:
 all_hits: res_dir
 	@echo
 	@echo "Collecting all hits for ${ORG} gene ${GENE} in ${TAXON}"
-	get-orthologs -v 1 -org ${ORG} \
+	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
 		-q ${GENE} ${OPT} \
-		-o ${RES_DIR}/${GENE}_all_hits_${TAXON}.tab 
-	@echo "	${RES_DIR}/${GENE}_all_hits_${TAXON}.tab "
+		-o ${RES_DIR}/${GENE}_${TAXON}_all_hits.tab
+	@echo "	${RES_DIR}/${GENE}_${TAXON}_all_hits.tab"
 
 ## Filter hits on several criteria
 filtered_hits: res_dir
 	@echo
 	@echo "Collecting filtered hits for ${ORG} gene ${GENE} in ${TAXON}"
-	get-orthologs -v 1 -org ${ORG} \
+	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
-		-lth ident 30 -lth ali_len 50 -uth e_value 1e-10 \
+		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
 		-q ${GENE} ${OPT} \
-		-o ${RES_DIR}/${GENE}_all_hits_${TAXON}.tab 
-	@echo "	${RES_DIR}/${GENE}_filtered_hits_${TAXON}.tab "
+		-o ${RES_DIR}/${GENE}_${TAXON}_filtered_hits.tab
+	@echo "	${RES_DIR}/${GENE}_${TAXON}_filtered_hits.tab"
 
 
 ## Unidirectional best hits
 best_hits: res_dir
 	@echo
 	@echo "Getting unidirectional best hits"
-	get-orthologs -v 1 -org ${ORG} \
+	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
-		-lth ident 30 -lth ali_len 50 -uth e_value 1e-10 \
+		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
 		-q ${GENE} -uth rank 1 ${OPT} \
-		-o ${RES_DIR}/${GENE}_best_hits_${TAXON}.tab 
-	@echo "	${RES_DIR}/${GENE}_best_hits_${TAXON}.tab "
+		-o ${RES_DIR}/${GENE}_${TAXON}_unidirBH.tab
+	@echo "	${RES_DIR}/${GENE}_${TAXON}_unidirBH.tab"
 
 ## Bidirectional best hits (BBH)
-bbh: res_dir
+bbh_manual: res_dir
 	@echo
 	@echo "Getting bidirectional best hits (BBH)"
-	get-orthologs -v 1 -org ${ORG} \
+	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
-		-lth ident 30 -lth ali_len 50 -uth e_value 1e-10 \
-		-q ${GENE} -uth rank 1 ${OPT} \
-		-o ${RES_DIR}/${GENE}_best_hits_${TAXON}.tab 
-	@echo "	${RES_DIR}/${GENE}_best_hits_${TAXON}.tab "
+		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
+		-q ${GENE} -uth rank 1 -uth s_rank ${OPT} \
+		-o ${RES_DIR}/${GENE}_${TAXON}_BBH_manual.tab 
+	@echo "	${RES_DIR}/${GENE}_${TAXON}_BBH_manual.tab "
+
+## Bidirectional best hits (BBH) in automatic mode
+bbh_auto: res_dir
+	@echo
+	@echo "Getting bidirectional best hits (BBH)"
+	get-orthologs -v ${V} -org ${ORG} \
+		-taxon ${TAXON} \
+		-return ${OUTPUT_FIELDS} \
+		-type BBH \
+		-q ${GENE} ${OPT} \
+		-o ${RES_DIR}/${GENE}_${TAXON}_BBH_auto.tab 
+	@echo "	${RES_DIR}/${GENE}_${TAXON}_BBH.tab "
+
+## Bidirectional best hits (BBH)
+bbh_depth: res_dir
+	@echo
+	@echo "Getting bidirectional best hits (BBH) at depth ${DEPTH}"
+	get-orthologs -v ${V} -org ${ORG} \
+		-taxon ${TAXON} -depth ${DEPTH} \
+		-return ${OUTPUT_FIELDS} \
+		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
+		-q ${GENE} -uth rank 1 ${OPT}  \
+		-o ${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab
+	@echo "	${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab"
 
