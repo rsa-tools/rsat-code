@@ -56,6 +56,9 @@ HITS=`grep -v '^;' ${HIT_FILE} | grep -v '^\#' | wc -l`
 count_hits:
 	@echo "	${HITS} hits	${RES_DIR}/${GENE}_${TAXON}_all_hits.tab"
 
+all_tests: list_param all_hits filtered_hits best_hits bbh_manual bbh_auto bbh_depth
+
+
 ## Get all matching genes
 all_hits: res_dir
 	@echo
@@ -83,7 +86,7 @@ filtered_hits: res_dir
 ## Unidirectional best hits
 best_hits: res_dir
 	@echo
-	@echo "Getting unidirectional best hits"
+	@echo "Collecting unidirectional best hits (BH) for ${ORG} gene ${GENE} in ${TAXON}"
 	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
@@ -95,7 +98,7 @@ best_hits: res_dir
 ## Bidirectional best hits (BBH)
 bbh_manual: res_dir
 	@echo
-	@echo "Getting bidirectional best hits (BBH)"
+	@echo "Collecting bidirectional best hits (BBH) for ${ORG} gene ${GENE} in ${TAXON}"
 	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
@@ -107,7 +110,7 @@ bbh_manual: res_dir
 ## Bidirectional best hits (BBH) in automatic mode
 bbh_auto: res_dir
 	@echo
-	@echo "Getting bidirectional best hits (BBH)"
+	@echo "Collecting bidirectional best hits (BBH) for ${ORG} gene ${GENE} in ${TAXON}"
 	get-orthologs -v ${V} -org ${ORG} \
 		-taxon ${TAXON} \
 		-return ${OUTPUT_FIELDS} \
