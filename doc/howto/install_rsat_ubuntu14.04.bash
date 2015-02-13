@@ -152,7 +152,7 @@ python3-setuptools
 python3-numpy
 python3-scipy
 python3-matplotlib
-r-base-core
+r-base
 emacs
 x11-apps
 firefox
