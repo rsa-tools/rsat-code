@@ -92,7 +92,7 @@ RSAT_WS=http://localhost/rsat/
 ##
 ## Configuration of a PC cluster
 ##
-## The parameter QSUB_MANAGER is required for running tasks on a PC
+## The parameter QUEUE_MANAGER is required for running tasks on a PC
 ## cluster. The program used to send jobs to the queue (qsub) has
 ## different parameters depending on the queue manager. Thus, a qsub
 ## command for torque will not be understood by sge and
@@ -100,11 +100,11 @@ RSAT_WS=http://localhost/rsat/
 ## manager in this property file, so RSAT can adapt the options
 ## consequently.
 ##
-## supported: torque | sge
-QSUB_MANAGER=torque
+## supported: batch | torque | sge
+QUEUE_MANAGER=batch
 
 ## Name of the queue where the jobs have to be sent
-CLUSTER_QUEUE=rsat
+CLUSTER_QUEUE=
 
 ################################################################
 ## Ensembl and EnsemblGenomes releases. 

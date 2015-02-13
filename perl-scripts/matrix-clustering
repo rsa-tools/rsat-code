@@ -56,7 +56,7 @@ For visualize the logo forest it is required the JavaScript I<D3>
 
 =over
 
-=item Jacques.van-Helden\@univ-amu.fr
+=item Jacques.van-Helden@univ-amu.fr
 
 =item Jaime Castro <jcastro@lcg.unam.mx>
 
@@ -181,6 +181,7 @@ package main;
   ## public_html/lib, which inludes a soft link (lib ->
   ## ../perl-scripts/lib).
   local $include_js_lib = 1; 
+
 
   ## Base on which we will buld the the URLs to the javascripts (D3 +
   ## JQuery libraries, required to display logo trees and tables).
@@ -1050,8 +1051,13 @@ sub CompareMatricesQuick {
   }
 
   ## Create the description table
-  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc ".$args_to_pass." >".$main::outfile{matrix_descriptions};
+  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc ".$args_to_pass." >".$main::outfile{prefix}."_desc.tab";
   &RSAT::util::one_command($cmd, 1, "");
+  
+  $cmd = "more ".$main::outfile{prefix}."_desc.tab | grep -v '^#name1' > ".$main::outfile{matrix_descriptions};
+  &RSAT::util::one_command($cmd, 1, "");
+  unlink($main::outfile{prefix}."_desc.tab");
+
   &RSAT::message::TimeWarn("Matrix description table", $main::outfile{matrix_descriptions}) if ($main::verbose >= 2);
   $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
   $cmd .= " -o ".$main::outfile{matrix_descriptions_html};
@@ -1345,15 +1351,7 @@ sub Add_attributes_to_JSON(){
       my (@Split_line, @Parsed_JSON) = ();
       my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
 
-
-      ################################################################
-      ## JAIME, I don't know why this list was defined as "my",
-      ## whereas it is defined as local above, and it is used at line
-      ## 283 where it is not defined. You should check the status of
-      ## this list at all moments of the code.
-      ##
-      ## @levels_JSON = ();
-      @levels_JSON = ();
+      my @levels_JSON = ();
       open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
       while(<LVL_JSON>){
 	  chomp;
@@ -1457,7 +1455,7 @@ sub create_html_tree_file(){
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
-    my $svg_x1 = 15 * $nb_char;
+    my $svg_x1 = 16 * $nb_char + 8;
     my $svg_y1 = -33;
     my $svg_x2 = '25 + '.$svg_x1.' + 25';;
     my $add_this = "";
@@ -1470,6 +1468,7 @@ sub create_html_tree_file(){
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
+	\t\t.attr(\"font-size\", \"18px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -1496,7 +1495,7 @@ sub create_html_tree_file(){
 	.attr("x", function(d){ return d.children ? 0 : 20; })
 	.attr("dy", function(d){ return d.children ? 0 : 27; })
         .attr("fill", "blue")
-	.attr("font-size", "17px")
+	.attr("font-size", "18px")
 	.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
         ';
 
@@ -2362,8 +2361,9 @@ sub Archive {
 #  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
-  if ($main::verbose >= 5) {
+  if ($main::verbose >= 0) {
     &RSAT::message::Debug("folder to archive", $to_archive);
+#    die "HELLO";
   }
 
   ## Avoid crash of the program when run from the "$archive_dir_dir"
@@ -2490,13 +2490,13 @@ sub set_output_file_names {
   if ($include_js_lib) {
     ## Note: we will need to redefine it after having parsed the
     ## arguments, since it will be relative to output directory.
-    &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 5);
+    &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 0);
     my $js_sync_cmd = "rsync -ruptl";
     $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
     $js_sync_cmd .= " ".$dir{output};
     &doit($js_sync_cmd, 0, 1, $verbose);
     $js_base = $dir{output}."/js";
-    &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 5);
+    &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 0);
   }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
     $js_base = $ENV{rsat_www}."/lib/js";
 #    $js_base =~ s|/rsat/rsat/|/rsat/|g;
@@ -2518,7 +2518,7 @@ sub set_output_file_names {
   ## Archive to facilitate transfer of all the results
   $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
 #  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
-  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 5);
+  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 0);
 #  die ("HELLO");
 
   ## Open the HTML index file and write header
@@ -3003,8 +3003,6 @@ sub ParametersTable{
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
 
-  my $link_to_archive = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive});
-
     my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
@@ -3027,7 +3025,7 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text"><a target=\'_blank\' href="'.$hclust_method_link.'">'.$hclust_method.'</a></td>
 	  <td class="par_text">'.$threshold_values_html.'</td>
-	  <td class="par_text"><a href="'.$link_to_archive.'">Download all results</a></td>
+	  <td class="par_text"><a href="'.$main::outfile{archive}.'">Download all results</a></td>
 	</tr>
       </tbody>
     </table>
@@ -3200,7 +3198,7 @@ sub InsertSmallForest {
     ## D3 values of the parameters of the small trees
     my $svg_width = 7;
     my $svg_height = 18;
-    my $svg_x1 = 6 * $nb_char;
+    my $svg_x1 = 7 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '6 + '.$svg_x1.' + 30';
     
@@ -3404,7 +3402,7 @@ sub InsertTreesAndBranchMotifs {
 
     my  $svg_width = 8.5;
     my  $svg_height = 35;
-    my  $svg_x1 = 6.5 * $nb_char;
+    my  $svg_x1 = 9.5 * $nb_char + 6;
     my  $svg_y1 = -15;
     my  $svg_x2 = '7 + '.$svg_x1.' + 40';
     my $label_single_tree = '
@@ -3422,6 +3420,7 @@ sub InsertTreesAndBranchMotifs {
 		.attr("dx", function(d) { return d.children ? -2 : 0; })
 		.attr("dy", function(d) { return d.children ? -6 : 0; })
 		.attr("fill", function(d) { return d.children ? "blue" : ""; })
+		.attr("font-size", "8px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
 

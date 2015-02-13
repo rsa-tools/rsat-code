@@ -1,0 +1,24 @@
+digraph {
+
+
+genome [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Genome\n(e.g. Escherichia_coli_K_12_substr__MG1655_uid57779)"];
+
+genome -> infer_operons
+genome -> infer_syntons
+
+infer_operons [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{infer-operons|distance=55\lgene_nb=1}"]
+
+infer_operons -> operons
+infer_operons -> single_tus
+
+operons [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Operons\n(N = )"];
+single_tus [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Single-gene transcripts\n(N = )"];
+
+infer_syntons [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{infer-operons|distance=100000\lgene_nb=1}"]
+infer_syntons -> syntons
+syntons [shape="rectangle", style="filled", fillcolor="#FFEEDD", label="Syntons\n(N = )"];
+
+
+
+}
+

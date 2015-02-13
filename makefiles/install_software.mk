@@ -49,6 +49,7 @@ list_versions:
 ## or useful for RSAT.
 EXT_APP_TARGETS=\
 	install_seqlogo \
+	install_weblogo3 \
 	install_gnuplot \
 	install_ghostscript \
 	install_d3 \
