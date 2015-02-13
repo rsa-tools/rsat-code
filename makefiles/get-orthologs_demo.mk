@@ -50,6 +50,12 @@ list_param:
 	@echo "	OUTPUT_FIELDS	${OUTPUT_FIELDS}"
 	@echo "	RES_DIR		${RES_DIR}"
 
+## Count the number of hits in a given file
+HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab
+HITS=`grep -v '^;' ${HIT_FILE} | grep -v '^\#' | wc -l`
+count_hits:
+	@echo "	${HITS} hits	${RES_DIR}/${GENE}_${TAXON}_all_hits.tab"
+
 ## Get all matching genes
 all_hits: res_dir
 	@echo
@@ -59,7 +65,7 @@ all_hits: res_dir
 		-return ${OUTPUT_FIELDS} \
 		-q ${GENE} ${OPT} \
 		-o ${RES_DIR}/${GENE}_${TAXON}_all_hits.tab
-	@echo "	${RES_DIR}/${GENE}_${TAXON}_all_hits.tab"
+	@${MAKE} count_hits HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_all_hits.tab
 
 ## Filter hits on several criteria
 filtered_hits: res_dir
@@ -71,7 +77,7 @@ filtered_hits: res_dir
 		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
 		-q ${GENE} ${OPT} \
 		-o ${RES_DIR}/${GENE}_${TAXON}_filtered_hits.tab
-	@echo "	${RES_DIR}/${GENE}_${TAXON}_filtered_hits.tab"
+	@${MAKE} count_hits HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_filtered_hits.tab
 
 
 ## Unidirectional best hits
@@ -84,7 +90,7 @@ best_hits: res_dir
 		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
 		-q ${GENE} -uth rank 1 ${OPT} \
 		-o ${RES_DIR}/${GENE}_${TAXON}_unidirBH.tab
-	@echo "	${RES_DIR}/${GENE}_${TAXON}_unidirBH.tab"
+	@${MAKE} count_hits HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_unidirBH.tab
 
 ## Bidirectional best hits (BBH)
 bbh_manual: res_dir
@@ -96,7 +102,7 @@ bbh_manual: res_dir
 		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
 		-q ${GENE} -uth rank 1 -uth s_rank ${OPT} \
 		-o ${RES_DIR}/${GENE}_${TAXON}_BBH_manual.tab 
-	@echo "	${RES_DIR}/${GENE}_${TAXON}_BBH_manual.tab "
+	@${MAKE} count_hits HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_BBH_manual.tab
 
 ## Bidirectional best hits (BBH) in automatic mode
 bbh_auto: res_dir
@@ -108,7 +114,7 @@ bbh_auto: res_dir
 		-type BBH \
 		-q ${GENE} ${OPT} \
 		-o ${RES_DIR}/${GENE}_${TAXON}_BBH_auto.tab 
-	@echo "	${RES_DIR}/${GENE}_${TAXON}_BBH.tab "
+	@${MAKE} count_hits HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_BBH.tab
 
 ## Bidirectional best hits (BBH)
 bbh_depth: res_dir
@@ -120,5 +126,5 @@ bbh_depth: res_dir
 		-lth ident 30 -lth ali_len 50 -uth e_value 1e-5 \
 		-q ${GENE} -uth rank 1 ${OPT}  \
 		-o ${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab
-	@echo "	${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab"
+	@${MAKE} count_hits HIT_FILE=${RES_DIR}/${GENE}_${TAXON}_depth${DEPTH}_BBH.tab
 
