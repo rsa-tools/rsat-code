@@ -57,7 +57,7 @@ list_param:
 genome_blast_formatdb:
 	@echo
 	@echo "genome-blast -task formatdb	${ORG}	${TAXON}"
-	genome-blast -v ${V} -q ${ORG} -dbtaxon ${TAXON} -reciprocal -task formatdb
+	genome-blast -v ${V} -q ${ORG} -dbtaxon ${TAXON} -reciprocal -task formatdb ${OPT}
 
 genome_blast_blastall:
 	@echo
