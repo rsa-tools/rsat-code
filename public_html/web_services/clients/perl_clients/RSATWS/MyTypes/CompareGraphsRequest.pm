@@ -1,0 +1,237 @@
+package MyTypes::CompareGraphsRequest;
+use strict;
+use warnings;
+
+
+__PACKAGE__->_set_element_form_qualified(0);
+
+sub get_xmlns { 'urn:RSATWS' };
+
+our $XML_ATTRIBUTE_CLASS;
+undef $XML_ATTRIBUTE_CLASS;
+
+sub __get_attr_class {
+    return $XML_ATTRIBUTE_CLASS;
+}
+
+use Class::Std::Fast::Storable constructor => 'none';
+use base qw(SOAP::WSDL::XSD::Typelib::ComplexType);
+
+Class::Std::initialize();
+
+{ # BLOCK to scope variables
+
+my %output_of :ATTR(:get<output>);
+my %Qinformat_of :ATTR(:get<Qinformat>);
+my %Rinformat_of :ATTR(:get<Rinformat>);
+my %outformat_of :ATTR(:get<outformat>);
+my %outweight_of :ATTR(:get<outweight>);
+my %Rinputgraph_of :ATTR(:get<Rinputgraph>);
+my %Qinputgraph_of :ATTR(:get<Qinputgraph>);
+my %Qwcol_of :ATTR(:get<Qwcol>);
+my %Qscol_of :ATTR(:get<Qscol>);
+my %Qtcol_of :ATTR(:get<Qtcol>);
+my %Rwcol_of :ATTR(:get<Rwcol>);
+my %Rscol_of :ATTR(:get<Rscol>);
+my %Rtcol_of :ATTR(:get<Rtcol>);
+my %return_of :ATTR(:get<return>);
+my %directed_of :ATTR(:get<directed>);
+my %self_of :ATTR(:get<self>);
+
+__PACKAGE__->_factory(
+    [ qw(        output
+        Qinformat
+        Rinformat
+        outformat
+        outweight
+        Rinputgraph
+        Qinputgraph
+        Qwcol
+        Qscol
+        Qtcol
+        Rwcol
+        Rscol
+        Rtcol
+        return
+        directed
+        self
+
+    ) ],
+    {
+        'output' => \%output_of,
+        'Qinformat' => \%Qinformat_of,
+        'Rinformat' => \%Rinformat_of,
+        'outformat' => \%outformat_of,
+        'outweight' => \%outweight_of,
+        'Rinputgraph' => \%Rinputgraph_of,
+        'Qinputgraph' => \%Qinputgraph_of,
+        'Qwcol' => \%Qwcol_of,
+        'Qscol' => \%Qscol_of,
+        'Qtcol' => \%Qtcol_of,
+        'Rwcol' => \%Rwcol_of,
+        'Rscol' => \%Rscol_of,
+        'Rtcol' => \%Rtcol_of,
+        'return' => \%return_of,
+        'directed' => \%directed_of,
+        'self' => \%self_of,
+    },
+    {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'Qinformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'Rinformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'outweight' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'Rinputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'Qinputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'Qwcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'Qscol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'Qtcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'Rwcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'Rscol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'Rtcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'directed' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'self' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'Qinformat' => 'Qinformat',
+        'Rinformat' => 'Rinformat',
+        'outformat' => 'outformat',
+        'outweight' => 'outweight',
+        'Rinputgraph' => 'Rinputgraph',
+        'Qinputgraph' => 'Qinputgraph',
+        'Qwcol' => 'Qwcol',
+        'Qscol' => 'Qscol',
+        'Qtcol' => 'Qtcol',
+        'Rwcol' => 'Rwcol',
+        'Rscol' => 'Rscol',
+        'Rtcol' => 'Rtcol',
+        'return' => 'return',
+        'directed' => 'directed',
+        'self' => 'self',
+    }
+);
+
+} # end BLOCK
+
+
+
+
+
+
+
+1;
+
+
+=pod
+
+=head1 NAME
+
+MyTypes::CompareGraphsRequest
+
+=head1 DESCRIPTION
+
+Perl data type class for the XML Schema defined complexType
+CompareGraphsRequest from the namespace urn:RSATWS.
+
+
+
+
+
+
+=head2 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * output
+
+
+=item * Qinformat
+
+
+=item * Rinformat
+
+
+=item * outformat
+
+
+=item * outweight
+
+
+=item * Rinputgraph
+
+
+=item * Qinputgraph
+
+
+=item * Qwcol
+
+
+=item * Qscol
+
+
+=item * Qtcol
+
+
+=item * Rwcol
+
+
+=item * Rscol
+
+
+=item * Rtcol
+
+
+=item * return
+
+
+=item * directed
+
+
+=item * self
+
+
+
+
+=back
+
+
+=head1 METHODS
+
+=head2 new
+
+Constructor. The following data structure may be passed to new():
+
+ { # MyTypes::CompareGraphsRequest
+   output =>  $some_value, # string
+   Qinformat =>  $some_value, # string
+   Rinformat =>  $some_value, # string
+   outformat =>  $some_value, # string
+   outweight =>  $some_value, # string
+   Rinputgraph =>  $some_value, # string
+   Qinputgraph =>  $some_value, # string
+   Qwcol =>  $some_value, # int
+   Qscol =>  $some_value, # int
+   Qtcol =>  $some_value, # int
+   Rwcol =>  $some_value, # int
+   Rscol =>  $some_value, # int
+   Rtcol =>  $some_value, # int
+   return =>  $some_value, # string
+   directed =>  $some_value, # int
+   self =>  $some_value, # int
+ },
+
+
+
+
+=head1 AUTHOR
+
+Generated by SOAP::WSDL
+
+=cut
+
