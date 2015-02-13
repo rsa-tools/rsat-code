@@ -143,6 +143,7 @@ package main;
   $main::query_organism = "";
   @main::query_genes = ();
   $main::ref_taxon = "";
+  $main::depth = 0;
   @main::ref_organisms = ();
   @main::missing_blast_files = ();
   @main::is_query = ();
@@ -294,7 +295,7 @@ package main;
   ## Get all organisms for a taxon
   if ($main::ref_taxon) {
     &RSAT::message::TimeWarn("Selecting reference organisms in taxon", $ref_taxon) if ($main::verbose >= 2);
-    @main::ref_organisms = &GetOrganismsForTaxon($ref_taxon);
+    @main::ref_organisms = &GetOrganismsForTaxon($ref_taxon, $depth);
     if (scalar(@main::ref_organisms) == 0) {
       &RSAT::error::FatalError("There is no  supported organism corresponding to the reference taxon", $main::ref_taxon,
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
@@ -1047,6 +1048,38 @@ to the reference taxon.
 
 	} elsif ($arg eq "-taxon") {
 	    $main::ref_taxon = shift (@arguments);
+
+=pod
+
+=item B<-depth #>
+
+Depth for exploring the taxonomic tree. When the value differs from 0,
+the program only returns one "representative" organism per taxon of
+the specified depth.
+
+This option is convenient to select a non-redundant set of
+species. Note that the biological relevance of the result strongly
+depends on the annotation of the taxonomy in the original database
+from whichb RSAT genomes were downloaded.
+
+Positive value indicate that the tree should be traversed from root to
+leaves.
+
+Negative values indicate that the tree should be traversed from leaves
+to root. Beware: level 0 is the species. Level -1 this corresponds to
+the lowest level of the taxonomy.
+
+Also note that the depth of the taxonomic annotations vary along
+branches, so that positive values will give different results from
+negative values.
+
+=cut
+
+       } elsif ($arg eq "-depth") {
+          $depth = shift(@arguments);
+          &RSAT::error::FatalError($depth, "Invalid value for depth, must be an Integer number") 
+   	      unless &IsInteger($depth);
+
 
 
 =pod
