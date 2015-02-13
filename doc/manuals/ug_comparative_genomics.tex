@@ -62,7 +62,7 @@ few seconds.
 \begin{verbatim}
 genome-blast -v 1 -task formatdb \
    -q Mycoplasma_pneumoniae \
-    -db Bacillus_subtilis 
+   -db Bacillus_subtilis 
 \end{verbatim}
 \end{footnotesize}
 
@@ -89,15 +89,15 @@ query it with the proteins of the query organism.
 
 \begin{footnotesize}
 \begin{verbatim}
-genome-blast -v 1 -task blastall \
+genome-blast -v 1 -task blastall  \
    -q Mycoplasma_pneumoniae \
-    -db Bacillus_subtilis 
+    -db Bacillus_subtilis
 \end{verbatim}
 \end{footnotesize}
 
-This task takes a bit less that one minute for Pneumoniae (because we
-chose a very small genomes), and can take around 10 minutes for
-medium-sized bacterial genomes (~4,000 genes).
+This task takes a bit less that one minute for \organism{Mycoplasma
+  pneumoniae} (because we chose a very small genomes), and can take
+around 10 minutes for medium-sized bacterial genomes (~4,000 genes).
 
 Note that the \program{blastall} command is written in the verbosity
 message. If you have specific reasons to customize this command, you
@@ -119,7 +119,7 @@ Note that you can run the two BLAST commands (\program{formatdb} and
 
 \begin{footnotesize}
 \begin{verbatim}
-genome-blast -v 1 -task formatdb,blastall \
+genome-blast -v 1 -task formatdb,blastall  \
     -q Bacillus_subtilis \
     -db Mycoplasma_pneumoniae
 \end{verbatim}
@@ -143,26 +143,20 @@ the option \option{-dbtaxon}.
 
 As an example, we will BLAST all the proteins of \org{Mycoplasma
   pneumoniae} against all the proteins of each species of
-\org{Mollicutes}.
+\org{Mollicutes}. 
 
-
-\begin{footnotesize}
-\begin{verbatim}
-genome-blast -v 1 -task formatdb,blastall \
-    -q Mycoplasma_pneumoniae \
-    -dbtaxon Mollicutes
-\end{verbatim}
-\end{footnotesize}
-
-And now the reciprocal search: BLAST all gene products of each
-bacteria of the taxon \org{Mollicutes} against those of
+We can also use the option \option{-reciprocal} to activate the
+reciprocal search: BLAST all gene products of each bacteria of the
+reference taxon \org{Mollicutes} against those of the query organism
 \org{Mycoplasma pneumoniae}.
 
+
+
 \begin{footnotesize}
 \begin{verbatim}
-genome-blast -v 1 -task formatdb,blastall \
-    -db Mycoplasma_pneumoniae \
-    -qtaxon Mollicutes
+genome-blast -v 1 -task formatdb,blastall -reciprocal \
+    -q Mycoplasma_pneumoniae \
+    -dbtaxon Mollicutes
 \end{verbatim}
 \end{footnotesize}
 
@@ -193,7 +187,7 @@ common criterion is to select \concept{bidirectional best hits
 
 We will illustrate the concept by retrieving the genes whose product
 is similar to the protein LexA of \org{Escherichia coli K12}, in
-all the Gammaproteobacteria. We will then refine the query to extract
+all the Enterobacteriales. We will then refine the query to extract
 putative orthologs.
 
 \subsection{Getting genes by similarities}
@@ -201,13 +195,13 @@ putative orthologs.
 \begin{footnotesize}
 \begin{verbatim}
 get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
-  -taxon Gammaproteobacteria \
-  -q lexA -o lexA_orthologs_Gammaproteobacteria.tab
+  -taxon Enterobacteriales \
+  -q lexA -o lexA_all_hits_Enterobacteriales.tab 
 \end{verbatim}
 \end{footnotesize}
 
-The result file is a list of all the Gammaproteobacterial genes whose
-product shows some similarity with the LexA protein from E.coli K12.  
+The result file is a list of all the Enterobacteriales genes whose
+product shows some similarity with the LexA protein from E.coli K12.
 
 \begin{scriptsize}
 \begin{verbatim}
@@ -244,9 +238,9 @@ alignment length, the E-value and the rank of each hit.
 \begin{footnotesize}
 \begin{verbatim}
 get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
-  -taxon Gammaproteobacteria \
-  -q lexA -o lexA_orthologs_Gammaproteobacteria.tab \
-  -return ident,ali_len,e_value,rank 
+  -taxon Enterobacteriales \
+  -q lexA -return ident,ali_len,e_value,rank \
+  -o lexA_all_hits_Enterobacteriales.tab \
 \end{verbatim}
 \end{footnotesize}
 
@@ -286,10 +280,10 @@ an upper threshold on the rank, with the option \option{-uth}.
 \begin{footnotesize}
 \begin{verbatim}
 get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
-  -taxon Gammaproteobacteria \
-  -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh.tab \
-  -return ident,ali_len,e_value,rank \
-  -uth rank 1 
+  -taxon Enterobacteriales \
+  -q lexA -return ident,ali_len,e_value,rank \
+  -uth rank 1 \
+  -o lexA_best_hits_Enterobacteriales_bbh.tab
 \end{verbatim}
 \end{footnotesize}
 
@@ -326,10 +320,11 @@ by imposing an upper threshold of 1e-10.
 \begin{verbatim}
 ## Note that or this test we suppress the BBH constraint (-uth rank 1)
 get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
-  -taxon Gammaproteobacteria \
-  -q lexA -o lexA_orthologs_Gammaproteobacteria_id30_len50_eval-10.tab \
+  -taxon Enterobacteriales \
+  -q lexA \
   -return ident,ali_len,e_value,rank \
-  -lth ident 30 -lth ali_len 50 -uth e_value 1e-10
+  -lth ident 30 -lth ali_len 50 -uth e_value 1e-10 \
+  -o lexA_filtered_hits_Enterobacteriales_id30_len50_eval-10.tab
 \end{verbatim}
 \end{footnotesize}
 
@@ -339,17 +334,18 @@ We can now combine the constrains above with the criterion of BBH.
 \begin{verbatim}
 ## Note that or this test we include the BBH constraint (-uth rank 1)
 get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
-  -taxon Gammaproteobacteria \
-  -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
+  -taxon Enterobacteriales \
+  -q lexA \
   -return ident,ali_len,e_value,rank \
   -lth ident 30 -lth ali_len 50  -uth e_value 1e-10 \
-  -uth rank 1 
+  -uth rank 1 \
+  -o lexA_BBH_Enterobacteriales_bbh_id30_len50_eval-10.tab
 \end{verbatim}
 \end{footnotesize}
 
 As expected, the number of selected hits is reduced by adding these
 constraints. In Sept 2006, we obtained the following number of hits
-for lexA in Gammaproteobacteria.
+for lexA in Enterobacteriales.
 
 \begin{itemize}
 \item 122 hits without any constraint;
@@ -363,6 +359,34 @@ for lexA in Gammaproteobacteria.
 Actually, in the particular case of \gene{lexA}, the BBH constraint
 already filtered out the spurious matches, but inother cases they can
 be useful.
+
+
+\subsection{Restricting the number of reference organisms}
+
+The decrease of sequencing cost impulsed the multiplication of genome
+sequencing projects. In 2015, some bacterial species are represented
+by several hundreds of strains in the EnsemblGenomes database
+(e.g. \organism{Escherichia coli}). A conseuence is that the
+comparative genomics analyses can become quite heavy. A more
+importance drawback is that some taxonomic branches are
+over-represented relative to other ones.
+
+To reduce this problem, we added an option \option{-depth} to the
+taxonomic tools.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Note that or this test we include the BBH constraint (-uth rank 1)
+get-orthologs -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
+  -taxon Enterobacteriales \
+  -q lexA -o lexA_orthologs_Enterobacteriales_bbh_id30_len50_eval-10.tab \
+  -return ident,ali_len,e_value,rank \
+  -lth ident 30 -lth ali_len 50  -uth e_value 1e-10 \
+  -uth rank 1 
+\end{verbatim}
+\end{footnotesize}
+
+
 
 \section{Retrieving sequences for multiple organisms}
 
@@ -386,8 +410,8 @@ input for \program{retrieve-seq-multigenome}.
 \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq-multigenome -noorf \
-  -i lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
-  -o lexA_orthologs_Gammaproteobacteria_up-noorf.fasta
+  -i lexA_orthologs_Enterobacteriales_bbh_id30_len50_eval-10.tab \
+  -o lexA_orthologs_Enterobacteriales_up-noorf.fasta
 \end{footnotesize}
 \end{verbatim}
 \end{footnotesize}
@@ -399,11 +423,11 @@ retrieve-seq-multigenome -noorf \
 \begin{footnotesize}
 \begin{verbatim}
 dyad-analysis  -v 1 \
-  -i lexA_orthologs_Gammaproteobacteria_up-noorf.fasta \
+  -i lexA_orthologs_Enterobacteriales_up-noorf.fasta \
   -sort -2str -noov -lth occ 1 -lth occ_sig 0 \
   -return occ,freq,proba,rank \
   -l 3 -spacing 0-20 -bg monads \
-  -o lexA_orthologs_Gammaproteobacteria_up-noorf_dyads-2str-noov.tab
+  -o lexA_orthologs_Enterobacteriales_up-noorf_dyads-2str-noov.tab
 \end{verbatim}
 \end{footnotesize}
 
