@@ -53,12 +53,12 @@ print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 ## Get supported organims
 my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms();
+#my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms_with_variations();
 
 ## Intialize array to store organisms with variation files
 my @org_variations=(); 
 
 foreach my $org_aux  ( @installed_organisms){
-
     ## Check by organims if there is variation file installed
     my $org_var=&RSAT::organism::has_variations($org_aux);
     if ($org_var){
@@ -69,11 +69,10 @@ foreach my $org_aux  ( @installed_organisms){
 
 if (scalar(@org_variations)>0){
     print "&nbsp;"x0, &OrganismPopUpString(@org_variations);
-
 }
 else {
-    print "&nbsp;"x3;
-    print "This RSAT site does not contain any genome with variations";
+  &RSAT::message::Warning("This RSAT site does not contain any genome with variations");
+  exit();
 }
 print "<p>\n";
 
