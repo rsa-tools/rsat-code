@@ -274,6 +274,8 @@ local $total_tasks = 0;
 local $new_only = 0;
 local $skipped_tasks = 0;
 
+local $skip_db_org = 0;
+
 ## Supported tasks
 @supported_tasks = qw (formatdb blastall cleandb all);
 foreach my $task (@supported_tasks) {
@@ -434,7 +436,12 @@ sub iterate_blast {
     foreach $db_organism (@db_organisms) {
       $d++;
 #    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
-      
+
+      if (($main::skip_db_org > 0) && ($d <= $main::skip_db_org)) {
+	  &RSAT::message::Warning("Skipping", $main::skip_db_org, "organisms", $d, $db_organism) if ($main::verbose >= 1);
+	  next;
+      }
+
 	## DB organism
 	$dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
 	$dir{db_org_genome} = $dir{db_org_dir}."/genome";
@@ -512,11 +519,12 @@ sub iterate_blast {
 			($arg eq "-qtaxon") || 
 			($arg eq "-dbtaxon") ||
 			($arg eq "-query_org_file") || 
-			($arg eq "-db_org_file") ||
-			($arg eq "-reciprocal") ## Reciprocal is treated by swapping query and reference org lists (required fro formatdb)
-			) {
+			($arg eq "-db_org_file")) {
 			shift @args_to_pass;
 			next;
+		    } elsif ($arg eq "-reciprocal") {
+		      ## Reciprocal is treated by swapping query and reference org lists (required fro formatdb)
+		      next;
 		    } elsif ($arg eq "-batch") {
 		      if ((scalar(@args_to_pass) > 0) &&
 			  (&IsNatural($args_to_pass[0]))) {
@@ -788,8 +796,21 @@ you use the option -no_self only when running the reciprocal blast.
 	    $no_self = 1;
 
 
+=pod
 
-	    #### dry run
+=item B<-skip_db_org X>
+
+Skip the first X DB organisms. 
+
+This is convenient to resume an interrupted list of genomes.
+
+=cut
+    } elsif ($ARGV[$a] eq "-skip_db_org") {
+      $main::skip_db_org = $ARGV[$a+1];
+      &RSAT::error::FatalError($main::skip_db_org, "invalid value for the option -skip_db_org. Must be a positive Natural number.") 
+        unless (&IsNatural($main::skip_db_org));
+
+
 =pod
 
 =item B<-n>
