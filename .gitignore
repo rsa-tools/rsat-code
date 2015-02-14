@@ -37,8 +37,6 @@ jobs
 ./lib
 logs
 logs_tmp
-makefile
-makefile
 public_html/data/GO
 public_html/data/KEGG
 public_html/data/genomes
