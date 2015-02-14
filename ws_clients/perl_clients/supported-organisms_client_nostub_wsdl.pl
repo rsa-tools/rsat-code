@@ -8,8 +8,8 @@
 
 use strict;
 
-# import the modules we need for this test; XML::Compile is included on the server
-# by default.
+## Import the modules we need for this test.  XML::Compile enables to
+## parse the WSDL (description of the web services) on the flight. 
 use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
