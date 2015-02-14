@@ -1,0 +1,44 @@
+################################################################ For
+## Mac OSX it is somewhat tricky to install some Perl modules.  In
+## particular, GD has always been an awful source of trouble.
+brew install gd
+
+################################################################
+## R and XQuartz
+################################################################
+
+I install R and XQuartz from the Mac OSX installation package image
+disks found on the official sites.
+
+XQuartz	    http://xquartz.macosforge.org/landing/
+R	    http://www.r-project.org/
+
+I also install Rstudio, which provides an exceptionally good
+development environment.
+Rstudio	    http://www.rstudio.com/
+
+
+################################################################
+## Python and related packages
+
+## Python 2.7
+brew install python
+sudo easy_install pip
+sudo pip install suds
+
+## Python 3
+brew install python3
+
+################################################################
+## Perl libraries
+##
+
+## Very tricky: after update to Yosemite, I ave two versions of Perl
+## (5.16 and 5.18). In order to get a functional server, I needed to
+## reinstall mysql and then install the modules separately for 5.18.
+
+brew install mysql
+brew install graphviz
+
+make  -f makefiles/install_rsat.mk PERL=perl5.18 CPAN=cpan5.18 perl_modules_install
+
