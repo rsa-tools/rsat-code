@@ -256,54 +256,54 @@ package main;
 
     $backup_org_table = 0 if ($i > 1); ## When we treat multiple organisms, we don't want to store a backup for each one
 
-    ################################################################
-    ## Automatic full name specification
-    unless ($organism_full_name) {
-      if ($organism_short_name =~ /\_/) {
-	$organism_full_name = $organism_short_name;
-	$organism_full_name =~ s/\_/ /g;
-      }
-    }
-
-
-    ################################################################
-    ## If the organism was previously supported, ensure that the
-    ## serialized files are suppressed.
-    &RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 2);
-    $organism = new RSAT::organism();
-#    $organism->check_name($organism_short_name, 1);
-    $organism->set_attribute("name", $organism_short_name);
-    $organism->set_attribute("feature_types", '*');
-    $organism->delete_serial_files();
-    
-
-    ################################################################
-    ## Installation directories
-    umask 0002;
-    if ($install_dir) {
-      $dir{install} = $install_dir;
-      &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 3);
-    } elsif ($supported_organism{$organism_short_name}->{'data'}) {
-      $dir{install} = $supported_organism{$organism_short_name}->{'data'};
-      &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 3);
-    } else {
-      $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
-      &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
-    }
-
-    $dir{genome} = $dir{install}."/genome";
-    $dir{oligos} = $dir{install}."/oligo-frequencies";
-    $outfile{features} = $dir{genome}."/feature.tab";
-    $outfile{synonyms} = $dir{genome}."/feature_names.tab";
-    $outfile{genome} = $dir{genome}."/contigs.txt";
-    ## Create output directoryies if required
     unless (($task{erase}) || ($task{uninstall})) {
-      &RSAT::util::CheckOutDir($dir{install});
-      &RSAT::util::CheckOutDir($dir{genome});
-      &RSAT::util::CheckOutDir($dir{oligos});
+
+	################################################################
+	## Automatic full name specification
+	unless ($organism_full_name) {
+	    if ($organism_short_name =~ /\_/) {
+		$organism_full_name = $organism_short_name;
+		$organism_full_name =~ s/\_/ /g;
+	    }
+	}
+	
+	
+	################################################################
+	## If the organism was previously supported, ensure that the
+	## serialized files are suppressed.
+	&RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 2);
+	$organism = new RSAT::organism();
+#    $organism->check_name($organism_short_name, 1);
+	$organism->set_attribute("name", $organism_short_name);
+	$organism->set_attribute("feature_types", '*');
+	$organism->delete_serial_files();
+	
+	
+	################################################################
+	## Installation directories
+	umask 0002;
+	if ($install_dir) {
+	    $dir{install} = $install_dir;
+	    &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 3);
+	} elsif ($supported_organism{$organism_short_name}->{'data'}) {
+	    $dir{install} = $supported_organism{$organism_short_name}->{'data'};
+	    &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 3);
+	} else {
+	    $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
+	    &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
+	}
+	
+	$dir{genome} = $dir{install}."/genome";
+	$dir{oligos} = $dir{install}."/oligo-frequencies";
+	$outfile{features} = $dir{genome}."/feature.tab";
+	$outfile{synonyms} = $dir{genome}."/feature_names.tab";
+	$outfile{genome} = $dir{genome}."/contigs.txt";
+	## Create output directoryies if required
+	&RSAT::util::CheckOutDir($dir{install});
+	&RSAT::util::CheckOutDir($dir{genome});
+	&RSAT::util::CheckOutDir($dir{oligos});
     }
     
-
     ################################################################
     ###################### Installation tasks ######################
     ################################################################
@@ -401,13 +401,14 @@ sub Verbose {
 ## file. This does not clean the organism directory on the hard drive
 ## (which requires the task "erase").
 sub Uninstall {
-  foreach our $organism_short_name (@organisms) {
-    if (defined($supported_organism{$organism_short_name})) {
-      &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 0);
-      delete($supported_organism{$organism_short_name});
+    foreach our $organism_short_name (@organisms) {
+	&RSAT::OrganismManager::check_name($organism_short_name, 1);
+	if (defined($supported_organism{$organism_short_name})) {
+	    &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 0);
+	    delete($supported_organism{$organism_short_name});
+	}
     }
-  }
-  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
+    &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
 }
 
 ################################################################
