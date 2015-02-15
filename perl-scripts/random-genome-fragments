@@ -421,7 +421,9 @@ package main;
     if ($main::keep_names) {
 	$seq_id = $names[$i-1];
     } else {
-	$seq_id = "rand_".$i;
+	$seq_id = "randfragment_".$i;
+	$seq_id .= "_".$organism_name;
+	$seq_id .= "_"; $seq_id .= join ":", $rand_contig_name, $rand_start, $rand_end, $rand_strand;
     }
 
     &RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
@@ -432,7 +434,8 @@ package main;
     if (($main::organism_name)&&($return_fields{seq})) {
       my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
       my @comments = join("; ",
-			  "random sequence $i of $main::nb_fragments",
+			  $organism_name,
+			  "random genome fragment $i of $main::nb_fragments",
 			  "length: $rand_fragment_size",
 			  "$rand_contig_name",
 			  "$rand_start:$rand_end:$rand_strand"
@@ -644,13 +647,13 @@ from 0-based into 1-based)
 Keep the same names as in the template file. This option obviously
 applies only when a template file is provided.
 
-By default, the name of output genome fragments is "rand_N", where N
-is the fragment number. In some cases, one would like to preserve the
-original feature name in order to distinguish groups of features
-(e.g. binding sites for different transcription factors).  
+By default, the name of output genome fragments is
+"rand_Organism_name_N", where N is the fragment number. In some cases,
+one would like to preserve the original feature name in order to
+distinguish groups of features (e.g. binding sites for different
+transcription factors).
 
 =cut
-
 
      } elsif ($arg eq "-keep_names") {
        $main::keep_names = 1;
@@ -963,6 +966,7 @@ __END__
 
 =item random-genes
 
+=back
 
 =cut
 
