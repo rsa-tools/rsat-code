@@ -147,8 +147,8 @@ ws_param:
 ws_stub: ws_init
 	@echo
 	@echo "Initiating Web services at SERVER=RSAT_WS=${RSAT_WS}"
-#	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
-	(cd ${RSAT}/public_html/clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
+	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
+	(cd ${RSAT}/public_html/web_services/clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
 
 ws_stub_test:
 	@echo
