@@ -547,7 +547,7 @@ sub check_name {
   }
   my $supported = &is_supported($organism_name);
   unless ($supported) {
-    my $message = "Organism $organism_name is not supported.\nUse the command supported-organisms for a list of supported organisms";
+    my $message = "Organism $organism_name is not supported. Run the command supported-organisms";
     if ($no_die) {
       &RSAT::message::Warning($message);
       return(0);
