@@ -2025,7 +2025,6 @@ sub PipingFormForSequence {
 	$oligo_background_model
 	<INPUT type="submit" value="local-word-analysis">
 	</FORM>
-	<b><font color=red>New !</font></b>
 	Windows of word over-representation
     </td>
 
@@ -2053,7 +2052,7 @@ sub PipingFormForSequence {
 	Gibbs sampling <br>(Defrance, 2009)
     </td>
 
-    <td align=center>
+    <!--td align=center>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
@@ -2062,7 +2061,7 @@ sub PipingFormForSequence {
 	<INPUT type="submit" value="gibbs">
 	</FORM>
 	Gibbs sampling <br>(Neuwald, 1995)
-    </td>
+    </td-->
 
     <td align=center>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
@@ -2105,7 +2104,6 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="matrix-scan-quick (matrices)">
 	</FORM>
-	<b><font color=red>New !</font></b>
 	Position-specific scoring matrices
     </td>
 
@@ -2120,7 +2118,7 @@ sub PipingFormForSequence {
 	Position-specific scoring matrices
     </td>
 
-    <td align=center>
+    <!--td align=center>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
@@ -2129,7 +2127,7 @@ sub PipingFormForSequence {
 	<INPUT type="submit" value="patser (matrices)">
 	</FORM>
 	Position-specific scoring matrices
-    </td>
+    </td-->
 
 
     <td align=center>
