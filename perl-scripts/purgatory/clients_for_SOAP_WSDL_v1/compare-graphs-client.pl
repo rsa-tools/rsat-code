@@ -1,20 +1,21 @@
 #!/usr/bin/perl -w
-# supported-organisms_client.pl - Client supported-organisms using the SOAP::WSDL module and a property file
+# compare-graphs-client.pl is a perl example of a RSAT convert-graph using the SOAP::WSDL module
 
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tool supported-organisms.
+## RSAT tool compare-graphs. It sends a request to the server for
+## comparing two graphs
 ##
 ################################################################
 
-use strict;
+#use strict;
 use SOAP::WSDL;
 use Util::Properties;
-#import SOAP::Lite+trace;
+# import SOAP::Lite + trace;
 
 ## Service location
-my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 #my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
@@ -24,7 +25,7 @@ my $property_file = shift @ARGV;
 die "\tYou must specify the property file as first argument\n"
   unless $property_file;
 
-## Call the service
+# Service call
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 $soap->wsdlinit;
 
@@ -33,9 +34,17 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
+#ARGUMENTS
+$args{Rinputgraph} = `cat $args{Rinputgraph}`;
+$args{Qinputgraph} = `cat $args{Qinputgraph}`;
+
+my $output_choice = $args{output_choice} || 'both';
+
+warn "\nThis demo script returns the intersection of two graphs \n\n";
+
 ## Send the request to the server
 print "Sending request to the server $server\n";
-my $som = $soap->call('supported_organisms' => 'request' => \%args);
+my $som = $soap->call('compare_graphs' => 'request' => \%args);
 
 ## Get the result
 if ($som->fault){ ## Report error if any
@@ -49,6 +58,16 @@ if ($som->fault){ ## Report error if any
     print "Command used on the server: ".$command, "\n";
 
     ## Report the result
-    my $result = $results{'client'};
-    print "Supported organisms: \n".$result;
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
+	print "Result file on the server: ".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Clusters\n".$result;
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: ".$server_file;
+	print "Conversion \n".$result;
+    }
 }
