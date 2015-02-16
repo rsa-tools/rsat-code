@@ -18,7 +18,7 @@ use XML::Compile::Transport::SOAPHTTP;
 package main;
 {
   ## Initialize variables with default values
-  my $server = "http://rsat.ulb.ac.be/rsat";
+  my $server = "http://pedagogix-tagc.univ-mrs.fr/rsat";
   my $organism = "";
   my $help = "";
   my $verbose = 1;
@@ -74,7 +74,7 @@ package main;
 
   ## Specification of the server.
   unless ($server) {
-    $server = "http://rsat.ulb.ac.be/rsat";
+    $server = "http://pedagogix-tagc.univ-mrs.fr/rsat";
   }
 
   ## Query parameters
