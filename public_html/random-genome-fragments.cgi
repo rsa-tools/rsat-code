@@ -201,33 +201,21 @@ sub PipingForm {
 	$assembly =~ s/.*assembly:(.*)$/$1/;
     ### prepare data for piping
     print <<End_of_form;
-<TABLE class='nextstep' style='text-align:left'>
-<TR>
-  <TD>
-    <H3>Next step</H3>
-  </TD>
-  </tr>
-  <tr  style='text-align:left'>
-  <TD  style='text-align:left'>
+    <hr>
+<table class = "nextstep">
+<tr><td colspan = 5><h3>next step</h3></td></tr>
 
-<b>Extract sequences in batch with Galaxy</b>.
-<br/>
-For the moment, we cannot directly connect this BED file to Galaxy, and retrieve the sequences automatically.
-<p/>
-Here are some <b>instructions to easily retrieve these sequences: </b>
-<ol>
-<li><a href="http://main.g2.bx.psu.edu/root?tool_id=upload1" target="_blank">Open The Galaxy website in a new window </a></li>
 
-<li>The selected tool is "Upload file". Fill the form as follow: <br/>
-<b>File Format: BED</b> <br/>
-<b>URL/Text:</b>  Paste the URL of your result file: <b>${result_URL}</b><br/>
-<b>Genome:</b>  Type the name of the organism assembly: <b>$assembly</b><br/>
-Click on the "execute" button. This job is queued (right menu). Wait until it is finished (time varies depending on the server load).
-</li>
-<li>In the left menu, click on "Fetch Sequences" and on "Extract Genomic DNA"</li>
-<li>The form is automatically filled, click on the "execute" button</li>
-<li>Your sequences are downloadable from the right menu.</li>
-</ol>
+<tr valign="top" align="center">
+
+
+ <td align=center>
+        <FORM METHOD="POST" ACTION="fetch-sequences_form.php">
+	<INPUT type="hidden" NAME="bedfile" VALUE="$result_file">
+	<INPUT type="submit" value="fetch sequences from UCSC">
+	</FORM>
+	Fetch sequences corresponding to the coordinates
+    </td>
 </TD>
 </TR>
 </TABLE>
