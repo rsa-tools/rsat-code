@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# retrieve_purge_oligos_client.pl - Client retrieve-seq + oligo-analysis
+# retrieve_purge_oligos_client_soap-wsdl.pl - Client retrieve-seq + oligo-analysis
 
 ################################################################
 ##
@@ -13,18 +13,15 @@
 
 use strict;
 use SOAP::WSDL;
-use Util::Properties;
 
 warn "\nThis demo script illustrates a work flow combining three requests to the RSAT web services:\n\tretrieve-seq | purge-sequence | oligo-analysis\n\n";
 
 
 ## Service location
+#my $server = 'http://localhost/rsat/web_services';
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
-my $property_file = shift @ARGV;
-die "\tYou must specify the property file as first argument\n"
-  unless $property_file;
 
 ## Service call
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
@@ -33,14 +30,36 @@ $soap->wsdlinit;
 #################################################
 ## Retrieve-seq part
 
-my $prop =  Util::Properties->new();
-$prop->file_name($property_file);
-$prop->load();
-my %args = $prop->prop_list();
+## Output option
+my $output_choice = 'server'; ## The result will stay in a file on the server
 
-## Convert the query string into a list
-my @queries = split(",", $args{query});
-$args{query} = \@queries;
+## Parameters
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my @gene = ("PHO5", "PHO8", "PHO11", "PHO81", "PHO84");  ## List of query genes
+my $all = 0;  ## -all option. This option is incompatible with the query list @gene (above)
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
+my $from;  ## Start position of the sequence. Default is used (-800).
+my $to;  ## End position of te sequence. Default is used (-1).
+my $feattype = '';  ## -feattype option value is not defined, default is used (CDS).
+my $type = '';  ## -type option value; other example:'-type downstream'
+my $format = 'fasta';  ## the format of the retrieved sequence(s)
+my $label = '';  ## Choice of label for the retrieved sequence(s). Default is used.
+my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
+my $nocom = 0;  ## Other possible value = 1.
+
+my %args = ('output' => $output_choice,
+    'organism' => $organism,
+    'query' => \@gene,  ## An array in a hash has to be referenced
+    'noorf' => $noorf,
+    'from' => $from,
+    'to' => $to,
+    'feattype' => $feattype,
+    'type' => $type,
+    'format' => $format,
+    'all' => $all,
+    'label' => $label,
+    'label_sep' => $label_sep,
+    'nocom' => $nocom);
 
 ## Send request to the server
 print "\nRetrieve-seq: sending request to the server\t", $server, "\n";
@@ -66,7 +85,9 @@ print "Result file on the server:\n\t".$server_file;
 #################################################
 ## Purge-sequence part
 
-$args{tmp_infile} = $server_file;
+## Define hash of parameters
+%args = ('output' => $output_choice,  ## Same 'server' output option
+ 'tmp_infile' => $server_file);  ## Output from retrieve-seq part is used as input here
 
 ## Send the request to the server
 print "\nPurge-sequence: sending request to the server\t", $server, "\n";
@@ -90,12 +111,30 @@ print "Result file on the server: \n\t".$server_file;
 #################################################
 ## Oligo-analysis part
 
-$args{output} = "both";
-$args{tmp_infile} = $server_file;
+## Output option
+$output_choice = 'both'; ## We want to get the result on the client side, as well as the server file name
 
-## Convert the lth string into a list
-my @lths = split(",", $args{lth});
-$args{lth} = \@lths;
+## Parameters
+$format = 'fasta';  ## The format of input sequences
+my $length = 6;  ## Length of patterns to be discovered
+my $background = 'upstream-noorf';  ## Type of background used
+my $stats = 'occ,proba,rank';  ## Returned statistics
+my $noov = 1;  ## Do not allow overlapping patterns
+my $str = 2;  ## Search on both strands
+my $sort = 1;  ## Sort the result according to score
+my @lth = ('occ_sig 0');  ## Lower limit to score is 0, less significant patterns are not displayed
+
+%args = ('output' => $output_choice, 
+	 'tmp_infile' => $server_file, 
+	 'format' => $format,
+	 'length' => $length,
+	 'organism' => $organism, 
+	 'background' => $background,
+	 'stats' => $stats,
+	 'noov' => $noov,
+	 'str' => $str,
+	 'sort' => $sort,
+	 'lth' => \@lth);
 
 ## Send request to the server
 print "\nOligo-analysis: sending request to the server\t", $server, "\n";
@@ -113,8 +152,16 @@ if ($som->fault){  ## Report error if any
     print "Command used on the server: ".$command, "\n";
     
     ## Report the result
-    $server_file = $results{'server'};
-    my $result = $results{'client'};
-    print "Result file on the server: \n\t".$server_file;
-    print "Discovered oligo(s): \n".$result;
+    if ($output_choice eq 'server') {
+	$server_file = $results{'server'};
+	print "Result file on the server: \n\t".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Discovered oligo(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	$server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: \n\t".$server_file;
+	print "Discovered oligo(s): \n".$result;
+    }
 }

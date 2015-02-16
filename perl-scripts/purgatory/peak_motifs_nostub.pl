@@ -7,11 +7,11 @@ use strict;
 ################################################################
 ## Import the modules we need for this test;
 ## XML::Compile is included on the server
-#use XML::Compile::SOAP11;
+use XML::Compile::SOAP11;
 use XML::Compile::WSDL11;
 use XML::Compile::Transport::SOAPHTTP;
 
-my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
+my $server = $ARGV[0] || "http://pedagogix-tagc.univ-mrs.fr/rsat";
 
 ################################################################
 ## Query parameters
@@ -25,7 +25,6 @@ my $noov = 1;  ## Do not allow overlapping patterns
 my $str = 2;  ## Search on both strands
 my $image_format = 'png';
 my $task = 'purge,seqlen,composition,ref_motifs,disco,merge_words,collect_motifs,scan,timelog,synthesis,archive';
-#my $task = 'purge,seqlen,composition,disco,synthesis';
 my $disco = 'oligos,positions';
 my $graph_title = 'Oct4_Chen2008';
 my $test = `cat peak_motifs_test1_demo_seq.fasta`;
@@ -33,7 +32,7 @@ my $test = `cat peak_motifs_test1_demo_seq.fasta`;
 my %args = (
 	    'verbosity' => $verbosity,
             'test' => $test,
-	    #            'format' => $format,
+#           'format' => $format,
             'min_length' => $min_length,
             'max_length' => $max_length,
 	    'top_peaks' => $top_peaks,
@@ -53,10 +52,6 @@ eval
     warn ("Parsing Web service description from WSDL", "\t", $wsdl_url, "\n");
     my $wsdl  = XML::LibXML->new->parse_file($wsdl_url);
     my $proxy = XML::Compile::WSDL11->new($wsdl);
-    #    # Retriving and processing the WSDL
-
-    #    my $wsdl  = XML::LibXML->new->parse_file('http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS.wsdl');
-    #    my $proxy = XML::Compile::WSDL11->new($wsdl);
 
     ## Compiling the client for peak-motifs
     warn ("Compiling client\n");
@@ -65,7 +60,7 @@ eval
     # Calling the service and getting the response
     warn ("Sending request\n");
     my $answer = $client->( request => {%args});
-    #    print "Answer: ".$answer."\n";
+
     # If the response arrived, look for a specific pattern
     # If the pattern is present, return 0 because the test passed.
     # If the result is something else, return 2 to indicate a warning.
