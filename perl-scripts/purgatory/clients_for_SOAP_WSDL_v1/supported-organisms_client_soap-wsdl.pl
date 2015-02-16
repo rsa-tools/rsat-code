@@ -1,17 +1,15 @@
 #!/usr/bin/perl -w
-# gene-info_client.pl - Client gene-info using the SOAP::WSDL module and a property file
+# supported-organisms_client_soap-wsdl.pl - Client supported-organisms using the SOAP::WSDL module
 
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tool gene-info. It searches all the genes havine the words
-## "mehtionine" or "purine" in their description.
+## RSAT tool supported-organisms.
 ##
 ################################################################
 
 use strict;
 use SOAP::WSDL;
-use Util::Properties;
 #import SOAP::Lite+trace;
 
 ## Service location
@@ -20,29 +18,21 @@ my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
-## Property file is firste argument
-my $property_file = shift @ARGV;
-die "\tYou must specify the property file as first argument\n"
-  unless $property_file;
-
 ## Call the service
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 $soap->wsdlinit;
 
-my $prop =  Util::Properties->new();
-$prop->file_name($property_file);
-$prop->load();
-my %args = $prop->prop_list();
+## Supported-organisms parameters
+my $format;  ## Output format (supported: html_list,html_table,array,text,keys,names,sizes,full,tree,html_tree)
+my $taxon;  ## Root taxon
 
-## Convert the query string into a list
-my @queries = split(",", $args{query});
-$args{query} = \@queries;
-
-my $output_choice = $args{output_choice} || 'both';
+my %args = ('format' => $format,
+	    'taxon' => $taxon,
+	    );
 
 ## Send the request to the server
 print "Sending request to the server $server\n";
-my $som = $soap->call('gene_info' => 'request' => \%args);
+my $som = $soap->call('supported_organisms' => 'request' => \%args);
 
 ## Get the result
 if ($som->fault){ ## Report error if any

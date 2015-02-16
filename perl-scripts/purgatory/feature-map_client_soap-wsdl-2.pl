@@ -8,7 +8,7 @@ use lib 'RSATWS';
 use MyInterfaces::RSATWebServices::RSATWSPortType;
 
 ## Service location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://pedagogix-tagc.univ-mrs.fr/rsat/web_services';
 
 ## Service call
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
