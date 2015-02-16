@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# retrieve-seq_client_soap-wsdl-2.pl - Client retrieve-seq using the SOAP::WSDL module
+# retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL module
 
 ################################################################
 ##
@@ -10,21 +10,25 @@
 ################################################################
 
 use strict;
-use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
-use lib 'RSATWS';
-use MyInterfaces::RSATWebServices::RSATWSPortType;
+use SOAP::WSDL;
+#import SOAP::Lite +trace;
 
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 ## Service call
-my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+$soap->wsdlinit;
+
+# $soap->wsdl_checkoccurs(0);
 
 ## Output option
 my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
-my $output_choice = 'ticket';
 
 ## Retrieve-seq parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
@@ -63,32 +67,30 @@ my %args = (
 
 ## Send the request to the server
 print "Sending request to the server $server\n";
-my $som = $soap->retrieve_seq({'request' => \%args});
+my $som = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result
-unless ($som) {
-	printf "A fault (%s) occured: %s\n", $som->get_faultcode(), $som->get_faultstring();
+if ($som->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
 } else {
-	my $results = $som->get_response();
+    my $results_ref = $som->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
 
     ## Report the remote command
-    my $command = $results -> get_command();
+    my $command = $results{'command'};
     print "Command used on the server: ".$command, "\n";
 
     ## Report the result
     if ($output_choice eq 'server') {
- 		my $server_file = $results -> get_server();
-		print "Result file on the server: ".$server_file;
-   } elsif ($output_choice eq 'client') {
-		my $result = $results -> get_client();
-		print "Retrieved sequence(s): \n".$result;
-   } elsif ($output_choice eq 'both') {
-		my $server_file = $results -> get_server();
-		my $result = $results -> get_client();
-		print "Result file on the server: ".$server_file."\n";
-		print "Retrieved sequence(s): \n".$result;
-    } elsif ($output_choice eq 'ticket') {
-		my $ticket = $results -> get_server();
-		print "Ticket: $ticket\n";
+	my $server_file = $results{'server'};
+	print "Result file on the server: ".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Retrieved sequence(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: ".$server_file;
+	print "Retrieved sequence(s): \n".$result;
     }
 }
