@@ -81,7 +81,7 @@ package main;
   &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
 
   ## Open DAS client
-  my $das = Bio::Das->new(10);  # timeout of 10 sec
+  my $das = Bio::Das->new(30);  # timeout of 10 sec => not enough for UCSC, changed to 30 sec (MTC, 16 Feb 2015)
   unless ($das) {
     &RSAT::error::FatalError("Cannot establish connection to UCSC DAS server", $das_server_url);
   }
