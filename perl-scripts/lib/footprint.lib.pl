@@ -389,7 +389,7 @@ sub InitQueryOutput {
   $outfile{log} = $outfile{prefix}."_log.txt";
   $main::out = &OpenOutputFile($outfile{log});
 
-  %main::command_args={ out=>$outfile{log} };
+  %main::command_args=(out=>$outfile{log});
 
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
