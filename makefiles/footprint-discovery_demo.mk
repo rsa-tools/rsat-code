@@ -11,8 +11,9 @@ GENE=lexA
 TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index
 
 ## Run footprint-discovery for a single gene of interest.
-FP_DISCO_DIR=results/footprint-discovery_demo/${ORG}/${TAXON}/${GENE}
+FP_DISCO_DIR=results/footprint-discovery_demo
 disco:
+	@mkdir -p ${FP_DISCO_DIR}
 	@echo
 	@echo "Running footprint-discovery 	${GEBE}	${ORG}	${TAXON}"
 	footprint-discovery  -v 1 -org ${ORG} -taxon ${TAXON} \
