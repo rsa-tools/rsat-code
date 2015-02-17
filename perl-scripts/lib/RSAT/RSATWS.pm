@@ -2705,6 +2705,13 @@ sub supported_organisms {
     $command .= " -taxon '".$args{taxon}."'";
   }
 
+  ## Source
+  if ($args{source}) {
+    $args{source} =~ s/\'//g;
+    $args{source} =~ s/\"//g;
+    $command .= " -source '".$args{source}."'";
+  }
+
   &run_WS_command($command, $output_choice, "supported-organisms", "tab");
 }
 
