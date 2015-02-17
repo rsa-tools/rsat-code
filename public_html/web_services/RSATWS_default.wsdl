@@ -2096,6 +2096,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Root taxon.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="source" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Only returns organisms from a user-selected source. Example: supported-organisms -source ensembl</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	  <xsd:element name="depth" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Traversal depth for the taxononmic tree. If several organisms are supported in a max-dept taxon, only one is reported.</xsd:documentation>
