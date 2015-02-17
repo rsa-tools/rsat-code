@@ -275,6 +275,7 @@ local $new_only = 0;
 local $skipped_tasks = 0;
 
 local $skip_db_org = 0;
+local $skip_query_org = 0;
 
 ## Supported tasks
 @supported_tasks = qw (formatdb blastall cleandb all);
@@ -434,14 +435,14 @@ sub iterate_blast {
     my $d = 0; ## counter of database organisms
     my $batch_command = "";
     foreach $db_organism (@db_organisms) {
-      $d++;
+	$d++;
 #    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
-
-      if (($main::skip_db_org > 0) && ($d <= $main::skip_db_org)) {
-	  &RSAT::message::Warning("Skipping", $main::skip_db_org, "organisms", $d, $db_organism) if ($main::verbose >= 1);
-	  next;
-      }
-
+	
+	if (($main::skip_db_org > 0) && ($d <= $main::skip_db_org)) {
+	    &RSAT::message::Warning("Skipping DB organism", $d, $db_organism) if ($main::verbose >= 1);
+	    next;
+	}
+	
 	## DB organism
 	$dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
 	$dir{db_org_genome} = $dir{db_org_dir}."/genome";
@@ -461,6 +462,11 @@ sub iterate_blast {
 	foreach $query_organism (@query_organisms) {
 	    $q++;
 
+	    if (($main::skip_query_org > 0) && ($q <= $main::skip_query_org)) {
+		&RSAT::message::Warning("Skipping query organism", $q, $db_organism) if ($main::verbose >= 1);
+		next;
+	    }
+	    
 	    ## Skip self-comparison if required
 	    if (($no_self) && ($query_organism eq $db_organism)) {
 		&RSAT::message::Warning("Skipping self-comparison", "DB", $d."/".scalar(@db_organisms), $db_organism, 
@@ -809,6 +815,20 @@ This is convenient to resume an interrupted list of genomes.
       $main::skip_db_org = $ARGV[$a+1];
       &RSAT::error::FatalError($main::skip_db_org, "invalid value for the option -skip_db_org. Must be a positive Natural number.") 
         unless (&IsNatural($main::skip_db_org));
+
+=pod
+
+=item B<-skip_query_org X>
+
+Skip the first X query organisms. 
+
+This is convenient to resume an interrupted list of genomes.
+
+=cut
+    } elsif ($ARGV[$a] eq "-skip_query_org") {
+      $main::skip_query_org = $ARGV[$a+1];
+      &RSAT::error::FatalError($main::skip_query_org, "invalid value for the option -skip_query_org. Must be a positive Natural number.") 
+        unless (&IsNatural($main::skip_query_org));
 
 
 =pod
