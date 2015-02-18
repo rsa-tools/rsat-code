@@ -61,7 +61,11 @@ tasks</b>.
 
   <p><li><i class="fa  fa-file-code-o fa-lg"></i> Examples of client programs in
    <ul style="list-style-type: none;">
-  		<li><i class="fa  fa-code fa-lg"></i> Perl</li>
+  		<li><i class="fa  fa-code fa-lg"></i> <b>Perl</b> <br/> The simplest clients use the module <b>XML::Compile::WSDL11</b>, which creates on the fly the stubb (client-side of the code needed to interact with the WSDL). <br/><a href="web_services/clients/perl_clients/matrix_scan.pl">[matrix-scan]</a> <a href="web_services/clients/perl_clients/matrix_scan_email.pl">[matrix-scan with email outpout]</a> <a href="web_services/clients/perl_clients/fetch_sequences_client.pl">[fetch sequences from UCSC]</a>
+  		</br>
+  		For long jobs, we recommend using the Web services in an asynchronous way : the first call outputs a <b>ticket</b>. This ticket is used to monitor the job. When the job is finished, the same ticket is used to retrieve the results.
+  		<br/><a href="web_services/clients/perl_clients/ticket/matrix_scan_ticket.pl">[matrix-scan with ticket]</a> <a href="web_services/clients/perl_clients/ticket/monitor_client.pl">[Monitor]</a> <a href="web_services/clients/perl_clients/ticket/get_result_client.pl">[Get result]</a> <a href="web_services/clients/perl_clients/ticket/monitor_and_get_result_from_ticket.pl">[Monitor and get results]</a>
+  		</br></li>
   		<li><i class="fa  fa-code fa-lg"></i> Python</li>
   		<li><i class="fa  fa-code fa-lg"></i> Java</li>
 </ul>
