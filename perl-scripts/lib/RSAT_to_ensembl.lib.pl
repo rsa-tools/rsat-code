@@ -411,7 +411,17 @@ sub Get_host_port {
 Usage:
     LoadRegistry($registry);
 
-Establish simultaneous connection to Ensembl and EnsemblGenomes
+Establish connection to Ensembl and EnsemblGenomes.
+
+
+BEWARE: the API relies on SQL queries through non-conventional
+ports. These ports must be authorized by the local firewall.
+
+List of ports for Ensembl
+    http://www.ensembl.org/info/data/mysql.html
+
+List of ports for EnsemblGenomes
+    http://ensemblgenomes.org/info/access/mysql
 
 =cut
 
