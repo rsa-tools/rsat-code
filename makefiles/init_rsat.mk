@@ -164,6 +164,12 @@ ws_nostub_test:
 	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} without stub"
 	perl ${RSAT}/${WS_PERL_CLIENT_DIR}/supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
 
+## Test web services to all RSAT servers
+ws_test_all_servers:
+	@echo
+	@echo "Testing Web services at various RSAT servers"
+	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}; make test_all_servers)
+
 ################################################################
 ## Compile and install C/C++ programs that are part of the RSAT
 ## distribution (since 2009).
