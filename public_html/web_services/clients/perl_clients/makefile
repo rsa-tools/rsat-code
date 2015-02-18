@@ -9,7 +9,6 @@ SERVER=http://pedagogix-tagc.univ-mrs.fr/rsat
 ## For these servers, the SOAP/WSDL should be working fine
 SERVERS=http://pedagogix-tagc.univ-mrs.fr/rsat \
 	http://rsat-tagc.univ-mrs.fr/rsat \
-	http://tagc.univ-mrs.fr/rsa-tools \
 	http://embnet.ccg.unam.mx/rsa-tools \
 	http://rsat.ulb.ac.be/rsat \
 	http://rsat01.biologie.ens.fr/rsat \
@@ -32,6 +31,7 @@ SERVERS_NOT_WORKING= \
 	http://protists.rsat.eu \
 	http://teaching.rsat.eu \
 	http://training.rsat.eu \
+	http://tagc.univ-mrs.fr/rsa-tools \
 	http://nexus.hgen.slu.se/rsa-tools
 
 WSDL_URL=${SERVER}/web_services/RSATWS.wsdl
