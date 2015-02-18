@@ -18,13 +18,16 @@ SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
 LOGS_DIR=${RSAT}/public_html/logs
 COUNT_FILE=${LOGS_DIR}/count-file
 
+#WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl
+#WS_PERL_CLIENT_DIR=ws_clients/perl_clients
+WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl_clients/
 EXEC_FILES='bin/*' \
 	'python-scripts/*' \
 	'perl-scripts/*' \
 	'perl-scripts/parsers/*' \
 	'public_html/*.cgi' \
 	'public_html/web_services/*.cgi' \
-	'ws_clients/perl_clients/*.pl'
+	'${WS_PERL_CLIENT_DIR}/*.pl'
 init:
 	@echo ""
 	@echo "Creating directories"
@@ -73,7 +76,7 @@ init:
 #	@chmod 755 perl-scripts/parsers/*
 #	@chmod 755 public_html/*.cgi
 #	@chmod 755 public_html/web_services/*.cgi
-#	@chmod 755 ws_clients/perl_clients/*.pl
+#	@chmod 755 ${WS_PERL_CLIENT_DIR}/*.pl
 
 	@echo ""
 	@echo "Creating links"
@@ -147,18 +150,18 @@ ws_param:
 ws_stub: ws_init
 	@echo
 	@echo "Initiating Web services at SERVER=RSAT_WS=${RSAT_WS}"
-	(cd ${RSAT}/ws_clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
-	(cd ${RSAT}/public_html/web_services/clients/perl_clients/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
+	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
+	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
 
 ws_stub_test:
 	@echo
 	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} using the stub"
-	(cd ${RSAT}/ws_clients/perl_clients/; make stub_test)
+	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}/; make stub_test)
 
 ws_nostub_test:
 	@echo
 	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} without stub"
-	perl ${RSAT}/ws_clients/perl_clients/supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
+	perl ${RSAT}/${WS_PERL_CLIENT_DIR}/supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
 
 ################################################################
 ## Compile and install C/C++ programs that are part of the RSAT
