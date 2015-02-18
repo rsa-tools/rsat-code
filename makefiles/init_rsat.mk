@@ -20,14 +20,16 @@ COUNT_FILE=${LOGS_DIR}/count-file
 
 #WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl
 #WS_PERL_CLIENT_DIR=ws_clients/perl_clients
-WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl_clients/
+WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl_clients
+WS_STUB_CLIENT_DIR=${WS_PERL_CLIENT_DIR}/soap-wsdl
 EXEC_FILES='bin/*' \
 	'python-scripts/*' \
 	'perl-scripts/*' \
 	'perl-scripts/parsers/*' \
 	'public_html/*.cgi' \
 	'public_html/web_services/*.cgi' \
-	'${WS_PERL_CLIENT_DIR}/*.pl'
+	'${WS_PERL_CLIENT_DIR}/*.pl' \
+	'${WS_STUB_CLIENT_DIR}/*.pl'
 init:
 	@echo ""
 	@echo "Creating directories"
@@ -150,13 +152,12 @@ ws_param:
 ws_stub: ws_init
 	@echo
 	@echo "Initiating Web services at SERVER=RSAT_WS=${RSAT_WS}"
-	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}/; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
-	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
+	(cd ${RSAT}/${WS_STUB_CLIENT_DIR}; chmod 755 *.pl; make stub SERVER=${RSAT_WS})
 
 ws_stub_test:
 	@echo
 	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} using the stub"
-	(cd ${RSAT}/${WS_PERL_CLIENT_DIR}/; make stub_test)
+	(cd ${RSAT}/${WS_STUB_CLIENT_DIR}/; make stub_test)
 
 ws_nostub_test:
 	@echo
