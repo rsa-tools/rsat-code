@@ -73,7 +73,7 @@ VAR_INFO_CMD=variation-info -v ${V}\
 	-species ${SPECIES} \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
-	${SPECIES_SUFFIX_OPT} 
+	${SPECIES_SUFFIX_OPT} ${OPT}
 
 VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
 	-i ${BED_VARIANTS} \
@@ -86,16 +86,18 @@ VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
 	-o ${VAR_FROM_ID_OUT}.varBed
 
 get_var_from_bed:
-	@echo "${VAR_INFO_BED_CMD}"
+	@echo "${DATE}	${VAR_INFO_BED_CMD}"
 	@${VAR_INFO_BED_CMD}
-	@echo "Out file"
-	@echo "	${VAR_FROM_BED_OUT}"
+	@echo "${DATE}	Collected variations from bed file";
+	@echo "Output file: "
+	@wc -l ${VAR_FROM_BED_OUT}.varBed
 
-get_var_from_ID:
+get_var_by_id:
 	@echo "${VAR_INFO_ID_CMD}"
 	@${VAR_INFO_ID_CMD}
-	@echo "Out file"
-	@echo "	${VAR_FROM_ID_OUT}"
+	@echo "${DATE}	Collected variations from ID file";
+	@echo "Output file: "
+	@wc -l ${VAR_FROM_ID_OUT}.varBed
 
 
 
