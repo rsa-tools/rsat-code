@@ -205,11 +205,11 @@ package	main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  our %matrix_list = ();
   our %matrix_PWM = ();
   our $flank_len = 29; ## Default -mml value
   our $only_biggest = 0;
   our $pval_limit = 1;
+  our %matrices_id=();
 
   our %uth = ();
   our %supported_uth = ();
@@ -576,6 +576,7 @@ package	main;
       $matrix_length = $mtx->get_attribute("ncol");     #$matrix_list{$matrix_ac}{'length'};
       $ID = $mtx->get_attribute("name");
       $AC=$mtx->get_attribute("id");
+<<<<<<< HEAD
       if ($ID eq $AC){
 	  $matrix_ac=$AC;
       }
@@ -583,13 +584,28 @@ package	main;
 	  $matrix_ac=$ID."_".$AC;
       }
 
+=======
+      #if ($ID eq $AC){
+      $matrix_ac=$AC;
+      #}
+      #else {
+	#  $matrix_ac=$ID."_".$AC;
+      #}
+      
+>>>>>>> c5bb0b70965b75fa44a310dbc9844cb8a2469c80
       next if ($matrix_length == 0);
       if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
 	  &RSAT::message::Info("Matrix is wider than varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
 	  next;
       }
+<<<<<<< HEAD
 
 
+=======
+      
+      $matrices_id{$matrix_ac}=$ID;
+      #print "AC $matrix_ac\t$ID";
+>>>>>>> c5bb0b70965b75fa44a310dbc9844cb8a2469c80
       ## Save matrix in tab format. matrix-scan-quick only takes as input matrices in tab delimited format
 
 
@@ -829,7 +845,7 @@ sub log10 {
 sub getLineInfo {
     my %line_info = ();
 
-    my @field = split ("\t",$_[0]);  #var_info,site,matrice,site_strand,site_start_offset,site_end_offset,seq,score
+    my @field = split ("\t",$_[0]);  #var_info,site,matrix,site_strand,site_start_offset,site_end_offset,seq,score
     $line_info{'matrice'} = $field[2];
     $line_info{'site_strand'} = $field[3];
     $line_info{'seq'} = $field[6];
@@ -1143,10 +1159,17 @@ sub Printline {
   # my $worst_seq = lc(substr($scanning_info{'worst_seq'}, 0, $worst_offset-1));
   # $worst_seq .= uc(substr($scanning_info{'worst_seq'},$worst_offset,1));
   # $worst_seq .= lc(substr($scanning_info{'worst_seq'},$worst_offset+1));
+<<<<<<< HEAD
 
   my $str = join ("\t",
+=======
+  $mtx_aux_id=$scanning_info{'matrice'};
+  #die "AC ". $mtx_aux_id. $matrices_id{ $mtx_aux_id}  ;
+  my $str = join ("\t", 
+>>>>>>> c5bb0b70965b75fa44a310dbc9844cb8a2469c80
 		  $scanning_info{'matrice'},
-		  $matrix_list{$scanning_info{'matrice'}}{'id'},
+		  #$matrix_list{$scanning_info{'matrice'}}{'id'},
+		  $matrices_id{$scanning_info{'matrice'}},
 		  $scanning_info{'variation'},
 		  $scanning_info{'type'},
 		  $scanning_info{'coord'},
