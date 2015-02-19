@@ -19,8 +19,12 @@ $program_version
 
 =head1 DESCRIPTION
 
-Taking as input variation IDs (rs numbers) or regions in a given genome I<variation-info> 
-will retrieve the varians information varBed format.
+Taking as input a set of either variation IDs (rs numbers) or genomic
+regions (bed format), retrieve information about matching variants.
+
+The collected information is reported in varBed format, which is a
+specific type of bed format for variations (see I<convert-variations>
+for info).
 
 =head1 AUTHORS
 
@@ -30,7 +34,7 @@ will retrieve the varians information varBed format.
 
 =item B<Jacques van Helden> <Jacques.van-Helden\@univ-amu.fr>
 
-=back 
+=back
 
 =head1 CATEGORY
 
@@ -46,32 +50,46 @@ variation-info [-i inputfile] [-o outputfile] [-v #] [-format variatio_format]
     [- col ID_column ] [-mml #] [-o output_file] [...]
 
 =head1 INPUT FORMAT
+
 =head2 Genomic coordinate file
 
-The option I<-i> allows to specify a genomic coordinate file in bed
-format. The program only takes into account the 3 first columns of the
-bed file, which specify the genomic coordinates.
+The option I<-i> allows to specify a genomic coordinate file (in bed
+format). The program only takes into account the 3 first columns of
+the bed file, which specify the genomic coordinates. Additional
+columns are ignored.
 
-B<Note> (from Jacques van Helden): the UCSC genome browser adopts a
-somewhat inconsistent convention for start and end coordinates: the
-start position is zero-based (first nucleotide of a
-chromosome/scaffold has coordinate 0), but the end position is
-considered not included in the selection. This is equivalent to have a
-zero-based coordinate for the start, and a 1-base coordinate for the
-end.
+The definition of the BED format is provided on the UCSC Genome
+Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
 
-=head2 Example of bed file
+=head2 Example of bed coordinates
 
  chr1	3473041	3473370
  chr1	4380371	4380650
  chr1	4845581	4845781
  chr1	4845801	4846260
 
-The definition of the BED format is provided on the UCSC Genome
-Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+=head2 Interpretation of bed coordinates
 
-This program only takes into account the 3 first columns, which
-specify the genomic coordinates.
+B<Beware>: input bed files are expected to follow the UCSC convention:
+
+=over
+
+=item I<zero-based coordinates>: coordinates start at 0,
+i.e. position 0 corresponds to the first nucleotide of a contig,
+position i to the (i+1)th nucleotide.
+
+=item I<semi-open interval>: coordinates are specified as semi-open
+interval [start:end[. The interval thus includes the start position,
+but not the end position.
+
+=back
+
+For example, the following line in a bed file:
+
+ chr1   27 28
+
+corresponds to the interval [28,28[ i.e. the 28th nucleotide on
+chromosome 1.
 
 =over
 
@@ -122,7 +140,7 @@ A tab delimited file with id of variation in column.
 
 =head1 OUTPUT FORMAT
 
-varBed format is a tab delimited file that facilitates access to relevant variant 
+varBed format is a tab delimited file that facilitates access to relevant variant
 information. The file includes the following columns:
 
 =over
@@ -131,13 +149,13 @@ information. The file includes the following columns:
 
 Chromosome number (without "chr")
 
-=item 2) start 
+=item 2) start
 
  Possition of the variations
 
 =item 3) end
 
-Possition of the variation 
+Possition of the variation
 
 =item 4) strand
 
@@ -188,13 +206,13 @@ I<variation-info>.
 =head2 convert-variations
 
 Convert between diferent variation data file types.
-I<variation-info> retrieves variants in varBed format, 
+I<variation-info> retrieves variants in varBed format,
 <convert-variations> can be used to convert to vcf anf gvf formats.
 
 =head2 retrieve-variations-seq
 
 Given a set of regions, varian IDs (rsNumber) or variants in varBed format
-<retrieve-variation-seq> will retrive the corresponding genomic 
+<retrieve-variation-seq> will retrive the corresponding genomic
 sequence sorounding the genetic variants.
 
 =head2 variation-scan
@@ -238,10 +256,13 @@ package main;
   our %infile = ();
   our %outfile = ();
 
+  our $skip = 0; ## Skip the first N variations of the input file
+  our $last = 0; ## Stop after N variations of the input file
+
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
-  
+
   our $species = '';
   our $ensembl_version = "";
   our $assembly_version = "";
@@ -254,13 +275,13 @@ package main;
   our $supported_input_formats = join ",", @supported_input_formats;
   our %supported_input_format = ();
   foreach my $format (@supported_input_formats) {
-      $supported_input_format{$format} = 1;
+    $supported_input_format{$format} = 1;
   }
   our $format = "";
 
-  
-  our $total_nb_variation = 0;
-  our $total_nb_variant = 0;
+  our %intervals_per_chr = (); ## Number of query intervals per chromosome
+  our %variations_per_chr = (); ## Number of variations found per chromosome
+  our $total_nb_variations = 0;
 
   ################################################################
   ## Read argument values
@@ -274,35 +295,35 @@ package main;
   ## Species and assembly or ensembl version have to be specified
   &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
   &RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -e_version -a_version") unless ($ensembl_version || $assembly_version);
-  
+
   ## Check input format and file existance
   if ($main::infile{'input'}) {
-      &RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
-      &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
+    &RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
+    &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
   }
-  
+
   ## Check species genome and variations directories
   my $genome_dir = &Get_genome_dir($species, $assembly_version, $ensembl_version,$species_suffix);
   my $variation_dir = &Get_variation_dir($species, $assembly_version, $ensembl_version, $species_suffix);
-  
+
   &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
   &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
 
   ## Check if genome sequence files are not missing
   my %chr_file = &Get_file_seq_name($genome_dir);
-  
+
   foreach my $file (keys(%chr_file)) {
-      my $raw_seq_file=$genome_dir."/".$chr_file{$file};
-      unless (-f $raw_seq_file) {
-	  &RSAT::error::FatalError($raw_seq_file," is missing.");
-      }
+    my $raw_seq_file=$genome_dir."/".$chr_file{$file};
+    unless (-f $raw_seq_file) {
+      &RSAT::error::FatalError($raw_seq_file," is missing.");
+    }
   }
-  
+
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
-  
-  
+
+
   ################################################################
   ## Open output stream
   $out = &OpenOutputFile($outfile{output});
@@ -334,119 +355,126 @@ package main;
 
   my $vart_files=`ls $variation_dir/*.varBed`;
   @variation_files= split ("\n",$vart_files);
-  
-  
+
+
   ## print join("+",@variation_files);
   ## die "BOOM";
   ## foreach ( glob ( $variation_dir."*.varBed") ) {
   ##  push (@variation_files,$_) unless (/Failed/);
   ## }
-  
-  
+
+
   ################################################################
   ## Read infile containing variation IDs
   if ($format eq "id") {
-      &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
-      
-      
-      my %variation_id = ();
-      
-      ## Get ID list
-      if ($main::infile{'input'}) {
-	  ($main::in) = &OpenInputFile($main::infile{'input'});
+    &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
+
+
+    my %variation_id = ();
+
+    ## Get ID list
+    if ($main::infile{'input'}) {
+      ($main::in) = &OpenInputFile($main::infile{'input'});
+    }
+
+    ## Get variation IDs from the input list
+    my $l = 0;
+    while (<$main::in>) {
+      $l++;
+      next if (($skip > 0) && ($l <= $skip));
+      last if (($last > 0) && ($l > $last));
+      next if (/^#/);
+      next if (/^;/);
+      next unless (/\S/);
+      chomp();
+      my @fields = split("\t");
+      my $id =  $fields[$col-1]; ## Select the ID from the user-specified column
+
+      ## Check if the ID has already been found previously if the
+      ## file. If yes ignore it, if not add it to the list.
+      unless (defined($variation_id{$id})) {
+	push @variation_ids, $id;
+	$variation_id{$id} = 1; ## Index the curent ID to remove potential duplicates
       }
 
-      ## Get SNP ids from the input list 
-      while (<$main::in>) {
-	  next if (/^#/);
-	  next if (/^;/);
-	  next unless (/\S/);
-	  chomp();
-	  my @fields = split("\t");
-	  my $id =  $fields[$col-1]; ## Select the ID from the user-specified column
-	  
-	  ## Check if the ID has already been found previously if the
-	  ## file. If yes ignore it, if not add it to the list.
-	  unless (defined($variation_id{$id})) {
-	      push @variation_ids, $id;
-	      $variation_id{$id} = 1; ## Index the curent ID to remove potential duplicates
-	  }
-	  
+    }
+    &RSAT::message::TimeWarn("Number of variations to find:", scalar(@variation_ids) ) if ($main::verbose >= 2);
+
+    ## Try to idenfity the variations in each chromosome separately.
+    ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are
+    ## ALE'S NOTE: THIS NOTE IS INCOMPLETE
+
+    ## Grep each variation file to collect the selected IDs
+    foreach my $file_name (@variation_files) {
+
+      my @variations_to_find = sort keys (%variation_id);
+      &RSAT::message::TimeWarn("Starting to grep variations in file", $file_name) if ($main::verbose >= 2);
+      &RSAT::message::Info("Variation IDs remaining to be found", scalar(@variations_to_find)) if ($main::verbose >= 2);
+
+      last if (scalar(@variations_to_find) == 0);
+
+      ## Create a regular expression to select the rows containing
+      ## query IDs with grep. Only search the variations that have not
+      ## yet been identified.
+      my $grep_expression = join('\|',@variations_to_find); ##
+      my $grep_cmd = "grep '".$grep_expression."' ".$file_name;
+      &RSAT::message::Warning("Running grep command", $grep_cmd) if ($main::verbose >= 3);
+
+      my @result = qx{$grep_cmd};
+
+      my $i = 0;
+      foreach (@result) {
+	chomp();
+	my @fields = split("\t");
+
+	my ($chr) = $fields[0];
+	$variations_per_chr{$chr}++;
+
+	## Skip super-variation
+	my $is_super = $fields[10];
+	## Ale's note: colum number changed after adding minor allele frequency. JvH note: we should later check if we really want to maintain these super-variations
+	next if ($is_super);
+
+	## Check if the variation ID is part of the queries
+	my $current_id = $fields[4];
+	next unless ($variation_id{$current_id});
+
+
+	## Remove found variation from the list of variations to be found
+	delete($variation_id{$fields[4]});
+
+	## Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
+	$fields[11] = 0;
+
+	## Report variation information in outfile
+	print $out join("\t",@fields),"\n";
+	$i++;
       }
-      &RSAT::message::TimeWarn("Number of variations to find:", scalar(@variation_ids) ) if ($main::verbose >= 2);
-      
-      ## Try to idenfity the variations in each chromosome separately.
-      ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are 
-      ## ALE'S NOTE: THIS NOTE IS INCOMPLETE
-      
-      ## Grep each variation file to collect the selected IDs
-      foreach my $file_name (@variation_files) {
-	  my @variations_to_find = sort keys (%variation_id);
-	  &RSAT::message::Warning("Starting to grep variation file", $file_name) if ($main::verbose >= 2);
-	  &RSAT::message::Warning("Variation IDs remaining to be found", scalar(@variations_to_find)) if ($main::verbose >= 2);
-	  
-	  last if (scalar(@variations_to_find) == 0);      
-	  
-	  ## Create a regular expression to select the rows containing
-	  ## query IDs with grep. Only search the variations that have not
-	  ## yet been identified.
-	  my $grep_expression = join('\|',@variations_to_find); ## 
-	  my $grep_cmd = "grep '".$grep_expression."' ".$file_name;
-	  &RSAT::message::Warning("Running grep command", $grep_cmd) if ($main::verbose >= 3);
-	  
-	  my @result = qx{$grep_cmd};
-	  
-	  my $i = 0;
-	  foreach (@result) {
-	      chomp();
-	      my @fields = split("\t");
-	      
-	      ## Skip super-variation 
-	      my $is_super = $fields[10];
-	      ## Ale's note: colum number changed after adding minor allele frequency. JvH note: we should later check if we really want to maintain these super-variations
-	      next if ($is_super); 
-	      
-	      ## Check if the variation ID is part of the queries
-	      my $current_id = $fields[4];
-	      next unless ($variation_id{$current_id});
-	      
-	      
-	      ## Remove found variation from the list of variations to be found
-	      delete($variation_id{$fields[4]});       	
-	      
-	      ## Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
-	      $fields[11] = 0;
-	      
-	      ## Report variation information in outfile
-	      print $out join("\t",@fields),"\n"; 
-	      $i++;
-	  }
-	  
-	  
-	  $file_name = &RSAT::util::hide_RSAT_path($file_name);
-	  &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id) )) if ($main::verbose >= 2);
+
+
+      $file_name = &RSAT::util::hide_RSAT_path($file_name);
+      &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id) )) if ($main::verbose >= 2);
+    }
+    close $out;
+
+    ## Report not found variations
+    my @not_found = sort(@variation_ids);
+    my $not_found_nb = scalar(@not_found);
+    if ($not_found_nb > 0) {
+      &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
+      my $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check\n";
+
+      foreach my $id (@not_found) {
+	$not_found_msg .= ";\tmissing\t".$id."\n";
       }
-      close $out;
-      
-      ## Report not found variations
-      my @not_found = sort(@variation_ids);
-      my $not_found_nb = scalar(@not_found);
-      if ($not_found_nb > 0) {
-	  &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
-	  my $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check\n";
-	  
-	  foreach my $id (@not_found) {
-	      $not_found_msg .= ";\tmissing\t".$id."\n";
-	  }
-	  print $out $not_found_msg;
-      }
-      
-      $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
+      print $out $not_found_msg;
+    }
+
+    $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
   }
-  
+
   ################################################################
   ## Get variation from coordinates
-
   elsif ($format eq "bed") {
     &RSAT::message::TimeWarn("Processing bed file",$main::infile{'input'}) if ($main::verbose >= 2);
     my %chr_coord = ();
@@ -456,73 +484,86 @@ package main;
     }
 
     ## Get coordinates from bed file and store them in a hash %chr_coord
+    my $l = 0;
     while (<$main::in>) {
-	
-	next if (/^#/);
-	next if (/^;/);
-	#next unless (/\t/);
-	## if user input a file that is space separated change it to tab
-	$_=~s/ +/\t/g;
-	chomp();
-	
-	my ($chr,$left,$right,$strand)= split("\t");
-	
-	$chr =~ s/chr//g;
-	$chr = "MT" if ($chr eq "M"); ## Match naming format for the methocondrial chromosome
-	$left ++;
-	
-	if ($left > $right) {
-	    &RSAT::message::Warning("Skipping line : ", $_, "Left (".$left.") > right (".$right.").") if ($main::verbose >= 2);
-	    next;
-	}
-	
-	unless ($chr_file{$chr}) {
-	    &RSAT::message::Warning("Skipping line : ", $_, "No variation file for chromosome $chr.") if ($main::verbose >= 2);
-	    next;
-	}
-	
-	$chr_coord{$chr}{$left} = $right;
-    }
-    
-    ## Retrieve variation
-    &RSAT::message::TimeWarn("Retrieve variations from coordinate") if ($main::verbose >= 2);
-    
-    ## For each chromosome reported in the bed file
-    ## ALE NOTE: This process depends completely on the RSAT variation files being sorted
-    foreach $chr (keys(%chr_coord)) {
-	my @lefts = sort {$a <=> $b} (keys(%{$chr_coord{$chr}})); ## sort coordinates per chromosome based on left side 
-	my $nb_coord = scalar(@lefts);
-	my $i = 0;
-	my $nb_variation = 0;
-	my ($var_file) = &OpenInputFile($variation_dir."/".$chr.".varBed"); ## Variation file in RSAT corresponding to the chromosome
-	
-	my $left = $lefts[$i];
-	my $right = $chr_coord{$chr}{$left};
-	
-	while (<$var_file>) {  ## Open RSAT variation file for the current chromosome
-	    next if (/^#/);
-	    next if (/^;/);
-	    next unless (/\t/);
-	    my @fields = split("\t"); ## One variation 
-	    
-	    if ($fields[1] <= $right && $fields[2] >= $left) { ## If variant is inside the coordinate print variant in variation file
-          $nb_variation++;
-          print $out $_ ;
-	    } elsif ($fields[2] > $right) { ## Get the next coordinate if the current variant is out of bounds for the current coordinate
-		$i++; 
-		last if ($i >= $nb_coord);
-		$left = $lefts[$i];
-		$right = $chr_coord{$chr}{$left};
-	    }
-	    
-      }
-    &RSAT::message::TimeWarn($nb_variation,"variation found on peaks of chromosome",$chr) if ($main::verbose >= 2);
+      $l++;
+      next if (($skip > 0) && ($l <= $skip));
+      last if (($last > 0) && ($l > $last));
+      next if (/^#/);
+      next if (/^;/);
 
+      #next unless (/\t/);
+      ## if user input a file that is space separated change it to tab
+      $_=~s/ +/\t/g;
+      chomp();
+
+      my ($chr,$left,$right,$strand)= split("\t");
+
+      $chr =~ s/chr//g; ## Suppress the "chr" prefix, which does not appear in the VCF files downloaded from ensembl
+      $chr = "MT" if ($chr eq "M"); ## Match naming format for the methocondrial chromosome
+      $left ++;
+      $intervals_per_chr{$chr}++;
+
+      if ($left > $right) {
+	&RSAT::message::Warning("Skipping line : ", $_, "Left (".$left.") > right (".$right.").") if ($main::verbose >= 2);
+	next;
+      }
+
+      unless ($chr_file{$chr}) {
+	&RSAT::message::Warning("Skipping line : ", $_, "No variation file for chromosome $chr.") if ($main::verbose >= 2);
+	next;
+      }
+
+      $chr_coord{$chr}{$left} = $right;
     }
-    close $out;
+
+    ## Retrieve variation
+    &RSAT::message::TimeWarn("Retrieving variations from genomic coordinates") if ($main::verbose >= 2);
+
+    ## Get information about variations for each chromosome reported
+    ## in the input file.
+    ##
+    ## ALE NOTE for JvH: This process assumes that variation
+    ## files are sorted on RSAT
+    foreach $chr (sort keys(%chr_coord)) {
+      &RSAT::message::TimeWarn("Sorting query intervals per left position on chromosome", $chr) if ($main::verbose >= 3);
+      my @lefts = sort {$a <=> $b} (keys(%{$chr_coord{$chr}})); ## sort coordinates per chromosome based on left side
+      my $nb_coord = scalar(@lefts);
+      my $i = 0;
+      $variations_per_chr{$chr} = 0;
+      my ($var_file) = &OpenInputFile($variation_dir."/".$chr.".varBed"); ## Variation file in RSAT corresponding to the chromosome
+
+      my $interval_left = $lefts[$i];
+      my $interval_right = $chr_coord{$chr}{$interval_left};
+
+      &RSAT::message::TimeWarn("Getting variations for", $intervals_per_chr{$chr}, "intervals on chromosome", $chr) if ($main::verbose >= 2);
+      while (<$var_file>) {  ## Open RSAT variation file for the current chromosome
+	next if (/^;/); ## Skip comment lines
+	next if (/^#/); ## Skip header lines
+	next unless (/\S/); ## Skip empty lines
+	my ($var_chr, $var_left, $var_right) = split("\t"); ## One variation
+
+	## Note: we selectall variations that overlap the interval by
+	## at least one nucleotide, even thoug they are not completely
+	## included within that interval (e.g. insertions)
+	if (($var_left <= $interval_right) &&
+	    ($var_right >= $interval_left)) { ## If variant is inside the coordinate print variant in variation file
+          $variations_per_chr{$chr}++;
+          print $out $_;
+	} elsif ($var_right > $interval_right) { ## Get the next coordinate if the current variant is out of bounds for the current coordinate
+	  $i++;
+	  last if ($i >= $nb_coord);
+	  $interval_left = $lefts[$i];
+	  $interval_right = $chr_coord{$chr}{$interval_left};
+	}
+
+      }
+      $total_nb_variations += $variations_per_chr{$chr};
+      &RSAT::message::TimeWarn("\tFound", $variations_per_chr{$chr}, "variations on chromosome",$chr, "Total:", $total_nb_variations) if ($main::verbose >= 2);
+    }
     $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
   }
-  
+
   ################################################################
   ## Report execution time and close output stream
   &close_and_quit();
@@ -554,7 +595,7 @@ sub close_and_quit {
 
 
 ################################################################
-## Display full help message 
+## Display full help message
 sub PrintHelp {
   system "pod2text -c $0";
   exit()
@@ -567,7 +608,7 @@ sub PrintOptions {
 }
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
   my $arg;
   my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -683,7 +724,7 @@ allows to use the command within a pipe.
 
 Format of the input file
 
-Supported formats: 
+Supported formats:
 
 =over
 
@@ -701,7 +742,7 @@ be specified by the option I<-col>.
 General format for the description of genomic features
 (see https://genome.ucsc.edu/FAQ/FAQformat.html#format1).
 
-=back 
+=back
 
 =cut
     } elsif ($arg eq "-format") {
@@ -725,6 +766,29 @@ Default : 1
       } else {
         &RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
       }
+
+=pod
+
+=item B<-skip>
+
+Skip the N first variations of the input file. This option is useful
+for quick tests, or to split an analysis in separate tasks.
+
+=cut
+	} elsif ($arg eq "-skip") {
+	    $main::skip = shift(@arguments);
+
+=pod
+
+=item B<-last>
+
+Stop after the N first variations of the list. This option is useful
+for quick tests, or to split an analysis in separate tasks.
+
+=cut
+	} elsif ($arg eq "-last") {
+	    $main::last = shift(@arguments);
+
 
 =pod
 
@@ -754,7 +818,7 @@ allows to use the command within a pipe.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; template ";
+  print $out "; variation-info ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {
