@@ -35,8 +35,10 @@ variation_stats:
 	@echo "	ASSEMBLY	${ASSEMBLY}"
 	@echo "	ORG		${ORG}"	
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
-	@echo "Number of lines per variation file"
-	@(cd ${VARIATION_DIR}; wc -l *.tab | sort -n)
+	@echo "Computing number of lines per contig (this can take time)"
+	@(cd ${VARIATION_DIR}; wc -l *.varBed | sort -n)
+
+all: convert_var 
 
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
@@ -67,7 +69,7 @@ VAR_FROM_BED_OUT=${RESULT_DIR}/Ballester_etal_elife_2014_module_beyondprimates_c
 ID_VARIANTS=${DEMO_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt
 VAR_FROM_ID_OUT=${RESULT_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs
 
-VAR_INFO_CMD=variation-info \
+VAR_INFO_CMD=variation-info -v ${V}\
 	-species ${SPECIES} \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
