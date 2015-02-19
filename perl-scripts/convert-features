@@ -718,12 +718,17 @@ FORMAT DESCRIPTIONS
 	   Genomic features in the UCSC format
 	   Ref: http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
 
-	   Warning: this format assumes that features are described with chromosomal positions,
-	   and should be zero-based (meaning that the first position is 0, not 1).
+	   Warning: this format assumes that features are described
+	   with chromosomal positions, and should be zero-based
+	   (meaning that the first position is 0, not 1).
 
-	   To ensure compatibility with other formats, convert-features internally transforms
-	   coordinates from BED into 1-based system (when BED as input). convert-features transforms coordinates so
-	   that output BED files are correctly zero-based (when BED as output).
+	   To ensure compatibility with other formats, when the input
+	   format is BED, convert-features automatically transforms
+	   input coordinates from zero-based to 1-based coordinates if
+	   required (i.e. if output format is
+	   one-based). Reciprocally, when output format is bed,
+	   convert-features transforms input coordinates in zero-based
+	   format if required.
 
 	   1. chrom - The name of the chromosome (e.g. chr3, chrY,
 	      chr2_random) or scaffold (e.g. scaffold10671).
