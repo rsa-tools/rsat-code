@@ -200,6 +200,7 @@ package	main;
   our $species = "";
 
   our $assembly_version = "";
+  our $species_suffix = "";
   our $db="ensembl";
   our $ensembl_version = "";
   our $genome_dir = "";
@@ -223,23 +224,21 @@ package	main;
   ################################################################
   ## Check argument values
   if ($to eq "vcf") {
-
     if ($species eq "") {
       &RSAT::error::FatalError("Species must be indicated if option -to equal vcf");
     }
-
-    unless ( $assembly_version || $ensembl_version ) {
-      &RSAT::error::FatalError("Ensembl or assembly version must be indicate if option -to equal vcf");
+    unless ($assembly_version || $ensembl_version) {
+      &RSAT::error::FatalError("Ensembl or assembly version is required when output format equals vcf (option -to)");
     }
     unless ($assembly_version){
-	$assembly_version=&Get_assembly_version($species,$ensembl_version,$species_suffix);
+      $assembly_version=&Get_assembly_version($species,$ensembl_version,$species_suffix);
     }
     $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version)."/";
     &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before covert-variation.") unless (-d $genome_dir);
 
     # Check if sequence file are not missing
     %chr_file = &Get_file_seq_name($genome_dir);
-      foreach my $file (keys(%chr_file)) {
+    foreach my $file (keys(%chr_file)) {
       unless (-f $genome_dir.$chr_file{$file}) {
         &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
       }
@@ -785,6 +784,22 @@ The version of the assembly of the species
 =cut
     } elsif ($arg eq "-a_version") {
       $main::assembly_version = shift(@arguments);
+
+=pod
+
+=item B<-species_suffix>
+
+Suffix to append to the full species ID.
+
+By default, the full species ID is composed by concatenating the
+Ensembl species and assembly version. The option I<-species_suffix>
+allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
+will be appended to the full species ID.
+
+=cut
+    } elsif ($arg eq "-species_suffix") {
+    $species_suffix = shift(@arguments);
+
 
 =pod
 
