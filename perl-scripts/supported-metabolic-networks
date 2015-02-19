@@ -24,9 +24,13 @@ network analysis tools in the RSAT/NeAT suite.
 
 =head1 AUTHORS
 
+=over
+
 =item didier.croes@ulb.ac.be
 
 =item Jacques.van-Helden\@univ-amu.fr
+
+=back
 
 =head1 CATEGORY
 
@@ -42,10 +46,14 @@ network analysis tools in the RSAT/NeAT suite.
 
 supported-metabolic-networks [-o outputfile] [-v #] [...]
 
-
 =head1 OUTPUT FORMAT
 
+Tab-delimited text with one row per metabolic network, and one column
+per attribute.
+
 =head1 SEE ALSO
+
+
 
 =head1 WISH LIST
 
