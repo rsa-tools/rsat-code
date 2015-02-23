@@ -26,11 +26,11 @@ all: clean_emacs_bk tar_archive clean_distrib_site publish
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
 PUB_SERVER=pedagogix-tagc.univ-mrs.fr
-PUB_LOGIN=jvanheld
+PUB_LOGIN=rsat
 SSH_OPT=
 PUB_FORMAT=tar.gz
-PUB_DIR=public_html/rsat_distrib
-DISTRIB_URL=http://${PUB_SERVER}/~${PUB_LOGIN}/rsat_distrib/
+PUB_DIR=/data/rsat_distribution
+DISTRIB_URL=http://${PUB_SERVER}/download_rsat/
 list_param:
 	@echo "RSAT distribution parameters"
 	@echo "	ARCHIVE			${ARCHIVE}"
