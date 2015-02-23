@@ -576,40 +576,23 @@ package	main;
       $matrix_length = $mtx->get_attribute("ncol");     #$matrix_list{$matrix_ac}{'length'};
       $ID = $mtx->get_attribute("name");
       $AC=$mtx->get_attribute("id");
-<<<<<<< HEAD
-      if ($ID eq $AC){
+      if (($ID eq $AC) || 
+	  ($ID !~/\S/)) {
 	  $matrix_ac=$AC;
+      } else {
+	$matrix_ac=$ID."_".$AC;
       }
-      else {
-	  $matrix_ac=$ID."_".$AC;
-      }
-
-=======
-      #if ($ID eq $AC){
-      $matrix_ac=$AC;
-      #}
-      #else {
-	#  $matrix_ac=$ID."_".$AC;
-      #}
-      
->>>>>>> c5bb0b70965b75fa44a310dbc9844cb8a2469c80
       next if ($matrix_length == 0);
       if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
 	  &RSAT::message::Info("Matrix is wider than varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
 	  next;
       }
-<<<<<<< HEAD
-
-
-=======
       
       $matrices_id{$matrix_ac}=$ID;
       #print "AC $matrix_ac\t$ID";
->>>>>>> c5bb0b70965b75fa44a310dbc9844cb8a2469c80
-      ## Save matrix in tab format. matrix-scan-quick only takes as input matrices in tab delimited format
 
-
-
+      ## Save matrix in tab format. matrix-scan-quick only takes as
+      ## input matrices in tab delimited format
       my $outM = &OpenOutputFile($matrix_file_tab);
 
       ##foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
@@ -624,13 +607,11 @@ package	main;
       close($outM);
 
 
-      ## Get score distribution for the current matrix to obtain pvalues
-      ## matrix-scan-quick returns scores, in order to stablish which pvalue
-      ## corresponds to each score is necesary to have the score distribution file
-      # die "HELLO". $matrix_file_tab if $matrix_ac=~"M0414_0.90";
-
-
-
+      ################################################################
+      ## Compute the probability distribution of weight scores for the
+      ## current matrix, in order to associate a p-values to each
+      ## possible weight. The resulting distribution table is used to
+      ## assign p-values to the weight scores returned by matrix-distrib-quick.
       &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
 
       %matrix_info = ();
@@ -1159,14 +1140,10 @@ sub Printline {
   # my $worst_seq = lc(substr($scanning_info{'worst_seq'}, 0, $worst_offset-1));
   # $worst_seq .= uc(substr($scanning_info{'worst_seq'},$worst_offset,1));
   # $worst_seq .= lc(substr($scanning_info{'worst_seq'},$worst_offset+1));
-<<<<<<< HEAD
 
-  my $str = join ("\t",
-=======
-  $mtx_aux_id=$scanning_info{'matrice'};
+  #$mtx_aux_id=$scanning_info{'matrice'};
   #die "AC ". $mtx_aux_id. $matrices_id{ $mtx_aux_id}  ;
   my $str = join ("\t", 
->>>>>>> c5bb0b70965b75fa44a310dbc9844cb8a2469c80
 		  $scanning_info{'matrice'},
 		  #$matrix_list{$scanning_info{'matrice'}}{'id'},
 		  $matrices_id{$scanning_info{'matrice'}},
