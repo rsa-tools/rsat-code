@@ -2,7 +2,7 @@
 ## Tester for the python script nsemblgenome;py
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/ensemblgenomes_tester.mk
+MAKEFILE=${RSAT}/makefiles/ensemblgenomes_rest_tester.mk
 PYTHON=python2.7
 #PYTHON=python3
 
