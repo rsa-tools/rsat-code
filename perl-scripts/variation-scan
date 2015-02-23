@@ -576,12 +576,16 @@ package	main;
       $matrix_length = $mtx->get_attribute("ncol");     #$matrix_list{$matrix_ac}{'length'};
       $ID = $mtx->get_attribute("name");
       $AC=$mtx->get_attribute("id");
-      if (($ID eq $AC) || 
-	  ($ID !~/\S/)) {
+
+      ## We prefer to keep separately the matrix accession (AC) and
+      ## the matrix/factor name (ID), because the AC permits to
+      ## recover the matrix.
+#      if (($ID eq $AC) || 
+#	  ($ID !~/\S/)) {
 	  $matrix_ac=$AC;
-      } else {
-	$matrix_ac=$ID."_".$AC;
-      }
+#      } else {
+#	$matrix_ac=$ID."_".$AC;
+#      }
       next if ($matrix_length == 0);
       if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
 	  &RSAT::message::Info("Matrix is wider than varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
