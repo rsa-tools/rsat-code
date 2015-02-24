@@ -35,8 +35,10 @@ variation_stats:
 	@echo "	ASSEMBLY	${ASSEMBLY}"
 	@echo "	ORG		${ORG}"	
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
-	@echo "Number of lines per variation file"
-	@(cd ${VARIATION_DIR}; wc -l *.tab | sort -n)
+	@echo "Computing number of lines per contig (this can take time)"
+	@(cd ${VARIATION_DIR}; wc -l *.varBed | sort -n)
+
+all: convert_var 
 
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
@@ -67,11 +69,11 @@ VAR_FROM_BED_OUT=${RESULT_DIR}/Ballester_etal_elife_2014_module_beyondprimates_c
 ID_VARIANTS=${DEMO_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt
 VAR_FROM_ID_OUT=${RESULT_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs
 
-VAR_INFO_CMD=variation-info \
+VAR_INFO_CMD=variation-info -v ${V}\
 	-species ${SPECIES} \
 	-e_version ${ENSEMBL_VERSION} \
 	-a_version ${ASSEMBLY} \
-	${SPECIES_SUFFIX_OPT} 
+	${SPECIES_SUFFIX_OPT} ${OPT}
 
 VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
 	-i ${BED_VARIANTS} \
@@ -84,16 +86,18 @@ VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
 	-o ${VAR_FROM_ID_OUT}.varBed
 
 get_var_from_bed:
-	@echo "${VAR_INFO_BED_CMD}"
+	@echo "${DATE}	${VAR_INFO_BED_CMD}"
 	@${VAR_INFO_BED_CMD}
-	@echo "Out file"
-	@echo "	${VAR_FROM_BED_OUT}"
+	@echo "${DATE}	Collected variations from bed file";
+	@echo "Output file: "
+	@wc -l ${VAR_FROM_BED_OUT}.varBed
 
-get_var_from_ID:
+get_var_by_id:
 	@echo "${VAR_INFO_ID_CMD}"
 	@${VAR_INFO_ID_CMD}
-	@echo "Out file"
-	@echo "	${VAR_FROM_ID_OUT}"
+	@echo "${DATE}	Collected variations from ID file";
+	@echo "Output file: "
+	@wc -l ${VAR_FROM_ID_OUT}.varBed
 
 
 
