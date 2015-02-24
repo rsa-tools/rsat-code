@@ -465,6 +465,7 @@ package main;
       ################################################################
       ## Create an archive with all result files
       &Archive(1);
+
   }
 
   ################################################################
@@ -1909,6 +1910,16 @@ sub Merge_matrices(){
 	    	unlink($file);
 	    }    
 
+
+	    ##########################################################
+	    ##########################################################
+	    ## Calculate the IC content
+	    my $merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, 0.15);
+#	    print " ---- ".$merged_mat_file_shaved." ---- \n";
+
+	    ##########################################################
+	    ##########################################################
+
 	    ## Create branch-wise logos
 	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
@@ -1921,6 +1932,7 @@ sub Merge_matrices(){
 	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 	    
 	    my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+
 	    my $cons = `more $mat_file | grep '^DE'`;
 	    chomp($cons);
 	    $cons =~ s/^DE\s+//;
@@ -3739,4 +3751,68 @@ sub Synthesis {
     
     &RSAT::message::TimeWarn("Report", $main::outfile{summary}) if ($main::verbose >= 2);
 }
+
+#######################################
+## Sheve the ends of the matrix with 
+## very low IC
+sub shave_matrix_low_IC_columns{
+
+    ## Read the matrix file name
+    my $matrix_to_shave = shift;
+    my $IC_threshold = shift;
+    
+    my $temp_IC_file = "IC_test.txt";
+    my $IC_info = "";
+    my @IC_info_array = ();
+    my $shave_up = 0; 
+    my $shave_dw = 0;
+  
+
+    ## Calculate the IC of the matrix,
+    ## save this info in a file
+    my $cmd = "convert-matrix -i ".$matrix_to_shave." -from tf -return info,header,margins -o ".$temp_IC_file;
+    &doit($cmd, 0, $die_on_error, $verbose);
+
+    ## Read the IC file
+    ## Select the line with the sum of IC of each column
+    my ($IC_file) = &OpenInputFile($temp_IC_file);
+    while (<$IC_file>) {
+	chomp;
+	if($_ =~ /; i\.sum/){
+	    $IC_info = $_;
+	    $IC_info =~ s/;\s+i.sum\s+//g;
+	    @IC_info_array = split(/\s+/, $IC_info);
+	    last;
+	}else{
+	    next;
+	}
+    }
+    close($IC_file);
+    unlink($IC_file);
+
+    ## Calculate the number of shaved columns 
+    ## in the upstream side of the motif
+    foreach my $IC (@IC_info_array){
+	if($IC <= $IC_threshold){
+	    $shave_up++;
+	}else{
+	    last;
+	}
+    }
+
+    ## Calculate the number of shaved columns 
+    ## in the downstream side of the motif
+    @IC_info_array = reverse(@IC_info_array);
+    foreach my $IC (@IC_info_array){
+	if($IC <= $IC_threshold){
+	    $shave_dw++;
+	}else{
+	    last;
+	}
+    }
+
+    print " --- ".$shave_up." --- ".$shave_dw." --- \n";
+    return $matrix_to_shave;
+}
+
 __END__
