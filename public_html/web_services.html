@@ -57,12 +57,18 @@ tasks</b>.
     18802441</a></li><br/>
     <i>The PERL code itself might be outdated by now, but the general information on Web services are still valid and constitute a good introduction for beginners.</i></p>
 
-  <p><li><i class="fa  fa-graduation-cap fa-lg"></i> <a href="http://rsat.ulb.ac.be/eccb14/session3.html">Tutorial at ECCB 2014 </a>with beginner example in Python</li></p>
+  <p><li><i class="fa  fa-graduation-cap fa-lg"></i> <a href="http://rsa-tools.github.io/tutorial_eccb14/session3.html"><b>Tutorial at ECCB 2014 </b></a>with beginner example in Python</li></p>
 
-  <p><li><i class="fa  fa-file-code-o fa-lg"></i> Examples of client programs in
+  <p><li><i class="fa  fa-file-code-o fa-lg"></i> Examples of client programs in <br/><br/>
    <ul style="list-style-type: none;">
-  		<li><i class="fa  fa-code fa-lg"></i> Perl</li>
-  		<li><i class="fa  fa-code fa-lg"></i> Python</li>
+  		<li><i class="fa  fa-code fa-lg"></i> <b>Perl</b> <br/> The simplest clients use the module <b>XML::Compile::WSDL11</b>, which creates on the fly the stubb (client-side of the code needed to interact with the WSDL). <br/><a href="web_services/clients/perl_clients/matrix_scan.pl">[matrix-scan]</a> <a href="web_services/clients/perl_clients/matrix_scan_email.pl">[matrix-scan with email outpout]</a> <a href="web_services/clients/perl_clients/fetch_sequences_client.pl">[fetch sequences from UCSC]</a>
+  		</br>
+  		For long jobs, we recommend using the Web services in an asynchronous way : the first call outputs a <b>ticket</b>. This ticket is used to monitor the job. When the job is finished, the same ticket is used to retrieve the results.
+  		<br/><a href="web_services/clients/perl_clients/ticket/matrix_scan_ticket.pl">[matrix-scan with ticket]</a> <a href="web_services/clients/perl_clients/ticket/monitor_client.pl">[Monitor]</a> <a href="web_services/clients/perl_clients/ticket/get_result_client.pl">[Get result]</a> <a href="web_services/clients/perl_clients/ticket/monitor_and_get_result_from_ticket.pl">[Monitor and get results]</a>
+  		</br></br></li>
+  		<li><i class="fa  fa-code fa-lg"></i> <b>Python</b> <br/>
+  		We use <b>suds</b> module for Python clients. <br/>
+  		<a href="web_services/clients/python/fetch-sequences_soap.py">[fetch sequences from UCSC]</a><a href="web_services/clients/python/matrix_scan_soap.py">[matrix-scan]</a><br/><br/></li>
   		<li><i class="fa  fa-code fa-lg"></i> Java</li>
 </ul>
   <p><li><i class="fa fa-book fa-lg"></i> <a href="distrib/tutorial_shell_rsat.pdf">
