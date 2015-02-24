@@ -93,7 +93,7 @@ Coordinate of the variation.
 
 =item 5. B_weight
 
-Best max weigth. 
+Best max weigth.
 
 =item 8. W_weight
 
@@ -152,7 +152,7 @@ Sequence with the lowest max weigth.
 
 Multiple sequence are return comma separate if the worst  max weigth
  is the same in multiple sequence.
- 
+
 =back
 
 =head1 SEE ALSO
@@ -205,11 +205,11 @@ package	main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  our %matrix_list = ();
   our %matrix_PWM = ();
   our $flank_len = 29; ## Default -mml value
   our $only_biggest = 0;
   our $pval_limit = 1;
+  our %matrices_id=();
 
   our %uth = ();
   our %supported_uth = ();
@@ -275,7 +275,7 @@ package	main;
   &RSAT::error::FatalError("Background file is mandatory. Use -bg option to specify it") unless ($infile{'bg'});
   &RSAT::error::FatalError("Matrix files in mandatory. Use -m option to specify it") unless (@matrix_files>0);
   &RSAT::error::FatalError("Background file",$infile{'bg'},"does not exist") unless (-f $infile{'bg'});
-  
+
   ################
   ## Calculate distribution of scores for matrices using convert-matrix (separete matrices) and matrix-distrib on each matrix file
 
@@ -293,7 +293,7 @@ package	main;
 
     my $split_dir = $distrib_dir."/split_dir/tmp";
     &RSAT::util::CheckOutDir($split_dir);
-    
+
     ## convert-matrix command, split matrix file into separete ones
     my $convert_matrix_cmd=$ENV{'RSAT'}."/perl-scripts/convert-matrix -v 1 -from ".$main::matrix_format." -to tf -split ";
     $convert_matrix_cmd.=" -i ".$infile{'matrixfile'};
@@ -396,7 +396,7 @@ package	main;
                       worst_strand
                       str_change
                       best_seq
-                      worst_seq 
+                      worst_seq
                       reference_allele
                       is_ref_better
                       minor_allele_freq);
@@ -421,7 +421,7 @@ package	main;
       $m = 0;
       foreach my $matrix_file (@matrix_files) {
 	  last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
-	  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format, %args);  
+	  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 	  foreach my $matrix (@matrices_from_file) {
 	      $m++;
 	      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
@@ -441,10 +441,10 @@ package	main;
 #	  push @matrices, $matrix;
   #     }
   # }
-  
-  
-  
-  
+
+
+
+
 
   ## NOTE FROM ALE: old readin matrices version
   # my ($mat_file) = &OpenInputFile($main::infile{'matrixfile'});
@@ -531,7 +531,7 @@ package	main;
 
   ## Take variant sequence from STDIN and write them in a file to be read
   unless ($main::infile{input}) {
-    my $outstream_var_seq = &OpenOutputFile($variation_seq); 
+    my $outstream_var_seq = &OpenOutputFile($variation_seq);
     while (<$main::in>) {
       next if (/^#/); ## Skip comment lines
       next if (/^;/); ## Skip RSAT-like comment lines
@@ -552,7 +552,7 @@ package	main;
   ##  1)ID and/or AC
   ##  2)width
   ##  3)Counts in tab format and write them in a temporal file, after writing them there is no need to store this info?
-  
+
   #foreach $mtx ( @matrices){
       ## Get ID or AC, if matrix is not transfac format consensus will be used
   #    my $mtx_name="";
@@ -566,7 +566,7 @@ package	main;
  #     }
   #    my $width = $mtx->get_attribute("ncol");
    #   die "BOOM".$mtx_name."col"."++".$width."++";
- 
+
   #}
 
   ## for each matrix in the matrix hash created previously by reading the matrix file --> OLD
@@ -576,56 +576,57 @@ package	main;
       $matrix_length = $mtx->get_attribute("ncol");     #$matrix_list{$matrix_ac}{'length'};
       $ID = $mtx->get_attribute("name");
       $AC=$mtx->get_attribute("id");
-      if ($ID eq $AC){
+
+      ## We prefer to keep separately the matrix accession (AC) and
+      ## the matrix/factor name (ID), because the AC permits to
+      ## recover the matrix.
+#      if (($ID eq $AC) || 
+#	  ($ID !~/\S/)) {
 	  $matrix_ac=$AC;
-      }
-      else {
-	  $matrix_ac=$ID."_".$AC;
-      }
-      
+#      } else {
+#	$matrix_ac=$ID."_".$AC;
+#      }
       next if ($matrix_length == 0);
       if ($matrix_length > $flank_len+1){ ## Matrices wider than the sequences flanking the variant don't use it for scanning
 	  &RSAT::message::Info("Matrix is wider than varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
 	  next;
       }
       
-      
-      ## Save matrix in tab format. matrix-scan-quick only takes as input matrices in tab delimited format
-      
-      
-      
+      $matrices_id{$matrix_ac}=$ID;
+      #print "AC $matrix_ac\t$ID";
+
+      ## Save matrix in tab format. matrix-scan-quick only takes as
+      ## input matrices in tab delimited format
       my $outM = &OpenOutputFile($matrix_file_tab);
-      
+
       ##foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
       ##print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
       ##}
-      
+
       ## Print the counts matrix
       print  $outM $mtx->toString(sep=>"\t",
 				  type=>"counts",
-				  format=>"tab" ); 
+				  format=>"tab" );
       ## Remove code
       close($outM);
-      
-      
-      ## Get score distribution for the current matrix to obtain pvalues
-      ## matrix-scan-quick returns scores, in order to stablish which pvalue
-      ## corresponds to each score is necesary to have the score distribution file
-      # die "HELLO". $matrix_file_tab if $matrix_ac=~"M0414_0.90";
-      
-      
-      
+
+
+      ################################################################
+      ## Compute the probability distribution of weight scores for the
+      ## current matrix, in order to associate a p-values to each
+      ## possible weight. The resulting distribution table is used to
+      ## assign p-values to the weight scores returned by matrix-distrib-quick.
       &RSAT::message::TimeWarn("\tGet distrib") if ($main::verbose >= 3);
-      
+
       %matrix_info = ();
-      
+
       ## Use precalculte distrib file if it was specified or distributions were requested as output
       if ($distrib_file_list{$matrix_ac}) {
 	  my %legend_col = ();
-	  
+	
 	  my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
 	  my ($d_file) = &OpenInputFile($distrib_file);
-	  
+	
       ## Read in distribution file for current matrix
       while (<$d_file>) {
         next if (/;/);
@@ -694,11 +695,11 @@ package	main;
     }
 
 
-    ## Control variables to match lines representing the same variant (alleles) 
+    ## Control variables to match lines representing the same variant (alleles)
     my $last_id = "";
     my $last_nb = 2000; ## Note from Alejandra: I don't understand this number
 
-    ## Scan command 
+    ## Scan command
     my $scan_cmd = $quick_cmd_test ;
     $scan_cmd .= " -i $fasta_file";
     $scan_cmd .= " -m $matrix_file_tab";
@@ -708,7 +709,7 @@ package	main;
 
     &RSAT::message::TimeWarn("\tScan matrix", $matrix_ac) if ($main::verbose >= 3);
 
-   
+
 
     ################
     ## Open rsat variable input file and change it to fasta format to be used with matrix-scan-quick
@@ -726,17 +727,17 @@ package	main;
       next unless (/\S/); ## Skip empty lines
       next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
       chomp();
-      
+
       ## Split line in rsat_var format
       my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq) = split(/\t/);
       &RSAT::message::Debug("Reading in one viariable from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq)) if ($main::verbose >= 3);
       #die "HELLO3";
       $ref = "-" if ($ref eq "");
-      
+
       if ($last_id ne $id && $last_id ne "") {
 	  $nb_variation ++;
 	  last if ($nb_variation > $top_variation && $top_variation>0);
-	  
+	
 	  if ($nb_variation >= $last_nb) {
 	      &RSAT::message::Info("matrix-scan command", $scan_cmd ) if ($main::verbose >= 3);
 	      my @scanning = qx{$scan_cmd};
@@ -829,7 +830,7 @@ sub log10 {
 sub getLineInfo {
     my %line_info = ();
 
-    my @field = split ("\t",$_[0]);  #var_info,site,matrice,site_strand,site_start_offset,site_end_offset,seq,score
+    my @field = split ("\t",$_[0]);  #var_info,site,matrix,site_strand,site_start_offset,site_end_offset,seq,score
     $line_info{'matrice'} = $field[2];
     $line_info{'site_strand'} = $field[3];
     $line_info{'seq'} = $field[6];
@@ -849,7 +850,7 @@ sub getLineInfo {
     $line_info{'minor_allele_freq'} = $field3[4];
 
     $diff_pos = 0;
-    $diff_pos ++ if ($line_info{'variant_ref'} eq "-"); 
+    $diff_pos ++ if ($line_info{'variant_ref'} eq "-");
     $line_info{'site_offset_start'} = $field[4]+$diff_pos-$matrix_length;
     return (%line_info);
 }
@@ -901,7 +902,7 @@ sub Analyse_scanning {
             push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
             push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
 	}
-	
+
 	$scanning_info{'original_ref'}=$line_info{'variant_ref'};
 	$scanning_info{'matrice'} = $line_info{'matrice'};
 	$scanning_info{'variation'} = $line_info{'id'};
@@ -934,16 +935,16 @@ sub Analyse_variation {
 	  push (@{$scanning_score{$score}{'site_offset_start'}}, $offset);
 	  push (@{$scanning_score{$score}{'site_strand'}}, $site_strand);
 	}
-	
+
 	if  (scalar( @scores ) == 1 ) {
 	  push (@{$scanning_score{$scores[0]}{'site_offset_start'}}, $offset);
 	  push (@{$scanning_score{$scores[0]}{'site_strand'}}, $site_strand);
 	}
-	
+
 	&Compare(\%scanning_info,\%scanning_score) ;
       }
     }
-    
+
     ## Compare best score for each variant.
   } else {
     &RSAT::message::Debug("Comparing best score for each variant") if ($main::verbose >= 10);
@@ -982,7 +983,7 @@ sub Compare {
 
 	next if ( $lth{'score'} && $lth{'score'} > $best_score );
 	next if ( $uth{'pval'} && $uth{'pval'} < $best_pval);
- 
+
 	my $worst_score = $sorted_score[-1];
 	my $worst_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$worst_score};
 	#print "worst pval". $worst_pval;
@@ -1007,7 +1008,7 @@ sub Compare {
 	    $scanning_info{'w_diff'} = $diff_1;
 	    $scanning_info{'best_pval'} = $best_pval;
 	    $scanning_info{'worst_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
-	   
+	
 	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
 	    $scanning_info{'best_offset'} =  join(";", @{ $scanning_score{$best_score}{'site_offset_start'} });
 	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
@@ -1020,7 +1021,7 @@ sub Compare {
 	} elsif ($diff_1 == $diff_2) {
 	    next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_1 );
 	    next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_1);
-	    
+	
 	    $scanning_info{'best_variant'} =  pop( @{ $scanning_score{$best_score}{'variant_alt'} });
 	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$best_score}{'variant_alt'} } );
 	    $scanning_info{'best_score'} = $best_score;
@@ -1062,7 +1063,7 @@ sub Compare {
 	    print (&GetMinOff(%scanning_info));<STDIN>;
 	    last();
 	}
-	
+
    }
     return();
 }
@@ -1076,7 +1077,7 @@ sub GetMinOff {
     $scanning_info{'strand_change'} = 0;
 
     my @best_off_by_diff_variant = split(";", $scanning_info{'best_offset'});
-    
+
     for ($b=0; $b < scalar(@best_off_by_diff_variant); $b++) {
 	my @best_off_by_same_variant = split(",",$best_off_by_diff_variant[$b]);
 
@@ -1119,7 +1120,7 @@ sub Printline {
 
   ## Take into account the strand information of the variable.
   if ($scanning_info{'var_strand'} eq "-"){
-      
+
        $local_ref=~ tr/ACGTacgt/TGCAtgca/;
        &RSAT::message::Info("Transforming ref variant to revers complement for comparison", $scanning_info{'variation'}) if ($main::verbose>=5)
   }
@@ -1144,18 +1145,21 @@ sub Printline {
   # $worst_seq .= uc(substr($scanning_info{'worst_seq'},$worst_offset,1));
   # $worst_seq .= lc(substr($scanning_info{'worst_seq'},$worst_offset+1));
 
+  #$mtx_aux_id=$scanning_info{'matrice'};
+  #die "AC ". $mtx_aux_id. $matrices_id{ $mtx_aux_id}  ;
   my $str = join ("\t", 
 		  $scanning_info{'matrice'},
-		  $matrix_list{$scanning_info{'matrice'}}{'id'},
+		  #$matrix_list{$scanning_info{'matrice'}}{'id'},
+		  $matrices_id{$scanning_info{'matrice'}},
 		  $scanning_info{'variation'},
 		  $scanning_info{'type'},
 		  $scanning_info{'coord'},
 		  $scanning_info{'best_score'},
-		  $scanning_info{'worst_score'}, 
+		  $scanning_info{'worst_score'},
 		  sprintf("%.2f",$scanning_info{'w_diff'}),
 		  $scanning_info{'best_pval'},
-		  $scanning_info{'worst_pval'}, 
-		  sprintf("%.2f",$scanning_info{'pval_ratio'}), 
+		  $scanning_info{'worst_pval'},
+		  sprintf("%.2f",$scanning_info{'pval_ratio'}),
 		  $scanning_info{'best_variant'},
 		  $scanning_info{'worst_variant'},
 		  $scanning_info{'best_offset'},
@@ -1337,7 +1341,7 @@ Only return rvar with type_score > #
 		&RSAT::error::FatalError("-lth argument : ",shift(@arguments)," is not natural");
 	    }
 	} else {
-	    &RSAT::error::FatalError("type $type not supported with lth. Supperted type :",join(", ",keys(%supported_lth)));	
+	    &RSAT::error::FatalError("type $type not supported with lth. Supperted type :",join(", ",keys(%supported_lth)));
 	}
 =pod
 

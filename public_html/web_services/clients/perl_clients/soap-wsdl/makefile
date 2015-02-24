@@ -32,11 +32,11 @@ SERVERS_NOT_WORKING= \
 	http://teaching.rsat.eu \
 	http://training.rsat.eu
 
-list_servers:
+list_param:
 	@echo "SERVERS	${SERVERS}"
 	@echo "SERVER	${SERVER}"
-	@echo "WSDL_URL	${WSDL_URL}"
 	@echo "RSAT_WS	${RSAT_WS}"
+	@echo "WSDL_URL	${WSDL_URL}"
 
 stub_param:
 	@echo "Parameters for generating the stub"

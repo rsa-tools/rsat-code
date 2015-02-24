@@ -77,7 +77,7 @@ chromosomes / contigs covered by the variations.
  ## [...]
 
 This header is followed by the actual description of the variations,
-in a column-delimited format compying with the GFF format. 
+in a column-delimited format compying with the GFF format.
 
  Y       dbSNP   SNV     10015   10015   .       +       .       ID=1;variation_id=23299259;Variant_seq=C,G;Dbxref=dbSNP_138:rs113469508;allele_string=A,C,G;evidence_values=Multiple_observations;Reference_seq=A
  Y       dbSNP   SNV     10146   10146   .       +       .       ID=2;variation_id=26647928;Reference_seq=C;Variant_seq=G;evidence_values=Multiple_observations,1000Genomes;allele_string=C,G;Dbxref=dbSNP_138:rs138058540;global_minor_allele_frequency=0|0.0151515|33
@@ -103,7 +103,7 @@ compatibility.
 =head2 RSAT variation format (varBed)
 
 Tab-delimited format with a specific column order, used as input by
-I<retrieve-variation-seq>. 
+I<retrieve-variation-seq>.
 
 This format presents several advantages for scanning variations with
 matrices.
@@ -143,7 +143,7 @@ A tab delimited on selected output format
 
 =head2 retrieve-variation-seq
 
-I<retrieve-variation-seq> retrieves variant information and sequences using ensembl variation 
+I<retrieve-variation-seq> retrieves variant information and sequences using ensembl variation
 files obtained with the program I<download-ensembl-variations>.
 
 =head1 WISH LIST
@@ -176,6 +176,9 @@ package	main;
   our %infile	= ();
   our %outfile = ();
 
+  our $skip = 0; ## Skip the first N variations of the input file
+  our $last = 0; ## Stop after N variations of the input file
+
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
@@ -190,16 +193,14 @@ package	main;
     "E_C",
     "evidence_values",
     'validation_status'
-    );
+      );
 
   our %validate_pattern = ();
-
-
   our $from = "";
   our $to = "";
   our $species = "";
-
   our $assembly_version = "";
+  our $species_suffix = "";
   our $db="ensembl";
   our $ensembl_version = "";
   our $genome_dir = "";
@@ -214,32 +215,28 @@ package	main;
     $validate_pattern{$_} = 1;
   }
 
-   if ($to eq "" || $from eq "") {
-      &RSAT::error::FatalError("Please specify input and/or output format ");
-    }
-
-  
+  if ($to eq "" || $from eq "") {
+    &RSAT::error::FatalError("Please specify input and/or output format ");
+  }
 
   ################################################################
   ## Check argument values
   if ($to eq "vcf") {
-
     if ($species eq "") {
       &RSAT::error::FatalError("Species must be indicated if option -to equal vcf");
     }
-
-    unless ( $assembly_version || $ensembl_version ) {
-      &RSAT::error::FatalError("Ensembl or assembly version must be indicate if option -to equal vcf");
+    unless ($assembly_version || $ensembl_version) {
+      &RSAT::error::FatalError("Ensembl or assembly version is required when output format equals vcf (option -to)");
     }
     unless ($assembly_version){
-	$assembly_version=&Get_assembly_version($species,$ensembl_version,$species_suffix);
+      $assembly_version=&Get_assembly_version($species,$ensembl_version,$species_suffix);
     }
     $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version)."/";
     &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before covert-variation.") unless (-d $genome_dir);
 
     # Check if sequence file are not missing
     %chr_file = &Get_file_seq_name($genome_dir);
-      foreach my $file (keys(%chr_file)) {
+    foreach my $file (keys(%chr_file)) {
       unless (-f $genome_dir.$chr_file{$file}) {
         &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
       }
@@ -250,7 +247,7 @@ package	main;
   ## Print verbose
   $out = &OpenOutputFile($outfile{output});
   if ($main::to eq "varBed") {
-      &Verbose() if ($main::verbose >= 1);
+    &Verbose() if ($main::verbose >= 1);
   }
 
   ################################################################
@@ -264,7 +261,7 @@ package	main;
       $main::outfile{input} =~ s/\.varBed$//;
       $main::outfile{input} =~ s/\.vcf$//;
       $main::outfile{input} =~ s/\.gvf$//;
-      
+
       ## Add extension to the input file, in order to recognize compressed files
       if ($main::infile{input_url} =~ /\.(\w+)$/) {
         my $extension = $1;
@@ -299,40 +296,42 @@ package	main;
 
   my $l = 0; ## Line counter for the input file
   while (<$main::in>) {
-      $l++;
-      next if (/^;/); ## Skip RSAT-like comment lines
-      next unless (/\S/); ## Skip empty lines
-      
+    $l++;
+    next if (($skip > 0) && ($l <= $skip));
+    last if (($skip > 0) && ($l > $last));
+    next if (/^;/); ## Skip RSAT-like comment lines
+    next unless (/\S/); ## Skip empty lines
 
-      while (/^#/) {
-	  print $out $_ unless ((/^##fileformat/) || (/^#[^#]/));
-	  $_ = <$main::in>;
+
+    while (/^#/) {
+      print $out $_ unless ((/^##fileformat/) || (/^#[^#]/));
+      $_ = <$main::in>;
+    }
+
+    chomp();
+    if ($legend) {
+      print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
+      print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
+      print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'varBed');
+      $legend = 0;
+    }
+
+    ### Read input files acording to the defined formart -from
+    my %variation =  ();
+
+    ## VCF file
+    if ($from eq "vcf") {
+      my @token = split("\t",$_);
+      &RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
+      if (scalar( @token ) < 8 ) {
+	&RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 8 columns", "Skipped");
+	print $_ if ($main::verbose >= 3);
+	next;
       }
-      
-      chomp();
-      if ($legend) {
-	  print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
-	  print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
-	  print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'varBed');
-	  $legend = 0;
-      }
-      
-      ### Read input files acording to the defined formart -from
-      my %variation =  ();
-      
-      ## VCF file
-      if ($from eq "vcf") {
-	  my @token = split("\t",$_);
-	  &RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
-	  if (scalar( @token ) < 8 ) {
-	      &RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 8 columns", "Skipped");
-	      print $_ if ($main::verbose >= 3);
-	      next;
-	  }
-	  
-	  %variation = &Get_var_from_vcf(\@token);
-      }
-      
+
+      %variation = &Get_var_from_vcf(\@token);
+    }
+
 
     ## RSAT file
     if ($from eq 'varBed') {
@@ -340,8 +339,8 @@ package	main;
 
       next if ($token[9] == 1);
       if (scalar( @token ) != 11 ) {
-         &RSAT::message::Warning("$_ skip. varBed line must be cointain 11 columns");
-         next;
+	&RSAT::message::Warning("$_ skip. varBed line must be cointain 11 columns");
+	next;
       }
 
       %variation = &Get_var_from_rsat(\@token);
@@ -457,7 +456,7 @@ sub Get_var_from_vcf {
     $variation{'ref'} = "-" unless ($variation{'ref'});
 
     # Coordinate
-    ## $variation{'start'} ++; ## VCF is one base coordintes in both start and end 
+    ## $variation{'start'} ++; ## VCF is one base coordintes in both start and end
     $variation{'end'} = $variation{'start'} + length($variation{'ref'})-1;
   }
 
@@ -534,17 +533,17 @@ sub Get_var_from_gvf {
 
     } elsif ($key eq "Variant_seq") {
 	$variation{'alt'} = $value;
-	
+
     } elsif ($key eq "global_minor_allele_frequency") { ## Recover value for minor allele frequency from gvf file
 	my @gmaf = split("\\|",$value);
 	$variation{'m_allele_freq'}=$gmaf[1];
 	#print $variation{'id'}.$variation{'m_allele_freq'};
 	#die "BOOM";
-    
+
     } elsif ($validate_pattern{$key}) {
 	$variation{'validate'} = 1;
 	push(@{$variation{'attribute'}},$key.'='.$value);
-	
+
     } elsif ($key eq 'validation_states' && $value ne "-") {
       $variation{'validate'} = 1;
       push(@{$variation{'attribute'}},$key.'='.$value);
@@ -721,7 +720,7 @@ This option is mutually exclusive with option I<-u>.
 
 =pod
 
-=item B<-u input_file_URL>
+=item B<-u input_URL>
 
 Use as input a file available on a remote Web server.
 
@@ -758,10 +757,33 @@ vcf,gvf,varBed
 
 =pod
 
+=item B<-skip>
+
+Skip the N first variations of the input file. This option is useful
+for quick tests, or to split an analysis in separate tasks.
+
+=cut
+	} elsif ($arg eq "-skip") {
+	    $main::skip = shift(@arguments);
+
+=pod
+
+=item B<-last>
+
+Stop after the N first variations of the list. This option is useful
+for quick tests, or to split an analysis in separate tasks.
+
+=cut
+	} elsif ($arg eq "-last") {
+	    $main::last = shift(@arguments);
+
+
+=pod
+
 =item B<-species species_name>
 
 Species where variation are coming from (Homo_sapiens, Mus_musculus).
- 
+
 =cut
     } elsif ($arg eq "-species") {
       $main::species = shift(@arguments);
@@ -785,6 +807,22 @@ The version of the assembly of the species
 =cut
     } elsif ($arg eq "-a_version") {
       $main::assembly_version = shift(@arguments);
+
+=pod
+
+=item B<-species_suffix>
+
+Suffix to append to the full species ID.
+
+By default, the full species ID is composed by concatenating the
+Ensembl species and assembly version. The option I<-species_suffix>
+allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
+will be appended to the full species ID.
+
+=cut
+    } elsif ($arg eq "-species_suffix") {
+    $species_suffix = shift(@arguments);
+
 
 =pod
 
