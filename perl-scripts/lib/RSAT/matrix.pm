@@ -630,6 +630,58 @@ sub insert_columns {
 }
 
 
+################################################################
+################################################################
+=pod
+
+=item trim_columns($left_col_nb, $right_col_nb)
+
+Insert columns on either or both flanks of the matrix, and fill it
+with a user-speicifed value (default: 0).
+
+=cut
+sub trim_columns {
+  my ($self, $left_col_nb, $right_col_nb) = @_;
+  
+  &RSAT::message::TimeWarn("Removing columns to matrix", $self->get_attribute("name"), $left_col_nb, $right_col_nb) if ($main::verbose >= 5);
+  
+
+  my @counts = $self->getMatrix();
+  my @shifted_counts = ();
+  
+  my $ncol = $self->get_attribute("ncol");
+  my $nrow = $self->get_attribute("nrow");
+  
+  for my $r (0..($nrow-1)) {
+    my $c;
+    
+    ## Insert columns on left side
+    if ($left_col_nb > 0) {
+      for $c (0..($left_col_nb-1)) {
+	$shifted_counts[$c][$r] = $fill_value;
+      }
+    }
+    
+    ## Fill the values of the original matrix in the extended matrix
+    for $c (0..$ncol) {
+      $shifted_counts[$c+$left_col_nb][$r] = $counts[$c][$r];
+    }
+    
+    ## Insert columns on right side
+    if ($right_col_nb > 0) {
+      for $c (($ncol+$left_col_nb)..($ncol+$left_col_nb+$right_col_nb)) {
+	$shifted_counts[$c][$r] = $fill_value;
+      }
+    }
+  }
+
+  ## Set the counts of the shifted matrix 1
+  $self->setMatrix($nrow, $ncol + $left_col_nb + $right_col_nb, @shifted_counts);
+}
+
+################################################################
+################################################################
+
 =pod
 
 =item sort_rows();
