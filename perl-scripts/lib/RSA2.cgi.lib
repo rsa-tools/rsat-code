@@ -1007,6 +1007,7 @@ sub GetMatrix {
 				'jaspar'=>1,
 				'mscan'=>1,
 				'meme'=>1,
+				'meme_block'=>1,
 				'motifsampler'=>1,
 				'sequences' => 1,
 				'stamp'=>1,
