@@ -519,7 +519,7 @@ sub _readFromTRANSFACFile {
       ## Equiprobable alphabet
 
     } elsif ((/^PO\s+/)  || (/^P0\s+/) || (/^Pos\s+/)) { ## 2009/11/03 JvH fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
-	## CIS-BP database matrices are similar to trasnfac but do not contain an AC or ID line.
+	## CIS-BP database matrices are similar to transfac but do not contain an AC or ID line.
 	## Intialize CIS-BP matrix
 	if  ($format eq "cis-bp"){
 	    $current_matrix_nb++;
@@ -1884,7 +1884,7 @@ sub _readFromTabFile {
       next unless ($line =~ /\S/); ## Skip empty lines
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
-      $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue
+      $line =~ s/(^.)\|/$1\t\|/; ## Add tab after residue if missing
       $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
       next if ($line =~ /^;/) ; # skip comment lines
       $line =~ s/\[//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
@@ -1903,6 +1903,14 @@ sub _readFromTabFile {
 	$matrix->set_attribute("id", $id);
 	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
 	next;
+      }
+
+      ## Detect error in the input format specification (user selected
+      ## tab for TRANSFAC-formatted matrix)
+      if (($line =~ /^po/i) 
+	  || (/^ac/i)
+	  || (/^id/i)) {
+	  &RSAT::error::FatalError("Matrix does not seem to be in tab-delimited format. Seems to be a transfac-formatted matrix.");
       }
 
       if ($line =~ /^\s*(\S+)\s+/) {
