@@ -1899,6 +1899,7 @@ sub Merge_matrices(){
 	    ## Merge the matrices and create a single matrix
 	    my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 	    my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
+	    my $merged_mat_file_shaved = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_shaved_matrices.tf";
 	    my $cmd = "cat ".$files." >".$cat_file;
 	    $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 	    $cmd .= " -in_format tf -out_format tf";
@@ -1910,18 +1911,11 @@ sub Merge_matrices(){
 	    	unlink($file);
 	    }    
 
-
-	    ##########################################################
-	    ##########################################################
-	    ## Calculate the IC content
-	    my $merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, 0.15);
-#	    print " ---- ".$merged_mat_file_shaved." ---- \n";
-
-	    ##########################################################
-	    ##########################################################
+	    ## Calculate the IC content and remove low IC columns
+	    $merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.15);
 
 	    ## Create branch-wise logos
-	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
+	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 	    &doit($cmd, 0, $die_on_error, $verbose);
@@ -3759,6 +3753,7 @@ sub shave_matrix_low_IC_columns{
 
     ## Read the matrix file name
     my $matrix_to_shave = shift;
+    my $shaved_matrix = shift;
     my $IC_threshold = shift;
     
     my $temp_IC_file = "IC_test.txt";
@@ -3811,8 +3806,10 @@ sub shave_matrix_low_IC_columns{
 	}
     }
 
-    print " --- ".$shave_up." --- ".$shave_dw." --- \n";
-    return $matrix_to_shave;
+    ## Trim the matrix
+    $cmd = "convert-matrix -i ".$matrix_to_shave." -from tf -to tf -trim_col_left ".$shave_up." -trim_col_right ".$shave_dw." -return counts,consensus -o ".$shaved_matrix;
+    &doit($cmd, 0, $die_on_error, $verbose);
+    return $shaved_matrix;
 }
 
 __END__
