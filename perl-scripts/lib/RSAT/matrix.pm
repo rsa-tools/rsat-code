@@ -636,8 +636,10 @@ sub insert_columns {
 
 =item trim_columns($left_col_nb, $right_col_nb)
 
-Insert columns on either or both flanks of the matrix, and fill it
-with a user-speicifed value (default: 0).
+Remove columns in the left or right end of the matrix.
+This method is useful for the branch-matrices produced by matrix-clustering
+where there are many columns of low IC making larger the size of the motif
+and less specific. 
 
 =cut
 sub trim_columns {
@@ -647,36 +649,55 @@ sub trim_columns {
   
 
   my @counts = $self->getMatrix();
-  my @shifted_counts = ();
+  my @trimmed_counts = ();
   
   my $ncol = $self->get_attribute("ncol");
   my $nrow = $self->get_attribute("nrow");
-  
-  for my $r (0..($nrow-1)) {
-    my $c;
-    
-    ## Insert columns on left side
-    if ($left_col_nb > 0) {
-      for $c (0..($left_col_nb-1)) {
-	$shifted_counts[$c][$r] = $fill_value;
-      }
-    }
-    
-    ## Fill the values of the original matrix in the extended matrix
-    for $c (0..$ncol) {
-      $shifted_counts[$c+$left_col_nb][$r] = $counts[$c][$r];
-    }
-    
-    ## Insert columns on right side
-    if ($right_col_nb > 0) {
-      for $c (($ncol+$left_col_nb)..($ncol+$left_col_nb+$right_col_nb)) {
-	$shifted_counts[$c][$r] = $fill_value;
-      }
-    }
-  }
+  my $new_col = 0;
 
-  ## Set the counts of the shifted matrix 1
-  $self->setMatrix($nrow, $ncol + $left_col_nb + $right_col_nb, @shifted_counts);
+  for my $r (0..($nrow-1)) {
+      my $c;
+      
+      ## Trim columns on both sides
+      if ($left_col_nb > 0 && $right_col_nb > 0) {
+	  $new_col = 0;
+	  for $c (0..($ncol - 1)){
+	      if($c > ($left_col_nb - 1)){
+		  $trimmed_counts[$new_col][$r] = $counts[$c][$r];
+		  $new_col++;
+		  if ($c >= ($ncol - $right_col_nb - 1)){
+		      last;
+		  }
+	      }	      
+	  }
+      }
+
+      ## Trim columns on left side
+      if ($left_col_nb > 0 && $right_col_nb < 1) {
+	  $new_col = 0;
+	  for $c (0..($ncol - 1)){
+	      if($c > ($left_col_nb - 1)){
+		  $trimmed_counts[$new_col][$r] = $counts[$c][$r];
+		  $new_col++;
+	      }	      
+	  }
+      }
+
+      ## Trim columns on right side
+      if ($left_col_nb < 1 && $right_col_nb > 0) {
+	  $new_col = 0;
+	  for $c (0..($ncol - 1)){
+	      $trimmed_counts[$new_col][$r] = $counts[$c][$r];
+	      $new_col++;
+	      if ($c >= ($ncol - $right_col_nb - 1)){
+		  last;
+	      }     
+	  }
+      }
+  }
+  
+  ## Set the counts of the trimmed matrix 1
+  $self->setMatrix($nrow, $new_col, @trimmed_counts);
 }
 
 ################################################################
