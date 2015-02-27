@@ -395,10 +395,9 @@ package main;
       $matrix->insert_columns($insert_col_left, $insert_col_right);
     }
 
-    ## JC: the trim method must be called here
     ## Trim columns 
     if (($trim_col_left > 0) || ($trim_col_right > 0)) {
-      # $matrix->insert_columns($insert_col_left, $insert_col_right);
+      $matrix->trim_columns($trim_col_left, $trim_col_right);
     }
 
     ## Add flanks
