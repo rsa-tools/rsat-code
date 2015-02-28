@@ -531,18 +531,25 @@ sub GetSequenceFile {
     $sequence_file = &RSAT::util::make_temp_file("","tmp_sequence", 1);
 
     ### upload sequence file from the client side
-    $upload_file = $query->param('uploaded_file');
+    my $upload_file = $query->param('uploaded_file');
     if ($upload_file) {
+      &RSAT::message::TimeWarn("Uploading file", $upload_file) if ($ENV{rsat_echo} >= 2);
       if ($upload_file =~ /\.gz$/) {
 	$sequence_file .= ".gz";
       }
       $type = $query->uploadInfo($upload_file)->{'Content-Type'};
       open SEQ, ">$sequence_file" ||
 	&cgiError("Cannot store sequence file in temp dir.");
+      my $data_size = 0;
       while (<$upload_file>) {
+	  $data_size += length($_);
 	print SEQ;
       }
       close SEQ;
+      &RSAT::message::Info("Uploaded file", $upload_file, $data_size." bytes") if ($ENV{rsat_echo} >= 1);
+      if ($data_size == 0) {
+	  &RSAT::error::FatalError("Uploaded file is empty. Please check the size of your local file (".$upload_file."). If this file is not empty, please contact the RSAT administrator (".$ENV{rsat_server_admin}.").");
+      }
 
       ### read sequence from the textarea "sequence"
     } elsif ($query->param('sequence') =~ /\S/) {
@@ -1007,6 +1014,7 @@ sub GetMatrix {
 				'jaspar'=>1,
 				'mscan'=>1,
 				'meme'=>1,
+				'meme_block'=>1,
 				'motifsampler'=>1,
 				'sequences' => 1,
 				'stamp'=>1,
