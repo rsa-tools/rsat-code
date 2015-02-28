@@ -44,6 +44,7 @@ formats.
 			   'jaspar'=>1,
 			   'mscan'=>1,
 			   'meme'=>1,
+			   'meme_block'=>1,
 			   'motifsampler'=>1,
 			   'stamp'=>1,
 			   'stamp-transfac'=>1,
@@ -123,8 +124,10 @@ sub readFromFile {
 	@matrices = _readFromUniprobeFile($file, %args);
     } elsif ($format eq "motifsampler") {
 	@matrices = _readFromMotifSamplerFile($file);
-    } elsif ($format eq "meme") {
+    } elsif ($format eq "meme_block") {
 	@matrices = _readFromMEMEFile($file);
+	} elsif ($format eq "meme") {
+	@matrices = _readFromMEMEFile_2015($file);
     } elsif ($format eq "feature") {
 	@matrices = _readFromFeatureFile($file);
       } elsif ($format eq "sequences") {
@@ -516,7 +519,7 @@ sub _readFromTRANSFACFile {
       ## Equiprobable alphabet
 
     } elsif ((/^PO\s+/)  || (/^P0\s+/) || (/^Pos\s+/)) { ## 2009/11/03 JvH fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
-	## CIS-BP database matrices are similar to trasnfac but do not contain an AC or ID line.
+	## CIS-BP database matrices are similar to transfac but do not contain an AC or ID line.
 	## Intialize CIS-BP matrix
 	if  ($format eq "cis-bp"){
 	    $current_matrix_nb++;
@@ -1881,7 +1884,7 @@ sub _readFromTabFile {
       next unless ($line =~ /\S/); ## Skip empty lines
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
-      $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue
+      $line =~ s/(^.)\|/$1\t\|/; ## Add tab after residue if missing
       $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
       next if ($line =~ /^;/) ; # skip comment lines
       $line =~ s/\[//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
@@ -1900,6 +1903,14 @@ sub _readFromTabFile {
 	$matrix->set_attribute("id", $id);
 	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
 	next;
+      }
+
+      ## Detect error in the input format specification (user selected
+      ## tab for TRANSFAC-formatted matrix)
+      if (($line =~ /^po/i) 
+	  || (/^ac/i)
+	  || (/^id/i)) {
+	  &RSAT::error::FatalError("Matrix does not seem to be in tab-delimited format. Seems to be a transfac-formatted matrix.");
       }
 
       if ($line =~ /^\s*(\S+)\s+/) {
@@ -2387,7 +2398,7 @@ method C<readFromFile($file, "MEME")>.
 
 sub _readFromMEMEFile {
   my ($file) = @_;
-  &RSAT::message::Info("Reading matrix from consensus file\t", $file) if ($main::verbose >= 3);
+  &RSAT::message::Info("Reading matrix from meme BLOCK file\t", $file) if ($main::verbose >= 3);
 
   ## open input stream
   my ($in, $dir) = &main::OpenInputFile($file);
@@ -2489,6 +2500,158 @@ sub _readFromMEMEFile {
 
   return @matrices;
 #  return $matrices[0];
+}
+
+=pod
+
+=item _readFromMEMEFile_2015($file)
+
+Read a matrix from a MEME file, as described in the format on the MEME page. This method is called by the
+method C<readFromFile($file, "MEME")>.
+
+MEME version 4
+
+ALPHABET= ACGT
+
+strands: + -
+
+Background letter frequencies
+A 0.303 C 0.183 G 0.209 T 0.306 
+
+MOTIF crp alternative name
+letter-probability matrix: alength= 4 w= 19 nsites= 17 E= 4.1e-009 
+ 0.000000  0.176471  0.000000  0.823529 
+ 0.000000  0.058824  0.647059  0.294118 
+ 0.000000  0.058824  0.000000  0.941176 
+ 0.176471  0.000000  0.764706  0.058824 
+ 0.823529  0.058824  0.000000  0.117647 
+ 0.294118  0.176471  0.176471  0.352941 
+ 0.294118  0.352941  0.235294  0.117647 
+ 0.117647  0.235294  0.352941  0.294118 
+ 0.529412  0.000000  0.176471  0.294118 
+ 0.058824  0.235294  0.588235  0.117647 
+ 0.176471  0.235294  0.294118  0.294118 
+ 0.000000  0.058824  0.117647  0.823529 
+ 0.058824  0.882353  0.000000  0.058824 
+ 0.764706  0.000000  0.176471  0.058824 
+ 0.058824  0.882353  0.000000  0.058824 
+ 0.823529  0.058824  0.058824  0.058824 
+ 0.176471  0.411765  0.058824  0.352941 
+ 0.411765  0.000000  0.000000  0.588235 
+ 0.352941  0.058824  0.000000  0.588235 
+
+=cut
+
+
+sub _readFromMEMEFile_2015 {
+  my ($file) = @_;
+  &RSAT::message::Info("Reading matrix from meme file version 2015\t", $file) if ($main::verbose >= 3);
+
+  ## open input stream
+  my ($in, $dir) = &main::OpenInputFile($file);
+  my @matrices = ();
+  my $current_matrix_nb = 0;
+  my $matrix;
+  my $nb_sites = 0;
+  my $ncol = 0;
+  my $in_blocks = 0;
+  my %alphabet = ();
+  my %residue_frequencies = ();
+  my @alphabet = ();
+  my @frequencies = ();
+  my $l = 0;
+  my $prefix = "matrix";
+  if ($file) {
+      $prefix = &RSAT::util::ShortFileName($file);
+  }
+  while (<$in>) {
+    $l++;
+    s/\r//;
+    chomp();
+    $_ = &main::trim($_);
+
+    if (/Background letter frequencies/) {
+      my $alphabet = <$in>;
+      $alphabet = lc($alphabet);
+      $alphabet = &main::trim($alphabet);
+      %residue_frequencies = split /\s+/, $alphabet;
+      @alphabet = sort (keys %residue_frequencies);
+      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 5);
+
+      ## Index the alphabet
+      foreach my $l (0..$#alphabet) {
+	$alphabet{$alphabet[$l]} = $l;
+      }
+
+    # MOTIF crp alternative name
+    } elsif (/MOTIF\s+(\S+)\s*(\S*)/) {
+      $current_matrix_nb += 1;
+      $ncol = 0;
+      $matrix = new RSAT::matrix();
+      $matrix->init();
+      $matrix->set_parameter("program", "meme");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+
+      my $id = $1;
+      my $ac = $2 || $id;
+      
+      $matrix->set_parameter("id", $id);
+      $matrix->set_parameter("ac", $ac); ## For TRANSFAC compatibility
+      $matrix->set_parameter("name", $id); ## For readability of logos
+      
+      &RSAT::message::Debug("motif found line", $l, "id=$id ac=$ac name =$id") if ($main::verbose >= 5);
+    
+    } elsif (/letter-probability matrix:.*w=\s*(\d+)\s+nsites=\s*(\d+)\s+E=\s*(\S+)/) {
+      ## letter-probability matrix: alength= alphabet length w= motif length nsites= source sites E= source E-value
+    
+      $matrix->set_parameter("sites", $2);
+      $nb_sites = $2;
+      $matrix->set_parameter("meme.E-value", $3);
+      $matrix->setPrior(%residue_frequencies);
+      $matrix->setAlphabet_lc(@alphabet);
+      push @matrices, $matrix;
+      
+      &RSAT::message::Debug("line", $l, "ncol=$1,nbsites=$nb_sites") if ($main::verbose >= 5);
+
+      ## next lines has the probabilities infos
+      $in_blocks = 1;
+      &RSAT::message::Debug("line", $l, "Starting to parse the matrix cells") if ($main::verbose >= 10);
+
+    } elsif ($in_blocks) {
+
+    	if ($_ !~ /\d+/) {
+			&RSAT::message::Debug("line", $l, "matrix cells parsed") if ($main::verbose >= 5);
+			$in_blocks = 0;
+			## correcting the frequency matrix to a count matrix
+ 			 my @matrix = $matrix->getMatrix();
+ 			 my $ncol = $matrix->ncol();
+  			 my $nrow = $matrix->nrow();
+  			 for my $c (0..($ncol-1)) {
+    			for my $r (0..($nrow-1)) {
+      			$matrix[$c][$r] *= 100; #multiply by 100 to obtain count over 100
+      			$matrix[$c][$r] = $matrix[$c][$r] * $nb_sites / 100 ; ## put back to the number of contributing sites
+      			$matrix[$c][$r] = int($matrix[$c][$r] + 0.5); ## round ton integer
+    			}
+  			}
+			
+		} else {
+    	## Count column of the matrix file (row like in TRANSFAC format)
+    
+	my $values = $_;
+	$values = &RSAT::util::trim($values);
+	my @fields = split /\s+/, $values;
+	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 5);
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
+	next;
+      }
+    }
+    }
+  close $in if ($file);
+
+  return @matrices;
+
 }
 
 
