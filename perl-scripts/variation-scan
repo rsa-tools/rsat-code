@@ -347,11 +347,11 @@ package	main;
   if ($main::verbose >= 1) {
     &Verbose() if ($main::verbose >= 1);
     print $out "; column content","\n";
-    print $out ";\t",'1',"\t",'ac_motif',"\t",'Accession number of the matrices',"\n";
-    print $out ";\t",'2',"\t",'motif',"\t",'Matrices current name',"\n";
-    print $out ";\t",'3',"\t",'var_id',"\t",'Id of the variation',"\n";
-    print $out ";\t",'4',"\t",'var_class',"\t",'SOterm of the variation',"\n";
-    print $out ";\t",'5',"\t",'var_coord',"\t",'Coordinate of the variation',"\n";
+    print $out ";\t",'1',"\t",'matrix_ac',"\t",'Accession number of the positions-pecific scoring matrix',"\n";
+    print $out ";\t",'2',"\t",'matrix_name',"\t",'Name of the matrix (generally the transcription factor name)',"\n";
+    print $out ";\t",'3',"\t",'var_id',"\t",'ID of the variation',"\n";
+    print $out ";\t",'4',"\t",'var_class',"\t",'Variation type, according to SNP Ontology (SO) nomenclature',"\n";
+    print $out ";\t",'5',"\t",'var_coord',"\t",'Coordinates of the variation',"\n";
     print $out ";\t",'6',"\t",'best_w',"\t",'Best weigth for the putative site',"\n";
     print $out ";\t",'7',"\t",'worst_w',"\t",'Worst weigth for the putative site',"\n";
     print $out ";\t",'8',"\t",'w_diff',"\t",'Difference between best and worst weigth',"\n";
