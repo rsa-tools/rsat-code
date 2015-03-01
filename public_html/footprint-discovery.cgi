@@ -29,8 +29,8 @@ $command = "$SCRIPTS/footprint-discovery";
 
 #$ENV{rsat_echo}=2;
 
-#### read parameters ####
-$parameters = " -v 1";
+## Read parameters
+$parameters = " -v 1"; ## TEMPORARY FOR DEBUG
 
 ################################################################
 ## Tasks: some tasks are not supported on the Web interface:
@@ -177,12 +177,16 @@ $index_file .= (&MainIndexFileName())[0];
 
 #$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
-my $log_file = $result_subdir."/server_log.txt";
+my $log_file = $result_dir."/server_log.txt";
+my $error_file = $result_dir."/server_errors.txt";
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere", $log_file, index=>$index_file, title=>"$mail_title",no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $log_file, index=>$index_file, 
+		  title=>"$mail_title", error_file=>$error_file, 
+		  no_email=>1);
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, 
+		  title=>$mail_title,error_file=>$error_file);
 }
 
 print $query->end_html();

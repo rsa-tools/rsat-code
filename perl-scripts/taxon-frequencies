@@ -225,7 +225,7 @@ package main;
     }
   }
 
-  &RSAT::message::TimeWarn("Computing taxon-frequencies for", scalar(@taxa),"taxa") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Computing taxon-specific oligo/dyad frequencies for", scalar(@taxa),"taxa") if ($main::verbose >= 2);
   if ($main::verbose >= 3) {
     my $t = 0;
     foreach my $taxon (@taxa) {
@@ -302,7 +302,7 @@ package main;
 	      $m++;
 
 	      &RSAT::message::TimeWarn("Taxon ".$t."/".$nb_taxa, $taxon, scalar(@organisms)." organisms", "background model ".$m,   $background_model, $pattern_type, $length."nt", $str, $noov)
-		if ($main::verbose >= 1);
+		if ($main::verbose >= 2);
 
 	      ## Initialize variables for one background model
 	      local %occ_sum_per_pattern = ();
@@ -618,7 +618,7 @@ package main;
 	      my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
 	      print $main::out $exec_time if ($main::verbose >= 1);
 	      close $main::out if ($main::outfile{taxfreq});
-	      &RSAT::message::TimeWarn("Saved taxon frequency file", $outfile{taxfreq}) if (($main::verbose >= 1) && ($outfile{taxfreq}));
+	      &RSAT::message::TimeWarn("Saved taxon frequency file", $outfile{taxfreq}) if (($main::verbose >= 2) && ($outfile{taxfreq}));
 	    }
 	  }
 	}
