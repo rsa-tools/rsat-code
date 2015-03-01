@@ -416,7 +416,11 @@ to get the species available at EnsemblGenomes (extended Ensembl).
 
 =cut
     } elsif (($arg eq "-species") || ($arg eq "-org")) { 
-      push @species_names, shift(@arguments);
+      my $org =  shift(@arguments);
+      unless ($org =~ /_/) {
+	&RSAT::error::FatalError("The option -org requires a valid organism name (non-empty, and should contain a least one underscore).");
+      }
+      push @species_names, $org;
 
 =pod
 
