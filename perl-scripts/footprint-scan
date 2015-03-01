@@ -745,7 +745,7 @@ package main;
     if ($batch_matrix) {
 	$batch=1;
 	$batch_cmd="";
-	my $cmd = "$SCRIPTS/footprint-scan ";
+	my $cmd = $SCRIPTS."/footprint-scan ";
 	$cmd .= " -v  ".$main::verbose;
 	$cmd .= " -m  ".$matrix_file;
 	$cmd .=" -matrix_format ".$matrix_format;
