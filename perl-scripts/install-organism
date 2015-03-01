@@ -1438,7 +1438,9 @@ sub ReadArguments {
       ## Organism name in one word (spaces replaced  by underscores)
     } elsif ($arg eq "-org") {
       my $organism_short_name = shift(@arguments);
-      &RSAT::error::FatalError( $organism_short_name, "Invalid short name: cannot contain spaces") if ($organism_short_name =~ /\s/);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid organism name: cannot contain spaces") if ($organism_short_name =~ /\s/);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should not be empty.") unless ($organism_short_name =~ /\S/);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should contain at least one underscore.") unless ($organism_short_name =~ /_/);
       push @organisms, $organism_short_name;
 
       ## Input file with organism list
