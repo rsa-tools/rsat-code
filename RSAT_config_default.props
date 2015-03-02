@@ -207,7 +207,7 @@ neat_java_ws=http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsd
 
 ## The java programs on the Web interface are currently supported only at the
 ## ULB server.
-neat_java_host=http://wwwsup.scmbb.ulb.ac.be/
+neat_java_host=http://wwwsup.scmbb.ulb.ac.be/rsat/
 
 # if forwarding to apache is not activated, indicate the tomcat port
 tomcat_port=
