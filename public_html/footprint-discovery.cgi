@@ -37,15 +37,12 @@ $parameters = " -v 1"; ## TEMPORARY FOR DEBUG
 ##
 ## -task network because it requires too much computation if a user
 ##   introduces all the genes of an organism with the option -sep_genes
-##   (required for network inference)
-##
-## -task operon because the option has not been introduced in the Web
-##   form (could be fixed some day).
+##   (required for network inference). 
 $tasks .= " -task query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
-my $max_genes = 100;
+my $max_genes = 20;
 #my $max_genename_size = 12;
 
 ################################################################
@@ -135,6 +132,10 @@ if ($query->param('queries') =~ /\S/) {
 } else {
   &cgiError("You should enter at least one query in the box\n");
 }
+
+
+## Anlayze genes separately
+$parameters .= " -sep_genes";
 
 ## Return fields and threshold values for dyad-analysis
 &CGI_return_fields();
