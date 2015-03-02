@@ -5851,7 +5851,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="m_c_l">
+      <xsd:element name="mcl">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="request" type="tns:MCLRequest" />
@@ -5859,7 +5859,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="m_c_lResponse">
+      <xsd:element name="mclResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:MCLResponse" />
@@ -5867,7 +5867,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="r_n_s_c">
+      <xsd:element name="rnsc">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="request" type="tns:RNSCRequest" />
@@ -6321,16 +6321,16 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:graph_neighboursResponse"/>
   </message>
 
-  <message name="m_c_lRequest">
-    <part name="parameters" element="tns:m_c_l"/>
+  <message name="mclRequest">
+    <part name="parameters" element="tns:mcl"/>
   </message>
 
-  <message name="m_c_lResponse">
-    <part name="output" element="tns:m_c_lResponse"/>
+  <message name="mclResponse">
+    <part name="output" element="tns:mclResponse"/>
   </message>
 
   <message name="r_n_s_cRequest">
-    <part name="parameters" element="tns:r_n_s_c"/>
+    <part name="parameters" element="tns:rnsc"/>
   </message>
 
   <message name="r_n_s_cResponse">
@@ -6590,8 +6590,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     </operation>
     <operation name="mcl">
       <documentation>Clustering via Stijn van Dongen MCL algorithm</documentation>
-      <input name="MCLRequest" message="tns:m_c_lRequest"/>
-      <output name="MCLResponse" message="tns:m_c_lResponse"/>         
+      <input name="MCLRequest" message="tns:mclRequest"/>
+      <output name="MCLResponse" message="tns:mclResponse"/>         
     </operation>
     <operation name="rnsc">
       <documentation>Clustering via Andrew King RNSC algorithm</documentation>
