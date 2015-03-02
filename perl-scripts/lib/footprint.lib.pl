@@ -1045,7 +1045,7 @@ sub InferQueryOperons {
 sub RetrieveQueryPromoters {
   if ($task{query_seq}) {
     &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 2);
-    my $cmd = "$SCRIPTS/retrieve-seq ";
+    my $cmd = $SCRIPTS."/retrieve-seq ";
     $cmd .= " -org ".$organism_name;
     if ($infer_operons) {
       &CheckDependency("query_seq", "leader_qgenes");
@@ -1087,7 +1087,7 @@ sub ComputeFilterDyads {
   if ($task{filter_dyads}) {
     &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 2);
     &CheckDependency("filter", "query_seq");
-    my $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
+    my $cmd = $SCRIPTS."/dyad-analysis -v 1 -return occ -lth occ 1";
     $cmd .= " -i ".$outfile{query_seq};
     $cmd .= " -l 3 -sp 0-20";
     $cmd .= " ".$strands;
@@ -1107,7 +1107,7 @@ sub ComputeFilterScan {
     $main::skip_gene=0;
     &RSAT::message::TimeWarn("Computing filter hits", $outfile{filter_scan}) if ($main::verbose >= 2);
     &CheckDependency("filter", "query_seq");
-    my $cmd = "$SCRIPTS/matrix-scan -v 1 -return sites,pval,rank -uth pval " .$main::filter_pval;
+    my $cmd = $SCRIPTS."/matrix-scan -v 1 -return sites,pval,rank -uth pval " .$main::filter_pval;
     $cmd .= " -uth rank 1 ";
     $cmd .= " -i ".$outfile{query_seq};
     foreach my $file (@matrix_files2) {
@@ -1268,7 +1268,7 @@ sub PurgeOrthoSeq {
   if ($task{purge}) {
     &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 2);
     &CheckDependency("purge", "seq");
-    my $cmd = "$SCRIPTS/purge-sequence";
+    my $cmd = $SCRIPTS."/purge-sequence";
     $cmd .= " -nodie" if ($main::die_on_error == 0);
     $cmd .= " -i ".$outfile{seq};
     $cmd .= " -ml 30 -mis 0 -mask_short 30";
@@ -1318,7 +1318,7 @@ sub CalcMAtrixTheorDistrib {
     ## Compute the Markov background model from input sequences if required
     if (($bg_method eq "input" ) || ($bg_method eq "window") ) {
       &RSAT::message::TimeWarn ("Computing background model from input sequences", $outfile{purged}) if ($main::verbose >=2 ) ;
-      my $cmd = "$SCRIPTS/oligo-analysis ";
+      my $cmd = $SCRIPTS."/oligo-analysis ";
       $cmd .= " -l  ".($markov+1);
       $cmd .= " -i ".$outfile{purged};
       $cmd .= " -format fasta";
@@ -1335,7 +1335,7 @@ sub CalcMAtrixTheorDistrib {
 
     ## Compute the theoretical distribution for the current matrix
     &RSAT::message::TimeWarn ("Computing matrix score distribution with background file", $main::bg_distrib) if ($main::verbose >=2);
-    my $cmd = "$SCRIPTS/matrix-distrib ";
+    my $cmd = $SCRIPTS."/matrix-distrib ";
     $cmd .= " -m ".$matrix_file;
     $cmd .= " -matrix_format ".$matrix_format;
     $cmd .= " -bgfile ". $main::bg_distrib;
@@ -1365,7 +1365,7 @@ sub OccurrenceSig {
     } else {
       &CheckDependency("occ_sig", "purged");
     }
-    my $cmd = "$SCRIPTS/matrix-scan";
+    my $cmd = $SCRIPTS."/matrix-scan";
     $cmd .= $ms_parameters;
     $cmd .= " -quick ";
     #$cmd .= " -m ".$matrix_file;
@@ -1655,7 +1655,7 @@ sub OrthoScan {
   if ($task{scan}) {
     &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 2);
     &CheckDependency("scan", "seq");
-    my $cmd = "$SCRIPTS/matrix-scan";
+    my $cmd = $SCRIPTS."/matrix-scan";
     $cmd .= $ms_parameters;
     $cmd .= " -quick ";
     $cmd .= " -return limits,sites,rank";
@@ -1679,7 +1679,7 @@ sub OrthoMap {
 
     &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 2);
     &CheckDependency("map", "sites");
-    my $cmd = "$SCRIPTS/feature-map -i ".$outfile{sites};
+    my $cmd = $SCRIPTS."/feature-map -i ".$outfile{sites};
     $cmd .= " -scalebar -legend";
     $cmd .= " -mlen 400 -scorethick -minscore 0 -mspacing 2 -mapthick 16 -minfthick 1";
     $cmd .= " -title '".$title."'";
