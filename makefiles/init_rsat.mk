@@ -162,7 +162,7 @@ ws_stub_test:
 ws_nostub_test:
 	@echo
 	@echo "Testing Web services at SERVER=RSAT_WS=${RSAT_WS} without stub"
-	perl ${RSAT}/${WS_PERL_CLIENT_DIR}/supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
+	perl ${RSAT}/${WS_PERL_CLIENT_DIR}/supported-organisms.pl ${RSAT_WS}
 
 ## Test web services to all RSAT servers
 ws_test_all_servers:

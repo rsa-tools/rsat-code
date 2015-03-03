@@ -630,6 +630,79 @@ sub insert_columns {
 }
 
 
+################################################################
+################################################################
+=pod
+
+=item trim_columns($left_col_nb, $right_col_nb)
+
+Remove columns in the left or right end of the matrix.
+This method is useful for the branch-matrices produced by matrix-clustering
+where there are many columns of low IC making larger the size of the motif
+and less specific. 
+
+=cut
+sub trim_columns {
+  my ($self, $left_col_nb, $right_col_nb) = @_;
+  
+  &RSAT::message::TimeWarn("Removing columns to matrix", $self->get_attribute("name"), $left_col_nb, $right_col_nb) if ($main::verbose >= 5);
+  
+
+  my @counts = $self->getMatrix();
+  my @trimmed_counts = ();
+  
+  my $ncol = $self->get_attribute("ncol");
+  my $nrow = $self->get_attribute("nrow");
+  my $new_col = 0;
+
+  for my $r (0..($nrow-1)) {
+      my $c;
+      
+      ## Trim columns on both sides
+      if ($left_col_nb > 0 && $right_col_nb > 0) {
+	  $new_col = 0;
+	  for $c (0..($ncol - 1)){
+	      if($c > ($left_col_nb - 1)){
+		  $trimmed_counts[$new_col][$r] = $counts[$c][$r];
+		  $new_col++;
+		  if ($c >= ($ncol - $right_col_nb - 1)){
+		      last;
+		  }
+	      }	      
+	  }
+      }
+
+      ## Trim columns on left side
+      if ($left_col_nb > 0 && $right_col_nb < 1) {
+	  $new_col = 0;
+	  for $c (0..($ncol - 1)){
+	      if($c > ($left_col_nb - 1)){
+		  $trimmed_counts[$new_col][$r] = $counts[$c][$r];
+		  $new_col++;
+	      }	      
+	  }
+      }
+
+      ## Trim columns on right side
+      if ($left_col_nb < 1 && $right_col_nb > 0) {
+	  $new_col = 0;
+	  for $c (0..($ncol - 1)){
+	      $trimmed_counts[$new_col][$r] = $counts[$c][$r];
+	      $new_col++;
+	      if ($c >= ($ncol - $right_col_nb - 1)){
+		  last;
+	      }     
+	  }
+      }
+  }
+  
+  ## Set the counts of the trimmed matrix 1
+  $self->setMatrix($nrow, $new_col, @trimmed_counts);
+}
+
+################################################################
+################################################################
+
 =pod
 
 =item sort_rows();
