@@ -132,26 +132,25 @@ order. It can be useful for naming a succession of files.
 =cut
 
 sub number_with_zeros {
-    my ($value, %args) = @_;
-    my $digits;
+  my ($value, %args) = @_;
+  my $digits;
 
-    if (defined($args{digits})) {
-	$digits = $args{digits};
-    } elsif (defined($args{maxval})) {
-	$digits = POSIX::ceil(log($args{maxval}+1)/log(10));
-    } else {
-	&RSAT::error::FatalError("&RSAT::util::number_with_zeros()", "arguments must include either digist=>\$digits or maxval=>\$maxval")
-    }
+  if (defined($args{digits})) {
+    $digits = $args{digits};
+  } elsif (defined($args{maxval})) {
+    $digits = POSIX::ceil(log($args{maxval}+1)/log(10));
+  } else {
+    &RSAT::error::FatalError("&RSAT::util::number_with_zeros()", "arguments must include either digist=>\$digits or maxval=>\$maxval")
+  }
 #    &RSAT::message::Debug("&RSAT::util::number_with_zeros()", $digits) if ($main::verbose >= 10);
 
-    &RSAT::error::FatalError("&RSAT::util::number_with_zeros()", $digits, "Invalid value for digit, should be Natural.")
-	unless (&IsNatural($digits));
-    my $digits_number = sprintf "%${digits}s", $value;
-    $digits_number =~ s/ /0/g;
-    return($digits_number);
+  &RSAT::error::FatalError("&RSAT::util::number_with_zeros()", $digits, "Invalid value for digit, should be Natural.")
+      unless (&IsNatural($digits));
+  my $digits_number = sprintf "%${digits}s", $value;
+  $digits_number =~ s/ /0/g;
+  return($digits_number);
 }
 
-################################################################
 
 =pod
 
@@ -163,12 +162,12 @@ Usage: $trimmed = &RSAT::util::trim($to_trim);
 
 =cut
 sub trim {
-    my ($string) = @_;
-    if ($string) {
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-    }
-    return $string;
+  my ($string) = @_;
+  if ($string) {
+    $string =~ s/^\s+//;
+    $string =~ s/\s+$//;
+  }
+  return $string;
 }
 
 
@@ -1219,9 +1218,12 @@ sub EmailTheResult {
 
     ## Run the command and send a notification mail if the user provided an email address
     $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> ".$tmp_file_path;
+    $command .= " 2> ".$args{error_file} if ($args{error_file}); ## JvH: added 2015-03-01; to validate
     $command .= "; echo \"$completion_message\" | ".$SCRIPTS."/send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
     $command .= " &"; ## Run task in background
     print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
+#    &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 0); 
+
     system $command;
 
     ## Prepare removal of the temporary file

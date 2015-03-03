@@ -96,7 +96,7 @@ print "<B>Input format</B>&nbsp;";
 			     -default=>$default{input_type});
 print "<\p>";
 ### Lenght of the sequences surranding the variant
-print "<B>Length of sequence around the variant</B>&nbsp;\n";
+print "<B>Length of flanking sequence on each side of the variant</B>&nbsp;\n";
 print $query->textfield(-name=>'mml',
 			-default=>$default{mml},
 			-size=>5);
@@ -120,9 +120,9 @@ print $query->end_form;
 my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 
-$descr1 .= "<p>In this demonstration, we retrieve the sequence of genetic variants.</p>\n
-
-<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
+$descr1 .= "<p>In this demonstration, we retrieve the sequence of genetic variants.</p>";
+$descr1 .= "<p> The genetic variants used in this example were collected by Weirauch et al (2014, Cell 158:1431-1443).";
+$desc1 .= "These variants had been reported in previous publications as affecting transcription factor binding. </p>\n";
 
 $descr1 .= "</blockquote>";
 

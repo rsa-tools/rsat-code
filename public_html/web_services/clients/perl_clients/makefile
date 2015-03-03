@@ -65,7 +65,7 @@ list_param:
 
 test_one_server:
 	@echo "Testing web services (without stub) at URL	${RSAT_WS}"
-	perl ./supported-organisms_client_nostub_wsdl.pl ${RSAT_WS}
+	perl ./supported-organisms.pl ${RSAT_WS}
 
 test_all_servers:
 	@for server in ${SERVERS}; do \

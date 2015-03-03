@@ -37,7 +37,7 @@ dpkg-reconfigure tzdata
 export INSTALLER=apt-get
 export INSTALLER_OPT="--quiet --assume-yes"
 ## alternative: INSTALLER=aptitude
-export INSTALL_ROOT_DIR=/bio/
+export INSTALL_ROOT_DIR=/RSAT/
 export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 #export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
 #export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
@@ -281,7 +281,7 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 emacs -nw /etc/php5/apache2/php.ini
 ## Modify the following parameters
 ##      post_max_size = 100M
-##      upload_max_size=100M
+##      upload_max_filesize=100M
 
 
 ## The following lines are required to activate cgi scripts.  Found at
