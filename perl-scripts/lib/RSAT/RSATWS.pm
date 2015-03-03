@@ -6343,19 +6343,22 @@ sub run_WS_command {
   if ($output_choice eq 'server') {
       return SOAP::Data->name('response' => \SOAP::Data->value(
 				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
-# TO FIX in RSATWS.wsdl							       SOAP::Data->name('URL' => $result_URL),
-				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
+#TO FIX in RSATWS.wsdl		  SOAP::Data->name('URL' => $result_URL),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'client') {
-      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-							       SOAP::Data->name('client' => $result)))
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'both') {
 #      &RSAT::error::FatalError("HELLO", "tmp_outfile", $tmp_outfile, &RSAT::util::hide_RSAT_path($tmp_outfile));
 
       return SOAP::Data->name('response' => \SOAP::Data->value(
 				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
-# TO FIX in RSATWS.wsdl				  SOAP::Data->name('URL' => $result_URL),
+#TO FIX in RSATWS.wsdl		  SOAP::Data->name('URL' => $result_URL),
 				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
 				  SOAP::Data->name('client' => $result)))
 	  ->attr({'xmlns' => ''});
