@@ -9,9 +9,10 @@ SERVER=http://pedagogix-tagc.univ-mrs.fr/rsat
 ## For these servers, the SOAP/WSDL should be working fine
 SERVERS=http://pedagogix-tagc.univ-mrs.fr/rsat \
 	http://rsat-tagc.univ-mrs.fr/rsat \
+	http://floresta.eead.csic.es/rsat \
+	http://rsat01.biologie.ens.fr/rsat \
 	http://embnet.ccg.unam.mx/rsa-tools \
 	http://rsat.ulb.ac.be/rsat \
-	http://rsat01.biologie.ens.fr/rsat \
 	http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## This server should be working only if you have a local installation of RSAT
@@ -31,6 +32,7 @@ SERVERS_NOT_WORKING= \
 	http://protists.rsat.eu \
 	http://teaching.rsat.eu \
 	http://training.rsat.eu \
+	http://rsat.sb-roscoff.fr \
 	http://tagc.univ-mrs.fr/rsa-tools \
 	http://nexus.hgen.slu.se/rsa-tools
 
