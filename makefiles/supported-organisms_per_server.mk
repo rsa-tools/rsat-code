@@ -12,6 +12,7 @@ URL=http://${SERVER}/${SERVER_PATH}
 RES_DIR=results/supported-organisms_per_server
 SUPPORTED_FILE=${RES_DIR}/supported_${TAXON}_${SERVER}_${SERVER_PATH}.tab
 supported_taxon:
+	@echo ""
 	@echo "Collecting supported ${TAXON} at ${URL}"
 	@mkdir -p ${RES_DIR}
 	@supported-organisms-server -taxon ${TAXON} -url ${URL} ${OPT} \

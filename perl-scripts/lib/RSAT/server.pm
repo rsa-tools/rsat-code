@@ -18,8 +18,8 @@ unless ($ENV{RSAT}) {
     $ENV{RSAT} =~ s|/*perl-scripts.*||; ## Guess RSAT path from module full name
     $ENV{RSAT} =~ s|/*public_html.*||; ## Guess RSAT path from module full name
     if ($ENV{RSAT} eq "") {
-      $ENV{RSAT} = `pwd`;
-      chomp $ENV{RSAT};
+	$ENV{RSAT} = `pwd`;
+	chomp $ENV{RSAT};
     }
 }
 
@@ -38,13 +38,13 @@ $ENV{PYTHONPATH}=$ENV{RSAT}."/lib/python2.7/site-packages";
 ## Date:   Wed Feb 11 23:47:48 2015 -0500
 
 sub GetGitLastCommitDate {
-	my $version_git = `git log | head -n 4 | grep Date` ;
-	$version_git =~ s/Date://;
-	$version_git =~ s/^\s*\w+\s+//;
-	$version_git =~ s/\D+\w+\s*$//;
-	&RSAT::message::Info("&RSAT::server::GetGitLastCommitDate()", "log version", $version_git)
-      if ($main::verbose >= 5);
-  return $version_git;
+    my $version_git = `git log | head -n 4 | grep Date` ;
+    $version_git =~ s/Date://;
+    $version_git =~ s/^\s*\w+\s+//;
+    $version_git =~ s/\D+\w+\s*$//;
+    &RSAT::message::Info("&RSAT::server::GetGitLastCommitDate()", "log version", $version_git)
+	if ($main::verbose >= 5);
+    return $version_git;
 }
 
 ################################################################
@@ -604,9 +604,8 @@ sub InitRSAT {
 
   ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ################################################################
-
-  $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
-  $main::PYTHON = "$ENV{RSAT}/python-scripts";
+  $main::SCRIPTS = $ENV{RSAT}."/perl-scripts";
+  $main::PYTHON = $ENV{RSAT}."/python-scripts";
 
   ################################################################
   ## Redirect queries to a remote server

@@ -18,7 +18,9 @@ list_param:
 	@echo "GENE		${GENE}"
 	@echo "QUERY		${QUERY}"
 	@echo "TASK		${TASK}"
-	@echo "BATCH		${BATC}"
+	@echo "SKIP		${SKIP}"
+	@echo "LAST		${LAST}"
+	@echo "BATCH		${BATCH}"
 	@echo "FP_DISCO_DIR	${FP_DISCO_DIR}"
 
 ## Run footprint-discovery for a single gene of interest.
