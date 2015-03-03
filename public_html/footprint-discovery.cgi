@@ -29,23 +29,20 @@ $command = "$SCRIPTS/footprint-discovery";
 
 #$ENV{rsat_echo}=2;
 
-#### read parameters ####
-$parameters = " -v 1";
+## Read parameters
+$parameters = " -v 1"; ## TEMPORARY FOR DEBUG
 
 ################################################################
 ## Tasks: some tasks are not supported on the Web interface:
 ##
 ## -task network because it requires too much computation if a user
 ##   introduces all the genes of an organism with the option -sep_genes
-##   (required for network inference)
-##
-## -task operon because the option has not been introduced in the Web
-##   form (could be fixed some day).
+##   (required for network inference). 
 $tasks .= " -task query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
-my $max_genes = 100;
+my $max_genes = 20;
 #my $max_genename_size = 12;
 
 ################################################################
@@ -136,6 +133,10 @@ if ($query->param('queries') =~ /\S/) {
   &cgiError("You should enter at least one query in the box\n");
 }
 
+
+## Anlayze genes separately
+$parameters .= " -sep_genes";
+
 ## Return fields and threshold values for dyad-analysis
 &CGI_return_fields();
 
@@ -177,12 +178,16 @@ $index_file .= (&MainIndexFileName())[0];
 
 #$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
-my $log_file = $result_subdir."/server_log.txt";
+my $log_file = $result_dir."/server_log.txt";
+my $error_file = $result_dir."/server_errors.txt";
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
-  &EmailTheResult("$command $parameters", "nobody@nowhere", $log_file, index=>$index_file, title=>"$mail_title",no_email=>1);
+  &EmailTheResult("$command $parameters", "nobody@nowhere", $log_file, index=>$index_file, 
+		  title=>"$mail_title", error_file=>$error_file, 
+		  no_email=>1);
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, title=>$mail_title);
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $log_file, index=>$index_file, 
+		  title=>$mail_title,error_file=>$error_file);
 }
 
 print $query->end_html();

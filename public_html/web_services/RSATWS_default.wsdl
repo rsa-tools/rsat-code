@@ -2030,7 +2030,7 @@ Default is 'both'.</xsd:documentation>
        </xsd:sequence>
       </xsd:complexType>
       
-      <xsd:complexType name="parsepsixmlRequest">
+      <xsd:complexType name="ParsePsiXmlRequest">
        <xsd:sequence>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
@@ -4539,7 +4539,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
-      <xsd:complexType name="parsepsixmlResponse">
+      <xsd:complexType name="ParsePsiXmlResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -5453,7 +5453,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <xsd:element name="parse_psi_xml">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="request" type="tns:parsepsixmlRequest" />
+	    <xsd:element name="request" type="tns:ParsePsiXmlRequest" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
@@ -5461,7 +5461,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <xsd:element name="parse_psi_xmlResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="response" type="tns:parsepsixmlResponse" />
+	    <xsd:element name="response" type="tns:ParsePsiXmlResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
@@ -5482,7 +5482,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="classfreq">
+      <xsd:element name="class_freq">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="request" type="tns:ClassFreqRequest" />
@@ -5490,7 +5490,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="classfreqResponse">
+      <xsd:element name="class_freqResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:ClassFreqResponse" />
@@ -5498,7 +5498,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="xygraph">
+      <xsd:element name="xy_graph">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="request" type="tns:XYGraphRequest" />
@@ -5506,7 +5506,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="xygraphResponse">
+      <xsd:element name="xy_graphResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:XYGraphResponse" />
@@ -5875,7 +5875,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="rnscResponse">
+      <xsd:element name="r_n_s_cResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:RNSCResponse" />
@@ -6120,20 +6120,20 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:roc_statsResponse"/>
   </message>
   
-  <message name="classfreqRequest">
-    <part name="parameters" element="tns:classfreq"/>
+  <message name="class_freqRequest">
+    <part name="parameters" element="tns:class_freq"/>
   </message>
   
-  <message name="classfreqResponse">
-    <part name="output" element="tns:classfreqResponse"/>
+  <message name="class_freqResponse">
+    <part name="output" element="tns:class_freqResponse"/>
   </message>
 
-  <message name="xygraphRequest">
-    <part name="parameters" element="tns:xygraph"/>
+  <message name="xy_graphRequest">
+    <part name="parameters" element="tns:xy_graph"/>
   </message>
 
-  <message name="xygraphResponse">
-    <part name="output" element="tns:xygraphResponse"/>
+  <message name="xy_graphResponse">
+    <part name="output" element="tns:xy_graphResponse"/>
   </message>
 
   <message name="convert_seqRequest">
@@ -6329,12 +6329,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:mclResponse"/>
   </message>
 
-  <message name="rnscRequest">
+  <message name="r_n_s_cRequest">
     <part name="parameters" element="tns:rnsc"/>
   </message>
 
-  <message name="rnscResponse">
-    <part name="output" element="tns:rnscResponse"/>
+  <message name="r_n_s_cResponse">
+    <part name="output" element="tns:r_n_s_cResponse"/>
   </message>
 
   <!-- GENERAL UTILITY TOOLS MESSAGES -->
@@ -6453,8 +6453,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     </operation>
     <operation name="parse_psi_xml">
       <documentation>Converts a psi xml file in a tab delimited file</documentation>
-      <input name="parsepsixmlRequest" message="tns:parse_psi_xmlRequest"/>
-      <output name="parsepsixmlResponse" message="tns:parse_psi_xmlResponse"/>
+      <input name="ParsePsiXmlRequest" message="tns:parse_psi_xmlRequest"/>
+      <output name="ParsePsiXmlResponse" message="tns:parse_psi_xmlResponse"/>
     </operation>
     <operation name="roc_stats">
       <documentation>Computes, from a set of scored results associated with validation labels, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve.</documentation>
@@ -6463,13 +6463,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     </operation>
     <operation name="xygraph">
       <documentation>Plot a graph and export it.</documentation>
-      <input name="XYGraphRequest" message="tns:xygraphRequest"/>
-      <output name="XYGraphResponse" message="tns:xygraphResponse"/>
+      <input name="XYGraphRequest" message="tns:xy_graphRequest"/>
+      <output name="XYGraphResponse" message="tns:xy_graphResponse"/>
     </operation>
     <operation name="classfreq">
       <documentation>This script takes a group of numbers (real or integers) and outputs their distribution among classes.</documentation>
-      <input name="ClassFreqRequest" message="tns:classfreqRequest"/>
-      <output name="ClassFreqResponse" message="tns:classfreqResponse"/>
+      <input name="ClassFreqRequest" message="tns:class_freqRequest"/>
+      <output name="ClassFreqResponse" message="tns:class_freqResponse"/>
     </operation>
     <operation name="convert_seq">
       <documentation>Converts a sequence between two formats (e.g. fasta -> raw).</documentation>
@@ -6595,8 +6595,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     </operation>
     <operation name="rnsc">
       <documentation>Clustering via Andrew King RNSC algorithm</documentation>
-      <input name="RNSCRequest" message="tns:rnscRequest"/>
-      <output name="RNSCResponse" message="tns:rnscResponse"/>
+      <input name="RNSCRequest" message="tns:r_n_s_cRequest"/>
+      <output name="RNSCResponse" message="tns:r_n_s_cResponse"/>
     </operation>
 
     <!-- GENERAL UTILITY TOOLS PORTTYPES -->
@@ -6788,10 +6788,10 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     </operation>
     <operation name="parse_psi_xml">
       <soap:operation soapAction=""/>
-      <input name="parsepsixmlRequest">
+      <input name="ParsePsiXmlRequest">
         <soap:body use="literal" />
       </input>
-      <output name="parsepsixmlResponse">
+      <output name="ParsePsiXmlResponse">
         <soap:body use="literal" />
       </output>
     </operation>

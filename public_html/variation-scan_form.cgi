@@ -216,9 +216,10 @@ sub Panel2 {
       ## (piped from a previous script)
       $variants_seq_url = $variants_seq_file;
       $variants_seq_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
-      $variants_seqChoiceString .=  "<a href=$variants_seq_url>";
+      $variants_seqChoiceString .=  "<a href=".$variants_seq_url.">";
       $variants_seqChoiceString .=  " transferred from previous query<BR>\n";
       $variants_seqChoiceString .=  "</a>";   
+      $variants_seqChoiceString .=  "<INPUT type='hidden' NAME='variants_seq_file' VALUE='".$variants_seq_file."'>\n";
       print $variants_seqChoiceString ;
 
   } else {
