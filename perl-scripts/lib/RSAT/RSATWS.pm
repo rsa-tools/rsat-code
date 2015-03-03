@@ -1000,17 +1000,40 @@ sub peak_motifs {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					     'server' => $response});
-    } elsif ($output_choice eq 'client') {
-      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					     'client' => $response});
-    } elsif ($output_choice eq 'both') {
-      return SOAP::Data->name('response' => {'server' => $response,
-					     'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					     'client' => $response});
-    }
+#     if ($output_choice eq 'server') {
+#       return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					     'server' => $response});
+#     } elsif ($output_choice eq 'client') {
+#       return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					     'client' => $response});
+#     } elsif ($output_choice eq 'both') {
+#       return SOAP::Data->name('response' => {'server' => $response,
+# 					     'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					     'client' => $response});
+#     }
+
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => $response),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $response)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  $response),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $response)))
+	  ->attr({'xmlns' => ''});
+  }
+
+
 
      local(*HIS_IN, *HIS_OUT, *HIS_ERR);
      my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
@@ -2168,17 +2191,37 @@ sub get_orthologs {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"get-orthologs",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-        return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-                                               'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-        return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-                                               'client' => $result});
-    } elsif ($output_choice eq 'both') {
-        return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-                                               'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-                                               'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+#         return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+#                                                'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+#         return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+#                                                'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+#         return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+#                                                'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+#                                                'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub get_orthologs_cmd {
@@ -2319,17 +2362,37 @@ sub footprint_discovery {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"footprint-discovery",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub footprint_discovery_cmd {
@@ -3104,17 +3167,37 @@ sub xygraph {
     }
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"xy-graph",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub xygraph_cmd {
@@ -4026,20 +4109,40 @@ sub compare_matrices {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-matrices", output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
-			                                         SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
-				->attr({'xmlns' => ''});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-								 SOAP::Data->name('client' => $tmp_outdir)))
-				->attr({'xmlns' => ''});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
-								 SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-								 SOAP::Data->name('client' => $tmp_outdir)))
-				->attr({'xmlns' => ''});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+# 			                                         SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command))))
+# 				->attr({'xmlns' => ''});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+# 								 SOAP::Data->name('client' => $tmp_outdir)))
+# 				->attr({'xmlns' => ''});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outdir),
+# 								 SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+# 								 SOAP::Data->name('client' => $tmp_outdir)))
+# 				->attr({'xmlns' => ''});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outdir)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => &RSAT::util::hide_RSAT_path($tmp_outdir))))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outdir)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => &RSAT::util::hide_RSAT_path($tmp_outdir))))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 
@@ -4537,20 +4640,40 @@ sub convert_graph {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"convert-graph",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-#           open TRUC, ">/home/rsat/rsa-tools/public_html/tmp/truc.brol";
-    print TRUC "$result";
-    close TRUC;  
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# #           open TRUC, ">/home/rsat/rsa-tools/public_html/tmp/truc.brol";
+#     print TRUC "$result";
+#     close TRUC;  
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub convert_graph_cmd {
@@ -4843,17 +4966,37 @@ sub display_graph {
 
         &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"display-graph",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 
@@ -4977,18 +5120,37 @@ sub draw_heatmap {
 
         &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"draw-heatmap",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-      } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#       } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
 
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub draw_heatmap_cmd {
@@ -5276,17 +5438,37 @@ sub graph_topology {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"graph_topology",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 
@@ -5401,17 +5583,38 @@ sub graph_cluster_membership {
 
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"graph-cluster-membership",output_choice=>$output_choice);
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub graph_cluster_membership_cmd {
@@ -5526,18 +5729,37 @@ sub compare_graphs {
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"compare-graphs",output_choice=>$output_choice);
 
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
 
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 sub compare_graphs_cmd {
@@ -5778,17 +6000,37 @@ sub rnsc {
 		     method_name=>"RNSC",
 		     output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 
@@ -5925,17 +6167,37 @@ sub mcl {
 		     method_name=>$method_name,
 		     output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
-					       'client' => $result});
-    }
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command), 
+# 					       'client' => $result});
+#     }
+
+  if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+			          SOAP::Data->name('client' => 'NA')))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' => 'NA'),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => \SOAP::Data->value(
+				  SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				  SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
+  }
 }
 
 =pod
