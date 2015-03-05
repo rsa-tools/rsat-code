@@ -38,9 +38,16 @@ check.param <- function() {
     hclust.method <<- "average";
   }
 
-  ## Default hclust method is the complete method
+  ## Option indicating if the heatmap must be computed
   if (!exists("draw.heatmap")) {
     draw.heatmap <<- "1";
+  }
+  
+  ## When this option is activated
+  ## Only the hclust is done, skipping the
+  ## trees and heatmap computation
+  if (!exists("only.hclust")) {
+    only.hclust <<- "0";
   }
 
   ## Define the kind of metric used: scores or distances
