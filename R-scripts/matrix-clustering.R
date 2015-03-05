@@ -72,12 +72,10 @@ if (length(args >= 1)) {
 ## Check parameters
 check.param()
 
-
 ##################################
 ## Read matrix comparison table
 global.compare.matrices.table <<- read.csv(infile, sep="\t", comment.char=";")
 names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
-
 
 ################################################################
 ## Read description table
@@ -110,8 +108,10 @@ dist.matrix <- distances.objects$matrix
 write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep="\t")
 
 number.of.motifs <- dim(global.description.table)[1]
-dir.trees <- paste(out.prefix, "_trees", sep="")
-dir.create(dir.trees, showWarnings=FALSE, recursive=TRUE)
+if(only.hclust == 0){
+  dir.trees <- paste(out.prefix, "_trees", sep="")
+  dir.create(dir.trees, showWarnings=FALSE, recursive=TRUE)
+}
 
 ################################################
 ## Build the tree by hierarchical clustering,
@@ -120,23 +120,25 @@ if(number.of.motifs > 1){
 
   tree <<- hclust.motifs(dist.matrix, hclust.method=hclust.method)
 
-  ################################################
-  ## If it is indicated, export the newick tree
-  if (export == "newick") {
-    newick.tree <- convert.hclust.to.newick(tree, decimals=3)
-    newick.file <- file.path(dir.trees, "tree.newick")
-    verbose(paste("Exporting newick file", newick.file), 2)
-    write(newick.tree, file=newick.file)
-    rm(newick.tree, newick.file)
+  if(only.hclust == 0){
+
+    ################################################
+    ## If it is indicated, export the newick tree
+    if (export == "newick") {
+      newick.tree <- convert.hclust.to.newick(tree, decimals=3)
+      newick.file <- file.path(dir.trees, "tree.newick")
+      verbose(paste("Exporting newick file", newick.file), 2)
+      write(newick.tree, file=newick.file)
+      rm(newick.tree, newick.file)
+    }
+    
+    #######################################
+    ### Creates and export the json file
+    JSON.tree <- convert.hclust.to.JSON(tree)
+    json.file <- paste(out.prefix, "_trees/tree.json", sep="")
+    verbose(paste("JSON tree file", json.file), 1)
+    writeLines(JSON.tree, con=json.file)
   }
-
-
-  #######################################
-  ### Creates and export the json file
-  JSON.tree <- convert.hclust.to.JSON(tree)
-  json.file <- paste(out.prefix, "_trees/tree.json", sep="")
-  verbose(paste("JSON tree file", json.file), 1)
-  writeLines(JSON.tree, con=json.file)
 
   #############################################################
   ## Bottom-up traversal of the tree to orientate the logos
@@ -171,52 +173,56 @@ if(number.of.motifs > 1){
 
   ######################
   ## Draw the heatmap
-  if(draw.heatmap == 1){
+  if(only.hclust == 0){
+    
+   if(draw.heatmap == 1){
 
-    for (plot.format in c("pdf", "jpg")) {
-      heatmap.file <- paste(sep="", out.prefix, "_figures/heatmap.", plot.format)
-        w <- 6
-        h <- w + 0.75
-        resol <- 72 ## Screen resolution
-      verbose(paste("drawing heatmap", heatmap.file), 1)
-      if (plot.format == "pdf") {
-        pdf(file=heatmap.file, width=w, height=h)
-      } else if (plot.format == "jpg") {
-          jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
+      for (plot.format in c("pdf", "jpg")) {
+        heatmap.file <- paste(sep="", out.prefix, "_figures/heatmap.", plot.format)
+          w <- 6
+          h <- w + 0.75
+          resol <- 72 ## Screen resolution
+        verbose(paste("drawing heatmap", heatmap.file), 1)
+        if (plot.format == "pdf") {
+          pdf(file=heatmap.file, width=w, height=h)
+        } else if (plot.format == "jpg") {
+            jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
+        }
+        draw.heatmap.motifs(dist.table, method = hclust.method, clusters, alignment.list, score = score)
+        dev.off()
       }
-      draw.heatmap.motifs(dist.table, method = hclust.method, clusters, alignment.list, score = score)
+    }
+   
+    
+    ########################################
+    ## Define the label color of the tree
+    ## according to the cluster
+    color.code <- color.code.clusters(clusters, tree, global.description.table)
+
+    ## Convert the hclust object in a dendrogram
+    tree.dendro <- as.dendrogram(tree)
+    labels_colors(tree.dendro) <- color.code
+
+    #######################################
+    ## Export the tree with the aligment
+    mar4 <- alignment.width - 10
+    for (plot.format in c("pdf", "png")) {
+      w.inches <- 14 ## width in inches
+      h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
+      resol <- 72 ## Screen resolution
+      tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
+      verbose(paste("hclust tree drawing", tree.drawing.file), 1)
+      if (plot.format == "pdf") {
+        pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
+      } else if (plot.format == "png") {
+        png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+      }
+  
+      par(mar=c(3,2,1,mar4),family="mono")
+      plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
       dev.off()
     }
   }
-  ########################################
-  ## Define the label color of the tree
-  ## according to the cluster
-  color.code <- color.code.clusters(clusters, tree, global.description.table)
-
-  ## Convert the hclust object in a dendrogram
-  tree.dendro <- as.dendrogram(tree)
-  labels_colors(tree.dendro) <- color.code
-
-  #######################################
-  ## Export the tree with the aligment
-  mar4 <- alignment.width - 10
-  for (plot.format in c("pdf", "png")) {
-    w.inches <- 14 ## width in inches
-    h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
-    resol <- 72 ## Screen resolution
-    tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
-    verbose(paste("hclust tree drawing", tree.drawing.file), 1)
-    if (plot.format == "pdf") {
-      pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
-    } else if (plot.format == "png") {
-      png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
-    }
-
-    par(mar=c(3,2,1,mar4),family="mono")
-    plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
-    dev.off()
-  }
-
 
   ##################################################
   ##  Produce the internal nodes attributes table
@@ -255,8 +261,10 @@ intermediate.levels <- vector()
 ## Print a file with the Hexadecimals code for the colors of the clusters
 ## The color of the clusters showed in the heatmap will be the same
 ## colors in the D3 trees.
-colors <- rainbow(length(clusters))
-write.table(paste("cluster_", 1:length(colors), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+if(only.hclust == 0){
+  colors <- rainbow(length(clusters))
+  write.table(paste("cluster_", 1:length(colors), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
 
 i <- sapply(1:length(clusters), function(nb){
 
@@ -292,25 +300,27 @@ i <- sapply(1:length(clusters), function(nb){
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer.up"]] <<- as.numeric(0)
                forest.list[[paste("cluster_", nb, sep = "")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
 
+               if(only.hclust == 0){
 
-               ## Create a JSON file for trees with a single node
-               ## In this situation this step is required because it is not possible to use the hclustToJson function
-               JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
-               json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
-               verbose(paste("JSON tree file", json.file), 1)
-               writeLines(JSON.single.node, con=json.file)
-
-               ## For consistency, print the empty file
-               ## It will be erased later
-               JSON.empty <- ";Empty_file\n"
-               JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
-               write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-
-               ## For consistency, Create the folder with the merged consensuses
-               dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
-               flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
-               if(flag >= 1){
+                 ## Create a JSON file for trees with a single node
+                 ## In this situation this step is required because it is not possible to use the hclustToJson function
+                 JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
+                 json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+                 verbose(paste("JSON tree file", json.file), 1)
+                 writeLines(JSON.single.node, con=json.file)
+                 
+                 ## For consistency, print the empty file
+                 ## It will be erased later
+                 JSON.empty <- ";Empty_file\n"
+                 JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
+                 write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+                 
+                 ## For consistency, Create the folder with the merged consensuses
+                 dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
+                 flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
+                 if(flag >= 1){
                    system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
+                 }
                }
 
                intermediate.levels.counter <<- intermediate.levels.counter + 1
@@ -347,25 +357,26 @@ i <- sapply(1:length(clusters), function(nb){
                ## Build the tree by hierarchical clustering,
                tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
 
-               ## Creates and export the json file
-               JSON.tree <- convert.hclust.to.JSON(tree)
-               json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
-               verbose(paste("JSON tree file", json.file), 1)
-               writeLines(JSON.tree, con = json.file)
+               if(only.hclust == 0){
+                 
+                  ## Creates and export the json file
+                  JSON.tree <- convert.hclust.to.JSON(tree)
+                  json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+                  verbose(paste("JSON tree file", json.file), 1)
+                  writeLines(JSON.tree, con = json.file)
 
 
-               ## Creates a file indicating to which levels of the JSON tree correspond to the levels on the hclust tree
-               ## This step is required to assign a name to the branches in the JSON tree in order to create
-               ## the branch-motifs
-               JSON.clusters.table <- identify.JSON.tree.branches(tree, description.table)
-               JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
-               write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-
+                  ## Creates a file indicating to which levels of the JSON tree correspond to the levels on the hclust tree
+                  ## This step is required to assign a name to the branches in the JSON tree in order to create
+                  ## the branch-motifs
+                  JSON.clusters.table <- identify.JSON.tree.branches(tree, description.table)
+                  JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
+                  write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+                }
 
                ## Align the motifs and retrieve the information of the intermediate alignments
                alignment.cluster <<- align.motifs(tree, description.table, compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric = score, nodes.attributes = FALSE, intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
-
 
                ## Export the table with the intermediates alignment information
                sapply(names(intern.alignment), function(lev){
