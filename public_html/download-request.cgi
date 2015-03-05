@@ -22,6 +22,7 @@ my @mandatory_fields  = qw ( first_name
                              last_name
                              email_address
                              institution
+                             city
                              country
                              );
 
@@ -54,7 +55,7 @@ if ($query->param('email_address') =~ /(\S+\@\S+\.\S+)/) {
 ## Send mail
 my $message = "RSAT download request\n\n";
 foreach my $field (@all_fields) {
-  $message .= sprintf("%-20s\t%s", $field, $query->param($field));
+  $message .= sprintf("%-22s\t%s", $field, $query->param($field));
   $message .= "\n";
 }
 
@@ -62,9 +63,12 @@ print "<pre>";
 print $message;
 print "</pre>";
 my $recipient = 'Jacques.van-Helden@univ-amu.fr'; ## All download requests should be sent to JvH
-my $subject = "RSAT download request";
+my $subject = join(" ", 
+		   "RSAT download request from",
+		   $query->param("first_name"), 
+		   $query->param("last_name"), 
+    );
 &RSAT::server::send_mail($message, $recipient, $subject);
-
 
 ## Indicate download URL
 print "<h2>Download URL</h2>";
