@@ -61,6 +61,12 @@ print $query->textfield(-name=>'institution', -size=>50);
 print "</td></tr>\n";
 
 print "<tr><td>\n";
+print "<br><b>City</b> <font color='red'>*</font>\n";
+print "</td>\n<td>";
+print $query->textfield(-name=>'city', -size=>50);
+print "</td></tr>\n";
+
+print "<tr><td>\n";
 print "<br><b>Country</b> <font color='red'>*</font>\n";
 print "</td>\n<td>";
 print $query->textfield(-name=>'country', -size=>50);
