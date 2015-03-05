@@ -252,8 +252,9 @@ package main;
 			maps
 			map_dyads
 			map_pssm
-			gene_index
 			network
+			gene_index
+			network_index
 			index
 			test
 		       );
@@ -531,19 +532,35 @@ package main;
   unless ($batch) {
       print $main_index "</table>\n";
 
-      if (scalar(@network_files) >= 1) {
-	print $main_index "<h2>Inferred co-regulation network</h2>\n";
-	print $main_index "<table class='resultlink'>\n";
-	#      print $main_index "<p><table>\n";
-	foreach my $key (@network_files) {
-	  print $main_index "<tr>\n";
-	  print $main_index "<td>".$key."</td>\n";
-	  my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
-	  print $main_index "<td>".$link."</td>\n";
-	  print $main_index "</tr>\n";
+      ## Add a table with links to the network files in the main index
+      
+      ## Check that at least one network file exists
+      my $network_files_found = 0;
+      foreach my $key (@network_files) {
+	if ($outfile{$key}) {
+	  $network_files_found++;
 	}
-	print $main_index "</table></p>\n";
       }
+
+      ## Add index table either if files were found, or if network
+      ## index was explicitely requested on the command line
+      if (($network_files_found) || ($task{network_index})) {
+	if (scalar(@network_files) >= 1) {
+	  print $main_index "<h2>Inferred co-regulation network</h2>\n";
+	  print $main_index "<table class='resultlink'>\n";
+	  #      print $main_index "<p><table>\n";
+	  foreach my $key (@network_files) {
+	    print $main_index "<tr>\n";
+	    print $main_index "<td>".$key."</td>\n";
+	    my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
+	    print $main_index "<td>".$link."</td>\n";
+	    print $main_index "</tr>\n";
+	  }
+	  print $main_index "</table></p>\n";
+	}
+      }
+
+      ## Report execution time
       my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
       print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
       print $main_index "</body>\n";
@@ -578,7 +595,6 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Initialize output directory + output files
-
   local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
   if (scalar(@current_query_genes) > 1) {
     $current_gene = $query_prefix;
@@ -1340,7 +1356,7 @@ sub CoregulationNetwork {
 
   ################################################################
   ## Write a list of dyad files
-  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; push @network_files, "dyad_file_list";
+  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; # push @network_files, "dyad_file_list";
   my $out= &OpenOutputFile($outfile{dyad_file_list});
   foreach my $query_prefix (sort keys %main_index) {
     &RSAT::message::Debug($query_prefix, $main_index{$query_prefix}{dyads}) if ($main::verbose >= 5);
