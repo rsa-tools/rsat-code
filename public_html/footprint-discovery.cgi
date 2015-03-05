@@ -30,7 +30,8 @@ $command = "$SCRIPTS/footprint-discovery";
 #$ENV{rsat_echo}=2;
 
 ## Read parameters
-$parameters = " -v 1"; ## TEMPORARY FOR DEBUG
+$parameters = " -v 1";
+#$parameters = " -v 3"; ## TEMPORARY FOR DEBUG
 
 ################################################################
 ## Tasks: some tasks are not supported on the Web interface:
