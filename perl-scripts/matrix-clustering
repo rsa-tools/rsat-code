@@ -430,6 +430,11 @@ package main;
       ## Create the merged matrices and consensuses
       &Merge_matrices();
 
+      ##########################################
+      ## Export the external motifs in a file
+      &Export_external_motifs();
+#      die "BOOM!\n";
+
       ################################################################
       ## Read the table with the hexadecimal code 
       ## for the colors assigned to each cluster
@@ -1208,6 +1213,7 @@ sub ReadClusterComposition {
   my %clusters_info = (); 
   foreach my $cluster (@clusters_to_HTML){
     my @nodes = @{$cluster_nodes{$cluster}};
+
     $clusters_info{$cluster} = scalar(@nodes);
     &RSAT::message::Debug("Cluster:", $cluster, 'nb of nodes:', $clusters_info{$cluster}) if ($main::verbose >= 4);
   }
@@ -1789,7 +1795,6 @@ sub create_single_matrix_files(){
 ## Merge the matrices at each level of the hclust tree, and produce a
 ## branch-wise matrix + logo + consensus.
 sub Merge_matrices(){
-
     
     ## Read the file with the information of the intermediate alignments
     ## This info will be used to create the branch-motifs
@@ -1903,6 +1908,7 @@ sub Merge_matrices(){
 	    my $cmd = "cat ".$files." >".$cat_file;
 	    $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 	    $cmd .= " -in_format tf -out_format tf";
+	    $cmd .= " -id ".$cluster." -name ".$cluster;
 	    $cmd .= " -o ".$merged_mat_file;
 	    &doit($cmd, 0, $die_on_error, $verbose);
 	    ## Delete files with single matrices
@@ -1932,7 +1938,45 @@ sub Merge_matrices(){
 	    $cons =~ s/^DE\s+//;
 	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
 	}
+    } 
+}
+
+
+#############################################
+## Collect the most external motif of each
+## cluster and save them in a file
+sub Export_external_motifs(){
+
+    my $mat_file = "";
+    my $external_branch_motifs = "";
+
+    foreach my $cluster (@clusters_to_HTML){
+	
+        ## Folders with the aligned matrices
+	my @folder_merged_matrices = ();
+	chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
+
+	if(scalar(@folder_merged_matrices) > 0){
+	    
+	    foreach my $folder (@folder_merged_matrices){
+	   
+		## Get the name of the motif of the most external branch
+		my $cluster_number = $folder;
+		$cluster_number =~ s/\D+//;
+		if($cluster_number == scalar(@folder_merged_matrices)){
+		    $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+		    last;
+		}
+	    }
+	} else{
+	    my $motif = "@{$cluster_nodes{$cluster}}";
+	    $mat_file = $main::outfile{prefix}."_single_matrices_".$motif.".tf";
+	}
+	$external_branch_motifs .= $mat_file." ";
     }
+    
+    my $cmd = "cat ".$external_branch_motifs." >".$main::outfile{root_motifs};
+    &doit($cmd, 0, $die_on_error, $verbose);
 }
 
 
@@ -2485,6 +2529,9 @@ sub set_output_file_names {
       &RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
       $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
   }
+
+  ## Root matrices file
+  $main::outfile{root_motifs} = $main::outfile{prefix}."_cluster_root_motifs.tf";
 
   ## Files required for the summary
   $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
@@ -3633,6 +3680,9 @@ sub InsertListOfFiles {
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{matrix_descriptions}).'"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
+		   </tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'"><strong>Root motifs</strong></a></td>
+		      <td class="tab_spacer_2">A file with the root matrix of each cluster.</td>
 		   </tr>
                          ';
 

@@ -690,7 +690,8 @@ sub send_mail {
 	$from = $ENV{smtp_sender};
     }
 
-    if (($ENV{rsat_echo} >= 0) || ($main::verbose >= 0)) {
+    ## Issue a warning to indicate that mail will be sent
+    if (($ENV{rsat_echo} >= 1) || ($main::verbose >= 2)) {
 	my $mail_warn = "Sending mail";
 	$mail_warn .= " from \"".$from."\"" if ($from);
 	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
