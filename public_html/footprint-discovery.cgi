@@ -41,7 +41,7 @@ $parameters = " -v 1";
 ##   (required for network inference). 
 $tasks .= " -task query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index";
 
-## Limit the analysis to only the 100 first genes
+## Limit the analysis to only the N first genes
 #$parameters .= " -max_genes 2 ";
 my $max_genes = 20;
 #my $max_genename_size = 12;
@@ -55,6 +55,9 @@ if ($query->param('queries') =~ /\S/) {
   foreach my $line (@query_lines) {
     $l++;
     $line =~ s/^\s+//;
+    next unless ($line =~ /\S/); ## Skip empty lines
+    next if ($line =~ /^;/); ## Skip comment lines
+    next if ($line =~ /^#/); ## Skip header lines
     my @fields = split /\s+/, $line;
 #    if ($fields[0] =~ /^>[actg]+$/i){ # Avoid fasta sequences
 #      &cgiError("Fasta sequences are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");
@@ -67,7 +70,10 @@ if ($query->param('queries') =~ /\S/) {
   }
 
   if (scalar(@query_genes) > $max_genes) {
-    &Warning("The RSAT web server cannot handle large scale analysis.<P> The analysis has been restricted to the ", $max_genes, " first genes<P>\n");
+    &Warning("Multi-gene footprint discovery is time-consuming, and cannot be ensured at large scale on the Web server.\n",
+	     "The analysis will be restricted to your ".$max_genes." first query genes.\n",
+	     "For genome-scale analyses, we recommend to download a stand-alone version of the RSAT suite.\n",
+	);
     @query_genes= splice(@query_genes,0,$max_genes);
     $query_prefix = $max_genes."_first_genes";
   }else{
@@ -136,7 +142,9 @@ if ($query->param('queries') =~ /\S/) {
 
 
 ## Anlayze genes separately
-$parameters .= " -sep_genes";
+if ($query->param("multi_genes") eq "separately") {
+  $parameters .= " -sep_genes";
+}
 
 ## Return fields and threshold values for dyad-analysis
 &CGI_return_fields();
