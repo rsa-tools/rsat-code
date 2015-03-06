@@ -290,6 +290,7 @@ sub GetQueryPrefix {
     #    chomp($query_prefix);
   } elsif ($infile{genes}) {
     $query_prefix = `basename $infile{genes} .tab`;
+    chomp($query_prefix);
   } else {
     $query_prefix = "multiple_genes";
   }
@@ -346,10 +347,16 @@ sub GetOutfilePrefix {
   $outfile_prefix .= "_";
   $outfile_prefix .= join ("_", $organism_name,$main::org_selection_prefix );
 
-  ## We don't want the bg model in the query prefix, because it is only a parameter for the dyads file (not for the sequences)
-  #  if ($bg_model) {
-  #    $outfile_prefix .= "_".$bg_model;
-  #  }
+  ## (??) We don't want the bg model in the query prefix, because it is
+  ## only a parameter for the dyads file (not for the
+  ## sequences). 
+  ##
+  ## JvH (2015-03-06): However we want it in the outfile prefix. I thus uncomment these lines
+  if ($bg_model) {
+    $outfile_prefix .= "_".$bg_model;
+  }
+
+  ## Include a suffix indicating that operons were inferred
   if ($infer_operons) {
     $outfile_prefix .= "_operons";
   }
@@ -383,17 +390,26 @@ sub InitQueryOutput {
   ## Create output directory if required
   $dir{output} = `dirname $outfile{prefix}`;
   chomp($dir{output});
+
+  &RSAT::message::Debug("Initializing output directory", 
+			   "\n\toutput_prefix=".$outfile_prefix, 
+			   "\n\tquery_prefix=".$query_prefix,
+			   "\n\t\$outfile{prefix}=".$outfile{prefix}, 
+			   "\n\t\$dir{output}=".$dir{output}, 
+      ) if ($main::verbose >= 4);
+
   &RSAT::util::CheckOutDir($dir{output});
 
   ## Open output stream for the log file
   $outfile{log} = $outfile{prefix}."_log.txt";
+  &RSAT::message::Debug("Log file", $outfile{log}) if ($main::verbose >= 4);
   $main::out = &OpenOutputFile($outfile{log});
-
   %main::command_args=(out=>$outfile{log});
 
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
   #$outfile{genes_info} = $outfile{prefix}."_query_genes_info.tab";
+  &RSAT::message::Debug("Genes file", $outfile{genes}) if ($main::verbose >= 4);
   $genes = &OpenOutputFile($outfile{genes}) ;
 
   ## Specify other file names
@@ -413,6 +429,8 @@ sub InitQueryOutput {
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
   # $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta" unless $main::no_purge;
+
+  ## Return output and query prefixes
   return($outfile_prefix, $query_prefix);
 }
 
