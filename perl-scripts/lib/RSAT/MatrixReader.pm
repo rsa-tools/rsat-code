@@ -1908,8 +1908,8 @@ sub _readFromTabFile {
       ## Detect error in the input format specification (user selected
       ## tab for TRANSFAC-formatted matrix)
       if (($line =~ /^po/i) 
-	  || (/^ac/i)
-	  || (/^id/i)) {
+	  || ($line =~ /^ac/i)
+	  || ($line =~ /^id/i)) {
 	  &RSAT::error::FatalError("Matrix does not seem to be in tab-delimited format. Seems to be a transfac-formatted matrix.");
       }
 
