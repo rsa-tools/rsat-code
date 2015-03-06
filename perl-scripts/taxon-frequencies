@@ -28,12 +28,19 @@ This requires to have write access on the RSAT directory. It is
 important to use the option -install, because otherwise all the models
 are simply displayed on the terminal (STOUT).
 
-taxon-frequencies -v 1 -taxon Mollicutes -all_models -install
+ taxon-frequencies -v 1 -taxon Mollicutes -all_models -install
 
 =head2 compute a single model and store it in a local file
 
-taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 > Mollicutes_dyads_3nt_sp0-20_freq.tab
+ taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 \
+      > Mollicutes_dyads_3nt_sp0-20_freq.tab
 
+=head2 Compute and install dyad frequencies for all the sub-taxa of a taxon of interest
+
+ taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 \
+   -install -sub_taxa
+
+Beware: this takes time.
 
 =head1 AUTHORS
 
