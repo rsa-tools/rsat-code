@@ -54,7 +54,8 @@ $field_description{rank} = "Rank";
 
 ## Other default parameters
 $default{dyads_filter} = 'checked';
-$default{bg_model} = 'taxfreq';
+#$default{bg_model} = 'taxfreq';
+$default{bg_model} = 'monad'; ## TEMPORARILY SET TO MONAD BECAUSE I HAVE A BUG WITH TAXFREQ
 $default{leaders} = '';
 $default{uth_rank} = 50;
 $default{to_matrix} = 1;
