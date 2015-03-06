@@ -65,7 +65,7 @@ if (length(args >= 1)) {
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
-  verbose(args, 1)
+  verbose(args, 3)
 }
 
 ######################
@@ -136,7 +136,7 @@ if(number.of.motifs > 1){
     ### Creates and export the json file
     JSON.tree <- convert.hclust.to.JSON(tree)
     json.file <- paste(out.prefix, "_trees/tree.json", sep="")
-    verbose(paste("JSON tree file", json.file), 1)
+    verbose(paste("JSON tree file", json.file), 2)
     writeLines(JSON.tree, con=json.file)
   }
 
@@ -182,7 +182,7 @@ if(number.of.motifs > 1){
           w <- 6
           h <- w + 0.75
           resol <- 72 ## Screen resolution
-        verbose(paste("drawing heatmap", heatmap.file), 1)
+        verbose(paste("drawing heatmap", heatmap.file), 2)
         if (plot.format == "pdf") {
           pdf(file=heatmap.file, width=w, height=h)
         } else if (plot.format == "jpg") {
@@ -211,7 +211,7 @@ if(number.of.motifs > 1){
       h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
       resol <- 72 ## Screen resolution
       tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
-      verbose(paste("hclust tree drawing", tree.drawing.file), 1)
+      verbose(paste("hclust tree drawing", tree.drawing.file), 2)
       if (plot.format == "pdf") {
         pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
       } else if (plot.format == "png") {
@@ -233,7 +233,7 @@ if(number.of.motifs > 1){
   colnames(internal.nodes.attributes.table) <- c("#level", "method", "alignment_status", "cluster_1", "cluster_2")
   attributes.file <- paste(sep="", out.prefix, "_tables/internal_nodes_attributes.tab")
   write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
-  verbose(paste("merge attributes table", attributes.file), 1)
+  verbose(paste("merge attributes table", attributes.file), 3)
 } else{
 
   motifs.info <- list()
@@ -267,8 +267,6 @@ if(only.hclust == 0){
 }
 
 i <- sapply(1:length(clusters), function(nb){
-
-  verbose(paste("Exploring the cluster generated: ", nb ), 1)
 
     alignment.cluster <<- list()
     description.table <<- NULL
@@ -306,7 +304,7 @@ i <- sapply(1:length(clusters), function(nb){
                  ## In this situation this step is required because it is not possible to use the hclustToJson function
                  JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
                  json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
-                 verbose(paste("JSON tree file", json.file), 1)
+                 verbose(paste("JSON tree file", json.file), 2)
                  writeLines(JSON.single.node, con=json.file)
                  
                  ## For consistency, print the empty file
@@ -362,7 +360,7 @@ i <- sapply(1:length(clusters), function(nb){
                   ## Creates and export the json file
                   JSON.tree <- convert.hclust.to.JSON(tree)
                   json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
-                  verbose(paste("JSON tree file", json.file), 1)
+                  verbose(paste("JSON tree file", json.file), 2)
                   writeLines(JSON.tree, con = json.file)
 
 
