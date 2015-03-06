@@ -8,25 +8,25 @@ check.param <- function() {
   if (!exists("infile")) {
     stop("Missing mandatory argument: infile=[matrix_comparison_table] ")
   }
-  verbose(paste("Input file", infile), 1)
+  verbose(paste("Input file", infile), 3)
 
   ## Check that description file
   if (!exists("description.file")) {
     stop("Missing mandatory argument: description.file=[matrix_description_table] ")
   }
-  verbose(paste("Description file", description.file), 1)
+  verbose(paste("Description file", description.file), 3)
 
   ## Check that output file has been specified
   if (!exists("out.prefix")) {
     stop("Missing mandatory argument: out.prefix=[output_prefix] ")
   }
-  verbose(paste("Output prefix", out.prefix), 1)
+  verbose(paste("Output prefix", out.prefix), 3)
 
   ## Check that distance table file has been specified
   if (!exists("distance.table")) {
     distance.table <<- paste(sep="", out.prefix, "_dist_table.tab")
   }
-  verbose(paste("Distance table", distance.table), 1)
+  verbose(paste("Distance table", distance.table), 3)
 
   ## Default score is the normalized correlation
   if (!exists("score")) {
