@@ -439,11 +439,12 @@ package main;
 
 #      die "HELLO";
 
-      &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
+      ## Define the background file
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
       unless (-e $infile{bg_model}) {
 #	  if ($task{bg_model}) {
+	&RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
 	my $cmd = $SCRIPTS."/taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
 	$cmd .= " -taxon ".$taxon;
 	$cmd .= " > ".$infile{bg_model};
