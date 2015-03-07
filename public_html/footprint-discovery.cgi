@@ -32,6 +32,7 @@ $command = "$SCRIPTS/footprint-discovery";
 ## Read parameters
 $parameters = " -v 1";
 #$parameters = " -v 3"; ## TEMPORARY FOR DEBUG
+$parameters .= " -nodie";
 
 ################################################################
 ## Tasks: some tasks are not supported on the Web interface:

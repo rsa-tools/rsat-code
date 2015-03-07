@@ -29,7 +29,9 @@ $query = new CGI;
 $command = "$SCRIPTS/footprint-scan";
 
 #### read parameters ####
-$parameters = " -v 0 -synthesis  -sep_genes ";
+$parameters = " -v 0";
+$parameters .= " -nodie";
+$parameters .= " -synthesis  -sep_genes";
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
