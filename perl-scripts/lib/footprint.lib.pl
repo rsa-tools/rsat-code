@@ -9,7 +9,7 @@ require "RSA2.cgi.lib";		## For sortable HTML tables
 ## Options for the &doit() command;
 local $dry = 0;	  ## Do not run the command, just echo them as warning
 local $batch = 0;		## Run the processes on a PC cluster
-local $main::die_on_error = 0;
+local $main::die_on_error = 1; ## Can be inactivted with the option -nodie
 local $job_prefix = "footprint_disco";
 local $cmd;
 
@@ -1053,8 +1053,7 @@ sub InferQueryOperons {
   $cmd .= " -o ".$outfile{leader_qgenes};
   &RSAT::message::Debug("Command to infer operon leaders ", $cmd) if ($task{operons}  && ($main::verbose >= 5)) ;
   #&one_command($cmd,0,"", %main::command_args) ;
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n";
-  &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix) if ($task{operons});
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix) if ($task{operons});
   &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
 }
 
@@ -1077,8 +1076,7 @@ sub RetrieveQueryPromoters {
     $cmd .= " -o ".$outfile{query_seq};
     &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);
     #&one_command($cmd,0);
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; 
-    &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n";  &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 
   }
   &IndexOneFile("Query sequence", $outfile{query_seq});
