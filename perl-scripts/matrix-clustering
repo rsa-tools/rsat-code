@@ -123,7 +123,7 @@ require "RSA.disco.lib";
 require "footprint.lib.pl";
 use Data::Dumper;
 use File::Basename;
-
+use File::Path;
 
 ################################################################
 ## Main package
@@ -198,7 +198,6 @@ package main;
     $supported_label_fields{$field} = 1;
   }
   local $supported_label_fields = join ",", @supported_label_fields;
-#    local $label_fields_to_return = "";
   local %label_fields_to_return = ();
   local @label_fields_to_return = ();
 
@@ -444,6 +443,13 @@ package main;
 	  ## Export the external motifs in a file
 	  &Export_external_motifs();
 	  #die " ---> Raindrops they come from the clouds in the sky!\n";
+
+	  ## Some files and directories that must be deleted
+	  $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
+	  $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
+	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
+	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
+
       }else{
 
 	  ################################################################
@@ -474,13 +480,11 @@ package main;
       }
       
 
-
       ######################
       ## Clone input file
       if($clone_input_flag == 1){
       	  &Clone_input();
       }
-
 
       if($root_matrices_flag == 0){
 
@@ -503,21 +507,9 @@ package main;
   &Verbose() if ($main::verbose);
   
   ################################################################
-  ## Generate the HMTL index of input/output files
-  &IndexFiles() if ($main::outfile{html_index});
-
-  ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); print $main::out $exec_time if ($main::verbose >= 1);
   close $main::out if ($main::outfile{prefix});
-
-  ## Close the HTML index file
-  if ($main::outfile{html_index}) {
-    print $main::html_index "<hr>";
-    print $main::html_index "</body>";
-    print $main::html_index "</html>";
-    close $main::html_index;
-  }
 
   exit(0);
 }
@@ -2573,7 +2565,7 @@ sub Delete_temporal_files {
   }
 
   foreach my $fd (keys %to_delete_folder){
-    rmdir($to_delete_folder{$fd});
+    rmtree($to_delete_folder{$fd});
   }
 
 }
