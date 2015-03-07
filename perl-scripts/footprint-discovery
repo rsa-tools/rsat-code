@@ -1426,13 +1426,24 @@ sub CoregulationNetwork {
   ## (likely to be generic or low-complexity motifs).
   $outfile{dyad_hubs} = $dir{network}."/".$main_prefix."_dyad_hubs_deg_gt".$max_dyad_degree.".tab";  push @network_files, "dyad_hubs";
   $outfile{dyads_filtered} = $dir{network}."/".$main_prefix."_dyads_filtered_max_deg".$max_dyad_degree.".tab"; push @network_files, "dyads_filtered";
+
+  ## Identify "hubs" and store them in a separate file
   my $dyad_hubs_cmd = "grep -v '^;' ".$outfile{dyad_gene_degrees};
   $dyad_hubs_cmd .= " | grep -v '^#'";
-  $dyad_hubs_cmd .= ' |awk -F\'\t\' \'$3 > '.$max_dyad_degree.' {print $1} \'';
+  $dyad_hubs_cmd .= ' |awk -F\'\t\' \'$4 > '.$max_dyad_degree.' {print $1} \'';
   $dyad_hubs_cmd .= " > " .$outfile{dyad_hubs};
-  $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
-  $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};
-  $dyad_hubs_cmd .= " > ".$outfile{dyads_filtered};
+
+  ## Filter out hubs
+  my $hub_nb = `wc -l $outfile{dyad_hubs}| awk '{print $1}'`;
+  chomp($hub_nb);
+  if ($hub_nb >= 1) {
+    $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
+    $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};
+    $dyad_hubs_cmd .= " > ".$outfile{dyads_filtered};
+  } else {
+    $dyad_hubs_cmd .= "; cp -f ".$outfile{dyad_sig_classes};
+    $dyad_hubs_cmd .= " ".$outfile{dyads_filtered};
+  }
   &one_command($dyad_hubs_cmd, 1, 0, task=>'network', out=>$main_log);
   &RSAT::message::TimeWarn("Dyad hubs", $outfile{dyad_hubs}) if ($main::verbose >= 2);
   &RSAT::message::TimeWarn("Filtered dyads", $outfile{dyads_filtered}) if ($main::verbose >= 2);
