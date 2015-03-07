@@ -31,6 +31,7 @@ _fp_disco:
 	@echo "Running footprint-discovery 	${ORG}	${TAXON}	${QUERY}"
 	footprint-discovery -v ${V} -org ${ORG} -taxon ${TAXON} \
 		${QUERY} \
+		-sep_genes \
 		-lth occ 1 \
 		-lth occ_sig 0 \
 		-uth rank 50 \
@@ -47,7 +48,10 @@ _fp_disco:
 YEAST_DEMO_GENES=${RSAT}/public_html/demo_files/footprint-discovery_selected_yeast_genes.tab
 fp_disco_selected_genes_yeast:
 	@echo "Selected genes	${YEAST_DEMO_GENES}"
-	@${MAKE} _fp_disco QUERY='-genes ${YEAST_DEMO_GENES}' ORG=Saccharomyces_cerevisiae TAXON=Saccharomycetaceae
+	@${MAKE} _fp_disco QUERY='-genes ${YEAST_DEMO_GENES}' \
+		ORG=Saccharomyces_cerevisiae \
+		TAXON=Saccharomycetales \
+		OPT='-task network,gene_index,network_index'
 
 ################################################################
 ## Run footprint-discovery with one selected gene
