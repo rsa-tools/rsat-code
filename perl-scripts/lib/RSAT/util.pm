@@ -990,7 +990,7 @@ sub doit {
   if ($batch) {
 
     ## command used to send the actual command as a script to the job scheduler
-    my $batch_cmd; 
+    my $qsub_command; 
 
     ## Define the shell
     my $shell = $ENV{CLUSTER_SHELL} || $ENV{SHELL};
@@ -1078,21 +1078,21 @@ sub doit {
       chomp($wd);
 
       ## qsub command functionning using torque
-      $batch_cmd = "qsub";
-      $batch_cmd .= " ".$selected_nodes if ($selected_nodes);
-      $batch_cmd .= " -d ".$wd;
-      $batch_cmd .= " -m ".$batch_mail;
-      $batch_cmd .= " -N ".$job_file;
-      #      $batch_cmd .= " -j oe ";
-      $batch_cmd .= " -e ".$job_file.".err";
-      $batch_cmd .= " -o ".$job_file.".log";
-      $batch_cmd .= " ".$job_file;
+      $qsub_command = "qsub";
+      $qsub_command .= " ".$selected_nodes if ($selected_nodes);
+      $qsub_command .= " -d ".$wd;
+      $qsub_command .= " -m ".$batch_mail;
+      $qsub_command .= " -N ".$job_file;
+      #      $qsub_command .= " -j oe ";
+      $qsub_command .= " -e ".$job_file.".err";
+      $qsub_command .= " -o ".$job_file.".log";
+      $qsub_command .= " ".$job_file;
 
-      &RSAT::message::Debug("qsub command for torque", $batch_cmd) if ($main::verbose >= 2);
+      &RSAT::message::Debug("qsub command for torque", $qsub_command) if ($main::verbose >= 2);
 
     } elsif (lc($queue_manager) eq "sge") {
       ## qsub command functionning using Sun Grid Engine
-      $batch_cmd = join(" ", "qsub",
+      $qsub_command = join(" ", "qsub",
 		       "-m", $batch_mail,
 		       "-q ", $cluster_queue,
 		       " -j y ",
@@ -1103,9 +1103,9 @@ sub doit {
 
     } elsif (lc($queue_manager) eq "batch") {
       ## qsub command functionning using Sun Grid Engine
-      $batch_cmd = &RSAT::server::GetProgramPath("batch");
-      $batch_cmd = $batch_cmd;
-      $batch_cmd .= " -f ".$job_file;
+      $qsub_command = &RSAT::server::GetProgramPath("batch");
+      $qsub_command = $qsub_command;
+      $qsub_command .= " -f ".$job_file;
 
     } else {
       &RSAT::error::FatalError($queue_manager, 
@@ -1113,7 +1113,7 @@ sub doit {
 			       "Please define the job scheduler by setting the variable QUEUE_MANAGER in RSAT_config.props.");
     }
 
-    &doit($batch_cmd, $dry, $die_on_error,$verbose,0);
+    &doit($qsub_command, $dry, $die_on_error,$verbose,0);
 
 
   } else {
@@ -1304,7 +1304,8 @@ sub one_command {
   ## analysis in a single command that will be sent to the cluster as
   ## a single job.
   if ($main::batch) {
-    if ($main::batch_cmd =~/\S/) {
+    if ((defined($main::batch_cmd)) &&
+	 ($main::batch_cmd =~/\S/)) {
       $main::batch_cmd .= " ; $cmd";
     } else {
       $main::batch_cmd = "$cmd";
