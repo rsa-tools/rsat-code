@@ -232,3 +232,25 @@ KWALKS_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/kwalks/bin
 ## alternative option.
 # LOGO_PROGRAM=seqlogo|weblogo
 LOGO_PROGRAM=seqlogo
+
+################################################################
+## Taxon-specific servers
+##
+## Values indicating which tools are supported on the current server
+
+## footprint-discovery_form.cgi
+## footprint-scan_form.cgi
+## get-orthologs_form.cgi
+## infer-operons_form.cgi
+PHYLO_TOOLS=0
+
+## retrieve-variation-seq_form.cgi
+## variation-info_form.cgi
+## variation-scan_form.cgi
+VARIATIONS_TOOLS=0
+
+## fetch-sequences_form.php
+UCSC_TOOLS=0
+
+## retrieve-ensembl-seq_form.cgi
+ENSEMBL_TOOLS=0

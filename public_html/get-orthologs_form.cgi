@@ -74,6 +74,23 @@ print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{PHYLO_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
+
+################################################################
+### formheader
+
 print $query->start_multipart_form(-action=>"get-orthologs.cgi");
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);

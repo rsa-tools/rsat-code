@@ -84,6 +84,24 @@ print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medin
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 print "</BLOCKQUOTE>\n";
+
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{VARIATIONS_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
+
+################################################################
+### formheader
+
 print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\"><font color='#0D73A7'>Information about variation-scan</font> </div>\n";
  print "<div id=\"menu105\" class=\"menu_collapsible\">\n";
 print "<BLOCKQUOTE>\n";
