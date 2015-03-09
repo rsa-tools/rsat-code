@@ -69,6 +69,23 @@ print "Infers the operon to which each coding gene of a given list belongs in a 
 print "<br>This program was developed by <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/rekins'>Rekins Janky</a> and <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.</center>";
 print "</CENTER>";
 
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{PHYLO_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
+
+################################################################
+### formheader
+
 
 print $query->start_multipart_form(-action=>"infer-operons.cgi");
 
