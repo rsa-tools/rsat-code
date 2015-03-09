@@ -1259,8 +1259,14 @@ sub one_command {
 
   &RSAT::message::Debug("RSAT::util::one_command()", $cmd) if ($main::verbose >= 3);
 
-  ## Check dependency on a specific task
+  ################################################################
+  ## Define a dry option for one_command, because there are two
+  ## reasons why we might avoid to actually run the command ("dry" mode):
+  ##
+  ## 1. Because this option was called in the main work space
   my $local_dry = $main::dry;
+  ## 2. Because this command is depending on the activation of a
+  ##    specific task by the user (option -task).
   if ($args{task}) {
     $required_task = $args{task};
     $local_dry = 1 unless ($main::task{$required_task});
@@ -1291,6 +1297,12 @@ sub one_command {
 #       $cmd = $cmd." >&".$err_file;
 #   }
 
+
+  ################################################################
+  ## If the main method is in batch, append the command to the string
+  ## $main::batch_cmd.  This serves to collect several steps of an
+  ## analysis in a single command that will be sent to the cluster as
+  ## a single job.
   if ($main::batch) {
     if ($main::batch_cmd =~/\S/) {
       $main::batch_cmd .= " ; $cmd";
@@ -1300,16 +1312,17 @@ sub one_command {
   } else {
 
     ## Report command in the log file
-    if (($print_out) || ($main::verbose >= 3)) {
+    if ($print_out) {
       my $local_out;
-      if ($args{out}) {
-	$local_out = $args{out};
-      } elsif ($main::out) {
-	$local_out = $main::out;
-      } else {
-	$local_out = STDOUT;
+      if ($args{log}) {
+	$local_out = $args{log};
+#      } elsif ($main::out) {
+#	$local_out = $main::out;
+#      } else {
+#	$local_out = STDOUT;
+#      }
+	print $local_out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n");
       }
-      print $local_out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n");
     }
     &doit($cmd, $local_dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
   }
