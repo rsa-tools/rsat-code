@@ -23,7 +23,8 @@ list_param:
 	@echo "BATCH		${BATCH}"
 	@echo "FP_DISCO_DIR	${FP_DISCO_DIR}"
 
-## Run footprint-discovery for a single gene of interest.
+## Generic command for footprint-discovery (will be adapted in other
+## targets by changing parameters).
 FP_DISCO_DIR=results/footprint-discovery_demo
 _fp_disco:
 	@mkdir -p ${FP_DISCO_DIR}
@@ -51,7 +52,7 @@ fp_disco_selected_genes_yeast:
 	@${MAKE} _fp_disco QUERY='-genes ${YEAST_DEMO_GENES}' \
 		ORG=Saccharomyces_cerevisiae \
 		TAXON=Saccharomycetales \
-		OPT='-task network,gene_index,network_index'
+		TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index,network,gene_index,network_index
 
 ################################################################
 ## Run footprint-discovery with one selected gene
