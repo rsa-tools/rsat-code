@@ -427,7 +427,6 @@ package main;
       &RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
 
     } else {
-
       $task{bg_model} = 1; ## Force the computation of the bg model
 
       ## Store the background model in the parent directory of the
@@ -437,18 +436,23 @@ package main;
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
 
-#      die "HELLO";
-
       ## Define the background file
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
+
+      &RSAT::message::Info("Using local taxon-specific background model file", $infile{bg_model}) if ($main::verbose >= 2);
+
+      ## Compute background model if required.  Note that this must be
+      ## done immediately, cannot be send in batch, because the BG
+      ## model file has to be available before the analysis of the
+      ## first gene starts.
       unless (-e $infile{bg_model}) {
 #	  if ($task{bg_model}) {
-	&RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Computing local taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 2);
 	my $cmd = $SCRIPTS."/taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
 	$cmd .= " -taxon ".$taxon;
 	$cmd .= " > ".$infile{bg_model};
-	&one_command($cmd, 1, 0, task=>'bg_model', log=>$main_log);
+	&doit($cmd, $dry, 1, $verbose, 0, "");  ## CANNOT BE DONE IN BATCH MODE -> third argument is 1
       }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
     }
