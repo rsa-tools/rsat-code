@@ -30,7 +30,7 @@ $default{demo_descr}="";
 $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
-$default{matrix_format} = "meme";
+$default{matrix_format} = "transfac";
 $default{kfold}="none";
 $default{permutation1} = "1";
 $default{permutation2} = "1";
@@ -827,7 +827,7 @@ print "<td><b>";
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."</blockquote>");
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'meme');
+print $query->hidden(-name=>'matrix_format',-default=>'meme_block');
 print $query->hidden(-name=>'kfold',-default=>$default{kfold});
 
 print $query->hidden(-name=>'tag1',-default=>'positive_set');
