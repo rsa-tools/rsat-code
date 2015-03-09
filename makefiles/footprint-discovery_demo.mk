@@ -1,5 +1,5 @@
 ################################################################
-## Demonstration for the too footprint-discovery
+## Demonstration for the tool footprint-discovery
 
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/footprint-discovery_demo.mk
@@ -59,6 +59,7 @@ fp_disco_selected_genes_yeast:
 fp_disco_one_gene: list_param
 	@${MAKE} _fp_disco QUERY='-q ${GENE}'
 
+################################################################
 ## Run footprint discovery with all the genes of the genome of
 ## interest. This costs several hours of computation, it should better
 ## run on a cluster with the option -batch (see target
