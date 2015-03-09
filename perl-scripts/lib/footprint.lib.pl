@@ -404,7 +404,7 @@ sub InitQueryOutput {
   $outfile{log} = $outfile{prefix}."_log.txt";
   &RSAT::message::Debug("Log file", $outfile{log}) if ($main::verbose >= 4);
   $main::out = &OpenOutputFile($outfile{log});
-  %main::command_args=(out=>$outfile{log});
+  %main::command_args=(log=>$outfile{log});
 
   ## File for storing the list of query gene names
   $outfile{genes} = $outfile{prefix}."_query_genes.tab";
