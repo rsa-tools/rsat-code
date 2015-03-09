@@ -1051,9 +1051,10 @@ sub InferQueryOperons {
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -uth interg_dist ".$dist_thr;
   $cmd .= " -o ".$outfile{leader_qgenes};
-  &RSAT::message::Debug("Command to infer operon leaders ", $cmd) if ($task{operons}  && ($main::verbose >= 5)) ;
-  #&one_command($cmd,0,"", %main::command_args) ;
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix) if ($task{operons});
+  &RSAT::message::Debug("Command to infer operon leaders ", $cmd) if ($task{operons}  && ($main::verbose >= 5));
+
+  &one_command($cmd,0,"", %main::command_args); ## JvH restored &one_command, 2015-03-09
+  #print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix) if ($task{operons});
   &IndexOneFile("Operon leaders for query genes", $outfile{leader_qgenes});
 }
 
@@ -1074,9 +1075,9 @@ sub RetrieveQueryPromoters {
     $cmd .= " -noorf";
     $cmd .= " -feattype misc_RNA,cds,trna";
     $cmd .= " -o ".$outfile{query_seq};
-    &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);
-    #&one_command($cmd,0);
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n";  &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);    
+    &one_command($cmd,0); ## JvH restored &one_command, 2015-03-09
+    #print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n";  &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 
   }
   &IndexOneFile("Query sequence", $outfile{query_seq});
@@ -1109,8 +1110,8 @@ sub ComputeFilterDyads {
     $cmd .= " ".$strands;
     $cmd .= " ".$noov;
     $cmd .= " -o ".$outfile{filter_dyads};
-   # &one_command($cmd);
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &one_command($cmd); ## JvH restored &one_command, 2015-03-09
+    ## print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("Filter dyads", $outfile{filter_dyads});
 }
@@ -1136,8 +1137,9 @@ sub ComputeFilterScan {
     $cmd .= " -quick ";
     #$cmd .= " ".$noov;
     $cmd .= " -o ".$outfile{filter_scan};
-    &one_command($cmd) if ($task{filter_scan});
-    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    #&one_command($cmd) if ($task{filter_scan}); ## JvH corrected one_command on 2015-03-09
+    &one_command($cmd, 1, 0, task=>'filter_scan', log=>$main_log);
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix)  if ($task{filter_scan});
     &IndexOneFile("Filter scan", $outfile{filter_scan});
 
     my $filterg=`grep -v ";" $outfile{filter_scan}  | grep -v "#" | cut -f1`;
@@ -1178,7 +1180,8 @@ sub GetOrthologs {
     $cmd .= " -only_blast";	## only use genome having blast files
     $cmd .= " -rand " if ($main::rand);
     $cmd .= " -o ".$outfile{orthologs};
-    &one_command($cmd);
+#    &one_command($cmd);
+    &one_command($cmd, 1, 0, task=>'orthologs', log=>$main_log);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 
   } elsif ($main::orthologs_list_file){
@@ -1227,9 +1230,8 @@ sub InferOrthoOperons {
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -o ".$outfile{bbh};
     $cmd .= " -uth interg_dist ".$dist_thr;
-    #&one_command($cmd, 1,"", %main::command_args) ;
-    
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &one_command($cmd, 1,"", %main::command_args) ;  ## JvH restored one_command on 2015-03-09
+    ## print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("Operon leader genes", $outfile{bbh});
 }
@@ -1246,8 +1248,9 @@ sub RetrieveOrthoSeq {
     $cmd .= " -noorf";
     $cmd .= " -feattype CDS,mRNA,tRNA,scRNA,misc_RNA" ;
     $cmd .= " -o ". $outfile{seq_notclean} ;
-    #&one_command($cmd);
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &one_command($cmd); ## JvH restored one_command on 2015-03-09
+    ## print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+
     ## Clearn non-dna characters
     $cmd = $SCRIPTS."/convert-seq";
     $cmd .= " -i ".$outfile{seq_notclean};
@@ -1256,8 +1259,8 @@ sub RetrieveOrthoSeq {
     $cmd .= " -to fasta ";
     $cmd .= " -dna ";
     $cmd .= " -o ". $outfile{seq};
-    #&one_command($cmd);
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    &one_command($cmd); ## JvH restored one_command on 2015-03-09
+    ## print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("$promoter sequences", $outfile{seq});
 
@@ -1299,6 +1302,7 @@ sub PurgeOrthoSeq {
     $cmd .= " -dna ";
     $cmd .= " -o ". $outfile{purged} ;
     &one_command($cmd);
+    ##  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
   &IndexOneFile("Purged sequences", $outfile{purged});
 
@@ -1321,10 +1325,10 @@ sub CalcMAtrixTheorDistrib {
   ## Define the global variable containing bg_distrib_file
   ## This BG file has either been
   $main::bg_distrib="";
-  if (($bg_method eq "input" )||($bg_method eq "window")) { ##bg input and bgwindow
-    $main::bg_distrib=$outfile{bg_distrib};
+  if (($bg_method eq "input" ) || ($bg_method eq "window")) { ##bg input and bgwindow
+    $main::bg_distrib = $outfile{bg_distrib};
   } elsif (defined($main::infile{bg})) { ## bgfile was entered by the user
-    $main::bg_distrib=$main::infile{bg};
+    $main::bg_distrib = $main::infile{bg};
   } else {
     &RSAT::error::FatalError("No background file for the computation of the theoretical distribution.");
   }
@@ -1405,8 +1409,9 @@ sub OccurrenceSig {
 ################################################################
 ## Evaluate if the gene occurrence significance in the given p-value
 ## can pass the threshold for selecting conserved interactions based
-## on overrepresentation
-sub Select_interaction{
+## on enrichment (over-representation) of binding sites in promoters
+## of orthologs.
+sub Select_interaction {
   &CheckDependency("synthesis","matrix_distrib");
   my $min_weight = &GetMinWeight();
   my ($occ_sig_file) = &OpenInputFile($outfile{occ_sig});
@@ -1476,7 +1481,7 @@ sub Select_interaction{
 
   }
 
-  #Sort scores that pass the threholds
+  ## Sort scores that pass the threholds
   my @all_notsorted_scores= keys (%scores_occ_th);
   my @sorted_scores=sort {$a<=>$b}  @all_notsorted_scores;
 
@@ -1494,10 +1499,9 @@ sub Select_interaction{
     }
   }
 
-  #Sort all scores to report all interactios
-  #Report either the score that passed the threshold or the zero scores if there where none scores that passed the thresholds
-
-
+  # Sort all scores to report all interactions.
+  # Report either the score that passed the threshold or the zero
+  # scores if there where none scores that passed the thresholds.
   if ($top_sig{$current_gene} ) {
     &RSAT::message::Debug("ALL Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
     $report_top_scores= join("\t", $top_sig{$current_gene}, $top_score{$current_gene} );
