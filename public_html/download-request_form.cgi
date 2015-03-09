@@ -25,7 +25,7 @@ $query = new CGI;
 ## Header
 &RSA_header("Download request", "form");
 print "<center>";
-print "Request a stand-alone version of the RSAT/NeAT software suites.<P>\n";
+print "Request a stand-alone version of the RSAT/NeAT software suites, either as an archive to install RSAT on your own operating system or as a Virtual Machine.<P>\n";
 print "</center>";
 print "<blockquote>\n";
 
