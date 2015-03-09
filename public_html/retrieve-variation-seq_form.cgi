@@ -37,6 +37,23 @@ print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medin
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{VARIATIONS_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
+
+################################################################
+### formheader
+
 print $default{demo_descr1};
 
 print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");

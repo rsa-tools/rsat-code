@@ -76,6 +76,25 @@ print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacq
 print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print "</CENTER>";
 print "</BLOCKQUOTE>\n";
+
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{PHYLO_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
+
+################################################################
+### formheader
+
+
 print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\"><font color='#0D73A7'>Information about footprint-scan</font> </div>\n";
  print "<div id=\"menu105\" class=\"menu_collapsible\">\n";
 print "<BLOCKQUOTE>\n";
@@ -86,6 +105,8 @@ print "</BLOCKQUOTE>\n";
 print "</div></p>\n";
 
 &ListParameters() if ($ENV{rsat_echo} >=2);
+
+
 
 &ReadMatrixFromFile() ;
 
