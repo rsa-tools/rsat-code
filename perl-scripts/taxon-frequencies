@@ -32,12 +32,12 @@ are simply displayed on the terminal (STOUT).
 
 =head2 compute a single model and store it in a local file
 
- taxon-frequencies -v 1 -type dyad -ml 3 -taxon Mollicutes \
+ taxon-frequencies -v 1 -type dyad -ml 3 -2str -taxon Mollicutes \
       > Mollicutes_dyads_3nt_sp0-20_freq.tab
 
 =head2 Compute and install dyad frequencies for all the sub-taxa of a taxon of interest
 
- taxon-frequencies -v 1 -type dyad -ml 3 -install -sub_taxa \
+ taxon-frequencies -v 1 -type dyad -ml 3 -2str -install -sub_taxa \
       -taxon Mollicutes 
 
 Beware: this takes time. Sub-taxa exploration is not optimized yet, so
