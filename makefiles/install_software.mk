@@ -758,7 +758,7 @@ _download_consensus:
 
 _compile_consensus:
 	@echo "Compiling consensus in RSAT_BIN	${CONSENSUS_DIR}"
-	(cd ${CONSENSUS_DIR}; rm *.o; make)
+	(cd ${CONSENSUS_DIR}; rm *.o; make CPPFLAGS="")
 	@echo "Installing consensus in RSAT_BIN	${RSAT_BIN}"
 	${SUDO} rsync -ruptvl ${CONSENSUS_DIR}/${CONSENSUS_APP} ${RSAT_BIN}
 	(cd ${RSAT_BIN}; ${SUDO} ln -fs ${CONSENSUS_APP} consensus)
