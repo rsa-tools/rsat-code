@@ -698,7 +698,7 @@ uncompress_program:
 ## Common frame for installing programs
 INSTALLED_PROGRAM=`ls -1t ${SRC_DIR}/${PROGRAM}/${PROGRAM}*`
 _compile_program:
-	(cd ${PROGRAM_DIR}; make ${_COMPILE_OPT})
+	(cd ${PROGRAM_DIR}; make ${COMPILE_OPT})
 	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
 
 
@@ -740,23 +740,30 @@ _compile_patser:
 
 ################################################################
 ## Install consensus (J.Hertz)
-CONSENSUS_VERSION=consensus-v6c.1
+#CONSENSUS_VERSION=consensus-v6c.1 ## Not distributed anymore ?
+CONSENSUS_VERSION=consensus-v6c
 CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
-CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
-CONSENSUS_DIR=ext/consensus/${CONSENSUS_VERSION}
+#CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
+CONSENSUS_URL=http://stormo.wustl.edu/src/
+CONSENSUS_DIR=${SRC_DIR}/consensus/${CONSENSUS_VERSION}
+install_consensus: _download_consensus _compile_consensus
+
 _download_consensus:
 	@echo
 	@echo "Downloading ${CONSENSUS_VERSION}"
 	@echo
 	@mkdir -p ${CONSENSUS_DIR}
-	(cd ${CONSENSUS_DIR}; wget -nv -nd ${CONSENSUS_URL}/${CONSENSUS_TAR}; tar -xpzf ${CONSENSUS_TAR})
+	(cd ${SRC_DIR}/consensus; wget -nv -nd --no-clobber ${CONSENSUS_URL}/${CONSENSUS_TAR}; cd ${CONSENSUS_DIR}; tar -xpzf ../${CONSENSUS_TAR})
 	@echo "consensus dir	${CONSENSUS_DIR}"
 
 _compile_consensus:
-#	${MAKE} uncompress_program PROGRAM=consensus
-	${MAKE} _compile_program PROGRAM=consensus _COMPILE_OPT='CPPFLAGS=""'
-
-
+	@echo "Compiling consensus in RSAT_BIN	${CONSENSUS_DIR}"
+	(cd ${CONSENSUS_DIR}; rm *.o; make)
+	@echo "Installing consensus in RSAT_BIN	${RSAT_BIN}"
+	${SUDO} rsync -ruptvl ${CONSENSUS_DIR}/${CONSENSUS_APP} ${RSAT_BIN}
+	(cd ${RSAT_BIN}; ${SUDO} ln -fs ${CONSENSUS_APP} consensus)
+	@echo "ls -ltr ${RSAT_BIN}/consensus*"
+#	${MAKE} _compile_program PROGRAM=consensus COMPILE_OPT='CPPFLAGS=""'
 
 ################################################################
 ## UCSC tools (developed by Jim Kent)
