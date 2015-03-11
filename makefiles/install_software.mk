@@ -715,7 +715,8 @@ _compile_gibbs:
 PATSER_VERSION=patser-v3b.5
 #PATSER_VERSION=patser-v3e.1
 PATSER_TAR=${PATSER_VERSION}.tar.gz
-PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
+PATSER_URL=http://stormo.wustl.edu/src/
+#PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 PATSER_DIR=${SRC_DIR}/patser/${PATSER_VERSION}
 PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
 install_patser: _download_patser _compile_patser
@@ -729,8 +730,9 @@ _download_patser:
 	@echo "patser dir	${PATSER_DIR}"
 
 _compile_patser:
-	@echo "Installing patser in RSAT_BIN	${RSAT_BIN}"
+	@echo "Compiling patser in RSAT_BIN	${PATSER_DIR}"
 	(cd ${PATSER_DIR}; rm *.o; make)
+	@echo "Installing patser in RSAT_BIN	${RSAT_BIN}"
 	${SUDO} rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT_BIN}
 	(cd ${RSAT_BIN}; ${SUDO} ln -fs ${PATSER_APP} patser)
 	@echo "ls -ltr ${RSAT_BIN}/patser*"
