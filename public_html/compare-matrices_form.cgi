@@ -42,7 +42,8 @@ $default{'return_NsEucl'} = "CHECKED";
 
 
 ## motif database
-$default{compare_motif_database}="footprintDB-plants"; #"jaspar_core_vertebrates";
+#$default{compare_motif_database}="footprintDB-plants"; #"jaspar_core_vertebrates";
+$default{compare_motif_database}="jaspar_core_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
