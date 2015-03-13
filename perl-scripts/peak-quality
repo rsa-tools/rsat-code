@@ -581,7 +581,7 @@ package main;
       $cmd .= " -minol 7";
       $cmd .= " -maxol 7";
       $cmd .= " ".$param{strand};
-      #	$cmd .= " -motif_db jaspar_core_vertebrates tf $RSAT/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf";
+      #	$cmd .= " -motif_db jaspar_core_vertebrates tf $RSAT/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf";
       $cmd .= " -source galaxy";
       $cmd .= " -task purge,seqlen,composition,disco,merge_words,collect_motifs,synthesis,scan";
       $cmd .= " -prefix peak-motifs";
