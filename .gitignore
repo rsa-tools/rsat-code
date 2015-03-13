@@ -26,7 +26,6 @@ contrib/count-words/count-words
 contrib/info-gibbs/info-gibbs
 contrib/kwalks/bin/lkwalk
 contrib/matrix-scan-quick/matrix-scan-quick
-./data
 denied_IP_addresses*
 distrib_accounts
 doc/manuals/*.log
@@ -70,7 +69,7 @@ results
 rsat_*.tar.gz
 available*
 .Rproj.user
-data
 ws_clients/perl_clients/RSATWS
 public_html/web_services/clients/perl_clients/RSATWS
 makefile
+public_html/data/ceas/
