@@ -1460,7 +1460,7 @@ sub MatrixDBcheckBox {
   my $choice_mode = $args{choice_mode} || "checkbox"; ## Display check boxes or radio buttons
 
   ## load the file containing the path to the databases
-  my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
+  my $mat_db = $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab" ;
   unless (-e $mat_db) {
     &RSAT::message::Warning( "Motif database description file not found ($mat_db)");
     return;
@@ -1504,7 +1504,7 @@ sub GetMatrixDBfromBox {
   my @selected_db = ();
 
   ## load the file containing the description and path of supported motif databases
-  my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
+  my $mat_db = $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab" ;
   open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
   while (my $line = <MAT_DB>) {
     next if ($line =~ /^;/); ## Skip comment lines
@@ -1516,13 +1516,13 @@ sub GetMatrixDBfromBox {
 
     ## Treat multiple database selections if the DB list was presented with checkboxes
     if ($query->param($db_name) =~ /on/){
-      $loaded_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/data/motif_databases/".$file;
+      $loaded_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/motif_databases/".$file;
       push @selected_db, $db_name;
     } else {
 
       ## Treat single database selection if the DB list was presented with radio box
       if ($query->param('db_choice') eq $db_name) {
-	$loaded_params .= " -file2 ".$ENV{RSAT}."/public_html/data/motif_databases/".$file;
+	$loaded_params .= " -file2 ".$ENV{RSAT}."/public_html/motif_databases/".$file;
 	$loaded_params .= " -format2 ".$format;
 	push @selected_db, $db_name;
       }
