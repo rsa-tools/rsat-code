@@ -1380,6 +1380,14 @@ sub PrintThresholdValues {
     return $message;
 }
 
+sub sort_unique {
+    my (@list) = @_;
+    my $index = ();
+    foreach my $element (@list) {
+	$index{$element}++;
+    }
+    return(sort(keys(%index)));
+}
 
 return 1;
 
