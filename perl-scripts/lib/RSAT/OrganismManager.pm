@@ -241,7 +241,7 @@ sub export_supported_organisms {
   &RSAT::message::TimeWarn("Storing updated organism table to temporary file", $organism_table_tmp) if ($main::verbose >= 2);
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table_tmp);
 
-  print $table_handle &supported_organism_table("header", 1, $source, $taxon, $depth, @fields);
+  print $table_handle &supported_organism_table("header", 1, $source, $taxon, $group, $depth, @fields);
   &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/public_html/data/supported_organisms.pl") if ($main::verbose >= 3);
 
   ## Rename the updated table to make it effective
@@ -284,10 +284,18 @@ Restrict only return organisms belonging to a given taxon.
 
 =cut
 sub supported_organism_table {
-  my ($header,$relative_path, $source, $taxon, $depth, @fields) = @_;
+  my ($header,$relative_path, $source, $taxon, $group, $depth, @fields) = @_;
   my $table = "";
 
-  &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "taxon: ".$taxon, "fields", join( ";", @fields)) 
+  ## Check arguments
+  &RSAT::error::FatalError("&RSAT::OrganismManager::supported_organism_table()",
+			   "arguments 'taxon' and 'group' are mutually exclusive")
+      if (($taxon) && ($group));
+  
+  &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", 
+			"taxon: ".$taxon, 
+			"group: ".$group, 
+			"fields", join( ";", @fields)) 
     if ($main::verbose >= 3);
 
   ## Default fields
@@ -317,6 +325,8 @@ sub supported_organism_table {
   my @selected_organisms = ();
   if ($taxon) {
     @selected_organisms = &GetOrganismsForTaxon($taxon, $depth);
+  } elsif ($group) {
+    @selected_organisms = &GetOrganismsForGroup($group, $depth);
   } else {
     @selected_organisms = sort keys %main::supported_organism;
     if ($depth != 0) {
@@ -381,8 +391,6 @@ sub is_supported {
     }
 }
 
-
-################################################################
 
 =pod
 
@@ -449,6 +457,69 @@ sub GetOrganismsForTaxon {
     }
   }
   return @organisms;
+}
+
+
+################################################################
+## Collect all organisms belonging to a given group (in the sense of
+## EnsemblGenomes).
+##
+## Supported groups: Fungi, Prokaryotes, Bacteria, Archaea, Protists,
+## Metazoa, Plants.
+##
+## Note that some of the "groups" correspond to a specific taxon
+## defined by its systematic name (e.g. Metazoa, Fungi) or by its
+## common name (Plants, Prokaryotes), whilst others are defined
+## according ot the common usage (e.g. Protists) but do not properly
+## speaking correspond to a taxonomic group. These non-taxonomic
+## groups are converted as follows:
+##
+## - "Protists" is converted to "Eukaryota NOT (Metazoa OR Fungi)"
+## - "Plants" is converted to Viridiplantae
+## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
+sub GetOrganismsForGroup {
+  my ($group_specificity) = @_;
+  my @specific_taxa = ();
+
+  my @supported_groups  = qw(Fungi
+                          Prokaryotes
+                          Bacteria
+                          Archaea
+                          Metazoa
+                          Protists
+                          Fungi
+                          Plants);
+  my $supported_groups = (join ", ", @supported_groups);
+  
+  ## Convert "groups" to corresponding taxa
+  if ($group_specificity eq "Fungi") {
+    @specific_taxa = ("Fungi");
+  } elsif ($group_specificity eq "Prokaryotes") {
+    @specific_taxa = ("Bacteria", "Archaea");
+  } elsif ($group_specificity eq "Bacteria") {
+    @specific_taxa = ("Bacteria");
+  } elsif ($group_specificity eq "Archaea") {
+    @specific_taxa = ("Archaea");
+  } elsif ($group_specificity eq "Metazoa") {
+    @specific_taxa = ("Metazoa");
+  } elsif ($group_specificity eq "Protists") {
+    ## Very tricky way to specify "Protists", which is not a
+    ## taxonomic group: I select all organisms that are neither
+    ## Metazoa nor Fungi
+    my $selected_organisms = `supported-organisms -taxon Eukaryota -return ID,taxonomy | grep -v Metazoa|grep -v Fungi | cut -f 1 | xargs`;
+    chomp($selected_organisms);
+    push @selected_organisms, split(/\s+/, $selected_organisms);
+  } elsif ($group_specificity eq "Plants") {
+    @specific_taxa = ("Viridiplantae");
+  } else {
+    &RSAT::error::FatalError($grop, "Invalid group specificity. Supported groups: ", $supported_groups);
+  }
+  
+  ## Add organisms from selected taxa
+  foreach my $taxon (@specific_taxa) {
+    push @selected_organisms, &GetOrganismsForTaxon($taxon);
+  }
+  return(@selected_organisms);
 }
 
 ################################################################
