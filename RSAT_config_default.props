@@ -36,11 +36,11 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ##   "(Eukaryota NOT (Metazoa OR Fungi)) OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
-GROUP_SPECIFICITY=
-PHYLO_TOOLS=0
-VARIATIONS_TOOLS=0
-UCSC_TOOLS=0
-ENSEMBL_TOOLS=0
+group_specificity=
+phylo_tools=0
+variations_tools=0
+ucsc_tools=0
+ensembl_tools=0
 
 ## RSAT binary directory. This directory should contain the executable
 ## files resulting from the compilation of C programs in RSAT
