@@ -50,12 +50,19 @@ package main;
 
     ## Filters
     our $taxon = "";
+    our $group = "";
     our $depth = 0;
     our $source = "";
 
     ## Read arguments
     &ReadArguments();
 
+
+    ################################################################
+    ## Check argument consistency
+    if (($taxon) && ($group)) {
+      &RSAT::error::FatalError("Options -taxon and -group are mutually exclusive");
+    }
 
     ## Return fields
     if ($out_format eq "full") {
@@ -83,6 +90,10 @@ package main;
     } else {
       if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
 	&RSAT::message::TimeWarn("Building organism tree") if ($main::verbose >= 2);
+	if ($group) {
+	  &RSAT::error::FatalError("Tree formats are not compatible with the option -group. Try the option -taxon.");
+	}
+
 	## Create a tree with the taxonomy
 	my $tree = new RSAT::Tree();
 	$tree->LoadSupportedTaxonomy_rj("Organisms", \%main::supported_organism);
@@ -96,7 +107,7 @@ package main;
 	  &RSAT::error::FatalError($out_format, "Invalid output format");
 	}
       } else {
-	print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $depth, @return_fields); ## Export the table with header and absolute paths
+	print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $group, $depth, @return_fields); ## Export the table with header and absolute paths
       }
     }
 
@@ -166,7 +177,37 @@ OPTIONS
         -taxon selected_taxon 
 	       Only returns organisms belonging to a selected taxon.
 	       Example: 
-	           supported-organisms -taxon Fungi
+	           supported-organisms -taxon Enterobacteriales
+
+        -group selected_group 
+
+	       Only returns organisms belonging to a selected
+	       "taxonomic" group.
+
+	       Supported groups (as defined by EnsemblGenomes): 
+	           Fungi
+	           Prokaryotes
+		   Bacteria
+		   Archaea
+		   Protists
+		   Metazoa
+		   Plants
+
+	       Note that some of the "groups" correspond to a specific
+	       taxon defined by its systematic name (e.g. Metazoa,
+	       Fungi) or by its common name (Plants, Prokaryotes),
+	       whilst others are defined according ot the common usage
+	       (e.g. Protists) but do not properly speaking correspond
+	       to a taxonomic group. These non-taxonomic groups are
+	       converted as follows:
+	       - "Protists" is converted to 
+	         "(Eukaryota NOT (Metazoa OR Fungi)) OR EnsemblProtists"
+	       - "Plants" is converted to Viridiplantae
+	       - "Prokaryotes" is converted to "Bacteria OR Archaea" 
+
+	       Example: 
+	           supported-organisms -taxon Protists
+	           supported-organisms -taxon Prokaryotes
 
 	-source selected_source
 	       Only return organisms from a user-selected source.
@@ -233,7 +274,8 @@ template options
 -v	verbose
 -format	output format ($supported_formats)
 -return output fields ($supported_return_fields)
--taxon  selected_taxon
+-taxon  select a taxon
+-group  select a "taxonomic" group
 -source selected_source
 -depth	traversal depth for the taxonomic tree
 -server return organisms supported on the remote RSAT server.
@@ -299,9 +341,13 @@ sub ReadArguments {
 	    }
 	}
 
-      ### root taxon
+      ## Taxon
     } elsif ($ARGV[$a] eq "-taxon") {
       $taxon = $ARGV[$a+1];
+
+      ## "Taxonomic" group
+    } elsif ($ARGV[$a] eq "-group") {
+      $group = $ARGV[$a+1];
 
       ## Tree depth
     } elsif ($ARGV[$a] eq "-depth") {

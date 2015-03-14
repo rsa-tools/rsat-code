@@ -1060,7 +1060,7 @@ sub Compare {
 	}
 	if ($only_biggest){
 	    &RSAT::message::Debug("Reporting only biggest score difference", $only_biggest) if ($main::verbose >= 10);
-	    print (&GetMinOff(%scanning_info));<STDIN>;
+	    print (&GetMinOff(%scanning_info)); #<STDIN>;
 	    last();
 	}
 

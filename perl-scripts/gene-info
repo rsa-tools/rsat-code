@@ -59,9 +59,9 @@ package main;
 
   &Verbose();
 
-  ### Read ORF information
+  ## Read ORF information
   my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
-  if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
+  if ((-e $serial_file) && (!$annotation_table) && (-M $serial_file < 2) && (-w $serial_file)) {
     $organism = retrieve $serial_file;
   } else {
     ### Read feature attributes (position, description, ...)

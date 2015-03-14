@@ -49,10 +49,36 @@ program is to convert a PSSM obtained from a database (e.g. TRANSFAC)
 or a pattern-discovery program (e.g. consensus, gibbs, meme,
 MotifSampler, ...) and obtain a matrix either for scanning (with
 matrix-scan) or for computing statistical parameters (see the return
-fields below).</p>
+fields below). We generally use the <b>TRANSFAC (tf)</b> format, in which we can specify identifiers and names for the matrix.</p>
     
 <p>
   <ul>
+    <li> <strong>    TRANSFAC (input/output)</strong> </li>
+Format used in the TRANSFAC database
+<pre>
+AC  MA0001.1
+XX
+ID  AGL3
+XX
+DE  MA0001.1 AGL3; from JASPAR
+PO       A     C     G     T
+1        0    94     1     2
+2        3    75     0    19
+3       79     4     3    11
+4       40     3     4    50
+5       66     1     1    29
+6       48     2     0    47
+7       65     5     5    22
+8       11     2     3    81
+9       65     3    28     1
+10       0     3    88     6
+XX
+CC  program: jaspar
+XX
+//
+</pre>
+
+  
   <li> <strong> tab (input/output)</strong> </li> tab-delimited
     file. One row per residue, one column per position. The first
     column of each row indicates the residue, the following columns
@@ -72,7 +98,129 @@ G |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0
 T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8
 //
 </pre>
-        
+
+<li> <strong> JASPAR (input/output) </strong> </li>
+    	http://jaspar.genereg.net/html/TEMPLATES/help.html
+    	<pre>  
+            > Mycn
+            A [ 0 29 0 2 0 0 ]
+            C [31 0 30 1 3 0 ]
+            G [ 0 0 0 28 0 31]
+            T [ 0 2 1 0 28 0 ]
+</pre>  
+
+ <li> <strong> MSCAN (input)</strong> </li>
+        http://www.cisreg.ca/cgi-bin/mscan/MSCAN
+     	<pre>           >mef2
+          10  0  0  0 22  0  6  2  3  4 22 10
+           0  2 12  0  0  0  0  0  0  0  0  0
+           9 20  2  0  0  0  0  0  0  0  0 10
+           3  0  8 22  0 22 16 20 19 18  0  2
+          >myf
+           7  9  4  0 16  7  0  6  0  0  6  0
+           8  0  2 15  0  0 15  0  0 10  0  0
+           1  7 10  1  0  9  1  0 16  6  0 16
+           0  0  0  0  0  0  0 10  0  0 10  0
+</pre> 
+
+  <li> <strong>    meme (input)</strong> </li>
+	Output file from MEME, the pattern-discovery program developed by
+	tim Bailey.This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
+	http://meme.nbcr.net/meme/doc/meme-format.html
+	
+<pre> 	Background letter frequencies
+	A 0.303 C 0.183 G 0.209 T 0.306 
+
+	MOTIF crp alternative name
+	letter-probability matrix: alength= 4 w= 19 nsites= 17 E= 4.1e-009 
+ 0.000000  0.176471  0.000000  0.823529 
+ 0.000000  0.058824  0.647059  0.294118 
+ 0.000000  0.058824  0.000000  0.941176 
+ 0.176471  0.000000  0.764706  0.058824 
+ 0.823529  0.058824  0.000000  0.117647 
+ 0.294118  0.176471  0.176471  0.352941 
+ 0.294118  0.352941  0.235294  0.117647 
+ 0.117647  0.235294  0.352941  0.294118 
+ 0.529412  0.000000  0.176471  0.294118 
+ 0.058824  0.235294  0.588235  0.117647 
+ 0.176471  0.235294  0.294118  0.294118 
+ 0.000000  0.058824  0.117647  0.823529 
+ 0.058824  0.882353  0.000000  0.058824 
+ 0.764706  0.000000  0.176471  0.058824 
+ 0.058824  0.882353  0.000000  0.058824 
+ 0.823529  0.058824  0.058824  0.058824 
+ 0.176471  0.411765  0.058824  0.352941 
+ 0.411765  0.000000  0.000000  0.588235 
+ 0.352941  0.058824  0.000000  0.588235 
+	</pre> 
+	
+  <li> <strong> 	meme_block (input) </strong> </li>older format from MEME 
+
+  <li> <strong> CIS-BP (input)</strong> </li>
+        Format used in the CIS-BP database.
+
+        Similar to transfac, but without the AC/ID lines, and Position
+        line labeled with Pos instead of PO.
+  
+    <li> <strong>  Cluster-Buster  (cb) (input/output)</strong> </li>
+	cluster-buster output file (usual extention .cb), which can be
+	used as input by various other programs (clover, trap). The
+	header line starts with a > (like in fasta format). The matrix
+	is then printed "vertically" on the following lines: each
+	column corresponds to one residue, and each row to a position
+	in the alignment.  For TRAP (Roider et al, Bioinformatics,
+	2007), the "/name=" is necessary for the program to work.
+<pre>
+	>element1 /name=element1
+	0  4 2 14
+	12 0 0 8
+	8  0 1 11
+	20 0 0 0
+	....
+ </pre>    
+ 
+ 
+ 
+<li> <strong>  STAMP and STAMP-transfac (input/output)</strong> </li>
+	Converts the matrix from/to a string in STAMP format
+	(http://www.benoslab.pitt.edu/stamp/help.html).
+
+	STAMP is a dialect of the TRANSFAC format, with important differences:
+	<ul>
+	<li>- the fields ID and AC are absent, and the matrix ID comes in the field DE </li>
+	<li>- the header row (PO) is not supported </li>
+	<li>- the positions start at 0 instead of 1 </li>
+	<li>- there is no matrix delimiter (the double slash) </li>
+	</ul>
+	In addition, STAMP admits two variants: 
+<ul>
+	<li>- " TRANSFAC" format, which is actually not
+          TRANSFAC (the fields AC and ID are not defined).
+   <pre>
+                      NA Mync
+                      XX
+                      DE Mync
+                      XX
+                      P0 A C G T
+                      01 0 31 0 0 C
+                      02 29 0 0 2 A
+                      03 0 30 0 1 C
+                      04 2 1 28 0 G
+                      05 0 3 0 28 T
+                      06 0 0 31 0 G
+                      XX
+</pre> </li>
+	<li>-  "TRANSFAC-like" (same as above, but the first two rows are missing) </li>
+</ul>
+ 
+ 
+ <li> <strong>     sequences (input)</strong> </li>
+	Create a matrix from a FASTA sequence file containing the pre-aligned sites.
+The method just reads the sequences and counts the residue frequencies
+at each position.
+    
  <li> <strong> 
     patser (output)</strong> </li>
         This format can be used as input to scan sequences with
@@ -81,13 +229,6 @@ T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8
         This is actually the same format as tab (described above), but
         the only return field is the count matrix.
 
-  <li> <strong>    assembly (input)</strong> </li>
-	Output file from the program pattern-assembly. One assembly
-	file can contain zero, one or several assemblies. Each
-	assembly is converted to a position-specific scoring matrix by
-	taking, for each residue at each position, the score of the
-	most significant pattern (oligonucleotide) containing that
-	residue in this position of the assembly.
 
  <li> <strong>     consensus (input/output)</strong> </li>
 	Output file from consensus, the pattern-discovery program
@@ -100,32 +241,59 @@ T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8
 	Output file from gibbs, the pattern-discovery program
 	developed by Andrew Neuwald (Lawrence et al. Science, 1993:
 	262, 208-214; Neuwald, et al. Protein Sci, 1995: 4, 1618-1632)
-
-  <li> <strong>    meme (input)</strong> </li>
-	Output file from MEME, the pattern-discovery program developed by
-	tim Bailey.This file contains one or several matrices, +
-	additional information on the parameters used for pattern
-	discovery (e.g. prior residue frequencies).
+	
+	
 
   <li> <strong>    MotifSampler (input/output)</strong> </li>
 	Output file from MotifSampler, the pattern-discovery program
 	developed by Gert Thijs (Thijs et al. Bioinformatics, 2001:17,
 	1113-1122).
+	
+	<li> <strong>     alignAce (input)</strong> </li>
+	
+	<li> <strong> Uniprobe (input)</strong></li>
+	http://the_brain.bwh.harvard.edu/uniprobe/downloads.php
+<pre>Protein: Cbf1	Seed k-mer: ATCACGTG	Enrichment Score: 0.499010437669239
+A:	0.251714422716682	0.231020715440932	0.371175995676819	0.343515826416987	0.189181911178663	0.373249743142318	0.159425685466501	0.387398837326962	0.160370450851774	0.00579566973382471	0.984310428811586	0.000520578518462409	0.0512168242470759	0.00554791387069823	0.00108871328362558	0.436684281349379	0.106429865986653	0.0872652424535894	0.2779359708333	0.222894293683715	0.366796870220836	0.226022414885529
+C:	0.10226033847082	0.315992694980937	0.148489261324769	0.182792315701972	0.406736016253256	0.213860951366744	0.324485360588445	0.0418650553618826	0.045745403962552	0.99055073718171	0.0105040001038691	0.975244090256611	0.0064124125195024	0.00433861322483728	0.0016092288172844	0.262472975122313	0.184027817720692	0.549338793818378	0.127202171464537	0.198102864294932	0.306135553163069	0.321957177096839
+G:	0.130212757211399	0.266959960914667	0.154092799416608	0.241158374156534	0.15046928890062	0.0930127274890034	0.354968645980097	0.554463521652852	0.0956960762910429	0.00242503126912309	0.0010685902059978	0.00922202192948052	0.94180586404824	0.00940766558113401	0.973242502288466	0.0857562483507934	0.0600857360004131	0.129208087201377	0.253172180381345	0.437904236128241	0.1940215817188	0.116641876697499
+T:	0.515812481601099	0.186026628663464	0.326241943581804	0.232533483724507	0.253612783667461	0.319876578001935	0.161120307964957	0.0162725856583034	0.698188068894632	0.00122856181534235	0.00411698087854669	0.0150133092954459	0.000564899185181348	0.98070580732333	0.0240595556106241	0.215086495177514	0.649456580292242	0.234187876526655	0.341689677320817	0.141098605893113	0.133045994897295	0.335378531320133
+</pre>
 
-  <li> <strong>    TRANSFAC (input/output)</strong> </li>
-        Format used in the TRANSFAC database;
-        (<a href='http://www.gene-regulation.com/pub/databases.html'>http://www.gene-regulation.com/pub/databases.html</a>)
+<li> <strong> Encode </strong> </li>
+http://compbio.mit.edu/encode-motifs/
+<pre>
+>SIX5_disc1 SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic
+G 0.008511 0.004255 0.987234 0.000000
+A 0.902127 0.012766 0.038298 0.046809
+R 0.455319 0.072340 0.344681 0.127660
+W 0.251064 0.085106 0.085106 0.578724
+T 0.000000 0.046809 0.012766 0.940425
+G 0.000000 0.000000 1.000000 0.000000
+T 0.038298 0.021277 0.029787 0.910638
+A 0.944681 0.004255 0.051064 0.000000
+G 0.000000 0.000000 1.000000 0.000000
+T 0.000000 0.000000 0.012766 0.987234
+</pre>
 
+ <li> <strong>   infogibbs (input/output)</strong> </li>
+        Output file from RSAT infogibbs.
 
-  <li> <strong>    cb (input)</strong> </li>
-	Cluster-Buster output file (usual extention .cb). The header
-	line starts with a > (like in fasta format). The matrix is
-	then printed "vertically" on the following lines: each column
-	corresponds to one residue, and each row to a position in the
-	alignment.
+        infogibbs is a gibbs sampler based on the optimization of the
+        information content of the matrix (rather than the weight of
+        the sampled segments). infogibbs was developed by Matthieu De France.
+
+  <li> <strong>    assembly (input)</strong> </li>
+	Output file from the program RSAT pattern-assembly. One assembly
+	file can contain zero, one or several assemblies. Each
+	assembly is converted to a position-specific scoring matrix by
+	taking, for each residue at each position, the score of the
+	most significant pattern (oligonucleotide) containing that
+	residue in this position of the assembly.
+
 
    <li> <strong>   feature (input)</strong> </li>
-        Output file from convert-features. 
+        Output file from RSAT convert-features. 
 
         This format allows to obtain a PSSM from a list of (supposedly
         pre-aligned) sites. These sites can themselves have been

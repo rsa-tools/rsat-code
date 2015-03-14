@@ -65,6 +65,24 @@ print "</CENTER>";
 
 print "<b>Remark: If you want to retrieve sequences from an organism that is not in the <a href='http://www.ensembl.org'>EnsEMBL</a> database, you can use the <a href='retrieve-seq_form.cgi'>retrieve-seq</a> program instead</b><p>\n";
 
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{ENSEMBL_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
+
+################################################################
+### formheader
+
+
 print $query->start_multipart_form(-action=>"retrieve-ensembl-seq.cgi");
 
 #print "<FONT FACE='Helvetica'>";
