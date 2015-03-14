@@ -456,6 +456,7 @@ sub GetOrganismsForTaxon {
       &RSAT::message::TimeWarn($message);
     }
   }
+  @organisms = &RSAT::util::sort_unique(@organisms);
   return @organisms;
 }
 
@@ -474,7 +475,8 @@ sub GetOrganismsForTaxon {
 ## speaking correspond to a taxonomic group. These non-taxonomic
 ## groups are converted as follows:
 ##
-## - "Protists" is converted to "Eukaryota NOT (Metazoa OR Fungi)"
+## - "Protists" is converted to 
+##   "(Eukaryota NOT (Metazoa OR Fungi)) OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 sub GetOrganismsForGroup {
@@ -509,6 +511,7 @@ sub GetOrganismsForGroup {
     my $selected_organisms = `supported-organisms -taxon Eukaryota -return ID,taxonomy | grep -v Metazoa|grep -v Fungi | cut -f 1 | xargs`;
     chomp($selected_organisms);
     push @selected_organisms, split(/\s+/, $selected_organisms);
+    @specific_taxa = ("EnsemblProtists");
   } elsif ($group_specificity eq "Plants") {
     @specific_taxa = ("Viridiplantae");
   } else {
@@ -519,6 +522,7 @@ sub GetOrganismsForGroup {
   foreach my $taxon (@specific_taxa) {
     push @selected_organisms, &GetOrganismsForTaxon($taxon);
   }
+  @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
   return(@selected_organisms);
 }
 
