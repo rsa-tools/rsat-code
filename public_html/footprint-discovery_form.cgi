@@ -54,10 +54,12 @@ $field_description{rank} = "Rank";
 
 ## Other default parameters
 $default{dyads_filter} = 'checked';
-$default{bg_model} = 'taxfreq';
+#$default{bg_model} = 'taxfreq';
+$default{bg_model} = 'monad'; ## TEMPORARILY SET TO MONAD BECAUSE I HAVE A BUG WITH TAXFREQ
 $default{leaders} = '';
 $default{uth_rank} = 50;
 $default{to_matrix} = 1;
+$default{multi_genes} = "separately";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -70,8 +72,7 @@ foreach $key (keys %default) {
 ### print the form ###
 
 
-################################################################
-### header
+## Header
 &RSA_header("footprint-discovery", "form");
 print "<CENTER>";
 print "Given one or several genes from a query organism, collect all orthologous genes for a given taxonomical level <br>and discover conserved elements in their promoters.<br>\n";
@@ -83,14 +84,30 @@ print "<BLOCKQUOTE>\n";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
-print $query->start_multipart_form(-action=>"footprint-discovery.cgi");
+################################################################
+### display the form only if the organisms on the curent server 
+###  are coherent with this tool, otherwise, display an info message
+ 
+if ($ENV{PHYLO_TOOLS} == 0){
+
+print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
+
+print $query->end_html;
+
+exit(0);
+	
+}
 
 ################################################################
-## Print the options for the selection of orthologs
+### formheader
+
+print $query->start_multipart_form(-action=>"footprint-discovery.cgi");
+
+## Options for the selection of orthologs
 print "<hr>";
 &PrintOrthoSelectionSection();
 
-### use predicted leader genes
+## Use predicted leader genes
 print "<br>";
 print $query->checkbox(-name=>'leaders',
 		       -checked=>$default{leaders},
@@ -98,6 +115,14 @@ print $query->checkbox(-name=>'leaders',
 print "<A HREF='help.footprint-discovery.html#leader'><B>\n";
 print "predict operon leader genes";
 print "</B></A>\n";
+
+## Analyze each gene separately or group genes
+print "<br>";
+print "<b><a href='help.footprint-discovery.html#multi_genes'>Treat genes</A>&nbsp;</b>\n";
+print $query->popup_menu(-name=>'multi_genes',
+			 -Values=>['separately', ## taxon-wise background model (taxfreq)
+				   'as a cluster'], ## background model estimated from the input sequence set
+			 -default=>$default{multi_genes});
 
 ################################################################
 #### Footprint-discovery-specific options
@@ -114,7 +139,7 @@ print "<a href='help.footprint-discovery.html#filtering'><b>\n";
 print "dyad filtering</b></a>\n";
 print "(only accept dyads having at least one occurrence in the promoter of the query gene)";
 
-### use background model
+## Ackground model
 print "<br>";
 print "<b><a href='help.footprint-discovery.html#bg_model'>Background model</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'bg_model',

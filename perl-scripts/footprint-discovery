@@ -252,8 +252,9 @@ package main;
 			maps
 			map_dyads
 			map_pssm
-			gene_index
 			network
+			gene_index
+			network_index
 			index
 			test
 		       );
@@ -400,7 +401,7 @@ package main;
       my $cmd = $SCRIPTS."/taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
       $cmd .= " -org_list ".$orglist_file;
       $cmd .= " > ".$infile{bg_model};
-      &one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+      &one_command($cmd, 1, 0, task=>'bg_model', log=>$main_log);
     }
 
   } elsif ($bg_model eq "taxfreq") {
@@ -426,7 +427,6 @@ package main;
       &RSAT::message::Info("Background model file already exists. Not re-computed.", $infile{bg_model}) if ($main::verbose >= 2);
 
     } else {
-
       $task{bg_model} = 1; ## Force the computation of the bg model
 
       ## Store the background model in the parent directory of the
@@ -436,17 +436,23 @@ package main;
       $dir{bg_model} = join("/",$main::dir{output_root}, "bg_models", $taxon);
       &RSAT::util::CheckOutDir($dir{bg_model});
 
-#      die "HELLO";
-
-      &RSAT::message::TimeWarn("Computing taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 1);
+      ## Define the background file
       my ($local_bg_file) = &ShortFileName($infile{bg_model});
       $infile{bg_model} = $dir{bg_model}."/".$local_bg_file;
+
+      &RSAT::message::Info("Using local taxon-specific background model file", $infile{bg_model}) if ($main::verbose >= 2);
+
+      ## Compute background model if required.  Note that this must be
+      ## done immediately, cannot be send in batch, because the BG
+      ## model file has to be available before the analysis of the
+      ## first gene starts.
       unless (-e $infile{bg_model}) {
 #	  if ($task{bg_model}) {
+	&RSAT::message::TimeWarn("Computing local taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 2);
 	my $cmd = $SCRIPTS."/taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
 	$cmd .= " -taxon ".$taxon;
 	$cmd .= " > ".$infile{bg_model};
-	&one_command($cmd, 1, 0, task=>'bg_model', out=>$main_log);
+	&doit($cmd, $dry, 1, $verbose, 0, "");  ## CANNOT BE DONE IN BATCH MODE -> third argument is 1
       }
       &RSAT::message::Info("Taxon-wise background model", $infile{bg_model}) if ($main::verbose >= 1);
     }
@@ -531,19 +537,35 @@ package main;
   unless ($batch) {
       print $main_index "</table>\n";
 
-      if (scalar(@network_files) >= 1) {
-	print $main_index "<h2>Inferred co-regulation network</h2>\n";
-	print $main_index "<table class='resultlink'>\n";
-	#      print $main_index "<p><table>\n";
-	foreach my $key (@network_files) {
-	  print $main_index "<tr>\n";
-	  print $main_index "<td>".$key."</td>\n";
-	  my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
-	  print $main_index "<td>".$link."</td>\n";
-	  print $main_index "</tr>\n";
+      ## Add a table with links to the network files in the main index
+      
+      ## Check that at least one network file exists
+      my $network_files_found = 0;
+      foreach my $key (@network_files) {
+	if ($outfile{$key}) {
+	  $network_files_found++;
 	}
-	print $main_index "</table></p>\n";
       }
+
+      ## Add index table either if files were found, or if network
+      ## index was explicitely requested on the command line
+      if (($network_files_found) || ($task{network_index})) {
+	if (scalar(@network_files) >= 1) {
+	  print $main_index "<h2>Inferred co-regulation network</h2>\n";
+	  print $main_index "<table class='resultlink'>\n";
+	  #      print $main_index "<p><table>\n";
+	  foreach my $key (@network_files) {
+	    print $main_index "<tr>\n";
+	    print $main_index "<td>".$key."</td>\n";
+	    my $link = &LinkOneFile($outfile{main_index}, $outfile{$key});
+	    print $main_index "<td>".$link."</td>\n";
+	    print $main_index "</tr>\n";
+	  }
+	  print $main_index "</table></p>\n";
+	}
+      }
+
+      ## Report execution time
       my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
       print $main_index "<p><pre>", $exec_time, "</pre></p>\n";
       print $main_index "</body>\n";
@@ -578,7 +600,6 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Initialize output directory + output files
-
   local ($outfile_prefix, $query_prefix) = &InitQueryOutput();
   if (scalar(@current_query_genes) > 1) {
     $current_gene = $query_prefix;
@@ -702,7 +723,7 @@ sub RunFootprintDisco {
     $cmd .= " -scorethick";
     $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
     $cmd .= " -o ".$outfile{map_dyads};
-    &one_command($cmd, 1, 0, task=>"map_dyads", out=>$main_log);
+    &one_command($cmd, 1, 0, task=>"map_dyads", log=>$main_log);
 
     ################################################################
     ## Generate a feature-map with the matrices
@@ -722,7 +743,7 @@ sub RunFootprintDisco {
     $cmd .= " -scorethick";
     $cmd .= " -mapthick 16 -mspacing 2 -mlen 600";
     $cmd .= " -o ".$outfile{map_pssm};
-    &one_command($cmd, 1, 0, task=>"map_pssm", out=>$main_log);
+    &one_command($cmd, 1, 0, task=>"map_pssm", log=>$main_log);
   }
 #  &RSAT::message::Debug("Indexing dyad map", $outfile{map_dyads}) if ($main::verbose >= 10);
   &IndexOneFile("Dyad map", $outfile{map_dyads}, image=>1) if (($status eq "OK") || ($batch));
@@ -741,6 +762,9 @@ sub RunFootprintDisco {
       sleep($delay);
       $jobnb = &get_job_nb();
     }
+
+#    print ("\n\nBatch command:\n\n", $batch_cmd, "\n\n"); 
+#    die "\n\nhELLO\n";
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
   }
 
@@ -1163,6 +1187,8 @@ sub DyadAnalysis {
   } elsif ($bg_model eq "taxfreq" || $bg_model eq "file") {
     $cmd .= " -expfreq ".$infile{bg_model} ;
   }
+
+  ################################################################
   ## dyad filtering (only accept dyads found in the promoter of the query gene(s)
   if (!$nofilter) {
     $cmd .= " -accept ".$outfile{filter_dyads};
@@ -1180,9 +1206,10 @@ sub DyadAnalysis {
   $cmd .= " -sort";
   $cmd .= " -o ".$outfile{dyads};
 #  &report_command ($cmd, "dyad-analysis");
-  &one_command($cmd, 1, 0, task=>'dyads', out=>$main_log);
+  &one_command($cmd, 1, 0, task=>'dyads', log=>$main_log);
   &IndexOneFile("Dyads (tab format)", $outfile{dyads});
 
+  ################################################################
   ## Generate a HTML table with the discovered dyads
   &CheckDependency("dyads_html", "dyads") if ($task{dyads});
   $cmd = $SCRIPTS."/text-to-html";
@@ -1190,9 +1217,8 @@ sub DyadAnalysis {
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
 #  &report_command ($cmd, "dyads_html");
-  &one_command($cmd, 1, 0, task=>'dyads', out=>$main_log);
+  &one_command($cmd, 1, 0, task=>'dyads', log=>$main_log);
   &IndexOneFile("<b>Dyads</b> (html format)", $outfile{dyads_html});
-
 
   ################################################################
   ## Make sure that there is at least one significant dyad before
@@ -1212,7 +1238,7 @@ sub DyadAnalysis {
     $cmd .= " -max_asmb_nb 5";
     $cmd .= " -o ".$outfile{asmb};
 #    &report_command ($cmd, "pattern-assembly");
-    &one_command($cmd, 1, 0, task=>'dyads', out=>$main_log);
+    &one_command($cmd, 1, 0, task=>'dyads', log=>$main_log);
 
 
     ################################################################
@@ -1234,7 +1260,7 @@ sub DyadAnalysis {
     $cmd .= " -logo";
     $cmd .= " -o ".$prefix{pssm};
 #    &report_command ($cmd, "matrix-from-patterns");
-    &one_command($cmd, 1, 0, task=>'dyads', out=>$main_log);
+    &one_command($cmd, 1, 0, task=>'dyads', log=>$main_log);
 
   }
 
@@ -1340,7 +1366,7 @@ sub CoregulationNetwork {
 
   ################################################################
   ## Write a list of dyad files
-  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; push @network_files, "dyad_file_list";
+  $outfile{dyad_file_list} .= $dir{network}."/".$main_prefix."_dyad_files.txt"; # push @network_files, "dyad_file_list";
   my $out= &OpenOutputFile($outfile{dyad_file_list});
   foreach my $query_prefix (sort keys %main_index) {
     &RSAT::message::Debug($query_prefix, $main_index{$query_prefix}{dyads}) if ($main::verbose >= 5);
@@ -1370,7 +1396,7 @@ sub CoregulationNetwork {
   $compare_scores_cmd .= " -org ".$organism_name;
   $compare_scores_cmd .= " -info name,id";
   $compare_scores_cmd .= " -o ".$outfile{dyad_sig_classes};
-  &one_command($compare_scores_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($compare_scores_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Dyad sig classes", $outfile{dyad_sig_classes}) if ($main::verbose >= 2);
 
 
@@ -1398,7 +1424,7 @@ sub CoregulationNetwork {
   $degree_cmd .= " -xleg1 'Dyad degree (number of footprints)'";
   $degree_cmd .= " -yleg1 'Number of dyads'";
   $degree_cmd .= " -o ". $outfile{dyad_degree_distrib_graph};
-  &one_command($degree_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($degree_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Dyad and gene degrees", $outfile{dyad_gene_degrees}) if ($main::verbose >= 2);
   &RSAT::message::TimeWarn("Dyad degree distribution", $outfile{dyad_degree_distrib}) if ($main::verbose >= 2);
   &RSAT::message::TimeWarn("Dyad degree distribution graph", $outfile{dyad_degree_distrib_graph}) if ($main::verbose >= 2);
@@ -1409,14 +1435,25 @@ sub CoregulationNetwork {
   ## (likely to be generic or low-complexity motifs).
   $outfile{dyad_hubs} = $dir{network}."/".$main_prefix."_dyad_hubs_deg_gt".$max_dyad_degree.".tab";  push @network_files, "dyad_hubs";
   $outfile{dyads_filtered} = $dir{network}."/".$main_prefix."_dyads_filtered_max_deg".$max_dyad_degree.".tab"; push @network_files, "dyads_filtered";
+
+  ## Identify "hubs" and store them in a separate file
   my $dyad_hubs_cmd = "grep -v '^;' ".$outfile{dyad_gene_degrees};
   $dyad_hubs_cmd .= " | grep -v '^#'";
-  $dyad_hubs_cmd .= ' |awk -F\'\t\' \'$3 > '.$max_dyad_degree.' {print $1} \'';
+  $dyad_hubs_cmd .= ' |awk -F\'\t\' \'$4 > '.$max_dyad_degree.' {print $1} \'';
   $dyad_hubs_cmd .= " > " .$outfile{dyad_hubs};
-  $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
-  $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};
-  $dyad_hubs_cmd .= " > ".$outfile{dyads_filtered};
-  &one_command($dyad_hubs_cmd, 1, 0, task=>'network', out=>$main_log);
+
+  ## Filter out hubs
+  my $hub_nb = `wc -l $outfile{dyad_hubs}| awk '{print $1}'`;
+  chomp($hub_nb);
+  if ($hub_nb >= 1) {
+    $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
+    $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};
+    $dyad_hubs_cmd .= " > ".$outfile{dyads_filtered};
+  } else {
+    $dyad_hubs_cmd .= "; cp -f ".$outfile{dyad_sig_classes};
+    $dyad_hubs_cmd .= " ".$outfile{dyads_filtered};
+  }
+  &one_command($dyad_hubs_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Dyad hubs", $outfile{dyad_hubs}) if ($main::verbose >= 2);
   &RSAT::message::TimeWarn("Filtered dyads", $outfile{dyads_filtered}) if ($main::verbose >= 2);
 
@@ -1434,7 +1471,7 @@ sub CoregulationNetwork {
   $compare_classes_cmd .= " -sc 3";
   $compare_classes_cmd .= " -lth dotprod 2 -lth QR 2 -lth Q 2 -lth R 2";
   $compare_classes_cmd .= " -o ".$outfile{gene_pairs};
-  &one_command($compare_classes_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($compare_classes_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene pairs", $outfile{gene_pairs}) if ($main::verbose >= 2);
 
   ################################################################
@@ -1446,7 +1483,7 @@ sub CoregulationNetwork {
   $cc_gene_info_cmd .= " -org ".$organism_name;
   $cc_gene_info_cmd .= " -info name,id";
   $cc_gene_info_cmd .= " -o ".$outfile{gene_pairs_names};
-  &one_command($cc_gene_info_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($cc_gene_info_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene pairs (with names)", $outfile{gene_pairs_names}) if ($main::verbose >= 2);
 
   ################################################################
@@ -1474,7 +1511,7 @@ sub CoregulationNetwork {
   $convert_graph_cmd .= " -from tab -to gml";
   $convert_graph_cmd .= " -ewidth -ecolors fire";
   $convert_graph_cmd .= " -o ".$outfile{gene_pairs_gml};
-  &one_command($convert_graph_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($convert_graph_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene pair graph (GML)", $outfile{gene_pairs_gml}) if ($main::verbose >= 2);
 
 
@@ -1488,7 +1525,7 @@ sub CoregulationNetwork {
   $gn_cmd .= " -in_format gml";
   $gn_cmd .= " -i ".$outfile{gene_pairs_gml};
   $gn_cmd .= " -o ".$outfile{gene_neighbours};
-  &one_command($gn_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($gn_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene neighbours", $outfile{gene_neighbours}) if ($main::verbose >= 2);
 
 
@@ -1505,7 +1542,7 @@ sub CoregulationNetwork {
   $deg_cmd .= " -all";
   $deg_cmd .= " -sort"; ## Sort genes by decreasing degree value
   $deg_cmd .= " -o ".$outfile{gene_degree};
-  &one_command($deg_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($deg_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene degree", $outfile{gene_degree}) if ($main::verbose >= 2);
 
   ################################################################
@@ -1516,7 +1553,7 @@ sub CoregulationNetwork {
   $hub_cmd .= " | grep -v '^#'";
   $hub_cmd .= " | awk '\$4 >=".$max_gene_degree."' ";
   $hub_cmd .= "> ".$outfile{gene_hubs};
-  &one_command($hub_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($hub_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
 
   $outfile{gene_nohubs} .= $dir{network}."/".$main_prefix."_gene_nohubs.tab"; push @network_files, "gene_nohubs";
@@ -1525,13 +1562,15 @@ sub CoregulationNetwork {
   $nohub_cmd .= " | awk '\$4 <".$max_gene_degree."' ";
   $nohub_cmd .= $outfile{gene_degree};
   $nohub_cmd .= "> ".$outfile{gene_nohubs};
-  &one_command($nohub_cmd, 1, 0, task=>'network', out=>$main_log);
+  &one_command($nohub_cmd, 1, 0, task=>'network', log=>$main_log);
   &RSAT::message::TimeWarn("Gene nohubs", $outfile{gene_nohubs}) if ($main::verbose >= 2);
 
 
 }
 
 
+################################################################
+## ARTIFICIAL TASK FOR DEBUGGING. SHOULD BE SUPPRESSED SOON.
 sub test {
   &RSAT::message::TimeWarn("Quick test procedure") if ($main::verbose >= 0);
 
@@ -1543,7 +1582,7 @@ sub test {
   $hub_cmd .= " | grep -v '^#'";
   $hub_cmd .=  "| awk '\$4 <".$max_gene_degree."' ";
   $hub_cmd .= "> ".$outfile{gene_hubs};
-  &one_command($hub_cmd, 1, 0, task=>'test', out=>$main_log);
+  &one_command($hub_cmd, 1, 0, task=>'test', log=>$main_log);
   &RSAT::message::TimeWarn("Gene hubs", $outfile{gene_hubs}) if ($main::verbose >= 2);
 }
 

@@ -21,7 +21,7 @@
 
 ## Load RSAT configuration
 require ('functions.php');
-#print_r($properties);#
+#print_r($properties);
 UpdateLogFile("rsat","","");
 
 echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";
@@ -35,6 +35,14 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
     <div>
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>
       <br/>
+<?php
+   ## first check if this tool is supported for the current server
+   if ($properties['UCSC_TOOLS'] == 0){
+     die("<span style='color:#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</span>");
+	}
+   
+?> 
+      
 <?php
    ## Get the list of supported organisms from UCSC and display it in the pop-up menu
    $cmd = $properties['RSAT'].'/perl-scripts/supported-organisms-ucsc';

@@ -55,9 +55,9 @@ data(oct4chipseq)
 
 ## The dataset contains 2 data frames
 
-## (1) Matrix-to-matrix comparison table,
-## with various scores to compare each pair of
-View(oct4.tfbm.compa)  matrices
+## (1) Matrix-to-matrix comparison table, with
+## various scores to compare each pair of matrices
+View(oct4.tfbm.compa)
 
 ## (2) Description table for the input PSSM
 ## (ID,name,consensus in both orientations, ...)

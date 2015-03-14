@@ -67,7 +67,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 
 _cluster:
 	@echo
-	@echo "Running matrix-clustering	${MATRIX_PREFIX}"
+	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
 	${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
 #	${CLUSTER_CMD}
 	@echo "		${CLUSTER_CMD}"
@@ -81,17 +81,20 @@ cluster_peakmotifs_Oct4:
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
 		TITLE='Oct4 motifs peak motifs'
 
+cluster_peakmotifs_Oct4_roots_only:
+	@${MAKE} cluster_peakmotifs_Oct4 OPT=-root_matrices_only
+
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set),
 ## without any threshold
 cluster_peakmotifs_Oct4_no_threshold:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} _cluster MATRIX_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1 MIN_COR=-1 \
+	@${MAKE} _cluster MATRIX_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1 MIN_COR=-1 \
 		TITLE='Peak-motifs results for Oct4 ChIP-seq peaks - no thresholds'
 
 ## Permutation test with peak-motifs (Chen Oct4 data set)
 cluster_peakmotifs_Oct4_permute:
-	${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices \
+	@${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices \
 		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks'
 
 ## Rndomize input matrices by permuting their columns
@@ -100,8 +103,8 @@ PERMUTED_DIR=results/matrix-clustering_results/${PERMUTED_PREFIX}
 PERMUTED_MATRIX_FILE=${PERMUTED_DIR}/${PERMUTED_PREFIX}_matrices.tf
 permute_matrices: list_param
 	@echo
-	@mkdir -p ${PERMUTED_DIR}
 	@echo "Permuting matrices	${MATRIX_FILE}"
+	@mkdir -p ${PERMUTED_DIR}
 	@permute-matrix -i ${MATRIX_FILE} \
 		-in_format transfac -out_format transfac \
 		-o ${PERMUTED_MATRIX_FILE}
@@ -109,6 +112,7 @@ permute_matrices: list_param
 
 ## Run clustering on permuted matrices
 cluster_permuted_matrices:
+	@echo
 	@echo "Clustering permuted matrices	${PERMUTED_MATRIX_FILE}"
 	${MAKE} _cluster MATRIX_PREFIX=${PERMUTED_PREFIX} MATRIX_FILE=${PERMUTED_MATRIX_FILE}
 
@@ -124,13 +128,14 @@ RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2014-04-11
 RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
-cluster_rdb:
+cluster_regulondb:
+	@echo
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4 \
 		TITLE='RegulonDB database'
 
 ## Permutation test with RegulonDB
-cluster_rdb_permute:
+cluster_regulondb_permute:
 	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} permute_matrices
 	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} cluster_permuted_matrices
 
@@ -147,6 +152,7 @@ cluster_jaspar_all_groups:
 	done
 
 cluster_jaspar_one_group:
+	@echo
 	@echo "Clustering all matrices from JASPAR ${JASPAR_GROUP}"
 	${MAKE} _cluster MATRIX_PREFIX=${JASPAR_PREFIX} \
 		MATRIX_FILE=${JASPAR_MATRICES} \
@@ -166,6 +172,7 @@ CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
 CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
 CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
 cluster_cisbp_one_group:
+	@echo
 	@echo "Clustering all matrices from cisBP ${CISBP_GROUP}"
 	${MAKE} _cluster MATRIX_PREFIX=${CISBP_PREFIX} \
 		MATRIX_FILE=${CISBP_MATRICES} \

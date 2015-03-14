@@ -182,10 +182,13 @@ their parameters.
 =head2 Detecting all putative target genes for a given transcription factor
 
 Given a PSSM we would like detect new putative binding sites for a
-given Transcription Factor. The usual approach would be to retrieve
-all upstream region sequences of the organism of interest and then
-search for high scored sites with matrix-scan, althougth to have a
-high score in one sequence doesn’t mean is a real binding site.
+given transcription factor. The usual approach would be to retrieve
+all upstream sequences of the organism of interest, and then search for
+high-scoring sites with matrix-scan. 
+
+However, observing a single high scoring site in one promoter does not
+necessarily means that this gene is regulated by the potentially bound
+transcription factor. 
 
 As we know sequences with a functional relevance migth be conserved
 througth some branches of phylogeny. So we expect binding sites with a
@@ -234,20 +237,19 @@ program I<get-orthologs>.
 
 Return Cis-Regulatory elements Enriched-Regions (CRER).
 
-            Calculate the statistical significance of the number of hits in
-            windows of variable sizes. The number of hits is the sum of
-            matches above a predefined threshold set on hits p-values, for
-            all matrices and on both strands (if -2str). The maximum size
-            for a CRER is defined by the option -crer_max.
+Calculate the statistical significance of the number of hits in
+windows of variable sizes. The number of hits is the sum of matches
+above a predefined threshold set on hits p-values, for all matrices
+and on both strands (if -2str). The maximum size for a CRER is defined
+by the option -crer_max.
 
-            The prior probability to find an instance of the motif is the
-            same for all matrices, and corresponds to the chosen pval
-            threshold. Within a region of maximal CRER size, subwindows are
-            defined between each hits, and the observed number of matches in
-            a subwindow is the sum of hits above the threshold. The
-            significance of the observed number of matches in a subwindow is
-            estimated by calculating a P-value using the binomial
-            distribution (Aerts et al., 2003).
+The prior probability to find an instance of the motif is the same for
+all matrices, and corresponds to the chosen pval threshold. Within a
+region of maximal CRER size, subwindows are defined between each hits,
+and the observed number of matches in a subwindow is the sum of hits
+above the threshold. The significance of the observed number of
+matches in a subwindow is estimated by calculating a P-value using the
+binomial distribution (Aerts et al., 2003).
 
 =item B<-lth_crer_size>
 
@@ -339,21 +341,25 @@ package main;
   local $skip_m = 0;
   local $last_m = 0;
   $main::window_size=50; #default length of window size based on bacterial genome size
-  ##tf parameter
+
+  ## Transcription factor (TF) parameter
   $main::tf="";
-  ## parameters for promoter retrieval
+
+  ## Parameters for promoter retrieval
   local $taxon;			## Reference taxon
-  local $organism_name;		## Query organism
+  local $organism_name;		## Query organism name
+  local $organism = "";         ## Organism object (will be instantiated in footprint.lib.pl)
   local @query_genes = ();	## list of query genes
+  local %gene_list = ();        ## ALEJANDRA: CAN YOU CHECK IF THIS IS STILL REQUIRED ?
   local $infer_operons = 0;     ## Infer operon leader genes
   $main::sep_genes = 0;	        ## Analyze each gene separately
-  $main::crer=0; ## ON THE WISH LIST: when set to one, look for CRER over-representation
+#  $main::crer=0; ## ON THE WISH LIST: when set to one, look for CRER over-representation
   local $skip_gene = 0;
   local %top_sig_row = ();
 
   local $batch_matrix=0;
 
-  local $dist_thr = 55;
+  local $dist_thr; $dist_thr = 55; ## Used in footprint.lib.pl
 
   ##################
   ## Option for randomized genes
@@ -380,8 +386,9 @@ package main;
   local $pval=1e-4;
   local $occ_th=5;
   local %values_at_th=(); # Hash to store values at pval threshold
+  local %query_indexes = ();
+  local $bg_distrib; $bg_distrib = ""; ## Used in footprint.lib.pl
 
-  local $bg_distrib="";
 
   ## Feature maps
   local $map_opt = "";
@@ -471,6 +478,7 @@ package main;
   local @info_fields = qw(name
                             upstr_neighb_name
                             descr); #### TO DEBUG: UPSTR_NEIGHB_NAME DOES NOT WORK
+
 
   #up_neighb_name
   #
@@ -739,12 +747,13 @@ package main;
 	next;
     }
 
-    ################
-    ## I requiered with -batch_matrix option, generate the command line by matrix and send it to the cluster
-
+    ################################################################
+    ## If requiered with -batch_matrix option, generate a separate
+    ## command for each matrix and send it to the cluster.
     if ($batch_matrix) {
-	$batch=1;
-	$batch_cmd="";
+	$batch = 1;
+	$batch_cmd = "";
+	my $script_dir = $SCRIPTS; ## JvH: just to avoid warnings when starting the program
 	my $cmd = $SCRIPTS."/footprint-scan ";
 	$cmd .= " -v  ".$main::verbose;
 	$cmd .= " -m  ".$matrix_file;
@@ -762,8 +771,9 @@ package main;
     ## Initialize variable that keeps the current file with othorlogs for the current TF
     $main::tf_ortho_file=() if $tf;
     
-    ################
-    ## Complet parameters for matrix scan commands with specific information for the matrix
+    ################################################################
+    ## Complete parameters for matrix scan commands with specific
+    ## information for the matrix.
     local $ms_parameters =  $ms_general_parameters;
     $ms_parameters .= " -m ".$matrix_file;
 
@@ -777,7 +787,7 @@ package main;
     &RSAT::message::TimeWarn("Analyzing matrix", $m."/".$matrix_nb) if ($main::verbose >= 1);
 
     ################################################################
-    ## If the option -tf is used, also run footprint analysis for
+    ## If the option -tf is used, also run footprint-scan for
     ## the transcripiton factor-coding gene (in addition to the
     ## query genes).
     if ($tf) {
@@ -792,9 +802,14 @@ package main;
 	$main::filter = $global_filter;
 	$main::rand = $global_rand;
       };
+
+      ################################################################
       ## Report caught errors
-      ## This is not working properly any more the one_command sends all 
-      ## to the current open file
+      ##
+      ## Note by Ale: THIS IS NOT WORKING PROPERLY ANY MORE THE
+      ## ONE_COMMAND SENDS ALL TO THE CURRENT OPEN FILE.
+      ##
+      ## Note by JvH (2015-03-09) : in principle I fixed this, please check.
       if ($@) {
 	if ($no_die) {
 	  ## Catch error and report in in log file
@@ -812,19 +827,20 @@ package main;
       }
     }
 
-    ################
-    ## Open synthesis table per matrix
+    ################################################################
+    ## Open synthesis table per matrix.
     if ($task{synthesis}) {
 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
 	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
       }
 
-    ################
-    ## Obtain the score related to the threshold p-value for selecting the recovered interactions
-    ## if a bg_file is given this calculus can be done per matrix, if -bginput is used the calculaiton
-    ## is done by Matrix-query_gene pair before calculationg the OccurrenceSig
-
+    ################################################################
+    ## Obtain the score related to the threshold p-value for selecting
+    ## the recovered interactions if a bg_file is given this calculus
+    ## can be done per matrix, if -bginput is used the calculaiton is
+    ## done by Matrix-query_gene pair before calculating the
+    ## occurrence significance.
     if( defined($main::infile{bg}) ){
 	$dir{matrix_result_dir} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
 	&RSAT::util::CheckOutDir($dir{matrix_result_dir});
@@ -833,7 +849,7 @@ package main;
     }
     
     ################################################################
-    ## Analyze query genes separately or altogether
+    ## Analyze query genes separately or altogether.
 
     if ($main::sep_genes) {
       # if ($task{synthesis}) {
@@ -870,7 +886,7 @@ package main;
 
 
       ################################################################
-      ## Create the matrix-wise report table (tab-delimite + HTML)
+      ## Create the matrix-wise report table (tab-delimited + HTML).
       if ($task{synthesis}) {
 	&RSAT::message::TimeWarn("Generating matrix-wise synthetic tables", $prefix{$m_suffix."_synthesis"}) if ($main::verbose >= 2);
 	my $syn_dir = `dirname $outfile{$m_suffix."_synthesis_tab"}`;
@@ -972,7 +988,7 @@ package main;
 	  ## Add figures and links to figures and results tables
 	  my $links = "";
 
-	  ##Link to significance file
+	  ## Link to significance file
 	  if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 	    my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".  join("", " <a href='", $file, "'>[sig]</a>") ." </td>"."\n";
@@ -981,21 +997,21 @@ package main;
 # 	      my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
 # 	      print $synthesis_index  "<td>". "<FONT COLOR=\"red\">". join("", " <a href='", $file, "'>[sig]</a>") ."</FONT>"." </td>"."\n";
 # 	  }
-	  ##Link and display to  significance graph
+	  ## Link and display to  significance graph
 	  if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
 	    my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
 	    print $synthesis_index   join("", " <a href='", $file, "'>[sigplot]</a>")." </td>"."\n";
 	  }
 
-	  ##Link and Display  frequency plot
+	  ## Link and Display  frequency plot
 	  if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
 	    my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index  "<td>".join("", " <a href='", $file, "'>",,"<img  src='",$file,"'height='",$img_hight,"'></a>")." </p>";
 	    print $synthesis_index   join("", " <a href='", $file, "'>[freqplot]</a>")." </td>"."\n";
 	  }
 
-	  ##Link to feature map
+	  ## Link to feature map
 	  if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
 	    my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
 	    print $synthesis_index "<td>".join("", " <a href='", $file, "'>[map]</a>")."</td>"."\n";
@@ -1012,7 +1028,7 @@ package main;
     }
 
     ################################################################
-    ## Close output stream
+    ## Close output stream.
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
     print $main::out $exec_time if ($main::verbose >= 1);
     close $main::out if ($main::outfile{output});
@@ -1028,7 +1044,7 @@ package main;
 
     ################################################################
     ## Report the index files (not necessary anymore since they were
-    ## displayed after each query)
+    ## displayed after each query).
     if ($main::verbose >= 5) {
       print ("; Index files\n");
       foreach my $key (sort keys %index_report_per_query) {
@@ -1037,7 +1053,7 @@ package main;
     }
 
     ################################################################
-    ## Print information for each matrix in the Matrices Report
+    ## Print information for each matrix in the Matrices Report.
     if ($task{synthesis}){
     	&AddOneMatrixToMatricesReport($m_suffix,$matrix_file,$matrix_format,$outfile{$m_suffix."_synthesis_html"},($tf||0),$matrices_synthesis_index,$matrices_synthesis_table );
     }
@@ -1048,7 +1064,6 @@ package main;
 
   ################################################################
   ## Close the general report for all matrices
-
   &CloseMatricesReport() if $task{synthesis};
 
   ################################################################
@@ -1107,9 +1122,12 @@ multiple matrices.
 
 =cut
 	} elsif ($arg eq "-m") {
-	    push @matrix_files, shift(@arguments);
-
-
+	  my $new_matrix_file = shift(@arguments);
+	  if (-e $new_matrix_file) {
+	    push @matrix_files, $new_matrix_file;
+	  } else {
+	    &RSAT::error::FatalError("Non-existing matrix file (option -m)", $new_matrix_file);
+	  }
 
 =pod
 
@@ -1710,7 +1728,8 @@ sub RunFootprintScan {
 
 
   if ($task{synthesis} && !($batch)){
-      $selected_interaction=&Select_interaction;
+    ## $selected_interaction = &Select_interaction(); ## Modified by JvH on 2015-03-09: $selected_interaction was not used anywhere, and &Select_interaction() has no return value
+      &Select_interaction();
 
 
       ## Index occ sig files for the synthetic table

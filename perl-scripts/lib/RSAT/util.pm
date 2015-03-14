@@ -990,7 +990,7 @@ sub doit {
   if ($batch) {
 
     ## command used to send the actual command as a script to the job scheduler
-    my $batch_cmd; 
+    my $qsub_command; 
 
     ## Define the shell
     my $shell = $ENV{CLUSTER_SHELL} || $ENV{SHELL};
@@ -1078,21 +1078,21 @@ sub doit {
       chomp($wd);
 
       ## qsub command functionning using torque
-      $batch_cmd = "qsub";
-      $batch_cmd .= " ".$selected_nodes if ($selected_nodes);
-      $batch_cmd .= " -d ".$wd;
-      $batch_cmd .= " -m ".$batch_mail;
-      $batch_cmd .= " -N ".$job_file;
-      #      $batch_cmd .= " -j oe ";
-      $batch_cmd .= " -e ".$job_file.".err";
-      $batch_cmd .= " -o ".$job_file.".log";
-      $batch_cmd .= " ".$job_file;
+      $qsub_command = "qsub";
+      $qsub_command .= " ".$selected_nodes if ($selected_nodes);
+      $qsub_command .= " -d ".$wd;
+      $qsub_command .= " -m ".$batch_mail;
+      $qsub_command .= " -N ".$job_file;
+      #      $qsub_command .= " -j oe ";
+      $qsub_command .= " -e ".$job_file.".err";
+      $qsub_command .= " -o ".$job_file.".log";
+      $qsub_command .= " ".$job_file;
 
-      &RSAT::message::Debug("qsub command for torque", $batch_cmd) if ($main::verbose >= 2);
+      &RSAT::message::Debug("qsub command for torque", $qsub_command) if ($main::verbose >= 2);
 
     } elsif (lc($queue_manager) eq "sge") {
       ## qsub command functionning using Sun Grid Engine
-      $batch_cmd = join(" ", "qsub",
+      $qsub_command = join(" ", "qsub",
 		       "-m", $batch_mail,
 		       "-q ", $cluster_queue,
 		       " -j y ",
@@ -1103,9 +1103,9 @@ sub doit {
 
     } elsif (lc($queue_manager) eq "batch") {
       ## qsub command functionning using Sun Grid Engine
-      $batch_cmd = &RSAT::server::GetProgramPath("batch");
-      $batch_cmd = $batch_cmd;
-      $batch_cmd .= " -f ".$job_file;
+      $qsub_command = &RSAT::server::GetProgramPath("batch");
+      $qsub_command = $qsub_command;
+      $qsub_command .= " -f ".$job_file;
 
     } else {
       &RSAT::error::FatalError($queue_manager, 
@@ -1113,7 +1113,7 @@ sub doit {
 			       "Please define the job scheduler by setting the variable QUEUE_MANAGER in RSAT_config.props.");
     }
 
-    &doit($batch_cmd, $dry, $die_on_error,$verbose,0);
+    &doit($qsub_command, $dry, $die_on_error,$verbose,0);
 
 
   } else {
@@ -1259,8 +1259,14 @@ sub one_command {
 
   &RSAT::message::Debug("RSAT::util::one_command()", $cmd) if ($main::verbose >= 3);
 
-  ## Check dependency on a specific task
+  ################################################################
+  ## Define a dry option for one_command, because there are two
+  ## reasons why we might avoid to actually run the command ("dry" mode):
+  ##
+  ## 1. Because this option was called in the main work space
   my $local_dry = $main::dry;
+  ## 2. Because this command is depending on the activation of a
+  ##    specific task by the user (option -task).
   if ($args{task}) {
     $required_task = $args{task};
     $local_dry = 1 unless ($main::task{$required_task});
@@ -1291,8 +1297,15 @@ sub one_command {
 #       $cmd = $cmd." >&".$err_file;
 #   }
 
+
+  ################################################################
+  ## If the main method is in batch, append the command to the string
+  ## $main::batch_cmd.  This serves to collect several steps of an
+  ## analysis in a single command that will be sent to the cluster as
+  ## a single job.
   if ($main::batch) {
-    if ($main::batch_cmd =~/\S/) {
+    if ((defined($main::batch_cmd)) &&
+	 ($main::batch_cmd =~/\S/)) {
       $main::batch_cmd .= " ; $cmd";
     } else {
       $main::batch_cmd = "$cmd";
@@ -1300,16 +1313,17 @@ sub one_command {
   } else {
 
     ## Report command in the log file
-    if (($print_out) || ($main::verbose >= 3)) {
+    if ($print_out) {
       my $local_out;
-      if ($args{out}) {
-	$local_out = $args{out};
-      } elsif ($main::out) {
-	$local_out = $main::out;
-      } else {
-	$local_out = STDOUT;
+      if ($args{log}) {
+	$local_out = $args{log};
+#      } elsif ($main::out) {
+#	$local_out = $main::out;
+#      } else {
+#	$local_out = STDOUT;
+#      }
+	print $local_out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n");
       }
-      print $local_out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n");
     }
     &doit($cmd, $local_dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
   }
@@ -1366,6 +1380,14 @@ sub PrintThresholdValues {
     return $message;
 }
 
+sub sort_unique {
+    my (@list) = @_;
+    my $index = ();
+    foreach my $element (@list) {
+	$index{$element}++;
+    }
+    return(sort(keys(%index)));
+}
 
 return 1;
 
