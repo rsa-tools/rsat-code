@@ -43,17 +43,25 @@ $command = "$SCRIPTS/supported-organisms -v 1";
 
 $parameters = " -return ID,nb,source,last_update,taxonomy,up_from,up_to";
 
+################################################################
+## treat taxon specificity of the server if required
+if ($ENV{GROUP_SPECIFICITY}) {
+  $command .= " -group ".$ENV{GROUP_SPECIFICITY};
+}
 $command .= " ".$parameters;
+&ReportWebCommand($command) if ($ENV{rsat_echo} >= 1);
 
-&ReportWebCommand($command);
-
+print "<pre>", `$command`, "</pre>";
 
 ### execute the command ###
-open RESULT, "$command | awk '{print \$0\"\t<a href=$ENV{rsat_www}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
+$command .= " | awk '{print \$0\"\t<a href=$ENV{rsat_www}/data/genomes/\"\$1\"/>data</a>\"}'";
+$command .= " | perl -pe 's|<a href=.+/data/genomes/;/>data</a>||'";
+
+open RESULT, "$command|";
 
 ### Print result on the web page
 print "<CENTER>\n";
-&PrintHtmlTable(RESULT, $tmp_file_path, false, 10000);
+&PrintHtmlTable(RESULT, $tmp_file_path, 0, 10000);
 print "</CENTER>\n";
 
 close(RESULT);
