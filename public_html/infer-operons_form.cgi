@@ -66,56 +66,43 @@ $field_description{gene_nb} = "Number of genes in the predicted operon";
 ### head
 print "<CENTER>";
 print "Infers the operon to which each coding gene of a given list belongs in a prokaryotic genome.";
-print "<br>This program was developed by <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/rekins'>Rekins Janky</a> and <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.</center>";
+print "<br>This program was developed by Rekins Janky and <a target=_blank href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a>.</center>";
 print "</CENTER>";
 
 ################################################################
-### display the form only if the organisms on the curent server 
-###  are coherent with this tool, otherwise, display an info message
- 
-if ($ENV{PHYLO_TOOLS} == 0){
-
-print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
-
-print $query->end_html;
-
-exit(0);
-	
+## Display the form only if the taxonomic specificity of this server
+## are consisten with this tool (requires Bacteria or
+## Archaea). Otherwise, display a warning message.
+my $taxon_specificity = ucfirst(lc($ENV{TAXON_SPECIFICITY}));
+if ($taxon_specificity) {
+  unless (($taxon_specificity eq "Bacteria") ||
+	  ($taxon_specificity eq "Archaea") ||
+	  ($taxon_specificity eq "Prokaryotes")) {
+    &RSAT::message::Warning("This instance of RSAT is dedicated to <b>".$taxon_specificity."</b>.",
+			    "Operon inference is only valid for Prokaryotes</br>");
+    print "<font size=+1>For operon inference, please use the Prokaryote-dedicated instance (<a target='_top' href='http://prokaryotes.rsat.eu/'>http://prokaryotes.rsat.eu/</a>).</font>";
+    "</hr>";
+    exit(0);
+  }
 }
 
 ################################################################
-### formheader
-
-
+## Form header
 print $query->start_multipart_form(-action=>"infer-operons.cgi");
 
+################################################################
+## Only print relevant organisms for operon inference
+@selected_organisms = ();
+push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
+    if (($taxon_specificity eq "Bacteria") ||
+	($taxon_specificity eq "Prokaryotes"));
+push @selected_organisms, &GetOrganismsForTaxon("Archaea")
+    if (($taxon_specificity eq "Archaea") ||
+	($taxon_specificity eq "Prokaryotes"));
+@selected_organisms = sort(@selected_organisms);
 
-#### Single organism
-# if ($default{single_multi_org} eq 'single') {
-#     $CHECKED = "checked";
-# } else {
-#     $CHECKED = "";
-# }
-# print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' $CHECKED>", 
-#        "<A HREF=help.infer-operons.html#single_org>",
-#        "<b>Single organism</b>",
-#        "</A>\n");
-# print "&nbsp;"x4, &OrganismPopUpString();
-# print "<p>\n";
+&OrganismPopUp(@selected_organisms);
 
-# #### Multiple organisms
-# if ($default{single_multi_org} eq 'multi') {
-#     $CHECKED = "checked";
-# } else {
-#     $CHECKED = "";
-# }
-# print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>", 
-#        "<A HREF=help.infer-operons.html#multi_org>",
-#        "<b>Multiple organisms</b>",
-#        "</a>\n"
-#       );
-
-&OrganismPopUp();
 
 ### query (gene list)
 print "<p>";
