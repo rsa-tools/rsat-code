@@ -37,11 +37,37 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 group_specificity=
+
+################################################################
+## Support for phylogenetic footprint analysis and related tools.
+##
+## get-orthologs_form.cgi
+## footprint-discovery_form.cgi
+## footprint-scan_form.cgi
 phylo_tools=0
+
+################################################################
+## Support for inter-individual variation analysis tools (regulatory
+## SNPs and other types of variations).
+##
+## retrieve-variation-seq_form.cgi
+## variation-info_form.cgi
+## variation-scan_form.cgi
 variations_tools=0
+
+################################################################
+## Support for tools requiring a connection to UCSC genome browser.
+##
+## fetch-sequences_form.php
 ucsc_tools=0
+
+################################################################
+## Support for tools depending on the connection to ensembl.org.
+##
+## retrieve-ensembl-seq_form.cgi
 ensembl_tools=0
 
+################################################################
 ## RSAT binary directory. This directory should contain the executable
 ## files resulting from the compilation of C programs in RSAT
 ## (matrix-scan-quick, count-words, ...) as well as the applications
@@ -260,24 +286,3 @@ KWALKS_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/kwalks/bin
 # LOGO_PROGRAM=seqlogo|weblogo
 LOGO_PROGRAM=seqlogo
 
-################################################################
-## Taxon-specific servers
-##
-## Values indicating which tools are supported on the current server
-
-## footprint-discovery_form.cgi
-## footprint-scan_form.cgi
-## get-orthologs_form.cgi
-## infer-operons_form.cgi
-PHYLO_TOOLS=0
-
-## retrieve-variation-seq_form.cgi
-## variation-info_form.cgi
-## variation-scan_form.cgi
-VARIATIONS_TOOLS=0
-
-## fetch-sequences_form.php
-UCSC_TOOLS=0
-
-## retrieve-ensembl-seq_form.cgi
-ENSEMBL_TOOLS=0
