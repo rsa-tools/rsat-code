@@ -31,8 +31,6 @@ Object for manipulating organisms.
 =cut
 
 
-################################################################
-
 =pod
 
 =item new()
@@ -103,7 +101,7 @@ Add a contig to the list.
 sub add_contig {
     my ($self, $contig_id, $contig_obj) = @_;
     $self->add_hash_attribute("contigs", $contig_id, $contig_obj);
-    &RSAT::message::Info(join("\t", "Added contig", $contig_id, $contig_obj)) if ($main::verbose >= 4);
+    &RSAT::message::Info("Added contig", $contig_id, $contig_obj) if ($main::verbose >= 4);
 }
 
 
@@ -222,12 +220,12 @@ sub OpenContigs {
   my $genome_file;
   my $genome_file_format;
 
+  &RSAT::message::TimeWarn("Opening contigs", @_) if ($main::verbose >= 3);
+
   if ($main::verbose >= 4) {
-    &RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
-    &RSAT::message::Info(join ("\t",
-			       "Manually specified input sequence file",
-			       $input_sequence_file,
-			       $input_sequence_format))
+    &RSAT::message::Info("Manually specified input sequence file",
+			 $input_sequence_file,
+			 $input_sequence_format)
       if ($input_sequence_file);
   }
 
@@ -240,6 +238,7 @@ sub OpenContigs {
     $self->check_name($organism_name);
     $genome_file = $main::supported_organism{$organism_name}->{'genome'};
     $genome_seq_format = $main::supported_organism{$organism_name}->{'seq_format'};
+#    &RSAT::message::Debug("&RSAT::organism::OpenContigs()", "genome file", $genome_file, $genome_seq_format) if ($main::verbose >= 0);
   } else {
     &RSAT::error::FatalError("You should specify an organism.", "Use the command supported-organisms to get a list of suported organisms");
   }
@@ -282,8 +281,8 @@ sub OpenContigs {
     my ($seq_dir, $seq_list) = &RSAT::util::SplitFileName($genome_file);
 
     if ($main::verbose >= 4) {
-      &RSAT::message::Info(join ("\t", "Genome dir", $seq_dir));
-      &RSAT::message::Info(join ("\t", "Sequence list", $seq_list));
+      &RSAT::message::Info("Genome dir", $seq_dir);
+      &RSAT::message::Info("Sequence list", $seq_list);
     }
 
     ## Read the list of contigs for this genome, and open a stream for each contig
@@ -309,22 +308,18 @@ sub OpenContigs {
 	if (-e $seq_dir."/".$masked_seq_file) {
 	  $seq_file = $masked_seq_file;
 
-	  &RSAT::message::Warning(join("\t",
-				       "Using masked repeat version of contig",
-				       $contig_id,
-				       $seq_dir."/".$seq_file,
-				      )) if ($main::verbose >= 3);
+	  &RSAT::message::Warning("Using masked repeat version of contig",
+				  $contig_id,
+				  $seq_dir."/".$seq_file) if ($main::verbose >= 3);
 	} else {
-	  &RSAT::message::Warning(join("\t",
-				       "There is no masked repeat version of contig",
-				       $contig_id,
-				       "missing file", $seq_dir."/".$masked_seq_file,
-				      ));
+	  &RSAT::message::Warning("There is no masked repeat version of contig",
+				  $contig_id,
+				  "missing file", $seq_dir."/".$masked_seq_file) if ($main::verbose >= 3);
 	}
       }
 
-      &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular") )
-	if ($main::verbose >= 4);
+      &RSAT::message::Info("Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular")
+	  if ($main::verbose >= 4);
 
       $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir."/".$seq_file,
 							 id=>        $contig_id,
@@ -428,9 +423,8 @@ sub DefineAcceptedFeatureTypes {
     @accepted_feature_types = qw(cds trna rrna);
   }
 
-
   foreach my $feature_type (@accepted_feature_types) {
-    &RSAT::message::Info(join("\t", "Adding feature type", $feature_type)) if ($main::verbose >= 4);
+    &RSAT::message::Info("Accepting feature type", $feature_type) if ($main::verbose >= 4);
     $self->push_attribute("feature_types", $feature_type);
   }
 }
@@ -464,6 +458,8 @@ sub LoadFeatures {
   my %contig = $self->get_contigs();
   my $name_index = $self->get_attribute("name_index");
 
+  &RSAT::message::TimeWarn("Loading features for organism", $organism_name) if ($main::verbose >= 3);
+
   ## Parse feature types
   my @feature_types = $self->get_attribute("feature_types");
   if (scalar(@feature_types) < 1) {
@@ -471,12 +467,11 @@ sub LoadFeatures {
   }
 
   foreach my $feature_type (@feature_types) {
-    warn join ("\t", ";", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 10);
+    &RSAT::message::Debug("&RSAT::Organism::LoadFeatures()", "Accepting feature type", $feature_type) if ($main::verbose >= 10);
     $accepted_feature_types{$feature_type}++;
   }
-  &RSAT::message::Info (join("\t", "Accepted feature types",
-		 join( ",", keys %accepted_feature_types)))
-    if ($main::verbose >= 4);
+  &RSAT::message::Info ("Accepted feature types", join( ",", keys %accepted_feature_types))
+      if ($main::verbose >= 4);
 
   ## Annotation table
   if ($annotation_table) {
@@ -495,13 +490,11 @@ sub LoadFeatures {
 
   foreach my $annotation_table ($self->get_attribute("annotation_tables")) {
 
-    &RSAT::message::Info(join ("\t",
-			       &RSAT::util::AlphaDate(),
-			       "Loading annotation table",
-			       $self->get_attribute("name"),
-			       $annotation_table)
-			) if ($main::verbose >= 4);
-
+    &RSAT::message::Info(&RSAT::util::AlphaDate(),
+			 "Loading annotation table",
+			 $self->get_attribute("name"),
+			 $annotation_table) if ($main::verbose >= 4);
+    
     ## Default column order for genomic features
     ## Note that this order can be redefined by the header of the
     ## annotation table (see below)
@@ -541,7 +534,7 @@ sub LoadFeatures {
 	  $field =~ s/description/descr/;
 	  $field =~ s/chrom_position/location/;
 	  $col{$field} = $field_column - 1;
-	  &RSAT::message::Info(join("\t", "Column specification", $field_column, $field)) if ($main::verbose >= 4);
+	  &RSAT::message::Info("Column specification", $field_column, $field) if ($main::verbose >= 5);
 	}
 	next;
       }
@@ -556,13 +549,13 @@ sub LoadFeatures {
 
       ## Check if the type of this feature is accepted
       unless ($accepted_feature_types{lc($type)}) {
-	&RSAT::message::Info(join( "\t","skipping feature", $id, "Non-selected feature type",$type))
-	  if ($main::verbose >= 4);
+	&RSAT::message::Info("skipping feature", $id, "Non-selected feature type",$type)
+	  if ($main::verbose >= 10);
 	next;
       }
 
       ################################################################
-      #### check mandatory attributes
+      ## Check mandatory attributes
 
       ## Check ID
       unless ($id) {
@@ -614,12 +607,14 @@ sub LoadFeatures {
       ## Left > right can occur if the genome has been exported with
       ## start and end positions rather than left and right
       ## or for a feature accross the replication origin on circular genomes.
-      unless (($left < $right) || ($contig_seq{$ctg}->get_attribute("circular") == 1)) {
-	&RSAT::message::Warning("left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
-	my $tmp = $left;
-	$left = $right;
-	$right = $tmp;
+      if (defined($contig_seq{$ctg})) {
+	unless (($left < $right) || ($contig_seq{$ctg}->get_attribute("circular") == 1)) {
+	  &RSAT::message::Warning("Left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	  my $tmp = $left;
+	  $left = $right;
+	  $right = $tmp;
 #	next;
+	}
       }
 
       ## Check strand
@@ -628,7 +623,7 @@ sub LoadFeatures {
 	next;
       }
 
-      #### make sure the strand format is correct
+      ## Make sure the strand format is correct
       $strand = &RSAT::util::ConvertStrand($strand);
 #      &RSAT::message::Debug($id, "strand", $strand) if ($main::verbose >= 10);
 
@@ -662,7 +657,7 @@ sub LoadFeatures {
 
       ## Add the new feature to the contig
       unless (defined($contig{$ctg})) {
-	&RSAT::message::Info(join("\t", "Creating new contig", $ctg)) if ($main::verbose >= 4);
+	&RSAT::message::Info("Creating new contig", $ctg) if ($main::verbose >= 4);
 	$contig{$ctg} = new RSAT::contig(id=>$ctg);
 	$contig{$ctg}->set_organism($organism_name);
       }
@@ -683,18 +678,17 @@ sub LoadFeatures {
     close $annot if ($annotation_table);
   }
 
+
   ## Check the number of features
   if (scalar($self->get_attribute("features")) < 1) {
     &RSAT::message::Warning("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
-  } elsif ($main::verbose >= 4) {
-
+  } elsif ($main::verbose >= 3) {
+    
     ## Print stats on the features
-    &RSAT::message::Info(join ("\t",
-		   "Loaded",
-		   scalar($self->get_attribute("features")),
-		   "features for organism",
-		   $self->get_attribute("name"),
-		  ));
+    &RSAT::message::Info("Loaded",
+			 scalar($self->get_attribute("features")),
+			 "features for organism",
+			 $self->get_attribute("name"));
     my %stats = ();
     foreach my $id (keys %type) {
       $stats{$type{$id}}++;
@@ -704,8 +698,6 @@ sub LoadFeatures {
     }
     &RSAT::message::psWarn("Features loaded");
   }
-  #    my %test = $self->get_attribute("feature_id");
-  #    &RSAT::message::Debug("Feature keys", scalar(keys(%test))) if ($main::verbose >= 10);
 }
 
 
@@ -1302,23 +1294,25 @@ sub LoadSynonyms {
     if (-e $synonym_file) {
 	$self->push_attribute("synonym_files", $synonym_file);
     } else {
-	&RSAT::message::Warning(join("\t", "synonym file does not exist", $synonym_file)) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Synonym file does not exist", $synonym_file) if ($main::verbose >= 3);
     }
   }
 
   foreach my $synonym_file ($self->get_attribute("synonym_files")) {
-      &RSAT::message::TimeWarn(join("\t","Loading synonyms from file", $synonym_file)) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Loading synonyms from file", $synonym_file) if ($main::verbose >= 3);
 
     #    my $synonym_file = $main::supported_organism{$organism_name}->{'synonyms'};
 #    unless ($synonym_file) {
-      #	&RSAT::message::Warning(join "\t", "no synonym table for organism",$organism_name)
+      #	&RSAT::message::Warning("no synonym table for organism",$organism_name)
       #	  if ($main::verbose >= 1);
       #	return;
       #      }
 
     my ($syn) = &RSAT::util::OpenInputFile( $synonym_file);
     while (<$syn>) {
-      next if ((/^;/) || (/^\#/) || (/^--/)); ## skip comment lines
+      next if (/^;/); ## skip comment lines
+      next if (/^\#/); ## Skip header lines
+      next if (/^--/); ## skip comment lines
       next unless (/\S/);			## skip empty lines
       chomp();
       my @fields = split "\t";
@@ -1328,9 +1322,9 @@ sub LoadSynonyms {
       if ($feature) {
 	$feature->push_attribute("names", $name);
 	$name_index->add_value(uc($name), $feature);
-	&RSAT::message::Info(join ("\t", "Added synonym", $id, $name)) if ($main::verbose >= 4);
+	&RSAT::message::Info("Added synonym", $id, $name) if ($main::verbose >= 10);
       } else {
-	&RSAT::message::Warning(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 4);
+	&RSAT::message::Warning("Cannot add synonym", "no feature with ID", $id) if ($main::verbose >= 5);
       }
     }
     close $syn if ($synonym_file);

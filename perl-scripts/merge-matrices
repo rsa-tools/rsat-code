@@ -136,13 +136,16 @@ package main;
 
   ## initialize some attributes (can be over-written with the option -merged_attr)
   local %merged_attributes = ();
-  $merged_attributes{"id"} = "merged";
-  $merged_attributes{"AC"} = "merged";
 
+  $outfile{id} = "merged";
+  $outfile{name} = "merged";
 
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  $merged_attributes{"id"} = $outfile{id};
+  $merged_attributes{"AC"} = $outfile{name};
 
   ################################################################
   ## Check argument values
@@ -358,6 +361,25 @@ formats.
       unless ($supported_input_format{$input_format}) {
 	&RSAT::error::FatalError($input_format, "Invalid input format for matrix", "Supported: ".$supported_input_formats);
       }
+
+=pod
+
+=item	B<-id ID>
+
+Set the matrix Id
+
+=cut
+    } elsif ($arg eq "-id") {
+      $outfile{id} = shift(@arguments);
+
+
+=item	B<-id ID>
+
+Set the matrix name
+
+=cut
+    } elsif ($arg eq "-name") {
+      $outfile{name} = shift(@arguments);
 
 
 =pod

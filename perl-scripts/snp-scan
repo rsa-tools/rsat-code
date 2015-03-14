@@ -94,7 +94,7 @@ package main;
 
   $main::infile{input} = 'result.tab';
   $bgfile = "Homo_all.freq";
-	$main::infile{matrixfile} = '../rsa-tools/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf';
+	$main::infile{matrixfile} = '../rsa-tools/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf';
 
   ################################################################
   ## Read argument values
