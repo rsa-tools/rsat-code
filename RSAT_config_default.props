@@ -32,7 +32,8 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## speaking correspond to a taxonomic group. These non-taxonomic
 ## groups are converted as follows:
 ##
-## - "Protists" is converted to "Eukaryota NOT (Metazoa OR Fungi)"
+## - "Protists" is converted to 
+##   "(Eukaryota NOT (Metazoa OR Fungi)) OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 GROUP_SPECIFICITY=
