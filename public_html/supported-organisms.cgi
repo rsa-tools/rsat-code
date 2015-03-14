@@ -41,18 +41,19 @@ $query = new CGI;
 $font{variable} = 1;
 #$command = "$SCRIPTS/supported-organisms -v 1";
 
-my @return_fields = qw (ID nb source last_update taxonomy data);
+my @return_fields = qw (ID nb source last_update data taxonomy);
 my $return_fields = join",", @return_fields;
 #$parameters = " -return ".$return_fields;
 
 ################################################################
 ## treat taxon specificity of the server if required
 my $group = "";
-if ($ENV{GROUP_SPECIFICITY}) {
-#  $parameters .= " -group ".$ENV{GROUP_SPECIFICITY};
-  $group = $ENV{GROUP_SPECIFICITY};
+if ($ENV{group_specificity}) {
+  $group = $ENV{group_specificity};
 }
-my $organism_table = &RSAT::OrganismManager::supported_organism_table(1, 0, $source, $taxon, $group, $depth, @return_fields); ## Export the table with header and absolute paths
+
+## Export the table with header and absolute paths
+my $organism_table = &RSAT::OrganismManager::supported_organism_table(1, 0, $source, $taxon, $group, $depth, @return_fields); 
 my @organism_rows = split("\n", $organism_table);
 my $nb_organisms = scalar(@organism_rows);
 
