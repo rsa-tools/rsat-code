@@ -161,7 +161,7 @@ sub PrintOrthoSelectionSection {
 #Streptococcus_mutans
 #Yersinia_pestis_KIM
 
-  #### choice of the organism
+  ## Choice of the organism
   print "<b>Query </b>";
   &OrganismPopUp(@supported_orthologs);
   
@@ -783,8 +783,17 @@ sub OrganismPopUpSelectable {
 ## Generate the content of the pop-up menu to be displayed for organism selection
 sub OrganismPopUpString {
     my (@selected_organisms) = @_;
-    if (scalar(@selected_organisms) <= 0) {
+    if (scalar(@selected_organisms) == 0) {
+      if ($ENV{GROUP_SPECIFICITY}) {
+	my $group = ucfirst(lc($ENV{GROUP_SPECIFICITY}));
+	
+	@selected_organisms = &RSAT::OrganismManager::GetOrganismsForGroup($group);
+	if (scalar(@selected_organisms) < 1) {
+	  &RSAT::error::FatalError("No organism supported on this server for taxon", $taxon_specificity);
+	}
+      } else {
 	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
+      }
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
@@ -857,12 +866,9 @@ sub OrganismPopUpEnsembl {
 ################################################################
 ## Display a pop-up menu with the supported taxonomy on the basis of
 ## the server-specific table of supported organisms
-
 sub TaxonPopUp {
     print &TaxonPopUpString(@_);
 }
-
-
 
 sub TaxonPopUpStringIndented {
     require RSAT::Tree;
