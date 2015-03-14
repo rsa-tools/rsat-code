@@ -161,7 +161,7 @@ sub PrintOrthoSelectionSection {
 #Streptococcus_mutans
 #Yersinia_pestis_KIM
 
-  #### choice of the organism
+  ## Choice of the organism
   print "<b>Query </b>";
   &OrganismPopUp(@supported_orthologs);
   
@@ -782,42 +782,63 @@ sub OrganismPopUpSelectable {
 ################################################################
 ## Generate the content of the pop-up menu to be displayed for organism selection
 sub OrganismPopUpString {
-    my (@selected_organisms) = @_;
-    if (scalar(@selected_organisms) <= 0) {
-	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
+  my (@selected_organisms) = @_;
+  if (scalar(@selected_organisms) == 0) {
+    if ($ENV{GROUP_SPECIFICITY}) {
+      my $group = ucfirst(lc($ENV{GROUP_SPECIFICITY}));
+      
+      @selected_organisms = &RSAT::OrganismManager::GetOrganismsForGroup($group);
+      if (scalar(@selected_organisms) < 1) {
+	&RSAT::error::FatalError("No organism supported on this server for taxon", $taxon_specificity);
+      }
+    } else {
+      @selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
     }
-    my $organismPopup = "";
-    $organismPopup .=  "<B>Organism</B>&nbsp;";
-    print '<script type="text/javascript"> ' ;
-    print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
-    print ' </script>';
-    print '<script type="text/javascript"> ' ;
-    print `cat $ENV{RSAT}/perl-scripts/lib/js/chosen/chosen.jquery.min.js`;
-    print ' </script>';
-    print '<script type="text/javascript">    
+
+    ## Add organisms required for the demos
+    if ($group ne "Fungi") {
+      push @selected_organisms, "Saccharomyces_cerevisiae";
+    }
+    if ($group ne "Metazoa") {
+      push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
+    }
+    if (($group ne "Bacteria") && ($group ne "Prokaryotes")) {
+      push @selected_organisms, "Saccharomyces_cerevisiae";
+    }
+    @selected_organisms = sort(@selected_organisms);
+  }
+  my $organismPopup = "";
+  $organismPopup .=  "<B>Organism</B>&nbsp;";
+  print '<script type="text/javascript"> ' ;
+  print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
+  print ' </script>';
+  print '<script type="text/javascript"> ' ;
+  print `cat $ENV{RSAT}/perl-scripts/lib/js/chosen/chosen.jquery.min.js`;
+  print ' </script>';
+  print '<script type="text/javascript">    
      jQuery(document).ready(function(){
 	 $(".chosen-select").chosen(); 
 	 $(".chosen-container").css({"font-size": "11px"});
 });
      
   </script>';
-    $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
-    foreach my $org (@selected_organisms) {
-	if (defined($supported_organism{$org})) {
-	    my $name = $org;
-	    $name =~ s/\_/ /g;
+  $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
+  foreach my $org (@selected_organisms) {
+    if (defined($supported_organism{$org})) {
+      my $name = $org;
+      $name =~ s/\_/ /g;
 #	    $name = $supported_organism{$org}->{'name'};
-	    if ((lc($org) eq lc($default{organism})) ||
-		(lc($name) eq lc($default{organism}))) {
-		$organismPopup .=  "<option selected VALUE='$org'>$name\n";
-	    } else {
-		$organismPopup .=  "<option value='$org'>$name\n";
-	    }
-	}
+      if ((lc($org) eq lc($default{organism})) ||
+	  (lc($name) eq lc($default{organism}))) {
+	$organismPopup .=  "<option selected VALUE='$org'>$name\n";
+      } else {
+	$organismPopup .=  "<option value='$org'>$name\n";
+      }
     }
-    $organismPopup .=  "</select>";
-    $organismPopup .=  "<br>\n";
-    return $organismPopup;
+  }
+  $organismPopup .=  "</select>";
+  $organismPopup .=  "<br>\n";
+  return $organismPopup;
 }
 
 ################################################################
@@ -857,12 +878,9 @@ sub OrganismPopUpEnsembl {
 ################################################################
 ## Display a pop-up menu with the supported taxonomy on the basis of
 ## the server-specific table of supported organisms
-
 sub TaxonPopUp {
     print &TaxonPopUpString(@_);
 }
-
-
 
 sub TaxonPopUpStringIndented {
     require RSAT::Tree;
@@ -1460,7 +1478,7 @@ sub MatrixDBcheckBox {
   my $choice_mode = $args{choice_mode} || "checkbox"; ## Display check boxes or radio buttons
 
   ## load the file containing the path to the databases
-  my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
+  my $mat_db = $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab" ;
   unless (-e $mat_db) {
     &RSAT::message::Warning( "Motif database description file not found ($mat_db)");
     return;
@@ -1504,7 +1522,7 @@ sub GetMatrixDBfromBox {
   my @selected_db = ();
 
   ## load the file containing the description and path of supported motif databases
-  my $mat_db = $ENV{RSAT}."/public_html/data/motif_databases/db_matrix_files.tab" ;
+  my $mat_db = $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab" ;
   open MAT_DB, "<$mat_db" or print "Motif databases file definition not found ($mat_db)";
   while (my $line = <MAT_DB>) {
     next if ($line =~ /^;/); ## Skip comment lines
@@ -1516,13 +1534,13 @@ sub GetMatrixDBfromBox {
 
     ## Treat multiple database selections if the DB list was presented with checkboxes
     if ($query->param($db_name) =~ /on/){
-      $loaded_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/data/motif_databases/".$file;
+      $loaded_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/motif_databases/".$file;
       push @selected_db, $db_name;
     } else {
 
       ## Treat single database selection if the DB list was presented with radio box
       if ($query->param('db_choice') eq $db_name) {
-	$loaded_params .= " -file2 ".$ENV{RSAT}."/public_html/data/motif_databases/".$file;
+	$loaded_params .= " -file2 ".$ENV{RSAT}."/public_html/motif_databases/".$file;
 	$loaded_params .= " -format2 ".$format;
 	push @selected_db, $db_name;
       }

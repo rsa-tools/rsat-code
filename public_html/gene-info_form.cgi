@@ -46,7 +46,7 @@ print "<FONT FACE='Helvetica'>";
 
 ################################################################
 ## Choice of the organism
-&OrganismPopUp;
+&OrganismPopUp();
 
 ################################################################
 ## Queries

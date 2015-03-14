@@ -505,21 +505,6 @@ sub CheckOrganism {
   &RSAT::OrganismManager::CheckOrganism(@_);
 }
 
-# ################################################################
-# ## Return a list of the supported organisms
-# ## various formats are supported
-# $supported_organisms = &ListSupportedOrganisms("text", 0, "ID");
-# sub ListSupportedOrganisms {
-#   my ($out_format, $header, @fields) = @_;
-#   &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
-#   $out_format = "text" unless ($main::out_format);
-#   $header = 0 unless ($header);
-#   my $taxon = "";
-#   my $depth = 0;
-#   return (&RSAT::OrganismManager::supported_organism_table($header, 0, $source, $taxon, $depth, @fields));
-# }
-
-
 ################################################################
 ## Return the list of supported taxa
 sub ListSupportedTaxa {

@@ -26,7 +26,6 @@ contrib/count-words/count-words
 contrib/info-gibbs/info-gibbs
 contrib/kwalks/bin/lkwalk
 contrib/matrix-scan-quick/matrix-scan-quick
-./data
 denied_IP_addresses*
 distrib_accounts
 doc/manuals/*.log
@@ -42,7 +41,7 @@ public_html/data/KEGG
 public_html/data/genomes
 public_html/data/genomes*
 public_html/data/metabolic_networks
-public_html/data/motif_databases/uniprobe/downloads
+public_html/motif_databases/uniprobe/downloads
 public_html/data/phylogeny
 public_html/data/supported_*
 public_html/data/taxon_frequencies
@@ -70,6 +69,8 @@ results
 rsat_*.tar.gz
 available*
 .Rproj.user
-data
 ws_clients/perl_clients/RSATWS
 public_html/web_services/clients/perl_clients/RSATWS
+makefile
+public_html/data/ceas/
+data

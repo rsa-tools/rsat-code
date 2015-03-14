@@ -104,7 +104,7 @@ print <<EndText;
                 <option value="peak-motifs" class="data1">Which TF motifs are over-represented in this data set ?</option>
                 
                 <option value="retrieve-seq-programs" class="data2">I want to extract their promoter sequences (or other sequence features) </option>
-                <option value="footprint-programs" class="data2">Which regulatory elements are conserved in promoters of orthologs ?</option>
+                <option value="footprint-programs" class="data2">Which regulatory elements are conserved in promoters of orthologs ? (only for prokaryotes and fungi)</option>
                 
                 <option value="disco-programs" class="data3">Are there over-represented motifs in these sequences ? </option>
                 <option value="scan-programs" class="data3">I want to scan these sequences with a motif </option>
@@ -129,7 +129,7 @@ print <<EndText;
                 <option value="peak-motifs_form.cgi" class="peak-motifs">peak-motifs</option>
                 
                 <option value="retrieve-seq_form.cgi" class="retrieve-seq-programs">retrieve sequences</option>
-                <option value="retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences</option>
+                <option value="retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences (only for organisms supported at Ensembl.org)</option>
                 
                  <option value="footprint-discovery_form.cgi" class="footprint-programs">footprint discovery</option>
                  <option value="footprint-scan_form.cgi" class="footprint-programs">footprint-scan</option>
@@ -149,7 +149,7 @@ print <<EndText;
                  
                  <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
                  
-                 <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC</option>
+                 <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC (only for organisms supported at genome.ucsc.edu)</option>
                  
                  <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
                  <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>

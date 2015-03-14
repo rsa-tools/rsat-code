@@ -226,7 +226,7 @@ package main;
 	$source_bashrc_cmd = "source ".$ssh_bashrc."; ";
       }
       $rsat_server_dir_cmd = "ssh $ssh_login '";
-      $rsat_server_dir_cmd .= $source_bashrc_cmd;
+      $rsat_server_dir_cmd .= $source_bashrc_cmd if ($source_bashrc_cmd);
       $rsat_server_dir_cmd .= " echo \$RSAT'";
       &RSAT::message::TimeWarn("Getting RSAT dir on server\n\t", $rsat_server_dir_cmd) if ($main::verbose >= 3);
       $rsat_server_dir = `$rsat_server_dir_cmd`;
@@ -247,7 +247,7 @@ package main;
     &RSAT::message::TimeWarn("Getting list of organisms from RSAT server for taxon", $taxon);
     my $orgs_for_taxa;
     if ($upload) {
-      &RSAT::message::Info("Getting list of organisms to upload for taxon", $taxon, "on local host", $ENV{HOSTNAME}, "");
+      &RSAT::message::Info("Getting list of organisms from local host",$ENV{rsat_site},"to upload for taxon", $taxon);
       $cmd = "supported-organisms -return ID -taxon ".$taxon." | grep -v '^#'";
     } elsif ($get_command eq "rsync") {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, "by ssh connection", $ssh_login);

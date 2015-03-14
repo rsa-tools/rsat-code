@@ -28,12 +28,22 @@ This requires to have write access on the RSAT directory. It is
 important to use the option -install, because otherwise all the models
 are simply displayed on the terminal (STOUT).
 
-taxon-frequencies -v 1 -taxon Mollicutes -all_models -install
+ taxon-frequencies -v 1 -all_models -install -taxon Mollicutes
 
 =head2 compute a single model and store it in a local file
 
-taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 > Mollicutes_dyads_3nt_sp0-20_freq.tab
+ taxon-frequencies -v 1 -type dyad -ml 3 -2str -taxon Mollicutes \
+      > Mollicutes_dyads_3nt_sp0-20_freq.tab
 
+=head2 Compute and install dyad frequencies for all the sub-taxa of a taxon of interest
+
+ taxon-frequencies -v 1 -type dyad -ml 3 -2str -install -sub_taxa \
+      -taxon Mollicutes 
+
+Beware: this takes time. Sub-taxa exploration is not optimized yet, so
+that all the descendents are collected for each taxon. When I find the
+time, I (JvH) should re-implement this with a leave-to-root traversal
+of the taxonomic tree.
 
 =head1 AUTHORS
 
@@ -213,7 +223,7 @@ package main;
       if (scalar(@taxa) == 0);
     ## check taxon names
     foreach my $taxon (@taxa) {
-      &RSAT::message::Debug("Checking taxon", $taxon) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Checking taxon", $taxon) if ($main::verbose >= 4);
       &CheckTaxon($taxon);
     }
     if ($sub_taxa) {
@@ -257,8 +267,8 @@ package main;
       shift @organisms;
     }
 
-#    &RSAT::message::Info("Taxon", $taxon, scalar(@organisms), "organisms") if ($main::verbose >= 0);
-#    &RSAT::message::Info("Taxon", $taxon, "organisms", join(";", @organisms)) if ($main::verbose >= 0);
+#    &RSAT::message::Info("Taxon", $taxon, scalar(@organisms), "organisms") if ($main::verbose >= 10);
+#    &RSAT::message::Info("Taxon", $taxon, "organisms", join(";", @organisms)) if ($main::verbose >= 10);
 
     ## Iterate background models
     my $m = 0;
@@ -401,8 +411,8 @@ package main;
 		$infile{$org} = $exp_freq_file;
 
 		## Count occurrences for each frequency file
-		&RSAT::message::TimeWarn("Loading pattern occurrences for organism", $o."/".$org_nb, $org) if ($main::verbose >= 2);
-		&RSAT::message::TimeWarn("\tFrequency file", $infile{$org}) if ($main::verbose >= 3);
+		&RSAT::message::TimeWarn("Loading", $pattern_type, "occurrences for organism", $o."/".$org_nb, $org) if ($main::verbose >= 3);
+		&RSAT::message::TimeWarn("\tFrequency file", $infile{$org}) if ($main::verbose >= 4);
 		my ($in) = &OpenInputFile($infile{$org});
 		my $l = 0;
 		while (<$in>) {
@@ -508,7 +518,7 @@ package main;
 	      ################################################################
 	      ## Suppress RC patterns if option -2str has been activated
 	      if ($sum_rc) {
-		&RSAT::message::TimeWarn("Suppressing redundant patterns (reverse complements)\n") if ($main::verbose >= 2);
+		&RSAT::message::TimeWarn("Suppressing redundant patterns (reverse complements)\n") if ($main::verbose >= 3);
 		foreach $pattern_seq (sort keys %pattern_id) {
 		  $rc_pattern_seq = &SmartRC($pattern_seq);
 		  #	&RSAT::message::Debug("Grouping reverse complements", $pattern_seq, $rc_pattern_seq) if ($main::verbose >= 4);
@@ -1055,5 +1065,14 @@ third parties pattern detection programs (MEME, MotifSampler).
 
 =head1 WISH LIST
 
+=head2 Taxon tree traversal
+
+Optimize the taxonomic tree traversal for the option -sub_taxa. The
+procedure should compute the frequencies at each branching node by
+summing the occurrences on its direct children, rather than summing
+occurrences for all the leaves. This should not be too complicated
+with a recursion from the root, where each branching calculates its
+own occurrence table by requestint the occurrences of each of its
+children.
 
 =cut
