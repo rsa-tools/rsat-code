@@ -47,12 +47,6 @@ print <<EndText;
   </TR>
 </table>
 
-<!--    <div class="attention">
-    <p><b>Attention!</b></p>
-    <p>The main address for Regulatory Sequence Analysis Tools (RSAT) will be changed to <a target="_top" href="http://www.rsat.eu/">http://www.rsat.eu/</a></p>
-    <p>Please update your bookmarks.</p>
-    </div>
--->
  <div align="center">
 	
 	<br/>
@@ -69,10 +63,6 @@ print <<EndText;
 	  the <a href="people.html"><b>RSAT team</b></a>.
 	</p>
 	<p><i>This website is free and open to all users.</i></p>
-
-EndText
-
-print <<EndText;
 
 <div class="hr-like"> </div>
 
@@ -240,9 +230,15 @@ print <<EndText;
     
 EndText
 
-@orgs =  &RSAT::OrganismManager::get_supported_organisms();
-print "<div align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>", scalar(@orgs) ," </b> <i>organisms supported on $ENV{rsat_site} (<a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a>)</i></div>\n";
+@orgs =  &RSAT::OrganismManager::get_supported_organisms_web();
+print "<div align='center'>";
+print "<i class='fa fa-bar-chart  fa-lg'></i> <b>", scalar(@orgs), "</b> <i>organisms supported";
+print " on $ENV{rsat_site} (<a href='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</a>)</i>\n";
 # print &ListSupportedOrganisms("html_list");
+if ($group_specificity = $ENV{group_specificity}) {
+   print ". Group specificity: <b>",$group_specificity,"</b></p>";
+}
+print "</div>\n";
 
 &UpdateLogFile();
 $count = &UpdateCounterFile();
