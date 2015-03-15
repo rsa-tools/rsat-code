@@ -517,6 +517,7 @@ sub GetOrganismsForTaxon {
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 sub GetOrganismsForGroup {
   my ($group_specificity) = @_;
+  my @selected_organisms = ();
   my @specific_taxa = ();
 
   my @supported_groups  = qw(Fungi
@@ -545,7 +546,7 @@ sub GetOrganismsForGroup {
     ## taxonomic group: I select all organisms that are neither
     ## Metazoa nor Fungi
       my %non_protist = ();
-      my @selected_organisms = &GetOrganismsForTaxon("EnsemblProtists");
+      push @selected_organisms, &GetOrganismsForTaxon("EnsemblProtists");
       my @eukaryotes = &GetOrganismsForTaxon("Eukaryota");
       my @metazoa = &GetOrganismsForTaxon("Metazoa");
       my @fungi = &GetOrganismsForTaxon("Fungi");
@@ -561,7 +562,12 @@ sub GetOrganismsForGroup {
 	  $non_protist{$org} = 1;
       }
       foreach my $org (@eukaryotes) {
-	  push (@selected_organisms, $org) unless ($non_protist{$org});
+	  if ($non_protist{$org}) {
+	      &RSAT::message::Debug("Discarding non-protist", $org) if ($main::verbose >= 10);
+	  } else {
+	      &RSAT::message::Debug("Adding protist", $org) if ($main::verbose >= 10);
+	      push (@selected_organisms, $org);
+	  }
       }
       ## my $selected_organisms = `supported-organisms -taxon Eukaryota -return ID,taxonomy | grep -v Metazoa|grep -v Fungi | grep -v Viridiplantae | cut -f 1 | xargs`;
       ## chomp($selected_organisms);
