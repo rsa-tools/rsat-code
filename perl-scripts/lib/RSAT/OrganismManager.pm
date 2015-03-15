@@ -435,7 +435,7 @@ sub GetOrganismsForTaxon {
   my ($taxon, $depth, $die_if_noorg) = @_;
   my @organisms = ();
   unless ($tree) {
-    $tree = new RSAT::Tree();
+      $tree = new RSAT::Tree();
   }
   $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
   my $node = $tree->get_node_by_id($taxon);
@@ -444,7 +444,6 @@ sub GetOrganismsForTaxon {
 
     ## Cut the taxonomic tree by selecting only one organism for each
     ## taxon at a given depth of the taxonomic tree.
-
     if (defined($depth) && ($depth != 0)) {
       @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
     }
@@ -457,7 +456,7 @@ sub GetOrganismsForTaxon {
     }
   }
   @organisms = &RSAT::util::sort_unique(@organisms);
-  return @organisms;
+  return(@organisms);
 }
 
 
@@ -476,7 +475,7 @@ sub GetOrganismsForTaxon {
 ## groups are converted as follows:
 ##
 ## - "Protists" is converted to 
-##   "(Eukaryota NOT (Metazoa OR Fungi)) OR EnsemblProtists"
+##   "(Eukaryota NOT (Metazoa OR Fungi OR Viridiplantae)) OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 sub GetOrganismsForGroup {
@@ -508,10 +507,29 @@ sub GetOrganismsForGroup {
     ## Very tricky way to specify "Protists", which is not a
     ## taxonomic group: I select all organisms that are neither
     ## Metazoa nor Fungi
-    my $selected_organisms = `supported-organisms -taxon Eukaryota -return ID,taxonomy | grep -v Metazoa|grep -v Fungi | cut -f 1 | xargs`;
-    chomp($selected_organisms);
-    push @selected_organisms, split(/\s+/, $selected_organisms);
-    @specific_taxa = ("EnsemblProtists");
+      my %non_protist = ();
+      my @selected_organisms = &GetOrganismsForTaxon("EnsemblProtists");
+      my @eukaryotes = &GetOrganismsForTaxon("Eukaryota");
+      my @metazoa = &GetOrganismsForTaxon("Metazoa");
+      my @fungi = &GetOrganismsForTaxon("Fungi");
+      my @plants = &GetOrganismsForTaxon("Viridiplantae");
+      my @non_protists = (@metazoa, @fungi, @plants);
+      &RSAT::message::Info("Collected", scalar(@eukaryotes),"eukaroytes",
+			   "\n", "Discarding non-protist eukaryotes: ", scalar(@non_protists), 
+			   "\n", scalar(@metazoa), "Metazoa",
+			   "\n", scalar(@fungi), "Fungi",
+			   "\n", scalar(@plants), "Plants"
+	  ) if ($main::verbose >= 5);
+      foreach my $org (@non_protists) {
+	  $non_protist{$org} = 1;
+      }
+      foreach my $org (@eukaryotes) {
+	  push (@selected_organisms, $org) unless ($non_protist{$org});
+      }
+      ## my $selected_organisms = `supported-organisms -taxon Eukaryota -return ID,taxonomy | grep -v Metazoa|grep -v Fungi | grep -v Viridiplantae | cut -f 1 | xargs`;
+      ## chomp($selected_organisms);
+      ## push @selected_organisms, split(/\s+/, $selected_organisms);
+#    @specific_taxa = ("EnsemblProtists");
   } elsif ($group_specificity eq "Plants") {
     @specific_taxa = ("Viridiplantae");
   } else {
