@@ -396,14 +396,51 @@ sub is_supported {
 
 =item B<get_supported_organisms>
 
-return a list with the IDs of the supported organisms.
+Return a list with all supported organisms on this RSAT instance.
 
 =cut
-
 sub get_supported_organisms {
   return sort keys %main::supported_organism;
 }
 
+=pod
+
+=item B<get_supported_organisms_web>
+
+Return a list with all supported organisms on the web server for this
+RSAT instance. This can differ from the complete list of organisms
+supported on the command line, because some servers are dedicated to
+specific taxonomic groups.
+
+The taxonomic range supported on a web interface is defined by the
+property "group_specificity" in the file $RSAT/RSAT_config.props.
+
+=cut
+sub get_supported_organisms_web {
+  my $group_specificity = ucfirst(lc($ENV{group_specificity}));
+  if ($group_specificity) {
+#      my $group_specificity = ucfirst(lc($ENV{group_specificity}));
+    @selected_organisms = &RSAT::OrganismManager::GetOrganismsForGroup($group_specificity);
+    if (scalar(@selected_organisms) < 1) {
+      &RSAT::error::FatalError("No organism supported on this server for group", $group_specificity);
+    }
+  } else {
+    @selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
+  }
+
+  ## Add organisms required for the demos
+  if ($group_specificity ne "Fungi") {
+    push @selected_organisms, "Saccharomyces_cerevisiae";
+  }
+  if ($group_specificity ne "Metazoa") {
+    push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
+  }
+  if (($group_specificity ne "Bacteria") && ($group_specificity ne "Prokaryotes")) {
+    push @selected_organisms, "Saccharomyces_cerevisiae";
+  }
+  @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
+  return (@selected_organisms);
+}
 
 ################################################################
 #### Check if an organism is supported on the current installation,
