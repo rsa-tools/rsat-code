@@ -17,7 +17,7 @@ $default{demo_descr1} = "";
 $default{organism} = "Homo_sapiens_GRCh37";
 $default{input_type}="gvf";
 $default{out_type}="varBed";
-$default{mml}=30 ; ## Length of the sequence sorounding the variant, 
+$default{mml}=30 ; ## Length of the sequence surrounding the variant, 
                    ## has to be consistent with the longest matrix to be used
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
