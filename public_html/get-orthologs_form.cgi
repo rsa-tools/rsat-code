@@ -75,9 +75,8 @@ print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
 ################################################################
-### display the form only if the organisms on the curent server 
-###  are coherent with this tool, otherwise, display an info message
- 
+## Display the form only if it is relveant for the organisms supported
+## on this RSAT instance.
 &check_phylo_tools();
 
 ################################################################
