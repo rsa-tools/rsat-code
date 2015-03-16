@@ -19,7 +19,36 @@ $program_version
 
 =head1 DESCRIPTION
 
-Compare-Snps for writing new perl scripts.
+Compare two or more files containing regulatory SNPs (predicted or
+annotated).
+
+Regulatory SNPs can be obtained from a variety of sources:
+
+=over
+
+=item I<variation-scan>
+
+RSAT program that predicts rSNPs by scanning SNP sequences with
+position-specific scoring matrices.
+
+L<http://www.rsat.eu/>
+
+=item I<is-rsnp>
+
+A Web site allowing to predict rSNPs or to retrieve pre-computed
+predictions.
+
+L<http://bioinformatics.research.nicta.com.au/software/is-rsnp/>
+
+=item I<haploreg>
+
+A web site combining annotations and predictions of regulatory SNPs,
+as well as integration of SNPs with regulatory information (ChIP-seq
+for transcription factors, histone modifications, ...).
+
+L<http://www.broadinstitute.org/mammals/haploreg/haploreg.php>
+
+=back
 
 =head1 AUTHORS
 
@@ -35,7 +64,7 @@ Compare-Snps for writing new perl scripts.
 
 =over
 
-=item util
+=item variations
 
 =back
 
@@ -47,7 +76,34 @@ compare-snps [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 OUTPUT FORMAT
 
+The output format is a tab-delimited file, with one row per rSNP.
+
+A regulatory SNP is defined by 2 mandatory fields:
+
+=over
+
+=item I<SNP ID>
+
+The identifier of the SNP shown or predicted to affect regulation.
+
+=item I<TFBM>
+
+Identifier of the transcription factor binding motif (TFBM) affected
+by the SNP.
+
+=back
+
 =head1 SEE ALSO
+
+=over
+
+=item B<variation-scan>
+
+The program I<compare-rsnps> takes as input the results of
+I<variation-scan>.
+
+=back
+
 
 =head1 WISH LIST
 
@@ -68,7 +124,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
-
+require RSAT::variation;
 
 
 ################################################################
