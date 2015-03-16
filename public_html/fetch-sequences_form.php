@@ -37,9 +37,18 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
       <br/>
 <?php
    ## first check if this tool is supported for the current server
-   if ($properties['UCSC_TOOLS'] == 0){
-     die("<span style='color:#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</span>");
-	}
+   if ($properties['ucsc_tools'] == 0) {
+     echo ("<font size='+1'>");
+     echo("<span style='color:#DD0000'>Sorry, this RSAT instance does not support UCSC fetch-sequence tool.</span>");
+     if (($properties['group_specificity'] != "") &&
+	 ($properties['group_specificity'] != "Metazoa")
+	 ) {
+       echo("<p>UCSC tools are mainly relevant for Metazoa.</p>\n");
+       echo("<p>This RSAT instance is dedicated to ".$properties['group_specificity'].".</p>\n");
+     }
+     echo("<p>We suggest you to try the Metazoa-specific instance of RSAT: <a target='_top' href='http://metazoa.rsat.eu/'><b>http://metazoa.rsat.eu/</b></a></p>\n");
+     die("");
+   }
    
 ?> 
       
