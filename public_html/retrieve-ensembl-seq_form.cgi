@@ -69,7 +69,7 @@ print "<b>Remark: If you want to retrieve sequences from an organism that is not
 ### display the form only if the organisms on the curent server 
 ###  are coherent with this tool, otherwise, display an info message
  
-if ($ENV{ENSEMBL_TOOLS} == 0){
+if ($ENV{ensembl_tools} == 0){
 
 print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
 
