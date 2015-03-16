@@ -127,7 +127,7 @@ cluster_footprints:
 RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2014-04-11
-RDB_MATRICES=${RSAT}/data/motif_databases/REGULONDB/${RDB_PREFIX}.tf
+RDB_MATRICES=${RSAT}/public_html/motif_databases/REGULONDB/${RDB_PREFIX}.tf
 cluster_regulondb:
 	@echo
 	@echo "Clustering all matrices from RegulonDB"
@@ -143,8 +143,8 @@ cluster_regulondb_permute:
 ## Cluster one jaspar group
 JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
 JASPAR_GROUP=vertebrates
-JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
-JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2015_03
+JASPAR_DIR=${RSAT}/public_html/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_all_groups:
 	@for g in ${JASPAR_GROUPS}; do \
