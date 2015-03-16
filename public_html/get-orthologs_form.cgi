@@ -75,21 +75,12 @@ print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
 ################################################################
-### display the form only if the organisms on the curent server 
-###  are coherent with this tool, otherwise, display an info message
- 
-if ($ENV{PHYLO_TOOLS} == 0){
-
-print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
-
-print $query->end_html;
-
-exit(0);
-	
-}
+## Display the form only if it is relveant for the organisms supported
+## on this RSAT instance.
+&check_phylo_tools();
 
 ################################################################
-### formheader
+## Form header
 
 print $query->start_multipart_form(-action=>"get-orthologs.cgi");
 

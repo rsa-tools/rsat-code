@@ -73,12 +73,12 @@ print "</CENTER>";
 ## Display the form only if the taxonomic specificity of this server
 ## are consisten with this tool (requires Bacteria or
 ## Archaea). Otherwise, display a warning message.
-my $taxon_specificity = ucfirst(lc($ENV{TAXON_SPECIFICITY}));
-if ($taxon_specificity) {
-  unless (($taxon_specificity eq "Bacteria") ||
-	  ($taxon_specificity eq "Archaea") ||
-	  ($taxon_specificity eq "Prokaryotes")) {
-    &RSAT::message::Warning("This instance of RSAT is dedicated to <b>".$taxon_specificity."</b>.",
+my $group_specificity = ucfirst(lc($ENV{group_specificity}));
+if ($group_specificity) {
+  unless (($group_specificity eq "Bacteria") ||
+	  ($group_specificity eq "Archaea") ||
+	  ($group_specificity eq "Prokaryotes")) {
+    &RSAT::message::Warning("This instance of RSAT is dedicated to <b>".$group_specificity."</b>.",
 			    "Operon inference is only valid for Prokaryotes</br>");
     print "<font size=+1>For operon inference, please use the Prokaryote-dedicated instance (<a target='_top' href='http://prokaryotes.rsat.eu/'>http://prokaryotes.rsat.eu/</a>).</font>";
     "</hr>";
@@ -94,11 +94,11 @@ print $query->start_multipart_form(-action=>"infer-operons.cgi");
 ## Only print relevant organisms for operon inference
 @selected_organisms = ();
 push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
-    if (($taxon_specificity eq "Bacteria") ||
-	($taxon_specificity eq "Prokaryotes"));
+    if (($group_specificity eq "Bacteria") ||
+	($group_specificity eq "Prokaryotes"));
 push @selected_organisms, &GetOrganismsForTaxon("Archaea")
-    if (($taxon_specificity eq "Archaea") ||
-	($taxon_specificity eq "Prokaryotes"));
+    if (($group_specificity eq "Archaea") ||
+	($group_specificity eq "Prokaryotes"));
 @selected_organisms = sort(@selected_organisms);
 
 &OrganismPopUp(@selected_organisms);
