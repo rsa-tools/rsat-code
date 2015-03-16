@@ -784,7 +784,7 @@ sub OrganismPopUpSelectable {
 sub OrganismPopUpString {
   my (@selected_organisms) = @_;
   if (scalar(@selected_organisms) == 0) {
-    @selected_organisms = &RSAT::OrganismManager::supported_organisms_web();
+    @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
   }
   my $organismPopup = "";
   $organismPopup .=  "<B>Organism</B>&nbsp;";
