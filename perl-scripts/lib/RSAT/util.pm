@@ -1381,12 +1381,16 @@ sub PrintThresholdValues {
 }
 
 sub sort_unique {
-    my (@list) = @_;
-    my $index = ();
-    foreach my $element (@list) {
-	$index{$element}++;
+    my (@input_list) = @_;
+    &RSAT::message::Debug("&RSAT::util::sort_unique()", "\@input_list", scalar(@input_list)) if ($main::verbose >= 5);
+    my $tmp_list_index = ();
+    foreach my $element (@input_list) {
+	$tmp_list_index{$element}++;
     }
-    return(sort(keys(%index)));
+    my @sorted_list = sort(keys(%tmp_list_index));
+    undef(%tmp_list_index); ## There is some strange side effect: I have to explicitly undef the index
+    &RSAT::message::Debug("&RSAT::util::sort_unique()", "\@sorted_list", scalar(@sorted_list)) if ($main::verbose >= 5);
+    return(@sorted_list);
 }
 
 return 1;
