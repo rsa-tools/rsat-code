@@ -17,8 +17,8 @@ COMPA_SUFFIX=w${MIN_W}_wr${MIN_WR}_cor${MIN_COR}_Ncor${MIN_NCOR}
 ## Case 1: peak-motifs result versus JASPAR database
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 PEAKMO_MATRICES=${RSAT}/public_html/demo_files/${PEAKMO_PREFIX}_matrices.tf
-
-JASPAR_PREFIX=jaspar_core_vertebrates_2013-11
+JASPAR_VERSION=2015_03
+JASPAR_PREFIX=jaspar_core_vertebrates_${JASPAR_VERSION}
 JASPAR_MATRICES=${RSAT}/public_html/data/motif_databases/JASPAR/${JASPAR_PREFIX}.tf
 
 PEAKMO_VS_JASPAR_DIR=results/peakmo_vs_jaspar
@@ -199,7 +199,7 @@ permuted_footprintdb_vs_itself:
 ## JASPAR
 JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
 JASPAR_GROUP=vertebrates
-JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2013-11
+JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_${JASPAR_VERSION}
 JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 jaspar_one_group_vs_itself:
@@ -214,12 +214,12 @@ permuted_jaspar_one_group_vs_itself:
 JASPAR_TASK=jaspar_one_group_vs_itself permute_jaspar_one_group permuted_jaspar_one_group_vs_itself
 iterate_jaspar:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} DB_PREFIX=jaspar_core_$${g}_2013-11 DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
+		${MAKE} DB_PREFIX=jaspar_core_$${g}_${JASPAR_VERSION} DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
 	done
 
 iterate_jaspar_perm:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} DB_PREFIX=jaspar_core_$${g}_2013-11_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
+		${MAKE} DB_PREFIX=jaspar_core_$${g}_${JASPAR_VERSION}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
 	done
 
 
