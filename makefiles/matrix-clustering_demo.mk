@@ -37,6 +37,7 @@ list_param:
 	@echo "PERMUTED_PREFIX		${PERMUTED_PREFIX}"
 	@echo "PERMUTED_DIR		${PERMUTED_DIR}"
 	@echo "PERMUTED_MATRIX_FILE	${PERMUTED_MATRIX_FILE}"
+	@echo "JASPAR_VERSION		${JASPAR_VERSION}"
 	@echo "JASPAR_GROUPS		${JASPAR_GROUPS}"
 	@echo "JASPAR_GROUP		${JASPAR_GROUP}"
 	@echo "CISBP_GROUPS		${CISBP_GROUPS}"
@@ -143,7 +144,8 @@ cluster_regulondb_permute:
 ## Cluster one jaspar group
 JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
 JASPAR_GROUP=vertebrates
-JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_2015_03
+JASPAR_VERSION=2015_03
+JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_${JASPAR_VERSION}
 JASPAR_DIR=${RSAT}/public_html/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_all_groups:
