@@ -33,7 +33,8 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## groups are converted as follows:
 ##
 ## - "Protists" is converted to 
-##   "(Eukaryota NOT (Metazoa OR Fungi)) OR EnsemblProtists"
+##   "(Eukaryota NOT (Metazoa OR Fungi OR Viridiplantae)) 
+##     OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 group_specificity=
