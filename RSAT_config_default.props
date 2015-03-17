@@ -16,7 +16,7 @@ rsat_server_admin=your.mail@your.mail.server
 RSAT=[RSAT_PARENT_PATH]/rsat
 
 ################################################################
-## Site-specific supported taxononmic groups + adapted tools
+## Site-specific supported taxononmic groups + adapted tools.
 ##
 ## Group specificity restricts the organisms displayed in the Web
 ## forms, according to the "taxonomic" groups defined by
@@ -37,6 +37,13 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ##     OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
+##
+## Group specificity is a facultative option that was developed in
+## 2015 to distribute RSAT maintenance and load on 6 servers
+## worldwide. For local installations, there is absolutely no ned to
+## specify a taxonomic specificity. If the option is left blank, the
+## Web server will display all the supported organisms.
+
 group_specificity=
 
 ################################################################
@@ -45,6 +52,14 @@ group_specificity=
 ## get-orthologs_form.cgi
 ## footprint-discovery_form.cgi
 ## footprint-scan_form.cgi
+##
+## Phylogenetic tools require to run genome-blast between selected
+## query organism and relevant reference taxa (for example Escherichia
+## coli against Gammaproteobacteria, Saccharomyces cerevisiae against
+## Fungi, ...). BLAST hit tables are stored in the genome directories,
+## and can occupy a lot of space, so this feature is only supported if
+## actively specified by the RSAT administrator.
+
 phylo_tools=0
 
 ################################################################
@@ -54,18 +69,32 @@ phylo_tools=0
 ## retrieve-variation-seq_form.cgi
 ## variation-info_form.cgi
 ## variation-scan_form.cgi
+##
+## Variation annotations occupy a lot of space fr Vertebrates (in
+## particular Homo sapiens), so this functionality is only supported
+## if actively specified by the RSAT administrator.
+
 variations_tools=0
 
 ################################################################
 ## Support for tools requiring a connection to UCSC genome browser.
 ##
 ## fetch-sequences_form.php
+##
+## UCSC essentially supports metazoan genomes + a few model organisms,
+## so this option is only relevant for servers that support Metazoa.
+
 ucsc_tools=0
 
 ################################################################
 ## Support for tools depending on the connection to ensembl.org.
 ##
 ## retrieve-ensembl-seq_form.cgi
+##
+## These tools require to have installed ensembl libraries, and
+## properly configured the variables ensembl_version and
+## ensemblgenomes_version (see below).
+
 ensembl_tools=0
 
 ################################################################
