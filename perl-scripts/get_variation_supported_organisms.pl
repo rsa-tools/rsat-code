@@ -50,18 +50,15 @@ package main;
 sub PrintHelp {
   print <<End_of_help;
 
-This script allows to update the RSAT config file in an interactive
-way. It should be used by RSAT amdinistrators when the configuration
-has to be changed (example: change of the IP address of the server).
+This script allows to create and update the file containing
+the organims supporting variation tools
 
 Author: Jacques.van-Helden\@univ-amu.fr
 
 Usage: 
-  cd \$RSAT; perl perl-scripts/configure_rsat.pl [auto]
+   perl perl-scripts/get_variation_supported_organisms.pl
 
-The option "auto" suppresses the interactive control of parameter
-values.
-
+The option "-h" givs this help description.
 End_of_help
   exit(0);
 }
