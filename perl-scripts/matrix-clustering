@@ -1129,7 +1129,7 @@ sub CompareMatricesQuick {
 ## 
 sub Hclustering {
     
-    &RSAT::message::TimeWarn("Clustering matrices on the basis of the selected parameter.") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Clustering matrices with R hclust function") if ($main::verbose >= 2);
 
 
     ##################################
@@ -1263,6 +1263,7 @@ sub ReadClusterComposition {
 ## an algorithm partitioning a network into clusters), and build
 ## consensus motifs.
 sub ClusterMotifs {
+  &RSAT::message::TimeWarn("Clustering matrices with MCL") if ($main::verbose >= 2);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
