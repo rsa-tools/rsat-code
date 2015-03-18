@@ -66,26 +66,24 @@ print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
-#### Select organims to retrieve variants sequences from
+my @org_variation=();
 
-## Get supported organims
-my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms();
-#my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms_with_variations();
+my $data_rsat=join("/",$ENV{RSAT},"data") ;
+my $supported_variation_organims_file=join ("/",$data_rsat,"supported_organisms_variation.tab");
 
-## Intialize array to store organisms with variation files
-my @org_variations=(); 
-
-foreach my $org_aux  ( @installed_organisms){
-    ## Check by organims if there is variation file installed
-    my $org_var=&RSAT::organism::has_variations($org_aux);
-    if ($org_var){
-	#print $org_var."++";
-	push (@org_variations, $org_aux)
+if (-e $supported_variation_organims_file){
+    my ($var_org) = &OpenInputFile($supported_variation_organims_file);
+    while(<$var_org>){
+	chomp;
+	next unless (/\S/) ; # skip empty rows
+	next if (/^;/); # skip comment lines
+	next if (/^\#/); # Skip header line	
+	my $org=$_ ;
+	push (@org_variations, $org) ;
+	
     }
-}
-
-if (scalar(@org_variations)>0){
     print "&nbsp;"x0, &OrganismPopUpString(@org_variations);
+    
 }
 else {
   &RSAT::message::Warning("This RSAT site does not contain any genome with variations");
