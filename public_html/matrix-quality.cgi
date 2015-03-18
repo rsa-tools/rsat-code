@@ -64,15 +64,12 @@ if ($query->param('html_title')) {
 
 ################################################################
 #### Matrix specification
-$matrix_file = $result_dir."/input_matrix";
+local $matrix_file = &GetMatrixFile($result_dir."/input_matrix");
+
+
 local $input_format = lc($query->param('matrix_format'));
 $matrix_sites=$query->param('matrix_sites');
 
-if ($query->param('matrix')) {
-    open MAT, "> ".$matrix_file;
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file);
     ($input_format) = split (/\s+/, $input_format);
     if ( ( ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "transfac" )) && $matrix_sites ){
 	$parameters .= " -ms $matrix_file";
@@ -80,10 +77,6 @@ if ($query->param('matrix')) {
     else{
 	$parameters .= " -m $matrix_file";
     }
-} else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
-
 
 $parameters .=  " -matrix_format " . $input_format;
 ################################################################
