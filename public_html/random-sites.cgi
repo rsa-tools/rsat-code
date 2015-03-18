@@ -49,18 +49,14 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 #
 $convert_matrix_parameters = '';
 
-$matrix_file = $tmp_file_path.".input";
+
 $tmp_matrix_file = $tmp_file_path.".matrix";
 
-if ($query->param('matrix')) {
-    open MAT, "> $matrix_file";
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file);
-    $convert_matrix_parameters .= " -i $matrix_file";
-} else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
+$matrix_file = &GetMatrixFile($tmp_file_path.".input");
+
+
+$convert_matrix_parameters .= " -i $matrix_file";
+
 
 ## Pseudo-counts
 if (&IsReal($query->param('pseudo_counts'))) {

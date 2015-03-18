@@ -111,19 +111,14 @@ $query_file = $file_prefix."_genes";
 
 ################################################################
 #### Matrix specification
-$matrix_file = $result_dir."/input_matrix";
+
 local $input_format = lc($query->param('matrix_format'));
 
-if ($query->param('matrix')) {
-  open MAT, "> $matrix_file";
-  print MAT $query->param('matrix');
-  close MAT;
-  &DelayedRemoval($matrix_file);
+local $matrix_file = &GetMatrixFile($result_dir."/input_matrix");
+
   ($input_format) = split (/\s+/, $input_format);
   $parameters .= " -m $matrix_file";
-} else {
-  &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
+
 $parameters .=  " -matrix_format " . $input_format;
 
 ################################################################
