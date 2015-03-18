@@ -37,18 +37,12 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 ################################################################
 #### Matrix specification
-$matrix_file_aux = $tmp_file_path."_input_matrix";
-local $input_format = lc($query->param('matrix_format'));
 
-if ($query->param('matrix')) {
-    open MAT, "> $matrix_file_aux";
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file_aux);
+local $matrix_file_aux = &GetMatrixFile($tmp_file_path."_input_matrix");
+
+
+local $input_format = lc($query->param('matrix_format'));
     ($input_format) = split (/\s+/, $input_format);
-} else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
 
 ## variation-scan only takes transfac format matrices as input
 ## if the matrix in other formating transforme it to trasnfac and store it

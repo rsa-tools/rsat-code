@@ -42,12 +42,7 @@ my $parameters;
 
 ################################################################
 #### Matrix specification
-$matrix_file = $tmp_file_path.".input";
-open MAT, "> $matrix_file";
-print MAT $query->param('matrix');
-close MAT;
-&DelayedRemoval($matrix_file);
-push (@result_files, "input matrix",$matrix_file);
+local $matrix_file = &GetMatrixFile($tmp_file_path.".input");
 
 $parameters .= " -m $matrix_file";
 
