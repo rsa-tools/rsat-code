@@ -38,38 +38,14 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 ################################################################
 #### Matrix specification
 
-local $matrix_file_aux = &GetMatrixFile($tmp_file_path."_input_matrix");
+local $matrix_file= &GetMatrixFile($tmp_file_path."_input_matrix");
 
 
 local $input_format = lc($query->param('matrix_format'));
-    ($input_format) = split (/\s+/, $input_format);
+($input_format) = split (/\s+/, $input_format);
 
-## variation-scan only takes transfac format matrices as input
-## if the matrix in other formating transforme it to trasnfac and store it
-my $convert_mtx_cmd;
-if (!($input_format eq 'transfac')){
-    $matrix_file= $tmp_file_path."_input_matrix_transfac_format";
-    $convert_mtx_cmd=" convert-matrix -v 3 -from $input_format ";
-    $convert_mtx_cmd.=" -to transfac -i $matrix_file_aux ";
-    $convert_mtx_cmd.=" -o $matrix_file ";
-    $matrix_covert=1;
-
-    # open MTX_RESULT, "$convert_mtx_cmd |";
-
-    # if (open MTX_FILE, ">$matrix_file") {
-    # 	&DelayedRemoval($matrix_file);
-    # }
-    # while (<MTX_RESULT>) {
-    # 	print  MTX_FILE  $_ ;
-    # }
-    # close MTX_RESULT;
-    # close MTX_FILE;   
-    
-}else{
-    $matrix_file=$matrix_file_aux;
-}
-
-$parameters .= " -m $matrix_file";
+$parameters .= " -m_format  $input_format ";
+$parameters .= " -m $matrix_file ";
 
 ## Get input
 
