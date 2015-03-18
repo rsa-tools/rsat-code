@@ -62,16 +62,10 @@ $parameters .= " -format1 ".$query_matrix_format;
 
 ################################################################
 #### Query matrix file
-$matrix_file = $output_path."/".$output_prefix."_query_matrices.".$query_matrix_format;
-if ($query->param('matrix')) {
-    open MAT, "> $matrix_file";
-    print MAT $query->param('matrix');
-    close MAT;
-    &DelayedRemoval($matrix_file);
-    $parameters .= " -file1 $matrix_file";
-} else {
-    &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
+local $matrix_file = &GetMatrixFile($output_path."/".$output_prefix."_query_matrices.".$query_matrix_format);
+
+$parameters .= " -file1 $matrix_file";
+
 push @result_files, ("Input file",$matrix_file);
 push @result_files, ("Result file",$result_file);
 
