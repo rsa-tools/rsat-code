@@ -2939,13 +2939,14 @@ sub check_phylo_tools() {
     if ($ENV{phylo_tools} == 0) {
 	print "<font size=+1>\n";
 	print "<p><font color='red'>Phylogenetic tools are not supported on this instance of RSAT.</font></p>\n";
-	print "Phylogenetic approaches are currently supported on the following instances: </p>\n"; 
+	print "Phylogenetic approaches are pparticularly suited for microbial genomes (small genomes, many species available).";
+	print "They are currently supported on the following RSAT servers: </p>\n"; 
 	print "<ol>\n";
 	print "<li>Prokaryotes: <a target='_top' href='http://prokaryotes.rsat.eu/'>http://prokaryotes.rsat.eu/</a></li>";
 	print "<li>Fungi: <a target='_top' href='http://fungi.rsat.eu/'>http://fungi.rsat.eu/</a></li>";
 	print "</ol>\n";
 	print "</font>\n";
-	"</hr>";
+	print "</hr>";
 	print $query->end_html;
 	exit(0);
     }
