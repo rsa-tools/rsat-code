@@ -4,7 +4,7 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 
-SITES_DIR=data
+SITES_DIR=/data/rsat/public_html/demo_files
 SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
 ## Choose python version. The script is compatible with both 2.7 and
@@ -12,24 +12,26 @@ SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_
 #PYTHON=python3
 PYTHON=python2.7
 RES_DIR=results/crer-scan_test/
+CRER_DIR=${RES_DIR}/crers
+DORSAL_PREFIX=Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites${IN_SUFFIX}
 SITES=${SITES_DORSAL}
+DORSAL_OUT=${CRER_DIR}/${DORSAL_PREFIX}${OUT_SUFFIX}_crer.ft
 demo_dorsal:
-	mkdir -p ${RES_DIR}
+	mkdir -p ${CRER_DIR}
 	${PYTHON} python-scripts/crer_scan.py  \
 		-i ${SITES_DORSAL} -s -in_format ft \
 		-lth_crer_size 30 -uth_crer_size 500 -lth_crer_sites 2 -uth_crer_sites 1000 \
 		-lth_crer_sites_distance 1 -uth_crer_sites_distance 1000 \
 		-uth_crer_eval 0.0001 -uth_crer_pval 0.0001 \
 		-lth_crer_sig 2.0 -uth_site_pval 0.0001 \
-		-lth_score 0 -uth_score 1000 -uth_overlap 1 -return_limits_filtered -o None -v 2 
-
+		-lth_score 0 -uth_score 1000 -uth_overlap 1 -return_limits_filtered -o ${DORSAL_OUT} -v 2 
+	@echo "	 ${DORSAL_OUT}"
 
 
 ################################################################
 ## Scan even-skipped promoter with the binding sites predicted from 12
 ## TFBM (matrices) of Drosophila segmentation genes.
 LTH_SIG=0.1
-CRER_DIR=${RES_DIR}/crers
 EVE_PREFIX=Drosophila_melanogaster_eve_segmentation_sites_pval0.001${IN_SUFFIX}
 EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/${EVE_PREFIX}.ft
 EVE_OUT=${CRER_DIR}/${EVE_PREFIX}${OUT_SUFFIX}_crer.ft

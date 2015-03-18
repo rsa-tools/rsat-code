@@ -201,15 +201,8 @@ sub Panel1 {
 
   print "<fieldset>\n<legend><b><a href='help.formats.html'>Matrix </a></b></legend>\n";
 
-  print "<table>
-  <tr><td colspan='2' style='text-align:center;'> ";
   &GetMatrix();
 
-
-  print "</td>
-  </tr>";
-
-  print "</td></tr></table>";
   print '<b><font style="font-size:80%"><a href="tutorials/tut_peak-motifs.html#seq" target="_blank"></a></font></b></br>';
   print "</fieldset><p/>";
 }

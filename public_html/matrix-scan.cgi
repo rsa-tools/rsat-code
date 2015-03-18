@@ -237,19 +237,13 @@ sub ReadMatrixScanParameters {
 
   ################################################################
   ## matrix specification
-  unless ($query->param('matrix') =~ /\S/) { ### empty matrix
-    &RSAT::error::FatalError("You did not enter the matrix");
-  }
-  $matrix_file = $tmp_file_path.".matrix";
+  $matrix_file = &GetMatrixFile($tmp_file_path.".matrix");
+
 
   $matrix_format = lc($query->param('matrix_format'));
   $parameters .= " -matrix_format ".$matrix_format;
 
-  open MAT, "> ".$matrix_file;
-  print MAT $query->param('matrix');
-  close MAT;
-  &DelayedRemoval($matrix_file);
-  $parameters .= " -m $matrix_file";
+   $parameters .= " -m $matrix_file";
   push @result_files, ("Matrix file (".$matrix_format.")",$matrix_file);
 
   ## Use consensus as matrix name
