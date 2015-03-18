@@ -1277,7 +1277,7 @@ Background file
 Matrix file format
 
 =cut
-    } elsif ($arg eq "-matrix_format") {
+    } elsif ($arg eq "-m_format") {
       $main::matrix_format = lc(shift(@arguments));
 	    unless ($supported_input_format{$main::matrix_format }) {
 		&RSAT::error::FatalError("$main::matrix_format \tInvalid input format for matrix\tSupported:",$supported_input_formats);
