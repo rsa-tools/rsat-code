@@ -279,7 +279,7 @@ package	main;
   ################
   ## Calculate distribution of scores for matrices using convert-matrix (separete matrices) and matrix-distrib on each matrix file
 
-  ## NOTE FROM ALE, I thin we can change this and put it within the matrix reading section
+  ## NOTE FROM ALE, I think we can change this and put it within the matrix reading section
   if ($calc_distrib) {
     &RSAT::error::FatalError("Specify distribution directory. Use -distrib_dir option") unless ($distrib_dir);
     &RSAT::message::TimeWarn("Calculing distribution") if ($main::verbose >= 2);
@@ -594,7 +594,7 @@ package	main;
       
       $matrices_id{$matrix_ac}=$ID;
       #print "AC $matrix_ac\t$ID";
-
+      
       ## Save matrix in tab format. matrix-scan-quick only takes as
       ## input matrices in tab delimited format
       my $outM = &OpenOutputFile($matrix_file_tab);
@@ -602,14 +602,14 @@ package	main;
       ##foreach my $line (sort {$a <=> $b} keys( %{ $matrix_list{$matrix_ac}{'tab'} } )) {
       ##print $outM join("\t",@{$matrix_list{$matrix_ac}{'tab'}{$line}})."\n";
       ##}
-
       ## Print the counts matrix
       print  $outM $mtx->toString(sep=>"\t",
 				  type=>"counts",
 				  format=>"tab" );
+
       ## Remove code
       close($outM);
-
+ 
 
       ################################################################
       ## Compute the probability distribution of weight scores for the
@@ -626,7 +626,8 @@ package	main;
 	
 	  my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
 	  my ($d_file) = &OpenInputFile($distrib_file);
-	
+	   # print "$distrib_file" ; die "BOOM";
+
       ## Read in distribution file for current matrix
       while (<$d_file>) {
         next if (/;/);
@@ -667,7 +668,6 @@ package	main;
 
       ## Excute matrix-distrib command and store it in an array
       my @result_distrib = qx{$mtx_distrob_cmd };
-
       foreach (@result_distrib) { ## Read matrix-distrib file
         chomp;
 	## ALE'S NOTE: This chunck of code is redundant
@@ -1277,7 +1277,7 @@ Background file
 Matrix file format
 
 =cut
-    } elsif ($arg eq "-matrix_format") {
+    } elsif ($arg eq "-m_format") {
       $main::matrix_format = lc(shift(@arguments));
 	    unless ($supported_input_format{$main::matrix_format }) {
 		&RSAT::error::FatalError("$main::matrix_format \tInvalid input format for matrix\tSupported:",$supported_input_formats);
