@@ -53,16 +53,10 @@ $parameters .= " -in_format ".$input_format;
 
 ################################################################
 #### Input matrix specification
-$matrix_file = $tmp_file_path."_input.".$input_format;
-if ($query->param('matrix')) {
-  open MAT, "> ".$matrix_file;
-  print MAT $query->param('matrix');
-  close MAT;
-  &DelayedRemoval($matrix_file);
+local $matrix_file = &GetMatrixFile($tmp_file_path."_input.".$input_format);
+
   $parameters .= " -i ".$matrix_file;
-} else {
-  &RSAT::error::FatalError('You did not enter any data in the matrix box');
-}
+
 push @result_files, ("Input file",$matrix_file);
 
 
