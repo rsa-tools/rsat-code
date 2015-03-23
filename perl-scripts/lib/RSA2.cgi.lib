@@ -801,6 +801,8 @@ sub OrganismPopUpString {
 });
      
   </script>';
+#  print "<pre>", join("\n", @selected_organisms), "</pre>";
+
   $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
   foreach my $org (@selected_organisms) {
     if (defined($supported_organism{$org})) {
@@ -813,11 +815,14 @@ sub OrganismPopUpString {
       } else {
 	$organismPopup .=  "<option value='$org'>$name\n";
       }
+#    } else {
+#	&RSAT::message::Warning("Discarding", $org, "not supported");
     }
   }
+
   $organismPopup .=  "</select>";
   $organismPopup .=  "<br>\n";
-  return $organismPopup;
+  return($organismPopup);
 }
 
 ################################################################
