@@ -433,10 +433,10 @@ sub get_supported_organisms_web {
     push @selected_organisms, "Saccharomyces_cerevisiae";
   }
   if ($group_specificity ne "Metazoa") {
-    push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
+      push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
   }
-  if (($group_specificity ne "Bacteria") && ($group_specificity ne "Prokaryotes")) {
-    push @selected_organisms, "Saccharomyces_cerevisiae";
+  unless (($group_specificity eq "Bacteria") || ($group_specificity eq "Prokaryotes")) {
+      push @selected_organisms, "Escherichia_coli_str_k_12_substr_mg1655";
   }
   @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
   return (@selected_organisms);
