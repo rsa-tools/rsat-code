@@ -801,6 +801,8 @@ sub OrganismPopUpString {
 });
      
   </script>';
+#  print "<pre>", join("\n", @selected_organisms), "</pre>";
+
   $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
   foreach my $org (@selected_organisms) {
     if (defined($supported_organism{$org})) {
@@ -813,11 +815,14 @@ sub OrganismPopUpString {
       } else {
 	$organismPopup .=  "<option value='$org'>$name\n";
       }
+#    } else {
+#	&RSAT::message::Warning("Discarding", $org, "not supported");
     }
   }
+
   $organismPopup .=  "</select>";
   $organismPopup .=  "<br>\n";
-  return $organismPopup;
+  return($organismPopup);
 }
 
 ################################################################
@@ -1051,6 +1056,14 @@ sub GetMatrix {
 			 -rows=>4,
 			 -columns=>60);
 
+  ## Option to upload the matrix file from the client machine
+   print "<BR>\n"; 
+   print "Or select a file to upload <BR>\n";
+   print $query->filefield(-name=>'uploaded_file_matrix',
+						-default=>'',
+						-size=>45,
+						-maxlength=>200);
+    print "<BR>\n"; 
 
   ## Propose help to find matrices
   unless ($args{nowhere}) {
@@ -1087,6 +1100,43 @@ onclick="toggleMenu(';
   }
 }
 
+################################################################
+##
+## Inspired from GetSequenceFile
+## To eanble loading matrices via a file instead of copy / paste
+##
+sub GetMatrixFile {
+  my ($matrix_file) = @_ ;
+
+  ################################################################
+  ## Upload sequence file from the client
+  my $upload_file = $query->param('uploaded_file_matrix');
+  if ($upload_file) {
+    
+    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+    open MAT, ">$matrix_file" ||
+      &cgiError("Cannot store matrix file in temp dir.");
+    while (<$upload_file>) {
+      print MAT;
+    }
+    close MAT;
+
+    ### Fetch sequence from an URL
+  } elsif ($query->param('matrix') =~ /\S/) {
+    if (open MAT, ">$matrix_file") {
+       print MAT $query->param('matrix');
+      close MAT;
+    }
+
+  } else {
+      &cgiError("The matrix box should not be empty.");
+  }
+
+  #### sequence file will be deleted
+  &DelayedRemoval($matrix_file);
+
+  return($matrix_file);
+}
 
 ################################################################
 ## Print the many scores supported by compare-matrices, which are also
