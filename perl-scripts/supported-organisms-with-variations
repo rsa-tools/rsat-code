@@ -1,0 +1,293 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: template,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+supported-organisms-with-variations
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Script to list and write in a file the organims that support
+variations
+
+=head1 AUTHORS
+
+amedina@lcg.unam.mx
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+supported-organisms-with-variations  [-o outputfile] [-v #]
+
+=head1 SEE ALSO
+
+supported-organisms
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require RSAT::Tree;
+require RSAT::TreeNode;
+require RSAT::OrganismManager;
+require RSAT::organism;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  #our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+ 
+  ################################################################
+  ## Open output stream
+  if ($outfile{output}){
+      $out = &OpenOutputFile($outfile{output});
+      
+  } else{
+      my $data_rsat=join("/",$ENV{RSAT},"data") ;
+      print $data_rsat;
+      my $supported_variation_organims_file=join ("/",$data_rsat,"supported_organisms_variation.tab");
+      $outfile{output}=$supported_variation_organims_file;
+      $out= &OpenOutputFile($supported_variation_organims_file);     
+      
+  }
+  ################################################################
+  ## Read input
+  # ($main::in) = &OpenInputFile($main::infile{input});
+  # while (<$main::in>) {
+  #   next unless (/\S/); ## Skip empty rows
+  #   next if (/^;/); ## Skip comment rows
+  #   next if (/^#/); ## Skip header rows
+  #   chomp();
+  # }
+  # close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+  ## Select organims to retrieve variants sequences from
+  ## Get supported organims
+  my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms();
+  ##my @installed_organisms = &RSAT::OrganismManager::get_supported_organisms_with_variations();
+  ## Intialize array to store organisms with variation files
+  my @org_variations=(); 
+  
+  foreach my $org_aux  ( @installed_organisms){
+      ## Check by organims if there is variation file installed
+      my $org_var=&RSAT::organism::has_variations($org_aux);
+      if ($org_var){
+	  #print $org_var."++";
+	  push (@org_variations, $org_aux);
+      }
+  }
+  
+  print $out join("\n", @org_variations);
+
+
+
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+  
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 0);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+
+=item	B<-o outputfile>
+
+If no output file is specified, the list of organims with supported variation will 
+be printed in $RSAT/data/supported_organisms_variation.tab
+
+This file is read by web interfaces that require to list organims in the server
+that support variation tools.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
