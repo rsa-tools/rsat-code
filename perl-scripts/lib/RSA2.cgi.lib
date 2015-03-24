@@ -1502,6 +1502,7 @@ sub SetBackgroundModel {
 ##
 ## Display a list of checkboxes allowing to select the supported motif
 ## databases (ex: Jaspar).
+## Option radiobox allows slection of only one data set, used in variation-scan
 sub MatrixDBcheckBox {
   my (%args) = @_;
   my $choice_mode = $args{choice_mode} || "checkbox"; ## Display check boxes or radio buttons
