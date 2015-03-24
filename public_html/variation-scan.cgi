@@ -38,14 +38,47 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 ################################################################
 #### Matrix specification
 
-local $matrix_file= &GetMatrixFile($tmp_file_path."_input_matrix");
+#local $matrix_file= &GetMatrixFile($tmp_file_path."_input_matrix");
 
 
-local $input_format = lc($query->param('matrix_format'));
-($input_format) = split (/\s+/, $input_format);
+local $input_format = "transfac";
+#lc($query->param('matrix_format'));
+#($input_format) = split (/\s+/, $input_format);
 
 $parameters .= " -m_format  $input_format ";
-$parameters .= " -m $matrix_file ";
+
+## Get motif set or input file to scan variants
+
+## MatrixDB selected 
+my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
+if (scalar(@selected_db) > 0) {
+    $mat_db_params=~s/-file2 //;
+    $mat_db_params=~s/-format2.+//;
+
+  $parameters .= " -m ".$mat_db_params;
+  
+}elsif ($query->param('custom_motif_db')) {
+  my $persomotif_file = $output_dir_full_path."/".$output_prefix."_custom_motif_db.tf";
+
+  $upload_persomotif = $query->param('custom_motif_db');
+  if ($upload_persomotif) {
+    my $type = $query->uploadInfo($upload_persomotif)->{'Content-Type'};
+    if ($upload_persomotif =~ /\.gz$/) {
+      $refmotif_file .= ".gz";
+    }
+    open REF, ">$persomotif_file" ||
+      &cgiError("Cannot store sequence file in temp dir.");
+    while (<$upload_persomotif>) {
+#      print "<br>UPLOADING REF MOTIFS \t", $_;
+      print REF;
+    }
+    close REF;
+  }
+
+  $parameters .= " -m ".$persomotif_file;
+  push(@tasks, "motifs_vs_db");
+}
+
 
 ## Get input
 
