@@ -31,7 +31,8 @@ $default{pseudo_distribution} = "pseudo_prior";
 $checked{$default{pseudo_distribution}} = "CHECKED";
 $default{mml}=30;
 
-
+$default{compare_motif_database}="jaspar_core_vertebrates";
+$default{custom_motif_db_name}="custom_motif_collection";
 
 ## Threshold values for site detection
 ## Suported uth 
@@ -124,7 +125,7 @@ print $query->start_multipart_form(-action=>"variation-scan.cgi");
  &Panel1();
 
 
-################# Inout variant sequences
+################# Input variant sequences
  &Panel2();
 
 ################# Scanning Parameters
@@ -197,14 +198,53 @@ exit(0);
 
 #################### Internal functions #######################
 
+# sub Panel1 {
+
+#   print "<fieldset>\n<legend><b><a href='help.formats.html'>Matrix </a></b></legend>\n";
+
+#   &GetMatrix();
+
+#   print '<b><font style="font-size:80%"><a href="tutorials/tut_peak-motifs.html#seq" target="_blank"></a></font></b></br>';
+#   print "</fieldset><p/>";
+# }
+
+################################################################
+## Select motif data base to be used to scan variants
+
 sub Panel1 {
+  print '
+<br/>';
+#<div>' #  print "
+# <div class=\"menu_heading_closed\" onclick=\"toggleMenu('103')\" id=\"heading103\">
 
-  print "<fieldset>\n<legend><b><a href='help.formats.html'>Matrix </a></b></legend>\n";
+#  <span title=\"A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Select here the known motifs collection or provide your own.\"></span> </div>\n
+# <div id=\"menu103\" class=\"menu_collapsible\">";
+  
+  ## Tasks
+  print "<fieldset><legend><a href='help.variation-scan.html'><b>Matrix collections</b></a></legend>";
+  
 
-  &GetMatrix();
+  print "<p/> ";
+  print "<b>A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Select here the known motifs collection to be used or provide your own.</b><br/>";
 
-  print '<b><font style="font-size:80%"><a href="tutorials/tut_peak-motifs.html#seq" target="_blank"></a></font></b></br>';
+  ## load the various databases that can be compared against
+  #&MatrixDBcheckBox("choice_mode"=>"checkbox");
+  &MatrixDBcheckBox("choice_mode"=>"radiobox");
+  print "<p/> ";
+  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $checked{file_upload}>";
+    
+  print "<a href=''><b>Use your own motif database:</b></a><br/>";
+  print $query->filefield(-name=>'custom_motif_db',
+			  -size=>10);
+#  print "<br>Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+
+ 
   print "</fieldset><p/>";
+
+  print '
+</div>
+</div>
+<p class="clear"></p>';
 }
 
 ##########################################
@@ -214,7 +254,7 @@ sub Panel2 {
   print "<div id=\"menu101\" class=\"menu_collapsible_display\">\n";
 
   print "<p/><fieldset>\n";
-  print "<legend><b><a href='help.peak-motifs.html#tasks'>Input variation sequences</a></b></legend>\n";
+  print "<legend><b><a href='help.variation-scan.html'>Input variation sequences</a></b></legend>\n";
 
 
 ### Input variant-seqs
