@@ -148,6 +148,10 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+  our %matrix_names = ();
+  our %regvar = ();
+  our $null = "<NA>"; ## Printout for null values (regulatory variations not found in a file)
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -177,6 +181,26 @@ package main;
       next if (/^;/); ## Skip comment rows
       next if (/^#/); ## Skip header rows
       chomp();
+      my @fields = split("\t", $_);
+      my $matrix_id = $fields[0];
+      my $matrix_name = $fields[1];
+      my $var_id = $fields[2];
+      my $best_pval = $fields[8];
+      my $worst_pval = $fields[9];
+      my $pval_ratio = $fields[10];
+
+      ## Index matrix names
+      if ($matrix_name) {
+	$matrix_names{lc($matrix_id)} = $matrix_name;
+	&RSAT::message::Warning("Indexing matrix name", $matrix_id, $matrix_name) if ($main::verbose >= 0);
+      } else {
+	&RSA::message::Warning("Missing name for matrix", $matrix_id);
+      }
+
+      ## Index the variations for this file name.  We should check if
+      ## the 3 index keys are not problematic for memory when reading
+      ## very big files.
+      $regvar{$var_id}{$matrix_id}{$name} = $pval_ratio;
     }
     close $main::in if ($main::infile{input});
   }
@@ -192,6 +216,39 @@ package main;
   ################################################################
   ## Insert here output printing
   &RSAT::message::TimeWarn("Printing the output") if ($main::verbose >= 2);
+
+  ## Print the header
+  print $out join("\t", 
+		  "#variation_id",
+		  "matrix_id",
+		  "matrix_name",
+		  @names,
+      ), "\n";
+      
+
+  ## Print the comparison
+  foreach my $var_id (sort keys %regvar) {
+    foreach my $matrix_id (sort keys %{$regvar{$var_id}}) {
+      my $matrix_name = $matrix_id;
+      if (defined($matrix_names{lc($matrix_id)})) {
+	$matrix_name = $matrix_names{lc($matrix_id)};
+      }
+
+      print $out join("\t", 
+		      $matrix_id,
+		      $var_id,
+		      $matrix_name
+	  );
+      foreach my $name (@names) {
+	my $score = $null;
+	if (defined($regvar{$var_id}{$matrix_id}{$name})) {
+	  $score = $regvar{$var_id}{$matrix_id}{$name};
+	}
+	print $out "\t", $score;
+      }
+      print $out "\n";
+    }
+  }
 
   ################################################################
   ## Report execution time and close output stream
