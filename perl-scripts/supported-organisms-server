@@ -37,7 +37,7 @@ package main;
   our $out = STDOUT;
 
   ## Default server. Can be changed with option -url
-  $server_url = "http://www.rsat.eu/"; 
+  $server_url = "http://rsat-tagc.univ-mrs.fr/rsat/"; 
 
   ## Output fields
   $return_fields = "";
@@ -186,13 +186,26 @@ OPTIONS
 		supported on the main RSAT server, before downloading
 		them.
 
-		Example: 
-		   supported-organisms-server -taxon Fungi -server http://rsat.fr/
+		Examples: 
+		   supported-organisms-server -taxon Fungi \
+		      -server http://rsat-tagc.univ-mrs.fr/rsat/
 
-		An alternative server RSAT server can be selected by
-		specifying the URL of the Web server.
+		   supported-organisms-server -taxon Metazoa \
+		      -server http://rsat.sb-roscoff.fr/
 
-		    supported-organisms-server -taxon Fungi -server http://embnet.ccg.unam.mx/rsa-tools
+		 Select additional output fields:
+		   supported-organisms-server -taxon Viridiplantae \
+		      -return last_update,ID,taxonomy \
+		      -server http://floresta.eead.csic.es/rsat/ 
+
+		 Choose a specific taxon:
+		   supported-organisms-server -taxon Archaea \
+		      -server http://embnet.ccg.unam.mx/rsa-tools
+
+		 Restrict taxon depth:
+		   supported-organisms-server -taxon Bacteria \
+		      -depth 5 -server http://embnet.ccg.unam.mx/rsa-tools
+
 
  	-return output fields
 		supported: $supported_return_fields
