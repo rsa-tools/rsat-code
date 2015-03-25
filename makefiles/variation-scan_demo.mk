@@ -38,8 +38,6 @@ variation_stats:
 	@echo "Computing number of lines per contig (this can take time)"
 	@(cd ${VARIATION_DIR}; wc -l *.varBed | sort -n)
 
-all: convert_var 
-
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
 ## format supported as input by RSAT retrieve-var.
@@ -66,7 +64,7 @@ convert_var:
 ## Bed file from the demo directory
 BED_VARIANTS=${DEMO_DIR}/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed
 VAR_FROM_BED_OUT=${RESULT_DIR}/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19
-ID_VARIANTS=${DEMO_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt
+VARIANT_IDS=${DEMO_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt
 VAR_FROM_ID_OUT=${RESULT_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs
 
 VAR_INFO_CMD=variation-info -v ${V}\
@@ -81,18 +79,24 @@ VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
 	-o ${VAR_FROM_BED_OUT}.varBed
 
 VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
-	-i ${ID_VARIANTS} \
+	-i ${VARIANT_IDS} \
 	-format id \
 	-o ${VAR_FROM_ID_OUT}.varBed
 
-get_var_from_bed:
+varinfo_from_bed_regions:
+	@echo ""
+	@echo "Getting variation information from genomic region (input bed file)."
+	@echo "BED_VARIANTS	${BED_VARIANTS}"
 	@echo "${DATE}	${VAR_INFO_BED_CMD}"
 	@${VAR_INFO_BED_CMD}
 	@echo "${DATE}	Collected variations from bed file";
 	@echo "Output file: "
 	@wc -l ${VAR_FROM_BED_OUT}.varBed
 
-get_var_by_id:
+varinfo_from_ids:
+	@echo ""
+	@echo "Getting variation information from variant IDs"
+	@echo "VARIANT_IDS	${VARIANT_IDS}"
 	@echo "${VAR_INFO_ID_CMD}"
 	@${VAR_INFO_ID_CMD}
 	@echo "${DATE}	Collected variations from ID file";
@@ -114,38 +118,36 @@ RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
 	-i ${RESULT_DIR}/${VARIANTS}.varBed \
 	-mml 30 -format varBed \
 	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq
-
-retrieve_var_varbed:
+retrieve_varseq_from_varbed:
+	@echo ""
+	@echo "Retrieving variation sequences from variation info file"
+	@echo "Input file	${RESULT_DIR}/${VARIANTS}.varBed"
 	@echo "${RETRIEVE_VAR_CMD_VARBED}"
 	@${RETRIEVE_VAR_CMD_VARBED}
 	@echo "Out file"
 	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq"
 
-
+## Still valid ? To check
 RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
 	-i  ${BED_VARIANTS}\
 	-mml 30 -format bed \
 	-o ${VAR_FROM_BED_OUT}.varSeq
-
 retrieve_var_bed:
 	@echo "${RETRIEVE_VAR_CMD_BED}"
 	@${RETRIEVE_VAR_CMD_BED}
 	@echo "Out file"
 	@echo "${VAR_FROM_BED_OUT}.varSeq"
 
-
-
+## Still valid ? To check
 RETRIEVE_VAR_CMD_ID=${RETRIEVE_VAR_CMD} \
-	-i  ${ID_VARIANTS} \
+	-i  ${VARIANT_IDS} \
 	-mml 30 -format id \
 	-o ${VAR_FROM_ID_OUT}.varSeq
-
 retrieve_var_id:
 	@echo "${RETRIEVE_VAR_CMD_ID}"
 	@${RETRIEVE_VAR_CMD_ID}
 	@echo "Out file"
 	@echo "	${VAR_FROM_ID_OUT}.varSeq"
-
 
 
 ################################################################
