@@ -58,7 +58,7 @@ if (scalar(@selected_db) > 0) {
   $parameters .= " -m ".$mat_db_params;
   
 }elsif ($query->param('custom_motif_db')) {
-  my $persomotif_file = $output_dir_full_path."/".$output_prefix."_custom_motif_db.tf";
+  my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db.tf";
 
   $upload_persomotif = $query->param('custom_motif_db');
   if ($upload_persomotif) {
