@@ -1396,7 +1396,7 @@ if __name__=='__main__':
 	# Verbose message
 	# Print the start of the crer computation in standard err
 	if verbose >= 2:
-		time_warn("Computation of crer")
+		time_warn("Computation of CRERs")
 	
 	# Variables initiation
 	sum_lengths = 0
@@ -1746,7 +1746,7 @@ if __name__=='__main__':
 											
 											# Verbose message
 											if verbose >=3 :
-												time_warn("	Printing %d crer in tmp file" % nb_crer_expect)
+												time_warn("	Printing %d CRERs in tmp file" % nb_crer_expect)
 									
 									# Without p-value computation
 									if nopval :
@@ -1783,12 +1783,8 @@ if __name__=='__main__':
 										write_crer(crer,filehandle)
 										
 										# Print a verbose message on standard error every five crer 
-										if verbose == 2 and nb_crer%5 == 0:
-											time_warn("	Printing %d crer" % nb_crer)
-										
-										# Print a verbose message on standard error for every crer 
-										if verbose >=3 :
-											time_warn("	Printing %d crer" % nb_crer)
+										if ((verbose == 2 and nb_crer%50 == 0) or (verbose >=3)) :
+											time_warn("	Printing %d CRERs" % nb_crer)
 	
 	# Read the temporary file
 	if not nopval:
@@ -1868,11 +1864,8 @@ if __name__=='__main__':
 						write_crer(crer,filehandle)
 					
 						# Print a verbose message on standard error every five crer 
-						if verbose == 2 and nb_crer%5 == 0:
-							time_warn("	Printing %d crer" % nb_crer)
-						# Print a verbose message on standard error for every crer 
-						if verbose >=3 :
-							time_warn("	Printing %d crer" % nb_crer)
+						if ((verbose == 2 and nb_crer%50 == 0) or (verbose >=3)) :
+							time_warn("	Printing %d CRERs" % nb_crer)
 		
 		# Write an error if there is no crer in temporary file
 	   # except (IndexError):
