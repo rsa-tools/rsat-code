@@ -152,8 +152,8 @@ retrieve_var_id:
 
 ################################################################
 ## Scan selected variations with the matrix of interest
-PVAL=0.1
-PVAL_RATIO=2
+PVAL=0.001
+PVAL_RATIO=10
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VARSCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VARSCAN_CMD=variation-scan -v ${V} \
@@ -175,12 +175,46 @@ VARSCAN_RES_JASPAR=${RESULT_DIR}/${VARIANTS}_vs_JASPAR_rsat_var_scan_pval${PVAL}
 scan_variations_with_jaspar:
 	@echo ""
 	@echo "Scanning variations with all motifs from JASPAR core vertebrate"
-	${MAKE} variation_scan \
+	@${MAKE} variation_scan \
 		MATRIX=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
 		VARSCAN_RES=${VARSCAN_RES_JASPAR}
 	@echo 
+
+## Scan variations from Weireauch et al. (Cell., 2014) with Jaspar core Vertebrates
+WEIRAUCH_VARSEQ=public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq
+WEIRAUCH_JASPAR=${RESULT_DIR}/varscan_weirauch-snps_vs_JASPAR_pval${PVAL}_pvalratio${PVAL_RATIO}
+varscan_weireauch_with_jaspar:
+	@echo ""
+	@echo "Scanning variations with all motifs from JASPAR core vertebrate"
+	@variation-scan  -v ${V} \
+		-m_format transfac \
+		-m ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
+		-i ${WEIRAUCH_VARSEQ} \
+		-bg ${RSAT}/public_html/data/genomes/Homo_sapiens_GRCh37/oligo-frequencies/3nt_upstream-noorf_Homo_sapiens_GRCh37-ovlp-1str.freq.gz \
+		-lth score 1 \
+		-lth w_diff 1 \
+		-lth pval_ratio ${PVAL_RATIO} \
+		-uth pval ${PVAL} \
+		-o ${WEIRAUCH_JASPAR}.tab
+	@echo "	${WEIRAUCH_JASPAR}.tab"
+	@txt-to-html -i ${WEIRAUCH_JASPAR}.tab \
+		-o ${WEIRAUCH_JASPAR}.html
+	@echo "	${WEIRAUCH_JASPAR}.html"
 
 ## Scan variation with all motifs in cisBP database (2000 motifs,
 ## should be 10 times longer than with JASPAR)
 scan_variations_with_cisbp:
 	@echo "TO BE DONE"
+
+COMPA=${RESULT_DIR}/regvar_comparisons_weinrauch
+WEINRAUCH_CISBP=${RESULT_DIR}/weirauch-snps_cisbp
+WEINRAUCH_HAPLOREG=${RESULT_DIR}/weirauch-snps_haploreg
+compare_regvar:
+	compare-reg-var -v ${V} \
+		-file weinrauch_jaspar ${WEIRAUCH_JASPAR}.tab \
+		-file weinrauch_cisbp ${WEINRAUCH_CISBP}.tab \
+		-file weinrauch_halporeg ${WEINRAUCH_HAPLOREG}.tab \
+		-o ${COMPA}.tab
+	@echo "	${COMPA}.tab"
+	text-to-html -i ${COMPA}.tab -o ${COMPA}.html
+	@echo "	${COMPA}.html"
