@@ -3003,8 +3003,34 @@ sub check_phylo_tools() {
     }
 }
 
+=pod
 
+=item B<check_ensembl_tools>
 
+Check with the environment variables (loaded from RSAT_config.props)
+if this RSAT instance supports ensembl tools. If not exit with an
+error message.
+
+=cut
+sub check_ensembl_tools {
+  if ($ENV{ensembls_tools} == 0){
+    &RSAT::message::Warning("Sorry, this RSAT instance does not support retrieve-ensembl-seq.");
+    &RSAT::message::Info("Ensembl is essentially oriented towards Metazoa, so retrieve-ensembl-seq is available on <a target='_blank' href='http://metazoa.rsat.eu/'>http://metazoa.rsat.eu/</a>.");
+    print $query->end_html;
+    exit(0);
+  }
+  return();
+}
+
+=pod
+
+=item B<check_variation_tools>
+
+Check with the environment variables (loaded from RSAT_config.props)
+if this RSAT instance supports variation tools. If not exit with an
+error message.
+
+=cut
 sub check_variation_tools {
   if ($ENV{variations_tools} == 0){
     &RSAT::message::Warning("Sorry, this RSAT instance does not support the analysis of regulatory variations");
