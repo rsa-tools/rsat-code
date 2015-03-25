@@ -13,3 +13,6 @@ sub read_varscan_file {
   &RSAT::message::Warning("NOT IMPLEMENTED YET");
 
 }
+
+
+1;
