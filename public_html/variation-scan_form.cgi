@@ -87,10 +87,8 @@ print "</CENTER>";
 print "</BLOCKQUOTE>\n";
 
 ################################################################
-### display the form only if the organisms on the curent server 
-###  are coherent with this tool, otherwise, display an info message
- 
-
+## Display the form only if this RSAT instance supports variation
+## analysis.
 &check_variation_tools();
 
 ################################################################
