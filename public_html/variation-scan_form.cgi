@@ -149,7 +149,7 @@ print $query->end_form;
 my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
 $descr1 .= "<blockquote class ='demo'>";
 $descr1 .= "<p>In this demonstration, we use <i>variation-scan<\i> to assess the effect that a genetic variants have on transcription factor binding.</p>\n
-<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. Motifs correspond to the transcription factores which biniding was reported to be affected by Weireauch, et al.</p>\n";
+<p> The genetic variants used in this example were collected by Weirauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. Motifs correspond to the transcription factores which biniding was reported to be affected by Weirauch, et al.</p>\n";
 $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"variation-scan_form.cgi");
