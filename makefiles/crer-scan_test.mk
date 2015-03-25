@@ -18,13 +18,13 @@ SITES=${SITES_DORSAL}
 DORSAL_OUT=${CRER_DIR}/${DORSAL_PREFIX}${OUT_SUFFIX}_crer.ft
 demo_dorsal:
 	mkdir -p ${CRER_DIR}
-	${PYTHON} python-scripts/crer_scan.py  \
+	${PYTHON} python-scripts/crer_scan.py  -v ${V} \
 		-i ${SITES_DORSAL} -s -in_format ft \
 		-lth_crer_size 30 -uth_crer_size 500 -lth_crer_sites 2 -uth_crer_sites 1000 \
 		-lth_crer_sites_distance 1 -uth_crer_sites_distance 1000 \
 		-uth_crer_eval 0.0001 -uth_crer_pval 0.0001 \
 		-lth_crer_sig 2.0 -uth_site_pval 0.0001 \
-		-lth_score 0 -uth_score 1000 -uth_overlap 1 -return_limits_filtered -o ${DORSAL_OUT} -v 2 
+		-lth_score 0 -uth_score 1000 -uth_overlap 1 -return_limits_filtered -o ${DORSAL_OUT}
 	@echo "	 ${DORSAL_OUT}"
 
 
