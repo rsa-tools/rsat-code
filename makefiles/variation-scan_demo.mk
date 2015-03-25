@@ -201,10 +201,27 @@ varscan_weireauch_with_jaspar:
 		-o ${WEIRAUCH_JASPAR}.html
 	@echo "	${WEIRAUCH_JASPAR}.html"
 
-## Scan variation with all motifs in cisBP database (2000 motifs,
-## should be 10 times longer than with JASPAR)
-scan_variations_with_cisbp:
-	@echo "TO BE DONE"
+
+## Scan variations from Weireauch et al. (Cell., 2014) with Cisbp core Vertebrates
+WEIRAUCH_CISBP=${RESULT_DIR}/varscan_weirauch-snps_vs_cisBP_pval${PVAL}_pvalratio${PVAL_RATIO}
+varscan_weireauch_with_cisbp:
+	@echo ""
+	@echo "Scanning variations with all motifs from CISBP core vertebrate"
+	@variation-scan  -v ${V} \
+		-m_format transfac \
+		-m ${RSAT}/public_html/motif_databases/cisBP/cisBP_Homo_sapiens_2014-10.tf
+		-i ${WEIRAUCH_VARSEQ} \
+		-bg ${RSAT}/public_html/data/genomes/Homo_sapiens_GRCh37/oligo-frequencies/3nt_upstream-noorf_Homo_sapiens_GRCh37-ovlp-1str.freq.gz \
+		-lth score 1 \
+		-lth w_diff 1 \
+		-lth pval_ratio ${PVAL_RATIO} \
+		-uth pval ${PVAL} \
+		-o ${WEIRAUCH_CISBP}.tab
+	@echo "	${WEIRAUCH_CISBP}.tab"
+	@txt-to-html -i ${WEIRAUCH_CISBP}.tab \
+		-o ${WEIRAUCH_CISBP}.html
+	@echo "	${WEIRAUCH_CISBP}.html"
+
 
 ################################################################
 ## Compare regulatory variations from various sources
