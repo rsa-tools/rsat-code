@@ -41,20 +41,12 @@ print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medin
 print ", Jeremy Delerce<sup>ci</sup>\n";
 print ", Yvon Mbouamboua<sup>t</sup>\n";
 print "</CENTER>";
-
-################################################################
-### display the form only if the organisms on the curent server 
-###  are coherent with this tool, otherwise, display an info message
  
-if ($ENV{variations_tools} == 0){
+################################################################
+## Display the form only if this RSAT instance supports variation
+## analysis.
+&check_variation_tools();
 
-print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
-
-print $query->end_html;
-
-exit(0);
-	
-}
 
 ################################################################
 ### formheader
