@@ -57,6 +57,7 @@ img {
 <li><a href="#sites">Sites</a></li>
 <li><a href="#site-formats">Site formats</a></li>
 <li><a href="#thresholds">Thresholds</a></li>
+<li><a href="#output-options">Output options</a></li>
 </ul></li>
 <li><a href="#references">References</a></li>
 </ul>
@@ -105,14 +106,65 @@ img {
 <table>
 <thead>
 <tr class="header">
-<th align="left">Score of input sites</th>
-<th align="left">The input file may contain …</th>
+<th align="left">Field</th>
+<th align="left">Description<sup>1</sup></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Site score</td>
-<td align="left">Score indicated in the “score” column of the input file.</td>
+<td align="left">Score of input sites</td>
+<td align="left">minimal and maximal site score to be considered</td>
+</tr>
+<tr class="even">
+<td align="left">P-value of input sites</td>
+<td align="left">maximal p-value of sites to be considered.Recommended to be the higher site p-value considered. Default : 1e-4. A lower threshold is not available because not considered sites with lower p-value has no bological sense.</td>
+</tr>
+<tr class="odd">
+<td align="left">CRER size</td>
+<td align="left">minimal and maximal size of the enriched region (in bp). Default: minimal site size : 30bp and maximal site size : 500bp</td>
+</tr>
+<tr class="even">
+<td align="left">Sites per CRER</td>
+<td align="left">minimal and maximal number of sites covered by the enriched region. Default: minimal number of sites : 2</td>
+</tr>
+<tr class="odd">
+<td align="left">Inter-site distance (bp)</td>
+<td align="left">distance between successive sites to be considered. A minimal inter-site distance can be used to prevent overlap between redundant matrices. Default : minimal distance : 1 bp. And a maximal inter-site distance can be used to prevent merging distinct modules into a single one. Note: the maximal inter-site distance is one of the most influential parameters in cluster-buster. Default : maximal distance : 35 bp</td>
+</tr>
+<tr class="even">
+<td align="left">CRER significance</td>
+<td align="left">minimal binomial significance. Default: 2. An upper threshold is not available because not considered CRER with higher significance has no bological sense.</td>
+</tr>
+<tr class="odd">
+<td align="left">Overlap between sites</td>
+<td align="left">maximal number of sites covered by the enriched region. A lower threshold is not available because two distinct sites is caracterised by no overlap.</td>
+</tr>
+</tbody>
+</table>
+<p><sup>1</sup>Note: None value is used to skip the threshold</p>
+</div>
+<div id="output-options" class="section level3">
+<h3>Output options</h3>
+<p>It possible to report sequence limits, only if provided in site file. Different mode are available such as:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Mode</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">None</td>
+<td align="left">No return any limits. Recommended when the input contains a lot of sequences.</td>
+</tr>
+<tr class="even">
+<td align="left">Filtered</td>
+<td align="left">return the limits filtered of the sequence. Only the sequence limits of CRERs.</td>
+</tr>
+<tr class="odd">
+<td align="left">All</td>
+<td align="left">return all limits of sequences scanned.</td>
 </tr>
 </tbody>
 </table>
