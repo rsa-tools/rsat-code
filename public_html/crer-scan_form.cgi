@@ -248,7 +248,7 @@ print <<end_part_1;
 		<li>Annotated binding sites imported from a transcription factor
 		  database.</li>
 
-		<li>Any other data source that procudes a set of
+		<li>Any other data source that produces a set of
 		genomic features.</li>
     </ol>
   </p>
