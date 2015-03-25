@@ -3002,5 +3002,18 @@ sub check_phylo_tools() {
 	exit(0);
     }
 }
+
+
+
+sub check_variation_tools {
+  if ($ENV{variations_tools} == 0){
+    &RSAT::message::Warning("Sorry, this RSAT instance does not support the analysis of regulatory variations");
+    &RSAT::message::Info("Variations are supported for Metazoa on <a target='_blank' href='http://metazoa.rsat.eu/'>http://metazoa.rsat.eu/</a>.");
+    print $query->end_html;
+    exit(0);
+  }
+  return();
+}
+
 1; # return true
 

@@ -23,7 +23,7 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## EnsemblGenomes.
 ##
 ## Supported groups: Fungi, Prokaryotes, Bacteria, Archaea, Protists,
-## Metazoa, Plants.
+## Metazoa, Plants, Teaching, None.
 ##
 ## Note that some of the "groups" correspond to a specific taxon
 ## defined by its systematic name (e.g. Metazoa, Fungi) or by its
@@ -37,14 +37,18 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ##     OR EnsemblProtists"
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
+## - "Teaching" displays a few model organisms used as demo for the
+##     different tools.
+## - "None" means that all the organisms supported on the command line
+##     are also displayed on the Web server.
 ##
 ## Group specificity is a facultative option that was developed in
 ## 2015 to distribute RSAT maintenance and load on 6 servers
-## worldwide. For local installations, there is absolutely no ned to
+## worldwide. For local installations, there is absolutely no need to
 ## specify a taxonomic specificity. If the option is left blank, the
 ## Web server will display all the supported organisms.
 
-group_specificity=
+group_specificity=None
 
 ################################################################
 ## Support for phylogenetic footprint analysis and related tools.
