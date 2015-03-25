@@ -3002,47 +3002,61 @@ sub segment_proba {
   &RSAT::message::Debug("Segment:", $segment, "Markov:".$order)
       if ($main::verbose >= 5);
 
-  ## for Bernouiili model
+  ## Bernoulli model
   if ($order == 0) {
     for my $c (0..($seq_len-1)) {
+      my $letter_proba = 0; ## JvH , added on 2015-03-22
       my $letter = substr($segment, $c, 1);
       if (defined($self->{"alphabet_index"}->{$letter})) {
 	$r = $self->{"alphabet_index"}->{$letter};
 	$letter_proba = $self->{"frequencies"}[$c][$r];
 	push @residue_proba, $letter_proba;
       } else {
-	if ((lc($letter) eq "n") &&
-	    ($self->get_attribute("n_treatment") eq "score")) {
-	  $letter_proba = 1;
-	  push @residue_proba, $letter_proba;
+	if ($letter eq "n") {
+	  if ($self->get_attribute("n_treatment") eq "score") {
+	    $letter_proba = 1;
+	    push @residue_proba, $letter_proba;
+	  } else {
+#	    &RSAT::message::Info('&RSAT::matrix::segment_proba()', "N residue in segment", $segment, "returning 0 proba") if ($main::verbose >= #0);
+	    return(0); ## Return 0 probability to skip N-containing segments if option -N is set to "skip"
+	  }
 	}
       }
       $segment_proba *= $letter_proba;
     }
-    ### for higher Mrkov order
+
+    ## Higher Markov orders
   } else {
-    ##prefix treatment
+
+    ## Prefix treatment
     my $prefix = substr($segment,0,$order);
-    my @prefix_residues = split //,$prefix;
+    my @prefix_residues = split //, $prefix;
     my $prefix_proba = 1;
 
-    ## calculation of the prefix probability
+    ## Calculation of the prefix probability, using a Bernoulli model
     for my $c (0..$#prefix_residues) {
       my $letter =  $prefix_residues[$c];
       if (defined($self->{"alphabet_index"}->{$letter})) {
 	$r = $self->{"alphabet_index"}->{$letter};
 	$prefix_proba *=  $self->{"frequencies"}[$c][$r];
-      } else {
-	if ((lc($pr) eq "n") &&
-	    ($self->get_attribute("n_treatment") eq "score")) {
-	  $prefix_proba *= 1;
+	
+      } elsif ($letter eq "n") { ## JvH fixed problems here 2015-03-22. To be checked
+	if ($self->get_attribute("n_treatment") eq "score") {
+	  ## Nothing to do (N proba is 1)
+	} else {
+#	  &RSAT::message::Info('&RSAT::matrix::segment_proba()', "N residue in prefix", $prefix, "returning 0 proba") if ($main::verbose >= 10);
+	  return 0; ## I (JvH) should check if the fact to return a 0 value poses problem
 	}
+      } else {
+#	  &RSAT::message::Info('&RSAT::matrix::segment_proba()', 'Invalid residues in segment', $segment) if ($main::verbose >= 10);
+	  return 0; ## I (JvH) should check if the fact to return a 0 value poses problem
       }
     }
     $segment_proba *= $prefix_proba;
     push @residue_proba, $prefix_proba;
 
-    ### for the remaining residue of $segment
+    ## Treat the residues following the prefix (those on which the
+    ## Markov model applies)
     for $c ($order..($seq_len-1)) {
       my $letter_proba = 0;
       $letter = substr($segment, $c, 1);
@@ -3051,10 +3065,25 @@ sub segment_proba {
 	$letter_proba = $self->{"frequencies"}[$c][$r];
 	push @residue_proba, $letter_proba;
       } else {
-	if ((lc($letter) eq "n") &&
-	    ($self->get_attribute("n_treatment") eq "score")) {
-	  $letter_proba = 1;
-	  push @residue_proba, $letter_proba;
+#	&RSAT::message::Debug("&RSAT::matrix::segment_proba", $letter, $r, $letter_proba) if ($main::verbose >= 10);
+	if ($letter eq "n") {
+#	  &RSAT::message::Debug("n found in", $segment) if ($main::verbose >= 10);
+	  if ($self->get_attribute("n_treatment") eq "score") {
+	    $letter_proba = 1;
+	    push @residue_proba, $letter_proba;
+	  } else {
+	    ## JvH 2015-03-22: as soon as one residue has 0 proba, it is
+	    ## not worth computing the rest of the segment proba
+# 	    &RSAT::message::Info('&RSAT::matrix::segment_proba()',
+#				 "N residue in segment", $segment, "returning 0 proba") if ($main::verbose >= 10);
+	    return 0;
+	  }
+	} else { 
+	  ## JvH 2015-03-22: as soon as one residue has 0 proba, it is
+	  ## not worth computing the rest of the segment proba
+#	  &RSAT::message::Info('&RSAT::matrix::segment_proba()',
+#			       "invalid residue", $letter, " in segment", $segment, "returning 0 proba") if ($main::verbose >= 1);
+	  return 0;
 	}
       }
       $segment_proba *= $letter_proba;
@@ -3066,7 +3095,7 @@ sub segment_proba {
     &RSAT::message::Debug("Proba_residue_M",$col,sprintf("%.6f",$residue_proba[$col]))
 	if ($main::verbose >= 5);
   }
-  return $segment_proba, \@residue_proba;
+  return $segment_proba, \@residue_proba; ## JvH, 2015-03-22: Is it necessary to return this arrow of residue probabilities ? If not required, we should avoid it because it costs
 }
 
 
@@ -4179,7 +4208,7 @@ sub makeLogo {
      # 			  "\n\ttmp_tf_file=".$tmp_tf_file,
      # 			  "\n\tpwd=".`pwd`,
      # 			  "logo_cmd=".$logo_cmd,
-     # 	) if ($main::verbose >= 0);
+     # 	) if ($main::verbose >= 10);
     
     ## Run seqlogo with specific parameters for the &doit() procedure
     my $logo_dry = 0;
