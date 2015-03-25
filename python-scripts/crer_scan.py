@@ -7,13 +7,12 @@
 #===============================================================================
 
 __doc__ ="""
-
 Scanning of predicted sites on sequence.
 And Detection of putative cis-regulatory enriched regions (CRERs).
 
 usage: 
 	   crer_scan.py [-h] 
-					[-i FILE]
+					[-i INFILE]
 					[-o OUTFILE]
 					[-v VERBOSE]
 					[-autoparam]
@@ -43,7 +42,7 @@ Optional arguments:
   -h, --help
 		show this help message and exit
 		
-  -i FILE
+  -i INFILE
 		If not specified, input is read from STDIN
 		
   -in_format FORMAT
@@ -1107,7 +1106,7 @@ if __name__=='__main__':
 	
 	parse = argparse.ArgumentParser()
 	
-	parse.add_argument('-i', action='store', dest='file',default=False, help = "If not specified, input is read from STDIN ")
+	parse.add_argument('-i', action='store', dest='infile',default=False, help = "If not specified, input is read from STDIN ")
 	parse.add_argument('-in_format',action='store',dest='format',default='ft', help = "input_format. Default: ft (produced by RSAT matrix-scan and dna-pattern). Supported: ft, bed")
 	parse.add_argument('-o',action = 'store', dest='outfile',help ="Output file in ft format")
 	parse.add_argument('-v',action = 'store', dest = 'verbose',default=1,type = int ,help = "level of verbose. Messages are wrote on standard error. Supported: Integer = 1,2,3. By default : 1 = No message. Level 2 : moderately density of messages. Level 3 : High density")
@@ -1147,7 +1146,7 @@ if __name__=='__main__':
 	
 	# Variables for arguments extraction
 	
-	file,sort,format,outfile = args.file,args.sort,args.format,args.outfile
+	infile,sort,format,outfile = args.infile,args.sort,args.format,args.outfile
 	verbose = args.verbose
 	autoparam = args.autoparam
 	
@@ -1184,14 +1183,14 @@ if __name__=='__main__':
 	if verbose >= 2:
 		time_warn("Starting")
 	
-	# If there is not a file, take sites on standard input
-	if file == False :
+	# If there is not a infile, take sites on standard input
+	if infile == False :
 		readline = sys.stdin.read()
 		try:
 			list_site, init_table,number_of_matrix,max_site_pvalue = read_stdin(number_of_matrix,autoparam,readline,format,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
 			
 		except (UnboundLocalError,IndexError,NameError,ValueError):
-			sys.stderr.write("Parsing error :\n Sites in STDIN not in right format. /n Check the format: Default = ft. \n. Supported = ft or bed")
+			sys.stderr.write("Parsing error :\n Sites in STDIN not in right format. /n Check the format: Default = ft. \n. Supported = ft or bed\n")
 			sys.exit()
 		
 	else:
@@ -1204,15 +1203,15 @@ if __name__=='__main__':
 				time_warn("	FT format recognized")
 			
 			try :
-				list_site,init_table,number_of_matrix,max_site_pvalue = read_features(number_of_matrix,autoparam,file,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
+				list_site,init_table,number_of_matrix,max_site_pvalue = read_features(number_of_matrix,autoparam,infile,pval_threshold, lth_score_threshold, uth_score_threshold,verbose)
 			
 			# Error messages
 			except (UnboundLocalError,IndexError,NameError,ValueError):
-				sys.stderr.write("Parsing error :\nFile input not in ft format")
+				sys.stderr.write("Parsing error :\nInput file does not seem conform to ft format\n")
 				sys.exit()
 				
 			except ( IOError):
-				sys.stderr.write("Parsing error :\nFile input not found ")
+				sys.stderr.write("Parsing error :\nInput file not found " + infile + "\n")
 				sys.exit()
 				
 		elif format == "bed":
@@ -1222,15 +1221,15 @@ if __name__=='__main__':
 				time_warn("	bed format recognized")
 			
 			try :
-				list_site,init_table,number_of_matrix = read_bed(number_of_matrix,file,lth_score_threshold, uth_score_threshold,verbose)
+				list_site,init_table,number_of_matrix = read_bed(number_of_matrix,infile,lth_score_threshold, uth_score_threshold,verbose)
 				
 			# Error messages
 			except (UnboundLocalError,IndexError,NameError,ValueError):
-				sys.stderr.write("Parsing error :\nFile input not in bed format")
+				sys.stderr.write("Parsing error :\nInput file is not conform to bed format\n")
 				sys.exit()
 			
 			except ( IOError):
-				sys.stderr.write("Parsing error :\nFile input not found ")
+				sys.stderr.write("Parsing error :\nInput file not found " + infile + "\n")
 				sys.exit()
 		
 		else :
@@ -1276,7 +1275,7 @@ if __name__=='__main__':
 	
 	# writing the complete command with all arguments
 	
-	filehandle.write("; python3 crer_scan.py -i %s " % args.file)
+	filehandle.write("; python3 crer_scan.py -i %s " % args.infile)
 	filehandle.write("-in_format %s " % args.format)
 	if outfile:
 		filehandle.write("-o %s " % args.outfile)
@@ -1343,7 +1342,7 @@ if __name__=='__main__':
 	
 
 	# Information about the input file
-	filehandle.write("\n; Input file\n; Input	%s\n" % file)
+	filehandle.write("\n; Input file\n; Input	%s\n" % infile)
 	filehandle.write("; File format	%s\n" % format )
 	
 	# Description of thresholds
