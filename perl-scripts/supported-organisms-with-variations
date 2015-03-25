@@ -19,12 +19,14 @@ $program_version
 
 =head1 DESCRIPTION
 
-Script to list and write in a file the organims that support
-variations
+Collect the supported organisms for which the genome directory
+contains variations, and list them in a file
+$RSAT/public_html/supported_organisms_variation.tab. This file is used
+to display the list of organisms for variation-specific tools on RSAT.
 
 =head1 AUTHORS
 
-amedina@lcg.unam.mx
+Alejandra Medina <amedina@lcg.unam.mx>
 
 =head1 CATEGORY
 
