@@ -206,15 +206,27 @@ varscan_weireauch_with_jaspar:
 scan_variations_with_cisbp:
 	@echo "TO BE DONE"
 
+################################################################
+## Compare regulatory variations from various sources
+## - variation-scan results of Weirauch variations scanned with
+##   JASPAR matrices
+## - is-rsnp results with Weirauch variations
+## - HaploReg results with Weirauch variations
 COMPA=${RESULT_DIR}/regvar_comparisons_weinrauch
 WEINRAUCH_CISBP=${RESULT_DIR}/weirauch-snps_cisbp
 WEINRAUCH_HAPLOREG=${RESULT_DIR}/weirauch-snps_haploreg
 compare_regvar:
 	compare-reg-var -v ${V} \
 		-file weinrauch_jaspar ${WEIRAUCH_JASPAR}.tab \
-		-file weinrauch_cisbp ${WEINRAUCH_CISBP}.tab \
-		-file weinrauch_halporeg ${WEINRAUCH_HAPLOREG}.tab \
+		-file weinrauch_jaspar2 ${WEIRAUCH_JASPAR}.tab \
+		-file weinrauch_jaspar3 ${WEIRAUCH_JASPAR}.tab \
 		-o ${COMPA}.tab
 	@echo "	${COMPA}.tab"
 	text-to-html -i ${COMPA}.tab -o ${COMPA}.html
 	@echo "	${COMPA}.html"
+
+## TEMPORARY: WE DON't HAVE THE scisbp and haploreg results yet
+## Yvon will collect them from the databases, and we will then convert
+## their format to varscan format.
+#		-file weinrauch_cisbp ${WEINRAUCH_CISBP}.tab \
+#		-file weinrauch_halporeg ${WEINRAUCH_HAPLOREG}.tab \
