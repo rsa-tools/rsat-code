@@ -90,15 +90,8 @@ print "</BLOCKQUOTE>\n";
 ### display the form only if the organisms on the curent server 
 ###  are coherent with this tool, otherwise, display an info message
  
-if ($ENV{variations_tools} == 0){
 
-print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
-
-print $query->end_html;
-
-exit(0);
-	
-}
+&check_variation_tools();
 
 ################################################################
 ### formheader
@@ -340,36 +333,39 @@ print "</fieldset><p/>";
 					  " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
 					  " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A>"]),
 
-			      ### Threshold on score
-			      $query->td(['Weight<br>score',
+			      ### Threshold on weight score
+			      $query->td(['Weight of predicted sites',
 					  $query->textfield(-name=>'lth_score',
 							    -default=>$default{lth_score},
 							    -size=>5),
 					  ""
 					 ]),
+			      
+			      ### Threshold on Sig of the score
+			      $query->td(['Weight difference between variants',
+					  $query->textfield(-name=>'lth_w_diff',
+							    -default=>$default{lth_w_diff},
+							    -size=>5),
+					  ""
+					 ]),
+
+                              ### Threshold on P-value of the score
+			      $query->td(['P-value of predicted sites',
+					  "",
+					  $query->textfield(-name=>'uth_pval',
+							    -default=>$default{uth_pval},
+							    -size=>5)				       
+					 ]),
 
 			      ### Threshold on P-value of the score
-			      $query->td(['P-value ratio',
+			      $query->td(['P-value ratio between variants',
 					  $query->textfield(-name=>'lth_pval_ratio',
 							    -default=>$default{lth_pval_ratio},
 							    -size=>5),
 					  ""
 					 ]),
 					  
-				### Threshold on Sig of the score
-			      $query->td(['Weight<br>score difference',
-					  $query->textfield(-name=>'lth_w_diff',
-							    -default=>$default{lth_w_diff},
-							    -size=>5),
-					  ""
-					 ]),
 		      
-                              ### Threshold on P-value of the score
-			      $query->td(['P-value (site)',
-					  "     ",$query->textfield(-name=>'uth_pval',
-							    -default=>$default{uth_pval},
-							    -size=>5)				       
-					 ])
 			     ]
 			    )
 		 );
