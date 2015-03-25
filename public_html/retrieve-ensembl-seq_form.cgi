@@ -66,6 +66,11 @@ print "</CENTER>";
 print "<b>Remark: If you want to retrieve sequences from an organism that is not in the <a href='http://www.ensembl.org'>EnsEMBL</a> database, you can use the <a href='retrieve-seq_form.cgi'>retrieve-seq</a> program instead</b><p>\n";
 
 ################################################################
+## Display the form only if this RSAT instance supports
+## Ensembl-depending tools.
+&check_ensembl_tools();
+
+################################################################
 ### display the form only if the organisms on the curent server 
 ###  are coherent with this tool, otherwise, display an info message
  
