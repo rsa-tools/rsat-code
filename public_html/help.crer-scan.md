@@ -2,12 +2,9 @@
 title: "[RSAT](RSAT_home.cgi) - crer-scan manual"
 output:
   html_document:
-    highlight: tango
-    theme: united
     toc: yes
     toc_depth: 3
   pdf_document:
-    highlight: zenburn
     toc: yes
     toc_depth: 3
 css: course.css
