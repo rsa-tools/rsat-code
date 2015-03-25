@@ -155,17 +155,32 @@ retrieve_var_id:
 PVAL=0.1
 PVAL_RATIO=2
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
-VAR_SCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
-VAR_SCAN_CMD=variation-scan -v ${V} \
+VARSCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
+VARSCAN_CMD=variation-scan -v ${V} \
 	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq \
 	-m ${MATRIX} -bg ${BG_MODEL} \
 	-uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
-	-o ${VAR_SCAN_RES}.tab
+	-o ${VARSCAN_RES}.tab
 variation_scan:
-	@echo "${VAR_SCAN_CMD}"
-	@${VAR_SCAN_CMD}
+	@echo "${VARSCAN_CMD}"
+	@${VARSCAN_CMD}
 	@echo "Output file"
-	@echo "	${VAR_SCAN_RES}.tab"
+	@echo "	${VARSCAN_RES}.tab"
 
 
+## Scan variation with all motifs in JASPAR core vertebrate database
+## (~200 motifs)
+VARSCAN_RES_JASPAR=${RESULT_DIR}/${VARIANTS}_vs_JASPAR_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
+scan_variations_with_jaspar:
+	@echo ""
+	@echo "Scanning variations with all motifs from JASPAR core vertebrate"
+	${MAKE} variation_scan \
+		MATRIX=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
+		VARSCAN_RES=${VARSCAN_RES_JASPAR}
+	@echo 
+
+## Scan variation with all motifs in cisBP database (2000 motifs,
+## should be 10 times longer than with JASPAR)
+scan_variations_with_cisbp:
+	@echo "TO BE DONE"
