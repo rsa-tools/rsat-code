@@ -144,52 +144,6 @@ sub load_supported_organisms {
   $organism_table_loaded = 1;
 }
 
-# ################################################################
-# ## Update one organism in the tab-delimited file
-# sub UpdateConfigTab {
-#   my ($org, %args) = @_;
-
-#   ## Organism name
-#   my $name = "";
-#   if ($args{name}) {
-#     $name = $args{name};
-#   } else {
-#     $name = $org;
-#     $name =~ s/\_/ /;
-#   }
-#   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism_full_name;
-
-#   ## Data directory
-#   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $ENV{RSAT}."/public_html/data/genomes/".$org;
-
-#   ## Update date
-#   my $now = `date '+%Y/%m/%d %H:%M:%S'`;
-#   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $install_date;
-
-#   $supported_organism{$organism_short_name}->{'source'} = $args{source} || $source;
-#   ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
-#   unless ($main::source eq 'ensembl') {
-#     $supported_organism{$organism_short_name}->{'features'} = $args{features} || $outfile{features};
-#     $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $outfile{genome};
-#     $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
-#   }
-#   $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $taxonomy;
-#   if (defined($outfile{synonyms})) {
-#     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $outfile{synonyms};
-#   }
-#   $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $up_to;
-#   $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $up_from;
-
-#   if ($main::verbose >= 0) {
-#     &RSAT::message::Debug("");
-#   }
-# #  &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
-
-#   ## Export the updated table of supported organisms
-#   &export_supported_organisms($config_table);
-
-# }
-
 
 ################################################################
 
@@ -417,12 +371,23 @@ property "group_specificity" in the file $RSAT/RSAT_config.props.
 
 =cut
 sub get_supported_organisms_web {
-  my $group_specificity = ucfirst(lc($ENV{group_specificity}));
-  if ($group_specificity) {
-#      my $group_specificity = ucfirst(lc($ENV{group_specificity}));
-    @selected_organisms = &RSAT::OrganismManager::GetOrganismsForGroup($group_specificity);
-    if (scalar(@selected_organisms) < 1) {
-      &RSAT::error::FatalError("No organism supported on this server for group", $group_specificity);
+  &RSAT::message::Info("Getting supported organisms on web site", $RSAT{rsat_www}) if ($main::verbose >= 3);
+
+  my  @selected_organisms = ();
+
+  ## Multiple groups can be specified
+  my @group_specificity = split(/,/, $ENV{group_specificity});
+
+  
+
+  if (scalar(@group_specificity) >= 1) {
+    ## Collect organisms for each group specificity
+    foreach my $group_specificity (@group_specificity) {
+      $group_specificity = ucfirst(lc($group_specificity));
+      push @selected_organisms , &RSAT::OrganismManager::GetOrganismsForGroup($group_specificity);
+      if (scalar(@selected_organisms) < 1) {
+	&RSAT::error::FatalError("No organism supported on this server for group", $ENV{group_specificity});
+      }
     }
   } else {
     @selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
@@ -470,6 +435,7 @@ sub CheckOrganism {
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
   my ($taxon, $depth, $die_if_noorg) = @_;
+  &RSAT::message::Info("Collecting organisms for taxon", $taxon) if ($main::verbose >= 0);
   my @organisms = ();
   unless ($tree) {
       $tree = new RSAT::Tree();
@@ -493,6 +459,7 @@ sub GetOrganismsForTaxon {
     }
   }
   @organisms = &RSAT::util::sort_unique(@organisms);
+  &RSAT::message::Info("Collected",scalar(@organisms),"organisms for taxon", $taxon) if ($main::verbose >= 3);
   return(@organisms);
 }
 
@@ -516,8 +483,9 @@ sub GetOrganismsForTaxon {
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 sub GetOrganismsForGroup {
+  my ($group_specificities) = @_;
 
-  my ($group_specificity) = @_;
+  &RSAT::message::Debug("GetOrganismsForGroup", $group_specificities) if ($main::verbose >= 4);
   my @selected_organisms = ();
   my @specific_taxa = ();
 
@@ -534,22 +502,24 @@ sub GetOrganismsForGroup {
                              None
                              );
   my $supported_groups = (join ", ", @supported_groups);
-  
-  ## Convert "groups" to corresponding taxa
-  if ($group_specificity eq "Fungi") {
-    @specific_taxa = ("Fungi");
-  } elsif ($group_specificity eq "Prokaryotes") {
-    @specific_taxa = ("Bacteria", "Archaea");
-  } elsif ($group_specificity eq "Bacteria") {
-    @specific_taxa = ("Bacteria");
-  } elsif ($group_specificity eq "Archaea") {
-    @specific_taxa = ("Archaea");
-  } elsif ($group_specificity eq "Metazoa") {
-    @specific_taxa = ("Metazoa");
-  } elsif ($group_specificity eq "Protists") {
-    ## Very tricky way to specify "Protists", which is not a
-    ## taxonomic group: I select all organisms that are neither
-    ## Metazoa nor Fungi
+
+  foreach my $group_specificity (split(",", $group_specificities)) {
+    ## Convert "groups" to corresponding taxa
+    &RSAT::message::Debug("Converting groups to taxa", $group_specificity) if ($main::verbose >= 4);
+    if ($group_specificity eq "Fungi") {
+      push @specific_taxa, "Fungi";
+    } elsif ($group_specificity eq "Prokaryotes") {
+      push @specific_taxa, "Bacteria", "Archaea";
+    } elsif ($group_specificity eq "Bacteria") {
+      push @specific_taxa, "Bacteria";
+    } elsif ($group_specificity eq "Archaea") {
+      push @specific_taxa, "Archaea";
+    } elsif ($group_specificity eq "Metazoa") {
+      push @specific_taxa, "Metazoa";
+    } elsif ($group_specificity eq "Protists") {
+      ## Very tricky way to specify "Protists", which is not a
+      ## taxonomic group: I select all organisms that are neither
+      ## Metazoa nor Fungi
       my %non_protist = ();
       push @selected_organisms, &GetOrganismsForTaxon("EnsemblProtists");
       my @eukaryotes = &GetOrganismsForTaxon("Eukaryota");
@@ -564,33 +534,34 @@ sub GetOrganismsForGroup {
 			   "\n", scalar(@plants), "Plants"
 	  ) if ($main::verbose >= 5);
       foreach my $org (@non_protists) {
-	  $non_protist{$org} = 1;
+	$non_protist{$org} = 1;
       }
       foreach my $org (@eukaryotes) {
-	  if ($non_protist{$org}) {
-	      &RSAT::message::Debug("Discarding non-protist", $org) if ($main::verbose >= 10);
-	  } else {
-	      &RSAT::message::Debug("Adding protist", $org) if ($main::verbose >= 10);
-	      push (@selected_organisms, $org);
-	  }
+	if ($non_protist{$org}) {
+	  &RSAT::message::Debug("Discarding non-protist", $org) if ($main::verbose >= 10);
+	} else {
+	  &RSAT::message::Debug("Adding protist", $org) if ($main::verbose >= 10);
+	  push (@selected_organisms, $org);
+	}
       }
 
-  } elsif ($group_specificity eq "Plants") {
-    @specific_taxa = ("Viridiplantae");
+    } elsif ($group_specificity eq "Plants") {
+      push @specific_taxa, "Viridiplantae";
 
-  } elsif ($group_specificity eq "Teaching") {
+    } elsif ($group_specificity eq "Teaching") {
 
-    @selected_organisms = qw(
+      push @selected_organisms, qw(
                              Escherichia_coli_K_12_substr__MG1655_uid57779
                              Saccharomyces_cerevisiae
                              Homo_sapiens_GRCh37
                              Drosophila_melanogaster
                             );
-  } elsif ($group_specificity eq "None") {
-    @selected_organisms = &get_supported_organisms();
+    } elsif ($group_specificity eq "None") {
+      @selected_organisms = &get_supported_organisms();
 
-  } else {
-    &RSAT::error::FatalError($group_specificity, "Invalid group specificity. Supported groups: ", $supported_groups);
+    } else {
+      &RSAT::error::FatalError($group_specificity, "Invalid group specificity. Supported groups: ", $supported_groups);
+    }
   }
   
   ## Add organisms from selected taxa
