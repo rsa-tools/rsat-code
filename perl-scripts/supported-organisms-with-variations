@@ -21,8 +21,9 @@ $program_version
 
 Collect the supported organisms for which the genome directory
 contains variations, and list them in a file
-$RSAT/public_html/supported_organisms_variation.tab. This file is used
-to display the list of organisms for variation-specific tools on RSAT.
+$RSAT/public_html/supported_organisms_variation.tab. This file can
+then be used to display the list of organisms for variation-specific
+tools on RSAT.
 
 =head1 AUTHORS
 
@@ -100,23 +101,16 @@ package main;
       $out = &OpenOutputFile($outfile{output});
       
   } else{
+    ## Automatic specifiction of the supported organisms with
+    ## variations
       my $data_rsat=join("/",$ENV{RSAT},"data") ;
-      print $data_rsat;
+
       my $supported_variation_organims_file=join ("/",$data_rsat,"supported_organisms_variation.tab");
       $outfile{output}=$supported_variation_organims_file;
       $out= &OpenOutputFile($supported_variation_organims_file);     
       
   }
-  ################################################################
-  ## Read input
-  # ($main::in) = &OpenInputFile($main::infile{input});
-  # while (<$main::in>) {
-  #   next unless (/\S/); ## Skip empty rows
-  #   next if (/^;/); ## Skip comment rows
-  #   next if (/^#/); ## Skip header rows
-  #   chomp();
-  # }
-  # close $main::in if ($main::infile{input});
+
 
   ################################################################
   ## Print verbose
@@ -140,7 +134,7 @@ package main;
       }
   }
   
-  print $out join("\n", @org_variations);
+  print $out join("\n", @org_variations), "\n";
 
 
 
