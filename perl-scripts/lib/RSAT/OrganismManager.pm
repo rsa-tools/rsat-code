@@ -550,12 +550,22 @@ sub GetOrganismsForGroup {
 
     } elsif ($group_specificity eq "Teaching") {
 
-      push @selected_organisms, qw(
-                             Escherichia_coli_K_12_substr__MG1655_uid57779
+      ## Define a list of model organisms
+      my @model_organisms = qw(Escherichia_coli_K_12_substr__MG1655_uid57779
+                             Bacillus_subtilis_168_uid57675
                              Saccharomyces_cerevisiae
                              Homo_sapiens_GRCh37
+                             Homo_sapiens_GRCh38
+                             Mus_musculus_GRCm38
                              Drosophila_melanogaster
                             );
+
+      ## Check that each organism is properly instaled.
+      foreach my $org (@model_organisms) {
+	if ($main::supported_organism{$org}) {
+	  push @selected_organisms, $org
+	}
+      }
     } elsif ($group_specificity eq "None") {
       @selected_organisms = &get_supported_organisms();
 
