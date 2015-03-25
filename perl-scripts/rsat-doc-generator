@@ -1,0 +1,345 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: rsat-doc-generator,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+rsat-doc-generator
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Generates documentation in various formats (markdown, html), from the
+PerlDoc documentation of an RSAT perl script.
+
+B<BEWARE>: this command should be used I<with caution>, to avoid
+replacing manually edited documentation (e.g. web pages) by a doc
+automatically generated doc from the PerlPod doc.
+
+=head1 AUTHORS
+
+Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+rsat-doc-generator [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The input file should be a perl-script including PerlPod documentation. 
+
+=head1 OUTPUT FORMAT
+
+The doc is exported in several formats. 
+
+=head2 markdown
+
+Markdow format is very convenient to 
+
+=head2 HTML
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<-in_format pydoc>
+
+Since new RSAT scripts are written in python, it would be good to
+support conversion from pydoc to markdown.
+
+=item B<-in_format md>
+
+Use markdown format rather than perlpod as input. This option will
+allow to edit the markdown files in order to customize the doc for the
+web pages (adapt parameter designations to the Web form, restrict help
+to the options supported on the web site).
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use Pod::Markdown;
+# Pod::Simple API is supported.
+
+# Command line usage: Parse a pod file and print to STDOUT:
+# $ perl -MPod::Markdown -e 'Pod::Markdown->new->filter(@ARGV)' path/to/POD/file > README.md
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  unless ($prefix{output}) {
+    &RSAT::error::FatalError("Output prefix (option -o) is mandatory for this program.");
+  }
+
+  ## Define output file names from output prefix
+  $prefix{output} =~ s/\.md//;
+  $outfile{md} = $prefix{output}.".md";
+  $outfile{html} = $prefix{output}.".html";
+
+  ## Define input script name
+  my $script_name = "UNDEFINED SCRIPTNAME";
+  if ($infile{input}) {
+    $script_name = $infile{input};
+    $script_name =~ s/.*perl-scripts\///;
+    $script_name =~ s/\.pl$//;
+  }
+
+  ################################################################
+  ## Initialize pandoc parser
+  my $markdown;
+  my $parser = Pod::Markdown->new;
+  $parser->output_string(\$markdown);
+
+  ################################################################
+  ## Open output stream
+  $out_md = &OpenOutputFile($outfile{md});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  $parser->parse_from_filehandle(\*$main::in);
+
+#  $parser->parse_string_document($pod_string);
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Print the markdown 
+  my $markdown_doc =  $parser->as_markdown;
+
+  ## Print the style header
+print $out_md "---
+title: \"[RSAT](RSAT_home.cgi) - ".$script_name." manual\"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+css: course.css
+---
+";
+
+  $markdown_doc =~ s/^#/\n## NAME/; ## Increase the first title by 1 level
+  $markdown_doc =~ s/\n#/\n##/g; ## Increase subsequent titles by 1 level
+  print $out_md $markdown_doc;
+
+  my $pandoc_cmd = &RSAT::server::GetProgramPath("pandoc");
+  $pandoc_cmd .= " --from markdown --to html";
+  $pandoc_cmd .= " -i ".$outfile{md};
+  $pandoc_cmd .= " -o ".$outfile{html};
+  &RSAT::message::Info("Pandoc commmand:", $pandoc_cmd);
+  &doit($pandoc_cmd);
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($prefix{output}) {
+    close $main::out_md;
+  }
+
+  if ($main::verbose >= 0) {
+    &RSAT::message::TimeWarn("Markdown file", $prefix{output}.".md");
+    &RSAT::message::TimeWarn("HTML file", $prefix{output}.".html");
+  }
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+Output prefix. Output file names are automatically defined by adding
+appropriate suffixes (.md, .html) to the output prefix.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $prefix{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; rsat-doc-generator ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
