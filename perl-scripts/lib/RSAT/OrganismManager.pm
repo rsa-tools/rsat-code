@@ -436,7 +436,7 @@ sub get_supported_organisms_web {
       push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
   }
   unless (($group_specificity eq "Bacteria") || ($group_specificity eq "Prokaryotes")) {
-      push @selected_organisms, "Escherichia_coli_str_k_12_substr_mg1655";
+      push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
   }
   @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
   return (@selected_organisms);
@@ -516,18 +516,23 @@ sub GetOrganismsForTaxon {
 ## - "Plants" is converted to Viridiplantae
 ## - "Prokaryotes" is converted to "Bacteria OR Archaea" 
 sub GetOrganismsForGroup {
+
   my ($group_specificity) = @_;
   my @selected_organisms = ();
   my @specific_taxa = ();
 
+  
   my @supported_groups  = qw(Fungi
-                          Prokaryotes
-                          Bacteria
-                          Archaea
-                          Metazoa
-                          Protists
-                          Fungi
-                          Plants);
+                             Prokaryotes
+                             Bacteria
+                             Archaea
+                             Metazoa
+                             Protists
+                             Fungi
+                             Plants
+                             Teaching
+                             None
+                             );
   my $supported_groups = (join ", ", @supported_groups);
   
   ## Convert "groups" to corresponding taxa
@@ -569,14 +574,23 @@ sub GetOrganismsForGroup {
 	      push (@selected_organisms, $org);
 	  }
       }
-      ## my $selected_organisms = `supported-organisms -taxon Eukaryota -return ID,taxonomy | grep -v Metazoa|grep -v Fungi | grep -v Viridiplantae | cut -f 1 | xargs`;
-      ## chomp($selected_organisms);
-      ## push @selected_organisms, split(/\s+/, $selected_organisms);
-#    @specific_taxa = ("EnsemblProtists");
+
   } elsif ($group_specificity eq "Plants") {
     @specific_taxa = ("Viridiplantae");
+
+  } elsif ($group_specificity eq "Teaching") {
+
+    @selected_organisms = qw(
+                             Escherichia_coli_K_12_substr__MG1655_uid57779
+                             Saccharomyces_cerevisiae
+                             Homo_sapiens_GRCh37
+                             Drosophila_melanogaster
+                            );
+  } elsif ($group_specificity eq "None") {
+    @selected_organisms = &get_supported_organisms();
+
   } else {
-    &RSAT::error::FatalError($grop, "Invalid group specificity. Supported groups: ", $supported_groups);
+    &RSAT::error::FatalError($group_specificity, "Invalid group specificity. Supported groups: ", $supported_groups);
   }
   
   ## Add organisms from selected taxa
