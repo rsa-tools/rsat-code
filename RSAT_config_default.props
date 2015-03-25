@@ -25,6 +25,9 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## Supported groups: Fungi, Prokaryotes, Bacteria, Archaea, Protists,
 ## Metazoa, Plants, Teaching, None.
 ##
+## Multiple groups can be entered separated by commas, without any
+## spacing.
+##
 ## Note that some of the "groups" correspond to a specific taxon
 ## defined by its systematic name (e.g. Metazoa, Fungi) or by its
 ## common name (Plants, Prokaryotes), whilst others are defined
