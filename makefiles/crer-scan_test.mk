@@ -4,8 +4,8 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/crer-scan_test.mk
 
-SITES_DIR=/data/rsat/public_html/demo_files
-SITES_DORSAL=${SITES_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
+DEMO_DIR=${RSAT}/public_html/demo_files
+SITES_DORSAL=${DEMO_DIR}/Drosophila_melanogaster_all_upstream3000-noorf_Dorsal_mkv2_pval0.001_sites.ft
 
 ## Choose python version. The script is compatible with both 2.7 and
 ## 3. Version 2.7 at least is required to use argsparse.
@@ -33,7 +33,7 @@ demo_dorsal:
 ## TFBM (matrices) of Drosophila segmentation genes.
 LTH_SIG=0.1
 EVE_PREFIX=Drosophila_melanogaster_eve_segmentation_sites_pval0.001${IN_SUFFIX}
-EVE_UPSTREAM_SITES=${RSAT}/public_html/demo_files/${EVE_PREFIX}.ft
+EVE_UPSTREAM_SITES=${DEMO_DIR}/${EVE_PREFIX}.ft
 EVE_OUT=${CRER_DIR}/${EVE_PREFIX}${OUT_SUFFIX}_crer.ft
 demo_eve:
 	@echo "Detecting CRERs for segmentation TF in even-skipped upstream sequence"
