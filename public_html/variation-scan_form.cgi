@@ -163,7 +163,7 @@ print $query->start_multipart_form(-action=>"variation-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
-
+$demo_matrix_file="demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
 $demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
 $demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq`;
 
@@ -172,7 +172,7 @@ print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 print $query->hidden(-name=>'variants_seqs', -default=>$demo_var_seq);
-
+print $query->hidden(-name=>'custom_motif_db' , -default=>$demo_matrix_file );
 print $query->hidden(-name=>'bg_method',-default=>'background"');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
 print $query->hidden(-name=>'markov_order',-default=>'2');
