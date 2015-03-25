@@ -1,0 +1,143 @@
+<h3 id="name-name">NAME NAME</h3>
+<p>matrix-clustering</p>
+<h2 id="version">VERSION</h2>
+<p>$program_version</p>
+<h2 id="description">DESCRIPTION</h2>
+<p>Taking as input a set of position-specific scoring matrices, identify clusters of similar matrices and build consensus motifs by merging the matrices that belong to the same cluster.</p>
+<h2 id="dependencies">DEPENDENCIES</h2>
+<p>The clustering step relies on <em>MCL</em>, the graph-based clustering algorithm developed by Stijn Van Dongen. MCL must be installed and its path indicated in the RSAT configuration file ($RSAT/RSAT_config.props). The installation of MCL can be done with a RSAT makefile:</p>
+<pre><code>cd $RSAT
+make -f makefiles/install_software.mk install_mcl</code></pre>
+<p>Various R packages are required in <em>matrix-clustering</em> to convert the hierarchical tree into different output formats and to manipulate the dendrogram which is exported.</p>
+<pre><code>RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
+ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
+dendextend : http://cran.r-project.org/web/packages/dendextend/index.html</code></pre>
+<p>For visualize the logo forest it is required the JavaScript <em>D3</em> (Data Driven Documents) library, the user can select an option to connect directly with the server to load the functions of this library (see option <em>-d3_base</em>).</p>
+<pre><code>D3 : http://d3js.org/</code></pre>
+<h2 id="authors">AUTHORS</h2>
+<h3 id="implementation">Implementation</h3>
+<ul class="incremental">
+<li>Jacques.van-Helden@univ-amu.fr</li>
+<li>Jaime Castro <script type="text/javascript">
+<!--
+h='&#108;&#x63;&#x67;&#46;&#x75;&#110;&#x61;&#x6d;&#46;&#x6d;&#120;';a='&#64;';n='&#106;&#x63;&#x61;&#x73;&#116;&#114;&#x6f;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#106;&#x63;&#x61;&#x73;&#116;&#114;&#x6f;&#32;&#x61;&#116;&#32;&#108;&#x63;&#x67;&#32;&#100;&#x6f;&#116;&#32;&#x75;&#110;&#x61;&#x6d;&#32;&#100;&#x6f;&#116;&#32;&#x6d;&#120;</noscript></li>
+</ul>
+<h3 id="conception">Conception</h3>
+<ul class="incremental">
+<li><p>Jacques van Helden</p>
+<p>The following collaborator contributed to the definition of requirements for this program.</p></li>
+<li>Carl Herrmann</li>
+<li>Denis Thieffry</li>
+<li><p>Morgane Thomas-Chollier</p></li>
+</ul>
+<h2 id="category">CATEGORY</h2>
+<p>util</p>
+<h2 id="usage">USAGE</h2>
+<p>matrix-clustering [-i inputfile] [-o outputfile] [-v ] [...]</p>
+<h2 id="output-format">OUTPUT FORMAT</h2>
+<h2 id="see-also">SEE ALSO</h2>
+<ul class="incremental">
+<li><p><em>compare-matrices</em></p>
+<p>The program <em>compare-matrices</em> is used by <em>cluster-matrices</em> to measure pairwise similarities and define the best alignment (offset, strand) between each pair of matrices.</p></li>
+</ul>
+<h2 id="wish-list">WISH LIST</h2>
+<h2 id="options">OPTIONS</h2>
+<ul class="incremental">
+<li><p><strong>-v #</strong></p>
+<p>Level of verbosity (detail in the warning messages during execution)</p></li>
+<li><p><strong>-h</strong></p>
+<p>Display full help message</p></li>
+<li><p><strong>-help</strong></p>
+<p>Same as -h</p></li>
+<li><p><strong>-i input matrix file</strong></p>
+<p>The input file contains a set of position-specific scoring matrices.</p></li>
+<li><p><strong>-matrix_format matrix_format</strong></p>
+<p>Specify the input matrix format.</p>
+<p><strong>Supported matrix formats</strong></p>
+<p>Since the program takes several matrices as input, it only accepts matrices in formats supporting several matrices per file (transfac, tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).</p>
+<p>For a description of these formats, see the help of <em>convert-matrix</em>.</p></li>
+<li><p><strong>-title graph_title</strong></p>
+<p>Title displayed on top of the report page.</p></li>
+<li><p><strong>-display_title</strong></p>
+<p>If it is selected. The title is displayed in the trees and in the result table. This is ideal when the user wants to compare motifs from different sources (files).</p></li>
+<li><p><strong>-root_matrices_only</strong></p>
+<p>When this option is selected. matrix-clustering returns a file with the motifs at the root of each cluster. This save time and memory consumption because the branch-motifs, heatmaps, and trees are not exported.</p></li>
+<li><p><strong>-o output_prefix</strong></p>
+<p>Prefix for the output files.</p>
+<p>Mandatory option: since the program <em>cluster-matrices</em> returns a list of output files (pairwise matrix comparisons, matrix clusters).</p></li>
+<li><p><strong>-heatmap</strong></p>
+<p>Display consensus of merged matrices on the internal branches of the tree.</p></li>
+<li><p><strong>-export format</strong></p>
+<p>Specify format for the output tree.</p>
+<p>The hierarchical tree in JSON format is always exported, since it is required to display the logo tree with the d3 library. Additional formats are proposed in option to enable visualization with classical phylogeny analysis tools.</p>
+<p><strong>Supported trees formats</strong></p>
+<p>(JSON, newick)</p>
+<ul class="incremental">
+<li><p><em>JSON</em> (default)</p>
+<p>File format used for D3 library to visualize the logo forest in HTML.</p></li>
+<li><p><em>newick</em> (optional)</p>
+<p>Widely used textual format to describe phylogenetic trees.</p></li>
+</ul></li>
+<li><p><strong>-task tasks</strong></p>
+<p>Specify one or several tasks to be run. If this option is not specified, all the tasks are run.</p>
+<p>Note that some tasks depend on other ones. This option should thus be used with caution, by experimented users only.</p>
+<p>Supported tasks: (all, comparison, clustering)</p>
+<ul class="incremental">
+<li><p><strong>all</strong></p>
+<p>Execute all the parts of the program (default)</p></li>
+<li><p><strong>clustering</strong></p>
+<p>Skip the matrix comparison step and only executes the clustering step.</p>
+<p>Assumes the users already have the description table and comparison table exported from the program <em>compare-matrices</em>.</p>
+<p>This option is ideal to saving time once all comparison beteen the input motifs had been done.</p></li>
+</ul></li>
+<li><p><strong>-label</strong></p>
+<p>Option to select the matrix label fields displayed in the html tree</p>
+<p><strong>Supported labels</strong></p>
+<pre><code>(name, consensus, id)</code></pre></li>
+<li><p><strong>-quick</strong></p>
+<p>With this option the motif comparison step is done with the program <em>compare-matrices-quick</em> (implemented in C) rather than the classic version compare-matrices (implemented in Perl). The quick version runs x100 times faster, but has not all implemented options as in the Perl version.</p>
+<p>We suggest use this option for a big set of input motifs &gt; 300 motifs.</p>
+<p><strong>NOTE:</strong> By the moment the only threshold used in quick version is Ncor.</p></li>
+<li><p><strong>-clone_input</strong></p>
+<p>If this option is selected, the input motif database is exported in the results folder.</p>
+<p>NOTE: take into account the input file size.</p></li>
+<li><p><strong>-max_matrix</strong></p>
+<p>This option specify how many matrices can be clustered in the same analysis. If there are more matrices than the specified number, the program reports an error.</p>
+<p>This parameter can be useful when the user analyse a big dataset of matrices.</p></li>
+<li><p><strong>-hclust_method</strong></p>
+<p>Option to select the agglomeration rule for hierarchical clustering.</p>
+<p>Supported agglomeration rules:</p>
+<ul class="incremental">
+<li><p><em>complete</em> (default)</p>
+<p>Compute inter-cluster distances based on the two most distant nodes.</p></li>
+<li><p><em>average</em></p>
+<p>Compute inter-cluster distances as the average distance between nodes belonging to the relative clusters.</p></li>
+<li><p><em>single</em></p>
+<p>Compute inter-cluster distances based on the closest nodes.</p></li>
+</ul></li>
+<li><p><strong>-top X</strong></p>
+<p>Only analyze the first X motifs of the input file. This options is convenient for quick testing before starting the full analysis.</p></li>
+<li><p><strong>-skip X</strong></p>
+<p>Skip the first X motifs of the input file. This options is convenient for testing the program on a subset of the motifs before starting the full analysis.</p></li>
+<li><p><strong>-consensus_labels</strong></p>
+<p>Option to select the labels displayed in the consensus alignment picture</p>
+<p>Default: consensus, id, strand</p>
+<p><strong>Supported labels</strong></p>
+<pre><code>(consensus, id, strand, number)</code></pre></li>
+<li><strong>-lth param lower_threshold</strong></li>
+<li><p><strong>-uth param upper_threshold</strong></p>
+<p>Threshold on some parameter (-lth: lower, -uth: upper threshold).</p>
+<p>Threshold parameters are passed to compare-classes.</p>
+<p>In addition, if a threshold is defined in the (unique) metrics used as clustering score (option <em>-score</em>), this threshold will be used to decide whether motifs should be aligned or not. If two motifs have a similarity score lower (or distance score higher) than the selected threshold, their aligment will be skipped. The status of each motif (Aligned or Non-aligned) is reported in the file prefix_matrix_alignment_table.tab</p>
+<p>Suggested thresholds:</p>
+<pre><code>cor &gt;= 0.7
+
+Ncor &gt;= 0.4</code></pre></li>
+<li><p><strong>-score metric</strong></p>
+<p>Select the metric which will be used to cluster the motifs.</p>
+<p>Supported metrics : cor, Ncor</p>
+<p>Default: Ncor</p></li>
+</ul>
