@@ -2631,7 +2631,9 @@ sub Archive {
 #  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
-  if ($main::verbose >= 0) {
+
+  ## TO CHECK (Jacques)
+  if ($main::verbose >= 3) {
     &RSAT::message::Debug("folder to archive", $to_archive);
 #    die "HELLO";
   }
@@ -2774,13 +2776,13 @@ sub set_output_file_names {
       if ($include_js_lib) {
 	  ## Note: we will need to redefine it after having parsed the
 	  ## arguments, since it will be relative to output directory.
-	  &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 0);
+	  &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 3);
 	  my $js_sync_cmd = "rsync -ruptl";
 	  $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
 	  $js_sync_cmd .= " ".$dir{output};
 	  &doit($js_sync_cmd, 0, 1, $verbose);
 	  $js_base = $dir{output}."/js";
-	  &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 0);
+	  &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
       }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	  $js_base = $ENV{rsat_www}."/lib/js";
       } else {
@@ -2803,7 +2805,7 @@ sub set_output_file_names {
   ## Archive to facilitate transfer of all the results
   $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
 #  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
-  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 0);
+  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
 #  die ("HELLO");
 
   ## Open the HTML index file and write header
