@@ -108,7 +108,6 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
             
             if (first_hit)
                 break;
-            
         }
     }
     
