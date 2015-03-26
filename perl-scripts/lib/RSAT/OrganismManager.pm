@@ -435,7 +435,7 @@ sub CheckOrganism {
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
   my ($taxon, $depth, $die_if_noorg) = @_;
-  &RSAT::message::Info("Collecting organisms for taxon", $taxon) if ($main::verbose >= 0);
+  &RSAT::message::Info("Collecting organisms for taxon", $taxon) if ($main::verbose >= 4);
   my @organisms = ();
   unless ($tree) {
       $tree = new RSAT::Tree();
