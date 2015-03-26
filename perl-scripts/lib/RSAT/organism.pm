@@ -244,7 +244,7 @@ sub OpenContigs {
     $self->check_name($organism_name);
     $genome_file = $main::supported_organism{$organism_name}->{'genome'};
     $genome_seq_format = $main::supported_organism{$organism_name}->{'seq_format'};
-#    &RSAT::message::Debug("&RSAT::organism::OpenContigs()", "genome file", $genome_file, $genome_seq_format) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("&RSAT::organism::OpenContigs()", "genome file", $genome_file, $genome_seq_format) if ($main::verbose >= 10);
   } else {
     &RSAT::error::FatalError("You should specify an organism.", "Use the command supported-organisms to get a list of suported organisms");
   }
