@@ -1,8 +1,8 @@
 /***************************************************************************
  *                                                                         *
- *  quick-scan
+ *  matrix-scan-quick
  *  
- *   
+ *
  *
  *                                                                         *
  ***************************************************************************/
@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20131211;
+int VERSION = 20150326;
 char *COMMAND_LINE;
 
 /*
@@ -47,7 +47,7 @@ void help()
 "        matrix-scan-quick\n"
 "\n"
 "VERSION\n"
-"        20120208\n"
+"        20140213\n"
 "\n"
 "AUTHOR\n"
 "        Matthieu Defrance <defrance@bigre.ulb.ac.be>\n"
@@ -69,11 +69,12 @@ void help()
 "\n"
 "  Matrix file\n"
 "    Only the tab format is supported.\n"
-"    see convert-matrix for details.\n"
+"    Only the first matrix in the file is used.\n"
+"    See convert-matrix for details.\n"
 "\n"
 "  Background file\n"
 "    Only the INCLUSive format is supported.\n"
-"    see convert-background-model for details.\n"
+"    See convert-background-model for details.\n"
 "\n"
 "OUTPUT FORMAT\n"
 "    The output is a tab-delimited file, with one row per match.\n"
@@ -90,7 +91,7 @@ void help()
 "    -o #                  print the output to filename #.\n"
 "                          if not specified, the standard output is used.\n"
 "\n"
-"    -m #                  read the matrix # (must be in tab format).\n"
+"    -m #                  read the matrix # or first matrix in # (must be in tab format).\n"
 " \n"
 "    -bgfile #             use # as background model (must be in INCLUSive format).\n"
 "                          by default an equiprobable model is used.\n"
@@ -299,7 +300,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        WARNING("using default bernoulli model (computed using input)");
+        VERBOSE2("using default bernoulli model (computed using input)");
         double priori[4] = {0.25, 0.25, 0.25, 0.25};
         bernoulli(markov, priori);
     }
