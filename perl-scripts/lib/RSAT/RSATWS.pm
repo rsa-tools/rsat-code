@@ -936,9 +936,6 @@ sub oligo_diff {
 ##
 ## peak-motifs
 ##
-## ATTENTION: THE MAMAZE ADDRESS IS HARD-CODED in the code !!! For some reason we
-## cannot access the properties from RSAT_config.props.  This should be
-## fixed.
 sub peak_motifs {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -952,11 +949,13 @@ sub peak_motifs {
     my $date = &RSAT::util::AlphaDate();
     $date =~ s/\n//;
 
-    my $output_directory = sprintf "peak-motifs.%s", $date;
+    my $output_directory = "peak-motifs_ws";
+#    my $output_path = $TMP."/".$output_directory;
+    my $output_path = &RSAT::util::make_temp_file("", $output_directory, 1, 1); 
     my $output_prefix = "peak-motifs";
-    my $output_path = $TMP."/".$output_directory;
     $output_path =~ s|\/\/|\/|g;
-    system("mkdir -p $output_path");
+#    system("mkdir -p $output_path");
+    system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 
     $command .= " -outdir '".$output_path."'";
     $command .= " -prefix '".$output_prefix."'";
@@ -975,42 +974,30 @@ sub peak_motifs {
 #    my $error_url = $error_file;
 #    $error_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
 
-    my $tmp_synthesis = $output_path."/".$output_prefix."_synthesis.html";
-    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-    my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-    my $result_url = $output_path;
-    $result_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    my $tmp_synthesis = &RSAT::util::rsat_path_to_url($output_path."/".$output_prefix."_synthesis.html");
+#    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    my $tmp_outzip = &RSAT::util::rsat_path_to_url($output_path."/".$output_prefix."_archive.zip");
+#    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+#    my $result_url = &RSAT::util::rsat_path_to_url($output_path);
+#    $result_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $error_file = $output_path.".err";
-    my $error_url = $error_file;
-    $error_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    my $error_url = &RSAT::util::rsat_path_to_url($error_file);
+#    $error_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
 
     my $response = "The server is now processing your request.\n";
-    $response .= "You can follow its status while running at the following URL\n";
-    $response .= "\t$tmp_synthesis\n";
+  #  $response .= "You can follow its status while running at the following URL\n";
     $response .= "Once it will be finished, the result will become available at the following URL\n";
-    $response .= "\t$result_url\n";
+    $response .= "\t$tmp_synthesis\n";
+ #   $response .= "\t$result_url\n";
     $response .= "A zipped archive will also be available at the following URL\n";
     $response .= "\t$tmp_outzip\n";
     $response .= "Otherwise, check the following page for error track\n";
     $response .= "\t$error_url\n";
 
-    `$command &>$error_file &`;
+    system("$command &>$error_file &");
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
-
-#     if ($output_choice eq 'server') {
-#       return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-# 					     'server' => $response});
-#     } elsif ($output_choice eq 'client') {
-#       return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-# 					     'client' => $response});
-#     } elsif ($output_choice eq 'both') {
-#       return SOAP::Data->name('response' => {'server' => $response,
-# 					     'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
-# 					     'client' => $response});
-#     }
 
 
   if ($output_choice eq 'server') {
