@@ -21,9 +21,14 @@ require "RSA2.cgi.lib";
 require RSAT::util;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+################
+## Restrict the number of input matrices treated on the Web server.
+local $max_matrices = 100;
+
 ################################################################
-## result page header
-### Read the CGI query
+## Result page header
+
+## Read the CGI query
 $query = new CGI;
 
 ### print the result page
@@ -51,6 +56,7 @@ system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the fi
 ################################################################
 ## Command line paramters
 local $parameters .= " -v 1";
+$parameters .= " -max_matrices ".$max_matrices;
 
 ################################################################
 ## Matrix input format
