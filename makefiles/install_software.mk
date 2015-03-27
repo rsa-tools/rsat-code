@@ -843,8 +843,8 @@ install_macs2_dependencies:
 ## PeakSplitter, program for splitting the sometimes too large regions
 ## returned by MACS into "topological" peaks.
 PEAKSPLITTER_BASE_DIR=${SRC_DIR}/PeakSplitter
-PEAKSPLITTER_ARCHIVE=PeakSplitter_Cpp.tar.gz
-PEAKSPLITTER_URL=http://www.ebi.ac.uk/bertone/software/${PEAKSPLITTER_ARCHIVE}
+PEAKSPLITTER_ARCHIVE=PeakSplitter_Cpp_1.0.tar.gz
+PEAKSPLITTER_URL=http://www.ebi.ac.uk/sites/ebi.ac.uk/files/groups/bertone/software/${PEAKSPLITTER_ARCHIVE}
 PEAKSPLITTER_DISTRIB_DIR=${PEAKSPLITTER_BASE_DIR}/PeakSplitter_Cpp
 install_peaksplitter: _download_peaksplitter _compile_peaksplitter 
 
