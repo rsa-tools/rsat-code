@@ -60,7 +60,7 @@ if (scalar(@selected_db) > 0) {
 }elsif ($query->param('custom_motif_db')) {
   my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db.tf";
 
-  $upload_persomotif = $query->param('custom_motif_db');
+  $upload_persomotif = $query->param('custom_motif_db_txt');
   if ($upload_persomotif) {
     my $type = $query->uploadInfo($upload_persomotif)->{'Content-Type'};
     if ($upload_persomotif =~ /\.gz$/) {
@@ -76,7 +76,31 @@ if (scalar(@selected_db) > 0) {
   }
 
   $parameters .= " -m ".$persomotif_file;
-  push(@tasks, "motifs_vs_db");
+}elsif ($query->param('custom_motif_db_url_txt')=~ /\S/) {
+    my $url = $query->param('custom_motif_db_url_txt');
+    &RSAT::message::Info("Fetching matrices from URL ".$url) if ($ENV{rsat_echo} >= 1);
+    my $motif = "";
+    my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db_fromURL.tf";
+    if (open SEQ, ">$persomotif_file") {
+	$motif = get($url);
+	if ($motif =~ /\S/) {
+	    print SEQ $motif;
+	    close SEQ;
+	} else {
+	    &RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
+	}
+    }
+    
+    ## Check sequence file
+    my $file_type = `file $persomotif_file`;
+    if ($file_type =~ "gzip") {
+	&RSAT::message::TimeWarn("Uncompressing motifs file", $persomotif_file);
+	my $cmd = "mv ".$persomotif_file." ".$persomotif_file.".gz";
+	$cmd .= " ; gunzip ".$persomotif_file.".gz";
+	&doit($cmd);
+    }  
+
+    $parameters .= " -m ".$persomotif_file;    
 }
 
 
