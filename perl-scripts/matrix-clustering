@@ -306,8 +306,7 @@ package main;
   local $root_matrices_flag = 0;
 
   ## Limit the number of input motifs
-  local $mat_nb_flag = 0;
-  local $mat_nb = 0;
+  local $max_matrices = 0;
   
   ## To export in the results the input file
   local $clone_input_flag = 0;
@@ -389,20 +388,42 @@ package main;
   }
 
   ################################################################
-  ## Read input matrices
-  if ($infile{matrices}){
-      @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
-      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
-	  if ($main::verbose >= 2);
-
-      if($mat_nb_flag == 1){
-	  if(scalar(@matrices) > $mat_nb){
-	  &RSAT::error::FatalError($mat_nb, "Matrices loaded from file", $infile{matrices}, "The number of input matrices is limted to", $mat_nb);
-	  }
-      }
+  ## Check matrix number if required
+  local $matrix_nb_ok = 1;
+  if ($max_matrices > 0) {
+    &RSAT::message::TimeWarn("Checking the number of input matrices (max: ".$max_matrices.").") if ($main::verbose >= 2);
+    @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
+    &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
+	if ($main::verbose >= 2);
+    if (scalar(@matrices) > $max_matrices) {
+      $matrix_nb_ok = 0;
+      &RSAT::message::Warning("Input file contains ".scalar(@matrices)." matrices (".$infile{matrices}.").", 
+			      "The analysis will be limited to the ".$max_matrices." first matrices");
+    }
   }
 
-  # ## According to the task selected by the user, execute or skip some functions
+  ## Check if matrix conversion is required.  Can be required for various reasons:
+  ## 1) input format differs from transfac, 
+  ## 2) if the number of input matrices exceeds the maximal allowed number (option -max_matrices).
+  ## 3) If the $clone_input_flag is ON.
+  if ((($matrix_format eq "transfac") || ($matrix_format eq "tf"))
+      && ($matrix_nb_ok)
+      && (!$clone_input_flag) ) {
+    $outfile{input_matrices} = $infile{matrices};
+  } else {
+    ## Convert input matrices in transfac format
+    &RSAT::message::TimeWarn("Converting input matrices");
+    my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+    $convert_matrix_cmd .= " -i ".$infile{matrices};
+    $convert_matrix_cmd .= " -from ".$matrix_format;
+    $convert_matrix_cmd .= " -to transfac";
+    $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
+    $convert_matrix_cmd .= " -o ".$outfile{input_matrices};
+    &doit($convert_matrix_cmd, 0, 1, $verbose);
+  }
+
+  # ## According to the task selected by the user, execute or skip
+  # ## some functions
   if($selected_tasks{all}){
 
       if($quick_flag == 0){
@@ -480,11 +501,12 @@ package main;
       }
       
 
-      ######################
-      ## Clone input file
-      if($clone_input_flag == 1){
-      	  &Clone_input();
-      }
+      # ######################
+      # ## Clone input file
+      ### JAIME: this is now treated at the beginning of the script
+      # if($clone_input_flag == 1){
+      # 	  &Clone_input();
+      # }
 
       if($root_matrices_flag == 0){
 
@@ -807,17 +829,19 @@ NOTE: take into account the input file size.
 
 =pod
 
-=item	B<-max_matrix>
+=item	B<-max_matrices>
 
-This option specify how many matrices can be clustered in the same analysis. If there are more matrices than
-the specified number, the program reports an error.
+This option specify how many matrices can be clustered in the same
+analysis. If there are more matrices than the specified number, the
+program restrics the analyses to the top matrices, and issues a
+warning.
 
-This parameter can be useful when the user analyse a big dataset of matrices.
+This parameter can be useful to prevent submission of excessive
+datasets to the Web server.
 
 =cut
-    } elsif ($arg eq "-max_matrix") {
-    $mat_nb_flag = 1;
-    $mat_nb = shift(@arguments);
+    } elsif ($arg eq "-max_matrices") {
+      $max_matrices = shift(@arguments);
     
       
 =pod
@@ -1025,8 +1049,8 @@ sub CompareMatrices {
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/compare-matrices -v ".$matrix_compa_verbose; 
   $cmd .= " -mode scores";
-  $cmd .= " -format ".$main::matrix_format;
-  $cmd .=  " -file ".$main::infile{matrices};
+  $cmd .= " -format transfac";
+  $cmd .=  " -file ".$main::outfile{input_matrices};
   $cmd .= " -DR";
   $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
   $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width,matrix_desc";
@@ -1065,7 +1089,7 @@ sub CompareMatrices {
 ################################################################
 ## Compare each discovered motifs to each other.
 sub CompareMatricesQuick {
-
+  &RSAT::message::TimeWarn("Running compare-matrices-quick") if ($main::verbose >= 2);
   ## Pariwise comparisons between discovered matrices.  We don't
   ## the option "distinct" in order to ensure that all the motifs are
   ## in the output graph even if they are not related to any other
@@ -1075,18 +1099,20 @@ sub CompareMatricesQuick {
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
   my $BIN=$ENV{RSAT}."/bin";
 
-  if($args_to_pass =~ /(-top \d+)/){
-
-      $args_to_pass = $1;
-      my $top = "convert-matrix ".$args_to_pass." -i ".$main::infile{matrices}." -from ".$main::matrix_format." -to tf -o ".$main::outfile{prefix}."_matrices.tf"; 
-      &RSAT::util::one_command($top, 1,"");
-      $main::infile{matrices} = $main::outfile{prefix}."_matrices.tf";
-  }else{
-      $args_to_pass = "";
-  }
+  ## Jaime: I (JvH) chaned this to treat it at the beginning of the
+  ## script, irrespective of the algorithm (quick or slow) used for
+  ## comparing matrices.
+  # if($args_to_pass =~ /(-top \d+)/){
+  #     $args_to_pass = $1;
+  #     my $top = "convert-matrix ".$args_to_pass." -i ".$main::outfile{input_matrices}." -from ".$main::matrix_format." -to tf -o ".$main::outfile{prefix}."_matrices.tf"; 
+  #     &RSAT::util::one_command($top, 1,"");
+  #     $main::infile{matrices} = $main::outfile{prefix}."_matrices.tf";
+  # }else{
+  #     $args_to_pass = "";
+  # }
 
   ## Create the description table
-  $cmd = $SCRIPTS."/compare-matrices -file ".$main::infile{matrices}." -format ".$main::matrix_format." -return matrix_desc ".$args_to_pass." >".$main::outfile{prefix}."_desc.tab";
+  $cmd = $SCRIPTS."/compare-matrices -file ".$main::outfile{input_matrices}." -format transfac -return matrix_desc ".$args_to_pass." >".$main::outfile{prefix}."_desc.tab";
   &RSAT::util::one_command($cmd, 1, "");
   
   $cmd = "more ".$main::outfile{prefix}."_desc.tab | grep -v '^#name1' > ".$main::outfile{matrix_descriptions};
@@ -1098,10 +1124,11 @@ sub CompareMatricesQuick {
   $cmd .= " -o ".$main::outfile{matrix_descriptions_html};
   &RSAT::util::one_command($cmd, 1,"");
 
+  ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
   my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
-  $cmd .=  " -file1 ".$main::infile{matrices};
-  $cmd .=  " -file2 ".$main::infile{matrices};
+  $cmd .=  " -file1 ".$main::outfile{input_matrices};
+  $cmd .=  " -file2 ".$main::outfile{input_matrices};
   $cmd .= " -lth_ncor1 -1";
   $cmd .= " -lth_ncor2 -1";
   $cmd .= " -lth_ncor -1";
@@ -1811,7 +1838,7 @@ sub create_single_matrix_files(){
     ## in order to process individually each matrix
     my %matrix_files = ();
     my $cmd = $SCRIPTS."/convert-matrix";
-    $cmd .= " -i ".$infile{matrices}." -from ".$main::matrix_format." -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
+    $cmd .= " -i ".$outfile{input_matrices}." -from transfac -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
     &doit($cmd, 0, $die_on_error, $verbose);
     
     $main::outfile{matrix_single_list} = $main::outfile{prefix}."_single_matrices_matrix_list.tab";
@@ -2574,15 +2601,15 @@ sub Delete_temporal_files {
 
 }
 
-##############################################
-## When the option -clone_input is selected
-## the input file is exported in the result 
-## folder
-sub Clone_input{
-  my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
-  &RSAT::util::one_command($cmd, 1,"");
-  &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
-}
+# ##############################################
+# ## When the option -clone_input is selected
+# ## the input file is exported in the result 
+# ## folder
+# sub Clone_input{
+#   my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
+#   &RSAT::util::one_command($cmd, 1,"");
+#   &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
+# }
 
 
 ##################################
@@ -2711,6 +2738,10 @@ sub set_output_file_names {
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
   $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
   $main::out = &OpenOutputFile($main::outfile{log});
+
+  ## Converted matrices (required for compare-matrices-quick, and to
+  ## restrict the number of matrices with option -max_matrices).
+  $main::outfile{input_matrices} = $main::outfile{prefix}."_input_matrices.tf"; push @outfiles, "input_matrices"; 
 
 
   ## Pairwise comparisons between matrices
