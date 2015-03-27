@@ -154,8 +154,8 @@ print $query->start_multipart_form(-action=>"variation-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
-$demo_matrix_file=$ENV{rsat_www}."/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
-#$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
+#$demo_matrix_file=$ENV{rsat_www}."/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
+$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
 $demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq`;
 
 print "<TD><b>";
@@ -165,13 +165,15 @@ print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 print $query->hidden(-name=>'variants_seqs', -default=>$demo_var_seq);
 
 print $query->hidden(-name=>'db_choice', -default=>'custom_motif_db_url' );
-print $query->hidden(-name=>'custom_motif_db_url', -default=>'on' );
+
+#print $query->hidden(-name=>'custom_motif_db_url', -default=>'on' );
 #print $query->hidden(-name=>'',-default=>'on');
 #print $query->hidden(-name=>'db_choice', -default=>'jaspar_pbm_mouse' );
 #print $query->hidden(-name=>'db_choice' , -default=>'custom_motif_db' ." checked" );
 #print $query->hidden(-name=>'jaspar_core_fungi' , -default=>'on'  );
 
-print $query->hidden(-name=>'custom_motif_db_url_txt', -default=>$demo_matrix_file);
+print $query->hidden(-name=>'db_choice', -default=>'custom_motif_text');
+print $query->hidden(-name=>'matrix', -default=>$demo_matrix);
 print $query->hidden(-name=>'bg_method',-default=>'background"');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
 print $query->hidden(-name=>'markov_order',-default=>'2');
@@ -225,23 +227,29 @@ sub Panel1 {
 
   print "<p/> ";
   print "<b>A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Select here the known motifs collection to be used or provide your own.</b><br/>";
-
+   print "<BR>\n";
   ## load the various databases that can be compared against
   #&MatrixDBcheckBox("choice_mode"=>"checkbox");
   &MatrixDBcheckBox("choice_mode"=>"radiobox");
   print "<p/> ";
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $checked{file_upload}>";
-    
-  print "<a href=''><b>Use your own motif database file:</b></a><br/>";
-  print $query->filefield(-name=>'custom_motif_db_txt',
-			  -size=>10);
-  print "<p/> ";
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db_url' >";   
-  print "<a href=''><b>Use your own motif database from URL source:</b></a><br/>";
-  print $query->textfield(-name=>'custom_motif_db_url_txt',
-		  -default=>$default{'custom_motif_db_url'},
-						-size=>62);
   
+  ## Old code to input the motif database via file or url
+  # print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $checked{file_upload}>";
+  # print "<a href=''><b>Use your own motif database file:</b></a><br/>";
+  # print $query->filefield(-name=>'custom_motif_db_txt',
+  # 			  -size=>10);
+  # print "<p/> ";
+  # print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db_url' >";   
+  # print "<a href=''><b>Use your own motif database from URL source:</b></a><br/>";
+  # print $query->textfield(-name=>'custom_motif_db_url_txt',
+  # 		  -default=>$default{'custom_motif_db_url'},
+  # 						-size=>62);
+
+  my %matrix_args= (
+      'db_choice'=>1,
+      'no_pseudo'=>1 
+      );
+  &GetMatrix(%matrix_args);
 #  print "<br>Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
 
  
