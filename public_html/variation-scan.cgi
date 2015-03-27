@@ -41,11 +41,10 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 #local $matrix_file= &GetMatrixFile($tmp_file_path."_input_matrix");
 
 
-local $input_format = "transfac";
-#lc($query->param('matrix_format'));
-#($input_format) = split (/\s+/, $input_format);
+#local $input_format = "transfac";
+local $input_format=lc($query->param('matrix_format'));
+($input_format) = split (/\s+/, $input_format);
 
-$parameters .= " -m_format  $input_format ";
 
 ## Get motif set or input file to scan variants
 
@@ -56,7 +55,8 @@ if (scalar(@selected_db) > 0) {
     $mat_db_params=~s/-format2.+//;
 
   $parameters .= " -m ".$mat_db_params;
-  
+  $parameters .= " -m_format  transfac ";
+
 }elsif ($query->param('custom_motif_db')) {
   my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db.tf";
 
@@ -76,32 +76,44 @@ if (scalar(@selected_db) > 0) {
   }
 
   $parameters .= " -m ".$persomotif_file;
-}elsif ($query->param('custom_motif_db_url_txt')=~ /\S/) {
-    my $url = $query->param('custom_motif_db_url_txt');
-    &RSAT::message::Info("Fetching matrices from URL ".$url) if ($ENV{rsat_echo} >= 1);
-    my $motif = "";
-    my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db_fromURL.tf";
-    if (open SEQ, ">$persomotif_file") {
-	$motif = get($url);
-	if ($motif =~ /\S/) {
-	    print SEQ $motif;
-	    close SEQ;
-	} else {
-	    &RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
-	}
-    }
-    
-    ## Check sequence file
-    my $file_type = `file $persomotif_file`;
-    if ($file_type =~ "gzip") {
-	&RSAT::message::TimeWarn("Uncompressing motifs file", $persomotif_file);
-	my $cmd = "mv ".$persomotif_file." ".$persomotif_file.".gz";
-	$cmd .= " ; gunzip ".$persomotif_file.".gz";
-	&doit($cmd);
-    }  
+}else{
+#elsif($query->param('custom_motif_db')) {
+    my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_manualinput.tf";
+    local $matrix_file =&GetMatrixFile($persomotif_file);
+    $parameters .= " -m $matrix_file";
+    $parameters .= " -m_format  $input_format ";
 
-    $parameters .= " -m ".$persomotif_file;    
 }
+
+
+
+## Code to get the motif from URL, no longer used
+# elsif ($query->param('custom_motif_db_url_txt')=~ /\S/) {
+#     my $url = $query->param('custom_motif_db_url_txt');
+#     &RSAT::message::Info("Fetching matrices from URL ".$url) if ($ENV{rsat_echo} >= 1);
+#     my $motif = "";
+#     my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db_fromURL.tf";
+#     if (open SEQ, ">$persomotif_file") {
+# 	$motif = get($url);
+# 	if ($motif =~ /\S/) {
+# 	    print SEQ $motif;
+# 	    close SEQ;
+# 	} else {
+# 	    &RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
+# 	}
+#     }
+    
+#     ## Check sequence file
+#     my $file_type = `file $persomotif_file`;
+#     if ($file_type =~ "gzip") {
+# 	&RSAT::message::TimeWarn("Uncompressing motifs file", $persomotif_file);
+# 	my $cmd = "mv ".$persomotif_file." ".$persomotif_file.".gz";
+# 	$cmd .= " ; gunzip ".$persomotif_file.".gz";
+# 	&doit($cmd);
+#     }  
+
+#     $parameters .= " -m ".$persomotif_file;    
+# }
 
 
 ## Get input
