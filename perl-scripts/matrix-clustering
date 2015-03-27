@@ -1971,8 +1971,8 @@ sub Merge_matrices(){
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 	    &doit($cmd, 0, $die_on_error, $verbose);
 	    
-	    $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
-	    $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+	    $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo.png";
+	    $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo_rc.png";
 	    
 	    $merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 	    
@@ -2127,8 +2127,8 @@ sub Merge_root_matrices(){
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 		&doit($cmd, 0, $die_on_error, $verbose);
 		
-		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo.png";
-		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo_rc.png";
 		
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 		
@@ -3806,8 +3806,8 @@ sub InsertTreesAndBranchMotifs {
 	    foreach my $level (1..scalar(keys %current_alignment_table_data)-1){
 		
 		my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
-		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo.png");
-		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merged_logo_rc.png");
+		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/cluster_".$num."_logo.png");
+		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/cluster_".$num."_logo_rc.png");
 		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf");
 		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
