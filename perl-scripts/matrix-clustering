@@ -1162,7 +1162,9 @@ sub Hclustering {
     ## leave a persistent trace of the complete analysis.
     ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     my $pos_drawing_offset = 0;
-    my  $cluster_motifs_cmd = "cat ".$cluster_motifs_script;
+
+    my $cluster_motif_cmd = "export RSAT=$ENV{RSAT}; ";
+    $cluster_motifs_cmd .= " cat ".$cluster_motifs_script;
     $cluster_motifs_cmd .= " | ".$r_path;
     $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
     $cluster_motifs_cmd .= " --args \"";
@@ -1213,7 +1215,7 @@ sub Hclustering {
       $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
     }
     $cluster_motifs_cmd .= "; \"";
-    #$cluster_motifs_cmd .= " >& ".$main::outfile{Rlog};
+    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, 1, $verbose);
