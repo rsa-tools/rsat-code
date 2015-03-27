@@ -57,26 +57,8 @@ if (scalar(@selected_db) > 0) {
   $parameters .= " -m ".$mat_db_params;
   $parameters .= " -m_format  transfac ";
 
-}elsif ($query->param('custom_motif_db')) {
-  my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_db.tf";
-
-  $upload_persomotif = $query->param('custom_motif_db_txt');
-  if ($upload_persomotif) {
-    my $type = $query->uploadInfo($upload_persomotif)->{'Content-Type'};
-    if ($upload_persomotif =~ /\.gz$/) {
-      $refmotif_file .= ".gz";
-    }
-    open REF, ">$persomotif_file" ||
-      &cgiError("Cannot store sequence file in temp dir.");
-    while (<$upload_persomotif>) {
-#      print "<br>UPLOADING REF MOTIFS \t", $_;
-      print REF;
-    }
-    close REF;
-  }
-
-  $parameters .= " -m ".$persomotif_file;
 }else{
+## This should work but for some reason it does not AMR
 #elsif($query->param('custom_motif_db')) {
     my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_manualinput.tf";
     local $matrix_file =&GetMatrixFile($persomotif_file);
@@ -84,7 +66,6 @@ if (scalar(@selected_db) > 0) {
     $parameters .= " -m_format  $input_format ";
 
 }
-
 
 
 ## Code to get the motif from URL, no longer used
