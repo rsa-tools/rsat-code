@@ -238,8 +238,6 @@ package main;
     $supported_metrics{lc($met)} = 1;
   }
 
-
-
   ## Consensuses alignment labels
   local @supported_consensuses_alignment_labels = qw(
 			         consensus
@@ -386,7 +384,7 @@ package main;
   if($root_matrices_flag == 1){
       $to_delete{'summary'} = $main::outfile{summary};
   }
-
+  
   ################################################################
   ## Check matrix number if required
   local $matrix_nb_ok = 1;
