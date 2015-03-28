@@ -62,10 +62,8 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Identify groups (clusters) of similarities between a set of motifs and align them.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>&nbsp: ";
-print "and <a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
+print "<a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
-#print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>t</sup>,\n";
-#print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print "</CENTER>";
 
@@ -180,7 +178,7 @@ peaks for the mouse transcription factor Otc4 (data from Chen et al.,
 $descr_1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_html_title = "Oct4 motifs peak motifs";
+$demo_html_title = "'Oct4 motifs peak motifs'";
 $demo_1_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
@@ -208,7 +206,7 @@ together.  </p>\n";
 $descr_2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_html_title = "Clustering column-permuted matrices discovered in Oct4 ChIP-seq";
+$demo_html_title = "'Clustering column-permuted matrices discovered in Oct4 ChIP-seq'";
 $demo_2_file = "demo_files/peak-motifs_result_Chen_Oct4_permuted_matrices.tf";
 $demo_2_matrices=`cat ${demo_2_file}`;
 print "<TD><b>";
