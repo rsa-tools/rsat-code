@@ -2996,7 +2996,7 @@ sub check_phylo_tools() {
     if ($ENV{phylo_tools} == 0) {
 	print "<font size=+1>\n";
 	print "<p><font color='red'>Phylogenetic tools are not supported on this instance of RSAT.</font></p>\n";
-	print "Our tools for phylogenetic footprinting (footprint-discovery, footprint-scan) are particularly suited for microbial genomes (small genomes, many species available), but remain delusive for multicellular organisms.</p>";
+	print "Our tools for phylogenetic footprinting (footprint-discovery, footprint-scan) are particularly well suited for microbial genomes (small genomes, many species available), but remain delusive for multicellular organisms.</p>";
 	print "<p>Phylogenetic approaches are currently supported on the following RSAT servers: </p>\n"; 
 	print "<ol>\n";
 	print "<li>Prokaryotes: <a target='_top' href='http://prokaryotes.rsat.eu/'>http://prokaryotes.rsat.eu/</a></li>";
