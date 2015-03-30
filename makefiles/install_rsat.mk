@@ -276,11 +276,12 @@ python2_modules_install:
 	@echo
 	@echo "Installing modules for python"
 	@for module in ${PYTHON2_MODULES} ; do \
-		echo "Installing python module	$${module}" ; \
+		echo "Installing python2 module	$${module}" ; \
 		${SUDO} pip install $${module}; \
 	done
 
-PYTHON3_MODULES=numpy scipy soappy
+PYTHON3_MODULES=numpy scipy
+PYTHON3_NONSUPPORTED= soappy
 python3_modules_list:
 	@echo ${PYTHON3_MODULES} | perl -pe 's|\s+|\n|g'
 
@@ -289,8 +290,9 @@ python3_modules_install:
 	@echo "Installing modules for python3"
 	@echo "${PYTHON3_MODULES}"
 	@echo
-	@for module in ${PY	THON3_MODULES} ; do \
-		${SUDO} pip install -U $${module}; \
+	@for module in ${PYTHON3_MODULES} ; do \
+		echo "Installing python3 module	$${module}" ; \
+		${SUDO} pip3 install $${module}; \
 	done
 
 ################################################################
