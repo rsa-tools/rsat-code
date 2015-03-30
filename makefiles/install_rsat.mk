@@ -99,6 +99,19 @@ unix_packages_list:
 	@echo ${UNIX_PACKAGES_CENTOS} | perl -pe 's|\s+|\n\t|g'
 	@echo
 
+BREW_PACKAGES=gd python python3 gnuplot ghostscript
+macosx_package_list:
+	@echo "Packages to install for Mac OSX (brew install)"
+	@echo ${BREW_PACKAGES} | perl -pe 's|\s+|\n|g'
+
+macosx_package_install:
+	@echo
+	@echo "Installing packages for Mac OSX (brew install)"
+	@for package in ${BREW_PACKAGES} ; do \
+		echo "Installing brew package	$${package}" ; \
+		${SUDO} brew install $${package}; \
+	done
+
 PACKAGE_MANAGER_MAC=brew install
 PACKAGE_MANAGER_CENTOS=yum install
 PACKAGE_MANAGER_UBUNTU=get-apt
@@ -270,6 +283,7 @@ perl_module_test_doc:
 ## Install modules required for python
 PYTHON2_MODULES=numpy scipy SUDS Rpy2 lxml SOAPpy httplib
 python2_modules_list:
+	@echo "Modules to install for Python 2"
 	@echo ${PYTHON2_MODULES} | perl -pe 's|\s+|\n|g'
 
 python2_modules_install:
@@ -283,6 +297,7 @@ python2_modules_install:
 PYTHON3_MODULES=numpy scipy
 PYTHON3_NONSUPPORTED= soappy
 python3_modules_list:
+	@echo "Modules to install for Python 3"
 	@echo ${PYTHON3_MODULES} | perl -pe 's|\s+|\n|g'
 
 python3_modules_install:
