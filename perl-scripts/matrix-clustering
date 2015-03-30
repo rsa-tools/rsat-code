@@ -4084,7 +4084,7 @@ sub shave_matrix_low_IC_columns{
 
     ## Calculate the IC of the matrix,
     ## save this info in a file
-    my $cmd = "convert-matrix -i ".$matrix_to_shave." -from tf -return info,header,margins -o ".$temp_IC_file;
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -return info,header,margins -o ".$temp_IC_file;
     &doit($cmd, 0, $die_on_error, $verbose);
 
     ## Read the IC file
