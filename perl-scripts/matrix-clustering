@@ -238,6 +238,8 @@ package main;
     $supported_metrics{lc($met)} = 1;
   }
 
+
+
   ## Consensuses alignment labels
   local @supported_consensuses_alignment_labels = qw(
 			         consensus
@@ -384,7 +386,7 @@ package main;
   if($root_matrices_flag == 1){
       $to_delete{'summary'} = $main::outfile{summary};
   }
-  
+
   ################################################################
   ## Check matrix number if required
   local $matrix_nb_ok = 1;
@@ -452,6 +454,7 @@ package main;
       ## several functions below.
       &ReadClusterComposition();
 
+
       if($root_matrices_flag == 1){
 	  
 	  ################################################################
@@ -461,7 +464,6 @@ package main;
 	  ##########################################
 	  ## Export the external motifs in a file
 	  &Export_external_motifs();
-	  #die " ---> Raindrops they come from the clouds in the sky!\n";
 
 	  ## Some files and directories that must be deleted
 	  $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
@@ -471,9 +473,16 @@ package main;
 
       }else{
 
+      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_2.txt") || die "Cannot create the test file: $!\n";
+      print TEST "Dynamo\n";
+
 	  ################################################################
 	  ## Create the merged matrices and consensuses
 	  &Merge_matrices();
+
+      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_1.txt") || die "Cannot create the test file: $!\n";
+      print TEST "Bitterblossom\n";
+      die "Bitterblossom\n";
 
 	  ##########################################
 	  ## Export the external motifs in a file
@@ -497,14 +506,6 @@ package main;
 	  ## Convert tab files to HTML files
 	  &ConvertTabToHTML(@tab_to_convert);
       }
-      
-
-      # ######################
-      # ## Clone input file
-      ### JAIME: this is now treated at the beginning of the script
-      # if($clone_input_flag == 1){
-      # 	  &Clone_input();
-      # }
 
       if($root_matrices_flag == 0){
 
