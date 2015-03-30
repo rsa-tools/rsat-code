@@ -50,15 +50,15 @@ list_versions:
 EXT_APP_TARGETS=\
 	install_seqlogo \
 	install_weblogo3 \
-	install_gnuplot \
-	install_ghostscript \
 	install_d3 \
 	install_mcl \
 	install_rnsc \
 	install_blast \
 	install_ensembl_bioperl \
 	install_ensembl_api \
-	install_vmatch 
+	install_vmatch \
+	install_ghostscript \
+	install_gnuplot
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -216,7 +216,8 @@ install_weblogo3_pip:
 
 ################################################################
 ## Get and install the program gnuplot
-GNUPLOT_VERSION=4.6.4
+#GNUPLOT_VERSION=4.6.4
+GNUPLOT_VERSION=5.0.0
 GNUPLOT_TAR=gnuplot-${GNUPLOT_VERSION}.tar.gz
 GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VERSION}/${GNUPLOT_TAR}
 GNUPLOT_DIR=${SRC_DIR}/gnuplot
@@ -372,7 +373,8 @@ install_ensembl_api_env:
 ################################################################
 ## Install the graph-based clustering algorithm MCL
 MCL_BASE_DIR=${SRC_DIR}/mcl
-MCL_VERSION=12-135
+#MCL_VERSION=12-135
+MCL_VERSION=14-137
 MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
 MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
 MCL_DISTRIB_DIR=${MCL_BASE_DIR}/mcl-${MCL_VERSION}
