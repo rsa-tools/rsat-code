@@ -268,7 +268,7 @@ perl_module_test_doc:
 
 ################################################################
 ## Install modules required for python
-PYTHON_MODULES=SUDS Rpy2 lxml SOAPpy httplib2
+PYTHON_MODULES=numpy scipy SUDS Rpy2 lxml SOAPpy httplib2
 python_modules_list:
 	@echo ${PYTHON_MODULES} | perl -pe 's|\s+|\n|g'
 
@@ -276,8 +276,9 @@ python_modules_install:
 	@echo
 	@echo "Installing modules for python"
 	@for module in ${PYTHON_MODULES} ; do \
-		${SUDO} easy_install $${module}; \
-	PYTHON3
+		echo "Installing python module	$${module}" ; \
+		${SUDO} pip install $${module}; \
+	done
 
 MODULES_done=numpy scipy soappy
 python3_modules_install:
