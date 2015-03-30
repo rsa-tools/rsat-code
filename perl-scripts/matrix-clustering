@@ -473,16 +473,16 @@ package main;
 
       }else{
 
-      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_2.txt") || die "Cannot create the test file: $!\n";
-      print TEST "Dynamo\n";
+#      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_2.txt") || die "Cannot create the test file: $!\n";
+#      print TEST "Dynamo\n";
 
 	  ################################################################
 	  ## Create the merged matrices and consensuses
 	  &Merge_matrices();
 
-      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_1.txt") || die "Cannot create the test file: $!\n";
-      print TEST "Bitterblossom\n";
-      die "Bitterblossom\n";
+#      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_1.txt") || die "Cannot create the test file: $!\n";
+#      print TEST "Bitterblossom\n";
+#      die "Bitterblossom\n";
 
 	  ##########################################
 	  ## Export the external motifs in a file
