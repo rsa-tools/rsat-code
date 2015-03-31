@@ -996,13 +996,14 @@ sub SeqBoxMQ {
 ##  db_choice=>1    display radio option to be combined with MatrixDB selection
 sub GetMatrix {
   my (%args) = @_;
-  my $db_choice= $args{'db_choice'};
+  my $db_choice= $args{'db_choice'} || 0;
+  my $status_db_choice=$args{'status_db_choice'} || 0;
 #  my $consensus = $args{consensus};
 #  my $no_pseudo = $args{no_pseudo};
   $args{title}="Input personal collection of motifs" if ($db_choice);
   my $title = $args{title} || "Matrix (or matrices)";
   #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' >" if ($db_choice);
+  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
@@ -1542,7 +1543,7 @@ sub MatrixDBcheckBox {
     next if ($line =~ /^#/);
     my ($db_name, $format, $file, $descr, $version) = split (/\t/,$line);
     my $status = "";
-    if ($db_name eq $default{compare_motif_database}) {
+    if ( $db_name eq $default{compare_motif_database} ) {
       $status = "checked";
     }
 
