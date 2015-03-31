@@ -471,18 +471,18 @@ package main;
 	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
 	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
 
-      }else{
+      } else {
 
-#      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_2.txt") || die "Cannot create the test file: $!\n";
-#      print TEST "Dynamo\n";
+      # open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_1.txt") || die "Cannot create the test file 1: $!\n";
+      # print TEST "Dynamo\n";
 
 	  ################################################################
 	  ## Create the merged matrices and consensuses
 	  &Merge_matrices();
 
-#      open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_1.txt") || die "Cannot create the test file: $!\n";
-#      print TEST "Bitterblossom\n";
-#      die "Bitterblossom\n";
+      # open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_2.txt") || die "Cannot create the test file 2: $!\n";
+      # print TEST "Bitterblossom\n";
+      # die "Bitterblossom\n";
 
 	  ##########################################
 	  ## Export the external motifs in a file
@@ -1114,7 +1114,7 @@ sub CompareMatricesQuick {
   $cmd = $SCRIPTS."/compare-matrices -file ".$main::outfile{input_matrices}." -format transfac -return matrix_desc ".$args_to_pass." >".$main::outfile{prefix}."_desc.tab";
   &RSAT::util::one_command($cmd, 1, "");
   
-  $cmd = "more ".$main::outfile{prefix}."_desc.tab | grep -v '^#name1' > ".$main::outfile{matrix_descriptions};
+  $cmd = "cat ".$main::outfile{prefix}."_desc.tab | grep -v '^#name1' > ".$main::outfile{matrix_descriptions};
   &RSAT::util::one_command($cmd, 1, "");
   unlink($main::outfile{prefix}."_desc.tab");
 
@@ -2231,7 +2231,7 @@ sub Add_div_to_HTML(){
     my $line = "";
     my $print = "";
     my $temp = &logo_tree();
-    my $cmd = $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
     &doit($cmd, 0, $die_on_error, $verbose);
 
@@ -4127,7 +4127,7 @@ sub shave_matrix_low_IC_columns{
     }
 
     ## Trim the matrix
-    $cmd = "convert-matrix -i ".$matrix_to_shave." -from tf -to tf -trim_col_left ".$shave_up." -trim_col_right ".$shave_dw." -return counts,consensus -o ".$shaved_matrix;
+    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -to tf -trim_col_left ".$shave_up." -trim_col_right ".$shave_dw." -return counts,consensus -o ".$shaved_matrix;
     &doit($cmd, 0, $die_on_error, $verbose);
     return $shaved_matrix;
 }
