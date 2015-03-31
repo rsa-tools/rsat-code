@@ -152,8 +152,11 @@ if (&IsNatural($query->param('uth_overlap'))) {
 }
 
 ## Only return limits of sequences containing at least one CRER
-$parameters .= " -return_limits_filtered";
-
+if (lc($query->param("limits")) eq "filtered") {
+    $parameters .= " -return_limits_filtered";
+} elsif (lc($query->param("limits")) eq "all") {
+    $parameters .= " -return_limits";
+}
 
 ## Output file
 $result_file = $tmp_file_path.".tab";
