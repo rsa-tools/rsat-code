@@ -31,8 +31,9 @@ $default{pseudo_distribution} = "pseudo_prior";
 $checked{$default{pseudo_distribution}} = "CHECKED";
 $default{mml}=30;
 
-$default{compare_motif_database}="jaspar_core_vertebrates";
-$default{custom_motif_db_name}="custom_motif_collection";
+#$default{compare_motif_database}="jaspar_core_vertebrates";
+#$default{db_choice_set}="jaspar_core_vertebrates";
+#$default{custom_motif_db_name}="custom_motif_collection";
 
 ## Threshold values for site detection
 ## Suported uth 
@@ -164,8 +165,8 @@ print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 print $query->hidden(-name=>'variants_seqs', -default=>$demo_var_seq);
 
-print $query->hidden(-name=>'db_choice', -default=>'custom_motif_db_url' );
-
+#print $query->hidden(-name=>'db_choice', -default=>'custom_motif_db_url' );
+#print $query->hidden(-name=>'compare_motif_database', -default=>'custom_motif_db' );
 #print $query->hidden(-name=>'custom_motif_db_url', -default=>'on' );
 #print $query->hidden(-name=>'',-default=>'on');
 #print $query->hidden(-name=>'db_choice', -default=>'jaspar_pbm_mouse' );
@@ -226,12 +227,9 @@ sub Panel1 {
   
 
   print "<p/> ";
-  print "<b>A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Select here the known motifs collection to be used or provide your own.</b><br/>";
+  print "<b>A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Provide your own motifs collection or select one to be used.</b><br/>";
    print "<BR>\n";
-  ## load the various databases that can be compared against
-  #&MatrixDBcheckBox("choice_mode"=>"checkbox");
-  &MatrixDBcheckBox("choice_mode"=>"radiobox");
-  print "<p/> ";
+  
   
   ## Old code to input the motif database via file or url
   # print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $checked{file_upload}>";
@@ -247,10 +245,18 @@ sub Panel1 {
 
   my %matrix_args= (
       'db_choice'=>1,
-      'no_pseudo'=>1 
+      'no_pseudo'=>1,
+      'status_db_choice'=>"checked"
       );
+  
   &GetMatrix(%matrix_args);
-#  print "<br>Matrices should be in <b>Transfac format</b> (other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>).";
+
+  
+  ## load the various databases that can be compared against
+  print "<p/>";
+  print "<b>Select one motif collection</b></p>";
+  &MatrixDBcheckBox("choice_mode"=>"radiobox");
+  print "<p/> ";
 
  
   print "</fieldset><p/>";
