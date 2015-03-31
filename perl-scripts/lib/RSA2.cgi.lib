@@ -1235,7 +1235,7 @@ sub ScoresAndThresholdsDiv {
 ## Display a table with checkboxes and thresholds for a set of
 ## specified fields
 sub FieldsThresholdsTable {
-  my ($help_file, $field_ref, $field_descr_ref) = @_;
+  my ($help_file, $field_ref, $field_descr_ref, $no_checkbox) = @_;
   my @fields = @{$field_ref};
   my %field_descr = %{$field_descr_ref};
   print "<table align='center'>\n";
@@ -1247,16 +1247,33 @@ sub FieldsThresholdsTable {
     my $uth = $default{'uth_'.$field} || "none";
 
     print "<tr valign='middle'>";
-#    print "<td>", $field, "</td>\n";
-    print "<td>", $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>''), "&nbsp;", $field, "</td>\n";
-    print "<td>", $query->textfield(-name=>'lth_'.$field,
-				    -default=>$lth,
-				    -size=>5), "</td>\n";
-    print "<td>", $query->textfield(-name=>'uth_'.$field,
+
+    ## Print field name with or without checkbox
+    if ($no_checkbox) {
+	print "<td>", $field, "</td>\n";
+    } else {
+	print "<td>", $query->checkbox(-name=>'return_'.$field,
+				       -checked=>$default{'return_'.$field},
+				       -label=>''), "&nbsp;", $field, "</td>\n";
+    }
+
+    ## Lower threshold
+    if (lc($lth) eq "disabled") {
+	print "<td align='center'>&nbsp;</td>";
+    } else {
+	print "<td>", $query->textfield(-name=>'lth_'.$field,
+				-default=>$lth,
+				-size=>5), "</td>\n";
+    }
+
+    ## Upper threshold
+    if (lc($uth) eq "disabled") {
+	print "<td>&nbsp;</td>";
+    } else {
+	print "<td>", $query->textfield(-name=>'uth_'.$field,
 				    -default=>$uth,
 				    -size=>5), "</td>\n";
+    }
     print "<td>", $field_descr{$field}, "</td>\n";
     print "</tr>\n";
   }
