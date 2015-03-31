@@ -612,6 +612,8 @@ sub UpdateConfigTab {
 ## Create a directory for the taxonomic group of the organism
 sub CreatePhylogeny {
     my $taxonomy = "";
+    &RSAT::message::Warning("Phylogeny indexation has been disabled");
+    return;
 
     ## read taxonomy from the parsing result
     $organism_table = $dir{install}."/genome/organism.tab";
