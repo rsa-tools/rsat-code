@@ -35,6 +35,7 @@ init:
 	@echo "Creating directories"
 	@echo "	data	${RSAT}/public_html/data"
 	@mkdir -p public_html/data
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
 	@echo "Options +Indexes" > public_html/data/.htaccess
 	@echo "	genomes	${RSAT}/public_html/data/genomes"
 	@mkdir -p public_html/data/genomes
@@ -52,11 +53,13 @@ init:
 	@mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
 	@chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/tmp/robots.txt
 	@rm -f public_html/tmp/index.html
 	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@mkdir -p ${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
 	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
@@ -125,6 +128,25 @@ _create_download_dir:
 	mkdir -p downloads
 	(cd downloads; ln -fs ${RSAT}/makefiles/downloads.mk ./makefile)
 
+################################################################
+## Configuration for robots.
+## Details can be found here: http://www.robotstxt.org/orig.html
+ROBOTS=${RSAT}/public_html/data/robots.txt
+init_robots:
+	@echo
+	@echo "Disabling robots from indexing data directory"
+	@echo "User-agent: *" > ${ROBOTS}
+	@echo "Disallow: ." >> ${ROBOTS}
+	@echo "Disallow: /rsat/data/" >> ${ROBOTS}
+	@echo "Disallow: /data/" >> ${ROBOTS}
+	@echo "Disallow: data/" >> ${ROBOTS}
+	@echo "Disallow: /rsat/tmp/" >> ${ROBOTS}
+	@echo "Disallow: /tmp/" >> ${ROBOTS}
+	@echo "Disallow: tmp/" >> ${ROBOTS}
+	@echo "Disallow: /rsat/logs/" >> ${ROBOTS}
+	@echo "Disallow: /logs/" >> ${ROBOTS}
+	@echo "Disallow: logs/" >> ${ROBOTS}
+	@echo "	ROBOTS	${ROBOTS}"
 
 ## Adapt the IP address in the RSATWS.wsdl file
 ws_init:
