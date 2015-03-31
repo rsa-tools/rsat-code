@@ -23,7 +23,7 @@ $default{limits} = "None";
 @threshold_fields = qw(site_score site_pval crer_size crer_sites crer_sites_distance crer_sig overlap);
 
 $descr{site_pval} = "P-value of input sites";
-$default{lth_site_pval} = "None";
+$default{lth_site_pval} = "Disabled";
 $default{uth_site_pval} = "1e-3";
 $default{demo_descr} = "";
 $descr{site_score} = "Score of input sites";
@@ -43,12 +43,12 @@ $default{lth_crer_sites_distance} = 1;
 $default{uth_crer_sites_distance} = 100;
 
 $descr{overlap} = "Overlap between sites";
-$default{lth_overlap} = "None";
+$default{lth_overlap} = "Disabled";
 $default{uth_overlap} = 1;
 
 $descr{crer_sig} = "CRER significance";
 $default{lth_crer_sig} = 1;
-$default{uth_crer_sig} = "None";
+$default{uth_crer_sig} = "Disabled";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -110,7 +110,8 @@ print "<h2>Thresholds</h2>";
 
 
 print "<blockquote>\n";
-&PrintThresholdTable(@threshold_fields);
+&FieldsThresholdsTable("help.crer-scan.html", \@threshold_fields, "", 1);
+#&PrintThresholdTable(@threshold_fields);
 print "</blockquote>\n";
 
 print "<h2>Output options</h2>";
@@ -174,40 +175,40 @@ exit(0);
 
 ################################################################
 ## Print a threshold table
-sub PrintThresholdTable {
-  my @threshold_fields = @_;
-  print "<table>\n";
-  print "<tr>\n";
-  print "<th align='left'>", "Field","</th>";
-  print "<th>", "Lower threshold", "</th>";
-  print "<th>", "Upper threshold", "</th>";
-  print "<th>", $default{"uth_".$field},"</th>";
-  print "</tr>\n";  
-  foreach my $field (@threshold_fields) {
-    print "<tr>\n";
-    my $field_description = $field;
-    if (defined($descr{$field})) {
-      $field_description = $descr{$field};
-    }
-    print "<td align='left'>",$field_description,"</td>";
-    for my $side ("lth", "uth") {
-      my $threshold_name = $side."_".$field;
-      my $threshold_value;
-      if (defined($default{$threshold_name})) {
-	$threshold_value = $default{$threshold_name};
-      } else {
-	$threshold_value = "None";
-      }
-      print "<td align='center'>\n";
-      print $query->textfield(-name=>$threshold_name,
-			      -default=>$threshold_value,
-			      -size=>4);
-      print "</td>\n";
-    }
-    print "</tr>\n";  
-  }
-  print "</table>\n";
-}
+# sub PrintThresholdTable {
+#   my @threshold_fields = @_;
+#   print "<table>\n";
+#   print "<tr>\n";
+#   print "<th align='left'>", "Field","</th>";
+#   print "<th>", "Lower threshold", "</th>";
+#   print "<th>", "Upper threshold", "</th>";
+#   print "<th>", $default{"uth_".$field},"</th>";
+#   print "</tr>\n";  
+#   foreach my $field (@threshold_fields) {
+#     print "<tr>\n";
+#     my $field_description = $field;
+#     if (defined($descr{$field})) {
+#       $field_description = $descr{$field};
+#     }
+#     print "<td align='left'>",$field_description,"</td>";
+#     for my $side ("lth", "uth") {
+#       my $threshold_name = $side."_".$field;
+#       my $threshold_value;
+#       if (defined($default{$threshold_name})) {
+# 	$threshold_value = $default{$threshold_name};
+#       } else {
+# 	$threshold_value = "None";
+#       }
+#       print "<td align='center'>\n";
+#       print $query->textfield(-name=>$threshold_name,
+# 			      -default=>$threshold_value,
+# 			      -size=>4);
+#       print "</td>\n";
+#     }
+#     print "</tr>\n";  
+#   }
+#   print "</table>\n";
+# }
 
 ################################################################
 ## Print a HTML the description of the tool
