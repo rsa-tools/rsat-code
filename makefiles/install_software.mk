@@ -89,6 +89,8 @@ install_ext_apps_optional:
 ## obtained (free of charge for academics) at http://www.vmatch.de/
 VMATCH_VERSION=2.2.4
 install_vmatch:
+	@echo
+	@echo "Installing vmatch for operating system ${OS}"
 	${MAKE} _install_vmatch_${OS}
 	${MAKE} _vmatch_warning
 
@@ -247,7 +249,17 @@ GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux_x86_64
 GS_DISTRIB=ghostscript-${GS_VERSION}.${GS_SUBVER}-linux-x86_64
 GS_TAR=${GS_DISTRIB}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
-install_ghostscript: _download_gs _install_gs
+
+VMATCH_VERSION=2.2.4
+install_ghostscript:
+	@echo
+	@echo "Installing ghostscript (gs) for operating system ${OS}"
+	${MAKE} _install_ghostscript_${OS}
+
+install_ghostscript_macosx:
+	brew install ghostscript
+
+install_ghostscript_linux: _download_gs _install_gs
 
 _download_gs:
 	@mkdir -p ${GS_DIR}
