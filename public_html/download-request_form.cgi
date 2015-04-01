@@ -75,6 +75,12 @@ print "</td></tr>\n";
 print "</table>";
 
 
+## License
+print "<br>", $query->checkbox(-name=>'license',
+		       -checked=>"",
+		       -label=>'');
+print "&nbsp;<b><font color='orange'>I agree with the</font> <a href='distrib/YOUR_NAME_RSAT_license.pdf'>license</b></a></p>";
+
 ################################################################
 ## Action buttons
 print "<ul><ul><table class='formbutton'>\n";
