@@ -24,6 +24,7 @@ my @mandatory_fields  = qw ( first_name
                              institution
                              city
                              country
+                             license
                              );
 
 my @all_fields = @mandatory_fields;
@@ -38,6 +39,9 @@ $query = new CGI;
 &CheckWebInput($query);
 
 ## Check mandatory fields
+if ($query->param("license") eq "") {
+  &RSAT::error::FatalError("RSAT download requires to agree with the license.");
+}
 foreach my $field (@mandatory_fields) {
   if ($query->param($field) eq "") {
     &RSAT::error::FatalError($field." field cannot be empty.");
@@ -64,9 +68,9 @@ print $message;
 print "</pre>";
 my $recipient = 'Jacques.van-Helden@univ-amu.fr'; ## All download requests should be sent to JvH
 my $subject = join(" ", 
-		   "RSAT download request from",
 		   $query->param("first_name"), 
 		   $query->param("last_name"), 
+		   "RSAT download request from",
     );
 &RSAT::server::send_mail($message, $recipient, $subject);
 
@@ -74,7 +78,6 @@ my $subject = join(" ",
 print "<h2>Download URL</h2>";
 
 print "<p>To download the Regulatory Sequence Analysis Tools, please follow this link</p>\n";
-
 my $download_url = "http://download.rsat.eu/";
 print "<p>", "<b><a href='",$download_url, "'>",$download_url, "</a></b>\n"; 
 
