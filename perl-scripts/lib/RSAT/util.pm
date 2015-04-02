@@ -981,9 +981,14 @@ sub make_temp_file {
 ################################################################
 ## echo a command and send it to the system
 ## Usage:
-##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle);
+## 
 sub doit {
-  my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
+  my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle) = @_;
+
+  if ($log_handle) {
+    print $log_handle "\n\n", $command, "\n";
+  }
 
   &RSAT::message::Debug("&RSAT::util::doit()", "Command:", $command) if ($main::verbose >= 5); 
   unless ($command) {
@@ -994,7 +999,6 @@ sub doit {
   ## Define current working directory
   my $wd = `pwd`;
   chomp($wd);
-
 
   ## Fix scope problem with the variable $main::verbose
   unless(defined($verbose)) {
@@ -1138,15 +1142,32 @@ sub doit {
     ## Send the command to the queue
     unless ($dry) {
 #	&RSAT::message::Debug("Running command", $command) if ($main::verbose >= 3);
-      my $error = system($command);
-      if ($die_on_error) {
+
+      eval {
+	my $error = system($command);
+	1;
+      } or do {
+	## Prepare error message
 	if ($error == -1) {
-	  &RSAT::error::FatalError("Could not execute the command\n\t$command");
+	  $error_message = "Could not execute the command\n\t".$command;
 	} elsif ($error) {
-	  &RSAT::error::FatalError("Error", $error , "occurred during execution of the command", "\n\t".$command);
+	  $error_message = join("\t", $0, "Error", $error , "occurred during execution of the command:", "\n", $command);
 	}
-      } else {
-	return ($error);
+
+	## Print error in log file if provided
+	if ($error) {
+	  if ($err_handle) {
+	    print $err_handle "\n\n", $error_message, "\n";
+	  }
+	}
+
+	## Report error in log file
+	if ($die_on_error) {
+	  &RSAT::error::FatalError($error_message);
+	} else {
+	  &RSAT::message::Warning($error_message);
+	  return ($error);
+	}
       }
     }
   }
