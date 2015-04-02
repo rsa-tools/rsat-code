@@ -24,8 +24,8 @@ SSH=-e 'ssh -x'
 ## Install the RSAT package
 install_rsat:
 	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk init
-	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
 	${MAKE} -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
+	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
 	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_ext_apps
 
 ################################################################
@@ -33,8 +33,9 @@ install_rsat:
 ## programs, installation of R packages)
 update:
 	git pull
-	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub compile_all
+	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub
 	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
+	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
 
 ################################################################
 ## Install Unix packages required for RSAT
